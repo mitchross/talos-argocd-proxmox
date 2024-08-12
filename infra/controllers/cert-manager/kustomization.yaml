@@ -3,7 +3,7 @@ kind: Kustomization
 
 resources:
   - ns.yaml
- # - external-secret.yaml
+  - external-secret.yaml
   - cluster-issuer.yaml
 
 helmCharts:
