@@ -21,8 +21,8 @@ spec:
       server: '*'
     # - namespace: 'sealed-secrets'
     #   server: '*'
-    # - namespace: 'external-secrets'
-    #   server: '*'
+    - namespace: 'external-secrets'
+      server: '*'
     - namespace: '1passwordconnect'
       server: '*'
   clusterResourceWhitelist:
