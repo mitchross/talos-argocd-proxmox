@@ -50,4 +50,4 @@ spec:
             secretName: cloudflared
         - name: config
           configMap:
-            name: cloudflared-config  # This should match the name in your Kustomization
+            name: cloudflared-config  
