@@ -1,0 +1,76 @@
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: certificate
+# ---
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   name: wildcard-staging
+#   namespace: certificate
+# spec:
+#   secretName: wildcard-staging
+#   issuerRef:
+#     name: letsencrypt-staging
+#     kind: ClusterIssuer
+#   commonName: '<path:stringreplacesecret#domain>'
+#   dnsNames:
+#   - '<path:stringreplacesecret#domain>'
+#   - '*.<path:stringreplacesecret#domain>'
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-production
+  namespace: certificate
+spec:
+  secretName: wildcard-production
+  issuerRef:
+    name: letsencrypt-production
+    kind: ClusterIssuer
+  commonName: 'vanillax.me'
+  dnsNames:
+  - 'vanillax.me'
+  - '*.vanillax.me'
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: ReferenceGrant
+metadata:
+  name: allowfromns-gateway
+  namespace: certificate
+spec:
+  from:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    namespace: gateway
+  to:
+  - group: ""
+    kind: Secret
+---
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: wildcard-production
+  namespace: certificate
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  refreshInterval: "5m"
+  secretStoreRefs:
+    - name: 1password
+      kind: ClusterSecretStore
+  selector:
+    secret:
+      name: wildcard-production
+  data:
+    - match:
+        secretKey: tls.crt
+        remoteRef:
+          remoteKey: certificate.wildcard-production-proxmox
+          property: tls.crt
+    - match:
+        secretKey: tls.key
+        remoteRef:
+          remoteKey: certificate.wildcard-production-proxmox
+          property: tls.key
