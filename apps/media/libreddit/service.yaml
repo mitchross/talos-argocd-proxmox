@@ -5,8 +5,8 @@ metadata:
   namespace: libreddit
 spec:
   ports:
-    - port: 3000
-      targetPort: 3000
+    - port: 8080
+      targetPort: 8080
       protocol: TCP
   selector:
     app.kubernetes.io/name: libreddit
