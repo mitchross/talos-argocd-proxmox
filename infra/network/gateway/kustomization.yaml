@@ -8,3 +8,6 @@ resources:
   - gw-external.yaml
   - ext-gateway-service.yaml
   - int-gateway-service.yaml
+  - gw-stonegarden.yaml
+  - gw-tls-passthrough.yaml
+  - cert-stonegarden.yaml

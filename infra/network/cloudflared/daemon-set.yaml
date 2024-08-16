@@ -16,12 +16,12 @@ spec:
     spec:
       containers:
         - name: cloudflared
-          image: cloudflare/cloudflared:2024.6.1
+          image: cloudflare/cloudflared:2024.8.2 # renovate: docker=cloudflare/cloudflared
           imagePullPolicy: IfNotPresent
           args:
             - tunnel
             - --config
-            - /etc/cloudflared/config/cloudflared-config.yaml
+            - /etc/cloudflared/config/config.yaml
             - run
           livenessProbe:
             httpGet:
@@ -32,22 +32,22 @@ spec:
             periodSeconds: 10
           resources:
             requests:
-              cpu: 50m
-              memory: 32Mi
+              cpu: 100m
+              memory: 64Mi
             limits:
-              cpu: 1000m
-              memory: 128Mi
+              memory: 512Mi
           volumeMounts:
             - name: config
-              mountPath: /etc/cloudflared/config
-            - name: creds
-              mountPath: /etc/cloudflared/creds
+              mountPath: /etc/cloudflared/config/config.yaml
+              subPath: config.yaml
+            - name: credentials
+              mountPath: /etc/cloudflared/credentials
               readOnly: true
       restartPolicy: Always
       volumes:
-        - name: creds
-          secret:
-            secretName: cloudflared
         - name: config
           configMap:
-            name: cloudflared-config  
+            name: config
+        - name: credentials
+          secret:
+            secretName: tunnel-credentials
