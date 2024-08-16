@@ -8,8 +8,12 @@ spec:
   - name: stonegarden
     namespace: gateway
   hostnames:
-  - "libreddit.vanillax.me"
+    - "libreddit.vanillax.me"
   rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
       backendRefs:
         - name: libreddit
-          port: 8080
+          port: 3000
