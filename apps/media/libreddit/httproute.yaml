@@ -10,10 +10,6 @@ spec:
   hostnames:
   - "libreddit.vanillax.me"
   rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
       backendRefs:
         - name: libreddit
           port: 8080
