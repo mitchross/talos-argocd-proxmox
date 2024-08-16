@@ -5,12 +5,15 @@ metadata:
   namespace: echo-server
 spec:
   parentRefs:
-  - name: internal
+  - name: stonegarden
     namespace: gateway
-    sectionName: https
   hostnames:
-  - "echo-server.vanillax.me"
+    - "echo-server.vanillax.me"
   rules:
-  - backendRefs:
-    - name: echo-server
-      port: 8080
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: echo-server
+          port: 8080
