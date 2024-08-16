@@ -6,8 +6,11 @@ configMapGenerator:
     namespace: cloudflared
     files:
       - config.yaml
-
+generatorOptions:
+ disableNameSuffixHash: true
+ 
 resources:
   - ns.yaml
   - daemon-set.yaml
   - external-secret.yaml
+  
