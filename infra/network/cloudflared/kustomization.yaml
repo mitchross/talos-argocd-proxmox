@@ -5,7 +5,7 @@ configMapGenerator:
   - name: config
     namespace: cloudflared
     files:
-      - cloudflared-config.yaml
+      - config.yaml
 
 resources:
   - ns.yaml
