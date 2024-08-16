@@ -16,4 +16,4 @@ spec:
             value: /
       backendRefs:
         - name: libreddit
-          port: 3000
+          port: 8080
