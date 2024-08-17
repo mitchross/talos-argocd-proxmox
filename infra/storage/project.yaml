@@ -11,6 +11,8 @@ spec:
       server: '*'
     - namespace: 'csi-proxmox'
       server: '*'
+    - namespace: 'openebs'
+      server: '*'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'

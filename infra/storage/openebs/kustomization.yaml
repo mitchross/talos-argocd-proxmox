@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: openebs
+
+resources:
+  - namespace.yaml
+
+helmCharts:
+  - name: openebs
+    repo: https://openebs.github.io/charts
+    releaseName: openebs
+    version: 3.9.0  # You can adjust this to the latest version
+    namespace: openebs
+    valuesFile: values.yaml
+
+configMapGenerator:
+  - name: openebs-values
+    files:
+      - values.yaml
