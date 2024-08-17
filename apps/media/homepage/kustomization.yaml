@@ -7,4 +7,4 @@ resources:
   - httproute.yaml
   - ns.yaml
 
-namespace: homepage
+namespace: homepage-dashboard

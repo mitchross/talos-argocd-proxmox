@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: homepage
-  namespace: homepage
+  name: homepage-dashboard
+  namespace: homepage-dashboard
 spec:
   ports:
     - port: 3000
       targetPort: 3000
       protocol: TCP
   selector:
-    app.kubernetes.io/name: homepage
+    app.kubernetes.io/name: homepage-dashboard
