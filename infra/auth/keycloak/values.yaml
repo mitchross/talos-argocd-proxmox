@@ -13,12 +13,7 @@ proxy: edge
 
 ingress:
   enabled: true
-  annotations:
-    cert-manager.io/cluster-issuer: cloudflare-cluster-issuer
-  hostname: keycloak.vanillax.me
-  pathType: Prefix
-  path: /
-  tls: true
+
 
 postgresql:
   enabled: true
