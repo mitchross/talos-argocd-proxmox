@@ -19,7 +19,7 @@ spec:
       server: '*'
     - namespace: 'echo-server'
       server: '*'
-    - namespace: 'home-page'
+    - namespace: 'homepage'
       server: '*'
   clusterResourceWhitelist:
     - group: '*'
