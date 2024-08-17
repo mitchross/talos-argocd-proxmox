@@ -5,6 +5,7 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+  - pvc.yaml
   - ns.yaml
 
 namespace: homepage-dashboard

@@ -53,3 +53,10 @@ spec:
             port: http
           initialDelaySeconds: 5
           periodSeconds: 10
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+        volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: homepage-config-pvc
