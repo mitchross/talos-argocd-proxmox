@@ -10,8 +10,6 @@ spec:
     matchLabels:
       app.kubernetes.io/name: homepage-dashboard
   replicas: 1
-  strategy:
-    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -34,29 +32,14 @@ spec:
           readOnlyRootFilesystem: true
           capabilities:
             drop: ["ALL"]
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 500m
-            memory: 256Mi
-        livenessProbe:
-          httpGet:
-            path: /
-            port: http
-          initialDelaySeconds: 10
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /
-            port: http
-          initialDelaySeconds: 5
-          periodSeconds: 10
         volumeMounts:
         - name: config
           mountPath: /app/config
-        volumes:
-        - name: config
-          persistentVolumeClaim:
-            claimName: homepage-config-pvc
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: homepage-config-pvc
+      - name: tmp
+        emptyDir: {}
