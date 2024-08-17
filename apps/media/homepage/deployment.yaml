@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: homepage-dashboard
-  namespace: homepage
+  namespace: homepage-dashboard
   labels:
     app.kubernetes.io/name: homepage-dashboard
 spec:
