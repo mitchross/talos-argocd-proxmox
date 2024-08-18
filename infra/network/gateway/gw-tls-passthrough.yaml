@@ -12,7 +12,7 @@ spec:
     - protocol: TLS
       port: 443
       name: proxmox
-      hostname: "proxmox2.vanillax.me"
+      hostname: "proxmox.vanillax.me"
       tls:
         mode: Passthrough
       allowedRoutes:
