@@ -13,10 +13,10 @@ ingress:
     service: https://proxmox.proxmox.svc.cluster.local:443
     originRequest:
       originServerName: proxmox.vanillax.me
-  - hostname: truenas.vanillax.me
-    service: https://truenas.truenas.svc.cluster.local:443
+  - hostname: truenas2.vanillax.me
+    service: https://truenas2.truenas.svc.cluster.local:443
     originRequest:
-      originServerName: truenas.vanillax.me
+      originServerName: truenas2.vanillax.me
   - hostname: "*.vanillax.me"
     service: https://cilium-gateway-stonegarden.gateway.svc.cluster.local:443
     originRequest:

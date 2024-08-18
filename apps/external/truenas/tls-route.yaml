@@ -1,7 +1,7 @@
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TLSRoute
 metadata:
-  name: truenas
+  name: truenas2
   namespace: truenas
 spec:
   parentRefs:
@@ -11,5 +11,5 @@ spec:
     - "truenas2.vanillax.me"
   rules:
     - backendRefs:
-        - name: truenas
+        - name: truenas2
           port: 443
