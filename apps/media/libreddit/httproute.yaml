@@ -5,7 +5,7 @@ metadata:
   namespace: libreddit
 spec:
   parentRefs:
-  - name: stonegarden
+  - name: external
     namespace: gateway
   hostnames:
     - "libreddit.vanillax.me"

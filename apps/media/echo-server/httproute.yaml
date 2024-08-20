@@ -5,7 +5,7 @@ metadata:
   namespace: echo-server
 spec:
   parentRefs:
-  - name: stonegarden
+  - name: external
     namespace: gateway
   hostnames:
     - "echo-server.vanillax.me"

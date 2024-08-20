@@ -5,7 +5,7 @@ metadata:
   namespace: homepage-dashboard
 spec:
   parentRefs:
-  - name: stonegarden
+  - name: internal
     namespace: gateway
   hostnames:
     - "homepage.vanillax.me"
