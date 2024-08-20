@@ -3,21 +3,12 @@ kind: Gateway
 metadata:
   name: external
   namespace: gateway
-  annotations:
-    cert-manager.io/issuer: cloudflare-issuer
 spec:
   gatewayClassName: cilium
   infrastructure:
     annotations:
       io.cilium/lb-ipam-ips: 192.168.10.49
   listeners:
-    - protocol: HTTP
-      port: 80
-      name: http
-      hostname: "*.vanillax.me"
-      allowedRoutes:
-        namespaces:
-          from: All
     - protocol: HTTPS
       port: 443
       name: https-gateway
@@ -25,25 +16,18 @@ spec:
       tls:
         certificateRefs:
           - kind: Secret
-            name: cloudflare-cert
+            name: cert-stonegarden
       allowedRoutes:
         namespaces:
           from: All
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: httpsredirect-externalgw
-  namespace: gateway
-spec:
-  parentRefs:
-    - name: external
-      namespace: gateway
-      sectionName: http
-  rules:
-    - filters:
-        - requestRedirect:
-            scheme: https
-            statusCode: 301
-          type: RequestRedirect
----
+    - protocol: HTTPS
+      port: 443
+      name: https-domain-gateway
+      hostname: vanillax.me
+      tls:
+        certificateRefs:
+          - kind: Secret
+            name: cert-stonegarden
+      allowedRoutes:
+        namespaces:
+          from: All

@@ -9,20 +9,12 @@ warp-routing:
 ingress:
   - hostname: hello.vanillax.me
     service: hello_world
-  - hostname: proxmox.vanillax.me
-    service: https://proxmox.proxmox.svc.cluster.local:443
-    originRequest:
-      originServerName: proxmox.vanillax.me
-  - hostname: truenas2.vanillax.me
-    service: https://truenas2.truenas.svc.cluster.local:443
-    originRequest:
-      originServerName: truenas2.vanillax.me
   - hostname: "*.vanillax.me"
-    service: https://cilium-gateway-stonegarden.gateway.svc.cluster.local:443
+    service: https://cilium-gateway-external.gateway.svc.cluster.local:443
     originRequest:
       originServerName: "*.vanillax.me"
   - hostname: vanillax.me
-    service: https://cilium-gateway-stonegarden.gateway.svc.cluster.local:443
+    service: https://cilium-gateway-external.gateway.svc.cluster.local:443
     originRequest:
       originServerName: vanillax.me
   - service: http_status:404

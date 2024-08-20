@@ -5,12 +5,9 @@ generatorOptions:
  disableNameSuffixHash: true
 
 resources:
+  - cert-stonegarden.yaml
   - gateway-class.yaml
   - ns.yaml
-  - gw-internal.yaml
   - gw-external.yaml
-  - ext-gateway-service.yaml
-  - int-gateway-service.yaml
-  - gw-stonegarden.yaml
+  - gw-internal.yaml
   - gw-tls-passthrough.yaml
-  - cert-stonegarden.yaml
