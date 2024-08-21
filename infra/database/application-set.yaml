@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: database
+  namespace: argocd
+  labels:
+    dev.stonegarden: database
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox
+        revision: HEAD
+        directories:
+          - path: k8s/infra/database/*
+  template:
+    metadata:
+      name: '{{ path.basename }}'
+      labels:
+        dev.stonegarden: controllers
+    spec:
+      project: database
+      source:
+        plugin:
+          name: kustomize-build-with-helm
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox
+        targetRevision: HEAD
+        path: '{{ path }}'
+      destination:
+        name: in-cluster
+        namespace: argocd
+      syncPolicy:
+        automated:
+          selfHeal: true
