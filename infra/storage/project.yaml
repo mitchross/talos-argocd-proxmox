@@ -13,7 +13,7 @@ spec:
       server: '*'
     - namespace: 'openebs'
       server: '*'
-    - namespace: 'longhorn'
+    - namespace: 'longhorn-system'
       server: '*'
   clusterResourceWhitelist:
     - group: '*'
