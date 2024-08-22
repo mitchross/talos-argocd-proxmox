@@ -10,7 +10,7 @@ helmCharts:
   - name: openebs
     repo: https://openebs.github.io/charts
     releaseName: openebs
-    version: 3.9.0  # You can adjust this to the latest version
+    version: 3.10.0  # You can adjust this to the latest version
     namespace: openebs
     valuesFile: values.yaml
 
