@@ -5,9 +5,9 @@ metadata:
   namespace: cnpg-database
 spec:
   instances: 1
-  affinity:
-    nodeSelector:
-      topology.kubernetes.io/zone: euclid
+  # affinity:
+  #   nodeSelector:
+  #     topology.kubernetes.io/zone: euclid
   storage:
     size: 4G
     pvcTemplate:
