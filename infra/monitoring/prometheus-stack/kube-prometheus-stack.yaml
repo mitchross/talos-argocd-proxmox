@@ -13,7 +13,7 @@ spec:
       targetRevision: 61.3.2
       helm:
         valueFiles:
-          - $values/k8s/infra/monitoring/prometheus-stack/values.yaml
+          - $values/infra/database/*monitoring/prometheus-stack/values.yaml
     - repoURL: https://github.com/mitchross/k3s-argocd-proxmox
       targetRevision: HEAD
       ref: values
