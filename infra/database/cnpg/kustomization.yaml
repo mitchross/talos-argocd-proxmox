@@ -13,10 +13,5 @@ helmCharts:
     includeCRDs: true
     version: 0.22.0
     valuesFile: values.yaml
-  - name: postgres-operator-ui
-    repo: https://opensource.zalando.com/postgres-operator/charts/postgres-operator-ui
-    releaseName: postgres-operator-ui
-    namespace: postgres-operator
-    includeCRDs: true
-    version: 1.13.0  # You may want to check for the latest version
+
  
