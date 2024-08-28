@@ -13,3 +13,10 @@ helmCharts:
     includeCRDs: true
     version: 0.22.0
     valuesFile: values.yaml
+  - name: cloudnative-pg-ui
+    repo: https://opensource.zalando.com/postgres-operator/charts/postgres-operator-ui
+    releaseName: cloudnative-pg-ui
+    namespace: cnpg-system
+    includeCRDs: true
+    version: 1.21.2
+    valuesFile: values.yaml
