@@ -4,13 +4,15 @@ kind: Kustomization
 namespace: system-upgrade-controller
 
 resources:
-  - ns.yaml
+  - https://raw.githubusercontent.com/rancher/system-upgrade-controller/v0.13.4/manifests/system-upgrade-controller.yaml
   - plans.yaml
+  - ns.yaml
 
-helmCharts:
-  - name: system-upgrade-controller
-    repo: https://github.com/rancher/system-upgrade-controller.git
-    version: v0.13.4
-    releaseName: system-upgrade-controller
-    namespace: system-upgrade-controller
-    valuesFile: values.yaml
+patches:
+  - target:
+      kind: Deployment
+      name: system-upgrade-controller
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: rancher/system-upgrade-controller:v0.13.4
