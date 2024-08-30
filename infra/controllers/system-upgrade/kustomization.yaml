@@ -3,7 +3,7 @@ kind: Kustomization
 
 resources:
   - ns.yaml
-  - system-upgrade-controller.yaml
+  #- system-upgrade-controller.yaml
   - deployment.yaml
   - plans.yaml
 
