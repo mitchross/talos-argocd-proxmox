@@ -1,11 +1,22 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+namespace: system-upgrade
+
 resources:
+  - https://raw.githubusercontent.com/rancher/system-upgrade-controller/master/manifests/crd.yaml
   - https://raw.githubusercontent.com/rancher/system-upgrade-controller/master/manifests/system-upgrade-controller.yaml
   - plans.yaml
 
 patches:
+  - target:
+      kind: CustomResourceDefinition
+      name: plans.upgrade.cattle.io
+    patch: |-
+      - op: add
+        path: /metadata/annotations
+        value:
+          argocd.argoproj.io/sync-wave: "-1"
   - target:
       kind: Deployment
       name: system-upgrade-controller
@@ -13,6 +24,10 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/image
         value: rancher/system-upgrade-controller:v0.13.4
+      - op: add
+        path: /metadata/annotations
+        value:
+          argocd.argoproj.io/sync-wave: "0"
   - target:
       kind: ConfigMap
       name: default-controller-env
