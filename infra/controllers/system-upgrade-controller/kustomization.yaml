@@ -1,12 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: system-upgrade-controller
-
 resources:
   - https://raw.githubusercontent.com/rancher/system-upgrade-controller/v0.13.4/manifests/system-upgrade-controller.yaml
   - plans.yaml
-  - ns.yaml
 
 patches:
   - target:
@@ -16,3 +13,10 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/image
         value: rancher/system-upgrade-controller:v0.13.4
+  - target:
+      kind: Namespace
+      name: system-upgrade
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: system-upgrade-controller
