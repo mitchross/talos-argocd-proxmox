@@ -2,8 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - https://raw.githubusercontent.com/rancher/system-upgrade-controller/v0.13.4/manifests/crd.yaml
-  - https://raw.githubusercontent.com/rancher/system-upgrade-controller/v0.13.4/manifests/system-upgrade-controller.yaml
+  - https://raw.githubusercontent.com/rancher/system-upgrade-controller/master/manifests/system-upgrade-controller.yaml
   - plans.yaml
 
 patches:
@@ -15,9 +14,9 @@ patches:
         path: /spec/template/spec/containers/0/image
         value: rancher/system-upgrade-controller:v0.13.4
   - target:
-      kind: Namespace
-      name: system-upgrade
+      kind: ConfigMap
+      name: default-controller-env
     patch: |-
       - op: replace
-        path: /metadata/name
-        value: system-upgrade-controller
+        path: /data/SYSTEM_UPGRADE_JOB_KUBECTL_IMAGE
+        value: rancher/kubectl:v1.30.3
