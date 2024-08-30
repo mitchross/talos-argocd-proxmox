@@ -12,5 +12,5 @@ helmCharts:
     repo: https://github.com/rancher/system-upgrade-controller.git
     version: v0.13.4
     releaseName: system-upgrade-controller
-    namespace: system-upgrade
+    namespace: system-upgrade-controller
     valuesFile: values.yaml
