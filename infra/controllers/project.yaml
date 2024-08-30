@@ -25,7 +25,7 @@ spec:
     #   server: '*'
     - namespace: '1passwordconnect'
       server: '*'
-    - namespace: 'system-upgrade-controller'
+    - namespace: 'system-upgrade'
       server: '*'
   clusterResourceWhitelist:
     - group: '*'
