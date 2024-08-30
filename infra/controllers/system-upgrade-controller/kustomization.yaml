@@ -4,7 +4,7 @@ kind: Kustomization
 namespace: system-upgrade-controller
 
 resources:
-  - namespace.yaml
+  - ns.yaml
   - plans.yaml
 
 helmCharts:
