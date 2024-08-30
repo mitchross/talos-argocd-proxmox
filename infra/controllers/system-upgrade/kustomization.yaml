@@ -5,7 +5,7 @@ resources:
   #- ns.yaml
   #- system-upgrade-controller.yaml
   - deployment.yaml
-  - plans.yaml
+  #- plans.yaml
 
 
 namespace: system-upgrade
