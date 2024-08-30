@@ -4,7 +4,7 @@ metadata:
   name: cluster-example
   namespace: cnpg-database
 spec:
-  instances: 3
+  instances: 2
   storage:
     storageClass: openebs-hostpath
     size: 4G
