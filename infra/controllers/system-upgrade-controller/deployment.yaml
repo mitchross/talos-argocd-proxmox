@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: system-upgrade-controller
+  namespace: system-upgrade
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      upgrade.cattle.io/controller: system-upgrade-controller
+  template:
+    metadata:
+      labels:
+        upgrade.cattle.io/controller: system-upgrade-controller
+    spec:
+      serviceAccountName: system-upgrade
+      containers:
+      - name: system-upgrade-controller
+        image: rancher/system-upgrade-controller:v0.13.4
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: SYSTEM_UPGRADE_CONTROLLER_NAME
+          value: system-upgrade-controller
+        - name: SYSTEM_UPGRADE_CONTROLLER_NAMESPACE
+          value: system-upgrade

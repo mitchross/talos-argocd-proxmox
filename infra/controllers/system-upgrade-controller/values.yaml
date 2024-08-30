@@ -1,7 +1,0 @@
-fullnameOverride: system-upgrade-controller
-global:
-  cattle:
-    systemDefaultRegistry: ""
-image:
-  repository: rancher/system-upgrade-controller
-  tag: v0.13.4
