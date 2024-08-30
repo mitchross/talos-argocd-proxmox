@@ -27,14 +27,8 @@ spec:
         path: '{{ path }}'
       destination:
         name: in-cluster
-        namespace: '{{ path.basename }}'
+        namespace: argocd
       syncPolicy:
-        automated: {}
-        syncOptions:
-          - CreateNamespace=true
-          - ServerSideApply=true
-      ignoreDifferences:
-        - group: upgrade.cattle.io
-          kind: Plan
-          jsonPointers:
-            - /spec/version
+        automated:
+          selfHeal: true
+          prune: true
