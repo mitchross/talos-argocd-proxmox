@@ -4,7 +4,6 @@ kind: Kustomization
 namespace: system-upgrade
 
 resources:
-  - https://raw.githubusercontent.com/rancher/system-upgrade-controller/master/manifests/crd.yaml
   - https://raw.githubusercontent.com/rancher/system-upgrade-controller/master/manifests/system-upgrade-controller.yaml
   - plans.yaml
 
