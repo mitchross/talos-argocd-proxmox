@@ -1,0 +1,12 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-zfs-ssd
+provisioner: driver.longhorn.io
+parameters:
+  numberOfReplicas: "3"
+  staleReplicaTimeout: "2880"
+  diskSelector: "longhorn-zfs-ssd"
+  nodeSelector: "kubernetes.io/hostname in (vanillax-ai)"
+reclaimPolicy: Retain
+allowVolumeExpansion: true
