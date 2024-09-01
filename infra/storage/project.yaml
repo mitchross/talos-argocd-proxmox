@@ -13,8 +13,8 @@ spec:
       server: '*'
     - namespace: 'openebs'
       server: '*'
-    - namespace: 'longhorn-system'
-      server: '*'
+    # - namespace: 'longhorn-system'
+    #   server: '*'
     - namespace: 'csi-driver-nfs'
       server: '*'
   clusterResourceWhitelist:
