@@ -1,3 +1,4 @@
+
 driver:
   name: nfs.csi.k8s.io
   replicas: 2
@@ -6,8 +7,8 @@ storageClasses:
 - name: nfs-csi
   defaultClass: false
   parameters:
-    server: nfs-server.default.svc.cluster.local
-    share: /
+    server: 192.168.10.133
+    share: /mnt/generaltank/k8s/
   mountOptions:
     - nfsvers=4.1
 
