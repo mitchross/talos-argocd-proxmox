@@ -1,6 +1,30 @@
+longhornManager:
+  nodeSelector: {}
+  tolerations: []
+  priorityClass: ""
+  resources: {}
+
+webhookConfiguration:
+  enabled: true
+
 persistence:
   defaultClass: true
-  defaultClassReplicaCount: 3
-  reclaimPolicy: Retain
-preUpgradeChecker:
-  jobEnabled: false
+  defaultClassReplicaCount: 1
+  defaultDataLocality: "best-effort"
+  reclaimPolicy: "Delete"
+  migratable: false
+
+defaultSettings:
+  createDefaultDiskLabeledNodes: true
+  defaultDataPath: /var/lib/longhorn/
+
+nodes:
+  vanillax-ai:  # Replace with your actual node name
+    defaultDataPath: /mnt/ssdtank/k8s
+    disks:
+      ssdtank:
+        path: /mnt/ssdtank/k8s
+        allowScheduling: true
+        storageReserved: 10Gi
+        tags:
+          - longhorn-zfs-ssd
