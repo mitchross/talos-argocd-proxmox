@@ -23,15 +23,15 @@ parameters:
   staleReplicaTimeout: "2880"
   diskSelector: "longhorn-zfs-ssd"  # This now matches the tag we set on the disk
 
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: my-app-data
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: longhorn-zfs-ssd
-  resources:
-    requests:
-      storage: 10Gi
+# ---
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: my-app-data
+# spec:
+#   accessModes:
+#     - ReadWriteOnce
+#   storageClassName: longhorn-zfs-ssd
+#   resources:
+#     requests:
+#       storage: 10Gi
