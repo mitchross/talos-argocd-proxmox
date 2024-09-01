@@ -1,27 +1,38 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: longhorn-conversion-webhook
+  name: longhorn-manager
   namespace: longhorn-system
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: longhorn-conversion-webhook
+      app: longhorn-manager
   template:
     metadata:
       labels:
-        app: longhorn-conversion-webhook
+        app: longhorn-manager
     spec:
       containers:
-      - name: longhorn-conversion-webhook
-        image: longhornio/longhorn-manager:v1.7.0  # Replace with your Longhorn version
+      - name: longhorn-manager
+        image: longhornio/longhorn-manager:v1.7.0  # Replace with your actual version
         imagePullPolicy: IfNotPresent
         command:
         - longhorn-manager
-        - conversion-webhook
+        - -d
+        - daemon
+        - --engine-image
+        - longhornio/longhorn-engine:v1.7.0  # Replace with your actual version
+        - --instance-manager-image
+        - longhornio/longhorn-instance-manager:v1.7.0  # Replace with your actual version
+        - --share-manager-image
+        - longhornio/longhorn-share-manager:v1.7.0  # Replace with your actual version
+        - --manager-image
+        - longhornio/longhorn-manager:v1.7.0  # Replace with your actual version
+        - --service-account
+        - longhorn-service-account
         ports:
-        - containerPort: 9501
+        - containerPort: 9500
         env:
         - name: POD_NAMESPACE
           valueFrom:
