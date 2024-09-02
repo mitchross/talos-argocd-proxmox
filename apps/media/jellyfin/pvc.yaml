@@ -4,7 +4,7 @@ metadata:
   name: jellyfin-config
   namespace: jellyfin
 spec:
-  storageClassName: proxmox-csi
+  storageClassName: openebs-zfspv
   volumeName: pv-jellyfin-config
   accessModes:
     - ReadWriteOnce
