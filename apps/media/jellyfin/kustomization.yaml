@@ -14,3 +14,4 @@ resources:
   - svc.yaml
   - pvc.yaml
   - deployment.yaml
+  - httproute.yaml
