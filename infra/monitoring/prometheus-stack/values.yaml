@@ -3,7 +3,7 @@ prometheus:
     storageSpec:
       volumeClaimTemplate:
         spec:
-          storageClassName: proxmox-csi
+          storageClassName: openebs-zfspv
           volumeName: pv-prometheus
           accessModes:
             - ReadWriteOnce
