@@ -1,0 +1,15 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-zfspv
+provisioner: zfs.csi.openebs.io
+allowVolumeExpansion: true
+parameters:
+  poolname: "ssdtank"  # Replace with your ZFS pool name
+  fstype: "zfs"
+volumeBindingMode: WaitForFirstConsumer
+allowedTopologies:
+- matchLabelExpressions:
+  - key: kubernetes.io/hostname
+    values:
+    - vanillax-ai  # Replace with your actual node name

@@ -11,4 +11,8 @@ localprovisioner:
     enabled: true
     isDefaultClass: false
 
+# Enable ZFS LocalPV
+zfs-localpv:
+  enabled: true
+
 # You can add more configurations as needed

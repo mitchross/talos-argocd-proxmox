@@ -4,6 +4,8 @@ namespace: openebs
 
 resources:
   - namespace.yaml
+  - zfs-storage-claim.yaml
+  - zfs-storage-class.yaml
 
 helmCharts:
   - name: openebs

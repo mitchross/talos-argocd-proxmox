@@ -1,0 +1,20 @@
+
+apiVersion: openebs.io/v1alpha1
+kind: StoragePoolClaim
+metadata:
+  name: zfspv-pool
+  annotations:
+    cas.openebs.io/config: |
+      - name: PoolResourceRequests
+        value: |-
+            memory: 2Gi
+      - name: PoolResourceLimits
+        value: |-
+            memory: 4Gi
+spec:
+  name: zfspv-pool
+  type: zfs
+  poolSpec:
+    path: "/mnt/ssdtank/k8s"  # Your ZFS pool path
+  nodeSelector:
+    kubernetes.io/hostname: vanillax-ai  # Replace with your actual node name
