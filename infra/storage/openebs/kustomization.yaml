@@ -6,7 +6,7 @@ resources:
   - namespace.yaml
   - zfs-storage-class.yaml
   # Uncomment the following line once the CRD issue is resolved
-  # - zfs-storage-pool-claim.yaml
+  - zfs-storage-pool-claim.yaml
 
 helmCharts:
   - name: openebs
