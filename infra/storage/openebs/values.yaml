@@ -11,13 +11,28 @@ localprovisioner:
     enabled: true
     isDefaultClass: false
 
-# Enable ZFS LocalPV
+# Enable and configure ZFS LocalPV
 zfs-localpv:
   enabled: true
+  pluginImage: "openebs/zfs-driver"
+  pluginTag: "2.4.0"
   zfsPlugin:
     image:
+      registry: ""
       repository: openebs/zfs-driver
-      tag: 2.4.0
+      tag: "2.4.0"
+      pullPolicy: IfNotPresent
+  zfsNode:
+    image:
+      registry: ""
+      repository: openebs/zfs-driver
+      tag: "2.4.0"
+      pullPolicy: IfNotPresent
+  zfsController:
+    image:
+      registry: ""
+      repository: openebs/zfs-driver
+      tag: "2.4.0"
       pullPolicy: IfNotPresent
 
 # You can add more configurations as needed
