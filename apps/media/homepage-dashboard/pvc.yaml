@@ -9,5 +9,5 @@ spec:
   volumeMode: Filesystem
   resources:
     requests:
-      storage: 1Gi  # Adjust the size as needed for your config files
-  storageClassName: openebs-hostpath
+      storage: 3Gi  # Adjust the size as needed for your config files
+  storageClassName: openebs-zfspv
