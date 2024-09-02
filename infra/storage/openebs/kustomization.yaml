@@ -14,5 +14,5 @@ helmCharts:
     releaseName: openebs
     namespace: openebs
     includeCRDs: true
-    version: 4.1.0  # Use the latest stable version
+    version: 3.10.0  # Use the latest stable version
     valuesFile: values.yaml
