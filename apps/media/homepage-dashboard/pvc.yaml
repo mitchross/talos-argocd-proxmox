@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: homepage-config-pvc2
+  name: homepage-config-pvc
   namespace: homepage-dashboard  # Adjust this if your namespace is different
 spec:
   accessModes:
