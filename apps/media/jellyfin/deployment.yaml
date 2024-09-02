@@ -38,7 +38,6 @@ spec:
             limits:
               cpu: 6000m
               memory: 6Gi
-              gpu.intel.com/i915: 1000m
           envFrom:
             - configMapRef:
                 name: jellyfin-env
