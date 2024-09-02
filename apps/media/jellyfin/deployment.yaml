@@ -13,7 +13,7 @@ spec:
   template:
     spec:
       nodeSelector:
-        topology.kubernetes.io/zone: vanillax-ai
+        kubernetes.io/hostname: vanillax-ai
       securityContext:
         runAsNonRoot: true
         runAsUser: 2501
