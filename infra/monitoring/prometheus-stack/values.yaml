@@ -1,5 +1,7 @@
 prometheus:
   prometheusSpec:
+    nodeSelector:
+      topology.kubernetes.io/zone: vanillax-ai
     storageSpec:
       volumeClaimTemplate:
         spec:
