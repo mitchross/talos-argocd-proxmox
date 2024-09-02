@@ -35,4 +35,9 @@ zfs-localpv:
       tag: "2.4.0"
       pullPolicy: IfNotPresent
 
+# Enable ZFS CSI driver
+csi:
+  zfs:
+    enabled: true
+
 # You can add more configurations as needed
