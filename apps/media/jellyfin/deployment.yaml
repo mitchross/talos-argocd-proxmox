@@ -13,7 +13,7 @@ spec:
   template:
     spec:
       nodeSelector:
-        topology.kubernetes.io/zone: euclid
+        topology.kubernetes.io/zone: vanillax-ai
       securityContext:
         runAsNonRoot: true
         runAsUser: 2501
@@ -58,7 +58,7 @@ spec:
             claimName: jellyfin-config
         - name: media
           nfs:
-            server: 192.168.1.55
-            path: /mnt/pool-0/data/media
+            server: 192.168.10.133
+            path: /mnt/generaltank/k8s/jellyfin
         - name: cache
           emptyDir: { }
