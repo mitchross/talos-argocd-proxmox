@@ -16,11 +16,11 @@ spec:
         kubernetes.io/hostname: vanillax-ai
       securityContext:
         runAsNonRoot: true
-        runAsUser: 2501
-        runAsGroup: 2501
-        fsGroup: 2501
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
-        supplementalGroups: [ 44, 104 ]
+        supplementalGroups: [ 44, 104, 1000 ]
         seccompProfile:
           type: RuntimeDefault
       containers:
