@@ -7,7 +7,7 @@ configMapGenerator:
   - name: jellyfin-env
     namespace: jellyfin
     literals:
-      - TZ="Europe/Oslo"
+      - TZ="America/Detroit"
 
 resources:
   - ns.yaml
