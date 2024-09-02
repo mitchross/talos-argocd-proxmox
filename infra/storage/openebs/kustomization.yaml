@@ -5,7 +5,7 @@ namespace: openebs
 resources:
   - namespace.yaml
   - zfs-storage-class.yaml
-  # Comment out the StoragePoolClaim for now
+  # Uncomment the following line once the CRD issue is resolved
   # - zfs-storage-pool-claim.yaml
 
 helmCharts:
@@ -14,5 +14,5 @@ helmCharts:
     releaseName: openebs
     namespace: openebs
     includeCRDs: true
-    version: 3.10.0  # Use the latest stable version
+    version: 3.10.0
     valuesFile: values.yaml
