@@ -14,5 +14,8 @@ localprovisioner:
 # Enable ZFS LocalPV
 zfs-localpv:
   enabled: true
+  zfsPlugin:
+    image: openebs/zfs-driver
+    tag: 2.1.0  # Use the latest stable version
 
 # You can add more configurations as needed

@@ -4,14 +4,15 @@ namespace: openebs
 
 resources:
   - namespace.yaml
-  - zfs-storage-claim.yaml
   - zfs-storage-class.yaml
+  # Comment out the StoragePoolClaim for now
+  # - zfs-storage-pool-claim.yaml
 
 helmCharts:
   - name: openebs
-    repo: https://openebs.github.io/openebs
+    repo: https://openebs.github.io/charts
     releaseName: openebs
     namespace: openebs
     includeCRDs: true
-    version: 4.1.0
+    version: 4.1.0  # Use the latest stable version
     valuesFile: values.yaml
