@@ -9,3 +9,7 @@ operator:
   token:
     existingSecret: 1password-connect-token
     existingSecretKey: token
+
+# Disable the creation of the credentials secret by the chart
+credentials:
+  create: false
