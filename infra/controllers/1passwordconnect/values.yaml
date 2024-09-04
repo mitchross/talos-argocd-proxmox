@@ -1,7 +1,7 @@
 connect:
-  credentials: 
+  credentials:
     existingSecret: 1password-connect-credentials
-    secretKey: 1password-credentials.json
+    existingSecretKey: 1password-credentials.json
   serviceType: ClusterIP
 
 operator:
@@ -9,7 +9,11 @@ operator:
   token:
     existingSecret: 1password-connect-token
     existingSecretKey: token
+    namespace: external-secrets
 
-# Disable the creation of the credentials secret by the chart
 credentials:
   create: false
+
+serviceAccount:
+  create: true
+  name: "1password-connect"

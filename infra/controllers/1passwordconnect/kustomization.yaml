@@ -5,7 +5,6 @@ namespace: 1passwordconnect
 
 resources:
   - ns.yaml
-  - external-secret.yaml
 
 helmCharts:
   - name: connect
@@ -19,3 +18,11 @@ configMapGenerator:
     files:
       - values.yaml
 
+patches:
+  - target:
+      kind: HelmChart
+    patch: |
+      - op: add
+        path: /metadata/annotations
+        value:
+          argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
