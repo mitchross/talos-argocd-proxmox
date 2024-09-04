@@ -1,4 +1,11 @@
 connect:
-  credentialsName: 1passwordconnect
-  credentialsKey: 1password-credentials.json
+  credentials: 
+    existingSecret: 1passwordconnect
+    secretKey: 1password-credentials.json
   serviceType: ClusterIP
+
+operator:
+  create: true
+  token:
+    existingSecret: 1passwordconnect
+    existingSecretKey: token

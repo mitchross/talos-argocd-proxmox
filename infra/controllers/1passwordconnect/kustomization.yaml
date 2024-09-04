@@ -5,6 +5,7 @@ namespace: 1passwordconnect
 
 resources:
   - ns.yaml
+  - external-secret.yaml
 
 helmCharts:
   - name: connect
@@ -18,14 +19,3 @@ configMapGenerator:
     files:
       - values.yaml
 
-patches:
-  - patch: |-
-      apiVersion: v1
-      kind: ConfigMap
-      metadata:
-        name: 1password-connect-config
-      data:
-        1password-credentials.json: '{{ CREDENTIALS_JSON }}'
-    target:
-      kind: ConfigMap
-      name: 1password-connect-config
