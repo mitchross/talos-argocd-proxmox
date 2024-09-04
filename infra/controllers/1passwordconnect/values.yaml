@@ -1,15 +1,16 @@
 connect:
-  credentials:
-    existingSecret: 1password-connect-credentials
-    existingSecretKey: 1password-credentials.json
+  existingSecret:
+    name: 1password-connect-credentials
+    key: 1password-credentials.json
   serviceType: ClusterIP
 
 operator:
   create: true
   token:
-    existingSecret: 1password-connect-token
-    existingSecretKey: token
-    namespace: external-secrets
+    existingSecret:
+      name: 1password-connect-token
+      key: token
+      namespace: external-secrets
 
 credentials:
   create: false
