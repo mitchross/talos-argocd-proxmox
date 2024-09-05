@@ -1,7 +1,7 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: cert-stonegarden
+  name: cert-vanillax
   namespace: gateway
 spec:
   dnsNames:
@@ -11,7 +11,7 @@ spec:
     group: cert-manager.io
     kind: ClusterIssuer
     name: cloudflare-cluster-issuer
-  secretName: cert-stonegarden
+  secretName: cert-vanillax
   usages:
     - digital signature
     - key encipherment

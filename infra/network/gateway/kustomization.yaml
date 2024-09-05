@@ -5,7 +5,7 @@ generatorOptions:
  disableNameSuffixHash: true
 
 resources:
-  - cert-stonegarden.yaml
+  - cert-vanillax.yaml
   - gateway-class.yaml
   - ns.yaml
   - gw-external.yaml
