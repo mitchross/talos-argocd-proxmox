@@ -4,7 +4,7 @@ kind: Kustomization
 helmCharts:
   - name: csi-driver-nfs
     repo: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts
-    version: v4.8.0
+    version: v4.9.0
     releaseName: csi-driver-nfs
     includeCRDs: true
     namespace: csi-driver-nfs
