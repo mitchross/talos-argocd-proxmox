@@ -7,10 +7,10 @@ resources:
   - namespace.yaml
 
 
-helmCharts:
-  - name: connect
-    repo: https://1password.github.io/connect-helm-charts
-    version: 1.15.1  # Check for the latest version
-    releaseName: "connect"
-    namespace: 1passwordconnect
-    valuesFile: values.yaml
+# helmCharts:
+#   - name: connect
+#     repo: https://1password.github.io/connect-helm-charts
+#     version: 1.15.1  # Check for the latest version
+#     releaseName: "connect"
+#     namespace: 1passwordconnect
+#     valuesFile: values.yaml
