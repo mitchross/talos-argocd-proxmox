@@ -1,6 +1,7 @@
 connect:
-  credentials: 
+  credentials:
     existingSecret: 1password-credentials
+    existingSecretKey: 1password-credentials.json  # Make sure this matches the key in your secret
 
 operator:
   create: true
