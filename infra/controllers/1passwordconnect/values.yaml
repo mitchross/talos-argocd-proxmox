@@ -1,0 +1,9 @@
+connect:
+  credentials: 
+    existingSecret: 1password-credentials
+
+operator:
+  create: true
+  token:
+    existingSecret: 1password-operator-token
+    existingSecretKey: token
