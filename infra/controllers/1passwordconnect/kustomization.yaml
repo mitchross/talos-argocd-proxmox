@@ -5,7 +5,7 @@ namespace: 1passwordconnect
 
 resources:
   - namespace.yaml
-  - http-route.yaml
+
 
 helmCharts:
   - name: connect
