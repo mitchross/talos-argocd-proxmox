@@ -4,8 +4,10 @@ metadata:
   name: jellyfin
   namespace: jellyfin
 
+  annotations:
+    io.cilium/lb-ipam-ips: 192.168.10.45
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     app: jellyfin
   ports:
