@@ -1,11 +1,11 @@
 cluster:
-  name: proxmox
+  name: threadripper
   id: 1
 
 kubeProxyReplacement: true
 
 
-k8sServiceHost: 192.168.10.100
+k8sServiceHost: 192.168.10.11
 k8sServicePort: 6443
 securityContext:
   capabilities:
