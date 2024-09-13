@@ -12,5 +12,5 @@ spec:
       - dns01:
           cloudflare:
             apiTokenSecretRef:
-              name: cert-manager-proxmox
-              key: token
+              name: cloudflare-api-token
+              key: api-token
