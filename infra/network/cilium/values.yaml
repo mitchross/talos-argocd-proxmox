@@ -4,13 +4,13 @@ cluster:
 
 kubeProxyReplacement: true
 
-
+ # Talos specific
 k8sServiceHost: 192.168.10.11
 k8sServicePort: 6443
 securityContext:
   capabilities:
-    ciliumAgent: [ CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID ]
-    cleanCiliumState: [ NET_ADMIN,SYS_ADMIN,SYS_RESOURCE ]
+    ciliumAgent: [ CHOWN, KILL, NET_ADMIN, NET_RAW, IPC_LOCK, SYS_ADMIN, SYS_RESOURCE, DAC_OVERRIDE, FOWNER, SETGID, SETUID ]
+    cleanCiliumState: [ NET_ADMIN, SYS_ADMIN, SYS_RESOURCE ]
 
 cgroup:
   autoMount:
@@ -22,7 +22,7 @@ ipam:
   mode: kubernetes
 
 operator:
-  replicas:  1
+  replicas: 1
   rollOutPods: true
   resources:
     limits:
@@ -58,16 +58,17 @@ externalIPs:
 
 enableCiliumEndpointSlice: true
 
+loadBalancer:
+  # https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#maglev-consistent-hashing
+  algorithm: maglev
+
 gatewayAPI:
   enabled: true
 envoy:
   securityContext:
     capabilities:
       keepCapNetBindService: true
-      envoy:
-        - NET_ADMIN
-        - PERFMON
-        - BPF
+      envoy: [ NET_ADMIN, PERFMON, BPF ]
 
 hubble:
   enabled: true
@@ -79,7 +80,12 @@ hubble:
     rollOutPods: true
 
 ingressController:
-  enabled: true
+  enabled: false
+  default: true
+  loadbalancerMode: shared
+  service:
+    annotations:
+      io.cilium/lb-ipam-ips: 192.168.10.55
 
 # mTLS
 authentication:
