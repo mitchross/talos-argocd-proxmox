@@ -14,6 +14,6 @@ generatorOptions:
 resources:
   - ns.yaml
   - daemon-set.yaml
-  #- 1password-secret.yaml
+ # - 1password-secret.yaml
   #- external-secret.yaml
   
