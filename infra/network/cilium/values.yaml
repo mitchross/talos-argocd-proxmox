@@ -42,8 +42,8 @@ resources:
     cpu: 200m
     memory: 512Mi
 
-#debug:
-#  enabled: true
+debug:
+  enabled: true
 
 # Increase rate limit when doing L2 announcements
 k8sClientRateLimit:
