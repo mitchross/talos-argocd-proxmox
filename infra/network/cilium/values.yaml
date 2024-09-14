@@ -80,7 +80,7 @@ hubble:
     rollOutPods: true
 
 ingressController:
-  enabled: false
+  enabled: true
   default: true
   loadbalancerMode: shared
   service:
