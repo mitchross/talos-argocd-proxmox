@@ -4,8 +4,11 @@ prometheus:
       kubernetes.io/hostname: vanillax-ai
     storageSpec:
       volumeClaimTemplate:
+        metadata:
+          name: prometheus-data
         spec:
           storageClassName: openebs-zfspv
+          volumeName: prometheus-data
           accessModes:
             - ReadWriteOnce
           resources:
