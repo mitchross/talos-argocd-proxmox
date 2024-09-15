@@ -29,11 +29,11 @@ controller:
 dex:
   resources:
     requests:
-      cpu: 10m
-      memory: 32Mi
+      cpu: 20m
+      memory: 64Mi
     limits:
       cpu: 1000m
-      memory: 64Mi
+      memory: 256Mi
 
 redis:
   resources:
@@ -51,7 +51,7 @@ server:
       memory: 64Mi
     limits:
       cpu: 4000m
-      memory: 128Mi
+      memory: 256Mi
 
 repoServer:
   containerSecurityContext:
@@ -68,7 +68,7 @@ repoServer:
       memory: 256Mi
     limits:
       cpu: 4000m
-      memory: 512Mi
+      memory: 1024Mi
   extraContainers:
     - name: kustomize-build-with-helm
       command:
@@ -99,7 +99,7 @@ applicationSet:
       memory: 64Mi
     limits:
       cpu: 1000m
-      memory: 256Mi
+      memory: 512Mi
 
 notifications:
   enabled: false
