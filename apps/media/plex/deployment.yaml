@@ -41,7 +41,6 @@ spec:
             limits:
               cpu: 6000m
               memory: 6Gi
-              gpu.intel.com/i915: 1000m
           envFrom:
             - configMapRef:
                 name: plex-env
@@ -63,8 +62,9 @@ spec:
             claimName: plex-config
         - name: media
           nfs:
-            server: 192.168.1.55
-            path: /mnt/pool-0/data/media
+            server: 192.168.10.133
+            path: /mnt/generaltank/k8s/jellyfin
+
         - name: transcode
           emptyDir: { }
         - name: tmp

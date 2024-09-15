@@ -5,7 +5,7 @@ metadata:
   namespace: jellyfin
 spec:
   storageClassName: openebs-zfspv
- # volumeName: pv-jellyfin-config
+  volumeName: pv-jellyfin-config
   accessModes:
     - ReadWriteOnce
   resources:
