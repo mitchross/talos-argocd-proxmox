@@ -20,4 +20,4 @@ spec:
           - vanillax-ai
   csi:
     driver: zfs.csi.openebs.io
-    volumeHandle: prometheus-data
+    volumeHandle: ssdtank/prometheus-data
