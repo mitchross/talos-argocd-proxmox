@@ -18,6 +18,3 @@ spec:
           operator: In
           values:
           - vanillax-ai
-  csi:
-    driver: zfs.csi.openebs.io
-    volumeHandle: prometheus-data
