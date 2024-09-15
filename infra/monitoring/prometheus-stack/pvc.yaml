@@ -7,6 +7,17 @@ spec:
     storage: 10Gi
   volumeMode: Filesystem
   accessModes:
-  - ReadWriteOnce
+    - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   storageClassName: openebs-zfspv
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai
+  csi:
+    driver: zfs.csi.openebs.io
+    volumeHandle: ssdtank/prometheus-data
