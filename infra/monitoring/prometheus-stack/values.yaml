@@ -13,4 +13,18 @@ prometheus:
             - ReadWriteOnce
           resources:
             requests:
-              storage: 10Gi  # Changed from 10G to 10Gi to match PV
+              storage: 10Gi
+    securityContext:
+      fsGroup: 65534
+      runAsUser: 65534
+      runAsNonRoot: true
+      runAsGroup: 65534
+    initContainers:
+      - name: init-chown-data
+        image: busybox
+        command: ["sh", "-c", "chown -R 65534:65534 /prometheus"]
+        volumeMounts:
+          - name: storage-volume
+            mountPath: /prometheus
+        securityContext:
+          runAsUser: 0
