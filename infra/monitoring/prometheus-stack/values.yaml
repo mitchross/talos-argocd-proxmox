@@ -13,4 +13,4 @@ prometheus:
             - ReadWriteOnce
           resources:
             requests:
-              storage: 10G
+              storage: 10Gi  # Changed from 10G to 10Gi to match PV
