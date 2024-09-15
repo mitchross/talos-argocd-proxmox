@@ -6,12 +6,8 @@ prometheus:
       volumeClaimTemplate:
         spec:
           storageClassName: openebs-zfspv
-          volumeName: pv-prometheus
           accessModes:
             - ReadWriteOnce
           resources:
             requests:
               storage: 10G
-          selector:
-            matchLabels:
-              app: prometheus
