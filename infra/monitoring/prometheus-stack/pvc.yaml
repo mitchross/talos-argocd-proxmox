@@ -18,3 +18,6 @@ spec:
           operator: In
           values:
           - vanillax-ai
+  hostPath:
+    path: "/mnt/data"
+    type: DirectoryOrCreate
