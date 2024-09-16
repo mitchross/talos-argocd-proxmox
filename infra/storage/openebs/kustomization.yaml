@@ -6,6 +6,8 @@ resources:
   - namespace.yaml
   - zfs-storage-class.yaml
   - zfs-volumesnapshot-class.yaml
+  - test-pvc.yaml
+  - test-storage-class.yaml
 
 helmCharts:
   - name: openebs
