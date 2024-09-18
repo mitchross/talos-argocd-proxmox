@@ -50,13 +50,13 @@ data:
             max_area: 100000
             threshold: 0.7
       detectors:
-      cpu1:
-        type: cpu
-        num_threads: 
-            detect:
-        # width: 1920
-        # height: 1080
-        fps: 5
+        cpu1:
+          type: cpu
+          num_threads: 
+              detect:
+          # width: 1920
+          # height: 1080
+          fps: 5
       cameras:
         front:
           ffmpeg:
