@@ -53,7 +53,7 @@ data:
         cpu1:
           type: cpu
           num_threads: 3
-                fps: 5
+          fps: 5
       cameras:
         front:
           ffmpeg:
