@@ -12,8 +12,8 @@ spec:
     metadata:
       labels:
         app: frigate
-      annotations:
-        reloader.stakater.com/auto: "true"
+
+
     spec:
       # nodeSelector:
       #   google.feature.node.kubernetes.io/coral: "true"
