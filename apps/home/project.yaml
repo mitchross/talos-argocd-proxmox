@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: home
+  namespace: argocd
+spec:
+  sourceRepos:
+    - 'https://github.com/mitchross/k3s-argocd-proxmox'
+  destinations:
+    - namespace: 'argocd'
+      server: '*'
+    - namespace: 'frigate'
+      server: '*'
+
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

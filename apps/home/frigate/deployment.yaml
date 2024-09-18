@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frigate
+  namespace: frigate
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frigate
+  template:
+    metadata:
+      labels:
+        app: frigate
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      nodeSelector:
+        google.feature.node.kubernetes.io/coral: "true"
+        intel.feature.node.kubernetes.io/gpu: "true"
+      containers:
+        - name: frigate
+          image: ghcr.io/blakeblackshear/frigate:0.14.1
+          env:
+            - name: LIBVA_DRIVER_NAME
+              value: "i965"
+            - name: FRIGATE_MQTT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mqtt-secret
+                  key: mqtt-username
+            - name: FRIGATE_MQTT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mqtt-secret
+                  key: mqtt-password
+          resources:
+            requests:
+              cpu: 1000m
+              memory: 2000M
+              # gpu.intel.com/i915: "1"
+            limits:
+              memory: 4000M
+              # gpu.intel.com/i915: "1"
+          securityContext:
+            privileged: true
+          livenessProbe:
+            httpGet:
+              path: /api/version
+              port: 5000
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/version
+              port: 5000
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: config-file
+              mountPath: /config/config.yml
+              subPath: config.yaml
+            - name: media
+              mountPath: /media
+            - name: cache
+              mountPath: /dev/shm
+            - name: usb
+              mountPath: /dev/bus/usb
+      volumes:
+        - name: config-file
+          configMap:
+            name: frigate-configmap
+        - name: media
+          persistentVolumeClaim:
+            claimName: frigate-media
+        - name: config
+          persistentVolumeClaim:
+            claimName: frigate-config
+        - name: cache
+          emptyDir:
+            medium: Memory
+            sizeLimit: 4Gi
+        # - name: usb
+        #   hostPath:
+        #     path: /dev/bus/usb
+        #     type: Directory

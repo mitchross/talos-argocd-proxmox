@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frigate-configmap
+  namespace: frigate
+data:
+  config.yaml: |
+      mqtt:
+        host: mosquitto.home
+        port: 1883
+        topic_prefix: frigate
+        user: mqtt_user
+        password: "{FRIGATE_MQTT_PASSWORD}"
+      database:
+        path: /data/frigate.db
+      ffmpeg:
+        hwaccel_args: preset-vaapi
+      timestamp_style:
+        position: "tr"
+        format: "%m/%d/%Y %H:%M:%S"
+        color:
+          red: 255
+          green: 255
+          blue: 255
+      snapshots:
+        enabled: true
+        timestamp: true
+        bounding_box: true
+        retain:
+          default: 14
+      motion:
+        threshold: 45
+        contour_area: 20
+      record:
+        enabled: true
+        retain:
+          days: 3
+          mode: active_objects
+        events:
+          retain:
+            default: 14
+            mode: active_objects
+      objects:
+        track:
+          - person
+          - animal
+        filters:
+          person:
+            min_area: 5000
+            max_area: 100000
+            threshold: 0.7
+      detectors:
+        coral1:
+          type: edgetpu
+          device: pci
+      detect:
+        # width: 1920
+        # height: 1080
+        fps: 5
+      cameras:
+        front:
+          ffmpeg:
+            inputs:
+              - path: http://67.53.46.161:65123/mjpg/video.mjpg
+                roles: ["record", "detect"]

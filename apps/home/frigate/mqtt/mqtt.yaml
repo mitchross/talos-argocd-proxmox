@@ -1,0 +1,109 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: frigate
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mosquitto-configmap
+  namespace: frigate
+data:
+  mosquitto.conf: |
+    persistence true
+    persistence_location /mosquitto/data/
+    log_dest file /mosquitto/log/mosquitto.log
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mosquitto
+  namespace: frigate
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mosquitto
+  template:
+    metadata:
+      labels:
+        app: mosquitto
+    spec:
+      containers:
+        - name: mosquitto
+          image: eclipse-mosquitto:2.0
+          ports:
+            - containerPort: 1883
+          volumeMounts:
+            - name: mosquitto-config
+              mountPath: /mosquitto/config
+            - name: mosquitto-data
+              mountPath: /mosquitto/data
+            - name: mosquitto-log
+              mountPath: /mosquitto/log
+      volumes:
+        - name: mosquitto-config
+          configMap:
+            name: mosquitto-configmap
+        - name: mosquitto-data
+          persistentVolumeClaim:
+            claimName: mosquitto-data
+        - name: mosquitto-log
+          persistentVolumeClaim:
+            claimName: mosquitto-log
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mosquitto-data
+  namespace: frigate
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: openebs-zfspv
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mosquitto-log
+  namespace: frigate
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+  storageClassName: openebs-zfspv
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mosquitto
+  namespace: frigate
+spec:
+  selector:
+    app: mosquitto
+  ports:
+    - port: 1883
+      targetPort: 1883
+
+---
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mqtt-secret
+  namespace: frigate
+type: Opaque
+data:
+  mqtt-username: YWRtaW4=  # base64 encoded username
+  mqtt-password: cGFzc3dvcmQ=  # base64 encoded password
