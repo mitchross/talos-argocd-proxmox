@@ -70,8 +70,8 @@ spec:
               mountPath: /media
             - name: cache
               mountPath: /dev/shm
-            - name: usb
-              mountPath: /dev/bus/usb
+            # - name: usb
+            #   mountPath: /dev/bus/usb
       volumes:
         - name: config-file
           configMap:
