@@ -50,10 +50,10 @@ data:
             max_area: 100000
             threshold: 0.7
       detectors:
-        coral1:
-          type: edgetpu
-          device: pci
-      detect:
+      cpu1:
+        type: cpu
+        num_threads: 8
+            detect:
         # width: 1920
         # height: 1080
         fps: 5
