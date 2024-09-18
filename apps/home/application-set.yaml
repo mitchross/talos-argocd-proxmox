@@ -20,7 +20,7 @@ spec:
       finalizers:
         - resources-finalizer.argocd.argoproj.io
     spec:
-      project: media
+      project: home
       source:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         targetRevision: HEAD
