@@ -52,11 +52,8 @@ data:
       detectors:
         cpu1:
           type: cpu
-          num_threads: 
-              detect: 3
-          # width: 1920
-          # height: 1080
-          fps: 5
+          num_threads: 3
+                fps: 5
       cameras:
         front:
           ffmpeg:
