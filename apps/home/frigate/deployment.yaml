@@ -86,7 +86,7 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 4Gi
-        # - name: usb
-        #   hostPath:
-        #     path: /dev/bus/usb
-        #     type: Directory
+        - name: usb
+          hostPath:
+            path: /dev/bus/usb
+            type: Directory
