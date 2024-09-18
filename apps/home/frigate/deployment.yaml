@@ -22,8 +22,6 @@ spec:
         - name: frigate
           image: ghcr.io/blakeblackshear/frigate:0.14.1
           env:
-            - name: LIBVA_DRIVER_NAME
-              value: "i965"
             - name: FRIGATE_MQTT_USER
               valueFrom:
                 secretKeyRef:
