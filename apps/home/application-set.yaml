@@ -11,7 +11,7 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         revision: HEAD
         directories:
-          - path: apps/media/*
+          - path: apps/home/*
   template:
     metadata:
       name: '{{ path.basename }}'
