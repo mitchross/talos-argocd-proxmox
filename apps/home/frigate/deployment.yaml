@@ -15,9 +15,9 @@ spec:
       annotations:
         reloader.stakater.com/auto: "true"
     spec:
-      nodeSelector:
-        google.feature.node.kubernetes.io/coral: "true"
-        intel.feature.node.kubernetes.io/gpu: "true"
+      # nodeSelector:
+      #   google.feature.node.kubernetes.io/coral: "true"
+      #   intel.feature.node.kubernetes.io/gpu: "true"
       containers:
         - name: frigate
           image: ghcr.io/blakeblackshear/frigate:0.14.1
