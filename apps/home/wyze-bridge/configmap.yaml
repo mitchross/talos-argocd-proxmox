@@ -4,6 +4,6 @@ metadata:
   name: wyze-bridge-config
   namespace: wyze-bridge
 data:
-  WB_AUTH: "True"
+  WB_AUTH: "false"
   # Add any other non-sensitive environment variables here
   # WB_IP: "your.node.ip.address"
