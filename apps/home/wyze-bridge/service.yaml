@@ -28,4 +28,4 @@ spec:
   - name: web-ui
     port: 5000
     targetPort: 5000
-  type: ClusterIP
+  type: LoadBalancer
