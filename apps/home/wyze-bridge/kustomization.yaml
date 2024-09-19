@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
 
   - namespace.yaml
+  - 1password-secret.yaml
 
 
 namespace: wyze-bridge
