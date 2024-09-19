@@ -12,7 +12,7 @@ data:
         user: mqtt_user
         password: "{FRIGATE_MQTT_PASSWORD}"
       database:
-        path: /data/frigate.db
+        path: /config/frigate.db
       ffmpeg:
         hwaccel_args: preset-vaapi
       timestamp_style:
