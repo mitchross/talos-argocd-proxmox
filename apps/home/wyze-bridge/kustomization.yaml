@@ -5,6 +5,9 @@ resources:
 
   - namespace.yaml
   - 1password-secret.yaml
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
 
 
 namespace: wyze-bridge
