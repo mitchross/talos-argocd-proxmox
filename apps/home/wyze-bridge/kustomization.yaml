@@ -8,6 +8,7 @@ resources:
   - configmap.yaml
   - deployment.yaml
   - service.yaml
+  - httproute.yaml
 
 
 namespace: wyze-bridge
