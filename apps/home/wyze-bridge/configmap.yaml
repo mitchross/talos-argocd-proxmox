@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wyze-bridge-config
+  namespace: wyze-bridge
+data:
+  WB_AUTH: "True"
+  # Add any other non-sensitive environment variables here
+  # WB_IP: "your.node.ip.address"
