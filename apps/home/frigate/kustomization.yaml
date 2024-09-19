@@ -9,5 +9,6 @@ resources:
   - mqtt/mqtt.yaml
   - pvc-config.yaml
   - service.yaml
+  - httproute.yaml
 
 namespace: frigate
