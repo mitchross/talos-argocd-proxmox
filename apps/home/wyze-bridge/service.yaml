@@ -3,9 +3,10 @@ kind: Service
 metadata:
   name: wyze-bridge
   namespace: wyze-bridge
+
+spec:
   annotations:
           io.cilium/lb-ipam-ips: "192.168.10.46"
-spec:
   selector:
     app: wyze-bridge
   ports:
