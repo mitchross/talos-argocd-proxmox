@@ -11,7 +11,8 @@ spec:
       server: '*'
     - namespace: 'frigate'
       server: '*'
-
+    - namespace: 'wyze-bridge'
+      server: '*'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'
