@@ -32,3 +32,9 @@ spec:
         automated:
           selfHeal: true
           prune: true
+
+      ignoreDifferences:
+      - group: onepassword.com
+        kind: OnePasswordItem
+        jsonPointers:
+        - /status
