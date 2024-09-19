@@ -5,5 +5,7 @@ metadata:
   namespace: wyze-bridge
 data:
   WB_AUTH: "False"
+  ON_DEMAND: "False"
+  TZ: "America/Detroit"
   # Add any other non-sensitive environment variables here
   # WB_IP: "your.node.ip.address"
