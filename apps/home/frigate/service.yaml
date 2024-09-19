@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frigate-http
+  namespace: frigate
+  labels:
+    app: frigate
+spec:
+  selector:
+    app: frigate
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frigate-rtsp
+  namespace: frigate
+  labels:
+    app: frigate
+spec:
+  selector:
+    app: frigate
+  ports:
+    - name: rtsp
+      port: 8554
+      targetPort: 8554
+  type: ClusterIP
