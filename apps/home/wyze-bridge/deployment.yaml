@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: wyze-bridge
-        image: mrlt8/wyze-bridge:latest
+        image: ghcr.io/mrlt8/docker-wyze-bridge:edge@sha256:a1bd35a707ff572645e0acda83228e567b4a3a18230ce82c9c819f00ce4df0c1
         ports:
         - containerPort: 1935
         - containerPort: 8554
