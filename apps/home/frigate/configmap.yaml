@@ -54,9 +54,14 @@ data:
           type: cpu
           num_threads: 3
           fps: 5
+
       cameras:
-        shed:
+        shed: 
+          enabled: True
           ffmpeg:
             inputs:
               - path: rtsp://192.168.10.46:8554/shed
-                roles: ["record", "detect"]
+                roles:
+                  - detect
+          detect:
+            enabled: False 
