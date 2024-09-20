@@ -13,8 +13,6 @@ data:
         password: "{FRIGATE_MQTT_PASSWORD}"
       database:
         path: /config/frigate.db
-      ffmpeg:
-        hwaccel_args: preset-vaapi
       timestamp_style:
         position: "tr"
         format: "%m/%d/%Y %H:%M:%S"
