@@ -36,17 +36,20 @@ data:
           mode: active_objects
         events:
           retain:
-            default: 14
+            default: 30
             mode: active_objects
+            objects:
+              person: 30
+              dog: 30
+              car: 30
+              truck: 30
       objects:
         track:
           - person
-          - animal
-        filters:
-          person:
-            min_area: 5000
-            max_area: 100000
-            threshold: 0.7
+          - dog
+          - car
+          - truck
+
       detectors:
         cpu1:
           type: cpu
@@ -61,5 +64,17 @@ data:
               - path: rtsp://192.168.10.46:8554/shed
                 roles:
                   - detect
+                  - record
           detect:
             enabled: True 
+
+        garage:
+          enabled: True
+          ffmpeg:
+            inputs:
+              - path: rtsp://192.168.10.46:8554/garage
+                roles:
+                  - detect
+                  - record
+          detect:
+            enabled: True
