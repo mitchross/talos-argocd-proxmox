@@ -55,8 +55,8 @@ data:
           num_threads: 3
           fps: 5
       cameras:
-        front:
+        shed:
           ffmpeg:
             inputs:
-              - path: http://67.53.46.161:65123/mjpg/video.mjpg
+              - path: rtsp://192.168.10.46:8554/shed
                 roles: ["record", "detect"]
