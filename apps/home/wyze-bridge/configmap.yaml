@@ -7,7 +7,7 @@ data:
   WB_AUTH: "False"
   ON_DEMAND: "False"
   TZ: "America/Detroit"
-  FILTER_NAMES: pet-cam
+  FILTER_NAMES: Pet Cam, Dog Cam 2
   FILTER_BLOCK: "True"
   # Add any other non-sensitive environment variables here
   # WB_IP: "your.node.ip.address"
