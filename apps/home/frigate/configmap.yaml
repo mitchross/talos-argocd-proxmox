@@ -62,4 +62,4 @@ data:
                 roles:
                   - detect
           detect:
-            enabled: False 
+            enabled: True 
