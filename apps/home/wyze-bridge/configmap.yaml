@@ -9,5 +9,7 @@ data:
   TZ: "America/Detroit"
   FILTER_NAMES: Pet Cam, Dog Cam 2
   FILTER_BLOCK: "True"
+  QUALITY: "HD120"
+  ROTATE_DOOR: "True"
   # Add any other non-sensitive environment variables here
   # WB_IP: "your.node.ip.address"
