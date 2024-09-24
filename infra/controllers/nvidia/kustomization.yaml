@@ -1,17 +1,30 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-commonAnnotations:
-  argocd.argoproj.io/sync-wave: "-1"
+
+namespace: gpu-operator
 
 resources:
   - namespace.yaml
-  - cm-time-slicing.yaml
+  - time-slicing-config.yaml
 
 helmCharts:
-  - name: nvidia-device-plugin
-    repo: https://nvidia.github.io/k8s-device-plugin
-    version: 0.14.2
-    releaseName: "nvidia-device-plugin"
-    namespace: nvidia-device-plugin
+  - name: gpu-operator
+    repo: https://helm.ngc.nvidia.com/nvidia
+    version: v23.9.1  # Check for the latest version
+    releaseName: gpu-operator
+    namespace: gpu-operator
     includeCRDs: true
-    valuesFile: values.yaml
+    valuesInline:
+      driver:
+        enabled: false  # Disable driver installation since Pop!_OS has pre-installed drivers
+      toolkit:
+        enabled: true
+      devicePlugin:
+        enabled: true
+        config:
+          name: time-slicing-config
+          default: config.yaml
+      migManager:
+        enabled: false  # Enable if you need MIG support
+      gfd:  # GPU Feature Discovery
+        enabled: true

@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: cm-time-slicing
-  namespace: nvidia-device-plugin
+  name: time-slicing-config
+  namespace: gpu-operator
 data:
-  time-slicing: |-
+  config.yaml: |
     version: v1
     sharing:
       timeSlicing:
