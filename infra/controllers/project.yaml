@@ -25,6 +25,9 @@ spec:
       server: '*'
     - namespace: 'system-upgrade'
       server: '*'
+    - namespace: 'nvidia-device-plugin'
+      server: '*'
+      
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'

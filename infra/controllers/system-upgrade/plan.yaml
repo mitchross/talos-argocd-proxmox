@@ -6,7 +6,7 @@ metadata:
   namespace: system-upgrade
 spec:
   concurrency: 1
-  version: v1.31.0+k3s1
+  version: v1.31.1+k3s1
   nodeSelector:
     matchExpressions:
       - {key: k3s-upgrade, operator: Exists}

@@ -1,0 +1,21 @@
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - test-pod.yaml
+
+helmCharts:
+  - name: nvidia-device-plugin
+    repo: https://nvidia.github.io/k8s-device-plugin
+    version: 0.14.3
+    namespace: nvidia-device-plugin
+    releaseName: nvdp
+    includeCRDs: true
+    valuesInline:
+      config:
+        name: cm-time-slicing
+        default: time-slicing
