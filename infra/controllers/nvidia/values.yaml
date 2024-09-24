@@ -1,0 +1,3 @@
+config:
+  name: cm-time-slicing
+  default: time-slicing
