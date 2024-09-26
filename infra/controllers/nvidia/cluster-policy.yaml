@@ -2,7 +2,7 @@ apiVersion: nvidia.com/v1
 kind: ClusterPolicy
 metadata:
   name: gpu-cluster-policy
-    \namespace: gpu-operator
+  namespace: gpu-operator
 spec:
   validator:
     driver:
