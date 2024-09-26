@@ -9,3 +9,20 @@ spec:
       env:
       - name: DISABLE_DEV_CHAR_SYMLINK_CREATION
         value: "true"
+  daemonsets: {}
+  dcgm:
+    enabled: false
+  dcgmExporter:
+    enabled: true
+  devicePlugin:
+    enabled: true
+  driver:
+    enabled: false  # Set to true if you want the operator to install the driver
+  gfd:
+    enabled: true
+  nodeStatusExporter:
+    enabled: true
+  operator:
+    defaultRuntime: docker
+  toolkit:
+    enabled: true

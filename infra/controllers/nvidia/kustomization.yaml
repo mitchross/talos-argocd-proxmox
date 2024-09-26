@@ -6,18 +6,18 @@ namespace: gpu-operator
 resources:
   - namespace.yaml
   - time-slicing-config.yaml
-  - cluster-policy.yaml
+
 
 helmCharts:
   - name: gpu-operator
     repo: https://helm.ngc.nvidia.com/nvidia
-    version: v23.9.1  # Check for the latest version
+    version: v23.9.1
     releaseName: gpu-operator
     namespace: gpu-operator
     includeCRDs: true
     valuesInline:
       driver:
-        enabled: false  # Disable driver installation since Pop!_OS has pre-installed drivers
+        enabled: false
       toolkit:
         enabled: true
       devicePlugin:
@@ -26,6 +26,11 @@ helmCharts:
           name: time-slicing-config
           default: config.yaml
       migManager:
-        enabled: false  # Enable if you need MIG support
-      gfd:  # GPU Feature Discovery
+        enabled: false
+      gfd:
         enabled: true
+      validator:
+        driver:
+          env:
+            - name: DISABLE_DEV_CHAR_SYMLINK_CREATION
+              value: "true"
