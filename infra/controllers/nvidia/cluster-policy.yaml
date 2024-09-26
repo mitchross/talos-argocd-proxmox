@@ -1,0 +1,11 @@
+apiVersion: nvidia.com/v1
+kind: ClusterPolicy
+metadata:
+  name: gpu-cluster-policy
+    \namespace: gpu-operator
+spec:
+  validator:
+    driver:
+      env:
+      - name: DISABLE_DEV_CHAR_SYMLINK_CREATION
+        value: "true"
