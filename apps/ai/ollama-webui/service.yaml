@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama-webui
+  namespace: ollama-webui
+  labels:
+    app: ollama-webui
+spec:
+  selector:
+    app: ollama-webui
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP

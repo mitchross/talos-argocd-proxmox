@@ -1,0 +1,19 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ollama-webui
+  namespace: ollama-webui
+spec:
+  parentRefs:
+    - name: internal
+      namespace: gateway
+  hostnames:
+    - "ollama-webui.vanillax.me"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: ollama-webui
+          port: 8080
