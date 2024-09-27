@@ -53,4 +53,4 @@ spec:
           hostPath:
             path: /usr/local/nvidia
       nodeSelector:
-        nvidia.com/gpu: "true"  # Schedule on nodes with NVIDIA GPUs
+         nvidia.com/gpu.present: "true"
