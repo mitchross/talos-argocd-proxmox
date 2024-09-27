@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: home
+  namespace: argocd
+spec:
+  sourceRepos:
+    - 'https://github.com/mitchross/k3s-argocd-proxmox'
+  destinations:
+    - namespace: 'argocd'
+      server: '*'
+    - namespace: 'ollama'
+      server: '*'
+    - namespace: 'ollama-webui'
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

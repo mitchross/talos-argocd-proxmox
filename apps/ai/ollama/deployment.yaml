@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: ollama
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      containers:
+        - name: ollama
+          image: ollama/ollama:latest
+          ports:
+            - containerPort: 11434
+          resources:
+            requests:
+              cpu: 4000m
+              memory: 16Gi
+            limits:
+              cpu: 8000m
+              memory: 38Gi
+              nvidia.com/gpu: 2  # Request 2 GPUs
+          securityContext:
+            privileged: true
+          env:
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "compute,utility"
+          volumeMounts:
+            - name: models
+              mountPath: /models
+            - name: config
+              mountPath: /root/.ollama/ollama.json
+              subPath: ollama.json
+            - name: nvidia-driver
+              mountPath: /usr/local/nvidia
+              readOnly: true
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: ollama-models
+        - name: config
+          configMap:
+            name: ollama-configmap
+        - name: nvidia-driver
+          hostPath:
+            path: /usr/local/nvidia
+      nodeSelector:
+        nvidia.com/gpu: "true"  # Schedule on nodes with NVIDIA GPUs
