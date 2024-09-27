@@ -13,6 +13,7 @@ spec:
       labels:
         app: ollama-webui
     spec:
+      runtimeClassName: nvidia
       containers:
         - name: ollama-webui
           image: ghcr.io/ollama-webui/ollama-webui:main

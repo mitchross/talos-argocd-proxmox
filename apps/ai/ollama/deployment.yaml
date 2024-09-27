@@ -13,6 +13,7 @@ spec:
       labels:
         app: ollama
     spec:
+      runtimeClassName: nvidia
       containers:
         - name: ollama
           image: ollama/ollama:latest
