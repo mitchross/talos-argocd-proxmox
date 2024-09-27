@@ -20,19 +20,19 @@ zfs-localpv:
     image:
       registry: ""
       repository: openebs/zfs-driver
-      tag: "2.6.1"
+      tag: "2.6.2"
       pullPolicy: IfNotPresent
   zfsNode:
     image:
       registry: ""
       repository: openebs/zfs-driver
-      tag: "2.6.1"
+      tag: "2.6.2"
       pullPolicy: IfNotPresent
   zfsController:
     image:
       registry: ""
       repository: openebs/zfs-driver
-      tag: "2.6.1"
+      tag: "2.6.2"
       pullPolicy: IfNotPresent
 
 # Enable ZFS CSI driver
