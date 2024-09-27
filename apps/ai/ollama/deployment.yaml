@@ -1,9 +1,10 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: ollama
   namespace: ollama
 spec:
+  serviceName: "ollama"
   replicas: 1
   selector:
     matchLabels:
@@ -44,9 +45,6 @@ spec:
               mountPath: /usr/local/nvidia
               readOnly: true
       volumes:
-        - name: models
-          persistentVolumeClaim:
-            claimName: ollama-models
         - name: config
           configMap:
             name: ollama-configmap
@@ -55,3 +53,12 @@ spec:
             path: /usr/local/nvidia
       nodeSelector:
          nvidia.com/gpu.present: "true"
+  volumeClaimTemplates:
+    - metadata:
+        name: models
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "openebs-zfspv"
+        resources:
+          requests:
+            storage: 500Gi  # Adjust this size as needed
