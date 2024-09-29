@@ -6,24 +6,3 @@ namespace: 1passwordconnect
 resources:
   - namespace.yaml
 
-helmCharts:
-  - name: connect
-    repo: https://1password.github.io/connect-helm-charts/
-    version: 1.16.0
-    releaseName: connect
-    namespace: 1passwordconnect
-    includeCRDs: true
-    valuesInline:
-      operator:
-        create: true
-        token:
-          existingSecret: 
-            name: 1password-operator-token
-            key: token
-      connect:
-        existingSecret: 
-          name: 1password-credentials
-          key: 1password-credentials
-      secrets:
-        opCredentials: op-credentials
-        connectServerToken: onepassword-token
