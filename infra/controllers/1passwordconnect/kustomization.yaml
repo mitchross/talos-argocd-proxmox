@@ -9,7 +9,7 @@ resources:
 helmCharts:
   - name: connect
     repo: https://1password.github.io/connect-helm-charts/
-    version: 1.16.0 # Replace with the specific version you want to use
+    version: 1.16.0# Replace with the specific version you want to use
     releaseName: connect
     namespace: 1passwordconnect
     includeCRDs: true
@@ -19,10 +19,10 @@ helmCharts:
         token:
           valueFrom:
             secretKeyRef:
-              name: 1password-connect-secret
-              key: operator-token
+              name: 1password-operator-token
+              key: token
       connect:
         credentialsFrom:
           secretKeyRef:
-            name: 1password-connect-secret
-            key: credentials
+            name: 1password-credentials
+            key: 1password-credentials.json
