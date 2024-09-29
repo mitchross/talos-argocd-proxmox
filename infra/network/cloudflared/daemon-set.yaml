@@ -18,11 +18,15 @@ spec:
         - name: cloudflared
           image: cloudflare/cloudflared:2024.9.1 # renovate: docker=cloudflare/cloudflared
           imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
           args:
-            - tunnel
-            - --config
-            - /etc/cloudflared/config/config.yaml
-            - run
+            - |
+              echo "Listing credentials file:"
+              ls -l /etc/cloudflared/credentials/credentials.json
+              echo "Contents of credentials file:"
+              cat /etc/cloudflared/credentials/credentials.json
+              echo "Running cloudflared tunnel:"
+              cloudflared tunnel --config /etc/cloudflared/config/config.yaml run
           livenessProbe:
             httpGet:
               path: /ready
