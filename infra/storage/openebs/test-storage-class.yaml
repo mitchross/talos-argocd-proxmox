@@ -7,7 +7,7 @@ parameters:
   compression: "off"
   dedup: "off"
   fstype: "zfs"
-  poolname: "ssdtank/k8s"
+  poolname: "ssdpool/k8s"
 provisioner: zfs.csi.openebs.io
 allowedTopologies:
 - matchLabelExpressions:
