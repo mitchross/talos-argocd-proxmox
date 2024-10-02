@@ -8,7 +8,7 @@ spec:
     - name: external
       namespace: gateway
   hostnames:
-    - "search.vanillax.me"
+    - "searxng.vanillax.me"
   rules:
     - matches:
         - path:
@@ -16,4 +16,5 @@ spec:
             value: /
       backendRefs:
         - name: searxng
-          port: 11434
+          port: 8080
+
