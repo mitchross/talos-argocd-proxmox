@@ -5,7 +5,7 @@ metadata:
   namespace: searxng
 spec:
   parentRefs:
-    - name: internal
+    - name: external
       namespace: gateway
   hostnames:
     - "search.vanillax.me"
