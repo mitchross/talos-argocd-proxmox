@@ -15,7 +15,7 @@ spec:
   revisionHistoryLimit: 1
   template:
     metadata:
-      namespace: privacy
+      namespace: searxng
       labels:
         app.kubernetes.io/name: searxng
     spec:
