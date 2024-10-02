@@ -10,4 +10,11 @@ resources:
   - httproute.yaml
   - fakesecret.yaml
 
+configMapGenerator:
+  - name: searxng-config-settings
+    files:
+    - config/settings.yml
+    options:
+      disableNameSuffixHash: true
+      
 namespace: searxng
