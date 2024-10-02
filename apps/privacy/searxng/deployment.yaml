@@ -28,7 +28,7 @@ spec:
               memory: 100M
               cpu: 50m
             limits:
-              memory: 500M
+              memory: 3000M
           envFrom:
             - configMapRef:
                 name: searxng
