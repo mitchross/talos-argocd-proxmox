@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: searxng
+  namespace: searxng
+  labels:
+    app.kubernetes.io/name: searxng
+data:
+  # This is redundant for now, however keeping it here in
+  # case 
+  SEARXNG_DEBUG: "false"
+  SEARXNG_URL: "https://search.vanillax.me"
+  SEARXNG_PORT: "8080"

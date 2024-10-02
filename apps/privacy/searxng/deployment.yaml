@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: searxng
+  namespace: searxng
+  labels:
+    app.kubernetes.io/name: searxng
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: searxng
+  strategy:
+    type: RollingUpdate
+  revisionHistoryLimit: 1
+  template:
+    metadata:
+      namespace: privacy
+      labels:
+        app.kubernetes.io/name: searxng
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: searxng
+          image: searxng/searxng:2024.4.29-e45a7cc06
+          resources:
+            requests:
+              memory: 100M
+              cpu: 50m
+            limits:
+              memory: 500M
+          envFrom:
+            - configMapRef:
+                name: searxng
+            - secretRef:
+                name: searxng
+          ports:
+            - containerPort: 8080
+              name: http
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 60
+          volumeMounts:
+            - name: searxng-config
+              mountPath: /etc/searxng
+            - name: searxng-config-settings
+              mountPath: /etc/searxng/settings.yml
+              subPath: settings.yml
+              readOnly: true
+      volumes:
+        - name: searxng-config
+          persistentVolumeClaim:
+            claimName: searxng-config
+        - name: searxng-config-settings
+          configMap:
+            name: searxng-config-settings
