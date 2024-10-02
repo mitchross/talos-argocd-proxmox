@@ -13,8 +13,8 @@ resources:
 configMapGenerator:
   - name: searxng-config-settings
     files:
-    - config/settings.yml
+    - config/settings.yaml
     options:
       disableNameSuffixHash: true
-      
+
 namespace: searxng
