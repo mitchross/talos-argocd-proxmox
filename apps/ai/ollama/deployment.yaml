@@ -37,7 +37,7 @@ spec:
               value: "compute,utility"
           volumeMounts:
             - name: models
-              mountPath: /models
+              mountPath: /root/.ollama
             - name: config
               mountPath: /root/.ollama/ollama.json
               subPath: ollama.json
