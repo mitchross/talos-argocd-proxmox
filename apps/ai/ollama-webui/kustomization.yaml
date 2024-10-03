@@ -7,5 +7,6 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+  - pvc.yaml
 
 namespace: ollama-webui
