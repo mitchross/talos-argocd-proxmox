@@ -4,4 +4,4 @@ metadata:
   name: ollama-webui-configmap
   namespace: ollama-webui
 data:
-  OLLAMA_API_BASE_URL: "http://ollama.ollama.svc.cluster.local:11434/api"
+  OLLAMA_BASE_URL: "http://ollama.ollama.svc.cluster.local:11434/api"
