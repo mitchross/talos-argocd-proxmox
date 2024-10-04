@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-external
+  namespace: redis
+  annotations:
+    io.cilium/lb-ipam-ips: "192.168.10.44"  # Replace with your desired external IP
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 6379
+      targetPort: 6379
+      protocol: TCP
+      name: redis
+    - port: 26379
+      targetPort: 26379
+      protocol: TCP
+      name: sentinel
+  selector:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/instance: redis
+    app.kubernetes.io/component: master
