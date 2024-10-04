@@ -5,8 +5,7 @@ namespace: redis
 
 resources:
   - namespace.yaml
-  - http-route.yaml
-  - service.yaml
+  - htt-proute.yaml
 
 helmCharts:
   - name: redis
@@ -38,3 +37,8 @@ helmCharts:
         serviceMonitor:
           enabled: true
           interval: 1m
+      service:
+        type: ClusterIP
+        ports:
+          redis: 6379
+          sentinel: 26379
