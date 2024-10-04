@@ -5,7 +5,6 @@ namespace: redis
 
 resources:
   - namespace.yaml
-  - http-route.yaml
   - service.yaml
   - redis-commander.yaml
 
