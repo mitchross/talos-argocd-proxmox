@@ -38,8 +38,8 @@ helmCharts:
         serviceMonitor:
           enabled: true
           interval: 1m
-      service:
-        type: ClusterIP
-        ports:
-          redis: 6379
-          sentinel: 26379
+      # service:
+      #   type: ClusterIP
+      #   ports:
+      #     redis: 6379
+      #     sentinel: 26379
