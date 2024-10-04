@@ -18,5 +18,4 @@ spec:
       name: sentinel
   selector:
     app.kubernetes.io/name: redis
-    app.kubernetes.io/instance: redis
-    app.kubernetes.io/component: master
+
