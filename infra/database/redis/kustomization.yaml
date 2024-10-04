@@ -1,0 +1,40 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: redis
+
+resources:
+  - namespace.yaml
+  - http-route.yaml
+  - service.yaml
+
+helmCharts:
+  - name: redis
+    repo: https://charts.bitnami.com/bitnami
+    version: 20.1.7
+    releaseName: redis
+    namespace: redis
+    includeCRDs: true
+    valuesInline:
+      auth:
+        enabled: false
+        sentinel: false
+      master:
+        persistence:
+          enabled: false
+      replica:
+        persistence:
+          enabled: false
+      sentinel:
+        enabled: true
+        masterSet: redis-master
+        getMasterTimeout: 10
+        startupProbe:
+          failureThreshold: 2
+        persistence:
+          enabled: false
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+          interval: 1m

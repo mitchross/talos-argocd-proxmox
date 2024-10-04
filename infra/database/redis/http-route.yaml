@@ -1,0 +1,19 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: redis
+  namespace: redis
+spec:
+  parentRefs:
+    - name: internal
+      namespace: gateway
+  hostnames:
+    - "redis.vanillax.me"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: redis
+          port: 6379
