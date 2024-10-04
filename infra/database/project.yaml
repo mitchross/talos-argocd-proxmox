@@ -13,6 +13,8 @@ spec:
       server: '*'
     - namespace: 'cnpg-system'
       server: '*'
+    - namespace: 'redis'
+      server: '*'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'
