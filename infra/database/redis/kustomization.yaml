@@ -5,7 +5,7 @@ namespace: redis
 
 resources:
   - namespace.yaml
-  - http-proute.yaml
+  - http-route.yaml
 
 helmCharts:
   - name: redis
