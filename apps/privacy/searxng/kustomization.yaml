@@ -14,7 +14,9 @@ configMapGenerator:
   - name: searxng-config-settings
     files:
     - config/settings.yaml
+    - limiter.toml=./resources/limiter.toml
     options:
       disableNameSuffixHash: true
+
 
 namespace: searxng
