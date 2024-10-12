@@ -43,6 +43,10 @@ spec:
       volumeName: pv-single-database
       accessModes:
         - ReadWriteOnce
+  securityContext:
+    fsGroup: 999
+    runAsUser: 999
+    runAsGroup: 999
 ---
 apiVersion: v1
 kind: Secret
