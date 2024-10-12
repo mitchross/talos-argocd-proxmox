@@ -1,10 +1,24 @@
+
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: cluster-example
   namespace: cnpg-database
 spec:
-  instances: 2
+  instances: 1
+  managed:
+    services:
+      disabledDefaultServices: [ "ro", "r" ]
+      additional:
+        - selectorType: rw
+          updateStrategy: patch
+          serviceTemplate:
+            metadata:
+              name: cluster-example-ext
+              annotations:
+                io.cilium/lb-ipam-ips: 192.168.10.43
+            spec:
+              type: LoadBalancer
   storage:
     storageClass: openebs-hostpath
     size: 4G
