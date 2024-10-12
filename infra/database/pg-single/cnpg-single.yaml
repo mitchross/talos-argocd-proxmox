@@ -43,9 +43,6 @@ spec:
       volumeName: pv-single-database  
       accessModes:
         - ReadWriteOnce
-  postgresql:
-    parameters:
-      shared_preload_libraries: "pg_stat_statements"
   bootstrap:
     initdb:
       database: app
