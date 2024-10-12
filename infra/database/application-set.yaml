@@ -12,6 +12,8 @@ spec:
         revision: HEAD
         directories:
           - path: infra/database/*
+          - path: infra/database/do-not-deploy
+            exclude: true
   template:
     metadata:
       name: '{{ path.basename }}'

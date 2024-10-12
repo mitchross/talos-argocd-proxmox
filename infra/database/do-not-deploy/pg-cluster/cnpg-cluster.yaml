@@ -20,5 +20,5 @@ spec:
             spec:
               type: LoadBalancer
   storage:
-    storageClass: openebs-hostpath
+    storageClass: openebs-zfspv
     size: 4G
