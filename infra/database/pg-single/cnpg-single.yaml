@@ -40,28 +40,15 @@ spec:
     size: 4G
     pvcTemplate:
       storageClassName: openebs-hostpath
-      volumeName: pv-single-database
+      volumeName: pv-single-database  
       accessModes:
         - ReadWriteOnce
-  securityContext:
-    fsGroup: 999
-    runAsUser: 999
-    runAsGroup: 999
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: admin-single-db
-type: kubernetes.io/basic-auth
-stringData:
-  username: 'admin'
-  password: 'admin'
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: user-single-db
-type: kubernetes.io/basic-auth
-stringData:
-  username: 'user'
-  password: 'user'
+  postgresql:
+    parameters:
+      shared_preload_libraries: "pg_stat_statements"
+  bootstrap:
+    initdb:
+      database: app
+      owner: app
+  enableSuperuserAccess: true
+  primaryUpdateStrategy: unsupervised
