@@ -1,9 +1,10 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: ollama-webui
   namespace: ollama-webui
 spec:
+  serviceName: "ollama-webui"
   replicas: 1
   selector:
     matchLabels:
@@ -16,7 +17,7 @@ spec:
       runtimeClassName: nvidia
       containers:
         - name: ollama-webui
-          image: ghcr.io/open-webui/open-webui:cuda
+          image: ghcr.io/open-webui/open-webui:git-ad31bd5-cuda
           ports:
             - containerPort: 8080
           resources:
@@ -29,9 +30,14 @@ spec:
             - configMapRef:
                 name: ollama-webui-configmap
           volumeMounts:
-          - name: webui-volume
-            mountPath: /app/backend/data
-      volumes:
-          - name: webui-volume
-            persistentVolumeClaim:
-              claimName: ollama-webui-pvc        
+            - name: webui-volume
+              mountPath: /app/backend/data
+  volumeClaimTemplates:
+    - metadata:
+        name: webui-volume
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "openebs-zfspv"
+        resources:
+          requests:
+            storage: 5Gi
