@@ -4,8 +4,8 @@ kind: Kustomization
 namespace: external-secrets
 
 resources:
-  # - external-secret.yaml
-  # - cluster-secret-store.yaml
+  - external-secret.yaml
+  - cluster-secret-store.yaml
   - ns.yaml
 
   
