@@ -3,4 +3,4 @@ kind: OnePasswordItem
 metadata:
   name: secret-name-test-name
 spec:
-  itemPath: "vaults/homelab/items/SECRET_NAME_TEST"
+  itemPath: "vaults/homelabproxmox/items/SECRET_NAME_TEST"
