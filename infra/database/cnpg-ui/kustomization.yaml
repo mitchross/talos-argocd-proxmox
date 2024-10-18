@@ -3,7 +3,7 @@ kind: Kustomization
 namespace: cnpg-zalando
 
 resources:
-  - namespace.yaml
+  - ns.yaml
   - configmap.yaml
   - externalsecret.yaml
   - postgres-operator-ui-httproute.yaml
@@ -13,7 +13,7 @@ helmCharts:
   - name: postgres-operator
     repo: https://opensource.zalando.com/postgres-operator/charts/postgres-operator
     releaseName: zalando-postgres
-    namespace: database
+    namespace: cnpg-zalando
     includeCRDs: true
     version: 1.13.0
     valuesFile: postgres-operator-values.yaml
@@ -21,6 +21,6 @@ helmCharts:
   - name: postgres-operator-ui
     repo: https://opensource.zalando.com/postgres-operator/charts/postgres-operator-ui
     releaseName: zalando-postgres-operator-ui
-    namespace: database
+    namespace: cnpg-zalando
     version: 1.13.0
     valuesFile: postgres-operator-ui-values.yaml
