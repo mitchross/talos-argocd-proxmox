@@ -6,7 +6,7 @@ resources:
   - ns.yaml
   - config-map.yaml
   - external-secret.yaml
-  - httproute.yaml
+  - http-route.yaml
   - ui-service.yaml
 
 helmCharts:
