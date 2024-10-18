@@ -9,7 +9,7 @@ configKubernetes:
     - environment
   enable_pod_disruption_budget: false
   pod_environment_configmap: zalando-postgres-pod-configmap
-  pod_environment_secret: zalando-postgres-pod-secrets
+  pod_environment_secret: zalando-postgres-secrets
 configPostgresPodResources:
   default_cpu_limit: "2"
   default_cpu_request: 20m
