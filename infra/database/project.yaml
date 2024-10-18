@@ -9,9 +9,7 @@ spec:
   destinations:
     - namespace: 'argocd'
       server: '*'
-    - namespace: 'cnpg-database'
-      server: '*'
-    - namespace: 'cnpg-system'
+    - namespace: 'cnpg-zalando'
       server: '*'
     - namespace: 'redis'
       server: '*'
