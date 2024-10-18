@@ -6,8 +6,8 @@ resources:
   - ns.yaml
   - config-map.yaml
   - external-secret.yaml
-  - postgres-operator-ui-httproute.yaml
-  - postgres-operator-ui-service.yaml
+  - httproute.yaml
+  - ui-service.yaml
 
 helmCharts:
   - name: postgres-operator
