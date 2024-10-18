@@ -1,0 +1,25 @@
+configMajorVersionUpgrade:
+  major_version_upgrade_mode: full
+configKubernetes:
+  enable_pod_antiaffinity: true
+  enable_cross_namespace_secret: true
+  watched_namespace: "*"
+  inherited_labels:
+    - application
+    - environment
+  enable_pod_disruption_budget: false
+  pod_environment_configmap: zalando-postgres-pod-configmap
+  pod_environment_secret: zalando-postgres-pod-secrets
+configPostgresPodResources:
+  default_cpu_limit: "2"
+  default_cpu_request: 20m
+  default_memory_limit: 2500Mi
+  default_memory_request: 700Mi
+  min_cpu_limit: 250m
+  min_memory_limit: 250Mi
+resources:
+  limits:
+    memory: 100M
+  requests:
+    cpu: 5m
+    memory: 32M

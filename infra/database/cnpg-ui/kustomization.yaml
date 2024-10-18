@@ -1,16 +1,26 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: cnpg-system
+namespace: cnpg-zalando
 
 resources:
-  - ns.yaml
+  - namespace.yaml
+  - configmap.yaml
+  - externalsecret.yaml
+  - postgres-operator-ui-httproute.yaml
+  - postgres-operator-ui-service.yaml
 
 helmCharts:
+  - name: postgres-operator
+    repo: https://opensource.zalando.com/postgres-operator/charts/postgres-operator
+    releaseName: zalando-postgres
+    namespace: database
+    includeCRDs: true
+    version: 1.13.0
+    valuesFile: postgres-operator-values.yaml
 
   - name: postgres-operator-ui
     repo: https://opensource.zalando.com/postgres-operator/charts/postgres-operator-ui
-    releaseName: postgres-operator-ui
-    namespace: pcnpg-system
-    includeCRDs: true
-    version: 1.13.0  # You may want to check for the latest version
-    valuesFile: values.yaml
+    releaseName: zalando-postgres-operator-ui
+    namespace: database
+    version: 1.13.0
+    valuesFile: postgres-operator-ui-values.yaml
