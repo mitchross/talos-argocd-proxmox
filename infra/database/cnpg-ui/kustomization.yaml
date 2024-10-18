@@ -5,7 +5,7 @@ namespace: cnpg-zalando
 resources:
   - ns.yaml
   - config-map.yaml
-  - externalsecret.yaml
+  - external-secret.yaml
   - postgres-operator-ui-httproute.yaml
   - postgres-operator-ui-service.yaml
 
