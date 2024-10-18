@@ -4,3 +4,7 @@ envs:
   operatorApiUrl: "http://zalando-postgres-postgres-operator:8080"
 ingress:
   enabled: false  # Disable the built-in ingress as we're using HTTPRoute
+service:
+  create: false
+
+
