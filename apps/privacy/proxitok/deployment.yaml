@@ -18,9 +18,15 @@ spec:
         runAsGroup: 65534
         fsGroup: 65534
         fsGroupChangePolicy: "OnRootMismatch"
+      volumes:
+        - name: cache-volume
+          emptyDir: {}
       containers:
         - name: main
           image: ghcr.io/pablouser1/proxitok@sha256:9300a54e10314e1fb8b3c2056705d6a931ce979d92793fd972c37ded446ece60
+          volumeMounts:
+            - name: cache-volume
+              mountPath: /var/www/html/cache
           envFrom:
             - configMapRef:
                 name: proxitok-configmap
@@ -30,6 +36,10 @@ spec:
               memory: 512Mi
             limits:
               memory: 600Mi
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "mkdir -p /var/www/html/cache/latte && chmod -R 777 /var/www/html/cache"]
         - name: redis
           image: public.ecr.aws/docker/library/redis:7.4.1
           env:
