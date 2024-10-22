@@ -33,12 +33,14 @@ spec:
         - name: redis
           image: public.ecr.aws/docker/library/redis:7.4.1
           env:
-            REDIS_REPLICATION_MODE: master
+            - name: REDIS_REPLICATION_MODE
+              value: "master"
           command: ["redis-server", "--save", "50 1", "--loglevel", "notice"]
         - name: signer
           image: ghcr.io/pablouser1/signtok:master
           env:
-            PORT: 8081
+            - name: PORT
+              value: "8081"
           resources:
             requests:
               memory: 512Mi
