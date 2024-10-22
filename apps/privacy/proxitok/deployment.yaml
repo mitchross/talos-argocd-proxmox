@@ -23,12 +23,9 @@ spec:
       initContainers:
         - name: init-cache
           image: busybox
-          securityContext:
-            runAsUser: 0
           command: ["/bin/sh", "-c"]
           args:
-            - mkdir -p /cache && 
-              chown -R 65534:65534 /cache
+            - mkdir -p /cache && chown -R 65534:65534 /cache
           volumeMounts:
             - name: cache-volume
               mountPath: /cache
@@ -49,12 +46,6 @@ spec:
               value: "6379"
             - name: API_CHROMEDRIVER
               value: "http://localhost:9515"
-          resources:
-            requests:
-              cpu: 100m
-              memory: 512Mi
-            limits:
-              memory: 600Mi
           securityContext:
             capabilities:
               drop:
@@ -63,24 +54,31 @@ spec:
                 - CHOWN
                 - SETGID
                 - SETUID
+            readOnlyRootFilesystem: true
         - name: chromedriver
           image: zenika/alpine-chrome:with-chromedriver
           volumeMounts:
             - name: shm
               mountPath: /dev/shm
+          ports:
+            - containerPort: 9515
+          securityContext:
+            runAsNonRoot: true
+          args:
+            - --chromedriver-port=9515
+            - --no-sandbox
+            - --headless
           resources:
             limits:
               memory: 1Gi
+              cpu: "1"
             requests:
               memory: 512Mi
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000
-          ports:
-            - containerPort: 9515
+              cpu: "500m"
         - name: redis
-          image: public.ecr.aws/docker/library/redis:7.4-alpine
-          command: ["redis-server", "--save", "", "--appendonly", "no"]
+          image: redis:7.4-alpine
+          command: ["redis-server"]
+          args: ["--save", ""]
           securityContext:
             runAsUser: 65534
             runAsNonRoot: true
@@ -88,5 +86,8 @@ spec:
             capabilities:
               drop:
                 - ALL
-          ports:
-            - containerPort: 6379
+          resources:
+            limits:
+              memory: 256Mi
+            requests:
+              memory: 128Mi
