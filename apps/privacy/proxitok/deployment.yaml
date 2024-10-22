@@ -20,21 +20,31 @@ spec:
         - name: shm
           emptyDir:
             medium: Memory
+        - name: tmp-volume
+          emptyDir: {}
       initContainers:
-        - name: init-cache
+        - name: init-tmp
           image: busybox
           command: ["/bin/sh", "-c"]
           args:
-            - mkdir -p /cache && chown -R 65534:65534 /cache
+            - |
+              mkdir -p /tmp && chmod 1777 /tmp &&
+              mkdir -p /cache && chown -R 65534:65534 /cache
           volumeMounts:
             - name: cache-volume
               mountPath: /cache
+            - name: tmp-volume
+              mountPath: /tmp
+          securityContext:
+            runAsUser: 0
       containers:
         - name: main
           image: ghcr.io/pablouser1/proxitok@sha256:9300a54e10314e1fb8b3c2056705d6a931ce979d92793fd972c37ded446ece60
           volumeMounts:
             - name: cache-volume
               mountPath: /cache
+            - name: tmp-volume
+              mountPath: /tmp
           env:
             - name: LATTE_CACHE
               value: "/cache"
@@ -46,6 +56,8 @@ spec:
               value: "6379"
             - name: API_CHROMEDRIVER
               value: "http://localhost:9515"
+            - name: TMPDIR
+              value: "/tmp"
           securityContext:
             capabilities:
               drop:
@@ -54,12 +66,13 @@ spec:
                 - CHOWN
                 - SETGID
                 - SETUID
-            readOnlyRootFilesystem: true
         - name: chromedriver
           image: zenika/alpine-chrome:with-chromedriver
           volumeMounts:
             - name: shm
               mountPath: /dev/shm
+            - name: tmp-volume
+              mountPath: /tmp
           ports:
             - containerPort: 9515
           securityContext:
@@ -79,10 +92,12 @@ spec:
           image: redis:7.4-alpine
           command: ["redis-server"]
           args: ["--save", ""]
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
           securityContext:
             runAsUser: 65534
             runAsNonRoot: true
-            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
