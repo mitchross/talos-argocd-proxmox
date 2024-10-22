@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proxitok
+  namespace: proxitok
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: proxitok
+  template:
+    metadata:
+      labels:
+        app: proxitok
+    spec:
+      securityContext:
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+        fsGroupChangePolicy: "OnRootMismatch"
+      containers:
+        - name: main
+          image: ghcr.io/pablouser1/proxitok:latest@sha256-9300a54e10314e1fb8b3c2056705d6a931ce979d92793fd972c37ded446ece60.sig
+          envFrom:
+            - configMapRef:
+                name: proxitok-configmap
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              memory: 600Mi
+        - name: redis
+          image: public.ecr.aws/docker/library/redis:7.4.1
+          env:
+            REDIS_REPLICATION_MODE: master
+          command: ["redis-server", "--save", "50 1", "--loglevel", "notice"]
+        - name: signer
+          image: ghcr.io/pablouser1/signtok:master
+          env:
+            PORT: 8081
+          resources:
+            requests:
+              memory: 512Mi
+            limits:
+              memory: 512Mi

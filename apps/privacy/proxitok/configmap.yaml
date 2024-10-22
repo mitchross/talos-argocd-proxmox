@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: proxitok-configmap
+data:
+  # Add your configuration data here
+  example-key: example-value

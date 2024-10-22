@@ -1,0 +1,14 @@
+apiVersion: networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: proxitok-route
+  namespace: proxitok
+spec:
+  rules:
+  - matches:
+    - path:
+        type: Prefix
+        value: "/"
+    backendRefs:
+    - name: proxitok-service
+      port: 8080
