@@ -4,11 +4,17 @@ metadata:
   name: proxitok-route
   namespace: proxitok
 spec:
+  parentRefs:
+    - name: external
+      namespace: gateway
+  hostnames:
+    - "proxitok.vanillax.me"
   rules:
-  - matches:
-    - path:
-        type: Prefix
-        value: "/"
-    backendRefs:
-    - name: proxitok-service
-      port: 8080
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: proxitok-service
+          port: 8080
+
