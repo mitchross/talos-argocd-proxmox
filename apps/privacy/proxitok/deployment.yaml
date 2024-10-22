@@ -79,10 +79,23 @@ spec:
             runAsUser: 1000
             runAsGroup: 1000
             runAsNonRoot: true
+          env:
+            - name: CHROME_DRIVER_ARGS
+              value: "--whitelisted-ips='' --verbose --log-level=INFO"
+            - name: CHROME_ARGS
+              value: >-
+                --headless
+                --no-sandbox
+                --disable-dev-shm-usage
+                --disable-gpu
+                --disable-software-rasterizer
+                --disable-blink-features=AutomationControlled
+                --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
           args:
-            - --chromedriver-port=9515
-            - --no-sandbox
-            - --headless
+            - chromedriver
+            - --port=9515
+            - --allowed-ips=""
+            - --allowed-origins="*"
           resources:
             limits:
               memory: 1Gi
