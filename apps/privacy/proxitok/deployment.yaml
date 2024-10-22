@@ -13,13 +13,11 @@ spec:
       labels:
         app: proxitok
     spec:
-      securityContext:
-        runAsUser: 65534
-        runAsGroup: 65534
-        fsGroup: 65534
-        fsGroupChangePolicy: "OnRootMismatch"
       volumes:
         - name: cache-volume
+          emptyDir:
+            medium: Memory
+        - name: shm
           emptyDir:
             medium: Memory
       initContainers:
@@ -29,7 +27,7 @@ spec:
             runAsUser: 0
           command: ["/bin/sh", "-c"]
           args:
-            - mkdir -p /cache/latte && 
+            - mkdir -p /cache && 
               chown -R 65534:65534 /cache
           volumeMounts:
             - name: cache-volume
@@ -39,29 +37,56 @@ spec:
           image: ghcr.io/pablouser1/proxitok@sha256:9300a54e10314e1fb8b3c2056705d6a931ce979d92793fd972c37ded446ece60
           volumeMounts:
             - name: cache-volume
-              mountPath: /var/www/html/cache
-          envFrom:
-            - configMapRef:
-                name: proxitok-configmap
+              mountPath: /cache
+          env:
+            - name: LATTE_CACHE
+              value: "/cache"
+            - name: API_CACHE
+              value: "redis"
+            - name: REDIS_HOST
+              value: "localhost"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: API_CHROMEDRIVER
+              value: "http://localhost:9515"
           resources:
             requests:
               cpu: 100m
               memory: 512Mi
             limits:
               memory: 600Mi
-        - name: redis
-          image: public.ecr.aws/docker/library/redis:7.4.1
-          env:
-            - name: REDIS_REPLICATION_MODE
-              value: "master"
-          command: ["redis-server", "--save", "50 1", "--loglevel", "notice"]
-        - name: signer
-          image: ghcr.io/pablouser1/signtok:master
-          env:
-            - name: PORT
-              value: "8081"
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - CHOWN
+                - SETGID
+                - SETUID
+        - name: chromedriver
+          image: zenika/alpine-chrome:with-chromedriver
+          volumeMounts:
+            - name: shm
+              mountPath: /dev/shm
           resources:
+            limits:
+              memory: 1Gi
             requests:
               memory: 512Mi
-            limits:
-              memory: 512Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+          ports:
+            - containerPort: 9515
+        - name: redis
+          image: public.ecr.aws/docker/library/redis:7.4-alpine
+          command: ["redis-server", "--save", "", "--appendonly", "no"]
+          securityContext:
+            runAsUser: 65534
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - containerPort: 6379
