@@ -76,6 +76,8 @@ spec:
           ports:
             - containerPort: 9515
           securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
             runAsNonRoot: true
           args:
             - --chromedriver-port=9515
