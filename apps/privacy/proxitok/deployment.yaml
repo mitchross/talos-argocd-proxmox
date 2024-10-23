@@ -44,7 +44,7 @@ spec:
           runAsUser: 0
       containers:
       - name: proxitok-web
-        image: ghcr.io/pablouser1/proxitok:master
+        image: ghcr.io/elektrikfisch/proxitok:latest
         ports:
         - containerPort: 8080
         envFrom:
