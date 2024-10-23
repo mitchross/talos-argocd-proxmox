@@ -10,3 +10,6 @@ data:
   REDIS_HOST: "proxitok-redis.proxitok.svc.cluster.local"
   REDIS_PORT: "6379"
   API_CHROMEDRIVER: "http://proxitok-chromedriver.proxitok.svc.cluster.local:9515"
+    # Add these for better stability
+  CHROME_TIMEOUT: "30"
+  CHROME_RETRIES: "3"
