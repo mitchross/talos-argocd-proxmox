@@ -1,123 +1,64 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: proxitok
+  name: proxitok-web
   namespace: proxitok
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: proxitok
+      app: proxitok-web
   template:
     metadata:
       labels:
-        app: proxitok
+        app: proxitok-web
     spec:
-      volumes:
-        - name: cache-volume
-          emptyDir:
-            medium: Memory
-        - name: shm
-          emptyDir:
-            medium: Memory
-        - name: tmp-volume
-          emptyDir: {}
       initContainers:
-        - name: init-tmp
-          image: busybox
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              mkdir -p /tmp && chmod 1777 /tmp &&
-              mkdir -p /cache && chown -R 65534:65534 /cache
-          volumeMounts:
-            - name: cache-volume
-              mountPath: /cache
-            - name: tmp-volume
-              mountPath: /tmp
-          securityContext:
-            runAsUser: 0
+      - name: wait-for-redis
+        image: busybox
+        command: ['sh', '-c', 'until nc -z proxitok-redis.proxitok.svc.cluster.local 6379; do echo waiting for redis; sleep 2; done;']
       containers:
-        - name: main
-          image: ghcr.io/pablouser1/proxitok@sha256:9300a54e10314e1fb8b3c2056705d6a931ce979d92793fd972c37ded446ece60
-          volumeMounts:
-            - name: cache-volume
-              mountPath: /cache
-            - name: tmp-volume
-              mountPath: /tmp
-          env:
-            - name: LATTE_CACHE
-              value: "/cache"
-            - name: API_CACHE
-              value: "redis"
-            - name: REDIS_HOST
-              value: "localhost"
-            - name: REDIS_PORT
-              value: "6379"
-            - name: API_CHROMEDRIVER
-              value: "http://localhost:9515"
-            - name: TMPDIR
-              value: "/tmp"
-          securityContext:
-            capabilities:
-              drop:
-                - ALL
-              add:
-                - CHOWN
-                - SETGID
-                - SETUID
-        - name: chromedriver
-          image: zenika/alpine-chrome:with-chromedriver
-          volumeMounts:
-            - name: shm
-              mountPath: /dev/shm
-            - name: tmp-volume
-              mountPath: /tmp
-          ports:
-            - containerPort: 9515
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            runAsNonRoot: true
-          env:
-            - name: CHROME_DRIVER_ARGS
-              value: "--whitelisted-ips='' --verbose --log-level=INFO"
-            - name: CHROME_ARGS
-              value: >-
-                --headless
-                --no-sandbox
-                --disable-dev-shm-usage
-                --disable-gpu
-                --disable-software-rasterizer
-                --disable-blink-features=AutomationControlled
-                --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
-          args:
-            - chromedriver
-            - --port=9515
-            - --allowed-ips=""
-            - --allowed-origins="*"
-          resources:
-            limits:
-              memory: 1Gi
-              cpu: "1"
-            requests:
-              memory: 512Mi
-              cpu: "500m"
-        - name: redis
-          image: redis:7.4-alpine
-          command: ["redis-server"]
-          args: ["--save", ""]
-          volumeMounts:
-            - name: tmp-volume
-              mountPath: /tmp
-          securityContext:
-            runAsUser: 65534
-            runAsNonRoot: true
-            capabilities:
-              drop:
-                - ALL
-          resources:
-            limits:
-              memory: 256Mi
-            requests:
-              memory: 128Mi
+      - name: proxitok-web
+        image: ghcr.io/pablouser1/proxitok:master
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: proxitok-config
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - CHOWN
+            - SETGID
+            - SETUID
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 15
+        volumeMounts:
+        - name: cache-volume
+          mountPath: /cache
+      volumes:
+      - name: cache-volume
+        persistentVolumeClaim:
+          claimName: proxitok-cache-pvc

@@ -9,3 +9,5 @@ resources:
   - pvc.yaml
   - configmap.yaml
   - ns.yaml
+  - deployment-chromedriver.yaml
+  - deployment-redis.yaml

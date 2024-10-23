@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proxitok-chromedriver
+  namespace: proxitok
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: proxitok-chromedriver
+  template:
+    metadata:
+      labels:
+        app: proxitok-chromedriver
+    spec:
+      containers:
+      - name: chromedriver
+        image: zenika/alpine-chrome:with-chromedriver
+        ports:
+        - containerPort: 9515
+        resources:
+          requests:
+            memory: "1Gi"
+          limits:
+            memory: "1Gi"

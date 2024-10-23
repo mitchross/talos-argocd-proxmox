@@ -1,20 +1,40 @@
-
 apiVersion: v1
 kind: Service
 metadata:
-  name: proxitok-service
+  name: proxitok-web
   namespace: proxitok
 spec:
-  type: ClusterIP
-  ports:
-    - name: http
-      port: 8080
-      targetPort: 8080
-    - name: redis
-      port: 6379
-      targetPort: 6379
-    - name: signer
-      port: 8081
-      targetPort: 8081
   selector:
-    app: proxitok
+    app: proxitok-web
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: proxitok-redis
+  namespace: proxitok
+spec:
+  selector:
+    app: proxitok-redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: proxitok-chromedriver
+  namespace: proxitok
+spec:
+  selector:
+    app: proxitok-chromedriver
+  ports:
+  - port: 9515
+    targetPort: 9515
+  type: ClusterIP

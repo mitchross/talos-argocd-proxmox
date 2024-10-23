@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: proxitok-pvc
+  name: proxitok-cache-pvc
   namespace: proxitok
 spec:
   accessModes:
