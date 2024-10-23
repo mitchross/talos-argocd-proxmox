@@ -15,6 +15,6 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: proxitok-service
+        - name: proxitok-web
           port: 8080
 
