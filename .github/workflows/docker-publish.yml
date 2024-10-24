@@ -1,8 +1,7 @@
 name: Docker Build
-
 on:
   schedule:
-    - cron: '36 9 * * *'
+    - cron: '36 9 * * *'  # Fixed cron expression
   push:
     branches: [ "main" ]
     paths:
@@ -12,7 +11,6 @@ on:
     branches: [ "main" ]
     paths:
       - 'docker/**'
-
 env:
   REGISTRY: ghcr.io
   
@@ -30,6 +28,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      # Debug step to verify directory structure
+      - name: Debug directory
+        run: |
+          pwd
+          ls -la
+          ls -la docker/
+          ls -la docker/comfyui/
 
       - name: Install cosign
         if: github.event_name != 'pull_request'
@@ -58,8 +64,8 @@ jobs:
         id: build-and-push
         uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09
         with:
-          context: ./docker/${{ matrix.app }}
-          file: ./docker/${{ matrix.app }}/dockerfile
+          context: docker/${{ matrix.app }}
+          dockerfile: dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
