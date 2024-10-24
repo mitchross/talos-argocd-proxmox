@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: comfyui-configmap
+  namespace: comfyui
+data:
+  gpu_config.json: |
+    {
+      "gpu_layers": "auto",
+      "cuda_devices": [0, 1],
+      "max_parallel_gpu_requests": 2
+    }

@@ -1,27 +1,25 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: ollama
-  namespace: ollama
+  name: comfyui
+  namespace: comfyui
 spec:
-  serviceName: "ollama"
+  serviceName: "comfyui"
   replicas: 1
   selector:
     matchLabels:
-      app: ollama
+      app: comfyui
   template:
     metadata:
       labels:
-        app: ollama
+        app: comfyui
     spec:
       runtimeClassName: nvidia
       containers:
-        - name: ollama
-          image: ollama/ollama:latest@sha256:2e620e1066fd098b388cd8a40a214f510807c619a80092133546f0d0d271f5f1
-
-
+        - name: comfyui
+          image: ghcr.io/ai-dock/comfyui:v2-cuda-12.1.1-base-22.04-v0.2.0@sha256:eacd7b9281383b13b53d86cacc283f856417c79a1312634e8a9cc6308cbe60f6
           ports:
-            - containerPort: 11434
+            - containerPort: 8188
           resources:
             requests:
               cpu: 4000m
@@ -29,7 +27,7 @@ spec:
             limits:
               cpu: 8000m
               memory: 38Gi
-              nvidia.com/gpu: 2  # Request 2 GPUs
+              nvidia.com/gpu: 2
           securityContext:
             privileged: true
           env:
@@ -39,22 +37,22 @@ spec:
               value: "compute,utility"
           volumeMounts:
             - name: models
-              mountPath: /root/.ollama
+              mountPath: /root/.comfyui
             - name: config
-              mountPath: /root/.ollama/ollama.json
-              subPath: ollama.json
+              mountPath: /root/.comfyui/gpu_config.json
+              subPath: gpu_config.json
             - name: nvidia-driver
               mountPath: /usr/local/nvidia
               readOnly: true
       volumes:
         - name: config
           configMap:
-            name: ollama-configmap
+            name: comfyui-configmap
         - name: nvidia-driver
           hostPath:
             path: /usr/local/nvidia
       nodeSelector:
-         nvidia.com/gpu.present: "true"
+        nvidia.com/gpu.present: "true"
   volumeClaimTemplates:
     - metadata:
         name: models
@@ -63,4 +61,4 @@ spec:
         storageClassName: "openebs-zfspv"
         resources:
           requests:
-            storage: 500Gi  # Adjust this size as needed
+            storage: 500Gi
