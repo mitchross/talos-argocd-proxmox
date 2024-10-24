@@ -22,4 +22,4 @@ spec:
             value: /
       backendRefs:
         - name: comfyui
-          port: 18188
+          port: 7860

@@ -1,4 +1,3 @@
-# service.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -11,6 +10,6 @@ spec:
     app: comfyui
   ports:
     - name: http
-      port: 18188
-      targetPort: 18188
+      port: 7860
+      targetPort: 7860
   type: ClusterIP

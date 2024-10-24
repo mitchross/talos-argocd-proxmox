@@ -19,47 +19,56 @@ spec:
       runtimeClassName: nvidia
       containers:
         - name: comfyui
-          image: ghcr.io/ai-dock/comfyui:v2-cuda-12.1.1-base-22.04-v0.2.0@sha256:eacd7b9281383b13b53d86cacc283f856417c79a1312634e8a9cc6308cbe60f6
+          image: docker.io/jahanson/comfyui:v0.0.1
           ports:
-            - containerPort: 8188
+            - containerPort: 7860
           resources:
             requests:
-              cpu: 4000m
-              memory: 16Gi
-              nvidia.com/gpu: 2
+              cpu: 500m
+              memory: 2Gi
+              nvidia.com/gpu: 1
             limits:
-              cpu: 8000m
-              memory: 38Gi
-              nvidia.com/gpu: 2
+              memory: 60Gi
+              nvidia.com/gpu: 1
           securityContext:
             privileged: true
           env:
-            - name: TZ
-              value: "America/New_York"
-            - name: PROVISIONING_SCRIPT
-              value: "https://raw.githubusercontent.com/ai-dock/comfyui/main/config/provisioning/flux.sh"
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: "compute,utility"
           volumeMounts:
-            - name: workspace
-              mountPath: /workspace
+            - name: models
+              mountPath: /data/models
             - name: config
-              mountPath: /root/.comfyui/gpu_config.json
-              subPath: gpu_config.json
+              mountPath: /data/config
+            - name: output
+              mountPath: /output
             - name: nvidia-driver
               mountPath: /usr/local/nvidia
               readOnly: true
       volumes:
-        - name: workspace
-          persistentVolumeClaim:
-            claimName: comfyui-workspace-pvc
-        - name: config
-          configMap:
-            name: comfyui-configmap
+        - name: output
+          emptyDir: {}
         - name: nvidia-driver
           hostPath:
             path: /usr/local/nvidia
       nodeSelector:
         nvidia.com/gpu.present: "true"
+  volumeClaimTemplates:
+    - metadata:
+        name: models
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "openebs-zfspv"
+        resources:
+          requests:
+            storage: 500Gi
+    - metadata:
+        name: config
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "openebs-zfspv"
+        resources:
+          requests:
+            storage: 10Gi
