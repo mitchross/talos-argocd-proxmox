@@ -1,15 +1,12 @@
-name: Create and publish ComfyUI Docker image
+name: Create and publish Docker image
 
 on:
   push:
     branches: ['release']
-    paths:
-      - 'docker/comfyui/**'
-      - '.github/workflows/docker-publish.yml'
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-comfyui
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push-image:
@@ -41,7 +38,7 @@ jobs:
         id: push
         uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
         with:
-          context: .
+          context: ./docker/comfyui
           file: ./docker/comfyui/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
