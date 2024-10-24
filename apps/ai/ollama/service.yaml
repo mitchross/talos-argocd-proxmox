@@ -10,6 +10,6 @@ spec:
     app: ollama
   ports:
     - name: http
-      port: 11434
-      targetPort: 11434
+      port: 18188
+      targetPort: 18188
   type: ClusterIP

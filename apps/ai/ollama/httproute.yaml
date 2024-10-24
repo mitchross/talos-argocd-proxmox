@@ -16,4 +16,4 @@ spec:
             value: /
       backendRefs:
         - name: ollama
-          port: 11434
+          port: 18188
