@@ -60,7 +60,7 @@ spec:
         name: models
       spec:
         accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "openebs-zfspv"
+        storageClassName: "openebs-zfspv-immediate"
         resources:
           requests:
             storage: 500Gi
@@ -68,7 +68,7 @@ spec:
         name: config
       spec:
         accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "openebs-zfspv"
+        storageClassName: "openebs-zfspv-immediate"
         resources:
           requests:
             storage: 10Gi
