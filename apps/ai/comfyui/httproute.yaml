@@ -14,7 +14,7 @@ spec:
     - name: internal
       namespace: gateway
   hostnames:
-    - "comfyui.${SECRET_DOMAIN}"
+    - "comfyui.vanillax.me"
   rules:
     - matches:
         - path:
