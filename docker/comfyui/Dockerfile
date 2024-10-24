@@ -16,7 +16,7 @@ COPY . /app
 
 # Install Python dependencies
 RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+#RUN pip install -r requirements.txt
 
 # Clone and install ComfyUI Manager
 RUN git clone https://github.com/ltdrdata/ComfyUI-Manager.git /app/custom_nodes/ComfyUI-Manager && \
