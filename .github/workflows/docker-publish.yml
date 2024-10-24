@@ -59,7 +59,7 @@ jobs:
         uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09
         with:
           context: ./docker/${{ matrix.app }}
-          file: ./docker/${{ matrix.app }}/Dockerfile
+          file: ./docker/${{ matrix.app }}/dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
