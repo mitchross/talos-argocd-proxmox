@@ -19,9 +19,9 @@ spec:
       runtimeClassName: nvidia
       containers:
         - name: comfyui
-          image: docker.io/jahanson/comfyui:v0.0.1
+          image:  ghcr.io/mitchross/k3s-argocd-proxmox-comfyui:latest
           ports:
-            - containerPort: 7860
+            - containerPort: 8188
           resources:
             requests:
               cpu: 500m

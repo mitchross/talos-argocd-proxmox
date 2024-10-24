@@ -10,6 +10,6 @@ spec:
     app: comfyui
   ports:
     - name: http
-      port: 7860
-      targetPort: 7860
+      port: 8188
+      targetPort: 8188
   type: ClusterIP
