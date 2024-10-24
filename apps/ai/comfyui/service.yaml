@@ -11,6 +11,6 @@ spec:
     app: comfyui
   ports:
     - name: http
-      port: 8188
-      targetPort: 8188
+      port: 18188
+      targetPort: 18188
   type: ClusterIP
