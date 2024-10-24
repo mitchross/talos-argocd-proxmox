@@ -59,12 +59,21 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}-${{ matrix.app }}
 
+      - name: Debug directory
+        run: |
+          echo "Current working directory:"
+          pwd
+          echo "Directory contents:"
+          ls -la
+          echo "Docker directory contents:"
+          ls -la docker/comfyui/
+
       - name: Build and push Docker image
         id: build-and-push
         uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09
         with:
-          context: ${{ github.workspace }}/docker/comfyui
-          file: ${{ github.workspace }}/docker/comfyui/dockerfile
+          context: docker/comfyui/  # Path to directory containing Dockerfile
+          dockerfile: dockerfile    # Just the filename, since context points to the directory
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
