@@ -13,6 +13,8 @@ spec:
       server: '*'
     - namespace: 'ollama-webui'
       server: '*'
+    - namespace: 'comfyui'
+      server: '*'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'

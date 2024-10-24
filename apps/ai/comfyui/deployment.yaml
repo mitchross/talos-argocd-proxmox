@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: comfyui
+  namespace: comfyui
+spec:
+  serviceName: "comfyui"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: comfyui
+  template:
+    metadata:
+      labels:
+        app: comfyui
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      runtimeClassName: nvidia
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: nvidia.com/gpu.present
+                    operator: In
+                    values:
+                      - "true"
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      containers:
+        - name: comfyui
+          image: ghcr.io/ai-dock/comfyui:v2-cuda-12.1.1-base-22.04-v0.2.0@sha256:eacd7b9281383b13b53d86cacc283f856417c79a1312634e8a9cc6308cbe60f6
+          ports:
+            - containerPort: 8188
+          resources:
+            requests:
+              cpu: 500m
+              memory: 6Gi
+              nvidia.com/gpu: 1
+            limits:
+              memory: 6Gi
+              nvidia.com/gpu: 1
+          env:
+            - name: TZ
+              valueFrom:
+                configMapKeyRef:
+                  name: cluster-settings
+                  key: TIMEZONE
+            - name: PROVISIONING_SCRIPT
+              value: "https://raw.githubusercontent.com/ai-dock/comfyui/main/config/provisioning/flux.sh"
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: comfyui-workspace-pvc
