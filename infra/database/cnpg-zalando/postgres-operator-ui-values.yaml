@@ -3,7 +3,7 @@ envs:
   resourcesVisible: "True"
   operatorApiUrl: "http://zalando-postgres-postgres-operator.cnpg-zalando.svc.cluster.local:8080"
 ingress:
-  enabled: true  # Disable the built-in ingress as we're using HTTPRoute
+  enabled: false  # Disable the built-in ingress as we're using HTTPRoute
 service:
   create: false
 
