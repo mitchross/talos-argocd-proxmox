@@ -4,7 +4,7 @@ metadata:
   name: postgres-operator-ui-service
   namespace: cnpg-zalando
   labels:
-    app: postgres-operator-ui
+    app: postgres-operator-ui-service
 spec:
   selector:
     app: postgres-operator-ui
