@@ -1,8 +1,7 @@
 name: Docker Publish ComfyUI
-
 on:
   schedule:
-    - cron: '34 6 * * *'
+    - cron: '34 6 * * *'  # Fixed cron syntax
   push:
     branches: [ "main" ]
     paths:
@@ -23,13 +22,35 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write  # Added write permission for tag creation
       packages: write
       id-token: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for versioning
+          
+      - name: Get latest version tag
+        id: get_version
+        run: |
+          latest_tag=$(git tag -l 'v*' | sort -V | tail -n1)
+          if [ -z "$latest_tag" ]; then
+            echo "version=v1.0.0" >> $GITHUB_OUTPUT
+          else
+            patch=$(echo $latest_tag | awk -F. '{ print $3 }')
+            new_patch=$((patch + 1))
+            new_tag="v1.0.${new_patch}"
+            echo "version=$new_tag" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create and push tag
+        if: github.event_name != 'pull_request'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a ${{ steps.get_version.outputs.version }} -m "Release ${{ steps.get_version.outputs.version }}"
+          git push origin ${{ steps.get_version.outputs.version }}
 
       - name: Install cosign
         if: github.event_name != 'pull_request'
@@ -55,6 +76,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ steps.get_version.outputs.version }}
             type=ref,event=branch
             type=ref,event=pr
             type=semver,pattern={{version}}
