@@ -3,8 +3,6 @@ kind: Service
 metadata:
   name: zalando-postgres-operator-ui-service
   namespace: cnpg-zalando
-  annotations:
-    io.cilium/lb-ipam-ips: "192.168.10.47"  #
 spec:
   selector:
     app: zalando-postgres-operator-ui
