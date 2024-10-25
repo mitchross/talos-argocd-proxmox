@@ -58,4 +58,4 @@ spec:
           hostPath:
             path: /usr/local/nvidia
       nodeSelector:
-        nvidia.com/gpu.present: "true"
+         nvidia.com/gpu.present: "true"
