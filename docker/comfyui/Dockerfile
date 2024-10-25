@@ -1,4 +1,3 @@
-
 # Base image with Python 3.11 and CUDA 12.5 support
 FROM nvidia/cuda:12.5.0-runtime-ubuntu22.04
 
@@ -47,5 +46,11 @@ WORKDIR /usr/local/ComfyUI
 RUN pip3 install --default-timeout=1000 --no-cache-dir torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu122
 RUN find . -name requirements.txt -exec pip3 --no-input install --default-timeout=1000 --no-cache-dir -r {} \;
 
-COPY comfyui.sh /usr/local/bin/comfyui
+# Create startup script directly in the image
+RUN echo '#!/bin/sh\ncd /usr/local/ComfyUI\n/usr/bin/python3 main.py $*' > /usr/local/bin/comfyui && \
+    chmod +x /usr/local/bin/comfyui
+
+# Make sure we expose the port
+EXPOSE 8188
+
 ENTRYPOINT [ "/usr/local/bin/comfyui" ]
