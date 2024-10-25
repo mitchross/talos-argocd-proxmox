@@ -1,4 +1,6 @@
-FROM nvidia/cuda:12.2.0-base-ubuntu22.04
+
+# Base image with Python 3.11 and CUDA 12.5 support
+FROM nvidia/cuda:12.5.0-runtime-ubuntu22.04
 
 RUN apt-get update
 
