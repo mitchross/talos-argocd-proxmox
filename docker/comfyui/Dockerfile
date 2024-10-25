@@ -1,33 +1,49 @@
-# Base image with Python 3.11 and CUDA 12.5 support
-FROM nvidia/cuda:12.5.0-runtime-ubuntu22.04
+FROM nvidia/cuda:12.2.0-base-ubuntu22.04
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    python3-pip \
-    libgl1-mesa-glx \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update
 
-# Set working directory
-WORKDIR /app
+# Satisfy tzdata whingeing from APT
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=Etc/UTC
+RUN apt-get install -y tzdata
 
-# Copy the cloned ComfyUI repository
-COPY . /app
+# Install a current version of Python
+RUN apt-get -y install software-properties-common
+RUN add-apt-repository -y ppa:deadsnakes/ppa
+RUN apt-get update
+RUN apt-get install -y python3.11
+RUN apt-get install -y python3.11-dev
 
-# Install Python dependencies
-RUN pip install --upgrade pip
-#RUN pip install -r requirements.txt
+# And make sure it's the one we want
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 10
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
+RUN update-alternatives --auto python3
 
-# Clone and install ComfyUI Manager
-RUN git clone https://github.com/ltdrdata/ComfyUI-Manager.git /app/custom_nodes/ComfyUI-Manager && \
-    pip install -r /app/custom_nodes/ComfyUI-Manager/requirements.txt
+# PIP
+RUN apt-get install -y python3-pip
+RUN pip3 install --upgrade pip
 
-# Clone and install GGUF support for ComfyUI
-RUN git clone https://github.com/city96/ComfyUI-GGUF.git /app/custom_nodes/ComfyUI-GGUF && \
-    pip install --upgrade gguf
+# GIT
+RUN apt-get install -y git
 
-# Expose the port used by ComfyUI
-EXPOSE 8188
+# Now, start installing ComfyUI
+WORKDIR /usr/local
+RUN git clone https://github.com/comfyanonymous/ComfyUI.git
 
-# Run ComfyUI with the server binding to 0.0.0.0
-CMD ["python3", "main.py", "--listen", "0.0.0.0"]
+# Some custom nodes that I find useful
+WORKDIR /usr/local/ComfyUI/custom_nodes
+RUN git clone https://github.com/Extraltodeus/ComfyUI-AutomaticCFG
+RUN git clone https://github.com/Clybius/ComfyUI-Extra-samplers
+RUN git clone https://github.com/flowtyone/ComfyUI-Flowty-LDSR.git
+RUN git clone https://github.com/ltdrdata/ComfyUI-Manager
+RUN git clone https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git
+RUN git clone https://github.com/city96/ComfyUI_ExtraModels
+RUN git clone https://github.com/ssitu/ComfyUI_UltimateSDUpscale --recursive
+
+# Install all the package dependencies
+WORKDIR /usr/local/ComfyUI
+RUN pip3 install --default-timeout=1000 --no-cache-dir torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu122
+RUN find . -name requirements.txt -exec pip3 --no-input install --default-timeout=1000 --no-cache-dir -r {} \;
+
+COPY comfyui.sh /usr/local/bin/comfyui
+ENTRYPOINT [ "/usr/local/bin/comfyui" ]
