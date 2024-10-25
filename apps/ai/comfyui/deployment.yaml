@@ -41,9 +41,9 @@ spec:
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: "compute,utility"
           volumeMounts:
-            - name: models
+            - name: models-storage  # Changed to match volumeClaimTemplates
               mountPath: /usr/local/ComfyUI/models
-            - name: config
+            - name: config-storage  # Changed to match volumeClaimTemplates
               mountPath: /usr/local/ComfyUI/config
             - name: workspace
               mountPath: /usr/local/ComfyUI/output
@@ -59,3 +59,20 @@ spec:
             path: /usr/local/nvidia
       nodeSelector:
          nvidia.com/gpu.present: "true"
+  volumeClaimTemplates:
+    - metadata:
+        name: models-storage  # Changed to match volumeMount
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "openebs-zfspv-immediate"
+        resources:
+          requests:
+            storage: 500Gi
+    - metadata:
+        name: config-storage  # Changed to match volumeMount
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: "openebs-zfspv-immediate"
+        resources:
+          requests:
+            storage: 10Gi
