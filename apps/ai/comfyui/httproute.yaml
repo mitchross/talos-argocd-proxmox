@@ -3,12 +3,6 @@ kind: HTTPRoute
 metadata:
   name: comfyui
   namespace: comfyui
-  annotations:
-    hajimari.io/enable: "true"
-    hajimari.io/appName: "ComfyUI"
-    hajimari.io/icon: mdi:draw
-    hajimari.io/group: "AI"
-    hajimari.io/instance: "admin"
 spec:
   parentRefs:
     - name: internal

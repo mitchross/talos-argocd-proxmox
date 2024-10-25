@@ -20,8 +20,11 @@ spec:
       containers:
         - name: comfyui
           image: ghcr.io/mitchross/k3s-argocd-proxmox-comfyui:v1.0.0
+          args: ["--listen", "0.0.0.0"]
+          imagePullPolicy: Always
           ports:
             - containerPort: 8188
+              name: http
           resources:
             requests:
               cpu: 500m
@@ -39,36 +42,20 @@ spec:
               value: "compute,utility"
           volumeMounts:
             - name: models
-              mountPath: /data/models
+              mountPath: /usr/local/ComfyUI/models
             - name: config
-              mountPath: /data/config
-            - name: output
-              mountPath: /output
+              mountPath: /usr/local/ComfyUI/config
+            - name: workspace
+              mountPath: /usr/local/ComfyUI/output
             - name: nvidia-driver
               mountPath: /usr/local/nvidia
               readOnly: true
       volumes:
-        - name: output
-          emptyDir: {}
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: comfyui-workspace-pvc
         - name: nvidia-driver
           hostPath:
             path: /usr/local/nvidia
       nodeSelector:
         nvidia.com/gpu.present: "true"
-  volumeClaimTemplates:
-    - metadata:
-        name: models
-      spec:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "openebs-zfspv-immediate"
-        resources:
-          requests:
-            storage: 500Gi
-    - metadata:
-        name: config
-      spec:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "openebs-zfspv-immediate"
-        resources:
-          requests:
-            storage: 10Gi
