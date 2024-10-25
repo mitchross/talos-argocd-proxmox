@@ -19,7 +19,7 @@ spec:
       runtimeClassName: nvidia
       containers:
         - name: comfyui
-          image:  ghcr.io/mitchross/k3s-argocd-proxmox-comfyui:latest
+          image:  ghcr.io/mitchross/k3s-argocd-proxmox-comfyui:latest@sha256:1d254c07e3a6fa3ec228a69586efc62a2289fa34cd231ec3d551ec81c1fc0592
           ports:
             - containerPort: 8188
           resources:
