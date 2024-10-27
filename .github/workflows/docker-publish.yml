@@ -1,7 +1,7 @@
 name: Docker Publish ComfyUI
 on:
   schedule:
-    - cron: '34 6 * * *'  # Fixed cron syntax
+    - cron: '0 0 * * 0'  # Fixed cron syntax
   push:
     branches: [ "main" ]
     paths:
