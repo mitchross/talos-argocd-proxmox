@@ -27,12 +27,12 @@ spec:
               name: http
           resources:
             requests:
-              cpu: 500m
-              memory: 2Gi
-              nvidia.com/gpu: 1
+              cpu: 4000m
+              memory: 16Gi
             limits:
-              memory: 60Gi
-              nvidia.com/gpu: 1
+              cpu: 8000m
+              memory: 38Gi
+              nvidia.com/gpu: 2  # Request 2 GPUs
           securityContext:
             privileged: true
           env:
