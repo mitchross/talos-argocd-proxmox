@@ -17,6 +17,10 @@ spec:
         reloader.stakater.com/auto: "true"
     spec:
       runtimeClassName: nvidia
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
       containers:
         - name: comfyui
           image: ghcr.io/mitchross/k3s-argocd-proxmox-comfyui:v1.0.2
@@ -32,21 +36,28 @@ spec:
             limits:
               cpu: 8000m
               memory: 38Gi
-              nvidia.com/gpu: 2  # Request 2 GPUs
+              nvidia.com/gpu: 2
           securityContext:
-            privileged: true
+            allowPrivilegeEscalation: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            runAsUser: 1000
+            runAsGroup: 1000
           env:
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: "compute,utility"
           volumeMounts:
-            - name: models-storage  # Changed to match volumeClaimTemplates
+            - name: models-storage
               mountPath: /usr/local/ComfyUI/models
-            - name: config-storage  # Changed to match volumeClaimTemplates
+              subPath: models
+            - name: config-storage
               mountPath: /usr/local/ComfyUI/config
+              subPath: config
             - name: workspace
               mountPath: /usr/local/ComfyUI/output
+              subPath: output
             - name: nvidia-driver
               mountPath: /usr/local/nvidia
               readOnly: true
@@ -61,7 +72,7 @@ spec:
          nvidia.com/gpu.present: "true"
   volumeClaimTemplates:
     - metadata:
-        name: models-storage  # Changed to match volumeMount
+        name: models-storage
       spec:
         accessModes: [ "ReadWriteOnce" ]
         storageClassName: "openebs-zfspv-immediate"
@@ -69,7 +80,7 @@ spec:
           requests:
             storage: 500Gi
     - metadata:
-        name: config-storage  # Changed to match volumeMount
+        name: config-storage
       spec:
         accessModes: [ "ReadWriteOnce" ]
         storageClassName: "openebs-zfspv-immediate"
