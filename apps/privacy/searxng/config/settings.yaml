@@ -1,43 +1,36 @@
-# Full SearXNG Configuration File
 use_default_settings: true
 
-
-
 server:
-    base_url: 'https://search.vanillax.me/'  # Your instance URL
-    secret_key: "generate_random_key_here"  # Generate a random secure key
-    bind_address: "0.0.0.0"  # Listen on all interfaces instead of just localhost
-    port: 8888
-    # Allow external access
+    base_url: 'https://search.vanillax.me'  # Remove trailing slash
+    secret_key: "${SEARXNG_SECRET_KEY}"  # Use from secret
+    bind_address: "0.0.0.0"
+    port: 8080  # Match with deployment port
     public_instance: true
-    limiter: true  # Keep rate limiting for protection
+    limiter: true
+    method: "GET"  # Explicitly set GET method
+    default_http_headers:
+        X-Content-Type-Options: nosniff
+        X-Download-Options: noopen
+        X-Robots-Tag: noindex, nofollow
+        Referrer-Policy: no-referrer
+        Access-Control-Allow-Origin: "*"
 
 redis:
     url: redis://192.168.10.44:6379
 
 search:
-    autocomplete: duckduckgo
     safe_search: 0
     formats:
         - html
         - json
+    autocomplete: "duckduckgo"
     default_lang: "en-US"
-    results_on_new_tab: true
-    anonymous_view: true
-
-general:
-    instance_name: RostSearch
-    debug: false
-    enable_metrics: true
 
 ui:
     static_use_hash: true
     default_theme: simple
     theme_args:
         simple_style: dark
-    infinite_scroll: true
-    results_on_new_tab: true
-    query_in_title: true
 
 enabled_plugins:
     - Basic Calculator

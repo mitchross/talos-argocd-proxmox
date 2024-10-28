@@ -8,7 +8,6 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
-  - fakesecret.yaml
 
 configMapGenerator:
   - name: searxng-config-settings

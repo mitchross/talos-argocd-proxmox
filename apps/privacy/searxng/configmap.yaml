@@ -3,11 +3,10 @@ kind: ConfigMap
 metadata:
   name: searxng
   namespace: searxng
-  labels:
-    app.kubernetes.io/name: searxng
 data:
-  # This is redundant for now, however keeping it here in
-  # case 
   SEARXNG_DEBUG: "false"
   SEARXNG_URL: "https://search.vanillax.me"
-  SEARXNG_PORT: "8080"
+  SEARXNG_PORT: "8080"  # Match with settings.yml
+  SEARXNG_BIND_ADDRESS: "0.0.0.0"
+  SEARXNG_BASE_URL: "https://search.vanillax.me"
+  SEARXNG_INSTANCE_NAME: "VSearch"
