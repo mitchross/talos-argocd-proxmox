@@ -10,3 +10,17 @@ spec:
     requests:
       storage: 100Gi  # Adjust size as needed
   storageClassName: openebs-zfspv-immediate
+---
+# New PVC for cache storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: comfyui-cache-pvc
+  namespace: comfyui
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: openebs-zfspv-immediate

@@ -17,10 +17,17 @@ spec:
         reloader.stakater.com/auto: "true"
     spec:
       runtimeClassName: nvidia
-      securityContext:
-        fsGroup: 1000
-        runAsUser: 1000
-        runAsGroup: 1000
+      initContainers:
+        - name: init-permissions
+          image: busybox
+          command: ['sh', '-c']
+          args:
+            - |
+              mkdir -p /cache/.cache/pip /cache/.cache/huggingface /cache/comfyui-logs;
+              chmod -R 777 /cache;
+          volumeMounts:
+            - name: cache-storage
+              mountPath: /cache
       containers:
         - name: comfyui
           image: ghcr.io/mitchross/k3s-argocd-proxmox-comfyui:v1.0.2
@@ -37,27 +44,26 @@ spec:
               cpu: 8000m
               memory: 38Gi
               nvidia.com/gpu: 2
-          securityContext:
-            allowPrivilegeEscalation: true
-            capabilities:
-              add: ["SYS_ADMIN"]
-            runAsUser: 1000
-            runAsGroup: 1000
           env:
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: "compute,utility"
+            - name: PIP_CACHE_DIR
+              value: "/cache/.cache/pip"
+            - name: TRANSFORMERS_CACHE
+              value: "/cache/.cache/huggingface"
+            - name: HOME
+              value: "/cache"
           volumeMounts:
             - name: models-storage
               mountPath: /usr/local/ComfyUI/models
-              subPath: models
             - name: config-storage
               mountPath: /usr/local/ComfyUI/config
-              subPath: config
             - name: workspace
               mountPath: /usr/local/ComfyUI/output
-              subPath: output
+            - name: cache-storage
+              mountPath: /cache
             - name: nvidia-driver
               mountPath: /usr/local/nvidia
               readOnly: true
@@ -65,6 +71,9 @@ spec:
         - name: workspace
           persistentVolumeClaim:
             claimName: comfyui-workspace-pvc
+        - name: cache-storage
+          persistentVolumeClaim:
+            claimName: comfyui-cache-pvc
         - name: nvidia-driver
           hostPath:
             path: /usr/local/nvidia
