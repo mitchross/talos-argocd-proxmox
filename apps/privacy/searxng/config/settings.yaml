@@ -1,66 +1,127 @@
-# Issue Analysis & Proposed Configuration
+# Full SearXNG Configuration File
+use_default_settings: true
 
-# 1. Current Issues:
-# - 403 Forbidden error on search endpoint
-# - Redis configuration may have typo
-# - Missing essential security and access configurations
-
-# 2. Corrected Configuration
 server:
-  limiter: true
-  image_proxy: true
-  method: GET
-  # Add these important sections
-  secret_key: "GENERATE_RANDOM_KEY_HERE"  # Required for security
-  bind_address: "0.0.0.0"  # Allow external connections
-  port: 8080  # Specify port explicitly
+    base_url: https://search.vanillax.me/  # Your instance URL
+    secret_key: "CHANGE_THIS_TO_SOMETHING_RANDOM"  # Generate a random key
+    bind_address: "0.0.0.0"  # Listen on all interfaces
+    port: 8080  # Default port
+    limiter: true  # Rate limiting
+    image_proxy: true
+    method: GET
+    proxies:
+        - 127.0.0.1
+    cors_enabled: true  # Enable if you need CORS support
+    http_protocol_version: "1.1"
 
 redis:
-  # Fix typo in Redis URL (missing /)
-  url: redis://192.168.10.44:6379
+    url: redis://192.168.10.44:6379
 
 search:
-  autocomplete: duckduckgo
-  formats:
-    - html
-    - json
-  # Add safe search settings
-  safe_search: 1
-  language: en-US
+    autocomplete: duckduckgo
+    safe_search: 1  # 0=None, 1=Moderate, 2=Strict
+    formats:
+        - html
+        - json
+    default_lang: "en-US"
+    results_on_new_tab: true
+    anonymous_view: true
 
 general:
-  instance_name: RostSearch
-  debug: false  # Ensure debug is off in production
+    instance_name: RostSearch
+    debug: false
+    enable_metrics: true
 
 ui:
-  static_use_hash: true
-  default_theme: simple
-  theme_args:
-    simple_style: dark
-  infinite_scroll: true
-  results_on_new_tab: true
+    static_use_hash: true
+    default_theme: simple
+    theme_args:
+        simple_style: dark
+    infinite_scroll: true
+    results_on_new_tab: true
+    query_in_title: true
 
-# Keep your existing plugins and hostnames configuration
 enabled_plugins:
-  - Basic Calculator
-  - Hash plugin
-  - Hostnames plugin
-  - Open Access DOI rewrite
-  - Self Informations
-  - Tracker URL remover
-  - Unit converter plugin
+    - Basic Calculator
+    - Hash plugin
+    - Hostnames plugin
+    - Open Access DOI rewrite
+    - Self Informations
+    - Tracker URL remover
+    - Unit converter plugin
 
 hostnames:
-  high_priority:
-    - (.*)\/blog\/(.*)
-    - (.*\.)?wikipedia.org$
-    # ... rest of your existing hostnames ...
-  replace:
-    (www\.)?reddit\.com$: libreddit.vanillax.me
+    high_priority:
+        - (.*)\/blog\/(.*)
+        - (.*\.)?wikipedia.org$
+        - (.*\.)?github.com$
+        - (.*\.)?reddit.com$
+        - (.*\.)?linuxserver.io$
+        - (.*\.)?docker.com$
+        - (.*\.)?archlinux.org$
+        - (.*\.)?stackoverflow.com$
+        - (.*\.)?askubuntu.com$
+        - (.*\.)?superuser.com$
+    replace:
+        (www\.)?reddit\.com$: libreddit.vanillax.me
 
-# Add security settings
-server:
-  proxies:
-    - 127.0.0.1
-  cors_enabled: true  # If you need CORS
-  base_url: https://search.vanillax.me/  # Set your base URL
+engines:
+    - name: google
+      use_mobile_ui: false
+    - name: duckduckgo
+      disable: false
+    - name: bing
+      disable: false
+    - name: wikipedia
+      disable: false
+    - name: stackoverflow
+      disable: false
+    - name: github
+      disable: false
+
+outgoing:
+    request_timeout: 6.0
+    max_request_timeout: 10.0
+    pool_connections: 100
+    pool_maxsize: 100
+    enable_http2: true
+
+categories_order:
+    - general
+    - files
+    - images
+    - videos
+    - news
+    - map
+    - it
+    - science
+    - social media
+
+categories:
+    general:
+        default: true
+    files:
+        default: false
+    images:
+        default: false
+    videos:
+        default: false
+    news:
+        default: false
+    map:
+        default: false
+    it:
+        default: false
+    science:
+        default: false
+    social media:
+        default: false
+
+default_preferences:
+    language: "en-US"
+    locale: "en"
+    autocomplete: "duckduckgo"
+    image_proxy: true
+    method: "GET"
+    safesearch: 1
+    theme: "simple"
