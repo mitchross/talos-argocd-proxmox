@@ -1,25 +1,23 @@
 # Full SearXNG Configuration File
 use_default_settings: true
 
+
+
 server:
-    base_url: https://search.vanillax.me/  # Your instance URL
-    secret_key: "CHANGE_THIS_TO_SOMETHING_RANDOM"  # Generate a random key
-    bind_address: "0.0.0.0"  # Listen on all interfaces
-    port: 8080  # Default port
-    limiter: true  # Rate limiting
-    image_proxy: true
-    method: GET
-    proxies:
-        - 127.0.0.1
-    cors_enabled: true  # Enable if you need CORS support
-    http_protocol_version: "1.1"
+    base_url: 'https://search.vanillax.me/'  # Your instance URL
+    secret_key: "generate_random_key_here"  # Generate a random secure key
+    bind_address: "0.0.0.0"  # Listen on all interfaces instead of just localhost
+    port: 8888
+    # Allow external access
+    public_instance: true
+    limiter: true  # Keep rate limiting for protection
 
 redis:
     url: redis://192.168.10.44:6379
 
 search:
     autocomplete: duckduckgo
-    safe_search: 1  # 0=None, 1=Moderate, 2=Strict
+    safe_search: 0
     formats:
         - html
         - json
