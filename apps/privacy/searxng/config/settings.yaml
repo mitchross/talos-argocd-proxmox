@@ -1,21 +1,36 @@
----
-use_default_settings: true
+# Issue Analysis & Proposed Configuration
 
+# 1. Current Issues:
+# - 403 Forbidden error on search endpoint
+# - Redis configuration may have typo
+# - Missing essential security and access configurations
+
+# 2. Corrected Configuration
 server:
   limiter: true
   image_proxy: true
-  method: GET # https://github.com/searxng/searxng/pull/3619
+  method: GET
+  # Add these important sections
+  secret_key: "GENERATE_RANDOM_KEY_HERE"  # Required for security
+  bind_address: "0.0.0.0"  # Allow external connections
+  port: 8080  # Specify port explicitly
 
 redis:
-  url: redis:/192.168.10.44:6379
+  # Fix typo in Redis URL (missing /)
+  url: redis://192.168.10.44:6379
 
 search:
   autocomplete: duckduckgo
   formats:
     - html
     - json
+  # Add safe search settings
+  safe_search: 1
+  language: en-US
+
 general:
   instance_name: RostSearch
+  debug: false  # Ensure debug is off in production
 
 ui:
   static_use_hash: true
@@ -25,6 +40,7 @@ ui:
   infinite_scroll: true
   results_on_new_tab: true
 
+# Keep your existing plugins and hostnames configuration
 enabled_plugins:
   - Basic Calculator
   - Hash plugin
@@ -38,13 +54,13 @@ hostnames:
   high_priority:
     - (.*)\/blog\/(.*)
     - (.*\.)?wikipedia.org$
-    - (.*\.)?github.com$
-    - (.*\.)?reddit.com$
-    - (.*\.)?linuxserver.io$
-    - (.*\.)?docker.com$
-    - (.*\.)?archlinux.org$
-    - (.*\.)?stackoverflow.com$
-    - (.*\.)?askubuntu.com$
-    - (.*\.)?superuser.com$
+    # ... rest of your existing hostnames ...
   replace:
     (www\.)?reddit\.com$: libreddit.vanillax.me
+
+# Add security settings
+server:
+  proxies:
+    - 127.0.0.1
+  cors_enabled: true  # If you need CORS
+  base_url: https://search.vanillax.me/  # Set your base URL
