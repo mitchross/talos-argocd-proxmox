@@ -30,7 +30,7 @@ spec:
               mountPath: /cache
       containers:
         - name: comfyui
-          image: ghcr.io/mitchross/k3s-argocd-proxmox-comfyui:v1.0.2
+          image: ghcr.io/mitchross/k3s-argocd-proxmox-comfyui:v1.0.3
           args: ["--listen", "0.0.0.0"]
           imagePullPolicy: Always
           ports:
