@@ -1,7 +1,7 @@
 connect:
   credentials:
-    existingSecret: "1password-credentials"
-    existingSecretKey: "1password-credentials.json"
+    existingSecret: 1password-credentials
+    existingSecretKey: 1password-credentials.json
 
   api:
     enabled: true
@@ -26,8 +26,8 @@ connect:
 operator:
   create: true
   token:
-    existingSecret: "1password-operator-token"
-    existingSecretKey: "token"
+    existingSecret: 1password-operator-token
+    existingSecretKey: token
   resources:
     requests:
       memory: "150Mi"
