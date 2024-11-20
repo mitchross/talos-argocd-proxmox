@@ -1,10 +1,48 @@
+# 1Password Connect API and Sync services
 connect:
+  # Credentials configuration
   credentials:
     existingSecret: 1password-credentials
-    existingSecretKey: 1password-credentials.json  # Make sure this matches the key in your secret
+    existingSecretKey: 1password-credentials.json
 
+  # API Service configuration
+  api:
+    enabled: true
+    resources:
+      requests:
+        memory: "150Mi"
+        cpu: "100m"
+      limits:
+        memory: "300Mi"
+        cpu: "200m"
+
+  # Sync Service configuration
+  sync:
+    enabled: true
+    resources:
+      requests:
+        memory: "150Mi"
+        cpu: "100m"
+      limits:
+        memory: "300Mi"
+        cpu: "200m"
+
+# 1Password Operator configuration
 operator:
   create: true
   token:
     existingSecret: 1password-operator-token
     existingSecretKey: token
+  resources:
+    requests:
+      memory: "150Mi"
+      cpu: "100m"
+    limits:
+      memory: "300Mi"
+      cpu: "200m"
+
+# Global settings
+global:
+  # Set to true if using a private container registry
+  imageRegistry: ""
+  imagePullSecrets: []
