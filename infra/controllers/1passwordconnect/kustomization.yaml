@@ -12,6 +12,7 @@ helmCharts:
     releaseName: connect
     version: 1.12.1
     namespace: 1passwordconnect
+    includeCRDs: true   
     valuesInline:
       connect:
         credentialsName: "1password-credentials"    # instead of existingSecret
