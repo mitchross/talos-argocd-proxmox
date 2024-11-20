@@ -12,4 +12,12 @@ helmCharts:
     releaseName: connect
     version: 1.12.1
     namespace: 1passwordconnect
-    valuesFile: values.yaml
+    valuesInline:
+      connect:
+        credentialsName: "1password-credentials"    # instead of existingSecret
+        credentialsKey: "1password-credentials.json"  # instead of existingSecretKey
+      operator:
+        create: true
+        token:
+          name: "1password-operator-token"    # instead of existingSecret
+          key: "token"                        # instead of existingSecretKey
