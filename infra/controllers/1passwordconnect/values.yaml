@@ -2,14 +2,6 @@ connect:
   credentials:
     existingSecret: 1password-credentials
     existingSecretKey: 1password-credentials.json
-
-operator:
-  create: true
-  token:
-    existingSecret: 1password-operator-token
-    existingSecretKey: token
-
-# Optional resource limits if you want them
   api:
     enabled: true
     resources:
@@ -19,7 +11,6 @@ operator:
       limits:
         memory: "300Mi"
         cpu: "200m"
-
   sync:
     enabled: true
     resources:
@@ -29,3 +20,16 @@ operator:
       limits:
         memory: "300Mi"
         cpu: "200m"
+
+operator:
+  create: true
+  token:
+    existingSecret: 1password-operator-token
+    existingSecretKey: token
+  resources:
+    requests:
+      memory: "150Mi"
+      cpu: "100m"
+    limits:
+      memory: "300Mi"
+      cpu: "200m"
