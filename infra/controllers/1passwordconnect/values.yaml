@@ -1,7 +1,4 @@
 connect:
-  credentials:
-    existingSecret: 1password-credentials
-    existingSecretKey: 1password-credentials.json
   api:
     enabled: true
     resources:
@@ -20,6 +17,9 @@ connect:
       limits:
         memory: "300Mi"
         cpu: "200m"
+  # Changed this section
+  existingSecret: 1password-credentials
+  existingSecretKey: 1password-credentials.json
 
 operator:
   create: true
