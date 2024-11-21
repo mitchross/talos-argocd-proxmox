@@ -17,14 +17,15 @@ connect:
       limits:
         memory: "300Mi"
         cpu: "200m"
-  credentials:
-    existingSecret: "1password-credentials"    # Reference to the secret that will be created separately
-    secretKey: "1password-credentials.json"    # Key in the secret containing the credentials
+  # Simplified credentials structure
+  credentialsSecret:
+    name: "1password-credentials"
+    key: "1password-credentials.json"
 
 operator:
   create: true
-  token:
-    existingSecret: "1password-operator-token"  # Reference to the operator token secret
+  tokenSecret:
+    name: "1password-operator-token"
     key: "token"
   resources:
     requests:
