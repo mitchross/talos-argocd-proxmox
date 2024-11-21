@@ -17,16 +17,20 @@ connect:
       limits:
         memory: "300Mi"
         cpu: "200m"
-  # Simplified credentials structure
+  # Keep our preferred secret name
   credentialsSecret:
     name: "1password-credentials"
     key: "1password-credentials.json"
+  # Add the secretName override
+  secretName: "1password-credentials"
 
 operator:
   create: true
   tokenSecret:
     name: "1password-operator-token"
     key: "token"
+  # Add the secretName override
+  secretName: "1password-operator-token"
   resources:
     requests:
       memory: "150Mi"
@@ -36,3 +40,8 @@ operator:
       cpu: "200m"
   autoRestart: true
   pollingInterval: 300
+
+  ##he key additions are:
+
+#Added connect.secretName to override the default op-credentials name
+#Added operator.secretName to override the default onepassword-token name
