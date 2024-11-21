@@ -17,16 +17,16 @@ connect:
       limits:
         memory: "300Mi"
         cpu: "200m"
-  # Match the secret name from your README
-  existingSecret: "1password-credentials"   
-  existingSecretKey: "1password-credentials.json"
+  # Specify the credentials configuration
+  credentials:
+    secretName: "1password-credentials"    # Your preferred name
+    secretKey: "1password-credentials.json"
 
 operator:
   create: true
   token:
-    # Match the secret name from your README
-    existingSecret: "1password-operator-token"    
-    existingSecretKey: "token"
+    name: "1password-operator-token"    # Your preferred name
+    key: "token"
   resources:
     requests:
       memory: "150Mi"
