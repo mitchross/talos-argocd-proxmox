@@ -1,7 +1,7 @@
 connect:
   credentials:
-    existingSecret: 1password-credentials
-    existingSecretKey: 1password-credentials.json
+    existingSecret: "1password-credentials"
+    existingSecretKey: "1password-credentials.json"
   api:
     enabled: true
     resources:
@@ -12,7 +12,7 @@ connect:
         memory: "300Mi"
         cpu: "200m"
   sync:
-    enabled: true
+    enabled: true 
     resources:
       requests:
         memory: "150Mi"
@@ -20,12 +20,19 @@ connect:
       limits:
         memory: "300Mi"
         cpu: "200m"
+  probes:
+    readiness: true
+    liveness: true
+  tls:
+    enabled: true  # If you want TLS
+  podAnnotations:
+    checksum/config: ${CHECKSUM}  # For config changes detection
 
 operator:
   create: true
   token:
-    existingSecret: 1password-operator-token
-    existingSecretKey: token
+    existingSecret: "1password-operator-token"
+    existingSecretKey: "token"
   resources:
     requests:
       memory: "150Mi"
@@ -33,3 +40,5 @@ operator:
     limits:
       memory: "300Mi"
       cpu: "200m"
+  autoRestart: true  # For automatic deployment updates
+  pollingInterval: 300  # More frequent updates if needed
