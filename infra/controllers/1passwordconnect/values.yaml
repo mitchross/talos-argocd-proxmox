@@ -17,24 +17,17 @@ connect:
       limits:
         memory: "300Mi"
         cpu: "200m"
-  # Configure main credentials secret
-  credentialsSecret:
-    name: "1password-credentials"
-    key: "1password-credentials.json"
   
-  # Environment variable configuration
-  env:
-    - name: OP_SESSION
-      valueFrom:
-        secretKeyRef:
-          name: "1password-credentials"  # Use our custom secret name
-          key: "1password-credentials.json"
+  # This is the correct parameter for the credentials secret name
+  credentialsName: "1password-credentials"    # Instead of credentialsSecret
+  credentialsKey: "1password-credentials.json"
 
 operator:
   create: true
-  tokenSecret:
-    name: "1password-operator-token"
-    key: "token"
+  # This is the correct parameter for the operator token
+  token:
+    name: "1password-operator-token"    # This sets the secret name for the operator token
+    key: "token"                        # The key within the secret
   resources:
     requests:
       memory: "150Mi"
@@ -44,6 +37,3 @@ operator:
       cpu: "200m"
   autoRestart: true
   pollingInterval: 300
-
-#Added connect.secretName to override the default op-credentials name
-#Added operator.secretName to override the default onepassword-token name
