@@ -3,9 +3,9 @@ kind: Kustomization
 
 resources:
   - ns.yaml
-  - cluster-issuer.yaml
-  - onepass-secret.yaml
   - cloudflare-external-secret.yaml
+  - cluster-issuer.yaml
+
 
 helmCharts:
   - name: cert-manager
