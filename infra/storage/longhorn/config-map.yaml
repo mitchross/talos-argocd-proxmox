@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: longhorn-disk-config
+  namespace: longhorn-system
+data:
+  config.json: |
+    [
+      {
+        "path": "/mnt/PNY232323060701001C5",
+        "allowScheduling": true
+      },
+      {
+        "path": "/mnt/PNY232323060701001C1",
+        "allowScheduling": true
+      },
+      {
+        "path": "/mnt/PNY232323060701001BD",
+        "allowScheduling": true
+      },
+      {
+        "path": "/mnt/PNY232323060701001C6",
+        "allowScheduling": true
+      }
+    ]
