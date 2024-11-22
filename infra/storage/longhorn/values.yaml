@@ -1,2 +1,36 @@
 preUpgradeChecker:
   jobEnabled: false
+
+defaultSettings:
+  defaultDataPath: /mnt
+  createDefaultDiskLabeledNodes: true
+  defaultDataLocality: disabled
+  replicaAutoBalance: least-effort
+
+persistence:
+  defaultClass: true
+  defaultFsType: ext4
+  defaultMountPath: /mnt
+  
+nodeSelector: {}
+
+longhornManager:
+  nodeSelector: {}
+
+defaultDataPath: /mnt
+
+nodes:
+  - name: vanillax-ai  # Replace with your node name from 'kubectl get nodes'
+    disks:
+      PNY232323060701001C5:
+        path: /mnt/PNY232323060701001C5
+        allowScheduling: true
+      PNY232323060701001C1:
+        path: /mnt/PNY232323060701001C1
+        allowScheduling: true
+      PNY232323060701001BD:
+        path: /mnt/PNY232323060701001BD
+        allowScheduling: true
+      PNY232323060701001C6:
+        path: /mnt/PNY232323060701001C6
+        allowScheduling: true
