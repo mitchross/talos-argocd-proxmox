@@ -20,7 +20,7 @@ chmod 600 ~/.kube/config
 
 ```shell
 export SETUP_NODEIP=192.168.10.11
-export SETUP_CLUSTERTOKEN=randomtokensecret1234567891210427
+export SETUP_CLUSTERTOKEN=randomtokensecret123456789567556556
 
 # Install K3s
 curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.31.2+k3s1" \
@@ -52,7 +52,7 @@ rm cilium-linux-${CLI_ARCH}.tar.gz
 API_SERVER_IP=192.168.10.11
 API_SERVER_PORT=6443
 cilium install \
-  --version 1.16.3 \
+  --version 1.16.4 \
   --set k8sServiceHost=${API_SERVER_IP} \
   --set k8sServicePort=${API_SERVER_PORT} \
   --set kubeProxyReplacement=true \
