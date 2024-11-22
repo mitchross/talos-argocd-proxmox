@@ -27,18 +27,22 @@ nodes:
         allowScheduling: true
         storageReserved: 10Gi
         tags: ["ssd", "data"]
+        diskType: filesystem
       disk-ssd2:
         path: /mnt/PNY232323060701001C1
         allowScheduling: true
         storageReserved: 10Gi
         tags: ["ssd", "data"]
+        diskType: filesystem
       disk-ssd3:
         path: /mnt/PNY232323060701001BD
         allowScheduling: true
         storageReserved: 10Gi
         tags: ["ssd", "backup"]
+        diskType: filesystem
       disk-ssd4:
         path: /mnt/PNY232323060701001C6
         allowScheduling: true
         storageReserved: 10Gi
         tags: ["ssd", "backup"]
+        diskType: filesystem
