@@ -19,9 +19,9 @@ helmCharts:
     namespace: openebs
     includeCRDs: true
     version: 3.10.0
-    valuesFile: values.yaml
+#     valuesFile: values.yaml
 
-configMapGenerator:
-  - name: openebs-values
-    files:
-      - values.yaml
+# configMapGenerator:
+#   - name: openebs-values
+#     files:
+#       - values.yaml
