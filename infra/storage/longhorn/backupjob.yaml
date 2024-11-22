@@ -1,0 +1,13 @@
+apiVersion: longhorn.io/v1beta1
+kind: RecurringJob
+metadata:
+  name: backup-daily
+  namespace: longhorn-system
+spec:
+  cron: "0 0 * * *"  # Daily at midnight
+  task: "backup"
+  groups: ["default"]  # Apply to volumes in default group
+  retain: 7  # Keep last 7 backups
+  concurrency: 2
+  labels:
+    recurring-job: backup

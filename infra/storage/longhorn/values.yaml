@@ -2,35 +2,28 @@ preUpgradeChecker:
   jobEnabled: false
 
 defaultSettings:
-  defaultDataPath: /mnt
-  createDefaultDiskLabeledNodes: true
-  defaultDataLocality: disabled
+  defaultReplicaCount: 2  # Store 2 copies of each volume
+  defaultDataLocality: best-effort  # Try to keep a replica on the same node as workload
   replicaAutoBalance: least-effort
-
-persistence:
-  defaultClass: true
-  defaultFsType: ext4
-  defaultMountPath: /mnt
-  
-nodeSelector: {}
-
-longhornManager:
-  nodeSelector: {}
-
-defaultDataPath: /mnt
+  storageOverProvisioningPercentage: 200  # Allow some overprovisioning
+  storageMinimalAvailablePercentage: 25
 
 nodes:
-  - name: vanillax-ai  # Replace with your node name from 'kubectl get nodes'
+  - name: vanillax-ai
     disks:
       PNY232323060701001C5:
         path: /mnt/PNY232323060701001C5
         allowScheduling: true
+        tags: ["ssd", "data"]
       PNY232323060701001C1:
         path: /mnt/PNY232323060701001C1
         allowScheduling: true
+        tags: ["ssd", "data"]
       PNY232323060701001BD:
         path: /mnt/PNY232323060701001BD
         allowScheduling: true
+        tags: ["ssd", "backup"]
       PNY232323060701001C6:
         path: /mnt/PNY232323060701001C6
         allowScheduling: true
+        tags: ["ssd", "backup"]

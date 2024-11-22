@@ -1,0 +1,25 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-ssd-fast
+parameters:
+  numberOfReplicas: "2"
+  diskSelector: "ssd,data"  # Use only SSDs tagged for data
+  nodeSelector: "kubernetes.io/hostname:vanillax-ai"
+provisioner: driver.longhorn.io
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-backup
+parameters:
+  numberOfReplicas: "1"
+  diskSelector: "ssd,backup"  # Use only SSDs tagged for backup
+  nodeSelector: "kubernetes.io/hostname:vanillax-ai"
+provisioner: driver.longhorn.io
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
