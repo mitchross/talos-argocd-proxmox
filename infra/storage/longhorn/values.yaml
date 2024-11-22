@@ -1,29 +1,44 @@
 preUpgradeChecker:
   jobEnabled: false
 
+persistence:
+  defaultClass: true
+  defaultFsType: ext4
+
+longhornManager:
+  nodeSelector: {}
+
 defaultSettings:
-  defaultReplicaCount: 2  # Store 2 copies of each volume
-  defaultDataLocality: best-effort  # Try to keep a replica on the same node as workload
+  defaultDataPath: /mnt
+  createDefaultDiskLabeledNodes: false
+  defaultReplicaCount: 2
   replicaAutoBalance: least-effort
-  storageOverProvisioningPercentage: 200  # Allow some overprovisioning
+  storageOverProvisioningPercentage: 200
   storageMinimalAvailablePercentage: 25
+  guaranteedEngineManagerCPU: 0.2
+  guaranteedReplicaManagerCPU: 0.2
 
 nodes:
   - name: vanillax-ai
+    allowScheduling: true
     disks:
-      PNY232323060701001C5:
+      disk1:
         path: /mnt/PNY232323060701001C5
         allowScheduling: true
+        storageReserved: 10Gi
         tags: ["ssd", "data"]
-      PNY232323060701001C1:
+      disk2:
         path: /mnt/PNY232323060701001C1
         allowScheduling: true
+        storageReserved: 10Gi
         tags: ["ssd", "data"]
-      PNY232323060701001BD:
+      disk3:
         path: /mnt/PNY232323060701001BD
         allowScheduling: true
+        storageReserved: 10Gi
         tags: ["ssd", "backup"]
-      PNY232323060701001C6:
+      disk4:
         path: /mnt/PNY232323060701001C6
         allowScheduling: true
+        storageReserved: 10Gi
         tags: ["ssd", "backup"]
