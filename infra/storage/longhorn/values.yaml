@@ -4,18 +4,14 @@ preUpgradeChecker:
 persistence:
  defaultClass: true
  defaultFsType: ext4
- autoCreateCustomResources: false
- diskSelector: ["ssd"]
- nodeSelector: ["node.longhorn.io/create-default-disk!=true"]
- defaultDiskConfigMap: longhorn-disk-config
+ storageOverProvisioningPercentage: 200
+ storageMinimalAvailablePercentage: 25
 
 defaultSettings:
- defaultDataPath: /mnt
+ defaultDataPath: /var/lib/longhorn
  createDefaultDiskLabeledNodes: false
  defaultReplicaCount: 2
  replicaAutoBalance: least-effort
- storageOverProvisioningPercentage: 200
- storageMinimalAvailablePercentage: 25
  guaranteedEngineManagerCPU: 0.2
  guaranteedReplicaManagerCPU: 0.2
  autoSalvage: true
@@ -26,27 +22,26 @@ nodes:
  - name: vanillax-ai
    allowScheduling: true
    disks:
+     default-disk:
+       path: /var/lib/longhorn
+       allowScheduling: false
      disk-1:
        path: /mnt/PNY232323060701001C5
        allowScheduling: true
        storageReserved: 10Gi
        tags: ["ssd", "data"]
-       mountPropagation: "Bidirectional"
      disk-2:
        path: /mnt/PNY232323060701001C1
        allowScheduling: true
        storageReserved: 10Gi
        tags: ["ssd", "data"]
-       mountPropagation: "Bidirectional"
      disk-3:
        path: /mnt/PNY232323060701001BD
        allowScheduling: true
        storageReserved: 10Gi
        tags: ["ssd", "backup"]
-       mountPropagation: "Bidirectional"
      disk-4:
        path: /mnt/PNY232323060701001C6
        allowScheduling: true
        storageReserved: 10Gi
        tags: ["ssd", "backup"]
-       mountPropagation: "Bidirectional"
