@@ -5,9 +5,6 @@ persistence:
   defaultClass: true
   defaultFsType: ext4
 
-longhornManager:
-  nodeSelector: {}
-
 defaultSettings:
   defaultDataPath: /mnt
   createDefaultDiskLabeledNodes: false
@@ -22,22 +19,22 @@ nodes:
   - name: vanillax-ai
     allowScheduling: true
     disks:
-      disk1:
+      disk-1:
         path: /mnt/PNY232323060701001C5
         allowScheduling: true
         storageReserved: 10Gi
         tags: ["ssd", "data"]
-      disk2:
+      disk-2:
         path: /mnt/PNY232323060701001C1
         allowScheduling: true
         storageReserved: 10Gi
         tags: ["ssd", "data"]
-      disk3:
+      disk-3:
         path: /mnt/PNY232323060701001BD
         allowScheduling: true
         storageReserved: 10Gi
         tags: ["ssd", "backup"]
-      disk4:
+      disk-4:
         path: /mnt/PNY232323060701001C6
         allowScheduling: true
         storageReserved: 10Gi
