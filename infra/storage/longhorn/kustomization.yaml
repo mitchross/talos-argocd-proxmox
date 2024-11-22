@@ -6,6 +6,7 @@ resources:
   - namespace.yaml
   - longhorn-storage-class.yaml
   - backupjob.yaml
+  - http-route.yaml
 
 
 helmCharts:
