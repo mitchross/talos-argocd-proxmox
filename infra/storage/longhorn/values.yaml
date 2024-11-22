@@ -1,47 +1,44 @@
 preUpgradeChecker:
- jobEnabled: false
+  jobEnabled: false
 
 persistence:
- defaultClass: true
- defaultFsType: ext4
- storageOverProvisioningPercentage: 200
- storageMinimalAvailablePercentage: 25
+  defaultClass: true
+  defaultFsType: ext4
+  storageOverProvisioningPercentage: 200
+  storageMinimalAvailablePercentage: 25
 
 defaultSettings:
- defaultDataPath: /var/lib/longhorn
- createDefaultDiskLabeledNodes: false
- defaultReplicaCount: 2
- replicaAutoBalance: least-effort
- guaranteedEngineManagerCPU: 0.2
- guaranteedReplicaManagerCPU: 0.2
- autoSalvage: true
- nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
- degradedAvailabilityProblemResolver: ignore
+  defaultDataPath: /var/lib/longhorn
+  createDefaultDiskLabeledNodes: false
+  defaultReplicaCount: 2
+  replicaAutoBalance: least-effort
+  guaranteedEngineManagerCPU: 0.2
+  guaranteedReplicaManagerCPU: 0.2
+  autoSalvage: true
+  nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
+  degradedAvailabilityProblemResolver: ignore
 
 nodes:
- - name: vanillax-ai
-   allowScheduling: true
-   disks:
-     default-disk:
-       path: /var/lib/longhorn
-       allowScheduling: false
-     disk-1:
-       path: /mnt/PNY232323060701001C5
-       allowScheduling: true
-       storageReserved: 10Gi
-       tags: ["ssd", "data"]
-     disk-2:
-       path: /mnt/PNY232323060701001C1
-       allowScheduling: true
-       storageReserved: 10Gi
-       tags: ["ssd", "data"]
-     disk-3:
-       path: /mnt/PNY232323060701001BD
-       allowScheduling: true
-       storageReserved: 10Gi
-       tags: ["ssd", "backup"]
-     disk-4:
-       path: /mnt/PNY232323060701001C6
-       allowScheduling: true
-       storageReserved: 10Gi
-       tags: ["ssd", "backup"]
+  - name: vanillax-ai
+    allowScheduling: true
+    disks:
+      disk-ssd1:
+        path: /mnt/PNY232323060701001C5
+        allowScheduling: true
+        storageReserved: 10Gi
+        tags: ["ssd", "data"]
+      disk-ssd2:
+        path: /mnt/PNY232323060701001C1
+        allowScheduling: true
+        storageReserved: 10Gi
+        tags: ["ssd", "data"]
+      disk-ssd3:
+        path: /mnt/PNY232323060701001BD
+        allowScheduling: true
+        storageReserved: 10Gi
+        tags: ["ssd", "backup"]
+      disk-ssd4:
+        path: /mnt/PNY232323060701001C6
+        allowScheduling: true
+        storageReserved: 10Gi
+        tags: ["ssd", "backup"]
