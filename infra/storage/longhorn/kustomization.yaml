@@ -7,8 +7,8 @@ resources:
   - longhorn-storage-class.yaml
   - backupjob.yaml
   - http-route.yaml
-  - config-map.yaml
-  
+
+
 
 
 helmCharts:

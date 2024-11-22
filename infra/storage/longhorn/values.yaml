@@ -9,7 +9,9 @@ persistence:
 
 defaultSettings:
   defaultDataPath: /var/lib/longhorn
-  createDefaultDiskLabeledNodes: false
+  createDefaultDiskLabeledNodes: true  # Change this to true
+  defaultClassPath: /var/lib/longhorn
+  defaultClass: true
   defaultReplicaCount: 2
   replicaAutoBalance: least-effort
   guaranteedEngineManagerCPU: 0.2
@@ -17,6 +19,11 @@ defaultSettings:
   autoSalvage: true
   nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
   degradedAvailabilityProblemResolver: ignore
+
+longhornManager:
+  nodeSelector:
+    kubernetes.io/hostname: vanillax-ai
+  priorityClass: system-cluster-critical
 
 nodes:
   - name: vanillax-ai
@@ -28,21 +35,25 @@ nodes:
         storageReserved: 10Gi
         tags: ["ssd", "data"]
         diskType: filesystem
+        forceFormatted: true  # Add this line
       disk-ssd2:
         path: /mnt/PNY232323060701001C1
         allowScheduling: true
         storageReserved: 10Gi
         tags: ["ssd", "data"]
         diskType: filesystem
+        forceFormatted: true  # Add this line
       disk-ssd3:
         path: /mnt/PNY232323060701001BD
         allowScheduling: true
         storageReserved: 10Gi
         tags: ["ssd", "backup"]
         diskType: filesystem
+        forceFormatted: true  # Add this line
       disk-ssd4:
         path: /mnt/PNY232323060701001C6
         allowScheduling: true
         storageReserved: 10Gi
         tags: ["ssd", "backup"]
         diskType: filesystem
+        forceFormatted: true  # Add this line
