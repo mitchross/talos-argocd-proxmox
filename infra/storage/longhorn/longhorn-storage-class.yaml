@@ -2,6 +2,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: longhorn-ssd-fast
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true" 
 parameters:
   numberOfReplicas: "2"
   diskSelector: "ssd,data"  # This will use both drives tagged with ssd AND data
