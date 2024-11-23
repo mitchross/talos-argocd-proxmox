@@ -4,7 +4,7 @@ metadata:
   name: longhorn-ssd-fast
 parameters:
   numberOfReplicas: "2"
-  diskSelector: "ssd,data"  # Use only SSDs tagged for data
+  diskSelector: "ssd,data"  # This will use both drives tagged with ssd AND data
   nodeSelector: "kubernetes.io/hostname:vanillax-ai"
 provisioner: driver.longhorn.io
 reclaimPolicy: Delete
@@ -16,10 +16,7 @@ kind: StorageClass
 metadata:
   name: longhorn-backup
 parameters:
-  numberOfReplicas: "1"
-  diskSelector: "ssd,backup"  # Use only SSDs tagged for backup
+  numberOfReplicas: "1"  # Usually one replica is enough for backup volumes
+  diskSelector: "ssd,backup"
   nodeSelector: "kubernetes.io/hostname:vanillax-ai"
 provisioner: driver.longhorn.io
-reclaimPolicy: Delete
-volumeBindingMode: Immediate
-allowVolumeExpansion: true
