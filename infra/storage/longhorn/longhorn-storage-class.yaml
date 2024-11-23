@@ -19,5 +19,4 @@ metadata:
 parameters:
   numberOfReplicas: "1"  # Usually one replica is enough for backup volumes
   diskSelector: "ssd,backup"
-  nodeSelector: "kubernetes.io/hostname=vanillax-ai" 
 provisioner: driver.longhorn.io
