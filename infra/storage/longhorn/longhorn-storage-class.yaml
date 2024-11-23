@@ -7,8 +7,6 @@ metadata:
 parameters:
   numberOfReplicas: "2"
   diskSelector: "ssd,data"
-  nodeSelector:
-      nvidia.com/gpu.present: "true"
 provisioner: driver.longhorn.io
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
