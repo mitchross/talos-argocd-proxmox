@@ -15,5 +15,6 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: longhorn-frontend
+        - name: longhorn-frontend  # This matches the existing service name
           port: 80
+          kind: Service
