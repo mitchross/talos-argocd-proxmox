@@ -6,8 +6,8 @@ metadata:
     storageclass.kubernetes.io/is-default-class: "true" 
 parameters:
   numberOfReplicas: "2"
-  diskSelector: "ssd,data"  # This will use both drives tagged with ssd AND data
-  nodeSelector: "kubernetes.io/hostname:vanillax-ai"
+  diskSelector: "ssd,data"
+  nodeSelector: "kubernetes.io/hostname=vanillax-ai" 
 provisioner: driver.longhorn.io
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
@@ -20,5 +20,5 @@ metadata:
 parameters:
   numberOfReplicas: "1"  # Usually one replica is enough for backup volumes
   diskSelector: "ssd,backup"
-  nodeSelector: "kubernetes.io/hostname:vanillax-ai"
+  nodeSelector: "kubernetes.io/hostname=vanillax-ai" 
 provisioner: driver.longhorn.io
