@@ -63,4 +63,4 @@ spec:
         storageClassName: "longhorn-ssd-fast"
         resources:
           requests:
-            storage: 500Gi  # Adjust this size as needed
+            storage: 250Gi  # Adjust this size as needed

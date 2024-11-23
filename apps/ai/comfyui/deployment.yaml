@@ -87,7 +87,7 @@ spec:
         storageClassName: "longhorn-ssd-fast"
         resources:
           requests:
-            storage: 500Gi
+            storage: 250Gi
     - metadata:
         name: config-storage
       spec:
