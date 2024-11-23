@@ -7,7 +7,8 @@ metadata:
 parameters:
   numberOfReplicas: "2"
   diskSelector: "ssd,data"
-  nodeSelector: "kubernetes.io/hostname=vanillax-ai" 
+  nodeSelector:
+      nvidia.com/gpu.present: "true"
 provisioner: driver.longhorn.io
 reclaimPolicy: Delete
 volumeBindingMode: Immediate
