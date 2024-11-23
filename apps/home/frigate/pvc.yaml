@@ -9,4 +9,4 @@ spec:
   resources:
     requests:
       storage: 500Gi
-  storageClassName: openebs-zfspv
+  storageClassName: longhorn-ssd-fast

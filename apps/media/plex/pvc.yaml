@@ -4,7 +4,7 @@ metadata:
   name: plex-config
   namespace: plex
 spec:
-  storageClassName: openebs-zfspv
+  storageClassName: longhorn-ssd-fast
   volumeName: pv-plex-config
   accessModes:
     - ReadWriteOnce

@@ -9,7 +9,7 @@ spec:
   resources:
     requests:
       storage: 100Gi  # Adjust size as needed
-  storageClassName: openebs-zfspv-immediate
+  storageClassName: longhorn-ssd-fast
 ---
 # New PVC for cache storage
 apiVersion: v1
@@ -23,4 +23,4 @@ spec:
   resources:
     requests:
       storage: 20Gi
-  storageClassName: openebs-zfspv-immediate
+  storageClassName: longhorn-ssd-fast

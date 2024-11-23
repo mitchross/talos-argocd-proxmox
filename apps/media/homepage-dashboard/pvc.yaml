@@ -10,4 +10,4 @@ spec:
   resources:
     requests:
       storage: 3Gi  # Adjust the size as needed for your config files
-  storageClassName: openebs-zfspv
+  storageClassName: longhorn-ssd-fast

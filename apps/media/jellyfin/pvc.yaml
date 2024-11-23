@@ -5,7 +5,7 @@ metadata:
   name: jellyfin-config
   namespace: jellyfin
 spec:
-  storageClassName: openebs-zfspv
+  storageClassName: longhorn-ssd-fast
   accessModes:
     - ReadWriteOnce
   resources:

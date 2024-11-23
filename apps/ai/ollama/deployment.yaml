@@ -60,7 +60,7 @@ spec:
         name: models
       spec:
         accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "openebs-zfspv"
+        storageClassName: "longhorn-ssd-fast"
         resources:
           requests:
             storage: 500Gi  # Adjust this size as needed

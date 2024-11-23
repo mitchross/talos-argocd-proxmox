@@ -20,5 +20,5 @@ spec:
             spec:
               type: LoadBalancer
   storage:
-    storageClass: openebs-zfspv
+    storageClass: longhorn-ssd-fast
     size: 4G

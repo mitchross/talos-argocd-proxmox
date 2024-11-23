@@ -62,7 +62,7 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: openebs-zfspv
+  storageClassName: longhorn-ssd-fast
 
 ---
 apiVersion: v1
@@ -76,7 +76,7 @@ spec:
   resources:
     requests:
       storage: 500Mi
-  storageClassName: openebs-zfspv
+  storageClassName: longhorn-ssd-fast
 
 ---
 apiVersion: v1
