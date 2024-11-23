@@ -9,8 +9,6 @@ spec:
   destinations:
     - namespace: 'argocd'
       server: '*'
-    - namespace: 'csi-proxmox'
-      server: '*'
     - namespace: 'openebs'
       server: '*'
     - namespace: 'csi-driver-nfs'
