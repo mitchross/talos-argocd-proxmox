@@ -24,7 +24,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: libreddit
-        image: quay.io/redlib/redlib:latest@sha256:d350eebf055527e2f2189aa0ef3a1e5a178a427ff6ae65a9d3ecbe7f43e83f71
+        image: quay.io/redlib/redlib:latest@sha256:645a98c118cd65e9910fb0268d7d7a4db2d01af4abfaa271b60eb278de7706d5
         imagePullPolicy: Always
         ports:
         - name: http
