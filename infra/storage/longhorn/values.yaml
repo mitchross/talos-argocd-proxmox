@@ -1,38 +1,36 @@
-preUpgradeChecker:
-  jobEnabled: false
-
+# values.yaml
 persistence:
   defaultClass: true
+  defaultClassReplicaCount: 2
   defaultFsType: ext4
-  storageOverProvisioningPercentage: 200
-  storageMinimalAvailablePercentage: 25
+  defaultMountOptions: []
+  reclaimPolicy: Retain
 
 defaultSettings:
-  defaultDataPath: /var/lib/longhorn
-  createDefaultDiskLabeledNodes: false
-  defaultReplicaCount: 1
-  replicaAutoBalance: least-effort
-  guaranteedEngineManagerCPU: 0.2
-  guaranteedReplicaManagerCPU: 0.2
-  autoSalvage: true
-  nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
-  degradedAvailabilityProblemResolver: ignore
-  storageMinimalAvailablePercentage: 10
+  # Data locality ensures volumes are scheduled with their workloads
+  defaultDataLocality: "strict-local"
+  
+  # Storage optimization settings
+  storageOverProvisioningPercentage: 200
+  storageMinimalAvailablePercentage: 25
+  
+  # Replica settings for single node
+  defaultReplicaCount: 2
+  replicaSoftAntiAffinity: true
+  replicaDiskSoftAntiAffinity: true
+  
+  # Performance settings
+  guaranteedEngineCPU: 0.25
+  guaranteedReplicaCPU: 0.25
+  concurrentReplicaRebuildPerNodeLimit: 2
+  
+  # Snapshot and backup settings
+  snapshotDataIntegrity: "fast-check"
+  snapshotMaxCount: 10
+  automaticSnapshotRemoval: true
+  backupCompressionMethod: "lz4"
+  failedBackupTTL: 72
+  
+  # Cleanup settings
+  engineCleanerEnabled: true
   autoCleanupSystemGeneratedSnapshot: true
-  # disks:
-  #   - node: vanillax-ai
-  #     path: /mnt/PNY232323060701001C5
-  #     allowScheduling: true
-  #     tags: ["ssd", "data"]
-  #   - node: vanillax-ai
-  #     path: /mnt/PNY232323060701001C1
-  #     allowScheduling: true
-  #     tags: ["ssd", "data"]
-  #   - node: vanillax-ai
-  #     path: /mnt/PNY232323060701001BD
-  #     allowScheduling: true
-  #     tags: ["ssd", "backup"]
-  #   - node: vanillax-ai
-  #     path: /mnt/PNY232323060701001C6
-  #     allowScheduling: true
-  #     tags: ["ssd", "backup"]

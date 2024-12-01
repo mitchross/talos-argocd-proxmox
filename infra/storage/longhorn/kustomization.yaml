@@ -5,12 +5,9 @@ namespace: longhorn-system
 resources:
   - namespace.yaml
   - longhorn-storage-class.yaml
+  - longhorn-storage-class-safe.yaml
   - backupjob.yaml
   - http-route.yaml
-
-
-
-
 
 helmCharts:
   - name: longhorn
@@ -20,4 +17,3 @@ helmCharts:
     includeCRDs: true
     version: v1.7.2
     valuesFile: values.yaml
-
