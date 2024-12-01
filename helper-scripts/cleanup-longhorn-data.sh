@@ -31,7 +31,7 @@ for disk_path in "${DISK_PATHS[@]}"; do
     if [ ! -d "$disk_path" ]; then
         echo -e "${RED}Path $disk_path does not exist, skipping...${NC}"
         continue
-    }
+    fi
     
     # Check if the disk is mounted
     if mountpoint -q "$disk_path"; then
