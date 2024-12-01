@@ -14,27 +14,27 @@ spec:
       allowScheduling: true
       evictionRequested: false
       path: /mnt/PNY232323060701001C5
-      storageReserved: 10Gi
+      storageReserved: 10737418240  # Changed from "10Gi" to bytes (10 * 1024^3)
       tags:
       - ssd
     ssd2:
       allowScheduling: true
       evictionRequested: false
       path: /mnt/PNY232323060701001C1
-      storageReserved: 10Gi
+      storageReserved: 10737418240  # Changed from "10Gi" to bytes (10 * 1024^3)
       tags:
       - ssd
     ssd3:
       allowScheduling: true
       evictionRequested: false
       path: /mnt/PNY232323060701001BD
-      storageReserved: 10Gi
+      storageReserved: 10737418240  # Changed from "10Gi" to bytes (10 * 1024^3)
       tags:
       - ssd
     ssd4:
       allowScheduling: true
       evictionRequested: false
       path: /mnt/PNY232323060701001C6
-      storageReserved: 10Gi
+      storageReserved: 10737418240  # Changed from "10Gi" to bytes (10 * 1024^3)
       tags:
       - ssd
