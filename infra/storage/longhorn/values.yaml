@@ -10,7 +10,7 @@ persistence:
 defaultSettings:
   defaultDataPath: /var/lib/longhorn
   createDefaultDiskLabeledNodes: false
-  defaultReplicaCount: 2
+  defaultReplicaCount: 1
   replicaAutoBalance: least-effort
   guaranteedEngineManagerCPU: 0.2
   guaranteedReplicaManagerCPU: 0.2
@@ -19,20 +19,20 @@ defaultSettings:
   degradedAvailabilityProblemResolver: ignore
   storageMinimalAvailablePercentage: 10
   autoCleanupSystemGeneratedSnapshot: true
-  disks:
-    - node: vanillax-ai
-      path: /mnt/PNY232323060701001C5
-      allowScheduling: true
-      tags: ["ssd", "data"]
-    - node: vanillax-ai
-      path: /mnt/PNY232323060701001C1
-      allowScheduling: true
-      tags: ["ssd", "data"]
-    - node: vanillax-ai
-      path: /mnt/PNY232323060701001BD
-      allowScheduling: true
-      tags: ["ssd", "backup"]
-    - node: vanillax-ai
-      path: /mnt/PNY232323060701001C6
-      allowScheduling: true
-      tags: ["ssd", "backup"]
+  # disks:
+  #   - node: vanillax-ai
+  #     path: /mnt/PNY232323060701001C5
+  #     allowScheduling: true
+  #     tags: ["ssd", "data"]
+  #   - node: vanillax-ai
+  #     path: /mnt/PNY232323060701001C1
+  #     allowScheduling: true
+  #     tags: ["ssd", "data"]
+  #   - node: vanillax-ai
+  #     path: /mnt/PNY232323060701001BD
+  #     allowScheduling: true
+  #     tags: ["ssd", "backup"]
+  #   - node: vanillax-ai
+  #     path: /mnt/PNY232323060701001C6
+  #     allowScheduling: true
+  #     tags: ["ssd", "backup"]
