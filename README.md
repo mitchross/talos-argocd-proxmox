@@ -130,13 +130,14 @@ df -h | grep "/mnt/PNY"
 ### 3.2 Install Longhorn
 
 ```shell
-# Create storage bootstrap directory ( DONT COPY PASTE, READ IT )
+# Create storage bootstrap directory ( DONT COPY PASTE, READ IT, its just copying the same files over for bootstrap )
 mkdir -p infra/storage/bootstrap
 cp infra/storage/longhorn/namespace.yaml infra/storage/bootstrap/
 cp infra/storage/longhorn/longhorn-storage-class*.yaml infra/storage/bootstrap/
 
 # Apply Longhorn bootstrap configuration
-kubectl apply -k infra/storage/bootstrap
+k3s kubectl kustomize --enable-helm infra/storage/bootstrap | k3s kubectl apply -f -
+
 
 # Wait for Longhorn to be ready (this may take a few minutes)
 kubectl -n longhorn-system wait --for=condition=ready pod --all --timeout=300s
