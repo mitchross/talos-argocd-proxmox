@@ -22,7 +22,7 @@ spec:
     namespace: monitoring
   syncPolicy:
     automated:
-      selfHeal: true
+      selfHeal: false
       prune: true
     syncOptions:
       - ApplyOutOfSyncOnly=true

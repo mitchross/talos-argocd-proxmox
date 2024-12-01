@@ -14,5 +14,5 @@ spec:
     name: in-cluster
   syncPolicy:
     automated:
-      selfHeal: true
+      selfHeal: false
       prune: true

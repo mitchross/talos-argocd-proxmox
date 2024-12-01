@@ -32,7 +32,7 @@ spec:
         namespace: argocd
       syncPolicy:
         automated:
-          selfHeal: true
+          selfHeal: false
           prune: true
         syncOptions:
           - ApplyOutOfSyncOnly=true
