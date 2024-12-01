@@ -6,6 +6,7 @@ resources:
   - namespace.yaml
   - longhorn-storage-class.yaml
   - longhorn-storage-class-safe.yaml
+  - node-disk-config.yaml
 
 helmCharts:
   - name: longhorn
