@@ -20,7 +20,7 @@ chmod 600 ~/.kube/config
 
 ```shell
 export SETUP_NODEIP=192.168.10.11
-export SETUP_CLUSTERTOKEN=randomtokensecret123456789567556556
+export SETUP_CLUSTERTOKEN=randomtokensecret123456
 
 # Install K3s
 curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.31.2+k3s1" \
@@ -83,7 +83,7 @@ kubectl create secret generic 1password-operator-token \
   --from-literal=token=$CONNECT_TOKEN \
   --namespace 1passwordconnect
 
-# Create external-secrets token (same token)
+# Create external-secrets token (same token as 1password-operator-token)
 kubectl create namespace external-secrets
 kubectl create secret generic 1passwordconnect \
   --from-literal=token=$CONNECT_TOKEN \
@@ -109,6 +109,60 @@ Create these items in your 1Password vault before proceeding:
 
 3. `external-secrets`:
    - Field: `token` (same as $CONNECT_TOKEN)
+
+
+## 3. Storage Setup (Required before ArgoCD)
+
+This step is crucial as many applications depend on having functional persistent storage.
+
+### 3.1 Prepare Storage Drives
+
+```shell
+# Clean up any existing Longhorn data (if reinstalling)
+# BE CAREFUL - This will delete data!
+./helper-scripts/cleanup-longhorn-data.sh
+
+# Verify your drives are properly mounted
+lsblk
+df -h | grep "/mnt/PNY"
+```
+
+### 3.2 Install Longhorn
+
+```shell
+# Create storage bootstrap directory ( DONT COPY PASTE, READ IT )
+mkdir -p infra/storage/bootstrap
+cp infra/storage/longhorn/namespace.yaml infra/storage/bootstrap/
+cp infra/storage/longhorn/longhorn-storage-class*.yaml infra/storage/bootstrap/
+
+# Apply Longhorn bootstrap configuration
+kubectl apply -k infra/storage/bootstrap
+
+# Wait for Longhorn to be ready (this may take a few minutes)
+kubectl -n longhorn-system wait --for=condition=ready pod --all --timeout=300s
+
+# Initialize Longhorn disks
+./helper-scripts/init-longhorn-data.sh
+
+# Verify Longhorn is working properly
+kubectl -n longhorn-system get pods
+kubectl get sc
+kubectl -n longhorn-system get nodes.longhorn.io -o yaml
+```
+
+### 3.3 Verify Storage Setup
+
+Access the Longhorn UI to verify disk configuration:
+```shell
+# Setup port forwarding to access Longhorn UI
+kubectl port-forward -n longhorn-system svc/longhorn-frontend 8080:80
+
+# Visit http://localhost:8080 in your browser
+# Verify:
+# 1. All disks are properly registered
+# 2. Node is schedulable
+# 3. Storage classes are available
+```
 
 ## 4. Apply Infrastructure
 

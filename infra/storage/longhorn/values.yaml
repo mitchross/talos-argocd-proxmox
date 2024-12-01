@@ -1,36 +1,36 @@
-# values.yaml
 persistence:
-  defaultClass: true
+  defaultClass: false  # Matches our bootstrap setting
   defaultClassReplicaCount: 2
-  defaultFsType: ext4
-  defaultMountOptions: []
   reclaimPolicy: Retain
 
 defaultSettings:
-  # Data locality ensures volumes are scheduled with their workloads
-  defaultDataLocality: "strict-local"
+  # Disable default disk settings
+  createDefaultDiskLabeledNodes: false
+  defaultDataPath: ""  # Prevent default disk creation
   
-  # Storage optimization settings
+  # Storage optimization settings (same as bootstrap)
+  defaultDataLocality: "strict-local"
   storageOverProvisioningPercentage: 200
   storageMinimalAvailablePercentage: 25
   
-  # Replica settings for single node
+  # Replica settings (same as bootstrap)
   defaultReplicaCount: 2
   replicaSoftAntiAffinity: true
   replicaDiskSoftAntiAffinity: true
   
-  # Performance settings
+  # SSD enforcement settings
+  storageMinimalAvailablePercentage: 25
+  storageReservedPercentageForDefaultDisk: "50"
+  diskSelector: "ssd"  # Only use SSD-tagged disks
+
+  # Additional production settings
   guaranteedEngineCPU: 0.25
   guaranteedReplicaCPU: 0.25
   concurrentReplicaRebuildPerNodeLimit: 2
   
-  # Snapshot and backup settings
+  # Snapshot and cleanup settings
   snapshotDataIntegrity: "fast-check"
   snapshotMaxCount: 10
   automaticSnapshotRemoval: true
-  backupCompressionMethod: "lz4"
-  failedBackupTTL: 72
-  
-  # Cleanup settings
   engineCleanerEnabled: true
   autoCleanupSystemGeneratedSnapshot: true

@@ -1,0 +1,43 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: longhorn-system
+
+resources:
+  - namespace.yaml
+  - longhorn-storage-class.yaml
+  - longhorn-storage-class-safe.yaml
+
+helmCharts:
+  - name: longhorn
+    repo: https://charts.longhorn.io/
+    releaseName: longhorn
+    namespace: longhorn-system
+    includeCRDs: true
+    version: v1.7.2
+    valuesInline:
+      persistence:
+        defaultClass: false  # Important: Don't make Longhorn the default storage class
+        defaultClassReplicaCount: 2
+        reclaimPolicy: Retain
+      
+      defaultSettings:
+        # Disable the default disk completely
+        createDefaultDiskLabeledNodes: false
+        defaultDataPath: ""  # Empty to prevent default disk creation
+        
+        # Storage optimization settings
+        defaultDataLocality: "strict-local"
+        storageOverProvisioningPercentage: 200
+        storageMinimalAvailablePercentage: 25
+        
+        # Replica settings
+        defaultReplicaCount: 2
+        replicaSoftAntiAffinity: true
+        replicaDiskSoftAntiAffinity: true
+        
+        # Require disk tags for scheduling
+        storageMinimalAvailablePercentage: 25
+        storageReservedPercentageForDefaultDisk: "50"
+        
+        # Default tags for disk selection
+        defaultSettings.diskSelector: "ssd"  # Only use disks with ssd tag
