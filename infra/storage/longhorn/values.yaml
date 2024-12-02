@@ -1,32 +1,32 @@
+# values.yaml in your main longhorn folder
 persistence:
-  defaultClass: false  # Matches our bootstrap setting
+  defaultClass: false
   defaultClassReplicaCount: 2
   reclaimPolicy: Retain
 
 defaultSettings:
-  # Disable default disk settings
+  # Disk initialization settings
   createDefaultDiskLabeledNodes: false
-  defaultDataPath: ""  # Prevent default disk creation
+  defaultDataPath: ""
   
-  # Storage optimization settings (same as bootstrap)
+  # Storage optimization settings
   defaultDataLocality: "strict-local"
   storageOverProvisioningPercentage: 200
   storageMinimalAvailablePercentage: 25
   
-  # Replica settings (same as bootstrap)
+  # Replica settings
   defaultReplicaCount: 2
   replicaSoftAntiAffinity: true
   replicaDiskSoftAntiAffinity: true
   
-  # SSD enforcement settings
-  storageMinimalAvailablePercentage: 25
-  storageReservedPercentageForDefaultDisk: "50"
-  diskSelector: "ssd"  # Only use SSD-tagged disks
-
-  # Additional production settings
+  # Resource management
   guaranteedEngineCPU: 0.25
   guaranteedReplicaCPU: 0.25
   concurrentReplicaRebuildPerNodeLimit: 2
+  
+  # Disk selection and scheduling
+  diskSelector: "ssd"
+  storageReservedPercentageForDefaultDisk: "50"
   
   # Snapshot and cleanup settings
   snapshotDataIntegrity: "fast-check"
@@ -34,3 +34,18 @@ defaultSettings:
   automaticSnapshotRemoval: true
   engineCleanerEnabled: true
   autoCleanupSystemGeneratedSnapshot: true
+  
+  # System integration settings (new additions)
+  systemManagedPodsImagePullPolicy: IfNotPresent
+  priorityClass: system-cluster-critical
+  taintToleration: "node.longhorn.io/storage=true:NoSchedule"
+  backupstorePollInterval: 300
+  backupCompressionMethod: "lz4"
+
+# Component-specific settings (new section)
+longhornManager:
+  priorityClass: system-node-critical
+  tolerations:
+    - key: "node.longhorn.io/storage"
+      operator: "Exists"
+      effect: "NoSchedule"

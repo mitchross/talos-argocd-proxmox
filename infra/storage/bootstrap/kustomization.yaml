@@ -17,28 +17,50 @@ helmCharts:
     version: v1.7.2
     valuesInline:
       persistence:
-        defaultClass: false  # Important: Don't make Longhorn the default storage class
+        defaultClass: false
         defaultClassReplicaCount: 2
         reclaimPolicy: Retain
-      
+
       defaultSettings:
-        # Disable the default disk completely
-        createDefaultDiskLabeledNodes: false
-        defaultDataPath: ""  # Empty to prevent default disk creation
+        # Disk initialization settings
+        createDefaultDiskLabeledNodes: false  # Don't create default disks
+        defaultDataPath: ""  # Prevent automatic disk creation
         
-        # Storage optimization settings
+        # Performance and locality settings
         defaultDataLocality: "strict-local"
         storageOverProvisioningPercentage: 200
         storageMinimalAvailablePercentage: 25
         
-        # Replica settings
+        # Storage efficiency settings
         defaultReplicaCount: 2
         replicaSoftAntiAffinity: true
         replicaDiskSoftAntiAffinity: true
         
-        # Require disk tags for scheduling
-        storageMinimalAvailablePercentage: 25
-        storageReservedPercentageForDefaultDisk: "50"
+        # Resource management
+        guaranteedEngineCPU: 0.25
+        guaranteedReplicaCPU: 0.25
         
-        # Default tags for disk selection
-        defaultSettings.diskSelector: "ssd"  # Only use disks with ssd tag
+        # Disk selection and scheduling
+        diskSelector: "ssd"
+        
+        # Cleanup and maintenance
+        autoCleanupSystemGeneratedSnapshot: true
+        concurrentReplicaRebuildPerNodeLimit: 2
+        
+        # Backup settings
+        backupstorePollInterval: 300
+        backupCompressionMethod: "lz4"
+        
+        # System managed settings
+        systemManagedPodsImagePullPolicy: IfNotPresent
+        priorityClass: system-cluster-critical
+        
+        # Node scheduling settings
+        taintToleration: "node.longhorn.io/storage=true:NoSchedule"
+        
+      longhornManager:
+        priorityClass: system-node-critical
+        tolerations:
+          - key: "node.longhorn.io/storage"
+            operator: "Exists"
+            effect: "NoSchedule"
