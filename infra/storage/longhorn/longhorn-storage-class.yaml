@@ -4,13 +4,11 @@ metadata:
   name: longhorn-ssd-fast
   annotations:
     storageclass.kubernetes.io/is-default-class: "true"
-provisioner: driver.longhorn.io
-allowVolumeExpansion: true
 parameters:
-  numberOfReplicas: "2"
-  dataLocality: "strict-local"
+  dataLocality: strict-local  # Keeps data on the same node as the workload
+  numberOfReplicas: "1"      # Changed from 2 to 1 to match strict-local requirement
+  diskSelector: ssd          # Continues to use our SSD-tagged disks
   staleReplicaTimeout: "30"
-  diskSelector: "ssd"  # This enforces SSD-only usage
-  nodeSelector: "storage"
+provisioner: driver.longhorn.io
 reclaimPolicy: Retain
 volumeBindingMode: WaitForFirstConsumer
