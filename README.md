@@ -142,8 +142,6 @@ k3s kubectl kustomize --enable-helm infra/storage/bootstrap | k3s kubectl apply 
 # Wait for Longhorn to be ready (this may take a few minutes)
 kubectl -n longhorn-system wait --for=condition=ready pod --all --timeout=300s
 
-# Initialize Longhorn disks
-./helper-scripts/init-longhorn-data.sh
 
 # Verify Longhorn is working properly
 kubectl -n longhorn-system get pods
@@ -176,6 +174,14 @@ kubectl kustomize --enable-helm infra/controllers/argocd | kubectl apply -f -
 
 # Get initial admin password (if needed)
 kubectl -n argocd get secret argocd-initial-admin-secret -ojsonpath="{.data.password}" |
+
+or Set it 
+
+#bcrypt the password
+ kubectl -n argocd patch secret argocd-secret   -p '{"stringData": {
+     "admin.password": "$2a$10$KjM2xxxxredactedmry6.rfFF0IJfCWuaD2XJ/2sr6oQGcszf8cO",
+       "admin.passwordMtime": "'$(date +%FT%T%Z)'"
+    }}'
 
 ```shell
 # Apply all infrastructure components via ArgoCD
