@@ -7,7 +7,7 @@ spec:
   cron: "0 0 * * *"
   task: "backup"
   groups:
-  - default
+    - default
   retain: 7
   concurrency: 2
   labels:

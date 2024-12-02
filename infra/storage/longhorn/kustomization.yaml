@@ -6,7 +6,7 @@ resources:
   - namespace.yaml
   - longhorn-storage-class.yaml
   - longhorn-storage-class-safe.yaml
-  - backupjob.yaml
+ # - backupjob.yaml
   - http-route.yaml
   - node-disk-config.yaml
 
