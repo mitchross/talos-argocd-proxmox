@@ -15,6 +15,8 @@ spec:
       evictionRequested: false
       path: /mnt/PNY232323060701001C5
       storageReserved: 10737418240  # Changed from "10Gi" to bytes (10 * 1024^3)
+      filesystem: ext4  # Adding filesystem type
+      schedulable: true  # Explicitly marking as schedulable
       tags:
         - ssd
     ssd2:
@@ -22,6 +24,8 @@ spec:
       evictionRequested: false
       path: /mnt/PNY232323060701001C1
       storageReserved: 10737418240  # Changed from "10Gi" to bytes (10 * 1024^3)
+      filesystem: ext4  # Adding filesystem type
+      schedulable: true  # Explicitly marking as schedulable
       tags:
         - ssd
     ssd3:
@@ -29,6 +33,8 @@ spec:
       evictionRequested: false
       path: /mnt/PNY232323060701001BD
       storageReserved: 10737418240  # Changed from "10Gi" to bytes (10 * 1024^3)
+      filesystem: ext4  # Adding filesystem type
+      schedulable: true  # Explicitly marking as schedulable
       tags:
        - ssd
     ssd4:
@@ -36,5 +42,7 @@ spec:
       evictionRequested: false
       path: /mnt/PNY232323060701001C6
       storageReserved: 10737418240  # Changed from "10Gi" to bytes (10 * 1024^3)
+      filesystem: ext4  # Adding filesystem type
+      schedulable: true  # Explicitly marking as schedulable
       tags:
        - ssd
