@@ -12,6 +12,8 @@ spec:
         revision: HEAD
         directories:
           - path: infra/*storage/*
+          - exclude: true
+            path: infra/*storage/archived/*
   template:
     metadata:
       name: '{{ path.basename }}'
@@ -32,3 +34,5 @@ spec:
         automated:
           selfheal: true
           prune: true
+        syncOptions:
+          - ServerSideApply=true
