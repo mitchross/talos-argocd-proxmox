@@ -13,8 +13,6 @@ spec:
       server: '*'
     - namespace: 'csi-driver-nfs'
       server: '*'
-    - namespace: 'longhorn-system'
-      server: '*'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'
