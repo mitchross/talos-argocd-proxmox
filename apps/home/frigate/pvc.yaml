@@ -3,6 +3,9 @@ kind: PersistentVolumeClaim
 metadata:
   name: frigate-media
   namespace: frigate
+  annotations:
+    directory: "frigate/media"    # This will create /datapool/kubernetes/frigate/media
+    retain: "true"                # This ensures data is retained
 spec:
   accessModes:
     - ReadWriteOnce

@@ -26,6 +26,9 @@ spec:
       - name: libreddit
         image: quay.io/redlib/redlib:latest@sha256:645a98c118cd65e9910fb0268d7d7a4db2d01af4abfaa271b60eb278de7706d5
         imagePullPolicy: Always
+        envFrom:                     
+          - configMapRef:             
+              name: libreddit-env     
         ports:
         - name: http
           containerPort: 8080

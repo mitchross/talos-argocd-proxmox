@@ -5,6 +5,7 @@ metadata:
   namespace: comfyui
   annotations:
     directory: "comfyui/workspace"    # This will create /datapool/kubernetes/comfyui/workspace
+    retain: "true"                    # This ensures data is retained
 spec:
   accessModes:
     - ReadWriteOnce
@@ -20,6 +21,7 @@ metadata:
   namespace: comfyui
   annotations:
     directory: "comfyui/cache"    # This will create /datapool/kubernetes/comfyui/cache
+    retain: "true"                # This ensures data is retained
 spec:
   accessModes:
     - ReadWriteOnce

@@ -3,6 +3,9 @@ kind: PersistentVolumeClaim
 metadata:
   name: ollama-models
   namespace: ollama
+  annotations:
+    directory: "ollama/models"    # This will create /datapool/kubernetes/ollama/models
+    retain: "true"               # This ensures data is retained
 spec:
   accessModes:
     - ReadWriteOnce
