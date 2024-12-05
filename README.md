@@ -20,10 +20,10 @@ chmod 600 ~/.kube/config
 
 ```shell
 export SETUP_NODEIP=192.168.10.11
-export SETUP_CLUSTERTOKEN=randomtokensecret123456
+export SETUP_CLUSTERTOKEN=randomtokensecret123456sdfgsfdgs
 
 # Install K3s
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.31.2+k3s1" \
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.31.3-rc2+k3s1" \
   INSTALL_K3S_EXEC="--node-ip $SETUP_NODEIP \
   --disable=flannel,local-storage,metrics-server,servicelb,traefik \
   --flannel-backend='none' \
@@ -76,6 +76,10 @@ kubectl create namespace 1passwordconnect
 #BASE64 the json first!!!
 kubectl create secret generic 1password-credentials \
   --from-file=1password-credentials.json=/path/to/1password-credentials.json \
+  --namespace 1passwordconnect
+
+  kubectl create secret generic 1password-credentials \
+  --from-file=1password-credentials.json=credentials.base64  \
   --namespace 1passwordconnect
 
 
