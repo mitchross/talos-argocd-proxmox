@@ -5,11 +5,7 @@ namespace: openebs
 resources:
   - namespace.yaml
   - zfs-storage-class.yaml
-  # - zfs-storage-class-immediate.yaml
-  # - zfs-volumesnapshot-class.yaml
-  # - test-pvc.yaml
-  # - test-storage-class.yaml
-  # - pod-test.yaml
+
 
 helmCharts:
   - name: openebs

@@ -1,43 +1,21 @@
-# Enable OpenEBS hostpath storage class
+# Disable hostpath since we're not using it
 storageClass:
   hostpath:
-    enabled: true
+    enabled: false
     isDefaultClass: false
 
-# Enable OpenEBS LocalPV device storage class
+# Enable LocalPV provisioner - this is what we're using
 localprovisioner:
   enabled: true
   deviceClass:
-    enabled: true
+    enabled: false  # We're not using device class
     isDefaultClass: false
 
-# Enable and configure ZFS LocalPV
+# Disable ZFS LocalPV since we're not using ZFS CSI
 zfs-localpv:
-  enabled: true
-  pluginImage: "openebs/zfs-driver"
-  pluginTag: "2.4.0"
-  zfsPlugin:
-    image:
-      registry: ""
-      repository: openebs/zfs-driver
-      tag: "2.6.2"
-      pullPolicy: IfNotPresent
-  zfsNode:
-    image:
-      registry: ""
-      repository: openebs/zfs-driver
-      tag: "2.6.2"
-      pullPolicy: IfNotPresent
-  zfsController:
-    image:
-      registry: ""
-      repository: openebs/zfs-driver
-      tag: "2.6.2"
-      pullPolicy: IfNotPresent
+  enabled: false
 
-# Enable ZFS CSI driver
+# Disable ZFS CSI driver
 csi:
   zfs:
-    enabled: true
-
-# You can add more configurations as needed
+    enabled: false
