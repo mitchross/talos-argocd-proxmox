@@ -30,7 +30,7 @@ spec:
         namespace: argocd
       syncPolicy:
         automated:
-          selfheal: true
+          selfHeal: true
           prune: true
         # Add these sync options for better PVC handling
         syncOptions:
