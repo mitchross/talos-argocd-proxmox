@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: proxitok-cache-pvc
   namespace: proxitok
+  annotations:
+    directory: "proxitok/cache"
 spec:
   accessModes:
     - ReadWriteOnce
