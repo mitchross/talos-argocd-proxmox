@@ -3,24 +3,27 @@ kind: PersistentVolumeClaim
 metadata:
   name: comfyui-workspace-pvc
   namespace: comfyui
+  annotations:
+    directory: "comfyui/workspace"    # This will create /datapool/kubernetes/comfyui/workspace
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 100Gi  # Adjust size as needed
-  storageClassName: longhorn-ssd-fast
+      storage: 100Gi
+  storageClassName: zfs-local
 ---
-# New PVC for cache storage
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: comfyui-cache-pvc
   namespace: comfyui
+  annotations:
+    directory: "comfyui/cache"    # This will create /datapool/kubernetes/comfyui/cache
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
       storage: 20Gi
-  storageClassName: longhorn-ssd-fast
+  storageClassName: zfs-local

@@ -20,5 +20,5 @@ spec:
             spec:
               type: LoadBalancer
   storage:
-    storageClass: longhorn-ssd-fast
+    storageClass: zfs-local
     size: 4G

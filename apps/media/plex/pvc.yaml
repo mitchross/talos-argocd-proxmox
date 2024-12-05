@@ -4,7 +4,22 @@ metadata:
   name: plex-config
   namespace: plex
 spec:
-  storageClassName: longhorn-ssd-fast
+  storageClassName: zfs-local
+  volumeName: pv-plex-config
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 12G
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: plex-config
+  namespace: plex
+  annotations:
+    directory: "plex/config"
+spec:
+  storageClassName: zfs-local
   volumeName: pv-plex-config
   accessModes:
     - ReadWriteOnce

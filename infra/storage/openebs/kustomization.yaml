@@ -4,24 +4,24 @@ namespace: openebs
 
 resources:
   - namespace.yaml
-  # - zfs-storage-class.yaml
-  # - zfs-storage-class-immediate.yaml
-  # - zfs-volumesnapshot-class.yaml
-  # - test-pvc.yaml
-  # - test-storage-class.yaml
-  # - pod-test.yaml
-  # DISABLED
+  - zfs-storage-class.yaml
+  - zfs-storage-class-immediate.yaml
+  - zfs-volumesnapshot-class.yaml
+  - test-pvc.yaml
+  - test-storage-class.yaml
+  - pod-test.yaml
+  DISABLED
 
-# helmCharts:
-#   - name: openebs
-#     repo: https://openebs.github.io/charts
-#     releaseName: openebs
-#     namespace: openebs
-#     includeCRDs: true
-#     version: 3.10.0
-#     valuesFile: values.yaml
+helmCharts:
+  - name: openebs
+    repo: https://openebs.github.io/charts
+    releaseName: openebs
+    namespace: openebs
+    includeCRDs: true
+    version: 3.10.0
+    valuesFile: values.yaml
 
-# configMapGenerator:
-#   - name: openebs-values
-#     files:
-#       - values.yaml
+configMapGenerator:
+  - name: openebs-values
+    files:
+      - values.yaml

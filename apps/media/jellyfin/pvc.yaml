@@ -1,11 +1,12 @@
----
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: jellyfin-config
   namespace: jellyfin
+  annotations:
+    directory: "jellyfin/config"
 spec:
-  storageClassName: longhorn-ssd-fast
+  storageClassName: zfs-local
   accessModes:
     - ReadWriteOnce
   resources:

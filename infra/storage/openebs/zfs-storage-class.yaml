@@ -1,14 +1,10 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: openebs-zfspv
+  name: zfs-local
+provisioner: openebs.io/local
 parameters:
-  recordsize: "128k"
-  compression: "off"
-  dedup: "off"
-  fstype: "zfs"
-  poolname: "ssdpool/k8s"
-provisioner: zfs.csi.openebs.io
+  basePath: "/datapool/kubernetes"
 allowedTopologies:
 - matchLabelExpressions:
   - key: kubernetes.io/hostname

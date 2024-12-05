@@ -3,10 +3,12 @@ kind: PersistentVolumeClaim
 metadata:
   name: searxng-config
   namespace: searxng
+  annotations:
+    directory: "searxng/config"
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
       storage: 1Gi
-  storageClassName: longhorn-ssd-fast
+  storageClassName: zfs-local

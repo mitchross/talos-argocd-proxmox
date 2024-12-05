@@ -62,7 +62,7 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: longhorn-ssd-fast
+  storageClassName: zfs-local
 
 ---
 apiVersion: v1
@@ -76,7 +76,7 @@ spec:
   resources:
     requests:
       storage: 500Mi
-  storageClassName: longhorn-ssd-fast
+  storageClassName: zfs-local
 
 ---
 apiVersion: v1

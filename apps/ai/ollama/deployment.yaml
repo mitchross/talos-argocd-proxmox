@@ -60,7 +60,7 @@ spec:
         name: models
       spec:
         accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "longhorn-ssd-fast"
+        storageClassName: "zfs-local"
         resources:
           requests:
             storage: 250Gi  # Adjust this size as needed
