@@ -1,21 +1,20 @@
-# Disable hostpath since we're not using it
+# values.yaml
 storageClass:
   hostpath:
     enabled: false
     isDefaultClass: false
 
-# Enable LocalPV provisioner - this is what we're using
 localprovisioner:
   enabled: true
+  # This is the crucial part we were missing
+  basePath: "/datapool/kubernetes"
   deviceClass:
-    enabled: false  # We're not using device class
+    enabled: false
     isDefaultClass: false
 
-# Disable ZFS LocalPV since we're not using ZFS CSI
 zfs-localpv:
   enabled: false
 
-# Disable ZFS CSI driver
 csi:
   zfs:
     enabled: false

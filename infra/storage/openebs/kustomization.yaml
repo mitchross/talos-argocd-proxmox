@@ -6,7 +6,6 @@ resources:
   - namespace.yaml
   - zfs-storage-class.yaml
 
-
 helmCharts:
   - name: openebs
     repo: https://openebs.github.io/charts
