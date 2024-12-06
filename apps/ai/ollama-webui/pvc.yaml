@@ -4,8 +4,7 @@ metadata:
   name: ollama-webui-pvc
   namespace: ollama-webui
   annotations:
-    directory: "ollama-webui/data"    # This will create /datapool/kubernetes/ollama-webui/data
-    retain: "true"                    # This ensures data is retained
+    openebs.io/retainpv: "true"    # OpenEBS-specific retention
 spec:
   accessModes:
     - ReadWriteOnce

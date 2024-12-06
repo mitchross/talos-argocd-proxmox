@@ -5,6 +5,8 @@ metadata:
 provisioner: openebs.io/local
 parameters:
   basePath: "/datapool/kubernetes"
+  subdirPath: "%(pvc.namespace)s/%(pvc.name)s"
+reclaimPolicy: Retain    # This is crucial for retention
 allowedTopologies:
 - matchLabelExpressions:
   - key: kubernetes.io/hostname

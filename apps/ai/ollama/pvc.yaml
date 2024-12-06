@@ -1,11 +1,10 @@
-apiVersion: v1
+CopyapiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: ollama-models
   namespace: ollama
   annotations:
-    directory: "ollama/models"    # This will create /datapool/kubernetes/ollama/models
-    retain: "true"               # This ensures data is retained
+    openebs.io/retainpv: "true"    # OpenEBS-specific retention
 spec:
   accessModes:
     - ReadWriteOnce
