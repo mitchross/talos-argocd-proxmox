@@ -2,14 +2,18 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: zfs-local
+  annotations:
+    openebs.io/cas-type: local
+    cas.openebs.io/config: |
+      - name: StorageType
+        value: hostpath
+      - name: BasePath
+        value: /datapool/kubernetes
 provisioner: openebs.io/local
-parameters:
-  basePath: "/datapool/kubernetes"
-  subdirPath: "%(pvc.namespace)s/%(pvc.name)s"
-reclaimPolicy: Retain    # This is crucial for retention
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
 allowedTopologies:
 - matchLabelExpressions:
   - key: kubernetes.io/hostname
     values:
       - vanillax-ai
-volumeBindingMode: WaitForFirstConsumer
