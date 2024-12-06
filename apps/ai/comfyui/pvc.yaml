@@ -1,31 +1,94 @@
+# PV for ComfyUI Models
 apiVersion: v1
-kind: PersistentVolumeClaim
+kind: PersistentVolume
 metadata:
-  name: comfyui-workspace-pvc
-  namespace: comfyui
-  annotations:
-    directory: "comfyui/workspace"    # This will create /datapool/kubernetes/comfyui/workspace
-    retain: "true"                    # This ensures data is retained
+  name: comfyui-models-pv    # Clear, descriptive name
 spec:
+  capacity:
+    storage: 250Gi
   accessModes:
     - ReadWriteOnce
-  resources:
-    requests:
-      storage: 100Gi
-  storageClassName: zfs-local
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/comfyui/models    # Human-readable path
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai
+
 ---
+# PV for ComfyUI Config
 apiVersion: v1
-kind: PersistentVolumeClaim
+kind: PersistentVolume
 metadata:
-  name: comfyui-cache-pvc
-  namespace: comfyui
-  annotations:
-    directory: "comfyui/cache"    # This will create /datapool/kubernetes/comfyui/cache
-    retain: "true"                # This ensures data is retained
+  name: comfyui-config-pv
 spec:
+  capacity:
+    storage: 10Gi
   accessModes:
     - ReadWriteOnce
-  resources:
-    requests:
-      storage: 20Gi
-  storageClassName: zfs-local
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/comfyui/config
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai
+
+---
+# PV for ComfyUI Workspace
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: comfyui-workspace-pv
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/comfyui/workspace
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai
+
+---
+# PV for ComfyUI Cache
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: comfyui-cache-pv
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/comfyui/cache
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai

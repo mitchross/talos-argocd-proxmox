@@ -20,7 +20,7 @@ chmod 600 ~/.kube/config
 
 ```shell
 export SETUP_NODEIP=192.168.10.11
-export SETUP_CLUSTERTOKEN=randomtokensecret123456sdfgsfdgs
+export SETUP_CLUSTERTOKEN=randomtokensecret123456
 
 # Install K3s
 curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.31.3-rc2+k3s1" \
@@ -42,13 +42,18 @@ source $HOME/.bashrc
 ```
 
 # Install Cilium CLI
+```
 CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
+
 CLI_ARCH=amd64
+
 curl -L --fail --remote-name-all https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${CLI_ARCH}.tar.gz
+
 sudo tar xzvfC cilium-linux-${CLI_ARCH}.tar.gz /usr/local/bin
 rm cilium-linux-${CLI_ARCH}.tar.gz
-
+```
 # Install Cilium
+```
 API_SERVER_IP=192.168.10.11
 API_SERVER_PORT=6443
 cilium install \
@@ -57,9 +62,10 @@ cilium install \
   --set k8sServicePort=${API_SERVER_PORT} \
   --set kubeProxyReplacement=true \
   --helm-set=operator.replicas=1
+```
 
 # Verify Cilium installation
-cilium status
+```cilium status```
 
 ## 2. Secrets Setup (Required before ArgoCD)
 
@@ -115,58 +121,148 @@ Create these items in your 1Password vault before proceeding:
    - Field: `token` (same as $CONNECT_TOKEN)
 
 
-## 3. Storage Setup (Required before ArgoCD)
+ # Storage Setup
 
-This step is crucial as many applications depend on having functional persistent storage.
+## Overview
+    This guide uses a simple, straightforward approach to Kubernetes storage that feels like managing regular directories on your computer.
 
-### 3.1 Prepare Storage Drives
+### Benefits of Using ZFS
+    While we're using ZFS, these same principles work with any filesystem. The key is making your data easy to find and manage, just like organizing files on your computer.
 
-```shell
-# Clean up any existing Longhorn data (if reinstalling)
-# BE CAREFUL - This will delete data!
-./helper-scripts/cleanup-longhorn-data.sh
+## 3.1 Prepare Your Storage Location
 
-# Verify your drives are properly mounted
-lsblk
-df -h | grep "/mnt/PNY"
+First, let's set up our storage with the right permissions so both you and Kubernetes can work with the files:
+
+### Step 1: Create the Main Storage Directory
+```
+sudo mkdir -p /datapool/kubernetes
 ```
 
-### 3.2 Install Longhorn
-
-```shell
-# Create storage bootstrap directory ( DONT COPY PASTE, READ IT, its just copying the same files over for bootstrap )
-mkdir -p infra/storage/bootstrap
-cp infra/storage/longhorn/namespace.yaml infra/storage/bootstrap/
-cp infra/storage/longhorn/longhorn-storage-class*.yaml infra/storage/bootstrap/
-
-# Apply Longhorn bootstrap configuration
-k3s kubectl kustomize --enable-helm infra/storage/bootstrap | k3s kubectl apply -f -
-
-
-# Wait for Longhorn to be ready (this may take a few minutes)
-kubectl -n longhorn-system wait --for=condition=ready pod --all --timeout=300s
-
-
-# Verify Longhorn is working properly
-kubectl -n longhorn-system get pods
-kubectl get sc
-kubectl -n longhorn-system get nodes.longhorn.io -o yaml
+### Step 2: Create a Special Group for Storage Access
+```
+sudo groupadd storage-access
+```
+Add yourself to this group:
+```
+sudo usermod -a -G storage-access yourusername
 ```
 
-### 3.3 Verify Storage Setup
+### Step 3: Set Up Permissions
 
-Access the Longhorn UI to verify disk configuration:
-```shell
-# Setup port forwarding to access Longhorn UI
-kubectl port-forward -n longhorn-system svc/longhorn-frontend 8080:80
+Set up the right permissions:
+```
+sudo chown root:storage-access /datapool/kubernetes
+sudo chmod 2775 /datapool/kubernetes
+```
+This setup means both you and Kubernetes can read and write files, while keeping your data secure.
 
-# Visit http://localhost:8080 in your browser
-# Verify:
-# 1. All disks are properly registered
-# 2. Node is schedulable
-# 3. Storage classes are available
+### 3 ( Extra )
+
+Create a special group that will have access to the storage
+```
+sudo groupadd storage-access
+```
+Add yourself to this group (replace 'yourusername' with your username)
+```
+sudo usermod -a -G storage-access yourusername
+```
+Set up the right permissions
+```
+sudo chown root:storage-access /datapool/kubernetes
+sudo chmod 2775 /datapool/kubernetes
+```
+You'll need to log out and back in for the new group to take effect
+Let's understand these permissions (2775):
+```
+The '2' means new files will automatically belong to the storage-access group
+The first '7' gives the owner (root) full access
+The second '7' gives your group full access
+The '5' lets others see the files exist but not modify them
+```
+This setup means both you and Kubernetes can read and write files, while keeping your data secure.
+
+## 3.2 Create the Storage Class
+
+Now we'll tell Kubernetes how to manage storage. We're using the built-in local storage system because it's simple and predictable:
+
+### Create a Local Storage Class YAML File
+```
+local-storage-class.yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+name: local-storage
+provisioner: kubernetes.io/no-provisioner  # Manages storage directly
+reclaimPolicy: Retain                      # Keeps your data safe
+volumeBindingMode: WaitForFirstConsumer    # Assigns storage when needed
+
+Apply this to your cluster:
 ```
 
+### A PersistentVolume (PV)
+
+```
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+name: myapp-data-pv
+spec:
+capacity:
+storage: 100Gi
+accessModes:
+- ReadWriteOnce
+persistentVolumeReclaimPolicy: Retain
+storageClassName: local-storage
+local:
+path: /datapool/kubernetes/myapp/data    # Your actual data location
+nodeAffinity:
+required:
+nodeSelectorTerms:
+- matchExpressions:
+- key: kubernetes.io/hostname
+operator: In
+values:
+- your-node-name    # Your actual node name
+```
+
+### A PersistentVolumeClaim (PVC)
+
+```
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+name: myapp-data-pvc
+namespace: myapp
+spec:
+storageClassName: local-storage
+accessModes:
+- ReadWriteOnce
+resources:
+requests:
+storage: 100Gi
+volumeName: myapp-data-pv    # Links to the PV above
+```
+
+## 3.4 How Your Storage Will Look
+
+Your storage will be organized like a well-structured file system:
+
+*   `datapool/kubernetes/`
+    *   `ollama/`          # Each app gets its own directory
+        *   `models/`               # Store AI models here
+        *   `cache/`               # Temporary files here
+    *   `nginx/`
+        *   `config/`              # Configuration files
+        *   `data/`               # Website files
+    *   `postgres/`
+        *   `data/`               # Database files
+
+This organization means:
+
+*   You can find your files easily
+*   Backing up is simple (just copy the folders you need)
+*   Your data stays safe even if you rebuild your cluster
+*   You can manage files directly from your computer
 ## 4. Apply Infrastructure
 
 
@@ -216,18 +312,7 @@ kubectl get secret tunnel-credentials -n cloudflared
 kubectl logs -n 1passwordconnect -l app=onepassword-connect
 ```
 
-# Components Status
 
-- [x] Cilium
-- [ ] Hubble
-- [x] Argo CD
-- [x] Proxmox CSI Plugin
-- [x] Cert-manager
-- [x] Gateway API
-- [ ] CNPG (Cloud Native PostgreSQL)
-- [ ] Authentication (Keycloak/Authentik)
-- [ ] Sealed Secrets
-- [ ] Cloudflared Tunnel
 
 # Troubleshooting
 

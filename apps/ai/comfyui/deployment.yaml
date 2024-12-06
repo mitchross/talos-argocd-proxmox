@@ -1,10 +1,9 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment    # Changed from StatefulSet to Deployment
 metadata:
   name: comfyui
   namespace: comfyui
 spec:
-  serviceName: "comfyui"
   replicas: 1
   selector:
     matchLabels:
@@ -68,6 +67,12 @@ spec:
               mountPath: /usr/local/nvidia
               readOnly: true
       volumes:
+        - name: models-storage
+          persistentVolumeClaim:
+            claimName: comfyui-models-pvc
+        - name: config-storage
+          persistentVolumeClaim:
+            claimName: comfyui-config-pvc
         - name: workspace
           persistentVolumeClaim:
             claimName: comfyui-workspace-pvc
@@ -79,20 +84,3 @@ spec:
             path: /usr/local/nvidia
       nodeSelector:
          nvidia.com/gpu.present: "true"
-  volumeClaimTemplates:
-    - metadata:
-        name: models-storage
-      spec:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "zfs-local"
-        resources:
-          requests:
-            storage: 250Gi
-    - metadata:
-        name: config-storage
-      spec:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "zfs-local"
-        resources:
-          requests:
-            storage: 10Gi
