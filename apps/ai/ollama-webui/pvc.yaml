@@ -12,3 +12,26 @@ spec:
     requests:
       storage: 5Gi
   storageClassName: zfs-local
+---
+ # PV for Ollama WebUI
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ollama-webui-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/ollama-webui
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai

@@ -4,7 +4,7 @@ metadata:
   name: ollama-models
   namespace: ollama
   annotations:
-    openebs.io/retainpv: "true"
+    openebs.io/retainpv: "true"    # OpenEBS-specific retention
 spec:
   accessModes:
     - ReadWriteOnce
@@ -12,3 +12,25 @@ spec:
     requests:
       storage: 250Gi
   storageClassName: zfs-local
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ollama-models-pv    # Human-readable name
+spec:
+  capacity:
+    storage: 250Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/ollama-models    # Your actual directory
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai    # Your node name
