@@ -9,6 +9,8 @@ metadata:
         value: hostpath
       - name: BasePath
         value: /datapool/kubernetes
+      - name: SubdirPath
+        value: "%(pvc.namespace)s/%(pvc.name)s"
 provisioner: openebs.io/local
 reclaimPolicy: Retain
 volumeBindingMode: WaitForFirstConsumer
