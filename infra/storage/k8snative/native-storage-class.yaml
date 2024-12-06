@@ -1,0 +1,7 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-storage
+provisioner: kubernetes.io/no-provisioner    # This tells Kubernetes we'll manage the directories
+reclaimPolicy: Retain    # This ensures data stays even if PVCs are deleted
+volumeBindingMode: WaitForFirstConsumer    # This waits to bind until a Pod needs it

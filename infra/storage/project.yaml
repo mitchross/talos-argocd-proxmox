@@ -13,6 +13,9 @@ spec:
       server: '*'
     - namespace: 'csi-driver-nfs'
       server: '*'
+
+    - namespace: 'k8snative'
+      server: '*'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'
