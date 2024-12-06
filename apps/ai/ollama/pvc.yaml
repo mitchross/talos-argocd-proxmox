@@ -11,7 +11,7 @@ spec:
   resources:
     requests:
       storage: 250Gi
-  storageClassName: zfs-local
+  storageClassName: local-storage
 ---
 apiVersion: v1
 kind: PersistentVolume
