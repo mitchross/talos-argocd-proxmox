@@ -4,14 +4,11 @@ metadata:
   name: zfs-local
   annotations:
     openebs.io/cas-type: local
-    cas.openebs.io/config: |
-      - name: StorageType
-        value: hostpath
-      - name: BasePath
-        value: /datapool/kubernetes
-      - name: SubdirPath
-        value: "%(pvc.namespace)s/%(pvc.name)s"
 provisioner: openebs.io/local
+parameters:
+  storageType: "hostpath"
+  basePath: "/datapool/kubernetes"
+  pathPattern: "{{.PVC.namespace}}/{{.PVC.name}}"
 reclaimPolicy: Retain
 volumeBindingMode: WaitForFirstConsumer
 allowedTopologies:
