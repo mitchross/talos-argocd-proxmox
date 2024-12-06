@@ -1,10 +1,9 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: ollama-webui
   namespace: ollama-webui
 spec:
-  serviceName: "ollama-webui"
   replicas: 1
   selector:
     matchLabels:
@@ -30,14 +29,9 @@ spec:
             - configMapRef:
                 name: ollama-webui-configmap
           volumeMounts:
-            - name: webui-volume
+            - name: webui-data
               mountPath: /app/backend/data
-  volumeClaimTemplates:
-    - metadata:
-        name: webui-volume
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        storageClassName: "zfs-local"
-        resources:
-          requests:
-            storage: 5Gi
+      volumes:
+        - name: webui-data
+          persistentVolumeClaim:
+            claimName: ollama-webui-data

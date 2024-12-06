@@ -4,7 +4,7 @@ metadata:
   name: ollama-models
   namespace: ollama
   annotations:
-    openebs.io/retainpv: "true"    # OpenEBS-specific retention
+    openebs.io/retainpv: "true"
 spec:
   accessModes:
     - ReadWriteOnce

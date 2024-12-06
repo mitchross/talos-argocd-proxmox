@@ -1,10 +1,9 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: ollama
   namespace: ollama
 spec:
-  serviceName: "ollama"
   replicas: 1
   selector:
     matchLabels:
@@ -18,8 +17,6 @@ spec:
       containers:
         - name: ollama
           image: ollama/ollama:0.4.7
-
-
           ports:
             - containerPort: 11434
           resources:
@@ -29,7 +26,7 @@ spec:
             limits:
               cpu: 8000m
               memory: 38Gi
-              nvidia.com/gpu: 2  # Request 2 GPUs
+              nvidia.com/gpu: 2
           securityContext:
             privileged: true
           env:
@@ -47,6 +44,9 @@ spec:
               mountPath: /usr/local/nvidia
               readOnly: true
       volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: ollama-models
         - name: config
           configMap:
             name: ollama-configmap
@@ -55,12 +55,3 @@ spec:
             path: /usr/local/nvidia
       nodeSelector:
          nvidia.com/gpu.present: "true"
-  volumeClaimTemplates:
-    - metadata:
-        name: models
-      spec:
-        accessModes: [ "ReadWriteOnce" ]
-        storageClassName: "zfs-local"
-        resources:
-          requests:
-            storage: 250Gi  # Adjust this size as needed
