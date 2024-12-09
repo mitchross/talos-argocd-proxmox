@@ -11,7 +11,7 @@ spec:
   resources:
     requests:
       storage: 250Gi
-  volumeName: comfyui-models-pv    # This explicitly connects to your specific PV
+  volumeName: comfyui-models-pv
 
 ---
 # PVC for ComfyUI Config
@@ -66,7 +66,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: comfyui-models-pv    # Clear, descriptive name
+  name: comfyui-models-pv
 spec:
   capacity:
     storage: 250Gi
@@ -75,7 +75,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
   local:
-    path: /datapool/kubernetes/comfyui/models    # Human-readable path
+    path: /datapool/kubernetes/comfyui/models
   nodeAffinity:
     required:
       nodeSelectorTerms:

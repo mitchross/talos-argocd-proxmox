@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment    # Changed from StatefulSet to Deployment
+kind: Deployment
 metadata:
   name: comfyui
   namespace: comfyui
@@ -22,14 +22,14 @@ spec:
           command: ['sh', '-c']
           args:
             - |
-              mkdir -p /cache/.cache/pip /cache/.cache/huggingface /cache/comfyui-logs;
+              mkdir -p /cache/.cache/pip /cache/.cache/huggingface;
               chmod -R 777 /cache;
           volumeMounts:
             - name: cache-storage
               mountPath: /cache
       containers:
         - name: comfyui
-          image: ghcr.io/mitchross/k3s-argocd-proxmox-comfyui:v1.0.10
+          image: ghcr.io/mitchross/comfyui-flux-flux:latest@sha256:67feb29f550ac86cd4c7f24d943fdbc50012bcd4cf789a29acb56e885d46dd0a  # Will be updated with your new image
           args: ["--listen", "0.0.0.0"]
           imagePullPolicy: Always
           ports:
@@ -48,21 +48,28 @@ spec:
               value: "all"
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: "compute,utility"
+            - name: LOW_VRAM
+              value: "false"
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: comfyui-secret
+                  key: HF_TOKEN
             - name: PIP_CACHE_DIR
-              value: "/cache/.cache/pip"
+              value: "/opt/comfyui/cache/.cache/pip"
             - name: TRANSFORMERS_CACHE
-              value: "/cache/.cache/huggingface"
+              value: "/opt/comfyui/cache/.cache/huggingface"
             - name: HOME
-              value: "/cache"
+              value: "/opt/comfyui"
           volumeMounts:
             - name: models-storage
-              mountPath: /usr/local/ComfyUI/models
+              mountPath: /opt/comfyui/models
             - name: config-storage
-              mountPath: /usr/local/ComfyUI/config
+              mountPath: /opt/comfyui/config
             - name: workspace
-              mountPath: /usr/local/ComfyUI/output
+              mountPath: /opt/comfyui/output
             - name: cache-storage
-              mountPath: /cache
+              mountPath: /opt/comfyui/cache
             - name: nvidia-driver
               mountPath: /usr/local/nvidia
               readOnly: true

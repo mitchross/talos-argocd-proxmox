@@ -8,5 +8,6 @@ resources:
   - service.yaml
   - httproute.yaml
   - configmap.yaml
+  - externalsecret.yaml
 
 namespace: comfyui
