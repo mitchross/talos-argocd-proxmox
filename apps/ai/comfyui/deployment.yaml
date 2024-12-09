@@ -19,6 +19,7 @@ spec:
       initContainers:
         - name: init-permissions
           image: busybox
+          imagePullPolicy: IfNotPresent
           command: ['sh', '-c']
           args:
             - |
