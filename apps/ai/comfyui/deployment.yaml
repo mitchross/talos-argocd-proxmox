@@ -30,8 +30,7 @@ spec:
       containers:
         - name: comfyui
           image: ghcr.io/mitchross/comfyui-flux-flux:latest@sha256:67feb29f550ac86cd4c7f24d943fdbc50012bcd4cf789a29acb56e885d46dd0a  # Will be updated with your new image
-          args: ["--listen", "0.0.0.0"]
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8188
               name: http
@@ -60,6 +59,7 @@ spec:
             - name: TRANSFORMERS_CACHE
               value: "/opt/comfyui/cache/.cache/huggingface"
             - name: HOME
+            
               value: "/opt/comfyui"
           volumeMounts:
             - name: models-storage
