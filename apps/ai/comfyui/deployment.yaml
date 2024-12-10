@@ -43,6 +43,11 @@ spec:
               cpu: 8000m
               memory: 38Gi
               nvidia.com/gpu: 2
+          securityContext:
+            fsGroup: 1000
+            runAsUser: 1000
+            runAsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
           env:
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"
