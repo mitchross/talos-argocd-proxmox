@@ -16,6 +16,11 @@ spec:
         reloader.stakater.com/auto: "true"
     spec:
       runtimeClassName: nvidia
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
       initContainers:
         - name: init-permissions
           image: busybox
@@ -43,11 +48,6 @@ spec:
               cpu: 8000m
               memory: 38Gi
               nvidia.com/gpu: 2
-          securityContext:
-            fsGroup: 1000
-            runAsUser: 1000
-            runAsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
           env:
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"
@@ -65,7 +65,6 @@ spec:
             - name: TRANSFORMERS_CACHE
               value: "/opt/comfyui/cache/.cache/huggingface"
             - name: HOME
-            
               value: "/opt/comfyui"
           volumeMounts:
             - name: models-storage
