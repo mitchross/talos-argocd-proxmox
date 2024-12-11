@@ -1,9 +1,9 @@
 
-# deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: comfyui
+  namespace: comfyui
 spec:
   replicas: 1
   selector:
