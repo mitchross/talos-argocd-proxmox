@@ -25,17 +25,20 @@ spec:
         - name: init-permissions
           image: busybox
           imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 0
           command: ['sh', '-c']
           args:
             - |
               mkdir -p /cache/.cache/pip /cache/.cache/huggingface;
               chmod -R 777 /cache;
+              chown -R 1000:1000 /cache
           volumeMounts:
             - name: cache-storage
               mountPath: /cache
       containers:
         - name: comfyui
-          image: ghcr.io/mitchross/comfyui-flux:cu124@sha256:b116eb6fb971bedff30ae30b1b6791dfed5a09da3e6d267fc0b43f5b632cd489
+          image: ghcr.io/mitchross/comfyui-flux:latest@sha256:b0851b137adc185b3d7697ae161090a671768a4f641aed3332cb3a139a25689c
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8188
@@ -78,6 +81,31 @@ spec:
             - name: nvidia-driver
               mountPath: /usr/local/nvidia
               readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8188
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8188
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /
+              port: 8188
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 12
       volumes:
         - name: models-storage
           persistentVolumeClaim:
@@ -95,4 +123,4 @@ spec:
           hostPath:
             path: /usr/local/nvidia
       nodeSelector:
-         nvidia.com/gpu.present: "true"
+        nvidia.com/gpu.present: "true"
