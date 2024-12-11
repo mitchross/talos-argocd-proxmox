@@ -1,8 +1,55 @@
+# pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: comfyui-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi  # Adjust size as needed
+
+---
+# configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: comfyui-configmap
+data:
+  gpu_config.json: |
+    {
+      "gpu_layers": "auto",
+      "cuda_devices": [0, 1],
+      "max_parallel_gpu_requests": 2
+    }
+
+---
+# external-secret.yaml
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: comfyui-huggingface
+spec:
+  refreshInterval: "1h"
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: 1password
+  target:
+    name: comfyui-secret
+    creationPolicy: Owner
+  data:
+    - secretKey: HF_TOKEN
+      remoteRef:
+        key: comfyui-huggingface
+        property: token
+
+---
+# deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: comfyui
-  namespace: comfyui
 spec:
   replicas: 1
   selector:
@@ -12,115 +59,35 @@ spec:
     metadata:
       labels:
         app: comfyui
-      annotations:
-        reloader.stakater.com/auto: "true"
     spec:
-      runtimeClassName: nvidia
-      securityContext:
-        fsGroup: 1000
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroupChangePolicy: OnRootMismatch
-      initContainers:
-        - name: init-permissions
-          image: busybox
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            runAsUser: 0
-          command: ['sh', '-c']
-          args:
-            - |
-              mkdir -p /cache/.cache/pip /cache/.cache/huggingface;
-              chmod -R 777 /cache;
-              chown -R 1000:1000 /cache
-          volumeMounts:
-            - name: cache-storage
-              mountPath: /cache
       containers:
-        - name: comfyui
-          image: ghcr.io/mitchross/comfyui-flux:latest@sha256:b0851b137adc185b3d7697ae161090a671768a4f641aed3332cb3a139a25689c
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 8188
-              name: http
-          resources:
-            requests:
-              cpu: 4000m
-              memory: 16Gi
-            limits:
-              cpu: 8000m
-              memory: 38Gi
-              nvidia.com/gpu: 2
-          env:
-            - name: NVIDIA_VISIBLE_DEVICES
-              value: "all"
-            - name: NVIDIA_DRIVER_CAPABILITIES
-              value: "compute,utility"
-            - name: LOW_VRAM
-              value: "false"
-            - name: HF_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: comfyui-secret
-                  key: HF_TOKEN
-            - name: PIP_CACHE_DIR
-              value: "/opt/comfyui/cache/.cache/pip"
-            - name: TRANSFORMERS_CACHE
-              value: "/opt/comfyui/cache/.cache/huggingface"
-            - name: HOME
-              value: "/opt/comfyui"
-          volumeMounts:
-            - name: models-storage
-              mountPath: /opt/comfyui/models
-            - name: config-storage
-              mountPath: /opt/comfyui/config
-            - name: workspace
-              mountPath: /opt/comfyui/output
-            - name: cache-storage
-              mountPath: /opt/comfyui/cache
-            - name: nvidia-driver
-              mountPath: /usr/local/nvidia
-              readOnly: true
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 8188
-            initialDelaySeconds: 60
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 8188
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
-            successThreshold: 1
-            failureThreshold: 3
-          startupProbe:
-            httpGet:
-              path: /
-              port: 8188
-            initialDelaySeconds: 60
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 12
+      - name: comfyui
+        image: frefrik/comfyui-flux:latest
+        ports:
+        - containerPort: 8188
+        env:
+        - name: CLI_ARGS
+          value: ""
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: comfyui-secret
+              key: HF_TOKEN
+        - name: LOW_VRAM
+          value: "false"
+        volumeMounts:
+        - name: comfyui-data
+          mountPath: /app
+        - name: gpu-config
+          mountPath: /app/gpu_config.json
+          subPath: gpu_config.json
+        resources:
+          limits:
+            nvidia.com/gpu: 2  # Updated to match cuda_devices config
       volumes:
-        - name: models-storage
-          persistentVolumeClaim:
-            claimName: comfyui-models-pvc
-        - name: config-storage
-          persistentVolumeClaim:
-            claimName: comfyui-config-pvc
-        - name: workspace
-          persistentVolumeClaim:
-            claimName: comfyui-workspace-pvc
-        - name: cache-storage
-          persistentVolumeClaim:
-            claimName: comfyui-cache-pvc
-        - name: nvidia-driver
-          hostPath:
-            path: /usr/local/nvidia
-      nodeSelector:
-        nvidia.com/gpu.present: "true"
+      - name: comfyui-data
+        persistentVolumeClaim:
+          claimName: comfyui-data
+      - name: gpu-config
+        configMap:
+          name: comfyui-configmap
