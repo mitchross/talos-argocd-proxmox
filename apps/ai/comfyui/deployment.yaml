@@ -1,39 +1,7 @@
-# init-job.yaml
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: comfyui-init
-  namespace: comfyui
-spec:
-  template:
-    spec:
-      nodeSelector:
-        kubernetes.io/hostname: vanillax-ai
-      containers:
-      - name: init-storage
-        image: busybox
-        command: 
-        - /bin/sh
-        - -c
-        - |
-          mkdir -p /datapool/kubernetes/comfyui/data
-          chmod 777 /datapool/kubernetes/comfyui/data
-        volumeMounts:
-        - name: host-path
-          mountPath: /datapool
-      volumes:
-      - name: host-path
-        hostPath:
-          path: /datapool
-          type: DirectoryOrCreate
-      restartPolicy: Never
-  backoffLimit: 4
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: comfyui
-  namespace: comfyui
 spec:
   replicas: 1
   selector:
@@ -44,6 +12,7 @@ spec:
       labels:
         app: comfyui
     spec:
+      runtimeClassName: nvidia
       nodeSelector:
         kubernetes.io/hostname: vanillax-ai
       initContainers:
@@ -68,12 +37,21 @@ spec:
               key: HF_TOKEN
         - name: LOW_VRAM
           value: "false"
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "all"
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: "compute,utility"
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0,1"
         volumeMounts:
         - name: comfyui-data
           mountPath: /app
         - name: gpu-config
           mountPath: /app/gpu_config.json
           subPath: gpu_config.json
+        - name: nvidia-driver
+          mountPath: /usr/local/nvidia
+          readOnly: true
         resources:
           limits:
             nvidia.com/gpu: 2
@@ -88,3 +66,7 @@ spec:
         hostPath:
           path: /datapool
           type: DirectoryOrCreate
+      - name: nvidia-driver
+        hostPath:
+          path: /usr/local/nvidia
+          type: Directory
