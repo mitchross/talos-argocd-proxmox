@@ -1,13 +1,40 @@
+# pv.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: comfyui-pv
+  namespace: comfyui
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/comfyui/data  # Updated to match Docker Compose structure
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai
+
+---
+# pvc.yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: comfyui-data
   namespace: comfyui
+  annotations:
+    openebs.io/retainpv: "true"
 spec:
   accessModes:
     - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-storage
   resources:
     requests:
-      storage: 10Gi  # Adjust size as needed
+      storage: 10Gi
+  storageClassName: local-storage

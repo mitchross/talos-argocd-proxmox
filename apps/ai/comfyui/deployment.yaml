@@ -1,4 +1,3 @@
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -14,6 +13,8 @@ spec:
       labels:
         app: comfyui
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: vanillax-ai
       containers:
       - name: comfyui
         image: frefrik/comfyui-flux:latest
@@ -31,13 +32,13 @@ spec:
           value: "false"
         volumeMounts:
         - name: comfyui-data
-          mountPath: /app
+          mountPath: /app    # This matches the Docker Compose mount point exactly
         - name: gpu-config
           mountPath: /app/gpu_config.json
           subPath: gpu_config.json
         resources:
           limits:
-            nvidia.com/gpu: 2  # Updated to match cuda_devices config
+            nvidia.com/gpu: 2
       volumes:
       - name: comfyui-data
         persistentVolumeClaim:
