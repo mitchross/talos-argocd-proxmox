@@ -3,10 +3,14 @@ kind: HTTPRoute
 metadata:
   name: prometheus-route
   namespace: monitoring
+  annotations:
+    cilium.io/websocket: "true"
 spec:
   parentRefs:
     - name: internal
       namespace: gateway
+      kind: Gateway
+      group: gateway.networking.k8s.io
   hostnames:
     - "prometheus.vanillax.me"
   rules:
@@ -16,12 +20,16 @@ spec:
             value: /
         - path:
             type: PathPrefix
-            value: /static/
+            value: /graph
         - path:
             type: PathPrefix
             value: /api/
+        - path:
+            type: PathPrefix
+            value: /static/
       backendRefs:
         - name: kube-prometheus-stack-prometheus
           port: 9090
           kind: Service
           group: ""
+          weight: 1
