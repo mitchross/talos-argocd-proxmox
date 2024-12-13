@@ -14,6 +14,12 @@ spec:
         - path:
             type: PathPrefix
             value: /
+        - path:
+            type: PathPrefix
+            value: /static/
+        - path:
+            type: PathPrefix
+            value: /api/
       backendRefs:
         - name: kube-prometheus-stack-prometheus
           port: 9090
