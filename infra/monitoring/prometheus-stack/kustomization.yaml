@@ -5,4 +5,5 @@ resources:
   - ns.yaml
   - kube-prometheus-stack.yaml
   - pvc.yaml
-  - http-route.yaml
+  - grafana-http-route.yaml
+  - prometheus-http-route.yaml
