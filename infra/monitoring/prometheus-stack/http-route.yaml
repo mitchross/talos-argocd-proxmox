@@ -35,5 +35,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: prometheus-operated
+        - name: kube-prometheus-stack-prometheus
           port: 9090
