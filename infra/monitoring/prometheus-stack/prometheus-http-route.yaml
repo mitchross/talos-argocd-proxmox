@@ -8,12 +8,12 @@ spec:
     - name: internal
       namespace: gateway
   hostnames:
-    - "prometheus.vanillax.me"
+    - "prom.vanillax.me"
   rules:
     - matches:
         - path:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: prometheus-operated
-          port: 9090
+        - name: kube-prometheus-stack-prometheus-node-exporter
+          port: 9100
