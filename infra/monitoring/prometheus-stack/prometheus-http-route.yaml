@@ -15,5 +15,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: kube-prometheus-stack-prometheus
-          port: 9090
+        - name: kube-prometheus-stack-prometheus-node-exporter
+          port: 9100
