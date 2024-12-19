@@ -21,6 +21,8 @@ spec:
       server: '*'
     - namespace: 'homepage-dashboard'
       server: '*'
+    - namespace: 'reubah'
+      server: '*'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'

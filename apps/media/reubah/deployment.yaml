@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reubah
+  namespace: reubah
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reubah
+  template:
+    metadata:
+      labels:
+        app: reubah
+    spec:
+      containers:
+        - name: reubah
+          image: ghcr.io/dendianugerah/reubah:latest
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - name: doc-temp
+              mountPath: /tmp
+          env:
+            - name: PORT
+              value: "8081"
+      volumes:
+        - name: doc-temp
+          persistentVolumeClaim:
+            claimName: reubah-doc-temp
