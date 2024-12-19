@@ -25,7 +25,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
   local:
-    path: /datapool/kubernetes/reubah-doc-temp
+    path: /datapool/kubernetes/reubah/doc-temp
   nodeAffinity:
     required:
       nodeSelectorTerms:
