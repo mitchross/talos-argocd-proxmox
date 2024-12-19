@@ -11,4 +11,27 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: zfs-local
+  storageClassName: local-storage
+---
+# PV for SearXNG
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: searxng-config-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/searxng/config
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai
