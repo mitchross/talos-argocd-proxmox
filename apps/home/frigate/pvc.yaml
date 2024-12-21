@@ -3,13 +3,34 @@ kind: PersistentVolumeClaim
 metadata:
   name: frigate-media
   namespace: frigate
-  annotations:
-    directory: "frigate/media"    # This will create /datapool/kubernetes/frigate/media
-    retain: "true"                # This ensures data is retained
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 250Gi
-  storageClassName: zfs-local
+      storage: 1000Gi
+  storageClassName: local-storage
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: frigate-media-pv
+  namespace: frigate
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/frigate/media
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai
