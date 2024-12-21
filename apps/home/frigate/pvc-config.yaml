@@ -15,7 +15,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: frigate-media-pv
+  name: frigate-config-pv
   namespace: frigate
 spec:
   capacity:
