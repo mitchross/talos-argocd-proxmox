@@ -62,7 +62,7 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: zfs-local
+  storageClassName: local-storage
 
 ---
 apiVersion: v1
@@ -76,7 +76,7 @@ spec:
   resources:
     requests:
       storage: 500Mi
-  storageClassName: zfs-local
+  storageClassName: local-storage
 
 ---
 apiVersion: v1
