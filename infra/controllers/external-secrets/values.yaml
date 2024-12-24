@@ -14,11 +14,10 @@ webhook:
     issuerRef:
       name: cloudflare-cluster-issuer
       kind: ClusterIssuer
-  servicePort: 443
-  hostNetwork: false
-  securityContext:
-    runAsNonRoot: true
-    runAsUser: 65534
+  port: 10250
+  service:
+    type: ClusterIP
+    port: 443
   resources:
     limits:
       cpu: 100m
