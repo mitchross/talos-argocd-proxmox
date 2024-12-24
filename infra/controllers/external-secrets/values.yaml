@@ -14,15 +14,7 @@ webhook:
     issuerRef:
       name: cloudflare-cluster-issuer
       kind: ClusterIssuer
-  servicePort: 443
   hostNetwork: false
   securityContext:
     runAsNonRoot: true
     runAsUser: 65534
-  resources:
-    limits:
-      cpu: 100m
-      memory: 64Mi
-    requests:
-      cpu: 10m
-      memory: 32Mi
