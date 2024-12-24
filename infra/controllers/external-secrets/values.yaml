@@ -2,6 +2,6 @@ replicaCount: 1
 serviceAccount:
   create: true
 certController:
-  create: false
+  create: true
 webhook:
   create: true
