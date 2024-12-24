@@ -5,19 +5,3 @@ certController:
   create: true
 webhook:
   create: true
-  certManager:
-    enabled: true
-    certificate:
-      duration: 8760h
-      renewBefore: 360h
-  hostNetwork: false
-  securityContext:
-    runAsNonRoot: true
-    runAsUser: 65534
-  resources:
-    limits:
-      cpu: 100m
-      memory: 64Mi
-    requests:
-      cpu: 10m
-      memory: 32Mi
