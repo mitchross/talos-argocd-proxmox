@@ -7,10 +7,14 @@ resources:
   - external-secret.yaml
   - cluster-secret-store.yaml
   - ns.yaml
+  - webhook-certificate.yaml
 
+  
 helmCharts:
   - name: external-secrets
     repo: https://charts.external-secrets.io
     releaseName: external-secrets
     version: 0.11.0
     valuesFile: values.yaml
+    
+
