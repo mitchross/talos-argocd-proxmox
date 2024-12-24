@@ -7,13 +7,15 @@ storageClasses:
   defaultClass: false
   parameters:
     source: "//192.168.10.8/k8s"
-    csi.storage.k8s.io/node-stage-secret-name: "smbcreds"  # This matches the secret name in external-secret.yaml
+    csi.storage.k8s.io/node-stage-secret-name: "smbcreds"
     csi.storage.k8s.io/node-stage-secret-namespace: "csi-driver-smb"
   mountOptions:
     - dir_mode=0777
     - file_mode=0777
     - uid=1000
     - gid=1000
+    - cache=strict  # Added for better NVR performance
+    - nosharesock   # Better for multi-pod access
 
 csiDriver:
   name: smb.csi.k8s.io

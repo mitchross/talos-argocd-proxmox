@@ -3,35 +3,12 @@ kind: PersistentVolumeClaim
 metadata:
   name: frigate-media
   namespace: frigate
-  annotations:
-    directory: "frigate/media"    
-    retain: "true"                
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany  # SMB supports multiple readers/writers
   resources:
     requests:
       storage: 1000Gi
-  storageClassName: local-storage
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: frigate-media-pv
-spec:
-  capacity:
-    storage: 1000Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-storage
-  local:
-    path: /datapool/kubernetes/frigate/media
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - vanillax-ai
+  storageClassName: smb-csi
+  volumeAttributes:
+    subPath: "frigate/media"  # This ensures a fixed path on the SMB share
