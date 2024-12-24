@@ -8,8 +8,10 @@ webhook:
   certManager:
     enabled: true
     certificate:
+      secretName: external-secrets-webhook
       duration: 8760h
       renewBefore: 360h
+  port: 10250
   hostNetwork: false
   securityContext:
     runAsNonRoot: true
