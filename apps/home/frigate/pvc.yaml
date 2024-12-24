@@ -3,6 +3,9 @@ kind: PersistentVolumeClaim
 metadata:
   name: frigate-media
   namespace: frigate
+  annotations:
+    directory: "frigate/media"    
+    retain: "true"                
 spec:
   accessModes:
     - ReadWriteOnce
@@ -10,16 +13,14 @@ spec:
     requests:
       storage: 1000Gi
   storageClassName: local-storage
-
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: frigate-media-pv
-  namespace: frigate
 spec:
   capacity:
-    storage: 10Gi
+    storage: 1000Gi
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain

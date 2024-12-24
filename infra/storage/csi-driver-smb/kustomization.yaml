@@ -12,3 +12,4 @@ helmCharts:
 
 resources:
   - namespace.yaml
+  - external-secret.yaml
