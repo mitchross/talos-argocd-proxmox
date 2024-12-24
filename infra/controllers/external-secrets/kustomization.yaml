@@ -7,7 +7,6 @@ resources:
   - external-secret.yaml
   - cluster-secret-store.yaml
   - ns.yaml
-  - webhook-certificate.yaml
 
   
 helmCharts:
