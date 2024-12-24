@@ -11,15 +11,10 @@ webhook:
       secretName: external-secrets-webhook
       duration: 8760h
       renewBefore: 360h
-  port: 10250
+    issuerRef:
+      name: cloudflare-cluster-issuer
+      kind: ClusterIssuer
   hostNetwork: false
   securityContext:
     runAsNonRoot: true
     runAsUser: 65534
-  resources:
-    limits:
-      cpu: 100m
-      memory: 64Mi
-    requests:
-      cpu: 10m
-      memory: 32Mi
