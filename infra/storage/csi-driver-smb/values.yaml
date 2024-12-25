@@ -1,7 +1,3 @@
-driver:
-  name: smb.csi.k8s.io
-  replicas: 2
-
 storageClasses:
 - name: smb-csi
   defaultClass: false
@@ -14,12 +10,5 @@ storageClasses:
     - file_mode=0777
     - uid=1000
     - gid=1000
-    - cache=strict  # Added for better NVR performance
-    - nosharesock   # Better for multi-pod access
-
-csiDriver:
-  name: smb.csi.k8s.io
-  attachRequired: false
-  fsGroupPolicy: File
-
-kubeletDir: /var/lib/kubelet
+    - cache=strict
+    - nosharesock

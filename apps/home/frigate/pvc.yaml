@@ -5,10 +5,10 @@ metadata:
   namespace: frigate
 spec:
   accessModes:
-    - ReadWriteMany  # SMB supports multiple readers/writers
+    - ReadWriteMany
   resources:
     requests:
       storage: 1000Gi
   storageClassName: smb-csi
-  volumeAttributes:
-    subPath: "frigate/media"  # This ensures a fixed path on the SMB share
+  parameters:
+    source: "//192.168.10.8/k8s/frigate/media"
