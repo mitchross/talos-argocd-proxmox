@@ -2,12 +2,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 helmCharts:
-  - name: csi-driver-smb
-    repo: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/master/charts
-    version: v1.14.0
-    releaseName: csi-driver-smb
+  - name: csi-driver-nfs
+    repo: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts
+    version: v4.9.0
+    releaseName: csi-driver-nfs
     includeCRDs: true
-    namespace: csi-driver-smb
+    namespace: csi-driver-nfs
     valuesFile: values.yaml
 
 resources:
