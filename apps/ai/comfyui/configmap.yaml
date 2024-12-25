@@ -6,7 +6,14 @@ metadata:
 data:
   gpu_config.json: |
     {
-      "gpu_layers": "auto",
-      "cuda_devices": [0, 1],
-      "max_parallel_gpu_requests": 2
+      "gpu_ids": [0, 1],
+      "device_mode": "parallel",
+      "unet_load_device": "cuda",
+      "clip_load_device": "cuda",
+      "vae_load_device": "cuda",
+      "free_gpu_mem": true,
+      "attention_slice_size": "auto",
+      "balanced_vram": true,
+      "cpu_offload": false,
+      "max_parallel_inference": 2
     }
