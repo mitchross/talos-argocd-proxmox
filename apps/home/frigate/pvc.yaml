@@ -34,7 +34,7 @@ spec:
     driver: smb.csi.k8s.io
     volumeHandle: frigate-media-volume
     volumeAttributes:
-      source: "//192.168.10.8/k8s/frigate/media"  # This will create/use the specific path
+      source: "//192.168.10.8/frigate/media"  # This will create/use the specific path
     nodeStageSecretRef:
       name: smbcreds
       namespace: csi-driver-smb
