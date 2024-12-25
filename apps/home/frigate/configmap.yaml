@@ -68,16 +68,6 @@ data:
           detect:
             enabled: True 
 
-        garage:
-          enabled: True
-          ffmpeg:
-            inputs:
-              - path: rtsp://192.168.10.46:8554/garage
-                roles:
-                  - detect
-                  - record
-          detect:
-            enabled: True
 
         driveway:
           enabled: True
