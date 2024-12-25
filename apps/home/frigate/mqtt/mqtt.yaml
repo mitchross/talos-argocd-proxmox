@@ -45,13 +45,21 @@ spec:
       labels:
         app: mosquitto
     spec:
+      securityContext:
+        fsGroup: 1883
+        runAsUser: 1883
+        runAsGroup: 1883
       initContainers:
         - name: init-mosquitto
           image: busybox
-          command: ['sh', '-c', 'mkdir -p /mosquitto/data /mosquitto/log']
+          command: ['sh', '-c', 'mkdir -p /mosquitto/data /mosquitto/log /mosquitto/config && cp /tmp/config/mosquitto.conf /mosquitto/config/ && chown -R 1883:1883 /mosquitto']
+          securityContext:
+            runAsUser: 0
           volumeMounts:
             - name: mosquitto-storage
               mountPath: /mosquitto
+            - name: mosquitto-config
+              mountPath: /tmp/config
       containers:
         - name: mosquitto
           image: eclipse-mosquitto:2.0
@@ -69,18 +77,8 @@ spec:
                   name: mqtt-secret
                   key: mqtt-password
           volumeMounts:
-            - name: mosquitto-config
-              mountPath: /mosquitto/config
             - name: mosquitto-storage
               mountPath: /mosquitto
-      volumes:
-        - name: mosquitto-config
-          configMap:
-            name: mosquitto-configmap
-        - name: mosquitto-storage
-          persistentVolumeClaim:
-            claimName: mosquitto-storage
-
 ---
 apiVersion: v1
 kind: Service
