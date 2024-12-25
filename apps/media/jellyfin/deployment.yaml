@@ -57,7 +57,7 @@ spec:
             claimName: jellyfin-config
         - name: media
           nfs:
-            server: 192.168.10.133
+            server: 192.168.10.8
             path: /mnt/generaltank/k8s/jellyfin
         - name: cache
           emptyDir: { }

@@ -19,8 +19,8 @@ metadata:
   name: mosquitto-storage
   namespace: frigate
   annotations:
-    directory: "frigate/mqtt"    # This will create /datapool/kubernetes/frigate/mqtt
-    retain: "true"               # This ensures data is retained
+    directory: "frigate/mqtt"
+    retain: "true"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -45,6 +45,13 @@ spec:
       labels:
         app: mosquitto
     spec:
+      initContainers:
+        - name: init-mosquitto
+          image: busybox
+          command: ['sh', '-c', 'mkdir -p /mosquitto/data /mosquitto/log']
+          volumeMounts:
+            - name: mosquitto-storage
+              mountPath: /mosquitto
       containers:
         - name: mosquitto
           image: eclipse-mosquitto:2.0
@@ -95,5 +102,5 @@ metadata:
   namespace: frigate
 type: Opaque
 data:
-  mqtt-username: YWRtaW4=  # base64 encoded username
-  mqtt-password: cGFzc3dvcmQ=  # base64 encoded password
+  mqtt-username: YWRtaW4=
+  mqtt-password: cGFzc3dvcmQ=
