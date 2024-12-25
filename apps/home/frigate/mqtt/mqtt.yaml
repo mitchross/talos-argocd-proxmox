@@ -52,31 +52,51 @@ spec:
 
 ---
 apiVersion: v1
-kind: PersistentVolumeClaim
+kind: PersistentVolume
 metadata:
-  name: mosquitto-data
+  name: mosquitto-data-pv
   namespace: frigate
 spec:
+  capacity:
+    storage: 1Gi
   accessModes:
     - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
+  persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/frigate/mqtt/data
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai
 
 ---
 apiVersion: v1
-kind: PersistentVolumeClaim
+kind: PersistentVolume
 metadata:
-  name: mosquitto-log
+  name: mosquitto-log-pv
   namespace: frigate
 spec:
+  capacity:
+    storage: 500Mi
   accessModes:
     - ReadWriteOnce
-  resources:
-    requests:
-      storage: 500Mi
+  persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/frigate/mqtt/log
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai
 
 ---
 apiVersion: v1
