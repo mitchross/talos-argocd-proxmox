@@ -4,7 +4,7 @@ kind: Kustomization
 helmCharts:
   - name: csi-driver-smb
     repo: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/master/charts
-    version: v1.14.0
+    version: v1.16.0
     releaseName: csi-driver-smb
     includeCRDs: true
     namespace: csi-driver-smb
