@@ -45,7 +45,7 @@ spec:
               mountPath: /themes
       containers:
         - name: torrent
-          image: ghcr.io/onedr0p/qbittorrent:5.0.2
+          image: ghcr.io/onedr0p/qbittorrent:5.0.3
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
