@@ -49,15 +49,6 @@ spec:
         fsGroup: 1883
         runAsUser: 1883
         runAsGroup: 1883
-      initContainers:
-        - name: init-mosquitto
-          image: busybox
-          command: ['sh', '-c', 'mkdir -p /mosquitto/data /mosquitto/log /mosquitto/config && cp /config/mosquitto.conf /mosquitto/config/ && chown -R 1883:1883 /mosquitto']
-          volumeMounts:
-            - name: storage
-              mountPath: /mosquitto
-            - name: config
-              mountPath: /config
       containers:
         - name: mosquitto
           image: eclipse-mosquitto:2.0
