@@ -68,6 +68,8 @@ spec:
           volumeMounts:
             - name: storage
               mountPath: /mosquitto
+            - name: config
+              mountPath: /mosquitto/config
       volumes:
         - name: config
           configMap:
