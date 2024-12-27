@@ -74,15 +74,23 @@ spec:
             - containerPort: 1883
           volumeMounts:
             - name: storage
-              mountPath: /mosquitto
+              mountPath: /mosquitto/data
+            - name: storage
+              mountPath: /mosquitto/log
             - name: config
               mountPath: /mosquitto/config
+            - name: mosquitto-config
+              mountPath: /mosquitto/config/mosquitto.conf
+              subPath: mosquitto.conf
       volumes:
         - name: config
           emptyDir: {}
         - name: storage
           persistentVolumeClaim:
             claimName: mosquitto-storage
+        - name: mosquitto-config
+          configMap:
+            name: mosquitto-configmap
 
 ---
 apiVersion: v1
