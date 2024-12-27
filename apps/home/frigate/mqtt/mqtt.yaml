@@ -67,9 +67,7 @@ spec:
                   key: mqtt-password
           volumeMounts:
             - name: storage
-              mountPath: /mosquitto/data
-            - name: storage
-              mountPath: /mosquitto/log
+              mountPath: /mosquitto
             - name: config
               mountPath: /mosquitto/config
       volumes:
