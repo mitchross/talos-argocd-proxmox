@@ -56,8 +56,7 @@ spec:
           persistentVolumeClaim:
             claimName: jellyfin-config
         - name: media
-          nfs:
-            server: 192.168.10.8
-            path: /mnt/generaltank/k8s/jellyfin
+          persistentVolumeClaim:
+            claimName: jellyfin-media
         - name: cache
           emptyDir: { }
