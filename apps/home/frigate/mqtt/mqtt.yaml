@@ -36,7 +36,7 @@ metadata:
   name: mosquitto
   namespace: frigate
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app: mosquitto
