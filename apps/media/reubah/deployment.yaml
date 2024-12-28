@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: reubah
-          image: ghcr.io/dendianugerah/reubah:latest@sha256-cbab15eb9497115ff47fa7f952c75fdaedf72f140c6c2abfd1a7b28a3a7cab07
+          image: ghcr.io/dendianugerah/reubah@sha256:d23bc33d67bae766ec71e508f628a81b9f469fd4afd06c238a23b3803f0748d8
           ports:
             - containerPort: 8081
           volumeMounts:

@@ -10,7 +10,7 @@ data:
     persistence_location /mosquitto/data/
     log_dest file /mosquitto/log/mosquitto.log
     allow_anonymous false
-    password_file /mosquitto/config/password.txt
+    password_file /mosquitto/config/mosquitto.passwd
 
 ---
 apiVersion: v1
@@ -50,40 +50,47 @@ spec:
         runAsUser: 1883
         runAsGroup: 1883
       initContainers:
-        - name: init-mosquitto
-          image: busybox
-          command: ['sh', '-c', 'mkdir -p /mosquitto/data /mosquitto/log /mosquitto/config && cp /config/mosquitto.conf /mosquitto/config/ && chown -R 1883:1883 /mosquitto']
-          volumeMounts:
-            - name: storage
-              mountPath: /mosquitto
-            - name: config
-              mountPath: /config
+      - name: init-passwd
+        image: eclipse-mosquitto:2.0
+        command: ['sh', '-c', "mosquitto_passwd -b -c /mosquitto/config/mosquitto.passwd $MQTT_USERNAME $MQTT_PASSWORD"]
+        env:
+        - name: MQTT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mqtt-secret
+              key: mqtt-username
+        - name: MQTT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mqtt-secret
+              key: mqtt-password
+        volumeMounts:
+        - name: config
+          mountPath: /mosquitto/config
       containers:
         - name: mosquitto
           image: eclipse-mosquitto:2.0
           ports:
             - containerPort: 1883
-          env:
-            - name: MQTT_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: mqtt-secret
-                  key: mqtt-username
-            - name: MQTT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mqtt-secret
-                  key: mqtt-password
           volumeMounts:
             - name: storage
-              mountPath: /mosquitto
+              mountPath: /mosquitto/data
+            - name: storage
+              mountPath: /mosquitto/log
+            - name: config
+              mountPath: /mosquitto/config
+            - name: mosquitto-config
+              mountPath: /mosquitto/config/mosquitto.conf
+              subPath: mosquitto.conf
       volumes:
         - name: config
-          configMap:
-            name: mosquitto-configmap
+          emptyDir: {}
         - name: storage
           persistentVolumeClaim:
             claimName: mosquitto-storage
+        - name: mosquitto-config
+          configMap:
+            name: mosquitto-configmap
 
 ---
 apiVersion: v1

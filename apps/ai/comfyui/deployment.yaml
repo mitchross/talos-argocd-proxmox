@@ -40,7 +40,7 @@ spec:
         - name: NVIDIA_VISIBLE_DEVICES
           value: "all"
         - name: NVIDIA_DRIVER_CAPABILITIES
-          value: "compute,utility"
+          value: "compute,utility,video"
         - name: CUDA_VISIBLE_DEVICES
           value: "0,1"
         volumeMounts:
