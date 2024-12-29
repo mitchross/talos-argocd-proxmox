@@ -2,8 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: homepage-dashboard
-  namespace: homepage-dashboardabels:
-   app.kubernetes.io/name: homepage-dashboard
+  namespace: homepage-dashboard
+  labels:
+    app.kubernetes.io/namepage-dashboard
 pec:
  selector:
    matchLabels:
@@ -48,6 +49,13 @@ pec:
          subPath: services.yaml
        - name: tmp
          mountPath: /tmp
+       resources:
+         requests:
+           cpu: 100m
+           memory: 128Mi
+         limits:
+           cpu: 500m
+           memory: 256Mi
      volumes:
      - name: config
        persistentVolumeClaim:
