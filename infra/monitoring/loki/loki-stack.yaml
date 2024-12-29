@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: loki-stack
-  namespace: argocd
+  namespace: monitoring
 spec:
   project: monitoring
   sources:
