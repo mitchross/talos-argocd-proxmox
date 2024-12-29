@@ -13,8 +13,38 @@ ingress:
     service: https://cilium-gateway-external.gateway.svc.cluster.local:443
     originRequest:
       originServerName: "*.vanillax.me"
+      proxyType: "http2"
+      noTLSVerify: true
+      connectTimeout: "10s"
+      keepAliveTimeout: "30s"
+      keepAliveConnections: 100
+      httpHostHeader: "*.vanillax.me"
+      # Pass through important headers
+      headers:
+        - name: "CF-Connecting-IP"
+        - name: "CF-IPCountry"
+        - name: "CF-RAY"
+        - name: "CF-Visitor"
+        - name: "X-Forwarded-For"
+        - name: "X-Forwarded-Proto"
+        - name: "True-Client-IP"
   - hostname: vanillax.me
     service: https://cilium-gateway-external.gateway.svc.cluster.local:443
     originRequest:
       originServerName: vanillax.me
+      proxyType: "http2"
+      noTLSVerify: true
+      connectTimeout: "10s"
+      keepAliveTimeout: "30s"
+      keepAliveConnections: 100
+      httpHostHeader: vanillax.me
+      # Pass through important headers
+      headers:
+        - name: "CF-Connecting-IP"
+        - name: "CF-IPCountry"
+        - name: "CF-RAY"
+        - name: "CF-Visitor"
+        - name: "X-Forwarded-For"
+        - name: "X-Forwarded-Proto"
+        - name: "True-Client-IP"
   - service: http_status:404
