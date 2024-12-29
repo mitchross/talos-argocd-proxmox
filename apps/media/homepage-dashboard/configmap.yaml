@@ -4,8 +4,8 @@ metadata:
   name: homepage-config
   namespace: homepage-dashboard
 data:
-  settings |
-   title: VanillaX Dashboard
+  settings.yaml: | 
+  title: VanillaX Dashboard
    theme: dark
    color: slate
    headerStyle: clean
@@ -19,7 +19,7 @@ data:
      Development:
        style: row
        columns: 3
-  services.yaml: |
+ services.yaml: |
    - Development:
        - Argo CD:
            icon: argocd.png
@@ -28,6 +28,6 @@ data:
            widget:
              type: argocd
              url: https://argocd.vanillax.me
-             key: argocd  # Optional: API key if needed
-             username: admin  # Optional: Basic auth if needed
-             password: ${SECRET_ARGOCD_PASSWORD}  # Will need to be provided via secret
+             key: argocd
+             username: admin
+             password: ${SECRET_ARGOCD_PASSWORD}
