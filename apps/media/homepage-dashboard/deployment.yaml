@@ -2,44 +2,58 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: homepage-dashboard
-  namespace: homepage-dashboard
-  labels:
-    app.kubernetes.io/name: homepage-dashboard
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: homepage-dashboard
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: homepage-dashboard
-    spec:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-      containers:
-      - name: homepage
-        image: ghcr.io/gethomepage/homepage
-        imagePullPolicy: Always
-        ports:
-        - name: http
-          containerPort: 3000
-        securityContext:
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          capabilities:
-            drop: ["ALL"]
-        volumeMounts:
-        - name: config
-          mountPath: /app/config
-        - name: tmp
-          mountPath: /tmp
-      volumes:
-      - name: config
-        persistentVolumeClaim:
-          claimName: homepage-config-pvc
-      - name: tmp
-        emptyDir: {}
+  namespace: homepage-dashboardabels:
+   app.kubernetes.io/name: homepage-dashboard
+pec:
+ selector:
+   matchLabels:
+     app.kubernetes.io/name: homepage-dashboard
+ replicas: 1
+ template:
+   metadata:
+     labels:
+       app.kubernetes.io/name: homepage-dashboard
+   spec:
+     securityContext:
+       runAsNonRoot: true
+       runAsUser: 1000
+       runAsGroup: 1000
+       fsGroup: 1000
+     containers:
+     - name: homepage
+       image: ghcr.io/gethomepage/homepage
+       imagePullPolicy: Always
+       ports:
+       - name: http
+         containerPort: 3000
+       securityContext:
+         allowPrivilegeEscalation: false
+         readOnlyRootFilesystem: true
+         capabilities:
+           drop: ["ALL"]
+       env:
+       - name: SECRET_ARGOCD_PASSWORD
+         valueFrom:
+           secretKeyRef:
+             name: homepage-secrets
+             key: argocd-password
+       volumeMounts:
+       - name: config
+         mountPath: /app/config
+       - name: homepage-config
+         mountPath: /app/config/settings.yaml
+         subPath: settings.yaml
+       - name: homepage-config
+         mountPath: /app/config/services.yaml
+         subPath: services.yaml
+       - name: tmp
+         mountPath: /tmp
+     volumes:
+     - name: config
+       persistentVolumeClaim:
+         claimName: homepage-config-pvc
+     - name: homepage-config
+       configMap:
+         name: homepage-config
+     - name: tmp
+       emptyDir: {}
