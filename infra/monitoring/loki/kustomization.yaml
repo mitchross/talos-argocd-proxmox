@@ -5,4 +5,4 @@ namespace: monitoring
 
 resources:
   - loki-stack.yaml
-  - http-route.yaml 
+  - routes.yaml 

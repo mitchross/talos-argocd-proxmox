@@ -4,7 +4,6 @@ kind: Kustomization
 namespace: monitoring
 
 resources:
-  - application.yaml
-  - pvc.yaml
-  - grafana-http-route.yaml
-  - prometheus-http-route.yaml
+  - prometheus-stack.yaml
+  - storage.yaml
+  - routes.yaml 

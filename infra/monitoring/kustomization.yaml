@@ -12,5 +12,5 @@ labels:
 resources:
   - ns.yaml
   - project.yaml
-  - loki/kustomization.yaml
-  - prometheus-stack/kustomization.yaml
+  - prometheus/
+  - loki/

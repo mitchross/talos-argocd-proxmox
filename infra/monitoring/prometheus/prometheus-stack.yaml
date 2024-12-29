@@ -1,0 +1,505 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus-stack
+  namespace: monitoring
+spec:
+  project: monitoring
+  sources:
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: 51.9.3
+      helm:
+        values:
+          prometheus:
+            prometheusSpec:
+              nodeSelector:
+                kubernetes.io/hostname: vanillax-ai
+              storageSpec:
+                volumeClaimTemplate:
+                  spec:
+                    storageClassName: local-storage   
+                    accessModes:
+                      - ReadWriteOnce
+                    resources:
+                      requests:
+                        storage: 10Gi
+          grafana:
+            additionalDataSources:
+              - name: Loki
+                type: loki
+                url: http://loki.monitoring.svc.cluster.local:3100
+                access: proxy
+                jsonData:
+                  maxLines: 1000
+            dashboardProviders:
+              dashboardproviders.yaml:
+                apiVersion: 1
+                providers:
+                  - name: 'Visitor Analytics'
+                    orgId: 1
+                    folder: 'Analytics'
+                    type: file
+                    disableDeletion: false
+                    editable: true
+                    options:
+                      path: /var/lib/grafana/dashboards/analytics
+            dashboards:
+              analytics:
+                visitor-analytics:
+                  json: |
+                    {
+                      "annotations": {
+                        "list": []
+                      },
+                      "editable": true,
+                      "fiscalYearStartMonth": 0,
+                      "graphTooltip": 0,
+                      "links": [],
+                      "liveNow": false,
+                      "panels": [
+                        {
+                          "datasource": {
+                            "type": "loki",
+                            "uid": "${DS_LOKI}"
+                          },
+                          "fieldConfig": {
+                            "defaults": {
+                              "mappings": [],
+                              "thresholds": {
+                                "mode": "absolute",
+                                "steps": [
+                                  {
+                                    "color": "blue",
+                                    "value": null
+                                  }
+                                ]
+                              },
+                              "unit": "short"
+                            }
+                          },
+                          "gridPos": {
+                            "h": 4,
+                            "w": 6,
+                            "x": 0,
+                            "y": 0
+                          },
+                          "id": 1,
+                          "options": {
+                            "colorMode": "value",
+                            "graphMode": "area",
+                            "justifyMode": "auto",
+                            "orientation": "auto",
+                            "reduceOptions": {
+                              "calcs": ["lastNotNull"],
+                              "fields": "",
+                              "values": false
+                            }
+                          },
+                          "targets": [
+                            {
+                              "datasource": {
+                                "type": "loki",
+                                "uid": "${DS_LOKI}"
+                              },
+                              "expr": "count_over_time({job=\"envoy\"}[24h])",
+                              "refId": "A"
+                            }
+                          ],
+                          "title": "Total Visits (24h)",
+                          "type": "stat"
+                        },
+                        {
+                          "datasource": {
+                            "type": "loki",
+                            "uid": "${DS_LOKI}"
+                          },
+                          "fieldConfig": {
+                            "defaults": {
+                              "mappings": [],
+                              "thresholds": {
+                                "mode": "absolute",
+                                "steps": [
+                                  {
+                                    "color": "green",
+                                    "value": null
+                                  }
+                                ]
+                              },
+                              "unit": "short"
+                            }
+                          },
+                          "gridPos": {
+                            "h": 4,
+                            "w": 6,
+                            "x": 6,
+                            "y": 0
+                          },
+                          "id": 2,
+                          "options": {
+                            "colorMode": "value",
+                            "graphMode": "area",
+                            "justifyMode": "auto",
+                            "orientation": "auto",
+                            "reduceOptions": {
+                              "calcs": ["lastNotNull"],
+                              "fields": "",
+                              "values": false
+                            }
+                          },
+                          "targets": [
+                            {
+                              "datasource": {
+                                "type": "loki",
+                                "uid": "${DS_LOKI}"
+                              },
+                              "expr": "count(count_over_time({job=\"envoy\"}[24h]) by (cf_ip))",
+                              "refId": "A"
+                            }
+                          ],
+                          "title": "Unique Visitors (24h)",
+                          "type": "stat"
+                        },
+                        {
+                          "datasource": {
+                            "type": "loki",
+                            "uid": "${DS_LOKI}"
+                          },
+                          "fieldConfig": {
+                            "defaults": {
+                              "custom": {
+                                "hideFrom": {
+                                  "legend": false,
+                                  "tooltip": false,
+                                  "viz": false
+                                }
+                              },
+                              "mappings": []
+                            }
+                          },
+                          "gridPos": {
+                            "h": 8,
+                            "w": 12,
+                            "x": 12,
+                            "y": 0
+                          },
+                          "id": 3,
+                          "options": {
+                            "basemap": {
+                              "config": {},
+                              "type": "default"
+                            },
+                            "controls": {
+                              "mouseWheelZoom": true,
+                              "showAttribution": true,
+                              "showZoom": true
+                            },
+                            "layers": [
+                              {
+                                "config": {
+                                  "showLegend": true,
+                                  "style": {
+                                    "color": {
+                                      "fixed": "dark-green"
+                                    },
+                                    "opacity": 0.4,
+                                    "size": {
+                                      "fixed": 5,
+                                      "max": 15,
+                                      "min": 2
+                                    }
+                                  }
+                                },
+                                "location": {
+                                  "mode": "auto"
+                                },
+                                "type": "markers"
+                              }
+                            ],
+                            "view": {
+                              "id": "zero",
+                              "lat": 0,
+                              "lon": 0,
+                              "zoom": 1
+                            }
+                          },
+                          "targets": [
+                            {
+                              "datasource": {
+                                "type": "loki",
+                                "uid": "${DS_LOKI}"
+                              },
+                              "expr": "{job=\"envoy\"} | json | count_over_time[24h] by (cf_country)",
+                              "refId": "A"
+                            }
+                          ],
+                          "title": "Visitor Locations",
+                          "type": "geomap"
+                        },
+                        {
+                          "datasource": {
+                            "type": "loki",
+                            "uid": "${DS_LOKI}"
+                          },
+                          "fieldConfig": {
+                            "defaults": {
+                              "color": {
+                                "mode": "thresholds"
+                              },
+                              "mappings": [],
+                              "thresholds": {
+                                "mode": "absolute",
+                                "steps": [
+                                  {
+                                    "color": "red",
+                                    "value": null
+                                  },
+                                  {
+                                    "color": "yellow",
+                                    "value": 30
+                                  },
+                                  {
+                                    "color": "green",
+                                    "value": 60
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "gridPos": {
+                            "h": 8,
+                            "w": 6,
+                            "x": 0,
+                            "y": 8
+                          },
+                          "id": 4,
+                          "options": {
+                            "orientation": "auto",
+                            "reduceOptions": {
+                              "calcs": ["mean"],
+                              "fields": "",
+                              "values": false
+                            },
+                            "showThresholdLabels": false,
+                            "showThresholdMarkers": true
+                          },
+                          "targets": [
+                            {
+                              "datasource": {
+                                "type": "loki",
+                                "uid": "${DS_LOKI}"
+                              },
+                              "expr": "avg(cf_bot_score{job=\"envoy\"})",
+                              "refId": "A"
+                            }
+                          ],
+                          "title": "Bot Score",
+                          "type": "gauge"
+                        },
+                        {
+                          "datasource": {
+                            "type": "loki",
+                            "uid": "${DS_LOKI}"
+                          },
+                          "fieldConfig": {
+                            "defaults": {
+                              "custom": {
+                                "align": "auto",
+                                "displayMode": "auto"
+                              },
+                              "mappings": [],
+                              "thresholds": {
+                                "mode": "absolute",
+                                "steps": [
+                                  {
+                                    "color": "green",
+                                    "value": null
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "gridPos": {
+                            "h": 8,
+                            "w": 12,
+                            "x": 12,
+                            "y": 8
+                          },
+                          "id": 5,
+                          "options": {
+                            "footer": {
+                              "fields": "",
+                              "reducer": ["sum"],
+                              "show": false
+                            },
+                            "showHeader": true
+                          },
+                          "targets": [
+                            {
+                              "datasource": {
+                                "type": "loki",
+                                "uid": "${DS_LOKI}"
+                              },
+                              "expr": "topk(10, sum(count_over_time({job=\"envoy\"}[24h])) by (request_path))",
+                              "refId": "A"
+                            }
+                          ],
+                          "title": "Top Pages",
+                          "transformations": [
+                            {
+                              "id": "organize",
+                              "options": {
+                                "excludeByName": {},
+                                "indexByName": {},
+                                "renameByName": {
+                                  "request_path": "Page",
+                                  "Value": "Visits"
+                                }
+                              }
+                            }
+                          ],
+                          "type": "table"
+                        },
+                        {
+                          "datasource": {
+                            "type": "loki",
+                            "uid": "${DS_LOKI}"
+                          },
+                          "fieldConfig": {
+                            "defaults": {
+                              "custom": {
+                                "hideFrom": {
+                                  "legend": false,
+                                  "tooltip": false,
+                                  "viz": false
+                                }
+                              },
+                              "mappings": []
+                            }
+                          },
+                          "gridPos": {
+                            "h": 8,
+                            "w": 12,
+                            "x": 0,
+                            "y": 16
+                          },
+                          "id": 6,
+                          "options": {
+                            "displayLabels": ["percent"],
+                            "legend": {
+                              "displayMode": "list",
+                              "placement": "right",
+                              "showLegend": true
+                            },
+                            "pieType": "pie",
+                            "reduceOptions": {
+                              "calcs": ["lastNotNull"],
+                              "fields": "",
+                              "values": true
+                            },
+                            "tooltip": {
+                              "mode": "single"
+                            }
+                          },
+                          "targets": [
+                            {
+                              "datasource": {
+                                "type": "loki",
+                                "uid": "${DS_LOKI}"
+                              },
+                              "expr": "sum(count_over_time({job=\"envoy\"}[24h])) by (cf_browser)",
+                              "refId": "A"
+                            }
+                          ],
+                          "title": "Browser Distribution",
+                          "type": "piechart"
+                        },
+                        {
+                          "datasource": {
+                            "type": "loki",
+                            "uid": "${DS_LOKI}"
+                          },
+                          "fieldConfig": {
+                            "defaults": {
+                              "custom": {
+                                "align": "auto",
+                                "displayMode": "auto"
+                              },
+                              "mappings": [],
+                              "thresholds": {
+                                "mode": "absolute",
+                                "steps": [
+                                  {
+                                    "color": "green",
+                                    "value": null
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "gridPos": {
+                            "h": 8,
+                            "w": 12,
+                            "x": 12,
+                            "y": 16
+                          },
+                          "id": 7,
+                          "options": {
+                            "footer": {
+                              "fields": "",
+                              "reducer": ["sum"],
+                              "show": false
+                            },
+                            "showHeader": true
+                          },
+                          "targets": [
+                            {
+                              "datasource": {
+                                "type": "loki",
+                                "uid": "${DS_LOKI}"
+                              },
+                              "expr": "topk(10, sum(count_over_time({job=\"envoy\"}[24h])) by (cf_country))",
+                              "refId": "A"
+                            }
+                          ],
+                          "title": "Top Countries",
+                          "transformations": [
+                            {
+                              "id": "organize",
+                              "options": {
+                                "excludeByName": {},
+                                "indexByName": {},
+                                "renameByName": {
+                                  "cf_country": "Country",
+                                  "Value": "Visits"
+                                }
+                              }
+                            }
+                          ],
+                          "type": "table"
+                        }
+                      ],
+                      "refresh": "1m",
+                      "schemaVersion": 38,
+                      "style": "dark",
+                      "tags": [],
+                      "templating": {
+                        "list": []
+                      },
+                      "time": {
+                        "from": "now-24h",
+                        "to": "now"
+                      },
+                      "title": "Visitor Analytics",
+                      "version": 1,
+                      "weekStart": ""
+                    }
+  destination:
+    name: in-cluster
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - ServerSideApply=true 
