@@ -10,7 +10,7 @@ spec:
       chart: loki-stack
       targetRevision: 2.9.11
       helm:
-        values:
+        values: |
           loki:
             auth_enabled: false
             storage:
