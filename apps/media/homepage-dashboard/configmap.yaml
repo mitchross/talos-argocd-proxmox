@@ -4,30 +4,30 @@ metadata:
   name: homepage-config
   namespace: homepage-dashboard
 data:
-  settings.yaml: | 
-  title: VanillaX Dashboard
-   theme: dark
-   color: slate
-   headerStyle: clean
-   layout:
-     Network:
-       style: row
-       columns: 3
-     Media:
-       style: row
-       columns: 3
-     Development:
-       style: row
-       columns: 3
- services.yaml: |
-   - Development:
-       - Argo CD:
-           icon: argocd.png
-           href: https://argocd.vanillax.me
-           description: GitOps Continuous Delivery
-           widget:
-             type: argocd
-             url: https://argocd.vanillax.me
-             key: argocd
-             username: admin
-             password: ${SECRET_ARGOCD_PASSWORD}
+  settings.yaml: |
+    title: VanillaX Dashboard
+    theme: dark
+    color: slate
+    headerStyle: clean
+    layout:
+      Network:
+        style: row
+        columns: 3
+      Media:
+        style: row
+        columns: 3
+      Development:
+        style: row
+        columns: 3
+  services.yaml: |
+    - Development:
+        - Argo CD:
+            icon: argocd.png
+            href: https://argocd.vanillax.me
+            description: GitOps Continuous Delivery
+            widget:
+              type: argocd
+              url: https://argocd.vanillax.me
+              key: argocd
+              username: admin
+              password: ${SECRET_ARGOCD_PASSWORD}
