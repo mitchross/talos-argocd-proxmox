@@ -7,3 +7,4 @@ commonLabels:
 resources:
   - project.yaml
   - application-set.yaml
+  - monitoring/
