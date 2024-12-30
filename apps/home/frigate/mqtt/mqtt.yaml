@@ -14,13 +14,39 @@ data:
 
 ---
 apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mosquitto-storage-pvc-pv
+  labels:
+    app: mosquitto
+    type: storage
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/frigate/mqtt
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai
+
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: mosquitto-storage
+  name: mosquitto-storage-pvc
   namespace: frigate
-  annotations:
-    directory: "frigate/mqtt"
-    retain: "true"
+  labels:
+    app: mosquitto
+    type: storage
 spec:
   accessModes:
     - ReadWriteOnce
@@ -28,6 +54,10 @@ spec:
     requests:
       storage: 2Gi
   storageClassName: local-storage
+  selector:
+    matchLabels:
+      app: mosquitto
+      type: storage
 
 ---
 apiVersion: apps/v1
@@ -87,7 +117,7 @@ spec:
           emptyDir: {}
         - name: storage
           persistentVolumeClaim:
-            claimName: mosquitto-storage
+            claimName: mosquitto-storage-pvc
         - name: mosquitto-config
           configMap:
             name: mosquitto-configmap

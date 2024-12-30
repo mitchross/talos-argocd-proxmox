@@ -1,21 +1,10 @@
 apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: ollama-webui-data
-  namespace: ollama-webui
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
-  storageClassName: local-storage
----
- # PV for Ollama WebUI
-apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: ollama-webui-pv
+  name: ollama-webui-storage-pv
+  labels:
+    app: ollama-webui
+    type: storage
 spec:
   capacity:
     storage: 5Gi
@@ -33,3 +22,23 @@ spec:
           operator: In
           values:
           - vanillax-ai
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-webui-storage-pvc
+  namespace: ollama-webui
+  labels:
+    app: ollama-webui
+    type: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: local-storage
+  selector:
+    matchLabels:
+      app: ollama-webui
+      type: storage

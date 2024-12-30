@@ -8,67 +8,77 @@ NC='\033[0m' # No Color
 
 echo "=== Validating Storage Configurations ==="
 
-# Find all yaml files
-YAML_FILES=$(find . -type f -name "*.yaml" -o -name "*.yml")
+# Find all yaml files, excluding .git and arr directories
+YAML_FILES=$(find . -type f \( -name "*.yaml" -o -name "*.yml" \) -not -path "*/\.*" -not -path "*/arr/*")
 
 # Initialize counters
 ERRORS=0
 WARNINGS=0
 
-for file in $YAML_FILES; do
-    # Skip files in .git directory
-    if [[ $file == *".git"* ]]; then
-        continue
+check_file() {
+    local file=$1
+    local has_errors=0
+
+    echo -e "\nChecking file: ${YELLOW}$file${NC}"
+
+    # Get file contents
+    content=$(cat "$file")
+
+    # Check PV naming
+    while IFS= read -r line; do
+        if [[ $line =~ name:[[:space:]]*(.*) ]] && [[ $(echo "$content" | grep -B2 "$line" | grep -q "kind: PersistentVolume"; echo $?) -eq 0 ]]; then
+            pv_name="${BASH_REMATCH[1]}"
+            if [[ ! $pv_name =~ -pv$ ]]; then
+                echo -e "${RED}ERROR: PV name '$pv_name' should end with '-pv'${NC}"
+                has_errors=1
+            fi
+        fi
+    done < <(echo "$content")
+
+    # Check PVC naming
+    while IFS= read -r line; do
+        if [[ $line =~ name:[[:space:]]*(.*) ]] && [[ $(echo "$content" | grep -B2 "$line" | grep -q "kind: PersistentVolumeClaim"; echo $?) -eq 0 ]]; then
+            pvc_name="${BASH_REMATCH[1]}"
+            if [[ ! $pvc_name =~ -pvc$ ]]; then
+                echo -e "${RED}ERROR: PVC name '$pvc_name' should end with '-pvc'${NC}"
+                has_errors=1
+            fi
+        fi
+    done < <(echo "$content")
+
+    # Check for required fields in PVs
+    if echo "$content" | grep -q "kind: PersistentVolume"; then
+        if ! echo "$content" | grep -q "labels:"; then
+            echo -e "${RED}ERROR: Missing labels in PV${NC}"
+            has_errors=1
+        fi
+        if ! echo "$content" | grep -q "nodeAffinity:"; then
+            echo -e "${RED}ERROR: Missing nodeAffinity in PV${NC}"
+            has_errors=1
+        fi
     fi
 
+    # Check for required fields in PVCs
+    if echo "$content" | grep -q "kind: PersistentVolumeClaim"; then
+        if ! echo "$content" | grep -q "namespace:"; then
+            echo -e "${RED}ERROR: Missing namespace in PVC${NC}"
+            has_errors=1
+        fi
+        if ! echo "$content" | grep -q "selector:"; then
+            echo -e "${RED}ERROR: Missing selector in PVC${NC}"
+            has_errors=1
+        fi
+    fi
+
+    return $has_errors
+}
+
+for file in $YAML_FILES; do
     # Check if file contains PV or PVC
     if grep -q "kind: PersistentVolume\|kind: PersistentVolumeClaim" "$file"; then
-        echo -e "\nChecking file: ${YELLOW}$file${NC}"
-        
-        # Check PV naming
-        PV_NAMES=$(grep -A1 "kind: PersistentVolume" "$file" | grep "name:" | awk '{print $2}')
-        for pv in $PV_NAMES; do
-            if [[ ! $pv =~ -pv$ ]]; then
-                echo -e "${RED}ERROR: PV name '$pv' should end with '-pv'${NC}"
-                ERRORS=$((ERRORS + 1))
-            fi
-        done
-
-        # Check PVC naming
-        PVC_NAMES=$(grep -A1 "kind: PersistentVolumeClaim" "$file" | grep "name:" | awk '{print $2}')
-        for pvc in $PVC_NAMES; do
-            if [[ ! $pvc =~ -pvc$ ]]; then
-                echo -e "${RED}ERROR: PVC name '$pvc' should end with '-pvc'${NC}"
-                ERRORS=$((ERRORS + 1))
-            fi
-        done
-
-        # Check for labels
-        if ! grep -q "labels:" "$file"; then
-            echo -e "${RED}ERROR: Missing labels in $file${NC}"
+        check_file "$file"
+        if [ $? -eq 1 ]; then
             ERRORS=$((ERRORS + 1))
-        fi
-
-        # Check for storageClassName
-        if ! grep -q "storageClassName:" "$file"; then
-            echo -e "${RED}ERROR: Missing storageClassName in $file${NC}"
-            ERRORS=$((ERRORS + 1))
-        fi
-
-        # Check for nodeAffinity in PVs
-        if grep -q "kind: PersistentVolume" "$file"; then
-            if ! grep -q "nodeAffinity:" "$file"; then
-                echo -e "${RED}ERROR: Missing nodeAffinity in PV in $file${NC}"
-                ERRORS=$((ERRORS + 1))
-            fi
-        fi
-
-        # Check for namespace in PVCs
-        if grep -q "kind: PersistentVolumeClaim" "$file"; then
-            if ! grep -q "namespace:" "$file"; then
-                echo -e "${RED}ERROR: Missing namespace in PVC in $file${NC}"
-                ERRORS=$((ERRORS + 1))
-            fi
         fi
     fi
 done
@@ -77,7 +87,7 @@ echo -e "\n=== Validation Summary ==="
 if [ $ERRORS -eq 0 ]; then
     echo -e "${GREEN}✓ All storage configurations are valid${NC}"
 else
-    echo -e "${RED}✗ Found $ERRORS error(s)${NC}"
+    echo -e "${RED}✗ Found issues in $ERRORS file(s)${NC}"
 fi
 
 # Exit with error if any issues found

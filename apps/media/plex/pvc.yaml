@@ -1,28 +1,89 @@
 apiVersion: v1
-kind: PersistentVolumeClaim
+kind: PersistentVolume
 metadata:
-  name: plex-config
-  namespace: plex
+  name: plex-config-pvc-pv
+  labels:
+    app: plex
+    type: config
 spec:
-  storageClassName: local-storage
-  volumeName: pv-plex-config
+  capacity:
+    storage: 12Gi
   accessModes:
     - ReadWriteOnce
-  resources:
-    requests:
-      storage: 12G
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/plex/config
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: plex-config
+  name: plex-config-pvc
   namespace: plex
-  annotations:
-    directory: "plex/config"
+  labels:
+    app: plex
+    type: config
 spec:
   storageClassName: local-storage
-  volumeName: pv-plex-config
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 12G
+      storage: 12Gi
+  selector:
+    matchLabels:
+      app: plex
+      type: config
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: plex-transcode-pvc-pv
+  labels:
+    app: plex
+    type: transcode
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/plex/transcode
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: plex-transcode-pvc
+  namespace: plex
+  labels:
+    app: plex
+    type: transcode
+spec:
+  storageClassName: local-storage
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  selector:
+    matchLabels:
+      app: plex
+      type: transcode

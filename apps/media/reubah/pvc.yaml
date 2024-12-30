@@ -1,8 +1,11 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: reubah-doc-temp
+  name: reubah-doc-temp-pvc
   namespace: reubah
+  labels:
+    app: reubah
+    type: doc-temp
 spec:
   accessModes:
     - ReadWriteOnce
@@ -10,13 +13,19 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: local-storage
+  selector:
+    matchLabels:
+      app: reubah
+      type: doc-temp
 
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: reubah-doc-temp-pv
-  namespace: reubah
+  name: reubah-doc-temp-pvc-pv
+  labels:
+    app: reubah
+    type: doc-temp
 spec:
   capacity:
     storage: 10Gi
