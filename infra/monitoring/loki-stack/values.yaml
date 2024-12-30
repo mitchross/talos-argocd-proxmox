@@ -6,6 +6,7 @@ loki:
     enabled: true
     size: 10Gi
     storageClassName: local-storage
+
 promtail:
   enabled: true
   containerSecurityContext:
@@ -45,7 +46,9 @@ promtail:
               regex: '(.+);(.+);(.+)'
               target_label: __path__
               replacement: /var/log/pods/*$3/$2/*.log
+
           pipeline_stages:
+            # First parse the main JSON structure
             - json:
                 expressions:
                   request_headers: request_headers
@@ -57,31 +60,69 @@ promtail:
                   bytes_sent: bytes_sent
                   duration: duration
                   referer: referer
+                  remote_address: remote_address
+                  upstream_address: upstream_address
+                  start_time: start_time
+
+            # Parse Cloudflare headers (case-insensitive matching)
             - json:
                 expressions:
-                  cf_ip: request_headers."Cf-Connecting-Ip"
-                  cf_country: request_headers."Cf-Ipcountry"
-                  cf_ray: request_headers."Cf-Ray"
-                  cf_city: request_headers."CF-IPCITY"
-                  cf_continent: request_headers."CF-IPCONTINENT"
-                  cf_latitude: request_headers."CF-IPLATITUDE"
-                  cf_longitude: request_headers."CF-IPLONGITUDE"
-                  cf_region: request_headers."CF-IPREGION"
-                  cf_device: request_headers."CF-Device-Type"
-                  cf_visitor: request_headers."Cf-Visitor"
-                  accept_language: request_headers."Accept-Language"
-                  x_forwarded_for: request_headers."X-Forwarded-For"
+                  cf_ip: request_headers["cf-connecting-ip"]
+                  cf_country: request_headers["cf-ipcountry"]
+                  cf_ray: request_headers["cf-ray"]
+                  cf_city: request_headers["cf-ipcity"]
+                  cf_continent: request_headers["cf-ipcontinent"]
+                  cf_latitude: request_headers["cf-iplatitude"]
+                  cf_longitude: request_headers["cf-iplongitude"]
+                  cf_region: request_headers["cf-ipregion"]
+                  cf_region_name: request_headers["cf-ipregion-name"]
+                  cf_device: request_headers["cf-device-type"]
+                  cf_visitor: request_headers["cf-visitor"]
+                  accept_language: request_headers["accept-language"]
+                  x_forwarded_for: request_headers["x-forwarded-for"]
+                  x_real_ip: request_headers["x-real-ip"]
+
+            # Convert timestamp
+            - timestamp:
+                source: start_time
+                format: RFC3339Nano
+
+            # Add all as labels
             - labels:
                 request_path:
                 response_code:
                 user_agent:
                 authority:
                 method:
+                remote_address:
+                upstream_address:
+                bytes_sent:
+                duration:
                 cf_ip:
                 cf_country:
                 cf_ray:
                 cf_city:
                 cf_continent:
                 cf_region:
+                cf_region_name:
                 cf_device:
-                accept_language: 
+                x_real_ip:
+                x_forwarded_for:
+
+            # Add metrics
+            - metrics:
+                requests_total:
+                    type: Counter
+                    description: "Total number of HTTP requests"
+                    prefix: envoy_
+                    config:
+                      match_all: true
+                      action: inc
+                request_duration_seconds:
+                    type: Histogram
+                    description: "HTTP request duration in seconds"
+                    prefix: envoy_
+                    config:
+                      match_all: true
+                      value: duration
+                      buckets: [0.1, 0.3, 0.5, 1, 2, 5, 10]

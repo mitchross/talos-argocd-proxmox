@@ -76,9 +76,9 @@ grafana:
                 "options": {
                   "dedupStrategy": "none",
                   "enableLogDetails": true,
-                  "prettifyLogMessage": false,
-                  "showCommonLabels": false,
-                  "showLabels": false,
+                  "prettifyLogMessage": true,
+                  "showCommonLabels": true,
+                  "showLabels": true,
                   "showTime": true,
                   "sortOrder": "Descending",
                   "wrapLogMessage": false
@@ -89,51 +89,13 @@ grafana:
                       "type": "loki",
                       "uid": "${DS_LOKI}"
                     },
-                    "expr": "{job=\"envoy\"} | json",
+                    "expr": "{job=\"envoy\"} | json | line_format \"{{.method}} {{.request_path}} - {{.response_code}} - From: {{.cf_country}}/{{.cf_city}} ({{.cf_ip}}) - Device: {{.cf_device}}\"",
                     "queryType": "range",
                     "refId": "A"
                   }
                 ],
-                "title": "Raw Logs",
+                "title": "Formatted Logs",
                 "type": "logs"
-              },
-              {
-                "datasource": {
-                  "type": "loki",
-                  "uid": "${DS_LOKI}"
-                },
-                "fieldConfig": {
-                  "defaults": {
-                    "custom": {
-                      "align": "auto",
-                      "displayMode": "auto"
-                    }
-                  }
-                },
-                "gridPos": {
-                  "h": 12,
-                  "w": 24,
-                  "x": 0,
-                  "y": 12
-                },
-                "id": 2,
-                "options": {
-                  "showHeader": true
-                },
-                "pluginVersion": "10.0.3",
-                "targets": [
-                  {
-                    "datasource": {
-                      "type": "loki",
-                      "uid": "${DS_LOKI}"
-                    },
-                    "expr": "{job=\"envoy\"} | json | line_format \"{{.cf_country}} {{.cf_city}} {{.cf_device}} {{.request_path}}\"",
-                    "queryType": "range",
-                    "refId": "A"
-                  }
-                ],
-                "title": "Parsed Fields",
-                "type": "table"
               }
             ],
             "refresh": "5s",
@@ -197,19 +159,14 @@ grafana:
                     "values": false
                   }
                 },
-                "pluginVersion": "10.0.3",
+                "title": "Total Visits (24h)",
+                "type": "stat",
                 "targets": [
                   {
-                    "datasource": {
-                      "type": "loki",
-                      "uid": "${DS_LOKI}"
-                    },
-                    "expr": "count_over_time({job=\"envoy\"}[24h])",
+                    "expr": "sum(count_over_time({job=\"envoy\"}[24h]))",
                     "refId": "A"
                   }
-                ],
-                "title": "Total Visits (24h)",
-                "type": "stat"
+                ]
               },
               {
                 "datasource": {
@@ -253,10 +210,13 @@ grafana:
                         "showLegend": true,
                         "style": {
                           "color": {
+                            "field": "Value",
                             "fixed": "dark-green"
                           },
                           "size": {
-                            "fixed": 5
+                            "field": "Value",
+                            "max": 15,
+                            "min": 5
                           }
                         }
                       },
@@ -276,7 +236,67 @@ grafana:
                   }
                 },
                 "title": "Visitor Locations",
-                "type": "geomap"
+                "type": "geomap",
+                "targets": [
+                  {
+                    "expr": "{job=\"envoy\"} | json | counter_over_time({job=\"envoy\"}[24h]) by (cf_latitude, cf_longitude)",
+                    "refId": "A"
+                  }
+                ]
+              },
+              {
+                "title": "Response Codes Distribution",
+                "type": "piechart",
+                "datasource": {
+                  "type": "loki",
+                  "uid": "${DS_LOKI}"
+                },
+                "gridPos": {
+                  "h": 8,
+                  "w": 6,
+                  "x": 0,
+                  "y": 4
+                },
+                "id": 7,
+                "targets": [
+                  {
+                    "expr": "topk(10, count_over_time({job=\"envoy\"}[24h]) by (response_code))",
+                    "refId": "A"
+                  }
+                ],
+                "options": {
+                  "legend": {
+                    "showLegend": true,
+                    "displayMode": "list",
+                    "placement": "right"
+                  }
+                }
+              },
+              {
+                "title": "Requests Over Time",
+                "type": "timeseries",
+                "datasource": {
+                  "type": "loki",
+                  "uid": "${DS_LOKI}"
+                },
+                "gridPos": {
+                  "h": 8,
+                  "w": 6,
+                  "x": 6,
+                  "y": 4
+                },
+                "id": 8,
+                "targets": [
+                  {
+                    "expr": "sum(rate({job=\"envoy\"}[5m]))",
+                    "refId": "A"
+                  }
+                ],
+                "options": {
+                  "legend": {
+                    "showLegend": true
+                  }
+                }
               },
               {
                 "datasource": {
@@ -288,16 +308,6 @@ grafana:
                     "custom": {
                       "align": "auto",
                       "displayMode": "auto"
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                      "mode": "absolute",
-                      "steps": [
-                        {
-                          "color": "green",
-                          "value": null
-                        }
-                      ]
                     }
                   }
                 },
@@ -305,7 +315,7 @@ grafana:
                   "h": 8,
                   "w": 12,
                   "x": 0,
-                  "y": 8
+                  "y": 12
                 },
                 "id": 3,
                 "options": {
@@ -314,27 +324,21 @@ grafana:
                   },
                   "showHeader": true
                 },
-                "pluginVersion": "10.0.3",
                 "targets": [
                   {
-                    "datasource": {
-                      "type": "loki",
-                      "uid": "${DS_LOKI}"
-                    },
-                    "expr": "topk(10, count_over_time({job=\"envoy\"}[24h]) by (request_path))",
+                    "expr": "topk(10, count_over_time({job=\"envoy\"}[24h]) by (request_path, method))",
                     "refId": "A"
                   }
                 ],
-                "title": "Top Pages",
+                "title": "Top Endpoints",
                 "transformations": [
                   {
                     "id": "organize",
                     "options": {
-                      "excludeByName": {},
-                      "indexByName": {},
                       "renameByName": {
-                        "request_path": "Page",
-                        "Value": "Visits"
+                        "request_path": "Endpoint",
+                        "method": "Method",
+                        "Value": "Hits"
                       }
                     }
                   }
@@ -351,16 +355,6 @@ grafana:
                     "custom": {
                       "align": "auto",
                       "displayMode": "auto"
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                      "mode": "absolute",
-                      "steps": [
-                        {
-                          "color": "green",
-                          "value": null
-                        }
-                      ]
                     }
                   }
                 },
@@ -368,7 +362,7 @@ grafana:
                   "h": 8,
                   "w": 12,
                   "x": 12,
-                  "y": 8
+                  "y": 12
                 },
                 "id": 4,
                 "options": {
@@ -377,33 +371,13 @@ grafana:
                   },
                   "showHeader": true
                 },
-                "pluginVersion": "10.0.3",
                 "targets": [
                   {
-                    "datasource": {
-                      "type": "loki",
-                      "uid": "${DS_LOKI}"
-                    },
                     "expr": "topk(10, count_over_time({job=\"envoy\"}[24h]) by (cf_country, cf_region, cf_city))",
                     "refId": "A"
                   }
                 ],
                 "title": "Top Locations",
-                "transformations": [
-                  {
-                    "id": "organize",
-                    "options": {
-                      "excludeByName": {},
-                      "indexByName": {},
-                      "renameByName": {
-                        "cf_country": "Country",
-                        "cf_region": "Region",
-                        "cf_city": "City",
-                        "Value": "Visits"
-                      }
-                    }
-                  }
-                ],
                 "type": "table"
               },
               {
@@ -416,16 +390,6 @@ grafana:
                     "custom": {
                       "align": "auto",
                       "displayMode": "auto"
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                      "mode": "absolute",
-                      "steps": [
-                        {
-                          "color": "green",
-                          "value": null
-                        }
-                      ]
                     }
                   }
                 },
@@ -433,41 +397,22 @@ grafana:
                   "h": 8,
                   "w": 12,
                   "x": 0,
-                  "y": 16
+                  "y": 20
                 },
                 "id": 5,
-                "options": {
-                  "footer": {
-                    "show": false
-                  },
-                  "showHeader": true
-                },
-                "pluginVersion": "10.0.3",
+                "title": "Device Types",
+                "type": "barchart",
                 "targets": [
                   {
-                    "datasource": {
-                      "type": "loki",
-                      "uid": "${DS_LOKI}"
-                    },
                     "expr": "topk(10, count_over_time({job=\"envoy\"}[24h]) by (cf_device))",
                     "refId": "A"
                   }
                 ],
-                "title": "Device Types",
-                "transformations": [
-                  {
-                    "id": "organize",
-                    "options": {
-                      "excludeByName": {},
-                      "indexByName": {},
-                      "renameByName": {
-                        "cf_device": "Device Type",
-                        "Value": "Visits"
-                      }
-                    }
-                  }
-                ],
-                "type": "table"
+                "options": {
+                  "xField": "cf_device",
+                  "yField": "Value",
+                  "showValue": "auto"
+                }
               },
               {
                 "datasource": {
@@ -479,16 +424,6 @@ grafana:
                     "custom": {
                       "align": "auto",
                       "displayMode": "auto"
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                      "mode": "absolute",
-                      "steps": [
-                        {
-                          "color": "green",
-                          "value": null
-                        }
-                      ]
                     }
                   }
                 },
@@ -496,57 +431,31 @@ grafana:
                   "h": 8,
                   "w": 12,
                   "x": 12,
-                  "y": 16
+                  "y": 20
                 },
                 "id": 6,
-                "options": {
-                  "footer": {
-                    "show": false
-                  },
-                  "showHeader": true
-                },
-                "pluginVersion": "10.0.3",
+                "title": "Browser Languages",
+                "type": "barchart",
                 "targets": [
                   {
-                    "datasource": {
-                      "type": "loki",
-                      "uid": "${DS_LOKI}"
-                    },
                     "expr": "topk(10, count_over_time({job=\"envoy\"}[24h]) by (accept_language))",
                     "refId": "A"
                   }
                 ],
-                "title": "Languages",
-                "transformations": [
-                  {
-                    "id": "organize",
-                    "options": {
-                      "excludeByName": {},
-                      "indexByName": {},
-                      "renameByName": {
-                        "accept_language": "Language",
-                        "Value": "Visits"
-                      }
-                    }
-                  }
-                ],
-                "type": "table"
+                "options": {
+                  "xField": "accept_language",
+                  "yField": "Value",
+                  "showValue": "auto"
+                }
               }
             ],
             "refresh": "1m",
             "schemaVersion": 38,
             "style": "dark",
-            "tags": [],
-            "templating": {
-              "list": []
-            },
             "time": {
               "from": "now-24h",
               "to": "now"
             },
-            "timepicker": {},
-            "timezone": "",
             "title": "Visitor Analytics",
-            "version": 1,
-            "weekStart": ""
-          } 
+            "version": 1
+          }
