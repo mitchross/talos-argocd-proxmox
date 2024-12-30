@@ -60,10 +60,23 @@ promtail:
                   method: method
                   path: path
                   code: code
+                  request_headers: request_headers
             - labels:
                 method:
                 path:
                 code:
+            - output:
+                source: request_headers
+            - regex:
+                expression: '"cf-connecting-ip":"(?P<cf_ip>[^"]+)"'
+            - regex:
+                expression: '"cf-ipcountry":"(?P<cf_country>[^"]+)"'
+            - regex:
+                expression: '"cf-ray":"(?P<cf_ray>[^"]+)"'
+            - labels:
+                cf_ip:
+                cf_country:
+                cf_ray:
 
         - job_name: cilium-agent
           kubernetes_sd_configs:
