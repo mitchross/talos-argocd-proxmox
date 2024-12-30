@@ -3,11 +3,30 @@ cluster:
   id: 1
 
 kubeProxyReplacement: true
-
-# # Disable Envoy
 enableEnvoyConfig: false
 
- # Talos specific
+# Metrics and Monitoring configuration
+prometheus:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+  metrics:
+    enabled:
+      - dns
+      - drop
+      - tcp
+      - flow
+      - port-distribution
+      - icmp
+      - http
+    port: 9090
+
+# Enhanced Debug and Logging
+debug:
+  enabled: true
+  verbose: true
+
+# Talos specific
 k8sServiceHost: 192.168.10.11
 k8sServicePort: 6443
 securityContext:
@@ -15,18 +34,14 @@ securityContext:
     ciliumAgent: [ CHOWN, KILL, NET_ADMIN, NET_RAW, IPC_LOCK, SYS_ADMIN, SYS_RESOURCE, DAC_OVERRIDE, FOWNER, SETGID, SETUID ]
     cleanCiliumState: [ NET_ADMIN, SYS_ADMIN, SYS_RESOURCE ]
 
-cgroup:
-  autoMount:
-    enabled: false
-  hostRoot: /sys/fs/cgroup
-
-# https://docs.cilium.io/en/stable/network/concepts/ipam/
-ipam:
-  mode: kubernetes
-
 operator:
   replicas: 1
   rollOutPods: true
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+    port: 6942
   resources:
     limits:
       cpu: 500m
@@ -35,43 +50,42 @@ operator:
       cpu: 50m
       memory: 128Mi
 
-# Roll out cilium agent pods automatically when ConfigMap is updated.
-rollOutCiliumPods: true
-resources:
-  limits:
-    cpu: 1000m
-    memory: 1Gi
-  requests:
-    cpu: 200m
-    memory: 512Mi
-
-debug:
+# Hubble Configuration with Enhanced Monitoring
+hubble:
   enabled: true
+  metrics:
+    enabled:
+      - dns:query;ignoreAAAA
+      - drop
+      - tcp
+      - flow
+      - icmp
+      - http
+    serviceMonitor:
+      enabled: true
+  relay:
+    enabled: true
+    rollOutPods: true
+    prometheus:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+  ui:
+    enabled: true
+    rollOutPods: true
+    prometheus:
+      enabled: true
+      serviceMonitor:
+        enabled: true
 
-# Increase rate limit when doing L2 announcements
-k8sClientRateLimit:
-  qps: 20
-  burst: 100
-
-l2announcements:
-  enabled: true
-
-externalIPs:
-  enabled: true
-
-enableCiliumEndpointSlice: true
-
-loadBalancer:
-  # https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#maglev-consistent-hashing
-  algorithm: maglev
-
-gatewayAPI:
-  enabled: true
-
-
+# Envoy Configuration with Access Logging
 envoy:
   enabled: true
   accessLog: "/dev/stdout"
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
   concurrency: 2
   resources:
     requests:
@@ -83,29 +97,40 @@ envoy:
   proxy:
     idleTimeout: 60s
     connectTimeout: 10s
-  initResources:
-    requests:
-      cpu: 100m
-      memory: 128Mi
-    limits:
-      cpu: 1000m
-      memory: 512Mi
+    prometheus:
+      enabled: true
   securityContext:
     capabilities:
       keepCapNetBindService: true
       envoy: [ NET_ADMIN, SYS_ADMIN, NET_BIND_SERVICE, PERFMON, BPF ]
-sessionAffinity: true
-sessionAffinityTimeout: 300s
 
-hubble:
+# Keep your existing configurations
+ipam:
+  mode: kubernetes
+cgroup:
+  autoMount:
+    enabled: false
+  hostRoot: /sys/fs/cgroup
+rollOutCiliumPods: true
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 200m
+    memory: 512Mi
+k8sClientRateLimit:
+  qps: 20
+  burst: 100
+l2announcements:
   enabled: true
-  relay:
-    enabled: true
-    rollOutPods: true
-  ui:
-    enabled: true
-    rollOutPods: true
-
+externalIPs:
+  enabled: true
+enableCiliumEndpointSlice: true
+loadBalancer:
+  algorithm: maglev
+gatewayAPI:
+  enabled: true
 ingressController:
   enabled: true
   default: true
@@ -113,14 +138,3 @@ ingressController:
   service:
     annotations:
       io.cilium/lb-ipam-ips: 192.168.10.40
-
-# mTLS
-authentication:
-  enabled: false
-  mutual:
-    spire:
-      enabled: false
-      install:
-        server:
-          dataStorage:
-            storageClass: cilium-spire-sc
