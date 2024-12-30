@@ -11,6 +11,51 @@ prometheus:
           resources:
             requests:
               storage: 10Gi
+    additionalScrapeConfigs:
+      - job_name: 'cilium-agent'
+        metrics_path: /metrics
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: ['kube-system']
+            selectors:
+              - role: pod
+                label: 'k8s-app=cilium'
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: keep
+            regex: cilium-.*
+          - source_labels: [__meta_kubernetes_pod_container_name]
+            action: keep
+            regex: cilium-agent
+
+      - job_name: 'cilium-operator'
+        metrics_path: /metrics
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: ['kube-system']
+            selectors:
+              - role: pod
+                label: 'io.cilium/app=operator'
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: keep
+            regex: cilium-operator.*
+
+      - job_name: 'hubble'
+        metrics_path: /metrics
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: ['kube-system']
+            selectors:
+              - role: pod
+                label: 'k8s-app=hubble'
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: keep
+            regex: hubble.*
 
 grafana:
   nodeSelector:
@@ -49,7 +94,80 @@ grafana:
           editable: true
           options:
             path: /var/lib/grafana/dashboards/debug
+        - name: 'Network'
+          orgId: 1
+          folder: 'Network'
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/network
   dashboards:
+    default:
+      cilium-metrics:
+        json: |
+          {
+            "annotations": {
+              "list": []
+            },
+            "editable": true,
+            "panels": [
+              {
+                "title": "Endpoint Status",
+                "type": "stat",
+                "datasource": "Prometheus",
+                "targets": [
+                  {
+                    "expr": "sum(cilium_endpoint_count)",
+                    "refId": "A"
+                  }
+                ]
+              },
+              {
+                "title": "Policy Import Status",
+                "type": "timeseries",
+                "datasource": "Prometheus",
+                "targets": [
+                  {
+                    "expr": "rate(cilium_policy_import_errors[5m])",
+                    "legendFormat": "Import Errors",
+                    "refId": "A"
+                  }
+                ]
+              },
+              {
+                "title": "Drop Count by Reason",
+                "type": "barchart",
+                "datasource": "Prometheus",
+                "targets": [
+                  {
+                    "expr": "sum by(reason) (rate(hubble_drop_total[5m]))",
+                    "refId": "A"
+                  }
+                ]
+              },
+              {
+                "title": "HTTP Request Duration",
+                "type": "timeseries",
+                "datasource": "Prometheus",
+                "targets": [
+                  {
+                    "expr": "rate(hubble_http_request_duration_seconds_sum[5m]) / rate(hubble_http_request_duration_seconds_count[5m])",
+                    "refId": "A"
+                  }
+                ]
+              }
+            ],
+            "refresh": "10s",
+            "schemaVersion": 38,
+            "style": "dark",
+            "time": {
+              "from": "now-1h",
+              "to": "now"
+            },
+            "title": "Cilium Overview",
+            "version": 1
+          }
     debug:
       logql-explorer:
         json: |
