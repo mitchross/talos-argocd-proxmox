@@ -10,21 +10,21 @@ prometheus:
   enabled: true
   serviceMonitor:
     enabled: true
+  contextPath: /metrics
   metrics:
-    enabled:
-      - dns
-      - drop
-      - tcp
-      - flow
-      - port-distribution
-      - icmp
-      - http
-    port: 9090
+    - dns:query
+    - drop
+    - tcp
+    - flow
+    - port-distribution
+    - icmp
+    - http
 
-# Enhanced Debug and Logging
+# Debug configuration
 debug:
   enabled: true
-  verbose: true
+  # Note: verbose must be a quoted string "true" or "false", not a boolean
+  verbose: "true"
 
 # Talos specific
 k8sServiceHost: 192.168.10.11
@@ -50,7 +50,7 @@ operator:
       cpu: 50m
       memory: 128Mi
 
-# Hubble Configuration with Enhanced Monitoring
+# Hubble Configuration
 hubble:
   enabled: true
   metrics:
@@ -78,14 +78,14 @@ hubble:
       serviceMonitor:
         enabled: true
 
-# Envoy Configuration with Access Logging
+# Envoy Configuration
 envoy:
   enabled: true
-  accessLog: "/dev/stdout"
   prometheus:
     enabled: true
     serviceMonitor:
       enabled: true
+  accessLog: "/dev/stdout"
   concurrency: 2
   resources:
     requests:
@@ -97,8 +97,6 @@ envoy:
   proxy:
     idleTimeout: 60s
     connectTimeout: 10s
-    prometheus:
-      enabled: true
   securityContext:
     capabilities:
       keepCapNetBindService: true
