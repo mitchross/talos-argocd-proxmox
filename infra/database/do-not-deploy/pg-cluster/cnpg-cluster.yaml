@@ -20,5 +20,5 @@ spec:
             spec:
               type: LoadBalancer
   storage:
-    storageClass: zfs-local
+    storageClass: local-storage
     size: 4G

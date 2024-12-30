@@ -7,7 +7,7 @@ metadata:
     directory: "jellyfin/config"    # This will create /datapool/kubernetes/jellyfin/config
     retain: "true"                  # This ensures data is retained
 spec:
-  storageClassName: zfs-local
+  storageClassName: local-storage
   accessModes:
     - ReadWriteOnce
   resources:

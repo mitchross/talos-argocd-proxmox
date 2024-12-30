@@ -12,4 +12,4 @@ spec:
   resources:
     requests:
       storage: 3Gi
-  storageClassName: zfs-local
+  storageClassName: local-storage

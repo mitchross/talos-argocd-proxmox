@@ -27,7 +27,7 @@ spec:
   resources:
     requests:
       storage: 2Gi
-  storageClassName: zfs-local
+  storageClassName: local-storage
 
 ---
 apiVersion: apps/v1

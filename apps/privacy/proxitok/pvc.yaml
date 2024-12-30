@@ -11,4 +11,4 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: zfs-local
+  storageClassName: local-storage

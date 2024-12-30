@@ -4,7 +4,7 @@ metadata:
   name: plex-config
   namespace: plex
 spec:
-  storageClassName: zfs-local
+  storageClassName: local-storage
   volumeName: pv-plex-config
   accessModes:
     - ReadWriteOnce
@@ -19,7 +19,7 @@ metadata:
   annotations:
     directory: "plex/config"
 spec:
-  storageClassName: zfs-local
+  storageClassName: local-storage
   volumeName: pv-plex-config
   accessModes:
     - ReadWriteOnce
