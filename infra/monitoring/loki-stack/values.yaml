@@ -6,6 +6,20 @@ loki:
     enabled: true
     size: 10Gi
     storageClassName: local-storage
+  commonConfig:
+    replication_factor: 1
+    ring:
+      kvstore:
+        store: memberlist
+  memberlist:
+    join_members:
+      - loki-headless.monitoring.svc.cluster.local:7946
+  compactor:
+    working_directory: /data/compactor
+    shared_store: filesystem
+    compaction_interval: 10m
+  limits_config:
+    retention_period: 30d
 
 promtail:
   enabled: true
