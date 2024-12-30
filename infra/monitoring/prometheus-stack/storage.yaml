@@ -5,7 +5,6 @@ metadata:
 spec:
   capacity:
     storage: 10Gi
-  volumeMode: Filesystem
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
@@ -28,7 +27,6 @@ metadata:
 spec:
   capacity:
     storage: 10Gi
-  volumeMode: Filesystem
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
@@ -42,4 +40,4 @@ spec:
             - key: kubernetes.io/hostname
               operator: In
               values:
-                - vanillax-ai 
+                - vanillax-ai
