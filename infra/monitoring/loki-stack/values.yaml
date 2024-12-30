@@ -31,20 +31,18 @@ promtail:
                   referer: referer
             - json:
                 expressions:
-                  cf_ip: request_headers."x-forwarded-for"
-                  cf_country: request_headers."cf-ipcountry"
-                  cf_ray: request_headers."cf-ray"
-                  cf_city: request_headers."cf-ipcity"
-                  cf_threat_score: request_headers."cf-threat-score"
-                  cf_bot_score: request_headers."cf-bot-score"
-                  cf_bot_management: request_headers."cf-bot-management"
-                  cf_worker_status: request_headers."cf-worker-status"
-                  cf_client_trust_score: request_headers."cf-client-trust-score"
-                  cf_cache_status: request_headers."cf-cache-status"
-                  cf_tls_version: request_headers."cf-visitor"
-                  cf_browser: request_headers."cf-device-type"
-                  cf_os: request_headers."cf-os"
-                  cf_client_asn: request_headers."cf-connecting-asn"
+                  cf_ip: request_headers."Cf-Connecting-Ip"
+                  cf_country: request_headers."Cf-Ipcountry"
+                  cf_ray: request_headers."Cf-Ray"
+                  cf_city: request_headers."CF-IPCITY"
+                  cf_continent: request_headers."CF-IPCONTINENT"
+                  cf_latitude: request_headers."CF-IPLATITUDE"
+                  cf_longitude: request_headers."CF-IPLONGITUDE"
+                  cf_region: request_headers."CF-IPREGION"
+                  cf_device: request_headers."CF-Device-Type"
+                  cf_visitor: request_headers."Cf-Visitor"
+                  accept_language: request_headers."Accept-Language"
+                  x_forwarded_for: request_headers."X-Forwarded-For"
             - labels:
                 request_path:
                 response_code:
@@ -55,9 +53,7 @@ promtail:
                 cf_country:
                 cf_ray:
                 cf_city:
-                cf_threat_score:
-                cf_bot_score:
-                cf_cache_status:
-                cf_tls_version:
-                cf_browser:
-                cf_client_asn: 
+                cf_continent:
+                cf_region:
+                cf_device:
+                accept_language: 

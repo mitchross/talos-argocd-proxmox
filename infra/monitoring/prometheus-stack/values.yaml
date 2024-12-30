@@ -106,6 +106,327 @@ grafana:
                 ],
                 "title": "Total Visits (24h)",
                 "type": "stat"
+              },
+              {
+                "datasource": {
+                  "type": "loki",
+                  "uid": "${DS_LOKI}"
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "mappings": [],
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        }
+                      ]
+                    }
+                  }
+                },
+                "gridPos": {
+                  "h": 8,
+                  "w": 12,
+                  "x": 12,
+                  "y": 0
+                },
+                "id": 2,
+                "options": {
+                  "basemap": {
+                    "config": {},
+                    "type": "default"
+                  },
+                  "controls": {
+                    "mouseWheelZoom": true,
+                    "showAttribution": true,
+                    "showZoom": true
+                  },
+                  "layers": [
+                    {
+                      "config": {
+                        "showLegend": true,
+                        "style": {
+                          "color": {
+                            "fixed": "dark-green"
+                          },
+                          "size": {
+                            "fixed": 5
+                          }
+                        }
+                      },
+                      "location": {
+                        "mode": "coords",
+                        "latitude": "cf_latitude",
+                        "longitude": "cf_longitude"
+                      },
+                      "type": "markers"
+                    }
+                  ],
+                  "view": {
+                    "id": "coords",
+                    "lat": 0,
+                    "lon": 0,
+                    "zoom": 1
+                  }
+                },
+                "title": "Visitor Locations",
+                "type": "geomap"
+              },
+              {
+                "datasource": {
+                  "type": "loki",
+                  "uid": "${DS_LOKI}"
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "custom": {
+                      "align": "auto",
+                      "displayMode": "auto"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        }
+                      ]
+                    }
+                  }
+                },
+                "gridPos": {
+                  "h": 8,
+                  "w": 12,
+                  "x": 0,
+                  "y": 8
+                },
+                "id": 3,
+                "options": {
+                  "footer": {
+                    "show": false
+                  },
+                  "showHeader": true
+                },
+                "pluginVersion": "10.0.3",
+                "targets": [
+                  {
+                    "datasource": {
+                      "type": "loki",
+                      "uid": "${DS_LOKI}"
+                    },
+                    "expr": "topk(10, count_over_time({job=\"envoy\"}[24h]) by (request_path))",
+                    "refId": "A"
+                  }
+                ],
+                "title": "Top Pages",
+                "transformations": [
+                  {
+                    "id": "organize",
+                    "options": {
+                      "excludeByName": {},
+                      "indexByName": {},
+                      "renameByName": {
+                        "request_path": "Page",
+                        "Value": "Visits"
+                      }
+                    }
+                  }
+                ],
+                "type": "table"
+              },
+              {
+                "datasource": {
+                  "type": "loki",
+                  "uid": "${DS_LOKI}"
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "custom": {
+                      "align": "auto",
+                      "displayMode": "auto"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        }
+                      ]
+                    }
+                  }
+                },
+                "gridPos": {
+                  "h": 8,
+                  "w": 12,
+                  "x": 12,
+                  "y": 8
+                },
+                "id": 4,
+                "options": {
+                  "footer": {
+                    "show": false
+                  },
+                  "showHeader": true
+                },
+                "pluginVersion": "10.0.3",
+                "targets": [
+                  {
+                    "datasource": {
+                      "type": "loki",
+                      "uid": "${DS_LOKI}"
+                    },
+                    "expr": "topk(10, count_over_time({job=\"envoy\"}[24h]) by (cf_country, cf_region, cf_city))",
+                    "refId": "A"
+                  }
+                ],
+                "title": "Top Locations",
+                "transformations": [
+                  {
+                    "id": "organize",
+                    "options": {
+                      "excludeByName": {},
+                      "indexByName": {},
+                      "renameByName": {
+                        "cf_country": "Country",
+                        "cf_region": "Region",
+                        "cf_city": "City",
+                        "Value": "Visits"
+                      }
+                    }
+                  }
+                ],
+                "type": "table"
+              },
+              {
+                "datasource": {
+                  "type": "loki",
+                  "uid": "${DS_LOKI}"
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "custom": {
+                      "align": "auto",
+                      "displayMode": "auto"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        }
+                      ]
+                    }
+                  }
+                },
+                "gridPos": {
+                  "h": 8,
+                  "w": 12,
+                  "x": 0,
+                  "y": 16
+                },
+                "id": 5,
+                "options": {
+                  "footer": {
+                    "show": false
+                  },
+                  "showHeader": true
+                },
+                "pluginVersion": "10.0.3",
+                "targets": [
+                  {
+                    "datasource": {
+                      "type": "loki",
+                      "uid": "${DS_LOKI}"
+                    },
+                    "expr": "topk(10, count_over_time({job=\"envoy\"}[24h]) by (cf_device))",
+                    "refId": "A"
+                  }
+                ],
+                "title": "Device Types",
+                "transformations": [
+                  {
+                    "id": "organize",
+                    "options": {
+                      "excludeByName": {},
+                      "indexByName": {},
+                      "renameByName": {
+                        "cf_device": "Device Type",
+                        "Value": "Visits"
+                      }
+                    }
+                  }
+                ],
+                "type": "table"
+              },
+              {
+                "datasource": {
+                  "type": "loki",
+                  "uid": "${DS_LOKI}"
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "custom": {
+                      "align": "auto",
+                      "displayMode": "auto"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green",
+                          "value": null
+                        }
+                      ]
+                    }
+                  }
+                },
+                "gridPos": {
+                  "h": 8,
+                  "w": 12,
+                  "x": 12,
+                  "y": 16
+                },
+                "id": 6,
+                "options": {
+                  "footer": {
+                    "show": false
+                  },
+                  "showHeader": true
+                },
+                "pluginVersion": "10.0.3",
+                "targets": [
+                  {
+                    "datasource": {
+                      "type": "loki",
+                      "uid": "${DS_LOKI}"
+                    },
+                    "expr": "topk(10, count_over_time({job=\"envoy\"}[24h]) by (accept_language))",
+                    "refId": "A"
+                  }
+                ],
+                "title": "Languages",
+                "transformations": [
+                  {
+                    "id": "organize",
+                    "options": {
+                      "excludeByName": {},
+                      "indexByName": {},
+                      "renameByName": {
+                        "accept_language": "Language",
+                        "Value": "Visits"
+                      }
+                    }
+                  }
+                ],
+                "type": "table"
               }
             ],
             "refresh": "1m",
