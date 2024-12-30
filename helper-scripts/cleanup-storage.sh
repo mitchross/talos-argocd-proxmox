@@ -1,50 +1,33 @@
 #!/bin/bash
 
-echo "WARNING: This will delete all PVs and PVCs. Make sure you have backed up your data!"
-read -p "Are you sure you want to continue? (y/N): " confirm
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
 
-if [[ $confirm != "y" && $confirm != "Y" ]]; then
-    echo "Aborted."
+echo -e "${YELLOW}WARNING: This script will delete all PVCs and PVs. Data may be lost.${NC}"
+echo -e "Please make sure you have backed up any important data."
+read -p "Are you sure you want to continue? (y/N) " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+    echo "Aborting."
     exit 1
 fi
 
-# Get all namespaces
-NAMESPACES=$(kubectl get ns -o jsonpath='{.items[*].metadata.name}')
+echo -e "\n${YELLOW}Step 1: Removing finalizers from PVCs${NC}"
+kubectl get pvc --all-namespaces -o json | jq '.items[] | select(.metadata.finalizers != null) | "kubectl patch pvc \(.metadata.name) -n \(.metadata.namespace) -p \"{\\"metadata\\":{\\"finalizers\\":[]}}\" --type=merge"' | xargs -I {} bash -c '{}'
 
-echo "=== Removing finalizers from PVCs ==="
-for ns in $NAMESPACES; do
-    echo "Checking namespace: $ns"
-    # Get PVCs in this namespace
-    PVCS=$(kubectl get pvc -n $ns -o jsonpath='{.items[*].metadata.name}' 2>/dev/null)
-    for pvc in $PVCS; do
-        echo "Removing finalizers from PVC $pvc in namespace $ns"
-        kubectl patch pvc $pvc -n $ns -p '{"metadata":{"finalizers":null}}' --type=merge
-    done
-done
+echo -e "\n${YELLOW}Step 2: Removing finalizers from PVs${NC}"
+kubectl get pv -o json | jq '.items[] | select(.metadata.finalizers != null) | "kubectl patch pv \(.metadata.name) -p \"{\\"metadata\\":{\\"finalizers\\":[]}}\" --type=merge"' | xargs -I {} bash -c '{}'
 
-echo "=== Removing finalizers from PVs ==="
-PVS=$(kubectl get pv -o jsonpath='{.items[*].metadata.name}')
-for pv in $PVS; do
-    echo "Removing finalizers from PV $pv"
-    kubectl patch pv $pv -p '{"metadata":{"finalizers":null}}' --type=merge
-done
+echo -e "\n${YELLOW}Step 3: Force deleting PVCs${NC}"
+kubectl delete pvc --all --all-namespaces --force --grace-period=0
 
-echo "=== Force deleting PVCs ==="
-for ns in $NAMESPACES; do
-    echo "Checking namespace: $ns"
-    PVCS=$(kubectl get pvc -n $ns -o jsonpath='{.items[*].metadata.name}' 2>/dev/null)
-    for pvc in $PVCS; do
-        echo "Force deleting PVC $pvc in namespace $ns"
-        kubectl delete pvc $pvc -n $ns --force --grace-period=0
-    done
-done
+echo -e "\n${YELLOW}Step 4: Force deleting PVs${NC}"
+kubectl delete pv --all --force --grace-period=0
 
-echo "=== Force deleting PVs ==="
-PVS=$(kubectl get pv -o jsonpath='{.items[*].metadata.name}')
-for pv in $PVS; do
-    echo "Force deleting PV $pv"
-    kubectl delete pv $pv --force --grace-period=0
-done
-
-echo "=== Cleanup complete ==="
-echo "You can now recreate your storage using the setup-storage.sh script" 
+echo -e "\n${GREEN}Cleanup completed successfully!${NC}"
+echo -e "You can now run the setup-storage.sh script to create the directories"
+echo -e "and then apply your storage configurations through ArgoCD." 
