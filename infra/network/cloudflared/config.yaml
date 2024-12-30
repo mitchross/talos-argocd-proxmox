@@ -3,23 +3,9 @@ credentials-file: /etc/cloudflared/credentials/credentials.json
 metrics: 0.0.0.0:2000
 no-autoupdate: true
 
-# Enhanced logging configuration
+# Add minimal logging configuration
 logFile: /var/log/cloudflared.log
 loglevel: info
-transport-loglevel: info
-
-# Include additional headers in logs
-originRequest:
-  httpHostHeader: true
-  # Log real IP addresses
-  headers:
-    - name: CF-Connecting-IP
-    - name: X-Real-IP
-    - name: X-Forwarded-For
-  # Enable connection details logging
-  connectTimeout: 30s
-  keepAliveConnections: 100
-  keepAliveTimeout: 1m30s
 
 warp-routing:
   enabled: true
@@ -27,26 +13,20 @@ warp-routing:
 ingress:
   - hostname: hello.vanillax.me
     service: hello_world
-    originRequest:
-      # Additional per-service logging
-      proxyType: http
-      disableChunkedEncoding: false
-      keepAliveTimeout: 1m30s
-      
   - hostname: "*.vanillax.me"
     service: https://cilium-gateway-external.gateway.svc.cluster.local:443
     originRequest:
       originServerName: "*.vanillax.me"
-      # Additional per-service logging
-      proxyType: https
-      keepAliveTimeout: 1m30s
-      
+      # Add minimal header logging
+      headers:
+        - name: CF-Connecting-IP
+        - name: X-Real-IP
   - hostname: vanillax.me
     service: https://cilium-gateway-external.gateway.svc.cluster.local:443
     originRequest:
       originServerName: vanillax.me
-      # Additional per-service logging
-      proxyType: https
-      keepAliveTimeout: 1m30s
-      
+      # Add minimal header logging
+      headers:
+        - name: CF-Connecting-IP
+        - name: X-Real-IP
   - service: http_status:404
