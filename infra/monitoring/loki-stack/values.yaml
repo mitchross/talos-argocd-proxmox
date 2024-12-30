@@ -8,7 +8,14 @@ loki:
     storageClassName: local-storage
 promtail:
   enabled: true
+  securityContext:
+    capabilities:
+      add:
+        - NET_ADMIN
+        - NET_RAW
   config:
+    clients:
+      - url: http://loki-headless.monitoring.svc.cluster.local:3100/loki/api/v1/push
     snippets:
       extraScrapeConfigs: |
         - job_name: envoy
