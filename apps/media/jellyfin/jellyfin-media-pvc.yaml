@@ -23,7 +23,6 @@ spec:
     nodeStageSecretRef:
       name: smbcreds
       namespace: csi-driver-smb
-
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

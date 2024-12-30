@@ -3,11 +3,42 @@ kind: PersistentVolumeClaim
 metadata:
   name: lidarr-config
   namespace: arr
+  labels:
+    app: lidarr
+    type: config
 spec:
-  storageClassName: proxmox-csi
-  volumeName: pv-lidarr-config
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 4G
+      storage: 10Gi
+  storageClassName: local-storage
+  selector:
+    matchLabels:
+      app: lidarr
+      type: config
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: lidarr-config-pv
+  labels:
+    app: lidarr
+    type: config
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/arr/lidarr/config
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai

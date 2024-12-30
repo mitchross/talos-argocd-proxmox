@@ -3,20 +3,29 @@ kind: PersistentVolumeClaim
 metadata:
   name: frigate-config
   namespace: frigate
+  labels:
+    app: frigate
+    type: config
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi
+      storage: 10Gi
   storageClassName: local-storage
+  selector:
+    matchLabels:
+      app: frigate
+      type: config
 
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: frigate-config-pv
-  namespace: frigate
+  labels:
+    app: frigate
+    type: config
 spec:
   capacity:
     storage: 10Gi

@@ -3,6 +3,9 @@ kind: PersistentVolumeClaim
 metadata:
   name: ollama-models
   namespace: ollama
+  labels:
+    app: ollama
+    type: models
 spec:
   accessModes:
     - ReadWriteOnce
@@ -10,11 +13,18 @@ spec:
     requests:
       storage: 250Gi
   storageClassName: local-storage
+  selector:
+    matchLabels:
+      app: ollama
+      type: models
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: ollama-models-pv    # Human-readable name
+  name: ollama-models-pv
+  labels:
+    app: ollama
+    type: models
 spec:
   capacity:
     storage: 250Gi
@@ -23,7 +33,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
   local:
-    path: /datapool/kubernetes/ollama-models    # Your actual directory
+    path: /datapool/kubernetes/ollama-models
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -31,4 +41,4 @@ spec:
         - key: kubernetes.io/hostname
           operator: In
           values:
-          - vanillax-ai    # Your node name
+          - vanillax-ai

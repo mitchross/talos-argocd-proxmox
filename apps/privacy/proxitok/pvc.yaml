@@ -3,12 +3,42 @@ kind: PersistentVolumeClaim
 metadata:
   name: proxitok-cache-pvc
   namespace: proxitok
-  annotations:
-    directory: "proxitok/cache"
+  labels:
+    app: proxitok
+    type: cache
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi
+      storage: 10Gi
   storageClassName: local-storage
+  selector:
+    matchLabels:
+      app: proxitok
+      type: cache
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: proxitok-cache-pv
+  labels:
+    app: proxitok
+    type: cache
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/proxitok/cache
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai

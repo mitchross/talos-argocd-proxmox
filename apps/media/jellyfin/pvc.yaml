@@ -1,15 +1,44 @@
-kind: PersistentVolumeClaim
 apiVersion: v1
+kind: PersistentVolumeClaim
 metadata:
   name: jellyfin-config
   namespace: jellyfin
-  annotations:
-    directory: "jellyfin/config"    # This will create /datapool/kubernetes/jellyfin/config
-    retain: "true"                  # This ensures data is retained
+  labels:
+    app: jellyfin
+    type: config
 spec:
   storageClassName: local-storage
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 12Gi
+      storage: 1Gi
+  selector:
+    matchLabels:
+      app: jellyfin
+      type: config
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jellyfin-config-pv
+  labels:
+    app: jellyfin
+    type: config
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/jellyfin/config
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai

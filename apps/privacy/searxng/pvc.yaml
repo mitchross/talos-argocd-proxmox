@@ -3,8 +3,9 @@ kind: PersistentVolumeClaim
 metadata:
   name: searxng-config
   namespace: searxng
-  annotations:
-    directory: "searxng/config"
+  labels:
+    app: searxng
+    type: config
 spec:
   accessModes:
     - ReadWriteOnce
@@ -12,12 +13,19 @@ spec:
     requests:
       storage: 1Gi
   storageClassName: local-storage
+  selector:
+    matchLabels:
+      app: searxng
+      type: config
 ---
 # PV for SearXNG
 apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: searxng-config-pv
+  labels:
+    app: searxng
+    type: config
 spec:
   capacity:
     storage: 1Gi

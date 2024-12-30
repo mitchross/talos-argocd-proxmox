@@ -3,11 +3,42 @@ kind: PersistentVolumeClaim
 metadata:
   name: radarr-config
   namespace: arr
+  labels:
+    app: radarr
+    type: config
 spec:
-  storageClassName: proxmox-csi
-  volumeName: pv-radarr-config
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 4G
+      storage: 10Gi
+  storageClassName: local-storage
+  selector:
+    matchLabels:
+      app: radarr
+      type: config
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: radarr-config-pv
+  labels:
+    app: radarr
+    type: config
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/arr/radarr/config
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai

@@ -23,7 +23,7 @@ export SETUP_NODEIP=192.168.10.11
 export SETUP_CLUSTERTOKEN=randomtokensecret123456
 
 # Install K3s
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.31.3-rc2+k3s1" \
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.32.0-rc1+k3s1" \
   INSTALL_K3S_EXEC="--node-ip $SETUP_NODEIP \
   --disable=flannel,local-storage,metrics-server,servicelb,traefik \
   --flannel-backend='none' \
@@ -121,148 +121,210 @@ Create these items in your 1Password vault before proceeding:
    - Field: `token` (same as $CONNECT_TOKEN)
 
 
- # Storage Setup
+# Storage Setup
 
 ## Overview
-    This guide uses a simple, straightforward approach to Kubernetes storage that feels like managing regular directories on your computer.
+This cluster uses a hybrid storage approach:
+1. Local storage for application configs and small datasets
+2. SMB storage for large media files
 
-### Benefits of Using ZFS
-    While we're using ZFS, these same principles work with any filesystem. The key is making your data easy to find and manage, just like organizing files on your computer.
+## Storage Types
 
-## 3.1 Prepare Your Storage Location
+### 1. Local Storage
+Used for application configurations and smaller datasets. All stored under `/datapool/kubernetes/`:
 
-First, let's set up our storage with the right permissions so both you and Kubernetes can work with the files:
-
-### Step 1: Create the Main Storage Directory
+```plaintext
+/datapool/kubernetes/
+├── ai/
+│   ├── ollama-models/    # Ollama AI models
+│   └── comfyui/         # ComfyUI storage
+├── media/
+│   └── jellyfin/
+│       └── config/      # Jellyfin configuration
+├── arr/
+│   ├── sonarr/config/   # Sonarr configuration
+│   ├── radarr/config/   # Radarr configuration
+│   ├── lidarr/config/   # Lidarr configuration
+│   └── prowlarr/config/ # Prowlarr configuration
+├── home/
+│   └── frigate/
+│       └── config/      # Frigate configuration
+└── privacy/
+    ├── proxitok/cache/  # ProxiTok cache
+    └── searxng/config/  # SearXNG configuration
 ```
-sudo mkdir -p /datapool/kubernetes
-```
 
-### Step 2: Create a Special Group for Storage Access
-```
+### 2. SMB Storage
+Used for large media files, mounted via SMB CSI driver:
+- Jellyfin media: `//192.168.10.8/jellyfin-media`
+- Frigate recordings: `//192.168.10.8/frigate`
+
+## Storage Setup Steps
+
+### 1. Prepare Local Storage
+
+```bash
+# Clone the repository if you haven't already
+git clone https://github.com/yourusername/k3s-argocd-proxmox.git
+cd k3s-argocd-proxmox
+
+# Make the script executable
+chmod +x helper-scripts/setup-storage.sh
+
+# Run the script to create all necessary directories
+sudo ./helper-scripts/setup-storage.sh
+
+# Set up storage access group
 sudo groupadd storage-access
-```
-Add yourself to this group:
-```
-sudo usermod -a -G storage-access yourusername
-```
-
-### Step 3: Set Up Permissions
-
-Set up the right permissions:
-```
+sudo usermod -a -G storage-access $USER
 sudo chown root:storage-access /datapool/kubernetes
 sudo chmod 2775 /datapool/kubernetes
 ```
-This setup means both you and Kubernetes can read and write files, while keeping your data secure.
 
-### 3 ( Extra )
+### 2. Set up SMB Storage
 
-Create a special group that will have access to the storage
-```
-sudo groupadd storage-access
-```
-Add yourself to this group (replace 'yourusername' with your username)
-```
-sudo usermod -a -G storage-access yourusername
-```
-Set up the right permissions
-```
-sudo chown root:storage-access /datapool/kubernetes
-sudo chmod 2775 /datapool/kubernetes
-```
-You'll need to log out and back in for the new group to take effect
-Let's understand these permissions (2775):
-```
-The '2' means new files will automatically belong to the storage-access group
-The first '7' gives the owner (root) full access
-The second '7' gives your group full access
-The '5' lets others see the files exist but not modify them
-```
-This setup means both you and Kubernetes can read and write files, while keeping your data secure.
+```bash
+# Create SMB credentials secret
+kubectl create namespace csi-driver-smb
 
-## 3.2 Create the Storage Class
-
-Now we'll tell Kubernetes how to manage storage. We're using the built-in local storage system because it's simple and predictable:
-
-### Create a Local Storage Class YAML File
+kubectl create secret generic smbcreds \
+  --from-literal username="your-username" \
+  --from-literal password="your-password" \
+  -n csi-driver-smb
 ```
-local-storage-class.yaml
+
+## Storage Configuration Examples
+
+### 1. Local Storage Class
+
+```yaml
+# local-storage-class.yaml
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-name: local-storage
-provisioner: kubernetes.io/no-provisioner  # Manages storage directly
-reclaimPolicy: Retain                      # Keeps your data safe
-volumeBindingMode: WaitForFirstConsumer    # Assigns storage when needed
-
-Apply this to your cluster:
+  name: local-storage
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
 ```
 
-### A PersistentVolume (PV)
+### 2. Example Configurations
 
-```
+#### Local Storage (e.g., Sonarr Config)
+```yaml
+# PV
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-name: myapp-data-pv
+  name: sonarr-config-pv
+  labels:
+    app: sonarr
+    type: config
 spec:
-capacity:
-storage: 100Gi
-accessModes:
-- ReadWriteOnce
-persistentVolumeReclaimPolicy: Retain
-storageClassName: local-storage
-local:
-path: /datapool/kubernetes/myapp/data    # Your actual data location
-nodeAffinity:
-required:
-nodeSelectorTerms:
-- matchExpressions:
-- key: kubernetes.io/hostname
-operator: In
-values:
-- your-node-name    # Your actual node name
-```
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/arr/sonarr/config
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai
 
-### A PersistentVolumeClaim (PVC)
-
-```
+# PVC
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-name: myapp-data-pvc
-namespace: myapp
+  name: sonarr-config
+  namespace: arr
+  labels:
+    app: sonarr
+    type: config
 spec:
-storageClassName: local-storage
-accessModes:
-- ReadWriteOnce
-resources:
-requests:
-storage: 100Gi
-volumeName: myapp-data-pv    # Links to the PV above
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: local-storage
+  selector:
+    matchLabels:
+      app: sonarr
+      type: config
 ```
 
-## 3.4 How Your Storage Will Look
+#### SMB Storage (e.g., Jellyfin Media)
+```yaml
+# PV
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jellyfin-media
+spec:
+  capacity:
+    storage: 1Gi  # Minimal size since it's just for mounting
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - dir_mode=0777
+    - file_mode=0777
+    - uid=1000
+    - gid=1000
+    - cache=strict
+    - nosharesock
+  csi:
+    driver: smb.csi.k8s.io
+    volumeHandle: jellyfin-media-volume
+    volumeAttributes:
+      source: "//192.168.10.8/jellyfin-media"
+    nodeStageSecretRef:
+      name: smbcreds
+      namespace: csi-driver-smb
 
-Your storage will be organized like a well-structured file system:
+# PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-media
+  namespace: jellyfin
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: jellyfin-media
+  storageClassName: ""
+```
 
-*   `datapool/kubernetes/`
-    *   `ollama/`          # Each app gets its own directory
-        *   `models/`               # Store AI models here
-        *   `cache/`               # Temporary files here
-    *   `nginx/`
-        *   `config/`              # Configuration files
-        *   `data/`               # Website files
-    *   `postgres/`
-        *   `data/`               # Database files
+## Storage Best Practices
 
-This organization means:
+1. Local Storage:
+   - Use for application configs and small datasets
+   - Always include proper labels and selectors
+   - Use `ReadWriteOnce` access mode
+   - Set node affinity to ensure proper binding
 
-*   You can find your files easily
-*   Backing up is simple (just copy the folders you need)
-*   Your data stays safe even if you rebuild your cluster
-*   You can manage files directly from your computer
+2. SMB Storage:
+   - Use for large media files that need sharing
+   - Always use `ReadWriteMany` access mode
+   - Include proper mount options for permissions
+   - Use minimal storage request (1Gi) since it's just for mounting
+
+3. General:
+   - Always back up data before making storage changes
+   - Use descriptive names for PVs and PVCs
+   - Include proper namespace in PVCs
+   - Set appropriate permissions on local directories
+
 ## 4. Apply Infrastructure
 
 
@@ -279,7 +341,7 @@ or Set it
 
 #bcrypt the password
  kubectl -n argocd patch secret argocd-secret   -p '{"stringData": {
-     "admin.password": "$2a$10$KjM2xxxxredactedmry6.rfFF0IJfCWuaD2XJ/2sr6oQGcszf8cO",
+     "admin.password": "$2a$12$ltMQCF4cVDVARdelQX/rmeHrF64A8fypy8WkpmmAlScprRSXnyzpi",
        "admin.passwordMtime": "'$(date +%FT%T%Z)'"
     }}'
 

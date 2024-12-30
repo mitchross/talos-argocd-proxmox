@@ -3,11 +3,42 @@ kind: PersistentVolumeClaim
 metadata:
   name: prowlarr-config
   namespace: arr
+  labels:
+    app: prowlarr
+    type: config
 spec:
-  storageClassName: proxmox-csi
-  volumeName: pv-prowlarr-config
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 1G
+      storage: 1Gi
+  storageClassName: local-storage
+  selector:
+    matchLabels:
+      app: prowlarr
+      type: config
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: prowlarr-config-pv
+  labels:
+    app: prowlarr
+    type: config
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/arr/prowlarr/config
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - vanillax-ai
