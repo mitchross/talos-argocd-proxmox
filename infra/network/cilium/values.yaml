@@ -10,6 +10,7 @@ prometheus:
   enabled: true
   serviceMonitor:
     enabled: true
+    trustCRDsExist: true
   contextPath: /metrics
   metrics:
     - dns:query
