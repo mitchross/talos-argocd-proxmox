@@ -7,7 +7,7 @@ BASE_DIR="/datapool/kubernetes"
 declare -a DIRS=(
     # AI Services
     "ollama-models"
-    "comfyui"
+    "comfyui/data"
     
     # Media Services
     "jellyfin/config"

@@ -14,7 +14,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
   local:
-    path: /datapool/kubernetes/comfyui
+    path: /datapool/kubernetes/comfyui/data
   nodeAffinity:
     required:
       nodeSelectorTerms:

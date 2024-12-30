@@ -4,26 +4,24 @@ A production-ready Kubernetes cluster setup using K3s, focusing on security and 
 
 ## Prerequisites
 
-```shell
+```bash
 # System dependencies
 sudo apt install zfsutils-linux nfs-kernel-server cifs-utils open-iscsi
 sudo apt install --reinstall zfs-dkms
 
 # Install 1Password CLI
 # Follow instructions at: https://1password.com/downloads/command-line/
-
-# Fix kubeconfig permissions (after k3s install)
-chmod 600 ~/.kube/config
 ```
 
 ## 1. Initial Cluster Setup
 
-```shell
+```bash
+# Set environment variables
 export SETUP_NODEIP=192.168.10.11
 export SETUP_CLUSTERTOKEN=randomtokensecret123456
 
 # Install K3s
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.32.0-rc1+k3s1" \
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.31.4+k3s1" \
   INSTALL_K3S_EXEC="--node-ip $SETUP_NODEIP \
   --disable=flannel,local-storage,metrics-server,servicelb,traefik \
   --flannel-backend='none' \
@@ -37,78 +35,72 @@ curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.32.0-rc1+k3s1" \
 mkdir -p $HOME/.kube
 sudo cp -i /etc/rancher/k3s/k3s.yaml $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
+chmod 600 $HOME/.kube/config
 echo "export KUBECONFIG=$HOME/.kube/config" >> $HOME/.bashrc
 source $HOME/.bashrc
 ```
 
+## 2. Network Setup (Cilium)
+
+```bash
 # Install Cilium CLI
-```
 CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
-
 CLI_ARCH=amd64
-
 curl -L --fail --remote-name-all https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${CLI_ARCH}.tar.gz
-
 sudo tar xzvfC cilium-linux-${CLI_ARCH}.tar.gz /usr/local/bin
 rm cilium-linux-${CLI_ARCH}.tar.gz
-```
+
 # Install Cilium
-```
 API_SERVER_IP=192.168.10.11
 API_SERVER_PORT=6443
 cilium install \
-  --version 1.16.4 \
+  --version 1.16.5 \
   --set k8sServiceHost=${API_SERVER_IP} \
   --set k8sServicePort=${API_SERVER_PORT} \
   --set kubeProxyReplacement=true \
   --helm-set=operator.replicas=1
+
+# Verify installation
+cilium status
 ```
 
-# Verify Cilium installation
-```cilium status```
+## 3. Secrets Management
 
-## 2. Secrets Setup (Required before ArgoCD)
+### 3.1 Setup 1Password Connect
 
-```shell
+```bash
 # Generate Connect credentials
 op connect server create  # Creates 1password-credentials.json
 
 # Store token for reuse
 export CONNECT_TOKEN="your-1password-connect-token"
 
-# Create required secrets
+# Create namespaces
 kubectl create namespace 1passwordconnect
+kubectl create namespace external-secrets
 
-#BASE64 the json first!!!
+# Create secrets
 kubectl create secret generic 1password-credentials \
-  --from-file=1password-credentials.json=/path/to/1password-credentials.json \
+  --from-file=1password-credentials.json=credentials.base64 \
   --namespace 1passwordconnect
-
-  kubectl create secret generic 1password-credentials \
-  --from-file=1password-credentials.json=credentials.base64  \
-  --namespace 1passwordconnect
-
 
 kubectl create secret generic 1password-operator-token \
   --from-literal=token=$CONNECT_TOKEN \
   --namespace 1passwordconnect
 
-# Create external-secrets token (same token as 1password-operator-token)
-kubectl create namespace external-secrets
 kubectl create secret generic 1passwordconnect \
   --from-literal=token=$CONNECT_TOKEN \
   --namespace external-secrets
 ```
 
-## 3. Required 1Password Vault Items
+### 3.2 Required 1Password Vault Items
 
-Create these items in your 1Password vault before proceeding:
+Create these items in your 1Password vault:
 
 1. `cert-manager-proxmox`:
    - Field: `token` (Cloudflare API token)
 
 2. `cloudflared-proxmox`:
-   - Field: `tunnel-credentials` (JSON format)
    ```json
    {
      "AccountTag": "your-account-tag",
@@ -120,19 +112,93 @@ Create these items in your 1Password vault before proceeding:
 3. `external-secrets`:
    - Field: `token` (same as $CONNECT_TOKEN)
 
+4. `smb-creds`:
+   - Field: `username` (SMB username)
+   - Field: `password` (SMB password)
 
-# Storage Setup
+## 4. Infrastructure Setup
 
-## Overview
+### 4.1 Bootstrap ArgoCD
+
+ArgoCD is initially installed via CLI, then manages itself through GitOps:
+
+```bash
+# Install Gateway API CRDs (required for Cilium)
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
+
+# Bootstrap ArgoCD installation
+kubectl kustomize --enable-helm infra/controllers/argocd | kubectl apply -f -
+
+# Wait for ArgoCD to be ready
+kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
+
+# Set admin password (optional)
+kubectl -n argocd patch secret argocd-secret -p '{"stringData": {
+    "admin.password": "$2a$12$ltMQCF4cVDVARdelQX/rmeHrF64A8fypy8WkpmmAlScprRSXnyzpi",
+    "admin.passwordMtime": "'$(date +%FT%T%Z)'"
+}}'
+
+# Verify ArgoCD is running
+kubectl get pods -n argocd
+```
+
+### 4.2 Core Infrastructure
+
+Now we set up ArgoCD to manage all components (including itself):
+
+```bash
+# Apply core infrastructure (including ArgoCD's own configuration)
+kubectl apply -k infra/
+
+# Verify applications are created
+kubectl get application -A
+
+# Wait for all applications to sync
+kubectl get application -A -w
+
+# Note: ArgoCD will now manage its own configuration through GitOps
+# Any changes to ArgoCD should be made through the infra/controllers/argocd directory
+```
+
+### 4.3 Application Sets
+
+After core infrastructure is ready:
+
+```bash
+# Apply application sets
+kubectl apply -k sets/
+
+# Verify application sets are created
+kubectl get applicationset -A
+
+# Monitor application creation
+kubectl get application -A -w
+```
+
+### 4.4 Verify Infrastructure
+
+```bash
+# Check ArgoCD status
+kubectl get pods -n argocd
+kubectl get application -A
+
+# Check sync status
+argocd app list  # If argocd CLI is installed
+# or
+kubectl get application -A -o custom-columns=NAME:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status
+
+# Check all applications are healthy
+kubectl get application -A --no-headers | awk '$3 != "Healthy" || $2 != "Synced" {print}'
+```
+
+## 5. Storage Setup
+
+### 5.1 Overview
 This cluster uses a hybrid storage approach:
 1. Local storage for application configs and small datasets
 2. SMB storage for large media files
 
-## Storage Types
-
-### 1. Local Storage
-Used for application configurations and smaller datasets. All stored under `/datapool/kubernetes/`:
-
+### 5.2 Directory Structure
 ```plaintext
 /datapool/kubernetes/
 ├── ai/
@@ -154,232 +220,139 @@ Used for application configurations and smaller datasets. All stored under `/dat
     └── searxng/config/  # SearXNG configuration
 ```
 
-### 2. SMB Storage
-Used for large media files, mounted via SMB CSI driver:
-- Jellyfin media: `//192.168.10.8/jellyfin-media`
-- Frigate recordings: `//192.168.10.8/frigate`
+### 5.3 Setup Steps
 
-## Storage Setup Steps
-
-### 1. Prepare Local Storage
-
+1. Clean up existing storage:
 ```bash
-# Clone the repository if you haven't already
-git clone https://github.com/yourusername/k3s-argocd-proxmox.git
-cd k3s-argocd-proxmox
+chmod +x helper-scripts/cleanup-storage.sh
+./helper-scripts/cleanup-storage.sh
+```
 
-# Make the script executable
+2. Create local storage directories:
+```bash
 chmod +x helper-scripts/setup-storage.sh
-
-# Run the script to create all necessary directories
-sudo ./helper-scripts/setup-storage.sh
-
-# Set up storage access group
-sudo groupadd storage-access
-sudo usermod -a -G storage-access $USER
-sudo chown root:storage-access /datapool/kubernetes
-sudo chmod 2775 /datapool/kubernetes
+./helper-scripts/setup-storage.sh
 ```
 
-### 2. Set up SMB Storage
+3. Apply storage configurations through ArgoCD:
+```bash
+# Verify storage class is applied by ArgoCD
+kubectl get sc local-storage
+
+# Verify SMB credentials from external-secrets
+kubectl get secret smbcreds -n csi-driver-smb
+
+# Apply application sets
+kubectl apply -k sets/
+```
+
+## 6. Verification
 
 ```bash
-# Create SMB credentials secret
-kubectl create namespace csi-driver-smb
+# Check core components
+kubectl get pods -A
+cilium status
 
-kubectl create secret generic smbcreds \
-  --from-literal username="your-username" \
-  --from-literal password="your-password" \
-  -n csi-driver-smb
-```
+# Check ArgoCD
+kubectl get application -A
+kubectl get pods -n argocd
 
-## Storage Configuration Examples
-
-### 1. Local Storage Class
-
-```yaml
-# local-storage-class.yaml
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: local-storage
-provisioner: kubernetes.io/no-provisioner
-volumeBindingMode: WaitForFirstConsumer
-reclaimPolicy: Retain
-```
-
-### 2. Example Configurations
-
-#### Local Storage (e.g., Sonarr Config)
-```yaml
-# PV
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: sonarr-config-pv
-  labels:
-    app: sonarr
-    type: config
-spec:
-  capacity:
-    storage: 10Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-storage
-  local:
-    path: /datapool/kubernetes/arr/sonarr/config
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - vanillax-ai
-
-# PVC
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: sonarr-config
-  namespace: arr
-  labels:
-    app: sonarr
-    type: config
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
-  storageClassName: local-storage
-  selector:
-    matchLabels:
-      app: sonarr
-      type: config
-```
-
-#### SMB Storage (e.g., Jellyfin Media)
-```yaml
-# PV
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: jellyfin-media
-spec:
-  capacity:
-    storage: 1Gi  # Minimal size since it's just for mounting
-  accessModes:
-    - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  mountOptions:
-    - dir_mode=0777
-    - file_mode=0777
-    - uid=1000
-    - gid=1000
-    - cache=strict
-    - nosharesock
-  csi:
-    driver: smb.csi.k8s.io
-    volumeHandle: jellyfin-media-volume
-    volumeAttributes:
-      source: "//192.168.10.8/jellyfin-media"
-    nodeStageSecretRef:
-      name: smbcreds
-      namespace: csi-driver-smb
-
-# PVC
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: jellyfin-media
-  namespace: jellyfin
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 1Gi
-  volumeName: jellyfin-media
-  storageClassName: ""
-```
-
-## Storage Best Practices
-
-1. Local Storage:
-   - Use for application configs and small datasets
-   - Always include proper labels and selectors
-   - Use `ReadWriteOnce` access mode
-   - Set node affinity to ensure proper binding
-
-2. SMB Storage:
-   - Use for large media files that need sharing
-   - Always use `ReadWriteMany` access mode
-   - Include proper mount options for permissions
-   - Use minimal storage request (1Gi) since it's just for mounting
-
-3. General:
-   - Always back up data before making storage changes
-   - Use descriptive names for PVs and PVCs
-   - Include proper namespace in PVCs
-   - Set appropriate permissions on local directories
-
-## 4. Apply Infrastructure
-
-
-# Install Gateway API CRDs
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
-
-# Install Argo CD
-kubectl kustomize --enable-helm infra/controllers/argocd | kubectl apply -f -
-
-# Get initial admin password (if needed)
-kubectl -n argocd get secret argocd-initial-admin-secret -ojsonpath="{.data.password}" |
-
-or Set it 
-
-#bcrypt the password
- kubectl -n argocd patch secret argocd-secret   -p '{"stringData": {
-     "admin.password": "$2a$12$ltMQCF4cVDVARdelQX/rmeHrF64A8fypy8WkpmmAlScprRSXnyzpi",
-       "admin.passwordMtime": "'$(date +%FT%T%Z)'"
-    }}'
-
-```shell
-# Apply all infrastructure components via ArgoCD
-kubectl apply -k infra/
-```
-
-kubectl apply -k sets
-
-# Apply full infrastructure
-kubectl kustomize infra | kubectl apply -f -
-
-## 5. Verify Setup
-
-```shell
-# Check 1Password Connect
+# Check secrets management
 kubectl get pods -n 1passwordconnect
-kubectl get secret 1password-credentials -n 1passwordconnect
-
-# Check External Secrets
 kubectl get externalsecret -A
 kubectl get clustersecretstore 1password -n external-secrets
 
-# Check specific secrets
-kubectl get secret cloudflare-api-token -n cert-manager
-kubectl get secret tunnel-credentials -n cloudflared
-
-# Check for errors
-kubectl logs -n 1passwordconnect -l app=onepassword-connect
+# Check storage
+kubectl get pv,pvc -A
+kubectl get sc
 ```
 
+## Troubleshooting
 
+1. Check 1Password Connect:
+```bash
+kubectl logs -n 1passwordconnect -l app=onepassword-connect
+kubectl get secret 1password-credentials -n 1passwordconnect
+```
 
-# Troubleshooting
+2. Verify External Secrets:
+```bash
+kubectl get externalsecret -A
+kubectl describe clustersecretstore 1password -n external-secrets
+```
 
-If secrets aren't syncing:
-1. Verify 1Password Connect is running
-2. Check vault items exist with correct field names
-3. Check External Secrets operator logs
-4. Verify ClusterSecretStore is ready
+### Storage Issues
+1. Check PV/PVC status:
+```bash
+kubectl get pv,pvc -A
+kubectl describe pv <pv-name>
+kubectl describe pvc <pvc-name> -n <namespace>
+```
+
+2. Verify SMB credentials:
+```bash
+kubectl get secret smbcreds -n csi-driver-smb
+kubectl describe pod -n <namespace> | grep -A5 Events
+```
+
+3. PVC Binding Issues:
+```bash
+# Common message: "waiting for first consumer to be created before binding"
+# This is NORMAL with WaitForFirstConsumer storage class.
+# Verify the deployment that uses the PVC exists:
+kubectl get deploy -n <namespace>
+
+# Check if pods are being created:
+kubectl get pods -n <namespace>
+
+# Check pod events for volume issues:
+kubectl describe pod <pod-name> -n <namespace>
+```
+
+Note: Storage binding order matters:
+1. PVC is created (status: Pending)
+2. Pod requesting the PVC is created
+3. Kubernetes selects a node for the Pod
+4. PVC binds to PV on the selected node
+5. Pod starts with the mounted volume
+
+If you see "waiting for first consumer", verify:
+- The deployment/statefulset exists
+- The PVC name in the pod spec matches
+- The storage class name is correct
+- Node affinity rules allow scheduling
+
+### ArgoCD Issues
+
+1. DNS/Network Issues:
+```bash
+# Check if CoreDNS is running
+kubectl get pods -n kube-system -l k8s-app=kube-dns
+
+# Verify DNS resolution from within the cluster
+kubectl run dnsutils --image=gcr.io/kubernetes-e2e-test-images/dnsutils:1.3 --rm -it -- bash
+# Inside the pod:
+nslookup github.com
+nslookup kubernetes.default.svc.cluster.local
+
+# Check if Cilium is healthy
+cilium status
+cilium connectivity test
+
+# Verify ArgoCD can reach GitHub
+kubectl exec -it -n argocd deploy/argocd-repo-server -- bash
+# Inside the pod:
+curl -v https://github.com
+```
+
+2. Repository Issues:
+```bash
+# Check ArgoCD repo-server logs
+kubectl logs -n argocd deploy/argocd-repo-server
+
+# Force refresh an application
+kubectl patch application <app-name> -n argocd --type merge -p='{"metadata": {"annotations": {"argocd.argoproj.io/refresh": "hard"}}}'
+
+# Restart ArgoCD components if needed
+kubectl rollout restart deploy -n argocd argocd-repo-server
+kubectl rollout restart deploy -n argocd argocd-server
