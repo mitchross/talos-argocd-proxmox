@@ -5,6 +5,7 @@ namespace: monitoring
 
 resources:
   - namespace.yaml
+  - storage.yaml
 
 helmCharts:
   - name: loki-stack
