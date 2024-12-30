@@ -24,12 +24,21 @@ check_file() {
     # Get file contents
     content=$(cat "$file")
 
-    # Check PV naming
+    # Check PV naming and configuration
     while IFS= read -r line; do
         if [[ $line =~ name:[[:space:]]*(.*) ]] && [[ $(echo "$content" | grep -B2 "$line" | grep -q "kind: PersistentVolume"; echo $?) -eq 0 ]]; then
             pv_name="${BASH_REMATCH[1]}"
-            if [[ ! $pv_name =~ -pv$ ]]; then
-                echo -e "${RED}ERROR: PV name '$pv_name' should end with '-pv'${NC}"
+            
+            # Check if this is an SMB volume
+            is_smb=0
+            if echo "$content" | grep -A50 "kind: PersistentVolume" | grep -q "driver: smb.csi.k8s.io"; then
+                is_smb=1
+                echo -e "${GREEN}Found SMB storage configuration for $pv_name${NC}"
+            fi
+            
+            # Only enforce -pv suffix for local storage
+            if [[ $is_smb -eq 0 ]] && [[ ! $pv_name =~ -pv$ ]]; then
+                echo -e "${RED}ERROR: Local storage PV name '$pv_name' should end with '-pv'${NC}"
                 has_errors=1
             fi
         fi
@@ -39,8 +48,24 @@ check_file() {
     while IFS= read -r line; do
         if [[ $line =~ name:[[:space:]]*(.*) ]] && [[ $(echo "$content" | grep -B2 "$line" | grep -q "kind: PersistentVolumeClaim"; echo $?) -eq 0 ]]; then
             pvc_name="${BASH_REMATCH[1]}"
-            if [[ ! $pvc_name =~ -pvc$ ]]; then
-                echo -e "${RED}ERROR: PVC name '$pvc_name' should end with '-pvc'${NC}"
+            
+            # Check if this PVC references an SMB volume
+            is_smb_pvc=0
+            if echo "$content" | grep -A10 "kind: PersistentVolumeClaim" | grep -q "ReadWriteMany"; then
+                # Check corresponding PV if volumeName is specified
+                volume_name=$(echo "$content" | grep -A10 "kind: PersistentVolumeClaim" | grep "volumeName:" | awk '{print $2}')
+                if [[ -n $volume_name ]]; then
+                    # Search for the PV in all yaml files
+                    if find . -type f -name "*.yaml" -exec grep -l "name: $volume_name" {} \; | xargs grep -l "driver: smb.csi.k8s.io" > /dev/null; then
+                        is_smb_pvc=1
+                        echo -e "${GREEN}Found SMB PVC configuration for $pvc_name${NC}"
+                    fi
+                fi
+            fi
+            
+            # Only enforce -pvc suffix for local storage
+            if [[ $is_smb_pvc -eq 0 ]] && [[ ! $pvc_name =~ -pvc$ ]]; then
+                echo -e "${RED}ERROR: Local storage PVC name '$pvc_name' should end with '-pvc'${NC}"
                 has_errors=1
             fi
         fi
@@ -48,13 +73,16 @@ check_file() {
 
     # Check for required fields in PVs
     if echo "$content" | grep -q "kind: PersistentVolume"; then
-        if ! echo "$content" | grep -q "labels:"; then
-            echo -e "${RED}ERROR: Missing labels in PV${NC}"
-            has_errors=1
-        fi
-        if ! echo "$content" | grep -q "nodeAffinity:"; then
-            echo -e "${RED}ERROR: Missing nodeAffinity in PV${NC}"
-            has_errors=1
+        # Only check these for local storage PVs
+        if ! echo "$content" | grep -q "driver: smb.csi.k8s.io"; then
+            if ! echo "$content" | grep -q "labels:"; then
+                echo -e "${RED}ERROR: Missing labels in local storage PV${NC}"
+                has_errors=1
+            fi
+            if ! echo "$content" | grep -q "nodeAffinity:"; then
+                echo -e "${RED}ERROR: Missing nodeAffinity in local storage PV${NC}"
+                has_errors=1
+            fi
         fi
     fi
 
@@ -64,9 +92,12 @@ check_file() {
             echo -e "${RED}ERROR: Missing namespace in PVC${NC}"
             has_errors=1
         fi
-        if ! echo "$content" | grep -q "selector:"; then
-            echo -e "${RED}ERROR: Missing selector in PVC${NC}"
-            has_errors=1
+        # Only check selector for local storage PVCs
+        if ! echo "$content" | grep -q "ReadWriteMany"; then
+            if ! echo "$content" | grep -q "selector:"; then
+                echo -e "${RED}ERROR: Missing selector in local storage PVC${NC}"
+                has_errors=1
+            fi
         fi
     fi
 

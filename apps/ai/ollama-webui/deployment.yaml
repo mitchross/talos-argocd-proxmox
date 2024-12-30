@@ -29,7 +29,7 @@ spec:
             - configMapRef:
                 name: ollama-webui-configmap
           volumeMounts:
-            - name: webui-data
+            - name: data
               mountPath: /app/backend/data
       volumes:
         - name: data
