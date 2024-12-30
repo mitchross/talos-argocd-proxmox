@@ -56,9 +56,9 @@ spec:
           limits:
             nvidia.com/gpu: 2
       volumes:
-      - name: comfyui-data
+      - name: data
         persistentVolumeClaim:
-          claimName: comfyui-data
+          claimName: comfyui-data-pvc
       - name: gpu-config
         configMap:
           name: comfyui-configmap

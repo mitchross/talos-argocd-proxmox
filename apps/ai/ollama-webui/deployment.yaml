@@ -32,6 +32,6 @@ spec:
             - name: webui-data
               mountPath: /app/backend/data
       volumes:
-        - name: webui-data
+        - name: data
           persistentVolumeClaim:
-            claimName: ollama-webui-data
+            claimName: ollama-webui-storage-pvc

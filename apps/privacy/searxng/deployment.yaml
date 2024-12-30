@@ -55,9 +55,9 @@ spec:
               subPath: settings.yml
               readOnly: true
       volumes:
-        - name: searxng-config
+        - name: config
           persistentVolumeClaim:
-            claimName: searxng-config
+            claimName: searxng-config-pvc
         - name: searxng-config-settings
           configMap:
             name: searxng-config-settings

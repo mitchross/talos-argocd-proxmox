@@ -59,13 +59,14 @@ spec:
       volumes:
         - name: config
           persistentVolumeClaim:
-            claimName: plex-config
+            claimName: plex-config-pvc
         - name: media
           nfs:
             server: 192.168.10.133
             path: /mnt/generaltank/k8s/jellyfin
 
         - name: transcode
-          emptyDir: { }
+          persistentVolumeClaim:
+            claimName: plex-transcode-pvc
         - name: tmp
           emptyDir: { }

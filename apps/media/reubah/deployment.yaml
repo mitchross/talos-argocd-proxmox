@@ -27,4 +27,4 @@ spec:
       volumes:
         - name: doc-temp
           persistentVolumeClaim:
-            claimName: reubah-doc-temp
+            claimName: reubah-doc-temp-pvc

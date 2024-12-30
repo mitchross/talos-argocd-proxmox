@@ -79,7 +79,7 @@ spec:
             claimName: frigate-media
         - name: config
           persistentVolumeClaim:
-            claimName: frigate-config
+            claimName: frigate-config-pvc
         - name: cache
           emptyDir:
             medium: Memory
