@@ -16,7 +16,8 @@ spec:
             value: /
       backendRefs:
         - name: prometheus-stack-grafana
-          port: 3000
+          port: 80
+          weight: 1
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -36,4 +37,5 @@ spec:
             value: /
       backendRefs:
         - name: prometheus-prometheus-stack-kube-prom-prometheus
-          port: 9090 
+          port: 9090
+          weight: 1 

@@ -15,6 +15,9 @@ prometheus:
 grafana:
   nodeSelector:
     kubernetes.io/hostname: vanillax-ai
+  service:
+    port: 80
+    targetPort: 3000
   additionalDataSources:
     - name: Loki
       type: loki
