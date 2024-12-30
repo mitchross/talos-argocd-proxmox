@@ -12,11 +12,19 @@ promtail:
     snippets:
       extraScrapeConfigs: |
         - job_name: envoy
-          static_configs:
-            - targets: ['localhost']
-              labels:
-                job: envoy
-                __path__: /var/log/envoy/*.log
+          kubernetes_sd_configs:
+            - role: pod
+              namespaces:
+                names:
+                  - gateway
+              selectors:
+                - role: pod
+                  label: "app=cilium-envoy"
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_container_name]
+              target_label: container_name
+            - source_labels: [__meta_kubernetes_pod_name]
+              target_label: pod_name
           pipeline_stages:
             - json:
                 expressions:
