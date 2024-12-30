@@ -2,6 +2,9 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: prometheus-prometheus-stack-kube-prom-prometheus-db-prom
+  labels:
+    app: prometheus
+    type: storage
 spec:
   capacity:
     storage: 10Gi
@@ -10,7 +13,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
   local:
-    path: /mnt/data/prometheus
+    path: /datapool/kubernetes/monitoring/prometheus
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -24,6 +27,9 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   name: prometheus-stack-grafana
+  labels:
+    app: grafana
+    type: storage
 spec:
   capacity:
     storage: 10Gi
@@ -32,7 +38,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
   local:
-    path: /mnt/data/grafana
+    path: /datapool/kubernetes/monitoring/grafana
   nodeAffinity:
     required:
       nodeSelectorTerms:

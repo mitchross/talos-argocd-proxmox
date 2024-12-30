@@ -23,6 +23,11 @@ declare -a DIRS=(
     # Privacy Services
     "proxitok/cache"
     "searxng/config"
+
+    # Monitoring
+    "monitoring/loki"
+    "monitoring/prometheus"
+    "monitoring/grafana"
 )
 
 # Create base directory if it doesn't exist
