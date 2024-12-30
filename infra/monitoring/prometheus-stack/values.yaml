@@ -13,6 +13,8 @@ prometheus:
               storage: 10Gi
 
 grafana:
+  nodeSelector:
+    kubernetes.io/hostname: vanillax-ai
   additionalDataSources:
     - name: Loki
       type: loki
