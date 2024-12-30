@@ -17,10 +17,20 @@ then
 fi
 
 echo -e "\n${YELLOW}Step 1: Removing finalizers from PVCs${NC}"
-kubectl get pvc --all-namespaces -o json | jq '.items[] | select(.metadata.finalizers != null) | "kubectl patch pvc \(.metadata.name) -n \(.metadata.namespace) -p \"{\\"metadata\\":{\\"finalizers\\":[]}}\" --type=merge"' | xargs -I {} bash -c '{}'
+# Get all PVCs with finalizers and remove them
+for ns in $(kubectl get ns -o jsonpath='{.items[*].metadata.name}'); do
+    for pvc in $(kubectl get pvc -n $ns -o jsonpath='{.items[*].metadata.name}' 2>/dev/null); do
+        echo "Removing finalizers from PVC $pvc in namespace $ns"
+        kubectl patch pvc $pvc -n $ns -p '{"metadata":{"finalizers":null}}' --type=merge
+    done
+done
 
 echo -e "\n${YELLOW}Step 2: Removing finalizers from PVs${NC}"
-kubectl get pv -o json | jq '.items[] | select(.metadata.finalizers != null) | "kubectl patch pv \(.metadata.name) -p \"{\\"metadata\\":{\\"finalizers\\":[]}}\" --type=merge"' | xargs -I {} bash -c '{}'
+# Get all PVs with finalizers and remove them
+for pv in $(kubectl get pv -o jsonpath='{.items[*].metadata.name}'); do
+    echo "Removing finalizers from PV $pv"
+    kubectl patch pv $pv -p '{"metadata":{"finalizers":null}}' --type=merge
+done
 
 echo -e "\n${YELLOW}Step 3: Force deleting PVCs${NC}"
 kubectl delete pvc --all --all-namespaces --force --grace-period=0
