@@ -12,6 +12,10 @@ spec:
         revision: HEAD
         directories:
           - path: infra/monitoring/*
+          - path: infra/monitoring/project.yaml
+            exclude: true
+          - path: infra/monitoring/application-set.yaml
+            exclude: true
   template:
     metadata:
       name: '{{ path.basename }}'

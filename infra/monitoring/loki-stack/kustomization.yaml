@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring
+
+resources:
+  - namespace.yaml
+
+helmCharts:
+  - name: loki-stack
+    repo: https://grafana.github.io/helm-charts
+    releaseName: loki
+    version: 2.9.11
+    namespace: monitoring
+    includeCRDs: true
+    valuesFile: values.yaml 

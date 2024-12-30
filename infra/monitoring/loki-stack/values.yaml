@@ -1,0 +1,63 @@
+loki:
+  auth_enabled: false
+  storage:
+    type: filesystem
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClassName: local-storage
+promtail:
+  enabled: true
+  config:
+    snippets:
+      extraScrapeConfigs: |
+        - job_name: envoy
+          static_configs:
+            - targets: ['localhost']
+              labels:
+                job: envoy
+                __path__: /var/log/envoy/*.log
+          pipeline_stages:
+            - json:
+                expressions:
+                  request_headers: request_headers
+                  request_path: request_path
+                  response_code: response_code
+                  user_agent: user_agent
+                  authority: authority
+                  method: method
+                  bytes_sent: bytes_sent
+                  duration: duration
+                  referer: referer
+            - json:
+                expressions:
+                  cf_ip: request_headers."x-forwarded-for"
+                  cf_country: request_headers."cf-ipcountry"
+                  cf_ray: request_headers."cf-ray"
+                  cf_city: request_headers."cf-ipcity"
+                  cf_threat_score: request_headers."cf-threat-score"
+                  cf_bot_score: request_headers."cf-bot-score"
+                  cf_bot_management: request_headers."cf-bot-management"
+                  cf_worker_status: request_headers."cf-worker-status"
+                  cf_client_trust_score: request_headers."cf-client-trust-score"
+                  cf_cache_status: request_headers."cf-cache-status"
+                  cf_tls_version: request_headers."cf-visitor"
+                  cf_browser: request_headers."cf-device-type"
+                  cf_os: request_headers."cf-os"
+                  cf_client_asn: request_headers."cf-connecting-asn"
+            - labels:
+                request_path:
+                response_code:
+                user_agent:
+                authority:
+                method:
+                cf_ip:
+                cf_country:
+                cf_ray:
+                cf_city:
+                cf_threat_score:
+                cf_bot_score:
+                cf_cache_status:
+                cf_tls_version:
+                cf_browser:
+                cf_client_asn: 

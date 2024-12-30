@@ -1,0 +1,122 @@
+prometheus:
+  prometheusSpec:
+    nodeSelector:
+      kubernetes.io/hostname: vanillax-ai
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-storage   
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi
+
+grafana:
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      url: http://loki.monitoring.svc.cluster.local:3100
+      access: proxy
+      jsonData:
+        maxLines: 1000
+  persistence:
+    enabled: true
+    storageClassName: local-storage
+    size: 10Gi
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: 'Visitor Analytics'
+          orgId: 1
+          folder: 'Analytics'
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/analytics
+  dashboards:
+    analytics:
+      visitor-analytics:
+        json: |
+          {
+            "annotations": {
+              "list": []
+            },
+            "editable": true,
+            "fiscalYearStartMonth": 0,
+            "graphTooltip": 0,
+            "links": [],
+            "liveNow": false,
+            "panels": [
+              {
+                "datasource": {
+                  "type": "loki",
+                  "uid": "${DS_LOKI}"
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "mappings": [],
+                    "thresholds": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "blue",
+                          "value": null
+                        }
+                      ]
+                    },
+                    "unit": "short"
+                  }
+                },
+                "gridPos": {
+                  "h": 4,
+                  "w": 6,
+                  "x": 0,
+                  "y": 0
+                },
+                "id": 1,
+                "options": {
+                  "colorMode": "value",
+                  "graphMode": "area",
+                  "justifyMode": "auto",
+                  "orientation": "auto",
+                  "reduceOptions": {
+                    "calcs": ["lastNotNull"],
+                    "fields": "",
+                    "values": false
+                  }
+                },
+                "pluginVersion": "10.0.3",
+                "targets": [
+                  {
+                    "datasource": {
+                      "type": "loki",
+                      "uid": "${DS_LOKI}"
+                    },
+                    "expr": "count_over_time({job=\"envoy\"}[24h])",
+                    "refId": "A"
+                  }
+                ],
+                "title": "Total Visits (24h)",
+                "type": "stat"
+              }
+            ],
+            "refresh": "1m",
+            "schemaVersion": 38,
+            "style": "dark",
+            "tags": [],
+            "templating": {
+              "list": []
+            },
+            "time": {
+              "from": "now-24h",
+              "to": "now"
+            },
+            "timepicker": {},
+            "timezone": "",
+            "title": "Visitor Analytics",
+            "version": 1,
+            "weekStart": ""
+          } 
