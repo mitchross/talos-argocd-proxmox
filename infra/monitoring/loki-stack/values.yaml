@@ -15,7 +15,7 @@ promtail:
         - NET_RAW
   config:
     clients:
-      - url: http://loki-headless.monitoring.svc.cluster.local:3100/loki/api/v1/push
+      - url: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
     snippets:
       extraScrapeConfigs: |
         - job_name: envoy
