@@ -9,12 +9,15 @@ loki:
 
 promtail:
   enabled: true
+  args:
+    - -config.expand-env=true
   containerSecurityContext:
     capabilities:
       add:
         - NET_BIND_SERVICE
         - NET_RAW
   config:
+    serverPort: 3101
     clients:
       - url: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
     snippets:
@@ -40,7 +43,7 @@ promtail:
               target_label: pod_uid
             - action: replace
               source_labels: [__meta_kubernetes_pod_name, __meta_kubernetes_pod_container_name, __meta_kubernetes_pod_uid]
-              regex: '(.+);(.+);(.+)'
+              regex: "(.+);(.+);(.+)"
               target_label: __path__
               replacement: /var/log/pods/*$3/$2/*.log
           pipeline_stages:
@@ -52,25 +55,25 @@ promtail:
                   request_headers: request_headers
             - template:
                 source: request_headers
-                template: '{{ if index . "cf-connecting-ip" }}{{ index . "cf-connecting-ip" }}{{ end }}'
+                template: "{{ if index . \"cf-connecting-ip\" }}{{ index . \"cf-connecting-ip\" }}{{ end }}"
                 to: cf_ip
             - template:
                 source: request_headers
-                template: '{{ if index . "cf-ipcountry" }}{{ index . "cf-ipcountry" }}{{ end }}'
+                template: "{{ if index . \"cf-ipcountry\" }}{{ index . \"cf-ipcountry\" }}{{ end }}"
                 to: cf_country
             - template:
                 source: request_headers
-                template: '{{ if index . "cf-ray" }}{{ index . "cf-ray" }}{{ end }}'
+                template: "{{ if index . \"cf-ray\" }}{{ index . \"cf-ray\" }}{{ end }}"
                 to: cf_ray
             - template:
                 source: request_headers
-                template: '{{ if index . "cf-ipcity" }}{{ index . "cf-ipcity" }}{{ end }}'
+                template: "{{ if index . \"cf-ipcity\" }}{{ index . \"cf-ipcity\" }}{{ end }}"
                 to: cf_city
             - labels:
-                request_path:
-                response_code:
-                method:
-                cf_ip:
-                cf_country:
-                cf_ray:
-                cf_city
+                request_path: ""
+                response_code: ""
+                method: ""
+                cf_ip: ""
+                cf_country: ""
+                cf_ray: ""
+                cf_city: ""
