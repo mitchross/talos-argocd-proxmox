@@ -18,7 +18,7 @@ promtail:
     clients:
       - url: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
     snippets:
-      extraScrapeConfigs: |
+      extraScrapeConfigs: |-
         - job_name: envoy
           kubernetes_sd_configs:
             - role: pod
@@ -27,7 +27,7 @@ promtail:
                   - kube-system
               selectors:
                 - role: pod
-                  label: "k8s-app=cilium-envoy"
+                  label: k8s-app=cilium-envoy
           relabel_configs:
             - source_labels: [__meta_kubernetes_pod_name]
               regex: cilium-envoy.*
@@ -39,42 +39,33 @@ promtail:
             - source_labels: [__meta_kubernetes_pod_uid]
               target_label: pod_uid
             - action: replace
-              source_labels:
-                - __meta_kubernetes_pod_name
-                - __meta_kubernetes_pod_container_name
-                - __meta_kubernetes_pod_uid
+              source_labels: [__meta_kubernetes_pod_name, __meta_kubernetes_pod_container_name, __meta_kubernetes_pod_uid]
               regex: '(.+);(.+);(.+)'
               target_label: __path__
               replacement: /var/log/pods/*$3/$2/*.log
-
           pipeline_stages:
-            # Parse the JSON log entry
             - json:
                 expressions:
                   method: method
                   request_path: request_path
                   response_code: response_code
                   request_headers: request_headers
-
-            # Extract Cloudflare headers from request_headers
             - template:
                 source: request_headers
-                template: '{{ if .["cf-connecting-ip"] }}{{ .["cf-connecting-ip"] }}{{ end }}'
+                template: '{{ if index . "cf-connecting-ip" }}{{ index . "cf-connecting-ip" }}{{ end }}'
                 to: cf_ip
             - template:
                 source: request_headers
-                template: '{{ if .["cf-ipcountry"] }}{{ .["cf-ipcountry"] }}{{ end }}'
+                template: '{{ if index . "cf-ipcountry" }}{{ index . "cf-ipcountry" }}{{ end }}'
                 to: cf_country
             - template:
                 source: request_headers
-                template: '{{ if .["cf-ray"] }}{{ .["cf-ray"] }}{{ end }}'
+                template: '{{ if index . "cf-ray" }}{{ index . "cf-ray" }}{{ end }}'
                 to: cf_ray
             - template:
                 source: request_headers
-                template: '{{ if .["cf-ipcity"] }}{{ .["cf-ipcity"] }}{{ end }}'
+                template: '{{ if index . "cf-ipcity" }}{{ index . "cf-ipcity" }}{{ end }}'
                 to: cf_city
-
-            # Set the extracted values as labels
             - labels:
                 request_path:
                 response_code:
@@ -82,4 +73,4 @@ promtail:
                 cf_ip:
                 cf_country:
                 cf_ray:
-                cf_city:
+                cf_city
