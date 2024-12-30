@@ -41,7 +41,111 @@ grafana:
           editable: true
           options:
             path: /var/lib/grafana/dashboards/analytics
+        - name: 'Debug'
+          orgId: 1
+          folder: 'Debug'
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/debug
   dashboards:
+    debug:
+      logql-explorer:
+        json: |
+          {
+            "annotations": {
+              "list": []
+            },
+            "editable": true,
+            "graphTooltip": 0,
+            "links": [],
+            "panels": [
+              {
+                "datasource": {
+                  "type": "loki",
+                  "uid": "${DS_LOKI}"
+                },
+                "gridPos": {
+                  "h": 12,
+                  "w": 24,
+                  "x": 0,
+                  "y": 0
+                },
+                "id": 1,
+                "options": {
+                  "dedupStrategy": "none",
+                  "enableLogDetails": true,
+                  "prettifyLogMessage": false,
+                  "showCommonLabels": false,
+                  "showLabels": false,
+                  "showTime": true,
+                  "sortOrder": "Descending",
+                  "wrapLogMessage": false
+                },
+                "targets": [
+                  {
+                    "datasource": {
+                      "type": "loki",
+                      "uid": "${DS_LOKI}"
+                    },
+                    "expr": "{job=\"envoy\"} | json",
+                    "queryType": "range",
+                    "refId": "A"
+                  }
+                ],
+                "title": "Raw Logs",
+                "type": "logs"
+              },
+              {
+                "datasource": {
+                  "type": "loki",
+                  "uid": "${DS_LOKI}"
+                },
+                "fieldConfig": {
+                  "defaults": {
+                    "custom": {
+                      "align": "auto",
+                      "displayMode": "auto"
+                    }
+                  }
+                },
+                "gridPos": {
+                  "h": 12,
+                  "w": 24,
+                  "x": 0,
+                  "y": 12
+                },
+                "id": 2,
+                "options": {
+                  "showHeader": true
+                },
+                "pluginVersion": "10.0.3",
+                "targets": [
+                  {
+                    "datasource": {
+                      "type": "loki",
+                      "uid": "${DS_LOKI}"
+                    },
+                    "expr": "{job=\"envoy\"} | json | line_format \"{{.cf_country}} {{.cf_city}} {{.cf_device}} {{.request_path}}\"",
+                    "queryType": "range",
+                    "refId": "A"
+                  }
+                ],
+                "title": "Parsed Fields",
+                "type": "table"
+              }
+            ],
+            "refresh": "5s",
+            "schemaVersion": 38,
+            "style": "dark",
+            "time": {
+              "from": "now-15m",
+              "to": "now"
+            },
+            "title": "LogQL Explorer",
+            "version": 1
+          }
     analytics:
       visitor-analytics:
         json: |
