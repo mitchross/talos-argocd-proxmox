@@ -4,9 +4,8 @@ metrics: 0.0.0.0:2000
 no-autoupdate: true
 
 # Enhanced logging configuration
-logFile: /var/log/cloudflared.log
-loglevel: info
-transport-loglevel: debug  # More detailed connection logs
+loglevel: debug   # Increased log level for more details
+transport-loglevel: debug
 
 warp-routing:
   enabled: true
@@ -15,28 +14,8 @@ ingress:
   - hostname: hello.vanillax.me
     service: hello_world
     originRequest:
-      # Add comprehensive visitor info headers
-      headers:
-        - name: CF-Connecting-IP          # Real visitor IP
-        - name: X-Real-IP                 # Original IP
-        - name: CF-IPCountry              # Visitor country
-        - name: CF-Ray                    # Cloudflare ray ID for tracing
-        - name: CF-Visitor                # Contains visitor details including TLS
-        - name: CF-Device-Type            # Mobile/Desktop/Tablet
-        - name: CF-IPCITY                 # Visitor city
-        - name: CF-IPCONTINENT            # Visitor continent
-        - name: CF-IPLATITUDE             # Approximate latitude
-        - name: CF-IPLONGITUDE            # Approximate longitude
-        - name: CF-IPREGION               # Visitor region/state
-        - name: CF-IPREGION-NAME          # Region/state full name
-        - name: X-Forwarded-For           # IP chain
-        - name: Accept-Language           # Visitor language preference
-        - name: User-Agent                # Browser/client info
-
-  - hostname: "*.vanillax.me"
-    service: https://cilium-gateway-external.gateway.svc.cluster.local:443
-    originRequest:
-      originServerName: "*.vanillax.me"
+      # Add header logging with log-headers flag
+      logHeaders: true
       headers:
         - name: CF-Connecting-IP
         - name: X-Real-IP
@@ -49,7 +28,27 @@ ingress:
         - name: CF-IPLATITUDE
         - name: CF-IPLONGITUDE
         - name: CF-IPREGION
-        - name: CF-IPREGION-NAME
+        - name: X-Forwarded-For
+        - name: Accept-Language
+        - name: User-Agent
+
+  - hostname: "*.vanillax.me"
+    service: https://cilium-gateway-external.gateway.svc.cluster.local:443
+    originRequest:
+      originServerName: "*.vanillax.me"
+      logHeaders: true
+      headers:
+        - name: CF-Connecting-IP
+        - name: X-Real-IP
+        - name: CF-IPCountry
+        - name: CF-Ray
+        - name: CF-Visitor
+        - name: CF-Device-Type
+        - name: CF-IPCITY
+        - name: CF-IPCONTINENT
+        - name: CF-IPLATITUDE
+        - name: CF-IPLONGITUDE
+        - name: CF-IPREGION
         - name: X-Forwarded-For
         - name: Accept-Language
         - name: User-Agent
@@ -58,6 +57,7 @@ ingress:
     service: https://cilium-gateway-external.gateway.svc.cluster.local:443
     originRequest:
       originServerName: vanillax.me
+      logHeaders: true
       headers:
         - name: CF-Connecting-IP
         - name: X-Real-IP
@@ -70,7 +70,6 @@ ingress:
         - name: CF-IPLATITUDE
         - name: CF-IPLONGITUDE
         - name: CF-IPREGION
-        - name: CF-IPREGION-NAME
         - name: X-Forwarded-For
         - name: Accept-Language
         - name: User-Agent
