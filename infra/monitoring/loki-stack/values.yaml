@@ -54,20 +54,21 @@ promtail:
           pipeline_stages:
           - json:
               expressions:
-                method: '$.method'
-                request_path: '$.request_path'
-                response_code: '$.response_code'
-                request_headers: '$.request_headers'
-                authority: '$.authority'
-                bytes_sent: '$.bytes_sent'
-                duration: '$.duration'
-                user_agent: '$.user_agent'
+                method: method
+                request_path: request_path
+                response_code: response_code
+                request_headers: request_headers
+                authority: authority
+                bytes_sent: bytes_sent
+                duration: duration
+                user_agent: user_agent
           - json:
+              source: request_headers
               expressions:
-                cf_ip: '$.request_headers["cf-connecting-ip"]'
-                cf_country: '$.request_headers["cf-ipcountry"]'
-                cf_ray: '$.request_headers["cf-ray"]'
-                cf_city: '$.request_headers["cf-ipcity"]'
+                cf_ip: "cf-connecting-ip"
+                cf_country: "cf-ipcountry"
+                cf_ray: "cf-ray"
+                cf_city: "cf-ipcity"
           - labels:
               method:
               request_path:
@@ -103,9 +104,9 @@ promtail:
           pipeline_stages:
             - json:
                 expressions:
-                  level: '$.level'
-                  msg: '$.msg'
-                  subsys: '$.subsys'
+                  level: level
+                  msg: msg
+                  subsys: subsys
             - labels:
                 level:
                 subsys:
