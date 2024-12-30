@@ -23,15 +23,18 @@ promtail:
             - role: pod
               namespaces:
                 names:
-                  - gateway
+                  - kube-system
               selectors:
                 - role: pod
-                  label: "app=cilium-envoy"
+                  label: "k8s-app=cilium"
           relabel_configs:
             - source_labels: [__meta_kubernetes_pod_container_name]
               target_label: container_name
             - source_labels: [__meta_kubernetes_pod_name]
               target_label: pod_name
+            - source_labels: [__meta_kubernetes_pod_container_name]
+              regex: "envoy"
+              action: keep
           pipeline_stages:
             - json:
                 expressions:
