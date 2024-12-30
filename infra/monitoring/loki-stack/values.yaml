@@ -89,3 +89,51 @@ promtail:
               cf_latitude:
               cf_longitude:
               accept_language:
+
+        - job_name: kubernetes-pods
+          kubernetes_sd_configs:
+            - role: pod
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_container_name]
+              target_label: container
+            - source_labels: [__meta_kubernetes_pod_name]
+              target_label: pod
+            - source_labels: [__meta_kubernetes_namespace]
+              target_label: namespace
+            - source_labels: [__meta_kubernetes_pod_node_name]
+              target_label: node
+          pipeline_stages:
+            - json:
+                expressions:
+                  timestamp: time
+                  level: level
+                  msg: msg
+            - labels:
+                level:
+                msg:
+
+        - job_name: cilium-logs
+          kubernetes_sd_configs:
+            - role: pod
+              namespaces:
+                names:
+                  - kube-system
+              selectors:
+                - role: pod
+                  label: k8s-app=cilium
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_name]
+              regex: cilium-.*
+              action: keep
+            - source_labels: [__meta_kubernetes_pod_container_name]
+              target_label: container
+            - source_labels: [__meta_kubernetes_pod_name]
+              target_label: pod
+          pipeline_stages:
+            - json:
+                expressions:
+                  level: level
+                  msg: msg
+            - labels:
+                level:
+                msg:
