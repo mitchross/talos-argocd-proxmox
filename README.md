@@ -198,7 +198,42 @@ This cluster uses a hybrid storage approach:
 1. Local storage for application configs and small datasets
 2. SMB storage for large media files
 
-### 5.2 Directory Structure
+### 5.2 Storage Naming Conventions
+
+All storage configurations follow these naming rules:
+1. PersistentVolumes end with `-pv` (e.g., `app-storage-pv`)
+2. PersistentVolumeClaims end with `-pvc` (e.g., `app-storage-pvc`)
+3. Base names match between PV and PVC for clarity
+4. All PVs and PVCs must have labels for binding
+
+Example configuration:
+```yaml
+# PV configuration
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: app-storage-pv    # Ends with -pv
+  labels:                 # Required labels
+    app: myapp
+    type: storage
+spec:
+  # ... rest of PV spec
+
+---
+# PVC configuration
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-storage-pvc   # Ends with -pvc
+  namespace: myapp        # Required namespace
+  labels:                 # Matching labels
+    app: myapp
+    type: storage
+spec:
+  # ... rest of PVC spec
+```
+
+### 5.3 Directory Structure
 ```plaintext
 /datapool/kubernetes/
 ├── ai/
@@ -220,7 +255,7 @@ This cluster uses a hybrid storage approach:
     └── searxng/config/  # SearXNG configuration
 ```
 
-### 5.3 Setup Steps
+### 5.4 Setup Steps
 
 1. Clean up existing storage:
 ```bash
@@ -234,7 +269,13 @@ chmod +x helper-scripts/setup-storage.sh
 ./helper-scripts/setup-storage.sh
 ```
 
-3. Apply storage configurations through ArgoCD:
+3. Validate storage configurations:
+```bash
+chmod +x helper-scripts/validate-storage.sh
+./helper-scripts/validate-storage.sh
+```
+
+4. Apply storage configurations through ArgoCD:
 ```bash
 # Verify storage class is applied by ArgoCD
 kubectl get sc local-storage
@@ -244,6 +285,20 @@ kubectl get secret smbcreds -n csi-driver-smb
 
 # Apply application sets
 kubectl apply -k sets/
+```
+
+### 5.5 Storage Validation
+
+The `validate-storage.sh` script checks:
+1. Proper naming conventions (-pv/-pvc suffixes)
+2. Required labels for PV/PVC binding
+3. Namespace specifications in PVCs
+4. Node affinity in PVs
+5. Storage class specifications
+
+Run validation before applying changes:
+```bash
+./helper-scripts/validate-storage.sh
 ```
 
 ## 6. Verification
@@ -269,6 +324,7 @@ kubectl get sc
 
 ## Troubleshooting
 
+### Secrets Issues
 1. Check 1Password Connect:
 ```bash
 kubectl logs -n 1passwordconnect -l app=onepassword-connect
