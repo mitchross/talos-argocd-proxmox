@@ -46,7 +46,7 @@ spec:
       volumes:
         - name: models
           persistentVolumeClaim:
-            claimName: ollama-models
+            claimName: ollama-storage-pvc
         - name: config
           configMap:
             name: ollama-configmap
