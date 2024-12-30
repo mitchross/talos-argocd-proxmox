@@ -72,6 +72,7 @@ grafana:
         maxLines: 1000
   persistence:
     enabled: true
+    existingClaim: grafana-storage-pvc
     storageClassName: local-storage
     size: 10Gi
   dashboardProviders:
