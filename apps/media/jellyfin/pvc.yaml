@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: jellyfin-config
+  name: jellyfin-config-pvc
   namespace: jellyfin
   labels:
     app: jellyfin
@@ -21,7 +21,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: jellyfin-config-pv
+  name: jellyfin-config-pvc-pv
   labels:
     app: jellyfin
     type: config
