@@ -48,47 +48,38 @@ promtail:
               replacement: /var/log/pods/*$3/$2/*.log
 
           pipeline_stages:
-            # Parse the main JSON log
+            # Parse the JSON log entry
             - json:
                 expressions:
-                  request_headers: '$.request_headers'
-                  request_path: '$.request_path'
-                  response_code: '$.response_code'
-                  user_agent: '$.user_agent'
-                  authority: '$.authority'
-                  method: '$.method'
-                  bytes_sent: '$.bytes_sent'
-                  duration: '$.duration'
-                  referer: '$.referer'
+                  method: method
+                  request_path: request_path
+                  response_code: response_code
+                  request_headers: request_headers
 
-            # Extract Cloudflare headers
-            - json:
-                expressions:
-                  cf_ip: '$.request_headers["cf-connecting-ip"]'
-                  cf_country: '$.request_headers["cf-ipcountry"]'
-                  cf_ray: '$.request_headers["cf-ray"]'
-                  cf_city: '$.request_headers["cf-ipcity"]'
-                  cf_continent: '$.request_headers["cf-ipcontinent"]'
-                  cf_latitude: '$.request_headers["cf-iplatitude"]'
-                  cf_longitude: '$.request_headers["cf-iplongitude"]'
-                  cf_region: '$.request_headers["cf-ipregion"]'
-                  cf_region_name: '$.request_headers["cf-ipregion-name"]'
-                  cf_device: '$.request_headers["cf-device-type"]'
-                  cf_visitor: '$.request_headers["cf-visitor"]'
-                  accept_language: '$.request_headers["accept-language"]'
-                  x_forwarded_for: '$.request_headers["x-forwarded-for"]'
-                  x_real_ip: '$.request_headers["x-real-ip"]'
+            # Extract Cloudflare headers from request_headers
+            - template:
+                source: request_headers
+                template: '{{ if .["cf-connecting-ip"] }}{{ .["cf-connecting-ip"] }}{{ end }}'
+                to: cf_ip
+            - template:
+                source: request_headers
+                template: '{{ if .["cf-ipcountry"] }}{{ .["cf-ipcountry"] }}{{ end }}'
+                to: cf_country
+            - template:
+                source: request_headers
+                template: '{{ if .["cf-ray"] }}{{ .["cf-ray"] }}{{ end }}'
+                to: cf_ray
+            - template:
+                source: request_headers
+                template: '{{ if .["cf-ipcity"] }}{{ .["cf-ipcity"] }}{{ end }}'
+                to: cf_city
 
-            # Set labels for querying
+            # Set the extracted values as labels
             - labels:
                 request_path:
                 response_code:
                 method:
                 cf_ip:
                 cf_country:
+                cf_ray:
                 cf_city:
-                cf_continent:
-                cf_region:
-                cf_device:
-                x_real_ip:
-                x_forwarded_for:
