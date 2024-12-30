@@ -1,7 +1,8 @@
+# PV for Prometheus storage
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: prometheus-prometheus-stack-kube-prom-prometheus-db-prom
+  name: prometheus-storage-pv
   labels:
     app: prometheus
     type: storage
@@ -24,9 +25,30 @@ spec:
                 - vanillax-ai
 ---
 apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-storage-pvc
+  namespace: monitoring
+  labels:
+    app: prometheus
+    type: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: local-storage
+  selector:
+    matchLabels:
+      app: prometheus
+      type: storage
+---
+# PV for Grafana storage
+apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: prometheus-stack-grafana
+  name: grafana-storage-pv
   labels:
     app: grafana
     type: storage
@@ -47,3 +69,23 @@ spec:
               operator: In
               values:
                 - vanillax-ai
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-storage-pvc
+  namespace: monitoring
+  labels:
+    app: grafana
+    type: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: local-storage
+  selector:
+    matchLabels:
+      app: grafana
+      type: storage

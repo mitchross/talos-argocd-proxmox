@@ -1,7 +1,8 @@
+# PV for Loki storage
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: loki-pv
+  name: loki-storage-pv
   labels:
     app: loki
     type: storage
@@ -22,4 +23,24 @@ spec:
             - key: kubernetes.io/hostname
               operator: In
               values:
-                - vanillax-ai 
+                - vanillax-ai
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: loki-storage-pvc
+  namespace: monitoring
+  labels:
+    app: loki
+    type: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: local-storage
+  selector:
+    matchLabels:
+      app: loki
+      type: storage 

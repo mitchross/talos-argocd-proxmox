@@ -1,4 +1,4 @@
-# pv.yaml
+# PV for ComfyUI data
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -25,11 +25,11 @@ spec:
           - vanillax-ai
 
 ---
-# pvc.yaml
+# PVC for ComfyUI data
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: comfyui-pv
+  name: comfyui-storage-pvc
   namespace: comfyui
   labels:
     app: comfyui
