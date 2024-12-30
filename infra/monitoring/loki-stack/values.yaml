@@ -8,8 +8,11 @@ loki:
     storageClassName: local-storage
 promtail:
   enabled: true
-  securityContext:
-    privileged: true
+  containerSecurityContext:
+    capabilities:
+      add:
+        - NET_BIND_SERVICE
+        - NET_RAW
   config:
     clients:
       - url: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
