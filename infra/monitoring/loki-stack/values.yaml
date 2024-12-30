@@ -46,7 +46,32 @@ promtail:
                 request_path: request_path
                 response_code: response_code
                 request_headers: request_headers
+                authority: authority
+                bytes_sent: bytes_sent
+                duration: duration
+                user_agent: user_agent
+          - json:
+              expressions:
+                cf_ip: request_headers."Cf-Connecting-Ip"
+                cf_country: request_headers."Cf-Ipcountry"
+                cf_ray: request_headers."Cf-Ray"
+                cf_city: request_headers."CF-IPCITY"
+                cf_continent: request_headers."CF-IPCONTINENT"
+                cf_latitude: request_headers."CF-IPLATITUDE"
+                cf_longitude: request_headers."CF-IPLONGITUDE"
+                cf_region: request_headers."CF-IPREGION"
+                cf_device: request_headers."CF-Device-Type"
+                accept_language: request_headers."Accept-Language"
           - labels:
               method:
               request_path:
               response_code:
+              authority:
+              cf_ip:
+              cf_country:
+              cf_city:
+              cf_region:
+              cf_device:
+              cf_latitude:
+              cf_longitude:
+              accept_language:
