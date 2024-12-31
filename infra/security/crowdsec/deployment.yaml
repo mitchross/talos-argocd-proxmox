@@ -38,22 +38,40 @@ spec:
               value: "3000"
           volumeMounts:
             - name: config
-              mountPath: /etc/crowdsec
-              readOnly: true
+              mountPath: /etc/crowdsec/config
             - name: data
-              mountPath: /var/lib/crowdsec/data/
-            - name: acquis
+              mountPath: /var/lib/crowdsec/data
+            - name: acquis-config
               mountPath: /etc/crowdsec/acquis.yaml
               subPath: acquis.yaml
+            - name: parsers-config
+              mountPath: /etc/crowdsec/parsers.yaml
+              subPath: parsers.yaml
+            - name: profiles-config
+              mountPath: /etc/crowdsec/profiles.yaml
+              subPath: profiles.yaml
       volumes:
         - name: config
           configMap:
             name: crowdsec-config
         - name: data
-          emptyDir: {}
-        - name: acquis
+          persistentVolumeClaim:
+            claimName: crowdsec-data-pvc
+        - name: acquis-config
           configMap:
             name: crowdsec-config
             items:
               - key: acquis.yaml
-                path: acquis.yaml 
+                path: acquis.yaml
+        - name: parsers-config
+          configMap:
+            name: crowdsec-config
+            items:
+              - key: parsers.yaml
+                path: parsers.yaml
+        - name: profiles-config
+          configMap:
+            name: crowdsec-config
+            items:
+              - key: profiles.yaml
+                path: profiles.yaml 

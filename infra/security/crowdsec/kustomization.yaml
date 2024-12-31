@@ -11,6 +11,7 @@ resources:
   - external-secret.yaml
   - service.yaml
   - httproute.yaml
+  - pvc.yaml
 
 commonLabels:
   app.kubernetes.io/name: crowdsec
