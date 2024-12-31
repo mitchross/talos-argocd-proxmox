@@ -15,7 +15,7 @@ helmCharts:
     releaseName: zalando-postgres
     namespace: cnpg-zalando
     includeCRDs: true
-    version: 1.13.0
+    version: 1.14.0
     valuesFile: postgres-operator-values.yaml
 
   - name: postgres-operator-ui
