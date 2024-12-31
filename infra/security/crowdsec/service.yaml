@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: crowdsec
+  namespace: crowdsec
+  labels:
+    app: crowdsec
+spec:
+  ports:
+    - port: 8080
+      name: metrics
+      targetPort: metrics
+    - port: 3000
+      name: dashboard
+      targetPort: dashboard
+  selector:
+    app: crowdsec 

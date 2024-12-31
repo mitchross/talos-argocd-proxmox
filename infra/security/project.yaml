@@ -1,0 +1,14 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: security
+  namespace: argocd
+spec:
+  sourceRepos:
+    - 'https://github.com/mitchross/k3s-argocd-proxmox'
+  destinations:
+    - namespace: 'crowdsec'
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*' 

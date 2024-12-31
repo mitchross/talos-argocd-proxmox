@@ -1,0 +1,19 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: crowdsec
+  namespace: crowdsec
+spec:
+  parentRefs:
+    - name: external-gateway
+      namespace: gateway-system
+  hostnames:
+    - "crowdsec.vanillax.me"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: crowdsec
+          port: 3000 

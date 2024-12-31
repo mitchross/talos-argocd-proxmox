@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crowdsec
+  namespace: crowdsec
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crowdsec
+  template:
+    metadata:
+      labels:
+        app: crowdsec
+    spec:
+      serviceAccountName: crowdsec
+      containers:
+        - name: crowdsec
+          image: crowdsecurity/crowdsec:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: metrics
+            - containerPort: 3000
+              name: dashboard
+          env:
+            - name: COLLECTIONS
+              value: "crowdsecurity/kubernetes crowdsecurity/http-cve"
+            - name: CUSTOM_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: METRICS_ENABLED
+              value: "true"
+            - name: DASHBOARD_ENABLED
+              value: "true"
+            - name: DASHBOARD_PORT
+              value: "3000"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/crowdsec
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/crowdsec/data/
+            - name: acquis
+              mountPath: /etc/crowdsec/acquis.yaml
+              subPath: acquis.yaml
+      volumes:
+        - name: config
+          configMap:
+            name: crowdsec-config
+        - name: data
+          emptyDir: {}
+        - name: acquis
+          configMap:
+            name: crowdsec-config
+            items:
+              - key: acquis.yaml
+                path: acquis.yaml 
