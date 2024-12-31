@@ -58,7 +58,7 @@ spec:
       volumes:
       - name: data
         persistentVolumeClaim:
-          claimName: comfyui-data-pvc
+          claimName: comfyui-storage-pvc
       - name: gpu-config
         configMap:
           name: comfyui-configmap
