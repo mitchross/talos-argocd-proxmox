@@ -8,7 +8,9 @@ spec:
     - 'https://github.com/mitchross/k3s-argocd-proxmox'
   destinations:
     - namespace: 'crowdsec'
-      server: '*'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'argocd'
+      server: 'https://kubernetes.default.svc'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*' 
