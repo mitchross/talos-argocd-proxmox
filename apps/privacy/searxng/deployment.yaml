@@ -54,6 +54,10 @@ spec:
               mountPath: /etc/searxng/settings.yml
               subPath: settings.yml
               readOnly: true
+            - name: searxng-config-settings
+              mountPath: /etc/searxng/limiter.toml
+              subPath: limiter.toml
+              readOnly: true
       volumes:
         - name: config
           persistentVolumeClaim:
