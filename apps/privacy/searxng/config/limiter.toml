@@ -14,7 +14,7 @@ ipv6_prefix = 48
 
 # To get unlimited access in a local network, by default link-lokal addresses
 # (networks) are not monitored by the ip_limit
-filter_link_local = true
+filter_link_local = false
 
 # activate link_token method in the ip_limit method
 link_token = false
@@ -29,10 +29,8 @@ block_ip = [
 ]
 
 pass_ip = [
-  '10.0.0.0/24',      # IPv4 private network
-  '192.168.10.0/24',      # IPv4 private network
-  '192.168.100.0/24',      # IPv4 private network
-  '192.168.1.0/24',      # IPv4 private network
+  # Allowing all IPs for testing
+  '0.0.0.0/0'      # Allow all IPv4 addresses
 ]
 
 # Activate passlist of (hardcoded) IPs from the SearXNG organization,
