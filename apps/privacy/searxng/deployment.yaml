@@ -48,7 +48,7 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 60
           volumeMounts:
-            - name: searxng-config
+            - name: config
               mountPath: /etc/searxng
             - name: searxng-config-settings
               mountPath: /etc/searxng/settings.yml
@@ -57,7 +57,7 @@ spec:
       volumes:
         - name: config
           persistentVolumeClaim:
-            claimName: searxng-config-pvc
+            claimName: searxng-config
         - name: searxng-config-settings
           configMap:
             name: searxng-config-settings
