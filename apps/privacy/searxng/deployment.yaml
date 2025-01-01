@@ -51,11 +51,7 @@ spec:
             - name: config
               mountPath: /etc/searxng/data
             - name: searxng-config-settings
-              mountPath: /etc/searxng/settings.yml
-              subPath: settings.yml
-            - name: searxng-config-settings
-              mountPath: /etc/searxng/limiter.toml
-              subPath: limiter.toml
+              mountPath: /etc/searxng
       volumes:
         - name: config
           persistentVolumeClaim:
