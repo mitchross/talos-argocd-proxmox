@@ -6,7 +6,7 @@ server:
     bind_address: "0.0.0.0"
     port: 8080  # Match with deployment port
     public_instance: true
-    limiter: true
+    limiter: false  # Temporarily disable limiter
     method: "GET"  # Explicitly set GET method
     default_http_headers:
         X-Content-Type-Options: nosniff
@@ -25,6 +25,7 @@ search:
         - json
     autocomplete: "duckduckgo"
     default_lang: "en-US"
+    format_by_default: "json"
 
 ui:
     static_use_hash: true
