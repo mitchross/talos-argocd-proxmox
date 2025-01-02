@@ -48,21 +48,22 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 60
           volumeMounts:
-            - name: config
-              mountPath: /etc/searxng
-            - name: searxng-config-settings
-              mountPath: /tmp/searxng-config
-          command:
-            - /bin/sh
-            - -c
-            - |
-              cp /tmp/searxng-config/settings.yaml /etc/searxng/settings.yml
-              cp /tmp/searxng-config/limiter.toml /etc/searxng/limiter.toml
-              /usr/local/searxng/dockerfiles/docker-entrypoint.sh
+            - name: searxng-settings
+              mountPath: /etc/searxng/settings.yml
+              subPath: settings.yaml
+            - name: searxng-limiter
+              mountPath: /etc/searxng/limiter.toml
+              subPath: limiter.toml
       volumes:
-        - name: config
-          persistentVolumeClaim:
-            claimName: searxng-config
-        - name: searxng-config-settings
+        - name: searxng-settings
           configMap:
             name: searxng-config-settings
+            items:
+              - key: settings.yaml
+                path: settings.yaml
+        - name: searxng-limiter
+          configMap:
+            name: searxng-config-settings
+            items:
+              - key: limiter.toml
+                path: limiter.toml
