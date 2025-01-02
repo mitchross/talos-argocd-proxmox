@@ -51,17 +51,18 @@ spec:
             - name: config
               mountPath: /etc/searxng
             - name: searxng-config-settings
-              mountPath: /tmp/searxng-config/settings.yml
-              subPath: settings.yml
+              mountPath: /etc/searxng/settings.yml
+              subPath: settings.yaml
             - name: searxng-config-settings
-              mountPath: /tmp/searxng-config/limiter.toml
+              mountPath: /etc/searxng/limiter.toml
               subPath: limiter.toml
           command:
             - /bin/sh
             - -c
             - |
-              cp /tmp/searxng-config/settings.yml /etc/searxng/settings.yml
-              cp /tmp/searxng-config/limiter.toml /etc/searxng/limiter.toml
+              if [ -d "/etc/searxng/settings.yml" ]; then
+                rm -rf /etc/searxng/settings.yml
+              fi
               /usr/local/searxng/dockerfiles/docker-entrypoint.sh
       volumes:
         - name: config
