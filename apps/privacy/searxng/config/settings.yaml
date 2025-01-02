@@ -6,14 +6,16 @@ server:
     bind_address: "0.0.0.0"
     port: 8080  # Match with deployment port
     public_instance: true
-    limiter: false  # Temporarily disable limiter
-    method: "GET"  # Explicitly set GET method
+    limiter: false  # Disable limiter temporarily
+    method: "GET"  # Allow both GET and POST
+    http_protocol_version: "1.0"
     default_http_headers:
         X-Content-Type-Options: nosniff
         X-Download-Options: noopen
         X-Robots-Tag: noindex, nofollow
         Referrer-Policy: no-referrer
         Access-Control-Allow-Origin: "*"
+        Access-Control-Allow-Methods: "GET, POST, OPTIONS"
 
 redis:
     url: redis://192.168.10.44:6379
@@ -23,9 +25,20 @@ search:
     formats:
         - html
         - json
+        - csv
+        - rss
+    format_by_default: false
     autocomplete: "duckduckgo"
     default_lang: "en-US"
-    format_by_default: "json"
+    ban_time_on_fail: 5
+    max_ban_time_on_fail: 120
+    suspended_times:
+        SearxEngineAccessDenied: 86400
+        SearxEngineCaptcha: 86400
+        SearxEngineTooManyRequests: 3600
+        cf_SearxEngineCaptcha: 1296000
+        cf_SearxEngineAccessDenied: 86400
+        recaptcha_SearxEngineCaptcha: 604800
 
 ui:
     static_use_hash: true
@@ -34,12 +47,13 @@ ui:
         simple_style: dark
 
 enabled_plugins:
+    - 'Hash plugin'
+    - 'Self Information'
+    - 'Tracker URL remover'
     - Basic Calculator
-    - Hash plugin
     - Hostnames plugin
     - Open Access DOI rewrite
     - Self Informations
-    - Tracker URL remover
     - Unit converter plugin
 
 hostnames:
@@ -72,10 +86,10 @@ engines:
       disable: false
 
 outgoing:
-    request_timeout: 6.0
-    max_request_timeout: 10.0
+    request_timeout: 3.0
+    max_request_timeout: 15.0
     pool_connections: 100
-    pool_maxsize: 100
+    pool_maxsize: 20
     enable_http2: true
 
 categories_order:
