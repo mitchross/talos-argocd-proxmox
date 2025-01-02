@@ -24,6 +24,7 @@ link_token = false
 # In the limiter, the ip_lists method has priority over all other methods -> if
 # an IP is in the pass_ip list, it has unrestricted access and it is also not
 # checked if e.g. the "user agent" suggests a bot (e.g. curl).
+#TEST
 
 block_ip = [
 ]
