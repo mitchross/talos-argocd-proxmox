@@ -9,6 +9,7 @@ resources:
   - service.yaml
   - httproute.yaml
   - secret.yaml
+  - redis.yaml
 
 configMapGenerator:
   - name: searxng-config-settings
@@ -17,6 +18,5 @@ configMapGenerator:
     - config/limiter.toml
     options:
       disableNameSuffixHash: true
-
 
 namespace: searxng

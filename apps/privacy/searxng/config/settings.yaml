@@ -18,7 +18,7 @@ server:
         Access-Control-Allow-Methods: "GET, POST, OPTIONS"
 
 redis:
-    url: redis://192.168.10.44:6379
+    url: redis://redis:6379
 
 search:
     safe_search: 0
