@@ -6,7 +6,7 @@ server:
     bind_address: "0.0.0.0"
     port: 8080  # Match with deployment port
     public_instance: true
-    limiter: false  # Disable limiter temporarily
+    limiter: true  # Enable limiter
     method: "GET"  # Allow both GET and POST
     http_protocol_version: "1.0"
     default_http_headers:
