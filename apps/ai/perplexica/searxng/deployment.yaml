@@ -20,8 +20,8 @@ spec:
           - containerPort: 8080
         volumeMounts:
           - mountPath: /etc/searxng
-            name: searxng-volume
+            name: searxng-config
       volumes:
-        - name: searxng-volume
-          hostPath:
-            path: ./searxng
+        - name: searxng-config
+          persistentVolumeClaim:
+            claimName: searxng-config-pvc
