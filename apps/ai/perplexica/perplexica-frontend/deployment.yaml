@@ -20,6 +20,6 @@ spec:
           - containerPort: 3000
         env:
           - name: NEXT_PUBLIC_API_URL
-            value: http://perplexica-backend-service.perplexica.svc.cluster.local:3001/api
+            value: https://api.perplexica.vanillax.me/api
           - name: NEXT_PUBLIC_WS_URL
-            value: ws://perplexica-backend-service.perplexica.svc.cluster.local:3001
+            value: wss://api.perplexica.vanillax.me
