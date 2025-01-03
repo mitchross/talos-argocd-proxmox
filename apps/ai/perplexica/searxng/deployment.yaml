@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: searxng-deployment
+  name: perplexica-searxng-deployment
   namespace: perplexica
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: searxng
+      app: perplexica-searxng
   template:
     metadata:
       labels:
-        app: searxng
+        app: perplexica-searxng
     spec:
       containers:
-      - name: searxng-container
+      - name: perplexica-searxng-container
         image: docker.io/searxng/searxng:latest
         ports:
           - containerPort: 8080
@@ -24,4 +24,4 @@ spec:
       volumes:
         - name: searxng-config
           persistentVolumeClaim:
-            claimName: searxng-config-pvc
+            claimName: perplexica-searxng-config-pvc
