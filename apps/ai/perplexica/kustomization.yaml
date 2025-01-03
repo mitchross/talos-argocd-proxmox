@@ -6,5 +6,5 @@ namespace: perplexica
 resources:
 - namespace/
 - searxng/
-# - perplexica-backend/
-# - perplexica-frontend/
+- perplexica-backend/
+- perplexica-frontend/
