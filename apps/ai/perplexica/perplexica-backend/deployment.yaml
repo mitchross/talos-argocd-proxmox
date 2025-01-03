@@ -20,7 +20,7 @@ spec:
           - containerPort: 3001
         env:
           - name: SEARXNG_API_URL
-            value: http://searxng-service.perplexica.svc.cluster.local:8080
+            value: http://perplexica-searxng-service.perplexica.svc.cluster.local:8080
         volumeMounts:
           - mountPath: /home/perplexica/data
             name: backend-dbstore-volume
@@ -48,4 +48,8 @@ metadata:
   namespace: perplexica
 data:
   config.toml: |
-    # Add the contents of your config.toml here
+    [GENERAL]
+    PORT = 3001
+    
+    [SEARXNG]
+    API_URL = "http://perplexica-searxng-service.perplexica.svc.cluster.local:8080"
