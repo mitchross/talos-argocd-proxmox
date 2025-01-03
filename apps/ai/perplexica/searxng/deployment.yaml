@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: searxng-deployment
+  namespace: perplexica
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: searxng
+  template:
+    metadata:
+      labels:
+        app: searxng
+    spec:
+      containers:
+      - name: searxng-container
+        image: docker.io/searxng/searxng:latest
+        ports:
+          - containerPort: 8080
+        volumeMounts:
+          - mountPath: /etc/searxng
+            name: searxng-volume
+      volumes:
+        - name: searxng-volume
+          hostPath:
+            path: ./searxng

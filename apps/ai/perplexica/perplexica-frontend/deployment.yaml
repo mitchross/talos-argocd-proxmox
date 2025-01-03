@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: perplexica-frontend-deployment
+  namespace: perplexica
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: perplexica-frontend
+  template:
+    metadata:
+      labels:
+        app: perplexica-frontend
+    spec:
+      containers:
+      - name: frontend-container
+        image: itzcrazykns1337/perplexica-frontend:main
+        ports:
+          - containerPort: 3000
+        env:
+          - name: NEXT_PUBLIC_API_URL
+            value: http://perplexica-backend-service.perplexica.svc.cluster.local:3001/api
+          - name: NEXT_PUBLIC_WS_URL
+            value: ws://perplexica-backend-service.perplexica.svc.cluster.local:3001
