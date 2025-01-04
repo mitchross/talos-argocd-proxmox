@@ -5,77 +5,72 @@ metadata:
   namespace: frigate
 data:
   config.yaml: |
-      mqtt:
-        host: mosquitto.home
-        port: 1883
-        topic_prefix: frigate
-        user: mqtt_user
-        password: "{FRIGATE_MQTT_PASSWORD}"
-      database:
-        path: /config/frigate.db
-      timestamp_style:
-        position: "tr"
-        format: "%m/%d/%Y %H:%M:%S"
-        color:
-          red: 255
-          green: 255
-          blue: 255
-      snapshots:
+    mqtt:
+      host: mosquitto.home
+      port: 1883
+      topic_prefix: frigate
+      user: mqtt_user
+      password: "{FRIGATE_MQTT_PASSWORD}"
+      
+    database:
+      path: /config/frigate.db
+      
+    timestamp_style:
+      position: "tr"
+      format: "%m/%d/%Y %H:%M:%S"
+      color:
+        red: 255
+        green: 255
+        blue: 255
+
+    snapshots:
+      enabled: true
+      timestamp: true
+      bounding_box: true
+      retain:
+        default: 14
+      
+    motion:
+      threshold: 45
+      contour_area: 20
+      
+    record:
+      enabled: true
+      retain:
+        days: 3
+        mode: active_objects
+      events:
+        retain_days_default: 30
+        objects:
+          person: 30
+          dog: 30
+          car: 30
+          truck: 30
+      
+    detectors:
+      coral:
+        type: edgetpu
+        device: usb
+
+    cameras:
+      shed: 
         enabled: true
-        timestamp: true
-        bounding_box: true
-        retain:
-          default: 14
-      motion:
-        threshold: 45
-        contour_area: 20
-      record:
+        ffmpeg:
+          inputs:
+            - path: rtsp://192.168.10.46:8554/shed
+              roles:
+                - detect
+                - record
+        detect:
+          enabled: true
+
+      driveway:
         enabled: true
-        retain:
-          days: 3
-          mode: active_objects
-        events:
-          retain:
-            default: 30
-            mode: active_objects
-            objects:
-              person: 30
-              dog: 30
-              car: 30
-              truck: 30
-      objects:
-        track:
-          - person
-          - dog
-          - car
-          - truck
-
-      detectors:
-        coral:
-          type: edgetpu
-          device: usb
-          
-
-      cameras:
-        shed: 
-          enabled: True
-          ffmpeg:
-            inputs:
-              - path: rtsp://192.168.10.46:8554/shed
-                roles:
-                  - detect
-                  - record
-          detect:
-            enabled: True 
-
-
-        driveway:
-          enabled: True
-          ffmpeg:
-            inputs:
-              - path: rtsp://192.168.10.46:8554/driveway
-                roles:
-                  - detect
-                  - record
-          detect:
-            enabled: True
+        ffmpeg:
+          inputs:
+            - path: rtsp://192.168.10.46:8554/driveway
+              roles:
+                - detect
+                - record
+        detect:
+          enabled: true
