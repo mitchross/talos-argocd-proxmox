@@ -12,6 +12,8 @@ spec:
         revision: HEAD
         directories:
           - path: apps/ai/*
+          - path: apps/ai/archived
+            exclude: true
   template:
     metadata:
       name: '{{ path.basename }}'
