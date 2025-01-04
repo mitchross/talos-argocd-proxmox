@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: frontend-container
-        image: ghcr.io/mitchross/perplexica-frontend:latest
+        image: mitchross09/perplexica-frontend:latest
         ports:
           - containerPort: 3000
         env:
