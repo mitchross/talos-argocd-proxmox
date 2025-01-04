@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: backend-container
-        image: itzcrazykns1337/perplexica-backend:main
+        image: ghcr.io/mitchross/perplexica-backend:latest
         ports:
           - containerPort: 3001
         env:
