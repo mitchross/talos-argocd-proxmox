@@ -35,17 +35,18 @@ data:
       contour_area: 20
       
     record:
-      enabled: true
+      enabled: True
       retain:
         days: 3
-        mode: active_objects
-      events:
-        retain_days_default: 30
-        objects:
-          person: 30
-          dog: 30
-          car: 30
-          truck: 30
+        mode: all
+      alerts:
+        retain:
+          days: 30
+          mode: motion
+      detections:
+        retain:
+          days: 30
+          mode: motion
       
     detectors:
       coral:
