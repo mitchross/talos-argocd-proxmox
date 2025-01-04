@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: frontend-container
-        image: mitchross09/perplexica-frontend:1.0.1
+        image: mitchross09/perplexica-frontend:v1.0.1
         ports:
           - containerPort: 3000
         env:
