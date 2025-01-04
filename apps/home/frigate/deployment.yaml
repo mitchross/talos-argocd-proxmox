@@ -15,9 +15,8 @@ spec:
 
 
     spec:
-      # nodeSelector:
-      #   google.feature.node.kubernetes.io/coral: "true"
-      #   intel.feature.node.kubernetes.io/gpu: "true"
+      nodeSelector:
+        google.feature.node.kubernetes.io/coral: "true"
       containers:
         - name: frigate
           image: ghcr.io/blakeblackshear/frigate:0.14.1
@@ -68,8 +67,8 @@ spec:
               mountPath: /media
             - name: cache
               mountPath: /dev/shm
-            # - name: usb
-            #   mountPath: /dev/bus/usb
+            - name: usb
+              mountPath: /dev/bus/usb
       volumes:
         - name: config-file
           configMap:
@@ -84,7 +83,7 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 4Gi
-        # - name: usb
-        #   hostPath:
-        #     path: /dev/bus/usb
-        #     type: Directory
+        - name: usb
+          hostPath:
+            path: /dev/bus/usb
+            type: Directory

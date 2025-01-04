@@ -51,10 +51,10 @@ data:
           - truck
 
       detectors:
-        cpu1:
-          type: cpu
-          num_threads: 3
-          fps: 5
+        coral:
+          type: edgetpu
+          device: usb
+          
 
       cameras:
         shed: 
