@@ -19,7 +19,7 @@ spec:
         google.feature.node.kubernetes.io/coral: "true"
       containers:
         - name: frigate
-          image: ghcr.io/blakeblackshear/frigate:0.14.1
+          image: ghcr.io/blakeblackshear/frigate:0.15.0-beta4
           env:
             - name: FRIGATE_MQTT_USER
               valueFrom:
