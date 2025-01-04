@@ -8,3 +8,4 @@ resources:
 - searxng/
 - perplexica-backend/
 - perplexica-frontend/
+- httproute.yaml

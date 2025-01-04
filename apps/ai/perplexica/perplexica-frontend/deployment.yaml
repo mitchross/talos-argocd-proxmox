@@ -15,11 +15,11 @@ spec:
     spec:
       containers:
       - name: frontend-container
-        image: mitchross09/perplexica-frontend:v1.0.5
+        image: mitchross09/perplexica-frontend:v1.0.6
         ports:
           - containerPort: 3000
         env:
           - name: NEXT_PUBLIC_API_URL
-            value: https://api.perplexica.vanillax.me/api
+            value: https://perplexica.vanillax.me/api
           - name: NEXT_PUBLIC_WS_URL
-            value: wss://api.perplexica.vanillax.me
+            value: wss://perplexica.vanillax.me

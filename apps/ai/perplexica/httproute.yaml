@@ -1,7 +1,7 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: perplexica-frontend
+  name: perplexica
   namespace: perplexica
 spec:
   parentRefs:
@@ -13,8 +13,14 @@ spec:
     - matches:
         - path:
             type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: perplexica-backend-service
+          port: 3001
+    - matches:
+        - path:
+            type: PathPrefix
             value: /
       backendRefs:
         - name: perplexica-frontend-service
           port: 3000 
-
