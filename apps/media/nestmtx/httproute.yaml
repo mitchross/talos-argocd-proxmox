@@ -16,4 +16,5 @@ spec:
             value: /
       backendRefs:
         - name: nestmtx
-          port: 8888
+          port: 2000
+          weight: 1
