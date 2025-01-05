@@ -21,6 +21,8 @@ spec:
       server: '*'
     - namespace: 'reubah'
       server: '*'
+    - namespace: 'nestmtx'
+      server: '*'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'

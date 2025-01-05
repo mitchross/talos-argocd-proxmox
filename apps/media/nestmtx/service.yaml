@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nestmtx
+  namespace: nestmtx
+  labels:
+    app: nestmtx
+spec:
+  selector:
+    app: nestmtx
+  ports:
+    - name: port-2000
+      port: 2000
+      targetPort: 2000
+    - name: port-2001
+      port: 2001
+      targetPort: 2001
+    - name: rtmp
+      port: 1935
+      targetPort: 1935
+    - name: udp-8000
+      port: 8000
+      protocol: UDP
+      targetPort: 8000
+    - name: udp-8001
+      port: 8001
+      protocol: UDP
+      targetPort: 8001
+    - name: tcp-8189
+      port: 8189
+      targetPort: 8189
+    - name: udp-8189
+      port: 8189
+      protocol: UDP
+      targetPort: 8189
+    - name: rtsp
+      port: 8554
+      targetPort: 8554
+    - name: port-8888
+      port: 8888
+      targetPort: 8888
+    - name: port-8889
+      port: 8889
+      targetPort: 8889
+    - name: port-8890
+      port: 8890
+      targetPort: 8890
+  type: ClusterIP

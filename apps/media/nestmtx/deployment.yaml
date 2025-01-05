@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nestmtx
+  namespace: nestmtx
+  labels:
+    app: nestmtx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nestmtx
+  template:
+    metadata:
+      labels:
+        app: nestmtx
+    spec:
+      containers:
+        - name: nestmtx
+          image: nestmtx/amd64:latest
+          ports:
+            - containerPort: 2000
+              name: port-2000
+            - containerPort: 2001
+              name: port-2001
+            - containerPort: 1935
+              name: rtmp
+            - containerPort: 8000
+              protocol: UDP
+              name: udp-8000
+            - containerPort: 8001
+              protocol: UDP
+              name: udp-8001
+            - containerPort: 8189
+              name: tcp-8189
+            - containerPort: 8189
+              protocol: UDP
+              name: udp-8189
+            - containerPort: 8554
+              name: rtsp
+            - containerPort: 8888
+              name: port-8888
+            - containerPort: 8889
+              name: port-8889
+            - containerPort: 8890
+              name: port-8890
+          env:
+            - name: RTP_MAX_PORT
+              value: "10100"
+            - name: MEDIA_MTX_RTSP_ENABLED
+              value: "true"
+            - name: MEDIA_MTX_RTMP_ENABLED
+              value: "true"
+            - name: MEDIA_MTX_HLS_ENABLED
+              value: "true"
+            - name: MEDIA_MTX_WEB_RTC_ENABLED
+              value: "true"
+            - name: MEDIA_MTX_SRT_ENABLED
+              value: "true"
+          volumeMounts:
+            - name: data
+              mountPath: /home/node/app/tmp
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: nestmtx-storage-pvc
