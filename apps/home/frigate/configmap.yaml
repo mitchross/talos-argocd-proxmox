@@ -15,10 +15,7 @@ data:
     database:
       path: /config/frigate.db
       
-    go2rtc:
-      streams:
-        backyard:
-          -webrtc://192.168.10.48:8889/backyard  
+
 
     timestamp_style:
       position: "tr"
