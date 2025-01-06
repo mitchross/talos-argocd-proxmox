@@ -15,9 +15,9 @@ spec:
       labels:
         app: nestmtx
     spec:
-      runtimeClassName: nvidia
-      nodeSelector:
-        nvidia.com/gpu.present: "true"
+      # runtimeClassName: nvidia
+      # nodeSelector:
+      #   nvidia.com/gpu.present: "true"
       containers:
         - name: nestmtx
           image: nestmtx/amd64:latest
@@ -60,24 +60,24 @@ spec:
               value: "true"
             - name: MEDIA_MTX_SRT_ENABLED
               value: "true"
-            - name: NVIDIA_VISIBLE_DEVICES
-              value: "all"
-            - name: NVIDIA_DRIVER_CAPABILITIES
-              value: "compute,utility"
+            # - name: NVIDIA_VISIBLE_DEVICES
+            #   value: "all"
+            # - name: NVIDIA_DRIVER_CAPABILITIES
+            #   value: "compute,utility"
           resources:
             requests:
               cpu: 500m
               memory: 1Gi
             limits:
               cpu: 2000m
-              memory: 2Gi
-              nvidia.com/gpu: 1
+              memory: 3Gi
+              # nvidia.com/gpu: 1
           volumeMounts:
             - name: data
               mountPath: /home/node/app/tmp
-            - name: nvidia-driver
-              mountPath: /usr/local/nvidia
-              readOnly: true
+            # - name: nvidia-driver
+            #   mountPath: /usr/local/nvidia
+            #   readOnly: true
       volumes:
         - name: data
           persistentVolumeClaim:
