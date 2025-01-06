@@ -18,7 +18,7 @@ data:
     go2rtc:
       streams:
         backyard:
-          - webrtc://192.168.10.48:8889/backyard  
+          -webrtc://192.168.10.48:8889/backyard  
 
     timestamp_style:
       position: "tr"
@@ -62,8 +62,7 @@ data:
       backyard:
         enabled: True
         ffmpeg:
-         
-          input_args: preset-rtsp-restream
+
           inputs:
             - path: rtsp://192.168.10.48:8554/backyard
               roles:
@@ -75,8 +74,7 @@ data:
       garage-inside:
         enabled: True
         ffmpeg:
-          hwaccel_args: preset-nvidia
-          input_args: preset-rtsp-restream
+
           inputs:
             - path: rtsp://192.168.10.48:8554/garage-inside
               roles:
