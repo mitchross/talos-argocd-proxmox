@@ -18,7 +18,7 @@ data:
     go2rtc:
       streams:
         backyard:
-          - rtsp://192.168.10.48:8554/backyard    
+          - webrtc://192.168.10.48:8889/backyard  
 
     timestamp_style:
       position: "tr"
