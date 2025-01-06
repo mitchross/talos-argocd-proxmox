@@ -62,7 +62,7 @@ data:
       backyard:
         enabled: True
         ffmpeg:
-          hwaccel_args: preset-nvidia
+         
           input_args: preset-rtsp-restream
           inputs:
             - path: rtsp://192.168.10.48:8554/backyard
@@ -88,7 +88,7 @@ data:
       shed: 
         enabled: True
         ffmpeg:
-          hwaccel_args: preset-nvidia
+         
           inputs:
             - path: rtsp://192.168.10.46:8554/shed
               roles:
@@ -100,7 +100,7 @@ data:
       driveway:
         enabled: True
         ffmpeg:
-          hwaccel_args: preset-nvidia
+       
           inputs:
             - path: rtsp://192.168.10.46:8554/driveway
               roles:
