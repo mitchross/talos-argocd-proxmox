@@ -19,7 +19,7 @@ data:
       streams:
         backyard:
           - rtsp://192.168.10.48:8554/backyard    
-          
+
     timestamp_style:
       position: "tr"
       format: "%m/%d/%Y %H:%M:%S"
@@ -62,8 +62,21 @@ data:
       backyard:
         enabled: True
         ffmpeg:
+          input_args: preset-rtsp-restream
           inputs:
             - path: rtsp://192.168.10.48:8554/backyard
+              roles:
+                - detect
+                - record
+        detect:
+          enabled: true
+
+      garage-inside:
+        enabled: True
+        ffmpeg:
+          input_args: preset-rtsp-restream
+          inputs:
+            - path: rtsp://192.168.10.48:8554/garage-inside
               roles:
                 - detect
                 - record
