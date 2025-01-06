@@ -9,37 +9,28 @@ spec:
   selector:
     app: nestmtx
   ports:
-    - name: port-2000
-      port: 2000
-      targetPort: 2000
-    - name: port-2001
-      port: 2001
-      targetPort: 2001
     - name: rtmp
       port: 1935
       targetPort: 1935
-    - name: udp-8000
+    - name: rtsp-udp-rtp
       port: 8000
       protocol: UDP
       targetPort: 8000
-    - name: udp-8001
+    - name: rtsp-udp-rtcp
       port: 8001
       protocol: UDP
       targetPort: 8001
-    - name: tcp-8189
-      port: 8189
-      targetPort: 8189
-    - name: udp-8189
+    - name: webrtc-udp
       port: 8189
       protocol: UDP
       targetPort: 8189
-    - name: port-8888
+    - name: hls
       port: 8888
       targetPort: 8888
-    - name: port-8889
+    - name: webrtc
       port: 8889
       targetPort: 8889
-    - name: port-8890
+    - name: srt
       port: 8890
       targetPort: 8890
   type: ClusterIP
@@ -47,7 +38,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: nestmtx-rtsp
+  name: nestmtx-external
   namespace: nestmtx
   labels:
     app: nestmtx
@@ -55,8 +46,33 @@ spec:
   selector:
     app: nestmtx
   ports:
-    - name: rtsp
+    - name: http
+      port: 2000
+      targetPort: 2000
+      protocol: TCP
+    - name: https
+      port: 2001
+      targetPort: 2001
+      protocol: TCP
+    - name: rtsp-tcp
       port: 8554
       targetPort: 8554
+      protocol: TCP
+    - name: rtsp-udp-rtp
+      port: 8000
+      targetPort: 8000
+      protocol: UDP
+    - name: rtsp-udp-rtcp
+      port: 8001
+      targetPort: 8001
+      protocol: UDP
+    - name: webrtc
+      port: 8889
+      targetPort: 8889
+      protocol: TCP
+    - name: webrtc-udp
+      port: 8189
+      targetPort: 8189
+      protocol: UDP
   type: LoadBalancer
   loadBalancerIP: 192.168.10.48
