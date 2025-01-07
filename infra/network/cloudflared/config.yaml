@@ -7,8 +7,7 @@ no-autoupdate: true
 loglevel: debug   # Increased log level for more details
 transport-loglevel: debug
 
-warp-routing:
-  enabled: true
+
 
 ingress:
   - hostname: hello.vanillax.me
@@ -52,6 +51,14 @@ ingress:
         - name: X-Forwarded-For
         - name: Accept-Language
         - name: User-Agent
+        - name: True-Client-IP
+        - name: CF-IPCountry
+        - name: CF-RAY
+        - name: CF-Worker
+        - name: CF-Client-Bot
+        - name: CF-Bot-Score
+        - name: CF-Challenge
+        - name: CF-Bot-Management-Tag
 
   - hostname: vanillax.me
     service: https://cilium-gateway-external.gateway.svc.cluster.local:443
