@@ -1,5 +1,5 @@
 apiVersion: "acid.zalan.do/v1"
-kind: postgresql
+kind: Postgresql
 metadata:
   name: khoj-db
   namespace: cnpg-zalando
