@@ -10,11 +10,8 @@ spec:
     postgres:
       - superuser
       - createdb
-      - passwordSecretName: postgres-admin-secret
-      - passwordSecretKey: superuser-password
-    khoj:
-      - superuser
-      - createdb
+  secretNamespace: cnpg-zalando
+  usersSecretName: postgres-admin-secret
   volume:
     size: 10Gi
     storageClass: local-storage
