@@ -10,6 +10,7 @@ resources:
   - ui-service.yaml
   - postgres-cluster.yaml
   - postgres-lb-service.yaml
+  - postgres-secrets.yaml
 
 helmCharts:
   - name: postgres-operator
