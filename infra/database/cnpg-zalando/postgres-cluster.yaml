@@ -7,14 +7,11 @@ spec:
   teamId: "khoj"
   numberOfInstances: 1
   users:
-    postgres:
-      - superuser
-      - createdb
     khoj:
       - superuser
       - createdb
-      passwordSecretName: khoj-secret
-      passwordSecretKey: POSTGRES_PASSWORD
+      - passwordSecretName: khoj-secret
+      - passwordSecretKey: POSTGRES_PASSWORD
   volume:
     size: 10Gi
     storageClass: local-storage
