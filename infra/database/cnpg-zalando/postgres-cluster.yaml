@@ -7,16 +7,14 @@ spec:
   teamId: "khoj"
   numberOfInstances: 1
   users:
-    - name: postgres
-      flags:
-        - superuser
-        - createdb
+    postgres:
+      superuser: true
+      createdb: true
       passwordSecretName: postgres-admin-secret
       passwordSecretKey: superuser-password
-    - name: khoj
-      flags:
-        - superuser
-        - createdb
+    khoj:
+      superuser: true
+      createdb: true
   volume:
     size: 10Gi
     storageClass: local-storage
