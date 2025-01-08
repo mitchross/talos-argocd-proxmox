@@ -9,18 +9,18 @@ spec:
     size: 10Gi
     storageClass: local-storage
   numberOfInstances: 1
+  preparedDatabases:
+    khoj: {}
   users:
-    postgres:
-      - superuser
-      - createdb
-      - login
+    - name: postgres
+      superuser: true
+      createdb: true
+      login: true
       passwordSecretName: postgres-admin-secret
       passwordSecretKey: superuser-password
-    khoj:  # khoj application user
-      - createdb
-      - login
-  databases:
-    khoj: khoj  # dbname: owner
+    - name: khoj
+      createdb: true
+      login: true
   postgresql:
     version: "15"
   resources:
