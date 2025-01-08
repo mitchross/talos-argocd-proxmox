@@ -10,8 +10,6 @@ spec:
     postgres:
       - superuser
       - createdb
-  secretNamespace: cnpg-zalando
-  usersSecretName: postgres-admin-secret
   volume:
     size: 10Gi
     storageClass: local-storage
@@ -30,4 +28,12 @@ spec:
   allowedSourceRanges:
     - 10.0.0.0/8
     - 172.16.0.0/12
-    - 192.168.0.0/16 
+    - 192.168.0.0/16
+  preparedDatabases:
+    khoj: {}
+  env:
+    - name: POSTGRES_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: postgres-admin-secret
+          key: superuser-password 
