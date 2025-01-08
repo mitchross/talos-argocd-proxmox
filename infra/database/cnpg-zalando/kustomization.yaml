@@ -8,6 +8,8 @@ resources:
   - external-secret.yaml
   - http-route.yaml
   - ui-service.yaml
+  - postgres-cluster.yaml
+  - postgres-lb-service.yaml
 
 helmCharts:
   - name: postgres-operator

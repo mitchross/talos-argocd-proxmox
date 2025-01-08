@@ -15,7 +15,7 @@ spec:
       server: '*'
     - namespace: 'comfyui'
       server: '*'
-    - namespace: 'perplexica'
+    - namespace: 'khoj'
       server: '*'
   clusterResourceWhitelist:
     - group: '*'

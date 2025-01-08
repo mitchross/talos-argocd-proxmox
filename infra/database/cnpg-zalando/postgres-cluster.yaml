@@ -1,0 +1,43 @@
+apiVersion: "acid.zalan.do/v1"
+kind: postgresql
+metadata:
+  name: khoj-db
+  namespace: cnpg-zalando
+spec:
+  teamId: "khoj"
+  volume:
+    size: 10Gi
+    storageClass: local-storage
+  numberOfInstances: 1
+  users:
+    postgres:
+      - superuser
+      - createdb
+      - login
+      passwordSecretName: postgres-admin-secret
+      passwordSecretKey: superuser-password
+    khoj:  # khoj application user
+      - createdb
+      - login
+  databases:
+    khoj: khoj  # dbname: owner
+  postgresql:
+    version: "15"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  patroni:
+    initdb:
+      encoding: "UTF8"
+      locale: "en_US.UTF-8"
+      data-checksums: "true"
+  enableMasterLoadBalancer: true
+  enableReplicaLoadBalancer: false
+  allowedSourceRanges:
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16 
