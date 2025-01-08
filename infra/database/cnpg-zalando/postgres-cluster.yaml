@@ -8,13 +8,13 @@ spec:
   numberOfInstances: 1
   users:
     postgres:
-      superuser: true
-      createdb: true
-      passwordSecretName: postgres-admin-secret
-      passwordSecretKey: superuser-password
+      - superuser
+      - createdb
+      - passwordSecretName: postgres-admin-secret
+      - passwordSecretKey: superuser-password
     khoj:
-      superuser: true
-      createdb: true
+      - superuser
+      - createdb
   volume:
     size: 10Gi
     storageClass: local-storage
