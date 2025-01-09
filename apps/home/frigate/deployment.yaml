@@ -60,7 +60,6 @@ spec:
             - name: config-file
               mountPath: /config/config.yml
               subPath: config.yaml
-              readOnly: true
             - name: media
               mountPath: /media
             - name: cache
