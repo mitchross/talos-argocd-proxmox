@@ -34,8 +34,8 @@ spec:
               cpu: 1000m
               memory: 2000M
             limits:
-              memory: 4000M
-              cpu: 4000m
+              memory: 8000M
+              cpu: 8000m
           securityContext:
             privileged: true
           livenessProbe:
