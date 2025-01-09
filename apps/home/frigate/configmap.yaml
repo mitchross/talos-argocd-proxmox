@@ -135,6 +135,9 @@ data:
           width: 1280
           height: 720
           fps: 5
+        live:
+          stream_name: shed
+          height: 1080
 
       driveway:
         enabled: True
@@ -146,6 +149,4 @@ data:
                 - record
         detect:
           enabled: true
-          width: 1280
-          height: 720
           fps: 5
