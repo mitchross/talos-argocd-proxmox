@@ -59,6 +59,15 @@ data:
     ffmpeg:
       input_args: preset-rtsp-generic
 
+    go2rtc:
+      streams:
+        backyard:
+          - rtsp://192.168.10.48:8554/backyard
+        garage-inside:
+          - rtsp://192.168.10.48:8554/garage-inside
+        garage-outside:
+          - rtsp://192.168.10.48:8554/garage-outside
+
     cameras:
       backyard:
         enabled: True
@@ -70,17 +79,31 @@ data:
                 - record
         detect:
           enabled: true
+          width: 1280
+          height: 720
+          fps: 5
+        live:
+          stream_name: backyard
+          height: 1080
 
       garage-inside:
         enabled: True
         ffmpeg:
+          input_args: preset-rtsp-restream
           inputs:
             - path: rtsp://192.168.10.48:8554/garage-inside
               roles:
                 - detect
                 - record
+                - audio
         detect:
           enabled: true
+          width: 1280
+          height: 720
+          fps: 5
+        live:
+          stream_name: garage-inside
+          height: 1080
 
       garage-outside:
         enabled: True
@@ -92,6 +115,12 @@ data:
                 - record
         detect:
           enabled: true
+          width: 1280
+          height: 720
+          fps: 5
+        live:
+          stream_name: garage-outside
+          height: 1080
 
       shed: 
         enabled: True
@@ -103,6 +132,9 @@ data:
                 - record
         detect:
           enabled: true
+          width: 1280
+          height: 720
+          fps: 5
 
       driveway:
         enabled: True
@@ -114,3 +146,6 @@ data:
                 - record
         detect:
           enabled: true
+          width: 1280
+          height: 720
+          fps: 5
