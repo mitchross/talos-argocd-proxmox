@@ -65,11 +65,60 @@ data:
         detect:
           enabled: true
 
+      kitchen:
+        enabled: True
+        ffmpeg:
+          inputs:
+            - path: rtsp://192.168.10.48:8554/kitchen
+              roles:
+                - detect
+                - record
+        detect:
+          enabled: true
 
+      garage-inside:
+        enabled: True
+        ffmpeg:
+          inputs:
+            - path: rtsp://192.168.10.48:8554/garage-inside
+              roles:
+                - detect
+                - record
+        detect:
+          enabled: true
 
+      living-room:
+        enabled: True
+        ffmpeg:
+          inputs:
+            - path: rtsp://192.168.10.48:8554/living-room
+              roles:
+                - detect
+                - record
+        detect:
+          enabled: true
 
+      front-porch:
+        enabled: True
+        ffmpeg:
+          inputs:
+            - path: rtsp://192.168.10.48:8554/front-porch
+              roles:
+                - detect
+                - record
+        detect:
+          enabled: true
 
-     
+      garage-outside:
+        enabled: True
+        ffmpeg:
+          inputs:
+            - path: rtsp://192.168.10.48:8554/garage-outside
+              roles:
+                - detect
+                - record
+        detect:
+          enabled: true
 
       shed:
         enabled: True
