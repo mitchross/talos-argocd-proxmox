@@ -78,16 +78,7 @@ data:
         detect:
           enabled: true
 
-      garage-outside:
-        enabled: True
-        ffmpeg:
-          inputs:
-            - path: rtsp://192.168.10.48:8554/garage-outside
-              roles:
-                - detect
-                - record
-        detect:
-          enabled: true
+
 
       shed: 
         enabled: True
