@@ -14,6 +14,9 @@ data:
       
     database:
       path: /config/frigate.db
+
+    ui:
+      timezone: America/Detroit
       
     timestamp_style:
       position: "tr"
@@ -52,6 +55,9 @@ data:
       coral:
         type: edgetpu
         device: usb
+
+    ffmpeg:
+      input_args: preset-rtsp-generic
 
     cameras:
       backyard:
