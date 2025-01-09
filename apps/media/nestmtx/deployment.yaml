@@ -69,8 +69,8 @@ spec:
               cpu: 500m
               memory: 1Gi
             limits:
-              cpu: 2000m
-              memory: 3Gi
+              cpu: 6000m
+              memory: 12Gi
               # nvidia.com/gpu: 1
           volumeMounts:
             - name: data
