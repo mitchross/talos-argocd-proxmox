@@ -79,7 +79,6 @@ data:
       shed: 
         enabled: True
         ffmpeg:
-         
           inputs:
             - path: rtsp://192.168.10.46:8554/shed
               roles:
@@ -91,7 +90,6 @@ data:
       driveway:
         enabled: True
         ffmpeg:
-       
           inputs:
             - path: rtsp://192.168.10.46:8554/driveway
               roles:
