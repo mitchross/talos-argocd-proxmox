@@ -7,13 +7,12 @@ no-autoupdate: true
 loglevel: debug   # Increased log level for more details
 transport-loglevel: debug
 
-
-
 ingress:
-  - hostname: hello.vanillax.me
-    service: hello_world
+  # External services that need internet access
+  - hostname: extgw.vanillax.me
+    service: https://cilium-gateway-external.gateway.svc.cluster.local:443
     originRequest:
-      # Add header logging with log-headers flag
+      originServerName: extgw.vanillax.me
       logHeaders: true
       headers:
         - name: CF-Connecting-IP
@@ -31,8 +30,9 @@ ingress:
         - name: Accept-Language
         - name: User-Agent
 
+  # Internal services (local network only)
   - hostname: "*.vanillax.me"
-    service: https://cilium-gateway-external.gateway.svc.cluster.local:443
+    service: https://cilium-gateway-internal.gateway.svc.cluster.local:443
     originRequest:
       originServerName: "*.vanillax.me"
       logHeaders: true
@@ -51,17 +51,9 @@ ingress:
         - name: X-Forwarded-For
         - name: Accept-Language
         - name: User-Agent
-        - name: True-Client-IP
-        - name: CF-IPCountry
-        - name: CF-RAY
-        - name: CF-Worker
-        - name: CF-Client-Bot
-        - name: CF-Bot-Score
-        - name: CF-Challenge
-        - name: CF-Bot-Management-Tag
 
   - hostname: vanillax.me
-    service: https://cilium-gateway-external.gateway.svc.cluster.local:443
+    service: https://cilium-gateway-internal.gateway.svc.cluster.local:443
     originRequest:
       originServerName: vanillax.me
       logHeaders: true
