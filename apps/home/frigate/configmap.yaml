@@ -56,29 +56,29 @@ data:
         device: usb
 
     cameras:
-      # backyard:
-      #   enabled: True
-      #   ffmpeg:
+      backyard:
+        enabled: True
+        ffmpeg:
 
-      #     inputs:
-      #       - path: rtsp://192.168.10.48:8554/backyard
-      #         roles:
-      #           - detect
-      #           - record
-      #   detect:
-      #     enabled: true
+          inputs:
+            - path: rtsp://nestmtx.vanillax.me:8554/backyard
+              roles:
+                - detect
+                - record
+        detect:
+          enabled: true
 
-      # garage-inside:
-      #   enabled: True
-      #   ffmpeg:
+      garage-inside:
+        enabled: True
+        ffmpeg:
 
-      #     inputs:
-      #       - path: rtsp://192.168.10.48:8554/garage-inside
-      #         roles:
-      #           - detect
-      #           - record
-      #   detect:
-      #     enabled: true
+          inputs:
+            - path: rtsp://nestmtx.vanillax.me:8554/garage-inside
+              roles:
+                - detect
+                - record
+        detect:
+          enabled: true
 
       shed: 
         enabled: True
