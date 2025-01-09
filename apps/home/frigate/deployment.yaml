@@ -13,10 +13,8 @@ spec:
       labels:
         app: frigate
     spec:
-      # runtimeClassName: nvidia
       nodeSelector:
         google.feature.node.kubernetes.io/coral: "true"
-        # nvidia.com/gpu.present: "true"
       containers:
         - name: frigate
           image: ghcr.io/blakeblackshear/frigate:0.15.0-beta4
@@ -31,10 +29,6 @@ spec:
                 secretKeyRef:
                   name: mqtt-secret
                   key: mqtt-password
-            # - name: NVIDIA_VISIBLE_DEVICES
-            #   value: "all"
-            # - name: NVIDIA_DRIVER_CAPABILITIES
-            #   value: "compute,utility,video"
           resources:
             requests:
               cpu: 1000m
@@ -42,7 +36,6 @@ spec:
             limits:
               memory: 4000M
               cpu: 4000m
-              #nvidia.com/gpu: 1
           securityContext:
             privileged: true
           livenessProbe:
@@ -67,15 +60,13 @@ spec:
             - name: config-file
               mountPath: /config/config.yml
               subPath: config.yaml
+              readOnly: true
             - name: media
               mountPath: /media
             - name: cache
               mountPath: /dev/shm
             - name: usb
               mountPath: /dev/bus/usb
-            # - name: nvidia-driver
-            #   mountPath: /usr/local/nvidia
-            #   readOnly: true
       volumes:
         - name: config-file
           configMap:
@@ -94,6 +85,3 @@ spec:
           hostPath:
             path: /dev/bus/usb
             type: Directory
-        # - name: nvidia-driver
-        #   hostPath:
-        #     path: /usr/local/nvidia
