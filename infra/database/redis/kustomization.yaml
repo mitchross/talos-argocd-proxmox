@@ -11,7 +11,7 @@ resources:
 helmCharts:
   - name: redis
     repo: https://charts.bitnami.com/bitnami
-    version: 20.6.1
+    version: 20.6.2
     releaseName: redis
     namespace: redis
     includeCRDs: true
