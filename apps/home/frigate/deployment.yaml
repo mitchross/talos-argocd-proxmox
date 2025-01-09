@@ -32,10 +32,10 @@ spec:
           resources:
             requests:
               cpu: 1000m
-              memory: 2000M
+              memory: 2Gi
             limits:
-              memory: 8000M
-              cpu: 8000m
+              memory: 12Gi
+              cpu: 12000m
           securityContext:
             privileged: true
           livenessProbe:
