@@ -120,7 +120,7 @@ data:
         detect:
           enabled: true
 
-      shed: 
+      shed:
         enabled: True
         ffmpeg:
           inputs:
