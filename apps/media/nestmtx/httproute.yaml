@@ -15,6 +15,6 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: nestmtx-external
+        - name: nestmtx
           port: 2000
           weight: 1

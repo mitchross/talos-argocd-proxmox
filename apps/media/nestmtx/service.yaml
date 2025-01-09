@@ -9,6 +9,9 @@ spec:
   selector:
     app: nestmtx
   ports:
+    - name: http
+      port: 2000
+      targetPort: 2000
     - name: rtmp
       port: 1935
       targetPort: 1935
