@@ -25,7 +25,7 @@ spec:
           mountPath: /datapool
       containers:
       - name: comfyui
-        image: frefrik/comfyui-flux:cu124
+        image: ghcr.io/mitchross/comfyui-flux:cu124-v1
         ports:
         - containerPort: 8188
         env:
