@@ -3,14 +3,13 @@ credentials-file: /etc/cloudflared/credentials/credentials.json
 metrics: 0.0.0.0:2000
 no-autoupdate: true
 
-# Enhanced logging configuration
 loglevel: debug
 transport-loglevel: debug
 
-# All Cloudflare traffic goes to external gateway only
 ingress:
+  # Handle any domain Cloudflare sends to the tunnel
   - hostname: "*.vanillax.me"
-    service: https://cilium-gateway-external.gateway.svc.cluster.local:443
+    service: https://gateway-external.gateway.svc.cluster.local:443
     originRequest:
       noTLSVerify: true
       originServerName: "${hostname}"
@@ -31,4 +30,5 @@ ingress:
         - name: Accept-Language
         - name: User-Agent
 
+  # Default catch-all rule
   - service: http_status:404
