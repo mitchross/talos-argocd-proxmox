@@ -147,6 +147,17 @@ gatewayAPI:
     name: gateway
   service:
     type: LoadBalancer
+  deployment:
+    enabled: true
+    replicas: 2
+    extraEnv: []
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 2000m
+        memory: 1Gi
 
 # Disable ingress controller since we're using Gateway API
 ingressController:
