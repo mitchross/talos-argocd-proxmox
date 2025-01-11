@@ -27,20 +27,18 @@ spec:
     limits:
       cpu: 500m
       memory: 512Mi
-  pod_template:
-    metadata:
-      labels:
-        application: spilo
-    spec:
-      nodeSelector:
-        kubernetes.io/hostname: vanillax-ai
+  nodeSelector:
+    kubernetes.io/hostname: vanillax-ai
+  tolerations:
+    - key: "kubernetes.io/hostname"
+      operator: "Equal"
+      value: "vanillax-ai"
+      effect: "NoSchedule"
   patroni:
     initdb:
       encoding: "UTF8"
       locale: "en_US.UTF-8"
       data-checksums: "true"
-  # Enable external access via LoadBalancer
   enableMasterLoadBalancer: true
-  # Set the specific IP for the master service
   masterServiceAnnotations:
-    io.cilium/lb-ipam-ips: "192.168.10.51"  # Different from operator's IP
+    io.cilium/lb-ipam-ips: "192.168.10.51"
