@@ -1,0 +1,41 @@
+apiVersion: "acid.zalan.do/v1"
+kind: postgresql
+metadata:
+  name: demo-db
+  namespace: cnpg-zalando
+spec:
+  teamId: "vanillax"
+  volume:
+    size: 10Gi
+    storageClass: local-storage
+  numberOfInstances: 2
+  users:
+    demoapp:  # Additional user for your application
+      - superuser
+      - createdb
+  databases:
+    demoapp: demoapp  # dbname: owner
+  postgresql:
+    version: "15"
+    parameters:
+      max_connections: "100"
+      shared_buffers: "256MB"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  nodeSelector:
+    kubernetes.io/hostname: vanillax-ai
+  patroni:
+    initdb:
+      encoding: "UTF8"
+      locale: "en_US.UTF-8"
+      data-checksums: "true"
+  # Enable external access via LoadBalancer
+  enableMasterLoadBalancer: true
+  # Set the specific IP for the master service
+  masterServiceAnnotations:
+    io.cilium/lb-ipam-ips: "192.168.10.51"  # Different from operator's IP
