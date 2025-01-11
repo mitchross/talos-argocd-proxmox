@@ -34,7 +34,8 @@ ingress:
   - hostname: "*.vanillax.me"
     service: https://cilium-gateway-internal.gateway.svc.cluster.local:443
     originRequest:
-      originServerName: "*.vanillax.me"
+      noTLSVerify: true
+      originServerName: "${hostname}"
       logHeaders: true
       headers:
         - name: CF-Connecting-IP
@@ -55,6 +56,7 @@ ingress:
   - hostname: vanillax.me
     service: https://cilium-gateway-internal.gateway.svc.cluster.local:443
     originRequest:
+      noTLSVerify: true
       originServerName: vanillax.me
       logHeaders: true
       headers:
