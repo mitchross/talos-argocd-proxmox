@@ -27,13 +27,8 @@ spec:
     limits:
       cpu: 500m
       memory: 512Mi
-  nodeSelector:
-    kubernetes.io/hostname: vanillax-ai
-  tolerations:
-    - key: "kubernetes.io/hostname"
-      operator: "Equal"
-      value: "vanillax-ai"
-      effect: "NoSchedule"
+  allowedSourceRanges:  # Define allowed IPs that can access the DB
+    - 192.168.0.0/16
   patroni:
     initdb:
       encoding: "UTF8"
