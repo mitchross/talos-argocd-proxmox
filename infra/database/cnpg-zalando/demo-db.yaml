@@ -27,9 +27,13 @@ spec:
     limits:
       cpu: 500m
       memory: 512Mi
-  podTemplate:
-    nodeSelector:
-      kubernetes.io/hostname: vanillax-ai
+  pod_template:
+    metadata:
+      labels:
+        application: spilo
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: vanillax-ai
   patroni:
     initdb:
       encoding: "UTF8"
