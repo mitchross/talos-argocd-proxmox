@@ -130,8 +130,9 @@ loadBalancer:
   algorithm: maglev
 gatewayAPI:
   enabled: true
+  # No ingressController, explicitly using HTTP gateway
 ingressController:
-  enabled: true
+  enabled: false
   default: true
   loadbalancerMode: shared
   service:
