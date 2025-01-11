@@ -7,9 +7,8 @@ loglevel: debug
 transport-loglevel: debug
 
 ingress:
-  # Handle any domain Cloudflare sends to the tunnel
   - hostname: "*.vanillax.me"
-    service: https://gateway-external.gateway.svc.cluster.local:443
+    service: https://cilium-gateway-external.gateway.svc.cluster.local:443
     originRequest:
       noTLSVerify: true
       originServerName: "${hostname}"
@@ -30,5 +29,4 @@ ingress:
         - name: Accept-Language
         - name: User-Agent
 
-  # Default catch-all rule
   - service: http_status:404
