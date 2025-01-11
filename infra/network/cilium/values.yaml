@@ -160,9 +160,6 @@ ingressController:
         memory: 512Mi
   service:
     type: LoadBalancer
-    labels:
-      argocd.argoproj.io/instance: cilium
-      cilium.io/ingress: "true"
     annotations:
       io.cilium/lb-ipam-ips: 192.168.10.40
     ports:
