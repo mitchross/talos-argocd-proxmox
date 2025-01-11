@@ -4,11 +4,11 @@ kind: Kustomization
 resources:
 
   - namespace.yaml
-  - 1password-secret.yaml
-  - configmap.yaml
-  - deployment.yaml
-  - service.yaml
-  - httproute.yaml
+  # - 1password-secret.yaml
+  # - configmap.yaml
+  # - deployment.yaml
+  # - service.yaml
+  # - httproute.yaml
 
 
 namespace: wyze-bridge
