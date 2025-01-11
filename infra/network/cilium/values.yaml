@@ -81,6 +81,9 @@ hubble:
         enabled: true
 
 # Envoy Configuration
+# Adding externalEnvoyProxy: false tells Cilium to use its internal proxy
+# This should resolve the gateway endpoint issues
+externalEnvoyProxy: false
 envoy:
   enabled: true
   prometheus:
