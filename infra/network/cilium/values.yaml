@@ -3,7 +3,7 @@ cluster:
   id: 1
 
 kubeProxyReplacement: true
-enableEnvoyConfig: false
+enableEnvoyConfig: true
 
 # Metrics and Monitoring configuration
 prometheus:
