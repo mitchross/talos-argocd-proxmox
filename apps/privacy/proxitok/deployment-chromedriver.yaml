@@ -18,46 +18,25 @@ spec:
         image: zenika/alpine-chrome:with-chromedriver
         ports:
         - containerPort: 9515
-        args:
-          - --no-sandbox
-          - --headless
-          - --disable-dev-shm-usage
-          - --disable-gpu
-          - --remote-debugging-port=9222
-        env:
-        - name: CHROME_OPTS
-          value: "--disable-dev-shm-usage --no-sandbox --headless --disable-gpu --disable-software-rasterizer --remote-debugging-port=9222"
-        - name: CHROMEDRIVER_OPTS
-          value: "--verbose --whitelisted-ips=''"
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "250m"
+            memory: "1Gi"
+            cpu: "500m"
           limits:
             memory: "2Gi"
-            cpu: "4000m"
-        volumeMounts:
-        - name: dshm
-          mountPath: /dev/shm
+            cpu: "1000m"
         securityContext:
-          capabilities:
-            drop:
-            - ALL
           allowPrivilegeEscalation: false
           runAsNonRoot: true
           runAsUser: 1000
-        readinessProbe:
-          tcpSocket:
-            port: 9515
-          initialDelaySeconds: 10
-          periodSeconds: 5
-        livenessProbe:
-          tcpSocket:
-            port: 9515
-          initialDelaySeconds: 15
-          periodSeconds: 15
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: shm
+          mountPath: /dev/shm
       volumes:
-      - name: dshm
+      - name: shm
         emptyDir:
           medium: Memory
-          sizeLimit: 3Gi
+          sizeLimit: 1Gi
