@@ -43,6 +43,7 @@ operator:
     serviceMonitor:
       enabled: true
     port: 6942
+    portName: operator-prometheus
   resources:
     limits:
       cpu: 500m
