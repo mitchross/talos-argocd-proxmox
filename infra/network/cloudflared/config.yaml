@@ -3,21 +3,18 @@ credentials-file: /etc/cloudflared/credentials/credentials.json
 metrics: 0.0.0.0:2000
 no-autoupdate: true
 
-loglevel: debug
+# Enhanced logging configuration
+loglevel: debug   # Increased log level for more details
 transport-loglevel: debug
 
+
+
 ingress:
-  - hostname: "*.vanillax.me"
-    service: https://cilium-gateway-external.gateway.svc.cluster.local:443
+  - hostname: hello.vanillax.me
+    service: hello_world
     originRequest:
-      # We don't need noTLSVerify since you're using valid certificates
-      noTLSVerify: false
-      # This ensures the SNI header matches what your certificate expects
-      originServerName: "${hostname}"
-      # We want to use HTTP/2 since your gateway supports it
-      http2Origin: true
-      proxyType: "http"
-      # Preserve all the Cloudflare headers
+      # Add header logging with log-headers flag
+      logHeaders: true
       headers:
         - name: CF-Connecting-IP
         - name: X-Real-IP
@@ -33,8 +30,55 @@ ingress:
         - name: X-Forwarded-For
         - name: Accept-Language
         - name: User-Agent
-        # Add Host header to ensure proper routing
-        - name: Host
-          value: "${hostname}"
+
+  - hostname: "*.vanillax.me"
+    service: https://cilium-gateway-external.gateway.svc.cluster.local:443
+    originRequest:
+      originServerName: "*.vanillax.me"
+      logHeaders: true
+      headers:
+        - name: CF-Connecting-IP
+        - name: X-Real-IP
+        - name: CF-IPCountry
+        - name: CF-Ray
+        - name: CF-Visitor
+        - name: CF-Device-Type
+        - name: CF-IPCITY
+        - name: CF-IPCONTINENT
+        - name: CF-IPLATITUDE
+        - name: CF-IPLONGITUDE
+        - name: CF-IPREGION
+        - name: X-Forwarded-For
+        - name: Accept-Language
+        - name: User-Agent
+        - name: True-Client-IP
+        - name: CF-IPCountry
+        - name: CF-RAY
+        - name: CF-Worker
+        - name: CF-Client-Bot
+        - name: CF-Bot-Score
+        - name: CF-Challenge
+        - name: CF-Bot-Management-Tag
+
+  - hostname: vanillax.me
+    service: https://cilium-gateway-external.gateway.svc.cluster.local:443
+    originRequest:
+      originServerName: vanillax.me
+      logHeaders: true
+      headers:
+        - name: CF-Connecting-IP
+        - name: X-Real-IP
+        - name: CF-IPCountry
+        - name: CF-Ray
+        - name: CF-Visitor
+        - name: CF-Device-Type
+        - name: CF-IPCITY
+        - name: CF-IPCONTINENT
+        - name: CF-IPLATITUDE
+        - name: CF-IPLONGITUDE
+        - name: CF-IPREGION
+        - name: X-Forwarded-For
+        - name: Accept-Language
+        - name: User-Agent
 
   - service: http_status:404
