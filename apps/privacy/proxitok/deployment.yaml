@@ -20,7 +20,7 @@ spec:
         command: ['sh', '-c', 'until nc -z proxitok-redis.proxitok.svc.cluster.local 6379; do echo waiting for redis; sleep 2; done;']
       - name: init-permissions
         image: busybox
-        command: ['sh', '-c', 'mkdir -p /run /var/lib/nginx/logs && chmod 777 /run /var/lib/nginx/logs']
+        command: ['sh', '-c', 'mkdir -p /run /var/lib/nginx/logs && chmod -R 777 /run /var/lib/nginx/logs && chown -R 1000:1000 /var/lib/nginx/logs']
         volumeMounts:
         - name: run-volume
           mountPath: /run
