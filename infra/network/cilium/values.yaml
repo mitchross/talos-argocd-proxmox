@@ -43,11 +43,12 @@ operator:
     enabled: true
     serviceMonitor:
       enabled: true
-    port: 6942
-    portName: operator-metrics  # Changed from operator-prometheus to be more distinct
-  # Explicitly define metrics configuration to avoid duplicates
-  extraArgs:
-    - --metrics-serve-addr=":6942"
+      port: 6942
+      portName: operator-metrics  # First port name
+  # Define API serving configuration
+  apiServePort: 9234  # Second port
+  # Remove any ambiguous port configurations
+  extraArgs: []  # Remove any port-related args to avoid conflicts
   resources:
     limits:
       cpu: 1000m
