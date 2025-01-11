@@ -9,7 +9,14 @@ spec:
     annotations:
       io.cilium/lb-ipam-ips: 192.168.10.49
   listeners:
-    - protocol: HTTPS
+    - protocol: HTTP  # Add HTTP listener for cloudflared
+      port: 80
+      name: http-gateway
+      hostname: "*.vanillax.me"
+      allowedRoutes:
+        namespaces:
+          from: All
+    - protocol: HTTPS  # Keep HTTPS listener for direct external access
       port: 443
       name: https-gateway
       hostname: "*.vanillax.me"
