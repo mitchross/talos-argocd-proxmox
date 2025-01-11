@@ -138,45 +138,7 @@ loadBalancer:
   algorithm: maglev
 gatewayAPI:
   enabled: true
+
+# Disable ingress controller since we're using Gateway API
 ingressController:
-  enabled: true
-  default: true
-  loadbalancerMode: shared
-  deployment:
-    enabled: true
-    replicas: 2
-    labels:
-      app: cilium-ingress
-    annotations: {}
-    podAnnotations: {}
-    podLabels:
-      app: cilium-ingress
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-      limits:
-        cpu: 500m
-        memory: 512Mi
-  service:
-    type: LoadBalancer
-    annotations:
-      io.cilium/lb-ipam-ips: 192.168.10.40
-    ports:
-      - name: http
-        port: 80
-        protocol: TCP
-        targetPort: 80
-        nodePort: 31572
-      - name: https
-        port: 443
-        protocol: TCP
-        targetPort: 443
-        nodePort: 31083
-    externalTrafficPolicy: Cluster
-    allocateLoadBalancerNodePorts: true
-    ipFamilyPolicy: SingleStack
-    ipFamilies:
-      - IPv4
-    sessionAffinity: None
-    internalTrafficPolicy: Cluster
+  enabled: false
