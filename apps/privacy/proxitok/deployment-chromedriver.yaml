@@ -18,6 +18,16 @@ spec:
         image: zenika/alpine-chrome:with-chromedriver
         ports:
         - containerPort: 9515
+        args:
+        - --no-sandbox
+        - --headless
+        - --disable-dev-shm-usage
+        - --disable-gpu
+        env:
+        - name: CHROME_OPTS
+          value: "--disable-dev-shm-usage --no-sandbox --headless --disable-gpu --disable-software-rasterizer"
+        - name: CHROMEDRIVER_OPTS
+          value: "--verbose --whitelisted-ips=''"
         resources:
           requests:
             memory: "1Gi"

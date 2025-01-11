@@ -21,6 +21,14 @@ spec:
       - name: wait-for-chromedriver
         image: busybox
         command: ['sh', '-c', 'until nc -z proxitok-chromedriver.proxitok.svc.cluster.local 9515; do echo waiting for chromedriver; sleep 2; done;']
+      - name: init-run
+        image: busybox
+        command: ['sh', '-c', 'mkdir -p /run && chown 1000:1000 /run && chmod 755 /run']
+        volumeMounts:
+        - name: run-dir
+          mountPath: /run
+        securityContext:
+          runAsUser: 0
       containers:
       - name: proxitok-web
         image: ghcr.io/pablouser1/proxitok:master
@@ -70,7 +78,11 @@ spec:
         volumeMounts:
         - name: cache-volume
           mountPath: /cache
+        - name: run-dir
+          mountPath: /run
       volumes:
       - name: cache-volume
         persistentVolumeClaim:
           claimName: proxitok-cache-pvc
+      - name: run-dir
+        emptyDir: {}
