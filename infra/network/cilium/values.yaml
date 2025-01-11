@@ -167,10 +167,12 @@ ingressController:
         port: 80
         protocol: TCP
         targetPort: 80
+        nodePort: 31572
       - name: https
         port: 443
         protocol: TCP
         targetPort: 443
+        nodePort: 31083
     externalTrafficPolicy: Cluster
     allocateLoadBalancerNodePorts: true
     ipFamilyPolicy: SingleStack
