@@ -4,14 +4,14 @@ namespace: cnpg-zalando
 
 resources:
   - ns.yaml
-  # - config-map.yaml
-  # - external-secret.yaml
-  # - data-pvc.yaml
-  # - backup-pvc.yaml
-  # - ui-service.yaml
-  # - http-route.yaml
-  # - demo-db-secret.yaml
-  # - demo-db.yaml
+  - config-map.yaml
+  - external-secret.yaml
+  - data-pvc.yaml
+  - backup-pvc.yaml
+  - ui-service.yaml
+  - http-route.yaml
+  - demo-db-secret.yaml
+  - demo-db.yaml
 
 helmCharts:
   - name: postgres-operator
