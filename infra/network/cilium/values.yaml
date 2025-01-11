@@ -138,6 +138,8 @@ loadBalancer:
   algorithm: maglev
 gatewayAPI:
   enabled: true
+  # Enable proper gateway controller support
+  controller: true
 
 # Disable ingress controller since we're using Gateway API
 ingressController:
