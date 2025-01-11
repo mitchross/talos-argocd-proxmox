@@ -10,7 +10,7 @@ transport-loglevel: debug
 # All Cloudflare traffic goes to external gateway only
 ingress:
   - hostname: "*.vanillax.me"
-    service: http://cilium-gateway-external.gateway.svc.cluster.local:443
+    service: https://cilium-gateway-external.gateway.svc.cluster.local:443
     originRequest:
       noTLSVerify: true
       originServerName: "${hostname}"
