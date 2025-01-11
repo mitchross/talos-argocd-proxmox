@@ -1,15 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: postgres-operator-ui-service
+  name: postgres-operator-ui
   namespace: cnpg-zalando
   labels:
-    app: postgres-operator-ui-service
+    app: postgres-operator-ui
 spec:
   selector:
-    app: postgres-operator-ui
+    app.kubernetes.io/name: postgres-operator-ui
   ports:
     - name: http
-      port: 8081
+      port: 80
       targetPort: 8081
   type: ClusterIP

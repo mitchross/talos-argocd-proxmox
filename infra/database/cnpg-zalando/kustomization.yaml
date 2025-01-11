@@ -6,8 +6,10 @@ resources:
   - ns.yaml
   - config-map.yaml
   - external-secret.yaml
-  - http-route.yaml
+  - data-pvc.yaml
+  - backup-pvc.yaml
   - ui-service.yaml
+  - http-route.yaml
 
 helmCharts:
   - name: postgres-operator
@@ -17,7 +19,6 @@ helmCharts:
     includeCRDs: true
     version: 1.13.0
     valuesFile: postgres-operator-values.yaml
-
   - name: postgres-operator-ui
     repo: https://opensource.zalando.com/postgres-operator/charts/postgres-operator-ui
     releaseName: zalando-postgres-operator-ui
