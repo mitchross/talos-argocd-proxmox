@@ -10,9 +10,14 @@ ingress:
   - hostname: "*.vanillax.me"
     service: https://cilium-gateway-external.gateway.svc.cluster.local:443
     originRequest:
-      noTLSVerify: true
+      # We don't need noTLSVerify since you're using valid certificates
+      noTLSVerify: false
+      # This ensures the SNI header matches what your certificate expects
       originServerName: "${hostname}"
-      logHeaders: true
+      # We want to use HTTP/2 since your gateway supports it
+      http2Origin: true
+      proxyType: "http"
+      # Preserve all the Cloudflare headers
       headers:
         - name: CF-Connecting-IP
         - name: X-Real-IP
@@ -28,5 +33,8 @@ ingress:
         - name: X-Forwarded-For
         - name: Accept-Language
         - name: User-Agent
+        # Add Host header to ensure proper routing
+        - name: Host
+          value: "${hostname}"
 
   - service: http_status:404
