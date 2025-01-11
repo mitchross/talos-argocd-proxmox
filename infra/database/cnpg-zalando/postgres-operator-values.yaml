@@ -2,8 +2,9 @@ configKubernetes:
   secret_name_template: "{username}.{cluster}.credentials"
   enable_pod_antiaffinity: false
   pod_environment_configmap: "postgres-operator-config"
-  node_selector:
-    kubernetes.io/hostname: vanillax-ai
+
+nodeSelector:
+  kubernetes.io/hostname: vanillax-ai
 
 users:
   enable_password_rotation: false
