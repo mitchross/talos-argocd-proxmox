@@ -27,8 +27,9 @@ spec:
     limits:
       cpu: 500m
       memory: 512Mi
-  nodeSelector:
-    kubernetes.io/hostname: vanillax-ai
+  podTemplate:
+    nodeSelector:
+      kubernetes.io/hostname: vanillax-ai
   patroni:
     initdb:
       encoding: "UTF8"
