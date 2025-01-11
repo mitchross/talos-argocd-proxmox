@@ -142,13 +142,34 @@ ingressController:
   enabled: true
   default: true
   loadbalancerMode: shared
-  # Add these sections to ensure proper pod deployment
   deployment:
     enabled: true
-    replicas: 2  # For high availability
+    replicas: 2
+    labels:
+      app: cilium-ingress
+    annotations: {}
+    podAnnotations: {}
+    podLabels:
+      app: cilium-ingress
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
   service:
+    type: LoadBalancer
     annotations:
       io.cilium/lb-ipam-ips: 192.168.10.40
-  # Add proper pod labels and selector
-  podLabels:
-    app: cilium-ingress
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+        targetPort: 80
+      - name: https
+        port: 443
+        protocol: TCP
+        targetPort: 443
+    externalTrafficPolicy: Cluster
+    allocateLoadBalancerNodePorts: true
