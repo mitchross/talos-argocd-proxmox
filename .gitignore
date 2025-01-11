@@ -1,3 +1,4 @@
 
 infra/controllers/external-secrets/external-secrets-token.env
 tools/venv/
+*.ds_store
