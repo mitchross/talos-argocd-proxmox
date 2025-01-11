@@ -4,58 +4,15 @@ metrics: 0.0.0.0:2000
 no-autoupdate: true
 
 # Enhanced logging configuration
-loglevel: debug   # Increased log level for more details
+loglevel: debug
 transport-loglevel: debug
 
+# All Cloudflare traffic goes to external gateway only
 ingress:
-  # External services that need internet access
-  - hostname: extgw.vanillax.me
-    service: https://cilium-gateway-external.gateway.svc.cluster.local:443
+  - service: https://cilium-gateway-external.gateway.svc.cluster.local:443
     originRequest:
-      originServerName: extgw.vanillax.me
-      logHeaders: true
-      headers:
-        - name: CF-Connecting-IP
-        - name: X-Real-IP
-        - name: CF-IPCountry
-        - name: CF-Ray
-        - name: CF-Visitor
-        - name: CF-Device-Type
-        - name: CF-IPCITY
-        - name: CF-IPCONTINENT
-        - name: CF-IPLATITUDE
-        - name: CF-IPLONGITUDE
-        - name: CF-IPREGION
-        - name: X-Forwarded-For
-        - name: Accept-Language
-        - name: User-Agent
-
-  # Internal services (local network only)
-  - hostname: "*.vanillax.me"
-    service: https://cilium-gateway-internal.gateway.svc.cluster.local:443
-    originRequest:
+      noTLSVerify: true
       originServerName: "${hostname}"
-      logHeaders: true
-      headers:
-        - name: CF-Connecting-IP
-        - name: X-Real-IP
-        - name: CF-IPCountry
-        - name: CF-Ray
-        - name: CF-Visitor
-        - name: CF-Device-Type
-        - name: CF-IPCITY
-        - name: CF-IPCONTINENT
-        - name: CF-IPLATITUDE
-        - name: CF-IPLONGITUDE
-        - name: CF-IPREGION
-        - name: X-Forwarded-For
-        - name: Accept-Language
-        - name: User-Agent
-
-  - hostname: vanillax.me
-    service: https://cilium-gateway-internal.gateway.svc.cluster.local:443
-    originRequest:
-      originServerName: vanillax.me
       logHeaders: true
       headers:
         - name: CF-Connecting-IP
