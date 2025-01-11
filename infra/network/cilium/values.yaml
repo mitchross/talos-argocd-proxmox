@@ -142,6 +142,13 @@ ingressController:
   enabled: true
   default: true
   loadbalancerMode: shared
+  # Add these sections to ensure proper pod deployment
+  deployment:
+    enabled: true
+    replicas: 2  # For high availability
   service:
     annotations:
       io.cilium/lb-ipam-ips: 192.168.10.40
+  # Add proper pod labels and selector
+  podLabels:
+    app: cilium-ingress

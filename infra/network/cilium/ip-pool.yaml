@@ -4,5 +4,5 @@ metadata:
   name: first-pool
 spec:
   blocks:
-    - start: 192.168.10.39
-      stop: 192.168.10.53
+    - start: 192.168.10.38
+      stop: 192.168.10.54
