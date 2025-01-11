@@ -35,6 +35,7 @@ securityContext:
     ciliumAgent: [ CHOWN, KILL, NET_ADMIN, NET_RAW, IPC_LOCK, SYS_ADMIN, SYS_RESOURCE, DAC_OVERRIDE, FOWNER, SETGID, SETUID ]
     cleanCiliumState: [ NET_ADMIN, SYS_ADMIN, SYS_RESOURCE ]
 
+# Operator configuration - Updated to prevent port name conflicts
 operator:
   replicas: 1
   rollOutPods: true
@@ -43,7 +44,10 @@ operator:
     serviceMonitor:
       enabled: true
     port: 6942
-    portName: operator-prometheus
+    portName: operator-metrics  # Changed from operator-prometheus to be more distinct
+  # Explicitly define metrics configuration to avoid duplicates
+  extraArgs:
+    - --metrics-serve-addr=":6942"
   resources:
     limits:
       cpu: 500m
@@ -81,8 +85,7 @@ hubble:
         enabled: true
 
 # Envoy Configuration
-# Adding externalEnvoyProxy: false tells Cilium to use its internal proxy
-# This should resolve the gateway endpoint issues
+# Disabled external proxy to use internal Cilium proxy
 externalEnvoyProxy: false
 envoy:
   enabled: true
