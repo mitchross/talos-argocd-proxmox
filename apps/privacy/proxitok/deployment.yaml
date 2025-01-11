@@ -18,37 +18,42 @@ spec:
       - name: wait-for-redis
         image: busybox
         command: ['sh', '-c', 'until nc -z proxitok-redis.proxitok.svc.cluster.local 6379; do echo waiting for redis; sleep 2; done;']
-      - name: wait-for-chromedriver
+      - name: init-permissions
         image: busybox
-        command: ['sh', '-c', 'until nc -z proxitok-chromedriver.proxitok.svc.cluster.local 9515; do echo waiting for chromedriver; sleep 2; done;']
-      - name: init-run
-        image: busybox
-        command: ['sh', '-c', 'mkdir -p /run && chown 1000:1000 /run && chmod 755 /run']
+        command: ['sh', '-c', 'mkdir -p /run /var/lib/nginx/logs && chmod 777 /run /var/lib/nginx/logs']
         volumeMounts:
-        - name: run-dir
+        - name: run-volume
           mountPath: /run
+        - name: nginx-logs
+          mountPath: /var/lib/nginx/logs
+        securityContext:
+          runAsUser: 0
+      - name: init-cache
+        image: busybox
+        command:
+        - /bin/sh
+        - -c
+        - |
+          mkdir -p /cache/templates-views
+          chown -R 1000:1000 /cache
+          chmod -R 755 /cache
+        volumeMounts:
+        - name: cache-volume
+          mountPath: /cache
         securityContext:
           runAsUser: 0
       containers:
       - name: proxitok-web
-        image: ghcr.io/pablouser1/proxitok:master
+        image: ghcr.io/elektrikfisch/proxitok:latest
         ports:
         - containerPort: 8080
-        env:
-        - name: LATTE_CACHE
-          value: "/cache"
-        - name: API_CACHE
-          value: "redis"
-        - name: REDIS_HOST
-          value: "proxitok-redis.proxitok.svc.cluster.local"
-        - name: REDIS_PORT
-          value: "6379"
-        - name: API_CHROMEDRIVER
-          value: "http://proxitok-chromedriver.proxitok.svc.cluster.local:9515"
+        envFrom:
+        - configMapRef:
+            name: proxitok-config
         securityContext:
           allowPrivilegeEscalation: false
-          runAsNonRoot: true
           runAsUser: 1000
+          fsGroup: 1000
           capabilities:
             drop:
             - ALL
@@ -78,11 +83,15 @@ spec:
         volumeMounts:
         - name: cache-volume
           mountPath: /cache
-        - name: run-dir
+        - name: run-volume
           mountPath: /run
+        - name: nginx-logs
+          mountPath: /var/lib/nginx/logs
       volumes:
       - name: cache-volume
         persistentVolumeClaim:
           claimName: proxitok-cache-pvc
-      - name: run-dir
+      - name: run-volume
+        emptyDir: {}
+      - name: nginx-logs
         emptyDir: {}

@@ -18,17 +18,9 @@ spec:
         image: redis:7.4-alpine
         ports:
         - containerPort: 6379
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "100m"
-          limits:
-            memory: "256Mi"
-            cpu: "200m"
         securityContext:
           readOnlyRootFilesystem: true
           runAsUser: 65534  # nobody user
-          runAsNonRoot: true
           allowPrivilegeEscalation: false
           capabilities:
             drop:
