@@ -8,9 +8,6 @@ resources:
   - external-secret.yaml
   - http-route.yaml
   - ui-service.yaml
-  - postgres-cluster.yaml
-  - postgres-lb-service.yaml
-  - postgres-secrets.yaml
 
 helmCharts:
   - name: postgres-operator
@@ -18,12 +15,37 @@ helmCharts:
     releaseName: zalando-postgres
     namespace: cnpg-zalando
     includeCRDs: true
-    version: 1.14.0
+    version: 1.13.0
     valuesFile: postgres-operator-values.yaml
 
   - name: postgres-operator-ui
     repo: https://opensource.zalando.com/postgres-operator/charts/postgres-operator-ui
     releaseName: zalando-postgres-operator-ui
     namespace: cnpg-zalando
-    version: 1.14.0
+    version: 1.13.0
+    valuesFile: postgres-operator-ui-values.yamlapiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cnpg-zalando
+
+resources:
+  - ns.yaml
+  - config-map.yaml
+  - external-secret.yaml
+  - http-route.yaml
+  - ui-service.yaml
+
+helmCharts:
+  - name: postgres-operator
+    repo: https://opensource.zalando.com/postgres-operator/charts/postgres-operator
+    releaseName: zalando-postgres
+    namespace: cnpg-zalando
+    includeCRDs: true
+    version: 1.13.0
+    valuesFile: postgres-operator-values.yaml
+
+  - name: postgres-operator-ui
+    repo: https://opensource.zalando.com/postgres-operator/charts/postgres-operator-ui
+    releaseName: zalando-postgres-operator-ui
+    namespace: cnpg-zalando
+    version: 1.13.0
     valuesFile: postgres-operator-ui-values.yaml
