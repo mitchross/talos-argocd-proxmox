@@ -3,8 +3,32 @@ kind: ConfigMap
 metadata:
   name: coredns
   namespace: kube-system
+  annotations:
+    argocd.argoproj.io/sync-options: Replace=true
 data:
-  custom-vanillax.server: |
+  Corefile: |
+    .:53 {
+        errors
+        health
+        ready
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+          pods insecure
+          fallthrough in-addr.arpa ip6.arpa
+        }
+        hosts /etc/coredns/NodeHosts {
+          ttl 60
+          reload 15s
+          fallthrough
+        }
+        prometheus :9153
+        forward . /etc/resolv.conf
+        cache 30
+        loop
+        reload
+        loadbalance
+        import /etc/coredns/custom/*.override
+    }
+    import /etc/coredns/custom/*.server
     vanillax.me:53 {
         hosts {
             192.168.10.50 *.vanillax.me
@@ -12,4 +36,6 @@ data:
             fallthrough
         }
         forward . /etc/resolv.conf
-    } 
+    }
+  NodeHosts: |
+    192.168.10.11 vanillax-ai 
