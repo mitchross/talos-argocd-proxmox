@@ -13,8 +13,7 @@ servers:
   - zones:
       - zone: .
         scheme: dns://
-        use_tcp: true
-    port: 53
+        port: 53
     plugins:
       - name: errors
       - name: health
@@ -32,7 +31,10 @@ servers:
           pods insecure
           fallthrough in-addr.arpa ip6.arpa
       - name: forward
-        parameters: . /etc/resolv.conf
+        parameters: . 1.1.1.1 1.0.0.1 8.8.8.8 8.8.4.4
+        configBlock: |-
+          force_tcp
+          max_concurrent 1000
       - name: cache
         parameters: 30
       - name: loop
@@ -41,7 +43,7 @@ servers:
   - zones:
       - zone: vanillax.me
         scheme: dns://
-    port: 53
+        port: 53
     plugins:
       - name: hosts
         configBlock: |-
@@ -49,7 +51,10 @@ servers:
           192.168.10.50 vanillax.me
           fallthrough
       - name: forward
-        parameters: . /etc/resolv.conf
+        parameters: . 1.1.1.1 1.0.0.1 8.8.8.8 8.8.4.4
+        configBlock: |-
+          force_tcp
+          max_concurrent 1000
 
 affinity:
   nodeAffinity:
