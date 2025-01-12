@@ -36,4 +36,4 @@ spec:
       data-checksums: "true"
   enableMasterLoadBalancer: true
   masterServiceAnnotations:
-    io.cilium/lb-ipam-ips: "192.168.10.51"
+    io.cilium/lb-ipam-ips: "192.168.10.52"
