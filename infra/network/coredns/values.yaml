@@ -8,6 +8,19 @@ serviceAccount:
 service:
   name: kube-dns
   clusterIP: 10.43.0.10
+  ports:
+    - name: dns-udp
+      port: 53
+      protocol: UDP
+      targetPort: 53
+    - name: dns-tcp
+      port: 53
+      protocol: TCP
+      targetPort: 53
+    - name: metrics
+      port: 9153
+      protocol: TCP
+      targetPort: 9153
 
 servers:
   - zones:
