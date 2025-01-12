@@ -1,4 +1,4 @@
-
+namespace: kube-system
 isClusterService: true
 replicaCount: 1
 
@@ -17,9 +17,11 @@ resources:
 service:
   name: kube-dns
   type: ClusterIP
+  namespace: kube-system  # Explicitly set namespace
 
 serviceAccount:
   create: true
+  namespace: kube-system  # Explicitly set namespace
 
 rbac:
   create: true
