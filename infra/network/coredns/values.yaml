@@ -4,7 +4,7 @@ replicaCount: 1
 
 prometheus:
   service:
-    enabled: false  # Disable metrics service for now
+    enabled: false
 
 resources:
   limits:
@@ -15,13 +15,14 @@ resources:
     memory: 128Mi
 
 service:
-  name: kube-dns
+  name: kube-dns  # This is important for K3s compatibility
   type: ClusterIP
-  namespace: kube-system  # Explicitly set namespace
+  namespace: kube-system
+  clusterIP: "10.43.0.10"  # K3s default DNS IP
 
 serviceAccount:
   create: true
-  namespace: kube-system  # Explicitly set namespace
+  namespace: kube-system
 
 rbac:
   create: true
@@ -34,9 +35,20 @@ servers:
       - name: errors
       - name: health
       - name: ready
+      - name: kubernetes
+        parameters: cluster.local in-addr.arpa ip6.arpa
+        configBlock: |-
+          pods insecure
+          fallthrough in-addr.arpa ip6.arpa
+          ttl 30
+      - name: hosts
+        parameters: /etc/coredns/NodeHosts
+        configBlock: |-
+          fallthrough
       - name: forward
         parameters: . /etc/resolv.conf
       - name: cache
+        parameters: 30
       - name: loop
       - name: reload
       - name: loadbalance
