@@ -8,7 +8,7 @@ configs:
       kustomize-build-with-helm:
         generate:
           command: [ "sh", "-c" ]
-          args: [ "k3s kubectl kustomize --enable-helm" ]
+          args: [ "kustomize build --enable-helm" ]
   params:
     server.insecure: true
 
@@ -61,7 +61,7 @@ repoServer:
       configMap:
         name: argocd-cmp-cm
     - name: cmp-tmp
-      emptyDir: { }
+      emptyDir: {}
   resources:
     requests:
       cpu: 100m
