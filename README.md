@@ -18,12 +18,12 @@ sudo apt install --reinstall zfs-dkms
 ```bash
 # Set environment variables
 export SETUP_NODEIP=192.168.10.11
-export SETUP_CLUSTERTOKEN=randomtokensecret123456
+export SETUP_CLUSTERTOKEN=randomtokensecret123456192381029321
 
 # Install K3s
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.31.4+k3s1" \
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.32.0+k3s1" \
   INSTALL_K3S_EXEC="--node-ip $SETUP_NODEIP \
-  --disable=flannel,local-storage,metrics-server,servicelb,traefik \
+  --disable=flannel,local-storage,metrics-server,servicelb,traefik,coredns \
   --flannel-backend='none' \
   --disable-network-policy \
   --disable-cloud-controller \
@@ -124,7 +124,7 @@ ArgoCD is initially installed via CLI, then manages itself through GitOps:
 
 ```bash
 # Install Gateway API CRDs (required for Cilium)
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/experimental-install.yaml
 
 # Bootstrap ArgoCD installation
 kubectl kustomize --enable-helm infra/controllers/argocd | kubectl apply -f -
@@ -140,6 +140,12 @@ kubectl -n argocd patch secret argocd-secret -p '{"stringData": {
 
 # Verify ArgoCD is running
 kubectl get pods -n argocd
+
+# Create the app-of-apps project and root applications
+kubectl apply -k infra/root-apps/
+
+# Wait for root applications to be created
+kubectl wait --for=condition=established application -n argocd applications infrastructure
 ```
 
 ### 4.2 Core Infrastructure
@@ -173,6 +179,9 @@ kubectl get applicationset -A
 
 # Monitor application creation
 kubectl get application -A -w
+
+# Apply all infrastructure configurations
+k3s kubectl kustomize infra | k3s kubectl apply -f -
 ```
 
 ### 4.4 Verify Infrastructure
