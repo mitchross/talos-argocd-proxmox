@@ -1,17 +1,10 @@
+
 isClusterService: true
 replicaCount: 1
 
 prometheus:
   service:
-    enabled: true
-    annotations: 
-      prometheus.io/scrape: "true"
-      prometheus.io/port: "9153"
-  monitor:
-    enabled: true
-    namespace: "monitoring"
-    labels: {}
-    interval: "15s"
+    enabled: false  # Disable metrics service for now
 
 resources:
   limits:
@@ -23,12 +16,10 @@ resources:
 
 service:
   name: kube-dns
-  clusterIP: ""
   type: ClusterIP
 
 serviceAccount:
   create: true
-  name: coredns
 
 rbac:
   create: true
@@ -41,12 +32,9 @@ servers:
       - name: errors
       - name: health
       - name: ready
-      - name: prometheus
-        port: 9153
       - name: forward
         parameters: . /etc/resolv.conf
       - name: cache
-        parameters: 30
       - name: loop
       - name: reload
       - name: loadbalance
