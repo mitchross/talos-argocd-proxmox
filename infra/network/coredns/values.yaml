@@ -40,3 +40,11 @@ servers:
       - name: loop
       - name: reload
       - name: loadbalance
+
+deployment:
+  name: coredns
+  annotations: {}
+  selector: {}
+
+customLabels:
+  app: coredns
