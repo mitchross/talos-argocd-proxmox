@@ -1,30 +1,82 @@
-# Network Configuration
+# 🌐 Network Configuration
 
 ## Network Architecture
 
+### Physical Topology
 ```mermaid
 graph TD
-    subgraph "External Network"
+    subgraph "Internet Gateway"
+        A[Internet] --> B[Firewalla Gold]
+        B --> C[2.5Gb Switch]
+    end
+
+    subgraph "Physical Network"
+        C --> D[K3s Node\nThreadripper\n192.168.10.11]
+        C --> E[Other Devices]
+    end
+
+    style D fill:#f9f,stroke:#333
+    style B fill:#9cf,stroke:#333
+```
+
+### Logical Topology
+```mermaid
+graph TD
+    subgraph "External Access"
         A[Internet] --> B[Cloudflare]
         B --> C[Cloudflare Tunnel]
     end
 
     subgraph "Internal Network 192.168.10.0/24"
-        C --> D[Gateway External\n192.168.10.50]
-        E[Internal DNS\n192.168.10.53] --> F[Gateway Internal\n192.168.10.51]
-        D --> G[K8s Services\n10.42.0.0/16]
-        F --> G
+        D[Firewalla Gold] --> E[Gateway External\n192.168.10.50]
+        D --> F[Gateway Internal\n192.168.10.51]
+        D --> G[CoreDNS\n192.168.10.53]
     end
 
-    subgraph "Pod Network 10.42.0.0/16"
-        G --> H[Pod-to-Pod Traffic]
-        H --> I[Service Mesh]
+    subgraph "K8s Networks"
+        H[Pod Network\n10.42.0.0/16]
+        I[Service Network\n10.43.0.0/16]
+        J[Cilium\nService Mesh]
     end
 
     subgraph "DNS Resolution"
-        J[*.vanillax.me] --> K[CoreDNS\n192.168.10.53]
-        K --> L[Split Horizon DNS]
+        K[*.vanillax.me] --> L[Split Horizon DNS]
+        L --> M[Internal DNS]
+        L --> N[Cloudflare DNS]
     end
+
+    C --> E
+    E --> H
+    F --> H
+    G --> F
+    J --> H
+    J --> I
+
+    style E fill:#f9f,stroke:#333
+    style F fill:#f9f,stroke:#333
+    style J fill:#9cf,stroke:#333
+```
+
+### Traffic Flow
+```mermaid
+sequenceDiagram
+    participant E as External User
+    participant C as Cloudflare
+    participant T as Cloudflare Tunnel
+    participant G as Gateway API
+    participant S as K8s Service
+    participant P as Pod
+
+    E->>C: HTTPS Request
+    C->>T: Proxied Request
+    T->>G: Internal Request
+    G->>S: Route to Service
+    S->>P: Pod Selection
+    P-->>E: Response (reverse path)
+
+    Note over C,T: SSL Termination
+    Note over T,G: Internal Network
+    Note over G,P: Cilium Service Mesh
 ```
 
 ## IP Allocation
