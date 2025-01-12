@@ -1,85 +1,83 @@
-fullnameOverride: coredns
+isClusterService: true
 replicaCount: 1
-k8sAppLabelOverride: kube-dns
+
+prometheus:
+  service:
+    enabled: true
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9153"
+  monitor:
+    enabled: true
+    additionalLabels: {}
+    namespace: ""
+    interval: "15s"
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+service:
+  name: kube-dns
+  clusterIP: ""
+  externalTrafficPolicy: Local
+  annotations: {}
 
 serviceAccount:
   create: true
 
-service:
-  name: kube-dns
-  clusterIP: 10.43.0.10
-  ports:
-    - name: dns-udp
-      port: 53
-      protocol: UDP
-      targetPort: 53
-    - name: dns-tcp
-      port: 53
-      protocol: TCP
-      targetPort: 53
-    - name: metrics
-      port: 9153
-      protocol: TCP
-      targetPort: 9153
+rbac:
+  create: true
+  pspEnable: false
+
+# Health checks
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 5
+  successThreshold: 1
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 5
+  successThreshold: 1
 
 servers:
   - zones:
-      - zone: .
-        scheme: dns://
-        port: 53
+    - zone: .
+      scheme: dns://
+    port: 53
     plugins:
       - name: errors
       - name: health
         configBlock: |-
           lameduck 5s
       - name: ready
-      - name: log
-        configBlock: |-
-          class error
       - name: prometheus
         parameters: 0.0.0.0:9153
-      - name: kubernetes
-        parameters: cluster.local in-addr.arpa ip6.arpa
-        configBlock: |-
-          pods insecure
-          fallthrough in-addr.arpa ip6.arpa
       - name: forward
-        parameters: . 1.1.1.1 1.0.0.1 8.8.8.8 8.8.4.4
-        configBlock: |-
-          force_tcp
-          max_concurrent 1000
+        parameters: . /etc/resolv.conf
       - name: cache
         parameters: 30
       - name: loop
       - name: reload
       - name: loadbalance
-  - zones:
-      - zone: vanillax.me
-        scheme: dns://
-        port: 53
-    plugins:
-      - name: hosts
-        configBlock: |-
-          192.168.10.50 *.vanillax.me
-          192.168.10.50 vanillax.me
-          fallthrough
-      - name: forward
-        parameters: . 1.1.1.1 1.0.0.1 8.8.8.8 8.8.4.4
-        configBlock: |-
-          force_tcp
-          max_concurrent 1000
 
-affinity:
-  nodeAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: node-role.kubernetes.io/control-plane
-              operator: Exists
-
-tolerations:
-  - key: CriticalAddonsOnly
-    operator: Exists
-  - key: node-role.kubernetes.io/control-plane
-    operator: Exists
-    effect: NoSchedule 
+# Autoscaling
+autoscaler:
+  enabled: true
+  coresPerReplica: 256
+  nodesPerReplica: 16
+  min: 1
+  max: 3
+  preventSinglePointFailure: true
+  includeUnschedulableNodes: false
