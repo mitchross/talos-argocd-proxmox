@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: custom-coredns-config
+  name: coredns
   namespace: kube-system
 data:
-  vanillax.server: |
+  custom-vanillax.server: |
     vanillax.me:53 {
         hosts {
             192.168.10.50 *.vanillax.me
