@@ -1,26 +1,82 @@
-# K3s Cluster Bootstrap
+# 🚀 K3s ArgoCD Cluster
 
-A production-ready Kubernetes cluster setup using K3s, focusing on security and GitOps practices.
+A GitOps-driven Kubernetes cluster using K3s, ArgoCD, and Cilium, with integrated Cloudflare Tunnel for secure external access.
 
-## Prerequisites
+## 📋️ Current Setup
+
+This repository demonstrates a single-node K3s cluster setup, optimized for home lab and small production environments. While K3s supports multi-node clusters, this setup uses a single node to simplify storage management and reduce complexity.
+
+### Why Single Node?
+- Fixed storage location for applications (no need for distributed storage)
+- Simplified backup and restore procedures
+- Perfect for home lab and small production workloads
+- Can be expanded with worker nodes for compute-only scaling
+
+### Current Hardware Stack
+```
+🧠 Compute
+├── AMD Threadripper 2950X (16c/32t)
+├── 128GB ECC DDR4 RAM
+├── 2× NVIDIA RTX 3090 24GB
+└── Google Coral TPU
+
+💾 Storage
+├── 4TB ZFS RAID-Z2
+├── NVMe OS Drive
+└── Local Path Storage for K8s
+
+🌐 Network
+├── 2.5Gb Networking
+├── Firewalla Gold
+└── Internal DNS Resolution
+```
+
+## 📋 Prerequisites
+
+- 💻 A Linux server/VM (can be Proxmox VM, mini PC, NUC, or similar)
+  - Minimum 4GB RAM (8GB+ recommended)
+  - 2 CPU cores (4+ recommended)
+  - 20GB storage (100GB+ recommended for applications)
+  - Note: These are minimum requirements, see hardware stack above for current setup
+- 🌐 Domain configured in Cloudflare
+- 🔐 1Password account for secrets management
+  - 1Password Connect credentials and token ([setup guide](docs/external-services.md#1password-setup))
+  - Cloudflare API tokens and tunnel configuration ([setup guide](docs/external-services.md#cloudflare-setup))
+- 🛠️ `kubectl` installed locally
+- ☁️ `cloudflared` installed locally
+
+## 🔄 Scaling Options
+
+While this setup uses a single node, you can add worker nodes for additional compute capacity:
 
 ```bash
-# System dependencies
+# On worker node
+curl -sfL https://get.k3s.io | K3S_URL=https://myserver:6443 K3S_TOKEN=mynodetoken sh -
+
+# Worker nodes can be added without affecting storage, as they:
+# - Don't run storage workloads
+# - Only handle compute tasks
+# - Automatically join the cluster
+```
+
+Note: Storage remains on the main node to maintain data locality and simplify management.
+
+## 🏃 Getting Started
+
+### 1. System Dependencies
+```bash
+# Install required system packages
 sudo apt install zfsutils-linux nfs-kernel-server cifs-utils open-iscsi
 sudo apt install --reinstall zfs-dkms
 
-# Install 1Password CLI
-# Follow instructions at: https://1password.com/downloads/command-line/
+# Install 1Password CLI (follow instructions at https://1password.com/downloads/command-line/)
 ```
 
-## 1. Initial Cluster Setup
-
+### 2. Install K3s 🎯
 ```bash
-# Set environment variables
 export SETUP_NODEIP=192.168.10.11
 export SETUP_CLUSTERTOKEN=randomtokensecret123456192381029321
 
-# Install K3s
 curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.32.0+k3s1" \
   INSTALL_K3S_EXEC="--node-ip $SETUP_NODEIP \
   --disable=flannel,local-storage,metrics-server,servicelb,traefik,coredns \
@@ -36,12 +92,9 @@ mkdir -p $HOME/.kube
 sudo cp -i /etc/rancher/k3s/k3s.yaml $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 chmod 600 $HOME/.kube/config
-echo "export KUBECONFIG=$HOME/.kube/config" >> $HOME/.bashrc
-source $HOME/.bashrc
 ```
 
-## 2. Network Setup (Cilium)
-
+### 3. Install Cilium 🔄
 ```bash
 # Install Cilium CLI
 CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
@@ -51,12 +104,8 @@ sudo tar xzvfC cilium-linux-${CLI_ARCH}.tar.gz /usr/local/bin
 rm cilium-linux-${CLI_ARCH}.tar.gz
 
 # Install Cilium
-API_SERVER_IP=192.168.10.11
-API_SERVER_PORT=6443
 cilium install \
   --version 1.16.5 \
-  --set k8sServiceHost=${API_SERVER_IP} \
-  --set k8sServicePort=${API_SERVER_PORT} \
   --set kubeProxyReplacement=true \
   --helm-set=operator.replicas=1
 
@@ -64,22 +113,17 @@ cilium install \
 cilium status
 ```
 
-## 3. Secrets Management
-
-### 3.1 Setup 1Password Connect
-
+### 4. Setup Secret Management 🔐
 ```bash
-# Generate Connect credentials
-op connect server create  # Creates 1password-credentials.json
-
-# Store token for reuse
-export CONNECT_TOKEN="your-1password-connect-token"
-
-# Create namespaces
+# Create required namespaces
 kubectl create namespace 1passwordconnect
 kubectl create namespace external-secrets
 
-# Create secrets
+# Generate and apply 1Password Connect credentials
+op connect server create  # Creates 1password-credentials.json
+export CONNECT_TOKEN="your-1password-connect-token"
+
+# Create required secrets
 kubectl create secret generic 1password-credentials \
   --from-file=1password-credentials.json=credentials.base64 \
   --namespace 1passwordconnect
@@ -93,225 +137,21 @@ kubectl create secret generic 1passwordconnect \
   --namespace external-secrets
 ```
 
-### 3.2 Required 1Password Vault Items
-
-Create these items in your 1Password vault:
-
-1. `cert-manager-proxmox`:
-   - Field: `token` (Cloudflare API token)
-
-2. `cloudflared-proxmox`:
-   ```json
-   {
-     "AccountTag": "your-account-tag",
-     "TunnelSecret": "your-tunnel-secret",
-     "TunnelID": "your-tunnel-id"
-   }
-   ```
-
-3. `external-secrets`:
-   - Field: `token` (same as $CONNECT_TOKEN)
-
-4. `smb-creds`:
-   - Field: `username` (SMB username)
-   - Field: `password` (SMB password)
-
-## 4. Infrastructure Setup
-
-### 4.1 Bootstrap ArgoCD
-
-ArgoCD is initially installed via CLI, then manages itself through GitOps:
-
+### 5. Install ArgoCD ⚓
 ```bash
-# Install Gateway API CRDs (required for Cilium)
+# Install Gateway API CRDs
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/experimental-install.yaml
 
-# Bootstrap ArgoCD installation
-kubectl kustomize --enable-helm infra/controllers/argocd | kubectl apply -f -
-
-# Wait for ArgoCD to be ready
-kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
-
-# Set admin password (optional)
-kubectl -n argocd patch secret argocd-secret -p '{"stringData": {
-    "admin.password": "$2a$12$ltMQCF4cVDVARdelQX/rmeHrF64A8fypy8WkpmmAlScprRSXnyzpi",
-    "admin.passwordMtime": "'$(date +%FT%T%Z)'"
-}}'
-
-# Verify ArgoCD is running
-kubectl get pods -n argocd
-
-# Create the app-of-apps project and root applications
+# Install ArgoCD
 kubectl apply -k infra/root-apps/
+kubectl wait --for=condition=established crd/applications.argoproj.io
+kubectl wait --for=condition=established crd/appprojects.argoproj.io
 
-# Wait for root applications to be created
-kubectl wait --for=condition=established application -n argocd applications infrastructure
+# Apply core infrastructure
+kubectl kustomize infra | kubectl apply -f -
 ```
 
-### 4.2 Core Infrastructure
-
-Now we set up ArgoCD to manage all components (including itself):
-
-```bash
-# Apply core infrastructure (including ArgoCD's own configuration)
-kubectl apply -k infra/
-
-# Verify applications are created
-kubectl get application -A
-
-# Wait for all applications to sync
-kubectl get application -A -w
-
-# Note: ArgoCD will now manage its own configuration through GitOps
-# Any changes to ArgoCD should be made through the infra/controllers/argocd directory
-```
-
-### 4.3 Application Sets
-
-After core infrastructure is ready:
-
-```bash
-# Apply application sets
-kubectl apply -k sets/
-
-# Verify application sets are created
-kubectl get applicationset -A
-
-# Monitor application creation
-kubectl get application -A -w
-
-# Apply all infrastructure configurations
-k3s kubectl kustomize infra | k3s kubectl apply -f -
-```
-
-### 4.4 Verify Infrastructure
-
-```bash
-# Check ArgoCD status
-kubectl get pods -n argocd
-kubectl get application -A
-
-# Check sync status
-argocd app list  # If argocd CLI is installed
-# or
-kubectl get application -A -o custom-columns=NAME:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status
-
-# Check all applications are healthy
-kubectl get application -A --no-headers | awk '$3 != "Healthy" || $2 != "Synced" {print}'
-```
-
-## 5. Storage Setup
-
-### 5.1 Overview
-This cluster uses a hybrid storage approach:
-1. Local storage for application configs and small datasets
-2. SMB storage for large media files
-
-### 5.2 Storage Naming Conventions
-
-All storage configurations follow these naming rules:
-1. PersistentVolumes end with `-pv` (e.g., `app-storage-pv`)
-2. PersistentVolumeClaims end with `-pvc` (e.g., `app-storage-pvc`)
-3. Base names match between PV and PVC for clarity
-4. All PVs and PVCs must have labels for binding
-
-Example configuration:
-```yaml
-# PV configuration
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: app-storage-pv    # Ends with -pv
-  labels:                 # Required labels
-    app: myapp
-    type: storage
-spec:
-  # ... rest of PV spec
-
----
-# PVC configuration
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: app-storage-pvc   # Ends with -pvc
-  namespace: myapp        # Required namespace
-  labels:                 # Matching labels
-    app: myapp
-    type: storage
-spec:
-  # ... rest of PVC spec
-```
-
-### 5.3 Directory Structure
-```plaintext
-/datapool/kubernetes/
-├── ai/
-│   ├── ollama-models/    # Ollama AI models
-│   └── comfyui/         # ComfyUI storage
-├── media/
-│   └── jellyfin/
-│       └── config/      # Jellyfin configuration
-├── arr/
-│   ├── sonarr/config/   # Sonarr configuration
-│   ├── radarr/config/   # Radarr configuration
-│   ├── lidarr/config/   # Lidarr configuration
-│   └── prowlarr/config/ # Prowlarr configuration
-├── home/
-│   └── frigate/
-│       └── config/      # Frigate configuration
-└── privacy/
-    ├── proxitok/cache/  # ProxiTok cache
-    └── searxng/config/  # SearXNG configuration
-```
-
-### 5.4 Setup Steps
-
-1. Clean up existing storage:
-```bash
-chmod +x helper-scripts/cleanup-storage.sh
-./helper-scripts/cleanup-storage.sh
-```
-
-2. Create local storage directories:
-```bash
-chmod +x helper-scripts/setup-storage.sh
-./helper-scripts/setup-storage.sh
-```
-
-3. Validate storage configurations:
-```bash
-chmod +x helper-scripts/validate-storage.sh
-./helper-scripts/validate-storage.sh
-```
-
-4. Apply storage configurations through ArgoCD:
-```bash
-# Verify storage class is applied by ArgoCD
-kubectl get sc local-storage
-
-# Verify SMB credentials from external-secrets
-kubectl get secret smbcreds -n csi-driver-smb
-
-# Apply application sets
-kubectl apply -k sets/
-```
-
-### 5.5 Storage Validation
-
-The `validate-storage.sh` script checks:
-1. Proper naming conventions (-pv/-pvc suffixes)
-2. Required labels for PV/PVC binding
-3. Namespace specifications in PVCs
-4. Node affinity in PVs
-5. Storage class specifications
-
-Run validation before applying changes:
-```bash
-./helper-scripts/validate-storage.sh
-```
-
-## 6. Verification
-
+### 6. Verify Installation ✅
 ```bash
 # Check core components
 kubectl get pods -A
@@ -321,103 +161,133 @@ cilium status
 kubectl get application -A
 kubectl get pods -n argocd
 
-# Check secrets management
+# Check secrets
 kubectl get pods -n 1passwordconnect
 kubectl get externalsecret -A
-kubectl get clustersecretstore 1password -n external-secrets
-
-# Check storage
-kubectl get pv,pvc -A
-kubectl get sc
 ```
 
-## Troubleshooting
+For detailed configuration and advanced setup:
 
-### Secrets Issues
-1. Check 1Password Connect:
-```bash
-kubectl logs -n 1passwordconnect -l app=onepassword-connect
-kubectl get secret 1password-credentials -n 1passwordconnect
+## 🌐 Network Configuration
+
+The cluster uses a split network configuration with the following topology:
+
+```mermaid
+graph TD
+    subgraph "External Network"
+        A[Internet] --> B[Cloudflare]
+        B --> C[Cloudflare Tunnel]
+    end
+
+    subgraph "Network Hardware"
+        D[Firewalla Gold] --> E[2.5Gb Switch]
+    end
+
+    subgraph "Internal Network 192.168.10.0/24"
+        E --> F[K3s Node\n192.168.10.11]
+        E --> G[Gateway External\n192.168.10.50]
+        E --> H[Gateway Internal\n192.168.10.51]
+        E --> I[CoreDNS\n192.168.10.53]
+    end
+
+    subgraph "K8s Networks"
+        J[Pod Network\n10.42.0.0/16]
+        K[Service Network\n10.43.0.0/16]
+    end
+
+    C --> G
+    F --> J
+    F --> K
+    I --> H
 ```
 
-2. Verify External Secrets:
-```bash
-kubectl get externalsecret -A
-kubectl describe clustersecretstore 1password -n external-secrets
+- Internal access via Gateway API (192.168.10.51)
+- External access via Cloudflare Tunnel
+- DNS split horizon for internal/external resolution
+
+[Detailed Network Documentation](docs/network.md)
+
+## 💾 Storage Configuration
+
+Local path provisioner and SMB storage options:
+- Node-specific PV binding
+- Storage classes for different use cases
+- Volume lifecycle management
+
+[Detailed Storage Documentation](docs/storage.md)
+
+## 🔒 Security Configuration
+
+Secure access through:
+- Cloudflare Zero Trust
+- Split DNS configuration
+- Internal certificate management
+
+[Detailed Security Documentation](docs/security.md)
+
+## 🔐 Secrets Management
+
+Secure secret handling using:
+- 1Password integration
+- External Secrets Operator
+- Automated secret rotation
+- RBAC-based access control
+
+[Detailed Secrets Documentation](docs/secrets.md)
+
+## ⚓ ArgoCD Configuration
+
+GitOps workflow using:
+- Pure Kubernetes manifests with Kustomize
+- Selective Helm chart usage
+- Multi-environment management
+
+[Detailed ArgoCD Documentation](docs/argocd.md)
+
+## 📁 Directory Structure
+
+```
+.
+├── apps/                 # Application manifests
+│   ├── core/            # Core system applications
+│   ├── monitoring/      # Monitoring stack
+│   └── services/        # User applications
+├── docs/                # Documentation
+│   ├── argocd.md       # ArgoCD setup and workflow
+│   ├── network.md      # Network configuration
+│   ├── security.md     # Security setup
+│   ├── storage.md      # Storage configuration
+│   └── external-services.md # External services setup
+├── infra/              # Infrastructure components
+│   ├── root-apps/      # ArgoCD root applications
+│   └── base/           # Base infrastructure
+└── sets/               # ApplicationSet configurations
 ```
 
-### Storage Issues
-1. Check PV/PVC status:
-```bash
-kubectl get pv,pvc -A
-kubectl describe pv <pv-name>
-kubectl describe pvc <pvc-name> -n <namespace>
-```
+## 🔍 Troubleshooting
 
-2. Verify SMB credentials:
-```bash
-kubectl get secret smbcreds -n csi-driver-smb
-kubectl describe pod -n <namespace> | grep -A5 Events
-```
+Common issues and solutions:
+1. **Network Issues** 🌐
+   - Check Gateway API status
+   - Verify Cloudflare Tunnel connectivity
+   - Test DNS resolution
 
-3. PVC Binding Issues:
-```bash
-# Common message: "waiting for first consumer to be created before binding"
-# This is NORMAL with WaitForFirstConsumer storage class.
-# Verify the deployment that uses the PVC exists:
-kubectl get deploy -n <namespace>
+2. **Storage Issues** 💾
+   - Verify PV binding
+   - Check storage provisioner logs
+   - Validate node affinity
 
-# Check if pods are being created:
-kubectl get pods -n <namespace>
+3. **ArgoCD Issues** ⚓
+   - Check application sync status
+   - Verify Git repository access
+   - Review application logs
 
-# Check pod events for volume issues:
-kubectl describe pod <pod-name> -n <namespace>
-```
+## 🤝 Contributing
 
-Note: Storage binding order matters:
-1. PVC is created (status: Pending)
-2. Pod requesting the PVC is created
-3. Kubernetes selects a node for the Pod
-4. PVC binds to PV on the selected node
-5. Pod starts with the mounted volume
+1. Fork the repository
+2. Create a feature branch
+3. Submit a pull request
 
-If you see "waiting for first consumer", verify:
-- The deployment/statefulset exists
-- The PVC name in the pod spec matches
-- The storage class name is correct
-- Node affinity rules allow scheduling
+## 📜 License
 
-### ArgoCD Issues
-
-1. DNS/Network Issues:
-```bash
-# Check if CoreDNS is running
-kubectl get pods -n kube-system -l k8s-app=kube-dns
-
-# Verify DNS resolution from within the cluster
-kubectl run dnsutils --image=gcr.io/kubernetes-e2e-test-images/dnsutils:1.3 --rm -it -- bash
-# Inside the pod:
-nslookup github.com
-nslookup kubernetes.default.svc.cluster.local
-
-# Check if Cilium is healthy
-cilium status
-cilium connectivity test
-
-# Verify ArgoCD can reach GitHub
-kubectl exec -it -n argocd deploy/argocd-repo-server -- bash
-# Inside the pod:
-curl -v https://github.com
-```
-
-2. Repository Issues:
-```bash
-# Check ArgoCD repo-server logs
-kubectl logs -n argocd deploy/argocd-repo-server
-
-# Force refresh an application
-kubectl patch application <app-name> -n argocd --type merge -p='{"metadata": {"annotations": {"argocd.argoproj.io/refresh": "hard"}}}'
-
-# Restart ArgoCD components if needed
-kubectl rollout restart deploy -n argocd argocd-repo-server
-kubectl rollout restart deploy -n argocd argocd-server
+MIT License - See [LICENSE](LICENSE) for details
