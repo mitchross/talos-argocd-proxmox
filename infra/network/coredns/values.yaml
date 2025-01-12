@@ -5,6 +5,19 @@ k8sAppLabelOverride: kube-dns
 service:
   name: kube-dns
   clusterIP: "10.43.0.10"
+  ports:
+    - name: dns
+      port: 53
+      protocol: UDP
+      targetPort: 53
+    - name: dns-tcp
+      port: 53
+      protocol: TCP
+      targetPort: 53
+    - name: metrics
+      port: 9153
+      protocol: TCP
+      targetPort: 9153
 
 serviceAccount:
   create: true
@@ -61,7 +74,7 @@ servers:
       - name: forward
         parameters: . 1.1.1.1 1.0.0.1
         configBlock: |-
-          prefer_udp
+          force_tcp
           max_concurrent 1000
       - name: cache
         parameters: 30
@@ -81,7 +94,7 @@ servers:
       - name: forward
         parameters: . 1.1.1.1 1.0.0.1
         configBlock: |-
-          prefer_udp
+          force_tcp
           max_concurrent 1000
 
 resources:
