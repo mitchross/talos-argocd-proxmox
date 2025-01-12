@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: custom-coredns-config
+  namespace: kube-system
+data:
+  vanillax.server: |
+    vanillax.me:53 {
+        hosts {
+            192.168.10.50 *.vanillax.me
+            192.168.10.50 vanillax.me
+            fallthrough
+        }
+        forward . /etc/resolv.conf
+    } 
