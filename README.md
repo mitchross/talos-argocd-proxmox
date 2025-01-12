@@ -113,7 +113,16 @@ cilium install \
 cilium status
 ```
 
-### 4. Setup Secret Management 🔐
+### 4. Install CoreDNS 🔍
+```bash
+# Install CoreDNS using kustomize with helm enabled
+k3s kubectl kustomize --enable-helm infra/network/coredns | k3s kubectl apply -f -
+
+# Verify installation
+kubectl get pods -n kube-system -l k8s-app=coredns
+```
+
+### 5. Setup Secret Management 🔐
 ```bash
 # Create required namespaces
 kubectl create namespace 1passwordconnect
@@ -137,7 +146,7 @@ kubectl create secret generic 1passwordconnect \
   --namespace external-secrets
 ```
 
-### 5. Install ArgoCD ⚓
+### 6. Install ArgoCD ⚓
 ```bash
 # Install Gateway API CRDs
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/experimental-install.yaml
@@ -160,7 +169,7 @@ kubectl apply -k infra/root-apps/
 kubectl kustomize infra | kubectl apply -f -
 ```
 
-### 6. Verify Installation ✅
+### 7. Verify Installation ✅
 ```bash
 # Check core components
 kubectl get pods -A

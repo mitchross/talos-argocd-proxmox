@@ -61,7 +61,10 @@ servers:
       - name: prometheus
         parameters: 0.0.0.0:9153
       - name: forward
-        parameters: . /etc/resolv.conf
+        parameters: . 8.8.8.8 8.8.4.4 1.1.1.1 1.0.0.1
+        configBlock: |-
+          prefer_udp
+          max_concurrent 1000
       - name: cache
         parameters: 30
       - name: loop
@@ -78,7 +81,10 @@ servers:
           192.168.10.50 vanillax.me
           fallthrough
       - name: forward
-        parameters: . /etc/resolv.conf
+        parameters: . 8.8.8.8 8.8.4.4 1.1.1.1 1.0.0.1
+        configBlock: |-
+          prefer_udp
+          max_concurrent 1000
 
 resources:
   limits:
