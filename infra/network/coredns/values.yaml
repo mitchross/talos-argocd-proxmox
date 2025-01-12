@@ -47,8 +47,6 @@ servers:
     port: 53
     plugins:
       - name: errors
-        configBlock: |-
-          consolidate 5s
       - name: debug
       - name: health
         configBlock: |-
