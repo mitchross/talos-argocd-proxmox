@@ -142,10 +142,19 @@ kubectl create secret generic 1passwordconnect \
 # Install Gateway API CRDs
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/experimental-install.yaml
 
-# Install ArgoCD
+# Install ArgoCD Core
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+# Wait for ArgoCD to be ready
+kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
+
+# Wait for CRDs to be established
+kubectl wait --for=condition=established crd/applications.argoproj.io --timeout=60s
+kubectl wait --for=condition=established crd/appprojects.argoproj.io --timeout=60s
+
+# Now apply the root applications
 kubectl apply -k infra/root-apps/
-kubectl wait --for=condition=established crd/applications.argoproj.io
-kubectl wait --for=condition=established crd/appprojects.argoproj.io
 
 # Apply core infrastructure
 kubectl kustomize infra | kubectl apply -f -
@@ -215,6 +224,16 @@ Local path provisioner and SMB storage options:
 - Volume lifecycle management
 
 [Detailed Storage Documentation](docs/storage.md)
+
+## 🔒 GPU Configuration
+
+Hardware accelerated workloads using:
+- NVIDIA GPU Operator
+- 2× RTX 3090 for AI/ML tasks
+- Google Coral TPU for inference
+- Optimized for Ollama and ComfyUI
+
+[Detailed GPU Documentation](docs/gpu.md)
 
 ## 🔒 Security Configuration
 

@@ -1,0 +1,89 @@
+fullnameOverride: coredns
+replicaCount: 1
+k8sAppLabelOverride: kube-dns
+
+service:
+  name: kube-dns
+  clusterIP: "10.43.0.10"
+
+serviceAccount:
+  create: true
+
+deployment:
+  annotations:
+    reloader.stakater.com/auto: "true"
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: node-role.kubernetes.io/control-plane
+              operator: Exists
+
+tolerations:
+  - key: CriticalAddonsOnly
+    operator: Exists
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule
+
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/instance: coredns
+
+servers:
+  - zones:
+      - zone: .
+        scheme: dns://
+        use_tcp: true
+    port: 53
+    plugins:
+      - name: log
+      - name: errors
+      - name: health
+        configBlock: |-
+          lameduck 5s
+      - name: ready
+      - name: kubernetes
+        parameters: cluster.local in-addr.arpa ip6.arpa
+        configBlock: |-
+          pods insecure
+          fallthrough in-addr.arpa ip6.arpa
+          ttl 30
+      - name: prometheus
+        parameters: 0.0.0.0:9153
+      - name: forward
+        parameters: . /etc/resolv.conf
+      - name: cache
+        parameters: 30
+      - name: loop
+      - name: reload
+      - name: loadbalance
+  - zones:
+      - zone: vanillax.me
+        scheme: dns://
+    port: 53
+    plugins:
+      - name: hosts
+        configBlock: |-
+          192.168.10.50 *.vanillax.me
+          192.168.10.50 vanillax.me
+          fallthrough
+      - name: forward
+        parameters: . /etc/resolv.conf
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi 
