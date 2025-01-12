@@ -3,7 +3,7 @@ cluster:
   id: 1
 
 kubeProxyReplacement: true
-enableEnvoyConfig: true
+enableEnvoyConfig: false
 
 # Metrics and Monitoring configuration
 prometheus:
@@ -43,11 +43,10 @@ operator:
     serviceMonitor:
       enabled: true
     port: 6942
-    portName: operator-prometheus
   resources:
     limits:
-      cpu: 500m
-      memory: 256Mi
+      cpu: 800m
+      memory: 512Mi
     requests:
       cpu: 50m
       memory: 128Mi
@@ -131,8 +130,9 @@ loadBalancer:
   algorithm: maglev
 gatewayAPI:
   enabled: true
+  # No ingressController, explicitly using HTTP gateway
 ingressController:
-  enabled: true
+  enabled: false
   default: true
   loadbalancerMode: shared
   service:

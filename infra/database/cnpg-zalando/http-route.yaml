@@ -15,5 +15,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: postgres-operator-ui-service
-          port: 8081
+        - name: postgres-operator-ui
+          port: 80

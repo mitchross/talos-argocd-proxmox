@@ -3,10 +3,10 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
-  - pvc.yaml
-  - deployment.yaml
-  - service.yaml
-  - httproute.yaml
-  - externalsecret.yaml
+  # - pvc.yaml
+  # - deployment.yaml
+  # - service.yaml
+  # - httproute.yaml
+  # - externalsecret.yaml
 
 namespace: khoj 

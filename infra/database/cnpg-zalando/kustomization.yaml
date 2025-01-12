@@ -6,11 +6,12 @@ resources:
   - ns.yaml
   - config-map.yaml
   - external-secret.yaml
-  - http-route.yaml
+  - data-pvc.yaml
+  - backup-pvc.yaml
   - ui-service.yaml
-  - postgres-cluster.yaml
-  - postgres-lb-service.yaml
-  - postgres-secrets.yaml
+  - http-route.yaml
+  - demo-db-secret.yaml
+  - demo-db.yaml
 
 helmCharts:
   - name: postgres-operator
@@ -18,12 +19,11 @@ helmCharts:
     releaseName: zalando-postgres
     namespace: cnpg-zalando
     includeCRDs: true
-    version: 1.14.0
+    version: 1.13.0
     valuesFile: postgres-operator-values.yaml
-
   - name: postgres-operator-ui
     repo: https://opensource.zalando.com/postgres-operator/charts/postgres-operator-ui
     releaseName: zalando-postgres-operator-ui
     namespace: cnpg-zalando
-    version: 1.14.0
+    version: 1.13.0
     valuesFile: postgres-operator-ui-values.yaml

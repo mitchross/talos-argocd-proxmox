@@ -1,26 +1,34 @@
-configMajorVersionUpgrade:
-  major_version_upgrade_mode: full
 configKubernetes:
+  secret_name_template: "{username}.{cluster}.credentials"
   enable_pod_antiaffinity: false
-  enable_cross_namespace_secret: true
-  watched_namespace: "*"
-  inherited_labels:
-    - application
-    - environment
-  enable_pod_disruption_budget: false
-  pod_environment_configmap: zalando-postgres-pod-configmap
-  pod_environment_secret: zalando-postgres-secrets
+  pod_environment_configmap: "postgres-operator-config"
 
-configPostgresPodResources:
-  default_cpu_limit: "2"
-  default_cpu_request: 20m
-  default_memory_limit: 2500Mi
-  default_memory_request: 700Mi
-  min_cpu_limit: 250m
-  min_memory_limit: 250Mi
-resources:
-  limits:
-    memory: 100M
-  requests:
-    cpu: 5m
-    memory: 32M
+nodeSelector:
+  kubernetes.io/hostname: vanillax-ai
+
+users:
+  enable_password_rotation: false
+  replication_username: "repluser"
+
+postgres_pod_resources:
+  default_cpu_request: "100m"
+  default_memory_request: "100Mi"
+  default_cpu_limit: "1000m"
+  default_memory_limit: "1Gi"
+
+timeouts:
+  pod_label_wait_timeout: "10m"
+  pod_deletion_wait_timeout: "10m"
+  ready_wait_timeout: "30s"
+
+# Enable external access to master
+enableMasterLoadBalancer: true
+masterServiceAnnotations:
+  io.cilium/lb-ipam-ips: "192.168.10.50"  # Adjust this IP to match your network plan
+masterLoadBalancerSpec:
+  type: LoadBalancer
+  ports:
+    - name: postgresql
+      port: 5432
+      protocol: TCP
+      targetPort: 5432

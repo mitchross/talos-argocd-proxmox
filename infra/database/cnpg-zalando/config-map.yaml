@@ -1,20 +1,11 @@
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: zalando-postgres-pod-configmap
+  name: postgres-operator-config
   namespace: cnpg-zalando
 data:
-  ALLOW_NOSSL: "true"
-  USE_WALG_BACKUP: "true"
-  USE_WALG_RESTORE: "true"
-  BACKUP_SCHEDULE: "0 5 * * *"
-  WAL_BUCKET_SCOPE_PREFIX: ""
-  WAL_BUCKET_SCOPE_SUFFIX: ""
-  WALG_DISABLE_S3_SSE: "true"
-  BACKUP_NUM_TO_RETAIN: "14"
-  CLONE_USE_WALG_RESTORE: "true"
-  AWS_S3_FORCE_PATH_STYLE: "true"
-  AWS_ENDPOINT: https://s3.nas.tbd
-  AWS_REGION: us-east-1
-  WAL_S3_BUCKET: zalando-postgres
+  # Operator configuration
+  BACKUP_SCHEDULE: "30 00 * * *"
+  BACKUP_RETENTION_LOCAL: "3"
+  BACKUP_VOLUME_CLAIM: "postgres-backup-pvc"
+  POSTGRES_SUPERUSER_SECRET: "postgres-superuser-secret"
