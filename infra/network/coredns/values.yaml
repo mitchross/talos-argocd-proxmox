@@ -43,11 +43,9 @@ servers:
   - zones:
       - zone: .
         scheme: dns://
-        use_tcp: true
     port: 53
     plugins:
       - name: errors
-      - name: debug
       - name: health
         configBlock: |-
           lameduck 5s
@@ -61,12 +59,7 @@ servers:
       - name: prometheus
         parameters: 0.0.0.0:9153
       - name: forward
-        parameters: . 1.1.1.1 1.0.0.1 8.8.8.8 8.8.4.4
-        configBlock: |-
-          tls_servername cloudflare-dns.com
-          tls
-      - name: forward
-        parameters: . 1.1.1.1 1.0.0.1 8.8.8.8 8.8.4.4
+        parameters: . 1.1.1.1 1.0.0.1
         configBlock: |-
           prefer_udp
           max_concurrent 1000
@@ -86,7 +79,7 @@ servers:
           192.168.10.50 vanillax.me
           fallthrough
       - name: forward
-        parameters: . 1.1.1.1 1.0.0.1 8.8.8.8 8.8.4.4
+        parameters: . 1.1.1.1 1.0.0.1
         configBlock: |-
           prefer_udp
           max_concurrent 1000
