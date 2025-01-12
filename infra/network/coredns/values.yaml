@@ -2,119 +2,35 @@ fullnameOverride: coredns
 replicaCount: 1
 k8sAppLabelOverride: kube-dns
 
-service:
-  name: kube-dns
-  clusterIP: "10.43.0.10"
-  ports:
-    - name: dns
-      port: 53
-      protocol: UDP
-      targetPort: 53
-    - name: dns-tcp
-      port: 53
-      protocol: TCP
-      targetPort: 53
-    - name: metrics
-      port: 9153
-      protocol: TCP
-      targetPort: 9153
-
 serviceAccount:
   create: true
 
-deployment:
-  annotations:
-    reloader.stakater.com/auto: "true"
-  labels:
-    k8s-app: kube-dns
-    kubernetes.io/name: "CoreDNS"
-  podLabels:
-    k8s-app: kube-dns
-  priorityClassName: "system-cluster-critical"
-  dnsPolicy: Default
-  resources:
-    limits:
-      memory: 170Mi
-    requests:
-      cpu: 100m
-      memory: 70Mi
-  securityContext:
-    allowPrivilegeEscalation: false
-    capabilities:
-      add:
-        - NET_BIND_SERVICE
-      drop:
-        - all
-    readOnlyRootFilesystem: true
-  healthCheck:
-    livenessProbe:
-      httpGet:
-        path: /health
-        port: 8080
-        scheme: HTTP
-      initialDelaySeconds: 60
-      periodSeconds: 10
-      timeoutSeconds: 1
-      successThreshold: 1
-      failureThreshold: 3
-    readinessProbe:
-      httpGet:
-        path: /ready
-        port: 8181
-        scheme: HTTP
-      initialDelaySeconds: 0
-      periodSeconds: 2
-      timeoutSeconds: 1
-      successThreshold: 1
-      failureThreshold: 3
-
-affinity:
-  nodeAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/os
-              operator: In
-              values:
-                - linux
-
-tolerations:
-  - key: CriticalAddonsOnly
-    operator: Exists
-  - key: node-role.kubernetes.io/control-plane
-    operator: Exists
-    effect: NoSchedule
-  - key: node-role.kubernetes.io/master
-    operator: Exists
-    effect: NoSchedule
-
-topologySpreadConstraints:
-  - maxSkew: 1
-    topologyKey: kubernetes.io/hostname
-    whenUnsatisfiable: DoNotSchedule
-    labelSelector:
-      matchLabels:
-        k8s-app: kube-dns
+service:
+  name: kube-dns
+  clusterIP: 10.43.0.10
 
 servers:
   - zones:
       - zone: .
         scheme: dns://
+        use_tcp: true
     port: 53
     plugins:
       - name: errors
       - name: health
+        configBlock: |-
+          lameduck 5s
       - name: ready
+      - name: log
+        configBlock: |-
+          class error
+      - name: prometheus
+        parameters: 0.0.0.0:9153
       - name: kubernetes
         parameters: cluster.local in-addr.arpa ip6.arpa
         configBlock: |-
           pods insecure
           fallthrough in-addr.arpa ip6.arpa
-      - name: hosts
-        configBlock: |-
-          fallthrough
-      - name: prometheus
-        parameters: :9153
       - name: forward
         parameters: . /etc/resolv.conf
       - name: cache
@@ -133,4 +49,19 @@ servers:
           192.168.10.50 vanillax.me
           fallthrough
       - name: forward
-        parameters: . /etc/resolv.conf 
+        parameters: . /etc/resolv.conf
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: node-role.kubernetes.io/control-plane
+              operator: Exists
+
+tolerations:
+  - key: CriticalAddonsOnly
+    operator: Exists
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule 
