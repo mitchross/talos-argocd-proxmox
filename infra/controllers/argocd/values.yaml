@@ -8,7 +8,7 @@ configs:
       kustomize-build-with-helm:
         generate:
           command: [ "sh", "-c" ]
-          args: [ "kustomize build --enable-helm" ]
+          args: [ "k3s kubectl kustomize --enable-helm" ]
   params:
     server.insecure: true
 

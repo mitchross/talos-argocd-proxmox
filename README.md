@@ -113,14 +113,40 @@ cilium install \
 cilium status
 ```
 
-### 4. Install CoreDNS 🔍
+### 4. Install CoreDNS 🔍 (Optional)
+CoreDNS can be installed in two ways:
+
+#### Option A: Use K3s Built-in CoreDNS
 ```bash
-# Install CoreDNS using kustomize with helm enabled
+# Remove the --disable coredns flag from K3s installation
+curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.32.0+k3s1" \
+  INSTALL_K3S_EXEC="--node-ip $SETUP_NODEIP \
+  --disable=flannel,local-storage,metrics-server,servicelb,traefik \
+  --flannel-backend='none' \
+  --disable-network-policy \
+  --disable-cloud-controller \
+  --disable-kube-proxy" \
+  K3S_TOKEN=$SETUP_CLUSTERTOKEN \
+  K3S_KUBECONFIG_MODE=644 sh -s -
+```
+
+#### Option B: Custom CoreDNS Installation
+Use this option if you need to customize CoreDNS configuration:
+```bash
+# First, ensure CoreDNS is disabled in K3s (as shown in step 2)
+# Then install custom CoreDNS:
 k3s kubectl kustomize --enable-helm infra/network/coredns | k3s kubectl apply -f -
 
 # Verify installation
 kubectl get pods -n kube-system -l k8s-app=coredns
 ```
+
+Key differences:
+- Option A: Uses K3s default CoreDNS configuration
+- Option B: Allows full customization of CoreDNS settings
+  - Custom DNS forwarding rules
+  - Split DNS configuration
+  - Advanced plugin configuration
 
 ### 5. Setup Secret Management 🔐
 ```bash
@@ -319,3 +345,38 @@ Common issues and solutions:
 ## 📜 License
 
 MIT License - See [LICENSE](LICENSE) for details
+
+## 🔧 Infrastructure Components
+
+### CoreDNS Configuration 🔍
+
+When running K3s with CoreDNS disabled (`--disable coredns`), the manual CoreDNS setup requires specific configuration to work properly:
+
+#### Key Configuration Points:
+- **Service IP**: Must use K3s's default DNS IP `10.43.0.10`
+- **Service Name**: Must be `kube-dns` for K3s compatibility
+- **Namespace**: Deployed in `kube-system` namespace
+- **DNS Configuration**:
+  ```yaml
+  plugins:
+    - kubernetes: Configured for cluster.local domain
+    - hosts: For node resolution
+    - forward: Using host's /etc/resolv.conf
+  ```
+
+#### Installation Steps:
+1. Disable CoreDNS in K3s installation:
+   ```bash
+   curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable coredns" sh -
+   ```
+
+2. Apply CoreDNS configuration:
+   ```bash
+   k3s kubectl kustomize --enable-helm infra/network/coredns | k3s kubectl apply -f -
+   ```
+
+3. Verify DNS resolution:
+   ```bash
+   kubectl get pods -n kube-system -l k8s-app=kube-dns
+   kubectl get svc -n kube-system kube-dns
+   ```
