@@ -4,13 +4,13 @@ replicaCount: 1
 prometheus:
   service:
     enabled: true
-    annotations:
+    annotations: 
       prometheus.io/scrape: "true"
       prometheus.io/port: "9153"
   monitor:
     enabled: true
-    additionalLabels: {}
-    namespace: ""
+    namespace: "monitoring"
+    labels: {}
     interval: "15s"
 
 resources:
@@ -24,46 +24,25 @@ resources:
 service:
   name: kube-dns
   clusterIP: ""
-  externalTrafficPolicy: Local
-  annotations: {}
+  type: ClusterIP
 
 serviceAccount:
   create: true
+  name: coredns
 
 rbac:
   create: true
-  pspEnable: false
-
-# Health checks
-livenessProbe:
-  enabled: true
-  initialDelaySeconds: 60
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 5
-  successThreshold: 1
-
-readinessProbe:
-  enabled: true
-  initialDelaySeconds: 30
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 5
-  successThreshold: 1
 
 servers:
   - zones:
     - zone: .
-      scheme: dns://
     port: 53
     plugins:
       - name: errors
       - name: health
-        configBlock: |-
-          lameduck 5s
       - name: ready
       - name: prometheus
-        parameters: 0.0.0.0:9153
+        port: 9153
       - name: forward
         parameters: . /etc/resolv.conf
       - name: cache
@@ -71,13 +50,3 @@ servers:
       - name: loop
       - name: reload
       - name: loadbalance
-
-# Autoscaling
-autoscaler:
-  enabled: true
-  coresPerReplica: 256
-  nodesPerReplica: 16
-  min: 1
-  max: 3
-  preventSinglePointFailure: true
-  includeUnschedulableNodes: false
