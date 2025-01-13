@@ -5,6 +5,11 @@ commonLabels:
   app.kubernetes.io/managed-by: argocd
 
 resources:
-  - project.yaml
-  - application-set.yaml
+  - network
+  - crds
+  - controllers
+  - auth
+  - monitoring
+  - storage
+  - database
 
