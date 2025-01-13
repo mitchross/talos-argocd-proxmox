@@ -1,0 +1,59 @@
+site_name: K3s ArgoCD Cluster
+site_description: Documentation for GitOps-driven K3s cluster using ArgoCD
+repo_url: https://github.com/mitchross/k3s-argocd-proxmox
+repo_name: mitchross/k3s-argocd-proxmox
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mermaid2
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid
+  - admonition
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
+nav:
+  - Home: index.md
+  - Setup:
+    - ArgoCD: argocd.md
+    - Network: network.md
+    - Storage: storage.md
+    - Security: security.md
+    - GPU: gpu.md
+  - Configuration:
+    - External Services: external-services.md
+    - Project Structure: structure.md 

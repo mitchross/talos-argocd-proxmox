@@ -2,6 +2,17 @@
 
 A GitOps-driven Kubernetes cluster using K3s, ArgoCD, and Cilium, with integrated Cloudflare Tunnel for secure external access.
 
+## 📋 Documentation
+- **[View Documentation Online](https://mitchross.github.io/k3s-argocd-proxmox)** - Full documentation website
+- **[Local Documentation](docs/)** - Browse documentation in the repository
+  - [ArgoCD Setup](docs/argocd.md)
+  - [Network Configuration](docs/network.md)
+  - [Storage Configuration](docs/storage.md)
+  - [Security Setup](docs/security.md)
+  - [GPU Configuration](docs/gpu.md)
+  - [External Services](docs/external-services.md)
+  - [Project Structure](docs/structure.md)
+
 ## 📋️ Current Setup
 
 This repository demonstrates a single-node K3s cluster setup, optimized for home lab and small production environments. While K3s supports multi-node clusters, this setup uses a single node to simplify storage management and reduce complexity.
