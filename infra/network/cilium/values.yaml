@@ -42,7 +42,7 @@ operator:
     enabled: true
     serviceMonitor:
       enabled: true
-    port: 6942
+    port: 9963
   resources:
     limits:
       cpu: 800m
