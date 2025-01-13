@@ -241,4 +241,55 @@ graph TD
     C --> E[ArgoCD Sync]
     E -->|Success| F[Done]
     E -->|Fail| D
+```
+
+## Installation
+
+Our ArgoCD installation uses a Helm-based approach with custom configurations:
+
+```yaml
+# Key components of our setup:
+configs:
+  cm:
+    create: true
+    application.resourceTrackingMethod: "annotation+label"
+  cmp:
+    create: true
+    plugins:
+      kustomize-build-with-helm:
+        generate:
+          command: [ "sh", "-c" ]
+          args: [ "k3s kubectl kustomize --enable-helm" ]
+  params:
+    server.insecure: true
+
+# Resource configurations for components
+controller:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 700Mi
+    limits:
+      cpu: 4000m
+      memory: 2Gi
+```
+
+### Installation Steps
+```bash
+# Install ArgoCD with our custom configuration
+k3s kubectl kustomize --enable-helm infra/controllers/argocd | k3s kubectl apply -f -
+
+# Wait for ArgoCD to be ready
+kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
+
+# Wait for CRDs to be established
+kubectl wait --for=condition=established crd/applications.argoproj.io --timeout=60s
+kubectl wait --for=condition=established crd/appprojects.argoproj.io --timeout=60s
+```
+
+### Key Features
+- Custom plugin configurations (Kustomize with Helm support)
+- Resource limits and requests for all components
+- Security settings and RBAC configurations
+- Config Management Plugin (CMP) setup for enhanced functionality
 ``` 
