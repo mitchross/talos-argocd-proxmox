@@ -86,11 +86,11 @@ sudo apt install --reinstall zfs-dkms
 ### 2. Install K3s 🎯
 ```bash
 export SETUP_NODEIP=192.168.10.11
-export SETUP_CLUSTERTOKEN=randomtokensecret123456192381029321
+export SETUP_CLUSTERTOKEN=randomtokensecret1234
 
 curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.32.0+k3s1" \
   INSTALL_K3S_EXEC="--node-ip $SETUP_NODEIP \
-  --disable=flannel,local-storage,metrics-server,servicelb,traefik,coredns \
+  --disable=flannel,local-storage,metrics-server,servicelb,traefik \
   --flannel-backend='none' \
   --disable-network-policy \
   --disable-cloud-controller \
@@ -116,18 +116,25 @@ rm cilium-linux-${CLI_ARCH}.tar.gz
 
 # Install Cilium
 cilium install \
-  --version 1.16.5 \
+  --version 1.16.3 \
+  --set k8sServiceHost=${API_SERVER_IP} \
+  --set k8sServicePort=${API_SERVER_PORT} \
   --set kubeProxyReplacement=true \
   --helm-set=operator.replicas=1
 
 # Verify installation
 cilium status
+
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/experimental-install.yaml
+cd to /infra/network/cilium
+cilium upgrade -f values.yaml
+
 ```
 
 ### 4. Install CoreDNS 🔍 (Optional)
 CoreDNS can be installed in two ways:
 
-#### Option A: Use K3s Built-in CoreDNS
+#### Option A: Use K3s Built-in CoreDNS ( RECOMMENDED)
 ```bash
 # Remove the --disable coredns flag from K3s installation
 curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.32.0+k3s1" \
@@ -144,7 +151,8 @@ curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.32.0+k3s1" \
 #### Option B: Custom CoreDNS Installation
 Use this option if you need to customize CoreDNS configuration:
 ```bash
-# First, ensure CoreDNS is disabled in K3s (as shown in step 2)
+# First, ensure CoreDNS is disabled in K3s 
+  --disable=flannel,local-storage,metrics-server,servicelb,traefik,coredns
 # Then install custom CoreDNS:
 k3s kubectl kustomize --enable-helm infra/network/coredns | k3s kubectl apply -f -
 
@@ -198,11 +206,16 @@ kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argo
 kubectl wait --for=condition=established crd/applications.argoproj.io --timeout=60s
 kubectl wait --for=condition=established crd/appprojects.argoproj.io --timeout=60s
 
-# Now apply the root applications
-kubectl apply -k infra/root-apps/
+#Install Argo apps (WIP)
 
-# Apply core infrastructure
-kubectl kustomize infra | kubectl apply -f -
+kubectl apply -f root-apps/project.yaml 
+kubectl apply -f root-apps/infrastructure.yaml 
+kubectl get applicationset -n argocd infrastructure -o yaml 
+kubectl wait --for=condition=synced application/infrastructure -n argocd --timeout=300s
+
+only after
+
+kubectl apply -f root-apps/applications.yaml
 ```
 
 This installation method includes:
