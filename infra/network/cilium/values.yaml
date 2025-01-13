@@ -9,7 +9,7 @@ enableEnvoyConfig: false
 prometheus:
   enabled: true
   serviceMonitor:
-    enabled: true
+    enabled: false
     trustCRDsExist: true
   contextPath: /metrics
   metrics:
@@ -24,7 +24,6 @@ prometheus:
 # Debug configuration
 debug:
   enabled: true
-  # Note: verbose must be a quoted string "true" or "false", not a boolean
   verbose: "true"
 
 # Talos specific
@@ -41,7 +40,7 @@ operator:
   prometheus:
     enabled: true
     serviceMonitor:
-      enabled: true
+      enabled: false
     port: 9963
   resources:
     limits:
@@ -63,21 +62,21 @@ hubble:
       - icmp
       - http
     serviceMonitor:
-      enabled: true
+      enabled: false
   relay:
     enabled: true
     rollOutPods: true
     prometheus:
       enabled: true
       serviceMonitor:
-        enabled: true
+        enabled: false
   ui:
     enabled: true
     rollOutPods: true
     prometheus:
       enabled: true
       serviceMonitor:
-        enabled: true
+        enabled: false
 
 # Envoy Configuration
 envoy:
@@ -85,7 +84,7 @@ envoy:
   prometheus:
     enabled: true
     serviceMonitor:
-      enabled: true
+      enabled: false
   accessLog: "/dev/stdout"
   concurrency: 2
   resources:
@@ -103,7 +102,7 @@ envoy:
       keepCapNetBindService: true
       envoy: [ NET_ADMIN, SYS_ADMIN, NET_BIND_SERVICE, PERFMON, BPF ]
 
-# Keep your existing configurations
+# IPAM Configuration
 ipam:
   mode: kubernetes
 cgroup:
@@ -130,7 +129,6 @@ loadBalancer:
   algorithm: maglev
 gatewayAPI:
   enabled: true
-  # No ingressController, explicitly using HTTP gateway
 ingressController:
   enabled: false
   default: true
