@@ -5,6 +5,15 @@ cluster:
 kubeProxyReplacement: true
 enableEnvoyConfig: false
 
+# DNS Configuration
+enableRemoteNodeIdentity: true
+tunnel: disabled
+ipv4NativeRoutingCIDR: "10.0.0.0/8"
+bpf:
+  masquerade: true
+k8s:
+  requireIPv4PodCIDR: true
+
 # Metrics and Monitoring configuration
 prometheus:
   enabled: true
