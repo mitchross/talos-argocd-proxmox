@@ -177,9 +177,8 @@ kubectl create secret generic 1passwordconnect \
 # Install Gateway API CRDs
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/experimental-install.yaml
 
-# Install ArgoCD Core
-kubectl create namespace argocd
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+# Install ArgoCD with our custom configuration
+k3s kubectl kustomize --enable-helm infra/controllers/argocd | k3s kubectl apply -f -
 
 # Wait for ArgoCD to be ready
 kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
@@ -194,6 +193,14 @@ kubectl apply -k infra/root-apps/
 # Apply core infrastructure
 kubectl kustomize infra | kubectl apply -f -
 ```
+
+This installation method includes:
+- Custom plugin configurations (Kustomize with Helm support)
+- Resource limits and requests
+- Security settings
+- CMP (Config Management Plugin) setup
+
+For detailed ArgoCD configuration, see [ArgoCD Documentation](docs/argocd.md)
 
 ### 7. Verify Installation ✅
 ```bash
