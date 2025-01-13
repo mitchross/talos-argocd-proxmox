@@ -243,39 +243,51 @@ graph TD
     E -->|Fail| D
 ```
 
-## Installation
+## Deployment Flow
 
-Our ArgoCD installation uses a Helm-based approach with custom configurations:
+```mermaid
+graph TD
+    subgraph "1. Initial Setup"
+        A[Install ArgoCD] --> B[Create Projects]
+        B --> C[infrastructure project]
+        B --> D[applications project]
+    end
 
-```yaml
-# Key components of our setup:
-configs:
-  cm:
-    create: true
-    application.resourceTrackingMethod: "annotation+label"
-  cmp:
-    create: true
-    plugins:
-      kustomize-build-with-helm:
-        generate:
-          command: [ "sh", "-c" ]
-          args: [ "k3s kubectl kustomize --enable-helm" ]
-  params:
-    server.insecure: true
+    subgraph "2. Infrastructure Deployment"
+        C --> E[Apply infrastructure ApplicationSet]
+        E --> F[network]
+        E --> G[storage]
+        E --> H[auth]
+        E --> I[monitoring]
+        E --> J[database]
+    end
 
-# Resource configurations for components
-controller:
-  resources:
-    requests:
-      cpu: 100m
-      memory: 700Mi
-    limits:
-      cpu: 4000m
-      memory: 2Gi
+    subgraph "3. Application Deployment"
+        D --> K[Apply applications ApplicationSet]
+        K --> L[home apps]
+        K --> M[media apps]
+        K --> N[ai apps]
+    end
+
+    %% Dependencies
+    F & G & H & I & J --> K
+    
+    style A fill:#f9f,stroke:#333
+    style C fill:#9cf,stroke:#333
+    style D fill:#9cf,stroke:#333
+    style E fill:#9f9,stroke:#333
+    style K fill:#9f9,stroke:#333
 ```
 
-### Installation Steps
+## Installation
+
+Our ArgoCD installation uses a Kustomize-based approach with custom configurations:
+
+### 1. Installation Steps
 ```bash
+# Install Gateway API CRDs first
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/experimental-install.yaml
+
 # Install ArgoCD with our custom configuration
 k3s kubectl kustomize --enable-helm infra/controllers/argocd | k3s kubectl apply -f -
 
@@ -285,6 +297,144 @@ kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argo
 # Wait for CRDs to be established
 kubectl wait --for=condition=established crd/applications.argoproj.io --timeout=60s
 kubectl wait --for=condition=established crd/appprojects.argoproj.io --timeout=60s
+```
+
+### 2. Project Setup
+We use two main projects to separate infrastructure from applications:
+
+```yaml
+# Project definitions (root-apps/project.yaml)
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: infrastructure
+  namespace: argocd
+spec:
+  sourceRepos:
+    - 'https://github.com/mitchross/k3s-argocd-proxmox'
+  destinations:
+    - namespace: '*'
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: applications
+  namespace: argocd
+spec:
+  sourceRepos:
+    - 'https://github.com/mitchross/k3s-argocd-proxmox'
+  destinations:
+    - namespace: '*'
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+```
+
+### 3. Application Management
+We use ApplicationSets to manage our deployments:
+
+```yaml
+# Infrastructure ApplicationSet (root-apps/infrastructure.yaml)
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: infrastructure
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox
+        revision: HEAD
+        directories:
+          - path: infra/*
+  template:
+    metadata:
+      name: '{{ path.basename }}'
+    spec:
+      project: infrastructure
+      source:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox
+        targetRevision: HEAD
+        path: '{{ path }}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{ path.basename }}'
+      syncPolicy:
+        automated:
+          selfHeal: true
+          prune: true
+
+# Applications ApplicationSet (root-apps/applications.yaml)
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: applications
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox
+        revision: HEAD
+        directories:
+          - path: apps/*
+  template:
+    metadata:
+      name: '{{ path.basename }}'
+    spec:
+      project: applications
+      source:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox
+        targetRevision: HEAD
+        path: '{{ path }}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{ path.basename }}'
+      syncPolicy:
+        automated:
+          selfHeal: true
+          prune: true
+```
+
+### 4. Deployment Order
+Important: Follow this order for deployment:
+
+1. Apply projects first:
+```bash
+kubectl apply -f root-apps/project.yaml
+```
+
+2. Apply infrastructure and wait for it to be ready:
+```bash
+kubectl apply -f root-apps/infrastructure.yaml
+kubectl wait --for=condition=synced application/infrastructure -n argocd --timeout=300s
+```
+
+3. Only after infrastructure is healthy, apply applications:
+```bash
+kubectl apply -f root-apps/applications.yaml
+```
+
+### Repository Structure
+```
+.
+├── root-apps/              # Top-level application definitions
+│   ├── project.yaml       # Project definitions
+│   ├── infrastructure.yaml # Infrastructure ApplicationSet
+│   └── applications.yaml  # Applications ApplicationSet
+├── infra/                 # Infrastructure components
+│   ├── network/          # Network configurations
+│   ├── storage/          # Storage configurations
+│   ├── auth/            # Authentication
+│   └── ...
+└── apps/                 # User applications
+    ├── home/            # Home automation apps
+    ├── media/          # Media applications
+    └── ...
 ```
 
 ### Key Features
