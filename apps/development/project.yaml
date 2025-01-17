@@ -1,0 +1,14 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: development
+  namespace: argocd
+spec:
+  sourceRepos:
+    - 'https://github.com/mitchross/k3s-argocd-proxmox'
+  destinations:
+    - namespace: 'kafka'
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

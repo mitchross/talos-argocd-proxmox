@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: kafka
+
+resources:
+  - namespace.yaml
+
+helmCharts:
+  - name: strimzi-kafka-operator
+    repo: https://strimzi.io/charts/
+    version: 0.45.0
+    includeCRDs: true
+    valuesFile: values.yaml
+
+

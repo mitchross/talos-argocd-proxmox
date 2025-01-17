@@ -46,7 +46,9 @@ servers:
         configBlock: |-
           fallthrough
       - name: forward
-        parameters: . /etc/resolv.conf
+        parameters: . 8.8.8.8 8.8.4.4 1.1.1.1
+        configBlock: |-
+          prefer_udp
       - name: cache
         parameters: 30
       - name: loop

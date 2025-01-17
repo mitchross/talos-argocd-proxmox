@@ -1,0 +1,30 @@
+watchNamespaces: ["kafka"]
+watchAnyNamespace: false
+
+resources:
+  requests:
+    memory: 384Mi
+    cpu: "200m"
+  limits:
+    memory: 384Mi
+    cpu: "1000m"
+
+logLevel: INFO
+loggers:
+  rootLogger.level: INFO
+
+# Healthchecks
+readinessProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 30
+  timeoutSeconds: 5
+
+livenessProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 30
+  timeoutSeconds: 5
+
+# Feature gates
+featureGates: ""
+
+
