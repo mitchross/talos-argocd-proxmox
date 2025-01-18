@@ -4,7 +4,7 @@ metadata:
   name: storage
   namespace: argocd
   labels:
-    dev.stonegarden: storage
+    vanillax.me: storage
 spec:
   generators:
     - git:
@@ -18,7 +18,7 @@ spec:
     metadata:
       name: '{{ path.basename }}'
       labels:
-        dev.stonegarden: storage
+        vanillax.me: storage
     spec:
       project: storage
       source:

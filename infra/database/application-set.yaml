@@ -4,7 +4,7 @@ metadata:
   name: database
   namespace: argocd
   labels:
-    dev.stonegarden: database
+    vanillax.me: database
 spec:
   generators:
     - git:
@@ -18,7 +18,7 @@ spec:
     metadata:
       name: '{{ path.basename }}'
       labels:
-        dev.stonegarden: controllers
+        vanillax.me: controllers
     spec:
       project: database
       source:

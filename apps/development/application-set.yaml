@@ -4,7 +4,7 @@ metadata:
   name: development
   namespace: argocd
   labels:
-    dev.stonegarden: application
+    vanillax.me: application
 spec:
   generators:
     - git:
@@ -16,7 +16,7 @@ spec:
     metadata:
       name: '{{ path.basename }}'
       labels:
-        dev.stonegarden: application
+        vanillax.me: application
       finalizers:
         - resources-finalizer.argocd.argoproj.io
     spec:
