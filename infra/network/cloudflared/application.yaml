@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloudflared
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"  # Fourth wave - after cert-manager
+spec:
+  project: network
+  source:
+    repoURL: https://github.com/mitchross/k3s-argocd-proxmox
+    targetRevision: HEAD
+    path: infra/network/cloudflared
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cloudflared
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true 

@@ -1,5 +1,49 @@
 # ArgoCD Setup and Workflow
 
+## Bootstrap Order and Sync Waves
+
+The infrastructure components are deployed in a specific order using ArgoCD sync waves to ensure dependencies are met:
+
+```mermaid
+graph TD
+    A[Wave 0: 1Password Connect] --> B[Wave 1: External Secrets]
+    B --> C[Wave 2: Cert Manager]
+    C --> D[Wave 3: Cloudflared]
+
+    style A fill:#f9f,stroke:#333
+    style B fill:#9cf,stroke:#333
+    style C fill:#9f9,stroke:#333
+    style D fill:#ff9,stroke:#333
+```
+
+### Critical Infrastructure Components
+
+1. **1Password Connect** (Wave 0)
+   - First component to deploy
+   - Provides secret store for all other components
+   - Must be fully operational before proceeding
+
+2. **External Secrets** (Wave 1)
+   - Depends on 1Password Connect
+   - Manages secret synchronization from 1Password
+   - Provides secrets to other components
+
+3. **Cert Manager** (Wave 2)
+   - Requires secrets from External Secrets
+   - Manages certificate issuance and renewal
+   - DNS validation credentials from 1Password
+
+4. **Cloudflared** (Wave 3)
+   - Requires certificates from Cert Manager
+   - Uses tunnel credentials from External Secrets
+   - Provides external access to cluster
+
+### Application Structure
+
+The cluster uses two root applications:
+1. `infra` - Manages infrastructure components with sync waves
+2. `apps` - Manages user applications (only deployed after infrastructure is ready)
+
 ## Design Philosophy
 
 ```mermaid

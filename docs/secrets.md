@@ -1,74 +1,77 @@
 # Secrets Management
 
-## Overview
+## Bootstrap Order
+
+The secrets management infrastructure is deployed in a specific order using ArgoCD sync waves:
 
 ```mermaid
 graph TD
-    subgraph "1Password Integration"
-        A[1Password Connect] --> B[External Secrets Operator]
-        B --> C[Kubernetes Secrets]
+    subgraph "Deployment Order"
+        A[Wave 0: 1Password Connect] --> B[Wave 1: External Secrets]
+        B --> C[Wave 2: Secret Consumers]
     end
 
-    subgraph "Secret Usage"
-        C --> D[Applications]
-        C --> E[Infrastructure]
+    subgraph "Secret Flow"
+        D[1Password Vault] --> E[1Password Connect]
+        E --> F[External Secrets Operator]
+        F --> G[Kubernetes Secrets]
+        G --> H[Applications]
     end
 
-    subgraph "Secret Types"
-        F[Certificates] --> C
-        G[Credentials] --> C
-        H[API Keys] --> C
-    end
+    style A fill:#f9f,stroke:#333
+    style B fill:#9cf,stroke:#333
+    style C fill:#9f9,stroke:#333
 ```
 
 ## Components
 
-### 1. 1Password Connect
+### 1. 1Password Connect (Wave 0)
+- First component to be deployed
 - Secure connection to 1Password vault
 - Token-based authentication
-- Automatic secret rotation
+- **Prerequisites**:
+  - 1Password credentials secret
+  - Connect token
+- **Required by**: All other components
 
-### 2. External Secrets Operator
+### 2. External Secrets Operator (Wave 1)
+- Deploys after 1Password Connect
 - Syncs secrets from 1Password to Kubernetes
 - Handles secret versioning
-- Manages secret lifecycle
+- **Prerequisites**:
+  - 1Password Connect operational
+  - Connect token secret
+- **Required by**: Cert Manager, Cloudflared
 
-## Setup Steps
+### 3. Secret Consumers (Wave 2+)
+Components that depend on secrets:
+- Cert Manager (Wave 2)
+  - DNS validation credentials
+- Cloudflared (Wave 3)
+  - Tunnel credentials
+  - API tokens
 
-1. **Deploy 1Password Connect**
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: 1password-credentials
-  namespace: external-secrets
-type: Opaque
-stringData:
-  credentials.json: |
-    {
-      "verifier": "YOUR_VERIFIER",
-      "connector": "YOUR_CONNECTOR"
-    }
+## Manual Setup Steps
+
+These steps must be completed before ArgoCD can manage the infrastructure:
+
+1. **Create Required Namespaces**
+```bash
+kubectl create namespace 1passwordconnect
+kubectl create namespace external-secrets
 ```
 
-2. **Configure External Secrets Operator**
-```yaml
-apiVersion: external-secrets.io/v1beta1
-kind: ClusterSecretStore
-metadata:
-  name: 1password
-spec:
-  provider:
-    onepassword:
-      connectHost: http://1password-connect:8080
-      vaults:
-        infrastructure: 1
-      auth:
-        secretRef:
-          connectTokenSecretRef:
-            name: 1password-token
-            key: token
-            namespace: external-secrets
+2. **Deploy 1Password Connect Credentials**
+```bash
+# Apply the credentials
+kubectl create secret generic 1password-credentials \
+  --from-file=1password-credentials.json=credentials.base64 \
+  --namespace 1passwordconnect
+
+# Apply the token
+kubectl create secret generic 1password-operator-token \
+  --from-literal=token=$CONNECT_TOKEN \
+  --namespace 1passwordconnect
 ```
 
 ## Secret Management
