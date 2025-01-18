@@ -3,5 +3,5 @@ kind: Kustomization
 
 resources:
   - project.yaml
-  - infra.yaml
-  - apps.yaml 
+  - applications.yaml
+  - infrastructure.yaml 

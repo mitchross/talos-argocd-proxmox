@@ -2,47 +2,36 @@
 
 ## 📋 Overview
 
-This document describes the setup of external services required for cluster operation. These services are deployed in a specific order to ensure proper bootstrapping.
-
 ```mermaid
 graph TD
-    subgraph "Bootstrap Order"
-        A[1. 1Password Setup] --> B[2. External Secrets]
-        B --> C[3. Certificate Management]
-        C --> D[4. Cloudflare Tunnel]
-    end
-
     subgraph "1Password Integration"
-        A --> E[Connect Server]
-        E --> F[Connect Token]
-        E --> G[Connect Credentials]
+        A[1Password Account] --> B[1Password Connect]
+        B --> C[Connect Token]
+        B --> D[Connect Credentials]
     end
 
     subgraph "Cloudflare Integration"
-        H[Cloudflare Account] --> I[DNS API Token]
-        H --> J[Tunnel Token]
-        J --> K[Tunnel Credentials]
+        E[Cloudflare Account] --> F[DNS API Token]
+        E --> G[Tunnel Token]
+        G --> H[Tunnel Credentials]
     end
 ```
 
-## 🔑 1Password Setup (Wave 0)
+## 🔑 1Password Setup
 
 ### Overview
-1Password is the first component that must be set up as it provides secrets for all other components:
+1Password integration requires two distinct components:
 1. **Connect Credentials** (`1password-credentials.json`)
    - Used to authenticate the 1Password Connect server
    - Contains server identity and verification keys
    - Generated once per cluster
-   - **Required before any other components**
 
 2. **Connect Token**
    - Used by applications to access the Connect server
    - Scoped to specific vaults
-   - Required by External Secrets Operator
+   - Can be rotated without regenerating credentials
 
-### Manual Setup Steps (Pre-ArgoCD)
-
-These steps must be completed before ArgoCD can manage the rest of the infrastructure:
+### Setup Steps
 
 1. **Create 1Password Connect Server** 🛠️
 ```bash
@@ -55,14 +44,6 @@ sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg
 # Generate Connect Credentials
 op connect server create k3s-cluster
 # This creates 1password-credentials.json
-
-# Create required namespace
-kubectl create namespace 1passwordconnect
-
-# Apply credentials
-kubectl create secret generic 1password-credentials \
-  --from-file=1password-credentials.json=credentials.base64 \
-  --namespace 1passwordconnect
 ```
 
 2. **Create Connect Token** 🎟️

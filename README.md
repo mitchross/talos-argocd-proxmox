@@ -206,19 +206,16 @@ kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argo
 kubectl wait --for=condition=established crd/applications.argoproj.io --timeout=60s
 kubectl wait --for=condition=established crd/appprojects.argoproj.io --timeout=60s
 
-# Install root applications
-kubectl apply -f root-apps/project.yaml
-kubectl apply -k root-apps
+#Install Argo apps (WIP)
 
-# Wait for infrastructure to be ready
-kubectl wait --for=condition=ready application/infra -n argocd --timeout=300s
+kubectl apply -f root-apps/project.yaml 
+kubectl apply -f root-apps/infrastructure.yaml 
+kubectl get applicationset -n argocd infrastructure -o yaml 
+kubectl wait --for=condition=synced application/infrastructure -n argocd --timeout=300s
 
-# Once infrastructure is ready, sync applications
-kubectl wait --for=condition=ready application/apps -n argocd --timeout=300s
+only after
 
-# You can now use the ArgoCD UI to manage:
-# 1. Infrastructure (sync the 'infra' application)
-# 2. Applications (sync the 'apps' application)
+kubectl apply -f root-apps/applications.yaml
 ```
 
 This installation method includes:
