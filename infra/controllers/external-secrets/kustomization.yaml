@@ -35,3 +35,5 @@ patches:
           "external-secrets.io/conversion-strategy": "none"
     
 
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "-15"

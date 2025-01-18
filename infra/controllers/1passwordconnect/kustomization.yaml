@@ -14,3 +14,6 @@ helmCharts:
     namespace: 1passwordconnect
     includeCRDs: true   
     valuesFile: values.yaml
+
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "-20"
