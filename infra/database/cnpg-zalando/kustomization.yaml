@@ -25,5 +25,5 @@ helmCharts:
     repo: https://opensource.zalando.com/postgres-operator/charts/postgres-operator-ui
     releaseName: zalando-postgres-operator-ui
     namespace: cnpg-zalando
-    version: 1.13.0
+    version: 1.14.0
     valuesFile: postgres-operator-ui-values.yaml
