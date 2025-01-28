@@ -16,7 +16,7 @@ spec:
       runtimeClassName: nvidia
       containers:
         - name: ollama-webui
-          image: ghcr.io/open-webui/open-webui:git-5ae6d05-cuda
+          image: ghcr.io/open-webui/open-webui:git-c5b5303-cuda
           ports:
             - containerPort: 8080
           resources:
