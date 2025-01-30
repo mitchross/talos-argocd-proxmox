@@ -5,7 +5,7 @@ metadata:
   namespace: reubah
 spec:
   parentRefs:
-    - name: internal
+    - name: external
       namespace: gateway
   hostnames:
     - "convert.vanillax.me"
