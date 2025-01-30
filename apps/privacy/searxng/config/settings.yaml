@@ -7,7 +7,7 @@ server:
     port: 8080  # Match with deployment port
     public_instance: true
     limiter: true  # Enable limiter
-    method: "GET"  # Allow both GET and POST
+    method: "GET,POST"  # Allow both GET and POST
     http_protocol_version: "1.0"
     default_http_headers:
         X-Content-Type-Options: nosniff
@@ -18,7 +18,7 @@ server:
         Access-Control-Allow-Methods: "GET, POST, OPTIONS"
 
 redis:
-    url: redis://redis:6379
+    url: redis://redis.searxng.svc.cluster.local:6379
 
 search:
     safe_search: 0
@@ -53,7 +53,6 @@ enabled_plugins:
     - Basic Calculator
     - Hostnames plugin
     - Open Access DOI rewrite
-    - Self Informations
     - Unit converter plugin
 
 hostnames:

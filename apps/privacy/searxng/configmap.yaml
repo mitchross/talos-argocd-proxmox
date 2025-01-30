@@ -9,4 +9,4 @@ data:
   SEARXNG_PORT: "8080"  # Match with settings.yml
   SEARXNG_BIND_ADDRESS: "0.0.0.0"
   SEARXNG_BASE_URL: "https://search.vanillax.me"
-  SEARXNG_INSTANCE_NAME: "VSearch"
+  SEARXNG_INSTANCE_NAME: "searxng"
