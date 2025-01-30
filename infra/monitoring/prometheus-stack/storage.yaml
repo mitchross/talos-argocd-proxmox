@@ -2,10 +2,11 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: prometheus-storage-pv
+  name: prometheus-data-pv
   labels:
-    app: prometheus
-    type: storage
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/instance: prometheus-stack
+    app.kubernetes.io/component: prometheus
 spec:
   capacity:
     storage: 10Gi
@@ -48,10 +49,11 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: grafana-storage-pv
+  name: grafana-data-pv
   labels:
-    app: grafana
-    type: storage
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/instance: prometheus-stack
+    app.kubernetes.io/component: grafana
 spec:
   capacity:
     storage: 10Gi
