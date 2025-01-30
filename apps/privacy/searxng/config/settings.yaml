@@ -7,7 +7,7 @@ server:
     port: 8080  # Match with deployment port
     public_instance: true
     limiter: true  # Enable limiter
-    method: "GET,POST"  # Allow both GET and POST
+    method: "GET"  # POST allows both GET and POST methods
     http_protocol_version: "1.0"
     default_http_headers:
         X-Content-Type-Options: nosniff
