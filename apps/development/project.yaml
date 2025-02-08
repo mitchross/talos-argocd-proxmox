@@ -11,6 +11,8 @@ spec:
       server: '*'
     - namespace: 'temporal'
       server: '*'
+    - namespace: 'argocd'
+      server: '*'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'
