@@ -124,7 +124,7 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: Gateway
 metadata:
-  name: internal-gateway
+  name: internal
   namespace: gateway
 spec:
   gatewayClassName: cilium
