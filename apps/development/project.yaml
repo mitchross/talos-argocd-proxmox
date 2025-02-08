@@ -9,6 +9,8 @@ spec:
   destinations:
     - namespace: 'kafka'
       server: '*'
+    - namespace: 'temporal'
+      server: '*'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'
