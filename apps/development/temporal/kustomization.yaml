@@ -7,5 +7,7 @@ helmCharts:
   - name: temporal
     repo: https://go.temporal.io/helm-charts
     version: 0.20.2
+    releaseName: temporal
+    namespace: temporal
     includeCRDs: true
     valuesFile: values.yaml
