@@ -13,8 +13,6 @@ spec:
       server: '*'
     - namespace: 'wyze-bridge'
       server: '*'
-    - namespace: 'temporal'
-      server: '*'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'
