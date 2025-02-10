@@ -19,7 +19,7 @@ spec:
     driver: smb.csi.k8s.io
     volumeHandle: jellyfin-media-volume
     volumeAttributes:
-      source: "//192.168.10.8/jellyfin-media"
+      source: "//192.168.10.133/jellyfin-media"
     nodeStageSecretRef:
       name: smbcreds
       namespace: csi-driver-smb
