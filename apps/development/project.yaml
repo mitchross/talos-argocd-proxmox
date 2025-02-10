@@ -13,6 +13,8 @@ spec:
       server: '*'
     - namespace: 'argocd'
       server: '*'
+    - namespace: 'strimzi'
+      server: '*'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'
