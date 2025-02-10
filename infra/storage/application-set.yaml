@@ -11,9 +11,8 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         revision: HEAD
         directories:
-          - path: infra/*storage/*
-          - exclude: true
-            path: infra/*storage/archived/*
+          - path: infra/storage/*
+
   template:
     metadata:
       name: '{{ path.basename }}'
