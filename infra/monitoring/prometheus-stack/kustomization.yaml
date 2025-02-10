@@ -1,13 +1,13 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: monitoring
-
+commonLabels:
+  app.kubernetes.io/name: prometheus-stack
+  app.kubernetes.io/managed-by: argocd
 resources:
   - namespace.yaml
   - routes.yaml
   - storage.yaml
-
 helmCharts:
   - name: kube-prometheus-stack
     repo: https://prometheus-community.github.io/helm-charts
@@ -15,4 +15,4 @@ helmCharts:
     version: 68.5.0
     namespace: monitoring
     includeCRDs: true
-    valuesFile: values.yaml 
+    valuesFile: values.yaml
