@@ -13,11 +13,3 @@ helmCharts:
     releaseName: strimzi
     namespace: kafka
     includeCRDs: true
-    valuesInline:
-      watchNamespaces:
-        - kafka
-      watchAnyNamespace: false
-      serviceAccount:
-        create: true
-      rbac:
-        create: true
