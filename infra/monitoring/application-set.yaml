@@ -22,7 +22,7 @@ spec:
       labels:
         vanillax.me: monitoring
     spec:
-      project: monitoring
+      project: infrastructure
       source:
         plugin:
           name: kustomize-build-with-helm
@@ -38,4 +38,4 @@ spec:
           prune: true
         syncOptions:
           - ApplyOutOfSyncOnly=true
-          - ServerSideApply=true 
+          - ServerSideApply=true

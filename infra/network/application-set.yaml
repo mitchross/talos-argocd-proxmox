@@ -18,7 +18,7 @@ spec:
       labels:
         vanillax.me: network
     spec:
-      project: network
+      project: infrastructure
       source:
         plugin:
           name: kustomize-build-with-helm
@@ -27,7 +27,7 @@ spec:
         path: '{{ path }}'
       destination:
         name: in-cluster
-        namespace: argocd
+        namespace: network
       syncPolicy:
         automated:
           selfHeal: true
