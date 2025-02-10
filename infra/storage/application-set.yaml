@@ -20,7 +20,7 @@ spec:
       labels:
         vanillax.me: storage
     spec:
-      project: storage
+      project: infrastructure
       source:
         plugin:
           name: kustomize-build-with-helm
@@ -29,7 +29,7 @@ spec:
         path: '{{ path }}'
       destination:
         name: in-cluster
-        namespace: argocd
+        namespace: storage
       syncPolicy:
         automated:
           selfHeal: true
