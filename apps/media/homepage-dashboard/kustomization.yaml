@@ -1,13 +1,14 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
+namespace: homepage-dashboard
+commonLabels:
+  app.kubernetes.io/name: homepage-dashboard
+  app.kubernetes.io/managed-by: argocd
 resources:
+  - ns.yaml
+  - secret.yaml
+  - configmap.yaml
+  - pvc.yaml
   - deployment.yaml
   - service.yaml
   - httproute.yaml
-  - pvc.yaml
-  - ns.yaml
-  - configmap.yaml
-  - secret.yaml
-
-namespace: homepage-dashboard

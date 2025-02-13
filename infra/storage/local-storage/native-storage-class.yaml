@@ -4,3 +4,4 @@ metadata:
   name: local-storage
 provisioner: kubernetes.io/no-provisioner # Important for local PVs
 volumeBindingMode: WaitForFirstConsumer # Recommended for local PVs
+reclaimPolicy: Retain # Match with existing PVs

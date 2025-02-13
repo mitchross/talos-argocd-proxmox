@@ -11,16 +11,15 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         revision: HEAD
         directories:
-          - path: infra/*storage/*
-          - exclude: true
-            path: infra/*storage/archived/*
+          - path: infra/storage/*
+
   template:
     metadata:
       name: '{{ path.basename }}'
       labels:
         vanillax.me: storage
     spec:
-      project: storage
+      project: infrastructure
       source:
         plugin:
           name: kustomize-build-with-helm
@@ -29,7 +28,7 @@ spec:
         path: '{{ path }}'
       destination:
         name: in-cluster
-        namespace: argocd
+        namespace: storage
       syncPolicy:
         automated:
           selfHeal: true

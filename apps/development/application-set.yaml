@@ -22,14 +22,15 @@ spec:
     spec:
       project: development
       source:
+        plugin:
+          name: kustomize-build-with-helm
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         targetRevision: HEAD
         path: '{{ path }}'
       destination:
         name: in-cluster
-        namespace: argocd
+        namespace: '{{ path.basename }}'
       syncPolicy:
         automated:
           selfHeal: true
           prune: true
-

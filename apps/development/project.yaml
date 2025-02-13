@@ -9,6 +9,12 @@ spec:
   destinations:
     - namespace: 'kafka'
       server: '*'
+    - namespace: 'temporal'
+      server: '*'
+    - namespace: 'argocd'
+      server: '*'
+    - namespace: 'strimzi'
+      server: '*'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'

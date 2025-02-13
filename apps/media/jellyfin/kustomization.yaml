@@ -11,8 +11,8 @@ configMapGenerator:
 
 resources:
   - ns.yaml
-  - svc.yaml
-  - pvc.yaml
-  - jellyfin-media-pvc.yaml
-  - deployment.yaml
-  - httproute.yaml
+  # - svc.yaml
+  # - pvc.yaml
+  # - jellyfin-media-pvc.yaml
+  # - deployment.yaml
+  # - httproute.yaml

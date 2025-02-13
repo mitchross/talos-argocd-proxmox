@@ -3,7 +3,5 @@ kind: Kustomization
 commonLabels:
   vanillax.me: network
   app.kubernetes.io/managed-by: argocd
-
 resources:
-  - project.yaml
   - application-set.yaml

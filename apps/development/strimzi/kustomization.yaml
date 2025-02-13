@@ -1,16 +1,15 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: kafka
-
+commonLabels:
+  app.kubernetes.io/name: strimzi
+  app.kubernetes.io/managed-by: argocd
 resources:
   - namespace.yaml
-
 helmCharts:
   - name: strimzi-kafka-operator
     repo: https://strimzi.io/charts/
     version: 0.45.0
+    releaseName: strimzi
+    namespace: kafka
     includeCRDs: true
-    valuesFile: values.yaml
-
-

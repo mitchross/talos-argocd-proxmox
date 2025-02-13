@@ -1,12 +1,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: monitoring
-
+commonLabels:
+  app.kubernetes.io/name: loki-stack
+  app.kubernetes.io/managed-by: argocd
 resources:
   - storage.yaml
   - routes.yaml
-
 helmCharts:
   - name: k8s-monitoring
     repo: https://grafana.github.io/helm-charts
@@ -14,4 +14,4 @@ helmCharts:
     version: 2.0.9
     namespace: monitoring
     includeCRDs: true
-    valuesFile: values.yaml 
+    valuesFile: values.yaml

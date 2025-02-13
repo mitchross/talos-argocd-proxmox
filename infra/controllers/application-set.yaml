@@ -18,7 +18,7 @@ spec:
       labels:
         vanillax.me: controllers
     spec:
-      project: controllers
+      project: infrastructure
       source:
         plugin:
           name: kustomize-build-with-helm
