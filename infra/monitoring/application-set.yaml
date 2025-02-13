@@ -11,11 +11,7 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         revision: HEAD
         directories:
-          - path: infra/monitoring/*
-          - path: infra/monitoring/project.yaml
-            exclude: true
-          - path: infra/monitoring/application-set.yaml
-            exclude: true
+          - path: infra/monitoring/k8s-monitoring
   template:
     metadata:
       name: '{{ path.basename }}'

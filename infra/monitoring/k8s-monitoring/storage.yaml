@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: k8s-monitoring-metrics-pv
+  labels:
+    app.kubernetes.io/name: k8s-monitoring
+    app.kubernetes.io/component: metrics
+spec:
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/monitoring/k8s-monitoring/metrics
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - vanillax-ai
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: k8s-monitoring-logs-pv
+  labels:
+    app.kubernetes.io/name: k8s-monitoring
+    app.kubernetes.io/component: logs
+spec:
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/monitoring/k8s-monitoring/logs
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - vanillax-ai 

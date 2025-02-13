@@ -1,0 +1,121 @@
+# Cluster configuration
+cluster:
+  name: vanillax-k3s
+
+# Configure destinations for telemetry data
+destinations:
+  - name: localPrometheus
+    type: prometheus
+    url: http://prometheus.monitoring.svc.cluster.local:9090/api/v1/write
+  - name: localLoki
+    type: loki
+    url: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
+
+# Enable cluster metrics collection
+clusterMetrics:
+  enabled: true
+  kubelet:
+    enabled: true
+  cadvisor:
+    enabled: true
+  kube-state-metrics:
+    enabled: true
+    deploy: true
+  node-exporter:
+    enabled: true
+    deploy: true
+  windows-exporter:
+    enabled: false
+
+# Enable pod logs collection
+podLogs:
+  enabled: true
+
+# Enable cluster events collection
+clusterEvents:
+  enabled: true
+
+# Enable Prometheus Operator object support
+prometheusOperatorObjects:
+  enabled: true
+
+# Enable service integrations
+integrations:
+  enabled: true
+  cilium:
+    instances:
+      - name: cilium-agent
+        scrapeConfig:
+          job_name: cilium-agent
+          kubernetes_sd_configs:
+            - role: pod
+              namespaces:
+                names: ['kube-system']
+              selectors:
+                - role: pod
+                  label: 'k8s-app=cilium'
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_name]
+              action: keep
+              regex: cilium-.*
+            - source_labels: [__meta_kubernetes_pod_container_name]
+              action: keep
+              regex: cilium-agent
+      - name: cilium-operator
+        scrapeConfig:
+          job_name: cilium-operator
+          kubernetes_sd_configs:
+            - role: pod
+              namespaces:
+                names: ['kube-system']
+              selectors:
+                - role: pod
+                  label: 'io.cilium/app=operator'
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_name]
+              action: keep
+              regex: cilium-operator.*
+      - name: hubble
+        scrapeConfig:
+          job_name: hubble
+          kubernetes_sd_configs:
+            - role: pod
+              namespaces:
+                names: ['kube-system']
+              selectors:
+                - role: pod
+                  label: 'k8s-app=hubble'
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_name]
+              action: keep
+              regex: hubble.*
+
+# Configure Alloy metrics collector
+alloy-metrics:
+  enabled: true
+  controller:
+    type: statefulset
+    replicas: 1
+  nodeSelector:
+    kubernetes.io/hostname: vanillax-ai
+
+# Configure Alloy logs collector
+alloy-logs:
+  enabled: true
+  controller:
+    type: daemonset
+  nodeSelector:
+    kubernetes.io/hostname: vanillax-ai
+
+# Configure Alloy singleton collector
+alloy-singleton:
+  enabled: true
+  controller:
+    type: deployment
+    replicas: 1
+  nodeSelector:
+    kubernetes.io/hostname: vanillax-ai
+
+# Global settings
+global:
+  scrapeInterval: 60s 

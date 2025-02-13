@@ -4,15 +4,14 @@ kind: Kustomization
 namespace: monitoring
 
 resources:
-  - namespace.yaml
   - storage.yaml
   - routes.yaml
 
 helmCharts:
-  - name: loki-stack
+  - name: k8s-monitoring
     repo: https://grafana.github.io/helm-charts
-    releaseName: loki
-    version: 2.10.2
+    releaseName: k8s-monitoring
+    version: 2.0.9
     namespace: monitoring
     includeCRDs: true
     valuesFile: values.yaml 
