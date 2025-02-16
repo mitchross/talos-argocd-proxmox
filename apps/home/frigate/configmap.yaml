@@ -59,14 +59,10 @@ data:
     ffmpeg:
       input_args: preset-rtsp-generic
 
-    # go2rtc:
-    #   streams:
-    #     backyard:
-    #       - rtsp://192.168.10.48:8554/backyard
-    #     garage-inside:
-    #       - rtsp://192.168.10.48:8554/garage-inside
-    #     garage-outside:
-    #       - rtsp://192.168.10.48:8554/garage-outside
+    go2rtc:
+      streams:
+        garage-inside:
+          - rtsp://192.168.10.48:8554/garage-inside
 
     cameras:
       backyard:
