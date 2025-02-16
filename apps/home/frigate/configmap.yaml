@@ -126,7 +126,7 @@ data:
         enabled: True
         ffmpeg:
           inputs:
-            - path: rtsp://192.168.10.48:8554/shed
+            - path: rtsp://192.168.10.46:8554/shed
               roles:
                 - detect
                 - record
@@ -143,7 +143,7 @@ data:
         enabled: True
         ffmpeg:
           inputs:
-            - path: rtsp://192.168.10.48:8554/driveway
+            - path: rtsp://192.168.10.46:8554/driveway
               roles:
                 - detect
                 - record
