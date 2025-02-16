@@ -17,7 +17,7 @@ spec:
         google.feature.node.kubernetes.io/coral: "true"
       containers:
         - name: frigate
-          image: ghcr.io/blakeblackshear/frigate:0.15.0-beta4
+          image: ghcr.io/blakeblackshear/frigate:0.15.0@sha256:dc77295ccc5a7258510ab6b1d9d5b7a339027305e2d29224338534febc4d1e89
           env:
             - name: TZ
               value: "America/New_York"
