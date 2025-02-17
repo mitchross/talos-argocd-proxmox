@@ -2,7 +2,8 @@ apiVersion: cilium.io/v2alpha1
 kind: CiliumLoadBalancerIPPool
 metadata:
   name: first-pool
+  namespace: kube-system
 spec:
   blocks:
-    - start: 192.168.10.38
-      stop: 192.168.10.54
+    - cidr: "192.168.10.32/27" # This will give us IPs from 192.168.10.32 to 192.168.10.63
+  allowFirstLastIPs: "No"
