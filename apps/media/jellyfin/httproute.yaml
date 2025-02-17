@@ -7,6 +7,7 @@ spec:
   parentRefs:
     - name: internal
       namespace: gateway
+      sectionName: https
   hostnames:
     - "jellyfin.vanillax.me"
   rules:
@@ -17,3 +18,4 @@ spec:
       backendRefs:
         - name: jellyfin
           port: 8096
+          weight: 1

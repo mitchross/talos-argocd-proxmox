@@ -27,6 +27,7 @@ controller:
       memory: 2Gi
 
 dex:
+  enabled: false
   resources:
     requests:
       cpu: 20m

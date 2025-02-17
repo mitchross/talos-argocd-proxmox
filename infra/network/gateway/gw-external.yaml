@@ -4,37 +4,39 @@ metadata:
   name: external
   namespace: gateway
 spec:
+  addresses:
+    - type: IPAddress
+      value: 192.168.10.49
   gatewayClassName: cilium
-  infrastructure:
-    annotations:
-      io.cilium/lb-ipam-ips: 192.168.10.49
   listeners:
-    - protocol: HTTP  # Add HTTP listener for cloudflared
+    - name: http
+      protocol: HTTP
       port: 80
-      name: http-gateway
       hostname: "*.vanillax.me"
       allowedRoutes:
         namespaces:
           from: All
-    - protocol: HTTPS  # Keep HTTPS listener for direct external access
+    - name: https
+      protocol: HTTPS
       port: 443
-      name: https-gateway
       hostname: "*.vanillax.me"
       tls:
         certificateRefs:
-          - kind: Secret
-            name: cert-vanillax
+          - name: cert-vanillax
+            kind: Secret
+            group: ""
       allowedRoutes:
         namespaces:
           from: All
-    - protocol: HTTPS
+    - name: https-domain
+      protocol: HTTPS
       port: 443
-      name: https-domain-gateway
-      hostname: vanillax.me
+      hostname: "vanillax.me"
       tls:
         certificateRefs:
-          - kind: Secret
-            name: cert-vanillax
+          - name: cert-vanillax
+            kind: Secret
+            group: ""
       allowedRoutes:
         namespaces:
           from: All

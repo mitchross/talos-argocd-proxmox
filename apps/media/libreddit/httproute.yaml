@@ -5,8 +5,9 @@ metadata:
   namespace: libreddit
 spec:
   parentRefs:
-  - name: external
-    namespace: gateway
+    - name: external
+      namespace: gateway
+      sectionName: https
   hostnames:
     - "libreddit.vanillax.me"
   rules:
@@ -17,3 +18,4 @@ spec:
       backendRefs:
         - name: libreddit
           port: 8080
+          weight: 1

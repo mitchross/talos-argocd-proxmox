@@ -7,6 +7,7 @@ spec:
   parentRefs:
     - name: internal
       namespace: gateway
+      sectionName: https
   hostnames:
     - "ollama.vanillax.me"
   rules:
@@ -17,3 +18,4 @@ spec:
       backendRefs:
         - name: ollama
           port: 11434
+          weight: 1

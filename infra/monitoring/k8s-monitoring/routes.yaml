@@ -7,6 +7,7 @@ spec:
   parentRefs:
     - name: internal
       namespace: gateway
+      sectionName: https
   hostnames:
     - "monitoring.vanillax.me"
   rules:
@@ -17,4 +18,4 @@ spec:
       backendRefs:
         - name: k8s-monitoring-grafana
           port: 80
-          weight: 1 
+          weight: 1

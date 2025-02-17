@@ -7,6 +7,7 @@ spec:
   parentRefs:
     - name: internal
       namespace: gateway
+      sectionName: https
   hostnames:
     - "wyze-bridge.vanillax.me"
   rules:
@@ -17,3 +18,4 @@ spec:
       backendRefs:
         - name: wyze-bridge
           port: 5000
+          weight: 1

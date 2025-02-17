@@ -14,13 +14,13 @@ spec:
         app: redis-commander
     spec:
       containers:
-      - name: redis-commander
-        image: rediscommander/redis-commander:latest
-        env:
-        - name: REDIS_HOSTS
-          value: "local:redis-master:6379"
-        ports:
-        - containerPort: 8081
+        - name: redis-commander
+          image: rediscommander/redis-commander:latest
+          env:
+            - name: REDIS_HOSTS
+              value: "local:redis-master:6379"
+          ports:
+            - containerPort: 8081
 ---
 apiVersion: v1
 kind: Service
@@ -28,12 +28,12 @@ metadata:
   name: redis-commander
   namespace: redis
   annotations:
-    io.cilium/lb-ipam-ips: "192.168.10.45"  # Your specified IP
+    io.cilium/lb-ipam-ips: "192.168.10.45" # Your specified IP
 spec:
   type: LoadBalancer
   ports:
-  - port: 8081
-    targetPort: 8081
+    - port: 8081
+      targetPort: 8081
   selector:
     app: redis-commander
 ---
@@ -46,6 +46,7 @@ spec:
   parentRefs:
     - name: internal
       namespace: gateway
+      sectionName: https
   hostnames:
     - "redis.vanillax.me"
   rules:
@@ -56,3 +57,4 @@ spec:
       backendRefs:
         - name: redis-commander
           port: 8081
+          weight: 1

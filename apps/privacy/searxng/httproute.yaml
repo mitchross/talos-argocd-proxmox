@@ -7,6 +7,7 @@ spec:
   parentRefs:
     - name: external
       namespace: gateway
+      sectionName: https
   hostnames:
     - "search.vanillax.me"
   rules:
@@ -17,4 +18,4 @@ spec:
       backendRefs:
         - name: searxng
           port: 8080
-
+          weight: 1
