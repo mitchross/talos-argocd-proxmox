@@ -14,4 +14,4 @@ generatorOptions:
 configMapGenerator:
   - name: frigate-configmap
     files:
-      - config.yaml
+      - config.yaml=config.yaml

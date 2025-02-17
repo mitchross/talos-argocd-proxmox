@@ -60,7 +60,7 @@ spec:
             - name: config
               mountPath: /config
             - name: config-file
-              mountPath: /config/config.yml
+              mountPath: /config/config.yaml
               subPath: config.yaml
             - name: media
               mountPath: /media
