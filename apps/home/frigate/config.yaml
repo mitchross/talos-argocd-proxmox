@@ -1,0 +1,127 @@
+mqtt:
+  host: mosquitto.home
+  port: 1883
+  topic_prefix: frigate
+  user: mqtt_user
+  password: "{FRIGATE_MQTT_PASSWORD}"
+database:
+  path: /config/frigate.db
+ui:
+  timezone: America/Detroit
+timestamp_style:
+  position: "tr"
+  format: "%m/%d/%Y %H:%M:%S"
+  color:
+    red: 255
+    green: 255
+    blue: 255
+snapshots:
+  enabled: true
+  timestamp: true
+  bounding_box: true
+  retain:
+    default: 14
+motion:
+  threshold: 45
+  contour_area: 20
+record:
+  enabled: True
+  retain:
+    days: 3
+    mode: all
+  alerts:
+    retain:
+      days: 30
+      mode: motion
+  detections:
+    retain:
+      days: 30
+      mode: motion
+detectors:
+  coral:
+    type: edgetpu
+    device: usb
+ffmpeg:
+  input_args: preset-rtsp-generic
+go2rtc:
+  streams:
+    garage-inside:
+      - rtsp://192.168.10.48:8554/garage-inside
+cameras:
+  backyard:
+    enabled: True
+    ffmpeg:
+      inputs:
+        - path: rtsp://192.168.10.48:8554/backyard
+          roles:
+            - detect
+            - record
+    detect:
+      enabled: true
+      width: 1280
+      height: 720
+      fps: 5
+    live:
+      stream_name: backyard
+      height: 1080
+  garage-inside:
+    enabled: True
+    ffmpeg:
+      input_args: preset-rtsp-restream
+      inputs:
+        - path: rtsp://192.168.10.48:8554/garage-inside
+          roles:
+            - detect
+            - record
+            - audio
+    detect:
+      enabled: true
+      width: 1280
+      height: 720
+      fps: 5
+    live:
+      stream_name: garage-inside
+      height: 1080
+  garage-outside:
+    enabled: True
+    ffmpeg:
+      inputs:
+        - path: rtsp://192.168.10.48:8554/garage-outside
+          roles:
+            - detect
+            - record
+    detect:
+      enabled: true
+      width: 1280
+      height: 720
+      fps: 5
+    live:
+      stream_name: garage-outside
+      height: 1080
+  shed:
+    enabled: True
+    ffmpeg:
+      inputs:
+        - path: rtsp://192.168.10.46:8554/shed
+          roles:
+            - detect
+            - record
+    detect:
+      enabled: true
+      width: 1280
+      height: 720
+      fps: 5
+    live:
+      stream_name: shed
+      height: 1080
+  driveway:
+    enabled: True
+    ffmpeg:
+      inputs:
+        - path: rtsp://192.168.10.46:8554/driveway
+          roles:
+            - detect
+            - record
+    detect:
+      enabled: true
+      fps: 5
