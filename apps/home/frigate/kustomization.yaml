@@ -9,6 +9,8 @@ resources:
   - service.yaml
   - httproute.yaml
 namespace: frigate
+generatorOptions:
+  disableNameSuffixHash: true
 configMapGenerator:
   - name: frigate-configmap
     files:
