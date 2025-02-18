@@ -61,7 +61,7 @@ spec:
               mountPath: /config
             - name: config-file
               mountPath: /config/config.yml
-              subPath: config.yaml
+              subPath: config.yml
             - name: media
               mountPath: /media
             - name: cache
@@ -70,15 +70,16 @@ spec:
               mountPath: /dev/bus/usb
         - name: debug
           image: busybox
-          command: ['sh', '-c', 'echo "Config contents:" && ls -la /config && cat /config/config.yml && sleep 3600']
+          command: ['sh', '-c', 'mkdir -p /config && echo "=== Listing root ===" && ls -la / && echo "=== Listing /config ===" && ls -la /config && echo "=== Contents of config.yml ===" && cat /config/config.yml 2>/dev/null || echo "No config.yml" && sleep 3600']
           volumeMounts:
             - name: config-file
               mountPath: /config/config.yml
-              subPath: config.yaml
+              subPath: config.yml
       volumes:
         - name: config-file
           configMap:
             name: frigate-configmap
+            defaultMode: 0644
         - name: media
           persistentVolumeClaim:
             claimName: frigate-media
