@@ -57,6 +57,8 @@ spec:
             timeoutSeconds: 1
             failureThreshold: 3
           volumeMounts:
+            - name: config-dir
+              mountPath: /config
             - name: config-file
               mountPath: /config/config.yml
               subPath: config.yml
@@ -74,6 +76,8 @@ spec:
               mountPath: /config/config.yml
               subPath: config.yml
       volumes:
+        - name: config-dir
+          emptyDir: {}
         - name: config-file
           configMap:
             name: frigate-configmap

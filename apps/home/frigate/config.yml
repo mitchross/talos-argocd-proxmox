@@ -62,7 +62,6 @@ cameras:
       height: 720
       fps: 5
     live:
-      stream_name: backyard
       height: 1080
   garage-inside:
     enabled: True
@@ -80,7 +79,6 @@ cameras:
       height: 720
       fps: 5
     live:
-      stream_name: garage-inside
       height: 1080
   garage-outside:
     enabled: True
@@ -96,7 +94,6 @@ cameras:
       height: 720
       fps: 5
     live:
-      stream_name: garage-outside
       height: 1080
   shed:
     enabled: True
@@ -112,7 +109,6 @@ cameras:
       height: 720
       fps: 5
     live:
-      stream_name: shed
       height: 1080
   driveway:
     enabled: True
@@ -126,5 +122,4 @@ cameras:
       enabled: true
       fps: 5
     live:
-      stream_name: driveway
       height: 1080
