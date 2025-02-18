@@ -22,6 +22,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: hoarder-env
+            - secretRef:
+                name: hoarder-secret
           volumeMounts:
             - name: data
               mountPath: /data
