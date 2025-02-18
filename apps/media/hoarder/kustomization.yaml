@@ -15,7 +15,6 @@ resources:
 namespace: hoarder
 configMapGenerator:
   - name: hoarder-env
-    behavior: merge
     literals:
       - MEILI_ADDR=http://hoarder-meilisearch.hoarder.svc.cluster.local:7700
       - BROWSER_WEB_URL=http://hoarder-chrome.hoarder.svc.cluster.local:9222
