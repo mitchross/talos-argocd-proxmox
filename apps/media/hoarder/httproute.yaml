@@ -5,7 +5,7 @@ metadata:
   namespace: hoarder
 spec:
   parentRefs:
-    - name: internal
+    - name: external
       namespace: gateway
       sectionName: https
   hostnames:
