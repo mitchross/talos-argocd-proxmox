@@ -125,3 +125,6 @@ cameras:
     detect:
       enabled: true
       fps: 5
+    live:
+      stream_name: driveway
+      height: 1080

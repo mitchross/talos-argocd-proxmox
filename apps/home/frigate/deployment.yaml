@@ -60,7 +60,7 @@ spec:
             - name: config
               mountPath: /config
             - name: config-file
-              mountPath: /config/config.yaml
+              mountPath: /config/config.yml
               subPath: config.yaml
             - name: media
               mountPath: /media
@@ -68,6 +68,13 @@ spec:
               mountPath: /dev/shm
             - name: usb
               mountPath: /dev/bus/usb
+        - name: debug
+          image: busybox
+          command: ['sh', '-c', 'echo "Config contents:" && ls -la /config && cat /config/config.yml && sleep 3600']
+          volumeMounts:
+            - name: config-file
+              mountPath: /config/config.yml
+              subPath: config.yaml
       volumes:
         - name: config-file
           configMap:
