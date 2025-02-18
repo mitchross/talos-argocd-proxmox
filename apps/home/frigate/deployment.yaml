@@ -57,8 +57,6 @@ spec:
             timeoutSeconds: 1
             failureThreshold: 3
           volumeMounts:
-            - name: config
-              mountPath: /config
             - name: config-file
               mountPath: /config/config.yml
               subPath: config.yml
@@ -83,9 +81,6 @@ spec:
         - name: media
           persistentVolumeClaim:
             claimName: frigate-media
-        - name: config
-          persistentVolumeClaim:
-            claimName: frigate-config-pvc
         - name: cache
           emptyDir:
             medium: Memory
