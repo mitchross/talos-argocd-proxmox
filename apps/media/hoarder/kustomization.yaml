@@ -11,6 +11,42 @@ resources:
   - service-chrome.yaml
   - service-meilisearch.yaml
   - httproute.yaml
-  - configmap.yaml
   - externalsecret.yaml
 namespace: hoarder
+configMapGenerator:
+  - name: hoarder-env
+    behavior: merge
+    literals:
+      - MEILI_ADDR=http://hoarder-meilisearch.hoarder.svc.cluster.local:7700
+      - BROWSER_WEB_URL=http://hoarder-chrome.hoarder.svc.cluster.local:9222
+      - DATA_DIR=/data
+      - NEXTAUTH_URL=https://hoarder.vanillax.me
+      - MAX_ASSET_SIZE_MB=50
+      - DISABLE_NEW_RELEASE_CHECK=false
+      - CRAWLER_NUM_WORKERS=1
+      - BROWSER_WEBSOCKET_URL=ws://hoarder-chrome.hoarder.svc.cluster.local:9222
+      - BROWSER_CONNECT_ONDEMAND=false
+      - CRAWLER_DOWNLOAD_BANNER_IMAGE=true
+      - CRAWLER_STORE_SCREENSHOT=true
+      - CRAWLER_FULL_PAGE_SCREENSHOT=false
+      - CRAWLER_FULL_PAGE_ARCHIVE=false
+      - CRAWLER_JOB_TIMEOUT_SEC=60
+      - CRAWLER_NAVIGATE_TIMEOUT_SEC=30
+      - CRAWLER_VIDEO_DOWNLOAD=false
+      - CRAWLER_VIDEO_DOWNLOAD_MAX_SIZE=50
+      - CRAWLER_VIDEO_DOWNLOAD_TIMEOUT_SEC=600
+      - CRAWLER_ENABLE_ADBLOCKER=true
+      - OCR_CACHE_DIR=$TEMP_DIR
+      - OCR_LANGS=eng
+      - OCR_CONFIDENCE_THRESHOLD=50
+      - WEBHOOK_TIMEOUT_SEC=5
+      - WEBHOOK_RETRY_TIMES=3
+      - OLLAMA_BASE_URL=https://ollama.vanillax.me/api
+      - OLLAMA_KEEP_ALIVE=5m
+      - INFERENCE_TEXT_MODEL=llama3.2
+      - INFERENCE_IMAGE_MODEL=llava
+      - EMBEDDING_TEXT_MODEL=granite-embedding:278m
+      - INFERENCE_CONTEXT_LENGTH=2048
+      - INFERENCE_LANG=english
+      - INFERENCE_JOB_TIMEOUT_SEC=30
+      - MEILI_NO_ANALYTICS=true
