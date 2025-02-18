@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hoarder-meilisearch
+spec:
+  selector:
+    app: hoarder-meilisearch
+  ports:
+    - protocol: TCP
+      port: 7700
+      targetPort: 7700
+  type: ClusterIP

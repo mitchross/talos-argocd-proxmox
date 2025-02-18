@@ -2,3 +2,6 @@
 infra/controllers/external-secrets/external-secrets-token.env
 tools/venv/
 *.ds_store
+apps/home/.DS_Store
+apps/home/.DS_Store
+apps/home/.DS_Store

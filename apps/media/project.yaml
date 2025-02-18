@@ -23,6 +23,8 @@ spec:
       server: '*'
     - namespace: 'nestmtx'
       server: '*'
+    - namespace: 'hoarder'
+      server: '*'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'
