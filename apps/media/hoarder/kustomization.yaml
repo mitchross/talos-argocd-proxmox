@@ -17,13 +17,13 @@ configMapGenerator:
   - name: hoarder-env
     literals:
       - MEILI_ADDR=http://hoarder-meilisearch.hoarder.svc.cluster.local:7700
-      - BROWSER_WEB_URL=http://hoarder-chrome:9222
+      - BROWSER_WEB_URL=http://hoarder-chrome.hoarder.svc.cluster.local:9222
       - DATA_DIR=/data
       - NEXTAUTH_URL=https://hoarder.vanillax.me
       - MAX_ASSET_SIZE_MB=50
       - DISABLE_NEW_RELEASE_CHECK=false
       - CRAWLER_NUM_WORKERS=1
-      - BROWSER_WEBSOCKET_URL=ws://hoarder-chrome:9222
+      - BROWSER_WEBSOCKET_URL=ws://hoarder-chrome.hoarder.svc.cluster.local:9222
       - BROWSER_CONNECT_ONDEMAND=true
       - CRAWLER_DOWNLOAD_BANNER_IMAGE=true
       - CRAWLER_STORE_SCREENSHOT=true
