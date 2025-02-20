@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hoarder-configuration
+  namespace: hoarder
+data:
+  # Add any non-secret configuration values here
+  NEXTAUTH_URL: "https://hoarder.vanillax.me"
+  # Add any other configuration values as needed 

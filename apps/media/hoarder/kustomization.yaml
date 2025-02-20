@@ -7,6 +7,7 @@ resources:
   - chrome/deployment-chrome.yaml
   - chrome/service-chrome.yaml
   # Hoarder resources
+  - hoarder/configmap.yaml
   - hoarder/deployment-web.yaml
   - hoarder/service-web.yaml
   - hoarder/externalsecret.yaml
