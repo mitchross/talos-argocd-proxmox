@@ -23,7 +23,7 @@ spec:
               name: meilisearch
           envFrom:
             - secretRef:
-                name: hoarder-secrets
+                name: hoarder-secret
             - configMapRef:
                 name: hoarder-configuration
       volumes:
