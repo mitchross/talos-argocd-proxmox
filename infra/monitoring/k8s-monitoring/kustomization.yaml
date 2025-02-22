@@ -12,7 +12,7 @@ helmCharts:
   - name: k8s-monitoring
     repo: https://grafana.github.io/helm-charts
     releaseName: k8s-monitoring
-    version: 2.0.10
+    version: 2.0.13
     namespace: monitoring
     includeCRDs: true
     valuesFile: values.yaml
