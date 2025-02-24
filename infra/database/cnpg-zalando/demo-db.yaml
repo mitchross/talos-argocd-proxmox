@@ -20,6 +20,7 @@ spec:
     parameters:
       max_connections: "100"
       shared_buffers: "256MB"
+      password_encryption: scram-sha-256
       listen_addresses: '*'
       unix_socket_directories: '/var/run/postgresql'
   resources:
@@ -39,9 +40,9 @@ spec:
     pg_hba:
       - local all postgres peer
       - local all all peer
-      - host all all 127.0.0.1/32 md5
-      - host all all 0.0.0.0/0 md5
-      - hostssl all all 0.0.0.0/0 md5
+      - host all all 127.0.0.1/32 scram-sha-256
+      - host all all 0.0.0.0/0 scram-sha-256
+      - hostssl all all 0.0.0.0/0 scram-sha-256
     ttl: 30
     loop_wait: 10
     retry_timeout: 10
