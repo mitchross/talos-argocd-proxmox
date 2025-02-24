@@ -3,8 +3,10 @@ kind: Service
 metadata:
   name: postgres-external
   namespace: cloudnative-pg
+  annotations:
+    io.cilium/lb-ipam-ips: "192.168.10.46" # Adjust this IP to match your network
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
     - port: 5432
       targetPort: 5432
