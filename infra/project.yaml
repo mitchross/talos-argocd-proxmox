@@ -40,8 +40,6 @@ spec:
       server: '*'
     - namespace: 'gpu-operator'
       server: '*'
-    - namespace: 'cnpg-zalando'
-      server: '*'
     - namespace: 'redis'
       server: '*'
     - namespace: 'openebs'
