@@ -41,9 +41,9 @@ spec:
   preparedDatabases:
     immich:
       extensions:
-        cube: {}
-        earthdistance: {}
-        vectors: {}
+        cube: "true"
+        earthdistance: "true"
+        vectors: "true"
   enableMasterLoadBalancer: true
   masterServiceAnnotations:
     io.cilium/lb-ipam-ips: "192.168.10.53"
