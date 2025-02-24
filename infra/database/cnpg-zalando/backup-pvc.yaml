@@ -13,7 +13,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
   local:
-    path: /datapool/kubernetes/postgres/backups
+    path: /datapool/kubernetes/postgres/data/pgroot/backups
   nodeAffinity:
     required:
       nodeSelectorTerms:

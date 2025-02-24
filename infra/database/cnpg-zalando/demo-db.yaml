@@ -20,6 +20,8 @@ spec:
     parameters:
       max_connections: "100"
       shared_buffers: "256MB"
+      listen_addresses: '*'
+      unix_socket_directories: '/var/run/postgresql'
   resources:
     requests:
       cpu: 100m
@@ -35,8 +37,15 @@ spec:
       locale: "en_US.UTF-8"
       data-checksums: "true"
     pg_hba:
+      - local all postgres peer
+      - local all all peer
+      - host all all 127.0.0.1/32 md5
+      - host all all 0.0.0.0/0 md5
       - hostssl all all 0.0.0.0/0 md5
-      - host    all all 0.0.0.0/0 md5 # Allow non-SSL connections too
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 33554432
   enableMasterLoadBalancer: true
   masterServiceAnnotations:
     io.cilium/lb-ipam-ips: "192.168.10.52"

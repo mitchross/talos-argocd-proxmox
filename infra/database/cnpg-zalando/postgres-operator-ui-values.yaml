@@ -11,6 +11,5 @@ rbac:
   useExistingRole: false
   namespaceLabelKey: "cnpg-zalando"
   clusterRoleBindingNamespace: "cnpg-zalando"
-
 global:
   namespace: "cnpg-zalando"
