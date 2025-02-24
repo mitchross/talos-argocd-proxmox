@@ -9,3 +9,4 @@ resources:
   - externalsecret.yaml
   - service.yaml
   - gateway.yaml
+  - pv.yaml
