@@ -1,10 +1,5 @@
 configKubernetes:
-  secret_name_template: "{username}.{cluster}.credentials"
-  enable_pod_antiaffinity: false
-  pod_environment_configmap: "postgres-operator-config"
   watched_namespace: "cnpg-zalando"
-  pod_service_account_name: "postgres-pod"
-  pod_terminate_grace_period: "5m"
   infrastructure_roles_secret_name: "postgres.postgres-superuser.credentials"
 rbac:
   create: true
