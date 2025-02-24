@@ -20,8 +20,6 @@ spec:
     limits:
       memory: "2Gi"
       cpu: "2"
-  # Primary service configuration
-  primaryServiceType: ClusterIP
   # Storage configuration
   storage:
     size: 100Gi
@@ -38,7 +36,7 @@ spec:
         - CREATE DATABASE immich;
         - CREATE DATABASE testdb;
         # Create users and grant permissions
-        - DO $$ BEGIN -- Create immich user if not exists IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${IMMICH_DB_USERNAME}') THEN CREATE USER "${IMMICH_DB_USERNAME}" WITH PASSWORD '${IMMICH_DB_PASSWORD}'; END IF; -- Create demo user if not exists IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${DEMO_DB_USERNAME}') THEN CREATE USER "${DEMO_DB_USERNAME}" WITH PASSWORD '${DEMO_DB_PASSWORD}'; END IF; END $$;
+        - DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${IMMICH_DB_USERNAME}') THEN CREATE USER "${IMMICH_DB_USERNAME}" WITH PASSWORD '${IMMICH_DB_PASSWORD}'; END IF; IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${DEMO_DB_USERNAME}') THEN CREATE USER "${DEMO_DB_USERNAME}" WITH PASSWORD '${DEMO_DB_PASSWORD}'; END IF; END $$;
         # Grant permissions
         - GRANT ALL PRIVILEGES ON DATABASE immich TO "${IMMICH_DB_USERNAME}";
         - GRANT ALL PRIVILEGES ON DATABASE testdb TO "${DEMO_DB_USERNAME}";
