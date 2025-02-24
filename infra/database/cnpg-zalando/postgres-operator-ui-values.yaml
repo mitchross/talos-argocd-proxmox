@@ -5,3 +5,8 @@ resources:
   requests:
     cpu: 50m
     memory: 128Mi
+rbac:
+  create: true
+  createRole: true
+  useExistingRole: false
+  namespaceLabelKey: "cnpg-zalando"
