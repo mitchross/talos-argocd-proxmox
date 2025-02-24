@@ -1,7 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: cnpg-zalando
-
 resources:
   - ns.yaml
   - config-map.yaml
@@ -12,7 +11,9 @@ resources:
   - http-route.yaml
   - demo-db-secret.yaml
   - demo-db.yaml
-
+  - immich-db-secret.yaml
+  - immich-db.yaml
+  - immich-data-pvc.yaml
 helmCharts:
   - name: postgres-operator
     repo: https://opensource.zalando.com/postgres-operator/charts/postgres-operator

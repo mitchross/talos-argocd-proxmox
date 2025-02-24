@@ -10,11 +10,11 @@ spec:
     storageClass: local-storage
   numberOfInstances: 2
   users:
-    demoapp:  # Additional user for your application
+    demoapp: # Additional user for your application
       - superuser
       - createdb
   databases:
-    demoapp: demoapp  # dbname: owner
+    demoapp: demoapp # dbname: owner
   postgresql:
     version: "15"
     parameters:
@@ -27,7 +27,7 @@ spec:
     limits:
       cpu: 500m
       memory: 512Mi
-  allowedSourceRanges:  # Define allowed IPs that can access the DB
+  allowedSourceRanges: # Define allowed IPs that can access the DB
     - 192.168.0.0/16
   patroni:
     initdb:

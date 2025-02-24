@@ -1,0 +1,49 @@
+apiVersion: "acid.zalan.do/v1"
+kind: postgresql
+metadata:
+  name: immich-db
+  namespace: cnpg-zalando
+spec:
+  teamId: "vanillax"
+  volume:
+    size: 50Gi
+    storageClass: local-storage
+  numberOfInstances: 2
+  users:
+    immich: # Database user for Immich
+      - superuser
+      - createdb
+  databases:
+    immich: immich # dbname: owner
+  postgresql:
+    version: "14" # Using 14 as it matches the Immich's pgvecto-rs image version
+    parameters:
+      max_connections: "200"
+      shared_buffers: "512MB"
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  allowedSourceRanges:
+    - 192.168.0.0/16
+  patroni:
+    initdb:
+      encoding: "UTF8"
+      locale: "en_US.UTF-8"
+      data-checksums: "true"
+    pg_hba:
+      - local all all trust
+      - hostssl all all 0.0.0.0/0 md5
+    slots: {}
+  preparedDatabases:
+    immich:
+      extensions:
+        - cube
+        - earthdistance
+        - vectors
+  enableMasterLoadBalancer: true
+  masterServiceAnnotations:
+    io.cilium/lb-ipam-ips: "192.168.10.53"

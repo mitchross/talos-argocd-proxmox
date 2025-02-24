@@ -1,20 +1,20 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: pgdata-demo-db-0
+  name: pgdata-immich-db-0
   labels:
     app: postgres
-    cluster-name: demo-db
+    cluster-name: immich-db
     spilo-role: master
 spec:
   capacity:
-    storage: 10Gi
+    storage: 50Gi
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
   local:
-    path: /datapool/kubernetes/postgres/data/pgroot/demo-db-0
+    path: /datapool/kubernetes/postgres/data/pgroot/immich-db-0
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -27,20 +27,20 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: pgdata-demo-db-1
+  name: pgdata-immich-db-1
   labels:
     app: postgres
-    cluster-name: demo-db
+    cluster-name: immich-db
     spilo-role: replica
 spec:
   capacity:
-    storage: 10Gi
+    storage: 50Gi
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
   local:
-    path: /datapool/kubernetes/postgres/data/pgroot/demo-db-1
+    path: /datapool/kubernetes/postgres/data/pgroot/immich-db-1
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -49,23 +49,3 @@ spec:
               operator: In
               values:
                 - vanillax-ai
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: postgres-data-pvc
-  namespace: cnpg-zalando
-  labels:
-    app: postgres
-    type: data
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
-  storageClassName: local-storage
-  selector:
-    matchLabels:
-      app: postgres
-      type: data
