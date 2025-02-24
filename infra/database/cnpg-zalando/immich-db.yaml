@@ -28,15 +28,15 @@ spec:
       cpu: 1000m
       memory: 1Gi
   allowedSourceRanges:
-    - 192.168.0.0/16
+    - 0.0.0.0/0 # Allow from anywhere
   patroni:
     initdb:
       encoding: "UTF8"
       locale: "en_US.UTF-8"
       data-checksums: "true"
     pg_hba:
-      - local all all trust
       - hostssl all all 0.0.0.0/0 md5
+      - host    all all 0.0.0.0/0 md5 # Allow non-SSL connections too
     slots: {}
   preparedDatabases:
     immich:
