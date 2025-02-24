@@ -21,6 +21,17 @@ spec:
       owner: postgres
       secret:
         name: postgres-superuser-secret
+      postInitSQL:
+        # Create databases
+        - CREATE DATABASE immich;
+        - CREATE DATABASE testdb;
+        # Create users and grant permissions
+        - DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'immich') THEN CREATE USER immich; END IF; IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'demoapp') THEN CREATE USER demoapp; END IF; END $$;
+        # Grant permissions
+        - GRANT ALL PRIVILEGES ON DATABASE immich TO immich;
+        - GRANT ALL PRIVILEGES ON DATABASE testdb TO demoapp;
+        # Extensions
+        - CREATE EXTENSION IF NOT EXISTS citext;
   # Monitoring configuration
   monitoring:
     enablePodMonitor: true
