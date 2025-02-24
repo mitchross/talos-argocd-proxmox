@@ -14,6 +14,7 @@ resources:
   - immich-db-secret.yaml
   - immich-db.yaml
   - immich-data-pvc.yaml
+  - postgres-service.yaml
 helmCharts:
   - name: postgres-operator
     repo: https://opensource.zalando.com/postgres-operator/charts/postgres-operator

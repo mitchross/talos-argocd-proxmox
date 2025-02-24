@@ -28,14 +28,3 @@ timeouts:
   pod_label_wait_timeout: "10m"
   pod_deletion_wait_timeout: "10m"
   ready_wait_timeout: "30s"
-# Enable external access to master
-enableMasterLoadBalancer: true
-masterServiceAnnotations:
-  io.cilium/lb-ipam-ips: "192.168.10.43"
-masterLoadBalancerSpec:
-  type: LoadBalancer
-  ports:
-    - name: postgresql
-      port: 5432
-      protocol: TCP
-      targetPort: 5432
