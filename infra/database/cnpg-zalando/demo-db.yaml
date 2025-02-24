@@ -20,9 +20,13 @@ spec:
     parameters:
       max_connections: "100"
       shared_buffers: "256MB"
-      password_encryption: scram-sha-256
-      listen_addresses: '*'
-      unix_socket_directories: '/var/run/postgresql'
+      log_statement: "all"
+      log_min_duration_statement: "0"
+      log_connections: "on"
+      log_disconnections: "on"
+      password_encryption: "md5"
+      shared_preload_libraries: "pg_stat_statements"
+      track_activity_query_size: "2048"
   resources:
     requests:
       cpu: 100m

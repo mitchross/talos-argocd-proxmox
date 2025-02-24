@@ -3,12 +3,12 @@ configKubernetes:
   enable_pod_antiaffinity: false
   pod_environment_configmap: "postgres-operator-config"
   watched_namespace: "cnpg-zalando"
-  infrastructure_roles_secret_name: "postgres-superuser"
-  infrastructure_roles_secrets:
-    - secretname: "postgres-superuser"
-      userkey: "username"
-      passwordkey: "password"
-      rolekey: "inrole"
+  pod_service_account_name: "postgres-pod"
+  pod_service_account_definition: ""
+  pod_service_account_role_binding_definition: ""
+  pod_terminate_grace_period: "5m"
+  infrastructure_roles_secret_name: "postgres.postgres-superuser.credentials"
+  oauth_token_secret_name: ""
 rbac:
   create: true
   createRole: true
@@ -22,6 +22,7 @@ nodeSelector:
 users:
   enable_password_rotation: false
   replication_username: "repluser"
+  super_username: "postgres"
 postgres_pod_resources:
   default_cpu_request: "100m"
   default_memory_request: "100Mi"
