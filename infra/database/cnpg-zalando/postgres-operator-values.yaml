@@ -2,29 +2,31 @@ configKubernetes:
   secret_name_template: "{username}.{cluster}.credentials"
   enable_pod_antiaffinity: false
   pod_environment_configmap: "postgres-operator-config"
-
+  watched_namespace: "cnpg-zalando" # Only watch this namespace
+  infrastructure_roles_secret_name: "postgres-superuser"
+  infrastructure_roles_secrets:
+    - secretname: "postgres-superuser"
+      userkey: "username"
+      passwordkey: "password"
+      rolekey: "inrole"
 nodeSelector:
   kubernetes.io/hostname: vanillax-ai
-
 users:
   enable_password_rotation: false
   replication_username: "repluser"
-
 postgres_pod_resources:
   default_cpu_request: "100m"
   default_memory_request: "100Mi"
   default_cpu_limit: "1000m"
   default_memory_limit: "1Gi"
-
 timeouts:
   pod_label_wait_timeout: "10m"
   pod_deletion_wait_timeout: "10m"
   ready_wait_timeout: "30s"
-
 # Enable external access to master
 enableMasterLoadBalancer: true
 masterServiceAnnotations:
-  io.cilium/lb-ipam-ips: "192.168.10.50"  # Adjust this IP to match your network plan
+  io.cilium/lb-ipam-ips: "192.168.10.50" # Adjust this IP to match your network plan
 masterLoadBalancerSpec:
   type: LoadBalancer
   ports:
