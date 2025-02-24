@@ -8,9 +8,7 @@ metadata:
 spec:
   selector:
     application: spilo
-    cluster-name: demo-db
     spilo-role: master
-    team: vanillax
   ports:
     - name: postgresql
       port: 5432
