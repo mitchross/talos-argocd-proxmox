@@ -4,11 +4,8 @@ configKubernetes:
   pod_environment_configmap: "postgres-operator-config"
   watched_namespace: "cnpg-zalando"
   pod_service_account_name: "postgres-pod"
-  pod_service_account_definition: ""
-  pod_service_account_role_binding_definition: ""
   pod_terminate_grace_period: "5m"
   infrastructure_roles_secret_name: "postgres.postgres-superuser.credentials"
-  oauth_token_secret_name: ""
 rbac:
   create: true
   createRole: true
