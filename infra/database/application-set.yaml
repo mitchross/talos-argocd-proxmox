@@ -11,10 +11,16 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         revision: HEAD
         directories:
+          # Direct database deployments (like Redis)
+          - path: infra/database/*
+          # Operator deployments
           - path: infra/database/*/operator
           - path: infra/database/*/clusters/*
+          # Exclusions
           - path: infra/database/do-not-deploy
             exclude: true
+          - path: infra/database/cloudnative-pg
+            exclude: true # Exclude the parent dir since we handle its subdirs
   template:
     metadata:
       name: '{{ path[2] }}-{{ path.basename }}'
