@@ -14,6 +14,9 @@ rbac:
   createRole: true
   useExistingRole: false
   namespaceLabelKey: "cnpg-zalando"
+  clusterRoleBindingNamespace: "cnpg-zalando"
+global:
+  namespace: "cnpg-zalando"
 nodeSelector:
   kubernetes.io/hostname: vanillax-ai
 users:
