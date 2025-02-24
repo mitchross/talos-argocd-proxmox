@@ -10,16 +10,6 @@ spec:
     parameters:
       shared_buffers: 256MB
       max_connections: "100"
-      # Allow connections from all addresses
-      listen_addresses: '*'
-  # Resource requirements
-  resources:
-    requests:
-      memory: "2Gi"
-      cpu: "1"
-    limits:
-      memory: "2Gi"
-      cpu: "2"
   # Storage configuration
   storage:
     size: 100Gi
@@ -31,20 +21,6 @@ spec:
       owner: postgres
       secret:
         name: postgres-superuser-secret
-      postInitSQL:
-        # Create databases
-        - CREATE DATABASE immich;
-        - CREATE DATABASE testdb;
-        # Create users and grant permissions
-        - DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${IMMICH_DB_USERNAME}') THEN CREATE USER "${IMMICH_DB_USERNAME}" WITH PASSWORD '${IMMICH_DB_PASSWORD}'; END IF; IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${DEMO_DB_USERNAME}') THEN CREATE USER "${DEMO_DB_USERNAME}" WITH PASSWORD '${DEMO_DB_PASSWORD}'; END IF; END $$;
-        # Grant permissions
-        - GRANT ALL PRIVILEGES ON DATABASE immich TO "${IMMICH_DB_USERNAME}";
-        - GRANT ALL PRIVILEGES ON DATABASE testdb TO "${DEMO_DB_USERNAME}";
-        # Allow external connections
-        - CREATE EXTENSION IF NOT EXISTS citext;
-        - ALTER SYSTEM SET listen_addresses TO '*';
-        # Update pg_hba.conf to allow connections from any IP
-        - echo "host all all 0.0.0.0/0 md5" >> /etc/postgresql/pg_hba.conf;
   # Monitoring configuration
   monitoring:
     enablePodMonitor: true
