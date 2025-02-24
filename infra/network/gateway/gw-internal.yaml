@@ -40,3 +40,9 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
+    - name: postgres
+      protocol: TCP
+      port: 5432
+      allowedRoutes:
+        namespaces:
+          from: All
