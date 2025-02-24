@@ -8,6 +8,7 @@ metadata:
 spec:
   selector:
     application: spilo
+    cluster-name: demo-db
     spilo-role: master
   ports:
     - name: postgresql
