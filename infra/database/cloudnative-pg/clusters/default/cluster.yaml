@@ -5,6 +5,7 @@ metadata:
   namespace: cloudnative-pg
 spec:
   instances: 1
+  enableSuperuserAccess: true
   # PostgreSQL configuration
   postgresql:
     parameters:
