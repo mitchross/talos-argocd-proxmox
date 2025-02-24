@@ -20,6 +20,9 @@ spec:
       resources:
         requests:
           storage: 100Gi
+  walStorage:
+    size: 10Gi
+    storageClass: local-storage
   # Bootstrap configuration
   bootstrap:
     initdb:
@@ -27,6 +30,8 @@ spec:
       owner: postgres
       secret:
         name: postgres-superuser-secret
+      postInitSQL:
+        - CREATE EXTENSION IF NOT EXISTS citext;
   # Monitoring configuration
   monitoring:
     enablePodMonitor: true

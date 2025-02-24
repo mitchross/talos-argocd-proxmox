@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: cloudnative-pg-storage-pv
+  name: cloudnative-pg-data-pv
   labels:
     app: cloudnative-pg
-    type: storage
+    type: data
 spec:
   capacity:
     storage: 100Gi
@@ -13,7 +13,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
   local:
-    path: /datapool/kubernetes/cloudnative-pg
+    path: /datapool/kubernetes/cloudnative-pg/data
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -21,4 +21,29 @@ spec:
             - key: kubernetes.io/hostname
               operator: In
               values:
-                - vanillax-ai 
+                - vanillax-ai
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: cloudnative-pg-wal-pv
+  labels:
+    app: cloudnative-pg
+    type: wal
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/cloudnative-pg/wal
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - vanillax-ai
