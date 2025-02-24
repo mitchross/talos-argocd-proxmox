@@ -11,7 +11,8 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         revision: HEAD
         directories:
-          - path: infra/database/*/*
+          - path: infra/database/*/operator
+          - path: infra/database/*/clusters/*
           - path: infra/database/do-not-deploy
             exclude: true
   template:
