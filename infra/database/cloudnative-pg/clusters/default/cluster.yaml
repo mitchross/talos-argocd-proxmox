@@ -11,6 +11,7 @@ spec:
     parameters:
       shared_buffers: 256MB
       max_connections: "100"
+      listen_addresses: '*'
   # Storage configuration
   storage:
     size: 100Gi
