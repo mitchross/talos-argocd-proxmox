@@ -4,7 +4,8 @@ metadata:
   name: postgres-data-pv
   labels:
     app: postgres
-    type: data
+    cluster-name: demo-db
+    spilo-role: master
 spec:
   capacity:
     storage: 10Gi
@@ -30,7 +31,8 @@ metadata:
   namespace: cnpg-zalando
   labels:
     app: postgres
-    type: data
+    cluster-name: demo-db
+    spilo-role: master
 spec:
   accessModes:
     - ReadWriteOnce
@@ -41,4 +43,5 @@ spec:
   selector:
     matchLabels:
       app: postgres
-      type: data
+      cluster-name: demo-db
+      spilo-role: master
