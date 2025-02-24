@@ -11,12 +11,12 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         revision: HEAD
         directories:
-          - path: infra/database/*
+          - path: infra/database/*/*
           - path: infra/database/do-not-deploy
             exclude: true
   template:
     metadata:
-      name: '{{ path.basename }}'
+      name: '{{ path[2] }}-{{ path.basename }}'
       labels:
         vanillax.me: controllers
     spec:
@@ -29,7 +29,7 @@ spec:
         path: '{{ path }}'
       destination:
         name: in-cluster
-        namespace: database
+        namespace: '{{ path[2] }}'
       syncPolicy:
         automated:
           selfHeal: true
