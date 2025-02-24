@@ -4,7 +4,7 @@ metadata:
   name: postgres-external
   namespace: cloudnative-pg
   annotations:
-    io.cilium/lb-ipam-ips: "192.168.10.47" # Changed to a new IP
+    io.cilium/lb-ipam-ips: "192.168.10.47"
 spec:
   type: LoadBalancer
   ports:
