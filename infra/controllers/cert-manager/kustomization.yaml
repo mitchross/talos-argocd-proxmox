@@ -7,13 +7,13 @@ resources:
   # - cluster-issuer.yaml
 
 
-helmCharts:
-  - name: cert-manager
-    repo: https://charts.jetstack.io
-    version: v1.17.1
-    releaseName: cert-manager
-    namespace: cert-manager
-    valuesFile: values.yaml
+# helmCharts:
+#   - name: cert-manager
+#     repo: https://charts.jetstack.io
+#     version: v1.17.1
+#     releaseName: cert-manager
+#     namespace: cert-manager
+#     valuesFile: values.yaml
 
 
 commonAnnotations:
