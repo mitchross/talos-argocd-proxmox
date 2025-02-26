@@ -68,13 +68,7 @@ spec:
               mountPath: /dev/shm
             - name: usb
               mountPath: /dev/bus/usb
-        - name: debug
-          image: busybox
-          command: ['sh', '-c', 'mkdir -p /config && echo "=== Listing root ===" && ls -la / && echo "=== Listing /config ===" && ls -la /config && echo "=== Contents of config.yml ===" && cat /config/config.yml 2>/dev/null || echo "No config.yml" && sleep 3600']
-          volumeMounts:
-            - name: config-file
-              mountPath: /config/config.yml
-              subPath: config.yml
+
       volumes:
         - name: config-dir
           emptyDir: {}
