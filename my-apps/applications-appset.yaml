@@ -1,0 +1,48 @@
+# my-apps/myapplications-appset.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: applications
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+        revision: HEAD
+        directories:
+          - path: my-apps/*
+          - path: my-apps/*/*
+          - exclude: true
+            path: my-apps/myapplications-appset.yaml
+  template:
+    metadata:
+      # Changed from 'app-{{path.basename}}' to just '{{path.basename}}'
+      name: '{{path.basename}}'
+      labels:
+        type: application
+    spec:
+      project: applications
+      source:
+        plugin:
+          name: kustomize-build-with-helm
+        repoURL: https://github.com/mitchross/k3s-argocd-starter.git
+        targetRevision: HEAD
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
