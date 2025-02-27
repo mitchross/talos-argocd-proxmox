@@ -31,11 +31,17 @@ ingress:
         - name: Accept-Language
         - name: User-Agent
 
+
+  # Service URL components:
+  # - cilium-gateway-gateway-external: The service name created by Cilium gateway controller
+  # - gateway: Namespace where the gateway is deployed
+  # - svc.cluster.local: Kubernetes DNS suffix
+  # - 443: HTTPS port
   - hostname: "*.vanillax.me"
-    service: https://cilium-gateway-external.gateway.svc.cluster.local:443
-    originRequest:
-      originServerName: "*.vanillax.me"
-      logHeaders: true
+    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
+     originRequest:
+       originServerName: "*.vanillax.me"
+       logHeaders: true
       headers:
         - name: CF-Connecting-IP
         - name: X-Real-IP
@@ -61,7 +67,7 @@ ingress:
         - name: CF-Bot-Management-Tag
 
   - hostname: vanillax.me
-    service: https://cilium-gateway-external.gateway.svc.cluster.local:443
+    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
     originRequest:
       originServerName: vanillax.me
       logHeaders: true
