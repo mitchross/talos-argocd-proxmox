@@ -23,6 +23,7 @@ spec:
       labels:
         type: infrastructure
     spec:
+      project: default
       source:
         plugin:
           name: kustomize-build-with-helm
