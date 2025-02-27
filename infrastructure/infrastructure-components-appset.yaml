@@ -15,15 +15,13 @@ spec:
           - path: infrastructure/controllers/*
           - path: infrastructure/monitoring/*
           - path: infrastructure/database/*
-
-
   template:
     metadata:
       name: '{{path.basename}}'
       labels:
         type: infrastructure
     spec:
-      project: default
+      project: infrastructure
       source:
         plugin:
           name: kustomize-build-with-helm
