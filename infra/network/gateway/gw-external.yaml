@@ -1,12 +1,12 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: external
+  name: gateway-external
   namespace: gateway
 spec:
   addresses:
-    - type: IPAddress
-      value: 192.168.10.49
+  - type: IPAddress
+    value: 192.168.10.49
   gatewayClassName: cilium
   listeners:
     - name: http
@@ -24,19 +24,7 @@ spec:
         certificateRefs:
           - name: cert-vanillax
             kind: Secret
-            group: ""
-      allowedRoutes:
-        namespaces:
-          from: All
-    - name: https-domain
-      protocol: HTTPS
-      port: 443
-      hostname: "vanillax.me"
-      tls:
-        certificateRefs:
-          - name: cert-vanillax
-            kind: Secret
-            group: ""
+            group: "" # required
       allowedRoutes:
         namespaces:
           from: All

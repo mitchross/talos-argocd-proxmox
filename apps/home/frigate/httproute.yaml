@@ -2,20 +2,17 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: frigate
-  namespace: frigate
 spec:
   parentRefs:
-    - name: internal
+    - name: gateway-internal
       namespace: gateway
-      sectionName: https
   hostnames:
-    - "frigate.vanillax.me"
+  - "frigate.vanillax.me"
   rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
+  - matches:
+    - path:
+        type: PathPrefix 
+        value: /
+    backendRefs:
         - name: frigate-http
           port: 5000
-          weight: 1
