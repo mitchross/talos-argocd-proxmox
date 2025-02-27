@@ -1,0 +1,75 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: infrastructure
+  namespace: argocd
+spec:
+  description: Core infrastructure components
+  sourceRepos:
+    - '*' # In production, specify exact repo URLs
+  destinations:
+    - namespace: '*'
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  roles:
+    - name: admin
+      description: Admin role for infrastructure project
+      policies:
+        - p, proj:infrastructure:admin, applications, *, infrastructure/*, allow
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: applications
+  namespace: argocd
+spec:
+  description: User applications
+  sourceRepos:
+    - '*' # In production, specify exact repo URLs
+  destinations:
+    - namespace: '*'
+      server: https://kubernetes.default.svc
+  # Restrict application projects from creating cluster-wide resources
+  clusterResourceWhitelist:
+    - group: cert-manager.io
+      kind: ClusterIssuer
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  roles:
+    - name: admin
+      description: Admin role for applications project
+      policies:
+        - p, proj:applications:admin, applications, *, applications/*, allow
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: monitoring
+  namespace: argocd
+spec:
+  description: Monitoring and observability components
+  sourceRepos:
+    - '*' # In production, specify exact repo URLs
+  destinations:
+    - namespace: monitoring
+      server: https://kubernetes.default.svc
+  # Allow all cluster resources like infrastructure since monitoring needs similar privileges
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  roles:
+    - name: admin
+      description: Admin role for monitoring project
+      policies:
+        - p, proj:monitoring:admin, applications, *, monitoring/*, allow
