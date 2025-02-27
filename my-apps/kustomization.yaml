@@ -6,4 +6,4 @@ commonLabels:
   app.kubernetes.io/managed-by: argocd
 
 resources:
-  - project.yaml
+
