@@ -23,6 +23,7 @@ spec:
       labels:
         type: application
     spec:
+      project: applications
       source:
         plugin:
           name: kustomize-build-with-helm
