@@ -2,13 +2,9 @@ tunnel: threadripper
 credentials-file: /etc/cloudflared/credentials/credentials.json
 metrics: 0.0.0.0:2000
 no-autoupdate: true
-
 # Enhanced logging configuration
-loglevel: debug   # Increased log level for more details
+loglevel: debug # Increased log level for more details
 transport-loglevel: debug
-
-
-
 ingress:
   - hostname: hello.vanillax.me
     service: hello_world
@@ -30,8 +26,6 @@ ingress:
         - name: X-Forwarded-For
         - name: Accept-Language
         - name: User-Agent
-
-
   # Service URL components:
   # - cilium-gateway-gateway-external: The service name created by Cilium gateway controller
   # - gateway: Namespace where the gateway is deployed
@@ -39,9 +33,9 @@ ingress:
   # - 443: HTTPS port
   - hostname: "*.vanillax.me"
     service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
-     originRequest:
-       originServerName: "*.vanillax.me"
-       logHeaders: true
+    originRequest:
+      originServerName: "*.vanillax.me"
+      logHeaders: true
       headers:
         - name: CF-Connecting-IP
         - name: X-Real-IP
@@ -65,7 +59,6 @@ ingress:
         - name: CF-Bot-Score
         - name: CF-Challenge
         - name: CF-Bot-Management-Tag
-
   - hostname: vanillax.me
     service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
     originRequest:
@@ -86,5 +79,4 @@ ingress:
         - name: X-Forwarded-For
         - name: Accept-Language
         - name: User-Agent
-
   - service: http_status:404
