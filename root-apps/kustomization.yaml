@@ -3,5 +3,3 @@ kind: Kustomization
 
 resources:
   - project.yaml
-  - applications.yaml
-  - infrastructure.yaml 
