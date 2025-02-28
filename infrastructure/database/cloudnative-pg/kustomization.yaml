@@ -4,10 +4,3 @@ namespace: cloudnative-pg
 resources:
   - operator
   - clusters/default
-helmCharts:
-  - name: cloudnative-pg
-    repo: https://cloudnative-pg.github.io/charts
-    version: 0.23.0
-    releaseName: cloudnative-pg
-    namespace: cloudnative-pg
-    includeCRDs: true
