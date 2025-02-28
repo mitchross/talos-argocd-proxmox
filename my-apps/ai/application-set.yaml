@@ -11,8 +11,8 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         revision: HEAD
         directories:
-          - path: apps/ai/*
-          - path: apps/ai/archived
+          - path: my-apps/ai/*
+          - path: my-apps/ai/archived
             exclude: true
   template:
     metadata:
@@ -34,4 +34,3 @@ spec:
         automated:
           selfHeal: true
           prune: true
-
