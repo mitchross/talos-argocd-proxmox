@@ -40,6 +40,7 @@ spec:
               cpu: 12000m
           securityContext:
             privileged: true
+            allowPrivilegeEscalation: true
           livenessProbe:
             httpGet:
               path: /api/version
@@ -68,7 +69,6 @@ spec:
               mountPath: /dev/shm
             - name: usb
               mountPath: /dev/bus/usb
-
       volumes:
         - name: config-dir
           emptyDir: {}
