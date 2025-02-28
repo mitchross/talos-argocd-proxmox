@@ -11,13 +11,10 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         revision: HEAD
         directories:
-          # Match all direct infrastructure components
-          - path: infrastructure/*
-            exclude: true
           - path: infrastructure/*/*
   template:
     metadata:
-      name: '{{path[1]}}-{{path.basename}}'
+      name: 'infra-{{path.basename}}'
       labels:
         type: infrastructure
     spec:

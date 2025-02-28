@@ -1,41 +1,38 @@
+# my-apps/myapplications-appset.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: network
+  name: applications
   namespace: argocd
-  labels:
-    vanillax.me: network
   annotations:
-    argocd.argoproj.io/sync-wave: "-2"
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   generators:
     - git:
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         revision: HEAD
         directories:
-          - path: infrastructure/networking/*
-          - path: infrastructure/networking/application-set.yaml
-            exclude: true
+          - path: my-apps/*/*
   template:
     metadata:
-      name: '{{ path.basename }}'
+      name: '{{path[1]}}-{{path.basename}}'
       labels:
-        vanillax.me: network
-        type: infrastructure
+        type: application
     spec:
-      project: infrastructure
+      project: ai
       source:
         plugin:
           name: kustomize-build-with-helm
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         targetRevision: HEAD
-        path: '{{ path }}'
+        path: '{{path}}'
       destination:
         server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
       syncPolicy:
         automated:
-          selfHeal: true
           prune: true
+          selfHeal: true
         retry:
           limit: 5
           backoff:

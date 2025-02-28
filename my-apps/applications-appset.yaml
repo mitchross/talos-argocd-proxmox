@@ -1,4 +1,4 @@
-# my-apps/applications-appset.yaml
+# my-apps/myapplications-appset.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -12,21 +12,14 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         revision: HEAD
         directories:
-          # Match all direct application folders
-          - path: my-apps/*
-            exclude: true
-          # Match all specific applications
           - path: my-apps/*/*
-          # Exclude this ApplicationSet itself
-          - path: my-apps/applications-appset.yaml
-            exclude: true
   template:
     metadata:
       name: '{{path[1]}}-{{path.basename}}'
       labels:
         type: application
     spec:
-      project: applications
+      project: ai
       source:
         plugin:
           name: kustomize-build-with-helm

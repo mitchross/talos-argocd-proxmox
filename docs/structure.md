@@ -2,47 +2,95 @@
 
 ```plaintext
 .
-├── apps/                      # Application manifests
-│   ├── ai/                    # AI-related applications
-│   ├── media/                 # Media applications
-│   └── privacy/               # Privacy-focused applications
-├── docs/                      # Documentation
+├── infrastructure/           # Infrastructure components
+│   ├── controllers/          # Kubernetes controllers
+│   │   └── argocd/           # ArgoCD configuration and projects
+│   ├── networking/           # Network configurations
+│   ├── storage/              # Storage configurations
+│   └── infrastructure-components-appset.yaml  # Main infrastructure ApplicationSet
+├── monitoring/               # Monitoring components
+│   ├── k8s-monitoring/       # Kubernetes monitoring stack
+│   └── monitoring-components-appset.yaml  # Main monitoring ApplicationSet
+├── my-apps/                  # User applications
+│   ├── ai/                   # AI-related applications
+│   ├── media/                # Media applications
+│   ├── development/          # Development tools
+│   ├── external/             # External service integrations
+│   ├── home/                 # Home automation apps
+│   ├── privacy/              # Privacy-focused applications
+│   └── myapplications-appset.yaml  # Main applications ApplicationSet
+├── docs/                     # Documentation
 │   ├── argocd.md             # ArgoCD setup and workflow
 │   ├── network.md            # Network configuration
 │   ├── storage.md            # Storage setup and management
 │   └── structure.md          # This file
-├── infra/                     # Infrastructure components
-│   ├── controllers/          # Kubernetes controllers
-│   ├── network/              # Network configurations
-│   ├── root-apps/            # Root ArgoCD applications
-│   └── storage/              # Storage configurations
-├── sets/                      # ApplicationSets
-└── README.md                  # Project overview
+└── README.md                 # Project overview
 ```
 
-## Directory Organization
+## Key Organization Principles
 
-### `/apps`
-Contains all application manifests organized by category. Each application follows a standard structure:
+1. **Three-Tier Structure**
+   - Infrastructure components (foundation layer)
+   - Monitoring components (observability layer)
+   - User applications (workload layer)
+
+2. **Application Categories** 
+   - Each category folder contains related applications
+   - Standardized application structure in each folder
+
+3. **Simplified Management**
+   - One ApplicationSet per tier
+   - Clear separation of concerns
+   - Controlled deployment order through sync waves
+
+## ApplicationSet Organization
+
+### `/infrastructure/infrastructure-components-appset.yaml`
+- Manages all infrastructure components
+- Uses infrastructure project
+- Deploys with negative sync wave (-2) to ensure it runs first
+- Pattern: `infrastructure/*/*`
+
+### `/monitoring/monitoring-components-appset.yaml`
+- Manages all monitoring components
+- Uses infrastructure project
+- Deploys with neutral sync wave (0)
+- Pattern: `monitoring/*/*`
+
+### `/my-apps/myapplications-appset.yaml`
+- Manages all user applications
+- Uses ai project (provides necessary permissions)
+- Deploys with positive sync wave (1) to ensure it runs last
+- Pattern: `my-apps/*/*`
+
+## Directory Contents
+
+### `/infrastructure`
+Infrastructure components and configurations:
+- `controllers/`: Core Kubernetes controllers (ArgoCD, Cert-Manager, etc.)
+- `networking/`: Network configurations (Cilium, Cloudflared, etc.)
+- `storage/`: Storage configurations and classes
+- `database/`: Database operators and configurations
+
+### `/monitoring`
+Monitoring and observability components:
+- `k8s-monitoring/`: Kubernetes monitoring stack (Prometheus, Grafana, etc.)
+- Additional monitoring components as needed
+
+### `/my-apps`
+User applications organized by category:
+- `ai/`: AI-related applications (Ollama, ComfyUI, etc.)
+- `media/`: Media applications (Plex, Jellyfin, etc.)
+- `development/`: Development tools (Kafka, Temporal, etc.)
+- `external/`: External integrations (Proxmox, TrueNAS, etc.)
+- `home/`: Home automation (Frigate, Wyze-Bridge, etc.)
+- `privacy/`: Privacy applications (Searxng, Libreddit, etc.)
+
+## Standard Application Structure
+Each application follows a standard structure:
 - `deployment.yaml`: Main application deployment
 - `service.yaml`: Service configuration
 - `configmap.yaml`: Application configuration
 - `httproute.yaml`: Gateway API routes
 - `kustomization.yaml`: Kustomize configuration
-
-### `/docs`
-Project documentation organized by topic:
-- `argocd.md`: ArgoCD setup and workflow details
-- `network.md`: Network architecture and configuration
-- `storage.md`: Storage setup and management
-- `structure.md`: Project structure documentation
-
-### `/infra`
-Infrastructure components and configurations:
-- `controllers/`: Kubernetes controllers (ArgoCD, Cert-Manager, etc.)
-- `network/`: Network configurations (Cilium, CoreDNS, etc.)
-- `root-apps/`: Root ArgoCD applications that manage everything
-- `storage/`: Storage configurations and classes
-
-### `/sets`
-ApplicationSet configurations for dynamic application generation. 
+- `pvc.yaml`: Persistent volume claims (if needed) 

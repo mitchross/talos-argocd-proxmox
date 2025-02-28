@@ -1,33 +1,24 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: ai-apps
+  name: monitoring-components
   namespace: argocd
-  labels:
-    vanillax.me: application
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   generators:
     - git:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         revision: HEAD
         directories:
-          - path: my-apps/ai/*
-          # Exclude the application set itself and archived apps
-          - path: my-apps/ai/application-set.yaml
-            exclude: true
-          - path: my-apps/ai/archived
-            exclude: true
-          - path: my-apps/ai/project.yaml
-            exclude: true
+          - path: monitoring/*/*
   template:
     metadata:
-      name: 'ai-{{path.basename}}'
+      name: 'monitoring-{{path.basename}}'
       labels:
-        vanillax.me: application
-      finalizers:
-        - resources-finalizer.argocd.argoproj.io
+        type: monitoring
     spec:
-      project: ai
+      project: infrastructure
       source:
         plugin:
           name: kustomize-build-with-helm
@@ -35,13 +26,18 @@ spec:
         targetRevision: HEAD
         path: '{{path}}'
       destination:
-        name: in-cluster
-        # Use the application's name as the namespace
+        server: https://kubernetes.default.svc
         namespace: '{{path.basename}}'
       syncPolicy:
         automated:
           selfHeal: true
           prune: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
         syncOptions:
           - CreateNamespace=true
           - ServerSideApply=true
