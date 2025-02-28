@@ -1,78 +1,120 @@
-# 🚀 K3s ArgoCD Cluster
+# 🚀 K3s ArgoCD Proxmox Cluster
+=========================
 
-A GitOps-driven Kubernetes cluster using K3s, ArgoCD, and Cilium, with integrated Cloudflare Tunnel for secure external access.
+> Modern GitOps deployment structure using ArgoCD on Kubernetes with Proxmox virtualization
 
-## 📋 Documentation
-- **[View Documentation Online](https://mitchross.github.io/k3s-argocd-proxmox)** - Full documentation website
-- **[Local Documentation](docs/)** - Browse documentation in the repository
-  - [ArgoCD Setup](docs/argocd.md)
-  - [Network Configuration](docs/network.md)
-  - [Storage Configuration](docs/storage.md)
-  - [Security Setup](docs/security.md)
-  - [GPU Configuration](docs/gpu.md)
-  - [External Services](docs/external-services.md)
-  - [Project Structure](docs/structure.md)
+A GitOps-driven Kubernetes cluster using K3s, ArgoCD, and Cilium, with integrated Cloudflare Tunnel for secure external access. Built for both home lab and small production environments.
 
-## 📋️ Current Setup
+## 📋 Table of Contents
 
-This repository demonstrates a single-node K3s cluster setup, optimized for home lab and small production environments. While K3s supports multi-node clusters, this setup uses a single node to simplify storage management and reduce complexity.
-
-### Why Single Node?
-- Fixed storage location for applications (no need for distributed storage)
-- Simplified backup and restore procedures
-- Perfect for home lab and small production workloads
-- Can be expanded with worker nodes for compute-only scaling
-
-### Current Hardware Stack
-```
-🧠 Compute
-├── AMD Threadripper 2950X (16c/32t)
-├── 128GB ECC DDR4 RAM
-├── 2× NVIDIA RTX 3090 24GB
-└── Google Coral TPU
-
-💾 Storage
-├── 4TB ZFS RAID-Z2
-├── NVMe OS Drive
-└── Local Path Storage for K8s
-
-🌐 Network
-├── 2.5Gb Networking
-├── Firewalla Gold
-└── Internal DNS Resolution
-```
+- [Prerequisites](#-prerequisites)
+- [Architecture](#-architecture)
+- [Quick Start](#-quick-start)
+  - [System Setup](#1-system-dependencies)
+  - [K3s Installation](#2-k3s-installation)
+  - [Networking Setup](#3-cilium-installation)
+  - [GitOps Setup](#4-argocd-installation)
+  - [Secret Management](#5-secret-management)
+- [Verification](#-verification)
+- [Documentation](#-documentation)
+- [Hardware Stack](#-hardware-stack)
+- [Scaling](#-scaling-options)
+- [Troubleshooting](#-troubleshooting)
+- [Contributing](#-contributing)
+- [License](#-license)
 
 ## 📋 Prerequisites
 
-- 💻 A Linux server/VM (can be Proxmox VM, mini PC, NUC, or similar)
+- Linux server/VM (can be Proxmox VM, mini PC, NUC, or similar)
   - Minimum 4GB RAM (8GB+ recommended)
   - 2 CPU cores (4+ recommended)
   - 20GB storage (100GB+ recommended for applications)
-  - Note: These are minimum requirements, see hardware stack above for current setup
-- 🌐 Domain configured in Cloudflare
-- 🔐 1Password account for secrets management
-  - 1Password Connect credentials and token ([setup guide](docs/external-services.md#1password-setup))
-  - Cloudflare API tokens and tunnel configuration ([setup guide](docs/external-services.md#cloudflare-setup))
-- 🛠️ `kubectl` installed locally
-- ☁️ `cloudflared` installed locally
+- Domain configured in Cloudflare
+- 1Password account for secrets management
+  - 1Password Connect credentials and token
+  - Cloudflare API tokens and tunnel configuration
+- `kubectl` installed locally
+- `cloudflared` installed locally
 
-## 🔄 Scaling Options
+## 🏗️ Architecture
 
-While this setup uses a single node, you can add worker nodes for additional compute capacity:
+```mermaid
+graph TD
+    subgraph "Argo CD Projects"
+        IP[Infrastructure Project] --> IAS[Infrastructure ApplicationSet]
+        AP[Applications Project] --> AAS[Applications ApplicationSet]
+        MP[Monitoring Project] --> MAS[Monitoring ApplicationSet]
+        AIP[AI Project] --> AIAS[AI ApplicationSet]
+    end
+    
+    subgraph "Infrastructure Components"
+        IAS --> N[Networking]
+        IAS --> S[Storage]
+        IAS --> C[Controllers]
+        IAS --> DB[Database]
+        
+        N --> Cilium
+        N --> Cloudflared
+        N --> Gateway
+        
+        S --> OpenEBS
+        S --> VolumeSnapshots
+        
+        C --> CertManager
+        C --> ExternalSecrets
+        
+        DB --> CloudNativePG
+    end
+    
+    subgraph "Monitoring Stack"
+        MAS --> Prometheus
+        MAS --> Grafana
+        MAS --> AlertManager
+        MAS --> Loki
+    end
+    
+    subgraph "User Applications"
+        AAS --> Home[Home Apps]
+        AAS --> Media[Media Apps]
+        AAS --> Dev[Dev Tools]
+        AAS --> Privacy[Privacy Apps]
+        
+        Home --> Frigate
+        Home --> WyzeBridge
+        
+        Media --> Plex
+        Media --> Jellyfin
+        
+        Dev --> Kafka
+        Dev --> Temporal
+        
+        Privacy --> SearXNG
+        Privacy --> LibReddit
+    end
+    
+    subgraph "AI Applications"
+        AIAS --> Ollama
+        AIAS --> ComfyUI
+    end
 
-```bash
-# On worker node
-curl -sfL https://get.k3s.io | K3S_URL=https://myserver:6443 K3S_TOKEN=mynodetoken sh -
-
-# Worker nodes can be added without affecting storage, as they:
-# - Don't run storage workloads
-# - Only handle compute tasks
-# - Automatically join the cluster
+    style IP fill:#f9f,stroke:#333,stroke-width:2px
+    style AP fill:#f9f,stroke:#333,stroke-width:2px
+    style MP fill:#f9f,stroke:#333,stroke-width:2px
+    style AIP fill:#f9f,stroke:#333,stroke-width:2px
+    style IAS fill:#bbf,stroke:#333,stroke-width:2px
+    style MAS fill:#bbf,stroke:#333,stroke-width:2px
+    style AAS fill:#bbf,stroke:#333,stroke-width:2px
+    style AIAS fill:#bbf,stroke:#333,stroke-width:2px
 ```
 
-Note: Storage remains on the main node to maintain data locality and simplify management.
+### Key Features
+- **Three-Tier Architecture**: Separate infrastructure, monitoring, and applications
+- **Sync Waves**: Controlled deployment order through ArgoCD sync waves
+- **Simple Directory Patterns**: No complex include/exclude logic
+- **All-in-One Management**: Just three ApplicationSets to manage everything
+- **GPU Integration**: Support for hardware acceleration with NVIDIA GPUs
 
-## 🏃 Getting Started
+## 🚀 Quick Start
 
 ### 1. System Dependencies
 ```bash
@@ -83,7 +125,7 @@ sudo apt install --reinstall zfs-dkms
 # Install 1Password CLI (follow instructions at https://1password.com/downloads/command-line/)
 ```
 
-### 2. Install K3s 🎯
+### 2. K3s Installation
 ```bash
 export SETUP_NODEIP=192.168.10.11
 export SETUP_CLUSTERTOKEN=randomtokensecret1234
@@ -105,69 +147,64 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 chmod 600 $HOME/.kube/config
 ```
 
-### 3. Install Cilium 🔄
+### Adding Worker Nodes
 ```bash
-# Install Cilium CLI
-CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
-CLI_ARCH=amd64
-curl -L --fail --remote-name-all https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${CLI_ARCH}.tar.gz
-sudo tar xzvfC cilium-linux-${CLI_ARCH}.tar.gz /usr/local/bin
-rm cilium-linux-${CLI_ARCH}.tar.gz
+# On worker node
+curl -sfL https://get.k3s.io | K3S_URL=https://myserver:6443 K3S_TOKEN=mynodetoken sh -
 
-# Install Cilium
-cilium install \
-  --version 1.16.3 \
+# Worker nodes:
+# - Don't run storage workloads
+# - Only handle compute tasks
+# - Automatically join the cluster
+```
+
+### 3. Cilium Installation
+```bash
+# Install Helm if not already installed
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+# Add Cilium Helm repository
+helm repo add cilium https://helm.cilium.io/
+helm repo update
+
+# Install Cilium using Helm
+helm install cilium cilium/cilium --version 1.16.3 \
+  --namespace kube-system \
+  --set kubeProxyReplacement=true \
   --set k8sServiceHost=${API_SERVER_IP} \
   --set k8sServicePort=${API_SERVER_PORT} \
-  --set kubeProxyReplacement=true \
-  --helm-set=operator.replicas=1
+  --set operator.replicas=1 \
+  --set hubble.relay.enabled=true \
+  --set hubble.ui.enabled=true
 
-# Verify installation
-cilium status
+# Verify the installation
+kubectl -n kube-system get pods -l k8s-app=cilium
+kubectl -n kube-system get pods -l k8s-app=cilium-operator
 
+# Install Gateway API CRDs
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/experimental-install.yaml
-cd to /infra/network/cilium
-cilium upgrade -f values.yaml
 
+# Apply custom Cilium configuration if needed
+kubectl apply -f infrastructure/networking/cilium/values.yaml
 ```
 
-### 4. Install CoreDNS 🔍 (Optional)
-CoreDNS can be installed in two ways:
-
-#### Option A: Use K3s Built-in CoreDNS ( RECOMMENDED)
+### 4. ArgoCD Installation
 ```bash
-# Remove the --disable coredns flag from K3s installation
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.32.0+k3s1" \
-  INSTALL_K3S_EXEC="--node-ip $SETUP_NODEIP \
-  --disable=flannel,local-storage,metrics-server,servicelb,traefik \
-  --flannel-backend='none' \
-  --disable-network-policy \
-  --disable-cloud-controller \
-  --disable-kube-proxy" \
-  K3S_TOKEN=$SETUP_CLUSTERTOKEN \
-  K3S_KUBECONFIG_MODE=644 sh -s -
+# Install Gateway API CRDs
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/experimental-install.yaml
+
+# Install ArgoCD with custom configuration
+k3s kubectl kustomize --enable-helm infrastructure/controllers/argocd | k3s kubectl apply -f -
+
+# Wait for ArgoCD to be ready
+kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
+
+# Wait for CRDs to be established
+kubectl wait --for=condition=established crd/applications.argoproj.io --timeout=60s
+kubectl wait --for=condition=established crd/appprojects.argoproj.io --timeout=60s
 ```
 
-#### Option B: Custom CoreDNS Installation
-Use this option if you need to customize CoreDNS configuration:
-```bash
-# First, ensure CoreDNS is disabled in K3s 
-  --disable=flannel,local-storage,metrics-server,servicelb,traefik,coredns
-# Then install custom CoreDNS:
-k3s kubectl kustomize --enable-helm infra/network/coredns | k3s kubectl apply -f -
-
-# Verify installation
-kubectl get pods -n kube-system -l k8s-app=coredns
-```
-
-Key differences:
-- Option A: Uses K3s default CoreDNS configuration
-- Option B: Allows full customization of CoreDNS settings
-  - Custom DNS forwarding rules
-  - Split DNS configuration
-  - Advanced plugin configuration
-
-### 5. Setup Secret Management 🔐
+### 5. Secret Management
 ```bash
 # Create required namespaces
 kubectl create namespace 1passwordconnect
@@ -191,23 +228,11 @@ kubectl create secret generic 1passwordconnect \
   --namespace external-secrets
 ```
 
-### 6. Install ArgoCD ⚓
+## 🛠️ Final Deployment
+
+Deploy the three-tier structure in order:
+
 ```bash
-# Install Gateway API CRDs
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/experimental-install.yaml
-
-# Install ArgoCD with our custom configuration
-k3s kubectl kustomize --enable-helm infrastructure/controllers/argocd | k3s kubectl apply -f -
-
-# Wait for ArgoCD to be ready
-kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
-
-# Wait for CRDs to be established
-kubectl wait --for=condition=established crd/applications.argoproj.io --timeout=60s
-kubectl wait --for=condition=established crd/appprojects.argoproj.io --timeout=60s
-
-# Apply the 3-tier structure in order
-
 # 1. First apply the ArgoCD projects
 kubectl apply -f infrastructure/controllers/argocd/projects.yaml -n argocd
 
@@ -221,15 +246,13 @@ kubectl apply -f monitoring/monitoring-components-appset.yaml -n argocd
 kubectl apply -f my-apps/myapplications-appset.yaml -n argocd
 ```
 
-This installation method includes:
+### Key Deployment Features
 - Three-tier architecture separating infrastructure, monitoring, and applications
 - Sync waves ensure proper deployment order
 - Simple directory patterns without complex include/exclude logic
 - All components managed through just three top-level ApplicationSets
 
-For detailed ArgoCD configuration, see [ArgoCD Documentation](docs/argocd.md)
-
-### 7. Verify Installation ✅
+## 🔍 Verification
 ```bash
 # Check core components
 kubectl get pods -A
@@ -244,93 +267,45 @@ kubectl get pods -n 1passwordconnect
 kubectl get externalsecret -A
 ```
 
-For detailed configuration and advanced setup:
+## 📋 Documentation
+- **[View Documentation Online](https://mitchross.github.io/k3s-argocd-proxmox)** - Full documentation website
+- **[Local Documentation](docs/)** - Browse documentation in the repository:
+  - [ArgoCD Setup](docs/argocd.md)
+  - [Network Configuration](docs/network.md)
+  - [Storage Configuration](docs/storage.md)
+  - [Security Setup](docs/security.md)
+  - [GPU Configuration](docs/gpu.md)
+  - [External Services](docs/external-services.md)
+  - [Project Structure](docs/structure.md)
 
-## 🌐 Network Configuration
+## 💻 Hardware Stack
+```
+🧠 Compute
+├── AMD Threadripper 2950X (16c/32t)
+├── 128GB ECC DDR4 RAM
+├── 2× NVIDIA RTX 3090 24GB
+└── Google Coral TPU
 
-The cluster uses a split network configuration with the following topology:
+💾 Storage
+├── 4TB ZFS RAID-Z2
+├── NVMe OS Drive
+└── Local Path Storage for K8s
 
-```mermaid
-graph TD
-    subgraph "External Network"
-        A[Internet] --> B[Cloudflare]
-        B --> C[Cloudflare Tunnel]
-    end
-
-    subgraph "Network Hardware"
-        D[Firewalla Gold] --> E[2.5Gb Switch]
-    end
-
-    subgraph "Internal Network 192.168.10.0/24"
-        E --> F[K3s Node\n192.168.10.11]
-        E --> G[Gateway External\n192.168.10.50]
-        E --> H[Gateway Internal\n192.168.10.51]
-        E --> I[CoreDNS\n192.168.10.53]
-    end
-
-    subgraph "K8s Networks"
-        J[Pod Network\n10.42.0.0/16]
-        K[Service Network\n10.43.0.0/16]
-    end
-
-    C --> G
-    F --> J
-    F --> K
-    I --> H
+🌐 Network
+├── 2.5Gb Networking
+├── Firewalla Gold
+└── Internal DNS Resolution
 ```
 
-- Internal access via Gateway API (192.168.10.51)
-- External access via Cloudflare Tunnel
-- DNS split horizon for internal/external resolution
+## 🔄 Scaling Options
 
-[Detailed Network Documentation](docs/network.md)
+While this setup uses a single node, you can add worker nodes for additional compute capacity:
 
-## 💾 Storage Configuration
-
-Local path provisioner and SMB storage options:
-- Node-specific PV binding
-- Storage classes for different use cases
-- Volume lifecycle management
-
-[Detailed Storage Documentation](docs/storage.md)
-
-## 🔒 GPU Configuration
-
-Hardware accelerated workloads using:
-- NVIDIA GPU Operator
-- 2× RTX 3090 for AI/ML tasks
-- Google Coral TPU for inference
-- Optimized for Ollama and ComfyUI
-
-[Detailed GPU Documentation](docs/gpu.md)
-
-## 🔒 Security Configuration
-
-Secure access through:
-- Cloudflare Zero Trust
-- Split DNS configuration
-- Internal certificate management
-
-[Detailed Security Documentation](docs/security.md)
-
-## 🔐 Secrets Management
-
-Secure secret handling using:
-- 1Password integration
-- External Secrets Operator
-- Automated secret rotation
-- RBAC-based access control
-
-[Detailed Secrets Documentation](docs/secrets.md)
-
-## ⚓ ArgoCD Configuration
-
-GitOps workflow using:
-- Pure Kubernetes manifests with Kustomize
-- Selective Helm chart usage
-- Multi-environment management
-
-[Detailed ArgoCD Documentation](docs/argocd.md)
+| Scaling Type | Description | Benefits |
+|--------------|-------------|----------|
+| **Single Node** | All workloads on one server | Simplified storage, easier management |
+| **Worker Nodes** | Add compute-only nodes | Increased capacity without storage complexity |
+| **Multi-Master** | High availability control plane | Production-grade resilience |
 
 ## 📁 Directory Structure
 
@@ -363,21 +338,33 @@ GitOps workflow using:
 
 ## 🔍 Troubleshooting
 
-Common issues and solutions:
-1. **Network Issues** 🌐
-   - Check Gateway API status
-   - Verify Cloudflare Tunnel connectivity
-   - Test DNS resolution
+| Issue Type | Troubleshooting Steps |
+|------------|----------------------|
+| **Network Issues** | • Check Gateway API status<br>• Verify Cloudflare Tunnel connectivity<br>• Test DNS resolution |
+| **Storage Issues** | • Verify PV binding<br>• Check storage provisioner logs<br>• Validate node affinity |
+| **ArgoCD Issues** | • Check application sync status<br>• Verify Git repository access<br>• Review application logs |
+| **Finalizer Cleanup** | • `kubectl patch applications -n argocd app-name --type json -p '[{"op":"remove","path":"/metadata/finalizers"}]'`<br>• `kubectl delete applications --all -n argocd` |
 
-2. **Storage Issues** 💾
-   - Verify PV binding
-   - Check storage provisioner logs
-   - Validate node affinity
+### ArgoCD Application Cleanup
+If you need to remove all existing applications to rebuild:
 
-3. **ArgoCD Issues** ⚓
-   - Check application sync status
-   - Verify Git repository access
-   - Review application logs
+```bash
+# Patch to remove finalizers from all applications
+kubectl get applications -n argocd -o name | xargs -I{} kubectl patch {} -n argocd --type json -p '[{"op": "remove", "path": "/metadata/finalizers"}]'
+
+# Delete all applications
+kubectl delete applications --all -n argocd
+
+# For stuck ApplicationSets
+kubectl get applicationsets -n argocd -o name | xargs -I{} kubectl patch {} -n argocd --type json -p '[{"op": "remove", "path": "/metadata/finalizers"}]'
+kubectl delete applicationsets --all -n argocd
+
+# Only then apply the new structure in order
+kubectl apply -f infrastructure/controllers/argocd/projects.yaml -n argocd
+kubectl apply -f infrastructure/infrastructure-components-appset.yaml -n argocd
+kubectl apply -f monitoring/monitoring-components-appset.yaml -n argocd
+kubectl apply -f my-apps/myapplications-appset.yaml -n argocd
+```
 
 ## 🤝 Contributing
 
@@ -388,38 +375,3 @@ Common issues and solutions:
 ## 📜 License
 
 MIT License - See [LICENSE](LICENSE) for details
-
-## 🔧 Infrastructure Components
-
-### CoreDNS Configuration 🔍
-
-When running K3s with CoreDNS disabled (`--disable coredns`), the manual CoreDNS setup requires specific configuration to work properly:
-
-#### Key Configuration Points:
-- **Service IP**: Must use K3s's default DNS IP `10.43.0.10`
-- **Service Name**: Must be `kube-dns` for K3s compatibility
-- **Namespace**: Deployed in `kube-system` namespace
-- **DNS Configuration**:
-  ```yaml
-  plugins:
-    - kubernetes: Configured for cluster.local domain
-    - hosts: For node resolution
-    - forward: Using host's /etc/resolv.conf
-  ```
-
-#### Installation Steps:
-1. Disable CoreDNS in K3s installation:
-   ```bash
-   curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable coredns" sh -
-   ```
-
-2. Apply CoreDNS configuration:
-   ```bash
-   k3s kubectl kustomize --enable-helm infra/network/coredns | k3s kubectl apply -f -
-   ```
-
-3. Verify DNS resolution:
-   ```bash
-   kubectl get pods -n kube-system -l k8s-app=kube-dns
-   kubectl get svc -n kube-system kube-dns
-   ```
