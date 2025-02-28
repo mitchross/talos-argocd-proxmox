@@ -5,7 +5,7 @@ metadata:
   namespace: echo-server
 spec:
   parentRefs:
-    - name: external
+    - name: gateway-external
       namespace: gateway
       sectionName: https
   hostnames:
