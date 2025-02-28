@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: ai
+  name: ai-apps
   namespace: argocd
   labels:
     vanillax.me: application
@@ -12,11 +12,16 @@ spec:
         revision: HEAD
         directories:
           - path: my-apps/ai/*
+          # Exclude the application set itself and archived apps
+          - path: my-apps/ai/application-set.yaml
+            exclude: true
           - path: my-apps/ai/archived
+            exclude: true
+          - path: my-apps/ai/project.yaml
             exclude: true
   template:
     metadata:
-      name: '{{ path.basename }}'
+      name: 'ai-{{path.basename}}'
       labels:
         vanillax.me: application
       finalizers:
@@ -24,13 +29,19 @@ spec:
     spec:
       project: ai
       source:
+        plugin:
+          name: kustomize-build-with-helm
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         targetRevision: HEAD
-        path: '{{ path }}'
+        path: '{{path}}'
       destination:
         name: in-cluster
-        namespace: argocd
+        # Use the application's name as the namespace
+        namespace: '{{path.basename}}'
       syncPolicy:
         automated:
           selfHeal: true
           prune: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true

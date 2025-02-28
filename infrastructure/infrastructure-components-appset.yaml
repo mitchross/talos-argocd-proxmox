@@ -10,14 +10,13 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         revision: HEAD
         directories:
-          - path: infrastructure/networking/*
-          - path: infrastructure/storage/*
-          - path: infrastructure/controllers/*
-          - path: infrastructure/monitoring/*
-          - path: infrastructure/database/*
+          # Match all direct infrastructure components
+          - path: infrastructure/*
+            exclude: true
+          - path: infrastructure/*/*
   template:
     metadata:
-      name: '{{path.basename}}'
+      name: '{{path[1]}}-{{path.basename}}'
       labels:
         type: infrastructure
     spec:
@@ -30,6 +29,7 @@ spec:
         path: '{{path}}'
       destination:
         server: https://kubernetes.default.svc
+        # Use the application name as the namespace, which should be defined in its kustomization.yaml
         namespace: '{{path.basename}}'
       syncPolicy:
         automated:

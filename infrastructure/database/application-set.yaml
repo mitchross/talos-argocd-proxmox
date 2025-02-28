@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: database
+  name: database-components
   namespace: argocd
   labels:
     vanillax.me: database
@@ -11,21 +11,16 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         revision: HEAD
         directories:
-          # Direct database deployments (like Redis)
-          - path: infra/database/*
-          # Operator deployments
-          - path: infra/database/*/operator
-          - path: infra/database/*/clusters/*
-          # Exclusions
-          - path: infra/database/do-not-deploy
+          # Direct database deployments (Redis, etc.)
+          - path: infrastructure/database/*/*
+          # Exclude the application-set itself
+          - path: infrastructure/database/application-set.yaml
             exclude: true
-          - path: infra/database/cloudnative-pg
-            exclude: true # Exclude the parent dir since we handle its subdirs
   template:
     metadata:
-      name: '{{ path[2] }}-{{ path.basename }}'
+      name: '{{path[2]}}'
       labels:
-        vanillax.me: controllers
+        vanillax.me: database
     spec:
       project: infrastructure
       source:
@@ -33,10 +28,11 @@ spec:
           name: kustomize-build-with-helm
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         targetRevision: HEAD
-        path: '{{ path }}'
+        path: '{{path}}'
       destination:
         name: in-cluster
-        namespace: '{{ path[2] }}'
+        # Use the actual component name as the namespace
+        namespace: '{{path[2]}}'
       syncPolicy:
         automated:
           selfHeal: true

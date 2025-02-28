@@ -11,7 +11,7 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         revision: HEAD
         directories:
-          - path: infra/controllers/*
+          - path: infrastructure/controllers/*
   template:
     metadata:
       name: '{{ path.basename }}'

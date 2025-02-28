@@ -13,8 +13,9 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         revision: HEAD
         directories:
-          - path: infra/network/*
-          - exclude: infra/network/application-set.yaml
+          - path: infrastructure/networking/*
+          - path: infrastructure/networking/application-set.yaml
+            exclude: true
   template:
     metadata:
       name: '{{ path.basename }}'

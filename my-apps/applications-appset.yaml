@@ -1,4 +1,4 @@
-# my-apps/myapplications-appset.yaml
+# my-apps/applications-appset.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -12,14 +12,17 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         revision: HEAD
         directories:
+          # Match all direct application folders
           - path: my-apps/*
+            exclude: true
+          # Match all specific applications
           - path: my-apps/*/*
-          - exclude: true
-            path: my-apps/myapplications-appset.yaml
+          # Exclude this ApplicationSet itself
+          - path: my-apps/applications-appset.yaml
+            exclude: true
   template:
     metadata:
-      # Changed from 'app-{{path.basename}}' to just '{{path.basename}}'
-      name: '{{path.basename}}'
+      name: '{{path[1]}}-{{path.basename}}'
       labels:
         type: application
     spec:
@@ -32,6 +35,7 @@ spec:
         path: '{{path}}'
       destination:
         server: https://kubernetes.default.svc
+        # Use the application name as the namespace, defined in its kustomization.yaml
         namespace: '{{path.basename}}'
       syncPolicy:
         automated:
