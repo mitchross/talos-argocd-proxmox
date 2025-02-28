@@ -1,4 +1,4 @@
-# K3s ArgoCD Cluster
+# K3s ArgoCD Proxmox Cluster
 
 A GitOps-driven Kubernetes cluster using K3s, ArgoCD, and Cilium, with integrated Cloudflare Tunnel for secure external access.
 
@@ -31,19 +31,38 @@ This project demonstrates a single-node K3s cluster setup, optimized for home la
 └── Internal DNS Resolution
 ```
 
+## Three-Tier Architecture
+
+This cluster follows a clean three-tier architecture:
+
+1. **📚 Infrastructure Tier** - Core system components deployed first (sync wave -2)
+   - Network components (Cilium, Gateway API)
+   - ArgoCD and GitOps controllers
+   - Cert-manager and security components
+
+2. **📊 Monitoring Tier** - Observability stack deployed second (sync wave 0)
+   - Prometheus and Grafana
+   - Loki for logs
+   - Uptime monitors
+
+3. **🚀 Applications Tier** - User workloads deployed last (sync wave 1)
+   - Media applications
+   - AI workloads
+   - User services
+
 ## Quick Links
 
-- [Installation Guide](argocd.md#installation)
+- [ArgoCD Setup Guide](argocd.md#installation)
 - [Network Configuration](network.md)
 - [Storage Setup](storage.md)
-- [Security Configuration](security.md)
+- [Security Configuration](secrets.md)
 - [GPU Setup](gpu.md)
 - [External Services](external-services.md)
 
 ## Features
 
 - 🚀 Single node K3s cluster with worker node scaling options
-- ⚓ GitOps with ArgoCD and pure Kubernetes manifests
+- ⚓ GitOps with ArgoCD and simplified three-tier ApplicationSets
 - 🔒 Secure access through Cloudflare Zero Trust
 - 🔐 Secrets management with 1Password integration
 - 🌐 Split DNS for internal/external access

@@ -1,103 +1,66 @@
 # 🌐 Network Configuration
 
-## Network Architecture
+## Architecture
 
-### Physical Topology
 ```mermaid
 graph TD
-    subgraph "Internet Gateway"
-        A[Internet] --> B[Firewalla Gold]
-        B --> C[2.5Gb Switch]
+    subgraph "Physical Topology"
+        A[Internet Gateway] --> B[Switch]
+        B --> C[K3s Node]
     end
 
-    subgraph "Physical Network"
-        C --> D[K3s Node\nThreadripper\n192.168.10.11]
-        C --> E[Other Devices]
+    subgraph "Logical Topology"
+        D[Internet] --> E[Cloudflare]
+        E --> F[Cloudflare Tunnel]
+        F --> G[Gateway API]
+        G --> H[Cilium Service Mesh]
+        H --> I[Kubernetes Service]
+        I --> J[Pod]
     end
 
-    style D fill:#f9f,stroke:#333
-    style B fill:#9cf,stroke:#333
+    style C fill:#f9f,stroke:#333
+    style H fill:#bbf,stroke:#333
 ```
 
-### Logical Topology
-```mermaid
-graph TD
-    subgraph "External Access"
-        A[Internet] --> B[Cloudflare]
-        B --> C[Cloudflare Tunnel]
-    end
+## Traffic Flow
 
-    subgraph "Internal Network 192.168.10.0/24"
-        D[Firewalla Gold] --> E[Gateway External\n192.168.10.50]
-        D --> F[Gateway Internal\n192.168.10.51]
-        D --> G[CoreDNS\n192.168.10.53]
-    end
-
-    subgraph "K8s Networks"
-        H[Pod Network\n10.42.0.0/16]
-        I[Service Network\n10.43.0.0/16]
-        J[Cilium\nService Mesh]
-    end
-
-    subgraph "DNS Resolution"
-        K[*.vanillax.me] --> L[Split Horizon DNS]
-        L --> M[Internal DNS]
-        L --> N[Cloudflare DNS]
-    end
-
-    C --> E
-    E --> H
-    F --> H
-    G --> F
-    J --> H
-    J --> I
-
-    style E fill:#f9f,stroke:#333
-    style F fill:#f9f,stroke:#333
-    style J fill:#9cf,stroke:#333
-```
-
-### Traffic Flow
 ```mermaid
 sequenceDiagram
-    participant E as External User
-    participant C as Cloudflare
-    participant T as Cloudflare Tunnel
-    participant G as Gateway API
-    participant S as K8s Service
-    participant P as Pod
+    participant User
+    participant Cloudflare
+    participant Gateway as Gateway API
+    participant Service as K8s Service
+    participant Pod
 
-    E->>C: HTTPS Request
-    C->>T: Proxied Request
-    T->>G: Internal Request
-    G->>S: Route to Service
-    S->>P: Pod Selection
-    P-->>E: Response (reverse path)
-
-    Note over C,T: SSL Termination
-    Note over T,G: Internal Network
-    Note over G,P: Cilium Service Mesh
+    User->>Cloudflare: HTTPS Request
+    Cloudflare->>Gateway: Proxied Request (SSL terminated)
+    Gateway->>Service: Route to Service
+    Service->>Pod: Forward to Pod
+    Pod->>Service: Response
+    Service->>Gateway: Return Response
+    Gateway->>Cloudflare: Forward Response
+    Cloudflare->>User: HTTPS Response
 ```
 
 ## IP Allocation
 
-### Network Ranges
-- **Internal Network**: 192.168.10.0/24
-  - Gateway External: 192.168.10.50
-  - Gateway Internal: 192.168.10.51
-  - CoreDNS: 192.168.10.53
-- **Pod Network**: 10.42.0.0/16
-- **Service Network**: 10.43.0.0/16
+- **Internal Network**: 192.168.1.0/24
+  - Gateway: 192.168.1.1
+  - K3s Node: 192.168.1.10
+
+- **Pod Network**: 10.42.0.0/16 (Cilium)
+  - Services: 10.43.0.0/16
+  - CoreDNS: 10.43.0.10
 
 ## Gateway API Configuration
 
-### 1. External Gateway
+### External Gateway
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: Gateway
 metadata:
   name: external-gateway
-  namespace: gateway
+  namespace: gateway-system
 spec:
   gatewayClassName: cilium
   listeners:
@@ -116,16 +79,16 @@ spec:
     tls:
       mode: Terminate
       certificateRefs:
-      - name: cloudflare-cert
+      - name: wildcard-cert
 ```
 
-### 2. Internal Gateway
+### Internal Gateway
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: Gateway
 metadata:
-  name: internal
-  namespace: gateway
+  name: internal-gateway
+  namespace: gateway-system
 spec:
   gatewayClassName: cilium
   listeners:
@@ -137,164 +100,209 @@ spec:
         from: All
 ```
 
-### 3. HTTPRoute Example
-```yaml
-apiVersion: gateway.networking.k8s.io/v1beta1
-kind: HTTPRoute
-metadata:
-  name: app-route
-spec:
-  parentRefs:
-  - name: external-gateway
-    namespace: gateway
-  - name: internal-gateway
-    namespace: gateway
-  rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /app
-    backendRefs:
-    - name: app-service
-      port: 80
-```
-
 ## Components
 
-### 1. Cilium
-- Network plugin replacement for kube-proxy
-- Handles pod networking and network policies
-- Provides load balancing and service mesh capabilities
+### Cilium
+- **Function**: CNI plugin, Service Mesh, Gateway API implementation
+- **Installation**: Deployed via Helm in the infrastructure tier
+- **Configuration**: Managed through Helm values
 
-### 2. CoreDNS
-- Manages internal DNS resolution
-- Handles custom domain routing
-- Splits traffic between internal and external gateways
+### CoreDNS
+- **Function**: DNS management for cluster
+- **Installation**: Bundled with K3s
+- **Configuration**: Custom configmap for internal domains
 
-### 3. Gateway API
-- Two gateway configurations:
-  - External (Cloudflare tunnel access)
-  - Internal (Local network access)
-- HTTPRoute resources for service routing
+### Gateway API
+- **Function**: Ingress/Gateway management
+- **Installation**: CRDs installed separately, implementation by Cilium
+- **Configuration**: Gateway and HTTPRoute resources
 
-### 4. Cloudflare Tunnel
-- Secure external access
-- No port forwarding required
-- Automatic SSL/TLS
+### Cloudflare Tunnel
+- **Function**: Secure external access
+- **Installation**: Deployed as a Kubernetes deployment
+- **Configuration**: Using tunnel credentials from secrets
 
 ## DNS Configuration
 
 ### Internal Domains
 ```yaml
-vanillax.me:53 {
-    hosts {
-        192.168.10.50 *.vanillax.me
-        192.168.10.50 vanillax.me
-        fallthrough
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+  namespace: kube-system
+data:
+  server.conf: |
+    home.arpa:53 {
+        errors
+        cache 30
+        forward . 192.168.1.1
     }
-    forward . /etc/resolv.conf
-}
 ```
-
-### External Domains
-- Managed through Cloudflare DNS
-- Points to Cloudflare Tunnel
 
 ## Network Flow
 
-1. **Internal Access**
-   ```mermaid
-   sequenceDiagram
-       Client->>CoreDNS: Query *.vanillax.me
-       CoreDNS->>Client: Return 192.168.10.50
-       Client->>Gateway: Request service
-       Gateway->>Service: Forward request
-   ```
+### Internal Access
+```mermaid
+sequenceDiagram
+    participant Internal as Internal Client
+    participant CoreDNS
+    participant Gateway as Internal Gateway
+    participant Service
+    participant Pod
 
-2. **External Access**
-   ```mermaid
-   sequenceDiagram
-       Client->>Cloudflare: Query *.vanillax.me
-       Cloudflare->>Tunnel: Forward request
-       Tunnel->>Gateway: Route to service
-       Gateway->>Service: Forward request
-   ```
+    Internal->>CoreDNS: DNS Query (service.home.arpa)
+    CoreDNS->>Internal: DNS Response (192.168.1.10)
+    Internal->>Gateway: HTTP Request
+    Gateway->>Service: Route Request
+    Service->>Pod: Forward Request
+    Pod->>Internal: Response
+```
+
+### External Access
+```mermaid
+sequenceDiagram
+    participant External as External Client
+    participant Cloudflare
+    participant Tunnel as Cloudflare Tunnel
+    participant Gateway as External Gateway
+    participant Service
+    participant Pod
+
+    External->>Cloudflare: DNS Query (service.example.com)
+    Cloudflare->>External: DNS Response (Cloudflare IP)
+    External->>Cloudflare: HTTPS Request
+    Cloudflare->>Tunnel: Proxied Request
+    Tunnel->>Gateway: Forward Request
+    Gateway->>Service: Route Request
+    Service->>Pod: Forward Request
+    Pod->>External: Response (reverse path)
+```
 
 ## Setup Steps
 
-1. **Install Cilium**
+### 1. Install Cilium (Infrastructure Tier)
+
+Cilium is installed via Helm as part of the infrastructure tier:
+
 ```bash
-cilium install \
-  --version 1.16.5 \
-  --set kubeProxyReplacement=true
+# Installing Cilium via Helm is handled automatically by the infrastructure ApplicationSet
+# The Helm chart is located at infrastructure/networking/cilium
+# You can view the values at infrastructure/networking/cilium/values.yaml
+
+# To manually install Cilium:
+helm repo add cilium https://helm.cilium.io/
+helm install cilium cilium/cilium \
+  --namespace kube-system \
+  --set kubeProxyReplacement=strict \
+  --set gatewayAPI.enabled=true \
+  --set-string extraConfig.enable-gateway-api=true \
+  --set ipam.mode=kubernetes
+
+# Verify Cilium is running
+kubectl -n kube-system get pods -l k8s-app=cilium
 ```
 
-2. **Configure CoreDNS**
-- Deployed through ArgoCD
-- Custom configuration for internal domains
+### 2. Configure CoreDNS
+```bash
+# Apply custom CoreDNS configuration
+kubectl apply -f infrastructure/networking/coredns/coredns-custom.yaml
 
-3. **Setup Gateways**
-- Deploy Gateway API CRDs
-- Configure internal and external gateways
-- Create HTTPRoutes for services
+# Restart CoreDNS to apply changes
+kubectl rollout restart -n kube-system deployment coredns
+```
 
-4. **Configure Cloudflare**
-- Setup DNS records
-- Configure Cloudflare Tunnel
-- Deploy tunnel operator
+### 3. Setup Gateways
+```bash
+# Create gateway namespace
+kubectl create namespace gateway-system
+
+# Apply gateway configurations
+kubectl apply -f infrastructure/networking/gateway/
+```
+
+### 4. Configure Cloudflare
+```bash
+# Add tunnel secrets (see external-services.md)
+kubectl apply -f infrastructure/networking/cloudflared/secrets.yaml
+
+# Deploy cloudflared tunnel
+kubectl apply -f infrastructure/networking/cloudflared/deployment.yaml
+```
 
 ## Validation
 
+### Cilium Status
 ```bash
 # Check Cilium status
 cilium status
+
+# Verify connectivity
 cilium connectivity test
+```
 
-# Verify DNS resolution
-dig @192.168.10.50 service.vanillax.me
+### DNS Resolution
+```bash
+# Test internal DNS
+kubectl run -it --rm debug --image=curlimages/curl -- nslookup kubernetes.default.svc.cluster.local
 
-# Test gateway routing
-curl -v https://service.vanillax.me
+# Test external DNS
+kubectl run -it --rm debug --image=curlimages/curl -- nslookup example.com
+```
 
-# Check Cloudflare tunnel
-cloudflared tunnel info
+### Gateway Routing
+```bash
+# Check gateway status
+kubectl get gateway -A
+
+# Test routes
+kubectl get httproute -A
+```
+
+### Cloudflare Tunnel
+```bash
+# Check tunnel pods
+kubectl get pods -n cloudflared
+
+# Check tunnel logs
+kubectl logs -n cloudflared -l app=cloudflared
 ```
 
 ## Troubleshooting
 
 ### DNS Issues
 1. Check CoreDNS pods:
-```bash
-kubectl get pods -n kube-system -l k8s-app=coredns
-kubectl logs -n kube-system -l k8s-app=coredns
-```
+   ```bash
+   kubectl get pods -n kube-system -l k8s-app=kube-dns
+   kubectl logs -n kube-system -l k8s-app=kube-dns
+   ```
 
-2. Verify DNS resolution:
-```bash
-kubectl run -it --rm debug --image=busybox -- nslookup kubernetes.default
-```
+2. Verify custom config:
+   ```bash
+   kubectl get configmap -n kube-system coredns-custom -o yaml
+   ```
 
 ### Gateway Issues
 1. Check gateway status:
-```bash
-kubectl get gateway -A
-kubectl get httproute -A
-```
+   ```bash
+   kubectl describe gateway -n gateway-system external-gateway
+   ```
 
-2. Verify gateway pods:
-```bash
-kubectl get pods -n gateway
-```
+2. Verify routes:
+   ```bash
+   kubectl describe httproute -A
+   ```
 
 ### Cloudflare Issues
 1. Check tunnel status:
-```bash
-kubectl get pods -n cloudflared
-kubectl logs -n cloudflared -l app=cloudflared
-```
+   ```bash
+   kubectl get pods -n cloudflared
+   kubectl logs -n cloudflared -l app=cloudflared
+   ```
 
 2. Verify tunnel connectivity:
-```bash
-cloudflared tunnel list
-cloudflared tunnel info <tunnel-id>
-``` 
+   ```bash
+   # Port-forward to cloudflared metrics
+   kubectl port-forward -n cloudflared svc/cloudflared 8080:2000
+   # Access metrics at http://localhost:8080/metrics
+   ``` 

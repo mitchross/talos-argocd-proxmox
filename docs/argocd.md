@@ -1,4 +1,208 @@
-# ArgoCD Setup and Workflow
+# 🚀 ArgoCD Installation and Configuration
+
+This guide details the setup and configuration of ArgoCD, which serves as the GitOps engine for our Kubernetes cluster.
+
+## 📋 Overview
+
+```mermaid
+graph TD
+    A[K3s Cluster] -->|Install| B[ArgoCD]
+    B -->|Create| C[AppProjects]
+    C -->|Deploy| D[ApplicationSets]
+    D -->|Generate| E[Applications]
+    E -->|Sync| F[Resources]
+    
+    subgraph "Three-Tier Architecture"
+        G[Infrastructure Tier]
+        H[Monitoring Tier]
+        I[Applications Tier]
+    end
+    
+    D --> G
+    D --> H
+    D --> I
+```
+
+## 🔄 Deployment Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant ArgoCD
+    participant Cluster
+    
+    User->>Cluster: Install Initial Components
+    Note over User,Cluster: kubectl apply -f projects.yaml
+    User->>Cluster: Apply Infrastructure ApplicationSet
+    Note over User,Cluster: kubectl apply -f infrastructure-components-appset.yaml
+    Cluster->>ArgoCD: Create Infrastructure Applications
+    ArgoCD->>Cluster: Deploy Infrastructure Components (wave -2)
+    Note over ArgoCD,Cluster: Cilium, Cert-Manager, etc.
+    User->>Cluster: Apply Monitoring ApplicationSet
+    Note over User,Cluster: kubectl apply -f monitoring-components-appset.yaml
+    Cluster->>ArgoCD: Create Monitoring Applications
+    ArgoCD->>Cluster: Deploy Monitoring Components (wave 0)
+    Note over ArgoCD,Cluster: Prometheus, Grafana, etc.
+    User->>Cluster: Apply Applications ApplicationSet
+    Note over User,Cluster: kubectl apply -f myapplications-appset.yaml
+    Cluster->>ArgoCD: Create User Applications
+    ArgoCD->>Cluster: Deploy User Applications (wave 1)
+    Note over ArgoCD,Cluster: Media apps, AI tools, etc.
+```
+
+## 📦 Installation Steps
+
+### 1. Install Gateway API CRDs
+```bash
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/experimental-install.yaml
+```
+
+### 2. Apply custom ArgoCD configuration
+```bash
+k3s kubectl kustomize --enable-helm infrastructure/controllers/argocd | k3s kubectl apply -f -
+```
+
+### 3. Wait for ArgoCD to be ready
+```bash
+kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
+
+kubectl wait --for=condition=established crd/applications.argoproj.io --timeout=60s
+kubectl wait --for=condition=established crd/appprojects.argoproj.io --timeout=60s
+```
+
+## 🔧 Project Setup
+
+ArgoCD projects define permissions and boundaries for applications. Our cluster uses four main projects:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: infrastructure
+  namespace: argocd
+spec:
+  sourceRepos:
+  - "*"
+  destinations:
+  - namespace: "*"
+    server: "*"
+  clusterResourceWhitelist:
+  - group: "*"
+    kind: "*"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: applications
+  namespace: argocd
+spec:
+  sourceRepos:
+  - "*"
+  destinations:
+  - namespace: "*"
+    server: "*"
+  clusterResourceWhitelist:
+  - group: "*"
+    kind: "Namespace"
+  - group: "*"
+    kind: "PersistentVolume"
+  - group: "networking.k8s.io"
+    kind: "*"
+  - group: "gateway.networking.k8s.io"
+    kind: "*"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: monitoring
+  namespace: argocd
+spec:
+  sourceRepos:
+  - "*"
+  destinations:
+  - namespace: "*"
+    server: "*"
+  clusterResourceWhitelist:
+  - group: "*"
+    kind: "Namespace"
+  - group: "monitoring.coreos.com"
+    kind: "*"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ai
+  namespace: argocd
+spec:
+  sourceRepos:
+  - "*"
+  destinations:
+  - namespace: "*"
+    server: "*"
+  clusterResourceWhitelist:
+  - group: "*"
+    kind: "Namespace"
+  - group: "*"
+    kind: "PersistentVolume"
+  - group: "networking.k8s.io"
+    kind: "*"
+  - group: "gateway.networking.k8s.io"
+    kind: "*"
+```
+
+## 📱 ApplicationSet Management
+
+We use three main ApplicationSets to manage our deployments:
+
+### 1. Infrastructure ApplicationSet
+Located at `infrastructure/infrastructure-components-appset.yaml`, this ApplicationSet manages infrastructure components like Cilium, Cert-Manager, and other core services.
+
+### 2. Monitoring ApplicationSet
+Located at `monitoring/monitoring-components-appset.yaml`, this ApplicationSet manages monitoring components like Prometheus, Grafana, and other observability tools.
+
+### 3. Applications ApplicationSet
+Located at `my-apps/myapplications-appset.yaml`, this ApplicationSet manages user applications like media servers, AI applications, and other user-facing services.
+
+## 🔢 Deployment Order
+
+Apply the resources in the following order:
+
+1. Apply the projects first:
+```bash
+kubectl apply -f infrastructure/controllers/argocd/projects.yaml -n argocd
+```
+
+2. Apply the ApplicationSets in order:
+```bash
+kubectl apply -f infrastructure/infrastructure-components-appset.yaml -n argocd
+kubectl apply -f monitoring/monitoring-components-appset.yaml -n argocd
+kubectl apply -f my-apps/myapplications-appset.yaml -n argocd
+```
+
+## 📂 Repository Structure
+
+The repository follows a clean three-tier structure:
+
+- `/infrastructure/` - Infrastructure components (network, security, etc.)
+- `/monitoring/` - Monitoring components (Prometheus, Grafana, etc.)
+- `/my-apps/` - User applications (media servers, AI tools, etc.)
+
+## ✅ Key Features
+
+1. **Three-Tier Architecture**:
+   - Clear separation of concerns
+   - Controlled deployment order
+   - Simplified management
+
+2. **Sync Waves**:
+   - Infrastructure: -2 (deployed first)
+   - Monitoring: 0 (deployed second)
+   - Applications: 1 (deployed last)
+
+3. **Simplified Directory Patterns**:
+   - No complex include/exclude logic
+   - One ApplicationSet per tier
+   - Clear path patterns
 
 ## Design Philosophy
 

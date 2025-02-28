@@ -5,88 +5,95 @@
 ```mermaid
 graph TD
     subgraph "Hardware"
-        A[2× RTX 3090 24GB] --> B[PCIe Passthrough]
-        C[Google Coral TPU] --> D[USB Passthrough]
+        A[2× RTX 3090] --> B[PCIe Lanes]
+        C[Google Coral TPU] --> D[USB 3.1]
     end
 
     subgraph "Kubernetes"
-        B --> E[NVIDIA Operator]
-        E --> F[Device Plugin]
-        E --> G[Container Toolkit]
-        D --> H[Coral Driver]
+        E[NVIDIA Operator] --> F[NVIDIA Container Runtime]
+        F --> G[NVIDIA Device Plugin]
+        G --> H[GPU Resources]
     end
 
-    subgraph "Workloads"
-        F --> I[Ollama]
-        F --> J[ComfyUI]
-        H --> K[Frigate]
+    subgraph "Applications"
+        I[AI Models] --> J[Ollama]
+        I --> K[ComfyUI]
+        I --> L[LLM Applications]
     end
 
-    style A fill:#9f9,stroke:#333
-    style C fill:#f9f,stroke:#333
+    B --> E
+    D --> Applications
+    H --> Applications
+
+    style A fill:#f9f,stroke:#333
+    style C fill:#bbf,stroke:#333
     style E fill:#9cf,stroke:#333
 ```
 
 ## Hardware Setup
 
-### NVIDIA GPUs
-- 2× NVIDIA RTX 3090
-  - 24GB VRAM each
-  - PCIe Gen4 x16
-  - CUDA Compute 8.6
+- **NVIDIA GPUs**: 2× RTX 3090 (24GB VRAM each)
+- **Google Coral**: USB Accelerator (TPU)
+- **PCIe Lanes**: 64 lanes via Threadripper
+- **Cooling**: Custom water cooling loop
 
-### Google Coral TPU
-- USB Accelerator
-- Edge TPU Coprocessor
-- ML Inference Optimized
+## NVIDIA Operator Setup
 
-## 🔧 NVIDIA Operator Setup
+The NVIDIA GPU Operator is installed as part of the infrastructure tier via Helm:
 
-### 1. Prerequisites
+### 1. Install NVIDIA Drivers
+
+The drivers are pre-installed on the host:
 ```bash
-# Install NVIDIA drivers
-sudo apt install nvidia-driver-535
-sudo apt install nvidia-container-toolkit
-
-# Verify installation
+# Verify NVIDIA drivers are installed
 nvidia-smi
+
+# Check driver version
+cat /proc/driver/nvidia/version
 ```
 
 ### 2. Install NVIDIA Operator
-```yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-namespace: gpu-operator
-resources:
-  - namespace.yaml
-  - https://helm.ngc.nvidia.com/nvidia/gpu-operator/charts/gpu-operator-v23.9.1.yaml
-patches:
-  - target:
-      kind: HelmRelease
-    patch: |
-      - op: replace
-        path: /spec/values/operator/defaultRuntime
-        value: containerd
+
+The NVIDIA Operator is installed via Helm as part of the infrastructure tier:
+
+```bash
+# The installation is handled by the infrastructure ApplicationSet
+# The Helm chart is located at infrastructure/controllers/nvidia-gpu-operator/
+
+# If you need to install manually:
+helm repo add nvidia https://helm.ngc.nvidia.com/nvidia
+helm install --wait --generate-name \
+     -n gpu-operator --create-namespace \
+     nvidia/gpu-operator \
+     --set driver.enabled=false \
+     --set toolkit.enabled=true
 ```
 
 ### 3. Verify Installation
+
 ```bash
-# Check operator status
+# Check that the pods are running
 kubectl get pods -n gpu-operator
 
-# Verify GPU availability
-kubectl get node -o json | jq '.items[].status.allocatable | select(has("nvidia.com/gpu"))'
+# Verify GPU allocation
+kubectl get nodes -o json | jq '.items[].status.allocatable | select(has("nvidia.com/gpu"))'
 ```
 
-## 🤖 AI Workloads
+## AI Workloads
 
-### 1. Ollama Setup
+### Example Configuration
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ollama
+  namespace: ai
 spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
   template:
     spec:
       containers:
@@ -95,161 +102,185 @@ spec:
         resources:
           limits:
             nvidia.com/gpu: 1
-        env:
-        - name: NVIDIA_VISIBLE_DEVICES
-          value: "all"
+            memory: 32Gi
+          requests:
+            nvidia.com/gpu: 1
+            memory: 16Gi
         volumeMounts:
-        - name: models
+        - name: ollama-models
           mountPath: /root/.ollama
+      nodeSelector:
+        gpu: "true"
+      volumes:
+      - name: ollama-models
+        persistentVolumeClaim:
+          claimName: ollama-models-pvc
 ```
 
-### 2. ComfyUI Configuration
+## Multiple GPU Management
+
+### Setting Up GPU Fractions
+
+GPU Time-Slicing is configured through the NVIDIA Operator:
+
+```yaml
+# Located in infrastructure/controllers/nvidia-gpu-operator/values.yaml
+devicePlugin:
+  config:
+    name: "time-slicing-config"
+    default: "0"
+    sharing:
+      timeSlicing:
+        renameByDefault: false
+        failRequestsGreaterThanOne: false
+        resources:
+          - name: nvidia.com/gpu
+            replicas: 4
+```
+
+### Application Configuration
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: comfyui
+  namespace: ai
 spec:
   template:
     spec:
       containers:
       - name: comfyui
-        image: comfyui/comfyui:latest
         resources:
           limits:
-            nvidia.com/gpu: 1
-        env:
-        - name: NVIDIA_VISIBLE_DEVICES
-          value: "all"
+            nvidia.com/gpu: 2  # Uses 2 GPU slices (50% of one GPU)
 ```
 
-## 🔍 GPU Monitoring
+## AI Application Priorities
 
-### 1. DCGM Exporter
+For best performance, use the following node affinity and priority settings:
+
 ```yaml
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: dcgm-exporter
+  name: high-priority-ai
 spec:
-  endpoints:
-  - port: metrics
-  selector:
-    matchLabels:
-      app: dcgm-exporter
+  template:
+    spec:
+      priorityClassName: high-priority
+      nodeSelector:
+        gpu: "true"
+      tolerations:
+      - key: "nvidia.com/gpu"
+        operator: "Exists"
+        effect: "NoSchedule"
 ```
 
-### 2. Grafana Dashboard
+### Priority Classes
+
 ```yaml
-apiVersion: integreatly.org/v1alpha1
-kind: GrafanaDashboard
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
 metadata:
-  name: gpu-dashboard
-spec:
-  json: |
-    {
-      "title": "GPU Metrics",
-      "panels": [
-        {
-          "title": "GPU Utilization",
-          "targets": [
-            {
-              "expr": "DCGM_FI_DEV_GPU_UTIL"
-            }
-          ]
-        }
-      ]
-    }
+  name: high-priority
+value: 1000000
+globalDefault: false
+description: "High priority AI workloads"
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: medium-priority
+value: 100000
+globalDefault: false
+description: "Medium priority AI workloads"
 ```
 
-## 🎯 Resource Management
+## TPU Setup
 
-### GPU Scheduling
+For Google Coral TPU:
+
 ```yaml
-# Example node label for GPU availability
-apiVersion: v1
-kind: Node
-metadata:
-  labels:
-    nvidia.com/gpu.present: "true"
-    nvidia.com/gpu.product: "NVIDIA-RTX-3090"
-
-# Pod GPU request
 apiVersion: v1
 kind: Pod
+metadata:
+  name: tpu-pod
 spec:
   containers:
-  - name: gpu-container
-    resources:
-      limits:
-        nvidia.com/gpu: 1
+  - name: tpu-container
+    image: tensorflow/tensorflow:latest
+    volumeMounts:
+    - name: coral-device
+      mountPath: /dev/bus/usb
+  volumes:
+  - name: coral-device
+    hostPath:
+      path: /dev/bus/usb
 ```
 
-### Memory Management
-- VRAM allocation strategies
-- Shared GPU support
-- Memory limits for containers
+## Monitoring GPU Usage
 
-## 🔧 Troubleshooting
+GPU metrics are collected by Prometheus and visualized in Grafana:
+
+```yaml
+# Part of the monitoring tier
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: nvidia-dcgm-exporter
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: nvidia-dcgm-exporter
+  podMetricsEndpoints:
+  - port: metrics
+    interval: 15s
+```
+
+## Troubleshooting
 
 ### Common Issues
 
 1. **GPU Not Detected**
+   ```bash
+   # Check NVIDIA driver status
+   nvidia-smi
+   
+   # Check device plugin pods
+   kubectl get pods -n gpu-operator -l app=nvidia-device-plugin-daemonset
+   ```
+
+2. **Resource Allocation Issues**
+   ```bash
+   # Check GPU allocation
+   kubectl describe node <node-name> | grep nvidia.com/gpu
+   
+   # Check pod resource requests
+   kubectl describe pod <pod-name> -n <namespace>
+   ```
+
+3. **Container Runtime Problems**
+   ```bash
+   # Check NVIDIA runtime configuration
+   kubectl get cm -n gpu-operator nvidia-container-toolkit-config -o yaml
+   
+   # Verify container runtime
+   kubectl get pods -n gpu-operator -l app=nvidia-container-toolkit-daemonset
+   ```
+
+### GPU Recovery
+
+If GPU becomes unavailable:
+
 ```bash
-# Check NVIDIA driver status
-nvidia-smi
-# Check container toolkit
-nvidia-container-cli info
-```
+# Restart NVIDIA device plugin
+kubectl rollout restart ds -n gpu-operator nvidia-device-plugin-daemonset
 
-2. **Resource Allocation**
-```bash
-# Check GPU allocation
-kubectl describe node | grep nvidia.com/gpu
-# View GPU metrics
-kubectl exec -it dcgm-exporter -- dcgm-exporter
-```
+# Verify GPU resources are available
+kubectl get nodes -o json | jq '.items[].status.allocatable | select(has("nvidia.com/gpu"))'
 
-3. **Performance Issues**
-```bash
-# Monitor GPU usage
-watch nvidia-smi
-# Check pod logs
-kubectl logs -f ollama-pod
-```
-
-## 📊 Performance Tuning
-
-### 1. CUDA Configuration
-```bash
-# Set CUDA device order
-export CUDA_DEVICE_ORDER=PCI_BUS_ID
-# Enable TensorCore operations
-export NVIDIA_TF32_OVERRIDE=1
-```
-
-### 2. Container Settings
-```yaml
-spec:
-  containers:
-  - name: gpu-workload
-    env:
-    - name: NVIDIA_VISIBLE_DEVICES
-      value: "all"
-    - name: NVIDIA_DRIVER_CAPABILITIES
-      value: "compute,utility"
-    - name: NVIDIA_REQUIRE_CUDA
-      value: "cuda>=11.8"
-```
-
-### 3. Resource Quotas
-```yaml
-apiVersion: v1
-kind: ResourceQuota
-metadata:
-  name: gpu-quota
-spec:
-  hard:
-    requests.nvidia.com/gpu: 2
-    limits.nvidia.com/gpu: 2
+# Check GPU node status
+kubectl describe node <node-name> | grep nvidia
 ``` 

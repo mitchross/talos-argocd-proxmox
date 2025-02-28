@@ -128,7 +128,7 @@ sudo apt install --reinstall zfs-dkms
 ### 2. K3s Installation
 ```bash
 export SETUP_NODEIP=192.168.10.11
-export SETUP_CLUSTERTOKEN=randomtokensecret1234
+export SETUP_CLUSTERTOKEN=randomtokensecret123333334
 
 curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.32.0+k3s1" \
   INSTALL_K3S_EXEC="--node-ip $SETUP_NODEIP \
@@ -168,30 +168,24 @@ helm repo add cilium https://helm.cilium.io/
 helm repo update
 
 # Install Cilium using Helm
-helm install cilium cilium/cilium --version 1.16.3 \
-  --namespace kube-system \
-  --set kubeProxyReplacement=true \
-  --set k8sServiceHost=${API_SERVER_IP} \
-  --set k8sServicePort=${API_SERVER_PORT} \
-  --set operator.replicas=1 \
-  --set hubble.relay.enabled=true \
-  --set hubble.ui.enabled=true
+helm install cilium cilium/cilium -n kube-system \
+  -f infrastructure/networking/cilium/values.yaml \
+  --version 1.17.1 \
+  --set operator.replicas=1
 
 # Verify the installation
 kubectl -n kube-system get pods -l k8s-app=cilium
 kubectl -n kube-system get pods -l k8s-app=cilium-operator
 
 # Install Gateway API CRDs
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/experimental-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
 
-# Apply custom Cilium configuration if needed
-kubectl apply -f infrastructure/networking/cilium/values.yaml
 ```
 
 ### 4. ArgoCD Installation
 ```bash
-# Install Gateway API CRDs
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/experimental-install.yaml
+
 
 # Install ArgoCD with custom configuration
 k3s kubectl kustomize --enable-helm infrastructure/controllers/argocd | k3s kubectl apply -f -
