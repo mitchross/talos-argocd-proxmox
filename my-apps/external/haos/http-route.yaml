@@ -5,9 +5,8 @@ metadata:
   namespace: haos
 spec:
   parentRefs:
-    - name: internal
+    - name: gateway-internal
       namespace: gateway
-      sectionName: https
   hostnames:
     - "haos.vanillax.me"
   rules:

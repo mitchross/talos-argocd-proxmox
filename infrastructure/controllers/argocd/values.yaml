@@ -7,16 +7,14 @@ configs:
     plugins:
       kustomize-build-with-helm:
         generate:
-          command: [ "sh", "-c" ]
-          args: [ "kustomize build --enable-helm" ]
+          command: ["sh", "-c"]
+          args: ["kustomize build --enable-helm"]
   params:
     server.insecure: true
-
 crds:
   install: true
   # -- Keep CRDs on chart uninstall
   keep: false
-
 controller:
   resources:
     requests:
@@ -25,7 +23,6 @@ controller:
     limits:
       cpu: 4000m
       memory: 2Gi
-
 dex:
   enabled: false
   resources:
@@ -35,7 +32,6 @@ dex:
     limits:
       cpu: 1000m
       memory: 256Mi
-
 redis:
   resources:
     requests:
@@ -44,7 +40,6 @@ redis:
     limits:
       cpu: 2000m
       memory: 128Mi
-
 server:
   resources:
     requests:
@@ -53,7 +48,6 @@ server:
     limits:
       cpu: 4000m
       memory: 256Mi
-
 repoServer:
   containerSecurityContext:
     readOnlyRootFilesystem: true
@@ -83,7 +77,7 @@ repoServer:
         seccompProfile:
           type: RuntimeDefault
         capabilities:
-          drop: [ "ALL" ]
+          drop: ["ALL"]
       volumeMounts:
         - name: plugins
           mountPath: /home/argocd/cmp-server/plugins
@@ -92,7 +86,6 @@ repoServer:
           subPath: kustomize-build-with-helm.yaml
         - mountPath: /tmp
           name: cmp-tmp
-
 applicationSet:
   resources:
     requests:
@@ -101,7 +94,6 @@ applicationSet:
     limits:
       cpu: 1000m
       memory: 512Mi
-
 notifications:
   enabled: false
   resources:

@@ -5,9 +5,8 @@ metadata:
   namespace: nestmtx
 spec:
   parentRefs:
-    - name: internal
+    - name: gateway-internal
       namespace: gateway
-      sectionName: https
   hostnames:
     - "nestmtx.vanillax.me"
   rules:

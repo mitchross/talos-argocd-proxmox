@@ -5,9 +5,8 @@ metadata:
   namespace: khoj
 spec:
   parentRefs:
-    - name: internal
+    - name: gateway-internal
       namespace: gateway
-      sectionName: https
   hostnames:
     - "khoj.vanillax.me"
   rules:
@@ -18,4 +17,4 @@ spec:
       backendRefs:
         - name: khoj-server-service
           port: 42110
-          weight: 1 
+          weight: 1

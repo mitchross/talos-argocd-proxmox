@@ -5,9 +5,8 @@ metadata:
   namespace: temporal
 spec:
   parentRefs:
-    - name: internal
+    - name: gateway-internal
       namespace: gateway
-      sectionName: https
   hostnames:
     - "temporal.vanillax.me"
   rules:

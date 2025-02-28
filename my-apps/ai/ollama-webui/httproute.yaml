@@ -5,9 +5,8 @@ metadata:
   namespace: ollama-webui
 spec:
   parentRefs:
-    - name: internal
+    - name: gateway-internal
       namespace: gateway
-      sectionName: https
   hostnames:
     - "ollama-webui.vanillax.me"
   rules:

@@ -5,9 +5,9 @@ metadata:
   namespace: cloudnative-pg
 spec:
   parentRefs:
-    - name: internal
+    - name: gateway-internal
       namespace: gateway
   rules:
     - backendRefs:
         - name: postgres-external
-          port: 5432 
+          port: 5432

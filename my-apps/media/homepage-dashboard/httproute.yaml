@@ -5,9 +5,8 @@ metadata:
   namespace: homepage-dashboard
 spec:
   parentRefs:
-    - name: internal
+    - name: gateway-internal
       namespace: gateway
-      sectionName: https
   hostnames:
     - "homepage.vanillax.me"
   rules:

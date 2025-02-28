@@ -5,9 +5,8 @@ metadata:
   namespace: ollama
 spec:
   parentRefs:
-    - name: internal
+    - name: gateway-internal
       namespace: gateway
-      sectionName: https
   hostnames:
     - "ollama.vanillax.me"
   rules:
