@@ -2,6 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: infrastructure-components
+  namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "-2"
 spec:
