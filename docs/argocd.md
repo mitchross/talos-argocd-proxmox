@@ -251,31 +251,44 @@ graph TD
         A[Install ArgoCD] --> B[Create Projects]
         B --> C[infrastructure project]
         B --> D[applications project]
+        B --> M[monitoring project]
+        B --> N[ai project]
     end
 
     subgraph "2. Infrastructure Deployment"
         C --> E[Apply infrastructure ApplicationSet]
-        E --> F[network]
+        E --> F[networking]
         E --> G[storage]
-        E --> H[auth]
-        E --> I[monitoring]
+        E --> H[controllers]
         E --> J[database]
     end
 
-    subgraph "3. Application Deployment"
-        D --> K[Apply applications ApplicationSet]
+    subgraph "3. Monitoring Deployment"
+        M --> O[Apply monitoring ApplicationSet]
+        O --> P[k8s-monitoring]
+    end
+
+    subgraph "4. Application Deployment"
+        N --> K[Apply myapplications ApplicationSet]
         K --> L[home apps]
-        K --> M[media apps]
-        K --> N[ai apps]
+        K --> Q[media apps]
+        K --> R[ai apps]
+        K --> S[development apps]
+        K --> T[external apps]
+        K --> U[privacy apps]
     end
 
     %% Dependencies
-    F & G & H & I & J --> K
+    F & G & H & J --> O
+    O --> K
     
     style A fill:#f9f,stroke:#333
     style C fill:#9cf,stroke:#333
     style D fill:#9cf,stroke:#333
+    style M fill:#9cf,stroke:#333
+    style N fill:#9cf,stroke:#333
     style E fill:#9f9,stroke:#333
+    style O fill:#9f9,stroke:#333
     style K fill:#9f9,stroke:#333
 ```
 
@@ -289,7 +302,7 @@ Our ArgoCD installation uses a Kustomize-based approach with custom configuratio
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/experimental-install.yaml
 
 # Install ArgoCD with our custom configuration
-k3s kubectl kustomize --enable-helm infra/controllers/argocd | k3s kubectl apply -f -
+k3s kubectl kustomize --enable-helm infrastructure/controllers/argocd | k3s kubectl apply -f -
 
 # Wait for ArgoCD to be ready
 kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
@@ -300,10 +313,10 @@ kubectl wait --for=condition=established crd/appprojects.argoproj.io --timeout=6
 ```
 
 ### 2. Project Setup
-We use two main projects to separate infrastructure from applications:
+We use the following projects to separate different types of applications:
 
 ```yaml
-# Project definitions (root-apps/project.yaml)
+# Project definitions (infrastructure/controllers/argocd/projects.yaml)
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
@@ -311,7 +324,7 @@ metadata:
   namespace: argocd
 spec:
   sourceRepos:
-    - 'https://github.com/mitchross/k3s-argocd-proxmox'
+    - '*'
   destinations:
     - namespace: '*'
       server: '*'
@@ -326,74 +339,166 @@ metadata:
   namespace: argocd
 spec:
   sourceRepos:
-    - 'https://github.com/mitchross/k3s-argocd-proxmox'
+    - '*'
+  destinations:
+    - namespace: '*'
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: 'PersistentVolume'
+    - group: cert-manager.io
+      kind: ClusterIssuer
+    - group: '*'
+      kind: 'CustomResourceDefinition'
+    - group: '*'
+      kind: 'Namespace'
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: monitoring
+  namespace: argocd
+spec:
+  sourceRepos:
+    - '*'
   destinations:
     - namespace: '*'
       server: '*'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ai
+  namespace: argocd
+spec:
+  sourceRepos:
+    - '*'
+  destinations:
+    - namespace: '*'
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: 'PersistentVolume'
+    - group: '*'
+      kind: 'CustomResourceDefinition'
+    - group: '*'
+      kind: 'ClusterRole'
+    - group: '*'
+      kind: 'ClusterRoleBinding'
+    - group: '*'
+      kind: 'Namespace'
 ```
 
 ### 3. Application Management
-We use ApplicationSets to manage our deployments:
+We use three main ApplicationSets to manage our deployments:
 
 ```yaml
-# Infrastructure ApplicationSet (root-apps/infrastructure.yaml)
+# Infrastructure ApplicationSet (infrastructure/infrastructure-components-appset.yaml)
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: infrastructure
+  name: infrastructure-components
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
 spec:
   generators:
     - git:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         revision: HEAD
         directories:
-          - path: infra/*
+          - path: infrastructure/*/*
   template:
     metadata:
-      name: '{{ path.basename }}'
+      name: 'infra-{{path.basename}}'
+      labels:
+        type: infrastructure
     spec:
       project: infrastructure
       source:
+        plugin:
+          name: kustomize-build-with-helm
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         targetRevision: HEAD
-        path: '{{ path }}'
+        path: '{{path}}'
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{ path.basename }}'
+        namespace: '{{path.basename}}'
       syncPolicy:
         automated:
           selfHeal: true
           prune: true
 
-# Applications ApplicationSet (root-apps/applications.yaml)
+# Monitoring ApplicationSet (monitoring/monitoring-components-appset.yaml)
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: applications
+  name: monitoring-components
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   generators:
     - git:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         revision: HEAD
         directories:
-          - path: apps/*
+          - path: monitoring/*/*
   template:
     metadata:
-      name: '{{ path.basename }}'
+      name: 'monitoring-{{path.basename}}'
+      labels:
+        type: monitoring
     spec:
-      project: applications
+      project: infrastructure
       source:
+        plugin:
+          name: kustomize-build-with-helm
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox
         targetRevision: HEAD
-        path: '{{ path }}'
+        path: '{{path}}'
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{ path.basename }}'
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          selfHeal: true
+          prune: true
+
+# Applications ApplicationSet (my-apps/myapplications-appset.yaml)
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: applications
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox
+        revision: HEAD
+        directories:
+          - path: my-apps/*/*
+  template:
+    metadata:
+      name: '{{path[1]}}-{{path.basename}}'
+      labels:
+        type: application
+    spec:
+      project: ai
+      source:
+        plugin:
+          name: kustomize-build-with-helm
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox
+        targetRevision: HEAD
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
       syncPolicy:
         automated:
           selfHeal: true
@@ -401,45 +506,53 @@ spec:
 ```
 
 ### 4. Deployment Order
-Important: Follow this order for deployment:
+Important: Follow this specific order for deployment:
 
 1. Apply projects first:
 ```bash
-kubectl apply -f root-apps/project.yaml
+kubectl apply -f infrastructure/controllers/argocd/projects.yaml -n argocd
 ```
 
 2. Apply infrastructure and wait for it to be ready:
 ```bash
-kubectl apply -f root-apps/infrastructure.yaml
-kubectl wait --for=condition=synced application/infrastructure -n argocd --timeout=300s
+kubectl apply -f infrastructure/infrastructure-components-appset.yaml -n argocd
 ```
 
-3. Only after infrastructure is healthy, apply applications:
+3. Apply monitoring:
 ```bash
-kubectl apply -f root-apps/applications.yaml
+kubectl apply -f monitoring/monitoring-components-appset.yaml -n argocd
+```
+
+4. Finally, apply applications:
+```bash
+kubectl apply -f my-apps/myapplications-appset.yaml -n argocd
 ```
 
 ### Repository Structure
 ```
 .
-├── root-apps/              # Top-level application definitions
-│   ├── project.yaml       # Project definitions
-│   ├── infrastructure.yaml # Infrastructure ApplicationSet
-│   └── applications.yaml  # Applications ApplicationSet
-├── infra/                 # Infrastructure components
-│   ├── network/          # Network configurations
-│   ├── storage/          # Storage configurations
-│   ├── auth/            # Authentication
-│   └── ...
-└── apps/                 # User applications
-    ├── home/            # Home automation apps
-    ├── media/          # Media applications
-    └── ...
+├── infrastructure/           # Infrastructure components
+│   ├── controllers/          # Kubernetes controllers
+│   │   └── argocd/           # ArgoCD configuration and projects
+│   ├── networking/           # Network configurations
+│   ├── storage/              # Storage configurations
+│   └── infrastructure-components-appset.yaml  # Main infrastructure ApplicationSet
+├── monitoring/               # Monitoring components
+│   ├── k8s-monitoring/       # Kubernetes monitoring stack
+│   └── monitoring-components-appset.yaml  # Main monitoring ApplicationSet
+├── my-apps/                  # User applications
+│   ├── ai/                   # AI-related applications
+│   ├── media/                # Media applications
+│   ├── development/          # Development tools
+│   ├── external/             # External service integrations
+│   ├── home/                 # Home automation apps
+│   ├── privacy/              # Privacy-focused applications
+│   └── myapplications-appset.yaml  # Main applications ApplicationSet
 ```
 
 ### Key Features
-- Custom plugin configurations (Kustomize with Helm support)
-- Resource limits and requests for all components
-- Security settings and RBAC configurations
-- Config Management Plugin (CMP) setup for enhanced functionality
+- Three-tier architecture separating infrastructure, monitoring, and applications
+- Sync waves ensure proper deployment order
+- Simple directory patterns without complex exclude logic
+- All applications managed through just three top-level ApplicationSets
 ``` 

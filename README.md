@@ -197,7 +197,7 @@ kubectl create secret generic 1passwordconnect \
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/experimental-install.yaml
 
 # Install ArgoCD with our custom configuration
-k3s kubectl kustomize --enable-helm infra/controllers/argocd | k3s kubectl apply -f -
+k3s kubectl kustomize --enable-helm infrastructure/controllers/argocd | k3s kubectl apply -f -
 
 # Wait for ArgoCD to be ready
 kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
@@ -206,23 +206,26 @@ kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argo
 kubectl wait --for=condition=established crd/applications.argoproj.io --timeout=60s
 kubectl wait --for=condition=established crd/appprojects.argoproj.io --timeout=60s
 
-#Install Argo apps (WIP)
+# Apply the 3-tier structure in order
 
-kubectl apply -f root-apps/project.yaml 
-kubectl apply -f root-apps/infrastructure.yaml 
-kubectl get applicationset -n argocd infrastructure -o yaml 
-kubectl wait --for=condition=synced application/infrastructure -n argocd --timeout=300s
+# 1. First apply the ArgoCD projects
+kubectl apply -f infrastructure/controllers/argocd/projects.yaml -n argocd
 
-only after
+# 2. Apply infrastructure components (sync wave -2 ensures they run first)
+kubectl apply -f infrastructure/infrastructure-components-appset.yaml -n argocd
 
-kubectl apply -f root-apps/applications.yaml
+# 3. Apply monitoring components (sync wave 0)
+kubectl apply -f monitoring/monitoring-components-appset.yaml -n argocd
+
+# 4. Finally, apply user applications (sync wave 1 ensures they run last)
+kubectl apply -f my-apps/myapplications-appset.yaml -n argocd
 ```
 
 This installation method includes:
-- Custom plugin configurations (Kustomize with Helm support)
-- Resource limits and requests
-- Security settings
-- CMP (Config Management Plugin) setup
+- Three-tier architecture separating infrastructure, monitoring, and applications
+- Sync waves ensure proper deployment order
+- Simple directory patterns without complex include/exclude logic
+- All components managed through just three top-level ApplicationSets
 
 For detailed ArgoCD configuration, see [ArgoCD Documentation](docs/argocd.md)
 
@@ -333,20 +336,29 @@ GitOps workflow using:
 
 ```
 .
-├── apps/                 # Application manifests
-│   ├── core/            # Core system applications
-│   ├── monitoring/      # Monitoring stack
-│   └── services/        # User applications
-├── docs/                # Documentation
-│   ├── argocd.md       # ArgoCD setup and workflow
-│   ├── network.md      # Network configuration
-│   ├── security.md     # Security setup
-│   ├── storage.md      # Storage configuration
-│   └── external-services.md # External services setup
-├── infra/              # Infrastructure components
-│   ├── root-apps/      # ArgoCD root applications
-│   └── base/           # Base infrastructure
-└── sets/               # ApplicationSet configurations
+├── infrastructure/           # Infrastructure components
+│   ├── controllers/          # Kubernetes controllers
+│   │   └── argocd/           # ArgoCD configuration and projects
+│   ├── networking/           # Network configurations
+│   ├── storage/              # Storage configurations
+│   └── infrastructure-components-appset.yaml  # Main infrastructure ApplicationSet
+├── monitoring/               # Monitoring components
+│   ├── k8s-monitoring/       # Kubernetes monitoring stack
+│   └── monitoring-components-appset.yaml  # Main monitoring ApplicationSet
+├── my-apps/                  # User applications
+│   ├── ai/                   # AI-related applications
+│   ├── media/                # Media applications
+│   ├── development/          # Development tools
+│   ├── external/             # External service integrations
+│   ├── home/                 # Home automation apps
+│   ├── privacy/              # Privacy-focused applications
+│   └── myapplications-appset.yaml  # Main applications ApplicationSet
+├── docs/                     # Documentation
+│   ├── argocd.md             # ArgoCD setup and workflow
+│   ├── network.md            # Network configuration
+│   ├── security.md           # Security setup
+│   ├── storage.md            # Storage configuration
+│   └── external-services.md  # External services setup
 ```
 
 ## 🔍 Troubleshooting
