@@ -27,7 +27,7 @@ spec:
       source:
         plugin:
           name: kustomize-build-with-helm
-        repoURL: https://github.com/mitchross/k3s-argocd-starter.git
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         targetRevision: HEAD
         path: '{{path}}'
       destination:
