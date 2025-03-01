@@ -4,28 +4,29 @@ metadata:
   name: wyze-bridge
   namespace: wyze-bridge
   annotations:
-    io.cilium/lb-ipam-ips: "192.168.10.46"
+    lbipam.cilium.io/ips: "192.168.10.46"
 spec:
   selector:
     app: wyze-bridge
   ports:
-  - name: rtmp
-    port: 1935
-    targetPort: 1935
-  - name: rtsp
-    port: 8554
-    targetPort: 8554
-  - name: hls
-    port: 8888
-    targetPort: 8888
-  - name: webrtc
-    port: 8889
-    targetPort: 8889
-  - name: webrtc-ice
-    port: 8189
-    protocol: UDP
-    targetPort: 8189
-  - name: web-ui
-    port: 5000
-    targetPort: 5000
+    - name: rtmp
+      port: 1935
+      targetPort: 1935
+    - name: rtsp
+      port: 8554
+      targetPort: 8554
+    - name: hls
+      port: 8888
+      targetPort: 8888
+    - name: webrtc
+      port: 8889
+      targetPort: 8889
+    - name: webrtc-ice
+      port: 8189
+      protocol: UDP
+      targetPort: 8189
+    - name: web-ui
+      port: 5000
+      targetPort: 5000
   type: LoadBalancer
+  loadBalancerClass: io.cilium/l2-announcer
