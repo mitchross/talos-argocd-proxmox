@@ -8,7 +8,7 @@ metadata:
     #this is only required if you want to request a specific IP from the Cilium IPAM pool
     #ie you want a static IP for the service
     #Optional: if you want to use L2 announcements for the LoadBalancer
-    lbipam.cilium.io/ips: "192.168.10.47"
+    lbipam.cilium.io/ips: "192.168.10.43"
 spec:
   type: LoadBalancer
   # Use L2 announcements for the LoadBalancer
