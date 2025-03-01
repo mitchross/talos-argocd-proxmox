@@ -13,5 +13,5 @@ spec:
       protocol: TCP
       name: postgresql
   selector:
-    postgresql: postgres-cluster
+    cnpg.io/cluster: postgres-cluster
     role: primary
