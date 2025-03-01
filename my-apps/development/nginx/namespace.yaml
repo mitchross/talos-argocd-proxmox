@@ -1,0 +1,5 @@
+# File: nginx/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nginx-example
