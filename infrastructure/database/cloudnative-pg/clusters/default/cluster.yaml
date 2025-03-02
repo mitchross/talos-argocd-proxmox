@@ -1,41 +1,19 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: postgres-v17-3
-  namespace: cloudnative-pg
+  name: single-example
+  namespace: cnpg-database
 spec:
-  instances: 1
-  enableSuperuserAccess: true
-  superuserSecret:
-    name: postgres-superuser
-  imageName: ghcr.io/cloudnative-pg/postgresql:17.2
-  primaryUpdateStrategy: unsupervised
-  # PostgreSQL configuration
-  postgresql:
-    parameters:
-      shared_buffers: 512MB
-      max_connections: "1800"
-      password_encryption: scram-sha-256
-    pg_hba:
-      - host all all 192.168.10.47/32 scram-sha-256  # Load Balancer IP access
-      # Restrict access to trusted networks only (example: replace with your specific network)
-      - host all all 10.0.0.0/16 scram-sha-256  # Example for internal cluster network
-  # Storage configuration
-  storage:
-    size: 100Gi
-    storageClass: local-storage
-    pvcTemplate:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 100Gi
-  walStorage:
-    size: 10Gi
-    storageClass: local-storage
-  # Monitoring configuration
+  #instances: 1
+  # https://cloudnative-pg.io/documentation/1.24/quickstart/
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.4
+  # https://cloudnative-pg.io/documentation/1.24/monitoring/
   monitoring:
     enablePodMonitor: true
+  enableSuperuserAccess: true
+  affinity:
+    nodeSelector:
+      kubernetes.io/hostname: vanillax-ai
   # Bootstrap configuration
   bootstrap:
     initdb:
@@ -47,3 +25,31 @@ spec:
         - CREATE EXTENSION IF NOT EXISTS citext;
         - ALTER SYSTEM SET log_statement = 'all';
         - ALTER SYSTEM SET log_duration = on;
+  postgresql:
+    parameters:
+      timezone: "America/New_York"
+  managed:
+    services:
+      #disabledDefaultServices: [ "ro", "r" ]
+      additional:
+        - selectorType: rw
+          updateStrategy: patch
+          serviceTemplate:
+            metadata:
+              name: single-example-ext
+              annotations:
+                lbipam.cilium.io/ips: "192.168.10.47"
+            spec:
+              type: LoadBalancer
+  storage:
+    size: 100Gi
+    storageClass: local-storage
+    pvcTemplate:
+      accessModes:
+        - ReadWriteOnce
+    wal:
+      storageClass: local-storage
+      size: 10Gi
+      pvcTemplate:
+        accessModes:
+          - ReadWriteOnce
