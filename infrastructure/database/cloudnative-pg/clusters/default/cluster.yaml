@@ -4,7 +4,7 @@ metadata:
   name: single-example
   namespace: cnpg-database
 spec:
-  #instances: 1
+  instances: 1
   # https://cloudnative-pg.io/documentation/1.24/quickstart/
   imageName: ghcr.io/cloudnative-pg/postgresql:16.4
   # https://cloudnative-pg.io/documentation/1.24/monitoring/
@@ -28,6 +28,8 @@ spec:
   postgresql:
     parameters:
       timezone: "America/New_York"
+    pg_hba:
+      - host all all 0.0.0.0/0 md5
   managed:
     services:
       #disabledDefaultServices: [ "ro", "r" ]
@@ -47,9 +49,3 @@ spec:
     pvcTemplate:
       accessModes:
         - ReadWriteOnce
-    wal:
-      storageClass: local-storage
-      size: 10Gi
-      pvcTemplate:
-        accessModes:
-          - ReadWriteOnce
