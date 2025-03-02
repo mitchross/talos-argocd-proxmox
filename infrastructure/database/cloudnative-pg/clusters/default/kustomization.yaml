@@ -10,3 +10,4 @@ resources:
   - service.yaml
   - gateway.yaml
   - pv.yaml
+  - tcp-route.yaml
