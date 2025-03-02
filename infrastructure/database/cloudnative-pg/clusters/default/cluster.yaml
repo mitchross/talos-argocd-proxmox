@@ -13,6 +13,7 @@ spec:
   # PostgreSQL configuration
   postgresql:
     parameters:
+      listen_addresses: '*'
       shared_buffers: 512MB
       max_connections: "1800"
   # Storage configuration
@@ -36,6 +37,9 @@ spec:
   # Bootstrap configuration
   bootstrap:
     initdb:
+      pg_hba:  
+        - host all all 192.168.10.47/32 md5
+        - host all all 0.0.0.0/0 md5 
       database: postgres
       owner: postgres
       secret:
