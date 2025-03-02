@@ -33,3 +33,12 @@ spec:
   # Monitoring configuration
   monitoring:
     enablePodMonitor: true
+  # Bootstrap configuration
+  bootstrap:
+    initdb:
+      database: postgres
+      owner: postgres
+      secret:
+        name: postgres-superuser-secret
+      postInitSQL:
+        - CREATE EXTENSION IF NOT EXISTS citext;
