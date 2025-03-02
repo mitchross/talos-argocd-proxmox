@@ -7,7 +7,7 @@ resources:
   - ns.yaml
   - gw-external.yaml
   - gw-internal.yaml
-  - gw-tls-passthrough.yaml
+
 
 generatorOptions:
   disableNameSuffixHash: true

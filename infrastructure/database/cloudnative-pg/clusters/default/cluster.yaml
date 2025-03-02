@@ -17,8 +17,9 @@ spec:
       max_connections: "1800"
       password_encryption: scram-sha-256
     pg_hba:
-      - host all all 192.168.10.47/32 scram-sha-256 # LB IP
-      - host all all 0.0.0.0/0 scram-sha-256 # Temporary access
+      - host all all 192.168.10.47/32 scram-sha-256  # Load Balancer IP access
+      # Restrict access to trusted networks only (example: replace with your specific network)
+      - host all all 10.0.0.0/16 scram-sha-256  # Example for internal cluster network
   # Storage configuration
   storage:
     size: 100Gi
