@@ -29,17 +29,16 @@ spec:
   walStorage:
     size: 10Gi
     storageClass: local-storage
-
-
   # Monitoring configuration
   monitoring:
     enablePodMonitor: true
   # Bootstrap configuration
   bootstrap:
     initdb:
-      pg_hba:  
-        - host all all 192.168.10.47/32 md5
-        - host all all 0.0.0.0/0 md5 
+      options:
+        pg_hba:
+          - host all all 192.168.10.47/32 md5
+          - host all all 0.0.0.0/0 md5
       database: postgres
       owner: postgres
       secret:
