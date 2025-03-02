@@ -1,31 +1,15 @@
-apiVersion: gateway.networking.k8s.io/v1
-kind: Gateway
-metadata:
-  name: gateway-tcp
-  namespace: gateway
-spec:
-  addresses:
-    - type: IPAddress
-      value: 192.168.10.51
-  gatewayClassName: cilium
-  listeners:
-    - name: postgresql-tcp
-      protocol: TCP
-      port: 5432 # PostgreSQL default port
-      allowedRoutes:
-        namespaces:
-          from: All
+
 apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TCPRoute
 metadata:
   name: postgres-route
-  namespace: cloudnative-pg  # Make sure this is in the same namespace as your PostgreSQL
+  namespace: cloudnative-pg # Make sure this is in the same namespace as your PostgreSQL
 spec:
   parentRefs:
     - name: gateway-internal
       namespace: gateway
-      sectionName: postgres  # References the listener name
+      sectionName: postgres # References the listener name
   rules:
     - backendRefs:
-        - name: single-example-rw  # This should be your PostgreSQL service name
+        - name: single-example-rw # This should be your PostgreSQL service name
           port: 5432
