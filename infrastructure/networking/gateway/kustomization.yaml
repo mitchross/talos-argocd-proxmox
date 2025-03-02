@@ -6,6 +6,6 @@ resources:
   - ns.yaml
   - gw-external.yaml
   - gw-internal.yaml
- # - gw-tcp.yaml
+  - gw-tcp-postgres.yaml
 generatorOptions:
   disableNameSuffixHash: true

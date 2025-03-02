@@ -7,6 +7,5 @@ commonLabels:
 resources:
   - cluster.yaml
   - externalsecret.yaml
-  - service.yaml
   - pv.yaml
 
