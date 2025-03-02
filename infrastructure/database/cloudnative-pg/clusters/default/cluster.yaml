@@ -35,13 +35,12 @@ spec:
   # Bootstrap configuration
   bootstrap:
     initdb:
-      options:
-        pg_hba:
-          - host all all 192.168.10.47/32 md5
-          - host all all 0.0.0.0/0 md5
       database: postgres
       owner: postgres
       secret:
         name: postgres-superuser-secret
       postInitSQL:
         - CREATE EXTENSION IF NOT EXISTS citext;
+      pg_hba:
+        - host all all 192.168.10.47/32 md5
+        - host all all 0.0.0.0/0 md5
