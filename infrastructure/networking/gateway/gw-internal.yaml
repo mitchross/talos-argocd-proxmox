@@ -31,10 +31,9 @@ spec:
     # New TCP listener for PostgreSQL
     - name: postgres
       protocol: TCP
-      supportedKinds:
-        - group: gateway.networking.k8s.io
-          kind: TCPRoute
       port: 5432
       allowedRoutes:
+        kinds:
+          - kind: TCPRoute
         namespaces:
           from: All
