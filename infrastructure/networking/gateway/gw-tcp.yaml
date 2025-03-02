@@ -6,7 +6,7 @@ metadata:
 spec:
   addresses:
     - type: IPAddress
-      value: 192.168.10.50
+      value: 192.168.10.51
   gatewayClassName: cilium
   listeners:
     - name: postgresql-tcp
