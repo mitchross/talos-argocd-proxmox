@@ -9,4 +9,4 @@ resources:
   - externalsecret.yaml
   - service.yaml
   - pv.yaml
-  - tcp-route.yaml
+  #- tcp-route.yaml
