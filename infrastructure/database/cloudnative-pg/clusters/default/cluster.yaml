@@ -10,15 +10,16 @@ spec:
     name: postgres-superuser
   imageName: ghcr.io/cloudnative-pg/postgresql:17.2
   primaryUpdateStrategy: unsupervised
-  
   # PostgreSQL configuration
   postgresql:
     parameters:
-      listen_addresses: '*'       # Critical for external connections
+      listen_addresses: '*' # Critical for external connections
       shared_buffers: 512MB
       max_connections: "1800"
       password_encryption: scram-sha-256
-
+    pg_hba:
+      - host all all 192.168.10.47/32 scram-sha-256 # LB IP
+      - host all all 0.0.0.0/0 scram-sha-256 # Temporary access
   # Storage configuration
   storage:
     size: 100Gi
@@ -29,22 +30,15 @@ spec:
       resources:
         requests:
           storage: 100Gi
-  
   walStorage:
     size: 10Gi
     storageClass: local-storage
-
   # Monitoring configuration
   monitoring:
     enablePodMonitor: true
-
   # Bootstrap configuration
   bootstrap:
     initdb:
-      options:
-        pg_hba:
-          - host all all 192.168.10.47/32 scram-sha-256  # LB IP
-          - host all all 0.0.0.0/0 scram-sha-256         # Temporary access
       database: postgres
       owner: postgres
       secret:
@@ -53,7 +47,6 @@ spec:
         - CREATE EXTENSION IF NOT EXISTS citext;
         - ALTER SYSTEM SET log_statement = 'all';
         - ALTER SYSTEM SET log_duration = on;
-
   # Connection pool settings
   connectionPool:
     enabled: true
