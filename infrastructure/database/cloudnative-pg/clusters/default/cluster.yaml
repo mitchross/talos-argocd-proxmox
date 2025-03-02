@@ -6,6 +6,8 @@ metadata:
 spec:
   instances: 1
   enableSuperuserAccess: true
+  superuserSecret:
+    name: postgres-superuser
   imageName: ghcr.io/cloudnative-pg/postgresql:17.2
   primaryUpdateStrategy: unsupervised
   # PostgreSQL configuration
@@ -26,15 +28,8 @@ spec:
   walStorage:
     size: 10Gi
     storageClass: local-storage
-  # Bootstrap configuration
-  bootstrap:
-    initdb:
-      database: postgres
-      owner: postgres
-      secret:
-        name: postgres-superuser-secret
-      postInitSQL:
-        - CREATE EXTENSION IF NOT EXISTS citext;
+
+
   # Monitoring configuration
   monitoring:
     enablePodMonitor: true
