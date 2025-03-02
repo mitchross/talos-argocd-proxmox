@@ -5,7 +5,7 @@ metadata:
   namespace: cloudnative-pg
 spec:
   parentRefs:
-    - name: gateway-internal
+    - name: tcp-gateway
       namespace: gateway
   rules:
     - backendRefs:
