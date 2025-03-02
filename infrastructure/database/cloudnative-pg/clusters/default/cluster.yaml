@@ -13,7 +13,6 @@ spec:
   # PostgreSQL configuration
   postgresql:
     parameters:
-      listen_addresses: '*' # Critical for external connections
       shared_buffers: 512MB
       max_connections: "1800"
       password_encryption: scram-sha-256
