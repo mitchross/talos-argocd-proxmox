@@ -1,16 +1,18 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: postgres-cluster
+  name: &current postgres-v17-3
   namespace: cloudnative-pg
 spec:
   instances: 1
   enableSuperuserAccess: true
+  imageName: ghcr.io/cloudnative-pg/postgresql:17.2
+  primaryUpdateStrategy: unsupervised
   # PostgreSQL configuration
   postgresql:
     parameters:
-      shared_buffers: 256MB
-      max_connections: "100"
+      shared_buffers: 512MB
+      max_connections: "1800"
   # Storage configuration
   storage:
     size: 100Gi

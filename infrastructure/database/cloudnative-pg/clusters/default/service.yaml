@@ -14,5 +14,5 @@ spec:
       protocol: TCP
       name: postgresql
   selector:
-    cnpg.io/cluster: postgres-cluster
+    cnpg.io/cluster: postgres-v17-3
     cnpg.io/instanceRole: primary
