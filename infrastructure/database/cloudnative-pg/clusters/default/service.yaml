@@ -9,10 +9,18 @@ spec:
   type: LoadBalancer
   loadBalancerClass: io.cilium/l2-announcer
   ports:
-    - port: 5432
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+    - name: https
+      port: 443
+      targetPort: 443
+      protocol: TCP
+    - name: postgres
+      port: 5432
       targetPort: 5432
       protocol: TCP
-      name: postgresql
   selector:
-    cnpg.io/cluster: postgres-v17-3
-    cnpg.io/instanceRole: primary
+    cnpg.io/cluster: single-example
+    
