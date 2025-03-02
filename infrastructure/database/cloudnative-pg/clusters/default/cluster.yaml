@@ -10,14 +10,13 @@ spec:
     name: postgres-superuser
   imageName: ghcr.io/cloudnative-pg/postgresql:17.2
   primaryUpdateStrategy: unsupervised
-  
+
   # PostgreSQL configuration
   postgresql:
     parameters:
-      listen_addresses: '*'       # Critical for external connections
-      shared_buffers: 512MB
+      listen_addresses: '*'  # Must be quoted in some k8s versions
+      shared_buffers: "512MB"
       max_connections: "1800"
-      password_encryption: scram-sha-256
 
   # Storage configuration
   storage:
@@ -26,38 +25,24 @@ spec:
     pvcTemplate:
       accessModes:
         - ReadWriteOnce
-      resources:
-        requests:
-          storage: 100Gi
-  
+
   walStorage:
     size: 10Gi
     storageClass: local-storage
 
+  # Bootstrap configuration (CORRECTED STRUCTURE)
+  bootstrap:
+    initdb:
+      - pg-hba: |
+          host all all 192.168.10.47/32 scram-sha-256
+          host all all 0.0.0.0/0 scram-sha-256
+      secret:
+        name: postgres-superuser-secret
+      database: postgres
+      owner: postgres
+      postInitSQL:
+        - CREATE EXTENSION IF NOT EXISTS citext;
+
   # Monitoring configuration
   monitoring:
     enablePodMonitor: true
-
-  # Bootstrap configuration
-  bootstrap:
-    initdb:
-      options:
-        pg_hba:
-          - host all all 192.168.10.47/32 scram-sha-256  # LB IP
-          - host all all 0.0.0.0/0 scram-sha-256         # Temporary access
-      database: postgres
-      owner: postgres
-      secret:
-        name: postgres-superuser-secret
-      postInitSQL:
-        - CREATE EXTENSION IF NOT EXISTS citext;
-        - ALTER SYSTEM SET log_statement = 'all';
-        - ALTER SYSTEM SET log_duration = on;
-
-  # Connection pool settings
-  connectionPool:
-    enabled: true
-    type: pgBouncer
-    parameters:
-      max_client_conn: 500
-      default_pool_size: 50
