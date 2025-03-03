@@ -1,15 +1,15 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: debug-pod
+  name: connectivity-test
   namespace: immich
 spec:
   containers:
     - name: debug
-      image: praqma/network-multitool:latest
+      image: postgres:15-alpine
       command:
         - sleep
-        - "3600"
+        - "86400"
       env:
         - name: DB_HOSTNAME
           value: "immich-postgres-external.immich.svc.cluster.local"
@@ -17,6 +17,6 @@ spec:
           value: "redis-external.redis.svc.cluster.local"
       resources:
         limits:
-          memory: "128Mi"
-          cpu: "100m"
+          memory: "256Mi"
+          cpu: "200m"
   restartPolicy: Never
