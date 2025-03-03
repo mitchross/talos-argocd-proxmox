@@ -12,7 +12,7 @@ spec:
         - "86400"
       env:
         - name: DB_HOSTNAME
-          value: "immich-postgres-external.immich.svc.cluster.local"
+          value: "immich-postgres-external.cloudnative-pg.svc.cluster.local"
         - name: REDIS_HOSTNAME
           value: "redis-external.redis.svc.cluster.local"
       resources:
