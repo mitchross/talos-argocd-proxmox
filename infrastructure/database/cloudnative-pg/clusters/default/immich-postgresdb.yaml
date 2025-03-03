@@ -6,10 +6,9 @@ metadata:
   labels:
     app: immich
 spec:
-  instances: 2 # Primary and one replica for high availability
-  # Image selection - we need to choose one that supports vector extensions
-  # Note: CloudNativePG uses its own images, so we'll need to install the extension 
+  instances: 2
   imageName: ghcr.io/tensorchord/cloudnative-pgvecto.rs:17.4-v0.4.0
+  
   # Resource allocation
   resources:
     requests:
@@ -17,17 +16,19 @@ spec:
       cpu: 500m
     limits:
       memory: 2Gi
-  # PostgreSQL configuration parameters that mirror the Docker Compose setup
+      
+  # PostgreSQL configuration
   postgresql:
     parameters:
       shared_buffers: "512MB"
       max_wal_size: "2GB"
       wal_compression: "on"
       logging_collector: "on"
-      log_statement: "all" # Helpful for debugging
+      log_statement: "all"
     pg_hba:
-      - host all all 0.0.0.0/0 md5 # Allow external connections
-  # Bootstrap configuration to create the necessary database and user
+      - host all all 0.0.0.0/0 md5
+      
+  # Bootstrap configuration
   bootstrap:
     initdb:
       database: immich
@@ -35,13 +36,20 @@ spec:
       secret:
         name: immich-db-credentials
       postInitSQL:
-        - CREATE EXTENSION IF NOT EXISTS vectors; # Add the vector extension
+        - CREATE EXTENSION IF NOT EXISTS vectors;
         - ALTER ROLE immich SET search_path = "$user", public, vectors;
-  # Storage configuration
+        
+  # Data storage configuration
   storage:
     size: 20Gi
-    storageClass: local-storage # Adjust based on your cluster's available storage classes
-  # External access through managed service
+    storageClass: local-storage
+    
+  # WAL storage configuration - this is the key addition
+  walStorage:
+    size: 5Gi
+    storageClass: local-storage
+    
+  # The rest of your configuration remains the same
   managed:
     services:
       additional:
@@ -59,8 +67,10 @@ spec:
                   port: 5432
                   targetPort: 5432
                   protocol: TCP
-  # Enable superuser access for initial setup and extension installation
+                  
   enableSuperuserAccess: true
-  # Monitoring configuration
   monitoring:
     enablePodMonitor: true
+  affinity:
+    nodeSelector:
+      kubernetes.io/hostname: vanillax-ai

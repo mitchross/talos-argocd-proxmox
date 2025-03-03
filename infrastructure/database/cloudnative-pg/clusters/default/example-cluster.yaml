@@ -43,9 +43,21 @@ spec:
                 lbipam.cilium.io/ips: "192.168.10.42"
             spec:
               type: LoadBalancer
+  # Data storage configuration 
   storage:
     size: 100Gi
     storageClass: local-storage
     pvcTemplate:
       accessModes:
         - ReadWriteOnce
+  
+  # WAL storage configuration - this is the new section
+  walStorage:
+    size: 10Gi
+    storageClass: local-storage
+    pvcTemplate:
+      accessModes:
+        - ReadWriteOnce
+  affinity:
+    nodeSelector:
+      kubernetes.io/hostname: vanillax-ai
