@@ -1,6 +1,7 @@
 # These entries are shared between all the Immich components
 env:
-  DB_HOSTNAME: "immich-database-rw.immich.svc.cluster.local"
+  # Use the CNPG service for the database connection
+  DB_HOSTNAME: "immich-postgres-external.immich.svc.cluster.local"
   DB_USERNAME: "immich"
   DB_DATABASE_NAME: "immich"
   # Use the secret we already created for the database
@@ -9,6 +10,11 @@ env:
       secretKeyRef:
         name: immich-db-credentials
         key: password
+  # Explicitly set Redis connection information
+  REDIS_HOSTNAME: "immich-redis-master.immich.svc.cluster.local"
+  REDIS_PORT: "6379"
+  REDIS_USERNAME: "default"
+  REDIS_PASSWORD: ""
 image:
   tag: v1.119.0
 immich:
@@ -20,6 +26,9 @@ immich:
     library:
       # Reference our PVC
       existingClaim: immich-library
+    # Upload storage
+    uploads:
+      existingClaim: immich-uploads
   configuration:
     trash:
       enabled: true
@@ -36,6 +45,9 @@ redis:
   architecture: standalone
   auth:
     enabled: false
+  master:
+    persistence:
+      existingClaim: redis-data-immich-redis-master-0
 # Immich components
 server:
   enabled: true
@@ -51,14 +63,14 @@ server:
         nginx.ingress.kubernetes.io/proxy-body-size: "0"
         traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
       hosts:
-        - host: immich.local
+        - host: immich.vanillax.me
           paths:
             - path: "/"
               pathType: Prefix
       tls:
         - secretName: immich-tls
           hosts:
-            - immich.local
+            - immich.vanillax.me
 machine-learning:
   enabled: true
   image:
