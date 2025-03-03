@@ -1,0 +1,76 @@
+# These entries are shared between all the Immich components
+env:
+  DB_HOSTNAME: "immich-database-rw.immich.svc.cluster.local"
+  DB_USERNAME: "immich"
+  DB_DATABASE_NAME: "immich"
+  # Use the secret we already created for the database
+  DB_PASSWORD:
+    valueFrom:
+      secretKeyRef:
+        name: immich-db-credentials
+        key: password
+image:
+  tag: v1.119.0
+immich:
+  metrics:
+    # Enabling this will create the service monitors needed to monitor immich with prometheus
+    enabled: false
+  persistence:
+    # Main data store for all photos shared between different components.
+    library:
+      # Reference our PVC
+      existingClaim: immich-library
+  configuration:
+    trash:
+      enabled: true
+      days: 30
+    storageTemplate:
+      enabled: true
+      template: "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}"
+# Disable bundled PostgreSQL since we're using our own
+postgresql:
+  enabled: false
+# Keep Redis enabled (this is separate from PostgreSQL)
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false
+# Immich components
+server:
+  enabled: true
+  image:
+    repository: ghcr.io/immich-app/immich-server
+    pullPolicy: IfNotPresent
+  ingress:
+    main:
+      enabled: true
+      ingressClassName: "traefik"
+      annotations:
+        # proxy-body-size is set to 0 to remove the body limit on file uploads
+        nginx.ingress.kubernetes.io/proxy-body-size: "0"
+        traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+      hosts:
+        - host: immich.local
+          paths:
+            - path: "/"
+              pathType: Prefix
+      tls:
+        - secretName: immich-tls
+          hosts:
+            - immich.local
+machine-learning:
+  enabled: true
+  image:
+    repository: ghcr.io/immich-app/immich-machine-learning
+    pullPolicy: IfNotPresent
+  env:
+    TRANSFORMERS_CACHE: /cache
+  persistence:
+    cache:
+      enabled: true
+      size: 10Gi
+      # Use PVC instead of emptyDir to avoid downloading ML models every start
+      type: pvc
+      accessMode: ReadWriteOnce
+      storageClass: local-storage

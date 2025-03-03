@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: immich
+commonLabels:
+  app.kubernetes.io/name: immich
+  app.kubernetes.io/managed-by: argocd
+resources:
+  - namespace.yaml
+  - pv.yaml
+  - pvc.yaml
+  - httproute.yaml
+helmCharts:
+  - name: immich
+    repo: https://immich-app.github.io/immich-charts
+    version: 1.0.0
+    releaseName: immich
+    namespace: immich
+    includeCRDs: true
+    valuesFile: values.yaml
