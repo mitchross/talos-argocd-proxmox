@@ -35,8 +35,8 @@ spec:
       secret:
         name: immich-db-credentials
       postInitSQL:
+        - ALTER SYSTEM SET search_path TO "$user", public, vectors;
         - CREATE EXTENSION IF NOT EXISTS vectors;
-        - ALTER ROLE immich SET search_path = "$user", public, vectors;
   # Data storage configuration
   storage:
     size: 20Gi
