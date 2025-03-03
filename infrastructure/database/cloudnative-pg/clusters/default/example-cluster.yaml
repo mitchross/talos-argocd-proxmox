@@ -58,6 +58,3 @@ spec:
     pvcTemplate:
       accessModes:
         - ReadWriteOnce
-  affinity:
-    nodeSelector:
-      kubernetes.io/hostname: vanillax-ai
