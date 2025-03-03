@@ -23,7 +23,8 @@ spec:
       wal_compression: "on"
       logging_collector: "on"
       log_statement: "all"
-      shared_preload_libraries: "vectors.so"
+    shared_preload_libraries:
+      - "vectors.so"
     pg_hba:
       - host all all 0.0.0.0/0 md5
   # Bootstrap configuration
