@@ -16,7 +16,7 @@ env:
   REDIS_USERNAME: "default"
   REDIS_PASSWORD: ""
 image:
-  tag: v1.119.0
+  tag: v1.128.0 # Latest version released 2 days ago
 immich:
   metrics:
     # Enabling this will create the service monitors needed to monitor immich with prometheus
