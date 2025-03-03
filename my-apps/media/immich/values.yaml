@@ -1,7 +1,7 @@
 # These entries are shared between all the Immich components
 env:
   # Use the CNPG service for the database connection
-  DB_HOSTNAME: "immich-postgres-external.immich.svc.cluster.local"
+  DB_HOSTNAME: "immich-postgres-external.cloudnative-pg.svc.cluster.local"
   DB_USERNAME: "immich"
   DB_DATABASE_NAME: "immich"
   # Use the secret we already created for the database
