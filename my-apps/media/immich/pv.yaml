@@ -47,3 +47,29 @@ spec:
               operator: In
               values:
                 - vanillax-ai
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: redis-data-immich-redis-master-0
+  labels:
+    app: redis
+    component: master
+    release: immich
+spec:
+  capacity:
+    storage: 8Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/immich/redis
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - vanillax-ai
