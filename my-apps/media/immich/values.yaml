@@ -10,8 +10,8 @@ env:
       secretKeyRef:
         name: immich-db-credentials
         key: password
-  # Explicitly set Redis connection information
-  REDIS_HOSTNAME: "immich-redis-master.immich.svc.cluster.local"
+  # Connect to external Redis service
+  REDIS_HOSTNAME: "redis-external.redis.svc.cluster.local"
   REDIS_PORT: "6379"
   REDIS_USERNAME: "default"
   REDIS_PASSWORD: ""
@@ -39,12 +39,9 @@ immich:
 # Disable bundled PostgreSQL since we're using our own
 postgresql:
   enabled: false
-# Keep Redis enabled (this is separate from PostgreSQL)
+# Disable bundled Redis since we're using our own
 redis:
-  enabled: true
-  architecture: standalone
-  auth:
-    enabled: false
+  enabled: false
 # Immich components
 server:
   enabled: true
