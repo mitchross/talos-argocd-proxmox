@@ -6,6 +6,7 @@ commonLabels:
   app.kubernetes.io/managed-by: argocd
 resources:
   - cluster.yaml
+  - immich-postgresdb.yaml
   - externalsecret.yaml
   - pv.yaml
 

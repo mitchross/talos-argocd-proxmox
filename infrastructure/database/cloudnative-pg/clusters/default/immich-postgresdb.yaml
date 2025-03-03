@@ -1,0 +1,66 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: immich-database
+  namespace: immich
+  labels:
+    app: immich
+spec:
+  instances: 2 # Primary and one replica for high availability
+  # Image selection - we need to choose one that supports vector extensions
+  # Note: CloudNativePG uses its own images, so we'll need to install the extension 
+  imageName: ghcr.io/cloudnative-pg/postgresql:14.10
+  # Resource allocation
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 2Gi
+  # PostgreSQL configuration parameters that mirror the Docker Compose setup
+  postgresql:
+    parameters:
+      shared_buffers: "512MB"
+      max_wal_size: "2GB"
+      wal_compression: "on"
+      logging_collector: "on"
+      log_statement: "all" # Helpful for debugging
+    pg_hba:
+      - host all all 0.0.0.0/0 md5 # Allow external connections
+  # Bootstrap configuration to create the necessary database and user
+  bootstrap:
+    initdb:
+      database: immich
+      owner: immich
+      secret:
+        name: immich-db-credentials
+      postInitSQL:
+        - CREATE EXTENSION IF NOT EXISTS vectors; # Add the vector extension
+        - ALTER ROLE immich SET search_path = "$user", public, vectors;
+  # Storage configuration
+  storage:
+    size: 20Gi
+    storageClass: local-storage # Adjust based on your cluster's available storage classes
+  # External access through managed service
+  managed:
+    services:
+      additional:
+        - selectorType: rw
+          updateStrategy: patch
+          serviceTemplate:
+            metadata:
+              name: immich-postgres-external
+              annotations:
+                lbipam.cilium.io/ips: "192.168.10.41"
+            spec:
+              type: LoadBalancer
+              ports:
+                - name: postgres
+                  port: 5432
+                  targetPort: 5432
+                  protocol: TCP
+  # Enable superuser access for initial setup and extension installation
+  enableSuperuserAccess: true
+  # Monitoring configuration
+  monitoring:
+    enablePodMonitor: true
