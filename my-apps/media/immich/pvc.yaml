@@ -31,17 +31,3 @@ spec:
     matchLabels:
       app: immich
       type: uploads
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: redis-data-immich-redis-master-0
-  namespace: immich
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 8Gi
-  storageClassName: local-storage
-  volumeName: redis-data-immich-redis-master-0

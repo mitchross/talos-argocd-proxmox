@@ -45,9 +45,6 @@ redis:
   architecture: standalone
   auth:
     enabled: false
-  master:
-    persistence:
-      existingClaim: redis-data-immich-redis-master-0
 # Immich components
 server:
   enabled: true
