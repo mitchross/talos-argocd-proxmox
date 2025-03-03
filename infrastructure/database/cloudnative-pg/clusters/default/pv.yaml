@@ -49,9 +49,9 @@ spec:
               operator: In
               values:
                 - vanillax-ai
----
-######IMMICH#####
 
+######IMMICH#####
+---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -95,6 +95,59 @@ spec:
   storageClassName: local-storage
   local:
     path: /datapool/kubernetes/postgres/immich-database/wal
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - vanillax-ai
+---
+# Second instance PVs for immich-database
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: immich-database-2-data-pv
+  labels:
+    app: cloudnative-pg
+    cluster: immich-database
+    type: data
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/postgres/immich-database-2/data
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - vanillax-ai
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: immich-database-2-wal-pv
+  labels:
+    app: cloudnative-pg
+    cluster: immich-database
+    type: wal
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /datapool/kubernetes/postgres/immich-database-2/wal
   nodeAffinity:
     required:
       nodeSelectorTerms:
