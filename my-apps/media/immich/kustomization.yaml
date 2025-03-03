@@ -12,7 +12,7 @@ resources:
 helmCharts:
   - name: immich
     repo: https://immich-app.github.io/immich-charts
-    version: 1.0.0
+    version: 0.9.0
     releaseName: immich
     namespace: immich
     includeCRDs: true
