@@ -55,10 +55,11 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: immich-database-data-pv
+  name: immich-database-1-data-pv
   labels:
     app: cloudnative-pg
     cluster: immich-database
+    instance: "1"
     type: data
 spec:
   capacity:
@@ -81,10 +82,11 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: immich-database-wal-pv
+  name: immich-database-1-wal-pv
   labels:
     app: cloudnative-pg
     cluster: immich-database
+    instance: "1"
     type: wal
 spec:
   capacity:
@@ -104,7 +106,6 @@ spec:
               values:
                 - vanillax-ai
 ---
-# Second instance PVs for immich-database
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -112,6 +113,7 @@ metadata:
   labels:
     app: cloudnative-pg
     cluster: immich-database
+    instance: "2"
     type: data
 spec:
   capacity:
@@ -138,6 +140,7 @@ metadata:
   labels:
     app: cloudnative-pg
     cluster: immich-database
+    instance: "2"
     type: wal
 spec:
   capacity:

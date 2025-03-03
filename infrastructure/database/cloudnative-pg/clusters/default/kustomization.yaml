@@ -9,4 +9,3 @@ resources:
   - immich-postgresdb.yaml
   - externalsecret.yaml
   - pv.yaml
-
