@@ -10,7 +10,7 @@ resources:
   - pvc.yaml
   - httproute.yaml
   - externalsecret.yaml
-  - debug-pod.yaml
+#  - debug-pod.yaml
 helmCharts:
   - name: immich
     repo: https://immich-app.github.io/immich-charts
