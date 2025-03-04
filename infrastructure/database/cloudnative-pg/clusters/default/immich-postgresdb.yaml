@@ -7,7 +7,7 @@ metadata:
     app: immich
 spec:
   instances: 2
-  imageName: ghcr.io/tensorchord/cloudnative-pgvecto.rs:17.4-v0.4.0
+  imageName: ghcr.io/tensorchord/cloudnative-pgvecto.rs:17.4
   # Resource allocation
   resources:
     requests:
