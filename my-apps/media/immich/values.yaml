@@ -48,23 +48,7 @@ server:
   image:
     repository: ghcr.io/immich-app/immich-server
     pullPolicy: IfNotPresent
-  ingress:
-    main:
-      enabled: true
-      ingressClassName: "traefik"
-      annotations:
-        # proxy-body-size is set to 0 to remove the body limit on file uploads
-        nginx.ingress.kubernetes.io/proxy-body-size: "0"
-        traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
-      hosts:
-        - host: immich.vanillax.me
-          paths:
-            - path: "/"
-              pathType: Prefix
-      tls:
-        - secretName: immich-tls
-          hosts:
-            - immich.vanillax.me
+
 machine-learning:
   enabled: true
   image:

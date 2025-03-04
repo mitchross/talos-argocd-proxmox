@@ -6,16 +6,16 @@ commonLabels:
   app.kubernetes.io/managed-by: argocd
 resources:
   - namespace.yaml
-#   - pv.yaml
-#   - pvc.yaml
-#   - httproute.yaml
-#   - externalsecret.yaml
-# #  - debug-pod.yaml
-# helmCharts:
-#   - name: immich
-#     repo: https://immich-app.github.io/immich-charts
-#     version: 0.9.0
-#     releaseName: immich
-#     namespace: immich
-#     includeCRDs: true
-#     valuesFile: values.yaml
+  - pv.yaml
+  - pvc.yaml
+  - httproute.yaml
+  - externalsecret.yaml
+#  - debug-pod.yaml
+helmCharts:
+  - name: immich
+    repo: https://immich-app.github.io/immich-charts
+    version: 0.9.0
+    releaseName: immich
+    namespace: immich
+    includeCRDs: true
+    valuesFile: values.yaml
