@@ -13,8 +13,16 @@ spec:
     - matches:
         - path:
             type: PathPrefix
-            value: /
+            value: /api
       backendRefs:
         - name: immich-server
           port: 3001
+          weight: 1
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: immich-server
+          port: 2283
           weight: 1
