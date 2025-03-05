@@ -6,16 +6,14 @@ metadata:
   labels:
     app: immich
 spec:
-  instances: 2
+  instances: 1  # Critical change - must be 1 due to pgvecto.rs v0.3.0 compatibility issues
   imageName: ghcr.io/tensorchord/cloudnative-pgvecto.rs:16.5-v0.3.0
-  # Resource allocation
   resources:
     requests:
       memory: 1Gi
       cpu: 500m
     limits:
       memory: 2Gi
-  # PostgreSQL configuration
   postgresql:
     parameters:
       shared_buffers: "512MB"
@@ -27,7 +25,6 @@ spec:
       - "vectors.so"
     pg_hba:
       - host all all 0.0.0.0/0 md5
-  # Bootstrap configuration
   bootstrap:
     initdb:
       database: immich
@@ -35,24 +32,21 @@ spec:
       secret:
         name: immich-db-credentials
       postInitApplicationSQL:
-        - CREATE SCHEMA IF NOT EXISTS vectors;
-        - CREATE EXTENSION IF NOT EXISTS vectors SCHEMA vectors;
-        - CREATE EXTENSION IF NOT EXISTS cube;
-        - CREATE EXTENSION IF NOT EXISTS earthdistance;
         - ALTER SYSTEM SET search_path TO "$user", public, vectors;
-        - GRANT USAGE ON SCHEMA vectors TO immich;
-        - GRANT ALL ON ALL TABLES IN SCHEMA vectors TO immich;
-        - GRANT CREATE ON SCHEMA public TO immich;
-        - ALTER USER immich WITH SUPERUSER;
-  # Data storage configuration
+        - SET search_path TO "$user", public, vectors;
+        - CREATE EXTENSION IF NOT EXISTS "vectors";
+        - CREATE EXTENSION IF NOT EXISTS "cube";
+        - CREATE EXTENSION IF NOT EXISTS "earthdistance";
+        - ALTER SCHEMA vectors OWNER TO "immich";
+        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA vectors TO "immich";
+        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "immich";
+        - ALTER ROLE "immich" WITH SUPERUSER;
   storage:
     size: 20Gi
     storageClass: local-storage
-  # WAL storage configuration
   walStorage:
     size: 5Gi
     storageClass: local-storage
-  # The rest of your configuration remains the same
   managed:
     services:
       additional:
