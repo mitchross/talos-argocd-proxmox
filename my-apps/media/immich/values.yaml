@@ -15,6 +15,13 @@ env:
   REDIS_PORT: "6379"
   REDIS_USERNAME: "default"
   REDIS_PASSWORD: ""
+  # Web interface configuration
+  IMMICH_WEB_URL: "https://immich.vanillax.me"
+  IMMICH_SERVER_URL: "https://immich.vanillax.me/api"
+  PUBLIC_IMMICH_SERVER_URL: "https://immich.vanillax.me/api"
+  NODE_ENV: "production"
+  LOG_LEVEL: "debug"
+  IMMICH_MACHINE_LEARNING_URL: "http://immich-machine-learning:3003"
 image:
   tag: v1.128.0 # Latest version released 2 days ago
 immich:
