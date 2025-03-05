@@ -16,30 +16,20 @@ helmCharts:
     namespace: redis
     includeCRDs: true
     valuesInline:
+      architecture: standalone
       auth:
         enabled: false
-        sentinel: false
       master:
         persistence:
-          enabled: false
-      replica:
-        persistence:
-          enabled: false
-      sentinel:
-        enabled: true
-        masterSet: redis-master
-        getMasterTimeout: 10
-        startupProbe:
-          failureThreshold: 2
-        persistence:
-          enabled: false
+          enabled: true
+          size: 10Gi
+          storageClass: local-storage
+        service:
+          type: ClusterIP
+          ports:
+            redis: 6379
       metrics:
         enabled: true
         serviceMonitor:
           enabled: false
           interval: 1m
-          # service:
-          #   type: ClusterIP
-          #   ports:
-          #     redis: 6379
-          #     sentinel: 26379

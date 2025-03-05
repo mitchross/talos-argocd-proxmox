@@ -34,14 +34,14 @@ spec:
       owner: immich
       secret:
         name: immich-db-credentials
-      postInitSQL:
+      postInitApplicationSQL:
+        - CREATE EXTENSION IF NOT EXISTS vectors WITH SCHEMA public;
         - ALTER SYSTEM SET search_path TO "$user", public, vectors;
-        - CREATE EXTENSION IF NOT EXISTS vectors;
   # Data storage configuration
   storage:
     size: 20Gi
     storageClass: local-storage
-  # WAL storage configuration - this is the key addition
+  # WAL storage configuration
   walStorage:
     size: 5Gi
     storageClass: local-storage
