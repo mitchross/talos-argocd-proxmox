@@ -48,7 +48,14 @@ server:
   image:
     repository: ghcr.io/immich-app/immich-server
     pullPolicy: IfNotPresent
-
+  service:
+    ports:
+      web:
+        port: 2283
+        targetPort: 2283
+      api:
+        port: 3001
+        targetPort: 3001
 machine-learning:
   enabled: true
   image:
