@@ -35,8 +35,11 @@ spec:
       secret:
         name: immich-db-credentials
       postInitApplicationSQL:
-        - CREATE EXTENSION IF NOT EXISTS vectors WITH SCHEMA public;
+        - CREATE SCHEMA IF NOT EXISTS vectors;
+        - CREATE EXTENSION IF NOT EXISTS vectors SCHEMA vectors;
         - ALTER SYSTEM SET search_path TO "$user", public, vectors;
+        - GRANT USAGE ON SCHEMA vectors TO immich;
+        - GRANT ALL ON ALL TABLES IN SCHEMA vectors TO immich;
   # Data storage configuration
   storage:
     size: 20Gi
