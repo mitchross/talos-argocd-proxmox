@@ -55,6 +55,16 @@ server:
           port: 2283
         api:
           port: 3001
+  podSpec:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: In
+                  values:
+                    - vanillax-ai
 machine-learning:
   enabled: true
   image:
@@ -70,3 +80,13 @@ machine-learning:
       type: pvc
       accessMode: ReadWriteOnce
       storageClass: local-storage
+  podSpec:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: In
+                  values:
+                    - vanillax-ai
