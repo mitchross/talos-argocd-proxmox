@@ -82,11 +82,7 @@ machine-learning:
   persistence:
     cache:
       enabled: true
-      size: 10Gi
-      # Use PVC instead of emptyDir to avoid downloading ML models every start
-      type: pvc
-      accessMode: ReadWriteOnce
-      storageClass: local-storage
+      existingClaim: immich-machine-learning-cache
   podSpec:
     affinity:
       nodeAffinity:
