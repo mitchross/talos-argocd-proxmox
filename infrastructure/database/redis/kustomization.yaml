@@ -8,6 +8,8 @@ resources:
   - namespace.yaml
   - service.yaml
   - redis-commander.yaml
+  - pv.yaml
+  - pvc.yaml
 helmCharts:
   - name: redis
     repo: https://charts.bitnami.com/bitnami
@@ -24,6 +26,7 @@ helmCharts:
           enabled: true
           size: 10Gi
           storageClass: local-storage
+          existingClaim: redis-data-redis-master-0
         service:
           type: ClusterIP
           ports:
