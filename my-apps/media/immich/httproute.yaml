@@ -1,3 +1,4 @@
+---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -5,20 +6,12 @@ metadata:
   namespace: immich
 spec:
   parentRefs:
-    - name: gateway-internal
+    - name: gateway-external
       namespace: gateway
       sectionName: https
   hostnames:
     - "immich.vanillax.me"
   rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /api
-      backendRefs:
-        - name: immich-server
-          port: 3001
-          weight: 1
     - matches:
         - path:
             type: PathPrefix
