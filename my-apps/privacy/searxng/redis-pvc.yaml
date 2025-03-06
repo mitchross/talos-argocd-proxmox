@@ -6,6 +6,7 @@ metadata:
   labels:
     app: searxng
     component: redis
+    purpose: redis-data
 spec:
   accessModes:
     - ReadWriteOnce
@@ -16,6 +17,7 @@ spec:
   volumeName: searxng-redis-data-pv
   selector:
     matchLabels:
+      type: local
       app: searxng
       component: redis
       purpose: redis-data
