@@ -26,7 +26,7 @@ data:
   IMMICH_MACHINE_LEARNING_URL: "http://immich-machine-learning:3003"
   
   # Storage configuration
-  UPLOAD_LOCATION: "/usr/src/app/upload"
+  UPLOAD_LOCATION: "/data/uploads"
   
   # Trash configuration
   IMMICH_TRASH_ENABLED: "true"

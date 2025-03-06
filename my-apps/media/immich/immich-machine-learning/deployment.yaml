@@ -26,10 +26,10 @@ spec:
                 name: immich-config
           env:
             - name: TRANSFORMERS_CACHE
-              value: "/cache"
+              value: "/data/ml-cache"
           volumeMounts:
-            - name: model-cache
-              mountPath: /cache
+            - name: immich-data
+              mountPath: /data
           resources:
             requests:
               memory: "1Gi"
@@ -50,9 +50,9 @@ spec:
             initialDelaySeconds: 60
             periodSeconds: 10
       volumes:
-        - name: model-cache
+        - name: immich-data
           persistentVolumeClaim:
-            claimName: immich-machine-learning-cache
+            claimName: immich-data
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

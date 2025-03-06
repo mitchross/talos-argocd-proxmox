@@ -32,11 +32,11 @@ spec:
                 secretKeyRef:
                   name: immich-db-credentials
                   key: password
+            - name: UPLOAD_LOCATION
+              value: "/data/uploads"
           volumeMounts:
-            - name: uploads
-              mountPath: /usr/src/app/upload
-            - name: library
-              mountPath: /usr/src/app/library
+            - name: immich-data
+              mountPath: /data
           resources:
             requests:
               memory: "512Mi"
@@ -57,12 +57,9 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 10
       volumes:
-        - name: uploads
+        - name: immich-data
           persistentVolumeClaim:
-            claimName: immich-uploads
-        - name: library
-          persistentVolumeClaim:
-            claimName: immich-library
+            claimName: immich-data
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
