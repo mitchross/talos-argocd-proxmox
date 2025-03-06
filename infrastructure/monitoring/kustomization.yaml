@@ -5,3 +5,4 @@ commonLabels:
   app.kubernetes.io/managed-by: argocd
 resources:
   - application-set.yaml
+  - k8s-monitoring-redis-pv.yaml
