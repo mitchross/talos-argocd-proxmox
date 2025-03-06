@@ -1,15 +1,14 @@
 server:
   replicaCount: 1
-
+  config:
+    persistence:
+      visibilityStore: default # Use default (Cassandra) store for visibility instead of Elasticsearch
 cassandra:
   config:
     cluster_size: 1
-
 elasticsearch:
-  replicas: 1
-
+  enabled: false # Disable Elasticsearch completely
 prometheus:
   enabled: false
-
 grafana:
-  enabled: false 
+  enabled: false
