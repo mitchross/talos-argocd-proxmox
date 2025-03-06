@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-machine-learning-cache
+  namespace: immich
+  labels:
+    app: immich
+    component: machine-learning
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: local-storage
+  volumeName: immich-ml-cache-pv
+  selector:
+    matchLabels:
+      app: immich
+      component: machine-learning
+      purpose: cache
