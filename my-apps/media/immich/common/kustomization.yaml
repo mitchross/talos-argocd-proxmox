@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: immich
+commonLabels:
+  app.kubernetes.io/name: immich
+  app.kubernetes.io/managed-by: argocd
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - externalsecret.yaml
+  - httproute.yaml
+  - pvc/library-pv.yaml
+  - pvc/library-pvc.yaml
+  - pvc/uploads-pv.yaml
+  - pvc/uploads-pvc.yaml
+  - pvc/ml-cache-pv.yaml
+  - pvc/ml-cache-pvc.yaml

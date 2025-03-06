@@ -3,8 +3,8 @@ kind: Kustomization
 namespace: immich
 commonLabels:
   app.kubernetes.io/name: immich
+  app.kubernetes.io/component: machine-learning
   app.kubernetes.io/managed-by: argocd
 resources:
-  - common
-  - immich-server
-  - immich-machine-learning
+  - deployment.yaml
+  - service.yaml 
