@@ -1,18 +1,18 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: redis-master-data-pv
+  name: searxng-redis-data-pv
   labels:
     type: local
-    app: redis
-    component: master
+    app: searxng
+    component: redis
     purpose: redis-data
 spec:
   storageClassName: local-storage
   capacity:
-    storage: 10Gi
+    storage: 1Gi
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: "/mnt/k3s-storage/redis-master-data"
+    path: "/mnt/k3s-storage/searxng-redis-data"

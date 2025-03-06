@@ -1,6 +1,5 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 resources:
   - namespace.yaml
   - configmap.yaml
@@ -9,13 +8,13 @@ resources:
   - httproute.yaml
   - secret.yaml
   - redis.yaml
-
+  - redis-pv.yaml
+  - redis-pvc.yaml
 configMapGenerator:
   - name: searxng-config-settings
     files:
-    - config/settings.yaml
-    - config/limiter.toml
+      - config/settings.yaml
+      - config/limiter.toml
     options:
       disableNameSuffixHash: true
-
 namespace: searxng
