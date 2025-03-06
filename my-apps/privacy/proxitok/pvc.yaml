@@ -21,7 +21,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: proxitok-cache-pv
+  name: proxitok-cache-volume
   labels:
     app: proxitok
     type: cache
@@ -37,8 +37,8 @@ spec:
   nodeAffinity:
     required:
       nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - vanillax-ai
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - vanillax-ai
