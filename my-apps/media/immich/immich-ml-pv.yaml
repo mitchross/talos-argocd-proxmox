@@ -15,7 +15,7 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   local:
-    path: /datapool/kubernetes/immich-ml-cache
+    path: "/datapool/kubernetes/immich-ml-cache"
   nodeAffinity:
     required:
       nodeSelectorTerms:

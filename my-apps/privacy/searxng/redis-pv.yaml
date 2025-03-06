@@ -15,7 +15,7 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   local:
-    path: /datapool/kubernetes/searxng-redis-data
+    path: "/datapool/kubernetes/searxng-redis-data"
   nodeAffinity:
     required:
       nodeSelectorTerms:

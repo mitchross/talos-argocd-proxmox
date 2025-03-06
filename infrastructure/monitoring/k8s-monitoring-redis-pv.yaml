@@ -15,7 +15,7 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   local:
-    path: /datapool/kubernetes/monitoring-redis-data
+    path: "/datapool/kubernetes/monitoring-redis-data"
   nodeAffinity:
     required:
       nodeSelectorTerms:
