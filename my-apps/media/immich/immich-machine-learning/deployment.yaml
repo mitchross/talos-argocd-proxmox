@@ -26,10 +26,11 @@ spec:
                 name: immich-config
           env:
             - name: TRANSFORMERS_CACHE
-              value: "/data/ml-cache"
+              value: "/cache"
           volumeMounts:
             - name: immich-data
-              mountPath: /data
+              mountPath: /cache
+              subPath: ml-cache
           resources:
             requests:
               memory: "1Gi"
