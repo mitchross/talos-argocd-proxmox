@@ -10,7 +10,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - "immich.vanillax.me"
+    - "photos.vanillax.me"
   rules:
     - matches:
         - path:
