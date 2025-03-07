@@ -36,21 +36,19 @@ spec:
                   name: immich-db-credentials
                   key: password
           volumeMounts:
-            - name: uploads
-              mountPath: /usr/src/app/upload
             - name: library
-              mountPath: /usr/src/app/library
+              mountPath: /usr/src/app/upload
             - name: immich-data
-              mountPath: /usr/src/app/thumbs
+              mountPath: /usr/src/app/upload/thumbs
               subPath: thumbs
             - name: immich-data
-              mountPath: /usr/src/app/encoded-video
+              mountPath: /usr/src/app/upload/encoded-video
               subPath: encoded-video
             - name: immich-data
-              mountPath: /usr/src/app/profile
+              mountPath: /usr/src/app/upload/profile
               subPath: profile
             - name: immich-data
-              mountPath: /usr/src/app/backups
+              mountPath: /usr/src/app/upload/backups
               subPath: backups
           resources:
             requests:
@@ -72,9 +70,6 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 10
       volumes:
-        - name: uploads
-          persistentVolumeClaim:
-            claimName: immich-uploads
         - name: library
           persistentVolumeClaim:
             claimName: immich-library

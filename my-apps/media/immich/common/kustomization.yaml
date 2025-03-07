@@ -12,8 +12,6 @@ resources:
   - pvc/library-pvc.yaml
   - pvc/ml-cache-pv.yaml
   - pvc/ml-cache-pvc.yaml
-  - pvc/uploads-pv.yaml
-  - pvc/uploads-pvc.yaml
   - configmap.yaml
   - externalsecret.yaml
   - httproute.yaml
