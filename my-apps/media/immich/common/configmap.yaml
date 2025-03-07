@@ -30,4 +30,4 @@ data:
   IMMICH_STORAGE_TEMPLATE_ENABLED: "true"
   IMMICH_STORAGE_TEMPLATE: "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}"
   # Mount check configuration
-  IMMICH_IGNORE_MOUNT_CHECK_ERRORS: "true"
+  IMMICH_IGNORE_MOUNT_CHECK_ERRORS: "false"
