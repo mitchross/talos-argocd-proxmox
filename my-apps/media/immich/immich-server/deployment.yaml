@@ -15,10 +15,11 @@ spec:
         app: immich
         component: server
     spec:
-      restartPolicy: OnFailure
+      # DEBUG MODE - The container will sleep instead of starting Immich for debugging
       containers:
         - name: immich-server
           image: ghcr.io/immich-app/immich-server:release
+          # DEBUG MODE - Comment out the line below when returning to normal operation
           command: ["/bin/sh", "-c", "echo 'Container ready for debugging' && sleep 3600"]
           ports:
             - containerPort: 2283
