@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: immich-fs-debug
+  namespace: immich
+spec:
+  restartPolicy: Never
+  containers:
+    - name: debug
+      image: busybox
+      command: ["/bin/sh", "-c", "mkdir -p /upload/encoded-video /upload/thumbs /upload/profile /upload/backups && touch /upload/.immich /upload/encoded-video/.immich /upload/thumbs/.immich /upload/profile/.immich /upload/backups/.immich && echo 'Created required files and directories' && sleep 3600"]
+      volumeMounts:
+        - name: library
+          mountPath: /upload
+  volumes:
+    - name: library
+      persistentVolumeClaim:
+        claimName: immich-library
+  nodeSelector:
+    kubernetes.io/hostname: vanillax-ai
