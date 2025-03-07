@@ -28,9 +28,8 @@ spec:
             - name: TRANSFORMERS_CACHE
               value: "/cache"
           volumeMounts:
-            - name: immich-data
+            - name: ml-cache
               mountPath: /cache
-              subPath: ml-cache
           resources:
             requests:
               memory: "1Gi"
@@ -51,9 +50,9 @@ spec:
             initialDelaySeconds: 60
             periodSeconds: 10
       volumes:
-        - name: immich-data
+        - name: ml-cache
           persistentVolumeClaim:
-            claimName: immich-data
+            claimName: immich-machine-learning-cache
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -62,4 +61,4 @@ spec:
                   - key: kubernetes.io/hostname
                     operator: In
                     values:
-                      - vanillax-ai 
+                      - vanillax-ai

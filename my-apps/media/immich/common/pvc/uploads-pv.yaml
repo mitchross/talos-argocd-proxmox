@@ -13,7 +13,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   storageClassName: local-storage
   local:
-    path: /datapool/kubernetes/immich/uploads
+    path: /datapool/kubernetes/immich-data/uploads
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -21,4 +21,4 @@ spec:
             - key: kubernetes.io/hostname
               operator: In
               values:
-                - vanillax-ai 
+                - vanillax-ai

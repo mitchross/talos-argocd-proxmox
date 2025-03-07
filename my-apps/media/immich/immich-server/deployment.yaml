@@ -33,24 +33,18 @@ spec:
                   name: immich-db-credentials
                   key: password
           volumeMounts:
-            - name: immich-data
+            - name: uploads
               mountPath: /usr/src/app/uploads
-              subPath: uploads
-            - name: immich-data
+            - name: library
               mountPath: /usr/src/app/library
-              subPath: library
-            - name: immich-data
+            - name: thumbs
               mountPath: /usr/src/app/thumbs
-              subPath: thumbs
-            - name: immich-data
+            - name: encoded-video
               mountPath: /usr/src/app/encoded-video
-              subPath: encoded-video
-            - name: immich-data
+            - name: profile
               mountPath: /usr/src/app/profile
-              subPath: profile
-            - name: immich-data
+            - name: backups
               mountPath: /usr/src/app/backups
-              subPath: backups
           resources:
             requests:
               memory: "512Mi"
@@ -71,9 +65,28 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 10
       volumes:
-        - name: immich-data
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: immich-uploads
+        - name: library
+          persistentVolumeClaim:
+            claimName: immich-library
+        - name: thumbs
           persistentVolumeClaim:
             claimName: immich-data
+            subPath: thumbs
+        - name: encoded-video
+          persistentVolumeClaim:
+            claimName: immich-data
+            subPath: encoded-video
+        - name: profile
+          persistentVolumeClaim:
+            claimName: immich-data
+            subPath: profile
+        - name: backups
+          persistentVolumeClaim:
+            claimName: immich-data
+            subPath: backups
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
