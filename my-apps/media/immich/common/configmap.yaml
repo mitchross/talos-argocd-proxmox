@@ -8,30 +8,26 @@ data:
   DB_HOSTNAME: "immich-postgres-external.cloudnative-pg.svc.cluster.local"
   DB_DATABASE_NAME: "immich"
   DB_USERNAME: "immich"
-  
   # Redis configuration
   REDIS_HOSTNAME: "redis-master.redis.svc.cluster.local"
   REDIS_PORT: "6379"
   REDIS_USERNAME: ""
   REDIS_PASSWORD: ""
-  
   # Web interface configuration
   IMMICH_WEB_URL: "https://photos.vanillax.me"
   IMMICH_SERVER_URL: "https://photos.vanillax.me/api"
   PUBLIC_IMMICH_SERVER_URL: "https://photos.vanillax.me/api"
-  
   # Application configuration
   NODE_ENV: "production"
   LOG_LEVEL: "debug"
   IMMICH_MACHINE_LEARNING_URL: "http://immich-machine-learning:3003"
-  
   # Storage configuration
   UPLOAD_LOCATION: "/usr/src/app/upload"
-  
   # Trash configuration
   IMMICH_TRASH_ENABLED: "true"
   IMMICH_TRASH_DAYS: "30"
-  
   # Storage template
   IMMICH_STORAGE_TEMPLATE_ENABLED: "true"
-  IMMICH_STORAGE_TEMPLATE: "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}" 
+  IMMICH_STORAGE_TEMPLATE: "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}"
+  # Mount check configuration
+  IMMICH_IGNORE_MOUNT_CHECK_ERRORS: "true"
