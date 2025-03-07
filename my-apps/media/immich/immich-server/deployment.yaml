@@ -39,6 +39,18 @@ spec:
             - name: immich-data
               mountPath: /usr/src/app/library
               subPath: library
+            - name: immich-data
+              mountPath: /usr/src/app/upload/thumbs
+              subPath: thumbs
+            - name: immich-data
+              mountPath: /usr/src/app/upload/encoded-video
+              subPath: encoded-video
+            - name: immich-data
+              mountPath: /usr/src/app/upload/profile
+              subPath: profile
+            - name: immich-data
+              mountPath: /usr/src/app/upload/backups
+              subPath: backups
           resources:
             requests:
               memory: "512Mi"
@@ -70,4 +82,4 @@ spec:
                   - key: kubernetes.io/hostname
                     operator: In
                     values:
-                      - vanillax-ai 
+                      - vanillax-ai
