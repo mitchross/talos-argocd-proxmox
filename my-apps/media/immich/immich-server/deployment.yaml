@@ -15,33 +15,6 @@ spec:
         app: immich
         component: server
     spec:
-      initContainers:
-        - name: init-dirs
-          image: busybox
-          command: 
-          - /bin/sh
-          - -c
-          - |
-            mkdir -p /usr/src/app/upload/encoded-video
-            mkdir -p /usr/src/app/upload/thumbs
-            mkdir -p /usr/src/app/upload/library
-            mkdir -p /usr/src/app/upload/profile
-            mkdir -p /usr/src/app/upload/backups
-            
-            # Create .immich files in each directory
-            echo "ok" > /usr/src/app/upload/encoded-video/.immich
-            echo "ok" > /usr/src/app/upload/thumbs/.immich
-            echo "ok" > /usr/src/app/upload/library/.immich
-            echo "ok" > /usr/src/app/upload/profile/.immich
-            echo "ok" > /usr/src/app/upload/backups/.immich
-            
-            # List all created directories and files for verification
-            ls -la /usr/src/app/upload
-            find /usr/src/app/upload -type f -name ".immich"
-          volumeMounts:
-          - name: immich-data
-            mountPath: /usr/src/app/upload
-            subPath: uploads
       containers:
         - name: immich-server
           image: ghcr.io/immich-app/immich-server:release
