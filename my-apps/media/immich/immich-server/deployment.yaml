@@ -37,14 +37,18 @@ spec:
               mountPath: /usr/src/app/uploads
             - name: library
               mountPath: /usr/src/app/library
-            - name: thumbs
+            - name: immich-data
               mountPath: /usr/src/app/thumbs
-            - name: encoded-video
+              subPath: thumbs
+            - name: immich-data
               mountPath: /usr/src/app/encoded-video
-            - name: profile
+              subPath: encoded-video
+            - name: immich-data
               mountPath: /usr/src/app/profile
-            - name: backups
+              subPath: profile
+            - name: immich-data
               mountPath: /usr/src/app/backups
+              subPath: backups
           resources:
             requests:
               memory: "512Mi"
@@ -71,22 +75,9 @@ spec:
         - name: library
           persistentVolumeClaim:
             claimName: immich-library
-        - name: thumbs
+        - name: immich-data
           persistentVolumeClaim:
             claimName: immich-data
-            subPath: thumbs
-        - name: encoded-video
-          persistentVolumeClaim:
-            claimName: immich-data
-            subPath: encoded-video
-        - name: profile
-          persistentVolumeClaim:
-            claimName: immich-data
-            subPath: profile
-        - name: backups
-          persistentVolumeClaim:
-            claimName: immich-data
-            subPath: backups
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
