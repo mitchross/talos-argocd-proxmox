@@ -5,6 +5,6 @@ commonLabels:
   app.kubernetes.io/name: immich
   app.kubernetes.io/managed-by: argocd
 resources:
-  - common
-  - immich-server
-  - immich-machine-learning
+  # - common
+  # - immich-server
+  # - immich-machine-learning
