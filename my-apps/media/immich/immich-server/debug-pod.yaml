@@ -11,7 +11,7 @@ spec:
       command: ["/bin/sh", "-c", "echo 'Debug pod ready for file permission testing' && sleep 3600"]
       volumeMounts:
         - name: uploads
-          mountPath: /usr/src/app/uploads
+          mountPath: /usr/src/app/upload
         - name: library
           mountPath: /usr/src/app/library
         - name: immich-data

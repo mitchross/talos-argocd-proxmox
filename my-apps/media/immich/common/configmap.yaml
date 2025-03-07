@@ -22,7 +22,7 @@ data:
   LOG_LEVEL: "debug"
   IMMICH_MACHINE_LEARNING_URL: "http://immich-machine-learning:3003"
   # Storage configuration
-  UPLOAD_LOCATION: "/usr/src/app/uploads"
+  UPLOAD_LOCATION: "/usr/src/app/upload"
   # Trash configuration
   IMMICH_TRASH_ENABLED: "true"
   IMMICH_TRASH_DAYS: "30"

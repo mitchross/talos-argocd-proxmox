@@ -20,7 +20,7 @@ spec:
         - name: immich-server
           image: ghcr.io/immich-app/immich-server:release
           # DEBUG MODE - Comment out the line below when returning to normal operation
-          command: ["/bin/sh", "-c", "echo 'Container ready for debugging' && sleep 3600"]
+          # command: ["/bin/sh", "-c", "echo 'Container ready for debugging' && sleep 3600"]
           ports:
             - containerPort: 2283
               name: http
@@ -37,7 +37,7 @@ spec:
                   key: password
           volumeMounts:
             - name: uploads
-              mountPath: /usr/src/app/uploads
+              mountPath: /usr/src/app/upload
             - name: library
               mountPath: /usr/src/app/library
             - name: immich-data
