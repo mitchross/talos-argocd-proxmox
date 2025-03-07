@@ -34,22 +34,22 @@ spec:
                   key: password
           volumeMounts:
             - name: immich-data
-              mountPath: /usr/src/app/upload
+              mountPath: /usr/src/app/uploads
               subPath: uploads
             - name: immich-data
               mountPath: /usr/src/app/library
               subPath: library
             - name: immich-data
-              mountPath: /usr/src/app/upload/thumbs
+              mountPath: /usr/src/app/thumbs
               subPath: thumbs
             - name: immich-data
-              mountPath: /usr/src/app/upload/encoded-video
+              mountPath: /usr/src/app/encoded-video
               subPath: encoded-video
             - name: immich-data
-              mountPath: /usr/src/app/upload/profile
+              mountPath: /usr/src/app/profile
               subPath: profile
             - name: immich-data
-              mountPath: /usr/src/app/upload/backups
+              mountPath: /usr/src/app/backups
               subPath: backups
           resources:
             requests:
