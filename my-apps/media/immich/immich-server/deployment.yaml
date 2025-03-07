@@ -15,9 +15,11 @@ spec:
         app: immich
         component: server
     spec:
+      restartPolicy: OnFailure
       containers:
         - name: immich-server
           image: ghcr.io/immich-app/immich-server:release
+          command: ["/bin/sh", "-c", "echo 'Container ready for debugging' && sleep 3600"]
           ports:
             - containerPort: 2283
               name: http
