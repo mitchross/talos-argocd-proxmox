@@ -1,0 +1,34 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: redis
+commonLabels:
+  app.kubernetes.io/name: redis
+  app.kubernetes.io/managed-by: argocd
+resources:
+  - namespace.yaml
+helmCharts:
+  - name: redis
+    repo: https://charts.bitnami.com/bitnami
+    version: 20.11.2
+    releaseName: redis
+    namespace: redis
+    includeCRDs: true
+    valuesInline:
+      architecture: standalone
+      auth:
+        enabled: false
+      master:
+        persistence:
+          enabled: true
+          size: 10Gi
+          storageClass: local-storage
+          existingClaim: redis-data-redis-master-0
+        service:
+          type: ClusterIP
+          ports:
+            redis: 6379
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: false
+          interval: 1m
