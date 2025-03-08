@@ -45,18 +45,18 @@ spec:
             limits:
               memory: "2Gi"
               cpu: "2000m"
-          livenessProbe:
-            httpGet:
-              path: /api/server-info/ping
-              port: api
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /api/server-info/ping
-              port: api
-            initialDelaySeconds: 30
-            periodSeconds: 10
+          # livenessProbe:
+          #   httpGet:
+          #     path: /api/server-info/ping
+          #     port: api
+          #   initialDelaySeconds: 30
+          #   periodSeconds: 10
+          # readinessProbe:
+          #   httpGet:
+          #     path: /api/server-info/ping
+          #     port: api
+          #   initialDelaySeconds: 30
+          #   periodSeconds: 10
       volumes:
         - name: library
           persistentVolumeClaim:
