@@ -10,5 +10,5 @@ spec:
   ports:
     - port: 3003
       targetPort: 3003
-      protocol: HTTP
-      name: http 
+      protocol: TCP
+      name: http
