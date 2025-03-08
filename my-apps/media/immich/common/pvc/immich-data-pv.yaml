@@ -21,4 +21,4 @@ spec:
             - key: kubernetes.io/hostname
               operator: In
               values:
-                - vanillax-ai 
+                - vanillax-ai
