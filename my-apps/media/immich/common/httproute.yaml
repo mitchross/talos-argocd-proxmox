@@ -6,7 +6,7 @@ metadata:
   namespace: immich
 spec:
   parentRefs:
-    - name: gateway-external
+    - name: gateway-internal
       namespace: gateway
       sectionName: https
   hostnames:
