@@ -8,8 +8,8 @@ resources:
   - namespace.yaml
 helmCharts:
   - name: redis
-    repo: https://charts.bitnami.com/bitnami
-    version: 20.11.3
+    repo: oci://registry-1.docker.io/bitnamicharts
+    version: 18.0.0
     releaseName: redis
     namespace: redis
     includeCRDs: true
