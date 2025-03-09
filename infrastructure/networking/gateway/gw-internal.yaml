@@ -5,8 +5,8 @@ metadata:
   namespace: gateway
 spec:
   addresses:
-    - type: IPAddress
-      value: 192.168.10.50
+  - type: IPAddress
+    value: 192.168.10.50
   gatewayClassName: cilium
   listeners:
     - name: http
@@ -14,8 +14,6 @@ spec:
       port: 80
       hostname: "*.vanillax.me"
       allowedRoutes:
-        kinds:
-          - kind: HTTPRoute
         namespaces:
           from: All
     - name: https
@@ -28,16 +26,9 @@ spec:
             kind: Secret
             group: "" # required
       allowedRoutes:
-        kinds:
-          - kind: HTTPRoute
         namespaces:
           from: All
     # New TCP listener for PostgreSQL
     - name: postgres
       protocol: TCP
       port: 5432
-      allowedRoutes:
-        kinds:
-          - kind: TCPRoute
-        namespaces:
-          from: All
