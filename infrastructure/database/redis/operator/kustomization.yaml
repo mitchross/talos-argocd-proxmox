@@ -9,7 +9,7 @@ resources:
 helmCharts:
   - name: redis
     repo: oci://registry-1.docker.io/bitnamicharts
-    version: 18.0.0
+    version: 18.19.4
     releaseName: redis
     namespace: redis
     includeCRDs: true
