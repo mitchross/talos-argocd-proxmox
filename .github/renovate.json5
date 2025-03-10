@@ -9,18 +9,32 @@
     'kubernetes',
     'kustomize',
     'argocd',
+    'docker',
   ],
   argocd: {
     fileMatch: [
       '^infra/.+\\.yaml$',
       '^apps/.+\\.yaml$',
+      '^my-apps/.+\\.yaml$',
     ],
   },
   kubernetes: {
     fileMatch: [
       '^infra/.+\\.yaml$',
       '^apps/.+\\.yaml$',
+      '^my-apps/.+\\.yaml$',
     ],
+  },
+  docker: {
+    enabled: true,
+    fileMatch: [
+      '(^|/)deployment\\.yaml$',
+      '(^|/)statefulset\\.yaml$',
+      '(^|/)daemonset\\.yaml$',
+      '(^|/)cronjob\\.yaml$',
+      '(^|/)job\\.yaml$',
+      '(^|/)pod\\.yaml$'
+    ]
   },
   'helm-values': {
     fileMatch: [
@@ -44,6 +58,7 @@
         'kubernetes',
         'kustomize',
         'argocd',
+        'docker',
       ],
       automerge: true,
       automergeType: 'branch',
@@ -57,10 +72,16 @@
         'kubernetes',
         'kustomize',
         'argocd',
+        'docker',
       ],
       automerge: false,
       prCreation: 'immediate',
     },
+    {
+      matchDatasources: ["docker"],
+      matchUpdateTypes: ["digest"],
+      enabled: true
+    }
   ],
   ignorePaths: [
     '**/charts/**',
