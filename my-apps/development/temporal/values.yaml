@@ -3,12 +3,54 @@ server:
   config:
     persistence:
       visibilityStore: default # Use default (Cassandra) store for visibility instead of Elasticsearch
+    dynamicconfig:
+      booleans:
+        enableServiceAuthorization: false
+      matchingServiceOperationsPerSecondLimit:
+        frontend: 2000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
 cassandra:
   config:
     cluster_size: 1
+  persistence:
+    size: 5Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
 elasticsearch:
   enabled: false # Disable Elasticsearch completely
+
+schema:
+  setup:
+    enabled: true
+    backoffLimit: 10
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
 prometheus:
   enabled: false
 grafana:
   enabled: false
+
+web:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
