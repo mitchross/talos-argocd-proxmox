@@ -1,13 +1,12 @@
 server:
+  enabled: true
+  image:
+    repository: temporalio/server
+    tag: 1.27.1
+    pullPolicy: IfNotPresent
   replicaCount: 1
-  config:
-    persistence:
-      visibilityStore: default # Use default (Cassandra) store for visibility instead of Elasticsearch
-    dynamicconfig:
-      booleans:
-        enableServiceAuthorization: false
-      matchingServiceOperationsPerSecondLimit:
-        frontend: 2000
+  podAnnotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
   resources:
     requests:
       cpu: 100m
@@ -15,11 +14,59 @@ server:
     limits:
       cpu: 500m
       memory: 512Mi
+  config:
+    logLevel: "info"
+    numHistoryShards: 1
+    persistence:
+      defaultStore: cass-default
+      visibilityStore: es-visibility
+  frontend:
+    podAnnotations:
+      cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+  history:
+    podAnnotations:
+      cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+  matching:
+    podAnnotations:
+      cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+  worker:
+    podAnnotations:
+      cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
 
 cassandra:
+  enabled: true
   config:
     cluster_size: 1
   persistence:
+    enabled: true
     size: 5Gi
   resources:
     requests:
@@ -30,23 +77,55 @@ cassandra:
       memory: 1Gi
 
 elasticsearch:
-  enabled: false # Disable Elasticsearch completely
+  enabled: true
+  replicas: 1
+  minimumMasterNodes: 1
+  persistence:
+    enabled: true
+    size: 5Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  imageTag: 7.17.3
+  host: elasticsearch-master-headless
+  scheme: http
+  port: 9200
+  version: "v7"
+  logLevel: "error"
+  visibilityIndex: "temporal_visibility_v1_dev"
 
 schema:
   setup:
     enabled: true
-    backoffLimit: 10
+    backoffLimit: 20
     resources:
       requests:
         cpu: 100m
         memory: 128Mi
 
-prometheus:
-  enabled: false
-grafana:
-  enabled: false
+admintools:
+  enabled: true
+  image:
+    repository: temporalio/admin-tools
+    tag: 1.27.1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 256Mi
 
 web:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: temporalio/ui
+    tag: 2.36.0
   resources:
     requests:
       cpu: 50m
@@ -54,3 +133,8 @@ web:
     limits:
       cpu: 200m
       memory: 256Mi
+
+prometheus:
+  enabled: false
+grafana:
+  enabled: false
