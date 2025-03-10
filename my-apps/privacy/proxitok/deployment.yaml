@@ -5,7 +5,7 @@ metadata:
   name: proxitok-web
   namespace: proxitok
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: proxitok-web
