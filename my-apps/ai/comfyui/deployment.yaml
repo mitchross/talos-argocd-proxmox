@@ -16,14 +16,10 @@ spec:
       runtimeClassName: nvidia
       nodeSelector:
         kubernetes.io/hostname: vanillax-ai
-      securityContext:
-        fsGroup: 1000
-        runAsUser: 1000
-        runAsGroup: 1000
       initContainers:
-        - name: ensure-subdir
+        - name: check-storage
           image: busybox
-          command: ['sh', '-c', 'mkdir -p /data/comfyui && chmod -R 777 /data/comfyui']
+          command: ['sh', '-c', 'mkdir -p /data/comfyui && chmod -R 777 /data/comfyui && echo "Storage directory prepared"']
           volumeMounts:
             - name: data
               mountPath: /data
