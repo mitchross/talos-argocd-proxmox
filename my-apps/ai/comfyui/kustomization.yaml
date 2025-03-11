@@ -9,4 +9,3 @@ resources:
   - externalsecret.yaml
   - configmap.yaml
   - httproute.yaml
-  - storage-class.yaml

@@ -42,7 +42,6 @@ spec:
               mountPath: /app
             - name: gpu-config
               mountPath: /app/gpu_config.json
-              subPath: gpu_config.json
             - name: nvidia-driver
               mountPath: /usr/local/nvidia
               readOnly: true
