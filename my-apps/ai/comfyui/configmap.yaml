@@ -15,5 +15,16 @@ data:
       "attention_slice_size": "auto",
       "balanced_vram": true,
       "cpu_offload": false,
-      "max_parallel_inference": 2
+      "max_parallel_inference": 2,
+      "extra_model_paths_config": {
+        "diffusers": "/app/models/diffusers",
+        "vae": "/app/models/vae",
+        "lora": "/app/models/lora",
+        "upscale": "/app/models/upscale_models",
+        "clip": "/app/models/clip",
+        "clip_vision": "/app/models/clip_vision",
+        "controlnet": "/app/models/controlnet",
+        "gligen": "/app/models/gligen",
+        "checkpoints": "/app/models/checkpoints"
+      }
     }

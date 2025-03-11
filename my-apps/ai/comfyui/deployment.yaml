@@ -20,14 +20,13 @@ spec:
         fsGroup: 1000
         runAsUser: 1000
         runAsGroup: 1000
-      # initContainers:
-      #   - name: check-storage
-      #     image: busybox
-      #     command: ['sh', '-c', 'echo "Checking SMB mount..." && mkdir -p /app/ComfyUI && chmod -R 777 /app && echo "Storage ready"']
-      #     volumeMounts:
-      #       - name: data
-      #         mountPath: /app
-      #         subPath: comfyui
+      initContainers:
+        - name: ensure-subdir
+          image: busybox
+          command: ['sh', '-c', 'mkdir -p /data/comfyui && chmod -R 777 /data/comfyui']
+          volumeMounts:
+            - name: data
+              mountPath: /data
       containers:
         - name: comfyui
           image: frefrik/comfyui-flux:cu124
@@ -69,6 +68,9 @@ spec:
         - name: gpu-config
           configMap:
             name: comfyui-configmap
+            items:
+              - key: gpu_config.json
+                path: gpu_config.json
         - name: nvidia-driver
           hostPath:
             path: /usr/local/nvidia
