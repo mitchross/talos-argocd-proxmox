@@ -19,10 +19,11 @@ spec:
       initContainers:
       - name: check-storage
         image: busybox
-        command: ['sh', '-c', 'until [ -d "/datapool/kubernetes/comfyui/data" ]; do echo waiting for storage dir; sleep 2; done;']
+        command: ['sh', '-c', 'echo "Checking SMB mount..." && ls -la /app && echo "Storage ready"']
         volumeMounts:
-        - name: host-path
-          mountPath: /datapool
+        - name: data
+          mountPath: /app
+          subPath: comfyui
       containers:
       - name: comfyui
         image: frefrik/comfyui-flux:cu124
@@ -47,6 +48,7 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /app
+          subPath: comfyui
         - name: gpu-config
           mountPath: /app/gpu_config.json
           subPath: gpu_config.json
@@ -63,10 +65,6 @@ spec:
       - name: gpu-config
         configMap:
           name: comfyui-configmap
-      - name: host-path
-        hostPath:
-          path: /datapool
-          type: DirectoryOrCreate
       - name: nvidia-driver
         hostPath:
           path: /usr/local/nvidia

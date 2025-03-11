@@ -1,14 +1,18 @@
+driver:
+  name: smb.csi.k8s.io
+  replicas: 2
 storageClasses:
-- name: smb-csi
-  defaultClass: false
-  parameters:
-    source: "//192.168.10.133/k8s"
-    csi.storage.k8s.io/node-stage-secret-name: "smbcreds"
-    csi.storage.k8s.io/node-stage-secret-namespace: "csi-driver-smb"
-  mountOptions:
-    - dir_mode=0777
-    - file_mode=0777
-    - uid=1000
-    - gid=1000
-    - cache=strict
-    - nosharesock
+  - name: smb-k8s
+    defaultClass: false
+    parameters:
+      source: //192.168.10.133/k8s_ssd
+      csi.storage.k8s.io/node-stage-secret-name: smb-creds
+      csi.storage.k8s.io/node-stage-secret-namespace: csi-driver-smb
+    mountOptions:
+      - dir_mode=0777
+      - file_mode=0777
+csiDriver:
+  name: smb.csi.k8s.io
+  attachRequired: false
+  fsGroupPolicy: File
+kubeletDir: /var/lib/kubelet

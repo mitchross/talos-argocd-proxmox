@@ -1,31 +1,4 @@
-# PV for ComfyUI data
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: comfyui-storage-pvc-pv
-  labels:
-    app: comfyui
-    type: storage
-spec:
-  capacity:
-    storage: 10Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-storage
-  local:
-    path: /datapool/kubernetes/comfyui/data
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - vanillax-ai
-
----
-# PVC for ComfyUI data
+# PVC for ComfyUI data using SMB share
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -36,12 +9,8 @@ metadata:
     type: storage
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany  # Changed from ReadWriteOnce to support SMB
   resources:
     requests:
-      storage: 10Gi
-  storageClassName: local-storage
-  selector:
-    matchLabels:
-      app: comfyui
-      type: storage
+      storage: 100Gi
+  storageClassName: smb-k8s  # Using your SMB StorageClass instead of local-storage
