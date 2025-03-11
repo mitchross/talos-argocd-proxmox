@@ -16,56 +16,60 @@ spec:
       runtimeClassName: nvidia
       nodeSelector:
         kubernetes.io/hostname: vanillax-ai
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
       initContainers:
-      - name: check-storage
-        image: busybox
-        command: ['sh', '-c', 'echo "Checking SMB mount..." && ls -la /app && echo "Storage ready"']
-        volumeMounts:
-        - name: data
-          mountPath: /app
-          subPath: comfyui
+        - name: check-storage
+          image: busybox
+          command: ['sh', '-c', 'echo "Checking SMB mount..." && mkdir -p /app/ComfyUI && chmod -R 777 /app && echo "Storage ready"']
+          volumeMounts:
+            - name: data
+              mountPath: /app
+              subPath: comfyui
       containers:
-      - name: comfyui
-        image: frefrik/comfyui-flux:cu124
-        ports:
-        - containerPort: 8188
-        env:
-        - name: CLI_ARGS
-          value: ""
-        - name: HF_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: comfyui-secret
-              key: HF_TOKEN
-        - name: LOW_VRAM
-          value: "false"
-        - name: NVIDIA_VISIBLE_DEVICES
-          value: "all"
-        - name: NVIDIA_DRIVER_CAPABILITIES
-          value: "compute,utility,video"
-        - name: CUDA_VISIBLE_DEVICES
-          value: "0,1"
-        volumeMounts:
-        - name: data
-          mountPath: /app
-          subPath: comfyui
-        - name: gpu-config
-          mountPath: /app/gpu_config.json
-          subPath: gpu_config.json
-        - name: nvidia-driver
-          mountPath: /usr/local/nvidia
-          readOnly: true
-        resources:
-          limits:
-            nvidia.com/gpu: 2
+        - name: comfyui
+          image: frefrik/comfyui-flux:cu124
+          ports:
+            - containerPort: 8188
+          env:
+            - name: CLI_ARGS
+              value: ""
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: comfyui-secret
+                  key: HF_TOKEN
+            - name: LOW_VRAM
+              value: "false"
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "compute,utility,video"
+            - name: CUDA_VISIBLE_DEVICES
+              value: "0,1"
+          volumeMounts:
+            - name: data
+              mountPath: /app
+              subPath: comfyui
+            - name: gpu-config
+              mountPath: /app/gpu_config.json
+              subPath: gpu_config.json
+            - name: nvidia-driver
+              mountPath: /usr/local/nvidia
+              readOnly: true
+          resources:
+            limits:
+              nvidia.com/gpu: 2
       volumes:
-      - name: data
-        persistentVolumeClaim:
-          claimName: comfyui-storage-pvc
-      - name: gpu-config
-        configMap:
-          name: comfyui-configmap
-      - name: nvidia-driver
-        hostPath:
-          path: /usr/local/nvidia
-          type: Directory
+        - name: data
+          persistentVolumeClaim:
+            claimName: comfyui-storage-pvc
+        - name: gpu-config
+          configMap:
+            name: comfyui-configmap
+        - name: nvidia-driver
+          hostPath:
+            path: /usr/local/nvidia
+            type: Directory
