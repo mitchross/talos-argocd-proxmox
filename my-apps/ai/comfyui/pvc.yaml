@@ -9,8 +9,8 @@ metadata:
     type: storage
 spec:
   accessModes:
-    - ReadWriteMany  # Changed from ReadWriteOnce to support SMB
+    - ReadWriteMany # Using ReadWriteMany for SMB
   resources:
     requests:
       storage: 100Gi
-  storageClassName: smb-k8s  # Using your SMB StorageClass instead of local-storage
+  storageClassName: comfyui-smb # Using a dedicated StorageClass for ComfyUI

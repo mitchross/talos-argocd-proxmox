@@ -16,13 +16,6 @@ spec:
       runtimeClassName: nvidia
       nodeSelector:
         kubernetes.io/hostname: vanillax-ai
-      initContainers:
-        - name: check-storage
-          image: busybox
-          command: ['sh', '-c', 'mkdir -p /data/comfyui && chmod -R 777 /data/comfyui && echo "Storage directory prepared"']
-          volumeMounts:
-            - name: data
-              mountPath: /data
       containers:
         - name: comfyui
           image: frefrik/comfyui-flux:cu124
@@ -47,7 +40,6 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /app
-              subPath: comfyui
             - name: gpu-config
               mountPath: /app/gpu_config.json
               subPath: gpu_config.json
