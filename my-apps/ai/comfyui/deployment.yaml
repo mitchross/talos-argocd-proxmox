@@ -37,6 +37,10 @@ spec:
               value: "compute,utility,video"
             - name: CUDA_VISIBLE_DEVICES
               value: "0,1"
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/bash", "-c", "if [ -d /app/ComfyUI ]; then git config --global --add safe.directory /app/ComfyUI || true; fi"]
           volumeMounts:
             - name: data
               mountPath: /app
