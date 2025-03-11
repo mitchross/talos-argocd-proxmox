@@ -42,6 +42,7 @@ spec:
               mountPath: /app
             - name: gpu-config
               mountPath: /app/gpu_config.json
+              subPath: gpu_config.json
             - name: nvidia-driver
               mountPath: /usr/local/nvidia
               readOnly: true
@@ -55,9 +56,6 @@ spec:
         - name: gpu-config
           configMap:
             name: comfyui-configmap
-            items:
-              - key: gpu_config.json
-                path: gpu_config.json
         - name: nvidia-driver
           hostPath:
             path: /usr/local/nvidia
