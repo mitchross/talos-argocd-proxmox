@@ -15,7 +15,7 @@ spec:
     spec:
       runtimeClassName: nvidia
       nodeSelector:
-        kubernetes.io/hostname: vanillax-ai
+        kubernetes.io/hostname: k3s-popos-proxmox-gpu-lite
       initContainers:
         - name: init-git-config
           image: busybox
