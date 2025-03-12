@@ -16,19 +16,19 @@ spec:
       runtimeClassName: nvidia
       nodeSelector:
         kubernetes.io/hostname: vanillax-ai
-      # initContainers:
-      #   - name: init-git-config
-      #     image: busybox
-      #     command: ["/bin/sh", "-c"]
-      #     args:
-      #       - |
-      #         mkdir -p /data/.config/git
-      #         echo '[safe]' > /data/.config/git/config
-      #         echo '    directory = *' >> /data/.config/git/config
-      #         chmod -R 777 /data/.config
-      #     volumeMounts:
-      #       - name: data
-      #         mountPath: /data
+      initContainers:
+        - name: init-git-config
+          image: busybox
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              mkdir -p /data/.config/git
+              echo '[safe]' > /data/.config/git/config
+              echo '    directory = *' >> /data/.config/git/config
+              chmod -R 777 /data/.config
+          volumeMounts:
+            - name: data
+              mountPath: /data
       containers:
         - name: comfyui
           image: frefrik/comfyui-flux:cu124
