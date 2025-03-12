@@ -11,8 +11,9 @@ data:
   # Redis configuration
   REDIS_HOSTNAME: "redis-master.redis.svc.cluster.local"
   REDIS_PORT: "6379"
-  REDIS_USERNAME: "default"
+  REDIS_USERNAME: ""
   REDIS_PASSWORD: ""
+  REDIS_URL: "redis://redis-master.redis.svc.cluster.local:6379"
   # Web interface configuration
   IMMICH_WEB_URL: "https://photos.vanillax.me"
   IMMICH_SERVER_URL: "https://photos.vanillax.me/api"
