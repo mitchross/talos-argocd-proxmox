@@ -1,16 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: meilisearch
+  name: hoarder-meilisearch
+  labels:
+    app: hoarder-meilisearch
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: meilisearch
+      app: hoarder-meilisearch
   template:
     metadata:
       labels:
-        app: meilisearch
+        app: hoarder-meilisearch
     spec:
       containers:
         - name: meilisearch

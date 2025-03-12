@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web
+  name: hoarder-web
 spec:
   replicas: 1
   selector:
@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/hoarder-app/hoarder
+          image: ghcr.io/hoarder-app/hoarder:0.22.0
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
