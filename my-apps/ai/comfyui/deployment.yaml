@@ -29,6 +29,14 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+        - name: fix-git-repo
+          image: alpine/git
+          command: ["/bin/sh", "-c"]
+          args:
+            - "if [ -d \"/app/ComfyUI\" ]; then\n  echo \"Fixing ComfyUI repository state...\"\n  cd /app/ComfyUI\n  # Check if we're on a branch or in detached HEAD state\n  if ! git symbolic-ref -q HEAD >/dev/null; then\n    echo \"Currently in detached HEAD state, checking out master branch...\"\n    git checkout -f master || git checkout -b master\n    git reset --hard origin/master\n  fi\n  \n  # Also fix ComfyUI-Manager if it exists\n  if [ -d \"/app/ComfyUI/custom_nodes/ComfyUI-Manager\" ]; then\n    echo \"Fixing ComfyUI-Manager repository state...\"\n    cd /app/ComfyUI/custom_nodes/ComfyUI-Manager\n    if ! git symbolic-ref -q HEAD >/dev/null; then\n      echo \"ComfyUI-Manager in detached HEAD state, checking out main branch...\"\n      git checkout -f main || git checkout -b main\n      git reset --hard origin/main\n    fi\n  fi\nelse\n  echo \"ComfyUI directory not found, nothing to fix.\"\nfi\n"
+          volumeMounts:
+            - name: data
+              mountPath: /app
       containers:
         - name: comfyui
           image: frefrik/comfyui-flux:cu124
