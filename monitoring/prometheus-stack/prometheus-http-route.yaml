@@ -1,21 +1,19 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: k8s-monitoring
+  name: prometheus
   namespace: monitoring
 spec:
   parentRefs:
     - name: gateway-internal
       namespace: gateway
-      sectionName: https
   hostnames:
-    - "monitoring.vanillax.me"
+    - prometheus.vanillax.me
   rules:
     - matches:
         - path:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: k8s-monitoring-grafana
-          port: 80
-          weight: 1
+        - name: kube-prometheus-stack-prometheus
+          port: 9090

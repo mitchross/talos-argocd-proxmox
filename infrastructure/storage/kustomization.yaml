@@ -7,3 +7,4 @@ resources:
   - local-storage
   - csi-driver-nfs
   - csi-driver-smb
+  - openebs
