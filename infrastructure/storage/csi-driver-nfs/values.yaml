@@ -8,7 +8,7 @@ storageClasses:
   defaultClass: false
   parameters:
     server: 192.168.10.133
-    share: /mnt/generaltank/k8s/
+    share: /mnt/generaltank/k8s_ssd/
   mountOptions:
     - nfsvers=4.1
 

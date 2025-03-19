@@ -11,4 +11,6 @@ data:
   INFERENCE_TEXT_MODEL: "llama3.2"
   INFERENCE_IMAGE_MODEL: "llava"
   EMBEDDING_TEXT_MODEL: "granite-embedding:278m"
+  # For webhook functionality (new in 0.22.0)
+  WEBHOOK_ENABLED: "false"
   # Add any other configuration values as needed 

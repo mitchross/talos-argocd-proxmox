@@ -4,4 +4,7 @@ commonLabels:
   vanillax.me: storage
   app.kubernetes.io/managed-by: argocd
 resources:
-  - application-set.yaml
+  - local-storage
+  - csi-driver-nfs
+  - csi-driver-smb
+  - openebs

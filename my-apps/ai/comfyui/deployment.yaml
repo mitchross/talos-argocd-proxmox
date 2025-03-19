@@ -17,57 +17,69 @@ spec:
       nodeSelector:
         kubernetes.io/hostname: vanillax-ai
       initContainers:
-      - name: check-storage
-        image: busybox
-        command: ['sh', '-c', 'until [ -d "/datapool/kubernetes/comfyui/data" ]; do echo waiting for storage dir; sleep 2; done;']
-        volumeMounts:
-        - name: host-path
-          mountPath: /datapool
+        - name: init-git-config
+          image: busybox
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              mkdir -p /data/.config/git
+              echo '[safe]' > /data/.config/git/config
+              echo '    directory = *' >> /data/.config/git/config
+              chmod -R 777 /data/.config
+          volumeMounts:
+            - name: data
+              mountPath: /data
+        - name: fix-git-repo
+          image: alpine/git
+          command: ["/bin/sh", "-c"]
+          args:
+            - "if [ -d \"/app/ComfyUI\" ]; then\n  echo \"Fixing ComfyUI repository state...\"\n  cd /app/ComfyUI\n  # Check if we're on a branch or in detached HEAD state\n  if ! git symbolic-ref -q HEAD >/dev/null; then\n    echo \"Currently in detached HEAD state, checking out master branch...\"\n    git checkout -f master || git checkout -b master\n    git reset --hard origin/master\n  fi\n  \n  # Also fix ComfyUI-Manager if it exists\n  if [ -d \"/app/ComfyUI/custom_nodes/ComfyUI-Manager\" ]; then\n    echo \"Fixing ComfyUI-Manager repository state...\"\n    cd /app/ComfyUI/custom_nodes/ComfyUI-Manager\n    if ! git symbolic-ref -q HEAD >/dev/null; then\n      echo \"ComfyUI-Manager in detached HEAD state, checking out main branch...\"\n      git checkout -f main || git checkout -b main\n      git reset --hard origin/main\n    fi\n  fi\nelse\n  echo \"ComfyUI directory not found, nothing to fix.\"\nfi\n"
+          volumeMounts:
+            - name: data
+              mountPath: /app
       containers:
-      - name: comfyui
-        image: frefrik/comfyui-flux:cu124
-        ports:
-        - containerPort: 8188
-        env:
-        - name: CLI_ARGS
-          value: ""
-        - name: HF_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: comfyui-secret
-              key: HF_TOKEN
-        - name: LOW_VRAM
-          value: "false"
-        - name: NVIDIA_VISIBLE_DEVICES
-          value: "all"
-        - name: NVIDIA_DRIVER_CAPABILITIES
-          value: "compute,utility,video"
-        - name: CUDA_VISIBLE_DEVICES
-          value: "0,1"
-        volumeMounts:
-        - name: data
-          mountPath: /app
-        - name: gpu-config
-          mountPath: /app/gpu_config.json
-          subPath: gpu_config.json
-        - name: nvidia-driver
-          mountPath: /usr/local/nvidia
-          readOnly: true
-        resources:
-          limits:
-            nvidia.com/gpu: 2
+        - name: comfyui
+          image: frefrik/comfyui-flux:cu124
+          ports:
+            - containerPort: 8188
+          env:
+            - name: CLI_ARGS
+              value: ""
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: comfyui-secret
+                  key: HF_TOKEN
+            - name: LOW_VRAM
+              value: "false"
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "compute,utility,video"
+            - name: CUDA_VISIBLE_DEVICES
+              value: "0,1"
+            - name: HOME
+              value: "/app"
+          volumeMounts:
+            - name: data
+              mountPath: /app
+            - name: gpu-config
+              mountPath: /app/gpu_config.json
+              subPath: gpu_config.json
+            - name: nvidia-driver
+              mountPath: /usr/local/nvidia
+              readOnly: true
+          resources:
+            limits:
+              nvidia.com/gpu: 2
       volumes:
-      - name: data
-        persistentVolumeClaim:
-          claimName: comfyui-storage-pvc
-      - name: gpu-config
-        configMap:
-          name: comfyui-configmap
-      - name: host-path
-        hostPath:
-          path: /datapool
-          type: DirectoryOrCreate
-      - name: nvidia-driver
-        hostPath:
-          path: /usr/local/nvidia
-          type: Directory
+        - name: data
+          persistentVolumeClaim:
+            claimName: comfyui-storage-pvc
+        - name: gpu-config
+          configMap:
+            name: comfyui-configmap
+        - name: nvidia-driver
+          hostPath:
+            path: /usr/local/nvidia
+            type: Directory
