@@ -3,17 +3,17 @@ kind: Kustomization
 namespace: hoarder
 resources:
   - namespace.yaml
-  # Chrome resources
-  - chrome/deployment-chrome.yaml
-  - chrome/service-chrome.yaml
-  # Hoarder resources
-  - hoarder/configmap.yaml
-  - hoarder/deployment-web.yaml
-  - hoarder/service-web.yaml
-  - hoarder/externalsecret.yaml
-  - hoarder/httproute.yaml
-  - hoarder/pvc-data.yaml
-  # Meilisearch resources
-  - meilisearch/deployment-meilisearch.yaml
-  - meilisearch/service-meilisearch.yaml
-  - meilisearch/pvc-meilisearch.yaml
+  # # Chrome resources
+  # - chrome/deployment-chrome.yaml
+  # - chrome/service-chrome.yaml
+  # # Hoarder resources
+  # - hoarder/configmap.yaml
+  # - hoarder/deployment-web.yaml
+  # - hoarder/service-web.yaml
+  # - hoarder/externalsecret.yaml
+  # - hoarder/httproute.yaml
+  # - hoarder/pvc-data.yaml
+  # # Meilisearch resources
+  # - meilisearch/deployment-meilisearch.yaml
+  # - meilisearch/service-meilisearch.yaml
+  # - meilisearch/pvc-meilisearch.yaml
