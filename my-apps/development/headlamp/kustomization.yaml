@@ -7,6 +7,9 @@ commonLabels:
 resources:
   - namespace.yaml
   - httproute.yaml
+  - serviceaccount.yaml
+  - clusterrolebinding.yaml
+  - token-job.yaml
 helmCharts:
   - name: headlamp
     repo: https://headlamp-k8s.github.io/headlamp/
