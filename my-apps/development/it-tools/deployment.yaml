@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: it-tools
-        image: ghcr.io/corentinth/it-tools:2024.5.10-33e5294
+        image: ghcr.io/corentinth/it-tools:v2025.2.9-b99a19c
         env: 
         - name: TZ
           value: America/Detroit
