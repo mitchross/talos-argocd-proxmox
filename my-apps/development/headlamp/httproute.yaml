@@ -7,7 +7,6 @@ spec:
   parentRefs:
     - name: gateway-internal
       namespace: gateway
-      sectionName: https
   hostnames:
     - "headlamp.vanillax.me"
   rules:
@@ -18,4 +17,4 @@ spec:
       backendRefs:
         - name: my-headlamp
           port: 80
-          weight: 1 
+          weight: 1

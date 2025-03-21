@@ -18,3 +18,4 @@ spec:
       backendRefs:
         - name: it-tools
           port: 80
+          weight: 1
