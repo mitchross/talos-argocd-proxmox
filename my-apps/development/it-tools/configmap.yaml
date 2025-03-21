@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: it-tools-env
+  namespace: it-tools
+data:
+  # System settings
+  TZ: ${CONFIG_TIMEZONE}
