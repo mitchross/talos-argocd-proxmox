@@ -17,42 +17,12 @@ spec:
       labels:
         app.kubernetes.io/name: it-tools
     spec:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
       containers:
       - name: it-tools
         image: ghcr.io/corentinth/it-tools:2024.5.10-33e5294
-        imagePullPolicy: Always
-        envFrom:                     
-          - configMapRef:             
-              name: it-tools-env     
+        env: 
+        - name: TZ
+          value: America/Detroit
         ports:
         - name: http
           containerPort: 80
-        securityContext:
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          capabilities:
-            drop: ["ALL"]
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 2000m
-            memory: 1Gi
-        livenessProbe:
-          httpGet:
-            path: /
-            port: http
-          initialDelaySeconds: 10
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /
-            port: http
-          initialDelaySeconds: 5
-          periodSeconds: 10
