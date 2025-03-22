@@ -8,13 +8,12 @@ resources:
   - namespace.yaml
   - httproute.yaml
   - serviceaccount.yaml
-  - clusterrolebinding.yaml
-  - token-job.yaml
+  - token-secret.yaml
 helmCharts:
   - name: headlamp
     repo: https://headlamp-k8s.github.io/headlamp/
-    version: 0.21.0
-    releaseName: my-headlamp
+    version: "0.29.1"
+    releaseName: headlamp
     namespace: kube-system
     includeCRDs: true
     valuesFile: values.yaml 

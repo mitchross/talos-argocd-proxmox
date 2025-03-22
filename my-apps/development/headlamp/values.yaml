@@ -1,18 +1,45 @@
+# Disable features we're handling separately
+serviceAccount:
+  create: false
+  name: "headlamp-admin"  # Reference existing SA
+
+clusterRoleBinding:
+  create: false
+
+# Basic configuration
 replicaCount: 1
-
 image:
-  repository: ghcr.io/headlamp-k8s/headlamp
-  tag: latest
-  pullPolicy: Always
+  registry: "ghcr.io"
+  repository: "headlamp-k8s/headlamp"
+  tag: ""  # Use chart's default version
+  pullPolicy: "IfNotPresent"
 
+# Application configuration
+config:
+  inCluster: true
+  baseURL: ""
+  pluginsDir: "/headlamp/plugins"
+
+# Service configuration
 service:
   type: ClusterIP
   port: 80
 
+# Resources
 resources:
-  requests:
-    memory: 128Mi
-    cpu: "100m"
   limits:
-    memory: 256Mi
-    cpu: "500m" 
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+# You can enable ingress if needed
+ingress:
+  enabled: false
+  # Configure for your environment if enabled
+  # hosts:
+  #   - host: headlamp.yourdomain.com
+  #     paths:
+  #       - path: /
+  #         pathType: Prefix 

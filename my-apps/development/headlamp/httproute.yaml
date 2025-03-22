@@ -15,6 +15,6 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: my-headlamp
+        - name: headlamp
           port: 80
           weight: 1
