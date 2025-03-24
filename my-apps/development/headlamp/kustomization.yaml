@@ -9,6 +9,7 @@ resources:
   - httproute.yaml
   - serviceaccount.yaml
   - token-secret.yaml
+  - metrics-role.yaml
 helmCharts:
   - name: headlamp
     repo: https://headlamp-k8s.github.io/headlamp/
