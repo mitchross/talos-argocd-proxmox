@@ -26,4 +26,4 @@ spec:
           value: America/Detroit
         ports:
         - name: http
-          containerPort: 8080
+          containerPort: 80
