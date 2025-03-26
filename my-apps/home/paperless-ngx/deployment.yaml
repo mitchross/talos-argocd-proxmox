@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless-ngx
+  namespace: paperless-ngx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: paperless-ngx
+  template:
+    metadata:
+      labels:
+        app: paperless-ngx
+    spec:
+      containers:
+        - name: paperless-ngx
+          image: ghcr.io/paperless-ngx/paperless-ngx:latest
+          ports:
+            - containerPort: 8000
+              name: http
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+          envFrom:
+            - configMapRef:
+                name: paperless-config
+            - secretRef:
+                name: paperless-db-credentials
+          env:
+            - name: PAPERLESS_DBHOST
+              value: "immich-postgres-external.immich.svc.cluster.local"
+            - name: USERMAP_UID
+              value: "1000"
+            - name: USERMAP_GID
+              value: "1000"
+          volumeMounts:
+            - name: data
+              mountPath: /usr/src/paperless/data
+            - name: media
+              mountPath: /usr/src/paperless/media
+            - name: export
+              mountPath: /usr/src/paperless/export
+            - name: consume
+              mountPath: /usr/src/paperless/consume
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: paperless-data-pvc
+        - name: media
+          persistentVolumeClaim:
+            claimName: paperless-media-pvc
+        - name: export
+          persistentVolumeClaim:
+            claimName: paperless-export-pvc
+        - name: consume
+          persistentVolumeClaim:
+            claimName: paperless-consume-pvc 

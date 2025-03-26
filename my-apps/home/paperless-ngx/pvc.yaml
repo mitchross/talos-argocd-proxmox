@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-data-pvc
+  namespace: paperless-ngx
+  labels:
+    app: paperless-ngx
+    type: data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: local-storage
+  selector:
+    matchLabels:
+      app: paperless-ngx
+      type: data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-media-pvc
+  namespace: paperless-ngx
+  labels:
+    app: paperless-ngx
+    type: media
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: local-storage
+  selector:
+    matchLabels:
+      app: paperless-ngx
+      type: media
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-export-pvc
+  namespace: paperless-ngx
+  labels:
+    app: paperless-ngx
+    type: export
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: local-storage
+  selector:
+    matchLabels:
+      app: paperless-ngx
+      type: export
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-consume-pvc
+  namespace: paperless-ngx
+  labels:
+    app: paperless-ngx
+    type: consume
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: local-storage
+  selector:
+    matchLabels:
+      app: paperless-ngx
+      type: consume 

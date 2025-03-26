@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: paperless-ngx
+commonLabels:
+  app.kubernetes.io/name: paperless-ngx
+  app.kubernetes.io/managed-by: argocd
+resources:
+  - namespace.yaml
+  - pv.yaml
+  - pvc.yaml
+  - externalsecret.yaml
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+  - httproute.yaml 
