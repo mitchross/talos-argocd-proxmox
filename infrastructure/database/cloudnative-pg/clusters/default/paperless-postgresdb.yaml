@@ -1,0 +1,62 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: paperless-database
+  namespace: paperless-ngx
+  labels:
+    app: paperless-ngx
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.2
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 2Gi
+  postgresql:
+    parameters:
+      shared_buffers: "256MB"
+      max_wal_size: "1GB"
+      wal_compression: "on"
+      logging_collector: "on"
+      log_statement: "all"
+    pg_hba:
+      - host all all 0.0.0.0/0 md5
+  bootstrap:
+    initdb:
+      database: paperless
+      owner: paperless
+      secret:
+        name: paperless-db-credentials
+      postInitApplicationSQL:
+        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "paperless";
+  storage:
+    size: 10Gi
+    storageClass: local-storage
+  walStorage:
+    size: 2Gi
+    storageClass: local-storage
+  managed:
+    services:
+      additional:
+        - selectorType: rw
+          updateStrategy: patch
+          serviceTemplate:
+            metadata:
+              name: paperless-postgres-external
+              annotations:
+                lbipam.cilium.io/ips: "192.168.10.42"
+            spec:
+              type: LoadBalancer
+              ports:
+                - name: postgres
+                  port: 5432
+                  targetPort: 5432
+                  protocol: TCP
+  enableSuperuserAccess: true
+  monitoring:
+    enablePodMonitor: true
+  affinity:
+    nodeSelector:
+      kubernetes.io/hostname: vanillax-ai 

@@ -33,7 +33,7 @@ spec:
                 name: paperless-db-credentials
           env:
             - name: PAPERLESS_DBHOST
-              value: "immich-postgres-external.immich.svc.cluster.local"
+              value: "paperless-database-rw.paperless-ngx.svc.cluster.local"
             - name: USERMAP_UID
               value: "1000"
             - name: USERMAP_GID

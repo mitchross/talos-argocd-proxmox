@@ -7,5 +7,6 @@ commonLabels:
 resources:
   - example-cluster.yaml
   - immich-postgresdb.yaml
+  - paperless-postgresdb.yaml
   - externalsecret.yaml
   - pv.yaml
