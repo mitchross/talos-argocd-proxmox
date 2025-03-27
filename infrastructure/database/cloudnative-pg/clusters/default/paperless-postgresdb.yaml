@@ -28,7 +28,7 @@ spec:
       database: paperless
       owner: paperless
       secret:
-        name: paperless-db-secret
+        name: paperless-app-secret
       postInitApplicationSQL:
         - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "paperless";
         - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "paperless";

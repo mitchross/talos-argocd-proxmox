@@ -30,7 +30,7 @@ spec:
             - configMapRef:
                 name: paperless-config
             - secretRef:
-                name: paperless-db-credentials
+                name: paperless-app-secret
           env:
             - name: PAPERLESS_DBHOST
               value: "paperless-database-rw.paperless-ngx.svc.cluster.local"
@@ -61,4 +61,4 @@ spec:
             claimName: paperless-export-pvc
         - name: consume
           persistentVolumeClaim:
-            claimName: paperless-consume-pvc 
+            claimName: paperless-consume-pvc
