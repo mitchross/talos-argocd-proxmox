@@ -28,16 +28,3 @@ spec:
       - name: registry-data
         persistentVolumeClaim:
           claimName: registry-pvc
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: registry
-  namespace: kube-system
-spec:
-  selector:
-    app: registry
-  ports:
-  - port: 5000
-    targetPort: 5000
-  type: ClusterIP
