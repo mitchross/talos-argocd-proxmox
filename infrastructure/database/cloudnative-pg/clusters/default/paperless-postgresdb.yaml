@@ -31,6 +31,9 @@ spec:
         name: paperless-db-credentials
       postInitApplicationSQL:
         - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "paperless";
+        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "paperless";
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "paperless";
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "paperless";
   storage:
     size: 10Gi
     storageClass: local-storage
@@ -59,4 +62,4 @@ spec:
     enablePodMonitor: true
   affinity:
     nodeSelector:
-      kubernetes.io/hostname: vanillax-ai 
+      kubernetes.io/hostname: vanillax-ai
