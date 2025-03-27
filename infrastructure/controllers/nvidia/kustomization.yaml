@@ -11,7 +11,7 @@ resources:
 helmCharts:
   - name: gpu-operator
     repo: https://helm.ngc.nvidia.com/nvidia
-    version: v24.9.2
+    version: v25.3.0
     releaseName: gpu-operator
     namespace: gpu-operator
     includeCRDs: true
