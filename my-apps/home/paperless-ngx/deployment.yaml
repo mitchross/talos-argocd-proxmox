@@ -33,7 +33,7 @@ spec:
                 name: paperless-app-secret
           env:
             - name: PAPERLESS_DBHOST
-              value: "paperless-database-rw.paperless-ngx.svc.cluster.local"
+              value: "paperless-postgres-external.paperless-ngx.svc.cluster.local"
             - name: PAPERLESS_REDIS
               value: "redis://redis-master.redis.svc.cluster.local:6379"
             - name: USERMAP_UID
