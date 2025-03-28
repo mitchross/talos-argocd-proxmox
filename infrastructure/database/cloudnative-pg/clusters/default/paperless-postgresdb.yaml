@@ -2,7 +2,7 @@ apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: paperless-database
-  namespace: paperless-ngx
+  namespace: cloudnative-pg
   labels:
     app: paperless-ngx
 spec:
@@ -28,7 +28,7 @@ spec:
       database: paperless
       owner: paperless
       secret:
-        name: paperless-app-secret  # Use paperless-app-secret here
+        name: paperless-app-secret # Use paperless-app-secret here
       postInitApplicationSQL:
         - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "paperless";
         - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "paperless";
