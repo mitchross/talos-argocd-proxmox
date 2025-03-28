@@ -28,7 +28,7 @@ spec:
       database: paperless
       owner: paperless
       secret:
-        name: paperless-postgres-init-secret  # Changed to use the new secret
+        name: paperless-app-secret  # Use paperless-app-secret here
       postInitApplicationSQL:
         - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "paperless";
         - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "paperless";
