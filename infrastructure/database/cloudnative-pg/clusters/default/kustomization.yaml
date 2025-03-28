@@ -5,8 +5,8 @@ commonLabels:
   app.kubernetes.io/name: cloudnative-pg-cluster
   app.kubernetes.io/managed-by: argocd
 resources:
-  - example-cluster.yaml
+  # - example-cluster.yaml
   - immich-postgresdb.yaml
-  # - paperless-postgresdb.yaml
+  - paperless-postgresdb.yaml
   - externalsecret.yaml
   - pv.yaml
