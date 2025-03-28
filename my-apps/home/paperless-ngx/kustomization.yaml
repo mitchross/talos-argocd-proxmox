@@ -8,8 +8,6 @@ resources:
   - namespace.yaml
   - pv.yaml
   - pvc.yaml
-  - externalsecret.yaml
-  - paperless-secret-key.yaml
   - configmap.yaml
   - deployment.yaml
   - service.yaml

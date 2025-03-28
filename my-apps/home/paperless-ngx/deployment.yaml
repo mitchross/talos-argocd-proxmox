@@ -33,9 +33,9 @@ spec:
                 name: paperless-app-secret
           env:
             - name: PAPERLESS_DBHOST
-              value: "paperless-postgres-external.paperless-ngx.svc.cluster.local"
+              value: "paperless-postgres-external.paperless-ngx.svc.cluster.local"  # Updated to match external service
             - name: PAPERLESS_REDIS
-              value: "redis://redis-master.redis.svc.cluster.local:6379"
+              value: "redis://redis-master.redis.svc.cluster.local:6379"  # Updated to match redis service
             - name: USERMAP_UID
               value: "1000"
             - name: USERMAP_GID
