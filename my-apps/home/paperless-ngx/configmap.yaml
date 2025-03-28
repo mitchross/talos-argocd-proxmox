@@ -4,10 +4,6 @@ metadata:
   name: paperless-config
   namespace: paperless-ngx
 data:
-  PAPERLESS_DBHOST: "paperless-postgres-external"
-  PAPERLESS_DBPORT: "5432"
-  PAPERLESS_DBNAME: "paperless"
-  PAPERLESS_DBUSER: "paperless"
   PAPERLESS_TIME_ZONE: "America/New_York"
   PAPERLESS_OCR_LANGUAGE: "eng"
   PAPERLESS_CONSUMER_POLLING: "0"
