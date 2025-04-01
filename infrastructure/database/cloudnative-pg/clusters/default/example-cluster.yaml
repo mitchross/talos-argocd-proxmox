@@ -40,7 +40,7 @@ spec:
             metadata:
               name: single-example-ext
               annotations:
-                lbipam.cilium.io/ips: "192.168.10.42"
+                lbipam.cilium.io/ips: "192.168.10.30"
             spec:
               type: LoadBalancer
   # Data storage configuration 
