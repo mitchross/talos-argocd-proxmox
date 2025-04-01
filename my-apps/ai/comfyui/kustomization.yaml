@@ -9,3 +9,4 @@ resources:
   - externalsecret.yaml
   - configmap.yaml
   - httproute.yaml
+  - job.yaml
