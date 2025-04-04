@@ -19,7 +19,7 @@ spec:
       labels:
         type: application
     spec:
-      project: ai
+      project: my-apps
       source:
         plugin:
           name: kustomize-build-with-helm
