@@ -25,33 +25,6 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
-  name: applications
-  namespace: argocd
-spec:
-  description: User applications
-  sourceRepos:
-    - '*' # In production, specify exact repo URLs
-  destinations:
-    - namespace: '*'
-      server: https://kubernetes.default.svc
-  # Restrict application projects from creating cluster-wide resources
-  clusterResourceWhitelist:
-    - group: cert-manager.io
-      kind: ClusterIssuer
-    - group: ""
-      kind: Namespace
-  namespaceResourceWhitelist:
-    - group: '*'
-      kind: '*'
-  roles:
-    - name: admin
-      description: Admin role for applications project
-      policies:
-        - p, proj:applications:admin, applications, *, applications/*, allow
----
-apiVersion: argoproj.io/v1alpha1
-kind: AppProject
-metadata:
   name: monitoring
   namespace: argocd
 spec:
@@ -73,3 +46,32 @@ spec:
       description: Admin role for monitoring project
       policies:
         - p, proj:monitoring:admin, applications, *, monitoring/*, allow
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: my-apps
+  namespace: argocd
+spec:
+  description: Project for my custom applications hosted in the my-apps folder
+  # Allow deploying apps to any namespace
+  destinations:
+    - namespace: '*'
+      server: '*'
+  # Allow deploying any cluster-scoped resources initially
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  # Allow deploying namespaced resources from specific groups
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  # Specifically allow the ClusterSecretStore kind from external-secrets.io
+  # This addresses the original sync error for paperless-ngx
+  clusterResourceWhitelist: # Note: This overwrites the previous wildcard, explicitly list needed kinds or keep the wildcard
+    - group: 'external-secrets.io'
+      kind: 'ClusterSecretStore'
+    - group: '*' # Added wildcard back - adjust if needed
+      kind: '*' # Added wildcard back - adjust if needed
+  sourceRepos:
+    - '*' # Allow deploying from any Git repository, adjust if needed
