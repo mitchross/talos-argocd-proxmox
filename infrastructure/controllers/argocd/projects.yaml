@@ -34,16 +34,12 @@ spec:
   destinations:
     - namespace: '*'
       server: https://kubernetes.default.svc
-  # Include necessary cluster-wide resources for applications
+  # Restrict application projects from creating cluster-wide resources
   clusterResourceWhitelist:
-    - group: '*'
-      kind: 'PersistentVolume'
     - group: cert-manager.io
       kind: ClusterIssuer
-    - group: '*'
-      kind: 'CustomResourceDefinition'
-    - group: '*'
-      kind: 'Namespace'
+    - group: ""
+      kind: Namespace
   namespaceResourceWhitelist:
     - group: '*'
       kind: '*'
@@ -77,36 +73,3 @@ spec:
       description: Admin role for monitoring project
       policies:
         - p, proj:monitoring:admin, applications, *, monitoring/*, allow
----
-apiVersion: argoproj.io/v1alpha1
-kind: AppProject
-metadata:
-  name: ai
-  namespace: argocd
-spec:
-  description: AI applications that need special PV permissions
-  sourceRepos:
-    - '*' # In production, specify exact repo URLs
-  destinations:
-    - namespace: '*'
-      server: https://kubernetes.default.svc
-  # Include PersistentVolume permissions critical for AI apps
-  clusterResourceWhitelist:
-    - group: '*'
-      kind: 'PersistentVolume'
-    - group: '*'
-      kind: 'CustomResourceDefinition'
-    - group: '*'
-      kind: 'ClusterRole'
-    - group: '*'
-      kind: 'ClusterRoleBinding'
-    - group: '*'
-      kind: 'Namespace'
-  namespaceResourceWhitelist:
-    - group: '*'
-      kind: '*'
-  roles:
-    - name: admin
-      description: Admin role for AI project
-      policies:
-        - p, proj:ai:admin, applications, *, ai/*, allow
