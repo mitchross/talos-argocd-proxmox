@@ -1,0 +1,134 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/budimanjojo/talhelper/master/pkg/config/schemas/talconfig.json
+# renovate: datasource=docker depName=ghcr.io/siderolabs/installer
+talosVersion: v1.9.5
+# renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
+kubernetesVersion: v1.30.0
+clusterName: c0depool-talos-cluster
+endpoint: https://192.168.10.199:6443
+clusterPodNets:
+  - 10.14.0.0/16
+clusterSvcNets:
+  - 10.15.0.0/16
+additionalApiServerCertSans:
+  - 192.168.10.199
+  - 127.0.0.1
+additionalMachineCertSans:
+  - 192.168.10.199
+  - 127.0.0.1
+nodes:
+  - hostname: talos-master-00
+    controlPlane: true
+    ipAddress: 192.168.10.170
+    installDisk: /dev/sda
+    talosImageURL: factory.talos.dev/installer/13c36cf02fe4f488b14f055c5aff8526ec961a1150223aed1d4de259bd45be04:v1.9.5
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: "ba:f6:6a:f3:57:9e"
+        dhcp: false
+        vip:
+          ip: 192.168.10.199
+  - hostname: talos-master-01
+    controlPlane: true
+    ipAddress: 192.168.10.171
+    installDisk: /dev/sda
+    talosImageURL: factory.talos.dev/installer/13c36cf02fe4f488b14f055c5aff8526ec961a1150223aed1d4de259bd45be04:v1.9.5
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: "12:9f:61:8d:29:0c"
+        dhcp: false
+        vip:
+          ip: 192.168.10.199
+  - hostname: talos-master-02
+    controlPlane: true
+    ipAddress: 192.168.10.172
+    installDisk: /dev/sda
+    talosImageURL: factory.talos.dev/installer/13c36cf02fe4f488b14f055c5aff8526ec961a1150223aed1d4de259bd45be04:v1.9.5
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: "0e:cc:ce:79:80:71"
+        dhcp: false
+        vip:
+          ip: 192.168.10.199
+  - hostname: talos-worker-00
+    controlPlane: false
+    ipAddress: 192.168.10.180
+    installDisk: /dev/sda
+    talosImageURL: factory.talos.dev/installer/13c36cf02fe4f488b14f055c5aff8526ec961a1150223aed1d4de259bd45be04:v1.9.5
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: "5e:19:52:b2:6a:ee"
+        dhcp: false
+    patches:
+      - |-
+        machine:
+          udev:
+            rules:
+              - SUBSYSTEM=="drm", KERNEL=="renderD*", GROUP="44", MODE="0660"
+              - SUBSYSTEM=="drm", KERNEL=="card*", GROUP="44", MODE="0660"
+  - hostname: talos-worker-01
+    controlPlane: false
+    ipAddress: 192.168.10.181
+    installDisk: /dev/sda
+    talosImageURL: factory.talos.dev/installer/13c36cf02fe4f488b14f055c5aff8526ec961a1150223aed1d4de259bd45be04:v1.9.5
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: "86:10:47:c7:6e:e9"
+        dhcp: false
+  - hostname: talos-worker-02
+    controlPlane: false
+    ipAddress: 192.168.10.182
+    installDisk: /dev/sda
+    talosImageURL: factory.talos.dev/installer/13c36cf02fe4f488b14f055c5aff8526ec961a1150223aed1d4de259bd45be04:v1.9.5
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: "1e:2d:03:dc:c4:96"
+        dhcp: false
+patches:
+  # Force nameserver
+  - |-
+    machine:
+      network:
+        nameservers:
+          - 1.1.1.1
+          - 1.0.0.1
+  # Configure NTP
+  - |-
+    machine:
+      time:
+        disabled: false
+        servers: ["time.cloudflare.com"]
+controlPlane:
+  patches:
+    # Cluster configuration
+    - |-
+      cluster:
+        # allowSchedulingOnControlPlanes: true
+        controllerManager:
+          extraArgs:
+            bind-address: 0.0.0.0
+        proxy:
+          disabled: true
+        network:
+          cni:
+            name: none
+        scheduler:
+          extraArgs:
+            bind-address: 0.0.0.0
+worker:
+  patches:
+    # Machine configuration
+    - |-
+      machine:
+        kubelet:
+          extraMounts:
+            - destination: /var/mnt/longhorn
+              type: bind
+              source: /var/mnt/longhorn
+              options:
+                - bind
+                - rshared
+                - rw
+        disks:
+            - device: /dev/sdb
+              partitions:
+                - mountpoint: /var/mnt/longhorn
