@@ -55,7 +55,7 @@ ingress:
         - name: CF-Bot-Score
         - name: CF-Challenge
         - name: CF-Bot-Management-Tag
-  - hostname: vanillax.xyz
+  - hostname: vanillax.me
     service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
     originRequest:
       noTLSVerify: true
