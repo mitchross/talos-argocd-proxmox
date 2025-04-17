@@ -5,3 +5,6 @@ tools/venv/
 apps/home/.DS_Store
 apps/home/.DS_Store
 apps/home/.DS_Store
+/infrastructure/controllers/argocd/charts
+1password-credentials.json
+1password-credentials.base64
