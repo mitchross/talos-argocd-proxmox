@@ -8,3 +8,4 @@ resources:
   - csi-driver-nfs
   - csi-driver-smb
   - openebs
+  - longhorn
