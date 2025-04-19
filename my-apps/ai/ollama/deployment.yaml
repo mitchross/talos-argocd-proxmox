@@ -16,7 +16,7 @@ spec:
       runtimeClassName: nvidia
       containers:
         - name: ollama
-          image: ollama/ollama:0.6.5
+          image: ollama/ollama:0.6.6
           ports:
             - containerPort: 11434
           resources:
