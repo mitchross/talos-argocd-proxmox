@@ -53,7 +53,7 @@ stringData:
 
 2. **Configure External Secrets Operator**
 ```yaml
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ClusterSecretStore
 metadata:
   name: 1password
@@ -75,7 +75,7 @@ spec:
 
 ### 1. Creating External Secrets
 ```yaml
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   name: app-secrets
