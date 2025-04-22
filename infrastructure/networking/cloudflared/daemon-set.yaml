@@ -32,12 +32,25 @@ spec:
             initialDelaySeconds: 60
             failureThreshold: 5
             periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 2000
+            initialDelaySeconds: 10
+            failureThreshold: 3
+            periodSeconds: 10
           resources:
             requests:
               cpu: 100m
               memory: 64Mi
             limits:
+              cpu: 250m
               memory: 512Mi
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           volumeMounts:
             - name: config
               mountPath: /etc/cloudflared/config/config.yaml
