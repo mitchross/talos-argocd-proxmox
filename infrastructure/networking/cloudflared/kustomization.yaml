@@ -9,5 +9,5 @@ generatorOptions:
   disableNameSuffixHash: true
 resources:
   - ns.yaml
-  - external-secret.yaml # Added ExternalSecret
+  - external-secret.yaml 
   - daemon-set.yaml
