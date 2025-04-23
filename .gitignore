@@ -9,3 +9,4 @@ apps/home/.DS_Store
 1password-credentials.json
 1password-credentials.base64
 tunnel-credentials.json
+*.yaml
