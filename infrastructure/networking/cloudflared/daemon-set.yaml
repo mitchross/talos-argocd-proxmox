@@ -48,6 +48,7 @@ spec:
               memory: 512Mi
           securityContext:
             runAsNonRoot: true
+            runAsUser: 65534 # Explicitly set UID for nonroot user
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
