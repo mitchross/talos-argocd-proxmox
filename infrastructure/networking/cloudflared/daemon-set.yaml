@@ -50,6 +50,8 @@ spec:
             runAsNonRoot: true
             runAsUser: 65534 # Explicitly set UID for nonroot user
             allowPrivilegeEscalation: false
+            seccompProfile: # Add seccompProfile
+              type: RuntimeDefault # Use the default runtime profile
             capabilities:
               drop: ["ALL"]
           volumeMounts:
