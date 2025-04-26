@@ -10,3 +10,5 @@ apps/home/.DS_Store
 1password-credentials.base64
 tunnel-credentials.json
 *.yaml
+*.lock
+/omni/apps/kube-system/cilium/charts

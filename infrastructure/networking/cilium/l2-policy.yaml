@@ -5,6 +5,6 @@ metadata:
   namespace: kube-system
 spec:
   interfaces:
-    - enx04421a41f4d1
+    - 'en*'
   loadBalancerIPs: true
   externalIPs: true
