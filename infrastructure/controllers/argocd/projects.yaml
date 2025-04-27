@@ -58,20 +58,15 @@ spec:
   destinations:
     - namespace: '*'
       server: '*'
-  # Allow deploying any cluster-scoped resources initially
-  clusterResourceWhitelist:
-    - group: '*'
-      kind: '*'
   # Allow deploying namespaced resources from specific groups
   namespaceResourceWhitelist:
     - group: '*'
       kind: '*'
-  # Specifically allow the ClusterSecretStore kind from external-secrets.io
-  # This addresses the original sync error for paperless-ngx
-  clusterResourceWhitelist: # Note: This overwrites the previous wildcard, explicitly list needed kinds or keep the wildcard
+  # Resources that can be created at cluster scope
+  clusterResourceWhitelist:
     - group: 'external-secrets.io'
       kind: 'ClusterSecretStore'
-    - group: '*' # Added wildcard back - adjust if needed
-      kind: '*' # Added wildcard back - adjust if needed
+    - group: '*'
+      kind: '*'
   sourceRepos:
     - '*' # Allow deploying from any Git repository, adjust if needed

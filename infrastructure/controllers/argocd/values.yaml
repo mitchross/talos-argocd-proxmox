@@ -1,7 +1,7 @@
 configs:
   cm:
     create: true
-    application.resourceTrackingMethod: "annotation+label"
+    application.resourceTrackingMethod: "annotation"
   cmp:
     create: true
     plugins:
@@ -11,6 +11,7 @@ configs:
           args: ["kustomize build --enable-helm"]
   params:
     server.insecure: true
+    controller.resource.health.persist: "false"
 crds:
   install: true
   # -- Keep CRDs on chart uninstall
