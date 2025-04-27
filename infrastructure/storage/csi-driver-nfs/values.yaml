@@ -1,20 +1,11 @@
-
-driver:
-  name: nfs.csi.k8s.io
-  replicas: 2
-
-storageClasses:
-- name: nfs-csi
-  defaultClass: false
-  parameters:
-    server: 192.168.10.133
-    share: /mnt/generaltank/k8s_ssd/
-  mountOptions:
-    - nfsvers=4.1
-
-csiDriver:
-  name: nfs.csi.k8s.io
-  attachRequired: false
-  fsGroupPolicy: File
-
-kubeletDir: /var/lib/kubelet
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: smb-ssd-storage
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: 192.168.10.133
+  share: /mnt/SSDs/k8s_ssd
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
