@@ -1,6 +1,6 @@
 storageClass:
   create: true
-  name: smb-ssd-storage
+  name: nfs-ssd-storage
   provisioner: nfs.csi.k8s.io
   parameters:
     server: 192.168.10.133
