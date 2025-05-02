@@ -1,7 +1,7 @@
 packer {
   required_plugins {
     proxmox = {
-      version = ">= 1.0.1"
+      version = ">= 1.2.2"
       source  = "github.com/hashicorp/proxmox"
     }
   }
@@ -14,9 +14,11 @@ source "proxmox-iso" "talos" {
   node                     = var.proxmox_node
   insecure_skip_tls_verify = true
 
-  iso_file    = "${var.base_iso_file}"
-  unmount_iso = true
-
+  boot_iso {
+    iso_file     = var.base_iso_file
+    iso_checksum = "none" # Assuming no checksum needed, adjust if necessary
+    unmount     = true
+  }
   scsi_controller = "virtio-scsi-single"
   network_adapters {
     bridge = "vmbr0"
@@ -26,13 +28,13 @@ source "proxmox-iso" "talos" {
     type              = "scsi"
     storage_pool      = var.proxmox_storage
     format            = "raw"
-    disk_size         = "1500M"
+    disk_size         = "4000M"
     io_thread         = true
     cache_mode        = "writethrough"
   }
 
   memory               = 2048
-  vm_id                = "9700"
+  vm_id                = "9701"
   cores                = var.cores
   cpu_type             = var.cpu_type
   sockets              = "1"
@@ -58,8 +60,8 @@ build {
 
   provisioner "shell" {
     inline = [
-      "curl -s -L ${local.image} -o /tmp/talos.raw.xz",
-      "xz -d -c /tmp/talos.raw.xz | dd of=/dev/sda && sync",
+      "curl -s -L ${local.image} -o /tmp/talos.raw.zst",
+      "zstd -d -c /tmp/talos.raw.zst | dd of=/dev/sda && sync",
     ]
   }
 }

@@ -48,3 +48,7 @@ talosconfig*
 # Extras
 config.xml
 *.pid
+1password-credentials.base64
+1password-credentials.json
+tunnel-credentials.json
+iac/terraform/talos-cluster/credentials.auto.tfvars
