@@ -15,5 +15,5 @@ helmCharts:
       defaultSettings:
         defaultDataPath: "/var/mnt/longhorn"
       preUpgradeChecker:
-        enabled: false
+        jobEnabled: false
     includeCRDs: true
