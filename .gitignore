@@ -52,3 +52,4 @@ config.xml
 1password-credentials.json
 tunnel-credentials.json
 iac/terraform/talos-cluster/credentials.auto.tfvars
+/infrastructure/controllers/argocd/charts
