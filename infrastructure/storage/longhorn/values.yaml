@@ -1,2 +1,15 @@
 defaultSettings:
   defaultDataPath: "/var/mnt/longhorn"
+
+# Add these configurations to handle the hook job issue
+upgradeChecker:
+  # Set to false to disable the pre-upgrade job that's hanging
+  enabled: false
+
+# Configure Kubernetes hooks behavior
+hooks:
+  # Disable the pre-upgrade hook that's causing problems
+  preUpgrade:
+    enabled: false
+  # Set a reasonable timeout for any hooks to avoid hanging
+  timeout: 300 # 5 minutes
