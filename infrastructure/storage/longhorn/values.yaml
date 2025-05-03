@@ -1,12 +1,15 @@
-# Basic Longhorn configuration
 defaultSettings:
   defaultDataPath: "/var/mnt/longhorn"
 
-persistence:
-  defaultClass: true
-  defaultFsType: ext4
+# Complete disabling of all pre-upgrade processes
+upgradeChecker:
+  enabled: false
+
+# Prevent hooks from running to avoid the hanging issue
+longhornManager:
+  priorityClass: null
   
-# CSI configuration for stability
+# Set proper CSI configurations
 csi:
   kubeletRootDir: /var/lib/kubelet
   attacherReplicaCount: 1
@@ -14,10 +17,19 @@ csi:
   resizerReplicaCount: 1
   snapshotterReplicaCount: 1
 
-# Disable the upgrade checker to avoid hanging issues
-upgradeChecker:
-  enabled: false
+# Turn off all hooks
+hooks:
+  driver:
+    postInstall:
+      enabled: false
+    postUpgrade:
+      enabled: false
+  manager:
+    postInstall:
+      enabled: false
+    postUpgrade:
+      enabled: false
 
-# Other settings
+# Disable ingress by default
 ingress:
   enabled: false
