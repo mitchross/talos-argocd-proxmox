@@ -1,20 +1,4 @@
 apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: hoarder-meilisearch-pv
-  labels:
-    app: hoarder
-    type: meilisearch-storage
-spec:
-  capacity:
-    storage: 10Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: openebs-hostpath
-
----
-apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: meilisearch-pvc
@@ -29,7 +13,3 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: openebs-hostpath
-  selector:
-    matchLabels:
-      app: hoarder
-      type: meilisearch-storage

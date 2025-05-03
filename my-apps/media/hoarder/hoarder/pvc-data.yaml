@@ -1,19 +1,4 @@
 apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: hoarder-data-pv
-  labels:
-    app: hoarder
-    type: data-storage
-spec:
-  capacity:
-    storage: 10Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: openebs-hostpath
----
-apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: data-pvc
@@ -28,7 +13,3 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: openebs-hostpath
-  selector:
-    matchLabels:
-      app: hoarder
-      type: data-storage
