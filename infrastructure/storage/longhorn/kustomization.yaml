@@ -3,6 +3,12 @@ kind: Kustomization
 namespace: longhorn-system
 resources:
   - namespace.yaml
+
+# Add annotations to control ArgoCD sync behavior
+commonAnnotations:
+  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true,Prune=false,ServerSideApply=true
+  argocd.argoproj.io/hook: Skip
+
 helmCharts:
   - name: longhorn
     repo: https://charts.longhorn.io
@@ -10,23 +16,4 @@ helmCharts:
     releaseName: longhorn
     namespace: longhorn-system
     valuesFile: values.yaml
-    skipTests: true # Skip test hooks
     includeCRDs: true
-    # Set specific annotations to control ArgoCD behavior
-    releaseName: longhorn
-    # Add specific hooks management
-    hooks:
-      enabled: false # Disable all hooks
-
-# Add specialized annotations for ArgoCD to control the sync
-patchesJson6902:
-  - target:
-      kind: Application
-      name: longhorn
-    patch: |
-      - op: add
-        path: /metadata/annotations/argocd.argoproj.io~1hook
-        value: Skip
-      - op: add
-        path: /metadata/annotations/argocd.argoproj.io~1sync-options
-        value: SkipDryRunOnMissingResource=true,ServerSideApply=true,Prune=false

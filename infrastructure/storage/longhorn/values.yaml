@@ -1,15 +1,22 @@
 defaultSettings:
   defaultDataPath: "/var/mnt/longhorn"
 
-# Add these configurations to handle the hook job issue
+# Based on Longhorn ArgoCD documentation
+csi:
+  attacherReplicaCount: 1
+  provisionerReplicaCount: 1
+  resizerReplicaCount: 1
+  snapshotterReplicaCount: 1
+
+# Completely disable the upgrade checker
 upgradeChecker:
-  # Set to false to disable the pre-upgrade job that's hanging
   enabled: false
 
-# Configure Kubernetes hooks behavior
-hooks:
-  # Disable the pre-upgrade hook that's causing problems
-  preUpgrade:
-    enabled: false
-  # Set a reasonable timeout for any hooks to avoid hanging
-  timeout: 300 # 5 minutes
+# Set a short timeout for any hooks to ensure they don't hang indefinitely
+annotations:
+  "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded,hook-failed"
+  "helm.sh/hook-delete-timeout": "5m"
+
+# Set specific Helm lifecycle annotations for ArgoCD handling
+ingress:
+  enabled: false
