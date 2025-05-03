@@ -5,6 +5,7 @@ namespace: gpu-device-plugin
 
 resources:
 - namespace.yaml
+- runtime.yaml
 
 helmCharts:
 - name: nvidia-device-plugin
