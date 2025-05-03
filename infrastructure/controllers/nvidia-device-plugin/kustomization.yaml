@@ -6,6 +6,7 @@ namespace: gpu-device-plugin
 resources:
 - namespace.yaml
 - runtime.yaml
+- nvidia-test-pod.yaml
 
 helmCharts:
 - name: nvidia-device-plugin

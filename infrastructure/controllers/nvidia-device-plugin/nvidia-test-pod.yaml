@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nvidia-test
+  namespace: default
+spec:
+  restartPolicy: Never
+  runtimeClassName: nvidia
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+  - name: nvidia-test
+    image: nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04
+    command: ["nvidia-smi"]
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
+    resources:
+      limits:
+        nvidia.com/gpu: "1"
