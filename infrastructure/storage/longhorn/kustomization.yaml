@@ -4,11 +4,6 @@ namespace: longhorn-system
 resources:
   - namespace.yaml
 
-# Add annotations to control ArgoCD sync behavior
-commonAnnotations:
-  argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true,Prune=false,ServerSideApply=true
-  argocd.argoproj.io/hook: Skip
-
 helmCharts:
   - name: longhorn
     repo: https://charts.longhorn.io
