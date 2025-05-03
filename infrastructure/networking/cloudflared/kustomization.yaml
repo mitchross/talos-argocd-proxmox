@@ -5,9 +5,12 @@ configMapGenerator:
     namespace: cloudflared
     files:
       - config.yaml
+    options:
+      annotations:
+        argocd.argoproj.io/sync-wave: "-2"  # Lower number than the Deployment (-1)
 generatorOptions:
   disableNameSuffixHash: true
 resources:
   - ns.yaml
-  - external-secret.yaml 
+  - external-secret.yaml
   - daemon-set.yaml
