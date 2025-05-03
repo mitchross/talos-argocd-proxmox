@@ -5,3 +5,15 @@ resources:
   - namespace.yaml
 
 
+helmCharts:
+  - name: longhorn
+    repo: https://charts.longhorn.io
+    version: 1.8.1
+    releaseName: longhorn
+    namespace: longhorn-system
+    valuesInline:
+      defaultSettings:
+        defaultDataPath: "/var/mnt/longhorn"
+      preUpgradeChecker:
+        enabled: false
+    includeCRDs: true
