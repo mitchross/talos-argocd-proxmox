@@ -1,35 +1,3 @@
 defaultSettings:
   defaultDataPath: "/var/mnt/longhorn"
 
-# Complete disabling of all pre-upgrade processes
-upgradeChecker:
-  enabled: false
-
-# Prevent hooks from running to avoid the hanging issue
-longhornManager:
-  priorityClass: null
-  
-# Set proper CSI configurations
-csi:
-  kubeletRootDir: /var/lib/kubelet
-  attacherReplicaCount: 1
-  provisionerReplicaCount: 1
-  resizerReplicaCount: 1
-  snapshotterReplicaCount: 1
-
-# Turn off all hooks
-hooks:
-  driver:
-    postInstall:
-      enabled: false
-    postUpgrade:
-      enabled: false
-  manager:
-    postInstall:
-      enabled: false
-    postUpgrade:
-      enabled: false
-
-# Disable ingress by default
-ingress:
-  enabled: false
