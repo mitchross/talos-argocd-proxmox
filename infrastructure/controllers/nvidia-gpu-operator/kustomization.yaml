@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: gpu-operator
+
+resources:
+  - namespace.yaml
+  - time-slicing-config.yaml
+
+
+helmCharts:
+  - name: gpu-operator
+    repo: https://helm.ngc.nvidia.com/nvidia
+    version: v25.3.0
+    releaseName: gpu-operator
+    namespace: gpu-operator
+    includeCRDs: true
+    valuesInline:
+      driver:
+        enabled: false
+      toolkit:
+        enabled: true
+      devicePlugin:
+        enabled: true
+        config:
+          name: time-slicing-config
+          default: config.yaml
+      migManager:
+        enabled: false
+      gfd:
+        enabled: true
+      validator:
+        driver:
+          env:
+            - name: DISABLE_DEV_CHAR_SYMLINK_CREATION
+              value: "true"
