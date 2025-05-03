@@ -11,9 +11,5 @@ helmCharts:
     version: 1.8.1
     releaseName: longhorn
     namespace: longhorn-system
-    valuesInline:
-      defaultSettings:
-        defaultDataPath: "/var/mnt/longhorn"
-      preUpgradeChecker:
-        jobEnabled: false
+    valuesFile: values.yaml
     includeCRDs: true
