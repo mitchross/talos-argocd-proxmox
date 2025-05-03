@@ -1,22 +1,23 @@
+# Basic Longhorn configuration
 defaultSettings:
   defaultDataPath: "/var/mnt/longhorn"
 
-# Based on Longhorn ArgoCD documentation
+persistence:
+  defaultClass: true
+  defaultFsType: ext4
+  
+# CSI configuration for stability
 csi:
+  kubeletRootDir: /var/lib/kubelet
   attacherReplicaCount: 1
   provisionerReplicaCount: 1
   resizerReplicaCount: 1
   snapshotterReplicaCount: 1
 
-# Completely disable the upgrade checker
+# Disable the upgrade checker to avoid hanging issues
 upgradeChecker:
   enabled: false
 
-# Set a short timeout for any hooks to ensure they don't hang indefinitely
-annotations:
-  "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded,hook-failed"
-  "helm.sh/hook-delete-timeout": "5m"
-
-# Set specific Helm lifecycle annotations for ArgoCD handling
+# Other settings
 ingress:
   enabled: false
