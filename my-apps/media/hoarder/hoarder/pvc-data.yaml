@@ -11,17 +11,7 @@ spec:
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-storage
-  local:
-    path: /datapool/kubernetes/hoarder-data
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - vanillax-ai
+  storageClassName: openebs-hostpath
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -37,7 +27,7 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: local-storage
+  storageClassName: openebs-hostpath
   selector:
     matchLabels:
       app: hoarder
