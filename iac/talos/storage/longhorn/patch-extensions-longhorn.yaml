@@ -1,0 +1,8 @@
+# iac/talos/storage/longhorn/patch-extensions-longhorn.yaml
+machine:
+  files: # Using files for potential cross-version compatibility
+    - content: |
+        siderolabs/iscsi-tools
+        siderolabs/util-linux-tools
+      path: /var/lib/extensions/enabled_extensions
+      permissions: 0600
