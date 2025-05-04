@@ -1,10 +1,9 @@
 defaultSettings:
   defaultDataPath: "/var/mnt/longhorn"
-
 preUpgradeChecker:
   jobEnabled: false
-
 persistence:
   defaultClass: true
+  defaultClassReplicaCount: 3
   defaultFsType: ext4
   reclaimPolicy: Retain
