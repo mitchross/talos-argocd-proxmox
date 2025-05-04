@@ -1,25 +1,13 @@
-
 # macOS / Windows specific
 .DS_Store
 Thumbs.db
+*.ds_store # Consolidate
 
 # Python Virtual Environment
 tools/venv/
-*.ds_store
-apps/home/.DS_Store
-apps/home/.DS_Store
-apps/home/.DS_Store
-/infrastructure/controllers/argocd/charts
-1password-credentials.json
-1password-credentials.base64
-tunnel-credentials.json
 
-*.lock
-/omni/apps/kube-system/cilium/charts
-/iac/talos/clusterconfig
-
-# Binaries
-bin
+# Binaries / Tools
+bin/
 /flux
 *.iso
 
@@ -29,39 +17,71 @@ bin
 .logs/
 .task/
 
+# --- IaC Specific Ignores --- 
+
 # Terraform
-.terraform*
-terraform.tfstate*
+*.tfvars # WARNING: Can ignore non-secret vars files too!
 *.tfstate
+*.tfstate.*
+.terraform*
 .tfplan
-crash.log
 crash.*.log
 override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+# Note: terraform.lock.hcl is usually committed, currently ignored by *.lock
+# Explicit credential vars file:
+iac/terraform/talos-cluster/credentials.auto.tfvars
 
-# Credentials / Secrets
-credentails.*
+# Packer
+packer_cache/
+*.pkrvars.hcl
+
+# Talos
+/iac/talos/clusterconfig/ # Generated node configs
+talosconfig*
+talsecrets.yaml # Ignore unencrypted secrets file if present
+
+# SOPS / Secrets Management
+*.agekey
+.sops.keys # Folder
+*.sops.keys # Files
+.secrets*
+*.secret
+secrets?.yaml
+credentials?.yaml
+*_secret.yaml
+secret_*.yaml
+*.decrypted.*
+.decrypted~*
+
+# General Credentials & Keys
+1password-credentials.*
+tunnel-credentials.json
+credentials.* # Fixed typo
+*.key
+*.pem
+*.crt
+*.cer
+id_rsa*
+id_ed25519*
+# *.pub # Usually okay to commit public keys
+*.env # WARNING: Can ignore non-secret .env files too!
 infra/controllers/external-secrets/external-secrets-token.env
 
-# Sops
-.secrets*
-.decrypted~*
-*.agekey
-sops-key*
-# Kubernetes
-kubeconfig*
-kubernetes/ # Assuming this is generated output
-talosconfig*
-*.pub
-*.key
+# K8s / Infra Specific
+/infrastructure/controllers/argocd/charts # Downloaded charts
+/omni/apps/kube-system/cilium/charts # Downloaded charts (if still relevant)
 
-# Extras
+# Kubernetes Configs
+kubeconfig*
+# kubernetes/ # Might be too broad?
+
+# Lock Files (Potentially broad)
+*.lock
+
+# Misc
 config.xml
 *.pid
-1password-credentials.base64
-1password-credentials.json
-tunnel-credentials.json
-iac/terraform/talos-cluster/credentials.auto.tfvars
 /infrastructure/controllers/argocd/charts
