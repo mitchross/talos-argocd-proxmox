@@ -7,7 +7,7 @@ metadata:
     app: jellyfin
     type: config
 spec:
-  storageClassName: local-storage
+  storageClassName: openebs-mayastor-replicated
   accessModes:
     - ReadWriteOnce
   resources:
@@ -17,28 +17,3 @@ spec:
     matchLabels:
       app: jellyfin
       type: config
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: jellyfin-config-pvc-pv
-  labels:
-    app: jellyfin
-    type: config
-spec:
-  capacity:
-    storage: 1Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-storage
-  local:
-    path: /datapool/kubernetes/jellyfin/config
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - vanillax-ai

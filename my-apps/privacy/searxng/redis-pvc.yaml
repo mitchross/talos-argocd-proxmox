@@ -12,10 +12,4 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: local-storage
-  volumeName: searxng-redis-data-pv
-  selector:
-    matchLabels:
-      app: searxng
-      component: redis
-      purpose: redis-data
+  storageClassName: openebs-mayastor-replicated

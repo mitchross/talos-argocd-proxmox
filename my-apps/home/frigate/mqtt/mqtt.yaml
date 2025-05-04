@@ -1,4 +1,3 @@
----
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,33 +10,6 @@ data:
     log_dest file /mosquitto/log/mosquitto.log
     allow_anonymous false
     password_file /mosquitto/config/mosquitto.passwd
-
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: mosquitto-storage-pvc-pv
-  labels:
-    app: mosquitto
-    type: storage
-spec:
-  capacity:
-    storage: 2Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-storage
-  local:
-    path: /datapool/kubernetes/frigate/mqtt
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - vanillax-ai
-
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -52,13 +24,12 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 2Gi
-  storageClassName: local-storage
+      storage: 1Gi
+  storageClassName: openebs-mayastor-replicated
   selector:
     matchLabels:
       app: mosquitto
       type: storage
-
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -80,23 +51,23 @@ spec:
         runAsUser: 1883
         runAsGroup: 1883
       initContainers:
-      - name: init-passwd
-        image: eclipse-mosquitto:2.0
-        command: ['sh', '-c', "mosquitto_passwd -b -c /mosquitto/config/mosquitto.passwd $MQTT_USERNAME $MQTT_PASSWORD"]
-        env:
-        - name: MQTT_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: mqtt-secret
-              key: mqtt-username
-        - name: MQTT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mqtt-secret
-              key: mqtt-password
-        volumeMounts:
-        - name: config
-          mountPath: /mosquitto/config
+        - name: init-passwd
+          image: eclipse-mosquitto:2.0
+          command: ['sh', '-c', "mosquitto_passwd -b -c /mosquitto/config/mosquitto.passwd $MQTT_USERNAME $MQTT_PASSWORD"]
+          env:
+            - name: MQTT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mqtt-secret
+                  key: mqtt-username
+            - name: MQTT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mqtt-secret
+                  key: mqtt-password
+          volumeMounts:
+            - name: config
+              mountPath: /mosquitto/config
       containers:
         - name: mosquitto
           image: eclipse-mosquitto:2.0
@@ -121,7 +92,6 @@ spec:
         - name: mosquitto-config
           configMap:
             name: mosquitto-configmap
-
 ---
 apiVersion: v1
 kind: Service
@@ -134,7 +104,6 @@ spec:
   ports:
     - port: 1883
       targetPort: 1883
-
 ---
 apiVersion: v1
 kind: Secret

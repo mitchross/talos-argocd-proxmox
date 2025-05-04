@@ -6,7 +6,7 @@ commonLabels:
   app.kubernetes.io/managed-by: argocd
 resources:
   - namespace.yaml
-  - pv.yaml
+  # - pv.yaml # Removed
   - pvc.yaml
   - configmap.yaml
   - deployment.yaml

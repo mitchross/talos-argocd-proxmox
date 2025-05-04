@@ -6,12 +6,9 @@ commonLabels:
   app.kubernetes.io/managed-by: argocd
 resources:
   - namespace.yaml
-  - pvc/immich-data-pv.yaml
-  - pvc/immich-data-pvc.yaml
-  - pvc/library-pv.yaml
-  - pvc/library-pvc.yaml
-  - pvc/ml-cache-pv.yaml
-  - pvc/ml-cache-pvc.yaml
   - configmap.yaml
   - externalsecret.yaml
   - httproute.yaml
+  - pvc/immich-data-pvc.yaml
+  - pvc/library-pvc.yaml
+  - pvc/ml-cache-pvc.yaml

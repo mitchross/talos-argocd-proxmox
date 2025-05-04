@@ -12,10 +12,6 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: local-storage
-  volumeName: immich-ml-cache-pv
-  selector:
-    matchLabels:
-      app: immich
-      component: machine-learning
-      purpose: cache 
+  storageClassName: openebs-mayastor-replicated
+  # volumeName: Removed
+  # selector: Removed

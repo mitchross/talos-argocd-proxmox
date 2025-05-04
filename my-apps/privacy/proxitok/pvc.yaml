@@ -11,34 +11,11 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 10Gi
-  storageClassName: local-storage
+      storage: 1Gi
+  storageClassName: openebs-mayastor-replicated
   selector:
     matchLabels:
       app: proxitok
       type: cache
 ---
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: proxitok-cache-volume
-  labels:
-    app: proxitok
-    type: cache
-spec:
-  capacity:
-    storage: 10Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-storage
-  local:
-    path: /datapool/kubernetes/proxitok/cache
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - vanillax-ai
+

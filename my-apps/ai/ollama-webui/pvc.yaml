@@ -1,44 +1,26 @@
+# PV definition removed
 apiVersion: v1
-kind: PersistentVolume
+kind: PersistentVolumeClaim
 metadata:
-  name: ollama-webui-storage-pv
-  labels:
-    app: ollama-webui
-    type: storage
+  name: ollama-webui-models
+  namespace: ai
 spec:
-  capacity:
-    storage: 5Gi
   accessModes:
     - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-storage
-  local:
-    path: /datapool/kubernetes/ollama-webui
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - vanillax-ai
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: openebs-mayastor-replicated
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ollama-webui-storage-pvc
-  namespace: ollama-webui
-  labels:
-    app: ollama-webui
-    type: storage
+  name: ollama-webui-data
+  namespace: ai
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
-  storageClassName: local-storage
-  selector:
-    matchLabels:
-      app: ollama-webui
-      type: storage
+  storageClassName: openebs-mayastor-replicated

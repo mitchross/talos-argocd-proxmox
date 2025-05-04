@@ -3,7 +3,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: nginx-storage
 spec:
-  storageClassName: local-storage
+  storageClassName: openebs-mayastor-replicated
   accessModes:
     - ReadWriteOnce
   resources:

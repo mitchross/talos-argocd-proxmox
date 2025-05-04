@@ -1,28 +1,4 @@
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: ollama-storage-pv
-  labels:
-    app: ollama
-    type: storage
-spec:
-  capacity:
-    storage: 250Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-storage
-  local:
-    path: /datapool/kubernetes/ollama-models
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - vanillax-ai
----
+# PV definition removed
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -36,8 +12,8 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 250Gi
-  storageClassName: local-storage
+      storage: 10Gi
+  storageClassName: openebs-mayastor-replicated
   selector:
     matchLabels:
       app: ollama

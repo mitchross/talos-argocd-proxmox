@@ -12,10 +12,4 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: local-storage
-  volumeName: redis-master-data-pv
-  selector:
-    matchLabels:
-      app: redis
-      component: master
-      purpose: redis-data
+  storageClassName: openebs-mayastor-replicated

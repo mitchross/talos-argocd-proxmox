@@ -12,34 +12,10 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: local-storage
+  storageClassName: openebs-mayastor-replicated
   selector:
     matchLabels:
       app: reubah
       type: doc-temp
-
 ---
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: reubah-doc-temp-pvc-pv
-  labels:
-    app: reubah
-    type: doc-temp
-spec:
-  capacity:
-    storage: 10Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-storage
-  local:
-    path: /datapool/kubernetes/reubah/doc-temp
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - vanillax-ai
+

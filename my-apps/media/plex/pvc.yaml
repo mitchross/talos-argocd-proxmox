@@ -1,28 +1,4 @@
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: plex-config-pvc-pv
-  labels:
-    app: plex
-    type: config
-spec:
-  capacity:
-    storage: 12Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-storage
-  local:
-    path: /datapool/kubernetes/plex/config
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - vanillax-ai
----
+# PV definition removed
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -32,7 +8,7 @@ metadata:
     app: plex
     type: config
 spec:
-  storageClassName: local-storage
+  storageClassName: openebs-mayastor-replicated
   accessModes:
     - ReadWriteOnce
   resources:
@@ -62,11 +38,11 @@ spec:
   nodeAffinity:
     required:
       nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - vanillax-ai
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - vanillax-ai
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -77,7 +53,7 @@ metadata:
     app: plex
     type: transcode
 spec:
-  storageClassName: local-storage
+  storageClassName: openebs-mayastor-replicated
   accessModes:
     - ReadWriteOnce
   resources:

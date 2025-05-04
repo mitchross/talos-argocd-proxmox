@@ -2,14 +2,13 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - namespace.yaml
-  - configmap.yaml
   - deployment.yaml
   - service.yaml
-  - httproute.yaml
-  - secret.yaml
-  - redis.yaml
-  - redis-pv.yaml
+  - ingress.yaml
   - redis-pvc.yaml
+  - redis-deployment.yaml
+  - redis-service.yaml
+  - configmap.yaml
 configMapGenerator:
   - name: searxng-config-settings
     files:

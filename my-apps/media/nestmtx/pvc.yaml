@@ -1,28 +1,4 @@
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: nestmtx-storage-pv
-  labels:
-    app: nestmtx
-    type: storage
-spec:
-  capacity:
-    storage: 10Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-storage
-  local:
-    path: /datapool/kubernetes/nestmtx
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - vanillax-ai
----
+# PV definition removed
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -37,7 +13,7 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: local-storage
+  storageClassName: openebs-mayastor-replicated
   selector:
     matchLabels:
       app: nestmtx

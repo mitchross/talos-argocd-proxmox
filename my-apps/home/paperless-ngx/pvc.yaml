@@ -12,11 +12,7 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: local-storage
-  selector:
-    matchLabels:
-      app: paperless-ngx
-      type: data
+  storageClassName: openebs-mayastor-replicated
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -32,11 +28,7 @@ spec:
   resources:
     requests:
       storage: 20Gi
-  storageClassName: local-storage
-  selector:
-    matchLabels:
-      app: paperless-ngx
-      type: media
+  storageClassName: openebs-mayastor-replicated
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -52,11 +44,7 @@ spec:
   resources:
     requests:
       storage: 5Gi
-  storageClassName: local-storage
-  selector:
-    matchLabels:
-      app: paperless-ngx
-      type: export
+  storageClassName: openebs-mayastor-replicated
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -72,8 +60,4 @@ spec:
   resources:
     requests:
       storage: 5Gi
-  storageClassName: local-storage
-  selector:
-    matchLabels:
-      app: paperless-ngx
-      type: consume 
+  storageClassName: openebs-mayastor-replicated
