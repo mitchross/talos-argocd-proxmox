@@ -1,0 +1,16 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: openebs-mayastor-replicated
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: io.openebs.csi-mayastor
+parameters:
+  # Number of replicas for Mayastor volumes (3 is recommended for production)
+  repl: "3"
+  # Protocol to use: nvmf or iscsi
+  protocol: "nvmf"
+  # IO timeout for volumes in seconds
+  ioTimeout: "30"
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
