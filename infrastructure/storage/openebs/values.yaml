@@ -13,25 +13,25 @@ jiva:
 zfs-localpv:
   enabled: false
 
-# Disable v4.x components
+# Configure v4.x components
 engines:
   replicated:
     mayastor:
-      enabled: false  # Disable Mayastor
+      enabled: true  # Enable Mayastor for replicated storage (recommended by Talos docs)
   local:
     hostpath:
-      enabled: true   # Keep ONLY Hostpath
+      enabled: true  # Keep ONLY Hostpath
     lvm:
       enabled: false  # Disable LVM
     zfs:
       enabled: false  # Disable ZFS
 
-# Disable mayastor CSI node init containers
+# Configure mayastor CSI node containers
 mayastor:
   csi:
     node:
       initContainers:
-        enabled: false
+        enabled: true  # Enable init containers for Mayastor
 
 # Disable monitoring stack
 observability:
