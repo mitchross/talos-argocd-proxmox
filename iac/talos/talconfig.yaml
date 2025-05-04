@@ -1,10 +1,8 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/budimanjojo/talhelper/master/pkg/config/schemas/talconfig.json
----
 # renovate: datasource=docker depName=ghcr.io/siderolabs/installer
 talosVersion: v1.10.0
 # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
 kubernetesVersion: v1.33.0
-
 clusterName: proxmox-talos-cluster
 endpoint: https://192.168.10.199:6443
 clusterPodNets:
@@ -87,7 +85,6 @@ nodes:
             rules:
               - SUBSYSTEM=="drm", KERNEL=="renderD*", GROUP="44", MODE="0660"
               - SUBSYSTEM=="drm", KERNEL=="card*", GROUP="44", MODE="0660"
-
   - hostname: talos-worker-01
     controlPlane: false
     ipAddress: 192.168.10.201
@@ -116,9 +113,7 @@ nodes:
         routes:
           - network: 0.0.0.0/0
             gateway: 192.168.10.1
-
 patches:
-
   # Force nameserver
   - |-
     machine:
@@ -126,14 +121,21 @@ patches:
         nameservers:
           - 1.1.1.1
           - 1.0.0.1
-
   # Configure NTP
   - |-
     machine:
       time:
         disabled: false
         servers: ["time.cloudflare.com"]
-
+  # Add Longhorn system extensions (iscsi-tools, util-linux)
+  - |-
+    machine:
+      files:
+        - content: |
+            siderolabs/iscsi-tools
+            siderolabs/util-linux-tools
+          path: /var/lib/extensions/enabled_extensions
+          permissions: 0600
 controlPlane:
   patches:
     # Cluster configuration
@@ -169,3 +171,10 @@ worker:
             - device: /dev/sdb
               partitions:
                 - mountpoint: /var/mnt/longhorn
+    # Add OpenEBS patches (HugePages, NodeLabels)
+    - |-
+      machine:
+        sysctls:
+          vm.nr_hugepages: "1024"
+        nodeLabels:
+          openebs.io/engine: mayastor
