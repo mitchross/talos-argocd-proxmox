@@ -1,49 +1,55 @@
-# values.yaml - Minimal config for RPi
-# Disable ALL components except LocalPV Hostpath
+# values.yaml - Simplified config for Mayastor based on Talos v1.10 guide and OpenEBS Helm defaults
 
-# Disable legacy components
-ndm:
-  enabled: false
-ndmOperator:
-  enabled: false
-cstor:
-  enabled: false
-jiva:
-  enabled: false
-zfs-localpv:
-  enabled: false
-
-# Configure v4.x components
+# --- Mayastor Configuration ---
 engines:
   replicated:
     mayastor:
-      enabled: true  # Enable Mayastor for replicated storage (recommended by Talos docs)
-  local:
-    hostpath:
-      enabled: true  # Keep ONLY Hostpath
-    lvm:
-      enabled: false  # Disable LVM
-    zfs:
-      enabled: false  # Disable ZFS
-
-# Configure mayastor CSI node containers
+      enabled: true # Explicitly enable Mayastor replicated engine
 mayastor:
   csi:
     node:
+      # Disable Mayastor CSI node init container (Talos has nvme_tcp built-in)
       initContainers:
-        enabled: true  # Enable init containers for Mayastor
-
-# Disable monitoring stack
-observability:
-  enabled: false  # Disable Loki/Promtail
-
-# Disable etcd and NATS
-etcd:
-  enabled: false
-nats:
-  enabled: false
-
-# LocalPV Hostpath config
+        enabled: false
+  # Attempt to disable default Mayastor Storage Classes
+  etcdLocalPv:
+    enabled: false # Disable mayastor-etcd-localpv SC
+  lokiLocalPv:
+    enabled: false # Disable mayastor-loki-localpv SC
+  singleReplicaSc:
+    enabled: false # Disable openebs-single-replica SC (if this flag exists)
+# --- Disable Local Engines ---
+engines:
+  local:
+    hostpath:
+      enabled: false # Explicitly disable hostpath engine
+    lvm:
+      enabled: false # Disable LVM engine
+    zfs:
+      enabled: false # Disable ZFS engine
+# Disable the Local PV provisioner (handles openebs-hostpath SC)
 localprovisioner:
-  enabled: true
-  basePath: /var/openebs/local
+  enabled: false
+
+# --- Disable Other Components (Optional but keeps install minimal) ---
+# Disable legacy components if they are still included by default (unlikely in v4.x)
+# ndm:
+#   enabled: false
+# ndmOperator:
+#   enabled: false
+# cstor:
+#   enabled: false
+# jiva:
+#   enabled: false
+
+# Disable monitoring stack if not needed
+# observability:
+#   enabled: false
+
+# Disable NATS if not needed (Mayastor might require it, check dependencies if errors occur)
+# nats:
+#   enabled: false
+
+# Disable etcd if not needed (Mayastor *does* require etcd by default, keep enabled unless using external etcd)
+# etcd:
+#  enabled: false
