@@ -30,7 +30,6 @@ engines:
 # Disable the Local PV provisioner (handles openebs-hostpath SC)
 localprovisioner:
   enabled: false
-
 # --- Disable Other Components (Optional but keeps install minimal) ---
 # Disable legacy components if they are still included by default (unlikely in v4.x)
 # ndm:
@@ -53,3 +52,14 @@ localprovisioner:
 # Disable etcd if not needed (Mayastor *does* require etcd by default, keep enabled unless using external etcd)
 # etcd:
 #  enabled: false
+
+# --- Explicitly Disable PriorityClass ---
+agentCore:
+  priorityClassName: ""
+apiServer:
+  priorityClassName: ""
+csiController:
+  priorityClassName: ""
+diskpoolOperator:
+  priorityClassName: ""
+# Add others here if errors persist for different components
