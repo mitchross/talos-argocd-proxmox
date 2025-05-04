@@ -16,7 +16,7 @@ zfs-localpv:
 # Disable v4.x components
 engines:
   replicated:
-    mayastor: 
+    mayastor:
       enabled: false  # Disable Mayastor
   local:
     hostpath:
@@ -25,6 +25,13 @@ engines:
       enabled: false  # Disable LVM
     zfs:
       enabled: false  # Disable ZFS
+
+# Disable mayastor CSI node init containers
+mayastor:
+  csi:
+    node:
+      initContainers:
+        enabled: false
 
 # Disable monitoring stack
 observability:
