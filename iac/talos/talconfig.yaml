@@ -178,3 +178,16 @@ worker:
           vm.nr_hugepages: "1024"
         nodeLabels:
           openebs.io/engine: mayastor
+    # Add NVIDIA patches (Kernel Modules, Sysctl)
+    # Assumes nonfree-kmod-nvidia and nvidia-container-toolkit extensions
+    # are already installed via boot assets or image upgrade.
+    - |-
+      machine:
+        kernel:
+          modules:
+            - name: nvidia
+            - name: nvidia_uvm
+            - name: nvidia_drm
+            - name: nvidia_modeset
+        sysctls:
+          net.core.bpf_jit_harden: 1

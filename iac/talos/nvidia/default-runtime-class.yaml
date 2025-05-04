@@ -1,0 +1,10 @@
+- op: add
+  path: /machine/files
+  value:
+    - content: |
+        [plugins]
+          [plugins."io.containerd.cri.v1.runtime"]
+            [plugins."io.containerd.cri.v1.runtime".containerd]
+              default_runtime_name = "nvidia"
+      path: /etc/cri/conf.d/20-customization.part
+      op: create
