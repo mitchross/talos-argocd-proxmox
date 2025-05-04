@@ -50,9 +50,13 @@ localprovisioner:
 #   enabled: false
 
 # Disable etcd if not needed (Mayastor *does* require etcd by default, keep enabled unless using external etcd)
-# etcd:
-#  enabled: false
-
+etcd:
+  # enabled: true # Keep etcd enabled
+  persistence:
+    storageClass: openebs-mayastor-replicated # Explicitly use Mayastor for etcd
+loki:
+  persistence:
+    storageClass: openebs-mayastor-replicated # Explicitly use Mayastor for loki
 # --- Explicitly Disable PriorityClass ---
 agentCore:
   priorityClassName: ""
