@@ -1,5 +1,9 @@
 
-infra/controllers/external-secrets/external-secrets-token.env
+# macOS / Windows specific
+.DS_Store
+Thumbs.db
+
+# Python Virtual Environment
 tools/venv/
 *.ds_store
 apps/home/.DS_Store
@@ -13,3 +17,51 @@ tunnel-credentials.json
 *.lock
 /omni/apps/kube-system/cilium/charts
 /iac/talos/clusterconfig
+
+# Binaries
+bin
+/flux
+*.iso
+
+# Temp folders
+.temp*
+.private/
+.logs/
+.task/
+
+# Terraform
+.terraform*
+terraform.tfstate*
+*.tfstate
+.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Credentials / Secrets
+credentails.*
+infra/controllers/external-secrets/external-secrets-token.env
+
+# Sops
+.secrets*
+.decrypted~*
+*.agekey
+sops-key*
+# Kubernetes
+kubeconfig*
+kubernetes/ # Assuming this is generated output
+talosconfig*
+*.pub
+*.key
+
+# Extras
+config.xml
+*.pid
+1password-credentials.base64
+1password-credentials.json
+tunnel-credentials.json
+iac/terraform/talos-cluster/credentials.auto.tfvars
+/infrastructure/controllers/argocd/charts

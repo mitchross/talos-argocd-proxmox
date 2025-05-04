@@ -1,0 +1,171 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/budimanjojo/talhelper/master/pkg/config/schemas/talconfig.json
+---
+# renovate: datasource=docker depName=ghcr.io/siderolabs/installer
+talosVersion: v1.10.0
+# renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
+kubernetesVersion: v1.33.0
+
+clusterName: proxmox-talos-cluster
+endpoint: https://192.168.10.199:6443
+clusterPodNets:
+  - 10.14.0.0/16
+clusterSvcNets:
+  - 10.15.0.0/16
+additionalApiServerCertSans:
+  - 192.168.10.199
+  - 127.0.0.1
+additionalMachineCertSans:
+  - 192.168.10.199
+  - 127.0.0.1
+nodes:
+  - hostname: talos-master-00
+    controlPlane: true
+    ipAddress: 192.168.10.100
+    installDisk: /dev/sda
+    talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: "6e:bb:2d:f8:3f:e4"
+        dhcp: false
+        addresses:
+          - 192.168.10.100/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.10.1
+        vip:
+          ip: 192.168.10.199
+  - hostname: talos-master-01
+    controlPlane: true
+    ipAddress: 192.168.10.101
+    installDisk: /dev/sda
+    talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: "56:49:d4:90:35:f2"
+        dhcp: false
+        addresses:
+          - 192.168.10.101/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.10.1
+        vip:
+          ip: 192.168.10.199
+  - hostname: talos-master-02
+    controlPlane: true
+    ipAddress: 192.168.10.102
+    installDisk: /dev/sda
+    talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: "82:41:13:78:51:42"
+        dhcp: false
+        addresses:
+          - 192.168.10.102/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.10.1
+        vip:
+          ip: 192.168.10.199
+  - hostname: talos-worker-00
+    controlPlane: false
+    ipAddress: 192.168.10.200
+    installDisk: /dev/sda
+    talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: "e6:18:b9:fc:00:66"
+        dhcp: false
+        addresses:
+          - 192.168.10.200/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.10.1
+    patches:
+      - |-
+        machine:
+          udev:
+            rules:
+              - SUBSYSTEM=="drm", KERNEL=="renderD*", GROUP="44", MODE="0660"
+              - SUBSYSTEM=="drm", KERNEL=="card*", GROUP="44", MODE="0660"
+
+  - hostname: talos-worker-01
+    controlPlane: false
+    ipAddress: 192.168.10.201
+    installDisk: /dev/sda
+    talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: "6a:d3:9b:66:cb:38"
+        dhcp: false
+        addresses:
+          - 192.168.10.201/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.10.1
+  - hostname: talos-worker-02
+    controlPlane: false
+    ipAddress: 192.168.10.203 # Corrected IP from .202
+    installDisk: /dev/sda
+    talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
+    networkInterfaces:
+      - deviceSelector:
+          hardwareAddr: "4a:4b:54:2a:21:7e"
+        dhcp: false
+        addresses:
+          - 192.168.10.203/24 # Use corrected IP
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.10.1
+
+patches:
+
+  # Force nameserver
+  - |-
+    machine:
+      network:
+        nameservers:
+          - 1.1.1.1
+          - 1.0.0.1
+
+  # Configure NTP
+  - |-
+    machine:
+      time:
+        disabled: false
+        servers: ["time.cloudflare.com"]
+
+controlPlane:
+  patches:
+    # Cluster configuration
+    - |-
+      cluster:
+        # allowSchedulingOnControlPlanes: true
+        controllerManager:
+          extraArgs:
+            bind-address: 0.0.0.0
+        proxy:
+          disabled: true
+        network:
+          cni:
+            name: none
+        scheduler:
+          extraArgs:
+            bind-address: 0.0.0.0
+worker:
+  patches:
+    # Machine configuration
+    - |-
+      machine:
+        kubelet:
+          extraMounts:
+            - destination: /var/mnt/longhorn
+              type: bind
+              source: /var/mnt/longhorn
+              options:
+                - bind
+                - rshared
+                - rw
+        disks:
+            - device: /dev/sdb
+              partitions:
+                - mountpoint: /var/mnt/longhorn
