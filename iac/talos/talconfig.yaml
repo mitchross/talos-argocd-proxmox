@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/budimanjojo/talhelper/master/pkg/config/schemas/talconfig.json
 # renovate: datasource=docker depName=ghcr.io/siderolabs/installer
-talosVersion: v1.10.0
+talosVersion: v1.10.1
 # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
 kubernetesVersion: v1.33.0
 clusterName: proxmox-talos-cluster
@@ -16,14 +16,14 @@ additionalMachineCertSans:
   - 192.168.10.199
   - 127.0.0.1
 nodes:
-  - hostname: talos-master-00
+  - hostname: talos-cluster-control-00
     controlPlane: true
     ipAddress: 192.168.10.100
     installDisk: /dev/sda
-    talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
+    talosImageURL: factory.talos.dev/nocloud-installer/8bb934255e55fb23f861b102771e52ef616fb577a5d512870910df6abe0c573e:v1.10.1
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: "6e:bb:2d:f8:3f:e4"
+          hardwareAddr: "BC:24:11:C4:D7:F6"
         dhcp: false
         addresses:
           - 192.168.10.100/24
@@ -32,14 +32,14 @@ nodes:
             gateway: 192.168.10.1
         vip:
           ip: 192.168.10.199
-  - hostname: talos-master-01
+  - hostname: talos-cluster-control-01
     controlPlane: true
     ipAddress: 192.168.10.101
     installDisk: /dev/sda
-    talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
+    talosImageURL: factory.talos.dev/nocloud-installer/8bb934255e55fb23f861b102771e52ef616fb577a5d512870910df6abe0c573e:v1.10.1
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: "56:49:d4:90:35:f2"
+          hardwareAddr: "BC:24:11:83:35:A4"
         dhcp: false
         addresses:
           - 192.168.10.101/24
@@ -48,14 +48,14 @@ nodes:
             gateway: 192.168.10.1
         vip:
           ip: 192.168.10.199
-  - hostname: talos-master-02
+  - hostname: talos-cluster-control-02
     controlPlane: true
     ipAddress: 192.168.10.102
     installDisk: /dev/sda
-    talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
+    talosImageURL: factory.talos.dev/nocloud-installer/8bb934255e55fb23f861b102771e52ef616fb577a5d512870910df6abe0c573e:v1.10.1
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: "82:41:13:78:51:42"
+          hardwareAddr: "BC:24:11:C8:69:8F"
         dhcp: false
         addresses:
           - 192.168.10.102/24
@@ -64,20 +64,23 @@ nodes:
             gateway: 192.168.10.1
         vip:
           ip: 192.168.10.199
-  - hostname: talos-worker-00
+  - hostname: talos-cluster-gpu-worker-00
     controlPlane: false
     ipAddress: 192.168.10.200
     installDisk: /dev/sda
-    talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
+    talosImageURL: factory.talos.dev/nocloud-installer/8bb934255e55fb23f861b102771e52ef616fb577a5d512870910df6abe0c573e:v1.10.1
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: "e6:18:b9:fc:00:66"
+          hardwareAddr: "BC:24:11:6E:A6:4C"
         dhcp: false
         addresses:
           - 192.168.10.200/24
         routes:
           - network: 0.0.0.0/0
             gateway: 192.168.10.1
+    # Use the GPU worker-specific configuration
+    nodeLabels:
+      node-type: gpu-worker
     patches:
       - |-
         machine:
@@ -85,34 +88,46 @@ nodes:
             rules:
               - SUBSYSTEM=="drm", KERNEL=="renderD*", GROUP="44", MODE="0660"
               - SUBSYSTEM=="drm", KERNEL=="card*", GROUP="44", MODE="0660"
-  - hostname: talos-worker-01
+          kernel:
+            modules:
+              - name: nvidia
+              - name: nvidia_uvm
+              - name: nvidia_drm
+              - name: nvidia_modeset
+          sysctls:
+            net.core.bpf_jit_harden: 1
+  - hostname: talos-cluster-worker-01
     controlPlane: false
     ipAddress: 192.168.10.201
     installDisk: /dev/sda
-    talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
+    talosImageURL: factory.talos.dev/nocloud-installer/8bb934255e55fb23f861b102771e52ef616fb577a5d512870910df6abe0c573e:v1.10.1
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: "6a:d3:9b:66:cb:38"
+          hardwareAddr: "BC:24:11:11:6B:0F"
         dhcp: false
         addresses:
           - 192.168.10.201/24
         routes:
           - network: 0.0.0.0/0
             gateway: 192.168.10.1
-  - hostname: talos-worker-02
+    nodeLabels:
+      node-type: worker
+  - hostname: talos-cluster-worker-02
     controlPlane: false
     ipAddress: 192.168.10.203 # Corrected IP from .202
     installDisk: /dev/sda
-    talosImageURL: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515
+    talosImageURL: factory.talos.dev/nocloud-installer/8bb934255e55fb23f861b102771e52ef616fb577a5d512870910df6abe0c573e:v1.10.1
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: "4a:4b:54:2a:21:7e"
+          hardwareAddr: "BC:24:11:5E:5C:1D"
         dhcp: false
         addresses:
           - 192.168.10.203/24 # Use corrected IP
         routes:
           - network: 0.0.0.0/0
             gateway: 192.168.10.1
+    nodeLabels:
+      node-type: worker
 patches:
   # Force nameserver
   - |-
@@ -136,6 +151,15 @@ patches:
             siderolabs/util-linux-tools
           path: /var/lib/extensions/enabled_extensions
           permissions: 0600
+  # Configure Longhorn storage volume
+  - |-
+    apiVersion: v1alpha1
+    kind: UserVolumeConfig
+    name: longhorn
+    provisioning:
+      diskSelector:
+        match: disk.dev_path == '/dev/sdb'
+      minSize: 10GB
 controlPlane:
   patches:
     # Cluster configuration
@@ -155,39 +179,15 @@ controlPlane:
             bind-address: 0.0.0.0
 worker:
   patches:
-    # Machine configuration
+    # Longhorn configuration for all worker nodes
     - |-
       machine:
         kubelet:
           extraMounts:
-            - destination: /var/mnt/longhorn
+            - destination: /var/lib/longhorn
               type: bind
               source: /var/mnt/longhorn
               options:
                 - bind
                 - rshared
                 - rw
-        disks:
-            - device: /dev/sdb
-              partitions:
-                - mountpoint: /var/mnt/longhorn
-    # Add OpenEBS patches (HugePages, NodeLabels)
-    - |-
-      machine:
-        sysctls:
-          vm.nr_hugepages: "1024"
-        nodeLabels:
-          openebs.io/engine: mayastor
-    # Add NVIDIA patches (Kernel Modules, Sysctl)
-    # Assumes nonfree-kmod-nvidia and nvidia-container-toolkit extensions
-    # are already installed via boot assets or image upgrade.
-    - |-
-      machine:
-        kernel:
-          modules:
-            - name: nvidia
-            - name: nvidia_uvm
-            - name: nvidia_drm
-            - name: nvidia_modeset
-        sysctls:
-          net.core.bpf_jit_harden: 1

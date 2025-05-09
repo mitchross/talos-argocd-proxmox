@@ -1,0 +1,53 @@
+[
+  {
+    "op": "add",
+    "path": "/machine/network/hostname",
+    "value": "talos-cluster-control-00"
+  },
+  {
+    "op": "add",
+    "path": "/machine/network/interfaces",
+    "value": [
+      {
+        "deviceSelector": {
+          "busPath": "0*"
+        },
+        "dhcp": false,
+        "addresses": ["192.168.10.100/24"],
+        "mtu": 1500,
+        "routes": [
+          {
+            "network": "0.0.0.0/0",
+            "gateway": "192.168.10.1"
+          }
+        ],
+        "vip": {
+          "ip": "192.168.10.199"
+        }
+      }
+    ]
+  },
+  {
+    "op": "add",
+    "path": "/machine/certSANs",
+    "value": [
+      "192.168.10.199",
+      "192.168.10.100",
+      "127.0.0.1"
+    ]
+  },
+  {
+    "op": "add", 
+    "path": "/machine/install/image",
+    "value": "factory.talos.dev/nocloud-installer/dc117d684fe4368607263e4e0092933cd2616e145040f72704219b2f1da6a2fd:v1.10.1"
+  },
+  {
+    "op": "add",
+    "path": "/cluster/apiServer/certSANs",
+    "value": [
+      "192.168.10.199",
+      "192.168.10.100",
+      "127.0.0.1"
+    ]
+  }
+]

@@ -85,3 +85,4 @@ kubeconfig*
 config.xml
 *.pid
 /infrastructure/controllers/argocd/charts
+/node_modules
