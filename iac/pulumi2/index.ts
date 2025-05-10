@@ -30,7 +30,29 @@ const ensureOutputDir = new command.local.Command("ensure-output-dir", {
 // Generate secrets once and use for all nodes
 const talosSecrets = new command.local.Command("generate-talos-secrets", {
   create: pulumi.interpolate`
+    echo "Attempting to generate secrets into ${talosOutputDir}/secrets.yaml"
     ${talosctlPath} gen secrets -o ${talosOutputDir}/secrets.yaml --force
+    if [ $? -ne 0 ]; then
+      echo "Error from generate-talos-secrets: talosctl gen secrets command failed with exit code $?."
+      exit 1
+    fi
+    # Check for existence
+    if [ ! -f "${talosOutputDir}/secrets.yaml" ]; then
+      echo "Error from generate-talos-secrets: secrets.yaml NOT FOUND after talosctl gen secrets command."
+      echo "Contents of ${talosOutputDir}:"
+      ls -la "${talosOutputDir}"
+      exit 1
+    fi
+    # Check for non-emptiness
+    if [ ! -s "${talosOutputDir}/secrets.yaml" ]; then
+      echo "Error from generate-talos-secrets: secrets.yaml IS EMPTY after talosctl gen secrets command."
+      echo "Contents of ${talosOutputDir}:"
+      ls -la "${talosOutputDir}"
+      echo "Content of ${talosOutputDir}/secrets.yaml (if any):"
+      cat "${talosOutputDir}/secrets.yaml"
+      exit 1
+    fi
+    echo "secrets.yaml successfully created and is non-empty by generate-talos-secrets."
     `,
   triggers: [ensureOutputDir.id]
 });
