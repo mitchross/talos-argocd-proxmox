@@ -12,31 +12,37 @@ config:
       filename: talos-cluster-control-00.yaml
       deviceSelector:
         busPath: 0*
+      role: "controlplane"
     - ip: 192.168.10.101
       hostname: talos-cluster-control-01
       filename: talos-cluster-control-01.yaml
       deviceSelector:
         busPath: 0*
+      role: "controlplane"
     - ip: 192.168.10.102
       hostname: talos-cluster-control-02
       filename: talos-cluster-control-02.yaml
       deviceSelector:
         busPath: 0*
+      role: "controlplane"
     - ip: 192.168.10.200
       hostname: talos-cluster-gpu-worker-00
       filename: talos-cluster-gpu-worker-00.yaml
       deviceSelector:
         busPath: "0*"
+      role: "worker"
     - ip: 192.168.10.201
       hostname: talos-cluster-worker-01
       filename: talos-cluster-worker-01.yaml
       deviceSelector:
         busPath: "0*"
+      role: "worker"
     - ip: 192.168.10.203
       hostname: talos-cluster-worker-02
       filename: talos-cluster-worker-02.yaml
       deviceSelector:
         busPath: "0*"
+      role: "worker"
   kubernetes: 1.33.0
   machine:
     install:
