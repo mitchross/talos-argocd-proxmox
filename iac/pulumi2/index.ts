@@ -77,7 +77,7 @@ const talosConfigFile = new command.local.Command("generate-talosconfig", {
   triggers: [talosSecrets.id]
 });
 
-// *** CORRECTED generateNodeConfigs block START ***
+// Generate Node Configurations with Role-Specific Patches and Cluster Settings
 const generateNodeConfigs = new command.local.Command("generate-node-configs", {
   create: pulumi.interpolate`
     # Wait for secrets file to be fully created
@@ -93,7 +93,6 @@ const generateNodeConfigs = new command.local.Command("generate-node-configs", {
     echo "Using Talos image: $talos_image"
 
     # Create a JSON file with the nodeConfig data to access in the shell
-    # Ensure nodeConfig is stringified correctly for shell consumption
     nodeConfigJson=$(cat <<EOF
 ${JSON.stringify(nodeConfig)}
 EOF
@@ -115,7 +114,7 @@ EOF
         busPath=$(cat ${talosOutputDir}/node-config.json | jq -r ".[$i].deviceSelector.busPath")
         role=$(cat ${talosOutputDir}/node-config.json | jq -r ".[$i].role")
 
-        # Start of the patch array
+        # Start of the node-specific patch array
         echo "[" > ${talosOutputDir}/patch-$i.json
 
         # Common patches for all roles
@@ -142,7 +141,7 @@ EOF
 EOF
 
         if [ "$role" = "controlplane" ]; then
-          # Patches specific to control-plane
+          # Patches specific to control-plane for the node-specific file
           cat >> ${talosOutputDir}/patch-$i.json << EOF
 ,
   {
@@ -179,7 +178,7 @@ EOF
   }
 EOF
         elif [ "$role" = "worker" ]; then
-          # Patches specific to worker
+          # Patches specific to worker for the node-specific file
           cat >> ${talosOutputDir}/patch-$i.json << EOF
 ,
   {
@@ -199,27 +198,28 @@ EOF
             "gateway": "192.168.10.1"
           }
         ]
-        # No VIP definition for worker interface here
       }
     ]
   }
-  # No /cluster/apiServer/certSANs for worker patch
 EOF
         else
             echo "Error: Unknown role '$role' for node $hostname"
             exit 1
         fi
 
-        # End of the patch array
+        # End of the node-specific patch array
         echo "]" >> ${talosOutputDir}/patch-$i.json
 
-        # Add a check for file creation and fail loudly if it's missing
         echo "Generating config for $filename (role: $role) with patch file ${talosOutputDir}/patch-$i.json..."
 
         if [ "$role" = "controlplane" ]; then
           ${talosctlPath} gen config \
             --with-secrets ${talosOutputDir}/secrets.yaml \
-            --config-patch-control-plane '[{"op": "add", "path": "/cluster/allowSchedulingOnControlPlanes", "value": true}]' \
+            --config-patch-control-plane '[
+              {"op": "add", "path": "/cluster/allowSchedulingOnControlPlanes", "value": true},
+              {"op": "add", "path": "/cluster/proxy", "value": {"disabled": true}},
+              {"op": "add", "path": "/cluster/network/cni", "value": {"name": "none"}}
+            ]' \
             --config-patch-control-plane @${talosOutputDir}/patch-$i.json \
             --kubernetes-version $k8s_version \
             --output ${talosOutputDir}/$filename \
@@ -250,19 +250,17 @@ EOF
     `,
   triggers: [talosConfigFile.id]
 });
-// *** CORRECTED generateNodeConfigs block END ***
 
 // Configure talosctl endpoints using the generated files
 const configureEndpoints = new command.local.Command("configure-endpoints", {
   create: pulumi.interpolate`
     # Ensure config files exist
-    # Ensure node-config.json exists (created by generate-node-configs)
     if [ ! -f "${talosOutputDir}/node-config.json" ]; then
         echo "Error: ${talosOutputDir}/node-config.json not found. This command depends on generate-node-configs."
         exit 1
     fi
-    # Use nodeConfig directly from Pulumi for checking files
-    for file in ${nodeConfig.map(n => `"${talosOutputDir}/${n.filename}"`).join(" ")}; do
+    all_config_files=(${nodeConfig.map(n => `"${talosOutputDir}/${n.filename}"`).join(" ")})
+    for file in "\${all_config_files[@]}"; do
         if [ ! -f "$file" ]; then
             echo "Error: Config file $file not found. This command depends on config generation."
             exit 1
@@ -270,20 +268,24 @@ const configureEndpoints = new command.local.Command("configure-endpoints", {
     done
 
     export TALOSCONFIG=${talosOutputDir}/talosconfig
-    # Configure endpoints with only control plane IPs
-    ${talosctlPath} config endpoints ${nodeIps.join(" ")}
-    # Configure nodes with only control plane IPs (talosctl config nodes might include workers eventually, but safe to start with CP)
-    ${talosctlPath} config nodes ${nodeIps.join(" ")}
+    control_plane_ips=(${nodeConfig.filter(n => n.role === 'controlplane').map(n => n.ip).join(" ")})
+    echo "Configuring endpoints: \${control_plane_ips[@]}"
+    ${talosctlPath} config endpoints \${control_plane_ips[@]}
+    if [ $? -ne 0 ]; then echo "Error setting talosctl endpoints"; exit 1; fi
+
+    echo "Configuring nodes: \${control_plane_ips[@]}"
+    ${talosctlPath} config nodes \${control_plane_ips[@]}
+    if [ $? -ne 0 ]; then echo "Error setting talosctl nodes"; exit 1; fi
     `,
   triggers: [generateNodeConfigs.id]
 });
 
 // Apply configurations to all nodes specified in nodeConfig
 const applyConfigs = nodeConfig.map((node, i) =>
-  new command.local.Command(`apply-config-${i}`, { // Renamed for clarity
+  new command.local.Command(`apply-config-${node.hostname}`, {
     create: pulumi.interpolate`
         export TALOSCONFIG=${talosOutputDir}/talosconfig
-        echo "Attempting to apply config to node ${node.ip} using file ${talosOutputDir}/${node.filename}"
+        echo "Attempting to apply config to node ${node.ip} (hostname: ${node.hostname}) using file ${talosOutputDir}/${node.filename}"
         ${talosctlPath} apply-config --insecure --nodes ${node.ip} --file ${talosOutputDir}/${node.filename}
         if [ $? -ne 0 ]; then
           echo "Error applying config to node ${node.ip} (hostname: ${node.hostname})"
@@ -291,7 +293,7 @@ const applyConfigs = nodeConfig.map((node, i) =>
         fi
         echo "Successfully applied config to node ${node.ip}"
         `,
-    triggers: [configureEndpoints.id] // Apply happens after config files are generated and endpoints are set
+    triggers: [configureEndpoints.id]
   })
 );
 
@@ -299,34 +301,37 @@ const applyConfigs = nodeConfig.map((node, i) =>
 const bootstrapCluster = new command.local.Command("bootstrap-cluster", {
   create: pulumi.interpolate`
     export TALOSCONFIG=${talosOutputDir}/talosconfig
-
-    echo "Bootstrapping cluster on first node (${nodeIps[0]})..."
-
-    # Bootstrap the cluster - this starts etcd and the control plane
-    ${talosctlPath} bootstrap --nodes ${nodeIps[0]}
-    if [ $? -ne 0 ]; then
-        echo "Error during bootstrap command for node ${nodeIps[0]}"
+    first_cp_node=${nodeConfig.find(n => n.role === 'controlplane')?.ip || ''}
+    if [ -z "$first_cp_node" ]; then
+        echo "Error: Could not find a control plane node IP for bootstrap."
         exit 1
     fi
 
-    echo "Waiting for API server to be available on ${nodeIps[0]}..."
-    # Wait for API server to be ready on the bootstrapped node
+    echo "Bootstrapping cluster on first node ($first_cp_node)..."
+
+    ${talosctlPath} bootstrap --nodes $first_cp_node
+    if [ $? -ne 0 ]; then
+        echo "Error during bootstrap command for node $first_cp_node"
+        exit 1
+    fi
+
+    echo "Waiting for API server to be available on $first_cp_node..."
     max_retries=30
     retry_interval=10
     for i in $(seq 1 $max_retries); do
-        if ${talosctlPath} health --nodes ${nodeIps[0]} --server=false 2>/dev/null; then
-            echo "API server is ready on ${nodeIps[0]}!"
+        if ${talosctlPath} health --nodes $first_cp_node --server=false 2>/dev/null; then
+            echo "API server is ready on $first_cp_node!"
             break
         fi
         if [ $i -eq $max_retries ]; then
-            echo "Timed out waiting for API server on ${nodeIps[0]} after $(($max_retries * $retry_interval)) seconds."
+            echo "Timed out waiting for API server on $first_cp_node after $(($max_retries * $retry_interval)) seconds."
+            ${talosctlPath} health --nodes $first_cp_node --server=false
             exit 1
         fi
-        echo "Waiting for API server on ${nodeIps[0]}... ($i/$max_retries)"
+        echo "Waiting for API server on $first_cp_node... ($i/$max_retries)"
         sleep $retry_interval
     done
     `,
-  // Run after all configs are applied
   triggers: applyConfigs.map(cmd => cmd.id)
 });
 
@@ -334,29 +339,38 @@ const bootstrapCluster = new command.local.Command("bootstrap-cluster", {
 const waitForNodes = new command.local.Command("wait-for-nodes", {
   create: pulumi.interpolate`
     export TALOSCONFIG=${talosOutputDir}/talosconfig
-
-    echo "Waiting for all nodes to be ready (timeout 10m)..."
-
-    # Wait for all nodes to be ready using the cluster health check
-    ${talosctlPath} health --server=false --wait-timeout=10m
-    if [ $? -ne 0 ]; then
-        echo "Error: Cluster did not become healthy within the timeout."
-        ${talosctlPath} health --server=false # Print current health status
+    first_cp_node=${nodeConfig.find(n => n.role === 'controlplane')?.ip || ''}
+     if [ -z "$first_cp_node" ]; then
+        echo "Error: Could not find a control plane node IP for health checks."
         exit 1
     fi
 
-    # Check that all defined nodes are members
+    echo "Waiting for all nodes to be ready (timeout 10m)..."
+
+    ${talosctlPath} health --nodes $first_cp_node --server=false --wait-timeout=10m
+    if [ $? -ne 0 ]; then
+        echo "Error: Cluster did not become healthy within the timeout."
+        ${talosctlPath} health --nodes $first_cp_node --server=false
+        exit 1
+    fi
+
     echo "Checking cluster membership..."
     all_nodes_ips=(${nodeConfig.map(n => n.ip).join(" ")})
+    missing_nodes=0
     for ip in "\${all_nodes_ips[@]}"; do
         echo "Checking node $ip membership status..."
-        # Query from a control plane node
-        if ! ${talosctlPath} get members --nodes ${nodeIps[0]} | grep $ip; then
-            echo "Warning: Node $ip not found in 'talosctl get members' output."
-            # Optionally add exit 1 here if this should be a hard failure
+        if ! ${talosctlPath} get members --nodes $first_cp_node | grep -q $ip; then
+            echo "ERROR: Node $ip not found in 'talosctl get members' output."
+            missing_nodes=$((missing_nodes + 1))
         fi
     done
-    echo "All nodes appear ready."
+
+    if [ $missing_nodes -gt 0 ]; then
+        echo "Error: $missing_nodes node(s) failed to join the cluster."
+        exit 1
+    fi
+
+    echo "All nodes appear ready and are members."
     `,
   triggers: [bootstrapCluster.id]
 });
@@ -365,11 +379,15 @@ const waitForNodes = new command.local.Command("wait-for-nodes", {
 const kubeconfig = new command.local.Command("get-kubeconfig", {
   create: pulumi.interpolate`
     export TALOSCONFIG=${talosOutputDir}/talosconfig
+    first_cp_node=${nodeConfig.find(n => n.role === 'controlplane')?.ip || ''}
+     if [ -z "$first_cp_node" ]; then
+        echo "Error: Could not find a control plane node IP to get kubeconfig."
+        exit 1
+    fi
 
-    echo "Retrieving kubeconfig..."
-    ${talosctlPath} --talosconfig=$TALOSCONFIG --nodes ${nodeIps[0]} kubeconfig ${talosOutputDir}/kubeconfig
+    echo "Retrieving kubeconfig from $first_cp_node..."
+    ${talosctlPath} --talosconfig=$TALOSCONFIG --nodes $first_cp_node kubeconfig ${talosOutputDir}/kubeconfig
 
-    # Check if kubeconfig was successfully created and is non-empty
     if [ -f "${talosOutputDir}/kubeconfig" ] && [ -s "${talosOutputDir}/kubeconfig" ]; then
         echo "Successfully generated kubeconfig at ${talosOutputDir}/kubeconfig"
     else
@@ -380,20 +398,18 @@ const kubeconfig = new command.local.Command("get-kubeconfig", {
   triggers: [waitForNodes.id]
 });
 
-// Install Cilium CNI
+// Install Cilium CNI with KubeProxy Replacement Enabled
 const ciliumInstall = new command.local.Command("install-cilium", {
   create: pulumi.interpolate`
-  # Wait briefly for networking to stabilize after nodes are ready
-  sleep 10
+  echo "Waiting 15 seconds before installing Cilium..."
+  sleep 15
   export KUBECONFIG=${talosOutputDir}/kubeconfig
 
-  # Check if KUBECONFIG file exists
   if [ ! -f "$KUBECONFIG" ]; then
       echo "Error: Kubeconfig file not found at $KUBECONFIG"
       exit 1
   fi
 
-  # Add permissive PSA labels to kube-system
   echo "Applying PSA labels to kube-system..."
   kubectl label --overwrite namespace kube-system \
     pod-security.kubernetes.io/enforce=privileged \
@@ -402,7 +418,6 @@ const ciliumInstall = new command.local.Command("install-cilium", {
   if [ $? -ne 0 ]; then echo "Error applying PSA labels"; exit 1; fi
 
 
-  # Install Cilium using Helm CLI with Talos-specific settings
   echo "Adding Cilium Helm repo..."
   helm repo add cilium https://helm.cilium.io/
   if [ $? -ne 0 ]; then echo "Error adding Helm repo"; exit 1; fi
@@ -411,12 +426,12 @@ const ciliumInstall = new command.local.Command("install-cilium", {
   helm repo update
   if [ $? -ne 0 ]; then echo "Error updating Helm repos"; exit 1; fi
 
-  echo "Installing/Upgrading Cilium..."
+  echo "Installing/Upgrading Cilium with kubeProxyReplacement=strict..."
   helm upgrade --install cilium cilium/cilium \
     --version 1.17.3 \
     --namespace kube-system \
     --set ipam.mode=kubernetes \
-    --set kubeProxyReplacement=false \
+    --set kubeProxyReplacement=strict \
     --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
     --set securityContext.capabilities.cleanCiliumState="{NET_ADMIN,SYS_ADMIN,SYS_RESOURCE}" \
     --set cgroup.autoMount.enabled=false \
@@ -426,10 +441,14 @@ const ciliumInstall = new command.local.Command("install-cilium", {
     --set priorityClassName=""
   if [ $? -ne 0 ]; then echo "Error installing/upgrading Cilium"; exit 1; fi
 
-  # Verify installation by checking for pods
   echo "Verifying Cilium installation (waiting up to 5 minutes for pods)..."
   kubectl wait --for=condition=ready pod -l k8s-app=cilium -n kube-system --timeout=5m
-  if [ $? -ne 0 ]; then echo "Error: Cilium pods did not become ready"; exit 1; fi
+  if [ $? -ne 0 ]; then
+    echo "Error: Cilium pods did not become ready";
+    kubectl -n kube-system get pods -l k8s-app=cilium
+    kubectl -n kube-system describe pods -l k8s-app=cilium
+    exit 1;
+  fi
 
   echo "Cilium installation appears successful."
   kubectl -n kube-system get pods -l k8s-app=cilium
