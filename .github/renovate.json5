@@ -11,28 +11,28 @@
     'argocd',
   ],
   argocd: {
-    fileMatch: [
-      '^infra/.+\\.yaml$',
-      '^apps/.+\\.yaml$',
-      '^my-apps/.+\\.yaml$',
+    managerFilePatterns: [
+      '/^infra/.+\\.yaml$/',
+      '/^apps/.+\\.yaml$/',
+      '/^my-apps/.+\\.yaml$/',
     ],
   },
   kubernetes: {
-    fileMatch: [
-      '^infra/.+\\.yaml$',
-      '^apps/.+\\.yaml$',
-      '^my-apps/.+\\.yaml$',
+    managerFilePatterns: [
+      '/^infra/.+\\.yaml$/',
+      '/^apps/.+\\.yaml$/',
+      '/^my-apps/.+\\.yaml$/',
     ],
   },
   'helm-values': {
-    fileMatch: [
-      '^infra/.+/values\\.yaml$',
-      '^apps/.+/values\\.yaml$',
+    managerFilePatterns: [
+      '/^infra/.+/values\\.yaml$/',
+      '/^apps/.+/values\\.yaml$/',
     ],
   },
   kustomize: {
-    fileMatch: [
-      '(^|/)kustomization\\.ya?ml$',
+    managerFilePatterns: [
+      '/(^|/)kustomization\\.ya?ml$/',
     ],
   },
   packageRules: [
@@ -64,11 +64,15 @@
       prCreation: 'immediate',
     },
     {
-      description: "Enable container digest updates",
-      matchDatasources: ["docker"],
-      matchUpdateTypes: ["digest"],
-      enabled: true
-    }
+      description: 'Enable container digest updates',
+      matchDatasources: [
+        'docker',
+      ],
+      matchUpdateTypes: [
+        'digest',
+      ],
+      enabled: true,
+    },
   ],
   ignorePaths: [
     '**/charts/**',
