@@ -3,11 +3,12 @@ kind: Kustomization
 namespace: openebs
 resources:
   - namespace.yaml
-  - storage-class.yaml # Ensure our custom SC is included
-helmCharts:
-  - name: openebs
-    repo: https://openebs.github.io/openebs
-    version: 4.2.0
-    releaseName: openebs
-    namespace: openebs
-    valuesFile: values.yaml
+  #off for now 
+#   - storage-class.yaml # Ensure our custom SC is included
+# helmCharts:
+#   - name: openebs
+#     repo: https://openebs.github.io/openebs
+#     version: 4.2.0
+#     releaseName: openebs
+#     namespace: openebs
+#     valuesFile: values.yaml
