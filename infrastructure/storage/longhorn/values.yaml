@@ -1,5 +1,5 @@
 defaultSettings:
-  defaultDataPath: "/var/mnt/longhorn"
+  defaultDataPath: "/var/lib/longhorn"
 preUpgradeChecker:
   jobEnabled: false
 persistence:
