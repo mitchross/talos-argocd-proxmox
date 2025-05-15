@@ -65,15 +65,15 @@ terraform plan \
   -var 'proxmox_api_url=https://192.168.10.11:8006/api2/json' \
   -var 'proxmox_node=proxmox-threadripper' \
   -var 'proxmox_api_token_id=root@pam!iac' \
-  -var 'proxmox_api_token_secret=ddxxxxb-0cd8-4xxxf-9xxxdb-6asssxx' \
+  -var 'proxmox_api_token_secret=c30xxxxxxxb-6aded8a1c3ae' \
   -out .tfplan
 
 # Apply the plan
 terraform apply \
-  -var 'proxmox_api_url=https://192.168.10.xx:8006/api2/json' \
+  -var 'proxmox_api_url=https://192.168.10.11:8006/api2/json' \
   -var 'proxmox_node=proxmox-threadripper' \
   -var 'proxmox_api_token_id=root@pam!iac' \
-  -var 'proxmox_api_token_secret=c30xxxxedb-xxxd8-4c0f-9xxxb-6axxxx1c3ae'
+  -var 'proxmox_api_token_secret=c30cfxxxxxxxaded8a1c3ae'
 ```
 
 **Important:** Take note of the MAC addresses outputted, copy and update in the following step.
@@ -108,7 +108,7 @@ cd iac/talos
 sops -e -i talsecret.sops.yaml
 
 # Generate Talos configuration
-export SOPS_AGE_KEY_FILE=/Users/<YOURHOME>/.config/sops/age/keys.txt
+export SOPS_AGE_KEY_FILE=~/.config/sops/age/keys.txt
 talhelper genconfig
 ```
 
@@ -126,6 +126,14 @@ talosctl apply-config --insecure --nodes <master-node ip> --file clusterconfig/<
 # For worker(s)
 talosctl apply-config --insecure --nodes <worker-node ip> --file clusterconfig/<worker-config>.yaml
 
+#Example
+talosctl apply-config --insecure --nodes 192.168.10.100 --file clusterconfig/proxmox-talos-cluster-talos-cluster-control-00.yaml
+talosctl apply-config --insecure --nodes 192.168.10.101 --file clusterconfig/proxmox-talos-cluster-talos-cluster-control-01.yaml
+talosctl apply-config --insecure --nodes 192.168.10.102 --file clusterconfig/proxmox-talos-cluster-talos-cluster-control-02.yaml
+talosctl apply-config --insecure --nodes 192.168.10.200 --file clusterconfig/proxmox-talos-cluster-talos-cluster-gpu-worker-00.yaml
+talosctl apply-config --insecure --nodes 192.168.10.201 --file clusterconfig/proxmox-talos-cluster-talos-cluster-worker-01.yaml
+talosctl apply-config --insecure --nodes 192.168.10.203 --file clusterconfig/proxmox-talos-cluster-talos-cluster-worker-02.yaml
+
 # Set up talosconfig
 mkdir -p $HOME/.talos
 cp clusterconfig/talosconfig $HOME/.talos/config
@@ -133,7 +141,7 @@ cp clusterconfig/talosconfig $HOME/.talos/config
 # Run the bootstrap command
 # Note: The bootstrap operation should only be called ONCE on a SINGLE control plane/master node
 # (use any one if you have multiple master nodes)
-talosctl bootstrap -n <master-node ip>
+talosctl bootstrap -n 192.168.10.100
 ```
 
 ### 6. Access the Kubernetes Cluster
@@ -141,7 +149,7 @@ talosctl bootstrap -n <master-node ip>
 ```bash
 # Get kubeconfig
 mkdir -p $HOME/.kube
-talosctl -n <master-node ip> kubeconfig $HOME/.kube/config
+talosctl -n 192.168.10.100 kubeconfig $HOME/.kube/config
 
 # Verify nodes are up
 kubectl get nodes
@@ -150,10 +158,10 @@ kubectl get nodes
 ### 7. Upgrade Talos (when needed)
 
 ```bash
-talosctl upgrade --image factory.talos.dev/installer/<image schematic ID>:<talos version> --preserve --nodes "<list of master and worker nodes, comma separated>"
+talosctl upgrade --image factory.talos.dev/installer/<image schematic ID>:<talos version> --preserve --nodes "192.168.10.100,192.168.10.101,192.168.10.102,192.168.10.200,192.168.10.201,192.168.10.203"
 
 # Verify extensions for each node
-talosctl get extensions --nodes <node IP>
+talosctl get extensions --nodes 192.168.10.100
 ```
 
 ### 8. Install Cilium CNI
@@ -170,5 +178,5 @@ cilium install \
   --helm-set=cgroup.hostRoot=/sys/fs/cgroup \
   --helm-set=l2announcements.enabled=true \
   --helm-set=externalIPs.enabled=true \
-  --helm-set=devices=ens+
+  --helm-set=devices=e+
 ```
