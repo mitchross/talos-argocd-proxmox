@@ -33,7 +33,7 @@ locals {
   vm_worker_nodes = {
     "0" = {
       vm_id                = 300
-      node_name            = "talos-worker-00"
+      node_name            = "talos-gpu-worker-00"
       clone_target         = "talos-v1.10.0-cloud-init-template"
       node_cpu_cores       = "4"
       node_memory          = 6144

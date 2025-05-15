@@ -307,12 +307,23 @@ const bootstrapCluster = new command.local.Command("bootstrap-cluster", {
         exit 1
     fi
 
-    echo "Bootstrapping cluster on first node ($first_cp_node)..."
+    echo "Attempting to bootstrap cluster on first node ($first_cp_node) if not already bootstrapped..."
 
-    ${talosctlPath} bootstrap --nodes $first_cp_node
-    if [ $? -ne 0 ]; then
-        echo "Error during bootstrap command for node $first_cp_node"
-        exit 1
+    # Attempt bootstrap and capture output
+    bootstrap_output=$(${talosctlPath} bootstrap --nodes $first_cp_node 2>&1)
+    bootstrap_exit_code=$?
+
+    if [ $bootstrap_exit_code -ne 0 ]; then
+        # Check if the error is due to etcd already existing
+        if echo "$bootstrap_output" | grep -q "etcd data directory is not empty"; then
+            echo "Node $first_cp_node appears to be already bootstrapped (etcd data directory not empty). Proceeding..."
+        else
+            echo "Error during bootstrap command for node $first_cp_node:"
+            echo "$bootstrap_output"
+            exit 1 # Exit for other bootstrap errors
+        fi
+    else
+        echo "Bootstrap command completed successfully for node $first_cp_node."
     fi
 
     echo "Waiting for API server to be available on $first_cp_node..."
@@ -321,12 +332,14 @@ const bootstrapCluster = new command.local.Command("bootstrap-cluster", {
     for i in $(seq 1 $max_retries); do
         if ${talosctlPath} health --nodes $first_cp_node --server=false 2>/dev/null; then
             echo "API server is ready on $first_cp_node!"
-            break
+            # Since the bootstrap command might have "failed" due to AlreadyExists,
+            # we explicitly exit 0 here if health check passes, ensuring Pulumi sees success.
+            exit 0
         fi
         if [ $i -eq $max_retries ]; then
             echo "Timed out waiting for API server on $first_cp_node after $(($max_retries * $retry_interval)) seconds."
-            ${talosctlPath} health --nodes $first_cp_node --server=false
-            exit 1
+            ${talosctlPath} health --nodes $first_cp_node --server=false # Show final status
+            exit 1 # API server did not become healthy
         fi
         echo "Waiting for API server on $first_cp_node... ($i/$max_retries)"
         sleep $retry_interval

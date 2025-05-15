@@ -33,8 +33,8 @@ source "proxmox-iso" "talos" {
     cache_mode        = "writethrough"
   }
 
-  memory               = 2048
-  vm_id                = "9701"
+  memory               = 4048
+  vm_id                = "9702"
   cores                = var.cores
   cpu_type             = var.cpu_type
   sockets              = "1"
