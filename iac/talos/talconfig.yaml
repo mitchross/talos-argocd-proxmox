@@ -12,15 +12,16 @@ clusterSvcNets:
 additionalApiServerCertSans:
   - 192.168.10.199
   - 127.0.0.1
-additionalMachineCertSans:
-  - 192.168.10.199
-  - 127.0.0.1
+customization:
+  systemExtensions:
+    officialExtensions:
+      - siderolabs/iscsi-tools
+      - siderolabs/util-linux-tools
 nodes:
   - hostname: talos-cluster-control-00
     controlPlane: true
     ipAddress: 192.168.10.100
     installDisk: /dev/sda
-    talosImageURL: factory.talos.dev/installer/3113b4ce6a82b241c60e4f17ec74f0345690cdf94a08a06284337b8432f2b93b
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "ca:d4:35:f4:f3:d0"
@@ -36,7 +37,6 @@ nodes:
     controlPlane: true
     ipAddress: 192.168.10.101
     installDisk: /dev/sda
-    talosImageURL: factory.talos.dev/installer/3113b4ce6a82b241c60e4f17ec74f0345690cdf94a08a06284337b8432f2b93b
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "86:cd:07:1a:19:fc"
@@ -52,7 +52,6 @@ nodes:
     controlPlane: true
     ipAddress: 192.168.10.102
     installDisk: /dev/sda
-    talosImageURL: factory.talos.dev/installer/3113b4ce6a82b241c60e4f17ec74f0345690cdf94a08a06284337b8432f2b93b
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "ea:6e:0d:68:3d:a0"
@@ -68,7 +67,6 @@ nodes:
     controlPlane: false
     ipAddress: 192.168.10.200
     installDisk: /dev/sda
-    talosImageURL: factory.talos.dev/installer/3113b4ce6a82b241c60e4f17ec74f0345690cdf94a08a06284337b8432f2b93b
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "aa:2c:a5:71:9d:c6"
@@ -81,11 +79,26 @@ nodes:
     # Use the GPU worker-specific configuration
     nodeLabels:
       node-type: gpu-worker
+    patches:
+      - |-
+        machine:
+          sysctls:
+            vm.nr_hugepages: "1024"
+          kernel:
+            modules:
+              - name: nvme_tcp
+              - name: vfio_pci
+              - name: uio_pci_generic
+      - |-
+        machine:
+          disks:
+            - device: /dev/sdb
+              partitions:
+                - mountpoint: /var/mnt/longhorn_sdb
   - hostname: talos-cluster-worker-01
     controlPlane: false
     ipAddress: 192.168.10.201
     installDisk: /dev/sda
-    talosImageURL: factory.talos.dev/installer/3113b4ce6a82b241c60e4f17ec74f0345690cdf94a08a06284337b8432f2b93b
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "ae:86:15:e7:eb:82"
@@ -101,7 +114,6 @@ nodes:
     controlPlane: false
     ipAddress: 192.168.10.203 # Corrected IP from .202
     installDisk: /dev/sda
-    talosImageURL: factory.talos.dev/installer/3113b4ce6a82b241c60e4f17ec74f0345690cdf94a08a06284337b8432f2b93b
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "ca:2b:35:07:04:74"
@@ -127,9 +139,11 @@ patches:
       time:
         disabled: false
         servers: ["time.cloudflare.com"]
-
-
 controlPlane:
+  talosImageURL: ghcr.io/siderolabs/installer:v1.10.1
+  certSANs:
+    - "192.168.10.199"
+    - "127.0.0.1"
   patches:
     # Cluster configuration
     - |-
@@ -146,3 +160,23 @@ controlPlane:
         scheduler:
           extraArgs:
             bind-address: 0.0.0.0
+worker:
+  talosImageURL: ghcr.io/siderolabs/installer:v1.10.1
+  patches:
+    - |-
+      machine:
+        kubelet:
+          extraMounts:
+            - destination: /var/lib/longhorn
+              type: bind
+              source: /var/lib/longhorn
+              options:
+                - bind
+                - rshared
+                - rw
+    - |-
+      machine:
+        disks:
+          - device: /dev/sdb
+            partitions:
+              - mountpoint: /var/mnt/longhorn_sdb
