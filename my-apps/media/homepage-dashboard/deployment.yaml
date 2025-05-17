@@ -32,6 +32,14 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
+          env:
+            - name: HOMEPAGE_ALLOWED_HOSTS
+              value: homepage.vanillax.me
+            - name: SECRET_ARGOCD_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: homepage-secrets
+                  key: argocd-password
           volumeMounts:
             - name: config
               mountPath: /app/config
