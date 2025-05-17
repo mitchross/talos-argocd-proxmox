@@ -29,5 +29,3 @@ data:
               type: argocd
               url: https://argocd.vanillax.me
               key: argocd
-              username: admin
-              password: ${SECRET_ARGOCD_PASSWORD}
