@@ -15,7 +15,4 @@ spec:
     requests:
       storage: 3Gi
   storageClassName: longhorn
-  selector:
-    matchLabels:
-      app: homepage
-      type: config
+
