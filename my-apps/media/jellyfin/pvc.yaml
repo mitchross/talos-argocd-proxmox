@@ -13,7 +13,4 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  selector:
-    matchLabels:
-      app: jellyfin
-      type: config
+

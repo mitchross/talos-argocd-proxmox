@@ -59,7 +59,3 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  selector:
-    matchLabels:
-      app: plex
-      type: transcode

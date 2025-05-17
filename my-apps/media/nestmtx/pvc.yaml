@@ -14,7 +14,4 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  selector:
-    matchLabels:
-      app: nestmtx
-      type: storage
+

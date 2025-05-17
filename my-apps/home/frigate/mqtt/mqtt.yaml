@@ -26,10 +26,7 @@ spec:
     requests:
       storage: 1Gi
   storageClassName: longhorn
-  selector:
-    matchLabels:
-      app: mosquitto
-      type: storage
+
 ---
 apiVersion: apps/v1
 kind: Deployment
