@@ -4,7 +4,7 @@ namespace: csi-driver-smb
 helmCharts:
   - name: csi-driver-smb
     repo: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/master/charts
-    version: v1.17.0
+    version: 1.18.0
     releaseName: csi-driver-smb
     includeCRDs: true
     namespace: csi-driver-smb
