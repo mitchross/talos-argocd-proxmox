@@ -60,4 +60,3 @@ spec:
   enableSuperuserAccess: true
   monitoring:
     enablePodMonitor: true
-
