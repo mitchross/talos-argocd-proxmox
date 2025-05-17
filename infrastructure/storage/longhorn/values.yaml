@@ -7,3 +7,5 @@ persistence:
   defaultClassReplicaCount: 3
   defaultFsType: ext4
   reclaimPolicy: Retain
+ingress:
+  enabled: false

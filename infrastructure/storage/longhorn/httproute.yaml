@@ -16,5 +16,6 @@ spec:
             value: /
       backendRefs:
         - name: longhorn-frontend # Default Longhorn UI service name
+          namespace: longhorn-system
           port: 80 # Default Longhorn UI port
           weight: 1
