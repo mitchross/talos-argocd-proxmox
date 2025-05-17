@@ -4,13 +4,12 @@ metadata:
   name: proxitok-web
   namespace: proxitok
 spec:
+  clusterIP: None
   selector:
     app: proxitok-web
   ports:
-  - port: 8080
-    targetPort: 8080
-  type: ClusterIP
-
+    - port: 8080
+      targetPort: 8080
 ---
 apiVersion: v1
 kind: Service
@@ -21,10 +20,9 @@ spec:
   selector:
     app: proxitok-redis
   ports:
-  - port: 6379
-    targetPort: 6379
+    - port: 6379
+      targetPort: 6379
   type: ClusterIP
-
 ---
 apiVersion: v1
 kind: Service
@@ -35,6 +33,6 @@ spec:
   selector:
     app: proxitok-chromedriver
   ports:
-  - port: 9515
-    targetPort: 9515
+    - port: 9515
+      targetPort: 9515
   type: ClusterIP

@@ -1,10 +1,11 @@
-# proxitok-web-deployment.yaml
+# proxitok-web-statefulset.yaml
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: proxitok-web
   namespace: proxitok
 spec:
+  serviceName: proxitok-web
   replicas: 2
   selector:
     matchLabels:
@@ -89,10 +90,17 @@ spec:
             - name: nginx-logs
               mountPath: /var/lib/nginx/logs
       volumes:
-        - name: cache-volume
-          persistentVolumeClaim:
-            claimName: proxitok-cache-pvc
         - name: run-volume
           emptyDir: {}
         - name: nginx-logs
           emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: cache-volume
+        namespace: proxitok
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 1Gi
