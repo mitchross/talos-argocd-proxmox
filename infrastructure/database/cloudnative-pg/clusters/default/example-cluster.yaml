@@ -11,9 +11,7 @@ spec:
   monitoring:
     enablePodMonitor: false
   enableSuperuserAccess: true
-  affinity:
-    nodeSelector:
-      kubernetes.io/hostname: vanillax-ai
+
   # Bootstrap configuration
   bootstrap:
     initdb:

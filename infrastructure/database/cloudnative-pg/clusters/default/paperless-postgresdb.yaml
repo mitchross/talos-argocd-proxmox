@@ -60,6 +60,4 @@ spec:
   enableSuperuserAccess: true
   monitoring:
     enablePodMonitor: true
-  affinity:
-    nodeSelector:
-      kubernetes.io/hostname: vanillax-ai
+

@@ -6,7 +6,7 @@ metadata:
   labels:
     app: immich
 spec:
-  instances: 1  # Critical change - must be 1 due to pgvecto.rs v0.3.0 compatibility issues
+  instances: 1 # Critical change - must be 1 due to pgvecto.rs v0.3.0 compatibility issues
   imageName: ghcr.io/tensorchord/cloudnative-pgvecto.rs:16.5-v0.3.0
   resources:
     requests:
@@ -67,6 +67,4 @@ spec:
   enableSuperuserAccess: true
   monitoring:
     enablePodMonitor: true
-  affinity:
-    nodeSelector:
-      kubernetes.io/hostname: vanillax-ai
+
