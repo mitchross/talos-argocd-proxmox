@@ -36,10 +36,10 @@ spec:
         - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "paperless";
   storage:
     size: 10Gi
-    storageClass: local-storage
+    storageClass: longhorn
   walStorage:
     size: 2Gi
-    storageClass: local-storage
+    storageClass: longhorn
   managed:
     services:
       additional:
