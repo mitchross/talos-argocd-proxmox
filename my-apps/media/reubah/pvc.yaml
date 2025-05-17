@@ -13,9 +13,5 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  selector:
-    matchLabels:
-      app: reubah
-      type: doc-temp
 ---
 
