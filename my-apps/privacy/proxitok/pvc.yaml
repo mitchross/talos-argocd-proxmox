@@ -13,9 +13,5 @@ spec:
     requests:
       storage: 1Gi
   storageClassName: longhorn
-  selector:
-    matchLabels:
-      app: proxitok
-      type: cache
 ---
 
