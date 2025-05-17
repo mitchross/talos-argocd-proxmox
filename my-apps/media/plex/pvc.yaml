@@ -8,7 +8,7 @@ metadata:
     app: plex
     type: config
 spec:
-  storageClassName: openebs-mayastor-replicated
+  storageClassName: longhorn
   accessModes:
     - ReadWriteOnce
   resources:
@@ -53,7 +53,7 @@ metadata:
     app: plex
     type: transcode
 spec:
-  storageClassName: openebs-mayastor-replicated
+  storageClassName: longhorn
   accessModes:
     - ReadWriteOnce
   resources:

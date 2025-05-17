@@ -25,7 +25,7 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  storageClassName: openebs-mayastor-replicated
+  storageClassName: longhorn
   selector:
     matchLabels:
       app: mosquitto

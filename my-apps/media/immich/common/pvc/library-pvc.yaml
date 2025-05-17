@@ -9,5 +9,5 @@ spec:
   resources:
     requests:
       storage: 100Gi
-  storageClassName: openebs-mayastor-replicated
+  storageClassName: longhorn
   # selector: Removed 

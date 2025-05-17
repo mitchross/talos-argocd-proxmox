@@ -12,7 +12,7 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: openebs-mayastor-replicated
+  storageClassName: longhorn
   selector:
     matchLabels:
       app: reubah

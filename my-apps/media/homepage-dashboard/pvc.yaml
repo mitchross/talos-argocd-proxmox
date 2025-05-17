@@ -14,7 +14,7 @@ spec:
   resources:
     requests:
       storage: 3Gi
-  storageClassName: openebs-mayastor-replicated
+  storageClassName: longhorn
   selector:
     matchLabels:
       app: homepage
