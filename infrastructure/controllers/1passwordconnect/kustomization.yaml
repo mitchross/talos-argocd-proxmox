@@ -15,5 +15,3 @@ helmCharts:
     includeCRDs: true   
     valuesFile: values.yaml
 
-commonAnnotations:
-  argocd.argoproj.io/sync-wave: "-20"

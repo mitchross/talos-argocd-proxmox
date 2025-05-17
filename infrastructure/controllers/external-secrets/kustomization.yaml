@@ -34,6 +34,3 @@ patches:
           "api-approved.kubernetes.io": "unapproved, request-not-required"
           "external-secrets.io/conversion-strategy": "none"
     
-
-commonAnnotations:
-  argocd.argoproj.io/sync-wave: "-15"

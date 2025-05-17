@@ -15,6 +15,3 @@ helmCharts:
     namespace: cert-manager
     valuesFile: values.yaml
 
-
-commonAnnotations:
-  argocd.argoproj.io/sync-wave: "-10"
