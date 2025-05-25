@@ -35,7 +35,23 @@ variable "cloudinit_storage_pool" {
 
 variable "talos_version" {
   type    = string
-  default = "v1.6.7"
+  default = "v1.10.2"
+}
+
+variable "talos_image_schematic_id" {
+  type    = string
+  description = "The schematic ID for the Talos factory image."
+}
+
+variable "vm_id" {
+  type        = string
+  description = "The Proxmox VM ID for the template."
+}
+
+variable "template_name_prefix" {
+  type        = string
+  description = "The prefix for the Proxmox template name."
+  default     = "talos"
 }
 
 variable "base_iso_file" {
@@ -43,5 +59,6 @@ variable "base_iso_file" {
 }
 
 locals {
-  image = "https://factory.talos.dev/image/3113b4ce6a82b241c60e4f17ec74f0345690cdf94a08a06284337b8432f2b93b/v1.10.1/metal-amd64.raw.zst"
+  # Construct the image URL dynamically
+  talos_image_url = "https://factory.talos.dev/image/${var.talos_image_schematic_id}/${var.talos_version}/metal-amd64.raw.zst"
 }

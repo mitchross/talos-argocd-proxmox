@@ -1,8 +1,9 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/budimanjojo/talhelper/master/pkg/config/schemas/talconfig.json
 # renovate: datasource=docker depName=ghcr.io/siderolabs/installer
-talosVersion: v1.10.1
+talosVersion: v1.10.2
 # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
 kubernetesVersion: v1.33.0
+# Cluster configuration
 clusterName: proxmox-talos-cluster
 endpoint: https://192.168.10.199:6443
 clusterPodNets:
@@ -11,20 +12,26 @@ clusterSvcNets:
   - 10.15.0.0/16
 additionalApiServerCertSans:
   - 192.168.10.199
-  - 127.0.0.1
-customization:
-  systemExtensions:
-    officialExtensions:
-      - siderolabs/iscsi-tools
-      - siderolabs/util-linux-tools
+# Node configurations
 nodes:
+  # Control plane nodes
   - hostname: talos-cluster-control-00
     controlPlane: true
     ipAddress: 192.168.10.100
     installDisk: /dev/sda
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/amd-ucode
+            - siderolabs/gasket-driver
+            - siderolabs/i915
+            - siderolabs/iscsi-tools
+            - siderolabs/qemu-guest-agent
+            - siderolabs/util-linux-tools
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: "ca:d4:35:f4:f3:d0"
+          hardwareAddr: "BC:24:11:A4:B2:97"
         dhcp: false
         addresses:
           - 192.168.10.100/24
@@ -37,9 +44,19 @@ nodes:
     controlPlane: true
     ipAddress: 192.168.10.101
     installDisk: /dev/sda
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/amd-ucode
+            - siderolabs/gasket-driver
+            - siderolabs/i915
+            - siderolabs/iscsi-tools
+            - siderolabs/qemu-guest-agent
+            - siderolabs/util-linux-tools
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: "86:cd:07:1a:19:fc"
+          hardwareAddr: "BC:24:11:ED:73:BF"
         dhcp: false
         addresses:
           - 192.168.10.101/24
@@ -52,9 +69,19 @@ nodes:
     controlPlane: true
     ipAddress: 192.168.10.102
     installDisk: /dev/sda
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/amd-ucode
+            - siderolabs/gasket-driver
+            - siderolabs/i915
+            - siderolabs/iscsi-tools
+            - siderolabs/qemu-guest-agent
+            - siderolabs/util-linux-tools
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: "ea:6e:0d:68:3d:a0"
+          hardwareAddr: "BC:24:11:98:6B:13"
         dhcp: false
         addresses:
           - 192.168.10.102/24
@@ -63,45 +90,69 @@ nodes:
             gateway: 192.168.10.1
         vip:
           ip: 192.168.10.199
+  # GPU worker node
   - hostname: talos-cluster-gpu-worker-00
     controlPlane: false
     ipAddress: 192.168.10.200
     installDisk: /dev/sda
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/amd-ucode
+            - siderolabs/gasket-driver
+            - siderolabs/i915
+            - siderolabs/iscsi-tools
+            - siderolabs/nonfree-kmod-nvidia-production
+            - siderolabs/nvidia-container-toolkit-production
+            - siderolabs/qemu-guest-agent
+            - siderolabs/util-linux-tools
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: "aa:2c:a5:71:9d:c6"
+          hardwareAddr: "BC:24:11:77:86:5F"
         dhcp: false
         addresses:
           - 192.168.10.200/24
         routes:
           - network: 0.0.0.0/0
             gateway: 192.168.10.1
-    # Use the GPU worker-specific configuration
     nodeLabels:
       node-type: gpu-worker
     patches:
       - |-
         machine:
-          sysctls:
-            vm.nr_hugepages: "1024"
           kernel:
             modules:
-              - name: nvme_tcp
-              - name: vfio_pci
-              - name: uio_pci_generic
-      - |-
-        machine:
-          disks:
-            - device: /dev/sdb
-              partitions:
-                - mountpoint: /var/mnt/longhorn_sdb
+              - name: nvidia
+              - name: nvidia_uvm
+              - name: nvidia_drm
+              - name: nvidia_modeset
+          files:
+            - path: /etc/cri/conf.d/20-customization.part
+              op: create
+              content: |
+                [plugins]
+                  [plugins."io.containerd.cri.v1.runtime"]
+                    [plugins."io.containerd.cri.v1.runtime".containerd]
+                      default_runtime_name = "nvidia"
+  # Regular worker nodes
   - hostname: talos-cluster-worker-01
     controlPlane: false
     ipAddress: 192.168.10.201
     installDisk: /dev/sda
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/amd-ucode
+            - siderolabs/gasket-driver
+            - siderolabs/i915
+            - siderolabs/iscsi-tools
+            - siderolabs/qemu-guest-agent
+            - siderolabs/util-linux-tools
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: "ae:86:15:e7:eb:82"
+          hardwareAddr: "BC:24:11:4C:99:A2"
         dhcp: false
         addresses:
           - 192.168.10.201/24
@@ -110,59 +161,120 @@ nodes:
             gateway: 192.168.10.1
     nodeLabels:
       node-type: worker
+    patches:
+      - |-
+        machine:
+          files:
+            - path: /etc/cri/conf.d/20-customization.part
+              op: create
+              content: |
+                [plugins]
+                  [plugins."io.containerd.cri.v1.runtime"]
+                    [plugins."io.containerd.cri.v1.runtime".containerd]
+                      default_runtime_name = "runc"
   - hostname: talos-cluster-worker-02
     controlPlane: false
-    ipAddress: 192.168.10.203 # Corrected IP from .202
+    ipAddress: 192.168.10.203
     installDisk: /dev/sda
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/amd-ucode
+            - siderolabs/gasket-driver
+            - siderolabs/i915
+            - siderolabs/iscsi-tools
+            - siderolabs/qemu-guest-agent
+            - siderolabs/util-linux-tools
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: "ca:2b:35:07:04:74"
+          hardwareAddr: "BC:24:11:AD:82:0D"
         dhcp: false
         addresses:
-          - 192.168.10.203/24 # Use corrected IP
+          - 192.168.10.203/24
         routes:
           - network: 0.0.0.0/0
             gateway: 192.168.10.1
     nodeLabels:
       node-type: worker
+    patches:
+      - |-
+        machine:
+          files:
+            - path: /etc/cri/conf.d/20-customization.part
+              op: create
+              content: |
+                [plugins]
+                  [plugins."io.containerd.cri.v1.runtime"]
+                    [plugins."io.containerd.cri.v1.runtime".containerd]
+                      default_runtime_name = "runc"
+# Global patches
 patches:
-  # Force nameserver
+  # Network configuration
   - |-
     machine:
       network:
         nameservers:
           - 1.1.1.1
           - 1.0.0.1
-  # Configure NTP
+  # Time configuration
   - |-
     machine:
       time:
         disabled: false
-        servers: ["time.cloudflare.com"]
+        servers:
+          - time.cloudflare.com
+  # Common kernel modules and sysctls
+  - |-
+    machine:
+      sysctls:
+        vm.nr_hugepages: "1024"
+        net.core.bpf_jit_harden: 1
+      kernel:
+        modules:
+          - name: nvme_tcp
+          - name: vfio_pci
+          - name: uio_pci_generic
+# Control plane specific configuration
 controlPlane:
-  talosImageURL: ghcr.io/siderolabs/installer:v1.10.1
-  certSANs:
-    - "192.168.10.199"
-    - "127.0.0.1"
   patches:
+    # Default containerd runtime for control plane nodes
+    - |-
+      machine:
+        files:
+          - path: /etc/cri/conf.d/20-customization.part
+            op: create
+            content: |
+              [plugins]
+                [plugins."io.containerd.cri.v1.runtime"]
+                  [plugins."io.containerd.cri.v1.runtime".containerd]
+                    default_runtime_name = "runc"
     # Cluster configuration
     - |-
       cluster:
-        # allowSchedulingOnControlPlanes: true
         controllerManager:
           extraArgs:
             bind-address: 0.0.0.0
         proxy:
           disabled: true
-        network:
-          cni:
-            name: none
         scheduler:
           extraArgs:
             bind-address: 0.0.0.0
+    # CNI configuration
+    - |-
+      cluster:
+        network:
+          cni:
+            name: none
+    # Node labels for control plane nodes that should not be load balancers
+    - |-
+      machine:
+        nodeLabels:
+          node.kubernetes.io/exclude-from-external-load-balancers: ""
+# Worker specific configuration
 worker:
-  talosImageURL: ghcr.io/siderolabs/installer:v1.10.1
   patches:
+    # Longhorn storage configuration
     - |-
       machine:
         kubelet:
@@ -174,8 +286,6 @@ worker:
                 - bind
                 - rshared
                 - rw
-    - |-
-      machine:
         disks:
           - device: /dev/sdb
             partitions:

@@ -189,6 +189,8 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/downloa
 
 # Install ArgoCD with custom configuration
 k3s kubectl kustomize --enable-helm infrastructure/controllers/argocd | k3s kubectl apply -f -
+//talos 
+kubectl kustomize --enable-helm infrastructure/controllers/argocd | kubectl apply -f -
 
 # Wait for ArgoCD to be ready
 kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s

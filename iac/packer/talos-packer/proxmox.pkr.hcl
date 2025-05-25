@@ -34,7 +34,7 @@ source "proxmox-iso" "talos" {
   }
 
   memory               = 4048
-  vm_id                = "9702"
+  vm_id                = var.vm_id
   cores                = var.cores
   cpu_type             = var.cpu_type
   sockets              = "1"
@@ -45,7 +45,7 @@ source "proxmox-iso" "talos" {
   cloud_init              = true
   cloud_init_storage_pool = var.cloudinit_storage_pool
 
-  template_name        = "talos-${var.talos_version}-cloud-init-template"
+  template_name        = "${var.template_name_prefix}-${var.talos_version}-cloud-init-template"
   template_description = "Talos ${var.talos_version} cloud-init, built on ${formatdate("YYYY-MM-DD hh:mm:ss ZZZ", timestamp())}"
 
   boot_wait = "25s"
@@ -60,7 +60,7 @@ build {
 
   provisioner "shell" {
     inline = [
-      "curl -s -L ${local.image} -o /tmp/talos.raw.zst",
+      "curl -s -L ${local.talos_image_url} -o /tmp/talos.raw.zst",
       "zstd -d -c /tmp/talos.raw.zst | dd of=/dev/sda && sync",
     ]
   }

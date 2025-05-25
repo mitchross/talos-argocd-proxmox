@@ -1,5 +1,0 @@
-machine:
-  sysctls:
-    vm.nr_hugepages: "2024"
-  nodeLabels:
-    openebs.io/engine: mayastor

@@ -54,4 +54,4 @@ spec:
           hostPath:
             path: /usr/local/nvidia
       nodeSelector:
-         nvidia.com/gpu.present: "true"
+        node-type: gpu-worker

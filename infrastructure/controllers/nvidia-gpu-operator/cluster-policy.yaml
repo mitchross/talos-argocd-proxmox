@@ -7,8 +7,8 @@ spec:
   validator:
     driver:
       env:
-      - name: DISABLE_DEV_CHAR_SYMLINK_CREATION
-        value: "true"
+        - name: DISABLE_DEV_CHAR_SYMLINK_CREATION
+          value: "true"
   daemonsets: {}
   dcgm:
     enabled: false
@@ -17,12 +17,12 @@ spec:
   devicePlugin:
     enabled: true
   driver:
-    enabled: false # Set to true if you want the operator to install the driver
+    enabled: false # Talos provides the driver
   gfd:
     enabled: true
   nodeStatusExporter:
     enabled: true
   operator:
-    defaultRuntime: docker
+    defaultRuntime: docker # This might need to be nvidia if Talos sets it as default via the other patch
   toolkit:
-    enabled: true
+    enabled: false # Talos provides the toolkit

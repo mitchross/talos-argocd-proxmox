@@ -7,54 +7,53 @@ resource "proxmox_vm_qemu" "proxmox-talos" {
 
     # VM General Settings
     target_node = var.proxmox_node
-    name = var.nodes[count.index].node_name
-    vmid = var.nodes[count.index].vm_id
+    name        = var.nodes[count.index].node_name
+    vmid        = var.nodes[count.index].vm_id
 
     # VM Advanced General Settings
-    onboot = true 
+    onboot = true
 
     # VM OS Settings
-    clone = var.nodes[count.index].clone_target
+    clone = var.nodes[count.index].clone_target # Name of the template to clone
 
     # VM System Settings
-    agent = 0
-    
+    agent = 1 # QEMU Guest Agent. Set to 1 if installed/needed.
+
     # VM CPU Settings
-    cores = var.nodes[count.index].node_cpu_cores
+    cores   = var.nodes[count.index].node_cpu_cores
     sockets = 1
-    cpu = "host"    
-    
+    # type = "host" # Uncomment if you need host CPU passthrough
+
     # VM Memory Settings
-    memory = var.nodes[count.index].node_memory
+    memory = var.nodes[count.index].node_memory # In MB
 
     # VM Network Settings
     network {
-        bridge = "vmbr0"
+        id     = 0
         model  = "virtio"
+        bridge = "vmbr0" # Ensure this bridge exists on your target_node
     }
 
     # VM Disk Settings
-    scsihw = "virtio-scsi-single"
-    disks {
-        scsi {
-            scsi0 {
-                disk {
-                    size = var.nodes[count.index].node_disk
-                    format    = "raw"
-                    iothread  = true
-                    backup    = false
-                    storage   = "local-lvm"
-                }
-            }
-        }
+    scsihw = "virtio-scsi-single" # SCSI controller type
+
+    disk {
+        slot    = 0
+        type    = "scsi"      # Bus type of the disk. Must match template's primary disk bus.
+        storage = "local-lvm" # Storage pool for the disk.
+        size    = var.nodes[count.index].node_disk # Size of the disk, e.g., "32G".
+        iothread = true       # Optional: Enable iothread
+        backup   = false      # Optional: Exclude from backups
     }
 
     # VM Cloud-Init Settings
-    os_type = "cloud-init"
-    cloudinit_cdrom_storage = "local-lvm"
+    os_type = "cloud-init" # Necessary for Cloud-Init
+    # cloudinit_cdrom_storage = "local-lvm" # Optional
     ipconfig0 = var.nodes[count.index].node_ipconfig
+
 }
 
 output "mac_addrs" {
-    value = [for value in proxmox_vm_qemu.proxmox-talos : lower(tostring(value.network[0].macaddr))]
+    description = "MAC addresses of the created VMs' first network interface."
+    value       = [for vm in proxmox_vm_qemu.proxmox-talos : lower(vm.network[0].macaddr)]
 }
