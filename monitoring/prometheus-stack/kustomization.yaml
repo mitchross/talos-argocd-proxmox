@@ -13,3 +13,4 @@ helmCharts:
     releaseName: kube-prometheus-stack
     namespace: prometheus-stack
     valuesFile: values.yaml
+    includeCRDs: true # This is the key setting!

@@ -7,15 +7,11 @@ prometheus:
     storageSpec:
       volumeClaimTemplate:
         spec:
-          storageClassName: openebs-hostpath
-          volumeName: pv-prometheus
+          storageClassName: longhorn
           accessModes:
             - ReadWriteOnce
           resources:
             requests:
               storage: 10G
-          selector:
-            matchLabels:
-              app: prometheus
 nodeExporter:
   enabled: false
