@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nvidia-device-plugin
+  namespace: gpu-device-plugin
+  labels:
+    app.kubernetes.io/name: nvidia-device-plugin
+    app.kubernetes.io/component: device-plugin
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nvidia-device-plugin
+  labels:
+    app.kubernetes.io/name: nvidia-device-plugin
+    app.kubernetes.io/component: device-plugin
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["nodes/status"]
+    verbs: ["patch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nvidia-device-plugin
+  labels:
+    app.kubernetes.io/name: nvidia-device-plugin
+    app.kubernetes.io/component: device-plugin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nvidia-device-plugin
+subjects:
+  - kind: ServiceAccount
+    name: nvidia-device-plugin
+    namespace: gpu-device-plugin

@@ -3,5 +3,24 @@ kind: ConfigMap
 metadata:
   name: nvidia-device-plugin-config
   namespace: gpu-device-plugin
+  labels:
+    app.kubernetes.io/name: nvidia-device-plugin
+    app.kubernetes.io/component: device-plugin
 data:
-  config.yaml: "version: v1\nflags:\n  migStrategy: \"none\"\n  failOnInitError: false\n  nvidiaDriverRoot: \"/\"\n  plugin:\n    passDeviceSpecs: false\n    deviceListStrategy: \"envvar\"\n    deviceIDStrategy: \"uuid\"\nsharing:\n  timeSlicing:\n    renameByDefault: false\n    failRequestsGreaterThanOne: true\n    resources:\n    - name: nvidia.com/gpu\n      replicas: 10 "
+  config.yaml: |
+    version: v1
+    flags:
+      migStrategy: "none"
+      failOnInitError: false
+      nvidiaDriverRoot: "/"
+      plugin:
+        passDeviceSpecs: false
+        deviceListStrategy: "envvar"
+        deviceIDStrategy: "uuid"
+    sharing:
+      timeSlicing:
+        renameByDefault: false
+        failRequestsGreaterThanOne: true
+        resources:
+        - name: nvidia.com/gpu
+          replicas: 10

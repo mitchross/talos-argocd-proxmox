@@ -1,12 +1,23 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: gpu-device-plugin
+metadata:
+  name: nvidia-device-plugin
+  labels:
+    app.kubernetes.io/name: nvidia-device-plugin
+    app.kubernetes.io/component: device-plugin
 resources:
   - namespace.yaml
   - runtime.yaml
+  - rbac.yaml
   - config.yaml
+  - service.yaml
   - nvidia-device-plugin.yml
+  # Test pods (uncomment to deploy)
   # - nvidia-test-pod.yaml
+  # - nvidia-timeslice-test.yaml
+commonLabels:
+  app.kubernetes.io/part-of: gpu-infrastructure
 # If the static nvidia-device-plugin.yml doesn't specify a namespace,
 # or if it specifies a different one (e.g., kube-system),
 # you might need a patch to set the namespace for the DaemonSet.

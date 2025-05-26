@@ -17,19 +17,39 @@ kind: DaemonSet
 metadata:
   name: nvidia-device-plugin-daemonset
   namespace: gpu-device-plugin
+  labels:
+    app.kubernetes.io/name: nvidia-device-plugin
+    app.kubernetes.io/version: "v0.17.2"
+    app.kubernetes.io/component: device-plugin
+    app.kubernetes.io/managed-by: kustomize
 spec:
   selector:
     matchLabels:
-      name: nvidia-device-plugin-ds
+      app.kubernetes.io/name: nvidia-device-plugin
+      app.kubernetes.io/component: device-plugin
   updateStrategy:
     type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
   template:
     metadata:
       labels:
-        name: nvidia-device-plugin-ds
+        app.kubernetes.io/name: nvidia-device-plugin
+        app.kubernetes.io/version: "v0.17.2"
+        app.kubernetes.io/component: device-plugin
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ""
     spec:
       tolerations:
         - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+        - key: CriticalAddonsOnly
+          operator: Exists
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
           operator: Exists
           effect: NoSchedule
       # Mark this pod as a critical add-on; when enabled, the critical add-on
@@ -38,18 +58,61 @@ spec:
       # See https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/
       priorityClassName: "system-node-critical"
       runtimeClassName: nvidia
+      serviceAccountName: nvidia-device-plugin
+      nodeSelector:
+        feature.node.kubernetes.io/pci-10de.present: "true" # NVIDIA PCI vendor ID
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - image: nvcr.io/nvidia/k8s-device-plugin:v0.17.2
           name: nvidia-device-plugin-ctr
+          imagePullPolicy: IfNotPresent
           args:
             - --config-file=/etc/nvidia/config.yaml
           env:
             - name: FAIL_ON_INIT_ERROR
               value: "false"
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          ports:
+            - containerPort: 2112
+              name: http-metrics
+              protocol: TCP
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            readOnlyRootFilesystem: true
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http-metrics
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http-metrics
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
           volumeMounts:
             - name: device-plugin
               mountPath: /var/lib/kubelet/device-plugins
