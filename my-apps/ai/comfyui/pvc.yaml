@@ -1,4 +1,4 @@
-# PVC for ComfyUI data using Longhorn storage
+# PVC for ComfyUI data using SMB share
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -9,8 +9,8 @@ metadata:
     type: storage
 spec:
   accessModes:
-    - ReadWriteOnce # Changed from ReadWriteMany since Longhorn doesn't support it
+    - ReadWriteMany # Using ReadWriteMany for SMB
   resources:
     requests:
       storage: 100Gi
-  storageClassName: longhorn # Changed from comfyui-smb to available storage class
+  storageClassName: comfyui-smb # Using SMB storage class for ComfyUI
