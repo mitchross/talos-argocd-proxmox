@@ -1,3 +1,7 @@
+# Ensure CRDs are installed (this is the default behavior)
+# Do NOT set skipCrds: true anywhere in the Application spec
+crds:
+  enabled: true
 prometheus:
   prometheusSpec:
     storageSpec:
