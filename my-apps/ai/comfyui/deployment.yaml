@@ -15,7 +15,7 @@ spec:
     spec:
       runtimeClassName: nvidia
       nodeSelector:
-        nvidia.com/gpu.present: "true"  # Schedule on GPU nodes
+        nvidia.com/gpu.present: "true" # Schedule on GPU nodes
       tolerations:
         - key: nvidia.com/gpu
           operator: Exists

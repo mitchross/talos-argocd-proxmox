@@ -18,7 +18,7 @@ spec:
       labels:
         type: monitoring
     spec:
-      project: infrastructure
+      project: monitoring
       source:
         plugin:
           name: kustomize-build-with-helm
