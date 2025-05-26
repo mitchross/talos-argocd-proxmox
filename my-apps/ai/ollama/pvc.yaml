@@ -14,7 +14,3 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  selector:
-    matchLabels:
-      app: ollama
-      type: storage

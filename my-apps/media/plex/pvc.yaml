@@ -14,10 +14,6 @@ spec:
   resources:
     requests:
       storage: 12Gi
-  selector:
-    matchLabels:
-      app: plex
-      type: config
 ---
 apiVersion: v1
 kind: PersistentVolume

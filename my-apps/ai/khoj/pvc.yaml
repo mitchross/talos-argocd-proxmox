@@ -14,10 +14,6 @@ spec:
     requests:
       storage: 1Gi
   storageClassName: longhorn
-  selector:
-    matchLabels:
-      app: khoj
-      type: config
 ---
 
 
@@ -38,7 +34,3 @@ spec:
     requests:
       storage: 5Gi
   storageClassName: longhorn
-  selector:
-    matchLabels:
-      app: khoj
-      type: models
