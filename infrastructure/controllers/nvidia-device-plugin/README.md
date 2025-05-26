@@ -78,13 +78,20 @@ kubectl logs -n gpu-device-plugin nvidia-test
 ```bash
 # Deploy multiple workloads to test sharing
 for i in {1..3}; do
-  kubectl run gpu-test-$i \
-    --image=nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04 \
-    --restart=Never --rm -it \
-    --overrides='{"spec":{"runtimeClassName":"nvidia","tolerations":[{"key":"nvidia.com/gpu","operator":"Exists","effect":"NoSchedule"}],"nodeSelector":{"feature.node.kubernetes.io/pci-10de.present":"true"}}}' \
-    --limits=nvidia.com/gpu=1 \
-    -- nvidia-smi
+  kubectl run gpu-test-$i --image=nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04 --restart=Never --rm -it --overrides='{"spec":{"runtimeClassName":"nvidia","tolerations":[{"key":"nvidia.com/gpu","operator":"Exists","effect":"NoSchedule"}],"nodeSelector":{"nvidia.com/gpu.present":"true"}}}' --limits=nvidia.com/gpu=1 -- nvidia-smi
 done
+```
+
+#### Alternative Test Commands
+```bash
+# Simple test without node selector (recommended for most setups)
+kubectl run gpu-test --image=nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04 --restart=Never --rm -it --overrides='{"spec":{"runtimeClassName":"nvidia","tolerations":[{"key":"nvidia.com/gpu","operator":"Exists","effect":"NoSchedule"}]}}' --limits=nvidia.com/gpu=1 -- nvidia-smi
+
+# Test with GPU Operator labels (for Talos/GPU Operator setups)
+kubectl run gpu-test --image=nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04 --restart=Never --rm -it --overrides='{"spec":{"runtimeClassName":"nvidia","tolerations":[{"key":"nvidia.com/gpu","operator":"Exists","effect":"NoSchedule"}],"nodeSelector":{"nvidia.com/gpu.present":"true"}}}' --limits=nvidia.com/gpu=1 -- nvidia-smi
+
+# Test with node-type selector (if using custom node labels)
+kubectl run gpu-test --image=nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04 --restart=Never --rm -it --overrides='{"spec":{"runtimeClassName":"nvidia","tolerations":[{"key":"nvidia.com/gpu","operator":"Exists","effect":"NoSchedule"}],"nodeSelector":{"node-type":"gpu-worker"}}}' --limits=nvidia.com/gpu=1 -- nvidia-smi
 ```
 
 ## 📊 Configuration
@@ -151,10 +158,7 @@ kubectl get pcidevices -n <node> | grep NVIDIA
 kubectl exec -it <device-plugin-pod> -- lsmod | grep nvidia
 
 # Test NVIDIA runtime
-kubectl run nvidia-debug --image=nvidia/cuda:12.4.1-base-ubuntu22.04 \
-  --restart=Never --rm -it \
-  --overrides='{"spec":{"runtimeClassName":"nvidia"}}' \
-  -- nvidia-smi
+kubectl run nvidia-debug --image=nvidia/cuda:12.4.1-base-ubuntu22.04 --restart=Never --rm -it --overrides='{"spec":{"runtimeClassName":"nvidia"}}' -- nvidia-smi
 ```
 
 ## 📈 Monitoring

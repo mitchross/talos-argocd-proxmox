@@ -60,7 +60,7 @@ spec:
       runtimeClassName: nvidia
       serviceAccountName: nvidia-device-plugin
       nodeSelector:
-        feature.node.kubernetes.io/pci-10de.present: "true" # NVIDIA PCI vendor ID
+        nvidia.com/gpu.present: "true"
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       containers:
