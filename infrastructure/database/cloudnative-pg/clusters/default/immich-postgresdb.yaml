@@ -43,10 +43,10 @@ spec:
         - ALTER ROLE "immich" WITH SUPERUSER;
   storage:
     size: 20Gi
-    storageClass: local-storage
+    storageClass: longhorn
   walStorage:
     size: 5Gi
-    storageClass: local-storage
+    storageClass: longhorn
   managed:
     services:
       additional:
@@ -67,4 +67,3 @@ spec:
   enableSuperuserAccess: true
   monitoring:
     enablePodMonitor: true
-
