@@ -84,9 +84,10 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
-            runAsNonRoot: true
-            runAsUser: 65534
-            runAsGroup: 65534
+            # Device plugins need root to create sockets in /var/lib/kubelet/device-plugins/
+            # runAsNonRoot: true
+            # runAsUser: 65534
+            # runAsGroup: 65534
             readOnlyRootFilesystem: true
             seccompProfile:
               type: RuntimeDefault
