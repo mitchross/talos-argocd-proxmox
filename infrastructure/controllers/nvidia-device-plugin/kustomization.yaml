@@ -1,19 +1,16 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: gpu-device-plugin
-
 resources:
-- namespace.yaml
-- runtime.yaml
-- nvidia-test-pod.yaml
-
+  - namespace.yaml
+  - runtime.yaml
+  - nvidia-test-pod.yaml
 helmCharts:
-- name: nvidia-device-plugin
-  repo: https://nvidia.github.io/k8s-device-plugin
-  version: 0.17.2
-  releaseName: nvidia-device-plugin
-  namespace: gpu-device-plugin
-  includeCRDs: true
-  valuesInline:
-    runtimeClassName: nvidia
+  - name: nvidia-device-plugin
+    repo: https://nvidia.github.io/k8s-device-plugin
+    version: 0.17.1
+    releaseName: nvidia-device-plugin
+    namespace: gpu-device-plugin
+    includeCRDs: true
+    valuesInline:
+      runtimeClassName: nvidia

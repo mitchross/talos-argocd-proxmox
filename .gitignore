@@ -87,3 +87,4 @@ config.xml
 /infrastructure/controllers/argocd/charts
 /node_modules
 /infrastructure/networking/cilium/charts
+*.log
