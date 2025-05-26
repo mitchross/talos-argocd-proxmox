@@ -1,6 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: monitoring
+namespace: prometheus-stack
 resources:
   - ns.yaml
   - alertmanager-http-route.yaml
@@ -11,5 +11,5 @@ helmCharts:
     repo: https://prometheus-community.github.io/helm-charts
     version: 72.6.2
     releaseName: kube-prometheus-stack
-    namespace: monitoring
+    namespace: prometheus-stack
     valuesFile: values.yaml
