@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nvidia-device-plugin-config
+  namespace: gpu-device-plugin
+data:
+  config.yaml: "version: v1\nflags:\n  migStrategy: \"none\"\n  failOnInitError: false\n  nvidiaDriverRoot: \"/\"\n  plugin:\n    passDeviceSpecs: false\n    deviceListStrategy: \"envvar\"\n    deviceIDStrategy: \"uuid\"\nsharing:\n  timeSlicing:\n    renameByDefault: false\n    failRequestsGreaterThanOne: true\n    resources:\n    - name: nvidia.com/gpu\n      replicas: 10 "

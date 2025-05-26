@@ -41,6 +41,8 @@ spec:
       containers:
         - image: nvcr.io/nvidia/k8s-device-plugin:v0.17.2
           name: nvidia-device-plugin-ctr
+          args:
+            - --config-file=/etc/nvidia/config.yaml
           env:
             - name: FAIL_ON_INIT_ERROR
               value: "false"
@@ -51,7 +53,13 @@ spec:
           volumeMounts:
             - name: device-plugin
               mountPath: /var/lib/kubelet/device-plugins
+            - name: config
+              mountPath: /etc/nvidia
+              readOnly: true
       volumes:
         - name: device-plugin
           hostPath:
             path: /var/lib/kubelet/device-plugins
+        - name: config
+          configMap:
+            name: nvidia-device-plugin-config

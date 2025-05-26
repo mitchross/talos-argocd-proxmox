@@ -4,6 +4,7 @@ namespace: gpu-device-plugin
 resources:
   - namespace.yaml
   - runtime.yaml
+  - config.yaml
   - nvidia-device-plugin.yml
   # - nvidia-test-pod.yaml
 # If the static nvidia-device-plugin.yml doesn't specify a namespace,

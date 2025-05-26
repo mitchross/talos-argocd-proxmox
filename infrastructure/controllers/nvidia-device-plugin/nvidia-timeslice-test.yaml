@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nvidia-timeslice-test
+  namespace: gpu-device-plugin
+spec:
+  restartPolicy: Never
+  runtimeClassName: nvidia
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: nvidia-timeslice-test
+      image: nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04
+      command:
+        - /bin/bash
+        - -c
+        - |
+          echo "=== GPU Time Slicing Test ==="
+          echo "Pod: nvidia-timeslice-test"
+          echo "Timestamp: $(date)"
+          echo
+          nvidia-smi
+          echo
+          echo "=== Running GPU workload for 30 seconds ==="
+          timeout 30s nvidia-smi dmon -s u -d 1 || echo "Workload completed"
+          echo "=== Test completed ==="
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      resources:
+        limits:
+          nvidia.com/gpu: "1"
+        requests:
+          nvidia.com/gpu: "1"
