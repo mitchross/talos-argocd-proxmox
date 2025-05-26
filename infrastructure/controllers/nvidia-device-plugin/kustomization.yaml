@@ -6,17 +6,6 @@ resources:
   - runtime.yaml
   - nvidia-device-plugin.yml
   # - nvidia-test-pod.yaml
-helmCharts:
-# Comment out or remove the helmCharts section
-# - name: nvidia-device-plugin
-#   repo: https://nvidia.github.io/k8s-device-plugin
-#   version: 0.17.1
-#   releaseName: nvidia-device-plugin
-#   namespace: gpu-device-plugin
-#   includeCRDs: true
-#   valuesInline:
-#     runtimeClassName: nvidia
-
 # If the static nvidia-device-plugin.yml doesn't specify a namespace,
 # or if it specifies a different one (e.g., kube-system),
 # you might need a patch to set the namespace for the DaemonSet.
