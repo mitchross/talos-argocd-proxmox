@@ -22,7 +22,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: searxng
-          image: searxng/searxng:latest@sha256:7e956987b228a87c5d6ba90a2bbfe30bb2f88d8dec174666a7ec2f4b18ddbd03
+          image: searxng/searxng:latest@sha256:fc9339bb549acd2b883b5ed50b485626f0a11a1c423ac9b9882ad003515a5cfd
           resources:
             requests:
               memory: 100M
