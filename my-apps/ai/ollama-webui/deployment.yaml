@@ -14,6 +14,12 @@ spec:
         app: ollama-webui
     spec:
       runtimeClassName: nvidia
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
       containers:
         - name: ollama-webui
           image: ghcr.io/open-webui/open-webui:git-c5b5303-cuda

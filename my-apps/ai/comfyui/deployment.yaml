@@ -15,7 +15,11 @@ spec:
     spec:
       runtimeClassName: nvidia
       nodeSelector:
-        kubernetes.io/hostname: vanillax-ai
+        nvidia.com/gpu.present: "true"  # Schedule on GPU nodes
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
       # initContainers:
       #   - name: init-git-config
       #     image: busybox
