@@ -1,11 +1,14 @@
-# Loki Configuration optimized for small-medium clusters
-# Using single binary deployment mode with filesystem storage
+# Official Loki Configuration - SingleBinary Mode
+# Based on Grafana Labs recommendations (March 2025)
+# For small to medium workloads
 
+# Deployment mode - SingleBinary for small clusters
 deploymentMode: SingleBinary
+# Core Loki configuration
 loki:
-  # Authentication and multi-tenancy
+  # Basic authentication
   auth_enabled: false
-  # Schema configuration
+  # Schema configuration for v13
   schemaConfig:
     configs:
       - from: "2024-04-01"
@@ -15,73 +18,18 @@ loki:
         index:
           prefix: loki_index_
           period: 24h
-  # Storage configuration
-  storage:
-    type: filesystem
-    bucketNames:
-      chunks: "chunks"
-      ruler: "ruler"
-      admin: "admin"
-    filesystem:
-      chunks_directory: /var/loki/chunks
-      rules_directory: /var/loki/rules
-  # Common configuration
+  # Common configuration for all components
   commonConfig:
     replication_factor: 1
-  # Server configuration
-  server:
-    http_listen_port: 3100
-    log_level: info
-  # Ingester configuration
-  ingester:
-    chunk_encoding: snappy
-    chunk_idle_period: 5m
-    chunk_retain_period: 30s
-    max_chunk_age: 1h
-    lifecycler:
-      heartbeat_period: 5s
-      num_tokens: 512
-      ring:
-        kvstore:
-          store: memberlist
-        replication_factor: 1
-  # Distributor configuration
-  distributor:
-    ring:
-      kvstore:
-        store: memberlist
-  # Query configuration
-  querier:
-    max_concurrent: 2048
-    query_timeout: 5m
-  # Query frontend configuration  
-  query_range:
-    align_queries_with_step: true
-    max_retries: 5
-    cache_results: true
+  # Storage configuration for filesystem
+  storage:
+    type: filesystem
   # Limits configuration
   limits_config:
     retention_period: 744h # 31 days
-    enforce_metric_name: false
-    reject_old_samples: true
-    reject_old_samples_max_age: 168h
-    max_query_series: 100000
-    max_query_parallelism: 32
-    ingestion_rate_mb: 10
-    ingestion_burst_size_mb: 20
-    per_stream_rate_limit: 3MB
-    per_stream_rate_limit_burst: 15MB
-    max_streams_per_user: 10000
-    max_line_size: 256000
     allow_structured_metadata: true
     volume_enabled: true
-  # Pattern ingester
-  pattern_ingester:
-    enabled: true
-  # Tracing
-  tracing:
-    enabled: true
-# Single Binary configuration
+# SingleBinary deployment configuration
 singleBinary:
   replicas: 1
   persistence:
@@ -95,13 +43,10 @@ singleBinary:
     limits:
       cpu: 1000m
       memory: 1Gi
-# Gateway configuration
+# Gateway for HTTP access
 gateway:
   enabled: true
   replicas: 1
-  image:
-    repository: nginxinc/nginx-unprivileged
-    tag: 1.25-alpine
   resources:
     requests:
       cpu: 50m
@@ -109,109 +54,28 @@ gateway:
     limits:
       cpu: 200m
       memory: 128Mi
-  # Ingress configuration
-  ingress:
-    enabled: false # Using HTTPRoute instead
-# Monitoring configuration
+# Monitoring integration
 monitoring:
   serviceMonitor:
     enabled: true
     labels:
       release: kube-prometheus-stack
-  dashboards:
-    enabled: true
-    labels:
-      grafana_dashboard: "1"
-# Disable optional components for simplicity
+# Promtail for log collection
+promtail:
+  enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+# Disable unnecessary components
 chunksCache:
   enabled: false
 resultsCache:
   enabled: false
 minio:
   enabled: false
-# Promtail configuration (for log shipping)
-promtail:
-  enabled: true
-  config:
-    # Log sources configuration
-    scrape_configs:
-      - job_name: kubernetes-pods
-        kubernetes_sd_configs:
-          - role: pod
-        pipeline_stages:
-          - cri: {}
-        relabel_configs:
-          - source_labels:
-              - __meta_kubernetes_pod_controller_name
-            regex: ([0-9a-z-.]+?)(-[0-9a-f]{8,10})?
-            target_label: __tmp_controller_name
-          - source_labels:
-              - __meta_kubernetes_pod_label_app_kubernetes_io_name
-              - __meta_kubernetes_pod_label_app
-              - __tmp_controller_name
-              - __meta_kubernetes_pod_name
-            regex: ^;*([^;]+)(;.*)?$
-            target_label: app
-            replacement: $1
-          - source_labels:
-              - __meta_kubernetes_pod_label_app_kubernetes_io_instance
-              - __meta_kubernetes_pod_label_instance
-            regex: ^;*([^;]+)(;.*)?$
-            target_label: instance
-            replacement: $1
-          - source_labels:
-              - __meta_kubernetes_pod_label_app_kubernetes_io_component
-              - __meta_kubernetes_pod_label_component
-            regex: ^;*([^;]+)(;.*)?$
-            target_label: component
-            replacement: $1
-          - action: replace
-            source_labels:
-              - __meta_kubernetes_pod_node_name
-            target_label: node_name
-          - action: replace
-            source_labels:
-              - __meta_kubernetes_namespace
-            target_label: namespace
-          - action: replace
-            replacement: $1
-            separator: /
-            source_labels:
-              - namespace
-              - app
-            target_label: job
-          - action: replace
-            source_labels:
-              - __meta_kubernetes_pod_name
-            target_label: pod
-          - action: replace
-            source_labels:
-              - __meta_kubernetes_pod_container_name
-            target_label: container
-          - action: replace
-            replacement: /var/log/pods/*$1/*.log
-            separator: /
-            source_labels:
-              - __meta_kubernetes_pod_uid
-              - __meta_kubernetes_pod_container_name
-            target_label: __path__
-          - action: replace
-            regex: true/(.*)
-            replacement: /var/log/pods/*$1/*.log
-            separator: /
-            source_labels:
-              - __meta_kubernetes_pod_annotationpresent_kubernetes_io_config_hash
-              - __meta_kubernetes_pod_annotation_kubernetes_io_config_hash
-              - __meta_kubernetes_pod_container_name
-            target_label: __path__
-  # Resource configuration for Promtail
-  resources:
-    requests:
-      cpu: 50m
-      memory: 64Mi
-    limits:
-      cpu: 200m
-      memory: 128Mi
-# Test configuration
 test:
   enabled: false
