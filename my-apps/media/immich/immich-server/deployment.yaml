@@ -61,12 +61,4 @@ spec:
         - name: library
           persistentVolumeClaim:
             claimName: immich-library
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - vanillax-ai
+      # Node affinity removed to allow scheduling on any worker node

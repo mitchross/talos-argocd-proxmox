@@ -55,10 +55,11 @@ spec:
             claimName: immich-machine-learning-cache
       affinity:
         nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-type
                     operator: In
                     values:
-                      - vanillax-ai
+                      - gpu-worker
