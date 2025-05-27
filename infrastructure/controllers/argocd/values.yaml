@@ -2,6 +2,16 @@ configs:
   cm:
     create: true
     application.resourceTrackingMethod: "annotation"
+    resource.customizations: |
+      gateway.networking.k8s.io_HTTPRoute:
+        ignoreDifferences: |
+          jsonPointers:
+          - /status
+          jqPathExpressions:
+          - .spec.parentRefs[]?.group
+          - .spec.parentRefs[]?.kind
+          - .spec.rules[]?.backendRefs[]?.group
+          - .spec.rules[]?.backendRefs[]?.kind
   cmp:
     create: true
     plugins:
