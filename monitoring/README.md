@@ -44,7 +44,7 @@ graph TB
 - **kube-state-metrics**: Kubernetes resource metrics
 
 ### 📝 Log Aggregation (loki-stack/)
-- **Loki**: Log aggregation and storage
+- **Loki**: Log aggregation and storage (SingleBinary mode with filesystem storage)
 - **Promtail**: Log collection agent
 - **Gateway**: HTTP access gateway
 
@@ -202,6 +202,23 @@ helm search repo grafana/loki --versions | head -5
 ```
 
 Update the version in `monitoring/loki-stack/kustomization.yaml` accordingly.
+
+#### Loki Deployment Mode Error
+If you see errors like "Cannot run scalable targets (backend, read, write) without an object storage backend":
+
+- **SimpleScalable mode** requires object storage (S3, MinIO, etc.)
+- **SingleBinary mode** works with filesystem storage (recommended for small clusters)
+
+For small clusters, use SingleBinary mode:
+
+```yaml
+deploymentMode: SingleBinary
+loki:
+  storage:
+    type: filesystem
+  commonConfig:
+    replication_factor: 1
+```
 
 #### Loki Storage Configuration Error
 If you see template errors related to `$.Values.loki.storage.bucketNames.chunks`, ensure your Loki values.yaml has proper storage configuration:

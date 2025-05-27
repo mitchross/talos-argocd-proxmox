@@ -1,7 +1,7 @@
 # Loki Configuration optimized for small-medium clusters
-# Using simple scalable deployment mode
+# Using single binary deployment mode with filesystem storage
 
-deploymentMode: SimpleScalable
+deploymentMode: SingleBinary
 loki:
   # Authentication and multi-tenancy
   auth_enabled: false
@@ -81,42 +81,17 @@ loki:
   # Tracing
   tracing:
     enabled: true
-# Backend configuration
-backend:
+# Single Binary configuration
+singleBinary:
   replicas: 1
   persistence:
+    enabled: true
     size: 10Gi
     storageClass: longhorn
   resources:
     requests:
       cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 1000m
-      memory: 1Gi
-# Read configuration
-read:
-  replicas: 1
-  persistence:
-    size: 2Gi
-    storageClass: longhorn
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 500m
       memory: 512Mi
-# Write configuration  
-write:
-  replicas: 1
-  persistence:
-    size: 10Gi
-    storageClass: longhorn
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
     limits:
       cpu: 1000m
       memory: 1Gi
