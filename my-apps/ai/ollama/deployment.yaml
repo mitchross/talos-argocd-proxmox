@@ -34,11 +34,11 @@ spec:
             requests:
               cpu: 2000m
               memory: 8Gi
-              nvidia.com/gpu: "2" # Use 2 physical GPUs
+              nvidia.com/gpu: "1" # Use 1 GPU instance
             limits:
               cpu: 4000m
               memory: 16Gi
-              nvidia.com/gpu: "2" # Use 2 physical GPUs
+              nvidia.com/gpu: "1" # Use 1 GPU instance
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
