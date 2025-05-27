@@ -1,0 +1,167 @@
+# ServiceMonitor for ArgoCD
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: argocd-metrics
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: argocd
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-metrics
+  namespaceSelector:
+    matchNames:
+      - argocd
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+---
+# ServiceMonitor for ArgoCD Server
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: argocd-server-metrics
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: argocd-server
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-server-metrics
+  namespaceSelector:
+    matchNames:
+      - argocd
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+---
+# ServiceMonitor for ArgoCD Repo Server
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: argocd-repo-server-metrics
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: argocd-repo-server
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-repo-server
+  namespaceSelector:
+    matchNames:
+      - argocd
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+---
+# ServiceMonitor for NVIDIA Device Plugin
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nvidia-device-plugin-metrics
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: nvidia-device-plugin
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nvidia-device-plugin
+  namespaceSelector:
+    matchNames:
+      - gpu-device-plugin
+  endpoints:
+    - port: http-metrics
+      interval: 30s
+      path: /metrics
+---
+# ServiceMonitor for Longhorn (if available)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: longhorn-metrics
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: longhorn
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: longhorn-manager
+  namespaceSelector:
+    matchNames:
+      - longhorn-system
+  endpoints:
+    - port: manager
+      interval: 30s
+      path: /metrics
+---
+# ServiceMonitor for Cilium
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: cilium-metrics
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: cilium
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      k8s-app: cilium
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  endpoints:
+    - port: prometheus
+      interval: 30s
+      path: /metrics
+---
+# ServiceMonitor for Cilium Operator
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: cilium-operator-metrics
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: cilium-operator
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      name: cilium-operator
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  endpoints:
+    - port: prometheus
+      interval: 30s
+      path: /metrics
+---
+# ServiceMonitor for Gateway API (if using)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: gateway-api-metrics
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: gateway-api
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gateway
+  namespaceSelector:
+    matchNames:
+      - gateway
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics

@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: loki-stack
+resources:
+  - ns.yaml
+  - loki-http-route.yaml
+helmCharts:
+  - name: loki
+    repo: https://grafana.github.io/helm-charts
+    version: 6.17.0
+    releaseName: loki
+    namespace: loki-stack
+    valuesFile: values.yaml
+    includeCRDs: true

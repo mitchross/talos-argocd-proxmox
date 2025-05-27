@@ -6,10 +6,13 @@ resources:
   - alertmanager-http-route.yaml
   - grafana-http-route.yaml
   - prometheus-http-route.yaml
+  - alertmanager-config.yaml
+  - custom-alerts.yaml
+  - custom-servicemonitors.yaml
 helmCharts:
   - name: kube-prometheus-stack
     repo: https://prometheus-community.github.io/helm-charts
-    version: 72.6.2
+    version: 72.6.3
     releaseName: kube-prometheus-stack
     namespace: prometheus-stack
     valuesFile: values.yaml

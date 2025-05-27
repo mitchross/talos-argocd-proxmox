@@ -1,0 +1,183 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: custom-cluster-alerts
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack
+    app.kubernetes.io/instance: kube-prometheus-stack
+    app.kubernetes.io/managed-by: Helm
+    prometheus: kube-prometheus-stack-prometheus
+    role: alert-rules
+spec:
+  groups:
+    # Kubernetes Cluster Health
+    - name: kubernetes.cluster.health
+      interval: 30s
+      rules:
+        - alert: KubernetesNodeNotReady
+          expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Kubernetes node {{ $labels.node }} is not ready"
+            description: "Node {{ $labels.node }} has been not ready for more than 5 minutes."
+        - alert: KubernetesPodCrashLooping
+          expr: rate(kube_pod_container_status_restarts_total[15m]) * 60 * 15 > 0
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping"
+            description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) is restarting {{ printf \"%.2f\" $value }} times every 15 minutes."
+        - alert: KubernetesPodNotReady
+          expr: kube_pod_status_phase{phase=~"Pending|Unknown"} > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is not ready"
+            description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready state for more than 5 minutes."
+    # Resource Usage Alerts
+    - name: kubernetes.resources
+      interval: 30s
+      rules:
+        - alert: NodeMemoryHighUsage
+          expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Node {{ $labels.instance }} has high memory usage"
+            description: "Node {{ $labels.instance }} memory usage is above 85% (current value: {{ printf \"%.2f\" $value }}%)"
+        - alert: NodeDiskSpaceUsage
+          expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"})) * 100 > 85
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Node {{ $labels.instance }} disk usage is high"
+            description: "Node {{ $labels.instance }} disk usage on {{ $labels.mountpoint }} is above 85% (current value: {{ printf \"%.2f\" $value }}%)"
+        - alert: NodeCPUHighUsage
+          expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Node {{ $labels.instance }} has high CPU usage"
+            description: "Node {{ $labels.instance }} CPU usage is above 90% (current value: {{ printf \"%.2f\" $value }}%)"
+    # ArgoCD Monitoring
+    - name: argocd.health
+      interval: 30s
+      rules:
+        - alert: ArgoCDApplicationNotSynced
+          expr: argocd_app_info{sync_status!="Synced"} > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "ArgoCD Application {{ $labels.name }} is not synced"
+            description: "ArgoCD Application {{ $labels.name }} in project {{ $labels.project }} has been out of sync for more than 10 minutes."
+        - alert: ArgoCDApplicationUnhealthy
+          expr: argocd_app_info{health_status!="Healthy"} > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "ArgoCD Application {{ $labels.name }} is unhealthy"
+            description: "ArgoCD Application {{ $labels.name }} in project {{ $labels.project }} is in an unhealthy state."
+    # Storage Alerts (Longhorn)
+    - name: storage.longhorn
+      interval: 30s
+      rules:
+        - alert: LonghornVolumeHealthy
+          expr: longhorn_volume_state{state!~"attached|detached"} > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Longhorn volume {{ $labels.volume }} is unhealthy"
+            description: "Longhorn volume {{ $labels.volume }} is in state {{ $labels.state }}"
+        - alert: LonghornNodeStorageSpaceLow
+          expr: (longhorn_node_storage_usage_bytes / longhorn_node_storage_capacity_bytes) * 100 > 90
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Longhorn node {{ $labels.node }} storage space is low"
+            description: "Longhorn node {{ $labels.node }} storage usage is above 90% (current value: {{ printf \"%.2f\" $value }}%)"
+    # Prometheus Stack Health
+    - name: monitoring.stack.health
+      interval: 30s
+      rules:
+        - alert: PrometheusTargetDown
+          expr: up == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Prometheus target {{ $labels.instance }} is down"
+            description: "Prometheus target {{ $labels.instance }} for job {{ $labels.job }} has been down for more than 2 minutes."
+        - alert: PrometheusConfigurationReloadFailure
+          expr: prometheus_config_last_reload_successful != 1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Prometheus configuration reload failure"
+            description: "Prometheus {{ $labels.instance }} configuration reload has failed."
+        - alert: AlertmanagerConfigurationReloadFailure
+          expr: alertmanager_config_last_reload_successful != 1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Alertmanager configuration reload failure"
+            description: "Alertmanager {{ $labels.instance }} configuration reload has failed."
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: custom-application-alerts
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack
+    app.kubernetes.io/instance: kube-prometheus-stack
+    app.kubernetes.io/managed-by: Helm
+    prometheus: kube-prometheus-stack-prometheus
+    role: alert-rules
+spec:
+  groups:
+    # Application-specific alerts for your workloads
+    - name: applications.health
+      interval: 60s
+      rules:
+        - alert: ApplicationHighMemoryUsage
+          expr: (container_memory_working_set_bytes{container!="POD",container!=""} / container_spec_memory_limit_bytes) * 100 > 90
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Container {{ $labels.container }} in {{ $labels.namespace }}/{{ $labels.pod }} has high memory usage"
+            description: "Container {{ $labels.container }} memory usage is above 90% of its limit (current value: {{ printf \"%.2f\" $value }}%)"
+        - alert: ApplicationHighCPUUsage
+          expr: (rate(container_cpu_usage_seconds_total{container!="POD",container!=""}[5m])) / (container_spec_cpu_quota{container!="POD",container!=""}/container_spec_cpu_period{container!="POD",container!=""}) * 100 > 90
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Container {{ $labels.container }} in {{ $labels.namespace }}/{{ $labels.pod }} has high CPU usage"
+            description: "Container {{ $labels.container }} CPU usage is above 90% of its limit (current value: {{ printf \"%.2f\" $value }}%)"
+    # Network and connectivity alerts
+    - name: network.connectivity
+      interval: 30s
+      rules:
+        - alert: PodNetworkUnavailable
+          expr: kube_pod_status_phase{phase="Running"} unless on (namespace, pod) kube_pod_status_ready{condition="True"}
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} network may be unavailable"
+            description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is running but not ready, which may indicate network issues."

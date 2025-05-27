@@ -1,9 +1,22 @@
-# Ensure CRDs are installed (this is the default behavior)
-# Do NOT set skipCrds: true anywhere in the Application spec
+# Enhanced kube-prometheus-stack configuration
+# Optimized for production workloads with security and performance considerations
+
+# Global settings
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+# CRD Configuration - Essential for proper functioning
 crds:
   enabled: true
+# Prometheus Configuration
 prometheus:
+  enabled: true
   prometheusSpec:
+    # Data retention and storage
+    retention: 30d
+    retentionSize: 15GB
+    walCompression: true
+    # Storage configuration with Longhorn
     storageSpec:
       volumeClaimTemplate:
         spec:
@@ -12,6 +25,198 @@ prometheus:
             - ReadWriteOnce
           resources:
             requests:
-              storage: 10G
+              storage: 20Gi
+    # Resource allocation
+    resources:
+      requests:
+        cpu: 500m
+        memory: 2Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+    # Security context
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      fsGroup: 65534
+    # Scrape configuration
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+    scrapeTimeout: 10s
+    # Enable service discovery for dynamic targets
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    # Additional scrape configs for custom monitoring
+    additionalScrapeConfigs: []
+    # Remote write configuration (for external storage if needed)
+    remoteWrite: []
+    # Alerting configuration
+    alerting:
+      alertmanagers:
+        - namespace: prometheus-stack
+          name: kube-prometheus-stack-alertmanager
+          port: 9093
+# Alertmanager Configuration
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    # Storage for alertmanager
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 2Gi
+    # Resource allocation
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    # Security context
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      fsGroup: 65534
+    # Retention
+    retention: 72h
+    # Configuration for alert routing (placeholder)
+    configSecret: ""
+# Grafana Configuration
+grafana:
+  enabled: true
+  # Admin credentials
+  adminPassword: "prom-operator"
+  # Persistence
+  persistence:
+    enabled: true
+    storageClassName: longhorn
+    size: 5Gi
+    accessModes:
+      - ReadWriteOnce
+  # Resource allocation
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 472
+    fsGroup: 472
+  # Enable plugins
+  plugins:
+    - grafana-piechart-panel
+    - grafana-worldmap-panel
+    - grafana-clock-panel
+  # Default dashboards
+  defaultDashboardsEnabled: true
+  defaultDashboardsTimezone: UTC
+  # Additional data sources configuration
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki-gateway.loki-stack.svc.cluster.local
+      jsonData:
+        timeout: 60
+        maxLines: 1000
+        derivedFields:
+          - datasourceUid: prometheus-uid
+            matcherRegex: "(?:logger=rpc\\.server|report).*?(?:traceID|trace_id)=([a-f\\d]+)"
+            name: TraceID
+            url: "$${__value.raw}"
+  # Grafana configuration
+  grafana.ini:
+    server:
+      root_url: https://grafana.vanillax.me
+    security:
+      allow_embedding: true
+      cookie_secure: true
+      strict_transport_security: true
+    analytics:
+      reporting_enabled: false
+      check_for_updates: false
+    snapshots:
+      external_enabled: false
+    explore:
+      enabled: true
+    feature_toggles:
+      enable: correlations
+# Node Exporter Configuration
+# Enable for comprehensive node-level metrics
 nodeExporter:
+  enabled: true
+  hostRootFsMount:
+    enabled: true
+    mountPropagation: HostToContainer
+  # Resource allocation
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 180Mi
+# kube-state-metrics Configuration
+kubeStateMetrics:
+  enabled: true
+  # Resource allocation
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+# Prometheus Operator Configuration
+prometheusOperator:
+  enabled: true
+  # Resource allocation
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+# Additional monitoring components
+kubelet:
+  enabled: true
+  serviceMonitor:
+    interval: 30s
+kubeApiServer:
+  enabled: true
+  serviceMonitor:
+    interval: 30s
+kubeControllerManager:
+  enabled: true
+  serviceMonitor:
+    interval: 30s
+kubeScheduler:
+  enabled: true
+  serviceMonitor:
+    interval: 30s
+kubeEtcd:
+  enabled: true
+  serviceMonitor:
+    interval: 30s
+coreDns:
+  enabled: true
+  serviceMonitor:
+    interval: 30s
+kubeDns:
   enabled: false
