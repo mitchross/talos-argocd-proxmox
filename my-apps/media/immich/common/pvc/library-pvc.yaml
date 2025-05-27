@@ -8,6 +8,6 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 100Gi
+      storage: 50Gi
   storageClassName: longhorn
-  # selector: Removed 
+
