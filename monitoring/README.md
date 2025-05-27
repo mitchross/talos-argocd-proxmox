@@ -52,7 +52,7 @@ graph TB
 
 ### ✅ Version Updates
 - Updated `kube-prometheus-stack` to v72.6.3 (latest)
-- Added Loki v6.17.0 for log aggregation
+- Added Loki v6.30.0 for log aggregation (latest)
 
 ### 🛡️ Security Enhancements
 - Non-root containers with proper security contexts
@@ -94,11 +94,7 @@ kubectl apply -f monitoring/monitoring-components-appset.yaml -n argocd
 - **Loki**: https://loki.vanillax.me
 
 ### 3. Configure Grafana Data Sources
-The Prometheus data source is automatically configured. To add Loki:
-
-1. Go to Configuration → Data Sources
-2. Add Loki data source: `http://loki-gateway.loki-stack.svc.cluster.local`
-3. Save & Test
+The Prometheus data source is automatically configured. Loki is also automatically configured as an additional data source.
 
 ## 📊 Default Dashboards
 
@@ -196,6 +192,31 @@ To expose metrics from your applications:
 ## 🛠️ Troubleshooting
 
 ### Common Issues
+
+#### Chart Version Not Found Error
+If you encounter errors like `chart "loki" version "X.X.X" not found`, check the latest version:
+
+```bash
+helm repo add grafana https://grafana.github.io/helm-charts --force-update
+helm search repo grafana/loki --versions | head -5
+```
+
+Update the version in `monitoring/loki-stack/kustomization.yaml` accordingly.
+
+#### Loki Storage Configuration Error
+If you see template errors related to `$.Values.loki.storage.bucketNames.chunks`, ensure your Loki values.yaml has proper storage configuration:
+
+```yaml
+loki:
+  storage:
+    type: filesystem
+    bucketNames:
+      chunks: "chunks"
+      ruler: "ruler"
+      admin: "admin"
+  commonConfig:
+    replication_factor: 1
+```
 
 #### Prometheus Not Scraping Targets
 ```bash
