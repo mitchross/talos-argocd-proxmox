@@ -4,11 +4,11 @@ resources:
   - namespace.yaml
   - deployment.yaml
   - service.yaml
-  - ingress.yaml
+  - httproute.yaml
   - redis-pvc.yaml
-  - redis-deployment.yaml
-  - redis-service.yaml
+  - redis.yaml
   - configmap.yaml
+  - secret.yaml
 configMapGenerator:
   - name: searxng-config-settings
     files:
