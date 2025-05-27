@@ -6,9 +6,11 @@ resources:
   - alertmanager-http-route.yaml
   - grafana-http-route.yaml
   - prometheus-http-route.yaml
-  - alertmanager-config.yaml
   - custom-alerts.yaml
   - custom-servicemonitors.yaml
+# Strategic merge patches to handle resource conflicts
+patchesStrategicMerge:
+  - alertmanager-config.yaml
 helmCharts:
   - name: kube-prometheus-stack
     repo: https://prometheus-community.github.io/helm-charts
