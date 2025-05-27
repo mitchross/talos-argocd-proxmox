@@ -34,11 +34,11 @@ spec:
             requests:
               cpu: 2000m
               memory: 8Gi
-              nvidia.com/gpu: "1" # Use 1 time-sliced GPU instead of 2 physical
+              nvidia.com/gpu: "2" # Use 2 physical GPUs
             limits:
               cpu: 4000m
               memory: 16Gi
-              nvidia.com/gpu: "1" # Optimized for time slicing
+              nvidia.com/gpu: "2" # Use 2 physical GPUs
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
