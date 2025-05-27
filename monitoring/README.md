@@ -235,6 +235,20 @@ loki:
     replication_factor: 1
 ```
 
+#### Kustomize Resource Conflicts
+If you see errors like `exists; behavior must be merge or replace`, this indicates a resource naming conflict:
+
+```bash
+# Check for conflicting resources
+kubectl get secrets -n prometheus-stack | grep alertmanager
+```
+
+**Solution**: Use `patchesStrategicMerge` in kustomization.yaml:
+```yaml
+patchesStrategicMerge:
+  - alertmanager-config.yaml
+```
+
 #### Prometheus Not Scraping Targets
 ```bash
 # Check Prometheus configuration
