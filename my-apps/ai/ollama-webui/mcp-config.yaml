@@ -1,0 +1,109 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mcp-config
+  namespace: ollama-webui
+data:
+  config.json: |
+    {
+      "mcpServers": {
+        "filesystem": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+        },
+        "time": {
+          "command": "uvx",
+          "args": ["mcp-server-time", "--local-timezone=UTC"]
+        },
+        "memory": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-memory"]
+        },
+        "sqlite": {
+          "command": "uvx",
+          "args": ["mcp-server-sqlite", "--db-path", "/tmp/demo.db"]
+        }
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcpo-multi
+  namespace: ollama-webui
+  labels:
+    app: mcpo-multi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcpo-multi
+  template:
+    metadata:
+      labels:
+        app: mcpo-multi
+    spec:
+      containers:
+        - name: mcpo-multi
+          image: ghcr.io/open-webui/mcpo:main
+          ports:
+            - containerPort: 8001
+              name: http
+          env:
+            - name: PORT
+              value: "8001"
+            - name: HOST
+              value: "0.0.0.0"
+          args:
+            - "--port"
+            - "8001"
+            - "--api-key"
+            - "mcp-multi-key"
+            - "--config"
+            - "/app/config/config.json"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          volumeMounts:
+            - name: mcp-config
+              mountPath: /app/config
+            - name: temp-storage
+              mountPath: /tmp
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      volumes:
+        - name: mcp-config
+          configMap:
+            name: mcp-config
+        - name: temp-storage
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcpo-multi
+  namespace: ollama-webui
+  labels:
+    app: mcpo-multi
+spec:
+  selector:
+    app: mcpo-multi
+  ports:
+    - name: http
+      port: 8001
+      targetPort: 8001
+  type: ClusterIP

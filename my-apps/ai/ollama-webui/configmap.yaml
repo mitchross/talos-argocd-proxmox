@@ -6,3 +6,21 @@ metadata:
 data:
   OLLAMA_API_BASE_URL: "https://ollama.vanillax.me"
   #DEFAULT_MODELS: "llama2,mistral,codellama"
+
+  # Enable Web Search with SearXNG
+  ENABLE_RAG_WEB_SEARCH: "true"
+  RAG_WEB_SEARCH_ENGINE: "searxng"
+  RAG_WEB_SEARCH_RESULT_COUNT: "5"
+  RAG_WEB_SEARCH_CONCURRENT_REQUESTS: "10"
+  SEARXNG_QUERY_URL: "https://search.vanillax.me/search?q=<query>&format=json"
+  # Enable RAG for document integration
+  ENABLE_RAG: "true"
+  # Enable tools and function calling
+  ENABLE_TOOLS: "true"
+  # MCP/OpenAPI Tools Configuration
+  # Format: OPENAPI_API_ENDPOINTS=name1:url1:key1;name2:url2:key2
+  OPENAPI_API_ENDPOINTS: "mcpo-time:http://mcpo.ollama-webui.svc.cluster.local:8000:mcp-demo-key"
+  # Optional: Enable image generation if you have models that support it
+  ENABLE_IMAGE_GENERATION: "true"
+  # Optional: Enable voice features
+  ENABLE_VOICE: "true"
