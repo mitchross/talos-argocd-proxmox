@@ -1,132 +1,134 @@
 use_default_settings: true
-
 server:
-    base_url: 'https://search.vanillax.me'  # Remove trailing slash
-    secret_key: "${SEARXNG_SECRET_KEY}"  # Use from secret
-    bind_address: "0.0.0.0"
-    port: 8080  # Match with deployment port
-    public_instance: true
-    limiter: true  # Enable limiter
-    method: "GET"  # POST allows both GET and POST methods
-    http_protocol_version: "1.0"
-    default_http_headers:
-        X-Content-Type-Options: nosniff
-        X-Download-Options: noopen
-        X-Robots-Tag: noindex, nofollow
-        Referrer-Policy: no-referrer
-        Access-Control-Allow-Origin: "*"
-        Access-Control-Allow-Methods: "GET, POST, OPTIONS"
-
+  base_url: 'https://search.vanillax.me' # Remove trailing slash
+  secret_key: "${SEARXNG_SECRET_KEY}" # Use from secret
+  bind_address: "0.0.0.0"
+  port: 8080 # Match with deployment port
+  public_instance: true
+  limiter: true # Enable limiter
+  method: "GET" # POST allows both GET and POST methods
+  http_protocol_version: "1.0"
+  default_http_headers:
+    X-Content-Type-Options: nosniff
+    X-Download-Options: noopen
+    X-Robots-Tag: noindex, nofollow
+    Referrer-Policy: no-referrer
+    Access-Control-Allow-Origin: "*"
+    Access-Control-Allow-Methods: "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers: "Content-Type, Accept, User-Agent"
 redis:
-    url: redis://redis.searxng.svc.cluster.local:6379
-
+  url: redis://redis.searxng.svc.cluster.local:6379
 search:
-    safe_search: 0
-    formats:
-        - html
-        - json
-        - csv
-        - rss
-    format_by_default: false
-    autocomplete: "duckduckgo"
-    default_lang: "en-US"
-    ban_time_on_fail: 5
-    max_ban_time_on_fail: 120
-    suspended_times:
-        SearxEngineAccessDenied: 86400
-        SearxEngineCaptcha: 86400
-        SearxEngineTooManyRequests: 3600
-        cf_SearxEngineCaptcha: 1296000
-        cf_SearxEngineAccessDenied: 86400
-        recaptcha_SearxEngineCaptcha: 604800
-
+  safe_search: 0
+  formats:
+    - html
+    - json
+    - csv
+    - rss
+  format_by_default: false
+  autocomplete: "duckduckgo"
+  default_lang: "en-US"
+  ban_time_on_fail: 5
+  max_ban_time_on_fail: 120
+  suspended_times:
+    SearxEngineAccessDenied: 86400
+    SearxEngineCaptcha: 86400
+    SearxEngineTooManyRequests: 3600
+    cf_SearxEngineCaptcha: 1296000
+    cf_SearxEngineAccessDenied: 86400
+    recaptcha_SearxEngineCaptcha: 604800
 ui:
-    static_use_hash: true
-    default_theme: simple
-    theme_args:
-        simple_style: dark
-
+  static_use_hash: true
+  default_theme: simple
+  theme_args:
+    simple_style: dark
+# Enable more plugins for better search capabilities
 enabled_plugins:
-    - 'Hash plugin'
-    - 'Self Information'
-    - 'Tracker URL remover'
-    - Basic Calculator
-    - Hostnames plugin
-    - Open Access DOI rewrite
-    - Unit converter plugin
-
+  - 'Hash plugin'
+  - 'Self Information'
+  - 'Tracker URL remover'
+  - Basic Calculator
+  - Hostnames plugin
+  - Open Access DOI rewrite
+  - Unit converter plugin
 hostnames:
-    high_priority:
-        - (.*)\/blog\/(.*)
-        - (.*\.)?wikipedia.org$
-        - (.*\.)?github.com$
-        - (.*\.)?reddit.com$
-        - (.*\.)?linuxserver.io$
-        - (.*\.)?docker.com$
-        - (.*\.)?archlinux.org$
-        - (.*\.)?stackoverflow.com$
-        - (.*\.)?askubuntu.com$
-        - (.*\.)?superuser.com$
-    replace:
-        (www\.)?reddit\.com$: libreddit.vanillax.me
-
+  high_priority:
+    - (.*)\/blog\/(.*)
+    - (.*\.)?wikipedia.org$
+    - (.*\.)?github.com$
+    - (.*\.)?reddit.com$
+    - (.*\.)?linuxserver.io$
+    - (.*\.)?docker.com$
+    - (.*\.)?archlinux.org$
+    - (.*\.)?stackoverflow.com$
+    - (.*\.)?askubuntu.com$
+    - (.*\.)?superuser.com$
+  replace:
+    (www\.)?reddit\.com$: libreddit.vanillax.me
 engines:
-    - name: google
-      use_mobile_ui: false
-    - name: duckduckgo
-      disable: false
-    - name: bing
-      disable: false
-    - name: wikipedia
-      disable: false
-    - name: stackoverflow
-      disable: false
-    - name: github
-      disable: false
-
+  - name: google
+    use_mobile_ui: false
+  - name: duckduckgo
+    disable: false
+  - name: bing
+    disable: false
+  - name: wikipedia
+    disable: false
+  - name: stackoverflow
+    disable: false
+  - name: github
+    disable: false
 outgoing:
-    request_timeout: 3.0
-    max_request_timeout: 15.0
-    pool_connections: 100
-    pool_maxsize: 20
-    enable_http2: true
-
+  request_timeout: 3.0
+  max_request_timeout: 15.0
+  pool_connections: 100
+  pool_maxsize: 20
+  enable_http2: true
 categories_order:
-    - general
-    - files
-    - images
-    - videos
-    - news
-    - map
-    - it
-    - science
-    - social media
-
+  - general
+  - files
+  - images
+  - videos
+  - news
+  - map
+  - it
+  - science
+  - social media
 categories:
-    general:
-        default: true
-    files:
-        default: false
-    images:
-        default: false
-    videos:
-        default: false
-    news:
-        default: false
-    map:
-        default: false
-    it:
-        default: false
-    science:
-        default: false
-    social media:
-        default: false
-
+  general:
+    default: true
+  files:
+    default: false
+  images:
+    default: false
+  videos:
+    default: false
+  news:
+    default: false
+  map:
+    default: false
+  it:
+    default: false
+  science:
+    default: false
+  social media:
+    default: false
 default_preferences:
-    language: "en-US"
-    locale: "en"
-    autocomplete: "duckduckgo"
-    image_proxy: true
-    method: "GET"
-    safesearch: 1
-    theme: "simple"
+  language: "en-US"
+  locale: "en"
+  autocomplete: "duckduckgo"
+  image_proxy: true
+  method: "GET"
+  safesearch: 1
+  theme: "simple"
+# Additional settings to ensure API access works properly  
+botdetection:
+  ip_limit:
+    # More generous limits for API access
+    window: 300 # 5 minutes
+    max_requests: 200 # Allow more requests per window
+  # Disable bot detection that might interfere with API access
+  http_accept: false
+  http_accept_encoding: false
+  http_accept_language: false
+  http_user_agent: false
