@@ -56,12 +56,6 @@ spec:
                   key: HF_TOKEN
             - name: LOW_VRAM
               value: "false"
-            - name: NVIDIA_VISIBLE_DEVICES
-              value: "all"
-            - name: NVIDIA_DRIVER_CAPABILITIES
-              value: "compute,utility,video"
-            - name: CUDA_VISIBLE_DEVICES
-              value: "0,1"
             - name: HOME
               value: "/app"
           volumeMounts:
@@ -70,12 +64,15 @@ spec:
             - name: gpu-config
               mountPath: /app/gpu_config.json
               subPath: gpu_config.json
-            - name: nvidia-driver
-              mountPath: /usr/local/nvidia
-              readOnly: true
           resources:
+            requests:
+              cpu: 1000m
+              memory: 4Gi
+              nvidia.com/gpu: "5" # Use 5 GPU slices (good performance for image generation)
             limits:
-              nvidia.com/gpu: 2
+              cpu: 4000m
+              memory: 8Gi
+              nvidia.com/gpu: "5" # Use 5 GPU slices (good performance for image generation)
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -83,7 +80,3 @@ spec:
         - name: gpu-config
           configMap:
             name: comfyui-configmap
-        - name: nvidia-driver
-          hostPath:
-            path: /usr/local/nvidia
-            type: Directory
