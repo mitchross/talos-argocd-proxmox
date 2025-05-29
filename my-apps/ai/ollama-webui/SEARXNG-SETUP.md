@@ -29,6 +29,34 @@ kubectl apply -k my-apps/ai/ollama-webui/
 
 ## Troubleshooting
 
+### Problem: 403 Forbidden Error 🚨
+**This is the most common issue!**
+
+**Symptoms**: Error in Open WebUI logs:
+```
+403 Client Error: Forbidden for url: https://search.vanillax.me/search?q=...&format=json
+```
+
+**Root Cause**: SearXNG's bot detection is blocking API requests from Open WebUI
+
+**Solution**: Deploy the updated SearXNG configuration that disables bot detection:
+```bash
+# Redeploy SearXNG with API-friendly configuration
+kubectl apply -k my-apps/privacy/searxng/
+
+# Wait for rollout to complete
+kubectl rollout status deployment/searxng -n searxng
+
+# Test the API
+bash my-apps/privacy/searxng/test-api.sh
+```
+
+**What was fixed**:
+- Disabled HTTP User-Agent bot detection
+- Disabled HTTP Accept header checks  
+- Increased rate limits for API access
+- Added proper CORS headers
+
 ### Problem: SearXNG Query URL field is empty
 **Solution**: Manually enter the URL in the UI settings:
 - URL: `https://search.vanillax.me/search?q=<query>&format=json`
@@ -37,23 +65,28 @@ kubectl apply -k my-apps/ai/ollama-webui/
 ### Problem: Web search not working
 **Check these steps**:
 
-1. **Verify SearXNG is accessible**:
+1. **Test API directly** (use the provided test script):
    ```bash
-   # Test SearXNG directly
-   curl "https://search.vanillax.me/search?q=test&format=json"
+   bash my-apps/privacy/searxng/test-api.sh
    ```
 
-2. **Check Open WebUI logs**:
+2. **Verify SearXNG is accessible**:
+   ```bash
+   curl "https://search.vanillax.me/search?q=test&format=json" \
+     -H "User-Agent: OpenWebUI/1.0"
+   ```
+
+3. **Check Open WebUI logs**:
    ```bash
    kubectl logs -n ollama-webui deployment/ollama-webui -f
    ```
 
-3. **Verify environment variables are loaded**:
+4. **Verify environment variables are loaded**:
    ```bash
    kubectl exec -n ollama-webui deployment/ollama-webui -- env | grep RAG
    ```
 
-4. **Test connectivity from Open WebUI pod**:
+5. **Test connectivity from Open WebUI pod**:
    ```bash
    kubectl exec -n ollama-webui deployment/ollama-webui -- \
      curl "https://search.vanillax.me/search?q=test&format=json"
@@ -90,14 +123,43 @@ search:
     - json  # ← This is required
 ```
 
+### Bot Detection Configuration (Fixed! ✅)
+The updated `config/limiter.toml` disables bot detection that was causing 403 errors:
+```toml
+[botdetection.http_user_agent]
+disable = true
+
+[botdetection.http_accept]  
+disable = true
+
+[botdetection.ip_limit]
+window = 300  # 5 minutes
+max_request = 1000  # Allow many requests
+```
+
 ## Usage
 
 1. **Enable per conversation**: Web search must be toggled ON for each chat session
 2. **Web search indicator**: You'll see search queries and results in the chat
 3. **Result integration**: Search results are automatically integrated into responses
 
+## Quick Test Commands
+
+```bash
+# Test API from command line
+curl "https://search.vanillax.me/search?q=weather&format=json" \
+  -H "User-Agent: OpenWebUI/1.0"
+
+# Run comprehensive test
+bash my-apps/privacy/searxng/test-api.sh
+
+# Check if bot detection is disabled
+kubectl logs -n searxng deployment/searxng | grep -i bot
+```
+
 ## Notes
 - Web search is enabled per-session (reloading page disables it)
 - Environment variables may not always populate UI fields automatically
 - Manual UI configuration is sometimes required
-- Search results count can be adjusted based on needs 
+- Search results count can be adjusted based on needs
+- **403 errors are usually fixed by redeploying with the updated bot detection config** ✅ 

@@ -28,15 +28,12 @@ max_request = 1000  # Allow many requests
 # In the limiter, the ip_lists method has priority over all other methods -> if
 # an IP is in the pass_ip list, it has unrestricted access and it is also not
 # checked if e.g. the "user agent" suggests a bot (e.g. curl).
-#TEST
 
-block_ip = [
-]
+block_ip = []
 
 pass_ip = [
-  # Allow all IPs - needed for API access
-  '0.0.0.0/0'      # Allow all IPv4 addresses
-  '::/0'           # Allow all IPv6 addresses
+  "0.0.0.0/0",  # Allow all IPv4 addresses
+  "::/0"        # Allow all IPv6 addresses
 ]
 
 # Activate passlist of (hardcoded) IPs from the SearXNG organization,
