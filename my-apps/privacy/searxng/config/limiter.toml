@@ -19,6 +19,10 @@ filter_link_local = false
 # activate link_token method in the ip_limit method
 link_token = false
 
+# Disable request limit for API access
+window = 300  # 5 minutes
+max_request = 1000  # Allow many requests
+
 [botdetection.ip_lists]
 
 # In the limiter, the ip_lists method has priority over all other methods -> if
@@ -30,10 +34,27 @@ block_ip = [
 ]
 
 pass_ip = [
-  # Allowing all IPs for testing
+  # Allow all IPs - needed for API access
   '0.0.0.0/0'      # Allow all IPv4 addresses
+  '::/0'           # Allow all IPv6 addresses
 ]
 
 # Activate passlist of (hardcoded) IPs from the SearXNG organization,
 # e.g. `check.searx.space`.
 pass_searxng_org = false
+
+[botdetection.http_accept]
+# Disable HTTP accept header bot detection that might block API requests
+disable = true
+
+[botdetection.http_accept_encoding]
+# Disable accept-encoding bot detection
+disable = true
+
+[botdetection.http_accept_language]
+# Disable accept-language bot detection  
+disable = true
+
+[botdetection.http_user_agent]
+# Disable user agent bot detection for API access
+disable = true
