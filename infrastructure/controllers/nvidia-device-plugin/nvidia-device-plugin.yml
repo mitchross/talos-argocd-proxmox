@@ -102,22 +102,6 @@ spec:
             limits:
               cpu: 200m
               memory: 256Mi
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: http-metrics
-            initialDelaySeconds: 30
-            periodSeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: http-metrics
-            initialDelaySeconds: 15
-            periodSeconds: 5
-            timeoutSeconds: 5
-            failureThreshold: 3
           volumeMounts:
             - name: device-plugin
               mountPath: /var/lib/kubelet/device-plugins
