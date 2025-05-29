@@ -82,6 +82,29 @@ spec:
       interval: 30s
       path: /metrics
 ---
+# ServiceMonitor for DCGM Exporter (GPU Metrics)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: dcgm-exporter-metrics
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: dcgm-exporter
+    app.kubernetes.io/component: gpu-metrics
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: dcgm-exporter
+  namespaceSelector:
+    matchNames:
+      - gpu-monitoring
+  endpoints:
+    - port: http-metrics
+      interval: 15s
+      path: /metrics
+      scrapeTimeout: 10s
+---
 # ServiceMonitor for Longhorn (if available)
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor

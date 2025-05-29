@@ -1,0 +1,90 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: gpu-alerts
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: gpu-alerts
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: gpu.rules
+      rules:
+        # GPU Utilization Rules
+        - alert: GPUHighUtilization
+          expr: DCGM_FI_DEV_GPU_UTIL > 90
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "GPU {{ $labels.gpu }} high utilization"
+            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has been running at {{ $value }}% utilization for more than 5 minutes."
+        - alert: GPUCriticalUtilization
+          expr: DCGM_FI_DEV_GPU_UTIL > 95
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "GPU {{ $labels.gpu }} critical utilization"
+            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has been running at {{ $value }}% utilization for more than 2 minutes."
+        # GPU Memory Rules
+        - alert: GPUHighMemoryUsage
+          expr: (DCGM_FI_DEV_FB_USED / DCGM_FI_DEV_FB_TOTAL) * 100 > 85
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "GPU {{ $labels.gpu }} high memory usage"
+            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} memory usage is {{ $value }}%."
+        - alert: GPUCriticalMemoryUsage
+          expr: (DCGM_FI_DEV_FB_USED / DCGM_FI_DEV_FB_TOTAL) * 100 > 95
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "GPU {{ $labels.gpu }} critical memory usage"
+            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} memory usage is {{ $value }}%."
+        # GPU Temperature Rules
+        - alert: GPUHighTemperature
+          expr: DCGM_FI_DEV_GPU_TEMP > 80
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "GPU {{ $labels.gpu }} high temperature"
+            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} temperature is {{ $value }}°C."
+        - alert: GPUCriticalTemperature
+          expr: DCGM_FI_DEV_GPU_TEMP > 90
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "GPU {{ $labels.gpu }} critical temperature"
+            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} temperature is {{ $value }}°C."
+        # GPU Power Rules
+        - alert: GPUHighPowerDraw
+          expr: DCGM_FI_DEV_POWER_USAGE > 400
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "GPU {{ $labels.gpu }} high power consumption"
+            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} is drawing {{ $value }}W of power."
+        # GPU Down/Unavailable
+        - alert: GPUDown
+          expr: up{job="dcgm-exporter-metrics"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "GPU monitoring down"
+            description: "DCGM exporter on node {{ $labels.kubernetes_node }} has been down for more than 2 minutes."
+        # GPU Clock Speed
+        - alert: GPULowClockSpeed
+          expr: DCGM_FI_DEV_SM_CLOCK < 500
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "GPU {{ $labels.gpu }} low clock speed"
+            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} clock speed is only {{ $value }}MHz."
