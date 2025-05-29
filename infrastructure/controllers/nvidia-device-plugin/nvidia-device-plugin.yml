@@ -68,7 +68,7 @@ spec:
           name: nvidia-device-plugin-ctr
           imagePullPolicy: IfNotPresent
           args:
-            - --config-file=/etc/nvidia/config.yaml
+            - --config-file=/etc/nvidia-device-plugin/config.yaml
           env:
             - name: FAIL_ON_INIT_ERROR
               value: "false"
@@ -122,8 +122,10 @@ spec:
             - name: device-plugin
               mountPath: /var/lib/kubelet/device-plugins
             - name: config
-              mountPath: /etc/nvidia
+              mountPath: /etc/nvidia-device-plugin
               readOnly: true
+            - name: nvidia-config-dir
+              mountPath: /etc/nvidia
       volumes:
         - name: device-plugin
           hostPath:
@@ -131,3 +133,5 @@ spec:
         - name: config
           configMap:
             name: nvidia-device-plugin-config
+        - name: nvidia-config-dir
+          emptyDir: {}
