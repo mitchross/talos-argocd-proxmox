@@ -98,7 +98,7 @@ spec:
       app.kubernetes.io/name: dcgm-exporter
   namespaceSelector:
     matchNames:
-      - gpu-monitoring
+      - prometheus-stack
   endpoints:
     - port: http-metrics
       interval: 15s
