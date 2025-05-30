@@ -6,11 +6,11 @@ ingress:
 # Disable Docker-in-Docker (not compatible with Talos security policies)
 dind:
   enabled: false
-# Resource configuration for better performance
+# Resource configuration - increased memory for standalone mode
 resources:
   requests:
-    memory: 512Mi
+    memory: 1Gi
     cpu: 500m
   limits:
-    memory: 1Gi
+    memory: 2Gi
     cpu: 1000m
