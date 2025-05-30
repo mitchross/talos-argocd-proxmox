@@ -28,11 +28,11 @@ spec:
             requests:
               memory: "8Gi"
               cpu: "2"
-              nvidia.com/gpu: 1
+              nvidia.com/gpu: "1"
             limits:
               memory: "32Gi"
               cpu: "8"
-              nvidia.com/gpu: 1
+              nvidia.com/gpu: "1"
           volumeMounts:
             - name: comfyui-storage
               mountPath: /opt/ComfyUI/models
