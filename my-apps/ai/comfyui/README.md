@@ -1,18 +1,18 @@
-# ComfyUI on Kubernetes (Talos)
+# ComfyUI on Kubernetes (Talos) with ArgoCD
 
-This directory contains Kubernetes manifests to deploy ComfyUI with GPU support on Talos Linux.
+This directory contains Kubernetes manifests to deploy ComfyUI with GPU support on Talos Linux via ArgoCD.
 
 ## Files Structure
 
 - `namespace.yaml` - ComfyUI namespace
-- `pvc.yaml` - Persistent Volume Claim for models and outputs (100GB)
+- `pvc.yaml` - Persistent Volume Claim for models and outputs (180GB, Longhorn single replica)
 - `configmap.yaml` - Configuration for model paths
 - `deployment.yaml` - Main ComfyUI deployment with GPU support
 - `service.yaml` - ClusterIP and NodePort services
 - `httproute.yaml` - HTTPRoute configuration for Gateway API
 - `kustomization.yaml` - Kustomize configuration
-- `setup-comfyui.sh` - Automated setup script
-- `comfyui-manifests.yaml` - Single file with all manifests (for reference)
+- `setup-comfyui.sh` - Post-deployment setup script for models and workflows
+- `README.md` - This documentation
 
 ## Prerequisites for Talos
 
@@ -21,34 +21,38 @@ This directory contains Kubernetes manifests to deploy ComfyUI with GPU support 
    ```bash
    kubectl label nodes <your-gpu-node> accelerator=nvidia-gpu
    ```
-3. **Storage**: Configure appropriate storage class (default: `local-path`)
+3. **Storage**: Longhorn configured (single replica for space efficiency)
 4. **Gateway API**: Ensure Gateway API is installed and configured in your cluster
+5. **ArgoCD**: This setup assumes deployment via ArgoCD
 
-## Quick Deployment
+## Deployment Workflow
 
-### Option 1: Using the Setup Script (Recommended)
+### 1. ArgoCD Deployment
+ArgoCD will automatically deploy the manifests. Ensure your ArgoCD application points to this directory.
+
+### 2. Post-Deployment Setup (Models & Workflows)
+After ArgoCD deploys ComfyUI, run the setup script to install models and custom nodes:
 
 ```bash
+# Navigate to the ComfyUI directory
+cd my-apps/ai/comfyui
+
 # Make the script executable
 chmod +x setup-comfyui.sh
 
-# Run the complete setup
+# Run post-deployment setup
 ./setup-comfyui.sh
 ```
 
-### Option 2: Manual Deployment
+### 3. Manual Deployment (Alternative)
+If you need to deploy manually without ArgoCD:
 
 ```bash
 # Apply all manifests using kustomize
 kubectl apply -k .
 
-# Or apply individual files
-kubectl apply -f namespace.yaml
-kubectl apply -f pvc.yaml
-kubectl apply -f configmap.yaml
-kubectl apply -f deployment.yaml
-kubectl apply -f service.yaml
-kubectl apply -f httproute.yaml
+# Then run the setup script
+./setup-comfyui.sh
 ```
 
 ## Features
@@ -64,70 +68,57 @@ kubectl apply -f httproute.yaml
   - ComfyUI Essentials
   - Custom Scripts
   - RGThree Comfy
+  - Flux-specific nodes (FluxTrainer, GGUF)
+  - WAS Node Suite & Efficiency Nodes
 
-### Pre-downloaded Models
-- **SDXL Base 1.0** - Main diffusion model
-- **SDXL VAE** - Variational autoencoder
-- **ControlNet Models** - Canny and OpenPose
-- **RealESRGAN 4x** - Upscaling model
+### Pre-downloaded Models (via setup script)
+- **Flux Dev BF16 & FP8** - Latest 12B parameter models for exceptional quality
+- **CyberRealistic Pony v11** - Popular photorealistic model
+- **SDXL Base 1.0** - Stable foundation model
+- **Flux & SDXL VAEs** - High-quality decoders
+- **Flux ControlNet** - Canny and Depth control
+- **Traditional ControlNet** - Canny and OpenPose
+- **RealESRGAN Upscalers** - General and Anime variants
+- **CyberRealistic Embeddings** - Optimized prompt tokens
 
-### Default Workflow
-- Basic SDXL generation workflow
-- Located at: `/opt/ComfyUI/user/default/workflows/basic_sdxl.json`
+### Pre-configured Workflows
+- **Flux Dev Workflow** - High-quality photorealistic generation
+- **CyberRealistic Pony Workflow** - Versatile realistic content
 
 ## Resource Requirements
 
-- **CPU**: 2-4 cores
-- **Memory**: 8-16 GB
-- **GPU**: 1x NVIDIA GPU
-- **Storage**: 100GB for models and outputs
+- **CPU**: 2-8 cores
+- **Memory**: 8-32 GB
+- **GPU**: 1x NVIDIA GPU (optimized for 24GB VRAM)
+- **Storage**: 180GB Longhorn (single replica for efficiency)
 
 ## Access Methods
 
-### 1. NodePort (Direct Access)
+### 1. HTTPRoute (Primary - Domain Access)
+- URL: `https://comfyui.vanillax.me`
+- Uses Gateway API with `gateway-internal`
+
+### 2. NodePort (Direct Access)
 ```bash
 # Access via node IP on port 30188
 http://<NODE_IP>:30188
 ```
 
-### 2. Port Forward (Local Development)
+### 3. Port Forward (Local Development)
 ```bash
 kubectl port-forward -n comfyui service/comfyui-service 8188:8188
 # Access at: http://localhost:8188
 ```
 
-### 3. HTTPRoute (Domain Access)
-Update `httproute.yaml` with your domain and gateway configuration:
-```yaml
-hostnames:
-- comfyui.your-domain.com
-parentRefs:
-- name: your-gateway-name
-  namespace: gateway-system
-```
-Then access via: `http://comfyui.your-domain.com`
-
 ## Configuration
 
-### Gateway Configuration
-Update the HTTPRoute in `httproute.yaml`:
-```yaml
-spec:
-  parentRefs:
-  - name: your-gateway-name
-    namespace: gateway-system
-  hostnames:
-  - comfyui.your-domain.com
-```
-
-### Storage Class
-Default uses `local-path`. Update in `pvc.yaml`:
-```yaml
-storageClassName: your-storage-class
-```
+### Storage (Longhorn)
+- Single replica for space efficiency
+- 180GB capacity for models and outputs
+- Persistent across pod restarts
 
 ### Resource Limits
-Adjust in `deployment.yaml`:
+Optimized for 24GB GPU systems:
 ```yaml
 resources:
   requests:
@@ -135,17 +126,15 @@ resources:
     cpu: "2"
     nvidia.com/gpu: 1
   limits:
-    memory: "16Gi"
-    cpu: "4"
+    memory: "32Gi"
+    cpu: "8"
     nvidia.com/gpu: 1
 ```
 
-### Node Selection
-Update node selector in `deployment.yaml`:
-```yaml
-nodeSelector:
-  accelerator: nvidia-gpu
-```
+### Gateway Configuration
+HTTPRoute configured for:
+- Gateway: `gateway-internal` in `gateway` namespace
+- Domain: `comfyui.vanillax.me`
 
 ## Monitoring
 
@@ -160,10 +149,11 @@ kubectl get httproute -n comfyui
 ## Troubleshooting
 
 1. **Pod not starting**: Check GPU node labels and availability
-2. **Storage issues**: Verify storage class and PVC status
-3. **Model download issues**: Check pod logs for download progress
+2. **Storage issues**: Verify Longhorn status and PVC binding
+3. **Model download issues**: Check pod logs during setup script execution
 4. **GPU not detected**: Ensure NVIDIA device plugin is running
 5. **HTTPRoute not working**: Check Gateway API installation and gateway configuration
+6. **ArgoCD sync issues**: Verify kustomization.yaml and resource files
 
 ## Customization
 
@@ -180,10 +170,35 @@ Use ComfyUI Manager web interface or install manually:
 kubectl exec -n comfyui $POD_NAME -- bash -c "cd /opt/ComfyUI/custom_nodes && git clone <repo-url>"
 ```
 
+### Updating Models via Script
+Re-run the setup script to add new models:
+```bash
+./setup-comfyui.sh
+```
+
+## ArgoCD Integration
+
+### Application Configuration
+Ensure your ArgoCD application configuration includes:
+```yaml
+spec:
+  source:
+    path: my-apps/ai/comfyui
+    repoURL: <your-repo>
+    targetRevision: HEAD
+  destination:
+    namespace: comfyui
+    server: https://kubernetes.default.svc
+```
+
+### Sync Strategy
+- **Automatic Sync**: Recommended for seamless updates
+- **Manual Sync**: For controlled deployments
+
 ## Notes
 
-- First startup takes time for model downloads
-- ComfyUI Manager provides easy model and node management
-- Models persist in the PVC across pod restarts
-- The setup script handles initial configuration and model downloads
-- HTTPRoute requires Gateway API to be installed in your cluster 
+- **First startup**: Takes time for model downloads (~50GB+)
+- **ComfyUI Manager**: Provides easy model and node management via web UI
+- **Model persistence**: All models persist in Longhorn storage across restarts
+- **Setup script**: Only handles post-deployment configuration, not manifest deployment
+- **ArgoCD friendly**: All manifests are properly structured for GitOps workflows 
