@@ -15,7 +15,7 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: kestra-standalone # Kestra standalone service name
+        - name: kestra-service # Actual service name from the Helm chart
           namespace: kestra
           port: 8080 # Default Kestra port
           weight: 1
