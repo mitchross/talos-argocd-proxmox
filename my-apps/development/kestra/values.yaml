@@ -3,7 +3,7 @@
 # Disable ingress since we're using HTTPRoute for external access
 ingress:
   enabled: false
-# Disable Docker-in-Docker (not compatible with Talos security policies)
+# Disable Docker-in-Docker completely (not compatible with Talos security policies)
 dind:
   enabled: false
 # Global configuration to disable Docker and force Kubernetes task runner
@@ -17,33 +17,42 @@ kestra:
       taskRunner:
         type: io.kestra.plugin.kubernetes.runner.Kubernetes
         namespace: kestra
-# Plugin defaults to ensure ALL script types use Kubernetes runner
+# Plugin defaults to ensure ALL script types use Kubernetes runner (Enterprise Edition)
 pluginDefaults:
-  # Cover all possible script plugin types
   - type: io.kestra.plugin.scripts
     forced: true
     values:
       taskRunner:
-        type: io.kestra.plugin.kubernetes.runner.Kubernetes
+        type: io.kestra.plugin.ee.kubernetes.runner.Kubernetes
         namespace: kestra
+        # Basic Kubernetes config - adjust if needed
+        config:
+          # Let Kestra use in-cluster authentication
+          inCluster: true
   - type: io.kestra.plugin.scripts.shell
     forced: true
     values:
       taskRunner:
-        type: io.kestra.plugin.kubernetes.runner.Kubernetes
+        type: io.kestra.plugin.ee.kubernetes.runner.Kubernetes
         namespace: kestra
+        config:
+          inCluster: true
   - type: io.kestra.plugin.scripts.python
     forced: true
     values:
       taskRunner:
-        type: io.kestra.plugin.kubernetes.runner.Kubernetes
+        type: io.kestra.plugin.ee.kubernetes.runner.Kubernetes
         namespace: kestra
+        config:
+          inCluster: true
   - type: io.kestra.plugin.scripts.node
     forced: true
     values:
       taskRunner:
-        type: io.kestra.plugin.kubernetes.runner.Kubernetes
+        type: io.kestra.plugin.ee.kubernetes.runner.Kubernetes
         namespace: kestra
+        config:
+          inCluster: true
 # Resource configuration - increased memory for standalone mode
 resources:
   requests:
