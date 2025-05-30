@@ -6,8 +6,7 @@ ingress:
 # Disable Docker-in-Docker (not compatible with Talos security policies)
 dind:
   enabled: false
-# Resource configuration - increased memory for standalone mode
-# Use Kubernetes task runner instead of Docker-in-Docker for script execution
+# Use Kubernetes task runner for ALL script types (comprehensive coverage)
 pluginDefaults:
   - type: io.kestra.plugin.scripts
     forced: true
@@ -15,7 +14,26 @@ pluginDefaults:
       taskRunner:
         type: io.kestra.plugin.kubernetes.runner.Kubernetes
         namespace: kestra
-# Resource configuration for better performance
+  - type: io.kestra.plugin.scripts.shell
+    forced: true
+    values:
+      taskRunner:
+        type: io.kestra.plugin.kubernetes.runner.Kubernetes
+        namespace: kestra
+  - type: io.kestra.plugin.scripts.python
+    forced: true
+    values:
+      taskRunner:
+        type: io.kestra.plugin.kubernetes.runner.Kubernetes
+        namespace: kestra
+# Global task runner configuration (fallback)
+kestra:
+  tasks:
+    defaults:
+      taskRunner:
+        type: io.kestra.plugin.kubernetes.runner.Kubernetes
+        namespace: kestra
+# Resource configuration - increased memory for standalone mode
 resources:
   requests:
     memory: 1Gi
