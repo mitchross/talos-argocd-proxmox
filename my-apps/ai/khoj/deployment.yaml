@@ -66,7 +66,7 @@ spec:
                   name: khoj-secret
                   key: POSTGRES_PASSWORD
             - name: POSTGRES_HOST
-              value: khoj-db.cnpg-zalando.svc.cluster.local
+              value: khoj-database-rw.cloudnative-pg.svc.cluster.local
             - name: POSTGRES_PORT
               value: "5432"
             - name: KHOJ_DJANGO_SECRET_KEY
