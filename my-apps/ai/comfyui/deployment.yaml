@@ -13,70 +13,55 @@ spec:
       labels:
         app: comfyui
     spec:
-      runtimeClassName: nvidia
+      # Node selector for GPU nodes
       nodeSelector:
-        nvidia.com/gpu.present: "true" # Schedule on GPU nodes
-      tolerations:
-        - key: nvidia.com/gpu
-          operator: Exists
-          effect: NoSchedule
-      # initContainers:
-      #   - name: init-git-config
-      #     image: busybox
-      #     command: ["/bin/sh", "-c"]
-      #     args:
-      #       - |
-      #         mkdir -p /data/.config/git
-      #         echo '[safe]' > /data/.config/git/config
-      #         echo '    directory = *' >> /data/.config/git/config
-      #         chmod -R 777 /data/.config
-      #     volumeMounts:
-      #       - name: data
-      #         mountPath: /data
-      #   - name: fix-git-repo
-      #     image: alpine/git
-      #     command: ["/bin/sh", "-c"]
-      #     args:
-      #       - "if [ -d \"/app/ComfyUI\" ]; then\n  echo \"Fixing ComfyUI repository state...\"\n  cd /app/ComfyUI\n  # Check if we're on a branch or in detached HEAD state\n  if ! git symbolic-ref -q HEAD >/dev/null; then\n    echo \"Currently in detached HEAD state, checking out master branch...\"\n    git checkout -f master || git checkout -b master\n    git reset --hard origin/master\n  fi\n  \n  # Also fix ComfyUI-Manager if it exists\n  if [ -d \"/app/ComfyUI/custom_nodes/ComfyUI-Manager\" ]; then\n    echo \"Fixing ComfyUI-Manager repository state...\"\n    cd /app/ComfyUI/custom_nodes/ComfyUI-Manager\n    if ! git symbolic-ref -q HEAD >/dev/null; then\n      echo \"ComfyUI-Manager in detached HEAD state, checking out main branch...\"\n      git checkout -f main || git checkout -b main\n      git reset --hard origin/main\n    fi\n  fi\nelse\n  echo \"ComfyUI directory not found, nothing to fix.\"\nfi\n"
-      #     volumeMounts:
-      #       - name: data
-      #         mountPath: /app
+        accelerator: nvidia-gpu
       containers:
         - name: comfyui
-          image: frefrik/comfyui-flux:cu124
+          image: yanwk/comfyui-boot:latest
           ports:
             - containerPort: 8188
           env:
             - name: CLI_ARGS
-              value: ""
-            - name: HF_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: comfyui-secret
-                  key: HF_TOKEN
-            - name: LOW_VRAM
-              value: "false"
-            - name: HOME
-              value: "/app"
-          volumeMounts:
-            - name: data
-              mountPath: /app
-            - name: gpu-config
-              mountPath: /app/gpu_config.json
-              subPath: gpu_config.json
+              value: "--listen 0.0.0.0 --port 8188"
           resources:
             requests:
-              cpu: 1000m
-              memory: 4Gi
-              nvidia.com/gpu: "1" # Use 5 GPU slices (good performance for image generation)
+              memory: "8Gi"
+              cpu: "2"
+              nvidia.com/gpu: 1
             limits:
-              cpu: 4000m
-              memory: 8Gi
-              nvidia.com/gpu: "1" # Use 5 GPU slices (good performance for image generation)
+              memory: "32Gi"
+              cpu: "8"
+              nvidia.com/gpu: 1
+          volumeMounts:
+            - name: comfyui-storage
+              mountPath: /opt/ComfyUI/models
+              subPath: models
+            - name: comfyui-storage
+              mountPath: /opt/ComfyUI/output
+              subPath: output
+            - name: comfyui-storage
+              mountPath: /opt/ComfyUI/custom_nodes
+              subPath: custom_nodes
+            - name: config-volume
+              mountPath: /opt/ComfyUI/extra_model_paths.yaml
+              subPath: extra_model_paths.yaml
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8188
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8188
+            initialDelaySeconds: 120
+            periodSeconds: 30
       volumes:
-        - name: data
+        - name: comfyui-storage
           persistentVolumeClaim:
-            claimName: comfyui-storage-pvc
-        - name: gpu-config
+            claimName: comfyui-storage
+        - name: config-volume
           configMap:
-            name: comfyui-configmap
+            name: comfyui-config

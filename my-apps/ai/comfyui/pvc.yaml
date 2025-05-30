@@ -1,16 +1,14 @@
-# PVC for ComfyUI data using SMB share
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: comfyui-storage-pvc
+  name: comfyui-storage
   namespace: comfyui
-  labels:
-    app: comfyui
-    type: storage
+  annotations:
+    volume.longhorn.io/numberOfReplicas: "1"
 spec:
   accessModes:
-    - ReadWriteMany # Using ReadWriteMany for SMB
+    - ReadWriteOnce
   resources:
     requests:
-      storage: 100Gi
-  storageClassName: comfyui-smb # Using SMB storage class for ComfyUI
+      storage: 180Gi
+  storageClassName: longhorn

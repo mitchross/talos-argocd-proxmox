@@ -1,30 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: comfyui-configmap
+  name: comfyui-config
   namespace: comfyui
 data:
-  gpu_config.json: |
-    {
-      "gpu_ids": [0, 1],
-      "device_mode": "parallel",
-      "unet_load_device": "cuda",
-      "clip_load_device": "cuda",
-      "vae_load_device": "cuda",
-      "free_gpu_mem": true,
-      "attention_slice_size": "auto",
-      "balanced_vram": true,
-      "cpu_offload": false,
-      "max_parallel_inference": 2,
-      "extra_model_paths_config": {
-        "diffusers": "/app/models/diffusers",
-        "vae": "/app/models/vae",
-        "lora": "/app/models/lora",
-        "upscale": "/app/models/upscale_models",
-        "clip": "/app/models/clip",
-        "clip_vision": "/app/models/clip_vision",
-        "controlnet": "/app/models/controlnet",
-        "gligen": "/app/models/gligen",
-        "checkpoints": "/app/models/checkpoints"
-      }
-    }
+  extra_model_paths.yaml: "base_path: /opt/ComfyUI/\ncheckpoints: models/checkpoints/\nconfigs: models/configs/\nvae: models/vae/\nclip: models/clip/\nunet: models/unet/\nclip_vision: models/clip_vision/\nstyle_models: models/style_models/\nembeddings: models/embeddings/\ndiffusers: models/diffusers/\ncontrolnet: models/controlnet/\ngligen: models/gligen/\nupscale_models: models/upscale_models/\ncustom_nodes: custom_nodes/ "
