@@ -6,31 +6,6 @@ ingress:
 # Disable Docker-in-Docker completely (not compatible with Talos security policies)
 dind:
   enabled: false
-# Configuration section - this gets merged as the Kestra configuration file
-configuration:
-  kestra:
-    plugins:
-      defaults:
-        - type: io.kestra.plugin.scripts
-          forced: true
-          values:
-            taskRunner:
-              type: io.kestra.plugin.scripts.runner.process.Process
-        - type: io.kestra.plugin.scripts.shell
-          forced: true
-          values:
-            taskRunner:
-              type: io.kestra.plugin.scripts.runner.process.Process
-        - type: io.kestra.plugin.scripts.python
-          forced: true
-          values:
-            taskRunner:
-              type: io.kestra.plugin.scripts.runner.process.Process
-        - type: io.kestra.plugin.scripts.node
-          forced: true
-          values:
-            taskRunner:
-              type: io.kestra.plugin.scripts.runner.process.Process
 # Resource configuration - increased memory for standalone mode
 resources:
   requests:
