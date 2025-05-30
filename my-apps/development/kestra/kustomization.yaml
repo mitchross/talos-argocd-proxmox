@@ -7,7 +7,7 @@ commonLabels:
 resources:
   - namespace.yaml
   - httproute.yaml
-
+  - networkpolicy.yaml
 helmCharts:
   - name: kestra
     repo: https://helm.kestra.io/
