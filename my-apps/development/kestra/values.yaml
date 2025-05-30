@@ -6,17 +6,6 @@ ingress:
 # Disable Docker-in-Docker completely (not compatible with Talos security policies)
 dind:
   enabled: false
-# Global configuration to disable Docker and force Kubernetes task runner
-kestra:
-  # Disable Docker globally 
-  docker:
-    enabled: false
-  # Configure default task runner for all tasks
-  tasks:
-    defaults:
-      taskRunner:
-        type: io.kestra.plugin.kubernetes.runner.Kubernetes
-        namespace: kestra
 # Plugin defaults to ensure ALL script types use Kubernetes runner (Enterprise Edition)
 pluginDefaults:
   - type: io.kestra.plugin.scripts
