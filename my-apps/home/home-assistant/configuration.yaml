@@ -1,0 +1,25 @@
+# Loads default set of integrations. Do not remove.
+default_config:
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+# Text to speech
+tts:
+  - platform: google_translate
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+# HTTP configuration for reverse proxy
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+# Enable the recorder (database)
+recorder:
+  db_url: sqlite:////config/home-assistant_v2.db
+# Enable energy monitoring
+energy:
+# Enable the person integration
+person:
