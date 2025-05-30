@@ -72,6 +72,31 @@ configs:
       jqPathExpressions:
       - '.status'
       - '.metadata.managedFields'
+    # Ignore differences for PersistentVolumeClaim resources
+    resource.customizations.ignoreDifferences._PersistentVolumeClaim: |
+      jqPathExpressions:
+      - '.spec.volumeName'
+      - '.spec.storageClassName'
+      - '.spec.volumeMode'
+      - '.status'
+      - '.metadata.creationTimestamp'
+      - '.metadata.generation'
+      - '.metadata.managedFields'
+      - '.metadata.finalizers'
+      - '.metadata.annotations["pv.kubernetes.io/bind-completed"]'
+      - '.metadata.annotations["pv.kubernetes.io/bound-by-controller"]'
+      - '.metadata.annotations["volume.beta.kubernetes.io/storage-provisioner"]'
+      - '.metadata.annotations["volume.kubernetes.io/storage-provisioner"]'
+    # Ignore differences for StatefulSet resources
+    resource.customizations.ignoreDifferences.apps_StatefulSet: |
+      jqPathExpressions:
+      - '.spec.template.spec.containers[]?.volumeMounts[]?.name'
+      - '.spec.template.spec.volumes[]?.persistentVolumeClaim'
+      - '.spec.volumeClaimTemplates[]?.metadata?.creationTimestamp'
+      - '.spec.volumeClaimTemplates[]?.status'
+      - '.status'
+      - '.metadata.generation'
+      - '.metadata.managedFields'
     # Ignoring differences in ExternalSecret resources
     resource.customizations.ignoreDifferences.external-secrets.io_ExternalSecret: |
       jqPathExpressions:
