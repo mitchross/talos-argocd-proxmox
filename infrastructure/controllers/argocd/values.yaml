@@ -3,94 +3,40 @@ configs:
     create: true
     application.resourceTrackingMethod: "annotation+label"
     configManagementPlugins: "- name: kustomize-fetch-tunnel-id\n  init:\n    command: [\"/bin/sh\", \"-c\"]\n    args: [\"echo 'Initializing kustomize-fetch-tunnel-id plugin...'\"]\n  generate:\n    command: [\"sh\"] # The interpreter for your script\n    # This path is relative to the root of the application's\n    # Git repository when Argo CD checks it out.\n    args: [\"scripts/kustomize-patch-tunnel-id.sh\"]\n    \n"
-    # Ignore differences for HTTPRoute resources
-    resource.customizations.ignoreDifferences.gateway.networking.k8s.io_HTTPRoute: |
-      jqPathExpressions:
-      - '.spec.parentRefs[]?.group'
-      - '.spec.parentRefs[]?.kind'
-      - '.spec.parentRefs[]?.name'
-      - '.spec.parentRefs[]?.namespace'
-      - '.spec.parentRefs[]?.sectionName'
-      - '.spec.rules[]?.backendRefs[]?.group'
-      - '.spec.rules[]?.backendRefs[]?.kind'
-      - '.spec.rules[]?.backendRefs[]?.name'
-      - '.spec.rules[]?.backendRefs[]?.namespace'
-      - '.spec.rules[]?.backendRefs[]?.port'
-      - '.spec.rules[]?.backendRefs[]?.weight'
-    # Ignore differences for Gateway resources
-    resource.customizations.ignoreDifferences.gateway.networking.k8s.io_Gateway: |
-      jqPathExpressions:
-      - '.status'
-      - '.spec.addresses[]?.type'
-      - '.spec.addresses[]?.value'
-      - '.spec.listeners[]?.name'
-      - '.spec.listeners[]?.hostname'
-      - '.spec.listeners[]?.port'
-      - '.spec.listeners[]?.protocol'
-      - '.spec.listeners[]?.allowedRoutes'
-      - '.spec.listeners[]?.tls'
-    # Ignore differences for Service resources
-    resource.customizations.ignoreDifferences._Service: |
-      jqPathExpressions:
-      - '.spec.clusterIP'
-      - '.spec.clusterIPs'
-      - '.spec.ipFamilies'
-      - '.spec.ipFamilyPolicy'
-      - '.status'
-      - '.metadata.managedFields'
-    # Ignore differences for CustomResourceDefinition resources (for Longhorn and other CRDs)
-    resource.customizations.ignoreDifferences.apiextensions.k8s.io_CustomResourceDefinition: |
-      jqPathExpressions:
-      - '.spec.preserveUnknownFields'
-      - '.spec.versions[]?.schema?.openAPIV3Schema'
-      - '.spec.versions[]'
-      - '.spec.names'
-      - '.spec.conversion'
-      - '.spec.scope'
-      - '.status'
-      - '.metadata.generation'
-      - '.metadata.resourceVersion'
-      - '.metadata.managedFields'
-      - '.metadata.annotations'
-      - '.metadata.labels'
-    # Ignore differences for Longhorn Volume resources
-    resource.customizations.ignoreDifferences.longhorn.io_Volume: |
-      jqPathExpressions:
-      - '.status'
-      - '.metadata.managedFields'
-      - '.spec.nodeID'
-      - '.spec.migrationNodeID'
-    # Ignore differences for Longhorn Node resources  
-    resource.customizations.ignoreDifferences.longhorn.io_Node: |
-      jqPathExpressions:
-      - '.status'
-      - '.metadata.managedFields'
-      - '.spec.disks'
-      - '.spec.allowScheduling'
-      - '.spec.evictionRequested'
-    # Ignore differences for Longhorn Settings resources
-    resource.customizations.ignoreDifferences.longhorn.io_Setting: |
-      jqPathExpressions:
-      - '.status'
-      - '.metadata.managedFields'
-    # Ignore differences for PersistentVolumeClaim resources
-    resource.customizations.ignoreDifferences._PersistentVolumeClaim: |
-      jqPathExpressions:
-      - '.spec.volumeName'
-      - '.spec.storageClassName'
-      - '.spec.volumeMode'
-      - '.status'
-      - '.metadata.creationTimestamp'
-      - '.metadata.generation'
-      - '.metadata.managedFields'
-      - '.metadata.finalizers'
-      - '.metadata.annotations["pv.kubernetes.io/bind-completed"]'
-      - '.metadata.annotations["pv.kubernetes.io/bound-by-controller"]'
-      - '.metadata.annotations["volume.beta.kubernetes.io/storage-provisioner"]'
-      - '.metadata.annotations["volume.kubernetes.io/storage-provisioner"]'
-    # Ignore differences for StatefulSet resources
-    resource.customizations.ignoreDifferences.apps_StatefulSet: "jqPathExpressions:\n- '.spec.template.spec.containers[]?.volumeMounts[]?.name'\n- '.spec.template.spec.volumes[]?.persistentVolumeClaim'\n- '.spec.volumeClaimTemplates[]?.metadata?.creationTimestamp'\n- '.spec.volumeClaimTemplates[]?.metadata?.name'\n- '.spec.volumeClaimTemplates[]?.metadata?.namespace' \n- '.spec.volumeClaimTemplates[]?.apiVersion'\n- '.spec.volumeClaimTemplates[]?.kind'\n- '.spec.volumeClaimTemplates[]?.status'\n- '.spec.volumeClaimTemplates'\n- '.spec.template'\n- '.spec.replicas'\n- '.status'\n- '.metadata.generation'\n- '.metadata.resourceVersion'\n- '.metadata.managedFields'\n"
-    # Ignoring differences in ExternalSecret resources
+    # Global ignore differences using managed fields (much more efficient)
+    resource.customizations.ignoreDifferences.all: |
+      managedFieldsManagers:
+      - kube-controller-manager
+      - cilium-operator
+      - longhorn-manager
+      - external-secrets
+      - kubectl
+      - helm
+      - kustomize
+      jsonPointers:
+      - /status
+      - /metadata/managedFields
+      - /metadata/generation
+      - /metadata/resourceVersion
+      - /metadata/annotations/deployment.kubernetes.io/revision
+    # Global compare options for better defaults
+    resource.compareoptions: |
+      # Ignore status fields for all resources (best practice)
+      ignoreResourceStatusField: all
+      # Ignore RBAC changes from aggregate roles
+      ignoreAggregatedRoles: true
+      # Enable using ignore differences for reconcile optimization
+      ignoreDifferencesOnResourceUpdates: true
+    # Enable resource update optimization (reduces unnecessary reconciles)
+    resource.ignoreResourceUpdatesEnabled: "true"
+    # Global resource update ignore patterns
+    resource.customizations.ignoreResourceUpdates.all: |
+      jsonPointers:
+      - /status
+      - /metadata/generation
+      - /metadata/resourceVersion
+      - /metadata/managedFields
+    # Specific ignore differences only for truly problematic resources
     resource.customizations.ignoreDifferences.external-secrets.io_ExternalSecret: |
       jqPathExpressions:
       - '.spec.data[]?.remoteRef?.conversionStrategy'
@@ -106,6 +52,8 @@ configs:
   params:
     server.insecure: true
     controller.resource.health.persist: "false"
+    # Enable server-side apply for better conflict resolution
+    server.enable.server.side.apply: "true"
 crds:
   install: true
   # -- Keep CRDs on chart uninstall
