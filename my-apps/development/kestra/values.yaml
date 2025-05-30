@@ -7,6 +7,15 @@ ingress:
 dind:
   enabled: false
 # Resource configuration - increased memory for standalone mode
+# Use Kubernetes task runner instead of Docker-in-Docker for script execution
+pluginDefaults:
+  - type: io.kestra.plugin.scripts
+    forced: true
+    values:
+      taskRunner:
+        type: io.kestra.plugin.kubernetes.runner.Kubernetes
+        namespace: kestra
+# Resource configuration for better performance
 resources:
   requests:
     memory: 1Gi
