@@ -2,7 +2,7 @@
 
 # Disable ingress since we're using HTTPRoute for external access
 ingress:
-  enabled: false
+  enabled: true
 # Disable Docker-in-Docker (not compatible with Talos security policies)
 dind:
   enabled: false

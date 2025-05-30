@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kestra-standalone
+  namespace: kestra
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: standalone
+      app.kubernetes.io/instance: kestra
+      app.kubernetes.io/name: kestra
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 8080
+      from: [] # Allow from any source
+  egress:
+    - {} # Allow all egress traffic 
