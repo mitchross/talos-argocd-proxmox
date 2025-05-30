@@ -6,14 +6,6 @@ ingress:
 # Disable Docker-in-Docker (not compatible with Talos security policies)
 dind:
   enabled: false
-# Use Kubernetes task runner instead of Docker-in-Docker for script execution
-pluginDefaults:
-  - type: io.kestra.plugin.scripts
-    forced: true
-    values:
-      taskRunner:
-        type: io.kestra.plugin.kubernetes.runner.Kubernetes
-        namespace: kestra
 # Resource configuration for better performance
 resources:
   requests:
