@@ -42,16 +42,17 @@ configs:
     resource.customizations.ignoreDifferences.apiextensions.k8s.io_CustomResourceDefinition: |
       jqPathExpressions:
       - '.spec.preserveUnknownFields'
-      - '.spec.versions[]?.schema?.openAPIV3Schema?.preserveUnknownFields'
-      - '.spec.versions[]?.storage'
-      - '.spec.versions[]?.served'
-      - '.spec.versions[]?.deprecated'
+      - '.spec.versions[]?.schema?.openAPIV3Schema'
+      - '.spec.versions[]'
+      - '.spec.names'
+      - '.spec.conversion'
       - '.spec.scope'
       - '.status'
       - '.metadata.generation'
+      - '.metadata.resourceVersion'
       - '.metadata.managedFields'
-      - '.metadata.annotations["controller-gen.kubebuilder.io/version"]'
-      - '.metadata.annotations["kubectl.kubernetes.io/last-applied-configuration"]'
+      - '.metadata.annotations'
+      - '.metadata.labels'
     # Ignore differences for Longhorn Volume resources
     resource.customizations.ignoreDifferences.longhorn.io_Volume: |
       jqPathExpressions:
@@ -88,15 +89,7 @@ configs:
       - '.metadata.annotations["volume.beta.kubernetes.io/storage-provisioner"]'
       - '.metadata.annotations["volume.kubernetes.io/storage-provisioner"]'
     # Ignore differences for StatefulSet resources
-    resource.customizations.ignoreDifferences.apps_StatefulSet: |
-      jqPathExpressions:
-      - '.spec.template.spec.containers[]?.volumeMounts[]?.name'
-      - '.spec.template.spec.volumes[]?.persistentVolumeClaim'
-      - '.spec.volumeClaimTemplates[]?.metadata?.creationTimestamp'
-      - '.spec.volumeClaimTemplates[]?.status'
-      - '.status'
-      - '.metadata.generation'
-      - '.metadata.managedFields'
+    resource.customizations.ignoreDifferences.apps_StatefulSet: "jqPathExpressions:\n- '.spec.template.spec.containers[]?.volumeMounts[]?.name'\n- '.spec.template.spec.volumes[]?.persistentVolumeClaim'\n- '.spec.volumeClaimTemplates[]?.metadata?.creationTimestamp'\n- '.spec.volumeClaimTemplates[]?.metadata?.name'\n- '.spec.volumeClaimTemplates[]?.metadata?.namespace' \n- '.spec.volumeClaimTemplates[]?.apiVersion'\n- '.spec.volumeClaimTemplates[]?.kind'\n- '.spec.volumeClaimTemplates[]?.status'\n- '.spec.volumeClaimTemplates'\n- '.spec.template'\n- '.spec.replicas'\n- '.status'\n- '.metadata.generation'\n- '.metadata.resourceVersion'\n- '.metadata.managedFields'\n"
     # Ignoring differences in ExternalSecret resources
     resource.customizations.ignoreDifferences.external-secrets.io_ExternalSecret: |
       jqPathExpressions:
