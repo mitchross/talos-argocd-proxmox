@@ -1,18 +1,17 @@
 #!/bin/bash
 
-# ComfyUI Setup Script for Kubernetes with GPU
+# ComfyUI Post-Deployment Setup Script for Kubernetes with GPU
 # This script sets up ComfyUI with popular models and workflows
+# Assumes manifests are already deployed via ArgoCD
 
 set -e
 
-echo "🚀 Setting up ComfyUI on Kubernetes with GPU support..."
-
-# Apply the manifests
-kubectl apply -f comfyui-manifests.yaml
+echo "🚀 Setting up ComfyUI models and workflows..."
+echo "ℹ️  Assuming ComfyUI is deployed via ArgoCD"
 
 # Wait for deployment to be ready
 echo "⏳ Waiting for ComfyUI deployment to be ready..."
-kubectl wait --for=condition=available --timeout=300s deployment/comfyui -n comfyui
+kubectl wait --for=condition=available --timeout=600s deployment/comfyui -n comfyui
 
 # Get the pod name
 POD_NAME=$(kubectl get pods -n comfyui -l app=comfyui -o jsonpath='{.items[0].metadata.name}')
