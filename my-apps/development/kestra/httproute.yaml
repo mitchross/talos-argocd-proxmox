@@ -1,0 +1,21 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: kestra
+  namespace: kestra
+spec:
+  parentRefs:
+    - name: gateway-internal # Assuming you have an internal gateway, adjust if needed
+      namespace: gateway # Assuming your gateway is in the 'gateway' namespace
+  hostnames:
+    - "kestra.vanillax.me" # You can change this hostname
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: kestra-standalone # Kestra standalone service name
+          namespace: kestra
+          port: 8080 # Default Kestra port
+          weight: 1
