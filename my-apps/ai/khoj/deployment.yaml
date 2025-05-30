@@ -104,11 +104,11 @@ spec:
             requests:
               cpu: 500m
               memory: 1Gi
-              nvidia.com/gpu: "2" # Use 2 GPU slices for AI acceleration
+              nvidia.com/gpu: "1" # Use 2 GPU slices for AI acceleration
             limits:
               cpu: 2000m
               memory: 4Gi
-              nvidia.com/gpu: "2" # Use 2 GPU slices for AI acceleration
+              nvidia.com/gpu: "1" # Use 2 GPU slices for AI acceleration
       volumes:
         - name: config
           persistentVolumeClaim:

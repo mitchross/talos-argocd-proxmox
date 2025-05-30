@@ -68,11 +68,11 @@ spec:
             requests:
               cpu: 1000m
               memory: 4Gi
-              nvidia.com/gpu: "5" # Use 5 GPU slices (good performance for image generation)
+              nvidia.com/gpu: "1" # Use 5 GPU slices (good performance for image generation)
             limits:
               cpu: 4000m
               memory: 8Gi
-              nvidia.com/gpu: "5" # Use 5 GPU slices (good performance for image generation)
+              nvidia.com/gpu: "1" # Use 5 GPU slices (good performance for image generation)
       volumes:
         - name: data
           persistentVolumeClaim:

@@ -34,11 +34,11 @@ spec:
             requests:
               cpu: 2000m
               memory: 8Gi
-              nvidia.com/gpu: "15" # Use 15 GPU slices (priority access to ~1.5 GPUs)
+              nvidia.com/gpu: "1" # Use 15 GPU slices (priority access to ~1.5 GPUs)
             limits:
               cpu: 4000m
               memory: 16Gi
-              nvidia.com/gpu: "15" # Use 15 GPU slices (priority access to ~1.5 GPUs)
+              nvidia.com/gpu: "1" # Use 15 GPU slices (priority access to ~1.5 GPUs)
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
