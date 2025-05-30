@@ -52,6 +52,26 @@ configs:
       - '.metadata.managedFields'
       - '.metadata.annotations["controller-gen.kubebuilder.io/version"]'
       - '.metadata.annotations["kubectl.kubernetes.io/last-applied-configuration"]'
+    # Ignore differences for Longhorn Volume resources
+    resource.customizations.ignoreDifferences.longhorn.io_Volume: |
+      jqPathExpressions:
+      - '.status'
+      - '.metadata.managedFields'
+      - '.spec.nodeID'
+      - '.spec.migrationNodeID'
+    # Ignore differences for Longhorn Node resources  
+    resource.customizations.ignoreDifferences.longhorn.io_Node: |
+      jqPathExpressions:
+      - '.status'
+      - '.metadata.managedFields'
+      - '.spec.disks'
+      - '.spec.allowScheduling'
+      - '.spec.evictionRequested'
+    # Ignore differences for Longhorn Settings resources
+    resource.customizations.ignoreDifferences.longhorn.io_Setting: |
+      jqPathExpressions:
+      - '.status'
+      - '.metadata.managedFields'
     # Ignoring differences in ExternalSecret resources
     resource.customizations.ignoreDifferences.external-secrets.io_ExternalSecret: |
       jqPathExpressions:
