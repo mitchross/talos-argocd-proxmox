@@ -2,25 +2,42 @@ configs:
   cm:
     create: true
     application.resourceTrackingMethod: "annotation+label"
-    configManagementPlugins: |
-      - name: kustomize-fetch-tunnel-id
-        init:
-          command: ["/bin/sh", "-c"]
-          args: ["echo 'Initializing kustomize-fetch-tunnel-id plugin...'"]
-        generate:
-          command: ["sh"] # The interpreter for your script
-          # This path is relative to the root of the application's
-          # Git repository when Argo CD checks it out.
-          args: ["scripts/kustomize-patch-tunnel-id.sh"]
-          
+    configManagementPlugins: "- name: kustomize-fetch-tunnel-id\n  init:\n    command: [\"/bin/sh\", \"-c\"]\n    args: [\"echo 'Initializing kustomize-fetch-tunnel-id plugin...'\"]\n  generate:\n    command: [\"sh\"] # The interpreter for your script\n    # This path is relative to the root of the application's\n    # Git repository when Argo CD checks it out.\n    args: [\"scripts/kustomize-patch-tunnel-id.sh\"]\n    \n"
     # Ignore differences for HTTPRoute resources
     resource.customizations.ignoreDifferences.gateway.networking.k8s.io_HTTPRoute: |
       jqPathExpressions:
       - '.spec.parentRefs[]?.group'
       - '.spec.parentRefs[]?.kind'
+      - '.spec.parentRefs[]?.name'
+      - '.spec.parentRefs[]?.namespace'
+      - '.spec.parentRefs[]?.sectionName'
       - '.spec.rules[]?.backendRefs[]?.group'
       - '.spec.rules[]?.backendRefs[]?.kind'
-
+      - '.spec.rules[]?.backendRefs[]?.name'
+      - '.spec.rules[]?.backendRefs[]?.namespace'
+      - '.spec.rules[]?.backendRefs[]?.port'
+      - '.spec.rules[]?.backendRefs[]?.weight'
+    # Ignore differences for Gateway resources
+    resource.customizations.ignoreDifferences.gateway.networking.k8s.io_Gateway: |
+      jqPathExpressions:
+      - '.status'
+      - '.spec.addresses[]?.type'
+      - '.spec.addresses[]?.value'
+      - '.spec.listeners[]?.name'
+      - '.spec.listeners[]?.hostname'
+      - '.spec.listeners[]?.port'
+      - '.spec.listeners[]?.protocol'
+      - '.spec.listeners[]?.allowedRoutes'
+      - '.spec.listeners[]?.tls'
+    # Ignore differences for Service resources
+    resource.customizations.ignoreDifferences._Service: |
+      jqPathExpressions:
+      - '.spec.clusterIP'
+      - '.spec.clusterIPs'
+      - '.spec.ipFamilies'
+      - '.spec.ipFamilyPolicy'
+      - '.status'
+      - '.metadata.managedFields'
     # Ignoring differences in ExternalSecret resources
     resource.customizations.ignoreDifferences.external-secrets.io_ExternalSecret: |
       jqPathExpressions:
