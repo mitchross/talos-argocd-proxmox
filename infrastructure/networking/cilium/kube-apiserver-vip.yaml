@@ -13,19 +13,8 @@ spec:
       port: 6443
       protocol: TCP
       targetPort: 6443
+  selector:
+    # This selector will find the actual kube-apiserver pods
+    component: kube-apiserver
+    tier: control-plane
   sessionAffinity: None
----
-apiVersion: v1
-kind: Endpoints
-metadata:
-  name: kube-apiserver-vip
-  namespace: default
-subsets:
-  - addresses:
-      - ip: 192.168.10.100
-      - ip: 192.168.10.101
-      - ip: 192.168.10.102
-    ports:
-      - name: https
-        port: 6443
-        protocol: TCP
