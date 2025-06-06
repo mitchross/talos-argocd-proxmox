@@ -4,6 +4,8 @@ resources:
   - announce.yaml
   - ip-pool.yaml
   - l2-policy.yaml
+  - vip-pool.yaml
+  - kube-apiserver-vip.yaml
 helmCharts:
   - name: cilium
     repo: https://helm.cilium.io

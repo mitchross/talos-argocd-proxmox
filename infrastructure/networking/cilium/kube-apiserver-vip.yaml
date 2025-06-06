@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-apiserver-vip
+  namespace: default
+  labels:
+    app: kube-apiserver-vip
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 192.168.10.199
+  ports:
+    - name: https
+      port: 6443
+      protocol: TCP
+      targetPort: 6443
+  sessionAffinity: None
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: kube-apiserver-vip
+  namespace: default
+subsets:
+  - addresses:
+      - ip: 192.168.10.100
+      - ip: 192.168.10.101
+      - ip: 192.168.10.102
+    ports:
+      - name: https
+        port: 6443
+        protocol: TCP

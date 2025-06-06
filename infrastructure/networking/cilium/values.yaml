@@ -1,26 +1,22 @@
 cluster:
   name: talos-default
   id: 1
-
 kubeProxyReplacement: true
-
-
-k8sServiceHost: localhost
-k8sServicePort: 7445
+# Point to one of the control plane nodes initially
+# Once VIP is working, this can be updated to the VIP
+k8sServiceHost: 192.168.10.100
+k8sServicePort: 6443
 securityContext:
   capabilities:
-    ciliumAgent: [ CHOWN, KILL, NET_ADMIN, NET_RAW, IPC_LOCK, SYS_ADMIN, SYS_RESOURCE, DAC_OVERRIDE, FOWNER, SETGID, SETUID ]
-    cleanCiliumState: [ NET_ADMIN, SYS_ADMIN, SYS_RESOURCE ]
-
+    ciliumAgent: [CHOWN, KILL, NET_ADMIN, NET_RAW, IPC_LOCK, SYS_ADMIN, SYS_RESOURCE, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    cleanCiliumState: [NET_ADMIN, SYS_ADMIN, SYS_RESOURCE]
 cgroup:
   autoMount:
     enabled: false
   hostRoot: /sys/fs/cgroup
-
 # https://docs.cilium.io/en/stable/network/concepts/ipam/
 ipam:
   mode: kubernetes
-
 operator:
   rollOutPods: true
   replicas: 1
@@ -31,7 +27,6 @@ operator:
     requests:
       cpu: 50m
       memory: 128Mi
-
 # Roll out cilium agent pods automatically when ConfigMap is updated.
 rollOutCiliumPods: true
 resources:
@@ -41,35 +36,27 @@ resources:
   requests:
     cpu: 200m
     memory: 512Mi
-
 debug:
- enabled: true
-
+  enabled: true
 # Increase rate limit when doing L2 announcements
 k8sClientRateLimit:
   qps: 20
   burst: 100
-
 l2announcements:
   enabled: true
-
 externalIPs:
   enabled: true
-
 enableCiliumEndpointSlice: true
-
 loadBalancer:
   # https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#maglev-consistent-hashing
   algorithm: maglev
-
 gatewayAPI:
   enabled: true
 envoy:
   securityContext:
     capabilities:
       keepCapNetBindService: true
-      envoy: [ NET_ADMIN, PERFMON, BPF ]
-
+      envoy: [NET_ADMIN, PERFMON, BPF]
 hubble:
   enabled: true
   relay:
@@ -78,7 +65,6 @@ hubble:
   ui:
     enabled: true
     rollOutPods: true
-
 ingressController:
   enabled: false
   default: true
@@ -86,7 +72,6 @@ ingressController:
   service:
     annotations:
       io.cilium/lb-ipam-ips: 192.168.10.40
-
 # mTLS
 authentication:
   enabled: false
