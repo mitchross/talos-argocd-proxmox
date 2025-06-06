@@ -1,0 +1,16 @@
+apiVersion: cilium.io/v2alpha1
+kind: CiliumL2AnnouncementPolicy
+metadata:
+  name: control-plane-l2-policy
+  namespace: kube-system
+spec:
+  interfaces:
+    - e*
+  loadBalancerIPs: true
+  externalIPs: true
+  serviceSelector:
+    matchLabels:
+      app: kube-apiserver-vip
+  nodeSelector:
+    matchLabels:
+      node-role.kubernetes.io/control-plane: ""

@@ -6,6 +6,7 @@ resources:
   - l2-policy.yaml
   - vip-pool.yaml
   - kube-apiserver-vip.yaml
+  - control-plane-l2-policy.yaml
 helmCharts:
   - name: cilium
     repo: https://helm.cilium.io
