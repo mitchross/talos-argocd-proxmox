@@ -29,7 +29,7 @@ nodes:
             - siderolabs/util-linux-tools
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: "BC:24:11:A4:B2:97"
+          hardwareAddr: "bc:24:11:a4:b2:97"
         dhcp: false
         addresses:
           - 192.168.10.100/24
@@ -52,7 +52,7 @@ nodes:
             - siderolabs/util-linux-tools
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: "BC:24:11:ED:73:BF"
+          hardwareAddr: "bc:24:11:ed:73:bf"
         dhcp: false
         addresses:
           - 192.168.10.101/24
@@ -75,7 +75,7 @@ nodes:
             - siderolabs/util-linux-tools
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: "BC:24:11:98:6B:13"
+          hardwareAddr: "bc:24:11:98:6b:13"
         dhcp: false
         addresses:
           - 192.168.10.102/24
@@ -101,7 +101,7 @@ nodes:
             - siderolabs/util-linux-tools
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: "BC:24:11:77:86:5F"
+          hardwareAddr: "bc:24:11:77:86:5f"
         dhcp: false
         addresses:
           - 192.168.10.200/24
@@ -144,7 +144,7 @@ nodes:
             - siderolabs/util-linux-tools
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: "BC:24:11:4C:99:A2"
+          hardwareAddr: "bc:24:11:4c:99:a2"
         dhcp: false
         addresses:
           - 192.168.10.201/24
@@ -180,7 +180,7 @@ nodes:
             - siderolabs/util-linux-tools
     networkInterfaces:
       - deviceSelector:
-          hardwareAddr: "BC:24:11:AD:82:0D"
+          hardwareAddr: "bc:24:11:ad:82:0d"
         dhcp: false
         addresses:
           - 192.168.10.203/24
