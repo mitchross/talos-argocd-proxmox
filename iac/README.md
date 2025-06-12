@@ -158,13 +158,23 @@ kubectl get nodes
 ### 7. Upgrade Talos (when needed)
 
 ```bash
-talosctl upgrade --image factory.talos.dev/installer/<image schematic ID>:<talos version> --preserve --nodes "192.168.10.100,192.168.10.101,192.168.10.102,192.168.10.200,192.168.10.201,192.168.10.203"
+talosctl upgrade --image ghcr.io/siderolabs/installer:v1.10.4 --nodes "192.168.10.100,192.168.10.101,192.168.10.102,192.168.10.200,192.168.10.201,192.168.10.203"
 
 # Verify extensions for each node
 talosctl get extensions --nodes 192.168.10.100
 ```
 
-### 8. Install Cilium CNI
+### 8. Upgrade Kubernetes (when needed)
+
+Upgrading the Kubernetes version is a separate step from upgrading Talos itself. Run the following command against a single control plane node to initiate the rolling upgrade of Kubernetes components across the entire cluster.
+
+**Note:** You must use a Kubernetes version compatible with your Talos installation. See the [Talos support matrix](https://www.talos.dev/latest/kubernetes-support-matrix/) for details.
+
+```bash
+talosctl upgrade-k8s --to <supported-k8s-version> --nodes 192.168.10.100
+```
+
+### 9. Install Cilium CNI
 
 **IMPORTANT:** Take note of the Ethernet device. Devices might be named `ens`, `eth`, or `enp` depending on your system.
 
