@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/karakeep-app/karakeep:0.24.1
+          image: ghcr.io/karakeep-app/karakeep:0.25.0
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
