@@ -35,7 +35,7 @@ variable "cloudinit_storage_pool" {
 
 variable "talos_version" {
   type    = string
-  default = "v1.10.2"
+  default = "v1.10.4"
 }
 
 variable "talos_image_schematic_id" {

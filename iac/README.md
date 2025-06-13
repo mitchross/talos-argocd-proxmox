@@ -35,14 +35,26 @@ cxxxxxcfedb-0ddd8-4c0f-932b-6adxxxxxxxxxc3ae
 # Navigate to packer directory
 cd iac/packer/talos-packer/
 
-# Update vars/local.pkrvars.hcl with your settings
+# Update vars/local.pkrvars.hcl with your common settings and Proxmox credentials.
 
-# Initialize and validate packer
+# Initialize and validate packer.
+# Note: We now specify both the common 'local' vars and the build-specific vars.
 packer init -upgrade .
-packer validate -var-file="vars/local.pkrvars.hcl" .
 
-# Build the template
-packer build -var-file="vars/local.pkrvars.hcl" .
+# Validate the non-GPU build
+packer validate -var-file="vars/local.pkrvars.hcl" -var-file="vars/non-gpu.pkrvars.hcl" .
+
+# Validate the GPU build
+packer validate -var-file="vars/local.pkrvars.hcl" -var-file="vars/gpu.pkrvars.hcl" .
+
+
+# Build the desired template by specifying the appropriate var file.
+
+# Build the NON-GPU template
+packer build -var-file="vars/local.pkrvars.hcl" -var-file="vars/non-gpu.pkrvars.hcl" .
+
+# Build the GPU template
+packer build -var-file="vars/local.pkrvars.hcl" -var-file="vars/gpu.pkrvars.hcl" .
 ```
 
 ### 3. Terraform - Provisioning Infrastructure
@@ -65,7 +77,7 @@ terraform plan \
   -var 'proxmox_api_url=https://192.168.10.11:8006/api2/json' \
   -var 'proxmox_node=proxmox-threadripper' \
   -var 'proxmox_api_token_id=root@pam!iac' \
-  -var 'proxmox_api_token_secret=c30xxxxxxxb-6aded8a1c3ae' \
+  -var 'proxmox_api_token_secret=c3xxxxx' \
   -out .tfplan
 
 # Apply the plan
@@ -73,7 +85,7 @@ terraform apply \
   -var 'proxmox_api_url=https://192.168.10.11:8006/api2/json' \
   -var 'proxmox_node=proxmox-threadripper' \
   -var 'proxmox_api_token_id=root@pam!iac' \
-  -var 'proxmox_api_token_secret=c30cfxxxxxxxaded8a1c3ae'
+  -var 'proxmox_api_token_secret=c30xxxxx'
 ```
 
 **Important:** Take note of the MAC addresses outputted, copy and update in the following step.

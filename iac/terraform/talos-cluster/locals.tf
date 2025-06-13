@@ -2,27 +2,27 @@ locals {
   # Original Master Node configuration
   vm_master_nodes_original = {
     "0" = {
-      vm_id          = 200
+      vm_id          = 400
       node_name      = "talos-master-00"
-      clone_target   = "talos-v1.10.2-cloud-init-template"
+      clone_target   = "talos-v1.10.4-cloud-init-template"
       node_cpu_cores = "6"
       node_memory    = 16000
       node_ipconfig  = "ip=192.168.10.100/24,gw=192.168.10.1"
       node_disk      = "48G"
     },
     "1" = {
-      vm_id          = 201
+      vm_id          = 401
       node_name      = "talos-master-01"
-      clone_target   = "talos-v1.10.2-cloud-init-template"
+      clone_target   = "talos-v1.10.4-cloud-init-template"
       node_cpu_cores = "6"
       node_memory    = 16000
       node_ipconfig  = "ip=192.168.10.101/24,gw=192.168.10.1"
       node_disk      = "48G"
     },
     "2" = {
-      vm_id          = 202
+      vm_id          = 402
       node_name      = "talos-master-02"
-      clone_target   = "talos-v1.10.2-cloud-init-template"
+      clone_target   = "talos-v1.10.4-cloud-init-template"
       node_cpu_cores = "6"
       node_memory    = 16000
       node_ipconfig  = "ip=192.168.10.102/24,gw=192.168.10.1"
@@ -33,36 +33,36 @@ locals {
   # Original Worker Node configuration
   vm_worker_nodes_original = {
     "0" = {
-      vm_id                     = 300
+      vm_id                     = 410
       node_name                 = "talos-gpu-worker-00"
-      clone_target              = "talos-gpu-v1.10.2-cloud-init-template"
+      clone_target              = "talos-gpu-v1.10.4-cloud-init-template"
       node_cpu_cores            = "8"
       node_memory               = 65000
       node_ipconfig             = "ip=192.168.10.200/24,gw=192.168.10.1"
       node_disk                 = "64G"
-      additional_node_disk_size = "512G"
+      additional_node_disk_size = "712G"
       additional_node_disk_storage = "datapool"
     },
     "1" = {
-      vm_id                     = 301
+      vm_id                     = 411
       node_name                 = "talos-worker-01"
-      clone_target              = "talos-v1.10.2-cloud-init-template"
+      clone_target              = "talos-v1.10.4-cloud-init-template"
       node_cpu_cores            = "8"
       node_memory               = 18000
       node_ipconfig             = "ip=192.168.10.201/24,gw=192.168.10.1"
       node_disk                 = "64G"
-      additional_node_disk_size = "512G"
+      additional_node_disk_size = "712G"
       additional_node_disk_storage = "datapool"
     },
     "2" = {
-      vm_id                     = 302
+      vm_id                     = 412
       node_name                 = "talos-worker-02"
-      clone_target              = "talos-v1.10.2-cloud-init-template"
+      clone_target              = "talos-v1.10.4-cloud-init-template"
       node_cpu_cores            = "8"
       node_memory               = 18000
       node_ipconfig             = "ip=192.168.10.203/24,gw=192.168.10.1"
       node_disk                 = "64G"
-      additional_node_disk_size = "512G"
+      additional_node_disk_size = "712G"
       additional_node_disk_storage = "datapool"
     }
   }
