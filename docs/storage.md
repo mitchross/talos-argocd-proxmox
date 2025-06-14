@@ -5,95 +5,86 @@
 ```mermaid
 graph TD
     subgraph "Storage Types"
-        A[Local Storage] --> B[Node-bound PVs]
-        C[SMB Storage] --> D[Network PVs]
+        A[Longhorn] --> B[Distributed PVs]
+        C[Local Storage] --> D[Node-bound PVs]
     end
-
     subgraph "Volume Binding"
-        B --> E[Local Path Provisioner]
-        D --> F[SMB CSI Driver]
+        B --> E[PersistentVolumes]
+        D --> F[PersistentVolumes]
+        E --> G[PersistentVolumeClaims]
+        F --> G
     end
-
     subgraph "Applications"
-        E --> G[Application Data]
-        F --> H[Media Storage]
+        G --> H[App Data]
     end
-
     style A fill:#f9f,stroke:#333
     style C fill:#bbf,stroke:#333
 ```
 
+## Declarative Storage with ArgoCD & Talos
+
+- **All storage resources (Longhorn, StorageClasses, PVs, PVCs) are managed declaratively via ArgoCD.**
+- **No manual creation of PVs/PVCs or StorageClasses on nodes.**
+- **Talos nodes are labeled for storage affinity in the Talos config (`talconfig.yaml`).**
+- **Longhorn is deployed and managed as part of the infrastructure ApplicationSet.**
+
 ## Directory Structure
 
 ```plaintext
-/datapool/kubernetes/
-├── arr/                  # *arr apps data
-├── comfyui/             # ComfyUI storage
-├── config/              # Application configs
-├── crowdsec/            # Security monitoring
-├── frigate/             # Camera monitoring
-├── homepage-dashboard/  # Dashboard data
-├── jellyfin/            # Media server
-├── khoj/                # Search data
-├── monitoring/          # Monitoring data
-├── nestmtx/            # Matrix server
-├── ollama-models/      # AI models
-├── ollama-webui/       # UI configurations
-├── perplexica/         # AI data
-├── plex/               # Media server
-├── postgres/           # Database storage
-├── prometheus/         # Metrics storage
-├── proxitok/           # ProxiTok cache
-├── reubah/             # Application data
-├── searxng/            # Search engine data
-└── TEMP/               # Temporary storage
+infrastructure/storage/
+├── longhorn/                # Longhorn manifests, patches, and configs
+├── storageclasses/          # StorageClass definitions (Longhorn, local, etc.)
+├── pvs/                     # (Optional) Static PVs for local storage
+└── kustomization.yaml       # Kustomize entrypoint for storage
 ```
 
 ## Storage Architecture
 
 ```mermaid
 graph TD
-    subgraph "Node: vanillax-ai"
-        A[Local Storage] --> B[/datapool/kubernetes]
-        B --> C[PersistentVolumes]
-        C --> D[PersistentVolumeClaims]
+    subgraph "Talos Node"
+        A[Longhorn System Extension] --> B[/var/lib/longhorn]
+        B --> C[Longhorn Engine]
     end
-
-    subgraph "Applications"
-        D --> E[AI Models]
-        D --> F[Media Apps]
-        D --> G[Databases]
+    subgraph "Cluster"
+        C --> D[Longhorn Manager]
+        D --> E[StorageClass: longhorn]
+        E --> F[Dynamic PVs]
+        F --> G[PVCs]
     end
-
-    subgraph "Volume Binding"
-        H[StorageClass] --> I[WaitForFirstConsumer]
-        I --> J[Node Affinity]
-        J --> C
+    G --> H[Applications]
+    subgraph "GitOps"
+        I[ArgoCD] --> J[Storage Manifests]
+        J --> E
     end
 ```
 
 ## Node Affinity and PVC Binding
 
-```mermaid
-sequenceDiagram
-    participant App as Application
-    participant K8s as Kubernetes Scheduler
-    participant PVC as PersistentVolumeClaim
-    participant PV as PersistentVolume
-    participant Node as Node Storage
-
-    App->>K8s: Create Pod with PVC
-    K8s->>PVC: Check storage requirements
-    PVC->>PV: Request binding
-    PV->>K8s: Check node affinity
-    K8s->>Node: Verify storage availability
-    Node->>K8s: Confirm availability
-    K8s->>App: Schedule pod on node
-    PVC->>PV: Bind volume
-    PV->>Node: Mount storage
-```
+- **Node labels for storage affinity are set in Talos config (`talconfig.yaml`).**
+- **Example:**
+  ```yaml
+  # In talconfig.yaml
+  nodes:
+    - hostname: storage-node-01
+      nodeLabels:
+        storage: "true"
+  ```
+- **StorageClasses** use `WaitForFirstConsumer` and node affinity to ensure correct scheduling.
 
 ## Storage Classes
+
+### Longhorn
+```yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn
+provisioner: driver.longhorn.io
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+```
 
 ### Local Storage
 ```yaml
@@ -105,113 +96,69 @@ provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
 ```
 
-### Node Affinity Configuration
-```yaml
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: app-data-pv
-spec:
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - vanillax-ai
-```
-
-## Volume Lifecycle
+## Volume Lifecycle (GitOps)
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Created: Create PVC
-    Created --> Pending: Wait for Consumer
-    Pending --> Binding: Pod Scheduled
-    Binding --> Bound: Volume Mounted
+    [*] --> Declared: Manifest in Git
+    Declared --> Synced: ArgoCD applies manifest
+    Synced --> Bound: Pod scheduled, PVC bound
     Bound --> [*]: Pod Running
 ```
 
 ## Storage Management
 
-### Directory Preparation
+- **All changes to storage (add/remove StorageClass, PV, PVC) are made in Git and synced by ArgoCD.**
+- **No manual kubectl or dashboard changes.**
+- **Talos nodes are never SSHed into for storage setup.**
+
+### Directory Preparation (Talos)
+- Talos mounts and prepares storage as defined in `talconfig.yaml` (see `extraMounts` and `disks` sections).
+- Example:
+  ```yaml
+  # In talconfig.yaml (worker patch)
+  machine:
+    kubelet:
+      extraMounts:
+        - destination: /var/lib/longhorn
+          type: bind
+          source: /var/lib/longhorn
+          options:
+            - bind
+            - rshared
+            - rw
+    disks:
+      - device: /dev/sdb
+        partitions:
+          - mountpoint: /var/mnt/longhorn_sdb
+  ```
+
+## Validation
+
 ```bash
-# Create base directory
-mkdir -p /datapool/kubernetes
-
-# Create application directories
-for dir in arr comfyui config frigate jellyfin monitoring ollama-models; do
-    mkdir -p /datapool/kubernetes/$dir
-done
-
-# Set permissions
-chown -R 1000:1000 /datapool/kubernetes/*
-```
-
-### Volume Validation
-```bash
-# Check PV status
-kubectl get pv -o custom-columns=NAME:.metadata.name,STATUS:.status.phase,NODE:.spec.nodeAffinity.required.nodeSelectorTerms[0].matchExpressions[0].values[0]
-
-# Verify PVC binding
-kubectl get pvc -A -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name,STATUS:.status.phase,VOLUME:.spec.volumeName
+# Check Longhorn pods
+kubectl get pods -n longhorn-system
+# Check StorageClasses
+kubectl get storageclass
+# Check PV/PVC status
+kubectl get pv
+kubectl get pvc -A
 ```
 
 ## Troubleshooting
 
-### Common Issues
-
-1. **Pending PVCs**
-```mermaid
-graph TD
-    A[PVC Pending] --> B{Check Status}
-    B -->|No PV| C[Verify PV exists]
-    B -->|No Node| D[Check Node Affinity]
-    B -->|Volume Exists| E[Check Binding Mode]
-    C --> F[Create PV]
-    D --> G[Update Node Labels]
-    E --> H[Wait for Pod Creation]
-```
-
-2. **Mount Issues**
-```bash
-# Check mount points
-kubectl describe pod <pod-name> -n <namespace>
-
-# Verify directory permissions
-ls -la /datapool/kubernetes/<app-directory>
-
-# Check node capacity
-df -h /datapool
-```
-
-### Volume Recovery
-1. Backup data:
-```bash
-rsync -av /datapool/kubernetes/<app>/ /backup/<app>/
-```
-
-2. Recreate PV/PVC:
-```bash
-kubectl delete pvc <pvc-name> -n <namespace>
-kubectl delete pv <pv-name>
-kubectl apply -f storage/
-```
+| Issue Type | Troubleshooting Steps |
+|------------|----------------------|
+| **Pending PVCs** | • Check PV existence<br>• Check node affinity/labels<br>• Validate StorageClass and volumeBindingMode |
+| **Mount Issues** | • Check Talos node config for correct mounts<br>• Validate disk presence in Talos<br>• Check Longhorn pod logs |
+| **Volume Recovery** | • Restore from backup/snapshot<br>• Update manifests in Git and re-sync |
+| **Drift** | • Ensure all changes are made in Git, not manually |
 
 ## Best Practices
 
-1. **Volume Naming**
-   - Use consistent naming: `<app>-<type>-{pv|pvc}`
-   - Include node affinity in PV names
-   - Label volumes for easy identification
-
-2. **Backup Strategy**
-   - Regular snapshots of /datapool
-   - Application-specific backup procedures
-   - Test restore procedures regularly
-
-3. **Monitoring**
-   - Set up alerts for storage capacity
-   - Monitor PV/PVC binding status
-   - Track volume performance metrics 
+1. **All storage resources are managed in Git** (ArgoCD syncs them to the cluster)
+2. **Node affinity is set via Talos config, not manual kubectl label**
+3. **No SSH or manual intervention on Talos nodes**
+4. **Regularly validate ArgoCD sync status for storage manifests**
+5. **Monitor Longhorn and storage metrics in Prometheus/Grafana**
+6. **Backup and test restore procedures regularly** 

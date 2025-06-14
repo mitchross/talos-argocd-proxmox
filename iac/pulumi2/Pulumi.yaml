@@ -1,7 +1,0 @@
-name: vanillax-proxmox-talos
-runtime: nodejs
-description: A Pulumi project to deploy Kubernetes on a Talos cluster using talhelper
-config:
-  pulumi:tags:
-    value:
-      pulumi:template: typescript

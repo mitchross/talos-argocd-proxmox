@@ -30,54 +30,157 @@ graph TD
     style E fill:#9cf,stroke:#333
 ```
 
+## Declarative GPU Management with Talos & ArgoCD
+
+- **All GPU resources (NVIDIA Operator, node labels, runtime config) are managed declaratively via ArgoCD and Talos.**
+- **No manual installation or configuration of drivers or runtimes on nodes.**
+- **Talos system extensions enable GPU support, configured in `talconfig.yaml`.**
+- **NVIDIA Operator and device plugin are deployed and managed as part of the infrastructure ApplicationSet.**
+
+## Directory Structure
+
+```plaintext
+infrastructure/controllers/nvidia-gpu-operator/   # NVIDIA Operator Helm chart and values
+infrastructure/gpu/                               # GPU-related manifests, node selectors, priority classes
+```
+
+## Talos GPU Node Configuration
+
+- **System extensions for NVIDIA drivers and container toolkit are enabled in `talconfig.yaml`.**
+- **Node labels for GPU scheduling are set in Talos config.**
+- **Containerd runtime is set to `nvidia` for GPU nodes.**
+- **No SSH or manual changes on Talos nodes.**
+
+Example:
+```yaml
+# In talconfig.yaml (GPU worker node)
+nodes:
+  - hostname: talos-cluster-gpu-worker-00
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/nonfree-kmod-nvidia-production
+            - siderolabs/nvidia-container-toolkit-production
+    nodeLabels:
+      node-type: gpu-worker
+    patches:
+      - |
+        machine:
+          kernel:
+            modules:
+              - name: nvidia
+              - name: nvidia_uvm
+              - name: nvidia_drm
+              - name: nvidia_modeset
+          files:
+            - path: /etc/cri/conf.d/20-customization.part
+              op: create
+              content: |
+                [plugins]
+                  [plugins."io.containerd.cri.v1.runtime"]
+                    [plugins."io.containerd.cri.v1.runtime".containerd]
+                      default_runtime_name = "nvidia"
+```
+
+## NVIDIA Operator & Device Plugin
+
+- **Deployed via Helm and managed by ArgoCD.**
+- **All configuration (toolkit, device plugin, time-slicing, etc.) is in Helm values files in Git.**
+- **No manual Helm or kubectl commands.**
+
+## Example: AI Workload Deployment
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    spec:
+      containers:
+      - name: ollama
+        image: ollama/ollama:latest
+        resources:
+          limits:
+            nvidia.com/gpu: 1
+            memory: 32Gi
+          requests:
+            nvidia.com/gpu: 1
+            memory: 16Gi
+        volumeMounts:
+        - name: ollama-models
+          mountPath: /root/.ollama
+      nodeSelector:
+        node-type: gpu-worker
+      volumes:
+      - name: ollama-models
+        persistentVolumeClaim:
+          claimName: ollama-models-pvc
+```
+
+## GPU Sharing & Time-Slicing
+
+- **Time-slicing and multi-GPU management are configured in the NVIDIA Operator Helm values.**
+- **All changes are made in Git and synced by ArgoCD.**
+
+Example:
+```yaml
+# In infrastructure/controllers/nvidia-gpu-operator/values.yaml
+devicePlugin:
+  config:
+    name: "time-slicing-config"
+    default: "0"
+    sharing:
+      timeSlicing:
+        renameByDefault: false
+        failRequestsGreaterThanOne: false
+        resources:
+          - name: nvidia.com/gpu
+            replicas: 4
+```
+
+## Validation
+
+```bash
+# Check NVIDIA Operator pods
+kubectl get pods -n gpu-operator
+# Check GPU node labels
+kubectl get nodes -l node-type=gpu-worker
+# Check GPU resource allocation
+kubectl get nodes -o json | jq '.items[].status.allocatable | select(has("nvidia.com/gpu"))'
+```
+
+## Troubleshooting
+
+| Issue Type | Troubleshooting Steps |
+|------------|----------------------|
+| **GPU Not Detected** | • Check Talos system extensions in config<br>• Check NVIDIA Operator pod status<br>• Validate node labels and runtime config |
+| **Resource Allocation Issues** | • Check GPU allocation on node<br>• Check pod resource requests<br>• Validate nodeSelector and tolerations |
+| **Container Runtime Issues** | • Check containerd runtime config in Talos<br>• Validate NVIDIA toolkit and device plugin pods |
+| **Drift** | • Ensure all changes are made in Git, not manually |
+
+## Best Practices
+
+1. **All GPU resources and configuration are managed in Git** (ArgoCD syncs them to the cluster)
+2. **Talos system extensions and runtime config are set in `talconfig.yaml`, not via SSH**
+3. **No manual installation or configuration of drivers or runtimes**
+4. **Regularly validate ArgoCD sync status for GPU manifests**
+5. **Monitor GPU metrics in Prometheus/Grafana**
+6. **Document all GPU workloads and node requirements**
+
 ## Hardware Setup
 
 - **NVIDIA GPUs**: 2× RTX 3090 (24GB VRAM each)
 - **Google Coral**: USB Accelerator (TPU)
 - **PCIe Lanes**: 64 lanes via Threadripper
 - **Cooling**: Custom water cooling loop
-
-## NVIDIA Operator Setup
-
-The NVIDIA GPU Operator is installed as part of the infrastructure tier via Helm:
-
-### 1. Install NVIDIA Drivers
-
-The drivers are pre-installed on the host:
-```bash
-# Verify NVIDIA drivers are installed
-nvidia-smi
-
-# Check driver version
-cat /proc/driver/nvidia/version
-```
-
-### 2. Install NVIDIA Operator
-
-The NVIDIA Operator is installed via Helm as part of the infrastructure tier:
-
-```bash
-# The installation is handled by the infrastructure ApplicationSet
-# The Helm chart is located at infrastructure/controllers/nvidia-gpu-operator/
-
-# If you need to install manually:
-helm repo add nvidia https://helm.ngc.nvidia.com/nvidia
-helm install --wait --generate-name \
-     -n gpu-operator --create-namespace \
-     nvidia/gpu-operator \
-     --set driver.enabled=false \
-     --set toolkit.enabled=true
-```
-
-### 3. Verify Installation
-
-```bash
-# Check that the pods are running
-kubectl get pods -n gpu-operator
-
-# Verify GPU allocation
-kubectl get nodes -o json | jq '.items[].status.allocatable | select(has("nvidia.com/gpu"))'
-```
 
 ## AI Workloads
 

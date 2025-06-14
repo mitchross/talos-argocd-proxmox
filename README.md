@@ -1,19 +1,19 @@
-# 🚀 K3s ArgoCD Proxmox Cluster
+# 🚀 Talos ArgoCD Proxmox Cluster
 =========================
 
-> Modern GitOps deployment structure using ArgoCD on Kubernetes with Proxmox virtualization
+> Modern GitOps deployment structure using Talos OS, ArgoCD, and Cilium, with Proxmox virtualization
 
-A GitOps-driven Kubernetes cluster using K3s, ArgoCD, and Cilium, with integrated Cloudflare Tunnel for secure external access. Built for both home lab and small production environments.
+A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux for K8s), ArgoCD, and Cilium, with integrated Cloudflare Tunnel for secure external access. Built for both home lab and small production environments.
 
-## 📋 Table of Contents
+## �� Table of Contents
 
 - [Prerequisites](#-prerequisites)
 - [Architecture](#-architecture)
 - [Quick Start](#-quick-start)
   - [System Setup](#1-system-dependencies)
-  - [K3s Installation](#2-k3s-installation)
+  - [Talos Cluster Bootstrapping](#2-talos-cluster-bootstrapping)
   - [Networking Setup](#3-cilium-installation)
-  - [GitOps Setup](#4-argocd-installation)
+  - [GitOps & ArgoCD](#4-argocd-installation)
   - [Secret Management](#5-secret-management)
 - [Verification](#-verification)
 - [Documentation](#-documentation)
@@ -25,14 +25,10 @@ A GitOps-driven Kubernetes cluster using K3s, ArgoCD, and Cilium, with integrate
 
 ## 📋 Prerequisites
 
-- Linux server/VM (can be Proxmox VM, mini PC, NUC, or similar)
-  - Minimum 4GB RAM (8GB+ recommended)
-  - 2 CPU cores (4+ recommended)
-  - 20GB storage (100GB+ recommended for applications)
+- Proxmox VMs or bare metal (see hardware below)
 - Domain configured in Cloudflare
 - 1Password account for secrets management
-  - 1Password Connect credentials and token
-  - Cloudflare API tokens and tunnel configuration
+- [Talosctl](https://www.talos.dev/v1.10/introduction/getting-started/) and [Talhelper](https://github.com/budimanjojo/talhelper) installed
 - `kubectl` installed locally
 - `cloudflared` installed locally
 
@@ -42,8 +38,8 @@ A GitOps-driven Kubernetes cluster using K3s, ArgoCD, and Cilium, with integrate
 graph TD
     subgraph "Argo CD Projects"
         IP[Infrastructure Project] --> IAS[Infrastructure ApplicationSet]
-        AP[Applications Project] --> AAS[Applications ApplicationSet]
         MP[Monitoring Project] --> MAS[Monitoring ApplicationSet]
+        AP[Applications Project] --> AAS[Applications ApplicationSet]
         AIP[AI Project] --> AIAS[AI ApplicationSet]
     end
     
@@ -57,7 +53,7 @@ graph TD
         N --> Cloudflared
         N --> Gateway
         
-        S --> OpenEBS
+        S --> Longhorn
         S --> VolumeSnapshots
         
         C --> CertManager
@@ -109,122 +105,73 @@ graph TD
 
 ### Key Features
 - **Three-Tier Architecture**: Separate infrastructure, monitoring, and applications
-- **Sync Waves**: Controlled deployment order through ArgoCD sync waves
-- **Simple Directory Patterns**: No complex include/exclude logic
-- **All-in-One Management**: Just three ApplicationSets to manage everything
-- **GPU Integration**: Support for hardware acceleration with NVIDIA GPUs
+- **Sync Waves**: Controlled deployment order via ArgoCD
+- **Declarative GitOps**: All cluster state managed in Git
+- **GPU Integration**: Full NVIDIA GPU support via Talos system extensions and GPU Operator
+- **Zero SSH**: All node management via Talosctl API
 
 ## 🚀 Quick Start
 
 ### 1. System Dependencies
 ```bash
-# Install required system packages
-sudo apt install zfsutils-linux nfs-kernel-server cifs-utils open-iscsi
-sudo apt install --reinstall zfs-dkms
-
-# Install 1Password CLI (follow instructions at https://1password.com/downloads/command-line/)
+# On your workstation
+brew install talosctl sops yq kubectl
+brew install budimanjojo/tap/talhelper
+# Or see Talos/Talhelper docs for Linux/Windows
 ```
 
-### 2. K3s Installation
+### 2. Generate Talos Configs (with Talhelper)
 ```bash
-export SETUP_NODEIP=192.168.10.11
-export SETUP_CLUSTERTOKEN=randomtokensecret123333334
-
-curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION="v1.32.0+k3s1" \
-  INSTALL_K3S_EXEC="--node-ip $SETUP_NODEIP \
-  --disable=flannel,local-storage,metrics-server,servicelb,traefik \
-  --flannel-backend='none' \
-  --disable-network-policy \
-  --disable-cloud-controller \
-  --disable-kube-proxy" \
-  K3S_TOKEN=$SETUP_CLUSTERTOKEN \
-  K3S_KUBECONFIG_MODE=644 sh -s -
-
-# Setup kubeconfig
-mkdir -p $HOME/.kube
-sudo cp -i /etc/rancher/k3s/k3s.yaml $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
-chmod 600 $HOME/.kube/config
+cd iac/talos
+# Edit talconfig.yaml for your cluster topology
+# Generate secrets (encrypted with SOPS)
+talhelper gensecret > talsecret.sops.yaml
+sops -e -i talsecret.sops.yaml
+# Generate node configs
+talhelper genconfig
 ```
 
-### Adding Worker Nodes
+### 3. Boot & Bootstrap Talos Nodes
+- Boot each VM/host with the generated Talos `machine.yaml` (PXE, ISO, or cloud-init)
+- Use `talosctl` to bootstrap the control plane:
 ```bash
-# On worker node
-curl -sfL https://get.k3s.io | K3S_URL=https://myserver:6443 K3S_TOKEN=mynodetoken sh -
-
-# Worker nodes:
-# - Don't run storage workloads
-# - Only handle compute tasks
-# - Automatically join the cluster
+# Set kubeconfig and talosconfig env vars
+export TALOSCONFIG=./clusterconfig/talosconfig
+export KUBECONFIG=./clusterconfig/kubeconfig
+# Bootstrap the cluster
+# (Run ONCE, on a single control plane node)
+talosctl bootstrap --nodes <control-plane-ip>
 ```
 
-### 3. Cilium Installation
+### 4. Apply Machine Configs
 ```bash
-# Install Helm if not already installed
-curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-
-# Add Cilium Helm repository
-helm repo add cilium https://helm.cilium.io/
-helm repo update
-
-# Install Cilium using Helm
-helm install cilium cilium/cilium -n kube-system \
-  -f infrastructure/networking/cilium/values.yaml \
-  --version 1.17.1 \
-  --set operator.replicas=1
-
-# Verify the installation
-kubectl -n kube-system get pods -l k8s-app=cilium
-kubectl -n kube-system get pods -l k8s-app=cilium-operator
-
-# Install Gateway API CRDs
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
-
+# Apply config to all nodes
+talosctl apply-config --insecure --nodes <node-ip> --file clusterconfig/<node>.yaml
 ```
 
-### 4. ArgoCD Installation
-```bash
+## 🛡️ Talos-Specific Notes
+- **No SSH**: All management via `talosctl` API
+- **Immutable OS**: No package manager, no shell
+- **Declarative**: All config in Git, applied via Talhelper/Talosctl
+- **System Extensions**: GPU, storage, and other drivers enabled via config
 
+## 🌐 Networking Setup
+- **Cilium**: CNI, service mesh, and Gateway API provider
+- **Gateway API**: Modern ingress, managed by Cilium
+- **Cloudflare Tunnel**: Secure external access
+- **CoreDNS**: Internal DNS, custom config for split DNS
 
-# Install ArgoCD with custom configuration
-k3s kubectl kustomize --enable-helm infrastructure/controllers/argocd | k3s kubectl apply -f -
-//talos 
-kubectl kustomize --enable-helm infrastructure/controllers/argocd | kubectl apply -f -
+## ⚓ GitOps & ArgoCD
+- **ArgoCD**: Manages all cluster resources via ApplicationSets
+- **Sync Waves**: Infrastructure (-2), Monitoring (0), Applications (1)
+- **Directory Structure**: See below for details
 
-# Wait for ArgoCD to be ready
-kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
+## 🔐 Secret Management
+- **1Password Connect**: External Secrets Operator syncs secrets from 1Password
+- **SOPS**: Used for encrypting Talos secrets
+- **No plaintext secrets in Git**
 
-# Wait for CRDs to be established
-kubectl wait --for=condition=established crd/applications.argoproj.io --timeout=60s
-kubectl wait --for=condition=established crd/appprojects.argoproj.io --timeout=60s
-```
-
-### 5. Secret Management
-```bash
-# Create required namespaces
-kubectl create namespace 1passwordconnect
-kubectl create namespace external-secrets
-
-# Generate and apply 1Password Connect credentials
-op connect server create  # Creates 1password-credentials.json
-export CONNECT_TOKEN="your-1password-connect-token"
-
-# Create required secrets
-kubectl create secret generic 1password-credentials \
-  --from-file=1password-credentials.json=credentials.base64 \
-  --namespace 1passwordconnect
-
-kubectl create secret generic 1password-operator-token \
-  --from-literal=token=$CONNECT_TOKEN \
-  --namespace 1passwordconnect
-
-kubectl create secret generic 1passwordconnect \
-  --from-literal=token=$CONNECT_TOKEN \
-  --namespace external-secrets
-```
-
-## 🛠️ Final Deployment
+## ��️ Final Deployment
 
 Deploy the three-tier structure in order:
 
@@ -250,7 +197,10 @@ kubectl apply -f my-apps/myapplications-appset.yaml -n argocd
 
 ## 🔍 Verification
 ```bash
-# Check core components
+# Check Talos node health
+talosctl health --nodes <node-ip>
+
+# Check Kubernetes core components
 kubectl get pods -A
 cilium status
 
@@ -285,7 +235,7 @@ kubectl get externalsecret -A
 💾 Storage
 ├── 4TB ZFS RAID-Z2
 ├── NVMe OS Drive
-└── Local Path Storage for K8s
+└── Longhorn/Local Path Storage for K8s
 
 🌐 Network
 ├── 2.5Gb Networking
@@ -336,23 +286,25 @@ While this setup uses a single node, you can add worker nodes for additional com
 
 | Issue Type | Troubleshooting Steps |
 |------------|----------------------|
-| **Network Issues** | • Check Gateway API status<br>• Verify Cloudflare Tunnel connectivity<br>• Test DNS resolution |
-| **Storage Issues** | • Verify PV binding<br>• Check storage provisioner logs<br>• Validate node affinity |
-| **ArgoCD Issues** | • Check application sync status<br>• Verify Git repository access<br>• Review application logs |
-| **Finalizer Cleanup** | • `kubectl patch applications -n argocd app-name --type json -p '[{"op":"remove","path":"/metadata/finalizers"}]'`<br>• `kubectl delete applications --all -n argocd` |
+| **Talos Node Issues** | • `talosctl health`<br>• Check Talos logs: `talosctl logs -n <node-ip> -k` |
+| **Network Issues** | • Check Cilium status<br>• Verify Gateway API<br>• Test DNS resolution |
+| **Storage Issues** | • Verify PV binding<br>• Check Longhorn/Local PV logs<br>• Validate node affinity |
+| **ArgoCD Issues** | • Check application sync status<br>• Review application logs |
+| **Secrets Issues** | • Check External Secrets Operator logs<br>• Verify 1Password Connect status |
+| **GPU Issues** | • Check GPU node labels<br>• Verify NVIDIA Operator pods<br>• Check `nvidia-smi` on GPU nodes |
 
 ### ArgoCD Application Cleanup
 If you need to remove all existing applications to rebuild:
 
 ```bash
-# Patch to remove finalizers from all applications
-kubectl get applications -n argocd -o name | xargs -I{} kubectl patch {} -n argocd --type json -p '[{"op": "remove", "path": "/metadata/finalizers"}]'
+# Remove finalizers from all applications
+kubectl get applications -n argocd -o name | xargs -I{} kubectl patch {} -n argocd --type json -p '[{"op": "remove","path": "/metadata/finalizers"}]'
 
 # Delete all applications
 kubectl delete applications --all -n argocd
 
 # For stuck ApplicationSets
-kubectl get applicationsets -n argocd -o name | xargs -I{} kubectl patch {} -n argocd --type json -p '[{"op": "remove", "path": "/metadata/finalizers"}]'
+kubectl get applicationsets -n argocd -o name | xargs -I{} kubectl patch {} -n argocd --type json -p '[{"op": "remove","path": "/metadata/finalizers"}]'
 kubectl delete applicationsets --all -n argocd
 
 # Only then apply the new structure in order

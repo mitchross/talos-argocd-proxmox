@@ -1,44 +1,57 @@
 variable "proxmox_api_url" {
+  description = "The URL for the Proxmox API."
   type        = string
-  description = "The API URL for Proxmox VE (e.g., https://proxmox-server:8006/api2/json)."
-}
-
-variable "proxmox_api_token_id" {
-  type        = string
-  description = "The Proxmox API token ID (e.g., user@pam!tokenid)."
-}
-
-variable "proxmox_api_token_secret" {
-  type        = string
-  sensitive   = true
-  description = "The Proxmox API token secret."
 }
 
 variable "proxmox_node" {
+  description = "The Proxmox node to deploy to."
   type        = string
-  description = "The target Proxmox VE node where VMs will be created (e.g., 'pve')."
+}
+
+variable "proxmox_api_token" {
+  description = "The Proxmox API token."
+  type        = string
+  sensitive   = true
+}
+
+variable "proxmox_pool" {
+  description = "The Proxmox resource pool to deploy to."
+  type        = string
+}
+
+variable "proxmox_ssh_user" {
+  description = "The SSH user for the Proxmox node."
+  type        = string
+  default     = "root"
+}
+
+variable "proxmox_ssh_password" {
+  description = "The SSH password for the Proxmox node."
+  type        = string
+  sensitive   = true
 }
 
 variable "nodes" {
-  type = map(object({
-    vmid                    = number
-    name                    = string
-    template                = string
-    cores                   = number
-    memory                  = number # in MB
-    ipconfig0               = string # e.g., "ip=192.168.1.100/24,gw=192.168.1.1"
-    disk_size               = string # e.g., "32G"
-    disk_storage            = string # Proxmox storage ID for the primary disk
-    disk_type               = string
-    onboot                  = bool
-    sockets                 = number
-    os_type                 = string
-    network_bridge          = string # Proxmox network bridge, e.g., "vmbr0"
-    network_model           = string
-    mac_address             = string # MAC address for the network interface
-    additional_disk_size    = string # e.g., "512G"
-    additional_disk_storage = string # Proxmox storage ID for the additional disk
+  description = "A list of virtual machines to create."
+  type = list(object({
+    name                 = string
+    vmid                 = number
+    role                 = string
+    ip                   = string
+    cores                = number
+    memory               = number
+    disk_size            = string
+    mac_address          = string
+    tags                 = optional(list(string))
+    additional_disk_size = optional(string)
+    additional_disk_storage = optional(string, "datapool")
   }))
-  description = "A map of virtual machine configurations. Each key is a unique identifier for the node, and the value is an object with its settings."
-  default     = {}
+  default = [
+    { name = "talos-master-00", vmid = 200, role = "controlplane", ip = "192.168.10.100", cores = 6, memory = 16000, disk_size = "48G", mac_address = "BC:24:11:A4:B2:97", tags = ["talos", "controlplane"] },
+    { name = "talos-master-01", vmid = 201, role = "controlplane", ip = "192.168.10.101", cores = 6, memory = 16000, disk_size = "48G", mac_address = "BC:24:11:ED:73:BF", tags = ["talos", "controlplane"] },
+    { name = "talos-master-02", vmid = 202, role = "controlplane", ip = "192.168.10.102", cores = 6, memory = 16000, disk_size = "48G", mac_address = "BC:24:11:98:6B:13", tags = ["talos", "controlplane"] },
+    { name = "talos-worker-01", vmid = 301, role = "worker", ip = "192.168.10.201", cores = 8, memory = 18000, disk_size = "64G", additional_disk_size = "712G", mac_address = "BC:24:11:4C:99:A2", tags = ["talos", "worker"] },
+    { name = "talos-worker-02", vmid = 303, role = "worker", ip = "192.168.10.203", cores = 8, memory = 18000, disk_size = "64G", additional_disk_size = "712G", mac_address = "BC:24:11:AD:82:0D", tags = ["talos", "worker"] },
+    { name = "talos-gpu-worker-00", vmid = 300, role = "worker-gpu", ip = "192.168.10.200", cores = 8, memory = 65000, disk_size = "64G", additional_disk_size = "712G", mac_address = "BC:24:11:77:86:5F", tags = ["talos", "worker", "gpu"] }
+  ]
 }

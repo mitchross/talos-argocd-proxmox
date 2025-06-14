@@ -1,23 +1,21 @@
 # 🚀 ArgoCD Installation and Configuration
 
-This guide details the setup and configuration of ArgoCD, which serves as the GitOps engine for our Kubernetes cluster.
+This guide details the setup and configuration of ArgoCD, which serves as the GitOps engine for our **Talos-based Kubernetes cluster**.
 
 ## 📋 Overview
 
 ```mermaid
 graph TD
-    A[K3s Cluster] -->|Install| B[ArgoCD]
+    A[Talos Cluster] -->|Install| B[ArgoCD]
     B -->|Create| C[AppProjects]
     C -->|Deploy| D[ApplicationSets]
     D -->|Generate| E[Applications]
     E -->|Sync| F[Resources]
-    
     subgraph "Three-Tier Architecture"
         G[Infrastructure Tier]
         H[Monitoring Tier]
         I[Applications Tier]
     end
-    
     D --> G
     D --> H
     D --> I
@@ -30,19 +28,20 @@ sequenceDiagram
     participant User
     participant ArgoCD
     participant Cluster
-    
-    User->>Cluster: Install Initial Components
+    User->>Cluster: Install Initial Components (Talos bootstrapping)
+    Note over User,Cluster: talosctl bootstrap, apply configs
+    User->>Cluster: Apply ArgoCD projects
     Note over User,Cluster: kubectl apply -f projects.yaml
     User->>Cluster: Apply Infrastructure ApplicationSet
     Note over User,Cluster: kubectl apply -f infrastructure-components-appset.yaml
     Cluster->>ArgoCD: Create Infrastructure Applications
     ArgoCD->>Cluster: Deploy Infrastructure Components (wave -2)
-    Note over ArgoCD,Cluster: Cilium, Cert-Manager, etc.
+    Note over ArgoCD,Cluster: Cilium, Longhorn, Cert-Manager, etc.
     User->>Cluster: Apply Monitoring ApplicationSet
     Note over User,Cluster: kubectl apply -f monitoring-components-appset.yaml
     Cluster->>ArgoCD: Create Monitoring Applications
     ArgoCD->>Cluster: Deploy Monitoring Components (wave 0)
-    Note over ArgoCD,Cluster: Prometheus, Grafana, etc.
+    Note over ArgoCD,Cluster: Prometheus, Grafana, Loki, etc.
     User->>Cluster: Apply Applications ApplicationSet
     Note over User,Cluster: kubectl apply -f myapplications-appset.yaml
     Cluster->>ArgoCD: Create User Applications
@@ -59,13 +58,12 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/
 
 ### 2. Apply custom ArgoCD configuration
 ```bash
-k3s kubectl kustomize --enable-helm infrastructure/controllers/argocd | k3s kubectl apply -f -
+kubectl kustomize --enable-helm infrastructure/controllers/argocd | kubectl apply -f -
 ```
 
 ### 3. Wait for ArgoCD to be ready
 ```bash
 kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
-
 kubectl wait --for=condition=established crd/applications.argoproj.io --timeout=60s
 kubectl wait --for=condition=established crd/appprojects.argoproj.io --timeout=60s
 ```
@@ -74,104 +72,31 @@ kubectl wait --for=condition=established crd/appprojects.argoproj.io --timeout=6
 
 ArgoCD projects define permissions and boundaries for applications. Our cluster uses four main projects:
 
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: AppProject
-metadata:
-  name: infrastructure
-  namespace: argocd
-spec:
-  sourceRepos:
-  - "*"
-  destinations:
-  - namespace: "*"
-    server: "*"
-  clusterResourceWhitelist:
-  - group: "*"
-    kind: "*"
----
-apiVersion: argoproj.io/v1alpha1
-kind: AppProject
-metadata:
-  name: applications
-  namespace: argocd
-spec:
-  sourceRepos:
-  - "*"
-  destinations:
-  - namespace: "*"
-    server: "*"
-  clusterResourceWhitelist:
-  - group: "*"
-    kind: "Namespace"
-  - group: "*"
-    kind: "PersistentVolume"
-  - group: "networking.k8s.io"
-    kind: "*"
-  - group: "gateway.networking.k8s.io"
-    kind: "*"
----
-apiVersion: argoproj.io/v1alpha1
-kind: AppProject
-metadata:
-  name: monitoring
-  namespace: argocd
-spec:
-  sourceRepos:
-  - "*"
-  destinations:
-  - namespace: "*"
-    server: "*"
-  clusterResourceWhitelist:
-  - group: "*"
-    kind: "Namespace"
-  - group: "monitoring.coreos.com"
-    kind: "*"
----
-apiVersion: argoproj.io/v1alpha1
-kind: AppProject
-metadata:
-  name: ai
-  namespace: argocd
-spec:
-  sourceRepos:
-  - "*"
-  destinations:
-  - namespace: "*"
-    server: "*"
-  clusterResourceWhitelist:
-  - group: "*"
-    kind: "Namespace"
-  - group: "*"
-    kind: "PersistentVolume"
-  - group: "networking.k8s.io"
-    kind: "*"
-  - group: "gateway.networking.k8s.io"
-    kind: "*"
-```
+- **infrastructure**: Cilium, Longhorn, Cert-Manager, External Secrets, etc.
+- **monitoring**: Prometheus, Grafana, Loki, Alertmanager, etc.
+- **applications**: User workloads (media, AI, dev, privacy, etc.)
+- **ai**: Specialized AI/ML workloads
 
 ## 📱 ApplicationSet Management
 
 We use three main ApplicationSets to manage our deployments:
 
 ### 1. Infrastructure ApplicationSet
-Located at `infrastructure/infrastructure-components-appset.yaml`, this ApplicationSet manages infrastructure components like Cilium, Cert-Manager, and other core services.
+Located at `infrastructure/infrastructure-components-appset.yaml`, this ApplicationSet manages infrastructure components like Cilium, Longhorn, Cert-Manager, and other core services. **All storage (Longhorn, local PVs, StorageClasses) is managed declaratively here.**
 
 ### 2. Monitoring ApplicationSet
-Located at `monitoring/monitoring-components-appset.yaml`, this ApplicationSet manages monitoring components like Prometheus, Grafana, and other observability tools.
+Located at `monitoring/monitoring-components-appset.yaml`, this ApplicationSet manages monitoring components like Prometheus, Grafana, Loki, and other observability tools.
 
 ### 3. Applications ApplicationSet
 Located at `my-apps/myapplications-appset.yaml`, this ApplicationSet manages user applications like media servers, AI applications, and other user-facing services.
 
 ## 🔢 Deployment Order
-
 Apply the resources in the following order:
 
 1. Apply the projects first:
 ```bash
 kubectl apply -f infrastructure/controllers/argocd/projects.yaml -n argocd
 ```
-
 2. Apply the ApplicationSets in order:
 ```bash
 kubectl apply -f infrastructure/infrastructure-components-appset.yaml -n argocd
@@ -183,9 +108,11 @@ kubectl apply -f my-apps/myapplications-appset.yaml -n argocd
 
 The repository follows a clean three-tier structure:
 
-- `/infrastructure/` - Infrastructure components (network, security, etc.)
-- `/monitoring/` - Monitoring components (Prometheus, Grafana, etc.)
+- `/infrastructure/` - Infrastructure components (network, storage, security, etc.)
+- `/monitoring/` - Monitoring components (Prometheus, Grafana, Loki, etc.)
 - `/my-apps/` - User applications (media servers, AI tools, etc.)
+- `/docs/` - Documentation
+- `/iac/` - Infrastructure as Code (Talos, Terraform, etc.)
 
 ## ✅ Key Features
 
@@ -193,16 +120,56 @@ The repository follows a clean three-tier structure:
    - Clear separation of concerns
    - Controlled deployment order
    - Simplified management
-
 2. **Sync Waves**:
    - Infrastructure: -2 (deployed first)
    - Monitoring: 0 (deployed second)
    - Applications: 1 (deployed last)
+3. **Declarative Storage**:
+   - All storage (Longhorn, StorageClasses, PVs, PVCs) is managed via ArgoCD manifests
+   - No manual storage setup required on nodes
+4. **No SSH**:
+   - All node management via Talosctl API
+   - Immutable OS, no shell or package manager
 
-3. **Simplified Directory Patterns**:
-   - No complex include/exclude logic
-   - One ApplicationSet per tier
-   - Clear path patterns
+## Best Practices
+
+- **All cluster state is managed in Git** (including storage, monitoring, and user apps)
+- **No manual changes** to the cluster; always use GitOps workflow
+- **Use sync waves** to control deployment order and dependencies
+- **Document all customizations** in `/docs/` and keep manifests up to date
+- **Monitor ArgoCD sync status** for drift or errors
+
+## Troubleshooting
+
+| Issue Type | Troubleshooting Steps |
+|------------|----------------------|
+| **ArgoCD Sync Issues** | • Check application sync status<br>• Review application logs<br>• Check for drift or failed syncs |
+| **Storage Issues** | • Verify Longhorn/StorageClass manifests are applied<br>• Check PV/PVC status<br>• Validate node affinity and volume binding |
+| **Talos Node Issues** | • `talosctl health`<br>• Check Talos logs: `talosctl logs -n <node-ip> -k` |
+| **Monitoring Issues** | • Check Prometheus/Grafana/Alertmanager pod status<br>• Review ServiceMonitor and PodMonitor configs |
+
+### ArgoCD Application Cleanup
+```bash
+# Remove finalizers from all applications
+kubectl get applications -n argocd -o name | xargs -I{} kubectl patch {} -n argocd --type json -p '[{"op": "remove","path": "/metadata/finalizers"}]'
+# Delete all applications
+kubectl delete applications --all -n argocd
+# For stuck ApplicationSets
+kubectl get applicationsets -n argocd -o name | xargs -I{} kubectl patch {} -n argocd --type json -p '[{"op": "remove","path": "/metadata/finalizers"}]'
+kubectl delete applicationsets --all -n argocd
+```
+
+## Talos-Specific Notes
+- **No SSH**: All management via `talosctl` API
+- **Immutable OS**: No package manager, no shell
+- **Declarative**: All config in Git, applied via Talhelper/Talosctl
+- **System Extensions**: GPU, storage, and other drivers enabled via config
+
+## See Also
+- [Storage Configuration](storage.md)
+- [Network Configuration](network.md)
+- [Secrets Management](secrets.md)
+- [GPU Configuration](gpu.md)
 
 ## Design Philosophy
 
@@ -506,7 +473,7 @@ Our ArgoCD installation uses a Kustomize-based approach with custom configuratio
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/experimental-install.yaml
 
 # Install ArgoCD with our custom configuration
-k3s kubectl kustomize --enable-helm infrastructure/controllers/argocd | k3s kubectl apply -f -
+kubectl kustomize --enable-helm infrastructure/controllers/argocd | kubectl apply -f -
 
 # Wait for ArgoCD to be ready
 kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s

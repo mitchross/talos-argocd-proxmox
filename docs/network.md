@@ -1,14 +1,13 @@
 # 🌐 Network Configuration
 
-## Architecture
+## Overview
 
 ```mermaid
 graph TD
     subgraph "Physical Topology"
         A[Internet Gateway] --> B[Switch]
-        B --> C[K3s Node]
+        B --> C[Talos Node]
     end
-
     subgraph "Logical Topology"
         D[Internet] --> E[Cloudflare]
         E --> F[Cloudflare Tunnel]
@@ -17,10 +16,123 @@ graph TD
         H --> I[Kubernetes Service]
         I --> J[Pod]
     end
-
     style C fill:#f9f,stroke:#333
     style H fill:#bbf,stroke:#333
 ```
+
+## Declarative Networking with ArgoCD & Talos
+
+- **All networking resources (Cilium, Gateway API, CoreDNS, Cloudflare Tunnel) are managed declaratively via ArgoCD.**
+- **No manual creation or editing of network resources on the cluster.**
+- **Talos network configuration (interfaces, routes, etc.) is set in `talconfig.yaml` and applied via Talosctl.**
+- **Cilium, Gateway API, and CoreDNS are deployed and managed as part of the infrastructure ApplicationSet.**
+
+## Directory Structure
+
+```plaintext
+infrastructure/networking/
+├── cilium/           # Cilium Helm values, L2/LB policies, VIPs
+├── coredns/          # CoreDNS custom configs
+├── gateway/          # Gateway API resources (Gateways, HTTPRoutes)
+├── cloudflared/      # Cloudflare Tunnel manifests and secrets
+└── kustomization.yaml
+```
+
+## Network Architecture
+
+```mermaid
+graph TD
+    subgraph "Talos Node"
+        A[Network Interfaces] --> B[Static IPs, VLANs]
+        B --> C[Kernel Networking]
+    end
+    subgraph "Cluster"
+        C --> D[Cilium CNI]
+        D --> E[Gateway API]
+        E --> F[CoreDNS]
+        D --> G[Service Mesh]
+        D --> H[LoadBalancer VIPs]
+        H --> I[Cloudflare Tunnel]
+    end
+    I --> J[External Access]
+    subgraph "GitOps"
+        K[ArgoCD] --> L[Networking Manifests]
+        L --> D
+        L --> E
+        L --> F
+        L --> I
+    end
+```
+
+## Talos Network Configuration
+
+- **All node-level network config is set in `talconfig.yaml` and applied via Talosctl.**
+- **No SSH or manual network changes on Talos nodes.**
+- **Example:**
+  ```yaml
+  # In talconfig.yaml
+  nodes:
+    - hostname: node-01
+      networkInterfaces:
+        - deviceSelector:
+            hardwareAddr: "xx:xx:xx:xx:xx:xx"
+          dhcp: false
+          addresses:
+            - 192.168.10.100/24
+          routes:
+            - network: 0.0.0.0/0
+              gateway: 192.168.10.1
+  ```
+
+## Cilium & Gateway API
+
+- **Cilium** is the CNI, service mesh, and Gateway API provider.
+- **Gateway API** is used for ingress and L4/L7 routing, managed by Cilium.
+- **All Cilium and Gateway API resources are managed via ArgoCD.**
+- **VIPs, L2/LB policies, and IP pools are defined in manifests and synced by ArgoCD.**
+
+## CoreDNS
+
+- **CoreDNS is managed via manifests in `infrastructure/networking/coredns/`.**
+- **Custom configs for split DNS, internal domains, etc. are applied declaratively.**
+
+## Cloudflare Tunnel
+
+- **Cloudflare Tunnel is deployed as a Deployment/DaemonSet and managed via ArgoCD.**
+- **Tunnel credentials are stored as Kubernetes secrets, managed via External Secrets Operator.**
+
+## Validation
+
+```bash
+# Check Cilium status
+cilium status
+# Check Gateway API resources
+kubectl get gateway -A
+kubectl get httproute -A
+# Check CoreDNS pods
+kubectl get pods -n kube-system -l k8s-app=kube-dns
+# Check Cloudflare Tunnel pods
+kubectl get pods -n cloudflared
+```
+
+## Troubleshooting
+
+| Issue Type | Troubleshooting Steps |
+|------------|----------------------|
+| **Cilium Issues** | • Check Cilium pod status<br>• Review Cilium logs<br>• Validate Helm values and policies in Git |
+| **Gateway API Issues** | • Check Gateway/HTTPRoute status<br>• Validate manifests in Git<br>• Review Cilium logs |
+| **CoreDNS Issues** | • Check CoreDNS pod status<br>• Validate custom config in Git<br>• Test DNS resolution |
+| **Cloudflare Tunnel Issues** | • Check tunnel pod status<br>• Validate secret and deployment manifests<br>• Test external access |
+| **Drift** | • Ensure all changes are made in Git, not manually |
+
+## Best Practices
+
+1. **All networking resources are managed in Git** (ArgoCD syncs them to the cluster)
+2. **Talos network config is set in `talconfig.yaml`, not via kubectl or SSH**
+3. **No manual changes to Cilium, Gateway API, CoreDNS, or Cloudflare Tunnel**
+4. **Regularly validate ArgoCD sync status for networking manifests**
+5. **Monitor Cilium, Gateway API, and DNS metrics in Prometheus/Grafana**
+6. **Document all customizations and keep manifests up to date**
 
 ## Traffic Flow
 

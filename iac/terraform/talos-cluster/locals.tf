@@ -1,124 +1,125 @@
 locals {
-  # Original Master Node configuration
-  vm_master_nodes_original = {
-    "0" = {
-      vm_id          = 400
-      node_name      = "talos-master-00"
-      clone_target   = "talos-v1.10.4-cloud-init-template"
-      node_cpu_cores = "6"
-      node_memory    = 16000
-      node_ipconfig  = "ip=192.168.10.100/24,gw=192.168.10.1"
-      node_disk      = "48G"
-    },
-    "1" = {
-      vm_id          = 401
-      node_name      = "talos-master-01"
-      clone_target   = "talos-v1.10.4-cloud-init-template"
-      node_cpu_cores = "6"
-      node_memory    = 16000
-      node_ipconfig  = "ip=192.168.10.101/24,gw=192.168.10.1"
-      node_disk      = "48G"
-    },
-    "2" = {
-      vm_id          = 402
-      node_name      = "talos-master-02"
-      clone_target   = "talos-v1.10.4-cloud-init-template"
-      node_cpu_cores = "6"
-      node_memory    = 16000
-      node_ipconfig  = "ip=192.168.10.102/24,gw=192.168.10.1"
-      node_disk      = "48G"
+  # Base configuration values
+  cluster_name     = "talos-cluster"
+  cluster_endpoint = "https://192.168.10.199:6443"
+  cni_name         = "cilium"
+  talos_version    = "v1.10.4"
+  gateway          = "192.168.10.1"
+  network_bridge   = "vmbr0"
+  disk_storage     = "local-lvm"
+  additional_disk_storage = "datapool"
+  
+  template_vmids = {
+    "controlplane" = 9706
+    "worker"       = 9706
+    "worker-gpu"   = 9705
+  }
+
+  # Talos Machine Configuration Templates
+  talosconfig_templates = {
+    controlplane = <<-EOT
+      version: v1alpha1
+      machine:
+        install:
+          image: ghcr.io/siderolabs/installer:${local.talos_version}
+          bootloader: true
+          extensions:
+            - name: siderolabs/amd-ucode
+            - name: siderolabs/gasket-driver
+            - name: siderolabs/i915
+            - name: siderolabs/iscsi-tools
+            - name: siderolabs/qemu-guest-agent
+            - name: siderolabs/util-linux-tools
+      cluster:
+        network:
+          cni:
+            name: ${local.cni_name}
+        apiServer:
+          certSANs:
+            - ${local.cluster_endpoint}
+        extraManifests: []
+    EOT
+    worker = <<-EOT
+      version: v1alpha1
+      machine:
+        install:
+          image: ghcr.io/siderolabs/installer:${local.talos_version}
+          bootloader: true
+          extensions:
+            - name: siderolabs/amd-ucode
+            - name: siderolabs/gasket-driver
+            - name: siderolabs/i915
+            - name: siderolabs/iscsi-tools
+            - name: siderolabs/qemu-guest-agent
+            - name: siderolabs/util-linux-tools
+      cluster:
+        network:
+          cni:
+            name: ${local.cni_name}
+    EOT
+    "worker-gpu" = <<-EOT
+      version: v1alpha1
+      machine:
+        files:
+          - op: create
+            content: |
+              [plugins]
+                [plugins."io.containerd.cri.v1.runtime"]
+                  [plugins."io.containerd.cri.v1.runtime".containerd]
+                    default_runtime_name = "nvidia"
+            path: /etc/cri/conf.d/20-customization.part
+        install:
+          image: ghcr.io/siderolabs/installer:${local.talos_version}
+          bootloader: true
+          extensions:
+            - name: siderolabs/amd-ucode
+            - name: siderolabs/gasket-driver
+            - name: siderolabs/i915
+            - name: siderolabs/iscsi-tools
+            - name: siderolabs/qemu-guest-agent
+            - name: siderolabs/util-linux-tools
+            - name: siderolabs/nonfree-kmod-nvidia-production
+            - name: siderolabs/nvidia-container-toolkit-production
+      cluster:
+        network:
+          cni:
+            name: ${local.cni_name}
+    EOT
+  }
+
+  # Node definitions
+  nodes = [
+    { name = "talos-master-00", vmid = 400, role = "controlplane", ip = "192.168.10.100", cores = 6, memory = 16000, disk_size = "48G", mac_address = "BC:24:11:A4:B2:97" },
+    { name = "talos-master-01", vmid = 401, role = "controlplane", ip = "192.168.10.101", cores = 6, memory = 16000, disk_size = "48G", mac_address = "BC:24:11:ED:73:BF" },
+    { name = "talos-master-02", vmid = 402, role = "controlplane", ip = "192.168.10.102", cores = 6, memory = 16000, disk_size = "48G", mac_address = "BC:24:11:98:6B:13" },
+    { name = "talos-gpu-worker-00", vmid = 410, role = "worker-gpu", ip = "192.168.10.200", cores = 8, memory = 65000, disk_size = "64G", additional_disk_size = "712G", mac_address = "BC:24:11:77:86:5F" },
+    { name = "talos-worker-01", vmid = 411, role = "worker", ip = "192.168.10.201", cores = 8, memory = 18000, disk_size = "64G", additional_disk_size = "712G", mac_address = "BC:24:11:4C:99:A2" },
+    { name = "talos-worker-02", vmid = 412, role = "worker", ip = "192.168.10.203", cores = 8, memory = 18000, disk_size = "64G", additional_disk_size = "712G", mac_address = "BC:24:11:AD:82:0D" },
+  ]
+
+  all_nodes_transformed = {
+    for node in var.nodes : node.name => {
+      vmid                    = node.vmid
+      name                    = node.name
+      template_vmid           = local.template_vmids[node.role]
+      cores                   = node.cores
+      memory                  = node.memory
+      ip                      = node.ip
+      gateway                 = local.gateway
+      disk_size               = node.disk_size
+      disk_storage            = local.disk_storage
+      disk_type               = "scsi"
+      onboot                  = true
+      sockets                 = 1
+      os_type                 = "cloud-init"
+      network_bridge          = local.network_bridge
+      network_model           = "virtio"
+      mac_address             = node.mac_address
+      tags                    = lookup(node, "tags", [node.role])
+      additional_disk_size    = lookup(node, "additional_disk_size", null)
+      additional_disk_storage = lookup(node, "additional_disk_size", null) != null ? local.additional_disk_storage : null
+      role                    = node.role
+      user_data               = local.talosconfig_templates[node.role]
     }
   }
-
-  # Original Worker Node configuration
-  vm_worker_nodes_original = {
-    "0" = {
-      vm_id                     = 410
-      node_name                 = "talos-gpu-worker-00"
-      clone_target              = "talos-gpu-v1.10.4-cloud-init-template"
-      node_cpu_cores            = "8"
-      node_memory               = 65000
-      node_ipconfig             = "ip=192.168.10.200/24,gw=192.168.10.1"
-      node_disk                 = "64G"
-      additional_node_disk_size = "712G"
-      additional_node_disk_storage = "datapool"
-    },
-    "1" = {
-      vm_id                     = 411
-      node_name                 = "talos-worker-01"
-      clone_target              = "talos-v1.10.4-cloud-init-template"
-      node_cpu_cores            = "8"
-      node_memory               = 18000
-      node_ipconfig             = "ip=192.168.10.201/24,gw=192.168.10.1"
-      node_disk                 = "64G"
-      additional_node_disk_size = "712G"
-      additional_node_disk_storage = "datapool"
-    },
-    "2" = {
-      vm_id                     = 412
-      node_name                 = "talos-worker-02"
-      clone_target              = "talos-v1.10.4-cloud-init-template"
-      node_cpu_cores            = "8"
-      node_memory               = 18000
-      node_ipconfig             = "ip=192.168.10.203/24,gw=192.168.10.1"
-      node_disk                 = "64G"
-      additional_node_disk_size = "712G"
-      additional_node_disk_storage = "datapool"
-    }
-  }
-
-  # Common defaults that were missing
-  common_node_config = {
-    disk_storage   = "local-lvm"
-    disk_type      = "disk"
-    onboot         = true
-    sockets        = 1
-    os_type        = "cloud-init"
-    network_bridge = "vmbr0"
-    network_model  = "virtio"
-  }
-
-  # MAC Addresses for existing VMs
-  node_mac_addresses = {
-    "talos-master-00"     = "BC:24:11:A4:B2:97"
-    "talos-master-01"     = "BC:24:11:ED:73:BF"
-    "talos-master-02"     = "BC:24:11:98:6B:13"
-    "talos-gpu-worker-00" = "BC:24:11:77:86:5F"
-    "talos-worker-01"     = "BC:24:11:4C:99:A2"
-    "talos-worker-02"     = "BC:24:11:AD:82:0D"
-  }
-
-  # Transformed Master Nodes
-  transformed_master_nodes = {
-    for k, v in local.vm_master_nodes_original : v.node_name => merge(local.common_node_config, {
-      vmid                    = v.vm_id
-      name                    = v.node_name
-      template                = v.clone_target
-      cores                   = tonumber(v.node_cpu_cores)
-      memory                  = v.node_memory
-      ipconfig0               = v.node_ipconfig
-      disk_size               = v.node_disk
-      mac_address             = local.node_mac_addresses[v.node_name]
-      additional_disk_size    = null
-      additional_disk_storage = null
-    })
-  }
-
-  # Transformed Worker Nodes
-  transformed_worker_nodes = {
-    for k, v in local.vm_worker_nodes_original : v.node_name => merge(local.common_node_config, {
-      vmid                    = v.vm_id
-      name                    = v.node_name
-      template                = v.clone_target
-      cores                   = tonumber(v.node_cpu_cores)
-      memory                  = v.node_memory
-      ipconfig0               = v.node_ipconfig
-      disk_size               = v.node_disk
-      mac_address             = local.node_mac_addresses[v.node_name]
-      additional_disk_size    = v.additional_node_disk_size
-      additional_disk_storage = v.additional_node_disk_storage
-    })
-  }
-
-  all_nodes_transformed = merge(local.transformed_master_nodes, local.transformed_worker_nodes)
 }
