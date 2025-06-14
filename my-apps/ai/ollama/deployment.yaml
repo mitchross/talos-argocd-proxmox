@@ -85,4 +85,4 @@ spec:
             name: ollama-configmap
             # Removed nvidia-driver hostPath - device plugin handles this
       nodeSelector:
-        nvidia.com/gpu.present: "true" # Use GPU Operator label
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
