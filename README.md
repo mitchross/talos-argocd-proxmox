@@ -5,16 +5,19 @@
 
 A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux for K8s), ArgoCD, and Cilium, with integrated Cloudflare Tunnel for secure external access. Built for both home lab and small production environments.
 
-## �� Table of Contents
+## 📋 Table of Contents
 
 - [Prerequisites](#-prerequisites)
 - [Architecture](#-architecture)
 - [Quick Start](#-quick-start)
-  - [System Setup](#1-system-dependencies)
-  - [Talos Cluster Bootstrapping](#2-talos-cluster-bootstrapping)
-  - [Networking Setup](#3-cilium-installation)
-  - [GitOps & ArgoCD](#4-argocd-installation)
-  - [Secret Management](#5-secret-management)
+  - [1. System Dependencies](#1-system-dependencies)
+  - [2. Generate Talos Configs](#2-generate-talos-configs-with-talhelper)
+  - [3. Boot & Bootstrap Talos Nodes](#3-boot--bootstrap-talos-nodes)
+  - [4. Apply Machine Configs](#4-apply-machine-configs)
+  - [5. Install Gateway API CRDs](#5-install-gateway-api-crds)
+  - [6. Install ArgoCD](#6-install-argocd)
+  - [7. Configure Secret Management](#7-configure-secret-management)
+  - [8. Final Deployment](#8-final-deployment)
 - [Verification](#-verification)
 - [Documentation](#-documentation)
 - [Hardware Stack](#-hardware-stack)
@@ -149,29 +152,51 @@ talosctl bootstrap --nodes <control-plane-ip>
 talosctl apply-config --insecure --nodes <node-ip> --file clusterconfig/<node>.yaml
 ```
 
-## 🛡️ Talos-Specific Notes
-- **No SSH**: All management via `talosctl` API
-- **Immutable OS**: No package manager, no shell
-- **Declarative**: All config in Git, applied via Talhelper/Talosctl
-- **System Extensions**: GPU, storage, and other drivers enabled via config
+### 5. Install Gateway API CRDs
+```bash
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
+```
 
-## 🌐 Networking Setup
-- **Cilium**: CNI, service mesh, and Gateway API provider
-- **Gateway API**: Modern ingress, managed by Cilium
-- **Cloudflare Tunnel**: Secure external access
-- **CoreDNS**: Internal DNS, custom config for split DNS
+### 6. Install ArgoCD
+```bash
+# Install ArgoCD with custom configuration
+kubectl kustomize --enable-helm infrastructure/controllers/argocd | kubectl apply -f -
 
-## ⚓ GitOps & ArgoCD
-- **ArgoCD**: Manages all cluster resources via ApplicationSets
-- **Sync Waves**: Infrastructure (-2), Monitoring (0), Applications (1)
-- **Directory Structure**: See below for details
+# Wait for ArgoCD to be ready
+kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
 
-## 🔐 Secret Management
-- **1Password Connect**: External Secrets Operator syncs secrets from 1Password
-- **SOPS**: Used for encrypting Talos secrets
-- **No plaintext secrets in Git**
+# Wait for CRDs to be established
+kubectl wait --for=condition=established crd/applications.argoproj.io --timeout=60s
+kubectl wait --for=condition=established crd/appprojects.argoproj.io --timeout=60s
+```
 
-## ��️ Final Deployment
+### 7. Configure Secret Management
+```bash
+# Create required namespaces
+kubectl create namespace 1passwordconnect
+kubectl create namespace external-secrets
+
+# Generate and apply 1Password Connect credentials
+# This command creates 1password-credentials.json
+op connect server create
+export CONNECT_TOKEN="your-1password-connect-token"
+
+# Create required secrets
+kubectl create secret generic 1password-credentials \
+  --from-file=1password-credentials.json=1password-credentials.base64 \
+  --namespace 1passwordconnect
+
+kubectl create secret generic 1password-operator-token \
+  --from-literal=token=$CONNECT_TOKEN \
+  --namespace 1passwordconnect
+
+kubectl create secret generic 1passwordconnect \
+  --from-literal=token=$CONNECT_TOKEN \
+  --namespace external-secrets
+```
+
+### 8. Final Deployment
 
 Deploy the three-tier structure in order:
 
@@ -194,6 +219,14 @@ kubectl apply -f my-apps/myapplications-appset.yaml -n argocd
 - Sync waves ensure proper deployment order
 - Simple directory patterns without complex include/exclude logic
 - All components managed through just three top-level ApplicationSets
+
+## 🛡️ Talos-Specific Notes
+- **No SSH**: All management via `talosctl` API
+- **Immutable OS**: No package manager, no shell
+- **Declarative**: All config in Git, applied via Talhelper/Talosctl
+- **System Extensions**: GPU, storage, and other drivers enabled via config
+- **SOPS**: Used for encrypting Talos secrets
+- **No plaintext secrets in Git**
 
 ## 🔍 Verification
 ```bash

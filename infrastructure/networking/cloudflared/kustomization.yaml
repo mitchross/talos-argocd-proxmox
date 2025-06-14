@@ -10,4 +10,4 @@ generatorOptions:
 resources:
   - ns.yaml
   - external-secret.yaml
-  - daemon-set.yaml
+  - deployment.yaml

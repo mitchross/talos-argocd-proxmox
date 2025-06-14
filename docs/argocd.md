@@ -470,7 +470,8 @@ Our ArgoCD installation uses a Kustomize-based approach with custom configuratio
 ### 1. Installation Steps
 ```bash
 # Install Gateway API CRDs first
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/experimental-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
 
 # Install ArgoCD with our custom configuration
 kubectl kustomize --enable-helm infrastructure/controllers/argocd | kubectl apply -f -

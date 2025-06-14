@@ -88,3 +88,5 @@ config.xml
 /node_modules
 /infrastructure/networking/cilium/charts
 *.log
+credentials.base64
+credentials.base64

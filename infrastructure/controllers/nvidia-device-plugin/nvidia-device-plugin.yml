@@ -60,7 +60,7 @@ spec:
       priorityClassName: "system-node-critical"
       serviceAccountName: nvidia-device-plugin
       nodeSelector:
-        nvidia.com/gpu.present: "true"
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       containers:
