@@ -15,7 +15,7 @@ spec:
     spec:
       runtimeClassName: nvidia
       nodeSelector:
-        nvidia.com/gpu.present: "true"
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
       tolerations:
         - key: nvidia.com/gpu
           operator: Exists
