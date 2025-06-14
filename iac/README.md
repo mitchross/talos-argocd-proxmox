@@ -41,54 +41,51 @@ cd iac/packer/talos-packer/
 # Note: We now specify both the common 'local' vars and the build-specific vars.
 packer init -upgrade .
 
-# Validate the non-GPU build
+# Validate the desired template by specifying the appropriate var files.
 packer validate -var-file="vars/local.pkrvars.hcl" -var-file="vars/non-gpu.pkrvars.hcl" .
-
-# Validate the GPU build
 packer validate -var-file="vars/local.pkrvars.hcl" -var-file="vars/gpu.pkrvars.hcl" .
 
-
-# Build the desired template by specifying the appropriate var file.
-
-# Build the NON-GPU template
+# Build the desired template by specifying the appropriate var files.
 packer build -var-file="vars/local.pkrvars.hcl" -var-file="vars/non-gpu.pkrvars.hcl" .
-
-# Build the GPU template
+# Or for the GPU-enabled template:
 packer build -var-file="vars/local.pkrvars.hcl" -var-file="vars/gpu.pkrvars.hcl" .
 ```
 
 ### 3. Terraform - Provisioning Infrastructure
 
-```bash
-# Navigate to terraform directory
-cd iac/terraform/c0depool-talos-cluster/
+The Terraform setup is now declarative. All node configurations are managed in one place.
 
-# Set up credentials
-cp example.credentails.auto.tfvars credentails.auto.tfvars
-# Update the file credentails.auto.tfvars
+1.  **Navigate to the Terraform directory:**
+    ```bash
+    cd iac/terraform/talos-cluster/
+    ```
 
-# Update locals.tf with your configuration
+2.  **Set up credentials:**
+    Create a `credentials.auto.tfvars` file. This file is ignored by Git and should contain your Proxmox secrets.
+    ```hcl
+    # iac/terraform/talos-cluster/credentials.auto.tfvars
 
-# Initialize Terraform
-terraform init
+    proxmox_api_url      = "https://<your-proxmox-ip>:8006/api2/json"
+    proxmox_api_token    = "<your-proxmox-api-token>" // e.g., root@pam!iac=...
+    proxmox_ssh_password = "<your-proxmox-ssh-password>"
+    ```
 
-# Create execution plan
-terraform plan \
-  -var 'proxmox_api_url=https://192.168.10.11:8006/api2/json' \
-  -var 'proxmox_node=proxmox-threadripper' \
-  -var 'proxmox_api_token_id=root@pam!iac' \
-  -var 'proxmox_api_token_secret=c3xxxxx' \
-  -out .tfplan
+3.  **Configure your cluster nodes:**
+    Open `variables.tf` and review the `nodes` variable. This is the single source of truth for your cluster's infrastructure.
+    - Adjust IPs, MAC addresses, cores, memory, and disk sizes as needed.
+    - **Crucially, ensure the MAC addresses here match the `hardwareAddr` selectors in `iac/talos/talconfig.yaml`**.
 
-# Apply the plan
-terraform apply \
-  -var 'proxmox_api_url=https://192.168.10.11:8006/api2/json' \
-  -var 'proxmox_node=proxmox-threadripper' \
-  -var 'proxmox_api_token_id=root@pam!iac' \
-  -var 'proxmox_api_token_secret=c30xxxxx'
-```
+4.  **Initialize and apply Terraform:**
+    ```bash
+    # Initialize Terraform
+    terraform init -upgrade
 
-**Important:** Take note of the MAC addresses outputted, copy and update in the following step.
+    # Create execution plan
+    terraform plan -out=.tfplan
+
+    # Apply the plan
+    terraform apply .tfplan
+    ```
 
 ### 4. Talos Configuration with talhelper
 
@@ -99,7 +96,7 @@ cd iac/talos
 # Generate talhelper secret
 talhelper gensecret > talsecret.sops.yaml
 
-# Create age key for encryption
+# Create age key for encryption ( only run once ) 
 mkdir -p $HOME/.config/sops/age/
 age-keygen -o $HOME/.config/sops/age/keys.txt
 ```
@@ -126,42 +123,39 @@ talhelper genconfig
 
 ### 5. Bootstrap Talos Cluster
 
-In Proxmox, go to each VM and get the temporary IP. 
-**Note:** The IP WON'T be what you set Talos to be configured for, so make sure you grab it from the console!
+1.  **Apply configuration to each node.**
+    Run the following commands one by one. The `--insecure` flag is required for the initial setup as the nodes don't yet trust the cluster's CA.
 
-```bash
-cd iac/talos
+    ```bash
+    # Control Plane Nodes
+    talosctl apply-config --insecure --nodes 192.168.10.100 --file clusterconfig/proxmox-talos-cluster-talos-cluster-control-00.yaml
+    talosctl apply-config --insecure --nodes 192.168.10.101 --file clusterconfig/proxmox-talos-cluster-talos-cluster-control-01.yaml
+    talosctl apply-config --insecure --nodes 192.168.10.102 --file clusterconfig/proxmox-talos-cluster-talos-cluster-control-02.yaml
 
-# For master node(s)
-talosctl apply-config --insecure --nodes <master-node ip> --file clusterconfig/<master-config>.yaml
+    # Worker Nodes
+    talosctl apply-config --insecure --nodes 192.168.10.200 --file clusterconfig/proxmox-talos-cluster-talos-cluster-gpu-worker-00.yaml
+    talosctl apply-config --insecure --nodes 192.168.10.201 --file clusterconfig/proxmox-talos-cluster-talos-cluster-worker-01.yaml
+    talosctl apply-config --insecure --nodes 192.168.10.203 --file clusterconfig/proxmox-talos-cluster-talos-cluster-worker-02.yaml
+    ```
 
-# For worker(s)
-talosctl apply-config --insecure --nodes <worker-node ip> --file clusterconfig/<worker-config>.yaml
+2.  **Set up talosconfig for cluster access.**
+    ```bash
+    mkdir -p ~/.talos
+    cp clusterconfig/talosconfig ~/.talos/config
+    ```
 
-#Example
-talosctl apply-config --insecure --nodes 192.168.10.100 --file clusterconfig/proxmox-talos-cluster-talos-cluster-control-00.yaml
-talosctl apply-config --insecure --nodes 192.168.10.101 --file clusterconfig/proxmox-talos-cluster-talos-cluster-control-01.yaml
-talosctl apply-config --insecure --nodes 192.168.10.102 --file clusterconfig/proxmox-talos-cluster-talos-cluster-control-02.yaml
-talosctl apply-config --insecure --nodes 192.168.10.200 --file clusterconfig/proxmox-talos-cluster-talos-cluster-gpu-worker-00.yaml
-talosctl apply-config --insecure --nodes 192.168.10.201 --file clusterconfig/proxmox-talos-cluster-talos-cluster-worker-01.yaml
-talosctl apply-config --insecure --nodes 192.168.10.203 --file clusterconfig/proxmox-talos-cluster-talos-cluster-worker-02.yaml
-
-# Set up talosconfig
-mkdir -p $HOME/.talos
-cp clusterconfig/talosconfig $HOME/.talos/config
-
-# Run the bootstrap command
-# Note: The bootstrap operation should only be called ONCE on a SINGLE control plane/master node
-# (use any one if you have multiple master nodes)
-talosctl bootstrap -n 192.168.10.100
-```
+3.  **Bootstrap the cluster.**
+    This command only needs to be run on a *single* control plane node, and only once.
+    ```bash
+    talosctl bootstrap -n 192.168.10.100
+    ```
 
 ### 6. Access the Kubernetes Cluster
 
 ```bash
 # Get kubeconfig
-mkdir -p $HOME/.kube
-talosctl -n 192.168.10.100 kubeconfig $HOME/.kube/config
+mkdir -p ~/.kube
+talosctl kubeconfig -n 192.168.10.100 ~/.kube/config
 
 # Verify nodes are up
 kubectl get nodes
@@ -174,9 +168,7 @@ talosctl upgrade --image ghcr.io/siderolabs/installer:v1.10.4 --nodes "192.168.1
 
 # Verify extensions for each node
 talosctl get extensions --nodes 192.168.10.100
-```
-
-### 8. Upgrade Kubernetes (when needed)
+```### 8. Upgrade Kubernetes (when needed)
 
 Upgrading the Kubernetes version is a separate step from upgrading Talos itself. Run the following command against a single control plane node to initiate the rolling upgrade of Kubernetes components across the entire cluster.
 
@@ -202,3 +194,4 @@ cilium install \
   --helm-set=externalIPs.enabled=true \
   --helm-set=devices=e+
 ```
+
