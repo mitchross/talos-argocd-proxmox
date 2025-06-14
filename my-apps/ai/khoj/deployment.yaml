@@ -14,7 +14,7 @@ spec:
         app: khoj-sandbox
     spec:
       nodeSelector:
-        feature.node.kubernetes.io/pci-0300_10de.present: "true" # Schedule on GPU nodes for potential GPU acceleration
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
       containers:
         - name: sandbox
           image: ghcr.io/khoj-ai/terrarium:latest
@@ -45,11 +45,10 @@ spec:
     spec:
       runtimeClassName: nvidia
       nodeSelector:
-        feature.node.kubernetes.io/pci-0300_10de.present: "true" # Schedule on GPU nodes for potential GPU acceleration
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
       tolerations:
         - key: nvidia.com/gpu
           operator: Exists
-          effect: NoSchedule
       containers:
         - name: server
           image: ghcr.io/khoj-ai/khoj:latest

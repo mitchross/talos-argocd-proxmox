@@ -15,7 +15,7 @@ spec:
     spec:
       # Node selector for GPU nodes
       nodeSelector:
-        accelerator: nvidia-gpu
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
       containers:
         - name: comfyui
           image: yanwk/comfyui-boot:latest
