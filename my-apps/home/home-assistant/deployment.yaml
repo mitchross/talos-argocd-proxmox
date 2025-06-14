@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: home-assistant
-          image: ghcr.io/home-assistant/home-assistant:2025.5.3
+          image: ghcr.io/home-assistant/home-assistant:2025.6.1
           env:
             - name: TZ
               value: "America/New_York"
