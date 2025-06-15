@@ -32,13 +32,13 @@ spec:
               protocol: TCP
           resources:
             requests:
-              cpu: 2000m
+              cpu: 1
               memory: 8Gi
-              nvidia.com/gpu: "1" # Use 15 GPU slices (priority access to ~1.5 GPUs)
+              nvidia.com/gpu: 1
             limits:
-              cpu: 4000m
+              cpu: 4
               memory: 16Gi
-              nvidia.com/gpu: "1" # Use 15 GPU slices (priority access to ~1.5 GPUs)
+              nvidia.com/gpu: 1
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
