@@ -1,11 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 resources:
   - ns.yaml
-  # NFD rules for Intel HW
-  - https://github.com/intel/intel-device-plugins-for-kubernetes/deployments/nfd/overlays/node-feature-rules?ref=v0.32.1
-
+  # The Intel-specific rules are not needed for NVIDIA GPU discovery
+  # and have been removed. NFD's default PCI source handles NVIDIA.
 # https://kubernetes-sigs.github.io/node-feature-discovery/v0.16/deployment/helm.html
 helmCharts:
   - name: node-feature-discovery
@@ -18,4 +16,19 @@ helmCharts:
       worker:
         config:
           core:
-            sleepInterval: 0s
+            # Run NFD periodically to catch any changes
+            sleepInterval: 60s
+            # Explicitly enable sources for clarity
+            sources: ["pci", "system"]
+          sources:
+            pci:
+              # By default, NFD discovers devices with class '03' (Display
+              # controller), which includes NVIDIA GPUs. We are making
+              # it explicit here for clarity.
+              deviceClassWhitelist:
+                - "03"
+              # This config creates the label that your workloads expect:
+              # e.g. feature.node.kubernetes.io/pci-0300_10de.present
+              deviceLabelFields:
+                - "class"
+                - "vendor"
