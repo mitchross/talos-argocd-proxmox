@@ -34,6 +34,8 @@ spec:
   destinations:
     - namespace: 'monitoring'
       server: 'https://kubernetes.default.svc'
+    - namespace: 'prometheus-stack'
+      server: 'https://kubernetes.default.svc'
     - namespace: 'loki-stack'
       server: 'https://kubernetes.default.svc'
     - namespace: 'monitoring-stack'
