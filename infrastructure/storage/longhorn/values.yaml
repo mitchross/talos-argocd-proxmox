@@ -6,6 +6,6 @@ persistence:
   defaultClass: true
   defaultClassReplicaCount: 3
   defaultFsType: ext4
-  reclaimPolicy: Retain
+  reclaimPolicy: Delete
 ingress:
   enabled: false
