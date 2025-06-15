@@ -192,6 +192,7 @@ cilium install \
   --helm-set=cgroup.hostRoot=/sys/fs/cgroup \
   --helm-set=l2announcements.enabled=true \
   --helm-set=externalIPs.enabled=true \
+  --set gatewayAPI.enabled=true \
   --helm-set=devices=e+
 ```
 
