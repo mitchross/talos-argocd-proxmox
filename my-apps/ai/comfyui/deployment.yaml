@@ -22,6 +22,7 @@ spec:
         - name: comfyui
           # Updated to use the cu124-megapak image
           image: yanwk/comfyui-boot:cu124-megapak
+          workingDir: /home/runner
           ports:
             - containerPort: 8188
           env:
