@@ -13,6 +13,8 @@ spec:
         revision: HEAD
         directories:
           - path: my-apps/*/*
+            kustomize:
+              enabled: true
   template:
     metadata:
       name: '{{path[1]}}-{{path.basename}}'

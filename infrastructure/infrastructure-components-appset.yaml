@@ -4,17 +4,19 @@ metadata:
   name: infrastructure-components
   namespace: argocd
   annotations:
-
+    argocd.argoproj.io/sync-wave: "-2"
 spec:
   generators:
     - git:
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         revision: HEAD
         directories:
           - path: infrastructure/*/*
+            kustomize:
+              enabled: true
   template:
     metadata:
-      name: 'infra-{{path.basename}}'
+      name: 'infra-{{path[1]}}-{{path.basename}}'
       labels:
         type: infrastructure
     spec:
@@ -22,7 +24,7 @@ spec:
       source:
         plugin:
           name: kustomize-build-with-helm
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         targetRevision: HEAD
         path: '{{path}}'
       destination:

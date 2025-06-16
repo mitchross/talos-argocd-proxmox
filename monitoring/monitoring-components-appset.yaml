@@ -8,10 +8,12 @@ metadata:
 spec:
   generators:
     - git:
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         revision: HEAD
         directories:
           - path: monitoring/*
+            kustomize:
+              enabled: true
   template:
     metadata:
       name: 'monitoring-{{path.basename}}'
@@ -22,7 +24,7 @@ spec:
       source:
         plugin:
           name: kustomize-build-with-helm
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         targetRevision: HEAD
         path: '{{path}}'
       destination:
