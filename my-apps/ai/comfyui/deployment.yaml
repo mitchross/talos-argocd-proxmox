@@ -16,6 +16,8 @@ spec:
       # Node selector for GPU nodes
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
+      securityContext:
+        fsGroup: 1000
       containers:
         - name: comfyui
           # Updated to use the cu124-megapak image
@@ -27,12 +29,12 @@ spec:
               value: "--listen 0.0.0.0 --port 8188"
           resources:
             requests:
-              memory: "8Gi"  # Increased for megapak
-              cpu: "4"       # Increased for megapak
+              memory: "8Gi" # Increased for megapak
+              cpu: "4" # Increased for megapak
               nvidia.com/gpu: "1"
             limits:
               memory: "16Gi" # Increased for megapak
-              cpu: "8"       # Increased for megapak  
+              cpu: "8" # Increased for megapak  
               nvidia.com/gpu: "1"
           volumeMounts:
             # Mount to /home/runner as per yanwk image design
@@ -48,7 +50,7 @@ spec:
             httpGet:
               path: /
               port: 8188
-            initialDelaySeconds: 90   # Increased for megapak startup time
+            initialDelaySeconds: 90 # Increased for megapak startup time
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 6
@@ -56,7 +58,7 @@ spec:
             httpGet:
               path: /
               port: 8188
-            initialDelaySeconds: 180  # Increased for megapak startup time
+            initialDelaySeconds: 180 # Increased for megapak startup time
             periodSeconds: 30
             timeoutSeconds: 10
             failureThreshold: 3
@@ -64,7 +66,6 @@ spec:
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
-            fsGroup: 1000
             runAsNonRoot: true
       volumes:
         - name: comfyui-storage
