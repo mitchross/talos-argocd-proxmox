@@ -63,11 +63,7 @@ spec:
             periodSeconds: 30
             timeoutSeconds: 10
             failureThreshold: 3
-          # Security context for the runner user
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            runAsNonRoot: true
+
       volumes:
         - name: comfyui-storage
           persistentVolumeClaim:
