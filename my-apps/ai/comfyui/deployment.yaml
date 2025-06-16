@@ -18,7 +18,8 @@ spec:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
       containers:
         - name: comfyui
-          image: yanwk/comfyui-boot:latest
+          # Updated to use the cu124-megapak image
+          image: yanwk/comfyui-boot:cu124-megapak
           ports:
             - containerPort: 8188
           env:
@@ -26,38 +27,45 @@ spec:
               value: "--listen 0.0.0.0 --port 8188"
           resources:
             requests:
-              memory: "4Gi"
-              cpu: "2"
+              memory: "8Gi"  # Increased for megapak
+              cpu: "4"       # Increased for megapak
               nvidia.com/gpu: "1"
             limits:
-              memory: "8Gi"
-              cpu: "4"
+              memory: "16Gi" # Increased for megapak
+              cpu: "8"       # Increased for megapak  
               nvidia.com/gpu: "1"
           volumeMounts:
+            # Mount to /home/runner as per yanwk image design
             - name: comfyui-storage
-              mountPath: /opt/ComfyUI/models
-              subPath: models
-            - name: comfyui-storage
-              mountPath: /opt/ComfyUI/output
-              subPath: output
-            - name: comfyui-storage
-              mountPath: /opt/ComfyUI/custom_nodes
-              subPath: custom_nodes
+              mountPath: /home/runner
+            # Optional: Mount specific ComfyUI directories if you want more granular control
+            # Note: The image expects data in /home/runner, which contains ComfyUI structure
             - name: config-volume
-              mountPath: /opt/ComfyUI/extra_model_paths.yaml
+              mountPath: /home/runner/ComfyUI/extra_model_paths.yaml
               subPath: extra_model_paths.yaml
+              readOnly: true
           readinessProbe:
             httpGet:
               path: /
               port: 8188
-            initialDelaySeconds: 60
+            initialDelaySeconds: 90   # Increased for megapak startup time
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
           livenessProbe:
             httpGet:
               path: /
               port: 8188
-            initialDelaySeconds: 120
+            initialDelaySeconds: 180  # Increased for megapak startup time
             periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          # Security context for the runner user
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            runAsNonRoot: true
       volumes:
         - name: comfyui-storage
           persistentVolumeClaim:
@@ -65,3 +73,4 @@ spec:
         - name: config-volume
           configMap:
             name: comfyui-config
+            optional: true
