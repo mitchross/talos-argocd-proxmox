@@ -5,8 +5,10 @@ metadata:
   namespace: kestra
 spec:
   parentRefs:
-    - name: gateway-internal # Assuming you have an internal gateway, adjust if needed
-      namespace: gateway # Assuming your gateway is in the 'gateway' namespace
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal
+      namespace: gateway
   hostnames:
     - "kestra.vanillax.me" # You can change this hostname
   rules:
@@ -15,7 +17,9 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: kestra-service # Actual service name from the Helm chart
+        - group: ""
+          kind: Service
+          name: kestra-service
           namespace: kestra
           port: 8080 # Default Kestra port
           weight: 1
