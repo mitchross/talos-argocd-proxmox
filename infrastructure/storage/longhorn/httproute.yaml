@@ -5,8 +5,10 @@ metadata:
   namespace: longhorn-system
 spec:
   parentRefs:
-    - name: gateway-internal # Assuming you have an internal gateway, adjust if needed
-      namespace: gateway # Assuming your gateway is in the 'gateway' namespace
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal
+      namespace: gateway
   hostnames:
     - "longhorn.vanillax.me" # You can change this hostname
   rules:
@@ -15,7 +17,9 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: longhorn-frontend # Default Longhorn UI service name
+        - group: ""
+          kind: Service
+          name: longhorn-frontend
           namespace: longhorn-system
           port: 80 # Default Longhorn UI port
           weight: 1

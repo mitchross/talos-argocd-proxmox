@@ -5,7 +5,9 @@ metadata:
   namespace: khoj
 spec:
   parentRefs:
-    - name: gateway-internal
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal
       namespace: gateway
   hostnames:
     - "khoj.vanillax.me"
@@ -15,6 +17,8 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: khoj-server-service
+        - group: ""
+          kind: Service
+          name: khoj-server-service
           port: 42110
           weight: 1
