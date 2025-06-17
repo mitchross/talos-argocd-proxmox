@@ -12,35 +12,53 @@ spec:
         revision: HEAD
         directories:
           - path: infrastructure/*/*
-            kustomize:
-              enabled: true
+        requeueAfterSeconds: 300  # Check for changes every 5 minutes
   template:
     metadata:
       name: 'infra-{{path[1]}}-{{path.basename}}'
       labels:
-        type: infrastructure
+        app.kubernetes.io/part-of: infrastructure
+        app.kubernetes.io/managed-by: argocd
+        component-type: '{{path[1]}}'
+        component-name: '{{path.basename}}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "-2"
+        notifications.argoproj.io/subscribe.on-sync-succeeded.slack: infrastructure-alerts
     spec:
       project: infrastructure
       source:
-        plugin:
-          name: kustomize-build-with-helm
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         targetRevision: HEAD
         path: '{{path}}'
+        plugin:
+          name: kustomize-build-with-helm
+          env:
+            - name: KUSTOMIZE_PLUGIN_HOME
+              value: /etc/kustomize/plugin
       destination:
         server: https://kubernetes.default.svc
-        # Use the application name as the namespace, which should be defined in its kustomization.yaml
         namespace: '{{path.basename}}'
       syncPolicy:
         automated:
           prune: true
           selfHeal: true
         retry:
-          limit: 5
+          limit: 3
           backoff:
-            duration: 5s
+            duration: 10s
             factor: 2
-            maxDuration: 3m
+            maxDuration: 5m
         syncOptions:
           - CreateNamespace=true
           - ServerSideApply=true
+          - ApplyOutOfSyncOnly=true
+          - PrunePropagationPolicy=foreground
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas
+        - group: ""
+          kind: Service
+          jsonPointers:
+            - /spec/clusterIP

@@ -1,4 +1,3 @@
-# my-apps/myapplications-appset.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -13,21 +12,29 @@ spec:
         revision: HEAD
         directories:
           - path: my-apps/*/*
-            kustomize:
-              enabled: true
+        requeueAfterSeconds: 600  # Less frequent checks for applications (10 minutes)
   template:
     metadata:
       name: '{{path[1]}}-{{path.basename}}'
       labels:
-        type: application
+        app.kubernetes.io/part-of: applications
+        app.kubernetes.io/managed-by: argocd
+        app-category: '{{path[1]}}'
+        app-name: '{{path.basename}}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "1"
+        notifications.argoproj.io/subscribe.on-sync-failed.slack: app-alerts
     spec:
       project: my-apps
       source:
-        plugin:
-          name: kustomize-build-with-helm
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         targetRevision: HEAD
         path: '{{path}}'
+        plugin:
+          name: kustomize-build-with-helm
+          env:
+            - name: KUSTOMIZE_PLUGIN_HOME
+              value: /etc/kustomize/plugin
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{path.basename}}'
@@ -36,11 +43,23 @@ spec:
           prune: true
           selfHeal: true
         retry:
-          limit: 5
+          limit: 3
           backoff:
-            duration: 5s
+            duration: 10s
             factor: 2
-            maxDuration: 3m
+            maxDuration: 10m
         syncOptions:
           - CreateNamespace=true
           - ServerSideApply=true
+          - ApplyOutOfSyncOnly=true
+          - PrunePropagationPolicy=foreground
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas
+        - group: ""
+          kind: Service
+          jsonPointers:
+            - /spec/clusterIP
+            - /metadata/resourceVersion

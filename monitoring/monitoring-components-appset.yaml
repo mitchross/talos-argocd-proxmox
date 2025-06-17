@@ -12,28 +12,36 @@ spec:
         revision: HEAD
         directories:
           - path: monitoring/*
-            kustomize:
-              enabled: true
+        requeueAfterSeconds: 180  # More frequent checks for monitoring
   template:
     metadata:
       name: 'monitoring-{{path.basename}}'
       labels:
-        type: monitoring
+        app.kubernetes.io/part-of: monitoring
+        app.kubernetes.io/managed-by: argocd
+        component-name: '{{path.basename}}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "0"
+        notifications.argoproj.io/subscribe.on-health-degraded.slack: monitoring-alerts
+        notifications.argoproj.io/subscribe.on-sync-failed.slack: monitoring-alerts
     spec:
       project: monitoring
       source:
-        plugin:
-          name: kustomize-build-with-helm
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         targetRevision: HEAD
         path: '{{path}}'
+        plugin:
+          name: kustomize-build-with-helm
+          env:
+            - name: KUSTOMIZE_PLUGIN_HOME
+              value: /etc/kustomize/plugin
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{path.basename}}'
       syncPolicy:
         automated:
-          selfHeal: true
           prune: true
+          selfHeal: true
         retry:
           limit: 5
           backoff:
@@ -43,3 +51,14 @@ spec:
         syncOptions:
           - CreateNamespace=true
           - ServerSideApply=true
+          - ApplyOutOfSyncOnly=true
+          - PrunePropagationPolicy=foreground
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas
+        - group: ""
+          kind: ConfigMap
+          jsonPointers:
+            - /data

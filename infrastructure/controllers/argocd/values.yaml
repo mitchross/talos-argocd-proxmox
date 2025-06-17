@@ -2,8 +2,18 @@ configs:
   cm:
     create: true
     application.resourceTrackingMethod: "annotation+label"
-    configManagementPlugins: "- name: kustomize-fetch-tunnel-id\n  init:\n    command: [\"/bin/sh\", \"-c\"]\n    args: [\"echo 'Initializing kustomize-fetch-tunnel-id plugin...'\"]\n  generate:\n    command: [\"sh\"] # The interpreter for your script\n    # This path is relative to the root of the application's\n    # Git repository when Argo CD checks it out.\n    args: [\"scripts/kustomize-patch-tunnel-id.sh\"]\n    \n"
-    # Global ignore differences using managed fields (much more efficient)
+    
+    # Enhanced config management plugins
+    configManagementPlugins: |
+      - name: kustomize-fetch-tunnel-id
+        init:
+          command: ["/bin/sh", "-c"]
+          args: ["echo 'Initializing kustomize-fetch-tunnel-id plugin...'"]
+        generate:
+          command: ["sh"]
+          args: ["scripts/kustomize-patch-tunnel-id.sh"]
+    
+    # Optimized global ignore differences
     resource.customizations.ignoreDifferences.all: |
       managedFieldsManagers:
       - kube-controller-manager
@@ -13,22 +23,30 @@ configs:
       - kubectl
       - helm
       - kustomize
+      - argocd-application-controller
+      - argocd-server
       jsonPointers:
       - /status
       - /metadata/managedFields
       - /metadata/generation
       - /metadata/resourceVersion
+      - /metadata/uid
       - /metadata/annotations/deployment.kubernetes.io/revision
-    # Global compare options for better defaults
+      - /metadata/annotations/kubectl.kubernetes.io/last-applied-configuration
+      - /spec/clusterIP
+      - /spec/clusterIPs
+    
+    # Enhanced global compare options
     resource.compareoptions: |
-      # Ignore status fields for all resources (best practice)
       ignoreResourceStatusField: all
-      # Ignore RBAC changes from aggregate roles
       ignoreAggregatedRoles: true
-      # Enable using ignore differences for reconcile optimization
       ignoreDifferencesOnResourceUpdates: true
-    # Enable resource update optimization (reduces unnecessary reconciles)
+      # Optimize comparison performance
+      ignoreUnchangedResourceUpdates: true
+    
+    # Enable resource update optimization
     resource.ignoreResourceUpdatesEnabled: "true"
+    
     # Global resource update ignore patterns
     resource.customizations.ignoreResourceUpdates.all: |
       jsonPointers:
@@ -36,77 +54,176 @@ configs:
       - /metadata/generation
       - /metadata/resourceVersion
       - /metadata/managedFields
-    # Specific ignore differences only for truly problematic resources
+      - /metadata/annotations/deployment.kubernetes.io/revision
+    
+    # Specific ignore differences for problematic resources
     resource.customizations.ignoreDifferences.external-secrets.io_ExternalSecret: |
       jqPathExpressions:
       - '.spec.data[]?.remoteRef?.conversionStrategy'
       - '.spec.data[]?.remoteRef?.decodingStrategy'
       - '.spec.data[]?.remoteRef?.metadataPolicy'
+    
+    # Add networking specific ignores
+    resource.customizations.ignoreDifferences.v1_Service: |
+      jsonPointers:
+      - /spec/clusterIP
+      - /spec/clusterIPs
+      - /spec/ports/*/nodePort
+    
+    # Add PVC specific ignores (common with dynamic provisioning)
+    resource.customizations.ignoreDifferences.v1_PersistentVolumeClaim: |
+      jsonPointers:
+      - /spec/volumeName
+      - /metadata/annotations/pv.kubernetes.io~1bind-completed
+      - /metadata/annotations/pv.kubernetes.io~1bound-by-controller
+    
+    # Performance and scaling settings
+    timeout.reconciliation: 180s
+    timeout.hard.reconciliation: 0s  # Disable hard timeout
+    application.instanceLabelKey: argocd.argoproj.io/instance
+    
+    # Enable efficient resource tracking
+    application.resourceTrackingMethod: "annotation+label"
+    
+    # Optimize repository cache
+    reposerver.parallelism.limit: 10
+
   cmp:
     create: true
     plugins:
       kustomize-build-with-helm:
         generate:
           command: ["sh", "-c"]
-          args: ["kustomize build --enable-helm"]
+          args: ["kustomize build --enable-helm --load-restrictor=LoadRestrictionsNone"]
+        discover:
+          find:
+            command: ["sh", "-c"]
+            args: ["find . -name 'kustomization.yaml' -o -name 'kustomization.yml' -o -name 'Kustomization'"]
+
   params:
     server.insecure: true
+    
+    # Enhanced controller settings
     controller.resource.health.persist: "false"
-    # Enable server-side apply for better conflict resolution
+    controller.self.heal.timeout.seconds: "5"
+    controller.operation.processors: "20"
+    controller.status.processors: "20"
+    controller.repo.server.timeout.seconds: "120"
+    
+    # Enable server-side apply
     server.enable.server.side.apply: "true"
+    
+    # Optimize application processing
+    application.sync.max.timeout: "300"
+    
+    # Repository settings for better performance
+    reposerver.parallelism.limit: "10"
+    
+    # Enable resource ignore for updates
+    controller.resource.ignore.resource.updates.enabled: "true"
+
 crds:
   install: true
-  # -- Keep CRDs on chart uninstall
   keep: false
+
+# Enhanced controller configuration
 controller:
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
   resources:
     requests:
-      cpu: 100m
-      memory: 700Mi
+      cpu: 250m  # Increased for better performance
+      memory: 1Gi # Increased for large clusters
     limits:
       cpu: 4000m
-      memory: 2Gi
+      memory: 4Gi # Increased for memory-intensive operations
+  env:
+    # Optimize controller performance
+    - name: ARGOCD_CONTROLLER_REPLICAS
+      value: "1"
+    - name: ARGOCD_CONTROLLER_SHARDING_ALGORITHM
+      value: "legacy"
+    # Performance tuning
+    - name: ARGOCD_RECONCILIATION_TIMEOUT
+      value: "180s"
+
+# Disable DEX (you already have this)
 dex:
   enabled: false
-  resources:
-    requests:
-      cpu: 20m
-      memory: 64Mi
-    limits:
-      cpu: 1000m
-      memory: 256Mi
+
+# Optimized Redis configuration
 redis:
   resources:
     requests:
       cpu: 100m
-      memory: 64Mi
+      memory: 128Mi  # Increased
     limits:
       cpu: 2000m
-      memory: 128Mi
+      memory: 512Mi  # Increased for better caching
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+# Enhanced server configuration
 server:
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
   resources:
     requests:
-      cpu: 50m
-      memory: 64Mi
+      cpu: 100m  # Increased
+      memory: 128Mi # Increased
     limits:
       cpu: 4000m
-      memory: 256Mi
+      memory: 1Gi  # Increased
+  config:
+    # Enable gRPC-Web for better performance
+    grpc.web: true
+
+# Enhanced repo server configuration
 repoServer:
+  replicas: 2  # Add replica for HA and performance
+  
   containerSecurityContext:
     readOnlyRootFilesystem: true
+    
   volumes:
     - name: cmp-kustomize-build-with-helm
       configMap:
         name: argocd-cmp-cm
     - name: cmp-tmp
-      emptyDir: {}
+      emptyDir:
+        sizeLimit: 1Gi  # Add size limit
+    - name: helm-cache
+      emptyDir:
+        sizeLimit: 2Gi
+        
   resources:
     requests:
-      cpu: 100m
-      memory: 256Mi
+      cpu: 250m  # Increased
+      memory: 512Mi # Increased
     limits:
       cpu: 4000m
-      memory: 1024Mi
+      memory: 2Gi  # Increased
+      
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      
+  env:
+    # Optimize Helm operations
+    - name: HELM_CACHE_HOME
+      value: /tmp/helm-cache
+    - name: HELM_CONFIG_HOME
+      value: /tmp/helm-config
+    - name: HELM_DATA_HOME
+      value: /tmp/helm-data
+      
   extraContainers:
     - name: kustomize-build-with-helm
       command:
@@ -121,6 +238,19 @@ repoServer:
           type: RuntimeDefault
         capabilities:
           drop: ["ALL"]
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+      env:
+        # Plugin-specific environment
+        - name: KUSTOMIZE_PLUGIN_HOME
+          value: /tmp/kustomize-plugins
+        - name: HELM_CACHE_HOME
+          value: /tmp/helm-cache
       volumeMounts:
         - name: plugins
           mountPath: /home/argocd/cmp-server/plugins
@@ -129,20 +259,35 @@ repoServer:
           subPath: kustomize-build-with-helm.yaml
         - mountPath: /tmp
           name: cmp-tmp
+        - mountPath: /tmp/helm-cache
+          name: helm-cache
+
+# Enhanced ApplicationSet controller
 applicationSet:
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
   resources:
     requests:
-      cpu: 50m
-      memory: 64Mi
+      cpu: 100m  # Increased
+      memory: 128Mi # Increased
     limits:
       cpu: 1000m
-      memory: 512Mi
+      memory: 1Gi  # Increased
+
+# Keep notifications disabled for now
 notifications:
   enabled: false
-  resources:
-    requests:
-      cpu: 100m
-      memory: 64Mi
-    limits:
-      cpu: 1000m
-      memory: 128Mi
+
+# Global configuration
+global:
+  # Add domain if you have one
+  # domain: argocd.yourdomain.com
+  
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 999
+    seccompProfile:
+      type: RuntimeDefault
