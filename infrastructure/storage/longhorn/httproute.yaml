@@ -17,9 +17,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - group: ""
-          kind: Service
-          name: longhorn-frontend
-          namespace: longhorn-system
-          port: 80 # Default Longhorn UI port
-          weight: 1
+        - name: longhorn-frontend
+          port: 80

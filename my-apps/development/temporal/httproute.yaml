@@ -15,6 +15,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: temporal-web
-          port: 8080
-          weight: 1
+        - name: temporal-frontend
+          port: 7233

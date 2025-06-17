@@ -22,4 +22,3 @@ spec:
           kind: Service
           name: searxng
           port: 8080
-          weight: 1

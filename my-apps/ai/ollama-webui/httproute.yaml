@@ -17,8 +17,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - group: ""
-          kind: Service
-          name: ollama-webui
+        - name: ollama-webui
           port: 8080
-          weight: 1

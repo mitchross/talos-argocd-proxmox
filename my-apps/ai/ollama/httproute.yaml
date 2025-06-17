@@ -17,8 +17,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - group: ""
-          kind: Service
-          name: ollama
+        - name: ollama
           port: 11434
-          weight: 1

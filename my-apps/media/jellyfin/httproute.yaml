@@ -17,4 +17,3 @@ spec:
       backendRefs:
         - name: jellyfin
           port: 8096
-          weight: 1

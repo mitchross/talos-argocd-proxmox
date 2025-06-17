@@ -17,8 +17,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - group: ""
-          kind: Service
-          name: nestmtx
+        - name: nestmtx
           port: 2000
-          weight: 1

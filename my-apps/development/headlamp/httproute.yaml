@@ -17,4 +17,3 @@ spec:
       backendRefs:
         - name: headlamp
           port: 80
-          weight: 1

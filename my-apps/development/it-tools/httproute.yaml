@@ -18,8 +18,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - group: ""
-          kind: Service
-          name: it-tools
+        - name: it-tools
           port: 8080
-          weight: 1

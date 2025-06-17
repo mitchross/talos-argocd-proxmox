@@ -21,5 +21,4 @@ spec:
           kind: Service
           name: kestra-service
           namespace: kestra
-          port: 8080 # Default Kestra port
-          weight: 1
+          port: 8080

@@ -18,4 +18,3 @@ spec:
       backendRefs:
         - name: echo-server
           port: 8080
-          weight: 1
