@@ -12,9 +12,9 @@ resources:
   - metrics-role.yaml
 helmCharts:
   - name: headlamp
-    repo: https://headlamp-k8s.github.io/headlamp/
-    version: "0.30.1"
+    repo: https://kubernetes-sigs.github.io/headlamp/
+    version: "0.31.1"
     releaseName: headlamp
     namespace: kube-system
     includeCRDs: true
-    valuesFile: values.yaml 
+    valuesFile: values.yaml
