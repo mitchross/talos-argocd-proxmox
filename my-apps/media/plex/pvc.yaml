@@ -28,7 +28,7 @@ spec:
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: local-storage
+  storageClassName: longhorn
   local:
     path: /datapool/kubernetes/plex/transcode
   nodeAffinity:

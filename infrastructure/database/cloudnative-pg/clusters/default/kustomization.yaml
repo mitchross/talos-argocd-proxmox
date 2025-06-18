@@ -10,4 +10,3 @@ resources:
   - paperless-postgresdb.yaml
   - khoj-postgresdb.yaml
   - externalsecret.yaml
-  - pv.yaml

@@ -11,7 +11,6 @@ spec:
   monitoring:
     enablePodMonitor: false
   enableSuperuserAccess: true
-
   # Bootstrap configuration
   bootstrap:
     initdb:
@@ -44,15 +43,14 @@ spec:
   # Data storage configuration 
   storage:
     size: 100Gi
-    storageClass: local-storage
+    storageClass: longhorn
     pvcTemplate:
       accessModes:
         - ReadWriteOnce
-  
   # WAL storage configuration - this is the new section
   walStorage:
     size: 10Gi
-    storageClass: local-storage
+    storageClass: longhorn
     pvcTemplate:
       accessModes:
         - ReadWriteOnce

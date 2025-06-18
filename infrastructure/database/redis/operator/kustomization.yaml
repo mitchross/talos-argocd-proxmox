@@ -21,7 +21,7 @@ helmCharts:
         persistence:
           enabled: true
           size: 10Gi
-          storageClass: local-storage
+          storageClass: longhorn
           existingClaim: redis-data-redis-master-0
         service:
           type: ClusterIP
