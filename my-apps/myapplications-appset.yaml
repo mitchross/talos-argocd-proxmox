@@ -71,3 +71,8 @@ spec:
             - /spec/rules/0/backendRefs/0/group
             - /spec/rules/0/backendRefs/0/kind
             - /spec/rules/0/backendRefs/0/weight
+        - group: apps
+          kind: StatefulSet
+          jsonPointers:
+            - /spec/volumeClaimTemplates/0/apiVersion
+            - /spec/volumeClaimTemplates/0/kind
