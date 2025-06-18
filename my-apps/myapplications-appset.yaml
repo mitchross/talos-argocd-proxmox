@@ -12,7 +12,7 @@ spec:
         revision: HEAD
         directories:
           - path: my-apps/*/*
-        requeueAfterSeconds: 600  # Less frequent checks for applications (10 minutes)
+        requeueAfterSeconds: 600 # Less frequent checks for applications (10 minutes)
   template:
     metadata:
       name: '{{path[1]}}-{{path.basename}}'
@@ -63,3 +63,11 @@ spec:
           jsonPointers:
             - /spec/clusterIP
             - /metadata/resourceVersion
+        - group: gateway.networking.k8s.io
+          kind: HTTPRoute
+          jsonPointers:
+            - /spec/parentRefs/0/group
+            - /spec/parentRefs/0/kind
+            - /spec/rules/0/backendRefs/0/group
+            - /spec/rules/0/backendRefs/0/kind
+            - /spec/rules/0/backendRefs/0/weight

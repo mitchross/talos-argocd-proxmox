@@ -12,7 +12,7 @@ spec:
         revision: HEAD
         directories:
           - path: infrastructure/*/*
-        requeueAfterSeconds: 300  # Check for changes every 5 minutes
+        requeueAfterSeconds: 300 # Check for changes every 5 minutes
   template:
     metadata:
       name: 'infra-{{path[1]}}-{{path.basename}}'
@@ -62,3 +62,11 @@ spec:
           kind: Service
           jsonPointers:
             - /spec/clusterIP
+        - group: gateway.networking.k8s.io
+          kind: HTTPRoute
+          jsonPointers:
+            - /spec/parentRefs/0/group
+            - /spec/parentRefs/0/kind
+            - /spec/rules/0/backendRefs/0/group
+            - /spec/rules/0/backendRefs/0/kind
+            - /spec/rules/0/backendRefs/0/weight
