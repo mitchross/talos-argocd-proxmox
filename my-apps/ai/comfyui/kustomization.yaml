@@ -4,7 +4,7 @@ resources:
   - namespace.yaml
   - pvc.yaml
   - configmap.yaml
- # - deployment.yaml
+  - deployment.yaml
   - service.yaml
   - httproute.yaml
 commonLabels:
