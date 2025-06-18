@@ -30,8 +30,8 @@ spec:
               value: "--listen 0.0.0.0 --port 8188"
           resources:
             requests:
-              memory: "12Gi"
-              cpu: "4"
+              memory: "8Gi"
+              cpu: "2"
               nvidia.com/gpu: "1"
             limits:
               memory: "24Gi"
