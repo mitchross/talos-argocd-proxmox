@@ -2,7 +2,7 @@ apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: immich-database
-  namespace: immich
+  namespace: cloudnative-pg
   labels:
     app: immich
 spec:
