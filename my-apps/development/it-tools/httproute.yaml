@@ -5,11 +5,8 @@ metadata:
   namespace: it-tools
 spec:
   parentRefs:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      name: gateway-external
+    - name: gateway-internal
       namespace: gateway
-      sectionName: https
   hostnames:
     - "it-tools.vanillax.me"
   rules:

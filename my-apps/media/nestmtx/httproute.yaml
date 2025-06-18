@@ -5,9 +5,7 @@ metadata:
   namespace: nestmtx
 spec:
   parentRefs:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      name: gateway-internal
+    - name: gateway-internal
       namespace: gateway
   hostnames:
     - "nestmtx.vanillax.me"

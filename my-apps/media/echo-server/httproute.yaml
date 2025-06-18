@@ -5,11 +5,10 @@ metadata:
   namespace: echo-server
 spec:
   parentRefs:
-    - name: gateway-external
+    - name: gateway-internal
       namespace: gateway
-      sectionName: https
   hostnames:
-    - "echo-server.vanillax.me"
+    - "echo.vanillax.me"
   rules:
     - matches:
         - path:

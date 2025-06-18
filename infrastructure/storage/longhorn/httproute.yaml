@@ -5,9 +5,7 @@ metadata:
   namespace: longhorn-system
 spec:
   parentRefs:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      name: gateway-internal
+    - name: gateway-internal
       namespace: gateway
   hostnames:
     - "longhorn.vanillax.me" # You can change this hostname

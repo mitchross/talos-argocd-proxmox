@@ -5,9 +5,7 @@ metadata:
   namespace: comfyui
 spec:
   parentRefs:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      name: gateway-internal
+    - name: gateway-internal
       namespace: gateway
   hostnames:
     - comfyui.vanillax.me
@@ -17,7 +15,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - group: ""
-          kind: Service
-          name: comfyui-service
+        - name: comfyui-service
           port: 8188

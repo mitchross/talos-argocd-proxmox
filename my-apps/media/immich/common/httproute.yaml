@@ -7,9 +7,8 @@ spec:
   parentRefs:
     - name: gateway-internal
       namespace: gateway
-      sectionName: https
   hostnames:
-    - "photos.vanillax.me"
+    - "immich.vanillax.me"
   rules:
     # - matches:
     #     - path:

@@ -5,9 +5,7 @@ metadata:
   namespace: searxng
 spec:
   parentRefs:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      name: gateway-external
+    - name: gateway-external
       namespace: gateway
       sectionName: https
   hostnames:
@@ -18,7 +16,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - group: ""
-          kind: Service
-          name: searxng
+        - name: searxng
           port: 8080

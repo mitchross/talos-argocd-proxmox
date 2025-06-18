@@ -5,9 +5,7 @@ metadata:
   namespace: kube-system
 spec:
   parentRefs:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      name: gateway-internal
+    - name: gateway-internal
       namespace: gateway
   hostnames:
     - "registry.vanillax.me"
@@ -17,5 +15,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: container-registry
+        - name: registry
           port: 5000
