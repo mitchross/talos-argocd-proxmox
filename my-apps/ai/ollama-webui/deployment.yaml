@@ -22,6 +22,7 @@ spec:
           effect: NoSchedule
       containers:
         - name: ollama-webui
+          # renovate: datasource=docker depName=ghcr.io/open-webui/open-webui
           image: ghcr.io/open-webui/open-webui:git-c5b5303-cuda
           ports:
             - containerPort: 8080
