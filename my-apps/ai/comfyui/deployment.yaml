@@ -23,6 +23,8 @@ spec:
           # Updated to use the cu124-megapak image
           image: yanwk/comfyui-boot:cu124-megapak
           workingDir: /home/runner
+          command: ["/bin/bash", "-c"]
+          args: ["cd /home/runner && exec /runner-scripts/entrypoint.sh"]
           ports:
             - containerPort: 8188
           env:
