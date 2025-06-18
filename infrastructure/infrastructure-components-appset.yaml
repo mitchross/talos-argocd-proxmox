@@ -70,3 +70,7 @@ spec:
             - /spec/rules/0/backendRefs/0/group
             - /spec/rules/0/backendRefs/0/kind
             - /spec/rules/0/backendRefs/0/weight
+        - group: apiextensions.k8s.io
+          kind: CustomResourceDefinition
+          jsonPointers:
+            - /spec/preserveUnknownFields
