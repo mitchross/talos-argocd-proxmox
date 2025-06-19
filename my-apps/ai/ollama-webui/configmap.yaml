@@ -4,7 +4,7 @@ metadata:
   name: ollama-webui-configmap
   namespace: ollama-webui
 data:
-  OLLAMA_API_BASE_URL: "https://ollama.vanillax.me"
+  OLLAMA_API_BASE_URL: "http://ollama.ollama.svc.cluster.local:11434"
   #DEFAULT_MODELS: "llama2,mistral,codellama"
 
   # Enable Web Search with SearXNG (Updated for latest Open WebUI)
@@ -22,7 +22,7 @@ data:
   ENABLE_TOOLS: "True"
   # MCP/OpenAPI Tools Configuration
   # Format: OPENAPI_API_ENDPOINTS=name1:url1:key1;name2:url2:key2
-  OPENAPI_API_ENDPOINTS: "mcpo-time:http://mcpo.ollama-webui.svc.cluster.local:8000:mcp-demo-key"
+  #OPENAPI_API_ENDPOINTS: "mcpo-time:http://mcpo.ollama-webui.svc.cluster.local:8000:mcp-demo-key"
   # Optional: Enable image generation if you have models that support it
   ENABLE_IMAGE_GENERATION: "True"
   # Optional: Enable voice features
