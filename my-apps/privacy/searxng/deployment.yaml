@@ -28,12 +28,18 @@ spec:
       containers:
         - name: searxng
           image: searxng/searxng:latest@sha256:a6ad4d72e07b3dc7b6cd80ed6d08e215fcea81b8165c9eeb3bf2b4c27a601f31
+          command:
+            - /bin/sh
+            - -c
+            - |
+              cp -L /config-ro/* /etc/searxng/
+              cd /usr/local/searxng && ./docker-entrypoint.sh
           resources:
             requests:
               memory: 100M
-              cpu: 50m
+              cpu: 100m
             limits:
-              memory: 3000M
+              memory: 500M
           envFrom:
             - configMapRef:
                 name: searxng
@@ -54,9 +60,14 @@ spec:
             periodSeconds: 60
           volumeMounts:
             - name: config
-              mountPath: /etc/searxng
-              readOnly: true
+              mountPath: /etc/searxng/settings.yml
+              subPath: settings.yaml
+            - name: config
+              mountPath: /etc/searxng/limiter.toml
+              subPath: limiter.toml
       volumes:
-        - name: config
+        - name: config-ro
           configMap:
             name: searxng-config-settings
+        - name: searxng-data
+          emptyDir: {}
