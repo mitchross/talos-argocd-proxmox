@@ -58,7 +58,7 @@ spec:
             - name: POSTGRES_DB
               value: khoj
             - name: POSTGRES_USER
-              value: khoj
+              value: khoj_admin
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
