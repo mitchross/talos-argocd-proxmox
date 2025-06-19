@@ -30,10 +30,13 @@ spec:
       secret:
         name: khoj-app-secret # Use khoj-app-secret here
       postInitApplicationSQL:
+        - ALTER ROLE "khoj_admin" WITH SUPERUSER;
+        - CREATE EXTENSION IF NOT EXISTS "vector";
         - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "khoj_admin";
         - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "khoj_admin";
         - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "khoj_admin";
         - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "khoj_admin";
+        - ALTER ROLE "khoj_admin" WITH NOSUPERUSER;
   storage:
     size: 5Gi
     storageClass: longhorn
