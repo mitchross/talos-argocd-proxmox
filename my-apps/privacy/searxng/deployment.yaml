@@ -41,7 +41,7 @@ spec:
               memory: 100M
               cpu: 100m
             limits:
-              memory: 500M
+              memory: 1500M
           readinessProbe:
             tcpSocket:
               port: 8080
