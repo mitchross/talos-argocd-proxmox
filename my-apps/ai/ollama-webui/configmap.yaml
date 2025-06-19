@@ -5,8 +5,14 @@ metadata:
   namespace: ollama-webui
 data:
   OLLAMA_API_BASE_URL: "http://ollama.ollama.svc.cluster.local:11434"
-  #DEFAULT_MODELS: "llama2,mistral,codellama"
-
+  DEFAULT_MODELS: "qwen3:30b-q4_K_M" # Set your default model (quantized for 24GB GPU)
+  SYSTEM_PROMPT: |
+    You are a helpful, friendly, and knowledgeable AI assistant, similar to ChatGPT and Gemini. Answer as helpfully, accurately, and safely as possible. If you don't know the answer, say so. Respond in clear, natural language, and ask clarifying questions if needed.
+  CONTEXT_WINDOW: "32768" # Qwen3 supports up to 32k tokens
+  TEMPERATURE: "0.6"
+  TOP_P: "0.95"
+  TOP_K: "20"
+  PRESENCE_PENALTY: "1.5"
   # Enable Web Search with SearXNG (Updated for latest Open WebUI)
   ENABLE_RAG_WEB_SEARCH: "True"
   RAG_WEB_SEARCH_ENGINE: "searxng"
