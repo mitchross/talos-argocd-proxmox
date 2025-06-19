@@ -121,14 +121,3 @@ default_preferences:
   method: "GET"
   safesearch: 1
   theme: "simple"
-# Additional settings to ensure API access works properly  
-botdetection:
-  ip_limit:
-    # More generous limits for API access
-    window: 300 # 5 minutes
-    max_requests: 200 # Allow more requests per window
-  # Disable bot detection that might interfere with API access
-  http_accept: false
-  http_accept_encoding: false
-  http_accept_language: false
-  http_user_agent: false

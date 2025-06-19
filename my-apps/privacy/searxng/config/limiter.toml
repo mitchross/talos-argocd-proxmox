@@ -1,3 +1,4 @@
+# Allow proxies to pass the real IP address.
 [real_ip]
 
 # Number of values to trust for X-Forwarded-For.
@@ -10,26 +11,19 @@ x_for = 2
 ipv4_prefix = 32
 ipv6_prefix = 48
 
+# Increase the rate limits to be generous for API access from Open WebUI.
 [botdetection.ip_limit]
+window = 300      # 5 minutes
+max_request = 1000  # Allow many requests
 
-# To get unlimited access in a local network, by default link-local addresses
-# (networks) are not monitored by the ip_limit
-filter_link_local = false
+# This is the key fix: Explicitly disable the bot detection methods
+# that are known to cause 403 Forbidden errors with API clients.
 
-# activate link_token method in the ip_limit method
-link_token = false
+[botdetection.http_user_agent]
+disable = true
 
-[botdetection.ip_lists]
-
-# In the limiter, the ip_lists method has priority over all other methods -> if
-# an IP is in the pass_ip list, it has unrestricted access and it is also not
-# checked if e.g. the "user agent" suggests a bot (e.g. curl).
-
-block_ip = []
-
-pass_ip = [
-  "0.0.0.0/0"  # Allow all IPv4 addresses for API access
-]
+[botdetection.http_accept]
+disable = true
 
 # Activate passlist of (hardcoded) IPs from the SearXNG organization,
 # e.g. `check.searx.space`.

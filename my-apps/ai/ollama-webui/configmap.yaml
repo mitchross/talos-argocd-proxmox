@@ -22,7 +22,7 @@ data:
   ENABLE_WEB_SEARCH: "True"
   WEB_SEARCH_ENGINE: "searxng"
   WEB_SEARCH_CONCURRENT_REQUESTS: "10"
-  SEARXNG_QUERY_URL: "https://search.vanillax.me/search?q=<query>&format=json"
+  SEARXNG_QUERY_URL: "http://searxng.searxng.svc.cluster.local:8080/search?q=<query>&format=json"
   WEB_SEARCH_RESULT_COUNT: "5"
   # Web Loader Settings
   ENABLE_WEB_LOADER_SSL_VERIFICATION: "True"
