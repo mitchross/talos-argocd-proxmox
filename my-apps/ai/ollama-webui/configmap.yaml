@@ -15,7 +15,7 @@ data:
   WEBUI_SECRET_KEY: "ollama-webui" # Change this to a secure, random string for production
   # When False, all configurations are read from this ConfigMap on every restart.
   # When True, settings changed in the UI are persisted in the database and override this file.
-  ENABLE_PERSISTENT_CONFIG: "False"
+  ENABLE_PERSISTENT_CONFIG: "True"
   # ---------------------------------------------------------------------------
   # Web Search (formerly RAG Web Search)
   # ---------------------------------------------------------------------------
