@@ -6,7 +6,7 @@ GPU monitoring is integrated into the Prometheus/Grafana stack using NVIDIA's DC
 ## Components Added
 
 ### 1. DCGM Exporter (`dcgm-exporter.yaml`)
-- **Namespace**: `gpu-monitoring`
+- **Namespace**: `prometheus-stack`
 - **Type**: DaemonSet (runs on GPU nodes only)
 - **Port**: 9400
 - **Metrics**: Full GPU telemetry (utilization, memory, temperature, power, etc.)
@@ -51,7 +51,7 @@ GPU monitoring is integrated into the Prometheus/Grafana stack using NVIDIA's DC
 ### Check GPU Metrics
 ```bash
 # Port forward to DCGM exporter
-kubectl port-forward -n gpu-monitoring svc/dcgm-exporter 9400:9400
+kubectl port-forward -n prometheus-stack svc/dcgm-exporter 9400:9400
 
 # View raw metrics
 curl localhost:9400/metrics | grep DCGM_FI_DEV
@@ -72,18 +72,18 @@ kubectl apply -k monitoring/prometheus-stack/
 ### Troubleshooting
 ```bash
 # Check DCGM exporter status
-kubectl get pods -n gpu-monitoring
+kubectl get pods -n prometheus-stack -l app.kubernetes.io/name=dcgm-exporter
 
 # View DCGM logs
-kubectl logs -n gpu-monitoring -l app.kubernetes.io/name=dcgm-exporter
+kubectl logs -n prometheus-stack -l app.kubernetes.io/name=dcgm-exporter
 
 # Check if metrics are being scraped
-kubectl exec -n prometheus-stack deployment/prometheus-kube-prometheus-prometheus -- \
+kubectl exec -n prometheus-stack deployment/kube-prometheus-stack-prometheus -- \
   promtool query instant 'up{job="dcgm-exporter-metrics"}'
 ```
 
 ## Notes
-- DCGM requires privileged containers and GPU nodes
+- DCGM requires privileged containers and GPU nodes (the `prometheus-stack` namespace has been configured for this).
 - Metrics are collected every 15 seconds
 - Dashboard auto-refreshes every 30 seconds
 - Alerts are configured for typical GPU workload thresholds
