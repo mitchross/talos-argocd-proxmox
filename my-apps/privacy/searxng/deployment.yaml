@@ -53,24 +53,15 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 60
           volumeMounts:
-            - name: settings
+            - name: config
               mountPath: /etc/searxng/settings.yml
               subPath: settings.yml
               readOnly: true
-            - name: limiter
+            - name: config
               mountPath: /etc/searxng/limiter.toml
               subPath: limiter.toml
               readOnly: true
       volumes:
-        - name: settings
+        - name: config
           configMap:
             name: searxng-config-settings
-            items:
-              - key: settings.yaml
-                path: settings.yaml
-        - name: limiter
-          configMap:
-            name: searxng-config-settings
-            items:
-              - key: limiter.toml
-                path: limiter.toml
