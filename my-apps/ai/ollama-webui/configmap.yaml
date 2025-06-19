@@ -4,33 +4,61 @@ metadata:
   name: ollama-webui-configmap
   namespace: ollama-webui
 data:
+  # ---------------------------------------------------------------------------
+  # Core Settings
+  # ---------------------------------------------------------------------------
   OLLAMA_BASE_URL: "http://ollama.ollama.svc.cluster.local:11434"
   DEFAULT_MODELS: "qwen3:30b" # Set your default model (quantized for 24GB GPU)
-  SYSTEM_PROMPT: |
-    You are a helpful, friendly, and knowledgeable AI assistant, similar to ChatGPT and Gemini. Answer as helpfully, accurately, and safely as possible. If you don't know the answer, say so. Respond in clear, natural language, and ask clarifying questions if needed.
   CONTEXT_WINDOW: "32768" # Qwen3 supports up to 32k tokens
   TEMPERATURE: "0.6"
   TOP_P: "0.95"
-  TOP_K: "20"
-  PRESENCE_PENALTY: "1.5"
-  # Enable Web Search with SearXNG (Updated for latest Open WebUI)
+  WEBUI_SECRET_KEY: "ollama-webui" # Change this to a secure, random string for production
+  # When False, all configurations are read from this ConfigMap on every restart.
+  # When True, settings changed in the UI are persisted in the database and override this file.
+  ENABLE_PERSISTENT_CONFIG: "False"
+  # ---------------------------------------------------------------------------
+  # Web Search (formerly RAG Web Search)
+  # ---------------------------------------------------------------------------
   ENABLE_RAG_WEB_SEARCH: "True"
   RAG_WEB_SEARCH_ENGINE: "searxng"
-  RAG_WEB_SEARCH_RESULT_COUNT: "5"
   RAG_WEB_SEARCH_CONCURRENT_REQUESTS: "10"
   SEARXNG_QUERY_URL: "https://search.vanillax.me/search?q=<query>&format=json"
+  WEB_SEARCH_RESULT_COUNT: "5"
   # Web Loader Settings
   ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION: "True"
   RAG_WEB_SEARCH_TRUST_ENV: "True" # Important for proxy support
   # Enable RAG for document integration
   ENABLE_RAG: "True"
+  # ---------------------------------------------------------------------------
+  # Tools / Function Calling (MCP / OpenAPI)
+  # ---------------------------------------------------------------------------
+  # Enable and configure connections to tool servers like MCP.
+  # The format is a semicolon-separated list: "name1:url1:key1;name2:url2:key2"
+  #OPENAPI_API_ENDPOINTS: "mcpo-time:http://mcpo.ollama-webui.svc.cluster.local:8000:mcp-demo-key"
   # Enable tools and function calling
   ENABLE_TOOLS: "True"
   # MCP/OpenAPI Tools Configuration
   # Format: OPENAPI_API_ENDPOINTS=name1:url1:key1;name2:url2:key2
-  #OPENAPI_API_ENDPOINTS: "mcpo-time:http://mcpo.ollama-webui.svc.cluster.local:8000:mcp-demo-key"
-  # Optional: Enable image generation if you have models that support it
+  OPENAPI_API_ENDPOINTS: "mcpo-time:http://mcpo.ollama-webui.svc.cluster.local:8000:mcp-demo-key;mcpo-multi:http://mcpo-multi.ollama-webui.svc.cluster.local:8001:mcp-multi-key"
+  # ---------------------------------------------------------------------------
+  # Optional Features
+  # ---------------------------------------------------------------------------
   ENABLE_IMAGE_GENERATION: "True"
-  # Optional: Enable voice features
-  ENABLE_VOICE: "True"
-  ENABLE_PERSISTENT_CONFIG: "False"
+  ENABLE_VOICE: "True" # This is a placeholder; actual STT/TTS is configured below.
+  # For Speech-to-Text (STT), using the built-in local Whisper model
+  AUDIO_STT_ENGINE: ""
+  WHISPER_MODEL: "base" # Options: tiny, base, small, medium, large
+  # For Text-to-Speech (TTS), using the browser's built-in engine
+  AUDIO_TTS_ENGINE: ""
+
+# ---------------------------------------------------------------------------
+# Deprecated / Removed Variables
+# ---------------------------------------------------------------------------
+# The following variables have been removed as they are now configured
+# per-user or per-model in the WebUI and are not server-side settings:
+# - SYSTEM_PROMPT
+# - PRESENCE_PENALTY
+# Obsolete variables:
+# - ENABLE_RAG
+# - ENABLE_TOOLS
+# - ENABLE_VOICE (replaced by specific STT/TTS engine configs)
