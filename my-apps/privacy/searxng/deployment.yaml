@@ -20,15 +20,14 @@ spec:
         app.kubernetes.io/name: searxng
     spec:
       restartPolicy: Always
+      securityContext:
+        runAsUser: 977
+        runAsGroup: 977
+        fsGroup: 977
+        fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: searxng
           image: searxng/searxng:latest@sha256:a6ad4d72e07b3dc7b6cd80ed6d08e215fcea81b8165c9eeb3bf2b4c27a601f31
-          command:
-            - /bin/sh
-            - -c
-            - |
-              cp -f /config/* /etc/searxng/
-              /usr/local/searxng/docker-entrypoint.sh
           resources:
             requests:
               memory: 100M
@@ -54,14 +53,24 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 60
           volumeMounts:
-            - name: config
-              mountPath: /config
+            - name: settings
+              mountPath: /etc/searxng/settings.yml
+              subPath: settings.yml
               readOnly: true
-            - name: searxng-data
-              mountPath: /etc/searxng
+            - name: limiter
+              mountPath: /etc/searxng/limiter.toml
+              subPath: limiter.toml
+              readOnly: true
       volumes:
-        - name: config
+        - name: settings
           configMap:
             name: searxng-config-settings
-        - name: searxng-data
-          emptyDir: {}
+            items:
+              - key: settings.yaml
+                path: settings.yaml
+        - name: limiter
+          configMap:
+            name: searxng-config-settings
+            items:
+              - key: limiter.toml
+                path: limiter.toml
