@@ -54,12 +54,7 @@ spec:
             periodSeconds: 60
           volumeMounts:
             - name: config
-              mountPath: /etc/searxng/settings.yml
-              subPath: settings.yml
-              readOnly: true
-            - name: config
-              mountPath: /etc/searxng/limiter.toml
-              subPath: limiter.toml
+              mountPath: /etc/searxng
               readOnly: true
       volumes:
         - name: config
