@@ -28,7 +28,7 @@ spec:
             - -c
             - |
               cp -f /config/* /etc/searxng/
-              /sbin/tini -- /usr/local/searxng/docker-entrypoint.sh
+              tini -- /usr/local/searxng/docker-entrypoint.sh
           resources:
             requests:
               memory: 100M
