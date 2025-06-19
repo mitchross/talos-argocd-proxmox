@@ -4,8 +4,8 @@ server:
   secret_key: "${SEARXNG_SECRET_KEY}" # Use from secret
   bind_address: "0.0.0.0"
   port: 8080 # Match with deployment port
-  public_instance: false
-  limiter: false
+  public_instance: true
+  limiter: true
   method: "GET" # POST allows both GET and POST methods
   http_protocol_version: "1.0"
   default_http_headers:
