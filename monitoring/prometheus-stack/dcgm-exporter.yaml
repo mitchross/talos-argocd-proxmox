@@ -30,7 +30,9 @@ spec:
           operator: Exists
           effect: NoSchedule
       nodeSelector:
-        nvidia.com/gpu.present: "true"
+        # This label is created by node-feature-discovery and is a reliable way
+        # to target nodes with NVIDIA GPUs on Talos.
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
       containers:
         - name: dcgm-exporter
           image: nvcr.io/nvidia/k8s/dcgm-exporter:3.3.5-3.4.0-ubuntu22.04
