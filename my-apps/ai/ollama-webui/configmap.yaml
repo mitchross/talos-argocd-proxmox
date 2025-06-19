@@ -5,7 +5,7 @@ metadata:
   namespace: ollama-webui
 data:
   OLLAMA_BASE_URL: "http://ollama.ollama.svc.cluster.local:11434"
-  DEFAULT_MODELS: "qwen3:30b-q4_K_M" # Set your default model (quantized for 24GB GPU)
+  DEFAULT_MODELS: "qwen3:30b" # Set your default model (quantized for 24GB GPU)
   SYSTEM_PROMPT: |
     You are a helpful, friendly, and knowledgeable AI assistant, similar to ChatGPT and Gemini. Answer as helpfully, accurately, and safely as possible. If you don't know the answer, say so. Respond in clear, natural language, and ask clarifying questions if needed.
   CONTEXT_WINDOW: "32768" # Qwen3 supports up to 32k tokens
