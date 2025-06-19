@@ -26,14 +26,14 @@ spec:
   bootstrap:
     initdb:
       database: khoj
-      owner: khoj
+      owner: khoj_admin
       secret:
         name: khoj-app-secret # Use khoj-app-secret here
       postInitApplicationSQL:
-        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "khoj";
-        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "khoj";
-        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "khoj";
-        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "khoj";
+        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "khoj_admin";
+        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "khoj_admin";
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "khoj_admin";
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "khoj_admin";
   storage:
     size: 5Gi
     storageClass: longhorn
