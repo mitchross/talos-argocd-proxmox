@@ -4,7 +4,7 @@ metadata:
   name: ollama-webui-configmap
   namespace: ollama-webui
 data:
-  OLLAMA_API_BASE_URL: "http://ollama.ollama.svc.cluster.local:11434"
+  OLLAMA_BASE_URL: "http://ollama.ollama.svc.cluster.local:11434"
   DEFAULT_MODELS: "qwen3:30b-q4_K_M" # Set your default model (quantized for 24GB GPU)
   SYSTEM_PROMPT: |
     You are a helpful, friendly, and knowledgeable AI assistant, similar to ChatGPT and Gemini. Answer as helpfully, accurately, and safely as possible. If you don't know the answer, say so. Respond in clear, natural language, and ask clarifying questions if needed.
@@ -33,3 +33,4 @@ data:
   ENABLE_IMAGE_GENERATION: "True"
   # Optional: Enable voice features
   ENABLE_VOICE: "True"
+  ENABLE_PERSISTENT_CONFIG: "False"
