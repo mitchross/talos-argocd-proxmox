@@ -3,9 +3,22 @@
 # Disable ingress since we're using HTTPRoute for external access
 ingress:
   enabled: false
-# Disable Docker-in-Docker completely (not compatible with Talos security policies)
+# DIND (Docker-in-Docker) sidecar configuration
+# We enable dind and use the rootless image which is more secure.
 dind:
-  enabled: false
+  enabled: true
+  image:
+    image: docker
+    tag: dind-rootless
+  # The dind-rootless container needs to run as root internally to manage user namespaces.
+  # This does not make the container privileged on the host.
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0
+  # Mount the shared socket volume into the dind container.
+  extraVolumeMounts:
+    - name: dind-socket
+      mountPath: /var/run
 # Resource configuration - increased memory for standalone mode
 resources:
   requests:
@@ -14,3 +27,20 @@ resources:
   limits:
     memory: 3Gi
     cpu: 2000m
+# Kestra configuration for plugins
+# This enables the docker runner and points it to the shared socket.
+configuration:
+  kestra:
+    plugins:
+      configurations:
+        - type: io.kestra.plugin.scripts.runner.docker.Docker
+          values:
+            docker-host: "unix:///var/run/docker.sock"
+# Mount the shared emptyDir for the dind socket into the main Kestra container.
+extraVolumeMounts:
+  - name: dind-socket
+    mountPath: /var/run
+# Define the shared volume that both containers will use.
+extraVolumes:
+  - name: dind-socket
+    emptyDir: {}
