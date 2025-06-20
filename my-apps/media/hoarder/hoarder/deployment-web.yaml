@@ -12,6 +12,10 @@ spec:
       labels:
         app: hoarder-web
     spec:
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+        runAsGroup: 1001
       containers:
         - name: web
           image: ghcr.io/karakeep-app/karakeep:0.25.0
