@@ -18,7 +18,7 @@ spec:
         runAsGroup: 1001
       containers:
         - name: web
-          image: ghcr.io/karakeep-app/karakeep:release@sha256:c30777ae3529a2d4d9a4c135df6ef12988ffc454ae65d8e9dad646abe2a64df3
+          image: ghcr.io/karakeep-app/karakeep:release@sha256:572076596ea7fdaa189694d31dc8059743773b1f908d68d7c4af3737948ff3b3
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
