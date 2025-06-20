@@ -13,4 +13,10 @@ data:
   EMBEDDING_TEXT_MODEL: "granite-embedding:278m"
   # For webhook functionality (new in 0.22.0)
   WEBHOOK_ENABLED: "false"
-  # Add any other configuration values as needed 
+  # Add any other configuration values as needed
+  DISABLE_SIGNUPS: "false"
+  # Crawler settings
+  CRAWLER_ENABLE_ADBLOCKER: "true"
+  CRAWLER_JOB_TIMEOUT_SEC: "60"
+  # OCR settings
+  OCR_LANGS: "eng"
