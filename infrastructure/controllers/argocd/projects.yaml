@@ -8,11 +8,17 @@ spec:
   sourceRepos:
     - '*' # In production, specify exact repo URLs
   destinations:
-    - namespace: '*'
+    - namespace: 'kube-system'
+      server: https://kubernetes.default.svc
+    - namespace: 'gateway'
       server: https://kubernetes.default.svc
   clusterResourceWhitelist:
-    - group: '*'
-      kind: '*'
+    - group: 'cilium.io'
+      kind: 'CiliumIdentity'
+    - group: 'gateway.networking.k8s.io'
+      kind: 'GatewayClass'
+    - group: 'gateway.networking.k8s.io'
+      kind: 'Gateway'
   namespaceResourceWhitelist:
     - group: '*'
       kind: '*'
@@ -42,10 +48,11 @@ spec:
       server: 'https://kubernetes.default.svc'
     - namespace: 'observability'
       server: 'https://kubernetes.default.svc'
-  # Allow all cluster resources like infrastructure since monitoring needs similar privileges
   clusterResourceWhitelist:
-    - group: '*'
-      kind: '*'
+    - group: 'monitoring.coreos.com'
+      kind: 'ServiceMonitor'
+    - group: 'monitoring.coreos.com'
+      kind: 'PrometheusRule'
   namespaceResourceWhitelist:
     - group: '*'
       kind: '*'
@@ -54,6 +61,10 @@ spec:
       description: Admin role for monitoring project
       policies:
         - p, proj:monitoring:admin, applications, *, monitoring/*, allow
+    - name: troubleshooting
+      description: "Allow exec into pods for troubleshooting"
+      policies:
+        - p, proj:monitoring:troubleshooting, exec, create, */*, allow
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
@@ -74,7 +85,14 @@ spec:
   clusterResourceWhitelist:
     - group: 'external-secrets.io'
       kind: 'ClusterSecretStore'
-    - group: '*'
-      kind: '*'
   sourceRepos:
     - '*' # Allow deploying from any Git repository, adjust if needed
+  roles:
+    - name: admin
+      description: "Admin access to my-apps"
+      policies:
+        - p, proj:my-apps:admin, applications, *, my-apps/*, allow
+    - name: troubleshooting
+      description: "Allow exec into pods for troubleshooting"
+      policies:
+        - p, proj:my-apps:troubleshooting, exec, create, */*, allow

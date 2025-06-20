@@ -2,7 +2,6 @@ configs:
   cm:
     create: true
     application.resourceTrackingMethod: "annotation+label"
-    
     # Enhanced config management plugins
     configManagementPlugins: |
       - name: kustomize-fetch-tunnel-id
@@ -12,7 +11,6 @@ configs:
         generate:
           command: ["sh"]
           args: ["scripts/kustomize-patch-tunnel-id.sh"]
-    
     # Optimized global ignore differences
     resource.customizations.ignoreDifferences.all: |
       managedFieldsManagers:
@@ -35,18 +33,12 @@ configs:
       - /metadata/annotations/kubectl.kubernetes.io/last-applied-configuration
       - /spec/clusterIP
       - /spec/clusterIPs
-    
     # Enhanced global compare options
     resource.compareoptions: |
       ignoreResourceStatusField: all
       ignoreAggregatedRoles: true
-      ignoreDifferencesOnResourceUpdates: true
-      # Optimize comparison performance
-      ignoreUnchangedResourceUpdates: true
-    
     # Enable resource update optimization
     resource.ignoreResourceUpdatesEnabled: "true"
-    
     # Global resource update ignore patterns
     resource.customizations.ignoreResourceUpdates.all: |
       jsonPointers:
@@ -55,39 +47,30 @@ configs:
       - /metadata/resourceVersion
       - /metadata/managedFields
       - /metadata/annotations/deployment.kubernetes.io/revision
-    
     # Specific ignore differences for problematic resources
     resource.customizations.ignoreDifferences.external-secrets.io_ExternalSecret: |
       jqPathExpressions:
       - '.spec.data[]?.remoteRef?.conversionStrategy'
       - '.spec.data[]?.remoteRef?.decodingStrategy'
       - '.spec.data[]?.remoteRef?.metadataPolicy'
-    
     # Add networking specific ignores
     resource.customizations.ignoreDifferences.v1_Service: |
       jsonPointers:
       - /spec/clusterIP
       - /spec/clusterIPs
       - /spec/ports/*/nodePort
-    
     # Add PVC specific ignores (common with dynamic provisioning)
     resource.customizations.ignoreDifferences.v1_PersistentVolumeClaim: |
       jsonPointers:
       - /spec/volumeName
       - /metadata/annotations/pv.kubernetes.io~1bind-completed
       - /metadata/annotations/pv.kubernetes.io~1bound-by-controller
-    
     # Performance and scaling settings
     timeout.reconciliation: 180s
-    timeout.hard.reconciliation: 0s  # Disable hard timeout
+    timeout.hard.reconciliation: 0s # Disable hard timeout
     application.instanceLabelKey: argocd.argoproj.io/instance
-    
-    # Enable efficient resource tracking
-    application.resourceTrackingMethod: "annotation+label"
-    
     # Optimize repository cache
     reposerver.parallelism.limit: 10
-
   cmp:
     create: true
     plugins:
@@ -99,33 +82,25 @@ configs:
           find:
             command: ["sh", "-c"]
             args: ["find . -name 'kustomization.yaml' -o -name 'kustomization.yml' -o -name 'Kustomization'"]
-
   params:
     server.insecure: true
-    
     # Enhanced controller settings
     controller.resource.health.persist: "false"
     controller.self.heal.timeout.seconds: "5"
     controller.operation.processors: "20"
     controller.status.processors: "20"
     controller.repo.server.timeout.seconds: "120"
-    
     # Enable server-side apply
     server.enable.server.side.apply: "true"
-    
     # Optimize application processing
     application.sync.max.timeout: "300"
-    
     # Repository settings for better performance
     reposerver.parallelism.limit: "10"
-    
     # Enable resource ignore for updates
     controller.resource.ignore.resource.updates.enabled: "true"
-
 crds:
   install: true
   keep: false
-
 # Enhanced controller configuration
 controller:
   metrics:
@@ -134,7 +109,7 @@ controller:
       enabled: true
   resources:
     requests:
-      cpu: 250m  # Increased for better performance
+      cpu: 250m # Increased for better performance
       memory: 1Gi # Increased for large clusters
     limits:
       cpu: 4000m
@@ -148,25 +123,22 @@ controller:
     # Performance tuning
     - name: ARGOCD_RECONCILIATION_TIMEOUT
       value: "180s"
-
 # Disable DEX (you already have this)
 dex:
   enabled: false
-
 # Optimized Redis configuration
 redis:
   resources:
     requests:
       cpu: 100m
-      memory: 128Mi  # Increased
+      memory: 128Mi # Increased
     limits:
       cpu: 2000m
-      memory: 512Mi  # Increased for better caching
+      memory: 512Mi # Increased for better caching
   metrics:
     enabled: true
     serviceMonitor:
       enabled: true
-
 # Enhanced server configuration
 server:
   metrics:
@@ -175,46 +147,40 @@ server:
       enabled: true
   resources:
     requests:
-      cpu: 100m  # Increased
+      cpu: 100m # Increased
       memory: 128Mi # Increased
     limits:
       cpu: 4000m
-      memory: 1Gi  # Increased
+      memory: 1Gi # Increased
   config:
     # Enable gRPC-Web for better performance
     grpc.web: true
-
 # Enhanced repo server configuration
 repoServer:
-  replicas: 2  # Add replica for HA and performance
-  
+  replicas: 2 # Add replica for HA and performance
   containerSecurityContext:
     readOnlyRootFilesystem: true
-    
   volumes:
     - name: cmp-kustomize-build-with-helm
       configMap:
         name: argocd-cmp-cm
     - name: cmp-tmp
       emptyDir:
-        sizeLimit: 1Gi  # Add size limit
+        sizeLimit: 1Gi # Add size limit
     - name: helm-cache
       emptyDir:
         sizeLimit: 2Gi
-        
   resources:
     requests:
-      cpu: 250m  # Increased
+      cpu: 250m # Increased
       memory: 512Mi # Increased
     limits:
       cpu: 4000m
-      memory: 2Gi  # Increased
-      
+      memory: 2Gi # Increased
   metrics:
     enabled: true
     serviceMonitor:
       enabled: true
-      
   env:
     # Optimize Helm operations
     - name: HELM_CACHE_HOME
@@ -223,7 +189,6 @@ repoServer:
       value: /tmp/helm-config
     - name: HELM_DATA_HOME
       value: /tmp/helm-data
-      
   extraContainers:
     - name: kustomize-build-with-helm
       command:
@@ -261,7 +226,6 @@ repoServer:
           name: cmp-tmp
         - mountPath: /tmp/helm-cache
           name: helm-cache
-
 # Enhanced ApplicationSet controller
 applicationSet:
   metrics:
@@ -270,21 +234,19 @@ applicationSet:
       enabled: true
   resources:
     requests:
-      cpu: 100m  # Increased
+      cpu: 100m # Increased
       memory: 128Mi # Increased
     limits:
       cpu: 1000m
-      memory: 1Gi  # Increased
-
+      memory: 1Gi # Increased
 # Keep notifications disabled for now
 notifications:
   enabled: false
-
 # Global configuration
 global:
   # Add domain if you have one
   # domain: argocd.yourdomain.com
-  
+
   # Security context
   securityContext:
     runAsNonRoot: true
