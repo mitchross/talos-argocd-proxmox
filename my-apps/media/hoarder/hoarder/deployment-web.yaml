@@ -18,10 +18,21 @@ spec:
         runAsGroup: 1001
       containers:
         - name: web
-          image: ghcr.io/karakeep-app/karakeep:0.25.0
+          image: ghcr.io/karakeep-app/karakeep:release@sha256:c30777ae3529a2d4d9a4c135df6ef12988ffc454ae65d8e9dad646abe2a64df3
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
           env:
             - name: MEILI_ADDR
               value: http://hoarder-meilisearch.hoarder.svc.cluster.local:7700

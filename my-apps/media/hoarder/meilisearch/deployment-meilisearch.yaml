@@ -14,9 +14,27 @@ spec:
       labels:
         app: hoarder-meilisearch
     spec:
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+        runAsGroup: 1001
       containers:
         - name: meilisearch
           image: getmeili/meilisearch:v1.11.1
+          ports:
+            - containerPort: 7700
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 7700
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 7700
+            initialDelaySeconds: 15
+            periodSeconds: 20
           env:
             - name: MEILI_NO_ANALYTICS
               value: "true"
@@ -26,8 +44,6 @@ spec:
           envFrom:
             - secretRef:
                 name: hoarder-secret
-            - configMapRef:
-                name: hoarder-configuration
       volumes:
         - name: meilisearch
           persistentVolumeClaim:
