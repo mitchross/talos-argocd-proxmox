@@ -12,7 +12,7 @@ spec:
   project: default
   source:
     # IMPORTANT: Please verify this is the correct URL for your Git repository.
-    repoURL: https://github.com/mitch-ross/k3s-argocd-proxmox.git
+    repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
     path: infrastructure/controllers/argocd
     targetRevision: HEAD
   destination:
