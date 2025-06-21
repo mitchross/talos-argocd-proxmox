@@ -8,9 +8,7 @@ spec:
   sourceRepos:
     - '*' # In production, specify exact repo URLs
   destinations:
-    - namespace: 'kube-system'
-      server: https://kubernetes.default.svc
-    - namespace: 'gateway'
+    - namespace: '*'
       server: https://kubernetes.default.svc
   clusterResourceWhitelist:
     - group: 'cilium.io'

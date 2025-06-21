@@ -31,12 +31,11 @@ spec:
       owner: immich
       secret:
         name: immich-db-credentials
-      postInitApplicationSQL:
-        - ALTER SYSTEM SET search_path TO "$user", public, vectors;
-        - SET search_path TO "$user", public, vectors;
+      postInitSQL:
         - CREATE EXTENSION IF NOT EXISTS "vectors";
         - CREATE EXTENSION IF NOT EXISTS "cube";
         - CREATE EXTENSION IF NOT EXISTS "earthdistance";
+        - ALTER DATABASE immich SET search_path TO '"$user", public, vectors';
         - ALTER SCHEMA vectors OWNER TO "immich";
         - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA vectors TO "immich";
         - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "immich";
