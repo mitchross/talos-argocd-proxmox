@@ -8,9 +8,10 @@ spec:
     - git:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         revision: HEAD
-        # Find all ApplicationSet files in the repository.
-        files:
-          - path: "**/*appset.yaml"
+        directories:
+          - path: infrastructure
+          - path: monitoring
+          - path: my-apps
   template:
     metadata:
       name: '{{path.basename}}-app'
