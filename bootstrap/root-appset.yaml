@@ -6,7 +6,7 @@ metadata:
 spec:
   generators:
     - git:
-        repoURL: https://github.com/mitch-ross/k3s-argocd-proxmox.git
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         revision: HEAD
         # Find all ApplicationSet files in the repository.
         files:
@@ -18,9 +18,9 @@ spec:
     spec:
       project: default
       source:
-        repoURL: https://github.com/mitch-ross/k3s-argocd-proxmox.git
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         targetRevision: HEAD
-        path: '{{path}}'
+        path: '{{path.directory}}'
       destination:
         server: https://kubernetes.default.svc
         namespace: argocd
