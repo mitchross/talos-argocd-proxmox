@@ -11,7 +11,7 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         revision: HEAD
         directories:
-          - path: monitoring/*
+          - path: monitoring/*-stack
         requeueAfterSeconds: 180 # More frequent checks for monitoring
   template:
     metadata:
