@@ -159,17 +159,23 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/downloa
 ```
 
 ### 6. Install ArgoCD
+With the CRDs in place, we can now bootstrap Argo CD. This is a two-step process.
+
+**First, we deploy Argo CD itself.** This `Application` manifest tells Argo CD how to manage its own installation and upgrades directly from this Git repository. This is the "app of apps" pattern.
+
 ```bash
-# Install ArgoCD with custom configuration
-kubectl kustomize --enable-helm infrastructure/controllers/argocd | kubectl apply -f -
-
-# Wait for ArgoCD to be ready
-kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
-
-# Wait for CRDs to be established
-kubectl wait --for=condition=established crd/applications.argoproj.io --timeout=60s
-kubectl wait --for=condition=established crd/appprojects.argoproj.io --timeout=60s
+# Apply the Argo CD application. It will self-manage from this point on.
+kubectl apply -f infrastructure/argocd-app.yaml
 ```
+
+**Second, we deploy the root ApplicationSet.** This `ApplicationSet` automatically discovers and deploys all the other ApplicationSets in this repository (for infrastructure, monitoring, etc.), creating a fully GitOps-driven deployment.
+
+```bash
+# Apply the root ApplicationSet. This will deploy everything else.
+kubectl apply -f infrastructure/root-appset.yaml
+```
+
+From this point on, every component of your cluster is managed via Git. Any changes pushed to the `main` branch will be automatically synced by Argo CD.
 
 ### 7. Configure Secret Management
 ```bash
@@ -194,24 +200,6 @@ kubectl create secret generic 1password-operator-token \
 kubectl create secret generic 1passwordconnect \
   --from-literal=token=$CONNECT_TOKEN \
   --namespace external-secrets
-```
-
-### 8. Final Deployment
-
-Deploy the three-tier structure in order:
-
-```bash
-# 1. First apply the ArgoCD projects
-kubectl apply -f infrastructure/controllers/argocd/projects.yaml -n argocd
-
-# 2. Apply infrastructure components (sync wave -2 ensures they run first)
-kubectl apply -f infrastructure/infrastructure-components-appset.yaml -n argocd
-
-# 3. Apply monitoring components (sync wave 0)
-kubectl apply -f monitoring/monitoring-components-appset.yaml -n argocd
-
-# 4. Finally, apply user applications (sync wave 1 ensures they run last)
-kubectl apply -f my-apps/myapplications-appset.yaml -n argocd
 ```
 
 ### Key Deployment Features
@@ -341,10 +329,8 @@ kubectl get applicationsets -n argocd -o name | xargs -I{} kubectl patch {} -n a
 kubectl delete applicationsets --all -n argocd
 
 # Only then apply the new structure in order
-kubectl apply -f infrastructure/controllers/argocd/projects.yaml -n argocd
-kubectl apply -f infrastructure/infrastructure-components-appset.yaml -n argocd
-kubectl apply -f monitoring/monitoring-components-appset.yaml -n argocd
-kubectl apply -f my-apps/myapplications-appset.yaml -n argocd
+kubectl apply -f infrastructure/argocd-app.yaml
+kubectl apply -f infrastructure/root-appset.yaml
 ```
 
 ## 🤝 Contributing

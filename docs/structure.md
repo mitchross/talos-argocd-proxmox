@@ -3,6 +3,8 @@
 ```plaintext
 .
 ├── infrastructure/           # Infrastructure components
+│   ├── argocd-app.yaml       # ArgoCD self-management Application
+│   ├── root-appset.yaml      # Root ApplicationSet to deploy all tiers
 │   ├── controllers/          # Kubernetes controllers
 │   │   └── argocd/           # ArgoCD configuration and projects
 │   ├── networking/           # Network configurations
@@ -39,25 +41,33 @@
    - Standardized application structure in each folder
 
 3. **Simplified Management**
-   - One ApplicationSet per tier
+   - A root ApplicationSet deploys one ApplicationSet per tier
    - Clear separation of concerns
    - Controlled deployment order through sync waves
 
-## ApplicationSet Organization
+## Bootstrap and ApplicationSet Organization
 
-### `/infrastructure/infrastructure-components-appset.yaml`
+This project uses a two-file bootstrap model located in the `/infrastructure` directory, followed by a set of tier-specific ApplicationSets that are discovered automatically.
+
+### Bootstrap Files
+- **`infrastructure/argocd-app.yaml`**: This is an Argo CD `Application` that manages Argo CD itself. It points to `infrastructure/controllers/argocd` to deploy the Helm chart and all its configurations, including the `AppProject` definitions. This is the "app of apps" pattern.
+- **`infrastructure/root-appset.yaml`**: This is an `ApplicationSet` that acts as the "appset of appsets". It automatically discovers and deploys all `*appset.yaml` files within the repository, effectively deploying all three tiers of the architecture.
+
+### Tier ApplicationSets
+
+#### `/infrastructure/infrastructure-components-appset.yaml`
 - Manages all infrastructure components
 - Uses infrastructure project
 - Deploys with negative sync wave (-2) to ensure it runs first
 - Pattern: `infrastructure/*/*`
 
-### `/monitoring/monitoring-components-appset.yaml`
+#### `/monitoring/monitoring-components-appset.yaml`
 - Manages all monitoring components
 - Uses infrastructure project
 - Deploys with neutral sync wave (0)
 - Pattern: `monitoring/*/*`
 
-### `/my-apps/myapplications-appset.yaml`
+#### `/my-apps/myapplications-appset.yaml`
 - Manages all user applications
 - Uses ai project (provides necessary permissions)
 - Deploys with positive sync wave (1) to ensure it runs last

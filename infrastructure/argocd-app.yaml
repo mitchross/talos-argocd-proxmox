@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+  # Add a finalizer to prevent this application from being accidentally deleted.
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # The 'default' project is used for managing Argo CD itself.
+  # This project is created by default by Argo CD.
+  project: default
+  source:
+    # IMPORTANT: Please verify this is the correct URL for your Git repository.
+    repoURL: https://github.com/mitch-ross/k3s-argocd-proxmox.git
+    path: infrastructure/controllers/argocd
+    targetRevision: HEAD
+  destination:
+    # Deploy to the same cluster where Argo CD is running.
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true # Delete resources that are no longer defined in Git
+      selfHeal: true # Automatically sync when the live state drifts from Git
+    syncOptions:
+      - CreateNamespace=true # Create the 'argocd' namespace if it doesn't exist 

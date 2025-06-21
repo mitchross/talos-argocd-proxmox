@@ -26,47 +26,53 @@ graph TD
 ```mermaid
 sequenceDiagram
     participant User
-    participant ArgoCD
     participant Cluster
-    User->>Cluster: Install Initial Components (Talos bootstrapping)
-    Note over User,Cluster: talosctl bootstrap, apply configs
-    User->>Cluster: Apply ArgoCD projects
-    Note over User,Cluster: kubectl apply -f projects.yaml
-    User->>Cluster: Apply Infrastructure ApplicationSet
-    Note over User,Cluster: kubectl apply -f infrastructure-components-appset.yaml
-    Cluster->>ArgoCD: Create Infrastructure Applications
-    ArgoCD->>Cluster: Deploy Infrastructure Components (wave -2)
-    Note over ArgoCD,Cluster: Cilium, Longhorn, Cert-Manager, etc.
-    User->>Cluster: Apply Monitoring ApplicationSet
-    Note over User,Cluster: kubectl apply -f monitoring-components-appset.yaml
-    Cluster->>ArgoCD: Create Monitoring Applications
-    ArgoCD->>Cluster: Deploy Monitoring Components (wave 0)
-    Note over ArgoCD,Cluster: Prometheus, Grafana, Loki, etc.
-    User->>Cluster: Apply Applications ApplicationSet
-    Note over User,Cluster: kubectl apply -f myapplications-appset.yaml
-    Cluster->>ArgoCD: Create User Applications
-    ArgoCD->>Cluster: Deploy User Applications (wave 1)
-    Note over ArgoCD,Cluster: Media apps, AI tools, etc.
+    participant ArgoCD
+
+    User->>Cluster: 1. Apply Self-Managed ArgoCD App
+    Note over User,Cluster: kubectl apply -f infrastructure/argocd-app.yaml
+    Cluster->>ArgoCD: Creates ArgoCD Application
+    ArgoCD->>ArgoCD: Self-manages and installs/upgrades itself
+
+    User->>Cluster: 2. Apply Root ApplicationSet
+    Note over User,Cluster: kubectl apply -f infrastructure/root-appset.yaml
+    Cluster->>ArgoCD: Creates Root ApplicationSet
+    
+    ArgoCD->>ArgoCD: Discovers all *appset.yaml files
+    ArgoCD->>Cluster: Creates Infrastructure ApplicationSet
+    ArgoCD->>Cluster: Creates Monitoring ApplicationSet
+    ArgoCD->>Cluster: Creates Applications ApplicationSet
+    
+    ArgoCD->>Cluster: Syncs all applications based on waves
 ```
 
 ## 📦 Installation Steps
 
+The entire cluster bootstrap process is now handled by a two-step apply process. These are the only manual commands needed after setting up Talos and the base kubeconfig.
+
 ### 1. Install Gateway API CRDs
+This is a prerequisite for Cilium's Gateway API integration.
 ```bash
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/latest/download/experimental-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
 ```
 
-### 2. Apply custom ArgoCD configuration
+### 2. Bootstrap Argo CD and Deploy All Applications
+First, deploy the self-managing Argo CD `Application`. This uses the "app of apps" pattern to make Argo CD manage its own installation and upgrades.
+
 ```bash
-kubectl kustomize --enable-helm infrastructure/controllers/argocd | kubectl apply -f -
+# Apply the Argo CD application. It will self-manage from this point on.
+kubectl apply -f infrastructure/argocd-app.yaml
 ```
 
-### 3. Wait for ArgoCD to be ready
+Second, deploy the `root-appset`. This single `ApplicationSet` discovers all other `ApplicationSet` manifests in the repository and deploys them automatically, respecting their defined sync waves.
+
 ```bash
-kubectl wait --for=condition=available deployment -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
-kubectl wait --for=condition=established crd/applications.argoproj.io --timeout=60s
-kubectl wait --for=condition=established crd/appprojects.argoproj.io --timeout=60s
+# Apply the root ApplicationSet. This will deploy everything else.
+kubectl apply -f infrastructure/root-appset.yaml
 ```
+
+After these two commands, the entire cluster state is managed via Git. No further `kubectl apply` commands are needed for deployment.
 
 ## 🔧 Project Setup
 
@@ -77,9 +83,11 @@ ArgoCD projects define permissions and boundaries for applications. Our cluster 
 - **applications**: User workloads (media, AI, dev, privacy, etc.)
 - **ai**: Specialized AI/ML workloads
 
+These `AppProject` resources are defined in `infrastructure/controllers/argocd/projects.yaml` and are deployed automatically as part of the main `argocd` application.
+
 ## 📱 ApplicationSet Management
 
-We use three main ApplicationSets to manage our deployments:
+We use three main ApplicationSets to manage our deployments, which are discovered and applied automatically by the `root-appset`.
 
 ### 1. Infrastructure ApplicationSet
 Located at `infrastructure/infrastructure-components-appset.yaml`, this ApplicationSet manages infrastructure components like Cilium, Longhorn, Cert-Manager, and other core services. **All storage (Longhorn, local PVs, StorageClasses) is managed declaratively here.**
@@ -89,20 +97,6 @@ Located at `monitoring/monitoring-components-appset.yaml`, this ApplicationSet m
 
 ### 3. Applications ApplicationSet
 Located at `my-apps/myapplications-appset.yaml`, this ApplicationSet manages user applications like media servers, AI applications, and other user-facing services.
-
-## 🔢 Deployment Order
-Apply the resources in the following order:
-
-1. Apply the projects first:
-```bash
-kubectl apply -f infrastructure/controllers/argocd/projects.yaml -n argocd
-```
-2. Apply the ApplicationSets in order:
-```bash
-kubectl apply -f infrastructure/infrastructure-components-appset.yaml -n argocd
-kubectl apply -f monitoring/monitoring-components-appset.yaml -n argocd
-kubectl apply -f my-apps/myapplications-appset.yaml -n argocd
-```
 
 ## 📂 Repository Structure
 

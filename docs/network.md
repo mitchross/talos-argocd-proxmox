@@ -291,56 +291,8 @@ sequenceDiagram
     Pod->>External: Response (reverse path)
 ```
 
-## Setup Steps
-
-### 1. Install Cilium (Infrastructure Tier)
-
-Cilium is installed via Helm as part of the infrastructure tier:
-
-```bash
-# Installing Cilium via Helm is handled automatically by the infrastructure ApplicationSet
-# The Helm chart is located at infrastructure/networking/cilium
-# You can view the values at infrastructure/networking/cilium/values.yaml
-
-# To manually install Cilium:
-helm repo add cilium https://helm.cilium.io/
-helm install cilium cilium/cilium \
-  --namespace kube-system \
-  --set kubeProxyReplacement=strict \
-  --set gatewayAPI.enabled=true \
-  --set-string extraConfig.enable-gateway-api=true \
-  --set ipam.mode=kubernetes
-
-# Verify Cilium is running
-kubectl -n kube-system get pods -l k8s-app=cilium
-```
-
-### 2. Configure CoreDNS
-```bash
-# Apply custom CoreDNS configuration
-kubectl apply -f infrastructure/networking/coredns/coredns-custom.yaml
-
-# Restart CoreDNS to apply changes
-kubectl rollout restart -n kube-system deployment coredns
-```
-
-### 3. Setup Gateways
-```bash
-# Create gateway namespace
-kubectl create namespace gateway-system
-
-# Apply gateway configurations
-kubectl apply -f infrastructure/networking/gateway/
-```
-
-### 4. Configure Cloudflare
-```bash
-# Add tunnel secrets (see external-services.md)
-kubectl apply -f infrastructure/networking/cloudflared/secrets.yaml
-
-# Deploy cloudflared tunnel
-kubectl apply -f infrastructure/networking/cloudflared/deployment.yaml
-```
+## Declarative Setup
+All components described in this document (Cilium, CoreDNS, Gateways, Cloudflare Tunnel) are deployed declaratively as part of the `infrastructure` ApplicationSet. There are no manual `helm` or `kubectl` commands required to deploy them. Their manifests are located in `infrastructure/networking/` and are automatically synced by Argo CD.
 
 ## Validation
 
