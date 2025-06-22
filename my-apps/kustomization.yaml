@@ -4,6 +4,4 @@ namespace: argocd
 commonLabels:
   vanillax.me: app-management
   app.kubernetes.io/managed-by: argocd
-
 resources:
-

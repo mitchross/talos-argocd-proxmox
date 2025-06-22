@@ -9,26 +9,75 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         revision: HEAD
         directories:
-          - path: infrastructure
-          - path: monitoring
-          - path: my-apps
+          # Discover every component directory in the main folders
+          - path: infrastructure/*
+          - path: monitoring/*
+          - path: my-apps/*
   template:
     metadata:
-      name: '{{path.basename}}-app'
+      # Create a unique name for each application
+      name: '{{path.basename}}'
       namespace: argocd
+      annotations:
+        # Keep notifications for degraded or failed syncs
+        notifications.argoproj.io/subscribe.on-health-degraded.slack: app-alerts
+        notifications.argoproj.io/subscribe.on-sync-failed.slack: app-alerts
     spec:
-      project: default
+      # Set project based on the top-level folder
+      project: '{{path[0]}}'
       source:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         targetRevision: HEAD
         path: '{{path}}'
+        # IMPORTANT: Apply the kustomize-helm plugin to all apps
+        plugin:
+          name: kustomize-build-with-helm
       destination:
         server: https://kubernetes.default.svc
-        namespace: argocd
+        # Deploy the app to a namespace matching its name
+        namespace: '{{path.basename}}'
       syncPolicy:
         automated:
           prune: true
           selfHeal: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 5m
         syncOptions:
           - CreateNamespace=true
-          - Replace=true
+          - ServerSideApply=true
+          - ApplyOutOfSyncOnly=true
+          - PrunePropagationPolicy=foreground
+      # Add robust ignore a-la the old appsets
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas
+        - group: ""
+          kind: Service
+          jsonPointers:
+            - /spec/clusterIP
+        - group: gateway.networking.k8s.io
+          kind: HTTPRoute
+          jsonPointers:
+            - /spec/parentRefs/0/group
+            - /spec/parentRefs/0/kind
+            - /spec/rules/0/backendRefs/0/group
+            - /spec/rules/0/backendRefs/0/kind
+            - /spec/rules/0/backendRefs/0/weight
+        - group: gateway.networking.k8s.io
+          kind: TCPRoute
+          jsonPointers:
+            - /spec/parentRefs/0/group
+            - /spec/parentRefs/0/kind
+            - /spec/rules/0/backendRefs/0/group
+            - /spec/rules/0/backendRefs/0/kind
+            - /spec/rules/0/backendRefs/0/weight
+        - group: apiextensions.k8s.io
+          kind: CustomResourceDefinition
+          jsonPointers:
+            - /spec/preserveUnknownFields
