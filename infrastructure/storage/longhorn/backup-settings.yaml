@@ -39,8 +39,7 @@ kind: Setting
 metadata:
   name: remove-snapshots-during-filesystem-trim
   namespace: longhorn-system
-spec:
-  value: "true"
+value: "true"
 ---
 # Backup compression method (update existing setting)
 apiVersion: longhorn.io/v1beta2
@@ -48,8 +47,7 @@ kind: Setting
 metadata:
   name: backup-compression-method
   namespace: longhorn-system
-spec:
-  value: "gzip" # Options: none, lz4, gzip
+value: "gzip" # Options: none, lz4, gzip
 ---
 # Backup concurrent limit (update existing setting)
 apiVersion: longhorn.io/v1beta2
@@ -57,8 +55,7 @@ kind: Setting
 metadata:
   name: backup-concurrent-limit
   namespace: longhorn-system
-spec:
-  value: "2"
+value: "2"
 ---
 # Volume backup restore concurrent limit
 apiVersion: longhorn.io/v1beta2
@@ -66,5 +63,4 @@ kind: Setting
 metadata:
   name: concurrent-volume-backup-restore-per-node-limit
   namespace: longhorn-system
-spec:
-  value: "2"
+value: "2"
