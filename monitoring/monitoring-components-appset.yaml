@@ -9,7 +9,7 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         revision: HEAD
         directories:
-          - path: monitoring/*/*
+          - path: monitoring/*
   template:
     metadata:
       name: 'monitoring-{{path.basename}}'
