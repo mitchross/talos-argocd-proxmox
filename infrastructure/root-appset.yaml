@@ -9,22 +9,26 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         revision: HEAD
         directories:
-          # Discover every component directory in the main folders
-          - path: infrastructure/*
+          # Discover each individual component/app directory
+          - path: infrastructure/controllers/*
+          - path: infrastructure/crds
+          - path: infrastructure/database/*
+          - path: infrastructure/networking/*
+          - path: infrastructure/storage/*
           - path: monitoring/*
-          - path: my-apps/*
+          - path: my-apps/*/*
   template:
     metadata:
-      # Create a unique name for each application
-      name: '{{path.basename}}'
+      # Create a unique name for each application, e.g., "controllers-argocd"
+      name: '{{path.path | replace "/" "-" | lower}}'
       namespace: argocd
       annotations:
         # Keep notifications for degraded or failed syncs
         notifications.argoproj.io/subscribe.on-health-degraded.slack: app-alerts
         notifications.argoproj.io/subscribe.on-sync-failed.slack: app-alerts
     spec:
-      # Set project based on the top-level folder
-      project: '{{path[0]}}'
+      # Set project based on the top-level folder (infrastructure, monitoring, or my-apps)
+      project: '{{path.path | split "/" | first}}'
       source:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         targetRevision: HEAD
@@ -34,7 +38,7 @@ spec:
           name: kustomize-build-with-helm
       destination:
         server: https://kubernetes.default.svc
-        # Deploy the app to a namespace matching its name
+        # Deploy the app to a namespace matching its directory name, e.g., "argocd", "plex"
         namespace: '{{path.basename}}'
       syncPolicy:
         automated:
@@ -66,17 +70,6 @@ spec:
           jsonPointers:
             - /spec/parentRefs/0/group
             - /spec/parentRefs/0/kind
-            - /spec/rules/0/backendRefs/0/group
-            - /spec/rules/0/backendRefs/0/kind
-            - /spec/rules/0/backendRefs/0/weight
-        - group: gateway.networking.k8s.io
-          kind: TCPRoute
-          jsonPointers:
-            - /spec/parentRefs/0/group
-            - /spec/parentRefs/0/kind
-            - /spec/rules/0/backendRefs/0/group
-            - /spec/rules/0/backendRefs/0/kind
-            - /spec/rules/0/backendRefs/0/weight
         - group: apiextensions.k8s.io
           kind: CustomResourceDefinition
           jsonPointers:
