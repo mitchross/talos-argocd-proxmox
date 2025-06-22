@@ -15,7 +15,7 @@ A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux f
   - [3. Boot & Bootstrap Talos Nodes](#3-boot--bootstrap-talos-nodes)
   - [4. Apply Machine Configs](#4-apply-machine-configs)
   - [5. Install Gateway API CRDs](#5-install-gateway-api-crds)
-  - [6. Install ArgoCD](#6-install-argocd)
+  - [6. Install ArgoCD & All Apps](#6-install-argocd--all-apps)
   - [7. Configure Secret Management](#7-configure-secret-management)
   - [8. Final Deployment](#8-final-deployment)
 - [Verification](#-verification)
@@ -38,72 +38,50 @@ A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux f
 ## 🏗️ Architecture
 
 ```mermaid
-graph TD
-    subgraph "Argo CD Projects"
-        IP[Infrastructure Project] --> IAS[Infrastructure ApplicationSet]
-        MP[Monitoring Project] --> MAS[Monitoring ApplicationSet]
-        AP[Applications Project] --> AAS[Applications ApplicationSet]
-        AIP[AI Project] --> AIAS[AI ApplicationSet]
-    end
-    
-    subgraph "Infrastructure Components"
-        IAS --> N[Networking]
-        IAS --> S[Storage]
-        IAS --> C[Controllers]
-        IAS --> DB[Database]
+graph TD;
+    subgraph "Git Repository"
+        Root["root-appset.yaml<br/>(path: infrastructure/root-appset.yaml)"]
         
-        N --> Cilium
-        N --> Cloudflared
-        N --> Gateway
-        
-        S --> Longhorn
-        S --> VolumeSnapshots
-        
-        C --> CertManager
-        C --> ExternalSecrets
-        
-        DB --> CloudNativePG
-    end
-    
-    subgraph "Monitoring Stack"
-        MAS --> Prometheus
-        MAS --> Grafana
-        MAS --> AlertManager
-        MAS --> Loki
-    end
-    
-    subgraph "User Applications"
-        AAS --> Home[Home Apps]
-        AAS --> Media[Media Apps]
-        AAS --> Dev[Dev Tools]
-        AAS --> Privacy[Privacy Apps]
-        
-        Home --> Frigate
-        Home --> WyzeBridge
-        
-        Media --> Plex
-        Media --> Jellyfin
-        
-        Dev --> Kafka
-        Dev --> Temporal
-        
-        Privacy --> SearXNG
-        Privacy --> LibReddit
-    end
-    
-    subgraph "AI Applications"
-        AIAS --> Ollama
-        AIAS --> ComfyUI
+        DirInfra["infrastructure/*/*<br/>(e.g., controllers/argocd)"]
+        DirMon["monitoring/*<br/>(e.g., loki-stack)"]
+        DirApps["my-apps/*/*<br/>(e.g., media/plex)"]
+
+        Root -- "scans path" --> DirInfra
+        Root -- "scans path" --> DirMon
+        Root -- "scans path" --> DirApps
     end
 
-    style IP fill:#f9f,stroke:#333,stroke-width:2px
-    style AP fill:#f9f,stroke:#333,stroke-width:2px
-    style MP fill:#f9f,stroke:#333,stroke-width:2px
-    style AIP fill:#f9f,stroke:#333,stroke-width:2px
-    style IAS fill:#bbf,stroke:#333,stroke-width:2px
-    style MAS fill:#bbf,stroke:#333,stroke-width:2px
-    style AAS fill:#bbf,stroke:#333,stroke-width:2px
-    style AIAS fill:#bbf,stroke:#333,stroke-width:2px
+    subgraph "Argo CD"
+        Argo["Argo CD Controller"] -- "Syncs" --> Root;
+        
+        subgraph "Generated Applications"
+            App1["App: controllers-argocd"]
+            App2["App: database-redis"]
+            App3["App: monitoring-loki-stack"]
+            App4["App: media-plex"]
+            AppEtc["... and so on"]
+        end
+
+        Argo -- "Generates from Template" --> App1
+        Argo -- "Generates from Template" --> App2
+        Argo -- "Generates from Template" --> App3
+        Argo -- "Generates from Template" --> App4
+    end
+    
+    subgraph "Kubernetes Cluster"
+        Res1["Argo CD Pods & CRDs"]
+        Res2["Redis Pods & Services"]
+        Res3["Loki Pods & Services"]
+        Res4["Plex Pod & Ingress"]
+    end
+
+    App1 -- "syncs infrastructure/controllers/argocd" --> Res1;
+    App2 -- "syncs infrastructure/database/redis" --> Res2;
+    App3 -- "syncs monitoring/loki-stack" --> Res3;
+    App4 -- "syncs my-apps/media/plex" --> Res4;
+
+    style Root fill:#f9f,stroke:#333,stroke-width:2px;
+    style Argo fill:#9cf,stroke:#333,stroke-width:2px
 ```
 
 ### Key Features
@@ -158,21 +136,14 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/downloa
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
 ```
 
-### 6. Install ArgoCD
-With the CRDs in place, we can now bootstrap Argo CD. This is a two-step process.
+### 6. Install ArgoCD & All Apps
+With the CRDs in place, we can bootstrap Argo CD and deploy the entire cluster with a single command.
 
-**First, we deploy Argo CD itself.** This `Application` manifest tells Argo CD how to manage its own installation and upgrades directly from this Git repository. This is the "app of apps" pattern.
+This `Application` manifest tells Argo CD how to manage its own installation. Once running, Argo CD will automatically sync the `root-appset.yaml` located in the `infrastructure` directory. This `ApplicationSet` will then discover and deploy every other component and application in the repository.
 
 ```bash
-# Apply the Argo CD application. It will self-manage from this point on.
+# Apply the Argo CD application. It will self-manage and deploy everything else.
 kubectl apply -f infrastructure/argocd-app.yaml
-```
-
-**Second, we deploy the root ApplicationSet.** This `ApplicationSet` automatically discovers and deploys all the other ApplicationSets in this repository (for infrastructure, monitoring, etc.), creating a fully GitOps-driven deployment.
-
-```bash
-# Apply the root ApplicationSet. This will deploy everything else.
-kubectl apply -f infrastructure/root-appset.yaml
 ```
 
 From this point on, every component of your cluster is managed via Git. Any changes pushed to the `main` branch will be automatically synced by Argo CD.
@@ -283,18 +254,16 @@ While this setup uses a single node, you can add worker nodes for additional com
 │   │   └── argocd/           # ArgoCD configuration and projects
 │   ├── networking/           # Network configurations
 │   ├── storage/              # Storage configurations
-│   └── infrastructure-components-appset.yaml  # Main infrastructure ApplicationSet
+│   └── root-appset.yaml      # Main infrastructure ApplicationSet
 ├── monitoring/               # Monitoring components
-│   ├── k8s-monitoring/       # Kubernetes monitoring stack
-│   └── monitoring-components-appset.yaml  # Main monitoring ApplicationSet
+│   ├── loki-stack/           # Loki logging stack
+│   └── prometheus-stack/     # Prometheus monitoring stack
 ├── my-apps/                  # User applications
 │   ├── ai/                   # AI-related applications
 │   ├── media/                # Media applications
 │   ├── development/          # Development tools
-│   ├── external/             # External service integrations
 │   ├── home/                 # Home automation apps
-│   ├── privacy/              # Privacy-focused applications
-│   └── myapplications-appset.yaml  # Main applications ApplicationSet
+│   └── privacy/              # Privacy-focused applications
 ├── docs/                     # Documentation
 │   ├── argocd.md             # ArgoCD setup and workflow
 │   ├── network.md            # Network configuration
