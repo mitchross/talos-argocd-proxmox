@@ -29,7 +29,7 @@ metadata:
   name: default
   namespace: longhorn-system
 spec:
-  backupTargetURL: "nfs://192.168.10.133:/mnt/BigTank/k8s/longhornbackup"
+  backupTargetURL: "nfs://192.168.10.133:/mnt/BigTank/k8s/longhornbackup?nfsvers=3"
   credentialSecret: ""
   pollInterval: "300s"
 ---
