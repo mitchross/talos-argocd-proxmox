@@ -77,9 +77,9 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/downloa
 
 ### 2. Bootstrap ArgoCD (One Command Deployment)
 Deploy the self-managing ArgoCD `Application`. This bootstrap application will:
-1. Install ArgoCD itself
-2. Create the three ApplicationSets 
-3. Automatically discover and deploy all infrastructure, monitoring, and applications
+1. Install ArgoCD itself using Helm
+2. Create all three ApplicationSets automatically
+3. Discover and deploy all infrastructure, monitoring, and applications
 
 ```bash
 # Apply the ArgoCD bootstrap application - this is the ONLY manual command needed
@@ -88,21 +88,24 @@ kubectl apply -f infrastructure/argocd-app.yaml
 
 **That's it!** ArgoCD will now manage itself and deploy everything else automatically.
 
+The bootstrap application references the three ApplicationSets via the ArgoCD kustomization, ensuring they're deployed as part of ArgoCD's self-management.
+
 ## 🔧 Project Setup
 
 ArgoCD projects define permissions and boundaries for applications. Our cluster uses three main projects with clear separation:
 
-- **infrastructure**: Core cluster components (Cilium, Longhorn, Cert-Manager, etc.)
+- **infrastructure**: Core cluster components (ArgoCD, Cilium, Longhorn, Cert-Manager, etc.)
 - **monitoring**: Observability stack (Prometheus, Grafana, Loki, etc.)
 - **my-apps**: All user workloads (media, AI, dev, privacy, etc.)
 
-These `AppProject` resources are defined in `infrastructure/projects.yaml` and are deployed automatically.
+These `AppProject` resources are defined in `infrastructure/projects.yaml` and are deployed automatically as part of the ArgoCD bootstrap.
 
 ## 📱 ApplicationSet Management
 
-We use **three simple ApplicationSets** (enterprise pattern):
+We use **three simple ApplicationSets** following enterprise patterns:
 
 ### 1. Infrastructure ApplicationSet (`infrastructure/root-appset.yaml`)
+Manages all core infrastructure components:
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
@@ -119,12 +122,29 @@ spec:
   template:
     metadata:
       name: 'infra-{{path.basename}}'
+      labels:
+        type: infrastructure
     spec:
       project: infrastructure
-      # ... rest of config
+      source:
+        plugin:
+          name: kustomize-build-with-helm
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+        targetRevision: HEAD
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
 ```
 
 ### 2. Monitoring ApplicationSet (`monitoring/monitoring-components-appset.yaml`)
+Manages the observability stack:
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
@@ -134,17 +154,36 @@ metadata:
 spec:
   generators:
     - git:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+        revision: HEAD
         directories:
           - path: monitoring/*/*
   template:
     metadata:
       name: 'monitoring-{{path.basename}}'
+      labels:
+        type: monitoring
     spec:
       project: monitoring
-      # ... rest of config
+      source:
+        plugin:
+          name: kustomize-build-with-helm
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+        targetRevision: HEAD
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
 ```
 
 ### 3. Applications ApplicationSet (`my-apps/myapplications-appset.yaml`)
+Manages all user applications:
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
@@ -154,14 +193,32 @@ metadata:
 spec:
   generators:
     - git:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+        revision: HEAD
         directories:
           - path: my-apps/*/*
   template:
     metadata:
       name: '{{path[1]}}-{{path.basename}}'
+      labels:
+        type: application
     spec:
       project: my-apps
-      # ... rest of config
+      source:
+        plugin:
+          name: kustomize-build-with-helm
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+        targetRevision: HEAD
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
 ```
 
 ## 📂 Repository Structure
@@ -171,9 +228,11 @@ The repository follows a clean three-tier structure that maps directly to the Ap
 ```
 ├── infrastructure/          # Infrastructure ApplicationSet
 │   ├── controllers/         # ArgoCD, External Secrets, etc.
+│   │   └── argocd/          # ArgoCD self-management
 │   ├── networking/          # Cilium, Gateway API, etc.
 │   ├── storage/             # Longhorn, CSI drivers, etc.
 │   ├── database/            # PostgreSQL, Redis operators
+│   ├── projects.yaml        # ArgoCD projects
 │   └── root-appset.yaml     # Infrastructure ApplicationSet
 ├── monitoring/              # Monitoring ApplicationSet
 │   ├── prometheus-stack/    # Prometheus, Grafana, AlertManager
@@ -193,23 +252,23 @@ The repository follows a clean three-tier structure that maps directly to the Ap
 
 1. **Self-Managing ArgoCD**:
    - ArgoCD manages its own installation and upgrades
-   - ApplicationSets are part of the ArgoCD application itself
+   - ApplicationSets are deployed as part of ArgoCD's kustomization
    - Zero manual intervention after bootstrap
 
 2. **Enterprise Pattern**:
    - Clear separation of concerns with three ApplicationSets
-   - Follows GitOps best practices
-   - Scalable and maintainable
+   - Follows GitOps best practices used in production
+   - Scalable and maintainable architecture
 
 3. **Simple Directory Discovery**:
-   - No complex excludes or wildcards
    - Each ApplicationSet scans its own directory pattern
+   - No complex excludes or wildcards needed
    - Easy to understand and modify
 
 4. **Production Ready**:
    - Proper error handling and retries
    - Automated sync with self-healing
-   - Comprehensive ignore patterns for drift
+   - Comprehensive ignore patterns for configuration drift
 
 ## 🚀 Deployment Workflow
 
@@ -224,12 +283,30 @@ kubectl apply -k infrastructure/
 
 ### Production Deployment
 ```bash
-# Single command deployment
+# Single command deployment - ArgoCD manages everything from here
 kubectl apply -f infrastructure/argocd-app.yaml
 
 # Monitor deployment progress
 kubectl get applications -n argocd -w
+
+# Check ApplicationSets
+kubectl get applicationsets -n argocd
+
+# View generated applications by type
+kubectl get applications -n argocd -l type=infrastructure
+kubectl get applications -n argocd -l type=monitoring
+kubectl get applications -n argocd -l type=application
 ```
+
+## 🔍 Application Naming Conventions
+
+The ApplicationSets use consistent naming patterns:
+
+| ApplicationSet | Pattern | Example Applications |
+|----------------|---------|---------------------|
+| **Infrastructure** | `infra-{basename}` | `infra-argocd`, `infra-cilium`, `infra-longhorn` |
+| **Monitoring** | `monitoring-{basename}` | `monitoring-prometheus-stack`, `monitoring-loki-stack` |
+| **Applications** | `{category}-{basename}` | `media-plex`, `ai-ollama`, `home-frigate` |
 
 ## Best Practices
 
@@ -251,6 +328,11 @@ kubectl get applicationsets -n argocd
 
 # View application details
 kubectl describe application infra-argocd -n argocd
+
+# Check applications by type
+kubectl get applications -n argocd -l type=infrastructure
+kubectl get applications -n argocd -l type=monitoring
+kubectl get applications -n argocd -l type=application
 ```
 
 ### Common Issues
@@ -266,8 +348,11 @@ kubectl describe application infra-argocd -n argocd
 # Check ArgoCD managing itself
 kubectl get application argocd -n argocd -o yaml
 
-# View ArgoCD ApplicationSets
+# View ArgoCD ApplicationSets (should show 3)
 kubectl get applicationsets -n argocd
+
+# Check ArgoCD kustomization references
+kubectl describe application argocd -n argocd
 ```
 
 ## Enterprise Patterns
