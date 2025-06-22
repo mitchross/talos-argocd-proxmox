@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: infrastructure-components
+  name: applications
   namespace: argocd
 spec:
   generators:
@@ -9,14 +9,14 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         revision: HEAD
         directories:
-          - path: infrastructure/*/*
+          - path: my-apps/*/*
   template:
     metadata:
-      name: 'infra-{{path.basename}}'
+      name: '{{path[1]}}-{{path.basename}}'
       labels:
-        type: infrastructure
+        type: application
     spec:
-      project: infrastructure
+      project: my-apps
       source:
         plugin:
           name: kustomize-build-with-helm
@@ -40,22 +40,8 @@ spec:
           - CreateNamespace=true
           - ServerSideApply=true
           - ApplyOutOfSyncOnly=true
-          - PrunePropagationPolicy=foreground
       ignoreDifferences:
         - group: apps
           kind: Deployment
           jsonPointers:
             - /spec/replicas
-        - group: ""
-          kind: Service
-          jsonPointers:
-            - /spec/clusterIP
-        - group: gateway.networking.k8s.io
-          kind: HTTPRoute
-          jsonPointers:
-            - /spec/parentRefs/0/group
-            - /spec/parentRefs/0/kind
-        - group: apiextensions.k8s.io
-          kind: CustomResourceDefinition
-          jsonPointers:
-            - /spec/preserveUnknownFields

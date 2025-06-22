@@ -1,9 +1,8 @@
 # 🚀 Talos ArgoCD Proxmox Cluster
-=========================
 
 > Modern GitOps deployment structure using Talos OS, ArgoCD, and Cilium, with Proxmox virtualization
 
-A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux for K8s), ArgoCD, and Cilium, with integrated Cloudflare Tunnel for secure external access. Built for both home lab and small production environments.
+A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux for K8s), ArgoCD, and Cilium, with integrated Cloudflare Tunnel for secure external access. Built for both home lab and production environments using **enterprise-grade GitOps patterns**.
 
 ## 📋 Table of Contents
 
@@ -15,9 +14,8 @@ A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux f
   - [3. Boot & Bootstrap Talos Nodes](#3-boot--bootstrap-talos-nodes)
   - [4. Apply Machine Configs](#4-apply-machine-configs)
   - [5. Install Gateway API CRDs](#5-install-gateway-api-crds)
-  - [6. Install ArgoCD & All Apps](#6-install-argocd--all-apps)
+  - [6. Bootstrap ArgoCD (One Command)](#6-bootstrap-argocd-one-command)
   - [7. Configure Secret Management](#7-configure-secret-management)
-  - [8. Final Deployment](#8-final-deployment)
 - [Verification](#-verification)
 - [Documentation](#-documentation)
 - [Hardware Stack](#-hardware-stack)
@@ -40,54 +38,64 @@ A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux f
 ```mermaid
 graph TD;
     subgraph "Git Repository"
-        Root["root-appset.yaml<br/>(path: infrastructure/root-appset.yaml)"]
+        Bootstrap["argocd-app.yaml<br/>(Bootstrap Application)"]
         
-        DirInfra["infrastructure/*/*<br/>(e.g., controllers/argocd)"]
-        DirMon["monitoring/*<br/>(e.g., loki-stack)"]
-        DirApps["my-apps/*/*<br/>(e.g., media/plex)"]
+        InfraAppSet["infrastructure/root-appset.yaml<br/>(Infrastructure ApplicationSet)"]
+        MonAppSet["monitoring/monitoring-components-appset.yaml<br/>(Monitoring ApplicationSet)"]
+        AppsAppSet["my-apps/myapplications-appset.yaml<br/>(Applications ApplicationSet)"]
+        
+        InfraDirs["infrastructure/*/*<br/>(e.g., controllers/argocd)"]
+        MonDirs["monitoring/*/*<br/>(e.g., prometheus-stack)"]
+        AppDirs["my-apps/*/*<br/>(e.g., media/plex)"]
 
-        Root -- "scans path" --> DirInfra
-        Root -- "scans path" --> DirMon
-        Root -- "scans path" --> DirApps
+        InfraAppSet -- "scans" --> InfraDirs
+        MonAppSet -- "scans" --> MonDirs
+        AppsAppSet -- "scans" --> AppDirs
     end
 
-    subgraph "Argo CD"
-        Argo["Argo CD Controller"] -- "Syncs" --> Root;
+    subgraph "ArgoCD Self-Management"
+        ArgoCD["ArgoCD Controller"] -- "Deploys itself via" --> Bootstrap
         
-        subgraph "Generated Applications"
-            App1["App: controllers-argocd"]
-            App2["App: database-redis"]
-            App3["App: monitoring-loki-stack"]
-            App4["App: media-plex"]
-            AppEtc["... and so on"]
+        subgraph "Self-Managed ApplicationSets"
+            InfraAS["Infrastructure ApplicationSet"]
+            MonAS["Monitoring ApplicationSet"] 
+            AppsAS["Applications ApplicationSet"]
         end
 
-        Argo -- "Generates from Template" --> App1
-        Argo -- "Generates from Template" --> App2
-        Argo -- "Generates from Template" --> App3
-        Argo -- "Generates from Template" --> App4
+        Bootstrap -- "Creates & Manages" --> InfraAS
+        Bootstrap -- "Creates & Manages" --> MonAS
+        Bootstrap -- "Creates & Manages" --> AppsAS
+        
+        subgraph "Generated Applications"
+            InfraApps["infra-argocd<br/>infra-cilium<br/>infra-longhorn<br/>..."]
+            MonApps["monitoring-prometheus-stack<br/>monitoring-loki-stack<br/>..."]
+            UserApps["media-plex<br/>ai-ollama<br/>home-frigate<br/>..."]
+        end
+
+        InfraAS -- "Generates" --> InfraApps
+        MonAS -- "Generates" --> MonApps
+        AppsAS -- "Generates" --> UserApps
     end
     
     subgraph "Kubernetes Cluster"
-        Res1["Argo CD Pods & CRDs"]
-        Res2["Redis Pods & Services"]
-        Res3["Loki Pods & Services"]
-        Res4["Plex Pod & Ingress"]
+        InfraRes["Infrastructure Resources<br/>(ArgoCD, Cilium, Storage)"]
+        MonRes["Monitoring Resources<br/>(Prometheus, Grafana, Loki)"]
+        AppRes["Application Resources<br/>(Plex, Ollama, Frigate)"]
     end
 
-    App1 -- "syncs infrastructure/controllers/argocd" --> Res1;
-    App2 -- "syncs infrastructure/database/redis" --> Res2;
-    App3 -- "syncs monitoring/loki-stack" --> Res3;
-    App4 -- "syncs my-apps/media/plex" --> Res4;
+    InfraApps -- "deploys" --> InfraRes
+    MonApps -- "deploys" --> MonRes
+    UserApps -- "deploys" --> AppRes
 
-    style Root fill:#f9f,stroke:#333,stroke-width:2px;
-    style Argo fill:#9cf,stroke:#333,stroke-width:2px
+    style Bootstrap fill:#f9f,stroke:#333,stroke-width:2px
+    style ArgoCD fill:#9cf,stroke:#333,stroke-width:2px
 ```
 
 ### Key Features
-- **Three-Tier Architecture**: Separate infrastructure, monitoring, and applications
-- **Sync Waves**: Controlled deployment order via ArgoCD
-- **Declarative GitOps**: All cluster state managed in Git
+- **Enterprise GitOps Pattern**: Three separate ApplicationSets for clear separation of concerns
+- **Self-Managing ArgoCD**: ArgoCD manages its own installation, upgrades, and ApplicationSets
+- **Simple Directory Discovery**: No complex patterns - easy to understand and maintain
+- **Production Ready**: Proper error handling, retries, and monitoring integration
 - **GPU Integration**: Full NVIDIA GPU support via Talos system extensions and GPU Operator
 - **Zero SSH**: All node management via Talosctl API
 
@@ -136,17 +144,22 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/downloa
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
 ```
 
-### 6. Install ArgoCD & All Apps
-With the CRDs in place, we can bootstrap Argo CD and deploy the entire cluster with a single command.
-
-This `Application` manifest tells Argo CD how to manage its own installation. Once running, Argo CD will automatically sync the `root-appset.yaml` located in the `infrastructure` directory. This `ApplicationSet` will then discover and deploy every other component and application in the repository.
+### 6. Bootstrap ArgoCD (One Command)
+Deploy the self-managing ArgoCD bootstrap application. This will:
+1. **Install ArgoCD itself** using Helm
+2. **Create all three ApplicationSets** (infrastructure, monitoring, applications)
+3. **Automatically discover and deploy** all components and applications
 
 ```bash
-# Apply the Argo CD application. It will self-manage and deploy everything else.
+# Single command to deploy everything - ArgoCD will manage itself from here
 kubectl apply -f infrastructure/argocd-app.yaml
 ```
 
-From this point on, every component of your cluster is managed via Git. Any changes pushed to the `main` branch will be automatically synced by Argo CD.
+**That's it!** ArgoCD will now:
+- Manage its own installation and upgrades
+- Deploy all infrastructure components (Cilium, storage, etc.)
+- Deploy monitoring stack (Prometheus, Grafana, Loki)
+- Deploy all applications (media, AI, home automation, etc.)
 
 ### 7. Configure Secret Management
 ```bash
@@ -173,12 +186,6 @@ kubectl create secret generic 1passwordconnect \
   --namespace external-secrets
 ```
 
-### Key Deployment Features
-- Three-tier architecture separating infrastructure, monitoring, and applications
-- Sync waves ensure proper deployment order
-- Simple directory patterns without complex include/exclude logic
-- All components managed through just three top-level ApplicationSets
-
 ## 🛡️ Talos-Specific Notes
 - **No SSH**: All management via `talosctl` API
 - **Immutable OS**: No package manager, no shell
@@ -196,9 +203,14 @@ talosctl health --nodes <node-ip>
 kubectl get pods -A
 cilium status
 
-# Check ArgoCD
-kubectl get application -A
-kubectl get pods -n argocd
+# Check ArgoCD self-management
+kubectl get applications -n argocd
+kubectl get applicationsets -n argocd
+
+# Check generated applications
+kubectl get applications -n argocd -l type=infrastructure
+kubectl get applications -n argocd -l type=monitoring  
+kubectl get applications -n argocd -l type=application
 
 # Check secrets
 kubectl get pods -n 1passwordconnect
@@ -208,7 +220,7 @@ kubectl get externalsecret -A
 ## 📋 Documentation
 - **[View Documentation Online](https://mitchross.github.io/k3s-argocd-proxmox)** - Full documentation website
 - **[Local Documentation](docs/)** - Browse documentation in the repository:
-  - [ArgoCD Setup](docs/argocd.md)
+  - [ArgoCD Setup](docs/argocd.md) - **Enterprise GitOps patterns and self-management**
   - [Network Configuration](docs/network.md)
   - [Storage Configuration](docs/storage.md)
   - [Security Setup](docs/security.md)
@@ -249,37 +261,53 @@ While this setup uses a single node, you can add worker nodes for additional com
 
 ```
 .
-├── infrastructure/           # Infrastructure components
-│   ├── controllers/          # Kubernetes controllers
-│   │   └── argocd/           # ArgoCD configuration and projects
-│   ├── networking/           # Network configurations
-│   ├── storage/              # Storage configurations
-│   └── root-appset.yaml      # Main infrastructure ApplicationSet
-├── monitoring/               # Monitoring components
-│   ├── loki-stack/           # Loki logging stack
-│   └── prometheus-stack/     # Prometheus monitoring stack
-├── my-apps/                  # User applications
-│   ├── ai/                   # AI-related applications
-│   ├── media/                # Media applications
-│   ├── development/          # Development tools
-│   ├── home/                 # Home automation apps
-│   └── privacy/              # Privacy-focused applications
-├── docs/                     # Documentation
-│   ├── argocd.md             # ArgoCD setup and workflow
-│   ├── network.md            # Network configuration
-│   ├── security.md           # Security setup
-│   ├── storage.md            # Storage configuration
-│   └── external-services.md  # External services setup
+├── infrastructure/           # Infrastructure ApplicationSet
+│   ├── controllers/          # ArgoCD, External Secrets, etc.
+│   │   └── argocd/           # ArgoCD self-management configuration
+│   ├── networking/           # Cilium, Gateway API, etc.
+│   ├── storage/              # Longhorn, CSI drivers, etc.
+│   ├── database/             # PostgreSQL, Redis operators
+│   ├── projects.yaml         # ArgoCD projects
+│   └── root-appset.yaml      # Infrastructure ApplicationSet
+├── monitoring/               # Monitoring ApplicationSet
+│   ├── prometheus-stack/     # Prometheus, Grafana, AlertManager
+│   ├── loki-stack/           # Loki, Promtail
+│   └── monitoring-components-appset.yaml
+├── my-apps/                  # Applications ApplicationSet
+│   ├── ai/                   # AI tools (Ollama, ComfyUI, etc.)
+│   ├── media/                # Media servers (Plex, Jellyfin, etc.)
+│   ├── home/                 # Home automation (Frigate, HA, etc.)
+│   ├── development/          # Dev tools (Headlamp, IT-Tools, etc.)
+│   ├── privacy/              # Privacy tools (SearXNG, ProxiTok, etc.)
+│   └── myapplications-appset.yaml
+└── docs/                     # Documentation
+    ├── argocd.md             # Enterprise GitOps setup
+    ├── network.md            # Network configuration
+    ├── security.md           # Security setup
+    ├── storage.md            # Storage configuration
+    └── external-services.md  # External services setup
 ```
+
+## ✅ Enterprise GitOps Features
+
+This setup implements **production-grade patterns** used in enterprise environments:
+
+1. **Self-Managing Infrastructure**: ArgoCD manages its own lifecycle
+2. **Clear Separation of Concerns**: Three distinct ApplicationSets
+3. **Simple Directory Discovery**: Easy for developers to add applications
+4. **Automated Operations**: Zero-touch deployments after bootstrap
+5. **Production Monitoring**: Full observability stack
+6. **Proper RBAC**: Project-based access controls
 
 ## 🔍 Troubleshooting
 
 | Issue Type | Troubleshooting Steps |
 |------------|----------------------|
 | **Talos Node Issues** | • `talosctl health`<br>• Check Talos logs: `talosctl logs -n <node-ip> -k` |
+| **ArgoCD Self-Management** | • `kubectl get application argocd -n argocd`<br>• Check ApplicationSet status<br>• Review ArgoCD logs |
+| **ApplicationSet Issues** | • `kubectl get applicationsets -n argocd`<br>• Check directory patterns<br>• Verify Git connectivity |
 | **Network Issues** | • Check Cilium status<br>• Verify Gateway API<br>• Test DNS resolution |
 | **Storage Issues** | • Verify PV binding<br>• Check Longhorn/Local PV logs<br>• Validate node affinity |
-| **ArgoCD Issues** | • Check application sync status<br>• Review application logs |
 | **Secrets Issues** | • Check External Secrets Operator logs<br>• Verify 1Password Connect status |
 | **GPU Issues** | • Check GPU node labels<br>• Verify NVIDIA Operator pods<br>• Check `nvidia-smi` on GPU nodes |
 
@@ -297,10 +325,22 @@ kubectl delete applications --all -n argocd
 kubectl get applicationsets -n argocd -o name | xargs -I{} kubectl patch {} -n argocd --type json -p '[{"op": "remove","path": "/metadata/finalizers"}]'
 kubectl delete applicationsets --all -n argocd
 
-# Only then apply the new structure in order
+# Bootstrap with the new enterprise pattern
 kubectl apply -f infrastructure/argocd-app.yaml
-kubectl apply -f infrastructure/root-appset.yaml
 ```
+
+## 🚀 Taking to Production
+
+This homelab setup translates directly to enterprise environments:
+
+1. **Replace Git repo** with your organization's repository
+2. **Add proper RBAC** for team-based access
+3. **Configure notifications** for Slack/Teams integration  
+4. **Add policy enforcement** with tools like OPA Gatekeeper
+5. **Implement proper secrets management** with External Secrets or Vault
+6. **Add multi-cluster support** with ArgoCD ApplicationSets
+
+The patterns and structure remain the same - this is **production-grade GitOps**.
 
 ## 🤝 Contributing
 
