@@ -4,6 +4,8 @@ namespace: longhorn-system
 resources:
   - namespace.yaml
   - httproute.yaml
+  - backup-settings.yaml
+  - recurring-jobs.yaml
 helmCharts:
   - name: longhorn
     repo: https://charts.longhorn.io

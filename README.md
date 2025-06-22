@@ -223,10 +223,15 @@ kubectl get externalsecret -A
   - [ArgoCD Setup](docs/argocd.md) - **Enterprise GitOps patterns and self-management**
   - [Network Configuration](docs/network.md)
   - [Storage Configuration](docs/storage.md)
+  - [**Longhorn Backup & Disaster Recovery**](docs/longhorn-backup-guide.md) 🗄️ - **TrueNAS Scale integration**
   - [Security Setup](docs/security.md)
   - [GPU Configuration](docs/gpu.md)
   - [External Services](docs/external-services.md)
   - [Project Structure](docs/structure.md)
+
+### 🚨 Emergency Runbooks
+- [**Longhorn Emergency Procedures**](docs/runbooks/longhorn-emergency-procedures.md) - **Critical storage recovery**
+- [Monitoring Runbooks](docs/runbooks/monitoring.md)
 
 ## 💻 Hardware Stack
 ```

@@ -1,0 +1,254 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: longhorn-backup-alerts
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: prometheus
+spec:
+  groups:
+    - name: longhorn.backup
+      rules:
+        # Backup Target Connectivity
+        - alert: LonghornBackupTargetUnavailable
+          expr: longhorn_backup_target_available == 0
+          for: 5m
+          labels:
+            severity: critical
+            component: longhorn
+            category: backup
+          annotations:
+            summary: "Longhorn backup target is unavailable"
+            description: |
+              Longhorn backup target has been unavailable for more than 5 minutes.
+              This means backups cannot be created or accessed.
+
+              Troubleshooting:
+              1. Check TrueNAS NFS service status
+              2. Verify network connectivity to backup target
+              3. Check Longhorn manager logs: kubectl logs -n longhorn-system -l app=longhorn-manager
+            runbook_url: "https://longhorn.io/docs/latest/snapshots-and-backups/backup-and-restore/backup-target/"
+        # Failed Backup Jobs
+        - alert: LonghornBackupFailed
+          expr: longhorn_backup_state{state="Error"} > 0
+          for: 2m
+          labels:
+            severity: critical
+            component: longhorn
+            category: backup
+          annotations:
+            summary: "Longhorn backup failed: {{ $labels.backup }}"
+            description: |
+              Backup {{ $labels.backup }} for volume {{ $labels.volume }} has failed.
+
+              Troubleshooting:
+              1. Check backup logs: kubectl describe backup {{ $labels.backup }} -n longhorn-system
+              2. Verify backup target connectivity
+              3. Check available storage space on backup target
+              4. Review Longhorn manager logs
+            runbook_url: "https://longhorn.io/docs/latest/troubleshooting/"
+        # No Recent Backups
+        - alert: LonghornNoRecentBackup
+          expr: |
+            (
+              time() - max by (volume) (longhorn_backup_created_at{volume=~".*"}) > 86400 * 2
+            ) and on (volume) (
+              longhorn_volume_info{data_tier="critical"} == 1
+            )
+          for: 15m
+          labels:
+            severity: warning
+            component: longhorn
+            category: backup
+          annotations:
+            summary: "No recent backup for critical volume: {{ $labels.volume }}"
+            description: |
+              Critical volume {{ $labels.volume }} has not had a successful backup in the last 2 days.
+
+              Current backup age: {{ $value | humanizeDuration }}
+
+              Actions:
+              1. Check recurring backup job status
+              2. Manually trigger backup if needed
+              3. Investigate backup job failures
+            runbook_url: "https://longhorn.io/docs/latest/snapshots-and-backups/recurring-snapshots-and-backups/"
+        # Backup Storage Usage
+        - alert: LonghornBackupStorageHigh
+          expr: "(\n  sum by (backup_target) (longhorn_backup_actual_size_bytes) / \n  sum by (backup_target) (longhorn_backup_target_available_bytes)\n) * 100 > 80\n"
+          for: 10m
+          labels:
+            severity: warning
+            component: longhorn
+            category: backup
+          annotations:
+            summary: "Longhorn backup storage usage is high"
+            description: |
+              Backup storage usage is {{ $value | humanizePercentage }} of available space.
+
+              Actions:
+              1. Clean up old backups
+              2. Increase backup target storage capacity
+              3. Review backup retention policies
+            runbook_url: "https://longhorn.io/docs/latest/snapshots-and-backups/backup-and-restore/backup-target/"
+        # Long Running Backup
+        - alert: LonghornBackupTakingTooLong
+          expr: |
+            (
+              time() - longhorn_backup_created_at{state="InProgress"}
+            ) > 3600 * 4  # 4 hours
+          for: 5m
+          labels:
+            severity: warning
+            component: longhorn
+            category: backup
+          annotations:
+            summary: "Longhorn backup taking too long: {{ $labels.backup }}"
+            description: |
+              Backup {{ $labels.backup }} has been running for more than 4 hours.
+
+              Duration: {{ $value | humanizeDuration }}
+
+              Actions:
+              1. Check backup progress
+              2. Verify backup target performance
+              3. Consider canceling and retrying backup
+            runbook_url: "https://longhorn.io/docs/latest/troubleshooting/"
+        # Snapshot Chain Too Long
+        - alert: LonghornSnapshotChainTooLong
+          expr: longhorn_volume_snapshot_count > 100
+          for: 5m
+          labels:
+            severity: warning
+            component: longhorn
+            category: snapshot
+          annotations:
+            summary: "Longhorn volume has too many snapshots: {{ $labels.volume }}"
+            description: |
+              Volume {{ $labels.volume }} has {{ $value }} snapshots.
+              Long snapshot chains can impact performance.
+
+              Actions:
+              1. Review snapshot retention policies
+              2. Clean up old snapshots
+              3. Consider creating a backup and removing old snapshots
+            runbook_url: "https://longhorn.io/docs/latest/snapshots-and-backups/snapshots/"
+        # Volume Degraded
+        - alert: LonghornVolumeDegraded
+          expr: longhorn_volume_robustness{robustness="degraded"} == 1
+          for: 5m
+          labels:
+            severity: warning
+            component: longhorn
+            category: volume
+          annotations:
+            summary: "Longhorn volume is degraded: {{ $labels.volume }}"
+            description: |
+              Volume {{ $labels.volume }} is in degraded state.
+              This means it has fewer replicas than desired.
+
+              Actions:
+              1. Check node health and storage capacity
+              2. Verify network connectivity between nodes
+              3. Consider manual replica rebuild
+            runbook_url: "https://longhorn.io/docs/latest/troubleshooting/"
+        # Volume Faulted
+        - alert: LonghornVolumeFaulted
+          expr: longhorn_volume_robustness{robustness="faulted"} == 1
+          for: 1m
+          labels:
+            severity: critical
+            component: longhorn
+            category: volume
+          annotations:
+            summary: "Longhorn volume is faulted: {{ $labels.volume }}"
+            description: |
+              Volume {{ $labels.volume }} is in faulted state.
+              This is a critical condition that may result in data loss.
+
+              IMMEDIATE ACTIONS:
+              1. Stop all applications using this volume
+              2. Create emergency backup if possible
+              3. Check Longhorn manager logs immediately
+              4. Contact support if needed
+            runbook_url: "https://longhorn.io/docs/latest/troubleshooting/"
+        # Node Storage Running Low
+        - alert: LonghornNodeStorageLow
+          expr: |
+            (
+              (longhorn_node_storage_capacity_bytes - longhorn_node_storage_usage_bytes) /
+              longhorn_node_storage_capacity_bytes
+            ) * 100 < 20
+          for: 10m
+          labels:
+            severity: warning
+            component: longhorn
+            category: storage
+          annotations:
+            summary: "Longhorn node storage is running low: {{ $labels.node }}"
+            description: |
+              Node {{ $labels.node }} has less than 20% storage available.
+              Available: {{ $value | humanizePercentage }}
+
+              Actions:
+              1. Clean up unused volumes
+              2. Add more storage to the node
+              3. Rebalance replicas to other nodes
+            runbook_url: "https://longhorn.io/docs/latest/troubleshooting/"
+        # Recurring Job Failed
+        - alert: LonghornRecurringJobFailed
+          expr: longhorn_recurring_job_last_run_state{state="failed"} == 1
+          for: 5m
+          labels:
+            severity: warning
+            component: longhorn
+            category: backup
+          annotations:
+            summary: "Longhorn recurring job failed: {{ $labels.job }}"
+            description: |
+              Recurring job {{ $labels.job }} has failed.
+              Job type: {{ $labels.task }}
+
+              Actions:
+              1. Check job configuration
+              2. Verify backup target connectivity
+              3. Review Longhorn manager logs
+              4. Manually trigger job to test
+            runbook_url: "https://longhorn.io/docs/latest/snapshots-and-backups/recurring-snapshots-and-backups/"
+    - name: longhorn.performance
+      rules:
+        # High Volume Latency
+        - alert: LonghornVolumeHighLatency
+          expr: "histogram_quantile(0.99, \n  rate(longhorn_volume_read_latency_seconds_bucket[5m])\n) > 0.1\n"
+          for: 5m
+          labels:
+            severity: warning
+            component: longhorn
+            category: performance
+          annotations:
+            summary: "High read latency on Longhorn volume: {{ $labels.volume }}"
+            description: |
+              Volume {{ $labels.volume }} is experiencing high read latency.
+              99th percentile latency: {{ $value | humanizeDuration }}
+
+              Actions:
+              1. Check node performance and load
+              2. Verify network connectivity
+              3. Consider replica placement optimization
+            runbook_url: "https://longhorn.io/docs/latest/troubleshooting/"
+        # High IOPS Usage
+        - alert: LonghornVolumeHighIOPS
+          expr: "rate(longhorn_volume_read_iops_total[5m]) + \nrate(longhorn_volume_write_iops_total[5m]) > 1000\n"
+          for: 10m
+          labels:
+            severity: info
+            component: longhorn
+            category: performance
+          annotations:
+            summary: "High IOPS on Longhorn volume: {{ $labels.volume }}"
+            description: |
+              Volume {{ $labels.volume }} is experiencing high IOPS.
+              Current IOPS: {{ $value | humanize }}
+
+              This is informational - monitor for performance impact.
+            runbook_url: "https://longhorn.io/docs/latest/troubleshooting/"
