@@ -5,7 +5,7 @@ metadata:
   namespace: longhorn-system
 data:
   # TrueNAS Scale NFS backup configuration
-  backup-target: "nfs://truenas-ip:/mnt/pool/longhorn-backups"
+  backup-target: "nfs://192.168.10.133:/mnt/BigTank/k8s/longhornbackup"
   # Alternative S3-compatible backup (if TrueNAS has MinIO)
   # backup-target: "s3://longhorn-backups@us-east-1/"
 ---
@@ -22,24 +22,18 @@ data:
 # AWS_SECRET_ACCESS_KEY: <base64-encoded-secret-key>
 # AWS_ENDPOINTS: <base64-encoded-truenas-s3-endpoint>
 ---
-# Longhorn Settings for backup configuration
+# Longhorn BackupTarget for NFS backup configuration
 apiVersion: longhorn.io/v1beta2
-kind: Setting
+kind: BackupTarget
 metadata:
-  name: backup-target
+  name: default
   namespace: longhorn-system
 spec:
-  value: "nfs://192.168.10.139:/mnt/BigTank/k8s/longhornbackup"
+  backupTargetURL: "nfs://192.168.10.133:/mnt/BigTank/k8s/longhornbackup"
+  credentialSecret: ""
+  pollInterval: "300s"
 ---
-apiVersion: longhorn.io/v1beta2
-kind: Setting
-metadata:
-  name: backup-target-credential-secret
-  namespace: longhorn-system
-spec:
-  value: "longhorn-backup-credentials"
----
-# Enable automatic snapshot cleanup
+# Enable automatic snapshot cleanup during filesystem trim
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
@@ -48,25 +42,7 @@ metadata:
 spec:
   value: "true"
 ---
-# Snapshot data integrity check
-apiVersion: longhorn.io/v1beta2
-kind: Setting
-metadata:
-  name: snapshot-data-integrity
-  namespace: longhorn-system
-spec:
-  value: "enabled"
----
-# Concurrent automatic backup creation
-apiVersion: longhorn.io/v1beta2
-kind: Setting
-metadata:
-  name: concurrent-automatic-backup-create-per-node
-  namespace: longhorn-system
-spec:
-  value: "2"
----
-# Backup compression
+# Backup compression method (update existing setting)
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
@@ -75,11 +51,20 @@ metadata:
 spec:
   value: "gzip" # Options: none, lz4, gzip
 ---
-# Backup concurrent limit
+# Backup concurrent limit (update existing setting)
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
-  name: concurrent-backup-create-per-node
+  name: backup-concurrent-limit
   namespace: longhorn-system
 spec:
-  value: "1"
+  value: "2"
+---
+# Volume backup restore concurrent limit
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: concurrent-volume-backup-restore-per-node-limit
+  namespace: longhorn-system
+spec:
+  value: "2"

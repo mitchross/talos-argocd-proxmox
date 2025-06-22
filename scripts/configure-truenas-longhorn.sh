@@ -12,7 +12,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration based on your TrueNAS setup
-TRUENAS_IP="192.168.10.139"  # Update this to your TrueNAS IP
+TRUENAS_IP="192.168.10.133"  # Update this to your TrueNAS IP
 NFS_PATH="/mnt/BigTank/k8s/longhornbackup"
 BACKUP_TARGET="nfs://${TRUENAS_IP}:${NFS_PATH}"
 
