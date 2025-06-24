@@ -4,33 +4,23 @@ metadata:
   name: longhorn-backup-config
   namespace: longhorn-system
 data:
-  # TrueNAS Scale NFS backup configuration
-  backup-target: "nfs://192.168.10.133:/mnt/BigTank/k8s/longhornbackup"
-  # Alternative S3-compatible backup (if TrueNAS has MinIO)
-  # backup-target: "s3://longhorn-backups@us-east-1/"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: longhorn-backup-credentials
-  namespace: longhorn-system
-type: Opaque
-data:
+  # S3-compatible MinIO backup configuration
+  backup-target: "s3://longhorn-backups@us-east-1/"
+  # Previous NFS configuration (commented out)
+  # backup-target: "nfs://192.168.10.133:/mnt/BigTank/k8s/longhornbackup"
 
-# For NFS, these might not be needed, but for S3-compatible:
-# AWS_ACCESS_KEY_ID: <base64-encoded-access-key>
-# AWS_SECRET_ACCESS_KEY: <base64-encoded-secret-key>
-# AWS_ENDPOINTS: <base64-encoded-truenas-s3-endpoint>
+# Note: longhorn-backup-credentials Secret is now managed by External Secrets
+# See: infrastructure/storage/longhorn/externalsecret.yaml
 ---
-# Longhorn BackupTarget for NFS backup configuration
+# Longhorn BackupTarget for S3/MinIO backup configuration
 apiVersion: longhorn.io/v1beta2
 kind: BackupTarget
 metadata:
   name: default
   namespace: longhorn-system
 spec:
-  backupTargetURL: "nfs://192.168.10.133:/mnt/BigTank/k8s/longhornbackup?nfsvers=3"
-  credentialSecret: ""
+  backupTargetURL: "s3://longhorn-backups@us-east-1/"
+  credentialSecret: "longhorn-backup-credentials"
   pollInterval: "300s"
 ---
 # Enable automatic snapshot cleanup during filesystem trim

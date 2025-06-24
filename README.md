@@ -194,6 +194,102 @@ kubectl create secret generic 1passwordconnect \
 - **SOPS**: Used for encrypting Talos secrets
 - **No plaintext secrets in Git**
 
+## 🗄️ MinIO S3 Backup Configuration
+
+This cluster uses **TrueNAS Scale MinIO** for S3-compatible storage backups, particularly for Longhorn persistent volume backups.
+
+### MinIO Setup on TrueNAS Scale
+
+1. **Install MinIO App** in TrueNAS Scale Apps
+2. **Access MinIO Console** at `http://192.168.10.133:9002`
+3. **Configure via MinIO Client (mc)**:
+
+```bash
+# Access MinIO container shell in TrueNAS
+sudo docker exec -it <minio_container_name> /bin/sh
+
+# Set up MinIO client alias (use your MinIO root credentials)
+mc alias set local http://localhost:9000 minio <your-root-password>
+
+# Verify connection
+mc admin info local
+
+# Create dedicated user for Longhorn backups
+mc admin user add local longhorn-user SecurePassword123!
+
+# Create service account for the user (generates access keys)
+mc admin user svcacct add local longhorn-user --name "longhorn-backup-access"
+# Output: Access Key: ABC123XYZ789EXAMPLE0
+# Output: Secret Key: ExampleSecretKey123+RandomChars/ForDocumentation
+
+# Create backup bucket
+mc mb local/longhorn-backups
+
+# Create IAM policy for Longhorn bucket access
+cat > /tmp/longhorn-policy.json << 'EOF'
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetBucketLocation",
+        "s3:ListBucket",
+        "s3:ListBucketMultipartUploads"
+      ],
+      "Resource": "arn:aws:s3:::longhorn-backups"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:AbortMultipartUpload",
+        "s3:ListMultipartUploadParts"
+      ],
+      "Resource": "arn:aws:s3:::longhorn-backups/*"
+    }
+  ]
+}
+EOF
+
+# Apply the policy
+mc admin policy create local longhorn-backup-policy /tmp/longhorn-policy.json
+mc admin policy attach local longhorn-backup-policy --user longhorn-user
+
+# Verify setup
+mc ls local/longhorn-backups
+```
+
+### 1Password Secret Management
+
+Store MinIO credentials securely in 1Password:
+
+1. **Create 1Password item** named `minio`
+2. **Add fields**:
+   - `minio_access_key`: `ABC123XYZ789EXAMPLE0`
+   - `minio_secret_key`: `ExampleSecretKey123+RandomChars/ForDocumentation`  
+   - `minio_endpoint`: `http://192.168.10.133:9000`
+
+### Longhorn S3 Backup Configuration
+
+The cluster automatically configures Longhorn to use MinIO via:
+
+- **External Secret**: `infrastructure/storage/longhorn/externalsecret.yaml`
+- **Backup Settings**: `infrastructure/storage/longhorn/backup-settings.yaml`
+- **Backup Target**: `s3://longhorn-backups@us-east-1/`
+
+### Backup Schedule
+
+Automated backups are configured with different tiers:
+
+| Data Tier | Snapshot Frequency | Backup Frequency | Retention |
+|-----------|-------------------|------------------|-----------|
+| **Critical** | Hourly | Daily (2 AM) | 30 days |
+| **Important** | Every 4 hours | Daily (3 AM) | 14 days |
+| **Standard** | Daily | Weekly | 4 weeks |
+
 ## 🔍 Verification
 ```bash
 # Check Talos node health
@@ -215,6 +311,14 @@ kubectl get applications -n argocd -l type=application
 # Check secrets
 kubectl get pods -n 1passwordconnect
 kubectl get externalsecret -A
+
+# Verify Longhorn backup configuration
+kubectl get backuptarget -n longhorn-system
+kubectl get secret longhorn-backup-credentials -n longhorn-system
+
+# Test MinIO connectivity from cluster
+kubectl run -it --rm debug --image=minio/mc --restart=Never -- \
+  mc alias set test http://192.168.10.133:9000 <access-key> <secret-key>
 ```
 
 ## 📋 Documentation

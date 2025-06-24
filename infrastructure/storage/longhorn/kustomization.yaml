@@ -6,6 +6,7 @@ resources:
   - httproute.yaml
   - backup-settings.yaml
   - recurring-jobs.yaml
+  - externalsecret.yaml
 helmCharts:
   - name: longhorn
     repo: https://charts.longhorn.io
