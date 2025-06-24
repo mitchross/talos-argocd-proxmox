@@ -4,7 +4,7 @@ namespace: longhorn-system
 resources:
   - namespace.yaml
   - httproute.yaml
-  - backup-settings.yaml
+  #- backup-settings.yaml
   - recurring-jobs.yaml
   - externalsecret.yaml
 helmCharts:
