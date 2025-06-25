@@ -2,11 +2,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ns.yaml
-  - ../../root-appset.yaml # Infrastructure ApplicationSet
-  - ../../../monitoring/monitoring-components-appset.yaml
-  - ../../../my-apps/myapplications-appset.yaml
   - ../../projects.yaml
   - http-route.yaml
+  # ApplicationSets that ArgoCD will manage
+  - ../../root-appset.yaml
+  - ../../../monitoring/monitoring-components-appset.yaml
+  - ../../../my-apps/myapplications-appset.yaml
 helmCharts:
   - name: argo-cd
     repo: https://argoproj.github.io/argo-helm
