@@ -4,10 +4,6 @@ resources:
   - ns.yaml
   - ../../projects.yaml
   - http-route.yaml
-  # ApplicationSets that ArgoCD will manage
-  - ../../root-appset.yaml
-  - ../../../monitoring/monitoring-components-appset.yaml
-  - ../../../my-apps/myapplications-appset.yaml
 helmCharts:
   - name: argo-cd
     repo: https://argoproj.github.io/argo-helm
