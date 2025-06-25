@@ -21,7 +21,7 @@ spec:
     spec:
       initContainers:
         - name: copy-config
-          image: busybox:1.36
+          image: busybox:1.37
           command: ["sh", "-c", "cp -L /config-ro/* /etc/searxng/"]
           securityContext:
             runAsUser: 0
@@ -32,7 +32,7 @@ spec:
               mountPath: /etc/searxng
       containers:
         - name: searxng
-          image: searxng/searxng:latest@sha256:a6ad4d72e07b3dc7b6cd80ed6d08e215fcea81b8165c9eeb3bf2b4c27a601f31
+          image: searxng/searxng:latest@sha256:bf3d26ca633a7cbc363d6eacf0c5fe0b346ade1af386882dc836e55a263e7ee3
           ports:
             - containerPort: 8080
               name: http
