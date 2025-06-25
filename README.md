@@ -151,6 +151,7 @@ Deploy ArgoCD and ApplicationSets in the correct order:
 ```bash
 # Step 1: Deploy ArgoCD itself
 kubectl apply -f infrastructure/argocd-app.yaml
+kubectl apply -f infrastructure/projects.yaml
 
 # Wait for ArgoCD to be ready (2-5 minutes)
 kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
