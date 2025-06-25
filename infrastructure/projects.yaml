@@ -47,6 +47,8 @@ spec:
       kind: 'MutatingWebhookConfiguration'
     - group: 'admissionregistration.k8s.io'
       kind: 'ValidatingWebhookConfiguration'
+    - group: ''
+      kind: 'Namespace'
   roles:
     - name: monitoring-admin
       description: "Full access to monitoring project"
@@ -71,6 +73,9 @@ spec:
   namespaceResourceWhitelist:
     - group: '*'
       kind: '*'
+  clusterResourceWhitelist:
+    - group: ''
+      kind: 'Namespace'
   roles:
     - name: apps-admin
       description: "Full access to applications project"
