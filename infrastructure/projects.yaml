@@ -13,6 +13,9 @@ spec:
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
   roles:
     - name: infrastructure-admin
       description: "Full access to infrastructure project"
@@ -35,20 +38,11 @@ spec:
     - namespace: '*'
       server: 'https://kubernetes.default.svc'
   clusterResourceWhitelist:
-    - group: 'monitoring.coreos.com'
+    - group: '*'
       kind: '*'
-    - group: 'rbac.authorization.k8s.io'
-      kind: 'ClusterRole'
-    - group: 'rbac.authorization.k8s.io'
-      kind: 'ClusterRoleBinding'
-    - group: 'apiextensions.k8s.io'
-      kind: 'CustomResourceDefinition'
-    - group: 'admissionregistration.k8s.io'
-      kind: 'MutatingWebhookConfiguration'
-    - group: 'admissionregistration.k8s.io'
-      kind: 'ValidatingWebhookConfiguration'
-    - group: ''
-      kind: 'Namespace'
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
   roles:
     - name: monitoring-admin
       description: "Full access to monitoring project"
@@ -70,12 +64,15 @@ spec:
   destinations:
     - namespace: '*'
       server: 'https://kubernetes.default.svc'
+  # Allow Namespace creation and cert-manager ClusterIssuers like the reference
+  clusterResourceWhitelist:
+    - group: cert-manager.io
+      kind: ClusterIssuer
+    - group: ""
+      kind: Namespace
   namespaceResourceWhitelist:
     - group: '*'
       kind: '*'
-  clusterResourceWhitelist:
-    - group: ''
-      kind: 'Namespace'
   roles:
     - name: apps-admin
       description: "Full access to applications project"
