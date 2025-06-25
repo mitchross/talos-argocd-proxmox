@@ -8,7 +8,7 @@ spec:
     - git:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         revision: HEAD
-                directories:
+        directories:
           - path: infrastructure/*/*
           - path: infrastructure/controllers/argocd
             exclude: true
