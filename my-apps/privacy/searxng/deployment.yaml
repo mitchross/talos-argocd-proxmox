@@ -21,7 +21,7 @@ spec:
     spec:
       initContainers:
         - name: copy-config
-          image: busybox:1.36
+          image: busybox:1.37
           command: ["sh", "-c", "cp -L /config-ro/* /etc/searxng/"]
           securityContext:
             runAsUser: 0
