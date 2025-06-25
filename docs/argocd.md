@@ -4,16 +4,16 @@ This guide details the setup and configuration of ArgoCD, which serves as the Gi
 
 ## 📋 Overview & Deployment Flow
 
-The cluster uses a **clean, enterprise-grade GitOps approach** with ArgoCD managing itself and three separate ApplicationSets for different workload types. This pattern is commonly used in production environments for clear separation of concerns and simplified management.
+The cluster follows the **k3s-argocd-starter pattern** - a simple, proven GitOps approach where ArgoCD manages itself and ApplicationSets are deployed separately. This eliminates circular dependencies and follows production best practices.
 
-The deployment flow follows this simple pattern:
+The deployment flow follows this clean pattern:
 
 ```mermaid
 graph TD;
     subgraph "Git Repository"
         Bootstrap["argocd-app.yaml<br/>(Bootstrap Application)"]
         
-        InfraAppSet["infrastructure/root-appset.yaml<br/>(Infrastructure ApplicationSet)"]
+        InfraAppSet["infrastructure/infrastructure-components-appset.yaml<br/>(Infrastructure ApplicationSet)"]
         MonAppSet["monitoring/monitoring-components-appset.yaml<br/>(Monitoring ApplicationSet)"]
         AppsAppSet["my-apps/myapplications-appset.yaml<br/>(Applications ApplicationSet)"]
         
@@ -75,20 +75,29 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/downloa
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
 ```
 
-### 2. Bootstrap ArgoCD (One Command Deployment)
-Deploy the self-managing ArgoCD `Application`. This bootstrap application will:
-1. Install ArgoCD itself using Helm
-2. Create all three ApplicationSets automatically
-3. Discover and deploy all infrastructure, monitoring, and applications
+### 2. Bootstrap ArgoCD (k3s-argocd-starter Pattern)
+Deploy ArgoCD and ApplicationSets in the correct order to avoid circular dependencies:
 
 ```bash
-# Apply the ArgoCD bootstrap application - this is the ONLY manual command needed
+# Step 1: Deploy ArgoCD itself
 kubectl apply -f infrastructure/argocd-app.yaml
+
+# Wait for ArgoCD to be ready (2-5 minutes)
+kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
+
+# Step 2: Deploy Infrastructure ApplicationSet
+kubectl apply -f infrastructure/infrastructure-components-appset.yaml
+
+# Step 3: Deploy Monitoring ApplicationSet  
+kubectl apply -f monitoring/monitoring-components-appset.yaml
+
+# Step 4: Deploy Applications ApplicationSet
+kubectl apply -f my-apps/myapplications-appset.yaml
 ```
 
 **That's it!** ArgoCD will now manage itself and deploy everything else automatically.
 
-The bootstrap application references the three ApplicationSets via the ArgoCD kustomization, ensuring they're deployed as part of ArgoCD's self-management.
+This pattern separates ArgoCD's self-management from ApplicationSet deployment, eliminating SharedResourceWarning issues and following proven GitOps practices.
 
 ## 🔧 Project Setup
 
@@ -104,7 +113,7 @@ These `AppProject` resources are defined in `infrastructure/projects.yaml` and a
 
 We use **three simple ApplicationSets** following enterprise patterns:
 
-### 1. Infrastructure ApplicationSet (`infrastructure/root-appset.yaml`)
+### 1. Infrastructure ApplicationSet (`infrastructure/infrastructure-components-appset.yaml`)
 Manages all core infrastructure components:
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -119,6 +128,8 @@ spec:
         revision: HEAD
         directories:
           - path: infrastructure/*/*
+          - path: infrastructure/controllers/argocd
+            exclude: true
   template:
     metadata:
       name: 'infra-{{path.basename}}'
@@ -233,7 +244,7 @@ The repository follows a clean three-tier structure that maps directly to the Ap
 │   ├── storage/             # Longhorn, CSI drivers, etc.
 │   ├── database/            # PostgreSQL, Redis operators
 │   ├── projects.yaml        # ArgoCD projects
-│   └── root-appset.yaml     # Infrastructure ApplicationSet
+│   └── infrastructure-components-appset.yaml     # Infrastructure ApplicationSet
 ├── monitoring/              # Monitoring ApplicationSet
 │   ├── prometheus-stack/    # Prometheus, Grafana, AlertManager
 │   ├── loki-stack/          # Loki, Promtail
@@ -252,8 +263,8 @@ The repository follows a clean three-tier structure that maps directly to the Ap
 
 1. **Self-Managing ArgoCD**:
    - ArgoCD manages its own installation and upgrades
-   - ApplicationSets are deployed as part of ArgoCD's kustomization
-   - Zero manual intervention after bootstrap
+   - ApplicationSets are deployed separately to avoid circular dependencies
+   - Follows k3s-argocd-starter proven pattern
 
 2. **Enterprise Pattern**:
    - Clear separation of concerns with three ApplicationSets
@@ -283,8 +294,13 @@ kubectl apply -k infrastructure/
 
 ### Production Deployment
 ```bash
-# Single command deployment - ArgoCD manages everything from here
+# Step-by-step deployment following k3s-argocd-starter pattern
 kubectl apply -f infrastructure/argocd-app.yaml
+kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
+
+kubectl apply -f infrastructure/infrastructure-components-appset.yaml
+kubectl apply -f monitoring/monitoring-components-appset.yaml
+kubectl apply -f my-apps/myapplications-appset.yaml
 
 # Monitor deployment progress
 kubectl get applications -n argocd -w

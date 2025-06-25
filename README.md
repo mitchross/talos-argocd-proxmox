@@ -144,21 +144,31 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/downloa
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
 ```
 
-### 6. Bootstrap ArgoCD (One Command)
-Deploy the self-managing ArgoCD bootstrap application. This will:
-1. **Install ArgoCD itself** using Helm
-2. **Create all three ApplicationSets** (infrastructure, monitoring, applications)
-3. **Automatically discover and deploy** all components and applications
+### 6. Bootstrap ArgoCD (Following k3s-argocd-starter Pattern)
+
+Deploy ArgoCD and ApplicationSets in the correct order:
 
 ```bash
-# Single command to deploy everything - ArgoCD will manage itself from here
+# Step 1: Deploy ArgoCD itself
 kubectl apply -f infrastructure/argocd-app.yaml
+
+# Wait for ArgoCD to be ready (2-5 minutes)
+kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
+
+# Step 2: Deploy Infrastructure ApplicationSet
+kubectl apply -f infrastructure/infrastructure-components-appset.yaml
+
+# Step 3: Deploy Monitoring ApplicationSet  
+kubectl apply -f monitoring/monitoring-components-appset.yaml
+
+# Step 4: Deploy Applications ApplicationSet
+kubectl apply -f my-apps/myapplications-appset.yaml
 ```
 
 **That's it!** ArgoCD will now:
 - Manage its own installation and upgrades
 - Deploy all infrastructure components (Cilium, storage, etc.)
-- Deploy monitoring stack (Prometheus, Grafana, Loki)
+- Deploy monitoring stack (Prometheus, Grafana, Loki)  
 - Deploy all applications (media, AI, home automation, etc.)
 
 ### 7. Configure Secret Management

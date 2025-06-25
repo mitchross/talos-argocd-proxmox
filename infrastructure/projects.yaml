@@ -4,15 +4,49 @@ metadata:
   name: infrastructure
   namespace: argocd
 spec:
-  description: "Infrastructure components"
+  description: "Infrastructure components - Core cluster services"
   sourceRepos:
-    - '*'
+    - 'https://github.com/mitchross/k3s-argocd-proxmox.git'
   destinations:
-    - namespace: '*'
-      server: '*'
+    - namespace: 'argocd'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'cilium'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'cert-manager'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'external-secrets'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'longhorn-system'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'openebs'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'cloudflared'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'gateway-system'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'cnpg-system'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'redis-operator'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'gpu-operator'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'node-feature-discovery'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'intel-device-plugins-operator'
+      server: 'https://kubernetes.default.svc'
+    - namespace: '1password'
+      server: 'https://kubernetes.default.svc'
   clusterResourceWhitelist:
     - group: '*'
       kind: '*'
+  roles:
+    - name: infrastructure-admin
+      description: "Full access to infrastructure project"
+      policies:
+        - p, proj:infrastructure:infrastructure-admin, applications, *, infrastructure/*, allow
+        - p, proj:infrastructure:infrastructure-admin, repositories, *, *, allow
+      groups:
+        - argocd:infrastructure-admins
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
@@ -20,15 +54,37 @@ metadata:
   name: monitoring
   namespace: argocd
 spec:
-  description: "Monitoring components"
+  description: "Monitoring and observability stack"
   sourceRepos:
-    - '*'
+    - 'https://github.com/mitchross/k3s-argocd-proxmox.git'
   destinations:
-    - namespace: '*'
-      server: '*'
+    - namespace: 'monitoring'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'prometheus-stack'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'loki-stack'
+      server: 'https://kubernetes.default.svc'
   clusterResourceWhitelist:
-    - group: '*'
+    - group: 'monitoring.coreos.com'
       kind: '*'
+    - group: 'rbac.authorization.k8s.io'
+      kind: 'ClusterRole'
+    - group: 'rbac.authorization.k8s.io'
+      kind: 'ClusterRoleBinding'
+    - group: 'apiextensions.k8s.io'
+      kind: 'CustomResourceDefinition'
+    - group: 'admissionregistration.k8s.io'
+      kind: 'MutatingWebhookConfiguration'
+    - group: 'admissionregistration.k8s.io'
+      kind: 'ValidatingWebhookConfiguration'
+  roles:
+    - name: monitoring-admin
+      description: "Full access to monitoring project"
+      policies:
+        - p, proj:monitoring:monitoring-admin, applications, *, monitoring/*, allow
+        - p, proj:monitoring:monitoring-admin, repositories, *, *, allow
+      groups:
+        - argocd:monitoring-admins
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
@@ -36,12 +92,68 @@ metadata:
   name: my-apps
   namespace: argocd
 spec:
-  description: "My applications"
+  description: "User applications and workloads"
   sourceRepos:
-    - '*'
+    - 'https://github.com/mitchross/k3s-argocd-proxmox.git'
   destinations:
-    - namespace: '*'
-      server: '*'
-  clusterResourceWhitelist:
+    - namespace: 'plex'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'jellyfin'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'immich'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'ollama'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'comfyui'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'khoj'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'ollama-webui'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'frigate'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'home-assistant'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'paperless-ngx'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'wyze-bridge'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'headlamp'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'it-tools'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'nginx'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'searxng'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'proxitok'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'libreddit'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'echo-server'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'hoarder'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'homepage-dashboard'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'nestmtx'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'kafka'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'kestra'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'temporal'
+      server: 'https://kubernetes.default.svc'
+    - namespace: 'strimzi'
+      server: 'https://kubernetes.default.svc'
+  namespaceResourceWhitelist:
     - group: '*'
       kind: '*'
+  roles:
+    - name: apps-admin
+      description: "Full access to applications project"
+      policies:
+        - p, proj:my-apps:apps-admin, applications, *, my-apps/*, allow
+        - p, proj:my-apps:apps-admin, repositories, *, *, allow
+      groups:
+        - argocd:apps-admins
