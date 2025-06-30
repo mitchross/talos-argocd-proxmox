@@ -32,7 +32,7 @@ spec:
               mountPath: /etc/searxng
       containers:
         - name: searxng
-          image: searxng/searxng:latest@sha256:bf3d26ca633a7cbc363d6eacf0c5fe0b346ade1af386882dc836e55a263e7ee3
+          image: searxng/searxng:latest@sha256:5a9a87decb510d2bc922dbe62ce5a35226b51ec5760746ae251b7f0ff39aee71
           ports:
             - containerPort: 8080
               name: http
