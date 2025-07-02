@@ -324,9 +324,11 @@ notifications:
   enabled: false
 # Global configuration
 global:
+  # Add domain if you have one
   domain: argocd.vanillax.me
   # Disable legacy redis
-  redis.enabled: false
+  redis:
+    enabled: false
 
   # Security context
   securityContext:
