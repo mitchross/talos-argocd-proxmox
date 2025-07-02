@@ -98,40 +98,43 @@ configs:
     reposerver.parallelism.limit: "10"
     # Enable resource ignore for updates
     controller.resource.ignore.resource.updates.enabled: "true"
+    # Set X-Frame-Options to deny to prevent clickjacking
+    server.x_frame_options: "deny"
 crds:
   install: true
   keep: false
 # Enhanced controller configuration
 controller:
+  replicas: 2 # HA setup
   metrics:
     enabled: true
     serviceMonitor:
       enabled: true
   networkPolicy:
     enabled: true
-    # Allow ingress from the repo-server and server
     ingress:
       - from:
-          - podSelector:
-              matchLabels:
-                app.kubernetes.io/name: argocd-repo-server
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: argocd-repo-server
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: argocd-server
+    egress:
+      - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: argocd-repo-server
         ports:
-          - protocol: TCP
-            port: 8084 # Controller metrics port
-      - from:
-          - podSelector:
-              matchLabels:
-                app.kubernetes.io/name: argocd-server
-        ports:
-          - protocol: TCP
-            port: 8084 # Controller metrics port
+        - protocol: TCP
+          port: 8081
   resources:
     requests:
-      cpu: 250m # Increased for better performance
-      memory: 1Gi # Increased for large clusters
+      cpu: 100m
+      memory: 128Mi
     limits:
-      cpu: 4000m
-      memory: 4Gi # Increased for memory-intensive operations
+      cpu: "1"
+      memory: 256Mi
   env:
     # Optimize controller performance
     - name: ARGOCD_CONTROLLER_REPLICAS
@@ -146,48 +149,60 @@ dex:
   enabled: false
 # Optimized Redis configuration
 redis:
-  resources:
-    requests:
-      cpu: 100m
-      memory: 128Mi # Increased
-    limits:
-      cpu: 2000m
-      memory: 512Mi # Increased for better caching
-  metrics:
-    enabled: true
-    serviceMonitor:
-      enabled: true
+  enabled: false
+
+# Enable redis-ha for a more resilient setup
+redis-ha:
+  enabled: true
+  replicas: 3 # Recommended for a quorum
+  # If you have a dedicated redis operator, you can use that instead
+  # external:
+  #   enabled: false
+  #   service:
+  #     name: "" # my-redis-ha-proxy
+  #     port: 6379
+
 # Enhanced server configuration
 server:
+  replicas: 2 # HA setup
   metrics:
     enabled: true
     serviceMonitor:
       enabled: true
   networkPolicy:
     enabled: true
-    # Allow ingress from the controller, repo-server, and itself for UI/API access
     ingress:
       - from:
-          - podSelector:
-              matchLabels:
-                app.kubernetes.io/name: argocd-application-controller
+        # Allow from ingress controller if you have one
+        # - namespaceSelector: {}
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: argocd-application-controller
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: argocd-repo-server
+    egress:
+      - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: argocd-repo-server
         ports:
-          - protocol: TCP
-            port: 8080 # Main server port
-      - from:
-          - podSelector:
-              matchLabels:
-                app.kubernetes.io/name: argocd-repo-server
+        - protocol: TCP
+          port: 8081
+      - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: argocd-application-controller
         ports:
-          - protocol: TCP
-            port: 8080 # Main server port
+        - protocol: TCP
+          port: 8082 # Controller health check
   resources:
     requests:
-      cpu: 100m # Increased
-      memory: 128Mi # Increased
+      cpu: 100m
+      memory: 128Mi
     limits:
-      cpu: 4000m
-      memory: 2Gi # Increased
+      cpu: 500m
+      memory: 256Mi
   config:
     # Enable gRPC-Web for better performance
     grpc.web: true
@@ -196,22 +211,19 @@ repoServer:
   replicas: 2 # Add replica for HA and performance
   networkPolicy:
     enabled: true
-    # Allow ingress from the server and controller
     ingress:
       - from:
-          - podSelector:
-              matchLabels:
-                app.kubernetes.io/name: argocd-server
-        ports:
-          - protocol: TCP
-            port: 8081 # Repo server GRPC port
-      - from:
-          - podSelector:
-              matchLabels:
-                app.kubernetes.io/name: argocd-application-controller
-        ports:
-          - protocol: TCP
-            port: 8081 # Repo server GRPC port
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: argocd-server
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: argocd-application-controller
+      ports:
+      - protocol: TCP
+        port: 8081
+      - protocol: TCP
+        port: 8084
   containerSecurityContext:
     readOnlyRootFilesystem: true
   volumes:
@@ -226,11 +238,11 @@ repoServer:
         sizeLimit: 2Gi
   resources:
     requests:
-      cpu: 250m # Increased
-      memory: 512Mi # Increased
+      cpu: 100m
+      memory: 256Mi # repo-server can be memory intensive
     limits:
-      cpu: 4000m
-      memory: 2Gi # Increased
+      cpu: "1"
+      memory: 512Mi
   metrics:
     enabled: true
     serviceMonitor:
@@ -280,35 +292,41 @@ repoServer:
           name: helm-cache
 # Enhanced ApplicationSet controller
 applicationSet:
+  replicas: 2 # HA setup
   networkPolicy:
     enabled: true
-    # Allow ingress from the ArgoCD server for ApplicationSet functionality
     ingress:
       - from:
-          - podSelector:
-              matchLabels:
-                app.kubernetes.io/name: argocd-server
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: argocd-server
+    egress:
+      - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: argocd-server
         ports:
-          - protocol: TCP
-            port: 7000 # Webhook server port
+        - protocol: TCP
+          port: 8080 # For webhooks
   metrics:
     enabled: true
     serviceMonitor:
       enabled: true
   resources:
     requests:
-      cpu: 100m # Increased
-      memory: 128Mi # Increased
+      cpu: 100m
+      memory: 128Mi
     limits:
-      cpu: 1000m
-      memory: 1Gi # Increased
+      cpu: 500m
+      memory: 256Mi
 # Keep notifications disabled for now
 notifications:
   enabled: false
 # Global configuration
 global:
-  # Add domain if you have one
-  # domain: argocd.yourdomain.com
+  domain: argocd.vanillax.me
+  # Disable legacy redis
+  redis.enabled: false
 
   # Security context
   securityContext:
