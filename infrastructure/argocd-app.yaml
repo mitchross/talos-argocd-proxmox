@@ -9,7 +9,7 @@ metadata:
 spec:
   # The 'default' project is used for managing Argo CD itself.
   # This project is created by default by Argo CD.
-  project: default
+  project: infrastructure
   source:
     # IMPORTANT: Please verify this is the correct URL for your Git repository.
     repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
