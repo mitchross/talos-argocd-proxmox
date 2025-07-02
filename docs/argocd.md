@@ -79,19 +79,23 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/downloa
 Deploy ArgoCD and ApplicationSets in the correct order to avoid circular dependencies:
 
 ```bash
-# Step 1: Deploy ArgoCD itself
-kubectl apply -f infrastructure/argocd-app.yaml
+# Step 1: Install ArgoCD Components & CRDs
+# This command uses kustomize to install the ArgoCD helm chart, which includes the CRDs.
+kubectl apply -k infrastructure/controllers/argocd
 
 # Wait for ArgoCD to be ready (2-5 minutes)
 kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
 
-# Step 2: Deploy Infrastructure ApplicationSet
+# Step 2: Bootstrap ArgoCD to Manage Itself and Create Projects
+# Now that ArgoCD is running, we apply the Application resource that tells
+# ArgoCD to manage its own installation from Git. We also apply the projects.
+kubectl apply -f infrastructure/controllers/argocd/projects.yaml
+kubectl apply -f infrastructure/argocd-app.yaml
+
+# Step 3: Deploy ApplicationSets
+# With ArgoCD managing itself and projects created, we can deploy the ApplicationSets.
 kubectl apply -f infrastructure/infrastructure-components-appset.yaml
-
-# Step 3: Deploy Monitoring ApplicationSet  
 kubectl apply -f monitoring/monitoring-components-appset.yaml
-
-# Step 4: Deploy Applications ApplicationSet
 kubectl apply -f my-apps/myapplications-appset.yaml
 ```
 
@@ -294,10 +298,17 @@ kubectl apply -k infrastructure/
 
 ### Production Deployment
 ```bash
-# Step-by-step deployment following k3s-argocd-starter pattern
-kubectl apply -f infrastructure/argocd-app.yaml
+# Step 1: Install ArgoCD Components & CRDs
+kubectl apply -k infrastructure/controllers/argocd
+
+# Wait for ArgoCD to be ready
 kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
 
+# Step 2: Bootstrap ArgoCD to Manage Itself and Create Projects
+kubectl apply -f infrastructure/controllers/argocd/projects.yaml
+kubectl apply -f infrastructure/argocd-app.yaml
+
+# Step 3: Deploy ApplicationSets
 kubectl apply -f infrastructure/infrastructure-components-appset.yaml
 kubectl apply -f monitoring/monitoring-components-appset.yaml
 kubectl apply -f my-apps/myapplications-appset.yaml

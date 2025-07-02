@@ -23,5 +23,13 @@ spec:
     automated:
       prune: true # Delete resources that are no longer defined in Git
       selfHeal: true # Automatically sync when the live state drifts from Git
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
     syncOptions:
-      - CreateNamespace=true # Create the 'argocd' namespace if it doesn't exist 
+      - CreateNamespace=true # Create the 'argocd' namespace if it doesn't exist
+      - ServerSideApply=true # Use server-side apply for fewer conflicts
+      - PrunePropagationPolicy=foreground # Ensures resources are deleted before the owner

@@ -89,4 +89,16 @@ config.xml
 /infrastructure/networking/cilium/charts
 *.log
 credentials.base64
-credentials.base64
+
+# Credentials
+*.json
+*.base64
+*.auto.tfvars
+
+# Terraform state
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# Mac OS
+.DS_Store

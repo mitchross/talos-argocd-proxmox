@@ -8,14 +8,8 @@ A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux f
 
 - [Prerequisites](#-prerequisites)
 - [Architecture](#-architecture)
+- [GitOps Architecture](#️-gitops-architecture)
 - [Quick Start](#-quick-start)
-  - [1. System Dependencies](#1-system-dependencies)
-  - [2. Generate Talos Configs](#2-generate-talos-configs-with-talhelper)
-  - [3. Boot & Bootstrap Talos Nodes](#3-boot--bootstrap-talos-nodes)
-  - [4. Apply Machine Configs](#4-apply-machine-configs)
-  - [5. Install Gateway API CRDs](#5-install-gateway-api-crds)
-  - [6. Bootstrap ArgoCD (One Command)](#6-bootstrap-argocd-one-command)
-  - [7. Configure Secret Management](#7-configure-secret-management)
 - [Verification](#-verification)
 - [Documentation](#-documentation)
 - [Hardware Stack](#-hardware-stack)
@@ -99,6 +93,48 @@ graph TD;
 - **GPU Integration**: Full NVIDIA GPU support via Talos system extensions and GPU Operator
 - **Zero SSH**: All node management via Talosctl API
 
+## 🏗️ GitOps Architecture
+
+This repository implements a **production-grade GitOps workflow** using a multi-tiered ApplicationSet pattern. This separates concerns, simplifies management, and provides a clear, scalable structure.
+
+### Self-Managing ArgoCD
+
+The process starts with a single command to install ArgoCD's components and CRDs. Then, a single `Application` resource (`infrastructure/argocd-app.yaml`) is applied, which configures ArgoCD to manage its own installation and upgrades directly from this Git repository. This is the core of the **self-healing infrastructure** pattern.
+
+### Three-Tier ApplicationSets
+
+The cluster is organized into three distinct `ApplicationSet` resources, each responsible for a different layer of the stack. This provides clear separation of concerns and access control.
+
+| ApplicationSet | Directory | Deploys | Description |
+| :--- | :--- | :--- | :--- |
+| **Infrastructure** | `infrastructure/` | Core Services | Manages essential components like ArgoCD, Cilium, storage, and other operators. |
+| **Monitoring** | `monitoring/` | Observability | Deploys the full monitoring stack, including Prometheus, Grafana, and Loki. |
+| **Applications** | `my-apps/` | User Workloads | Manages all end-user applications, such as Plex, Ollama, and Home Assistant. |
+
+Each `ApplicationSet` automatically discovers new applications when a new directory is added to its designated path (e.g., adding `my-apps/new-app/` will automatically create a new ArgoCD application).
+
+### Directory Structure
+
+The repository's structure directly maps to the ApplicationSet strategy, making it intuitive to manage.
+
+```
+.
+├── infrastructure/           #  Infrastucture ApplicationSet
+│   ├── controllers/
+│   │   └── argocd/           # ArgoCD self-management config
+│   ├── networking/           # Cilium, Gateway API, etc.
+│   ├── storage/              # Longhorn, CSI drivers, etc.
+│   └── infrastructure-components-appset.yaml
+├── monitoring/               # Monitoring ApplicationSet
+│   ├── prometheus-stack/     # Prometheus, Grafana, etc.
+│   └── monitoring-components-appset.yaml
+├── my-apps/                  # Applications ApplicationSet
+│   ├── ai/                   # AI tools
+│   ├── media/                # Media servers
+│   └── myapplications-appset.yaml
+└── docs/                     # Documentation
+```
+
 ## 🚀 Quick Start
 
 ### 1. System Dependencies
@@ -146,23 +182,34 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/downloa
 
 ### 6. Bootstrap ArgoCD (Following k3s-argocd-starter Pattern)
 
+This cluster uses a **proven GitOps bootstrap pattern** that ensures stability and avoids common race conditions. The process is carefully ordered:
+
+1.  **Install CRDs First**: We use `kustomize` to apply the base ArgoCD Helm chart, which safely installs the necessary Custom Resource Definitions (CRDs) into the cluster.
+2.  **Bootstrap Self-Management**: With the CRDs in place, we apply the `projects.yaml` and the root `argocd-app.yaml`. This tells the running ArgoCD instance to take over its own management from Git.
+3.  **Deploy ApplicationSets**: Once ArgoCD is self-managing, we deploy the three ApplicationSets, which then automatically discover and deploy all other applications and components.
+
+This method prevents errors by ensuring resources are created only after their definitions are available in the cluster.
+
 Deploy ArgoCD and ApplicationSets in the correct order:
 
 ```bash
-# Step 1: Deploy ArgoCD itself
-kubectl apply -f infrastructure/argocd-app.yaml
-kubectl apply -f infrastructure/projects.yaml
+# Step 1: Install ArgoCD Components & CRDs
+# This uses kustomize to install the ArgoCD helm chart, which includes the CRDs.
+kubectl apply -k infrastructure/controllers/argocd
 
 # Wait for ArgoCD to be ready (2-5 minutes)
 kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
 
-# Step 2: Deploy Infrastructure ApplicationSet
+# Step 2: Bootstrap ArgoCD to Manage Itself and Create Projects
+# Now that ArgoCD is running, we apply the Application resource that tells
+# ArgoCD to manage its own installation from Git. We also apply the projects.
+kubectl apply -f infrastructure/controllers/argocd/projects.yaml
+kubectl apply -f infrastructure/argocd-app.yaml
+
+# Step 3: Deploy ApplicationSets
+# With ArgoCD managing itself, we can deploy the ApplicationSets.
 kubectl apply -f infrastructure/infrastructure-components-appset.yaml
-
-# Step 3: Deploy Monitoring ApplicationSet  
 kubectl apply -f monitoring/monitoring-components-appset.yaml
-
-# Step 4: Deploy Applications ApplicationSet
 kubectl apply -f my-apps/myapplications-appset.yaml
 ```
 
@@ -211,9 +258,9 @@ This cluster uses **TrueNAS Scale MinIO** for S3-compatible storage backups, par
 
 ### MinIO Setup on TrueNAS Scale
 
-1. **Install MinIO App** in TrueNAS Scale Apps
-2. **Access MinIO Console** at `http://192.168.10.133:9002`
-3. **Configure via MinIO Client (mc)**:
+1.  **Install MinIO App** in TrueNAS Scale Apps
+2.  **Access MinIO Console** at `http://192.168.10.133:9002`
+3.  **Configure via MinIO Client (mc)**:
 
 ```bash
 # Access MinIO container shell in TrueNAS
@@ -277,19 +324,19 @@ mc ls local/longhorn-backups
 
 Store MinIO credentials securely in 1Password:
 
-1. **Create 1Password item** named `minio`
-2. **Add fields**:
-   - `minio_access_key`: `ABC123XYZ789EXAMPLE0`
-   - `minio_secret_key`: `ExampleSecretKey123+RandomChars/ForDocumentation`  
-   - `minio_endpoint`: `http://192.168.10.133:9000`
+1.  **Create 1Password item** named `minio`
+2.  **Add fields**:
+    -   `minio_access_key`: `ABC123XYZ789EXAMPLE0`
+    -   `minio_secret_key`: `ExampleSecretKey123+RandomChars/ForDocumentation`  
+    -   `minio_endpoint`: `http://192.168.10.133:9000`
 
 ### Longhorn S3 Backup Configuration
 
 The cluster automatically configures Longhorn to use MinIO via:
 
-- **External Secret**: `infrastructure/storage/longhorn/externalsecret.yaml`
-- **Backup Settings**: `infrastructure/storage/longhorn/backup-settings.yaml`
-- **Backup Target**: `s3://longhorn-backups@us-east-1/`
+-   **External Secret**: `infrastructure/storage/longhorn/externalsecret.yaml`
+-   **Backup Settings**: `infrastructure/storage/longhorn/backup-settings.yaml`
+-   **Backup Target**: `s3://longhorn-backups@us-east-1/`
 
 ### Backup Schedule
 
@@ -377,48 +424,6 @@ While this setup uses a single node, you can add worker nodes for additional com
 | **Worker Nodes** | Add compute-only nodes | Increased capacity without storage complexity |
 | **Multi-Master** | High availability control plane | Production-grade resilience |
 
-## 📁 Directory Structure
-
-```
-.
-├── infrastructure/           # Infrastructure ApplicationSet
-│   ├── controllers/          # ArgoCD, External Secrets, etc.
-│   │   └── argocd/           # ArgoCD self-management configuration
-│   ├── networking/           # Cilium, Gateway API, etc.
-│   ├── storage/              # Longhorn, CSI drivers, etc.
-│   ├── database/             # PostgreSQL, Redis operators
-│   ├── projects.yaml         # ArgoCD projects
-│   └── root-appset.yaml      # Infrastructure ApplicationSet
-├── monitoring/               # Monitoring ApplicationSet
-│   ├── prometheus-stack/     # Prometheus, Grafana, AlertManager
-│   ├── loki-stack/           # Loki, Promtail
-│   └── monitoring-components-appset.yaml
-├── my-apps/                  # Applications ApplicationSet
-│   ├── ai/                   # AI tools (Ollama, ComfyUI, etc.)
-│   ├── media/                # Media servers (Plex, Jellyfin, etc.)
-│   ├── home/                 # Home automation (Frigate, HA, etc.)
-│   ├── development/          # Dev tools (Headlamp, IT-Tools, etc.)
-│   ├── privacy/              # Privacy tools (SearXNG, ProxiTok, etc.)
-│   └── myapplications-appset.yaml
-└── docs/                     # Documentation
-    ├── argocd.md             # Enterprise GitOps setup
-    ├── network.md            # Network configuration
-    ├── security.md           # Security setup
-    ├── storage.md            # Storage configuration
-    └── external-services.md  # External services setup
-```
-
-## ✅ Enterprise GitOps Features
-
-This setup implements **production-grade patterns** used in enterprise environments:
-
-1. **Self-Managing Infrastructure**: ArgoCD manages its own lifecycle
-2. **Clear Separation of Concerns**: Three distinct ApplicationSets
-3. **Simple Directory Discovery**: Easy for developers to add applications
-4. **Automated Operations**: Zero-touch deployments after bootstrap
-5. **Production Monitoring**: Full observability stack
-6. **Proper RBAC**: Project-based access controls
-
 ## 🔍 Troubleshooting
 
 | Issue Type | Troubleshooting Steps |
@@ -453,20 +458,20 @@ kubectl apply -f infrastructure/argocd-app.yaml
 
 This homelab setup translates directly to enterprise environments:
 
-1. **Replace Git repo** with your organization's repository
-2. **Add proper RBAC** for team-based access
-3. **Configure notifications** for Slack/Teams integration  
-4. **Add policy enforcement** with tools like OPA Gatekeeper
-5. **Implement proper secrets management** with External Secrets or Vault
-6. **Add multi-cluster support** with ArgoCD ApplicationSets
+1.  **Replace Git repo** with your organization's repository
+2.  **Add proper RBAC** for team-based access
+3.  **Configure notifications** for Slack/Teams integration  
+4.  **Add policy enforcement** with tools like OPA Gatekeeper
+5.  **Implement proper secrets management** with External Secrets or Vault
+6.  **Add multi-cluster support** with ArgoCD ApplicationSets
 
 The patterns and structure remain the same - this is **production-grade GitOps**.
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Submit a pull request
+1.  Fork the repository
+2.  Create a feature branch
+3.  Submit a pull request
 
 ## 📜 License
 
