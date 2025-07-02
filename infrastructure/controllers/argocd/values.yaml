@@ -214,8 +214,6 @@ repoServer:
         # Plugin-specific environment
         - name: KUSTOMIZE_PLUGIN_HOME
           value: /tmp/kustomize-plugins
-        - name: HELM_CACHE_HOME
-          value: /tmp/helm-cache
       volumeMounts:
         - name: plugins
           mountPath: /home/argocd/cmp-server/plugins

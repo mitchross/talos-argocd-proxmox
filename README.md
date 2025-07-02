@@ -8,15 +8,18 @@ A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux f
 
 - [Prerequisites](#-prerequisites)
 - [Architecture](#-architecture)
-- [GitOps Architecture](#️-gitops-architecture)
 - [Quick Start](#-quick-start)
+  - [1. System Dependencies](#1-system-dependencies)
+  - [2. Generate Talos Configs](#2-generate-talos-configs)
+  - [3. Boot & Bootstrap Talos Nodes](#3-boot--bootstrap-talos-nodes)
+  - [4. Install Gateway API CRDs](#4-install-gateway-api-crds)
+  - [5. Configure Secret Management](#5-configure-secret-management)
+  - [6. Bootstrap ArgoCD & Deploy The Stack](#6-bootstrap-argocd--deploy-the-stack)
 - [Verification](#-verification)
+- [Talos-Specific Notes](#️-talos-specific-notes)
+- [MinIO S3 Backup Configuration](#-minio-s3-backup-configuration)
 - [Documentation](#-documentation)
-- [Hardware Stack](#-hardware-stack)
-- [Scaling](#-scaling-options)
 - [Troubleshooting](#-troubleshooting)
-- [Contributing](#-contributing)
-- [License](#-license)
 
 ## 📋 Prerequisites
 
@@ -24,8 +27,7 @@ A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux f
 - Domain configured in Cloudflare
 - 1Password account for secrets management
 - [Talosctl](https://www.talos.dev/v1.10/introduction/getting-started/) and [Talhelper](https://github.com/budimanjojo/talhelper) installed
-- `kubectl` installed locally
-- `cloudflared` installed locally
+- `kubectl`, `kustomize`, `sops` installed locally
 
 ## 🏗️ Architecture
 
@@ -93,155 +95,137 @@ graph TD;
 - **GPU Integration**: Full NVIDIA GPU support via Talos system extensions and GPU Operator
 - **Zero SSH**: All node management via Talosctl API
 
-## 🏗️ GitOps Architecture
-
-This repository implements a **production-grade GitOps workflow** using a multi-tiered ApplicationSet pattern. This separates concerns, simplifies management, and provides a clear, scalable structure.
-
-### Self-Managing ArgoCD
-
-The process starts with a single command to install ArgoCD's components and CRDs. Then, a single `Application` resource (`infrastructure/argocd-app.yaml`) is applied, which configures ArgoCD to manage its own installation and upgrades directly from this Git repository. This is the core of the **self-healing infrastructure** pattern.
-
-### Three-Tier ApplicationSets
-
-The cluster is organized into three distinct `ApplicationSet` resources, each responsible for a different layer of the stack. This provides clear separation of concerns and access control.
-
-| ApplicationSet | Directory | Deploys | Description |
-| :--- | :--- | :--- | :--- |
-| **Infrastructure** | `infrastructure/` | Core Services | Manages essential components like ArgoCD, Cilium, storage, and other operators. |
-| **Monitoring** | `monitoring/` | Observability | Deploys the full monitoring stack, including Prometheus, Grafana, and Loki. |
-| **Applications** | `my-apps/` | User Workloads | Manages all end-user applications, such as Plex, Ollama, and Home Assistant. |
-
-Each `ApplicationSet` automatically discovers new applications when a new directory is added to its designated path (e.g., adding `my-apps/new-app/` will automatically create a new ArgoCD application).
-
-### Directory Structure
-
-The repository's structure directly maps to the ApplicationSet strategy, making it intuitive to manage.
-
-```
-.
-├── infrastructure/           #  Infrastucture ApplicationSet
-│   ├── controllers/
-│   │   └── argocd/           # ArgoCD self-management config
-│   ├── networking/           # Cilium, Gateway API, etc.
-│   ├── storage/              # Longhorn, CSI drivers, etc.
-│   └── infrastructure-components-appset.yaml
-├── monitoring/               # Monitoring ApplicationSet
-│   ├── prometheus-stack/     # Prometheus, Grafana, etc.
-│   └── monitoring-components-appset.yaml
-├── my-apps/                  # Applications ApplicationSet
-│   ├── ai/                   # AI tools
-│   ├── media/                # Media servers
-│   └── myapplications-appset.yaml
-└── docs/                     # Documentation
-```
-
 ## 🚀 Quick Start
 
 ### 1. System Dependencies
 ```bash
-# On your workstation
-brew install talosctl sops yq kubectl
+# On your macOS workstation using Homebrew
+brew install talosctl sops yq kubectl kustomize
 brew install budimanjojo/tap/talhelper
-# Or see Talos/Talhelper docs for Linux/Windows
+
+# For Linux/Windows, please see the official installation docs for each tool.
 ```
 
-### 2. Generate Talos Configs (with Talhelper)
+### 2. Generate Talos Configs
 ```bash
+# Navigate to the Talos configuration directory
 cd iac/talos
-# Edit talconfig.yaml for your cluster topology
-# Generate secrets (encrypted with SOPS)
+
+# Edit talconfig.yaml to match your cluster topology and node IPs
+# Then, generate the encrypted secrets file
 talhelper gensecret > talsecret.sops.yaml
-sops -e -i talsecret.sops.yaml
-# Generate node configs
+
+# IMPORTANT: You must encrypt the file with SOPS for Talos to use it
+sops --encrypt --in-place talsecret.sops.yaml
+
+# Generate the machine configs for each node
 talhelper genconfig
 ```
 
 ### 3. Boot & Bootstrap Talos Nodes
-- Boot each VM/host with the generated Talos `machine.yaml` (PXE, ISO, or cloud-init)
-- Use `talosctl` to bootstrap the control plane:
+- Boot each VM or bare-metal host with its corresponding generated ISO from `iac/talos/clusterconfig/`.
+- Set your `TALOSCONFIG` and `KUBECONFIG` environment variables to point to the generated files.
 ```bash
-# Set kubeconfig and talosconfig env vars
-export TALOSCONFIG=./clusterconfig/talosconfig
-export KUBECONFIG=./clusterconfig/kubeconfig
-# Bootstrap the cluster
-# (Run ONCE, on a single control plane node)
+# Set environment variables for your shell session
+export TALOSCONFIG=./iac/talos/clusterconfig/talosconfig
+export KUBECONFIG=./iac/talos/clusterconfig/kubeconfig
+```
+- Bootstrap the cluster on a **single control plane node**.
+```bash
+# Run ONCE on a single control plane node IP
 talosctl bootstrap --nodes <control-plane-ip>
 ```
-
-### 4. Apply Machine Configs
+- Apply the machine configuration to all nodes in the cluster.
 ```bash
-# Apply config to all nodes
-talosctl apply-config --insecure --nodes <node-ip> --file clusterconfig/<node>.yaml
+talosctl apply-config --insecure --nodes <node-ip-1> --file iac/talos/clusterconfig/<node-1-name>.yaml
+talosctl apply-config --insecure --nodes <node-ip-2> --file iac/talos/clusterconfig/<node-2-name>.yaml
+# ... repeat for all nodes
 ```
 
-### 5. Install Gateway API CRDs
+### 4. Install Gateway API CRDs
+This is a prerequisite for Cilium's Gateway API integration.
 ```bash
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
 ```
 
-### 6. Bootstrap ArgoCD (Following k3s-argocd-starter Pattern)
+### 5. Configure Secret Management
+This cluster uses [1Password Connect](https://developer.1password.com/docs/connect) and [External Secrets Operator](https://external-secrets.io/) to manage secrets.
 
-This cluster uses a **proven GitOps bootstrap pattern** that ensures stability and avoids common race conditions. The process is carefully ordered:
+1.  **Generate 1Password Connect Credentials**: Follow the [1Password documentation](https://developer.1password.com/docs/connect/get-started#step-2-deploy-the-1password-connect-server) to generate your `1password-credentials.json` file and your access token.
 
-1.  **Install CRDs First**: We use `kustomize` to apply the base ArgoCD Helm chart, which safely installs the necessary Custom Resource Definitions (CRDs) into the cluster.
-2.  **Bootstrap Self-Management**: With the CRDs in place, we apply the `projects.yaml` and the root `argocd-app.yaml`. This tells the running ArgoCD instance to take over its own management from Git.
-3.  **Deploy ApplicationSets**: Once ArgoCD is self-managing, we deploy the three ApplicationSets, which then automatically discover and deploy all other applications and components.
+2.  **Create Namespaces**:
+    ```bash
+    kubectl create namespace 1passwordconnect
+    kubectl create namespace external-secrets
+    ```
 
-This method prevents errors by ensuring resources are created only after their definitions are available in the cluster.
+3.  **Create Kubernetes Secrets**:
+    ```bash
+    # IMPORTANT: Place your generated `1password-credentials.json` in the root of this repository first.
+    kubectl create secret generic 1password-credentials \
+      --from-file=1password-credentials.json \
+      --namespace 1passwordconnect
 
-Deploy ArgoCD and ApplicationSets in the correct order:
+    # Replace YOUR_CONNECT_TOKEN with your actual token
+    export CONNECT_TOKEN="YOUR_CONNECT_TOKEN"
+
+    kubectl create secret generic 1password-operator-token \
+      --from-literal=token=$CONNECT_TOKEN \
+      --namespace 1passwordconnect
+
+    kubectl create secret generic 1passwordconnect \
+      --from-literal=token=$CONNECT_TOKEN \
+      --namespace external-secrets
+    ```
+
+### 6. Bootstrap ArgoCD & Deploy The Stack
+This final step uses a carefully ordered process to install ArgoCD and then deploy every other component.
 
 ```bash
-# Step 1: Install ArgoCD Components & CRDs
-# This uses kustomize to install the ArgoCD helm chart, which includes the CRDs.
-kubectl apply -k infrastructure/controllers/argocd
+# 1. Install ArgoCD Components & CRDs
+# This uses kustomize to build the official Helm chart and apply the manifests.
+kustomize build infrastructure/controllers/argocd --enable-helm | kubectl apply -f -
 
-# Wait for ArgoCD to be ready (2-5 minutes)
+# 2. Wait for ArgoCD to be ready (2-5 minutes)
 kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
 
-# Step 2: Bootstrap ArgoCD to Manage Itself and Create Projects
+# 3. Bootstrap ArgoCD to Manage Itself and Create Projects
 # Now that ArgoCD is running, we apply the Application resource that tells
 # ArgoCD to manage its own installation from Git. We also apply the projects.
 kubectl apply -f infrastructure/controllers/argocd/projects.yaml
 kubectl apply -f infrastructure/argocd-app.yaml
 
-# Step 3: Deploy ApplicationSets
-# With ArgoCD managing itself, we can deploy the ApplicationSets.
+# 4. Deploy the ApplicationSets
+# With ArgoCD managing itself, we can now deploy the ApplicationSets,
+# which will discover and sync all other applications.
 kubectl apply -f infrastructure/infrastructure-components-appset.yaml
 kubectl apply -f monitoring/monitoring-components-appset.yaml
 kubectl apply -f my-apps/myapplications-appset.yaml
 ```
+**That's it!** ArgoCD will now build the entire cluster state from the Git repository.
 
-**That's it!** ArgoCD will now:
-- Manage its own installation and upgrades
-- Deploy all infrastructure components (Cilium, storage, etc.)
-- Deploy monitoring stack (Prometheus, Grafana, Loki)  
-- Deploy all applications (media, AI, home automation, etc.)
+## 🔍 Verification
+After the final step, you can monitor the deployment and verify that everything is working correctly.
 
-### 7. Configure Secret Management
 ```bash
-# Create required namespaces
-kubectl create namespace 1passwordconnect
-kubectl create namespace external-secrets
+# Check Talos node health (run for each node)
+talosctl health --nodes <node-ip>
 
-# Generate and apply 1Password Connect credentials
-# This command creates 1password-credentials.json
-op connect server create
-export CONNECT_TOKEN="your-1password-connect-token"
+# Watch ArgoCD sync status
+# The `STATUS` column should eventually show `Synced` for all applications
+kubectl get applications -n argocd -w
 
-# Create required secrets
-kubectl create secret generic 1password-credentials \
-  --from-file=1password-credentials.json=1password-credentials.base64 \
-  --namespace 1passwordconnect
+# Verify all pods are running across the cluster
+# It may take 10-15 minutes for all images to pull and pods to become Ready.
+kubectl get pods -A
 
-kubectl create secret generic 1password-operator-token \
-  --from-literal=token=$CONNECT_TOKEN \
-  --namespace 1passwordconnect
+# Check that secrets have been populated by External Secrets
+kubectl get externalsecret -A
+# You should see secrets like `cloudflare-api-credentials` in the `cert-manager` namespace
 
-kubectl create secret generic 1passwordconnect \
-  --from-literal=token=$CONNECT_TOKEN \
-  --namespace external-secrets
+# Verify the Longhorn UI is accessible and backups are configured
+kubectl get backuptarget -n longhorn-system
 ```
 
 ## 🛡️ Talos-Specific Notes
@@ -347,37 +331,6 @@ Automated backups are configured with different tiers:
 | **Critical** | Hourly | Daily (2 AM) | 30 days |
 | **Important** | Every 4 hours | Daily (3 AM) | 14 days |
 | **Standard** | Daily | Weekly | 4 weeks |
-
-## 🔍 Verification
-```bash
-# Check Talos node health
-talosctl health --nodes <node-ip>
-
-# Check Kubernetes core components
-kubectl get pods -A
-cilium status
-
-# Check ArgoCD self-management
-kubectl get applications -n argocd
-kubectl get applicationsets -n argocd
-
-# Check generated applications
-kubectl get applications -n argocd -l type=infrastructure
-kubectl get applications -n argocd -l type=monitoring  
-kubectl get applications -n argocd -l type=application
-
-# Check secrets
-kubectl get pods -n 1passwordconnect
-kubectl get externalsecret -A
-
-# Verify Longhorn backup configuration
-kubectl get backuptarget -n longhorn-system
-kubectl get secret longhorn-backup-credentials -n longhorn-system
-
-# Test MinIO connectivity from cluster
-kubectl run -it --rm debug --image=minio/mc --restart=Never -- \
-  mc alias set test http://192.168.10.133:9000 <access-key> <secret-key>
-```
 
 ## 📋 Documentation
 - **[View Documentation Online](https://mitchross.github.io/k3s-argocd-proxmox)** - Full documentation website
