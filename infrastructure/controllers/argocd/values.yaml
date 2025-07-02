@@ -107,6 +107,24 @@ controller:
     enabled: true
     serviceMonitor:
       enabled: true
+  networkPolicy:
+    enabled: true
+    # Allow ingress from the repo-server and server
+    ingress:
+      - from:
+          - podSelector:
+              matchLabels:
+                app.kubernetes.io/name: argocd-repo-server
+        ports:
+          - protocol: TCP
+            port: 8084 # Controller metrics port
+      - from:
+          - podSelector:
+              matchLabels:
+                app.kubernetes.io/name: argocd-server
+        ports:
+          - protocol: TCP
+            port: 8084 # Controller metrics port
   resources:
     requests:
       cpu: 250m # Increased for better performance
@@ -145,19 +163,55 @@ server:
     enabled: true
     serviceMonitor:
       enabled: true
+  networkPolicy:
+    enabled: true
+    # Allow ingress from the controller, repo-server, and itself for UI/API access
+    ingress:
+      - from:
+          - podSelector:
+              matchLabels:
+                app.kubernetes.io/name: argocd-application-controller
+        ports:
+          - protocol: TCP
+            port: 8080 # Main server port
+      - from:
+          - podSelector:
+              matchLabels:
+                app.kubernetes.io/name: argocd-repo-server
+        ports:
+          - protocol: TCP
+            port: 8080 # Main server port
   resources:
     requests:
       cpu: 100m # Increased
       memory: 128Mi # Increased
     limits:
       cpu: 4000m
-      memory: 1Gi # Increased
+      memory: 2Gi # Increased
   config:
     # Enable gRPC-Web for better performance
     grpc.web: true
 # Enhanced repo server configuration
 repoServer:
   replicas: 2 # Add replica for HA and performance
+  networkPolicy:
+    enabled: true
+    # Allow ingress from the server and controller
+    ingress:
+      - from:
+          - podSelector:
+              matchLabels:
+                app.kubernetes.io/name: argocd-server
+        ports:
+          - protocol: TCP
+            port: 8081 # Repo server GRPC port
+      - from:
+          - podSelector:
+              matchLabels:
+                app.kubernetes.io/name: argocd-application-controller
+        ports:
+          - protocol: TCP
+            port: 8081 # Repo server GRPC port
   containerSecurityContext:
     readOnlyRootFilesystem: true
   volumes:
@@ -226,6 +280,17 @@ repoServer:
           name: helm-cache
 # Enhanced ApplicationSet controller
 applicationSet:
+  networkPolicy:
+    enabled: true
+    # Allow ingress from the ArgoCD server for ApplicationSet functionality
+    ingress:
+      - from:
+          - podSelector:
+              matchLabels:
+                app.kubernetes.io/name: argocd-server
+        ports:
+          - protocol: TCP
+            port: 7000 # Webhook server port
   metrics:
     enabled: true
     serviceMonitor:
