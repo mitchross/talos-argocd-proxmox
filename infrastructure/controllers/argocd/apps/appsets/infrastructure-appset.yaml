@@ -11,9 +11,9 @@ spec:
     - git:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git # TODO: Replace with your repo URL
         revision: HEAD
-        # Discover any application directory within the infrastructure/controllers path...
+        # Discover any application directory within the infrastructure/controllers/apps path.
         directories:
-          - path: "infrastructure/controllers/*"
+          - path: "infrastructure/controllers/apps/*"
     - git:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git # TODO: Replace with your repo URL
         revision: HEAD
