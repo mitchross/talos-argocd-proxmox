@@ -102,3 +102,4 @@ credentials.base64
 
 # Mac OS
 .DS_Store
+/infrastructure/argocd/charts
