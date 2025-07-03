@@ -146,20 +146,30 @@ This cluster uses [1Password Connect](https://developer.1password.com/docs/conne
     ```
 
 ### 6. Bootstrap ArgoCD & Deploy The Stack
-This final step uses our "App of Apps" pattern to bootstrap the entire cluster from a single command.
+This final step uses our "App of Apps" pattern to bootstrap the entire cluster. This is a multi-step process to avoid race conditions with CRD installation.
 
 ```bash
-# 1. Apply the ArgoCD Bootstrap Manifests
-# This single command does everything:
-#  - Deploys the ArgoCD Helm chart, including its CRDs.
-#  - Deploys the 'root' Application, which points to our self-managing configuration.
+# 1. Apply the ArgoCD main components and CRDs
+# This deploys the ArgoCD Helm chart, which creates the CRDs and controller.
 kustomize build infrastructure/controllers/argocd --enable-helm | kubectl apply -f -
 
-# 2. Wait for ArgoCD to be ready (2-5 minutes)
-# This ensures the ArgoCD server is running before you try to access its UI or API.
+# 2. Wait for the ArgoCD CRDs to be established in the cluster
+# This command pauses until the Kubernetes API server recognizes the 'Application' resource type.
+echo "Waiting for ArgoCD CRDs to be established..."
+kubectl wait --for condition=established --timeout=60s crd/applications.argoproj.io
+
+# 3. Wait for the ArgoCD server to be ready
+# This ensures the ArgoCD server is running before we apply the root application.
+echo "Waiting for ArgoCD server to be available..."
 kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
+
+# 4. Apply the Root Application
+# Now that ArgoCD is running and its CRDs are ready, we can apply the 'root' application
+# to kickstart the self-managing GitOps loop.
+echo "Applying the root application..."
+kubectl apply -f infrastructure/controllers/argocd/root.yaml
 ```
-**That's it!** You have successfully bootstrapped the cluster.
+**That's it!** You have successfully and reliably bootstrapped the cluster.
 
 ### What Happens Next Automatically?
 
@@ -367,7 +377,10 @@ kubectl get applicationsets -n argocd -o name | xargs -I{} kubectl patch {} -n a
 kubectl delete applicationsets --all -n argocd
 
 # Bootstrap with the new enterprise pattern
+# Note: This is the full, correct bootstrap sequence.
 kustomize build infrastructure/controllers/argocd --enable-helm | kubectl apply -f -
+kubectl wait --for condition=established --timeout=60s crd/applications.argoproj.io
+kubectl apply -f infrastructure/controllers/argocd/root.yaml
 ```
 
 ## 🚀 Taking to Production
