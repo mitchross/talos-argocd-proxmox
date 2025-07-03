@@ -11,30 +11,26 @@ spec:
     - git:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git # TODO: Replace with your repo URL
         revision: HEAD
-        # Discover any 'argo-app.yaml' file within the my-apps directory.
-        files:
-          - path: "my-apps/**/argo-app.yaml"
+        # Discover any application directory within the my-apps/*/* path.
+        directories:
+          - path: my-apps/*/*
   template:
     metadata:
-      # The name is dynamically set from the 'name' field in each argo-app.yaml
-      name: '{{name}}'
+      # Name is derived from the path, e.g., 'ai-ollama'
+      name: '{{path.elements[1]}}-{{path.basename}}'
       namespace: argocd
-      finalizers:
-        - resources-finalizer.argocd.argoproj.io
     spec:
       project: my-apps
       source:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git # TODO: Replace with your repo URL
         targetRevision: HEAD
-        # The path points directly to the directory containing the argo-app.yaml file.
-        path: '{{path.directory}}'
-        # Instruct Argo CD's Kustomize builder to enable Helm chart support.
+        path: '{{path}}'
         kustomize:
           buildOptions: "--enable-helm"
       destination:
         server: https://kubernetes.default.svc
-        # The namespace is dynamically set from the 'namespace' field in each argo-app.yaml
-        namespace: '{{namespace}}'
+        # Namespace is the directory name, e.g., 'ollama'
+        namespace: '{{path.basename}}'
       syncPolicy:
         automated:
           prune: true
