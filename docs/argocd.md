@@ -42,14 +42,28 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/downloa
 ```
 
 ### 2. Bootstrap ArgoCD
-This single command uses Kustomize to deploy the ArgoCD Helm chart and the `root` application, which kickstarts the entire GitOps loop.
+This final step uses our "App of Apps" pattern to bootstrap the entire cluster. This is a multi-step process to avoid race conditions with CRD installation.
 
 ```bash
-# 1. Apply the ArgoCD Bootstrap Manifests
+# 1. Apply the ArgoCD main components and CRDs
+# This deploys the ArgoCD Helm chart, which creates the CRDs and controller.
 kustomize build infrastructure/controllers/argocd --enable-helm | kubectl apply -f -
 
-# 2. Wait for ArgoCD to be ready (2-5 minutes)
+# 2. Wait for the ArgoCD CRDs to be established in the cluster
+# This command pauses until the Kubernetes API server recognizes the 'Application' resource type.
+echo "Waiting for ArgoCD CRDs to be established..."
+kubectl wait --for condition=established --timeout=60s crd/applications.argoproj.io
+
+# 3. Wait for the ArgoCD server to be ready
+# This ensures the ArgoCD server is running before we apply the root application.
+echo "Waiting for ArgoCD server to be available..."
 kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
+
+# 4. Apply the Root Application
+# Now that ArgoCD is running and its CRDs are ready, we can apply the 'root' application
+# to kickstart the self-managing GitOps loop.
+echo "Applying the root application..."
+kubectl apply -f infrastructure/controllers/argocd/root.yaml
 ```
 **That's it!** ArgoCD will now manage itself and deploy everything else automatically.
 

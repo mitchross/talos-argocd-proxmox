@@ -380,6 +380,7 @@ kubectl delete applicationsets --all -n argocd
 # Note: This is the full, correct bootstrap sequence.
 kustomize build infrastructure/controllers/argocd --enable-helm | kubectl apply -f -
 kubectl wait --for condition=established --timeout=60s crd/applications.argoproj.io
+kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
 kubectl apply -f infrastructure/controllers/argocd/root.yaml
 ```
 
