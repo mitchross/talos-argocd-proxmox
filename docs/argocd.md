@@ -4,104 +4,54 @@ This guide details the setup and configuration of ArgoCD, which serves as the Gi
 
 ## 📋 Overview & Deployment Flow
 
-The cluster follows the **k3s-argocd-starter pattern** - a simple, proven GitOps approach where ArgoCD manages itself and ApplicationSets are deployed separately. This eliminates circular dependencies and follows production best practices.
+The cluster follows the **App of Apps** pattern, where ArgoCD manages itself and all other applications from a single, declarative source of truth in Git. This is an enterprise-grade pattern that provides scalability, safety, and clear separation of concerns.
 
-The deployment flow follows this clean pattern:
+The deployment flow is a two-phase process: a one-time manual bootstrap, followed by a fully automated, self-managing GitOps loop.
 
 ```mermaid
 graph TD;
-    subgraph "Git Repository"
-        Bootstrap["argocd-app.yaml<br/>(Bootstrap Application)"]
-        
-        InfraAppSet["infrastructure/infrastructure-components-appset.yaml<br/>(Infrastructure ApplicationSet)"]
-        MonAppSet["monitoring/monitoring-components-appset.yaml<br/>(Monitoring ApplicationSet)"]
-        AppsAppSet["my-apps/myapplications-appset.yaml<br/>(Applications ApplicationSet)"]
-        
-        InfraDirs["infrastructure/*/*<br/>(e.g., controllers/argocd)"]
-        MonDirs["monitoring/*<br/>(e.g., prometheus-stack)"]
-        AppDirs["my-apps/*/*<br/>(e.g., media/plex)"]
-
-        InfraAppSet -- "scans" --> InfraDirs
-        MonAppSet -- "scans" --> MonDirs
-        AppsAppSet -- "scans" --> AppDirs
+    subgraph "Bootstrap Process (Manual)"
+        User(["👨‍💻 User"]) -- "kubectl apply -k" --> Kustomization["infrastructure/controllers/argocd/kustomization.yaml"];
+        Kustomization -- "Deploys" --> ArgoCD["ArgoCD<br/>(from Helm Chart)"];
+        Kustomization -- "Deploys" --> RootApp["Root Application<br/>(root.yaml)"];
     end
 
-    subgraph "Argo CD"
-        ArgoCD["ArgoCD Controller"] -- "Deploys itself via" --> Bootstrap
-        
-        subgraph "Self-Managed ApplicationSets"
-            InfraAS["Infrastructure ApplicationSet"]
-            MonAS["Monitoring ApplicationSet"] 
-            AppsAS["Applications ApplicationSet"]
-        end
-
-        Bootstrap -- "Creates" --> InfraAS
-        Bootstrap -- "Creates" --> MonAS
-        Bootstrap -- "Creates" --> AppsAS
-        
-        subgraph "Generated Applications"
-            InfraApps["infra-argocd<br/>infra-cilium<br/>infra-longhorn<br/>..."]
-            MonApps["monitoring-prometheus-stack<br/>monitoring-loki-stack<br/>..."]
-            UserApps["media-plex<br/>ai-ollama<br/>home-frigate<br/>..."]
-        end
-
-        InfraAS -- "Generates" --> InfraApps
-        MonAS -- "Generates" --> MonApps
-        AppsAS -- "Generates" --> UserApps
-    end
-    
-    subgraph "Kubernetes Cluster"
-        InfraRes["Infrastructure Resources<br/>(ArgoCD, Cilium, Storage)"]
-        MonRes["Monitoring Resources<br/>(Prometheus, Grafana, Loki)"]
-        AppRes["Application Resources<br/>(Plex, Ollama, Frigate)"]
+    subgraph "GitOps Self-Management Loop (Automatic)"
+        ArgoCD -- "1. Syncs" --> RootApp;
+        RootApp -- "2. Points to<br/>.../argocd/apps/" --> ArgoConfigDir["ArgoCD Config<br/>(Projects & AppSets)"];
+        ArgoCD -- "3. Deploys" --> AppSets["ApplicationSets"];
+        AppSets -- "4. Scan Repo for<br/>argo-app.yaml" --> AppManifests["Application Manifests<br/>(e.g., my-apps/nginx/*)"];
+        ArgoCD -- "5. Deploys" --> ClusterResources["Cluster Resources<br/>(Nginx, Prometheus, etc.)"];
     end
 
-    InfraApps -- "deploys" --> InfraRes
-    MonApps -- "deploys" --> MonRes
-    UserApps -- "deploys" --> AppRes
-
-    style Bootstrap fill:#f9f,stroke:#333,stroke-width:2px
-    style ArgoCD fill:#9cf,stroke:#333,stroke-width:2px
+    style User fill:#a2d5c6,stroke:#333
+    style Kustomization fill:#5bc0de,stroke:#333
+    style RootApp fill:#f0ad4e,stroke:#333
+    style ArgoCD fill:#d9534f,stroke:#333
 ```
 
 ## 📦 Installation Steps
 
-The entire cluster bootstrap process is handled by a single bootstrap `Application` that makes ArgoCD manage itself and all other workloads.
+The entire cluster bootstrap process is handled by a single command.
 
-### 1. Install Gateway API CRDs
+### 1. Install Gateway API CRDs (If not already installed)
 This is a prerequisite for Cilium's Gateway API integration.
 ```bash
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
 ```
 
-### 2. Bootstrap ArgoCD (k3s-argocd-starter Pattern)
-Deploy ArgoCD and ApplicationSets in the correct order to avoid circular dependencies:
+### 2. Bootstrap ArgoCD
+This single command uses Kustomize to deploy the ArgoCD Helm chart and the `root` application, which kickstarts the entire GitOps loop.
 
 ```bash
-# Step 1: Install ArgoCD Components & CRDs
-# This command uses kustomize to install the ArgoCD helm chart, which includes the CRDs.
-kubectl apply -k infrastructure/controllers/argocd
+# 1. Apply the ArgoCD Bootstrap Manifests
+kustomize build infrastructure/controllers/argocd --enable-helm | kubectl apply -f -
 
-# Wait for ArgoCD to be ready (2-5 minutes)
+# 2. Wait for ArgoCD to be ready (2-5 minutes)
 kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
-
-# Step 2: Bootstrap ArgoCD to Manage Itself and Create Projects
-# Now that ArgoCD is running, we apply the Application resource that tells
-# ArgoCD to manage its own installation from Git. We also apply the projects.
-kubectl apply -f infrastructure/controllers/argocd/projects.yaml
-kubectl apply -f infrastructure/argocd-app.yaml
-
-# Step 3: Deploy ApplicationSets
-# With ArgoCD managing itself and projects created, we can deploy the ApplicationSets.
-kubectl apply -f infrastructure/infrastructure-components-appset.yaml
-kubectl apply -f monitoring/monitoring-components-appset.yaml
-kubectl apply -f my-apps/myapplications-appset.yaml
 ```
-
 **That's it!** ArgoCD will now manage itself and deploy everything else automatically.
-
-This pattern separates ArgoCD's self-management from ApplicationSet deployment, eliminating SharedResourceWarning issues and following proven GitOps practices.
 
 ## 🔧 Project Setup
 
@@ -111,123 +61,57 @@ ArgoCD projects define permissions and boundaries for applications. Our cluster 
 - **monitoring**: Observability stack (Prometheus, Grafana, Loki, etc.)
 - **my-apps**: All user workloads (media, AI, dev, privacy, etc.)
 
-These `AppProject` resources are defined in `infrastructure/projects.yaml` and are deployed automatically as part of the ArgoCD bootstrap.
+These `AppProject` resources are defined in `infrastructure/controllers/argocd/apps/projects.yaml` and are managed automatically by the `root` ArgoCD application.
 
 ## 📱 ApplicationSet Management
 
-We use **three simple ApplicationSets** following enterprise patterns:
+We use **three simple ApplicationSets** that discover applications based on a metadata file.
 
-### 1. Infrastructure ApplicationSet (`infrastructure/infrastructure-components-appset.yaml`)
-Manages all core infrastructure components:
+### 1. The "Application as Metadata" Pattern
+Instead of relying on directory paths, our `ApplicationSet`s discover applications by looking for a marker file named `argo-app.yaml`.
+
+An example `argo-app.yaml` for `my-apps/development/nginx`:
 ```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: infrastructure-components
-  namespace: argocd
-spec:
-  generators:
-    - git:
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        revision: HEAD
-        directories:
-          - path: infrastructure/*/*
-          - path: infrastructure/controllers/argocd
-            exclude: true
-  template:
-    metadata:
-      name: 'infra-{{path.basename}}'
-      labels:
-        type: infrastructure
-    spec:
-      project: infrastructure
-      source:
-        plugin:
-          name: kustomize-build-with-helm
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        targetRevision: HEAD
-        path: '{{path}}'
-      destination:
-        server: https://kubernetes.default.svc
-        namespace: '{{path.basename}}'
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-        syncOptions:
-          - CreateNamespace=true
+# This file provides the metadata for the ApplicationSet generator.
+# It tells ArgoCD how to create the Application for this component.
+name: my-app-nginx
+namespace: nginx
 ```
 
-### 2. Monitoring ApplicationSet (`monitoring/monitoring-components-appset.yaml`)
-Manages the observability stack:
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: monitoring-components
-  namespace: argocd
-spec:
-  generators:
-    - git:
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        revision: HEAD
-        directories:
-          - path: monitoring/*/*
-  template:
-    metadata:
-      name: 'monitoring-{{path.basename}}'
-      labels:
-        type: monitoring
-    spec:
-      project: monitoring
-      source:
-        plugin:
-          name: kustomize-build-with-helm
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        targetRevision: HEAD
-        path: '{{path}}'
-      destination:
-        server: https://kubernetes.default.svc
-        namespace: '{{path.basename}}'
-      syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-        syncOptions:
-          - CreateNamespace=true
-```
+### 2. ApplicationSet Configuration
+All `ApplicationSet`s live in `infrastructure/controllers/argocd/apps/appsets/` and follow the same pattern. Here is the `my-apps-appset.yaml` as an example:
 
-### 3. Applications ApplicationSet (`my-apps/myapplications-appset.yaml`)
-Manages all user applications:
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: applications
+  name: my-apps
   namespace: argocd
 spec:
+  preserveResourcesOnDeletion: true # Safety feature!
   generators:
     - git:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         revision: HEAD
-        directories:
-          - path: my-apps/*/*
+        # Discover any 'argo-app.yaml' file within the my-apps directory.
+        files:
+          - path: "my-apps/**/argo-app.yaml"
   template:
     metadata:
-      name: '{{path[1]}}-{{path.basename}}'
-      labels:
-        type: application
+      # Name comes from the 'name' field in argo-app.yaml
+      name: '{{name}}'
+      namespace: argocd
     spec:
       project: my-apps
       source:
-        plugin:
-          name: kustomize-build-with-helm
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         targetRevision: HEAD
-        path: '{{path}}'
+        # Path points to the directory where the argo-app.yaml was found
+        path: '{{path.directory}}'
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{path.basename}}'
+        # Namespace comes from the 'namespace' field in argo-app.yaml
+        namespace: '{{namespace}}'
       syncPolicy:
         automated:
           prune: true
@@ -238,80 +122,66 @@ spec:
 
 ## 📂 Repository Structure
 
-The repository follows a clean three-tier structure that maps directly to the ApplicationSets:
+The repository structure is designed for clarity and co-location of configuration.
 
 ```
-├── infrastructure/          # Infrastructure ApplicationSet
-│   ├── controllers/         # ArgoCD, External Secrets, etc.
-│   │   └── argocd/          # ArgoCD self-management
-│   ├── networking/          # Cilium, Gateway API, etc.
-│   ├── storage/             # Longhorn, CSI drivers, etc.
-│   ├── database/            # PostgreSQL, Redis operators
-│   ├── projects.yaml        # ArgoCD projects
-│   └── infrastructure-components-appset.yaml     # Infrastructure ApplicationSet
-├── monitoring/              # Monitoring ApplicationSet
-│   ├── prometheus-stack/    # Prometheus, Grafana, AlertManager
-│   ├── loki-stack/          # Loki, Promtail
-│   └── monitoring-components-appset.yaml
-├── my-apps/                 # Applications ApplicationSet
-│   ├── ai/                  # AI tools (Ollama, ComfyUI, etc.)
-│   ├── media/               # Media servers (Plex, Jellyfin, etc.)
-│   ├── home/                # Home automation (Frigate, HA, etc.)
-│   ├── development/         # Dev tools (Headlamp, IT-Tools, etc.)
-│   ├── privacy/             # Privacy tools (SearXNG, ProxiTok, etc.)
-│   └── myapplications-appset.yaml
-└── docs/                    # Documentation
+├── infrastructure/
+│   └── controllers/
+│       └── argocd/
+│           ├── apps/                   # <-- Config managed BY ArgoCD
+│           │   ├── appsets/
+│           │   │   ├── infrastructure-appset.yaml
+│           │   │   ├── monitoring-appset.yaml
+│           │   │   └── my-apps-appset.yaml
+│           │   ├── projects.yaml
+│           │   └── kustomization.yaml
+│           ├── argo-app.yaml         # <-- Marker for ArgoCD itself
+│           ├── http-route.yaml
+│           ├── ns.yaml
+│           ├── root.yaml             # <-- The "root" app (App of Apps)
+│           ├── values.yaml
+│           └── kustomization.yaml    # <-- The BOOTSTRAP kustomization
+├── monitoring/
+│   └── prometheus-stack/
+│       ├── argo-app.yaml             # <-- Example marker file
+│       └── ...
+└── my-apps/
+    └── development/
+        └── nginx/
+            ├── argo-app.yaml         # <-- Example marker file
+            └── ...
 ```
 
 ## ✅ Key Features
 
-1. **Self-Managing ArgoCD**:
-   - ArgoCD manages its own installation and upgrades
-   - ApplicationSets are deployed separately to avoid circular dependencies
-   - Follows k3s-argocd-starter proven pattern
+1. **Co-located & Self-Managing ArgoCD**:
+   - ArgoCD's entire configuration lives logically within `infrastructure/controllers/argocd`.
+   - The `root` application manages the projects and `ApplicationSet`s from the `apps/` subdirectory, creating a safe, self-managing loop.
 
 2. **Enterprise Pattern**:
-   - Clear separation of concerns with three ApplicationSets
-   - Follows GitOps best practices used in production
-   - Scalable and maintainable architecture
+   - Clear separation of concerns with three `ApplicationSet`s.
+   - Follows GitOps best practices used in production.
 
-3. **Simple Directory Discovery**:
-   - Each ApplicationSet scans its own directory pattern
-   - No complex excludes or wildcards needed
-   - Easy to understand and modify
+3. **Simple Metadata Discovery**:
+   - Applications are discovered via `argo-app.yaml` files, not brittle directory pathing. This is flexible and clear.
 
 4. **Production Ready**:
-   - Proper error handling and retries
-   - Automated sync with self-healing
-   - Comprehensive ignore patterns for configuration drift
+   - The `ApplicationSet`s use `preserveResourcesOnDeletion: true` as a safety mechanism to prevent accidental mass-deletions.
 
 ## 🚀 Deployment Workflow
 
 ### Development/Testing
 ```bash
-# Test individual applications
-kubectl apply -k infrastructure/controllers/argocd --dry-run=server
-
-# Test entire infrastructure
-kubectl apply -k infrastructure/
+# Test individual applications with a server-side dry run
+kustomize build my-apps/development/nginx | kubectl apply --dry-run=server -f -
 ```
 
 ### Production Deployment
+The deployment is triggered by a merge to the `main` branch. The bootstrap is a one-time operation.
+
 ```bash
-# Step 1: Install ArgoCD Components & CRDs
-kubectl apply -k infrastructure/controllers/argocd
-
-# Wait for ArgoCD to be ready
-kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
-
-# Step 2: Bootstrap ArgoCD to Manage Itself and Create Projects
-kubectl apply -f infrastructure/controllers/argocd/projects.yaml
-kubectl apply -f infrastructure/argocd-app.yaml
-
-# Step 3: Deploy ApplicationSets
-kubectl apply -f infrastructure/infrastructure-components-appset.yaml
-kubectl apply -f monitoring/monitoring-components-appset.yaml
-kubectl apply -f my-apps/myapplications-appset.yaml
+# Bootstrap ArgoCD and the entire cluster
+kustomize build infrastructure/controllers/argocd --enable-helm | kubectl apply -f -
 
 # Monitor deployment progress
 kubectl get applications -n argocd -w
@@ -319,29 +189,22 @@ kubectl get applications -n argocd -w
 # Check ApplicationSets
 kubectl get applicationsets -n argocd
 
-# View generated applications by type
-kubectl get applications -n argocd -l type=infrastructure
-kubectl get applications -n argocd -l type=monitoring
-kubectl get applications -n argocd -l type=application
+# View generated applications by project
+kubectl get applications -n argocd -l argocd.argoproj.io/project=infrastructure
+kubectl get applications -n argocd -l argocd.argoproj.io/project=monitoring
+kubectl get applications -n argocd -l argocd.argoproj.io/project=my-apps
 ```
 
 ## 🔍 Application Naming Conventions
 
-The ApplicationSets use consistent naming patterns:
-
-| ApplicationSet | Pattern | Example Applications |
-|----------------|---------|---------------------|
-| **Infrastructure** | `infra-{basename}` | `infra-argocd`, `infra-cilium`, `infra-longhorn` |
-| **Monitoring** | `monitoring-{basename}` | `monitoring-prometheus-stack`, `monitoring-loki-stack` |
-| **Applications** | `{category}-{basename}` | `media-plex`, `ai-ollama`, `home-frigate` |
+The `ApplicationSet`s use the `name` field from each `argo-app.yaml` to name the application in ArgoCD, giving you full control.
 
 ## Best Practices
 
-- **All cluster state is managed in Git** - no manual changes
-- **ArgoCD manages itself** - including upgrades and configuration changes
-- **Clear separation** - infrastructure, monitoring, and applications are separate
-- **Simple patterns** - easy directory discovery without complex logic
-- **Production ready** - proper retries, error handling, and monitoring
+- **All cluster state is managed in Git** - no manual changes are made via `kubectl`.
+- **ArgoCD manages itself** - including its projects and `ApplicationSet` configurations.
+- **Clear separation** - infrastructure, monitoring, and applications are separate projects.
+- **Simple metadata patterns** - `argo-app.yaml` provides a clear, declarative way to onboard applications.
 
 ## Troubleshooting
 
@@ -353,55 +216,46 @@ kubectl get applications -n argocd
 # Check ApplicationSet status
 kubectl get applicationsets -n argocd
 
-# View application details
-kubectl describe application infra-argocd -n argocd
-
-# Check applications by type
-kubectl get applications -n argocd -l type=infrastructure
-kubectl get applications -n argocd -l type=monitoring
-kubectl get applications -n argocd -l type=application
+# Describe an application to see its sync status, resources, and health
+kubectl describe application my-app-nginx -n argocd
 ```
 
 ### Common Issues
 | Issue | Solution |
 |-------|----------|
-| **ApplicationSet not generating apps** | Check directory patterns and Git connectivity |
-| **Applications stuck in sync** | Review application logs and sync policies |
-| **ArgoCD UI not accessible** | Check HTTPRoute and certificate status |
-| **Kustomize plugin errors** | Verify plugin configuration in ArgoCD values |
+| **ApplicationSet not generating apps** | Verify the `argo-app.yaml` file exists, is valid YAML, and is in a path the `ApplicationSet` is scanning. Check the `ApplicationSet` logs. |
+| **Applications stuck in sync** | Review application logs (`argocd app logs <app-name>`) and check for sync errors in the UI. |
+| **ArgoCD UI not accessible** | Check the `http-route.yaml` and the status of the `istio-ingressgateway` service. |
 
 ### ArgoCD Self-Management
 ```bash
-# Check ArgoCD managing itself
-kubectl get application argocd -n argocd -o yaml
+# Check the root application that manages the rest of ArgoCD's config
+kubectl get application root -n argocd -o yaml
 
-# View ArgoCD ApplicationSets (should show 3)
+# View the ArgoCD ApplicationSets managed by the root app
 kubectl get applicationsets -n argocd
-
-# Check ArgoCD kustomization references
-kubectl describe application argocd -n argocd
 ```
 
 ## Enterprise Patterns
 
 This setup follows **enterprise GitOps patterns**:
 
-1. **Infrastructure as Code**: Everything defined in Git
-2. **Self-Service**: Developers can add applications by creating directories
-3. **Separation of Concerns**: Clear boundaries between workload types
-4. **Automated Operations**: Zero-touch deployments after bootstrap
-5. **Observability**: Full monitoring and alerting stack
-6. **Security**: Proper RBAC and project boundaries
+1. **Infrastructure as Code**: Everything defined in Git.
+2. **Self-Service**: Developers can add applications by creating a directory and an `argo-app.yaml` file.
+3. **Separation of Concerns**: Clear project boundaries for security and organization.
+4. **Automated Operations**: Zero-touch deployments after the initial bootstrap.
+5. **Observability**: Ready for a full monitoring and alerting stack.
+6. **Security**: `AppProject`s provide the foundation for RBAC and policy.
 
 ## Taking to Production
 
 This homelab setup translates directly to enterprise environments:
 
-1. **Replace Git repo** with your organization's repository
-2. **Add proper RBAC** for team-based access
-3. **Configure notifications** for Slack/Teams integration
-4. **Add policy enforcement** with tools like OPA Gatekeeper
-5. **Implement proper secrets management** with External Secrets or Vault
-6. **Add multi-cluster support** with ArgoCD ApplicationSets
+1. **Replace Git repo URL** in the `ApplicationSet`s and `root.yaml`.
+2. **Add proper RBAC** to the `AppProject`s for team-based access.
+3. **Configure notifications** for Slack/Teams in the ArgoCD `values.yaml`.
+4. **Add policy enforcement** with tools like OPA Gatekeeper, using project selectors.
+5. **Implement proper secrets management** with External Secrets Operator, which is already set up.
+6. **Add multi-cluster support** by adding new cluster destinations to the `AppProject`s and modifying the `ApplicationSet`s.
 
 The patterns and structure remain the same - this is **production-grade GitOps**. 
