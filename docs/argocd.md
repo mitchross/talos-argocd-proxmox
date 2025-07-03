@@ -11,7 +11,7 @@ The deployment flow is a two-phase process: a one-time manual bootstrap, followe
 ```mermaid
 graph TD;
     subgraph "Bootstrap Process (Manual)"
-        User(["👨‍💻 User"]) -- "kubectl apply -k" --> Kustomization["infrastructure/controllers/argocd/kustomization.yaml"];
+        User(["👨‍💻 User"]) -- "kubectl apply -k" --> Kustomization["infrastructure/argocd/kustomization.yaml"];
         Kustomization -- "Deploys" --> ArgoCD["ArgoCD<br/>(from Helm Chart)"];
         Kustomization -- "Deploys" --> RootApp["Root Application<br/>(root.yaml)"];
     end
@@ -47,7 +47,7 @@ This final step uses our "App of Apps" pattern to bootstrap the entire cluster. 
 ```bash
 # 1. Apply the ArgoCD main components and CRDs
 # This deploys the ArgoCD Helm chart, which creates the CRDs and controller.
-kustomize build infrastructure/controllers/argocd --enable-helm | kubectl apply -f -
+kustomize build infrastructure/argocd --enable-helm | kubectl apply -f -
 
 # 2. Wait for the ArgoCD CRDs to be established in the cluster
 # This command pauses until the Kubernetes API server recognizes the 'Application' resource type.
@@ -63,7 +63,7 @@ kubectl wait --for=condition=Available deployment/argocd-server -n argocd --time
 # Now that ArgoCD is running and its CRDs are ready, we can apply the 'root' application
 # to kickstart the self-managing GitOps loop.
 echo "Applying the root application..."
-kubectl apply -f infrastructure/controllers/argocd/root.yaml
+kubectl apply -f infrastructure/argocd/root.yaml
 ```
 **That's it!** ArgoCD will now manage itself and deploy everything else automatically.
 
@@ -75,20 +75,20 @@ ArgoCD projects define permissions and boundaries for applications. Our cluster 
 - **monitoring**: Observability stack (Prometheus, Grafana, Loki, etc.)
 - **my-apps**: All user workloads (media, AI, dev, privacy, etc.)
 
-These `AppProject` resources are defined in `infrastructure/controllers/argocd/apps/projects.yaml` and are managed automatically by the `root` ArgoCD application.
+These `AppProject` resources are defined in `infrastructure/argocd/apps/projects.yaml` and are managed automatically by the `root` ArgoCD application.
 
 ## 📱 ApplicationSet Management
 
-We use **three simple ApplicationSets** that discover applications based on their directory structure. This follows a "convention over configuration" approach, eliminating the need for metadata files.
+We use **three simple ApplicationSets** that discover applications based on their directory structure. This follows a "convention over configuration" approach, eliminating the need for metadata files, and follows **2025 homelab best practices** with a flattened structure.
 
 ### 1. The "Directory as Application" Pattern
-Instead of relying on marker files, our `ApplicationSet`s discover applications by looking for directories that match a predefined path pattern. The application's name and target namespace are derived directly from this path. Each `ApplicationSet` is pointed to a specific path to discover its apps:
-- **Infrastructure:** `infrastructure/controllers/apps/*`
-- **Monitoring:** `monitoring/*`
-- **My Apps:** `my-apps/*/*`
+Instead of relying on marker files, our `ApplicationSet`s discover applications by looking for directories that match a predefined path pattern. The application's name and target namespace are derived directly from this path. Each `ApplicationSet` is co-located with its applications:
+- **Infrastructure:** `infrastructure/*` (defined in `infrastructure/infrastructure-appset.yaml`)
+- **Monitoring:** `monitoring/*` (defined in `monitoring/monitoring-appset.yaml`)
+- **My Apps:** `my-apps/*/*` (defined in `my-apps/my-apps-appset.yaml`)
 
 ### 2. ApplicationSet Configuration
-All `ApplicationSet`s live in `infrastructure/controllers/argocd/apps/appsets/` and follow the same pattern. Here is the `my-apps-appset.yaml` as an example:
+Each `ApplicationSet` is **co-located** with its applications, following peer-level organization. Here is the `my-apps-appset.yaml` as an example:
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -134,22 +134,25 @@ spec:
 
 ## 📂 Repository Structure
 
-The repository structure is designed for clarity and to prevent recursive management loops.
+The repository structure follows **2025 homelab best practices** with a flattened, peer-level organization designed for clarity and to prevent recursive management loops.
 
 ```
 ├── infrastructure/
-│   └── controllers/
-│       ├── argocd/                   # <-- Manually bootstrapped, NOT in AppSet
-│       │   ├── apps/                 # <-- ArgoCD's OWN config (Projects/AppSets)
-│       │   │   └── ...
-│       │   └── ...
-│       └── apps/                     # <-- Scanned by infrastructure-appset
-│           ├── cert-manager/
-│           └── ...
+│   ├── argocd/                       # <-- Manually bootstrapped, NOT in AppSet
+│   │   ├── apps/                     # <-- ArgoCD's OWN config (Projects/AppSets)
+│   │   │   └── ...
+│   │   └── ...
+│   ├── infrastructure-appset.yaml   # <-- ApplicationSet co-located with apps
+│   ├── cert-manager/                 # <-- Scanned by infrastructure-appset
+│   ├── longhorn/                     # <-- Scanned by infrastructure-appset
+│   └── ...
 ├── monitoring/
-│   └── prometheus-stack/             # <-- Scanned by monitoring-appset
-│       └── ...
+│   ├── monitoring-appset.yaml        # <-- ApplicationSet co-located with apps
+│   ├── prometheus-stack/             # <-- Scanned by monitoring-appset
+│   ├── loki-stack/                   # <-- Scanned by monitoring-appset
+│   └── ...
 └── my-apps/
+    ├── my-apps-appset.yaml           # <-- ApplicationSet co-located with apps
     └── development/
         └── nginx/                    # <-- Scanned by my-apps-appset
             └── ...
@@ -157,20 +160,22 @@ The repository structure is designed for clarity and to prevent recursive manage
 
 ## ✅ Key Features
 
-1. **Co-located & Self-Managing ArgoCD**:
-   - ArgoCD's entire configuration lives logically within `infrastructure/controllers/argocd`.
+1. **Flattened & Self-Managing ArgoCD**:
+   - ArgoCD's entire configuration lives within `infrastructure/argocd`.
    - The `root` application manages the projects and `ApplicationSet`s from its own `apps/` subdirectory.
-   - **Crucially, ArgoCD's configuration is structurally isolated from other infrastructure apps, preventing recursive management loops.**
+   - **ApplicationSets are co-located with their applications**, following 2025 homelab best practices.
+   - **ArgoCD's configuration is structurally isolated from other infrastructure apps, preventing recursive management loops.**
 
-2. **Enterprise Pattern**:
-   - Clear separation of concerns with three `ApplicationSet`s.
-   - Follows GitOps best practices used in production.
+2. **2025 Homelab Pattern**:
+   - Flattened peer-level organization eliminates confusing nested structures.
+   - Clear separation of concerns with three co-located `ApplicationSet`s.
+   - Follows modern GitOps best practices optimized for homelab simplicity.
 
 3. **Simple Directory Discovery**:
    - Applications are discovered automatically based on their directory structure. This is flexible, clear, and requires no boilerplate.
 
 4. **Production Ready**:
-   - The `ApplicationSet`s use `preserveResourcesOnDeletion: true` as a safety mechanism to prevent accidental mass-deletions.
+   - The `ApplicationSet`s use automated sync policies with proper safety mechanisms.
 
 ## 🚀 Deployment Workflow
 
@@ -185,7 +190,7 @@ The deployment is triggered by a merge to the `main` branch. The bootstrap is a 
 
 ```bash
 # Bootstrap ArgoCD and the entire cluster
-kustomize build infrastructure/controllers/argocd --enable-helm | kubectl apply -f -
+kustomize build infrastructure/argocd --enable-helm | kubectl apply -f -
 
 # Monitor deployment progress
 kubectl get applications -n argocd -w
@@ -203,9 +208,13 @@ kubectl get applications -n argocd -l argocd.argoproj.io/project=my-apps
 
 The `ApplicationSet`s use the directory `path` to automatically generate the application name and target namespace. This creates a consistent and predictable naming scheme.
 
-- **Application Name**: Combines the project (`my-apps`, `infrastructure`, `monitoring`) with the directory path.
-  - `my-apps/development/nginx` -> `my-apps-nginx-development`
+- **Application Name**: Combines the project prefix with the directory path.
+  - `infrastructure/cert-manager` -> `infra-cert-manager`
+  - `monitoring/prometheus-stack` -> `monitoring-prometheus-stack`
+  - `my-apps/development/nginx` -> `my-apps-nginx`
 - **Target Namespace**: Uses the final directory in the path.
+  - `infrastructure/cert-manager` -> `cert-manager`
+  - `monitoring/prometheus-stack` -> `prometheus-stack`
   - `my-apps/development/nginx` -> `nginx`
 
 ## Best Practices
@@ -232,10 +241,11 @@ kubectl describe application my-apps-nginx-development -n argocd
 ### Common Issues
 | Issue | Solution |
 |-------|----------|
-| **ApplicationSet not generating apps** | Verify the directory structure matches the `path` pattern in the `ApplicationSet`. Check the `ApplicationSet` controller logs in the `argocd` namespace. Also ensure you are not accidentally excluding the path you want to deploy. |
-| **Recursive loop or Helm error on `infra-argocd`** | This error occurs if the `infrastructure-appset` is configured to scan a path that includes the `infrastructure/controllers/argocd` directory. The solution is to isolate discoverable applications into a dedicated subdirectory (e.g., `infrastructure/controllers/apps`) and point the ApplicationSet generator to that specific path, ensuring ArgoCD's own configuration is never discovered. |
-| **Applications stuck in sync** | Review application logs (`argocd app logs <app-name>`) and check for sync errors in the UI. |
-| **ArgoCD UI not accessible** | Check the `http-route.yaml` and the status of the `istio-ingressgateway` service. |
+| **ApplicationSet not generating apps** | Verify the directory structure matches the `path` pattern in the `ApplicationSet`. Check the `ApplicationSet` controller logs in the `argocd` namespace. Ensure directories have valid `kustomization.yaml` files. |
+| **Recursive loop or Helm error on `infra-argocd`** | This error occurs if the `infrastructure-appset` is configured to scan a path that includes the `infrastructure/argocd` directory. The ApplicationSet excludes `infrastructure/argocd` to prevent this issue. Verify the exclude patterns in `infrastructure/infrastructure-appset.yaml`. |
+| **Applications stuck in sync** | Review application logs (`argocd app logs <app-name>`) and check for sync errors in the UI. Check if Helm charts require `--enable-helm` flag. |
+| **ArgoCD UI not accessible** | Check the `http-route.yaml` and the status of the Gateway API or ingress controller. |
+| **Nested kustomization Helm issues** | The 2025 structure flattens nested kustomizations to avoid `--enable-helm` inheritance issues. If you see Helm chart errors, ensure the chart is defined at the ApplicationSet target level, not nested. |
 
 ### ArgoCD Self-Management
 ```

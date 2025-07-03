@@ -34,7 +34,7 @@ A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux f
 ```mermaid
 graph TD;
     subgraph "Bootstrap Process (Manual)"
-        User(["👨‍💻 User"]) -- "kubectl apply -k" --> Kustomization["infrastructure/controllers/argocd/kustomization.yaml"];
+        User(["👨‍💻 User"]) -- "kubectl apply -k" --> Kustomization["infrastructure/argocd/kustomization.yaml"];
         Kustomization -- "Deploys" --> ArgoCD["ArgoCD<br/>(from Helm Chart)"];
         Kustomization -- "Deploys" --> RootApp["Root Application<br/>(root.yaml)"];
     end
@@ -54,8 +54,8 @@ graph TD;
 ```
 
 ### Key Features
-- **Enterprise GitOps Pattern**: ApplicationSets provide clean separation of concerns.
-- **Self-Managing ArgoCD**: ArgoCD manages its own installation, upgrades, and ApplicationSets from a co-located `apps` directory.
+- **2025 Homelab GitOps Pattern**: Flattened ApplicationSets provide clean separation of concerns.
+- **Self-Managing ArgoCD**: ArgoCD manages its own installation, upgrades, and ApplicationSets from Git.
 - **Simple Directory Discovery**: Applications are discovered automatically based on their directory path. No extra files needed.
 - **Production Ready**: Proper error handling, retries, and monitoring integration.
 - **GPU Integration**: Full NVIDIA GPU support via Talos system extensions and GPU Operator
@@ -151,7 +151,7 @@ This final step uses our "App of Apps" pattern to bootstrap the entire cluster. 
 ```bash
 # 1. Apply the ArgoCD main components and CRDs
 # This deploys the ArgoCD Helm chart, which creates the CRDs and controller.
-kustomize build infrastructure/controllers/argocd --enable-helm | kubectl apply -f -
+kustomize build infrastructure/argocd --enable-helm | kubectl apply -f -
 
 # 2. Wait for the ArgoCD CRDs to be established in the cluster
 # This command pauses until the Kubernetes API server recognizes the 'Application' resource type.
@@ -167,15 +167,15 @@ kubectl wait --for=condition=Available deployment/argocd-server -n argocd --time
 # Now that ArgoCD is running and its CRDs are ready, we can apply the 'root' application
 # to kickstart the self-managing GitOps loop.
 echo "Applying the root application..."
-kubectl apply -f infrastructure/controllers/argocd/root.yaml
+kubectl apply -f infrastructure/argocd/root.yaml
 ```
 **That's it!** You have successfully and reliably bootstrapped the cluster.
 
 ### What Happens Next Automatically?
 
-1.  **ArgoCD Syncs Itself**: The `root` Application tells ArgoCD to sync the contents of `infrastructure/controllers/argocd/apps/`.
+1.  **ArgoCD Syncs Itself**: The `root` Application tells ArgoCD to sync the contents of `infrastructure/argocd/apps/`.
 2.  **Projects & AppSets Created**: ArgoCD creates the `AppProject`s and the three `ApplicationSet`s (`infrastructure`, `monitoring`, `my-apps`).
-3.  **Applications Discovered**: The `ApplicationSet`s scan the repository for any directories matching their defined paths (e.g., `my-apps/*/*`) and create the corresponding ArgoCD `Application` resources.
+3.  **Applications Discovered**: The `ApplicationSet`s scan the repository for any directories matching their defined paths (e.g., `infrastructure/*`, `monitoring/*`, `my-apps/*/*`) and create the corresponding ArgoCD `Application` resources.
 4.  **Cluster Reconciliation**: ArgoCD syncs all discovered applications, building the entire cluster state declaratively from Git.
 
 ## 🔍 Verification
@@ -376,12 +376,12 @@ kubectl delete applications --all -n argocd
 kubectl get applicationsets -n argocd -o name | xargs -I{} kubectl patch {} -n argocd --type json -p '[{"op": "remove","path": "/metadata/finalizers"}]'
 kubectl delete applicationsets --all -n argocd
 
-# Bootstrap with the new enterprise pattern
+# Bootstrap with the new 2025 homelab pattern
 # Note: This is the full, correct bootstrap sequence.
-kustomize build infrastructure/controllers/argocd --enable-helm | kubectl apply -f -
+kustomize build infrastructure/argocd --enable-helm | kubectl apply -f -
 kubectl wait --for condition=established --timeout=60s crd/applications.argoproj.io
 kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
-kubectl apply -f infrastructure/controllers/argocd/root.yaml
+kubectl apply -f infrastructure/argocd/root.yaml
 ```
 
 ## 🚀 Taking to Production
