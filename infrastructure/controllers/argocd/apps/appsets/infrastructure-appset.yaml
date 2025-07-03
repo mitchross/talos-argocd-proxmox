@@ -11,9 +11,16 @@ spec:
     - git:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git # TODO: Replace with your repo URL
         revision: HEAD
-        # Discover any application directory within the infrastructure/*/* path.
+        # Discover any application directory within the infrastructure/controllers path...
         directories:
           - path: "infrastructure/controllers/*"
+    - git:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git # TODO: Replace with your repo URL
+        revision: HEAD
+        # ...but explicitly exclude the argocd directory itself to prevent a recursive loop.
+        directories:
+          - path: "infrastructure/controllers/argocd"
+            exclude: true
   template:
     metadata:
       # Name is derived from the path, e.g., 'infra-cert-manager'
