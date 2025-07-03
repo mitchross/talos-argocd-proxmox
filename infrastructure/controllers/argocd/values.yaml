@@ -1,338 +1,64 @@
-configs:
-  cm:
-    create: true
-    application.resourceTrackingMethod: "annotation+label"
-    # Enhanced config management plugins
-    configManagementPlugins: |
-      - name: kustomize-fetch-tunnel-id
-        init:
-          command: ["/bin/sh", "-c"]
-          args: ["echo 'Initializing kustomize-fetch-tunnel-id plugin...'"]
-        generate:
-          command: ["sh"]
-          args: ["scripts/kustomize-patch-tunnel-id.sh"]
-    # Optimized global ignore differences
-    resource.customizations.ignoreDifferences.all: |
-      managedFieldsManagers:
-      - kube-controller-manager
-      - cilium-operator
-      - longhorn-manager
-      - external-secrets
-      - kubectl
-      - helm
-      - kustomize
-      - argocd-application-controller
-      - argocd-server
-      jsonPointers:
-      - /status
-      - /metadata/managedFields
-      - /metadata/generation
-      - /metadata/resourceVersion
-      - /metadata/uid
-      - /metadata/annotations/deployment.kubernetes.io/revision
-      - /metadata/annotations/kubectl.kubernetes.io/last-applied-configuration
-      - /spec/clusterIP
-      - /spec/clusterIPs
-    # Enhanced global compare options
-    resource.compareoptions: |
-      ignoreResourceStatusField: all
-      ignoreAggregatedRoles: true
-    # Enable resource update optimization
-    resource.ignoreResourceUpdatesEnabled: "true"
-    # Global resource update ignore patterns
-    resource.customizations.ignoreResourceUpdates.all: |
-      jsonPointers:
-      - /status
-      - /metadata/generation
-      - /metadata/resourceVersion
-      - /metadata/managedFields
-      - /metadata/annotations/deployment.kubernetes.io/revision
-    # Specific ignore differences for problematic resources
-    resource.customizations.ignoreDifferences.external-secrets.io_ExternalSecret: |
-      jqPathExpressions:
-      - '.spec.data[]?.remoteRef?.conversionStrategy'
-      - '.spec.data[]?.remoteRef?.decodingStrategy'
-      - '.spec.data[]?.remoteRef?.metadataPolicy'
-    # Add networking specific ignores
-    resource.customizations.ignoreDifferences.v1_Service: |
-      jsonPointers:
-      - /spec/clusterIP
-      - /spec/clusterIPs
-      - /spec/ports/*/nodePort
-    # Add PVC specific ignores (common with dynamic provisioning)
-    resource.customizations.ignoreDifferences.v1_PersistentVolumeClaim: |
-      jsonPointers:
-      - /spec/volumeName
-      - /metadata/annotations/pv.kubernetes.io~1bind-completed
-      - /metadata/annotations/pv.kubernetes.io~1bound-by-controller
-    # Performance and scaling settings
+# Global settings for the Argo CD chart
+global:
+  # Ingress is disabled because we use a custom HTTPRoute for external access
+  ingress:
+    enabled: false
+# Argo CD server settings
+server:
+  # Extra configuration for the argocd-cm ConfigMap
+  config:
+    # URL for the Argo CD UI. Important for SSO redirects and notifications.
+    url: https://argocd.vanillax.me
+    # Application reconciliation timeout
     timeout.reconciliation: 180s
-    timeout.hard.reconciliation: 0s # Disable hard timeout
-    application.instanceLabelKey: argocd.argoproj.io/instance
-    # Optimize repository cache
-    reposerver.parallelism.limit: 10
-  cmp:
-    create: true
-    plugins:
-      kustomize-build-with-helm:
-        generate:
-          command: ["sh", "-c"]
-          args: ["kustomize build --enable-helm --load-restrictor=LoadRestrictionsNone"]
-        discover:
-          find:
-            command: ["sh", "-c"]
-            args: ["find . -name 'kustomization.yaml' -o -name 'kustomization.yml' -o -name 'Kustomization'"]
-  params:
-    server.insecure: true
-    # Enhanced controller settings
-    controller.resource.health.persist: "false"
-    controller.self.heal.timeout.seconds: "5"
-    controller.operation.processors: "20"
-    controller.status.processors: "20"
-    controller.repo.server.timeout.seconds: "120"
-    # Enable server-side apply
-    server.enable.server.side.apply: "true"
-    # Optimize application processing
-    application.sync.max.timeout: "300"
-    # Repository settings for better performance
-    reposerver.parallelism.limit: "10"
-    # Enable resource ignore for updates
-    controller.resource.ignore.resource.updates.enabled: "true"
-    # Set X-Frame-Options to deny to prevent clickjacking
-    server.x_frame_options: "deny"
-crds:
-  install: true
-  keep: false
-# Enhanced controller configuration
-controller:
-  replicas: 2 # HA setup
-  metrics:
-    enabled: true
-    serviceMonitor:
-      enabled: true
-  networkPolicy:
-    enabled: true
-    ingress:
-      - from:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: argocd-repo-server
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: argocd-server
-    egress:
-      - to:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: argocd-repo-server
-        ports:
-        - protocol: TCP
-          port: 8081
+# Enable and configure the ApplicationSet controller
+applicationSet:
+  enabled: true
+  # Resource requests and limits for the ApplicationSet controller
   resources:
     requests:
       cpu: 100m
-      memory: 128Mi
-    limits:
-      cpu: "1"
       memory: 256Mi
-  env:
-    # Optimize controller performance
-    - name: ARGOCD_CONTROLLER_REPLICAS
-      value: "1"
-    - name: ARGOCD_CONTROLLER_SHARDING_ALGORITHM
-      value: "legacy"
-    # Performance tuning
-    - name: ARGOCD_RECONCILIATION_TIMEOUT
-      value: "180s"
-# Disable DEX (you already have this)
+    limits:
+      cpu: 500m
+      memory: 512Mi
+# High Availability (HA) configuration for production environments
+ha:
+  enabled: true
+  # Resource requests and limits for the HA redis
+  redis:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+# Resource requests and limits for core Argo CD components
+controller:
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+repoServer:
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+server:
+  resources:
+    requests:
+      cpu: 150m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+# Disable Dex as we are not using it for authentication in this setup
 dex:
   enabled: false
-# Optimized Redis configuration
-redis:
-  enabled: false
-
-# Enable redis-ha for a more resilient setup
-redis-ha:
-  enabled: true
-  replicas: 3 # Recommended for a quorum
-  # If you have a dedicated redis operator, you can use that instead
-  # external:
-  #   enabled: false
-  #   service:
-  #     name: "" # my-redis-ha-proxy
-  #     port: 6379
-
-# Enhanced server configuration
-server:
-  replicas: 2 # HA setup
-  metrics:
-    enabled: true
-    serviceMonitor:
-      enabled: true
-  networkPolicy:
-    enabled: true
-    ingress:
-      - from:
-        # Allow from ingress controller if you have one
-        # - namespaceSelector: {}
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: argocd-application-controller
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: argocd-repo-server
-    egress:
-      - to:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: argocd-repo-server
-        ports:
-        - protocol: TCP
-          port: 8081
-      - to:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: argocd-application-controller
-        ports:
-        - protocol: TCP
-          port: 8082 # Controller health check
-  resources:
-    requests:
-      cpu: 100m
-      memory: 128Mi
-    limits:
-      cpu: 500m
-      memory: 256Mi
-  config:
-    # Enable gRPC-Web for better performance
-    grpc.web: true
-# Enhanced repo server configuration
-repoServer:
-  replicas: 2 # Add replica for HA and performance
-  networkPolicy:
-    enabled: true
-    ingress:
-      - from:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: argocd-server
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: argocd-application-controller
-      ports:
-      - protocol: TCP
-        port: 8081
-      - protocol: TCP
-        port: 8084
-  containerSecurityContext:
-    readOnlyRootFilesystem: true
-  volumes:
-    - name: cmp-kustomize-build-with-helm
-      configMap:
-        name: argocd-cmp-cm
-    - name: cmp-tmp
-      emptyDir:
-        sizeLimit: 1Gi # Add size limit
-    - name: helm-cache
-      emptyDir:
-        sizeLimit: 2Gi
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi # repo-server can be memory intensive
-    limits:
-      cpu: "1"
-      memory: 512Mi
-  metrics:
-    enabled: true
-    serviceMonitor:
-      enabled: true
-  env:
-    # Optimize Helm operations
-    - name: HELM_CACHE_HOME
-      value: /tmp/helm-cache
-    - name: HELM_CONFIG_HOME
-      value: /tmp/helm-config
-    - name: HELM_DATA_HOME
-      value: /tmp/helm-data
-  extraContainers:
-    - name: kustomize-build-with-helm
-      command:
-        - argocd-cmp-server
-      image: '{{ default .Values.global.image.repository .Values.repoServer.image.repository }}:{{ default (include "argo-cd.defaultTag" .) .Values.repoServer.image.tag }}'
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 999
-        allowPrivilegeEscalation: false
-        readOnlyRootFilesystem: true
-        seccompProfile:
-          type: RuntimeDefault
-        capabilities:
-          drop: ["ALL"]
-      resources:
-        requests:
-          cpu: 100m
-          memory: 256Mi
-        limits:
-          cpu: 1000m
-          memory: 1Gi
-      env:
-        # Plugin-specific environment
-        - name: KUSTOMIZE_PLUGIN_HOME
-          value: /tmp/kustomize-plugins
-      volumeMounts:
-        - name: plugins
-          mountPath: /home/argocd/cmp-server/plugins
-        - name: cmp-kustomize-build-with-helm
-          mountPath: /home/argocd/cmp-server/config/plugin.yaml
-          subPath: kustomize-build-with-helm.yaml
-        - mountPath: /tmp
-          name: cmp-tmp
-        - mountPath: /tmp/helm-cache
-          name: helm-cache
-# Enhanced ApplicationSet controller
-applicationSet:
-  replicas: 2 # HA setup
-  networkPolicy:
-    enabled: true
-    ingress:
-      - from:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: argocd-server
-    egress:
-      - to:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: argocd-server
-        ports:
-        - protocol: TCP
-          port: 8080 # For webhooks
-  metrics:
-    enabled: true
-    serviceMonitor:
-      enabled: true
-  resources:
-    requests:
-      cpu: 100m
-      memory: 128Mi
-    limits:
-      cpu: 500m
-      memory: 256Mi
-# Keep notifications disabled for now
-notifications:
-  enabled: false
-# Global configuration
-global:
-  # Add domain if you have one
-  domain: argocd.vanillax.me
-  # Disable legacy redis
-  redis:
-    enabled: false
-
-  # Security context
-  securityContext:
-    runAsNonRoot: true
-    runAsUser: 999
-    seccompProfile:
-      type: RuntimeDefault

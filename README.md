@@ -33,65 +33,31 @@ A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux f
 
 ```mermaid
 graph TD;
-    subgraph "Git Repository"
-        Bootstrap["argocd-app.yaml<br/>(Bootstrap Application)"]
-        
-        InfraAppSet["infrastructure/root-appset.yaml<br/>(Infrastructure ApplicationSet)"]
-        MonAppSet["monitoring/monitoring-components-appset.yaml<br/>(Monitoring ApplicationSet)"]
-        AppsAppSet["my-apps/myapplications-appset.yaml<br/>(Applications ApplicationSet)"]
-        
-        InfraDirs["infrastructure/*/*<br/>(e.g., controllers/argocd)"]
-        MonDirs["monitoring/*/*<br/>(e.g., prometheus-stack)"]
-        AppDirs["my-apps/*/*<br/>(e.g., media/plex)"]
-
-        InfraAppSet -- "scans" --> InfraDirs
-        MonAppSet -- "scans" --> MonDirs
-        AppsAppSet -- "scans" --> AppDirs
+    subgraph "Bootstrap Process (Manual)"
+        User(["👨‍💻 User"]) -- "kubectl apply -k" --> Kustomization["infrastructure/controllers/argocd/kustomization.yaml"];
+        Kustomization -- "Deploys" --> ArgoCD["ArgoCD<br/>(from Helm Chart)"];
+        Kustomization -- "Deploys" --> RootApp["Root Application<br/>(root.yaml)"];
     end
 
-    subgraph "ArgoCD Self-Management"
-        ArgoCD["ArgoCD Controller"] -- "Deploys itself via" --> Bootstrap
-        
-        subgraph "Self-Managed ApplicationSets"
-            InfraAS["Infrastructure ApplicationSet"]
-            MonAS["Monitoring ApplicationSet"] 
-            AppsAS["Applications ApplicationSet"]
-        end
-
-        Bootstrap -- "Creates & Manages" --> InfraAS
-        Bootstrap -- "Creates & Manages" --> MonAS
-        Bootstrap -- "Creates & Manages" --> AppsAS
-        
-        subgraph "Generated Applications"
-            InfraApps["infra-argocd<br/>infra-cilium<br/>infra-longhorn<br/>..."]
-            MonApps["monitoring-prometheus-stack<br/>monitoring-loki-stack<br/>..."]
-            UserApps["media-plex<br/>ai-ollama<br/>home-frigate<br/>..."]
-        end
-
-        InfraAS -- "Generates" --> InfraApps
-        MonAS -- "Generates" --> MonApps
-        AppsAS -- "Generates" --> UserApps
-    end
-    
-    subgraph "Kubernetes Cluster"
-        InfraRes["Infrastructure Resources<br/>(ArgoCD, Cilium, Storage)"]
-        MonRes["Monitoring Resources<br/>(Prometheus, Grafana, Loki)"]
-        AppRes["Application Resources<br/>(Plex, Ollama, Frigate)"]
+    subgraph "GitOps Self-Management Loop (Automatic)"
+        ArgoCD -- "1. Syncs" --> RootApp;
+        RootApp -- "2. Points to<br/>.../argocd/apps/" --> ArgoConfigDir["ArgoCD Config<br/>(Projects & AppSets)"];
+        ArgoCD -- "3. Deploys" --> AppSets["ApplicationSets"];
+        AppSets -- "4. Scan Repo for<br/>argo-app.yaml" --> AppManifests["Application Manifests<br/>(e.g., my-apps/nginx/*)"];
+        ArgoCD -- "5. Deploys" --> ClusterResources["Cluster Resources<br/>(Nginx, Prometheus, etc.)"];
     end
 
-    InfraApps -- "deploys" --> InfraRes
-    MonApps -- "deploys" --> MonRes
-    UserApps -- "deploys" --> AppRes
-
-    style Bootstrap fill:#f9f,stroke:#333,stroke-width:2px
-    style ArgoCD fill:#9cf,stroke:#333,stroke-width:2px
+    style User fill:#a2d5c6,stroke:#333
+    style Kustomization fill:#5bc0de,stroke:#333
+    style RootApp fill:#f0ad4e,stroke:#333
+    style ArgoCD fill:#d9534f,stroke:#333
 ```
 
 ### Key Features
-- **Enterprise GitOps Pattern**: Three separate ApplicationSets for clear separation of concerns
-- **Self-Managing ArgoCD**: ArgoCD manages its own installation, upgrades, and ApplicationSets
-- **Simple Directory Discovery**: No complex patterns - easy to understand and maintain
-- **Production Ready**: Proper error handling, retries, and monitoring integration
+- **Enterprise GitOps Pattern**: ApplicationSets provide clean separation of concerns.
+- **Self-Managing ArgoCD**: ArgoCD manages its own installation, upgrades, and ApplicationSets from a co-located `apps` directory.
+- **Simple Metadata Discovery**: Applications are discovered via a simple `argo-app.yaml` marker file. No complex pathing needed.
+- **Production Ready**: Proper error handling, retries, and monitoring integration.
 - **GPU Integration**: Full NVIDIA GPU support via Talos system extensions and GPU Operator
 - **Zero SSH**: All node management via Talosctl API
 
@@ -180,30 +146,27 @@ This cluster uses [1Password Connect](https://developer.1password.com/docs/conne
     ```
 
 ### 6. Bootstrap ArgoCD & Deploy The Stack
-This final step uses a carefully ordered process to install ArgoCD and then deploy every other component.
+This final step uses our "App of Apps" pattern to bootstrap the entire cluster from a single command.
 
 ```bash
-# 1. Install ArgoCD Components & CRDs
-# This uses kustomize to build the official Helm chart and apply the manifests.
+# 1. Apply the ArgoCD Bootstrap Manifests
+# This single command does everything:
+#  - Deploys the ArgoCD Helm chart, including its CRDs.
+#  - Deploys the 'root' Application, which points to our self-managing configuration.
 kustomize build infrastructure/controllers/argocd --enable-helm | kubectl apply -f -
 
 # 2. Wait for ArgoCD to be ready (2-5 minutes)
+# This ensures the ArgoCD server is running before you try to access its UI or API.
 kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
-
-# 3. Bootstrap ArgoCD to Manage Itself and Create Projects
-# Now that ArgoCD is running, we apply the Application resource that tells
-# ArgoCD to manage its own installation from Git. We also apply the projects.
-kubectl apply -f infrastructure/controllers/argocd/projects.yaml
-kubectl apply -f infrastructure/argocd-app.yaml
-
-# 4. Deploy the ApplicationSets
-# With ArgoCD managing itself, we can now deploy the ApplicationSets,
-# which will discover and sync all other applications.
-kubectl apply -f infrastructure/infrastructure-components-appset.yaml
-kubectl apply -f monitoring/monitoring-components-appset.yaml
-kubectl apply -f my-apps/myapplications-appset.yaml
 ```
-**That's it!** ArgoCD will now build the entire cluster state from the Git repository.
+**That's it!** You have successfully bootstrapped the cluster.
+
+### What Happens Next Automatically?
+
+1.  **ArgoCD Syncs Itself**: The `root` Application tells ArgoCD to sync the contents of `infrastructure/controllers/argocd/apps/`.
+2.  **Projects & AppSets Created**: ArgoCD creates the `AppProject`s and the three `ApplicationSet`s (`infrastructure`, `monitoring`, `my-apps`).
+3.  **Applications Discovered**: The `ApplicationSet`s scan the repository for any directory containing an `argo-app.yaml` file and create the corresponding ArgoCD `Application` resources.
+4.  **Cluster Reconciliation**: ArgoCD syncs all discovered applications, building the entire cluster state declaratively from Git.
 
 ## 🔍 Verification
 After the final step, you can monitor the deployment and verify that everything is working correctly.
@@ -404,7 +367,7 @@ kubectl get applicationsets -n argocd -o name | xargs -I{} kubectl patch {} -n a
 kubectl delete applicationsets --all -n argocd
 
 # Bootstrap with the new enterprise pattern
-kubectl apply -f infrastructure/argocd-app.yaml
+kustomize build infrastructure/controllers/argocd --enable-helm | kubectl apply -f -
 ```
 
 ## 🚀 Taking to Production

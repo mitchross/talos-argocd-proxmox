@@ -1,12 +1,18 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: argocd
 resources:
   - ns.yaml
   - http-route.yaml
+  # This is the root application that manages our AppProjects and ApplicationSets.
+  # By including it here, the ArgoCD installation will immediately start managing
+  # the rest of the applications in the repository.
+  - root.yaml
 helmCharts:
   - name: argo-cd
     repo: https://argoproj.github.io/argo-helm
-    version: 8.1.2
-    releaseName: "argocd"
+    version: "6.7.13" # It's good practice to pin the chart version
+    releaseName: argocd
     namespace: argocd
     valuesFile: values.yaml
+    includeCRDs: true

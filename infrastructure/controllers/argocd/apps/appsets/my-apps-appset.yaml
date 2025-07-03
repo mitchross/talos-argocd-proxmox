@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: my-apps
+  namespace: argocd
+spec:
+  preserveResourcesOnDeletion: true
+  generators:
+    - git:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git # TODO: Replace with your repo URL
+        revision: HEAD
+        # Discover any 'argo-app.yaml' file within the my-apps directory.
+        files:
+          - path: "my-apps/**/argo-app.yaml"
+  template:
+    metadata:
+      # The name is dynamically set from the 'name' field in each argo-app.yaml
+      name: '{{name}}'
+      namespace: argocd
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: my-apps
+      source:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git # TODO: Replace with your repo URL
+        targetRevision: HEAD
+        # The path points directly to the directory containing the argo-app.yaml file.
+        path: '{{path.directory}}'
+      destination:
+        server: https://kubernetes.default.svc
+        # The namespace is dynamically set from the 'namespace' field in each argo-app.yaml
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - RespectIgnoreDifferences=true

@@ -1,0 +1,4 @@
+# This file provides the metadata for the ApplicationSet generator.
+# It tells ArgoCD how to create the Application for this component.
+name: infra-argocd
+namespace: argocd
