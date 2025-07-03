@@ -8,31 +8,26 @@ metadata:
 spec:
   preserveResourcesOnDeletion: true
   generators:
-    - matrix:
-        generators:
-          - git:
-              repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-              revision: HEAD
-              directories:
-                - path: "infrastructure/controllers/apps/*"
-          - list:
-              elements:
-                - cluster: "in-cluster"
+    - git:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+        revision: HEAD
+        directories:
+          - path: "infrastructure/controllers/apps/*"
   template:
     metadata:
-      name: 'infra-{{element.path.basename}}'
+      name: 'infra-{{path.basename}}'
       namespace: argocd
     spec:
       project: infrastructure
       source:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         targetRevision: HEAD
-        path: '{{element.path}}'
+        path: '{{path}}'
         kustomize:
           buildOptions: "--enable-helm"
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{element.path.basename}}'
+        namespace: '{{path.basename}}'
       syncPolicy:
         automated:
           prune: true
