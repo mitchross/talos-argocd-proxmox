@@ -1,0 +1,47 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: infrastructure-fixed
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  preserveResourcesOnDeletion: true
+  generators:
+    - git:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+        revision: main
+        directories:
+          - path: "infrastructure/controllers/apps/*"
+          - path: "infrastructure/database/*"
+          - path: "infrastructure/networking/*"
+  template:
+    metadata:
+      name: 'infra-{{path.basename}}'
+      namespace: argocd
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: '{{path}}'
+    spec:
+      project: infrastructure
+      source:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+        targetRevision: main
+        path: '{{path}}'
+        kustomize:
+          buildOptions: "--enable-helm"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - RespectIgnoreDifferences=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m

@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: manual-cloudnative-pg
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: infrastructure
+  source:
+    repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+    targetRevision: main
+    path: infrastructure/database/cloudnative-pg
+    kustomize:
+      buildOptions: "--enable-helm"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cloudnative-pg
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - RespectIgnoreDifferences=true

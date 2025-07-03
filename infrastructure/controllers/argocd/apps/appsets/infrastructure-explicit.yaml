@@ -1,0 +1,94 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: infrastructure-explicit
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  preserveResourcesOnDeletion: true
+  generators:
+    - list:
+        elements:
+        # Controllers/Apps
+        - name: 1passwordconnect
+          path: infrastructure/controllers/apps/1passwordconnect
+          namespace: 1passwordconnect
+        - name: cert-manager
+          path: infrastructure/controllers/apps/cert-manager
+          namespace: cert-manager
+        - name: container-registry
+          path: infrastructure/controllers/apps/container-registry
+          namespace: container-registry
+        - name: csi-driver-nfs
+          path: infrastructure/controllers/apps/csi-driver-nfs
+          namespace: csi-driver-nfs
+        - name: csi-driver-smb
+          path: infrastructure/controllers/apps/csi-driver-smb
+          namespace: csi-driver-smb
+        - name: external-secrets
+          path: infrastructure/controllers/apps/external-secrets
+          namespace: external-secrets
+        - name: intel-device-plugins
+          path: infrastructure/controllers/apps/intel-device-plugins
+          namespace: intel-device-plugins
+        - name: local-storage
+          path: infrastructure/controllers/apps/local-storage
+          namespace: local-storage
+        - name: longhorn
+          path: infrastructure/controllers/apps/longhorn
+          namespace: longhorn
+        - name: node-feature-discovery
+          path: infrastructure/controllers/apps/node-feature-discovery
+          namespace: node-feature-discovery
+        - name: nvidia-device-plugin
+          path: infrastructure/controllers/apps/nvidia-device-plugin
+          namespace: nvidia-device-plugin
+        - name: nvidia-gpu-operator
+          path: infrastructure/controllers/apps/nvidia-gpu-operator
+          namespace: nvidia-gpu-operator
+        - name: openebs
+          path: infrastructure/controllers/apps/openebs
+          namespace: openebs
+        # Database
+        - name: cloudnative-pg
+          path: infrastructure/database/cloudnative-pg
+          namespace: cloudnative-pg
+        - name: redis
+          path: infrastructure/database/redis
+          namespace: redis
+        # Networking
+        - name: cilium
+          path: infrastructure/networking/cilium
+          namespace: kube-system
+        - name: cloudflared
+          path: infrastructure/networking/cloudflared
+          namespace: cloudflared
+        - name: coredns
+          path: infrastructure/networking/coredns
+          namespace: kube-system
+        - name: gateway
+          path: infrastructure/networking/gateway
+          namespace: gateway
+  template:
+    metadata:
+      name: 'infra-{{name}}'
+      namespace: argocd
+    spec:
+      project: infrastructure
+      source:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+        targetRevision: main
+        path: '{{path}}'
+        kustomize:
+          buildOptions: "--enable-helm"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - RespectIgnoreDifferences=true

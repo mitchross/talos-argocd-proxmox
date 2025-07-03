@@ -5,3 +5,8 @@ resources:
   - appsets/infrastructure-appset.yaml
   - appsets/my-apps-appset.yaml
   - appsets/monitoring-appset.yaml
+  
+  # Troubleshooting alternatives - uncomment to test:
+  # - manual-cloudnative-pg-app.yaml           # Manual app for cloudnative-pg
+  # - appsets/infrastructure-appset-fixed.yaml  # Fixed template variables
+  # - appsets/infrastructure-explicit.yaml      # Explicit list instead of directory discovery
