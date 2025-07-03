@@ -65,6 +65,11 @@ spec:
             periodSeconds: 30
             timeoutSeconds: 10
             failureThreshold: 3
+          tolerations:
+            - key: "gpu"
+              operator: "Equal"
+              value: "true"
+              effect: "NoSchedule"
       volumes:
         - name: comfyui-storage
           persistentVolumeClaim:

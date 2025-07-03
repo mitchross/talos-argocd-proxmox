@@ -49,6 +49,10 @@ spec:
       tolerations:
         - key: nvidia.com/gpu
           operator: Exists
+        - key: "gpu"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"
       containers:
         - name: server
           image: ghcr.io/khoj-ai/khoj:latest
