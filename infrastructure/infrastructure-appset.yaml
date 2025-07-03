@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: infrastructure-appset
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+        revision: HEAD
+        directories:
+          - path: infrastructure/*
+            exclude: infrastructure/argocd
+  template:
+    metadata:
+      name: 'infra-{{path.basename}}'
+      namespace: argocd
+      labels:
+        app.kubernetes.io/name: '{{path.basename}}'
+        app.kubernetes.io/part-of: 'infrastructure'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+        targetRevision: HEAD
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

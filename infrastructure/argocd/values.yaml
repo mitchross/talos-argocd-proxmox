@@ -19,15 +19,11 @@ server:
     limits:
       cpu: 500m
       memory: 512Mi
-# Config Management Plugin for Kustomize + Helm
+# Enable Helm support globally for all Kustomize applications (official approach)
 configs:
-  cmp:
-    create: true
-    plugins:
-      kustomize-build-with-helm:
-        generate:
-          command: ["sh", "-c"]
-          args: ["kustomize build --enable-helm"]
+  cm:
+    # Global kustomize build options - enables Helm chart processing in kustomizations
+    kustomize.buildOptions: "--enable-helm"
 # Enable and configure the ApplicationSet controller
 applicationSet:
   enabled: true
