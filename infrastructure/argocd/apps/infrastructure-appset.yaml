@@ -10,10 +10,7 @@ spec:
         revision: main
         directories:
           - path: infrastructure/*
-            exclude: |
-              infrastructure/argocd
-              infrastructure/crds
-              infrastructure/storage
+            exclude: "infrastructure/argocd"
   template:
     metadata:
       name: 'infra-{{path.basename}}'
