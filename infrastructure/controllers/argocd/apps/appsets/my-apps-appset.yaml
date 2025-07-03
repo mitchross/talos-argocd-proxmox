@@ -10,7 +10,7 @@ spec:
   generators:
     - git:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        revision: HEAD
+        revision: main
         directories:
           - path: "my-apps/*/*"
   template:
@@ -21,7 +21,7 @@ spec:
       project: my-apps
       source:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        targetRevision: HEAD
+        targetRevision: main
         path: '{{.path}}'
         kustomize:
           buildOptions: "--enable-helm"
