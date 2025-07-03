@@ -11,23 +11,25 @@ server:
     url: https://argocd.vanillax.me
     # Application reconciliation timeout
     timeout.reconciliation: 180s
-# Configure Argo CD ConfigMap to enable Helm support in Kustomize globally
-configs:
-  cm:
-    # Enable Helm support in Kustomize builds globally
-    # This allows ApplicationSets to work with Helm charts in Kustomize
-    kustomize.buildOptions: "--enable-helm"
+  # Resource requests and limits for the Argo CD server
+  resources:
+    requests:
+      cpu: 150m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 # Enable and configure the ApplicationSet controller
 applicationSet:
   enabled: true
   # Resource requests and limits for the ApplicationSet controller
   resources:
     requests:
+      memory: 128Mi
       cpu: 100m
-      memory: 256Mi
     limits:
-      cpu: 500m
       memory: 512Mi
+      cpu: 500m
 # High Availability (HA) configuration for production environments
 ha:
   enabled: true
@@ -57,14 +59,6 @@ repoServer:
     limits:
       cpu: 1000m
       memory: 1Gi
-server:
-  resources:
-    requests:
-      cpu: 150m
-      memory: 256Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
 # Disable Dex as we are not using it for authentication in this setup
 dex:
   enabled: false
