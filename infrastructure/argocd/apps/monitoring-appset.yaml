@@ -19,6 +19,8 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         targetRevision: main
         path: '{{path}}'
+        kustomize:
+          buildOptions: "--enable-helm"
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{path.basename}}'
