@@ -13,7 +13,7 @@ spec:
         revision: HEAD
         # Discover any application directory within the monitoring/* path.
         directories:
-          - path: monitoring/*
+          - path: "monitoring/*"
   template:
     metadata:
       # Name is derived from the path, e.g., 'monitoring-loki-stack'
