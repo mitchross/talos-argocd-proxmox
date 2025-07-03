@@ -10,7 +10,7 @@ spec:
   generators:
     - git:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git # TODO: Replace with your repo URL
-        revision: HEAD
+        revision: main
         # Discover any application directory within the monitoring/* path.
         directories:
           - path: "monitoring/*"
@@ -23,7 +23,7 @@ spec:
       project: monitoring
       source:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git # TODO: Replace with your repo URL
-        targetRevision: HEAD
+        targetRevision: main
         path: '{{.path}}'
         kustomize:
           buildOptions: "--enable-helm"

@@ -10,7 +10,7 @@ spec:
   generators:
     - git:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        revision: HEAD
+        revision: main
         directories:
           - path: "infrastructure/controllers/apps/*"
           - path: "infrastructure/database/*"
@@ -23,7 +23,7 @@ spec:
       project: infrastructure
       source:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        targetRevision: HEAD
+        targetRevision: main
         path: '{{.path}}'
         kustomize:
           buildOptions: "--enable-helm"
