@@ -16,7 +16,8 @@ spec:
           - path: "my-apps/*/*"
   template:
     metadata:
-      name: 'my-apps-{{path.elements[1]}}-{{path.basename}}'
+      # Name is derived from the path, e.g., my-apps-ai-comfyui
+      name: 'my-apps-{{path.segments[1]}}-{{path.segments[2]}}'
       namespace: argocd
     spec:
       project: my-apps
@@ -28,8 +29,8 @@ spec:
           buildOptions: "--enable-helm"
       destination:
         server: https://kubernetes.default.svc
-        # Namespace is the directory name, e.g., 'ollama'
-        namespace: '{{path.basename}}'
+        # Namespace is the last part of the path (e.g., "comfyui").
+        namespace: '{{path.segments[2]}}'
       syncPolicy:
         automated:
           prune: true
