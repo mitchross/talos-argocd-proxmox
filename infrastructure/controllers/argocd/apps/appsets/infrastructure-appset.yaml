@@ -24,7 +24,7 @@ spec:
       source:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         targetRevision: HEAD
-        path: '{{.path.path}}'
+        path: '{{.path}}'
         kustomize:
           buildOptions: "--enable-helm"
       destination:
