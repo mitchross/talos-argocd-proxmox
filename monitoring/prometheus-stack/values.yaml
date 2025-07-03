@@ -57,6 +57,10 @@ prometheus:
         - namespace: prometheus-stack
           name: kube-prometheus-stack-alertmanager
           port: 9093
+    caching:
+      enabled: true
+      cacheSize: 500MB
+      cacheTTL: 10m
 # Alertmanager Configuration
 alertmanager:
   enabled: true

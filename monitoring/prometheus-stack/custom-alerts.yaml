@@ -135,6 +135,30 @@ spec:
           annotations:
             summary: "Alertmanager configuration reload failure"
             description: "Alertmanager {{ $labels.instance }} configuration reload has failed."
+    # Custom Alert for High API Latency
+    - name: custom-api-latency
+      interval: 5m
+      rules:
+        - alert: HighAPILatency
+          expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="api"}[5m])) by (le)) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High API latency detected"
+            description: "The 95th percentile latency for API requests is above 500ms."
+    # Custom Alert for Database Connection Errors
+    - name: custom-database-connection-errors
+      interval: 5m
+      rules:
+        - alert: DatabaseConnectionErrors
+          expr: increase(db_connection_errors_total[5m]) > 5
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Database connection errors detected"
+            description: "More than 5 database connection errors occurred in the last 5 minutes."
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
