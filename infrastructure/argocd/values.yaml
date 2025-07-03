@@ -1,17 +1,16 @@
 # Global settings for the Argo CD chart
 global:
-  # Ingress is disabled because we use a custom HTTPRoute for external access
+  # Ingress is disabled; external access is managed via HTTPRoute
   ingress:
     enabled: false
-# Argo CD server settings
+
+# Argo CD server configuration
 server:
-  # Extra configuration for the argocd-cm ConfigMap
   config:
-    # URL for the Argo CD UI. Important for SSO redirects and notifications.
+    # URL for the Argo CD UI - used for SSO redirects and notifications
     url: https://argocd.vanillax.me
-    # Application reconciliation timeout
+    # Application reconciliation interval
     timeout.reconciliation: 180s
-  # Resource requests and limits for the Argo CD server
   resources:
     requests:
       cpu: 150m
@@ -19,26 +18,27 @@ server:
     limits:
       cpu: 500m
       memory: 512Mi
-# Enable Helm support globally for all Kustomize applications (official approach)
+
+# ConfigMaps and feature flags
 configs:
   cm:
-    # Global kustomize build options - enables Helm chart processing in kustomizations
+    # Enable Helm support in Kustomize builds
     kustomize.buildOptions: "--enable-helm"
-# Enable and configure the ApplicationSet controller
+
+# ApplicationSet controller settings
 applicationSet:
   enabled: true
-  # Resource requests and limits for the ApplicationSet controller
   resources:
     requests:
-      memory: 128Mi
       cpu: 100m
+      memory: 128Mi
     limits:
-      memory: 512Mi
       cpu: 500m
-# High Availability (HA) configuration for production environments
+      memory: 512Mi
+
+# High Availability setup
 ha:
   enabled: true
-  # Resource requests and limits for the HA redis
   redis:
     resources:
       requests:
@@ -47,7 +47,8 @@ ha:
       limits:
         cpu: 200m
         memory: 256Mi
-# Resource requests and limits for core Argo CD components
+
+# Argo CD controller settings
 controller:
   resources:
     requests:
@@ -56,6 +57,8 @@ controller:
     limits:
       cpu: 1000m
       memory: 1Gi
+
+# Argo CD repo-server settings
 repoServer:
   resources:
     requests:
@@ -64,6 +67,7 @@ repoServer:
     limits:
       cpu: 1000m
       memory: 1Gi
-# Disable Dex as we are not using it for authentication in this setup
+
+# Dex is disabled; external authentication (e.g. SSO) is used
 dex:
   enabled: false
