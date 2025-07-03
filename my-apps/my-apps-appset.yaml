@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: my-apps
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+        revision: main
+        directories:
+          - path: my-apps/*/*
+  template:
+    metadata:
+      name: 'my-apps-{{path.basename}}'
+    spec:
+      project: my-apps
+      source:
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+        targetRevision: main
+        path: '{{path}}'
+        kustomize:
+          buildOptions: "--enable-helm"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+          - CreateNamespace=true
+          - RespectIgnoreDifferences=true
+          - ApplyOutOfSyncOnly=true
+      info:
+        - name: 'Description'
+          value: 'Application: {{path.basename}}'
