@@ -13,6 +13,8 @@ spec:
         revision: HEAD
         directories:
           - path: "infrastructure/controllers/apps/*"
+          - path: "infrastructure/database/*"
+          - path: "infrastructure/networking/*"
   template:
     metadata:
       name: 'infra-{{path.basename}}'
