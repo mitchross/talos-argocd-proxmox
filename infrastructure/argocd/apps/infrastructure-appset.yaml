@@ -13,6 +13,8 @@ spec:
   template:
     metadata:
       name: 'infra-{{path.basename}}'
+      labels:
+        app.kubernetes.io/part-of: infrastructure
     spec:
       project: infrastructure
       source:
@@ -34,5 +36,11 @@ spec:
           - RespectIgnoreDifferences=true
           - ApplyOutOfSyncOnly=true
       info:
-        - name: 'Description'
+        - name: Description
           value: 'Infrastructure component: {{path.basename}}'
+      retry:
+        limit: 5
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 3m

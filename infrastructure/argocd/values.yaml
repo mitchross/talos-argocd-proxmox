@@ -71,3 +71,14 @@ repoServer:
 # Dex is disabled; external authentication (e.g. SSO) is used
 dex:
   enabled: false
+
+
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+
+notifications:
+  enabled: true
+  secret:
+    create: true
