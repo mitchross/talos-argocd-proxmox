@@ -43,7 +43,7 @@ graph TD;
         ArgoCD -- "1. Syncs" --> RootApp;
         RootApp -- "2. Points to<br/>.../argocd/apps/" --> ArgoConfigDir["ArgoCD Config<br/>(Projects & AppSets)"];
         ArgoCD -- "3. Deploys" --> AppSets["ApplicationSets"];
-        AppSets -- "4. Scan Repo for<br/>argo-app.yaml" --> AppManifests["Application Manifests<br/>(e.g., my-apps/nginx/*)"];
+        AppSets -- "4. Scans Repo for<br/>Application Directories" --> AppManifests["Application Manifests<br/>(e.g., my-apps/nginx/)"];
         ArgoCD -- "5. Deploys" --> ClusterResources["Cluster Resources<br/>(Nginx, Prometheus, etc.)"];
     end
 
@@ -56,7 +56,7 @@ graph TD;
 ### Key Features
 - **Enterprise GitOps Pattern**: ApplicationSets provide clean separation of concerns.
 - **Self-Managing ArgoCD**: ArgoCD manages its own installation, upgrades, and ApplicationSets from a co-located `apps` directory.
-- **Simple Metadata Discovery**: Applications are discovered via a simple `argo-app.yaml` marker file. No complex pathing needed.
+- **Simple Directory Discovery**: Applications are discovered automatically based on their directory path. No extra files needed.
 - **Production Ready**: Proper error handling, retries, and monitoring integration.
 - **GPU Integration**: Full NVIDIA GPU support via Talos system extensions and GPU Operator
 - **Zero SSH**: All node management via Talosctl API
@@ -175,7 +175,7 @@ kubectl apply -f infrastructure/controllers/argocd/root.yaml
 
 1.  **ArgoCD Syncs Itself**: The `root` Application tells ArgoCD to sync the contents of `infrastructure/controllers/argocd/apps/`.
 2.  **Projects & AppSets Created**: ArgoCD creates the `AppProject`s and the three `ApplicationSet`s (`infrastructure`, `monitoring`, `my-apps`).
-3.  **Applications Discovered**: The `ApplicationSet`s scan the repository for any directory containing an `argo-app.yaml` file and create the corresponding ArgoCD `Application` resources.
+3.  **Applications Discovered**: The `ApplicationSet`s scan the repository for any directories matching their defined paths (e.g., `my-apps/*/*`) and create the corresponding ArgoCD `Application` resources.
 4.  **Cluster Reconciliation**: ArgoCD syncs all discovered applications, building the entire cluster state declaratively from Git.
 
 ## 🔍 Verification

@@ -13,11 +13,10 @@ spec:
         revision: HEAD
         # Discover any application directory within the my-apps/*/* path.
         directories:
-          - path: my-apps/*/*
+          - path: "my-apps/*/*"
   template:
     metadata:
-      # Name is derived from the path, e.g., 'ai-ollama'
-      name: '{{path.elements[1]}}-{{path.basename}}'
+      name: 'my-apps-{{path.elements[1]}}-{{path.basename}}'
       namespace: argocd
     spec:
       project: my-apps

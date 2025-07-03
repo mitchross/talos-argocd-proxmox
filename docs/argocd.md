@@ -20,7 +20,7 @@ graph TD;
         ArgoCD -- "1. Syncs" --> RootApp;
         RootApp -- "2. Points to<br/>.../argocd/apps/" --> ArgoConfigDir["ArgoCD Config<br/>(Projects & AppSets)"];
         ArgoCD -- "3. Deploys" --> AppSets["ApplicationSets"];
-        AppSets -- "4. Scan Repo for<br/>argo-app.yaml" --> AppManifests["Application Manifests<br/>(e.g., my-apps/nginx/*)"];
+        AppSets -- "4. Scans Repo for<br/>Application Directories" --> AppManifests["Application Manifests<br/>(e.g., my-apps/nginx/)"];
         ArgoCD -- "5. Deploys" --> ClusterResources["Cluster Resources<br/>(Nginx, Prometheus, etc.)"];
     end
 
@@ -65,18 +65,14 @@ These `AppProject` resources are defined in `infrastructure/controllers/argocd/a
 
 ## 📱 ApplicationSet Management
 
-We use **three simple ApplicationSets** that discover applications based on a metadata file.
+We use **three simple ApplicationSets** that discover applications based on their directory structure. This follows a "convention over configuration" approach, eliminating the need for metadata files.
 
-### 1. The "Application as Metadata" Pattern
-Instead of relying on directory paths, our `ApplicationSet`s discover applications by looking for a marker file named `argo-app.yaml`.
+### 1. The "Directory as Application" Pattern
+Instead of relying on marker files, our `ApplicationSet`s discover applications by looking for directories that match a predefined path pattern. The application's name and target namespace are derived directly from this path.
 
-An example `argo-app.yaml` for `my-apps/development/nginx`:
-```yaml
-# This file provides the metadata for the ApplicationSet generator.
-# It tells ArgoCD how to create the Application for this component.
-name: my-app-nginx
-namespace: nginx
-```
+For an application at `my-apps/development/nginx`, the `ApplicationSet` will automatically:
+- Create an ArgoCD Application named `my-apps-development-nginx`.
+- Deploy the application into the `nginx` namespace.
 
 ### 2. ApplicationSet Configuration
 All `ApplicationSet`s live in `infrastructure/controllers/argocd/apps/appsets/` and follow the same pattern. Here is the `my-apps-appset.yaml` as an example:
@@ -93,25 +89,28 @@ spec:
     - git:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         revision: HEAD
-        # Discover any 'argo-app.yaml' file within the my-apps directory.
-        files:
-          - path: "my-apps/**/argo-app.yaml"
+        # Discover any directory matching the pattern.
+        directories:
+          - path: "my-apps/*/*"
   template:
     metadata:
-      # Name comes from the 'name' field in argo-app.yaml
-      name: '{{name}}'
+      # Name is derived from the directory path.
+      name: 'my-apps-{{path.basenameNormalized}}-{{path[2]}}'
       namespace: argocd
     spec:
       project: my-apps
       source:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         targetRevision: HEAD
-        # Path points to the directory where the argo-app.yaml was found
-        path: '{{path.directory}}'
+        # Path points to the discovered directory.
+        path: '{{path}}'
+        # Enable Helm charts for Kustomize
+        kustomize:
+          buildOptions: "--enable-helm"
       destination:
         server: https://kubernetes.default.svc
-        # Namespace comes from the 'namespace' field in argo-app.yaml
-        namespace: '{{namespace}}'
+        # Namespace is the last part of the path (e.g., "nginx").
+        namespace: '{{path.basenameNormalized}}'
       syncPolicy:
         automated:
           prune: true
@@ -135,20 +134,17 @@ The repository structure is designed for clarity and co-location of configuratio
 │           │   │   └── my-apps-appset.yaml
 │           │   ├── projects.yaml
 │           │   └── kustomization.yaml
-│           ├── argo-app.yaml         # <-- Marker for ArgoCD itself
 │           ├── http-route.yaml
 │           ├── ns.yaml
 │           ├── root.yaml             # <-- The "root" app (App of Apps)
 │           ├── values.yaml
 │           └── kustomization.yaml    # <-- The BOOTSTRAP kustomization
 ├── monitoring/
-│   └── prometheus-stack/
-│       ├── argo-app.yaml             # <-- Example marker file
+│   └── prometheus-stack/             # <-- Example discovered application
 │       └── ...
 └── my-apps/
     └── development/
-        └── nginx/
-            ├── argo-app.yaml         # <-- Example marker file
+        └── nginx/                    # <-- Example discovered application
             └── ...
 ```
 
@@ -162,8 +158,8 @@ The repository structure is designed for clarity and co-location of configuratio
    - Clear separation of concerns with three `ApplicationSet`s.
    - Follows GitOps best practices used in production.
 
-3. **Simple Metadata Discovery**:
-   - Applications are discovered via `argo-app.yaml` files, not brittle directory pathing. This is flexible and clear.
+3. **Simple Directory Discovery**:
+   - Applications are discovered automatically based on their directory structure. This is flexible, clear, and requires no boilerplate.
 
 4. **Production Ready**:
    - The `ApplicationSet`s use `preserveResourcesOnDeletion: true` as a safety mechanism to prevent accidental mass-deletions.
@@ -197,14 +193,19 @@ kubectl get applications -n argocd -l argocd.argoproj.io/project=my-apps
 
 ## 🔍 Application Naming Conventions
 
-The `ApplicationSet`s use the `name` field from each `argo-app.yaml` to name the application in ArgoCD, giving you full control.
+The `ApplicationSet`s use the directory `path` to automatically generate the application name and target namespace. This creates a consistent and predictable naming scheme.
+
+- **Application Name**: Combines the project (`my-apps`, `infrastructure`, `monitoring`) with the directory path.
+  - `my-apps/development/nginx` -> `my-apps-nginx-development`
+- **Target Namespace**: Uses the final directory in the path.
+  - `my-apps/development/nginx` -> `nginx`
 
 ## Best Practices
 
 - **All cluster state is managed in Git** - no manual changes are made via `kubectl`.
 - **ArgoCD manages itself** - including its projects and `ApplicationSet` configurations.
 - **Clear separation** - infrastructure, monitoring, and applications are separate projects.
-- **Simple metadata patterns** - `argo-app.yaml` provides a clear, declarative way to onboard applications.
+- **Simple directory patterns** - A new directory is all that's needed to onboard an application.
 
 ## Troubleshooting
 
@@ -217,13 +218,13 @@ kubectl get applications -n argocd
 kubectl get applicationsets -n argocd
 
 # Describe an application to see its sync status, resources, and health
-kubectl describe application my-app-nginx -n argocd
+kubectl describe application my-apps-nginx-development -n argocd
 ```
 
 ### Common Issues
 | Issue | Solution |
 |-------|----------|
-| **ApplicationSet not generating apps** | Verify the `argo-app.yaml` file exists, is valid YAML, and is in a path the `ApplicationSet` is scanning. Check the `ApplicationSet` logs. |
+| **ApplicationSet not generating apps** | Verify the directory structure matches the `path` pattern in the `ApplicationSet`. Check the `ApplicationSet` controller logs in the `argocd` namespace. |
 | **Applications stuck in sync** | Review application logs (`argocd app logs <app-name>`) and check for sync errors in the UI. |
 | **ArgoCD UI not accessible** | Check the `http-route.yaml` and the status of the `istio-ingressgateway` service. |
 
@@ -241,7 +242,7 @@ kubectl get applicationsets -n argocd
 This setup follows **enterprise GitOps patterns**:
 
 1. **Infrastructure as Code**: Everything defined in Git.
-2. **Self-Service**: Developers can add applications by creating a directory and an `argo-app.yaml` file.
+2. **Self-Service**: Developers can add new applications simply by creating a new directory in the correct path.
 3. **Separation of Concerns**: Clear project boundaries for security and organization.
 4. **Automated Operations**: Zero-touch deployments after the initial bootstrap.
 5. **Observability**: Ready for a full monitoring and alerting stack.
