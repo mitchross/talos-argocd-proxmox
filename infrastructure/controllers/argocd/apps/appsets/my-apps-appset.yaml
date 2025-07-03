@@ -8,29 +8,31 @@ metadata:
 spec:
   preserveResourcesOnDeletion: true
   generators:
-    - git:
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git # TODO: Replace with your repo URL
-        revision: HEAD
-        # Discover any application directory within the my-apps/*/* path.
-        directories:
-          - path: "my-apps/*/*"
+    - matrix:
+        generators:
+          - git:
+              repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+              revision: HEAD
+              directories:
+                - path: "my-apps/*/*"
+          - list:
+              elements:
+                - cluster: "in-cluster"
   template:
     metadata:
-      # Name is derived from the path, e.g., my-apps-ai-comfyui
-      name: 'my-apps-{{path.segments[1]}}-{{path.segments[2]}}'
+      name: 'my-apps-{{element.path.segments[1]}}-{{element.path.segments[2]}}'
       namespace: argocd
     spec:
       project: my-apps
       source:
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git # TODO: Replace with your repo URL
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         targetRevision: HEAD
-        path: '{{path}}'
+        path: '{{element.path}}'
         kustomize:
           buildOptions: "--enable-helm"
       destination:
         server: https://kubernetes.default.svc
-        # Namespace is the last part of the path (e.g., "comfyui").
-        namespace: '{{path.segments[2]}}'
+        namespace: '{{element.path.segments[2]}}'
       syncPolicy:
         automated:
           prune: true

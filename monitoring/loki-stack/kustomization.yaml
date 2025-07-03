@@ -9,6 +9,5 @@ helmCharts:
     repo: https://grafana.github.io/helm-charts
     version: 6.30.1
     releaseName: loki
-    namespace: loki-stack
     valuesFile: values.yaml
     includeCRDs: true

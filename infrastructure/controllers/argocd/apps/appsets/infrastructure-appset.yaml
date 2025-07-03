@@ -8,36 +8,31 @@ metadata:
 spec:
   preserveResourcesOnDeletion: true
   generators:
-    - git:
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git # TODO: Replace with your repo URL
-        revision: HEAD
-        # Discover any application directory within the infrastructure/controllers/apps path.
-        directories:
-          - path: "infrastructure/controllers/apps/*"
-    - git:
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git # TODO: Replace with your repo URL
-        revision: HEAD
-        # ...but explicitly exclude the argocd directory itself to prevent a recursive loop.
-        directories:
-          - path: "infrastructure/controllers/argocd"
-            exclude: true
+    - matrix:
+        generators:
+          - git:
+              repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+              revision: HEAD
+              directories:
+                - path: "infrastructure/controllers/apps/*"
+          - list:
+              elements:
+                - cluster: "in-cluster"
   template:
     metadata:
-      # Name is derived from the path, e.g., 'infra-cert-manager'
-      name: 'infra-{{path.basename}}'
+      name: 'infra-{{element.path.basename}}'
       namespace: argocd
     spec:
       project: infrastructure
       source:
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git # TODO: Replace with your repo URL
+        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         targetRevision: HEAD
-        path: '{{path}}'
+        path: '{{element.path}}'
         kustomize:
           buildOptions: "--enable-helm"
       destination:
         server: https://kubernetes.default.svc
-        # Namespace is the directory name, e.g., 'cert-manager'
-        namespace: '{{path.basename}}'
+        namespace: '{{element.path.basename}}'
       syncPolicy:
         automated:
           prune: true
