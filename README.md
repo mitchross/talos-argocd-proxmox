@@ -111,8 +111,8 @@ talosctl apply-config --insecure --nodes <node-ip-2> --file iac/talos/clustercon
 ### 4. Install Gateway API CRDs
 This is a prerequisite for Cilium's Gateway API integration.
 ```bash
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/experimental-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.3.0/standard-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.3.0/experimental-install.yaml
 ```
 
 ### 5. Configure Secret Management
