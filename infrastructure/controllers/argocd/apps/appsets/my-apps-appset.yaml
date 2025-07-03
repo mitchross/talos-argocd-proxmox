@@ -15,7 +15,7 @@ spec:
           - path: "my-apps/*/*"
   template:
     metadata:
-      name: 'my-apps-{{path.segments[1]}}-{{path.segments[2]}}'
+      name: 'my-apps-{{path.basename}}'
       namespace: argocd
     spec:
       project: my-apps
@@ -27,7 +27,7 @@ spec:
           buildOptions: "--enable-helm"
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{path.segments[2]}}'
+        namespace: '{{path.basename}}'
       syncPolicy:
         automated:
           prune: true
