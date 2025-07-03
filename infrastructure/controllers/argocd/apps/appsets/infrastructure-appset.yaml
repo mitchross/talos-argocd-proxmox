@@ -3,6 +3,8 @@ kind: ApplicationSet
 metadata:
   name: infrastructure
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   preserveResourcesOnDeletion: true
   generators:
