@@ -27,6 +27,9 @@ spec:
         targetRevision: HEAD
         # The path points directly to the directory containing the argo-app.yaml file.
         path: '{{path.directory}}'
+        # Instruct Argo CD's Kustomize builder to enable Helm chart support.
+        kustomize:
+          buildOptions: "--enable-helm"
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{namespace}}'
