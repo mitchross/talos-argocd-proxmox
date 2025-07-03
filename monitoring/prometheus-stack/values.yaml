@@ -135,6 +135,13 @@ grafana:
             matcherRegex: "(?:logger=rpc\\.server|report).*?(?:traceID|trace_id)=([a-f\\d]+)"
             name: TraceID
             url: "$${__value.raw}"
+    - name: AdditionalDataSource
+      type: prometheus
+      access: proxy
+      url: http://additional-prometheus.svc.cluster.local
+      jsonData:
+        timeout: 60
+        httpMethod: POST
   # Grafana configuration
   grafana.ini:
     server:

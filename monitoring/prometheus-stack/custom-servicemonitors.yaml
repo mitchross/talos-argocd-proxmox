@@ -7,6 +7,7 @@ metadata:
   labels:
     app.kubernetes.io/name: argocd
     release: kube-prometheus-stack
+    prometheus: kube-prometheus-stack-prometheus
 spec:
   selector:
     matchLabels:
@@ -28,6 +29,7 @@ metadata:
   labels:
     app.kubernetes.io/name: argocd-server
     release: kube-prometheus-stack
+    prometheus: kube-prometheus-stack-prometheus
 spec:
   selector:
     matchLabels:
@@ -49,6 +51,7 @@ metadata:
   labels:
     app.kubernetes.io/name: argocd-repo-server
     release: kube-prometheus-stack
+    prometheus: kube-prometheus-stack-prometheus
 spec:
   selector:
     matchLabels:
@@ -70,6 +73,7 @@ metadata:
   labels:
     app.kubernetes.io/name: nvidia-device-plugin
     release: kube-prometheus-stack
+    prometheus: kube-prometheus-stack-prometheus
 spec:
   selector:
     matchLabels:
@@ -92,6 +96,7 @@ metadata:
     app.kubernetes.io/name: dcgm-exporter
     app.kubernetes.io/component: gpu-metrics
     release: kube-prometheus-stack
+    prometheus: kube-prometheus-stack-prometheus
 spec:
   selector:
     matchLabels:
@@ -114,6 +119,7 @@ metadata:
   labels:
     app.kubernetes.io/name: longhorn
     release: kube-prometheus-stack
+    prometheus: kube-prometheus-stack-prometheus
 spec:
   selector:
     matchLabels:
@@ -135,6 +141,7 @@ metadata:
   labels:
     app.kubernetes.io/name: cilium
     release: kube-prometheus-stack
+    prometheus: kube-prometheus-stack-prometheus
 spec:
   selector:
     matchLabels:
@@ -156,6 +163,7 @@ metadata:
   labels:
     app.kubernetes.io/name: cilium-operator
     release: kube-prometheus-stack
+    prometheus: kube-prometheus-stack-prometheus
 spec:
   selector:
     matchLabels:
@@ -177,6 +185,7 @@ metadata:
   labels:
     app.kubernetes.io/name: gateway-api
     release: kube-prometheus-stack
+    prometheus: kube-prometheus-stack-prometheus
 spec:
   selector:
     matchLabels:

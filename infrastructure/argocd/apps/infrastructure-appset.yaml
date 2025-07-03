@@ -42,3 +42,12 @@ spec:
           duration: 5s
           factor: 2
           maxDuration: 3m
+  notifications:
+    enabled: true
+    resources:
+      requests:
+        cpu: 100m
+        memory: 64Mi
+      limits:
+        cpu: 1000m
+        memory: 128Mi

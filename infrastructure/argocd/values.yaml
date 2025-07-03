@@ -3,7 +3,6 @@ global:
   # Ingress is disabled; external access is managed via HTTPRoute
   ingress:
     enabled: false
-
 # Argo CD server configuration
 server:
   config:
@@ -13,18 +12,16 @@ server:
     timeout.reconciliation: 180s
   resources:
     requests:
-      cpu: 150m
-      memory: 256Mi
+      cpu: 50m
+      memory: 128Mi
     limits:
-      cpu: 500m
+      cpu: 4000m
       memory: 512Mi
-
 # ConfigMaps and feature flags
 configs:
   cm:
     # Enable Helm support in Kustomize builds
     kustomize.buildOptions: "--enable-helm"
-
 # ApplicationSet controller settings
 applicationSet:
   enabled: true
@@ -35,7 +32,6 @@ applicationSet:
     limits:
       cpu: 500m
       memory: 512Mi
-
 # High Availability setup
 ha:
   enabled: true
@@ -47,7 +43,6 @@ ha:
       limits:
         cpu: 200m
         memory: 256Mi
-
 # Argo CD controller settings
 controller:
   resources:
@@ -57,7 +52,6 @@ controller:
     limits:
       cpu: 1000m
       memory: 1Gi
-
 # Argo CD repo-server settings
 repoServer:
   resources:
@@ -67,17 +61,13 @@ repoServer:
     limits:
       cpu: 1000m
       memory: 1Gi
-
 # Dex is disabled; external authentication (e.g. SSO) is used
 dex:
   enabled: false
-
-
 metrics:
   enabled: true
   serviceMonitor:
     enabled: true
-
 notifications:
   enabled: true
   secret:
