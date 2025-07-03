@@ -11,6 +11,12 @@ server:
     url: https://argocd.vanillax.me
     # Application reconciliation timeout
     timeout.reconciliation: 180s
+# Configure Argo CD ConfigMap to enable Helm support in Kustomize globally
+configs:
+  cm:
+    # Enable Helm support in Kustomize builds globally
+    # This allows ApplicationSets to work with Helm charts in Kustomize
+    kustomize.buildOptions: "--enable-helm"
 # Enable and configure the ApplicationSet controller
 applicationSet:
   enabled: true
