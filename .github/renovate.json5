@@ -9,12 +9,15 @@
     'kubernetes',
     'kustomize',
     'argocd',
+    'terraform',
+    'dockerfile',
   ],
   argocd: {
     managerFilePatterns: [
       '/^infra/.+\\.yaml$/',
       '/^apps/.+\\.yaml$/',
       '/^my-apps/.+\\.yaml$/',
+      '/^monitoring/.+\\.yaml$/',
     ],
   },
   kubernetes: {
@@ -22,17 +25,31 @@
       '/^infra/.+\\.yaml$/',
       '/^apps/.+\\.yaml$/',
       '/^my-apps/.+\\.yaml$/',
+      '/^monitoring/.+\\.yaml$/',
+      '/^iac/.+\\.yaml$/',
     ],
   },
   'helm-values': {
     managerFilePatterns: [
       '/^infra/.+/values\\.yaml$/',
       '/^apps/.+/values\\.yaml$/',
+      '/^monitoring/.+/values\\.yaml$/',
+      '/^my-apps/.+/values\\.yaml$/',
     ],
   },
   kustomize: {
     managerFilePatterns: [
-      '/(^|/)kustomization\\.ya?ml$/',
+      '(^|/)kustomization\\.ya?ml$',
+    ],
+  },
+  terraform: {
+    fileMatch: [
+      '/^iac/terraform/.+\\.tf$/',
+    ],
+  },
+  dockerfile: {
+    fileMatch: [
+      '/^docker/.+/Dockerfile$/',
     ],
   },
   packageRules: [
@@ -83,9 +100,19 @@
         'iac/talos/talconfig.yaml'
       ],
       matchStrings: [
-        'talosVersion:\s*(?<currentValue>v[0-9.]+)'
+        'talosVersion:\\s*(?<currentValue>v[0-9.]+)'
       ],
       depNameTemplate: 'ghcr.io/siderolabs/installer',
+      datasourceTemplate: 'docker'
+    },
+    {
+      fileMatch: [
+        'iac/talos/talconfig.yaml'
+      ],
+      matchStrings: [
+        'kubernetesVersion:\\s*(?<currentValue>v[0-9.]+)'
+      ],
+      depNameTemplate: 'ghcr.io/siderolabs/kubelet',
       datasourceTemplate: 'docker'
     }
   ]
