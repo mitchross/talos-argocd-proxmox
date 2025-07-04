@@ -101,10 +101,10 @@ export KUBECONFIG=./iac/talos/clusterconfig/kubeconfig
 # Run ONCE on a single control plane node IP
 talosctl bootstrap --nodes <control-plane-ip>
 ```
-- Apply the machine configuration to all nodes in the cluster.
+- Apply the machine configuration to all nodes in the cluster. This command should be run from the root of the repository after setting `TALOSCONFIG`.
 ```bash
-talosctl apply-config --insecure --nodes <node-ip-1> --file iac/talos/clusterconfig/<node-1-name>.yaml
-talosctl apply-config --insecure --nodes <node-ip-2> --file iac/talos/clusterconfig/<node-2-name>.yaml
+talosctl apply-config --nodes <node-ip-1> --file iac/talos/clusterconfig/<node-1-name>.yaml
+talosctl apply-config --nodes <node-ip-2> --file iac/talos/clusterconfig/<node-2-name>.yaml
 # ... repeat for all nodes
 ```
 
@@ -208,6 +208,39 @@ kubectl get backuptarget -n longhorn-system
 - **System Extensions**: GPU, storage, and other drivers enabled via config
 - **SOPS**: Used for encrypting Talos secrets
 - **No plaintext secrets in Git**
+
+#### Upgrading Nodes
+When a new version of Talos is released or system extensions in `iac/talos/talconfig.yaml` are changed, follow this process to upgrade your nodes. This method uses the direct `upgrade` command to ensure the new system image is correctly applied, which is more reliable than `apply-config` for image changes.
+
+**Important:** Always upgrade control plane nodes **one at a time**, waiting for each node to successfully reboot and rejoin the cluster before proceeding to the next. This prevents losing etcd quorum. Worker nodes can be upgraded in parallel after the control plane is healthy.
+
+1.  **Update Configuration**:
+    Modify `iac/talos/talconfig.yaml` with the new `talosVersion` or changes to `systemExtensions`.
+
+2.  **Ensure Environment is Set**:
+    Make sure your `TALOSCONFIG` variable is pointing to your generated cluster configuration file as described in the Quick Start.
+
+3.  **Upgrade a Control Plane Node**:
+    Run the following commands from the root of the repository. Replace `<node-name>` and `<node-ip>` with the target node's details. Run this for each control plane node sequentially.
+
+    ```bash
+    # Example for the first control plane node
+    NODE_NAME="talos-cluster-control-00"
+    NODE_IP="192.168.10.100" # Replace with your node's IP
+    INSTALLER_URL=$(talhelper genurl installer -c iac/talos/talconfig.yaml -n "$NODE_NAME")
+    talosctl upgrade --nodes "$NODE_IP" --image "$INSTALLER_URL"
+    ```
+    Wait for the command to complete and verify the node is healthy with `talosctl health --nodes <node-ip>` before moving to the next control plane node.
+
+4.  **Upgrade Worker Nodes**:
+    Once the control plane is fully upgraded and healthy, you can upgrade the worker nodes. These can be run in parallel from separate terminals.
+    ```bash
+    # Example for the GPU worker node
+    NODE_NAME="talos-cluster-gpu-worker-00"
+    NODE_IP="192.168.10.200" # Replace with your node's IP
+    INSTALLER_URL=$(talhelper genurl installer -c iac/talos/talconfig.yaml -n "$NODE_NAME")
+    talosctl upgrade --nodes "$NODE_IP" --image "$INSTALLER_URL"
+    ```
 
 ## 🗄️ MinIO S3 Backup Configuration
 
