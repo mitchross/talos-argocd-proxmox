@@ -114,6 +114,16 @@ nodes:
     controlPlane: false
     ipAddress: 192.168.10.201
     installDisk: /dev/sda
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/amd-ucode
+            - siderolabs/gasket-driver
+            - siderolabs/i915
+            - siderolabs/iscsi-tools
+            - siderolabs/qemu-guest-agent
+            - siderolabs/util-linux-tools
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "bc:24:11:4c:99:a2"
@@ -140,6 +150,16 @@ nodes:
     controlPlane: false
     ipAddress: 192.168.10.203
     installDisk: /dev/sda
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/amd-ucode
+            - siderolabs/gasket-driver
+            - siderolabs/i915
+            - siderolabs/iscsi-tools
+            - siderolabs/qemu-guest-agent
+            - siderolabs/util-linux-tools
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "bc:24:11:ad:82:0d"
