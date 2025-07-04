@@ -43,13 +43,13 @@
     ],
   },
   terraform: {
-    fileMatch: [
-      '/^iac/terraform/.+\\.tf$/',
+    managerFilePatterns: [
+      '//^iac/terraform/.+\\.tf$//',
     ],
   },
   dockerfile: {
-    fileMatch: [
-      '/^docker/.+/Dockerfile$/',
+    managerFilePatterns: [
+      '//^docker/.+/Dockerfile$//',
     ],
   },
   packageRules: [
@@ -94,26 +94,28 @@
   ignorePaths: [
     '**/charts/**',
   ],
-  regexManagers: [
+  customManagers: [
     {
-      fileMatch: [
-        'iac/talos/talconfig.yaml'
+      customType: 'regex',
+      managerFilePatterns: [
+        '/iac/talos/talconfig.yaml/',
       ],
       matchStrings: [
-        'talosVersion:\\s*(?<currentValue>v[0-9.]+)'
+        'talosVersion:\\s*(?<currentValue>v[0-9.]+)',
       ],
       depNameTemplate: 'ghcr.io/siderolabs/installer',
-      datasourceTemplate: 'docker'
+      datasourceTemplate: 'docker',
     },
     {
-      fileMatch: [
-        'iac/talos/talconfig.yaml'
+      customType: 'regex',
+      managerFilePatterns: [
+        '/iac/talos/talconfig.yaml/',
       ],
       matchStrings: [
-        'kubernetesVersion:\\s*(?<currentValue>v[0-9.]+)'
+        'kubernetesVersion:\\s*(?<currentValue>v[0-9.]+)',
       ],
       depNameTemplate: 'ghcr.io/siderolabs/kubelet',
-      datasourceTemplate: 'docker'
-    }
-  ]
+      datasourceTemplate: 'docker',
+    },
+  ],
 }
