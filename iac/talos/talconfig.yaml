@@ -1,8 +1,8 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/budimanjojo/talhelper/master/pkg/config/schemas/talconfig.json
 # renovate: datasource=docker depName=ghcr.io/siderolabs/installer
-talosVersion: v1.10.4
+talosVersion: v1.10.5
 # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
-kubernetesVersion: v1.33.1
+kubernetesVersion: v1.33.2
 # Cluster configuration
 clusterName: proxmox-talos-cluster
 endpoint: https://192.168.10.100:6443
@@ -73,6 +73,12 @@ nodes:
       customization:
         systemExtensions:
           officialExtensions:
+            - siderolabs/amd-ucode
+            - siderolabs/gasket-driver
+            - siderolabs/i915
+            - siderolabs/iscsi-tools
+            - siderolabs/qemu-guest-agent
+            - siderolabs/util-linux-tools
             - siderolabs/nonfree-kmod-nvidia-production
             - siderolabs/nvidia-container-toolkit-production
     networkInterfaces:
