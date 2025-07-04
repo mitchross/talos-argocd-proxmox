@@ -42,13 +42,7 @@ spec:
           duration: 5s
           factor: 2
           maxDuration: 3m
-      topologySpreadConstraints:
-        - maxSkew: 1
-          topologyKey: "kubernetes.io/hostname"
-          whenUnsatisfiable: ScheduleAnyway
-          labelSelector:
-            matchLabels:
-              app.kubernetes.io/part-of: infrastructure
+
   notifications:
     enabled: true
     resources:
