@@ -77,4 +77,16 @@
   ignorePaths: [
     '**/charts/**',
   ],
+  regexManagers: [
+    {
+      fileMatch: [
+        'iac/talos/talconfig.yaml'
+      ],
+      matchStrings: [
+        'talosVersion:\s*(?<currentValue>v[0-9.]+)'
+      ],
+      depNameTemplate: 'ghcr.io/siderolabs/installer',
+      datasourceTemplate: 'docker'
+    }
+  ]
 }
