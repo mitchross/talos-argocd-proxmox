@@ -16,6 +16,7 @@ spec:
       # Node selector for GPU nodes
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
+      priorityClassName: gpu-workload-preemptible
       securityContext:
         fsGroup: 1000
       containers:

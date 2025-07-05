@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+metadata:
+  name: gpu-priority-classes
+  labels:
+    app.kubernetes.io/name: gpu-priority-classes
+    app.kubernetes.io/component: scheduling
+resources:
+  - priority-classes.yaml
+commonLabels:
+  app.kubernetes.io/part-of: gpu-infrastructure

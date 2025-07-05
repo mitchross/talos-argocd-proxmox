@@ -1,0 +1,27 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: gpu-workload-high
+  annotations:
+    description: "High priority for primary AI workloads (Ollama)"
+value: 1000
+globalDefault: false
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: gpu-workload-background
+  annotations:
+    description: "Background priority for batch AI workloads (Ollama)"
+value: 100
+globalDefault: false
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: gpu-workload-preemptible
+  annotations:
+    description: "Low priority for secondary AI workloads (Khoj, ComfyUI) - can be preempted by Ollama"
+value: 50
+globalDefault: false
+preemptionPolicy: PreemptLowerPriority

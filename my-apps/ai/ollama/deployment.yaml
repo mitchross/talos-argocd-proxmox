@@ -19,6 +19,7 @@ spec:
         app.kubernetes.io/component: llm-server
     spec:
       runtimeClassName: nvidia
+      priorityClassName: gpu-workload-high
       tolerations:
         - key: "gpu"
           operator: "Equal"
@@ -39,7 +40,7 @@ spec:
             requests:
               cpu: "1000m"
               memory: 8Gi
-              nvidia.com/gpu: "20"
+              nvidia.com/gpu: "18"
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
