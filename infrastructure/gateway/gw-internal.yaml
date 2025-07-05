@@ -3,6 +3,8 @@ kind: Gateway
 metadata:
   name: gateway-internal
   namespace: gateway
+  annotations:
+    cert-manager.io/cluster-issuer: cloudflare-cluster-issuer
 spec:
   addresses:
   - type: IPAddress

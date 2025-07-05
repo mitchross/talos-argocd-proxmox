@@ -1,10 +1,13 @@
 installCRDs: true
 
+config:
+  apiVersion: controller.config.cert-manager.io/v1alpha1
+  kind: ControllerConfiguration
+  enableGatewayAPI: true
+
 extraArgs:
-  - "--enable-gateway-api"
   - "--dns01-recursive-nameservers-only"
   - "--dns01-recursive-nameservers=8.8.8.8:53,1.1.1.1:53"
-  - "--enable-gateway-api"
 
 resources:
   limits:
