@@ -2,10 +2,15 @@ apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
   name: cloudflare-cluster-issuer
+  annotations:
+    argocd.argoproj.io/sync-wave: "5" # Deploy well after cert-manager deployments are ready
+    argocd.argoproj.io/sync-options: Validate=true
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
 spec:
   acme:
+    # stage server: https://acme-staging-v02.api.letsencrypt.org/directory
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: mitchross09@gmail.com
+    email: admin@vanillax.me
     privateKeySecretRef:
       name: cloudflare-key
     solvers:
