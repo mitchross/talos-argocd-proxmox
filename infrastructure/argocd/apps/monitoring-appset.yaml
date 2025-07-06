@@ -13,6 +13,8 @@ spec:
   template:
     metadata:
       name: 'monitoring-{{path.basename}}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "0"
     spec:
       project: monitoring
       source:

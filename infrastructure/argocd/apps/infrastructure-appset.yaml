@@ -13,6 +13,8 @@ spec:
   template:
     metadata:
       name: 'infra-{{path.basename}}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "1"
       labels:
         app.kubernetes.io/part-of: infrastructure
     spec:
@@ -42,7 +44,6 @@ spec:
           duration: 5s
           factor: 2
           maxDuration: 3m
-
   notifications:
     enabled: true
     resources:
