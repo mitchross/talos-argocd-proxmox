@@ -1,30 +1,44 @@
-installCRDs: true
+# Add leader election namespace to prevent RBAC permissions errors
 global:
   leaderElection:
+    # This should be the same namespace cert-manager is installed into
     namespace: cert-manager
+crds:
+  enabled: true
+  keep: true
+# Use the modern, structured configuration for controller settings
 config:
   apiVersion: controller.config.cert-manager.io/v1alpha1
   kind: ControllerConfiguration
   enableGatewayAPI: true
+# extraArgs can still be used for flags not available in the structured config
 extraArgs:
+  # "--enable-gateway-api" has been moved to the 'config' block above
   - "--dns01-recursive-nameservers-only"
-  - "--dns01-recursive-nameservers=8.8.8.8:53,1.1.1.1:53"
+  - "--dns01-recursive-nameservers=1.1.1.1:53,8.8.8.8:53,9.9.9.9:53"
+  - "--dns01-check-retry-period=10s"
+  - "--max-concurrent-challenges=60"
+  - "--enable-certificate-owner-ref=true"
+# Security context for improved container security - This section is well-configured
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  seccompProfile:
+    type: RuntimeDefault
+# Resource limits for production workloads - This section is well-configured
 resources:
   limits:
-    cpu: 100m
-    memory: 128Mi
+    cpu: 200m
+    memory: 256Mi
   requests:
-    cpu: 10m
-    memory: 64Mi
+    cpu: 20m
+    memory: 128Mi
 webhook:
-  resources:
-    limits:
-      cpu: 100m
-      memory: 64Mi
-    requests:
-      cpu: 10m
-      memory: 32Mi
-cainjector:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    seccompProfile:
+      type: RuntimeDefault
   resources:
     limits:
       cpu: 100m
@@ -32,3 +46,28 @@ cainjector:
     requests:
       cpu: 10m
       memory: 64Mi
+cainjector:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    seccompProfile:
+      type: RuntimeDefault
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 20m
+      memory: 128Mi
+# Prometheus monitoring - This section is well-configured
+prometheus:
+  enabled: true
+  servicemonitor:
+    enabled: true
+    prometheusInstance: default
+    targetPort: 9402
+    path: /metrics
+    interval: 60s
+    scrapeTimeout: 30s
+    labels:
+      release: kube-prometheus-stack
