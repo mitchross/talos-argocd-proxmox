@@ -60,14 +60,14 @@ cainjector:
       cpu: 20m
       memory: 128Mi
 # Prometheus monitoring - This section is well-configured
-prometheus:
-  enabled: true
-  servicemonitor:
-    enabled: true
-    prometheusInstance: default
-    targetPort: 9402
-    path: /metrics
-    interval: 60s
-    scrapeTimeout: 30s
-    labels:
-      release: kube-prometheus-stack
+# prometheus:
+#   enabled: true
+#   servicemonitor:
+#     enabled: true
+#     prometheusInstance: default
+#     targetPort: 9402
+#     path: /metrics
+#     interval: 60s
+#     scrapeTimeout: 30s
+#     labels:
+#       release: kube-prometheus-stack
