@@ -35,6 +35,18 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
+            - name: config-files
+              mountPath: /config/configuration.yaml
+              subPath: configuration.yaml
+            - name: config-files
+              mountPath: /config/automations.yaml
+              subPath: automations.yaml
+            - name: config-files
+              mountPath: /config/scripts.yaml
+              subPath: scripts.yaml
+            - name: config-files
+              mountPath: /config/scenes.yaml
+              subPath: scenes.yaml
           resources:
             requests:
               cpu: 100m
@@ -66,3 +78,6 @@ spec:
         - name: config
           persistentVolumeClaim:
             claimName: home-assistant-config
+        - name: config-files
+          configMap:
+            name: home-assistant-config
