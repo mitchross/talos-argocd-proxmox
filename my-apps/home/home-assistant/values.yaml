@@ -3,7 +3,8 @@ image:
   tag: 2025.7.1
   pullPolicy: IfNotPresent
 env:
-  TZ: "America/New_York"
+  - name: TZ
+    value: "America/New_York"
 service:
   main:
     ports:
