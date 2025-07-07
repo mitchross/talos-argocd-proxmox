@@ -7,6 +7,11 @@ spec:
   selector:
     app.kubernetes.io/name: home-assistant
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 8123
       targetPort: 8123
+    - name: code-server
+      protocol: TCP
+      port: 8443
+      targetPort: 8443

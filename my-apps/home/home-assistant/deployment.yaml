@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: home-assistant
   namespace: home-assistant
+  labels:
+    app.kubernetes.io/name: home-assistant
 spec:
   replicas: 1
   strategy:
@@ -33,29 +35,34 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
-            - name: config-files
-              mountPath: /config/configuration.yaml
-              subPath: configuration.yaml
-            - name: config-files
-              mountPath: /config/automations.yaml
-              subPath: automations.yaml
-            - name: config-files
-              mountPath: /config/scripts.yaml
-              subPath: scripts.yaml
-            - name: config-files
-              mountPath: /config/scenes.yaml
-              subPath: scenes.yaml
           resources:
             requests:
-              cpu: 500m
-              memory: 1Gi
+              cpu: 100m
+              memory: 256Mi
             limits:
-              cpu: "2"
               memory: 4Gi
+        - name: code-server
+          image: "ghcr.io/coder/code-server:4.91.1"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: TZ
+              value: "America/New_York"
+          args:
+            - "--auth"
+            - "none"
+            - "--user-data-dir"
+            - "/config/.vscode"
+            - "--extensions-dir"
+            - "/config/.vscode"
+            - "/config"
+          ports:
+            - containerPort: 8443
+              name: code-server
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /config
       volumes:
         - name: config
           persistentVolumeClaim:
             claimName: home-assistant-config
-        - name: config-files
-          configMap:
-            name: home-assistant-config
