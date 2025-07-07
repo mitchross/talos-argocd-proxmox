@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: home-assistant
+  namespace: home-assistant
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: home-assistant
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: home-assistant
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: home-assistant
+          image: "ghcr.io/home-assistant/home-assistant:stable"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          env:
+            - name: TZ
+              value: "America/New_York"
+          ports:
+            - containerPort: 8123
+              name: http
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: config-files
+              mountPath: /config/configuration.yaml
+              subPath: configuration.yaml
+            - name: config-files
+              mountPath: /config/automations.yaml
+              subPath: automations.yaml
+            - name: config-files
+              mountPath: /config/scripts.yaml
+              subPath: scripts.yaml
+            - name: config-files
+              mountPath: /config/scenes.yaml
+              subPath: scenes.yaml
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: home-assistant-config
+        - name: config-files
+          configMap:
+            name: home-assistant-config
