@@ -23,10 +23,11 @@ server:
 configs:
   params:
     # Parameters for the argocd-cmd-params-cm ConfigMap
-    # This ensures the server knows its external URL
-    server.basehref: /
+    # This ensures the server knows it is running behind a gateway
+    # and should not handle TLS itself.
+    server.insecure: "true"
   cm:
-    # URL for the argocd-cm ConfigMap
+    # URL for the UI to use
     url: "https://argocd.vanillax.me"
     # Enable Helm support in Kustomize builds
     kustomize.buildOptions: "--enable-helm"
