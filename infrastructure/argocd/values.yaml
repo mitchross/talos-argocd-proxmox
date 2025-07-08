@@ -15,7 +15,7 @@ server:
       cpu: 4000m
       memory: 512Mi
   config:
-    url: "http://argocd.vanillax.me"
+    url: "https://argocd.vanillax.me"
 # ConfigMaps and feature flags
 configs:
   cm:
