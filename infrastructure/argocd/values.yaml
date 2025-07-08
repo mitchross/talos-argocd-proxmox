@@ -21,6 +21,8 @@ configs:
   params:
     server.basehref: /
     server.url: "https://argocd.vanillax.me"
+    server.args:
+      - --x-forwarded-proto-https
   cm:
     # Enable Helm support in Kustomize builds
     kustomize.buildOptions: "--enable-helm"
