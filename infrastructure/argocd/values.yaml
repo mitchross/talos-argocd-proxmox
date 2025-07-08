@@ -5,11 +5,6 @@ global:
     enabled: false
 # Argo CD server configuration
 server:
-  config:
-    # URL for the Argo CD UI - used for SSO redirects and notifications
-    url: https://argocd.vanillax.me
-    # Application reconciliation interval
-    timeout.reconciliation: 180s
   resources:
     requests:
       cpu: 50m
