@@ -5,8 +5,13 @@ global:
     enabled: false
 # Argo CD server configuration
 server:
-  # Configure server to run in insecure mode for HTTPRoute
-  insecure: true
+  # The server no longer needs to be insecure at the pod level
+  # as we will handle TLS termination at the gateway.
+  # The --x-forwarded-proto-https flag will inform ArgoCD of this.
+  insecure: false
+  extraArgs:
+    - --insecure
+    - --x-forwarded-proto-https
   resources:
     requests:
       cpu: 50m
@@ -14,16 +19,15 @@ server:
     limits:
       cpu: 4000m
       memory: 512Mi
-  config:
-    url: "https://argocd.vanillax.me"
 # ConfigMaps and feature flags
 configs:
   params:
+    # Parameters for the argocd-cmd-params-cm ConfigMap
+    # This ensures the server knows its external URL
     server.basehref: /
-    server.url: "https://argocd.vanillax.me"
-    server.args:
-      - --x-forwarded-proto-https
   cm:
+    # URL for the argocd-cm ConfigMap
+    url: "https://argocd.vanillax.me"
     # Enable Helm support in Kustomize builds
     kustomize.buildOptions: "--enable-helm"
 # ApplicationSet controller settings
