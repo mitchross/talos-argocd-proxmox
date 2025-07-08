@@ -5,16 +5,43 @@ metadata:
   namespace: argocd
 spec:
   generators:
-    - git:
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        revision: main
-        directories:
-          - path: infrastructure/*
+    - list:
+        elements:
+          - name: cloudnative-pg-crds
+            path: infrastructure/cloudnative-pg/crds
+            syncwave: "-2"
+          - name: cloudnative-pg-operator
+            path: infrastructure/cloudnative-pg/operator
+            syncwave: "1"
+          - name: 1passwordconnect
+            path: infrastructure/1passwordconnect
+            syncwave: "0"
+          - name: cert-manager
+            path: infrastructure/cert-manager
+            syncwave: "0"
+          - name: cilium
+            path: infrastructure/cilium
+            syncwave: "-1"
+          - name: cloudflared
+            path: infrastructure/cloudflared
+            syncwave: "0"
+          - name: coredns
+            path: infrastructure/coredns
+            syncwave: "0"
+          - name: external-secrets
+            path: infrastructure/external-secrets
+            syncwave: "0"
+          - name: gateway
+            path: infrastructure/gateway
+            syncwave: "0"
+          - name: longhorn
+            path: infrastructure/longhorn
+            syncwave: "0"
   template:
     metadata:
-      name: 'infra-{{path.basename}}'
+      name: 'infra-{{name}}'
       annotations:
-        argocd.argoproj.io/sync-wave: "1"
+        argocd.argoproj.io/sync-wave: "{{syncwave}}"
       labels:
         app.kubernetes.io/part-of: infrastructure
     spec:
@@ -25,7 +52,7 @@ spec:
         path: '{{path}}'
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{path.basename}}'
+        namespace: '{{name}}'
       syncPolicy:
         automated:
           prune: true
@@ -37,7 +64,7 @@ spec:
           - ApplyOutOfSyncOnly=true
       info:
         - name: Description
-          value: 'Infrastructure component: {{path.basename}}'
+          value: 'Infrastructure component: {{name}}'
       retry:
         limit: 5
         backoff:
