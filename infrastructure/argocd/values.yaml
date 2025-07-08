@@ -5,6 +5,8 @@ global:
     enabled: false
 # Argo CD server configuration
 server:
+  # Configure server to run in insecure mode for HTTPRoute
+  insecure: true
   resources:
     requests:
       cpu: 50m
