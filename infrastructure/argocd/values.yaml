@@ -18,6 +18,9 @@ server:
     url: "https://argocd.vanillax.me"
 # ConfigMaps and feature flags
 configs:
+  params:
+    server.basehref: /
+    server.url: "https://argocd.vanillax.me"
   cm:
     # Enable Helm support in Kustomize builds
     kustomize.buildOptions: "--enable-helm"
