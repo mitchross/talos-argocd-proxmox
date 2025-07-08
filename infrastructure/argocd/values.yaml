@@ -3,15 +3,23 @@ global:
   # Ingress is disabled; external access is managed via HTTPRoute
   ingress:
     enabled: false
-# Argo CD server configuration
+# ConfigMaps and feature flags
+configs:
+  params:
+    # This ensures the server knows it is running behind a gateway
+    # and should not handle TLS itself. This adds the --insecure flag
+    # to the argocd-server command.
+    server.insecure: "true"
+  cm:
+    # URL for the UI to use
+    url: "https://argocd.vanillax.me"
+    # Enable Helm support in Kustomize builds
+    kustomize.buildOptions: "--enable-helm"
+# Argo CD server settings
 server:
-  # The server no longer needs to be insecure at the pod level
-  # as we will handle TLS termination at the gateway.
-  # The --x-forwarded-proto-https flag will inform ArgoCD of this.
-  insecure: false
-  extraArgs:
-    - --insecure
-    - --x-forwarded-proto-https
+  # We are not using the chart's built-in ingress
+  ingress:
+    enabled: false
   resources:
     requests:
       cpu: 50m
@@ -19,18 +27,6 @@ server:
     limits:
       cpu: 4000m
       memory: 512Mi
-# ConfigMaps and feature flags
-configs:
-  params:
-    # Parameters for the argocd-cmd-params-cm ConfigMap
-    # This ensures the server knows it is running behind a gateway
-    # and should not handle TLS itself.
-    server.insecure: "true"
-  cm:
-    # URL for the UI to use
-    url: "https://argocd.vanillax.me"
-    # Enable Helm support in Kustomize builds
-    kustomize.buildOptions: "--enable-helm"
 # ApplicationSet controller settings
 applicationSet:
   enabled: true
