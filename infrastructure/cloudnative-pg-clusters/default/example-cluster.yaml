@@ -1,0 +1,56 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: single-example
+  namespace: cloudnative-pg
+spec:
+  instances: 1
+  # https://cloudnative-pg.io/documentation/1.24/quickstart/
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.4
+  # https://cloudnative-pg.io/documentation/1.24/monitoring/
+  monitoring:
+    enablePodMonitor: false
+  enableSuperuserAccess: true
+  # Bootstrap configuration
+  bootstrap:
+    initdb:
+      database: postgres
+      owner: postgres
+      secret:
+        name: postgres-superuser-secret
+      postInitSQL:
+        - CREATE EXTENSION IF NOT EXISTS citext;
+        - ALTER SYSTEM SET log_statement = 'all';
+        - ALTER SYSTEM SET log_duration = on;
+  postgresql:
+    parameters:
+      timezone: "America/New_York"
+    pg_hba:
+      - host all all 0.0.0.0/0 md5
+  managed:
+    services:
+      #disabledDefaultServices: [ "ro", "r" ]
+      additional:
+        - selectorType: rw
+          updateStrategy: patch
+          serviceTemplate:
+            metadata:
+              name: single-example-ext
+              annotations:
+                lbipam.cilium.io/ips: "192.168.10.30"
+            spec:
+              type: LoadBalancer
+  # Data storage configuration 
+  storage:
+    size: 100Gi
+    storageClass: longhorn
+    pvcTemplate:
+      accessModes:
+        - ReadWriteOnce
+  # WAL storage configuration - this is the new section
+  walStorage:
+    size: 10Gi
+    storageClass: longhorn
+    pvcTemplate:
+      accessModes:
+        - ReadWriteOnce

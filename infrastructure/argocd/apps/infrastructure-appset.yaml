@@ -35,6 +35,7 @@ spec:
           - CreateNamespace=true
           - RespectIgnoreDifferences=true
           - ApplyOutOfSyncOnly=true
+          - ServerSideApply=true
       info:
         - name: Description
           value: 'Infrastructure component: {{path.basename}}'
