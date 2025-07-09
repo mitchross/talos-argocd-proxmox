@@ -7,12 +7,13 @@ spec:
   generators:
     - git:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        revision: main
+        revision: HEAD
         directories:
           - path: infrastructure/*
+          - path: infrastructure/database/*
   template:
     metadata:
-      name: 'infra-{{path.basename}}'
+      name: '{{path.basename}}'
       annotations:
         argocd.argoproj.io/sync-wave: "1"
       labels:
