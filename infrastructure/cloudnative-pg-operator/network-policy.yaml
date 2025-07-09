@@ -11,6 +11,8 @@ spec:
   ingress:
     - fromEndpoints:
         - matchLabels:
+            # This is the standard label for kube-apiserver pods.
+            k8s-app: kube-apiserver
             k8s:io.kubernetes.pod.namespace: kube-system
       toPorts:
         - ports:
