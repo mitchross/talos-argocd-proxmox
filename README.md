@@ -167,7 +167,7 @@ kubectl wait --for=condition=Available deployment/argocd-server -n argocd --time
 # Now that ArgoCD is running and its CRDs are ready, we can apply the 'root' application
 # to kickstart the self-managing GitOps loop.
 echo "Applying the root application..."
-kubectl apply -f infrastructure/argocd/root.yaml
+kubectl apply -f infrastructure/controllers/argocd/root.yaml
 ```
 **That's it!** You have successfully and reliably bootstrapped the cluster.
 
