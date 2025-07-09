@@ -12,7 +12,7 @@ spec:
     path: infrastructure/controllers/argocd/appsets
     targetRevision: HEAD
     kustomize:
-      buildOptions: --load-restrictor LoadRestrictionsNone
+      options: --load-restrictor LoadRestrictionsNone
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
