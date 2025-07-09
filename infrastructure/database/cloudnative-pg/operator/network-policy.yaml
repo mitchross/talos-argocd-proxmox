@@ -13,8 +13,12 @@ spec:
         - matchLabels:
             # This is the standard label for kube-apiserver pods.
             k8s-app: kube-apiserver
-            k8s:io.kubernetes.pod.namespace: kube-system
+        - matchLabels:
+            # Also allow from control plane component
+            component: kube-apiserver
       toPorts:
         - ports:
+            - port: "9443"
+              protocol: TCP
             - port: "443"
               protocol: TCP
