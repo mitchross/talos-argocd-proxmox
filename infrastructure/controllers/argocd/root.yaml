@@ -11,8 +11,6 @@ spec:
     repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git # TODO: Replace with your repository URL
     path: infrastructure/controllers/argocd/appsets
     targetRevision: HEAD
-    kustomize:
-      options: --load-restrictor LoadRestrictionsNone
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
