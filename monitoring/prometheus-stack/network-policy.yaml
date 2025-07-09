@@ -1,0 +1,21 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-grafana-to-prometheus
+  namespace: prometheus-stack
+spec:
+  description: "Allow Grafana to connect to Prometheus for querying metrics."
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+      app.kubernetes.io/instance: kube-prometheus-stack
+      app.kubernetes.io/component: prometheus
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: grafana
+            app.kubernetes.io/instance: kube-prometheus-stack-grafana
+      toPorts:
+        - ports:
+            - port: "9090"
+              protocol: TCP

@@ -12,6 +12,7 @@ resources:
   - dcgm-exporter.yaml # DCGM GPU monitoring
   - gpu-alerts.yaml # GPU alerting rules
   - gpu-dashboard.yaml # Grafana dashboard
+  - network-policy.yaml # Allow Grafana to access Prometheus
 # Strategic merge patches to handle resource conflicts
 patchesStrategicMerge:
   - alertmanager-config.yaml
