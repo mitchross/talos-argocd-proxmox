@@ -7,17 +7,19 @@ spec:
   generators:
     - git:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        revision: main
+        revision: HEAD
         directories:
           - path: my-apps/*/*
   template:
     metadata:
       name: 'my-apps-{{path.basename}}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "2"
     spec:
       project: my-apps
       source:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        targetRevision: main
+        targetRevision: HEAD
         path: '{{path}}'
       destination:
         server: https://kubernetes.default.svc
@@ -31,6 +33,13 @@ spec:
           - CreateNamespace=true
           - RespectIgnoreDifferences=true
           - ApplyOutOfSyncOnly=true
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
       info:
         - name: 'Description'
           value: 'Application: {{path.basename}}'

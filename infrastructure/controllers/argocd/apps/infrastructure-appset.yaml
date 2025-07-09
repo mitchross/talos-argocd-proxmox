@@ -22,7 +22,7 @@ spec:
       project: infrastructure
       source:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        targetRevision: main
+        targetRevision: HEAD
         path: '{{path}}'
       destination:
         server: https://kubernetes.default.svc
@@ -46,12 +46,3 @@ spec:
           duration: 5s
           factor: 2
           maxDuration: 3m
-  notifications:
-    enabled: true
-    resources:
-      requests:
-        cpu: 100m
-        memory: 64Mi
-      limits:
-        cpu: 1000m
-        memory: 128Mi

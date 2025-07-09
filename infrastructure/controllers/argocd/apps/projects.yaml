@@ -11,7 +11,7 @@ metadata:
 spec:
   description: "Infrastructure components like controllers, networking, and storage."
   sourceRepos:
-    - '*' # For simplicity, but in production, you should lock this down to your specific Git repository URL.
+    - https://github.com/mitchross/k3s-argocd-proxmox.git
   destinations:
     - namespace: '*'
       server: https://kubernetes.default.svc
@@ -31,7 +31,7 @@ metadata:
 spec:
   description: "User-facing applications."
   sourceRepos:
-    - '*'
+    - https://github.com/mitchross/k3s-argocd-proxmox.git
   destinations:
     - namespace: '*'
       server: https://kubernetes.default.svc
@@ -51,7 +51,7 @@ metadata:
 spec:
   description: "Monitoring and observability stack (Prometheus, Grafana, Loki)."
   sourceRepos:
-    - '*'
+    - https://github.com/mitchross/k3s-argocd-proxmox.git
   destinations:
     - namespace: '*'
       server: https://kubernetes.default.svc
