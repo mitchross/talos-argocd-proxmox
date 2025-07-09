@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git # TODO: Replace with your repository URL
-    path: infrastructure/controllers/argocd/appsets
+    path: infrastructure/controllers/argocd/apps
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
