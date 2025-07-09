@@ -6,7 +6,7 @@ resources:
 helmCharts:
   - name: connect
     repo: https://1password.github.io/connect-helm-charts
-    version: 1.17.1
+    version: 2.0.1
     releaseName: 1password-connect
     valuesFile: values.yaml
     includeCRDs: true
