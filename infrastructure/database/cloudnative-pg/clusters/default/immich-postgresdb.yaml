@@ -31,10 +31,13 @@ spec:
       owner: immich
       secret:
         name: immich-db-credentials
+      # Only put extension installations that work at the postgres level here
       postInitSQL:
         - CREATE EXTENSION IF NOT EXISTS "vectors";
         - CREATE EXTENSION IF NOT EXISTS "cube";
         - CREATE EXTENSION IF NOT EXISTS "earthdistance";
+      # Database-specific commands go here - runs after the database is created
+      postInitApplicationSQL:
         - ALTER DATABASE immich SET search_path TO '"$user", public, vectors';
         - ALTER SCHEMA vectors OWNER TO "immich";
         - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA vectors TO "immich";
