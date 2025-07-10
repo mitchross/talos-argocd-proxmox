@@ -20,5 +20,5 @@ data:
   PAPERLESS_OCR_OUTPUT_TYPE: "pdfa"
   PAPERLESS_CONSUMER_RECURSIVE: "true"
   PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS: "true"
-  PAPERLESS_REDIS: "redis://redis-master.redis.svc.cluster.local:6379"
+  PAPERLESS_REDIS: "redis://redis-master.redis-instance.svc.cluster.local:6379"
   PAPERLESS_URL: "https://paperless.vanillax.me"
