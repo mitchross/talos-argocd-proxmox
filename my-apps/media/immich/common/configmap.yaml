@@ -10,7 +10,7 @@ data:
   DB_USERNAME: "immich"
   DB_SCHEMA: "immich"
   # Redis configuration
-  REDIS_HOSTNAME: "redis-master.redis.svc.cluster.local"
+  REDIS_HOSTNAME: "redis-master.redis-instance.svc.cluster.local"
   REDIS_PORT: "6379"
   REDIS_USERNAME: ""
   REDIS_PASSWORD: ""
