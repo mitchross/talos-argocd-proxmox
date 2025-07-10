@@ -7,7 +7,7 @@ metadata:
     app: immich
 spec:
   instances: 1 # Critical change - must be 1 due to pgvecto.rs v0.3.0 compatibility issues
-  imageName: ghcr.io/tensorchord/cloudnative-pgvecto.rs:16.5-v0.3.0
+  imageName: ghcr.io/tensorchord/vchord-pg:16-v0.4.0
   resources:
     requests:
       memory: 1Gi
@@ -23,6 +23,7 @@ spec:
       log_statement: "all"
     shared_preload_libraries:
       - "vectors.so"
+      - "vchord.so"
     pg_hba:
       - host all all 0.0.0.0/0 md5
   bootstrap:
@@ -38,6 +39,7 @@ spec:
         - CREATE EXTENSION IF NOT EXISTS "cube";
         - CREATE EXTENSION IF NOT EXISTS "earthdistance";
         - CREATE EXTENSION IF NOT EXISTS "vectors";
+        - CREATE EXTENSION IF NOT EXISTS "vchord" CASCADE;
         - CREATE SCHEMA IF NOT EXISTS immich;
         - ALTER DATABASE immich SET search_path TO 'immich, public, vectors';
         - GRANT ALL PRIVILEGES ON SCHEMA immich TO "immich";
