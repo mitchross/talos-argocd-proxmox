@@ -7,7 +7,7 @@ metadata:
     app: immich
 spec:
   instances: 1 # Critical change - must be 1 due to pgvecto.rs v0.3.0 compatibility issues
-  imageName: ghcr.io/tensorchord/cloudnative-pgvecto.rs:16.5-v0.3.0@sha256:be3f025d79aa1b747817f478e07e71be43236e14d00d8a9eb3914146245035ba
+  imageName: ghcr.io/tensorchord/cloudnative-pgvecto.rs:16.5-v0.3.0
   resources:
     requests:
       memory: 1Gi
@@ -23,7 +23,6 @@ spec:
       log_statement: "all"
     shared_preload_libraries:
       - "vectors.so"
-      - "vchord.so"
     pg_hba:
       - host all all 0.0.0.0/0 md5
   bootstrap:
@@ -32,18 +31,13 @@ spec:
       owner: immich
       secret:
         name: immich-db-credentials
-      # Only put extensions that work at the postgres level here
-      postInitSQL: []
-      # Database-specific commands go here - runs after the database is created
-      postInitApplicationSQL:
+      postInitSQL:
+        - CREATE EXTENSION IF NOT EXISTS "vectors";
         - CREATE EXTENSION IF NOT EXISTS "cube";
         - CREATE EXTENSION IF NOT EXISTS "earthdistance";
-        - CREATE EXTENSION IF NOT EXISTS "vectors";
-        - CREATE EXTENSION IF NOT EXISTS "vchord" CASCADE;
-        - CREATE SCHEMA IF NOT EXISTS immich;
-        - ALTER DATABASE immich SET search_path TO 'immich, public, vectors';
-        - GRANT ALL PRIVILEGES ON SCHEMA immich TO "immich";
-        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA immich TO "immich";
+        - ALTER DATABASE immich SET search_path TO '"$user", public, vectors';
+        - ALTER SCHEMA vectors OWNER TO "immich";
+        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA vectors TO "immich";
         - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "immich";
         - ALTER ROLE "immich" WITH SUPERUSER;
   storage:
