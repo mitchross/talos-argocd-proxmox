@@ -4,10 +4,10 @@ namespace: argocd
 resources:
   - ns.yaml
   - http-route.yaml
-  # root.yaml is now applied in a separate step after the CRDs are established.
   # This is the root application that manages our AppProjects and ApplicationSets.
   # By including it here, the ArgoCD installation will immediately start managing
   # the rest of the applications in the repository.
+  - root.yaml
 helmCharts:
   - name: argo-cd
     repo: https://argoproj.github.io/argo-helm
