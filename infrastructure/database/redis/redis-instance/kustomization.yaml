@@ -13,7 +13,7 @@ helmCharts:
     repo: oci://registry-1.docker.io/bitnamicharts
     version: 21.2.9
     releaseName: redis
-    namespace: redis
+    namespace: redis-instance
     includeCRDs: true
     valuesInline:
       architecture: standalone
