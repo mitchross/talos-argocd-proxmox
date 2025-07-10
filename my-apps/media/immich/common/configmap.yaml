@@ -5,7 +5,7 @@ metadata:
   namespace: immich
 data:
   # Database configuration
-  DB_HOSTNAME: "immich-postgres-external.cloudnative-pg.svc.cluster.local"
+  DB_HOSTNAME: "immich-database-rw.cloudnative-pg.svc.cluster.local"
   DB_DATABASE_NAME: "immich"
   DB_USERNAME: "immich"
   DB_SCHEMA: "immich"
