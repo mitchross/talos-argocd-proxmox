@@ -12,3 +12,4 @@ resources:
   - pvc/immich-data-pvc.yaml
   - pvc/library-pvc.yaml
   - pvc/ml-cache-pvc.yaml
+  - db-migration-job.yaml

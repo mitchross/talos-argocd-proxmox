@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: immich-db-migration
+  namespace: immich
+spec:
+  template:
+    spec:
+      containers:
+        - name: db-migration
+          image: postgres:16
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              export PGPASSWORD=$DB_PASS
+              psql -h immich-postgres-external.cloudnative-pg.svc.cluster.local -U $DB_USER -d immich -c 'CREATE EXTENSION IF NOT EXISTS "cube";'
+              psql -h immich-postgres-external.cloudnative-pg.svc.cluster.local -U $DB_USER -d immich -c 'CREATE EXTENSION IF NOT EXISTS "earthdistance";'
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: immich-db-credentials
+                  key: username
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: immich-db-credentials
+                  key: password
+      restartPolicy: Never
+  backoffLimit: 4
