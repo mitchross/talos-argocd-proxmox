@@ -4,7 +4,7 @@ metadata:
   name: redis-external
   namespace: redis
   annotations:
-    io.cilium/lb-ipam-ips: "192.168.10.44"  # Replace with your desired external IP
+    io.cilium/lb-ipam-ips: "192.168.10.44" # Replace with your desired external IP
 spec:
   type: LoadBalancer
   ports:
@@ -18,4 +18,3 @@ spec:
       name: sentinel
   selector:
     app.kubernetes.io/name: redis
-

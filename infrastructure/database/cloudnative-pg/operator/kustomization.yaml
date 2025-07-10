@@ -24,4 +24,4 @@ helmCharts:
           INHERITED_LABELS: "app.kubernetes.io/managed-by"
           # Configure job TTL and cleanup
           JOB_TTL_SECONDS_AFTER_FINISHED: "3600" # Clean up completed jobs after 1 hour
-          FAILED_JOB_TTL_SECONDS_AFTER_FINISHED: "7200" # Clean up failed jobs after 2 hours
+          FAILED_JOB_TTL_SECONDS_AFTER_FINISHED: "7200" # Clean up failed jobs after 2 hours 

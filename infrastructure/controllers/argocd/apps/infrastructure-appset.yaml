@@ -9,7 +9,11 @@ spec:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         revision: HEAD
         directories:
-          - path: infrastructure/*/*
+          - path: infrastructure/controllers/*
+          - path: infrastructure/database/*/*
+          - path: infrastructure/networking/*
+          - path: infrastructure/storage/*
+          - path: infrastructure/crds
   template:
     metadata:
       name: '{{path.basename}}'
