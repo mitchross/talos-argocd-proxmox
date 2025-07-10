@@ -18,6 +18,6 @@ spec:
           image: rediscommander/redis-commander:latest
           env:
             - name: REDIS_HOSTS
-              value: "local:redis-master:6379"
+              value: "local:redis-master.redis-instance.svc.cluster.local:6379"
           ports:
             - containerPort: 8081
