@@ -22,21 +22,21 @@ server:
     enabled: false
   resources:
     requests:
-      cpu: 50m
-      memory: 128Mi
+      cpu: 250m
+      memory: 256Mi
     limits:
-      cpu: 4000m
-      memory: 512Mi
+      cpu: 1000m
+      memory: 1Gi
 # ApplicationSet controller settings
 applicationSet:
   enabled: true
   resources:
     requests:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 250m
+      memory: 256Mi
     limits:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 1000m
+      memory: 1Gi
 # High Availability setup
 ha:
   enabled: true
@@ -46,26 +46,26 @@ ha:
         cpu: 100m
         memory: 128Mi
       limits:
-        cpu: 200m
-        memory: 256Mi
+        cpu: 500m
+        memory: 512Mi
 # Argo CD controller settings
 controller:
   resources:
     requests:
-      cpu: 250m
+      cpu: 500m
       memory: 512Mi
     limits:
-      cpu: 1000m
-      memory: 1Gi
+      cpu: 2000m
+      memory: 2Gi
 # Argo CD repo-server settings
 repoServer:
   resources:
     requests:
-      cpu: 200m
+      cpu: 500m
       memory: 512Mi
     limits:
-      cpu: 1000m
-      memory: 1Gi
+      cpu: 2000m
+      memory: 2Gi
 # Dex is disabled; external authentication (e.g. SSO) is used
 dex:
   enabled: false
