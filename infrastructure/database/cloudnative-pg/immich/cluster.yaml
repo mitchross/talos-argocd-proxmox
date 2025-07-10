@@ -7,7 +7,7 @@ metadata:
     app: immich
 spec:
   instances: 1 # Critical change - must be 1 due to pgvecto.rs v0.3.0 compatibility issues
-  imageName: ghcr.io/immich-app/immich-postgres:16-v0.3.0
+  imageName: ghcr.io/tensorchord/cloudnative-pgvecto.rs:16.5-v0.3.0@sha256:be3f025d79aa1b747817f478e07e71be43236e14d00d8a9eb3914146245035ba
   resources:
     requests:
       memory: 1Gi
