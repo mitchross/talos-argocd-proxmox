@@ -8,7 +8,6 @@ commonAnnotations:
   argocd.argoproj.io/sync-wave: "-10"
 resources:
   - namespace.yaml
-
 helmCharts:
   - name: cloudnative-pg
     repo: https://cloudnative-pg.github.io/charts
@@ -16,3 +15,13 @@ helmCharts:
     releaseName: cloudnative-pg-operator
     namespace: cloudnative-pg
     includeCRDs: true
+    valuesInline:
+      config:
+        # Enable job cleanup and set retention policies
+        data:
+          ENABLE_AZURE_PVC_UPDATES: "false"
+          INHERITED_ANNOTATIONS: "argocd.argoproj.io/sync-wave"
+          INHERITED_LABELS: "app.kubernetes.io/managed-by"
+          # Configure job TTL and cleanup
+          JOB_TTL_SECONDS_AFTER_FINISHED: "3600" # Clean up completed jobs after 1 hour
+          FAILED_JOB_TTL_SECONDS_AFTER_FINISHED: "7200" # Clean up failed jobs after 2 hours
