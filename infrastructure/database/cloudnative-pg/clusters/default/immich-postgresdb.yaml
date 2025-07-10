@@ -32,11 +32,11 @@ spec:
       secret:
         name: immich-db-credentials
       # Only put extensions that work at the postgres level here
-      postInitSQL:
-        - CREATE EXTENSION IF NOT EXISTS "cube";
-        - CREATE EXTENSION IF NOT EXISTS "earthdistance";
+      postInitSQL: []
       # Database-specific commands go here - runs after the database is created
       postInitApplicationSQL:
+        - CREATE EXTENSION IF NOT EXISTS "cube";
+        - CREATE EXTENSION IF NOT EXISTS "earthdistance";
         - CREATE EXTENSION IF NOT EXISTS "vectors";
         - CREATE SCHEMA IF NOT EXISTS immich;
         - ALTER DATABASE immich SET search_path TO 'immich, public, vectors';
