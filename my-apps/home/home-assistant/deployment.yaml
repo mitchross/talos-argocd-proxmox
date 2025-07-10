@@ -54,7 +54,7 @@ spec:
             limits:
               memory: 4Gi
         - name: code-server
-          image: "ghcr.io/coder/code-server:4.91.1"
+          image: "ghcr.io/coder/code-server:4.101.2"
           imagePullPolicy: IfNotPresent
           env:
             - name: TZ
