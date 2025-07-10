@@ -31,7 +31,7 @@ spec:
       owner: immich
       secret:
         name: immich-db-secret
-      postInitSQL:
+      postInitApplicationSQL:
         - CREATE EXTENSION IF NOT EXISTS "vectors";
         - CREATE EXTENSION IF NOT EXISTS "cube";
         - CREATE EXTENSION IF NOT EXISTS "earthdistance";
