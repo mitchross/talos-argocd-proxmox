@@ -8,6 +8,7 @@ data:
   DB_HOSTNAME: "immich-postgres-external.cloudnative-pg.svc.cluster.local"
   DB_DATABASE_NAME: "immich"
   DB_USERNAME: "immich"
+  DB_SCHEMA: "immich"
   # Redis configuration
   REDIS_HOSTNAME: "redis-master.redis.svc.cluster.local"
   REDIS_PORT: "6379"
