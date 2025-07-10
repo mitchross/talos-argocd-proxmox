@@ -7,7 +7,7 @@ metadata:
     app: immich
 spec:
   instances: 1 # Critical change - must be 1 due to pgvecto.rs v0.3.0 compatibility issues
-  imageName: ghcr.io/tensorchord/vchord-postgres:pg16-0.4.3
+  imageName: ghcr.io/immich-app/immich-postgres:16-v0.3.0
   resources:
     requests:
       memory: 1Gi
