@@ -38,7 +38,10 @@ spec:
       # Database-specific commands go here - runs after the database is created
       postInitApplicationSQL:
         - CREATE EXTENSION IF NOT EXISTS "vectors";
-        - ALTER DATABASE immich SET search_path TO '"$user", public, vectors';
+        - CREATE SCHEMA IF NOT EXISTS immich;
+        - ALTER DATABASE immich SET search_path TO 'immich, public, vectors';
+        - GRANT ALL PRIVILEGES ON SCHEMA immich TO "immich";
+        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA immich TO "immich";
         - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "immich";
         - ALTER ROLE "immich" WITH SUPERUSER;
   storage:
