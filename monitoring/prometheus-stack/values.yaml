@@ -118,10 +118,7 @@ grafana:
     runAsUser: 472
     fsGroup: 472
   # Enable plugins
-  plugins:
-    - grafana-piechart-panel
-    - grafana-worldmap-panel
-    - grafana-clock-panel
+  plugins: []
   # Default dashboards
   defaultDashboardsEnabled: true
   defaultDashboardsTimezone: UTC
