@@ -32,7 +32,7 @@ spec:
               mountPath: /etc/searxng
       containers:
         - name: searxng
-          image: searxng/searxng:latest@sha256:8f757f615fe5dc634ba16fae8576a5189b695b55fc225f6bae2efb5b9aa8d3da
+          image: searxng/searxng:latest@sha256:54097e8189288082454fc257cf39c51d8059f24efeb07a4abbe0abbc58e38772
           envFrom:
             - secretRef:
                 name: searxng
