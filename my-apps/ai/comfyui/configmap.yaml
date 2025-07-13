@@ -4,4 +4,18 @@ metadata:
   name: comfyui-config
   namespace: comfyui
 data:
-  extra_model_paths.yaml: "base_path: /opt/ComfyUI/\ncheckpoints: models/checkpoints/\nconfigs: models/configs/\nvae: models/vae/\nclip: models/clip/\nunet: models/unet/\nclip_vision: models/clip_vision/\nstyle_models: models/style_models/\nembeddings: models/embeddings/\ndiffusers: models/diffusers/\ncontrolnet: models/controlnet/\ngligen: models/gligen/\nupscale_models: models/upscale_models/\ncustom_nodes: custom_nodes/ "
+  extra_model_paths.yaml: |
+    base_path: /opt/ComfyUI/
+    checkpoints: models/checkpoints/
+    configs: models/configs/
+    vae: models/vae/
+    clip: models/clip/
+    unet: models/unet/
+    clip_vision: models/clip_vision/
+    style_models: models/style_models/
+    embeddings: models/embeddings/
+    diffusers: models/diffusers/
+    controlnet: models/controlnet/
+    gligen: models/gligen/
+    upscale_models: models/upscale_models/
+    custom_nodes: custom_nodes/
