@@ -22,5 +22,5 @@ data:
         renameByDefault: false
         failRequestsGreaterThanOne: false
         resources:
-        - name: nvidia.com/gpu
-          replicas: 10
+        - name: nvidia.com.gpu
+          replicas: 20
