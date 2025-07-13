@@ -5,5 +5,5 @@ commonLabels:
   app.kubernetes.io/name: immich-db
   app.kubernetes.io/managed-by: argocd
 resources:
-  - cluster.yaml
+  # - cluster.yaml
   - externalsecret.yaml
