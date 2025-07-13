@@ -1,13 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
-
 metadata:
   labels:
     app: cloudflared
   name: cloudflared
   namespace: cloudflared
-
 spec:
+  replicas: 2
   selector:
     matchLabels:
       app: cloudflared
