@@ -13,8 +13,15 @@ spec:
           args:
             - |
               export PGPASSWORD=$DB_PASS
+              psql -h immich-postgres-external.cloudnative-pg.svc.cluster.local -U $DB_USER -d immich -c 'CREATE SCHEMA IF NOT EXISTS immich AUTHORIZATION $DB_USER;'
+              psql -h immich-postgres-external.cloudnative-pg.svc.cluster.local -U $DB_USER -d immich -c 'CREATE EXTENSION IF NOT EXISTS "vectors";'
               psql -h immich-postgres-external.cloudnative-pg.svc.cluster.local -U $DB_USER -d immich -c 'CREATE EXTENSION IF NOT EXISTS "cube";'
               psql -h immich-postgres-external.cloudnative-pg.svc.cluster.local -U $DB_USER -d immich -c 'CREATE EXTENSION IF NOT EXISTS "earthdistance";'
+              psql -h immich-postgres-external.cloudnative-pg.svc.cluster.local -U $DB_USER -d immich -c 'GRANT ALL ON SCHEMA vectors TO $DB_USER;'
+              psql -h immich-postgres-external.cloudnative-pg.svc.cluster.local -U $DB_USER -d immich -c 'GRANT SELECT ON TABLE pg_vector_index_stat TO $DB_USER;'
+              psql -h immich-postgres-external.cloudnative-pg.svc.cluster.local -U $DB_USER -d immich -c 'ALTER DATABASE immich SET search_path TO "$user", public, vectors;'
+              psql -h immich-postgres-external.cloudnative-pg.svc.cluster.local -U $DB_USER -d immich -c 'GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $DB_USER;'
+              psql -h immich-postgres-external.cloudnative-pg.svc.cluster.local -U $DB_USER -d immich -c 'GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA vectors TO $DB_USER;'
           env:
             - name: DB_USER
               valueFrom:
