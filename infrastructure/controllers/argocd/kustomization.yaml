@@ -11,7 +11,7 @@ resources:
 helmCharts:
   - name: argo-cd
     repo: https://argoproj.github.io/argo-helm
-    version: "8.1.2" # It's good practice to pin the chart version
+    version: "8.1.3" # It's good practice to pin the chart version
     releaseName: argocd
     namespace: argocd
     valuesFile: values.yaml
