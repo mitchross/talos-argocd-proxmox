@@ -18,6 +18,7 @@ spec:
       containers:
         - name: sandbox
           image: ghcr.io/khoj-ai/terrarium:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           resources:
@@ -57,6 +58,7 @@ spec:
       containers:
         - name: server
           image: ghcr.io/khoj-ai/khoj:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 42110
           env:

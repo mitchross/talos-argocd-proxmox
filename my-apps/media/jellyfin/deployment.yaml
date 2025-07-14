@@ -20,17 +20,18 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
-        supplementalGroups: [ 44, 104, 1000 ]
+        supplementalGroups: [44, 104, 1000]
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: jellyfin
           image: ghcr.io/jellyfin/jellyfin:10.10.7
+          imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:
-              drop: [ "ALL" ]
+              drop: ["ALL"]
           resources:
             requests:
               cpu: 500m
@@ -59,4 +60,4 @@ spec:
           persistentVolumeClaim:
             claimName: jellyfin-media
         - name: cache
-          emptyDir: { }
+          emptyDir: {}

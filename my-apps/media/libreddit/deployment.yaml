@@ -23,36 +23,36 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
       containers:
-      - name: libreddit
-        image: quay.io/redlib/redlib:latest@sha256:b945c6e15d27c93c9c89f331960838f2f20f2acae82a47f29afded67f508e920
-        imagePullPolicy: Always
-        envFrom:                     
-          - configMapRef:             
-              name: libreddit-env     
-        ports:
-        - name: http
-          containerPort: 8080
-        securityContext:
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          capabilities:
-            drop: ["ALL"]
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 2000m
-            memory: 1Gi
-        livenessProbe:
-          httpGet:
-            path: /
-            port: http
-          initialDelaySeconds: 10
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /
-            port: http
-          initialDelaySeconds: 5
-          periodSeconds: 10
+        - name: libreddit
+          image: quay.io/redlib/redlib:latest@sha256:b945c6e15d27c93c9c89f331960838f2f20f2acae82a47f29afded67f508e920
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: libreddit-env
+          ports:
+            - name: http
+              containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 2000m
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10

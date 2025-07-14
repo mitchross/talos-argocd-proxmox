@@ -21,6 +21,7 @@ spec:
       containers:
         - name: nestmtx
           image: nestmtx/amd64:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 2000
               name: port-2000

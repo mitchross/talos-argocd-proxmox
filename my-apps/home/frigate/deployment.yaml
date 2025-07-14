@@ -18,6 +18,7 @@ spec:
       containers:
         - name: frigate
           image: ghcr.io/blakeblackshear/frigate:0.15.2
+          imagePullPolicy: IfNotPresent
           env:
             - name: TZ
               value: "America/New_York"

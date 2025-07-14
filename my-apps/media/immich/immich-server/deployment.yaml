@@ -19,6 +19,7 @@ spec:
       containers:
         - name: immich-server
           image: ghcr.io/immich-app/immich-server:release
+          imagePullPolicy: IfNotPresent
           # DEBUG MODE - Comment out the line below when returning to normal operation
           # command: ["/bin/sh", "-c", "echo 'Container ready for debugging' && sleep 3600"]
           ports:
@@ -45,18 +46,18 @@ spec:
             limits:
               memory: "2Gi"
               cpu: "2000m"
-          # livenessProbe:
-          #   httpGet:
-          #     path: /api/server-info/ping
-          #     port: api
-          #   initialDelaySeconds: 30
-          #   periodSeconds: 10
-          # readinessProbe:
-          #   httpGet:
-          #     path: /api/server-info/ping
-          #     port: api
-          #   initialDelaySeconds: 30
-          #   periodSeconds: 10
+              # livenessProbe:
+              #   httpGet:
+              #     path: /api/server-info/ping
+              #     port: api
+              #   initialDelaySeconds: 30
+              #   periodSeconds: 10
+              # readinessProbe:
+              #   httpGet:
+              #     path: /api/server-info/ping
+              #     port: api
+              #   initialDelaySeconds: 30
+              #   periodSeconds: 10
       volumes:
         - name: library
           persistentVolumeClaim:

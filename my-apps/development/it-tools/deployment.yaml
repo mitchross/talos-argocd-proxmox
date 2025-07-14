@@ -18,11 +18,12 @@ spec:
         app.kubernetes.io/name: it-tools
     spec:
       containers:
-      - name: it-tools
-        image: ghcr.io/sharevb/it-tools:nightly@sha256:e04bcef602488d412d498c1791fbacaf0dae41a6ccad7233b083bae53835f53f
-        env: 
-        - name: TZ
-          value: America/Detroit
-        ports:
-        - name: http
-          containerPort: 8080
+        - name: it-tools
+          image: ghcr.io/sharevb/it-tools:nightly@sha256:e04bcef602488d412d498c1791fbacaf0dae41a6ccad7233b083bae53835f53f
+          imagePullPolicy: Always
+          env:
+            - name: TZ
+              value: America/Detroit
+          ports:
+            - name: http
+              containerPort: 8080

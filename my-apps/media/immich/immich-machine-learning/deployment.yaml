@@ -18,6 +18,7 @@ spec:
       containers:
         - name: immich-machine-learning
           image: ghcr.io/immich-app/immich-machine-learning:release
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3003
               name: http

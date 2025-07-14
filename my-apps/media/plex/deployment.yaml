@@ -23,17 +23,18 @@ spec:
         runAsGroup: 2501
         fsGroup: 2501
         fsGroupChangePolicy: OnRootMismatch
-        supplementalGroups: [ 44, 104 ]
+        supplementalGroups: [44, 104]
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: plex
           image: ghcr.io/onedr0p/plex:1.40.4.8679-424562606
+          imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:
-              drop: [ "ALL" ]
+              drop: ["ALL"]
           resources:
             requests:
               cpu: 500m
@@ -64,9 +65,8 @@ spec:
           nfs:
             server: 192.168.10.133
             path: /mnt/generaltank/k8s/jellyfin
-
         - name: transcode
           persistentVolumeClaim:
             claimName: plex-transcode-pvc
         - name: tmp
-          emptyDir: { }
+          emptyDir: {}

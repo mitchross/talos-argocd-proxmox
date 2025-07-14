@@ -16,6 +16,7 @@ spec:
       containers:
         - name: paperless-ngx
           image: ghcr.io/paperless-ngx/paperless-ngx:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
               name: http

@@ -14,17 +14,18 @@ spec:
         app: registry
     spec:
       containers:
-      - name: registry
-        image: registry:2
-        ports:
-        - containerPort: 5000
-        env:
-        - name: REGISTRY_STORAGE_DELETE_ENABLED
-          value: "true"
-        volumeMounts:
-        - name: registry-data
-          mountPath: /var/lib/registry
+        - name: registry
+          image: registry:2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          env:
+            - name: REGISTRY_STORAGE_DELETE_ENABLED
+              value: "true"
+          volumeMounts:
+            - name: registry-data
+              mountPath: /var/lib/registry
       volumes:
-      - name: registry-data
-        persistentVolumeClaim:
-          claimName: registry-pvc
+        - name: registry-data
+          persistentVolumeClaim:
+            claimName: registry-pvc

@@ -33,6 +33,7 @@ spec:
       containers:
         - name: searxng
           image: searxng/searxng:latest@sha256:54097e8189288082454fc257cf39c51d8059f24efeb07a4abbe0abbc58e38772
+          imagePullPolicy: Always
           envFrom:
             - secretRef:
                 name: searxng

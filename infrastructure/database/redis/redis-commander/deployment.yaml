@@ -16,6 +16,7 @@ spec:
       containers:
         - name: redis-commander
           image: rediscommander/redis-commander:latest
+          imagePullPolicy: IfNotPresent
           env:
             - name: REDIS_HOSTS
               value: "local:redis-master.redis-instance.svc.cluster.local:6379"

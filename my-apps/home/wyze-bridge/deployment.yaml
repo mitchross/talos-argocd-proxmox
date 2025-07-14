@@ -14,17 +14,18 @@ spec:
         app: wyze-bridge
     spec:
       containers:
-      - name: wyze-bridge
-        image: ghcr.io/mrlt8/docker-wyze-bridge:edge@sha256:ada1d59fd745beb84747f7f2f086323cc50b9b72a0abc0075c808028b7b936fa
-        ports:
-        - containerPort: 1935
-        - containerPort: 8554
-        - containerPort: 8888
-        - containerPort: 8889
-        - containerPort: 8189
-        - containerPort: 5000
-        envFrom:
-        - configMapRef:
-            name: wyze-bridge-config
-        - secretRef:
-            name: wyze-bridge-secrets
+        - name: wyze-bridge
+          image: ghcr.io/mrlt8/docker-wyze-bridge:edge@sha256:ada1d59fd745beb84747f7f2f086323cc50b9b72a0abc0075c808028b7b936fa
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 1935
+            - containerPort: 8554
+            - containerPort: 8888
+            - containerPort: 8889
+            - containerPort: 8189
+            - containerPort: 5000
+          envFrom:
+            - configMapRef:
+                name: wyze-bridge-config
+            - secretRef:
+                name: wyze-bridge-secrets

@@ -28,6 +28,7 @@ spec:
         - name: comfyui
           # Updated to use the cu124-megapak image
           image: yanwk/comfyui-boot:cu124-megapak-20250707
+          imagePullPolicy: IfNotPresent
           workingDir: /home/runner
           command: ["/bin/bash", "-c"]
           args: ["chmod +x /runner-scripts/entrypoint.sh && cd /home/runner && exec /runner-scripts/entrypoint.sh"]

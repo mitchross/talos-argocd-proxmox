@@ -18,7 +18,7 @@ loki:
   limits_config:
     allow_structured_metadata: true
     volume_enabled: true
-    retention_period: 14d # Reduced from 31 days to 14 days for cost efficiency
+    retention_period: 7d
 deploymentMode: SimpleScalable
 backend:
   replicas: 2

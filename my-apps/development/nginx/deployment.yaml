@@ -14,10 +14,11 @@ spec:
         app: nginx
     spec:
       containers:
-      - name: nginx
-        image: nginx:alpine
-        ports:
-        - name: http
-          containerPort: 80
-        - name: https
-          containerPort: 443
+        - name: nginx
+          image: nginx:alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+            - name: https
+              containerPort: 443

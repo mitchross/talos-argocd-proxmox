@@ -18,6 +18,7 @@ spec:
       containers:
         - name: mcpo
           image: ghcr.io/open-webui/mcpo:main
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
               name: http

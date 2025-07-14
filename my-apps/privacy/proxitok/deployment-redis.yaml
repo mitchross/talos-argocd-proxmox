@@ -14,14 +14,15 @@ spec:
         app: proxitok-redis
     spec:
       containers:
-      - name: redis
-        image: redis:8.0-alpine
-        ports:
-        - containerPort: 6379
-        securityContext:
-          readOnlyRootFilesystem: true
-          runAsUser: 65534  # nobody user
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
+        - name: redis
+          image: redis:8.0-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6379
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsUser: 65534 # nobody user
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL

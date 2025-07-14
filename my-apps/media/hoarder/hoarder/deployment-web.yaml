@@ -17,7 +17,7 @@ spec:
         runAsUser: 1001
         runAsGroup: 1001
       containers:
-        - name: web
+        - name: hoarder
           image: ghcr.io/karakeep-app/karakeep:release@sha256:572076596ea7fdaa189694d31dc8059743773b1f908d68d7c4af3737948ff3b3
           imagePullPolicy: Always
           ports:
