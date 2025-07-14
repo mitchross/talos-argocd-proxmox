@@ -19,20 +19,20 @@ POD_NAME=$(kubectl get pods -n comfyui -l app=comfyui -o jsonpath='{.items[0].me
 echo "📦 Installing ComfyUI Manager and essential custom nodes for latest models..."
 kubectl exec -n comfyui $POD_NAME -- bash -c "
 cd /opt/ComfyUI/custom_nodes
-git clone https://github.com/ltdrdata/ComfyUI-Manager.git
-git clone https://github.com/Fannovel16/comfyui_controlnet_aux.git
-git clone https://github.com/cubiq/ComfyUI_essentials.git
-git clone https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git
-git clone https://github.com/rgthree/rgthree-comfy.git
+if [ ! -d ComfyUI-Manager ]; then git clone https://github.com/ltdrdata/ComfyUI-Manager.git; fi
+if [ ! -d comfyui_controlnet_aux ]; then git clone https://github.com/Fannovel16/comfyui_controlnet_aux.git; fi
+if [ ! -d ComfyUI_essentials ]; then git clone https://github.com/cubiq/ComfyUI_essentials.git; fi
+if [ ! -d ComfyUI-Custom-Scripts ]; then git clone https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git; fi
+if [ ! -d rgthree-comfy ]; then git clone https://github.com/rgthree/rgthree-comfy.git; fi
 # Flux-specific nodes
-git clone https://github.com/kijai/ComfyUI-FluxTrainer.git
-git clone https://github.com/city96/ComfyUI-GGUF.git
+if [ ! -d ComfyUI-FluxTrainer ]; then git clone https://github.com/kijai/ComfyUI-FluxTrainer.git; fi
+if [ ! -d ComfyUI-GGUF ]; then git clone https://github.com/city96/ComfyUI-GGUF.git; fi
 # Additional useful nodes
-git clone https://github.com/WASasquatch/was-node-suite-comfyui.git
-git clone https://github.com/jags111/efficiency-nodes-comfyui.git
+if [ ! -d was-node-suite-comfyui ]; then git clone https://github.com/WASasquatch/was-node-suite-comfyui.git; fi
+if [ ! -d efficiency-nodes-comfyui ]; then git clone https://github.com/jags111/efficiency-nodes-comfyui.git; fi
 "
 
-echo "🤖 Downloading latest and greatest models from CivitAI and Hugging Face..."
+echo "�� Downloading latest and greatest models from CivitAI and Hugging Face..."
 
 # Create model directories
 kubectl exec -n comfyui $POD_NAME -- bash -c "
@@ -47,74 +47,74 @@ mkdir -p /opt/ComfyUI/models/embeddings
 echo "📥 Downloading Flux Dev BF16 (taking advantage of your 24GB VRAM)..."
 kubectl exec -n comfyui $POD_NAME -- bash -c "
 cd /opt/ComfyUI/models/unet
-wget -O flux1-dev.safetensors 'https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/flux1-dev.safetensors'
+if [ ! -f flux1-dev.safetensors ]; then wget -O flux1-dev.safetensors 'https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/flux1-dev.safetensors'; fi
 # Also keep FP8 version as backup for complex workflows
-wget -O flux1-dev-fp8.safetensors 'https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-dev-fp8.safetensors'
+if [ ! -f flux1-dev-fp8.safetensors ]; then wget -O flux1-dev-fp8.safetensors 'https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-dev-fp8.safetensors'; fi
 "
 
 # Download Flux Schnell for faster generation
 kubectl exec -n comfyui $POD_NAME -- bash -c "
 cd /opt/ComfyUI/models/unet
-wget -O flux1-schnell.safetensors 'https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors'
+if [ ! -f flux1-schnell.safetensors ]; then wget -O flux1-schnell.safetensors 'https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors'; fi
 "
 
 # Download Flux VAE
 kubectl exec -n comfyui $POD_NAME -- bash -c "
 cd /opt/ComfyUI/models/vae
-wget -O ae.safetensors 'https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/ae.safetensors'
+if [ ! -f ae.safetensors ]; then wget -O ae.safetensors 'https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/ae.safetensors'; fi
 "
 
 # Download Flux Text Encoders (Full precision for 24GB setup)
 kubectl exec -n comfyui $POD_NAME -- bash -c "
 cd /opt/ComfyUI/models/clip
-wget -O t5xxl_fp16.safetensors 'https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp16.safetensors'
-wget -O t5xxl_fp8_e4m3fn.safetensors 'https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn.safetensors'
-wget -O clip_l.safetensors 'https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors'
+if [ ! -f t5xxl_fp16.safetensors ]; then wget -O t5xxl_fp16.safetensors 'https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp16.safetensors'; fi
+if [ ! -f t5xxl_fp8_e4m3fn.safetensors ]; then wget -O t5xxl_fp8_e4m3fn.safetensors 'https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn.safetensors'; fi
+if [ ! -f clip_l.safetensors ]; then wget -O clip_l.safetensors 'https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors'; fi
 "
 
 # Download CyberRealistic Pony (latest version)
 echo "📥 Downloading CyberRealistic Pony..."
 kubectl exec -n comfyui $POD_NAME -- bash -c "
 cd /opt/ComfyUI/models/checkpoints
-wget -O cyberrealistic_pony_v11.safetensors 'https://civitai.com/api/download/models/951667'
+if [ ! -f cyberrealistic_pony_v11.safetensors ]; then wget -O cyberrealistic_pony_v11.safetensors 'https://civitai.com/api/download/models/951667'; fi
 "
 
 # Download SDXL Base (still useful)
 kubectl exec -n comfyui $POD_NAME -- bash -c "
 cd /opt/ComfyUI/models/checkpoints
-wget -O sd_xl_base_1.0.safetensors https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
+if [ ! -f sd_xl_base_1.0.safetensors ]; then wget -O sd_xl_base_1.0.safetensors https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors; fi
 "
 
 # Download SDXL VAE
 kubectl exec -n comfyui $POD_NAME -- bash -c "
 cd /opt/ComfyUI/models/vae
-wget -O sdxl_vae.safetensors https://huggingface.co/stabilityai/sdxl-vae/resolve/main/sdxl_vae.safetensors
+if [ ! -f sdxl_vae.safetensors ]; then wget -O sdxl_vae.safetensors https://huggingface.co/stabilityai/sdxl-vae/resolve/main/sdxl_vae.safetensors; fi
 "
 
 # Download popular embeddings for better prompting
 kubectl exec -n comfyui $POD_NAME -- bash -c "
 cd /opt/ComfyUI/models/embeddings
-wget -O cyberrealistic_negative_pony.pt 'https://civitai.com/api/download/models/83425'
-wget -O cyberrealistic_positive_pony.pt 'https://civitai.com/api/download/models/1729052'
+if [ ! -f cyberrealistic_negative_pony.pt ]; then wget -O cyberrealistic_negative_pony.pt 'https://civitai.com/api/download/models/83425'; fi
+if [ ! -f cyberrealistic_positive_pony.pt ]; then wget -O cyberrealistic_positive_pony.pt 'https://civitai.com/api/download/models/1729052'; fi
 "
 
 # Download latest ControlNet models
 kubectl exec -n comfyui $POD_NAME -- bash -c "
 mkdir -p /opt/ComfyUI/models/controlnet
 cd /opt/ComfyUI/models/controlnet
-wget -O control_v11p_sd15_canny.pth https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15_canny.pth
-wget -O control_v11p_sd15_openpose.pth https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15_openpose.pth
+if [ ! -f control_v11p_sd15_canny.pth ]; then wget -O control_v11p_sd15_canny.pth https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15_canny.pth; fi
+if [ ! -f control_v11p_sd15_openpose.pth ]; then wget -O control_v11p_sd15_openpose.pth https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15_openpose.pth; fi
 # Flux ControlNet models
-wget -O flux-dev-controlnet-canny-v3.safetensors 'https://huggingface.co/XLabs-AI/flux-controlnet-canny-v3/resolve/main/flux-controlnet-canny-v3.safetensors'
-wget -O flux-dev-controlnet-depth-v3.safetensors 'https://huggingface.co/XLabs-AI/flux-controlnet-depth-v3/resolve/main/flux-controlnet-depth-v3.safetensors'
+if [ ! -f flux-dev-controlnet-canny-v3.safetensors ]; then wget -O flux-dev-controlnet-canny-v3.safetensors 'https://huggingface.co/XLabs-AI/flux-controlnet-canny-v3/resolve/main/flux-controlnet-canny-v3.safetensors'; fi
+if [ ! -f flux-dev-controlnet-depth-v3.safetensors ]; then wget -O flux-dev-controlnet-depth-v3.safetensors 'https://huggingface.co/XLabs-AI/flux-controlnet-depth-v3/resolve/main/flux-controlnet-depth-v3.safetensors'; fi
 "
 
 # Download upscaler models
 kubectl exec -n comfyui $POD_NAME -- bash -c "
 mkdir -p /opt/ComfyUI/models/upscale_models
 cd /opt/ComfyUI/models/upscale_models
-wget -O RealESRGAN_x4plus.pth https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth
-wget -O RealESRGAN_x4plus_anime_6B.pth https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth
+if [ ! -f RealESRGAN_x4plus.pth ]; then wget -O RealESRGAN_x4plus.pth https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth; fi
+if [ ! -f RealESRGAN_x4plus_anime_6B.pth ]; then wget -O RealESRGAN_x4plus_anime_6B.pth https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth; fi
 "
 
 echo "📋 Setting up workflows for latest models..."
