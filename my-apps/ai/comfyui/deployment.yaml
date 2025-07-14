@@ -17,8 +17,6 @@ spec:
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
       priorityClassName: gpu-workload-preemptible
-      securityContext:
-        fsGroup: 1000
       tolerations:
         - key: "gpu"
           operator: "Equal"
@@ -26,31 +24,15 @@ spec:
           effect: "NoSchedule"
       containers:
         - name: comfyui
-          # Updated to use the cu124-megapak image
+          # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu124-megapak
           image: yanwk/comfyui-boot:cu124-megapak-20250707
           imagePullPolicy: IfNotPresent
-          workingDir: /home/runner
-          command: ["/bin/bash", "-c"]
-          args:
-            - >
-              if [ ! -d "${COMFYUI_HOME}/ComfyUI" ]; then
-
-
-                echo "First run: Cloning ComfyUI and setting up in ${COMFYUI_HOME}...";
-                chmod +x /runner-scripts/entrypoint.sh && cd ${COMFYUI_HOME} && /runner-scripts/entrypoint.sh --setup-only;
-              else
-
-
-                echo "Existing installation found in ${COMFYUI_HOME} - skipping clone/setup";
-              fi; # Start the server cd ${COMFYUI_HOME}/ComfyUI && python main.py ${CLI_ARGS};
-
+          workingDir: /root
           ports:
             - containerPort: 8188
           env:
             - name: CLI_ARGS
               value: "--listen 0.0.0.0 --port 8188"
-            - name: COMFYUI_HOME
-              value: "/home/runner"
           resources:
             requests:
               memory: "8Gi"
@@ -61,20 +43,14 @@ spec:
               cpu: "8"
               nvidia.com/gpu: "1"
           volumeMounts:
-            # Mount to /home/runner as per yanwk image design
+            # The image expects a persistent volume at /root to store ComfyUI, models, and outputs.
             - name: comfyui-storage
-              mountPath: /home/runner
-            # Optional: Mount specific ComfyUI directories if you want more granular control
-            # Note: The image expects data in /home/runner, which contains ComfyUI structure
-            - name: config-volume
-              mountPath: /home/runner/ComfyUI/extra_model_paths.yaml
-              subPath: extra_model_paths.yaml
-              readOnly: true
+              mountPath: /root
           readinessProbe:
             httpGet:
               path: /
               port: 8188
-            initialDelaySeconds: 300 # Increased for large downloads
+            initialDelaySeconds: 300 # Increased for large downloads on first start
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 6
@@ -82,7 +58,7 @@ spec:
             httpGet:
               path: /
               port: 8188
-            initialDelaySeconds: 1500 # Increased for large downloads
+            initialDelaySeconds: 1500 # Increased for large downloads on first start
             periodSeconds: 30
             timeoutSeconds: 10
             failureThreshold: 3
@@ -90,7 +66,3 @@ spec:
         - name: comfyui-storage
           persistentVolumeClaim:
             claimName: comfyui-storage
-        - name: config-volume
-          configMap:
-            name: comfyui-config
-            optional: true
