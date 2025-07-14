@@ -33,20 +33,24 @@ spec:
           command: ["/bin/bash", "-c"]
           args:
             - >
-              if [ ! -d "/home/runner/ComfyUI" ]; then
+              if [ ! -d "${COMFYUI_HOME}/ComfyUI" ]; then
 
-                echo "First run: Cloning ComfyUI and setting up...";
-                chmod +x /runner-scripts/entrypoint.sh && cd /home/runner && /runner-scripts/entrypoint.sh --setup-only;
+
+                echo "First run: Cloning ComfyUI and setting up in ${COMFYUI_HOME}...";
+                chmod +x /runner-scripts/entrypoint.sh && cd ${COMFYUI_HOME} && /runner-scripts/entrypoint.sh --setup-only;
               else
 
-                echo "Existing installation found - skipping clone/setup";
-              fi; # Start the server cd /home/runner/ComfyUI && python main.py ${CLI_ARGS};
+
+                echo "Existing installation found in ${COMFYUI_HOME} - skipping clone/setup";
+              fi; # Start the server cd ${COMFYUI_HOME}/ComfyUI && python main.py ${CLI_ARGS};
 
           ports:
             - containerPort: 8188
           env:
             - name: CLI_ARGS
               value: "--listen 0.0.0.0 --port 8188"
+            - name: COMFYUI_HOME
+              value: "/home/runner"
           resources:
             requests:
               memory: "8Gi"
