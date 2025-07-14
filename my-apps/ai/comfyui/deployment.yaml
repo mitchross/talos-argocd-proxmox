@@ -67,7 +67,7 @@ spec:
             httpGet:
               path: /
               port: 8188
-            initialDelaySeconds: 600 # Increased for large downloads
+            initialDelaySeconds: 1500 # Increased for large downloads
             periodSeconds: 30
             timeoutSeconds: 10
             failureThreshold: 3
