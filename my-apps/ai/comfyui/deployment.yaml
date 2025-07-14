@@ -31,7 +31,17 @@ spec:
           imagePullPolicy: IfNotPresent
           workingDir: /home/runner
           command: ["/bin/bash", "-c"]
-          args: ["chmod +x /runner-scripts/entrypoint.sh && cd /home/runner && exec /runner-scripts/entrypoint.sh"]
+          args:
+            - >
+              if [ ! -d "/home/runner/ComfyUI" ]; then
+
+                echo "First run: Cloning ComfyUI and setting up...";
+                chmod +x /runner-scripts/entrypoint.sh && cd /home/runner && /runner-scripts/entrypoint.sh --setup-only;
+              else
+
+                echo "Existing installation found - skipping clone/setup";
+              fi; # Start the server cd /home/runner/ComfyUI && python main.py ${CLI_ARGS};
+
           ports:
             - containerPort: 8188
           env:
