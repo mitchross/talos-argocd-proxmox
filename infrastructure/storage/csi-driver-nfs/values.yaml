@@ -7,3 +7,7 @@ storageClass:
     share: /mnt/BigTank/k8s/comfyui
   reclaimPolicy: Retain
   volumeBindingMode: Immediate
+  mountOptions:
+    - "nfsvers=4.1"
+    - "nolock"
+    - "tcp"
