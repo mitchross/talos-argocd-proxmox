@@ -15,6 +15,6 @@ mountOptions:
   - noperm
   - mfsymlinks
   - vers=3.0
-reclaimPolicy: Delete
+reclaimPolicy: Retain
 volumeBindingMode: Immediate
 allowVolumeExpansion: true
