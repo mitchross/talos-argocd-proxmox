@@ -9,4 +9,4 @@ spec:
   resources:
     requests:
       storage: 250Gi
-  storageClassName: nfs-storageclass-comfyui
+  storageClassName: comfyui-smb
