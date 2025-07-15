@@ -3,12 +3,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: comfyui-storage
   namespace: comfyui
-  annotations:
-    volume.longhorn.io/numberOfReplicas: "1"
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 180Gi
-  storageClassName: longhorn
+      storage: 250Gi
+  storageClassName: nfs-storageclass-comfyui

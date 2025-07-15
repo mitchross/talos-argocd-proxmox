@@ -1,9 +1,9 @@
 storageClass:
   create: true
-  name: nfs-ssd-storage
+  name: nfs-storageclass-comfyui
   provisioner: nfs.csi.k8s.io
   parameters:
     server: 192.168.10.133
-    share: /mnt/SSDs/k8s_ssd
+    share: /mnt/BigTank/k8s/comfyui
   reclaimPolicy: Retain
   volumeBindingMode: Immediate
