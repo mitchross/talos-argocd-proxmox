@@ -1,0 +1,11 @@
+# Terraform files
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+*.tfplan*
+
+# Credentials
+credentials.sh
+credentials.auto.tfvars
+.env 

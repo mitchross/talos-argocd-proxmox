@@ -18,3 +18,24 @@ mountOptions:
 reclaimPolicy: Retain
 volumeBindingMode: Immediate
 allowVolumeExpansion: true
+---
+# Ollama specific storage class
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ollama-smb
+provisioner: smb.csi.k8s.io
+parameters:
+  # Point directly to the ollama subfolder on the SMB share
+  source: //192.168.10.133/k8s/ollama
+  csi.storage.k8s.io/node-stage-secret-name: smbcreds
+  csi.storage.k8s.io/node-stage-secret-namespace: csi-driver-smb
+mountOptions:
+  - dir_mode=0777
+  - file_mode=0777
+  - noperm
+  - mfsymlinks
+  - vers=3.0
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+allowVolumeExpansion: true

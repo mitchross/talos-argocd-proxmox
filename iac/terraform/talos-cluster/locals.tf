@@ -3,7 +3,7 @@ locals {
   cluster_name     = "talos-cluster"
   cluster_endpoint = "https://192.168.10.199:6443"
   cni_name         = "cilium"
-  talos_version    = "v1.10.4"
+  talos_version    = "v1.10.5"
   gateway          = "192.168.10.1"
   network_bridge   = "vmbr0"
   disk_storage     = "local-lvm"

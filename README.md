@@ -151,7 +151,7 @@ This final step uses our "App of Apps" pattern to bootstrap the entire cluster. 
 ```bash
 # 1. Apply the ArgoCD main components and CRDs
 # This deploys the ArgoCD Helm chart, which creates the CRDs and controller.
-kustomize build infrastructure/argocd --enable-helm | kubectl apply -f -
+kustomize build infrastructure/controllers/argocd --enable-helm | kubectl apply -f -
 
 # 2. Wait for the ArgoCD CRDs to be established in the cluster
 # This command pauses until the Kubernetes API server recognizes the 'Application' resource type.

@@ -16,12 +16,12 @@ schematic:
   customization:
     systemExtensions:
       officialExtensions:
-        - siderolabs/amd-ucode
-        - siderolabs/gasket-driver
-        - siderolabs/i915
-        - siderolabs/iscsi-tools
-        - siderolabs/qemu-guest-agent
-        - siderolabs/util-linux-tools
+            - siderolabs/amd-ucode
+            - siderolabs/gasket-driver
+            - siderolabs/iscsi-tools
+            - siderolabs/nfsd
+            - siderolabs/qemu-guest-agent
+            - siderolabs/util-linux-tools
 # Node configurations
 nodes:
   # Control plane nodes
@@ -38,32 +38,32 @@ nodes:
         routes:
           - network: 0.0.0.0/0
             gateway: 192.168.10.1
-  - hostname: talos-cluster-control-01
-    controlPlane: true
-    ipAddress: 192.168.10.101
-    installDisk: /dev/sda
-    networkInterfaces:
-      - deviceSelector:
-          hardwareAddr: "bc:24:11:ed:73:bf"
-        dhcp: false
-        addresses:
-          - 192.168.10.101/24
-        routes:
-          - network: 0.0.0.0/0
-            gateway: 192.168.10.1
-  - hostname: talos-cluster-control-02
-    controlPlane: true
-    ipAddress: 192.168.10.102
-    installDisk: /dev/sda
-    networkInterfaces:
-      - deviceSelector:
-          hardwareAddr: "bc:24:11:98:6b:13"
-        dhcp: false
-        addresses:
-          - 192.168.10.102/24
-        routes:
-          - network: 0.0.0.0/0
-            gateway: 192.168.10.1
+  # - hostname: talos-cluster-control-01
+  #   controlPlane: true
+  #   ipAddress: 192.168.10.101
+  #   installDisk: /dev/sda
+  #   networkInterfaces:
+  #     - deviceSelector:
+  #         hardwareAddr: "bc:24:11:ed:73:bf"
+  #       dhcp: false
+  #       addresses:
+  #         - 192.168.10.101/24
+  #       routes:
+  #         - network: 0.0.0.0/0
+  #           gateway: 192.168.10.1
+  # - hostname: talos-cluster-control-02
+  #   controlPlane: true
+  #   ipAddress: 192.168.10.102
+  #   installDisk: /dev/sda
+  #   networkInterfaces:
+  #     - deviceSelector:
+  #         hardwareAddr: "bc:24:11:98:6b:13"
+  #       dhcp: false
+  #       addresses:
+  #         - 192.168.10.102/24
+  #       routes:
+  #         - network: 0.0.0.0/0
+  #           gateway: 192.168.10.1
   # GPU worker node
   - hostname: talos-cluster-gpu-worker-00
     controlPlane: false
@@ -75,12 +75,12 @@ nodes:
           officialExtensions:
             - siderolabs/amd-ucode
             - siderolabs/gasket-driver
-            - siderolabs/i915
             - siderolabs/iscsi-tools
-            - siderolabs/qemu-guest-agent
-            - siderolabs/util-linux-tools
+            - siderolabs/nfsd
             - siderolabs/nonfree-kmod-nvidia-production
             - siderolabs/nvidia-container-toolkit-production
+            - siderolabs/qemu-guest-agent
+            - siderolabs/util-linux-tools
     networkInterfaces:
       - deviceSelector:
           hardwareAddr: "bc:24:11:77:86:5f"
@@ -120,8 +120,8 @@ nodes:
           officialExtensions:
             - siderolabs/amd-ucode
             - siderolabs/gasket-driver
-            - siderolabs/i915
             - siderolabs/iscsi-tools
+            - siderolabs/nfsd
             - siderolabs/qemu-guest-agent
             - siderolabs/util-linux-tools
     networkInterfaces:
@@ -156,8 +156,8 @@ nodes:
           officialExtensions:
             - siderolabs/amd-ucode
             - siderolabs/gasket-driver
-            - siderolabs/i915
             - siderolabs/iscsi-tools
+            - siderolabs/nfsd
             - siderolabs/qemu-guest-agent
             - siderolabs/util-linux-tools
     networkInterfaces:

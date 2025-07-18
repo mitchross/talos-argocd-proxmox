@@ -53,7 +53,7 @@ packer build -var-file="vars/local.pkrvars.hcl" -var-file="vars/gpu.pkrvars.hcl"
 
 ### 3. Terraform - Provisioning Infrastructure
 
-The Terraform setup is now declarative. All node configurations are managed in one place.
+The Terraform setup is fully declarative with all node configurations managed in one place.
 
 1.  **Navigate to the Terraform directory:**
     ```bash
@@ -61,29 +61,45 @@ The Terraform setup is now declarative. All node configurations are managed in o
     ```
 
 2.  **Set up credentials:**
-    Create a `credentials.auto.tfvars` file. This file is ignored by Git and should contain your Proxmox secrets.
+    Create a `credentials.auto.tfvars` file (automatically loaded by Terraform). This file is git-ignored and contains your Proxmox secrets:
     ```hcl
     # iac/terraform/talos-cluster/credentials.auto.tfvars
-
     proxmox_api_url      = "https://<your-proxmox-ip>:8006/api2/json"
-    proxmox_api_token    = "<your-proxmox-api-token>" // e.g., root@pam!iac=...
+    proxmox_node         = "<your-proxmox-node-name>"
+    proxmox_api_token    = "<your-api-token-id>=<your-api-token-secret>"
+    proxmox_pool         = ""
     proxmox_ssh_password = "<your-proxmox-ssh-password>"
+    ```
+    
+    **Example:**
+    ```hcl
+    proxmox_api_url      = "https://192.168.10.11:8006/api2/json"
+    proxmox_node         = "proxmox-threadripper"
+    proxmox_api_token    = "root@pam!iac=c30cfedb-0cd8-4c0f-932b-6aded8a1c3ae"
+    proxmox_pool         = ""
+    proxmox_ssh_password = "your-ssh-password"
     ```
 
 3.  **Configure your cluster nodes:**
-    Open `variables.tf` and review the `nodes` variable. This is the single source of truth for your cluster's infrastructure.
-    - Adjust IPs, MAC addresses, cores, memory, and disk sizes as needed.
-    - **Crucially, ensure the MAC addresses here match the `hardwareAddr` selectors in `iac/talos/talconfig.yaml`**.
+    Node configurations are defined in `variables.tf` in the `nodes` variable. This is the single source of truth for your cluster infrastructure.
+    - Review and adjust IPs, MAC addresses, cores, memory, and disk sizes as needed
+    - **Important**: Ensure MAC addresses match the `hardwareAddr` selectors in `iac/talos/talconfig.yaml`
+    - VM IDs and roles are pre-configured for a 3-master + 3-worker cluster
 
 4.  **Initialize and apply Terraform:**
     ```bash
-    # Initialize Terraform
+    # Initialize Terraform (only needed once)
     terraform init -upgrade
 
-    # Create execution plan
+    # Plan and apply changes
     terraform plan -out=.tfplan
+    terraform apply .tfplan
+    ```
 
-    # Apply the plan
+    **For targeted deployments** (e.g., recreating a single VM):
+    ```bash
+    # Target specific resources
+    terraform plan -target='proxmox_virtual_environment_vm.vm["talos-master-00"]' -out=.tfplan
     terraform apply .tfplan
     ```
 
@@ -193,6 +209,7 @@ cilium install \
   --helm-set=l2announcements.enabled=true \
   --helm-set=externalIPs.enabled=true \
   --set gatewayAPI.enabled=true \
-  --helm-set=devices=e+
+  --helm-set=devices=e+ \
+  --helm-set=operator.replicas=1
 ```
 
