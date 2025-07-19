@@ -15,5 +15,8 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: registry
+        - group: ""
+          kind: Service
+          name: registry
           port: 5000
+          weight: 1

@@ -21,3 +21,4 @@ spec:
           kind: Service
           name: longhorn-frontend
           port: 80
+          weight: 1
