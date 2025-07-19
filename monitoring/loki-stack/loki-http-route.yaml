@@ -21,3 +21,4 @@ spec:
           kind: Service
           name: loki-gateway
           port: 80
+          weight: 1

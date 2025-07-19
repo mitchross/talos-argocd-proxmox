@@ -21,3 +21,4 @@ spec:
           kind: Service
           name: kube-prometheus-stack-grafana
           port: 80
+          weight: 1
