@@ -5,7 +5,9 @@ metadata:
   namespace: home-assistant
 spec:
   parentRefs:
-    - name: gateway-internal
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal
       namespace: gateway
   hostnames:
     - "home-assistant.vanillax.me"
