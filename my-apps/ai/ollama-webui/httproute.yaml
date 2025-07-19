@@ -21,3 +21,4 @@ spec:
           kind: Service
           name: ollama-webui
           port: 8080
+          weight: 1

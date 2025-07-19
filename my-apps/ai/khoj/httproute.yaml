@@ -21,3 +21,4 @@ spec:
           kind: Service
           name: khoj-server-service
           port: 42110
+          weight: 1

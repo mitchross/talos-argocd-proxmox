@@ -21,3 +21,4 @@ spec:
           kind: Service
           name: ollama
           port: 11434
+          weight: 1

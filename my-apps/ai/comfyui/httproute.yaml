@@ -21,3 +21,4 @@ spec:
           kind: Service
           name: comfyui-service
           port: 8188
+          weight: 1
