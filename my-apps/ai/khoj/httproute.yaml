@@ -17,5 +17,7 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: khoj-server-service
+        - group: ""
+          kind: Service
+          name: khoj-server-service
           port: 42110

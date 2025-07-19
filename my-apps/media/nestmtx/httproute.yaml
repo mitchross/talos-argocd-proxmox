@@ -5,7 +5,9 @@ metadata:
   namespace: nestmtx
 spec:
   parentRefs:
-    - name: gateway-internal
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal
       namespace: gateway
   hostnames:
     - "nestmtx.vanillax.me"
@@ -15,5 +17,7 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: nestmtx
+        - group: ""
+          kind: Service
+          name: nestmtx
           port: 2000

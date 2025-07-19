@@ -5,7 +5,9 @@ metadata:
   namespace: hoarder
 spec:
   parentRefs:
-    - name: gateway-external
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-external
       namespace: gateway
   hostnames:
     - "hoarder.vanillax.me"
@@ -15,5 +17,7 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: hoarder-web
+        - group: ""
+          kind: Service
+          name: hoarder-web
           port: 3000

@@ -5,7 +5,9 @@ metadata:
   namespace: temporal
 spec:
   parentRefs:
-    - name: gateway-internal
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal
       namespace: gateway
   hostnames:
     - "temporal.vanillax.me"
@@ -15,5 +17,7 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: temporal-frontend
+        - group: ""
+          kind: Service
+          name: temporal-frontend
           port: 7233

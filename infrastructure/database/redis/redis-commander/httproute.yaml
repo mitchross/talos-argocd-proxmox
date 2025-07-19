@@ -15,6 +15,8 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: redis-commander
+        - group: ""
+          kind: Service
+          name: redis-commander
           port: 8081
           weight: 1
