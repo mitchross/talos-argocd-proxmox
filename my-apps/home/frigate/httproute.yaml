@@ -14,5 +14,8 @@ spec:
         type: PathPrefix 
         value: /
     backendRefs:
-        - name: frigate-http
+        - group: ""
+          kind: Service
+          name: frigate-http
           port: 5000
+          weight: 1

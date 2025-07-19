@@ -21,3 +21,4 @@ spec:
           kind: Service
           name: paperless-ngx
           port: 8000
+          weight: 1

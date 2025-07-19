@@ -21,3 +21,4 @@ spec:
           kind: Service
           name: wyze-bridge
           port: 5000
+          weight: 1

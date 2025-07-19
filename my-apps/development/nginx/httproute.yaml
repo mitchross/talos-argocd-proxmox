@@ -18,5 +18,8 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: nginx
+        - group: ""
+          kind: Service
+          name: nginx
           port: 80
+          weight: 1

@@ -15,5 +15,8 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: home-assistant
+        - group: ""
+          kind: Service
+          name: home-assistant
           port: 8123
+          weight: 1

@@ -21,3 +21,4 @@ spec:
           kind: Service
           name: it-tools
           port: 8080
+          weight: 1
