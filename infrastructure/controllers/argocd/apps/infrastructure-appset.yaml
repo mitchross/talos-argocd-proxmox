@@ -48,7 +48,7 @@ ignoreDifferences:
       - .spec.data[].remoteRef.decodingStrategy
       - .spec.data[].remoteRef.metadataPolicy
     jsonPointers:
-      - /metadata/annotations/argocd.argoproj.io~1tracking-id
+      - /spec/data
   - group: external-secrets.io
     kind: ClusterSecretStore
     jqPathExpressions:
