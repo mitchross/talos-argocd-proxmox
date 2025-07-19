@@ -43,19 +43,16 @@ spec:
 ignoreDifferences:
   - group: external-secrets.io
     kind: ExternalSecret
-    jqPathExpressions:
-      - .status
-      - .spec.data[].remoteRef.conversionStrategy
-      - .spec.data[].remoteRef.decodingStrategy
-      - .spec.data[].remoteRef.metadataPolicy
     jsonPointers:
-      - /metadata/annotations/argocd.argoproj.io~1tracking-id
+      - /spec/data
+    managedFieldsManagers:
+      - external-secrets
   - group: external-secrets.io
     kind: ClusterSecretStore
-    jqPathExpressions:
-      - .status
     jsonPointers:
-      - /metadata/annotations/argocd.argoproj.io~1tracking-id
+      - /spec/data
+    managedFieldsManagers:
+      - external-secrets
   - group: gateway.networking.k8s.io
     kind: GatewayClass
     jsonPointers:
