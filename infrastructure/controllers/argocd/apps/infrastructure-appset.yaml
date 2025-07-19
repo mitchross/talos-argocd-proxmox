@@ -45,6 +45,10 @@ spec:
           kind: ExternalSecret
           managedFieldsManagers:
             - external-secrets
+        - group: gateway.networking.k8s.io
+          kind: GatewayClass
+          jsonPointers:
+            - /metadata/annotations/argocd.argoproj.io~1tracking-id
       info:
         - name: Description
           value: 'Infrastructure component: {{path.basename}}'
