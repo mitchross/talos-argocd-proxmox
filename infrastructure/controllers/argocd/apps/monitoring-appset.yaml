@@ -46,6 +46,12 @@ spec:
           jsonPointers:
             - /spec/data/0/remoteRef/conversionStrategy
             - /spec/data/0/remoteRef/decodingStrategy
+            - /spec/data/1/remoteRef/conversionStrategy
+            - /spec/data/1/remoteRef/decodingStrategy
+            - /spec/data/2/remoteRef/conversionStrategy
+            - /spec/data/2/remoteRef/decodingStrategy
+            - /spec/dataFrom/0/remoteRef/conversionStrategy
+            - /spec/dataFrom/0/remoteRef/decodingStrategy
             - /spec/target/metadataPolicy
       info:
         - name: 'Description'
