@@ -21,3 +21,4 @@ spec:
           kind: Service
           name: headlamp
           port: 80
+          weight: 1
