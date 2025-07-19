@@ -4,7 +4,9 @@ metadata:
   name: argocd
 spec:
   parentRefs:
-    - name: gateway-internal
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal
       namespace: gateway
   hostnames:
     - "argocd.vanillax.me"
@@ -14,5 +16,7 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: argocd-server
+        - group: ""
+          kind: Service
+          name: argocd-server
           port: 80
