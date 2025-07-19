@@ -95,9 +95,10 @@ spec:
         - name: nginx-logs
           emptyDir: {}
   volumeClaimTemplates:
-    - metadata:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
         name: cache-volume
-        namespace: proxitok
       spec:
         accessModes: ["ReadWriteOnce"]
         storageClassName: longhorn
