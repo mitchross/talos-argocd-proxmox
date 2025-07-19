@@ -55,12 +55,13 @@ spec:
               value: "0.0.0.0:11434"
             - name: OLLAMA_MODELS
               value: "/root/.ollama/models"
-              # Removed NVIDIA env vars - device plugin handles GPU access
+            - name: OLLAMA_CONFIG
+              value: "/etc/ollama/ollama.json"
           volumeMounts:
             - name: models
               mountPath: /root/.ollama
             - name: config
-              mountPath: /root/.ollama/ollama.json
+              mountPath: /etc/ollama/ollama.json
               subPath: ollama.json
               readOnly: true
           livenessProbe:
@@ -86,6 +87,5 @@ spec:
         - name: config
           configMap:
             name: ollama-configmap
-            # Removed nvidia-driver hostPath - device plugin handles this
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
