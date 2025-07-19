@@ -45,6 +45,8 @@ spec:
           kind: ExternalSecret
           managedFieldsManagers:
             - external-secrets
+            - external-secrets-operator
+            - external-secrets-controller
         - group: gateway.networking.k8s.io
           kind: GatewayClass
           jsonPointers:
