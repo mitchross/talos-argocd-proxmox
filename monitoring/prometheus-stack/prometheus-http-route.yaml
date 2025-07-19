@@ -21,3 +21,4 @@ spec:
           kind: Service
           name: kube-prometheus-stack-prometheus
           port: 9090
+          weight: 1
