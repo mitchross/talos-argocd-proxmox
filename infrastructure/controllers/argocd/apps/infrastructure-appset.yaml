@@ -40,21 +40,6 @@ spec:
           - RespectIgnoreDifferences=true
           - ApplyOutOfSyncOnly=true
           - ServerSideApply=true
-ignoreDifferences:
-  - group: external-secrets.io
-    kind: ExternalSecret
-    jqPathExpressions:
-      - .spec.data[].remoteRef.conversionStrategy
-      - .spec.data[].remoteRef.decodingStrategy
-      - .spec.data[].remoteRef.metadataPolicy
-    jsonPointers:
-      - /spec/data
-  - group: external-secrets.io
-    kind: ClusterSecretStore
-    jqPathExpressions:
-      - .status
-    jsonPointers:
-      - /metadata/annotations/argocd.argoproj.io~1tracking-id
 retry:
   limit: 5
   backoff:

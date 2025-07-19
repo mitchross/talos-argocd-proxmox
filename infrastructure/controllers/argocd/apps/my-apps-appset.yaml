@@ -40,13 +40,6 @@ spec:
             duration: 5s
             factor: 2
             maxDuration: 3m
-      ignoreDifferences:
-        - group: external-secrets.io
-          kind: ExternalSecret
-          jqPathExpressions:
-            - .spec.data[].remoteRef.conversionStrategy
-            - .spec.data[].remoteRef.decodingStrategy
-            - .spec.data[].remoteRef.metadataPolicy
       info:
         - name: 'Description'
           value: 'Application: {{path.basename}}'
