@@ -47,6 +47,22 @@ spec:
             - external-secrets
             - external-secrets-operator
             - external-secrets-controller
+        - group: external-secrets.io
+          kind: ExternalSecret
+          jqPathExpressions:
+            - .status
+        - group: external-secrets.io
+          kind: ExternalSecret
+          jsonPointers:
+            - /metadata/annotations/argocd.argoproj.io~1tracking-id
+        - group: external-secrets.io
+          kind: ClusterSecretStore
+          jqPathExpressions:
+            - .status
+        - group: external-secrets.io
+          kind: ClusterSecretStore
+          jsonPointers:
+            - /metadata/annotations/argocd.argoproj.io~1tracking-id
         - group: gateway.networking.k8s.io
           kind: GatewayClass
           jsonPointers:
