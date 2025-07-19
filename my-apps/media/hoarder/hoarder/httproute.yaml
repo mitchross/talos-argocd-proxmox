@@ -21,3 +21,4 @@ spec:
           kind: Service
           name: hoarder-web
           port: 3000
+          weight: 1

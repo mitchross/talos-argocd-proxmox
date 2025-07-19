@@ -29,3 +29,4 @@ spec:
           kind: Service
           name: immich-server
           port: 3001
+          weight: 1
