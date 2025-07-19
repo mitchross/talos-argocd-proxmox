@@ -21,3 +21,4 @@ spec:
           kind: Service
           name: homepage-dashboard
           port: 3000
+          weight: 1
