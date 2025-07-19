@@ -40,6 +40,17 @@ spec:
           - RespectIgnoreDifferences=true
           - ApplyOutOfSyncOnly=true
           - ServerSideApply=true
+      ignoreDifferences:
+        - group: external-secrets.io
+          kind: ExternalSecret
+          jsonPointers:
+            - /spec/dataFrom/0/conversionStrategy
+            - /spec/dataFrom/0/decodingStrategy
+            - /spec/data/0/conversionStrategy
+            - /spec/data/0/decodingStrategy
+            - /spec/target/conversionStrategy
+            - /spec/target/decodingStrategy
+            - /spec/target/metadataPolicy
       info:
         - name: Description
           value: 'Infrastructure component: {{path.basename}}'
