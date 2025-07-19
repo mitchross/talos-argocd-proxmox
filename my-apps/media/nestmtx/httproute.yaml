@@ -21,3 +21,4 @@ spec:
           kind: Service
           name: nestmtx
           port: 2000
+          weight: 1

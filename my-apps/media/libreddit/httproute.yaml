@@ -22,3 +22,4 @@ spec:
           kind: Service
           name: libreddit
           port: 8080
+          weight: 1
