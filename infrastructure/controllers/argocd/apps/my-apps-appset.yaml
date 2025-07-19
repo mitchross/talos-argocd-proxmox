@@ -43,8 +43,10 @@ spec:
       ignoreDifferences:
         - group: external-secrets.io
           kind: ExternalSecret
-          managedFieldsManagers:
-            - external-secrets
+          jqPathExpressions:
+            - .spec.data[].remoteRef.conversionStrategy
+            - .spec.data[].remoteRef.decodingStrategy
+            - .spec.data[].remoteRef.metadataPolicy
       info:
         - name: 'Description'
           value: 'Application: {{path.basename}}'
