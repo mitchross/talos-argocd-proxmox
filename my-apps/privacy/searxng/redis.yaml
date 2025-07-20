@@ -18,16 +18,13 @@ spec:
       containers:
         - name: redis
           image: redis:7-alpine
-          command:
-            - redis-server
-            - "--save"
-            - "30"
-            - "1"
-            - "--loglevel"
-            - warning
+          command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
           ports:
             - containerPort: 6379
               name: redis
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
           resources:
             requests:
               cpu: 50m
@@ -35,9 +32,13 @@ spec:
             limits:
               cpu: 100m
               memory: 128Mi
-          volumeMounts:
-            - name: redis-data
-              mountPath: /data
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsUser: 999 # redis user
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
       volumes:
         - name: redis-data
           persistentVolumeClaim:
@@ -55,3 +56,16 @@ spec:
       name: redis
   selector:
     app: redis
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data
+  namespace: searxng
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: longhorn

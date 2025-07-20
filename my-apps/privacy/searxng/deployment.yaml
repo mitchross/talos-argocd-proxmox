@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: searxng
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app.kubernetes.io/name: searxng
@@ -19,32 +19,24 @@ spec:
       labels:
         app.kubernetes.io/name: searxng
     spec:
-      initContainers:
-        - name: copy-config
-          image: busybox:latest
-          command: ["sh", "-c", "cp -L /config-ro/* /config-rw/ && chown -R 1000:1000 /config-rw"]
-          volumeMounts:
-            - name: config-ro
-              mountPath: /config-ro
-              readOnly: true
-            - name: config-rw
-              mountPath: /config-rw
+      restartPolicy: Always
       containers:
         - name: searxng
-          image: searxng/searxng:latest@sha256:8f1196f03960ebae2292ba7b6d3e074c643abded31ad5bb0d0e971e20670156c
-          imagePullPolicy: Always
+          image: searxng/searxng:2024.4.29-e45a7cc06
+          resources:
+            requests:
+              memory: 100M
+              cpu: 50m
+            limits:
+              memory: 3000M
           envFrom:
             - configMapRef:
+                name: searxng
+            - secretRef:
                 name: searxng
           ports:
             - containerPort: 8080
               name: http
-          resources:
-            requests:
-              memory: 100M
-              cpu: 100m
-            limits:
-              memory: 3500M
           readinessProbe:
             tcpSocket:
               port: 8080
@@ -56,11 +48,22 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 60
           volumeMounts:
-            - name: config-rw
-              mountPath: /etc/searxng
+            - name: searxng-settings
+              mountPath: /etc/searxng/settings.yml
+              subPath: settings.yaml
+            - name: searxng-limiter
+              mountPath: /etc/searxng/limiter.toml
+              subPath: limiter.toml
       volumes:
-        - name: config-ro
+        - name: searxng-settings
           configMap:
             name: searxng-config-settings
-        - name: config-rw
-          emptyDir: {}
+            items:
+              - key: settings.yaml
+                path: settings.yaml
+        - name: searxng-limiter
+          configMap:
+            name: searxng-config-settings
+            items:
+              - key: limiter.toml
+                path: limiter.toml

@@ -4,7 +4,11 @@ metadata:
   name: searxng
   namespace: searxng
 data:
-  SEARXNG_BASE_URL: "https://search.vanillax.me"
-  SEARXNG_PORT: "8080"
+  SEARXNG_DEBUG: "false"
+  SEARXNG_URL: "https://search.vanillax.me"
+  SEARXNG_PORT: "8080" # Match with settings.yml
   SEARXNG_BIND_ADDRESS: "0.0.0.0"
-  REDIS_URL: "redis://redis.searxng.svc.cluster.local:6379/0"
+  SEARXNG_BASE_URL: "https://search.vanillax.me"
+  SEARXNG_INSTANCE_NAME: "vanillax"
+  SEARXNG_REDIS_URL: "redis://redis:6379"
+  SEARXNG_LIMITER: "true"
