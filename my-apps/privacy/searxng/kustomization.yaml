@@ -13,6 +13,7 @@ configMapGenerator:
     files:
       - settings.yml=config/settings.yaml
       - limiter.toml=config/limiter.toml
-    options:
-      disableNameSuffixHash: true
-namespace: searxng
+      - favicons.toml=config/favicons.toml
+    namespace: searxng
+generatorOptions:
+  disableNameSuffixHash: true
