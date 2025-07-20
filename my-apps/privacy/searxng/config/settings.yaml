@@ -5,7 +5,7 @@ server:
   image_proxy: true
   method: GET # https://github.com/searxng/searxng/pull/3619
   public_instance: false
-redis:
+valkey:
   url: "redis://redis.searxng.svc.cluster.local:6379/0"
 search:
   autocomplete: duckduckgo
