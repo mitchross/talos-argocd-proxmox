@@ -8,7 +8,6 @@ resources:
   - redis-pvc.yaml
   - redis.yaml
   - configmap.yaml
-  - secret.yaml
 configMapGenerator:
   - name: searxng-config-settings
     files:

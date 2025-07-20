@@ -35,7 +35,7 @@ spec:
           image: searxng/searxng:latest@sha256:8f1196f03960ebae2292ba7b6d3e074c643abded31ad5bb0d0e971e20670156c
           imagePullPolicy: Always
           envFrom:
-            - secretRef:
+            - configMapRef:
                 name: searxng
           ports:
             - containerPort: 8080

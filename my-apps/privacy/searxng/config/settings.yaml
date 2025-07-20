@@ -1,12 +1,10 @@
----
 use_default_settings: true
-
 server:
+  secret_key: "39235b560d84ae66210f4fb0d0b43104fe35167c97fab9cc81b8b341d70d8326"
   limiter: true
   image_proxy: true
   method: GET # https://github.com/searxng/searxng/pull/3619
   public_instance: false
-
 search:
   autocomplete: duckduckgo
   favicon_resolver: duckduckgo
@@ -17,10 +15,8 @@ search:
   formats:
     - html
     - json
-
 general:
   instance_name: Vanillax Search
-
 ui:
   default_theme: simple
   infinite_scroll: true
@@ -29,13 +25,11 @@ ui:
   static_use_hash: true
   theme_args:
     simple_style: auto
-
 categories_as_tabs:
   general:
   images:
   videos:
   map:
-
 enabled_plugins:
   - Basic Calculator
   - Hash plugin
@@ -43,7 +37,6 @@ enabled_plugins:
   - Self Informations
   - Tracker URL remover
   - Unit converter plugin
-
 hostnames:
   high_priority:
     - (.*)\/blog\/(.*)
