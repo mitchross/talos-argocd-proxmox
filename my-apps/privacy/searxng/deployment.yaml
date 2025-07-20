@@ -64,11 +64,8 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 60
           volumeMounts:
-            - name: searxng-data
-              mountPath: /etc/searxng
             - name: searxng-config-settings
               mountPath: /etc/searxng
-              readOnly: false
       volumes:
         - name: searxng-config-settings
           configMap:
