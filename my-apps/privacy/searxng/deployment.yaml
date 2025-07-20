@@ -19,28 +19,10 @@ spec:
       labels:
         app.kubernetes.io/name: searxng
     spec:
-      initContainers:
-        - name: copy-config
-          image: busybox:1.37
-          command: ["sh", "-c", "cp -L /config-ro/* /etc/searxng/"]
-          securityContext:
-            runAsUser: 0
-          volumeMounts:
-            - name: config-ro
-              mountPath: /config-ro
-            - name: searxng-data
-              mountPath: /etc/searxng
       containers:
         - name: searxng
           image: searxng/searxng:latest@sha256:8f1196f03960ebae2292ba7b6d3e074c643abded31ad5bb0d0e971e20670156c
           imagePullPolicy: Always
-          securityContext:
-            capabilities:
-              add:
-                - CHOWN
-                - SETGID
-                - SETUID
-                - DAC_OVERRIDE
           envFrom:
             - configMapRef:
                 name: searxng
@@ -70,5 +52,3 @@ spec:
         - name: searxng-config-settings
           configMap:
             name: searxng-config-settings
-        - name: searxng-data
-          emptyDir: {}
