@@ -19,6 +19,16 @@ spec:
       labels:
         app.kubernetes.io/name: searxng
     spec:
+      initContainers:
+        - name: copy-config
+          image: busybox:latest
+          command: ["sh", "-c", "cp -L /config-ro/* /config-rw/ && chown -R 1000:1000 /config-rw"]
+          volumeMounts:
+            - name: config-ro
+              mountPath: /config-ro
+              readOnly: true
+            - name: config-rw
+              mountPath: /config-rw
       containers:
         - name: searxng
           image: searxng/searxng:latest@sha256:8f1196f03960ebae2292ba7b6d3e074c643abded31ad5bb0d0e971e20670156c
@@ -46,9 +56,11 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 60
           volumeMounts:
-            - name: searxng-config-settings
+            - name: config-rw
               mountPath: /etc/searxng
       volumes:
-        - name: searxng-config-settings
+        - name: config-ro
           configMap:
             name: searxng-config-settings
+        - name: config-rw
+          emptyDir: {}
