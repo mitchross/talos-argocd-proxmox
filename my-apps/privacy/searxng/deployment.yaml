@@ -34,6 +34,13 @@ spec:
         - name: searxng
           image: searxng/searxng:latest@sha256:8f1196f03960ebae2292ba7b6d3e074c643abded31ad5bb0d0e971e20670156c
           imagePullPolicy: Always
+          securityContext:
+            capabilities:
+              add:
+                - CHOWN
+                - SETGID
+                - SETUID
+                - DAC_OVERRIDE
           envFrom:
             - configMapRef:
                 name: searxng
@@ -59,8 +66,11 @@ spec:
           volumeMounts:
             - name: searxng-data
               mountPath: /etc/searxng
+            - name: searxng-config-settings
+              mountPath: /etc/searxng
+              readOnly: false
       volumes:
-        - name: config-ro
+        - name: searxng-config-settings
           configMap:
             name: searxng-config-settings
         - name: searxng-data
