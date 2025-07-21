@@ -5,6 +5,7 @@ commonLabels:
   app.kubernetes.io/name: redis-commander
   app.kubernetes.io/managed-by: argocd
 resources:
+  - namespace.yaml
   - deployment.yaml
   - service.yaml
   - httproute.yaml
