@@ -10,7 +10,7 @@ spec:
       name: gateway-internal
       namespace: gateway
   hostnames:
-    - "home-assistant.vanillax.me"
+    - "homeassistant.vanillax.me"
   rules:
     - matches:
         - path:
