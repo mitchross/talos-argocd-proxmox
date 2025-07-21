@@ -83,6 +83,3 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: nestmtx-storage-pvc
-        - name: nvidia-driver
-          hostPath:
-            path: /usr/local/nvidia
