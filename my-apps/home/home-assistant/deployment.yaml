@@ -5,6 +5,9 @@ metadata:
   namespace: home-assistant
   labels:
     app.kubernetes.io/name: home-assistant
+    app.kubernetes.io/component: home-automation
+    app.kubernetes.io/part-of: smart-home
+    app.kubernetes.io/version: stable
 spec:
   replicas: 1
   strategy:
@@ -16,7 +19,16 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: home-assistant
+        app.kubernetes.io/component: home-automation
+        app.kubernetes.io/part-of: smart-home
+        app.kubernetes.io/version: stable
     spec:
+      # Pod-level security context
+      securityContext:
+        fsGroup: 0
+        fsGroupChangePolicy: "OnRootMismatch"
+      # Add restart policy for better reliability
+      restartPolicy: Always
       containers:
         - name: home-assistant
           image: "ghcr.io/home-assistant/home-assistant:stable"
@@ -31,6 +43,23 @@ spec:
             - containerPort: 8123
               name: http
               protocol: TCP
+          # Health checks for better reliability
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
           volumeMounts:
             - name: config
               mountPath: /config
@@ -49,12 +78,17 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 256Mi
+              memory: 512Mi
             limits:
+              cpu: 2000m
               memory: 4Gi
         - name: code-server
           image: "ghcr.io/coder/code-server:4.102.1"
           imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+            readOnlyRootFilesystem: false
           env:
             - name: TZ
               value: "America/New_York"
@@ -70,6 +104,30 @@ spec:
             - containerPort: 8443
               name: code-server
               protocol: TCP
+          # Health checks for code-server
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: code-server
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: code-server
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           volumeMounts:
             - name: config
               mountPath: /config

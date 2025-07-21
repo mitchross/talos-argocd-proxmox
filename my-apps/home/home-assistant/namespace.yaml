@@ -3,4 +3,7 @@ kind: Namespace
 metadata:
   name: home-assistant
   labels:
-    pod-security.kubernetes.io/enforce: privileged
+    # Since we removed hostNetwork, we can use baseline security
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted

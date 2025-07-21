@@ -3,9 +3,24 @@ kind: Service
 metadata:
   name: home-assistant
   namespace: home-assistant
+  labels:
+    app.kubernetes.io/name: home-assistant
+    app.kubernetes.io/component: home-automation
+    app.kubernetes.io/part-of: smart-home
+  annotations:
+    # Prometheus monitoring
+    prometheus.io/scrape: "false"
+    # Session affinity for better UX
+    service.kubernetes.io/topology-mode: Auto
 spec:
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: home-assistant
+  # Session affinity for consistent user experience
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800  # 3 hours
   ports:
     - name: http
       protocol: TCP

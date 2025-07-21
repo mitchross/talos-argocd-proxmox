@@ -3,6 +3,14 @@ kind: PersistentVolumeClaim
 metadata:
   name: home-assistant-config
   namespace: home-assistant
+  labels:
+    app.kubernetes.io/name: home-assistant
+    app.kubernetes.io/component: home-automation
+    app.kubernetes.io/part-of: smart-home
+  annotations:
+    # Longhorn backup settings
+    longhorn.io/recurring-job-source: enabled
+    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
     - ReadWriteOnce

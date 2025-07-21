@@ -3,6 +3,13 @@ kind: HTTPRoute
 metadata:
   name: home-assistant
   namespace: home-assistant
+  labels:
+    app.kubernetes.io/name: home-assistant
+    app.kubernetes.io/component: home-automation
+    app.kubernetes.io/part-of: smart-home
+  annotations:
+    # Gateway API best practices
+    gateway.networking.k8s.io/timeout: "300s"
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
@@ -22,3 +29,7 @@ spec:
           name: home-assistant
           port: 8123
           weight: 1
+      # Add timeout configuration for better reliability
+      timeouts:
+        request: "60s"
+        backendRequest: "30s"
