@@ -11,7 +11,7 @@ spec:
       name: gateway-internal
       namespace: gateway
   hostnames:
-    - "nginx.vanillax.xyz"
+    - "nginx.vanillax.me"
   rules:
     - matches:
         - path:

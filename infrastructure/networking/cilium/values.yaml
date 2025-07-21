@@ -38,10 +38,10 @@ resources:
     memory: 512Mi
 debug:
   enabled: true
-# Increase rate limit when doing L2 announcements
+# Increase rate limit when doing L2 announcements and Gateway API operations
 k8sClientRateLimit:
-  qps: 20
-  burst: 100
+  qps: 50
+  burst: 200
 l2announcements:
   enabled: true
 externalIPs:
@@ -53,6 +53,7 @@ loadBalancer:
   algorithm: maglev
 gatewayAPI:
   enabled: true
+  enableAlpn: true
 envoy:
   securityContext:
     capabilities:
@@ -60,6 +61,14 @@ envoy:
       envoy: [NET_ADMIN, PERFMON, BPF]
 hubble:
   enabled: true
+  metrics:
+    enabled:
+      - dns:query;ignoreAAAA
+      - drop
+      - tcp
+      - flow
+      - icmp
+      - http
   relay:
     enabled: true
     rollOutPods: true
