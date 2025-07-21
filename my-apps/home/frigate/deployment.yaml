@@ -14,7 +14,7 @@ spec:
         app: frigate
     spec:
       nodeSelector:
-        google.feature.node.kubernetes.io/coral: "true"
+        kubernetes.io/hostname: talos-cluster-gpu-worker-00
       containers:
         - name: frigate
           image: ghcr.io/blakeblackshear/frigate:0.15.2
