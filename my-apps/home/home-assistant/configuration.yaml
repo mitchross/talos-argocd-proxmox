@@ -17,6 +17,7 @@ http:
     - 172.16.0.0/12
     - 192.168.0.0/16
     - 192.168.10.32/27 # Cilium IP Pool
+    - 192.168.10.50 # Gateway IP
 # Enable the recorder (database)
 recorder:
   db_url: sqlite:////config/home-assistant_v2.db
