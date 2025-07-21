@@ -20,7 +20,7 @@ spec:
   sessionAffinity: ClientIP
   sessionAffinityConfig:
     clientIP:
-      timeoutSeconds: 10800  # 3 hours
+      timeoutSeconds: 10800 # 3 hours
   ports:
     - name: http
       protocol: TCP
@@ -28,5 +28,5 @@ spec:
       targetPort: 8123
     - name: code-server
       protocol: TCP
-      port: 8443
-      targetPort: 8443
+      port: 8080
+      targetPort: 8080

@@ -99,9 +99,11 @@ spec:
             - "/config/.vscode"
             - "--extensions-dir"
             - "/config/.vscode"
+            - "--port"
+            - "8080"
             - "/config"
           ports:
-            - containerPort: 8443
+            - containerPort: 8080
               name: code-server
               protocol: TCP
           # Health checks for code-server
