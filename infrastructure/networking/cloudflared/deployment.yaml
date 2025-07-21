@@ -15,6 +15,18 @@ spec:
       labels:
         app: cloudflared
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - cloudflared
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: cloudflared
           image: cloudflare/cloudflared:2025.2.0 # renovate: docker=cloudflare/cloudflared
