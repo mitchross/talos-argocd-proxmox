@@ -1,40 +1,15 @@
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: frigate-media
-spec:
-  capacity:
-    storage: 1Ti
-  accessModes:
-    - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  mountOptions:
-    - dir_mode=0777
-    - file_mode=0777
-    - uid=1000
-    - gid=1000
-    - cache=strict
-    - nosharesock
-  csi:
-    driver: smb.csi.k8s.io
-    volumeHandle: frigate-media-volume
-    volumeAttributes:
-      source: "//192.168.10.133/frigate"
-    nodeStageSecretRef:
-      name: smbcreds
-      namespace: csi-driver-smb
----
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: frigate-media
   namespace: frigate
+  labels:
+    app: frigate
+    type: storage
 spec:
   accessModes:
     - ReadWriteMany
   resources:
     requests:
       storage: 1Ti
-  volumeName: frigate-media
-  storageClassName: ""
+  storageClassName: frigate-smb
