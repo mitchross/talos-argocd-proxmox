@@ -17,14 +17,13 @@ spec:
       labels:
         app.kubernetes.io/name: home-assistant
     spec:
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: home-assistant
           image: "ghcr.io/home-assistant/home-assistant:stable"
           imagePullPolicy: IfNotPresent
           securityContext:
-            privileged: true
+            runAsNonRoot: false
+            runAsUser: 0
           env:
             - name: TZ
               value: "America/New_York"
