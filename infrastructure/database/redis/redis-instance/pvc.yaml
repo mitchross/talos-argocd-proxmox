@@ -6,6 +6,11 @@ metadata:
   labels:
     app: redis
     component: master
+  annotations:
+    # Longhorn backup settings - Critical tier for database
+    longhorn.io/recurring-job-source: enabled
+    longhorn.io/recurring-job-group: critical
+    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
     - ReadWriteOnce

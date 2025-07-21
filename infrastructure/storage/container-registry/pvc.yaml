@@ -3,6 +3,14 @@ kind: PersistentVolumeClaim
 metadata:
   name: registry-pvc
   namespace: kube-system
+  labels:
+    app.kubernetes.io/name: container-registry
+    app.kubernetes.io/component: infrastructure
+  annotations:
+    # Longhorn backup settings - Critical tier for infrastructure
+    longhorn.io/recurring-job-source: enabled
+    longhorn.io/recurring-job-group: critical
+    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   storageClassName: longhorn
   accessModes:

@@ -6,6 +6,11 @@ metadata:
   labels:
     app: jellyfin
     type: config
+  annotations:
+    # Longhorn backup settings - Standard tier for media configuration
+    longhorn.io/recurring-job-source: enabled
+    longhorn.io/recurring-job-group: standard
+    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   storageClassName: longhorn
   accessModes:

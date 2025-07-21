@@ -6,6 +6,11 @@ metadata:
   labels:
     app: hoarder
     type: meilisearch-storage
+  annotations:
+    # Longhorn backup settings - Standard tier for search index (recreatable)
+    longhorn.io/recurring-job-source: enabled
+    longhorn.io/recurring-job-group: standard
+    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
     - ReadWriteOnce

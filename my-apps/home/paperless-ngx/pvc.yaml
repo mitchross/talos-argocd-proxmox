@@ -6,6 +6,11 @@ metadata:
   labels:
     app: paperless-ngx
     type: data
+  annotations:
+    # Longhorn backup settings - Critical tier for user documents
+    longhorn.io/recurring-job-source: enabled
+    longhorn.io/recurring-job-group: critical
+    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
     - ReadWriteOnce
@@ -22,6 +27,11 @@ metadata:
   labels:
     app: paperless-ngx
     type: media
+  annotations:
+    # Longhorn backup settings - Critical tier for user documents
+    longhorn.io/recurring-job-source: enabled
+    longhorn.io/recurring-job-group: critical
+    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
     - ReadWriteOnce
@@ -38,6 +48,11 @@ metadata:
   labels:
     app: paperless-ngx
     type: export
+  annotations:
+    # Longhorn backup settings - Critical tier for user documents
+    longhorn.io/recurring-job-source: enabled
+    longhorn.io/recurring-job-group: critical
+    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
     - ReadWriteOnce
@@ -54,6 +69,11 @@ metadata:
   labels:
     app: paperless-ngx
     type: consume
+  annotations:
+    # Longhorn backup settings - Critical tier for user documents
+    longhorn.io/recurring-job-source: enabled
+    longhorn.io/recurring-job-group: critical
+    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
     - ReadWriteOnce

@@ -3,6 +3,14 @@ kind: PersistentVolumeClaim
 metadata:
   name: immich-library
   namespace: immich
+  labels:
+    app.kubernetes.io/name: immich
+    app.kubernetes.io/component: media-management
+  annotations:
+    # Longhorn backup settings - Important tier for photo library
+    longhorn.io/recurring-job-source: enabled
+    longhorn.io/recurring-job-group: important
+    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
     - ReadWriteOnce
@@ -10,4 +18,3 @@ spec:
     requests:
       storage: 20Gi
   storageClassName: longhorn
-
