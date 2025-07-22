@@ -25,3 +25,6 @@ recorder:
 energy:
 # Enable the person integration
 person:
+# Expose Camera Stream Source Integration
+# Allows exposing camera stream URLs via API for go2rtc/Frigate integration
+expose_camera_stream_source:

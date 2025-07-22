@@ -15,6 +15,10 @@ spec:
       labels:
         app: nestmtx
     spec:
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
       # runtimeClassName: nvidia
       # nodeSelector:
       #   feature.node.kubernetes.io/pci-0300_10de.present: "true"
