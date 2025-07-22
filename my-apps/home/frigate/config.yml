@@ -30,9 +30,8 @@ record:
     days: 3
     mode: all
 detectors:
-  coral:
-    type: edgetpu
-    device: usb
+  cpu:
+    type: cpu
 ffmpeg:
   input_args: preset-rtsp-generic
 go2rtc:
