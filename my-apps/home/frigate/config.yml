@@ -5,7 +5,7 @@ mqtt:
   user: "${FRIGATE_MQTT_USER}"
   password: "${FRIGATE_MQTT_PASSWORD}"
 database:
-  path: /config/frigate.db
+  path: /homeassistant/frigate.db
 ui:
   timezone: America/New_York
 timestamp_style:
@@ -29,6 +29,9 @@ record:
   retain:
     days: 3
     mode: all
+# Object detection is now disabled by default in 0.16.0+
+detect:
+  enabled: true
 detectors:
   cpu:
     type: cpu
@@ -36,60 +39,21 @@ ffmpeg:
   input_args: preset-rtsp-generic
 go2rtc:
   streams:
-    # Non-Nest cameras - temporarily disabled
-    # shed-cam:
-    #   - rtsp://192.168.10.46:8554/shed
-    # driveway-cam:
-    #   - rtsp://192.168.10.46:8554/driveway
-
-    # Nest cameras via native go2rtc Nest source
+    # Nest cameras using Home Assistant API via hass-expose-camera-stream-source
     backyard-nest:
-      - "nest:${NEST_REFRESH_TOKEN}#Backyard Camera"
+      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.backyard_camera -H "Authorization: Bearer ${HOMEASSISTANT_TOKEN}"'
     garage-inside-nest:
-      - "nest:${NEST_REFRESH_TOKEN}#Garage Inside"
+      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.garage_inside -H "Authorization: Bearer ${HOMEASSISTANT_TOKEN}"'
     garage-outside-nest:
-      - "nest:${NEST_REFRESH_TOKEN}#Garage Camera"
+      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.garage_camera -H "Authorization: Bearer ${HOMEASSISTANT_TOKEN}"'
     front-porch-nest:
-      - "nest:${NEST_REFRESH_TOKEN}#Front Porch Doorbell"
+      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.front_porch_doorbell -H "Authorization: Bearer ${HOMEASSISTANT_TOKEN}"'
     living-room-nest:
-      - "nest:${NEST_REFRESH_TOKEN}#Living Room Camera"
+      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.living_room_camera -H "Authorization: Bearer ${HOMEASSISTANT_TOKEN}"'
     kitchen-nest:
-      - "nest:${NEST_REFRESH_TOKEN}#Kitchen Camera"
+      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.kitchen_camera -H "Authorization: Bearer ${HOMEASSISTANT_TOKEN}"'
 cameras:
-  # Non-Nest cameras - temporarily disabled
-  # shed:
-  #   enabled: false
-  #   ffmpeg:
-  #     inputs:
-  #       - path: rtsp://192.168.10.46:8554/shed
-  #         roles:
-  #           - detect
-  #           - record
-  #   detect:
-  #     enabled: true
-  #     width: 1280
-  #     height: 720
-  #     fps: 5
-  #   live:
-  #     height: 1080
-
-  # driveway:
-  #   enabled: false
-  #   ffmpeg:
-  #     inputs:
-  #       - path: rtsp://192.168.10.46:8554/driveway
-  #         roles:
-  #           - detect
-  #           - record
-  #   detect:
-  #     enabled: true
-  #     width: 1280
-  #     height: 720
-  #     fps: 5
-  #   live:
-  #     height: 1080
-
-  # Nest cameras via go2rtc restream
+  # Nest cameras via Home Assistant API
   backyard:
     enabled: true
     ffmpeg:
@@ -121,9 +85,6 @@ cameras:
           roles:
             - detect
             - record
-        - path: rtsp://127.0.0.1:8554/garage-inside-nest?audio
-          roles:
-            - audio
     detect:
       enabled: true
       width: 1280
@@ -164,9 +125,6 @@ cameras:
           roles:
             - detect
             - record
-        - path: rtsp://127.0.0.1:8554/front-porch-nest?audio
-          roles:
-            - audio
     detect:
       enabled: true
       width: 1280

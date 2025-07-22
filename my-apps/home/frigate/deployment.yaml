@@ -17,7 +17,7 @@ spec:
         kubernetes.io/hostname: talos-cluster-gpu-worker-00
       containers:
         - name: frigate
-          image: ghcr.io/blakeblackshear/frigate:0.15.2
+          image: ghcr.io/blakeblackshear/frigate:0.16.0-beta4
           imagePullPolicy: IfNotPresent
           env:
             - name: TZ
@@ -32,11 +32,11 @@ spec:
                 secretKeyRef:
                   name: frigate-secrets
                   key: FRIGATE_MQTT_PASSWORD
-            - name: NEST_REFRESH_TOKEN
+            - name: HOMEASSISTANT_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: frigate-secrets
-                  key: NEST_REFRESH_TOKEN
+                  key: HOMEASSISTANT_TOKEN
           resources:
             requests:
               cpu: 1000m
