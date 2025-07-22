@@ -41,20 +41,19 @@ ffmpeg:
 # Using the correct echo:curl syntax from official documentation
 go2rtc:
   streams:
-    # Nest cameras using Home Assistant API via hass-expose-camera-stream-source
-    # Using echo:curl syntax as documented for non-add-on deployments
+    # Nest cameras using direct Nest integration (native go2rtc support)
     backyard-nest:
-      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.backyard_camera -H "Authorization: Bearer ${FRIGATE_HOMEASSISTANT_TOKEN}"'
+      - "nest:{FRIGATE_NEST_REFRESH_TOKEN}#backyard_camera"
     garage-inside-nest:
-      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.garage_inside -H "Authorization: Bearer ${FRIGATE_HOMEASSISTANT_TOKEN}"'
+      - "nest:{FRIGATE_NEST_REFRESH_TOKEN}#garage_inside"
     garage-outside-nest:
-      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.garage_camera -H "Authorization: Bearer ${FRIGATE_HOMEASSISTANT_TOKEN}"'
+      - "nest:{FRIGATE_NEST_REFRESH_TOKEN}#garage_camera"
     front-porch-nest:
-      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.front_porch_doorbell -H "Authorization: Bearer ${FRIGATE_HOMEASSISTANT_TOKEN}"'
+      - "nest:{FRIGATE_NEST_REFRESH_TOKEN}#front_porch_doorbell"
     living-room-nest:
-      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.living_room_camera -H "Authorization: Bearer ${FRIGATE_HOMEASSISTANT_TOKEN}"'
+      - "nest:{FRIGATE_NEST_REFRESH_TOKEN}#living_room_camera"
     kitchen-nest:
-      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.kitchen_camera -H "Authorization: Bearer ${FRIGATE_HOMEASSISTANT_TOKEN}"'
+      - "nest:{FRIGATE_NEST_REFRESH_TOKEN}#kitchen_camera"
 cameras:
   # Keep working shed and driveway cameras
   shed:
