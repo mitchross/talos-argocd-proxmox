@@ -29,10 +29,10 @@ record:
   retain:
     days: 3
     mode: all
-  events:
-    retain:
-      default: 30
-      mode: motion
+events:
+  retain:
+    default: 30
+    mode: motion
 detectors:
   coral:
     type: edgetpu
@@ -184,10 +184,6 @@ cameras:
         - dog
         - cat
         - car
-    zones:
-      front_door:
-        objects:
-          - person
   living-room:
     enabled: true
     ffmpeg:
