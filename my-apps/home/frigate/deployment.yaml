@@ -32,7 +32,7 @@ spec:
                 secretKeyRef:
                   name: frigate-secrets
                   key: FRIGATE_MQTT_PASSWORD
-            - name: HOMEASSISTANT_TOKEN
+            - name: FRIGATE_HOMEASSISTANT_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: frigate-secrets
