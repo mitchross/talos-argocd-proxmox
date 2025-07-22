@@ -5,7 +5,7 @@ mqtt:
   user: "${FRIGATE_MQTT_USER}"
   password: "${FRIGATE_MQTT_PASSWORD}"
 database:
-  path: /config/frigate.db
+  path: /homeassistant/frigate.db
 ui:
   timezone: America/New_York
 timestamp_style:
@@ -38,21 +38,22 @@ detectors:
 ffmpeg:
   input_args: preset-rtsp-generic
 # Re-adding go2rtc with Nest cameras via Home Assistant API
+# Using exec syntax to properly handle environment variables
 go2rtc:
   streams:
     # Nest cameras using Home Assistant API via hass-expose-camera-stream-source
     backyard-nest:
-      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.backyard_camera -H "Authorization: Bearer ${HOMEASSISTANT_TOKEN}"'
+      - exec:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.backyard_camera -H "Authorization: Bearer $HOMEASSISTANT_TOKEN"
     garage-inside-nest:
-      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.garage_inside -H "Authorization: Bearer ${HOMEASSISTANT_TOKEN}"'
+      - exec:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.garage_inside -H "Authorization: Bearer $HOMEASSISTANT_TOKEN"
     garage-outside-nest:
-      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.garage_camera -H "Authorization: Bearer ${HOMEASSISTANT_TOKEN}"'
+      - exec:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.garage_camera -H "Authorization: Bearer $HOMEASSISTANT_TOKEN"
     front-porch-nest:
-      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.front_porch_doorbell -H "Authorization: Bearer ${HOMEASSISTANT_TOKEN}"'
+      - exec:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.front_porch_doorbell -H "Authorization: Bearer $HOMEASSISTANT_TOKEN"
     living-room-nest:
-      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.living_room_camera -H "Authorization: Bearer ${HOMEASSISTANT_TOKEN}"'
+      - exec:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.living_room_camera -H "Authorization: Bearer $HOMEASSISTANT_TOKEN"
     kitchen-nest:
-      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.kitchen_camera -H "Authorization: Bearer ${HOMEASSISTANT_TOKEN}"'
+      - exec:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.kitchen_camera -H "Authorization: Bearer $HOMEASSISTANT_TOKEN"
 cameras:
   # Keep working shed and driveway cameras
   shed:
