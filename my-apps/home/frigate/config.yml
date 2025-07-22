@@ -29,10 +29,6 @@ record:
   retain:
     days: 3
     mode: all
-events:
-  retain:
-    default: 30
-    mode: motion
 detectors:
   coral:
     type: edgetpu
