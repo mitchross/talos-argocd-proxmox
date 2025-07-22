@@ -46,21 +46,19 @@ go2rtc:
       - rtsp://192.168.10.46:8554/shed
     driveway-cam:
       - rtsp://192.168.10.46:8554/driveway
-    # Nest cameras via native go2rtc Nest source
-    # Using NEST_REFRESH_TOKEN environment variable from external secret
-    # Update device names to match your actual Nest device names
-    backyard-nest:
-      - "nest:${NEST_REFRESH_TOKEN}#Backyard Camera"
-    garage-inside-nest:
-      - "nest:${NEST_REFRESH_TOKEN}#Garage Inside"
-    garage-outside-nest:
-      - "nest:${NEST_REFRESH_TOKEN}#Garage Camera"
-    front-porch-nest:
-      - "nest:${NEST_REFRESH_TOKEN}#Front Porch Doorbell"
-    living-room-nest:
-      - "nest:${NEST_REFRESH_TOKEN}#Living Room Camera"
-    kitchen-nest:
-      - "nest:${NEST_REFRESH_TOKEN}#Kitchen Camera"
+      # Nest cameras temporarily disabled for troubleshooting
+      # backyard-nest:
+      #   - "nest:${NEST_REFRESH_TOKEN}#Backyard Camera"
+      # garage-inside-nest:
+      #   - "nest:${NEST_REFRESH_TOKEN}#Garage Inside"
+      # garage-outside-nest:
+      #   - "nest:${NEST_REFRESH_TOKEN}#Garage Camera"
+      # front-porch-nest:
+      #   - "nest:${NEST_REFRESH_TOKEN}#Front Porch Doorbell"
+      # living-room-nest:
+      #   - "nest:${NEST_REFRESH_TOKEN}#Living Room Camera"
+      # kitchen-nest:
+      #   - "nest:${NEST_REFRESH_TOKEN}#Kitchen Camera"
 cameras:
   # Non-Nest cameras - direct RTSP
   shed:
@@ -93,134 +91,140 @@ cameras:
       fps: 5
     live:
       height: 1080
-  # Nest cameras via go2rtc restream
-  backyard:
-    enabled: true
-    ffmpeg:
-      input_args: preset-rtsp-restream-low-latency
-      inputs:
-        - path: rtsp://127.0.0.1:8554/backyard-nest?video
-          roles:
-            - detect
-            - record
-    detect:
-      enabled: true
-      width: 1280
-      height: 720
-      fps: 5
-    live:
-      height: 1080
-    objects:
-      track:
-        - person
-        - dog
-        - cat
-        - car
-  garage-inside:
-    enabled: true
-    ffmpeg:
-      input_args: preset-rtsp-restream-low-latency
-      inputs:
-        - path: rtsp://127.0.0.1:8554/garage-inside-nest?video
-          roles:
-            - detect
-            - record
-        - path: rtsp://127.0.0.1:8554/garage-inside-nest?audio
-          roles:
-            - audio
-    detect:
-      enabled: true
-      width: 1280
-      height: 720
-      fps: 5
-    live:
-      height: 1080
-    objects:
-      track:
-        - person
-        - car
-  garage-outside:
-    enabled: true
-    ffmpeg:
-      input_args: preset-rtsp-restream-low-latency
-      inputs:
-        - path: rtsp://127.0.0.1:8554/garage-outside-nest?video
-          roles:
-            - detect
-            - record
-    detect:
-      enabled: true
-      width: 1280
-      height: 720
-      fps: 5
-    live:
-      height: 1080
-    objects:
-      track:
-        - person
-        - car
-  front-porch:
-    enabled: true
-    ffmpeg:
-      input_args: preset-rtsp-restream-low-latency
-      inputs:
-        - path: rtsp://127.0.0.1:8554/front-porch-nest?video
-          roles:
-            - detect
-            - record
-        - path: rtsp://127.0.0.1:8554/front-porch-nest?audio
-          roles:
-            - audio
-    detect:
-      enabled: true
-      width: 1280
-      height: 720
-      fps: 5
-    live:
-      height: 1080
-    objects:
-      track:
-        - person
-        - dog
-        - cat
-        - car
-  living-room:
-    enabled: true
-    ffmpeg:
-      input_args: preset-rtsp-restream-low-latency
-      inputs:
-        - path: rtsp://127.0.0.1:8554/living-room-nest?video
-          roles:
-            - detect
-            - record
-    detect:
-      enabled: true
-      width: 1280
-      height: 720
-      fps: 5
-    live:
-      height: 1080
-    objects:
-      track:
-        - person
-        - dog
-        - cat
-  kitchen:
-    enabled: true
-    ffmpeg:
-      input_args: preset-rtsp-restream-low-latency
-      inputs:
-        - path: rtsp://127.0.0.1:8554/kitchen-nest?video
-          roles:
-            - detect
-            - record
-    detect:
-      enabled: true
-      width: 1280
-      height: 720
-      fps: 5
-    live:
-      height: 1080
-    objects:
-      track:
-        - person
+
+# Nest cameras temporarily disabled for troubleshooting
+# backyard:
+#   enabled: false
+#   ffmpeg:
+#     input_args: preset-rtsp-restream-low-latency
+#     inputs:
+#       - path: rtsp://127.0.0.1:8554/backyard-nest?video
+#         roles:
+#           - detect
+#           - record
+#   detect:
+#     enabled: true
+#     width: 1280
+#     height: 720
+#     fps: 5
+#   live:
+#     height: 1080
+#   objects:
+#     track:
+#       - person
+#       - dog
+#       - cat
+#       - car
+
+# garage-inside:
+#   enabled: false
+#   ffmpeg:
+#     input_args: preset-rtsp-restream-low-latency
+#     inputs:
+#       - path: rtsp://127.0.0.1:8554/garage-inside-nest?video
+#         roles:
+#           - detect
+#           - record
+#       - path: rtsp://127.0.0.1:8554/garage-inside-nest?audio
+#         roles:
+#           - audio
+#   detect:
+#     enabled: true
+#     width: 1280
+#     height: 720
+#     fps: 5
+#   live:
+#     height: 1080
+#   objects:
+#     track:
+#       - person
+#       - car
+
+# garage-outside:
+#   enabled: false
+#   ffmpeg:
+#     input_args: preset-rtsp-restream-low-latency
+#     inputs:
+#       - path: rtsp://127.0.0.1:8554/garage-outside-nest?video
+#         roles:
+#           - detect
+#           - record
+#   detect:
+#     enabled: true
+#     width: 1280
+#     height: 720
+#     fps: 5
+#   live:
+#     height: 1080
+#   objects:
+#     track:
+#       - person
+#       - car
+
+# front-porch:
+#   enabled: false
+#   ffmpeg:
+#     input_args: preset-rtsp-restream-low-latency
+#     inputs:
+#       - path: rtsp://127.0.0.1:8554/front-porch-nest?video
+#         roles:
+#           - detect
+#           - record
+#       - path: rtsp://127.0.0.1:8554/front-porch-nest?audio
+#         roles:
+#           - audio
+#   detect:
+#     enabled: true
+#     width: 1280
+#     height: 720
+#     fps: 5
+#   live:
+#     height: 1080
+#   objects:
+#     track:
+#       - person
+#       - dog
+#       - cat
+#       - car
+
+# living-room:
+#   enabled: false
+#   ffmpeg:
+#     input_args: preset-rtsp-restream-low-latency
+#     inputs:
+#       - path: rtsp://127.0.0.1:8554/living-room-nest?video
+#         roles:
+#           - detect
+#           - record
+#   detect:
+#     enabled: true
+#     width: 1280
+#     height: 720
+#     fps: 5
+#   live:
+#     height: 1080
+#   objects:
+#     track:
+#       - person
+#       - dog
+#       - cat
+
+# kitchen:
+#   enabled: false
+#   ffmpeg:
+#     input_args: preset-rtsp-restream-low-latency
+#     inputs:
+#       - path: rtsp://127.0.0.1:8554/kitchen-nest?video
+#         roles:
+#           - detect
+#           - record
+#   detect:
+#     enabled: true
+#     width: 1280
+#     height: 720
+#     fps: 5
+#   live:
+#     height: 1080
+#   objects:
+#     track:
+#       - person
