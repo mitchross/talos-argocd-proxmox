@@ -32,16 +32,16 @@ spec:
                 secretKeyRef:
                   name: frigate-secrets
                   key: FRIGATE_MQTT_PASSWORD
-                    - name: FRIGATE_HOMEASSISTANT_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: frigate-secrets
-              key: HOMEASSISTANT_TOKEN
-        - name: FRIGATE_NEST_REFRESH_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: frigate-secrets
-              key: NEST_REFRESH_TOKEN
+            - name: FRIGATE_HOMEASSISTANT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: frigate-secrets
+                  key: HOMEASSISTANT_TOKEN
+            - name: FRIGATE_NEST_REFRESH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: frigate-secrets
+                  key: NEST_REFRESH_TOKEN
           resources:
             requests:
               cpu: 1000m
