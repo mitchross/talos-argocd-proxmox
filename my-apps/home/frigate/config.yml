@@ -5,7 +5,7 @@ mqtt:
   user: "${FRIGATE_MQTT_USER}"
   password: "${FRIGATE_MQTT_PASSWORD}"
 database:
-  path: /homeassistant/frigate.db
+  path: /config/frigate.db
 ui:
   timezone: America/New_York
 timestamp_style:
@@ -37,29 +37,17 @@ detectors:
     type: cpu
 ffmpeg:
   input_args: preset-rtsp-generic
-go2rtc:
-  streams:
-    # Nest cameras using Home Assistant API via hass-expose-camera-stream-source
-    backyard-nest:
-      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.backyard_camera -H "Authorization: Bearer ${HOMEASSISTANT_TOKEN}"'
-    garage-inside-nest:
-      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.garage_inside -H "Authorization: Bearer ${HOMEASSISTANT_TOKEN}"'
-    garage-outside-nest:
-      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.garage_camera -H "Authorization: Bearer ${HOMEASSISTANT_TOKEN}"'
-    front-porch-nest:
-      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.front_porch_doorbell -H "Authorization: Bearer ${HOMEASSISTANT_TOKEN}"'
-    living-room-nest:
-      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.living_room_camera -H "Authorization: Bearer ${HOMEASSISTANT_TOKEN}"'
-    kitchen-nest:
-      - 'echo:curl -fsSL http://homeassistant.vanillax.me/api/camera_stream_source/camera.kitchen_camera -H "Authorization: Bearer ${HOMEASSISTANT_TOKEN}"'
+# Temporarily disable go2rtc streams to test basic functionality first
+# go2rtc:
+#   streams:
+#     # We'll add these back once basic functionality works
 cameras:
-  # Nest cameras via Home Assistant API
-  backyard:
+  # Start with a simple test camera to verify basic functionality
+  shed:
     enabled: true
     ffmpeg:
-      input_args: preset-rtsp-restream-low-latency
       inputs:
-        - path: rtsp://127.0.0.1:8554/backyard-nest?video
+        - path: rtsp://192.168.10.46:8554/shed
           roles:
             - detect
             - record
@@ -70,18 +58,11 @@ cameras:
       fps: 5
     live:
       height: 1080
-    objects:
-      track:
-        - person
-        - dog
-        - cat
-        - car
-  garage-inside:
+  driveway:
     enabled: true
     ffmpeg:
-      input_args: preset-rtsp-restream-low-latency
       inputs:
-        - path: rtsp://127.0.0.1:8554/garage-inside-nest?video
+        - path: rtsp://192.168.10.46:8554/driveway
           roles:
             - detect
             - record
@@ -92,89 +73,3 @@ cameras:
       fps: 5
     live:
       height: 1080
-    objects:
-      track:
-        - person
-        - car
-  garage-outside:
-    enabled: true
-    ffmpeg:
-      input_args: preset-rtsp-restream-low-latency
-      inputs:
-        - path: rtsp://127.0.0.1:8554/garage-outside-nest?video
-          roles:
-            - detect
-            - record
-    detect:
-      enabled: true
-      width: 1280
-      height: 720
-      fps: 5
-    live:
-      height: 1080
-    objects:
-      track:
-        - person
-        - car
-  front-porch:
-    enabled: true
-    ffmpeg:
-      input_args: preset-rtsp-restream-low-latency
-      inputs:
-        - path: rtsp://127.0.0.1:8554/front-porch-nest?video
-          roles:
-            - detect
-            - record
-    detect:
-      enabled: true
-      width: 1280
-      height: 720
-      fps: 5
-    live:
-      height: 1080
-    objects:
-      track:
-        - person
-        - dog
-        - cat
-        - car
-  living-room:
-    enabled: true
-    ffmpeg:
-      input_args: preset-rtsp-restream-low-latency
-      inputs:
-        - path: rtsp://127.0.0.1:8554/living-room-nest?video
-          roles:
-            - detect
-            - record
-    detect:
-      enabled: true
-      width: 1280
-      height: 720
-      fps: 5
-    live:
-      height: 1080
-    objects:
-      track:
-        - person
-        - dog
-        - cat
-  kitchen:
-    enabled: true
-    ffmpeg:
-      input_args: preset-rtsp-restream-low-latency
-      inputs:
-        - path: rtsp://127.0.0.1:8554/kitchen-nest?video
-          roles:
-            - detect
-            - record
-    detect:
-      enabled: true
-      width: 1280
-      height: 720
-      fps: 5
-    live:
-      height: 1080
-    objects:
-      track:
-        - person
