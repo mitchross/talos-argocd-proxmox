@@ -25,13 +25,18 @@ spec:
             - name: FRIGATE_MQTT_USER
               valueFrom:
                 secretKeyRef:
-                  name: mqtt-secret
-                  key: mqtt-username
+                  name: frigate-secrets
+                  key: FRIGATE_MQTT_USER
             - name: FRIGATE_MQTT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: mqtt-secret
-                  key: mqtt-password
+                  name: frigate-secrets
+                  key: FRIGATE_MQTT_PASSWORD
+            - name: NEST_REFRESH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: frigate-secrets
+                  key: NEST_REFRESH_TOKEN
           resources:
             requests:
               cpu: 1000m
