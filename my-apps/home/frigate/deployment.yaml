@@ -13,6 +13,7 @@ spec:
       labels:
         app: frigate
     spec:
+      runtimeClassName: nvidia
       nodeSelector:
         kubernetes.io/hostname: talos-cluster-gpu-worker-00
       containers:
@@ -63,7 +64,6 @@ spec:
           securityContext:
             privileged: true
             allowPrivilegeEscalation: true
-            runtimeClassName: nvidia
           livenessProbe:
             httpGet:
               path: /api/version
