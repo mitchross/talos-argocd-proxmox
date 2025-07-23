@@ -3,8 +3,6 @@ kind: Deployment
 metadata:
   name: frigate
   namespace: frigate
-  labels:
-    app: frigate
 spec:
   replicas: 1
   selector:
@@ -16,21 +14,12 @@ spec:
         app: frigate
     spec:
       runtimeClassName: nvidia
-      priorityClassName: gpu-workload-high
-      tolerations:
-        - key: "gpu"
-          operator: "Equal"
-          value: "true"
-          effect: "NoSchedule"
       nodeSelector:
-        feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        kubernetes.io/hostname: talos-cluster-gpu-worker-00
       containers:
         - name: frigate
           image: ghcr.io/blakeblackshear/frigate:0.16.0-beta4
           imagePullPolicy: IfNotPresent
-          securityContext:
-            privileged: true
-            allowPrivilegeEscalation: true
           env:
             - name: TZ
               value: "America/New_York"
@@ -65,13 +54,32 @@ spec:
                   name: frigate-secrets
                   key: NEST_REFRESH_TOKEN
           resources:
+            requests:
+              cpu: 1000m
+              memory: 2Gi
             limits:
               memory: 12Gi
               cpu: 12000m
               nvidia.com/gpu: 1
-            requests:
-              memory: 2Gi
-              cpu: '1'
+          securityContext:
+            privileged: true
+            allowPrivilegeEscalation: true
+          livenessProbe:
+            httpGet:
+              path: /api/version
+              port: 5000
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/version
+              port: 5000
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
           volumeMounts:
             - name: config-dir
               mountPath: /config
@@ -84,20 +92,13 @@ spec:
               mountPath: /dev/shm
             - name: usb
               mountPath: /dev/bus/usb
-          livenessProbe:
-            httpGet:
-              path: /api/version
-              port: 5000
-          readinessProbe:
-            httpGet:
-              path: /api/version
-              port: 5000
       volumes:
         - name: config-dir
           emptyDir: {}
         - name: config-file
           configMap:
             name: frigate-configmap
+            defaultMode: 0644
         - name: media
           persistentVolumeClaim:
             claimName: frigate-media
