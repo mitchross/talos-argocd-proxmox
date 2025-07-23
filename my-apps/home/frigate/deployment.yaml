@@ -59,9 +59,11 @@ spec:
             limits:
               memory: 12Gi
               cpu: 12000m
+              nvidia.com/gpu: 1
           securityContext:
             privileged: true
             allowPrivilegeEscalation: true
+            runtimeClassName: nvidia
           livenessProbe:
             httpGet:
               path: /api/version
