@@ -70,7 +70,6 @@ cameras:
       width: 1280
       height: 720
       fps: 5
-      detector: tensorrt
     live:
       height: 1080
   driveway:
@@ -86,7 +85,6 @@ cameras:
       width: 1280
       height: 720
       fps: 5
-      detector: tensorrt
     live:
       height: 1080
   # Add Nest cameras via go2rtc restream
@@ -104,7 +102,6 @@ cameras:
       width: 1280
       height: 720
       fps: 5
-      detector: tensorrt
     live:
       height: 1080
     objects:
@@ -127,7 +124,6 @@ cameras:
       width: 1280
       height: 720
       fps: 5
-      detector: tensorrt
     live:
       height: 1080
     objects:
@@ -148,7 +144,6 @@ cameras:
       width: 1280
       height: 720
       fps: 5
-      detector: tensorrt
     live:
       height: 1080
     objects:
@@ -169,7 +164,6 @@ cameras:
       width: 1280
       height: 720
       fps: 5
-      detector: tensorrt
     live:
       height: 1080
     objects:
@@ -192,7 +186,6 @@ cameras:
       width: 1280
       height: 720
       fps: 5
-      detector: tensorrt
     live:
       height: 1080
     objects:
@@ -214,7 +207,6 @@ cameras:
       width: 1280
       height: 720
       fps: 5
-      detector: tensorrt
     live:
       height: 1080
     objects:
