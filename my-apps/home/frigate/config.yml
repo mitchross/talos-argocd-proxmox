@@ -33,11 +33,10 @@ record:
 detect:
   enabled: true
 detectors:
-  tensorrt:
-    type: tensorrt
-    device: 0
+  cpu:
+    type: cpu
 ffmpeg:
-  hwaccel_args: preset-nvidia-h264
+  input_args: preset-rtsp-generic
 # Re-adding go2rtc with Nest cameras via Home Assistant API
 # Using the correct echo:curl syntax from official documentation
 go2rtc:
@@ -70,7 +69,6 @@ cameras:
       width: 1280
       height: 720
       fps: 5
-      detector: tensorrt
     live:
       height: 1080
   driveway:
@@ -86,7 +84,6 @@ cameras:
       width: 1280
       height: 720
       fps: 5
-      detector: tensorrt
     live:
       height: 1080
   # Add Nest cameras via go2rtc restream
@@ -104,7 +101,6 @@ cameras:
       width: 1280
       height: 720
       fps: 5
-      detector: tensorrt
     live:
       height: 1080
     objects:
@@ -127,7 +123,6 @@ cameras:
       width: 1280
       height: 720
       fps: 5
-      detector: tensorrt
     live:
       height: 1080
     objects:
@@ -148,7 +143,6 @@ cameras:
       width: 1280
       height: 720
       fps: 5
-      detector: tensorrt
     live:
       height: 1080
     objects:
@@ -169,7 +163,6 @@ cameras:
       width: 1280
       height: 720
       fps: 5
-      detector: tensorrt
     live:
       height: 1080
     objects:
@@ -192,7 +185,6 @@ cameras:
       width: 1280
       height: 720
       fps: 5
-      detector: tensorrt
     live:
       height: 1080
     objects:
@@ -214,7 +206,6 @@ cameras:
       width: 1280
       height: 720
       fps: 5
-      detector: tensorrt
     live:
       height: 1080
     objects:
