@@ -41,19 +41,19 @@ ffmpeg:
 # Using the correct echo:curl syntax from official documentation
 go2rtc:
   streams:
-    # Nest cameras using Home Assistant Integration
+    # Nest cameras using direct Nest integration (native go2rtc support)
     backyard-nest:
-      - 'echo:curl -fsSL {FRIGATE_HOMEASSISTANT_URL}/api/camera_stream_source/camera.backyard_camera -H "Authorization: Bearer {FRIGATE_HOMEASSISTANT_TOKEN}"'
+      - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEsZ6SReCC2ZtlYVvLI6UNQZlzwKQjWv1pkYzQ1NztwVsr1NqV1iYNb-3StU8yO6-xiZVnirwztAMMqnd0KRlGHyJKc"
     garage-inside-nest:
-      - 'echo:curl -fsSL {FRIGATE_HOMEASSISTANT_URL}/api/camera_stream_source/camera.garage_inside -H "Authorization: Bearer {FRIGATE_HOMEASSISTANT_TOKEN}"'
+      - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEs6xJSbcP_WS7rsPKtaG8GdwxdrIcuIewmed2hsPvmh58WggGkDixnwnifuchUSGZB6eQaxQu7t-CNJZL-An6qiEG8"
     garage-outside-nest:
-      - 'echo:curl -fsSL {FRIGATE_HOMEASSISTANT_URL}/api/camera_stream_source/camera.garage_camera -H "Authorization: Bearer {FRIGATE_HOMEASSISTANT_TOKEN}"'
+      - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEsLUBYvPpbrvkZE3ir7qdib-rPCuK5gOUjGNAsPpI-JKhu2tv0tmTY2j5zhLmyLt9Mxa6ZkQTjyT1BrP_EdF523vZI"
     front-porch-nest:
-      - 'echo:curl -fsSL {FRIGATE_HOMEASSISTANT_URL}/api/camera_stream_source/camera.front_porch_doorbell -H "Authorization: Bearer {FRIGATE_HOMEASSISTANT_TOKEN}"'
+      - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEtoyaiDgotGDqDsbmu6D40w0Rb8ZLrrjMfxdXgXuD-39y9pPzfDXFLQpCC2ZC3-t8nYsizVoaUTXOshmma5yPr7n3s"
     living-room-nest:
-      - 'echo:curl -fsSL {FRIGATE_HOMEASSISTANT_URL}/api/camera_stream_source/camera.living_room_camera -H "Authorization: Bearer {FRIGATE_HOMEASSISTANT_TOKEN}"'
+      - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEv5tLwvH71E3vUblbN0ZG1t8gDbTk4Gqcj7MuHGMniuTScOiemnu3ux2aji7VV_x-cBBbWe6u2zXU2lmOcUdxsLjnc"
     kitchen-nest:
-      - 'echo:curl -fsSL {FRIGATE_HOMEASSISTANT_URL}/api/camera_stream_source/camera.kitchen_camera -H "Authorization: Bearer {FRIGATE_HOMEASSISTANT_TOKEN}"'
+      - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEuNP2NFY_qy6L9xdYaaMkjwAKiOWBL7c1VaveNbDlguT_nY0u_Ibcx14EtpzDOOdRigBA21vDzWEa_5t7gJl-nH0Hc"
 cameras:
   # Keep working shed and driveway cameras
   shed:

@@ -20,6 +20,8 @@ spec:
           image: ghcr.io/blakeblackshear/frigate:0.16.0-beta4
           imagePullPolicy: IfNotPresent
           env:
+            - name: TZ
+              value: "America/New_York"
             - name: FRIGATE_MQTT_USER
               valueFrom:
                 secretKeyRef:
@@ -30,13 +32,26 @@ spec:
                 secretKeyRef:
                   name: frigate-secrets
                   key: FRIGATE_MQTT_PASSWORD
-            - name: FRIGATE_HOMEASSISTANT_URL
-              value: http://home-assistant.home-assistant.svc.cluster.local:8123
-            - name: FRIGATE_HOMEASSISTANT_TOKEN
+            - name: FRIGATE_NEST_CLIENT_ID
               valueFrom:
                 secretKeyRef:
                   name: frigate-secrets
-                  key: HOMEASSISTANT_TOKEN
+                  key: NEST_CLIENT_ID
+            - name: FRIGATE_NEST_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: frigate-secrets
+                  key: NEST_CLIENT_SECRET
+            - name: FRIGATE_NEST_PROJECT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: frigate-secrets
+                  key: NEST_PROJECT_ID
+            - name: FRIGATE_NEST_REFRESH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: frigate-secrets
+                  key: NEST_REFRESH_TOKEN
           resources:
             requests:
               cpu: 1000m
