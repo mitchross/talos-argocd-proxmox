@@ -42,13 +42,11 @@ spec:
             - name: tmp
               mountPath: /tmp
           securityContext:
-            allowPrivilegeEscalation: true
+            allowPrivilegeEscalation: false
             runAsUser: 0
             capabilities:
               drop:
                 - ALL
-              add:
-                - SYS_ADMIN
             seccompProfile:
               type: RuntimeDefault
           readinessProbe:
