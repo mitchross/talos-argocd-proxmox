@@ -10,4 +10,3 @@ resources:
   - ns.yaml
   - deployment-chromedriver.yaml
   - deployment-redis.yaml
-  - chrome-wrapper-configmap.yaml
