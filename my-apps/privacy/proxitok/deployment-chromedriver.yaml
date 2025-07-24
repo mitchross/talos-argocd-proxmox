@@ -27,7 +27,9 @@ spec:
           command: ["/usr/bin/chromedriver"]
           args:
             - --port=9515
-            - --whitelisted-ips=
+            - --allowed-origins=*
+            - --allowed-ips=
+            - --disable-web-security
             - --verbose
             - --log-path=/tmp/chromedriver.log
           env:
