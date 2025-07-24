@@ -15,7 +15,6 @@ spec:
         app: proxitok-web
     spec:
       securityContext:
-        fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
       initContainers:
@@ -24,7 +23,6 @@ spec:
           command: ['sh', '-c', 'until nc -z proxitok-redis.proxitok.svc.cluster.local 6379; do echo waiting for redis; sleep 2; done;']
           securityContext:
             runAsNonRoot: true
-            runAsUser: 1000
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
@@ -39,11 +37,9 @@ spec:
             - name: nginx-logs
               mountPath: /var/lib/nginx/logs
           securityContext:
-            runAsUser: 0
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
-              add: ["CHOWN", "FOWNER", "DAC_OVERRIDE"]
             seccompProfile:
               type: RuntimeDefault
         - name: init-cache
@@ -59,11 +55,9 @@ spec:
             - name: cache-volume
               mountPath: /cache
           securityContext:
-            runAsUser: 0
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
-              add: ["CHOWN", "FOWNER", "DAC_OVERRIDE"]
             seccompProfile:
               type: RuntimeDefault
       containers:
@@ -76,15 +70,10 @@ spec:
                 name: proxitok-config
           securityContext:
             allowPrivilegeEscalation: false
-            runAsUser: 1000
             runAsNonRoot: true
             capabilities:
               drop:
                 - ALL
-              add:
-                - CHOWN
-                - SETGID
-                - SETUID
             seccompProfile:
               type: RuntimeDefault
           resources:

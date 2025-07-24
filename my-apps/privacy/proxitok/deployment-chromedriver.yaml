@@ -14,9 +14,6 @@ spec:
         app: proxitok-chromedriver
     spec:
       securityContext:
-        runAsNonRoot: false # Chrome needs to run as root in this image
-        runAsUser: 0
-        fsGroup: 0
         seccompProfile:
           type: RuntimeDefault
       containers:
@@ -45,15 +42,13 @@ spec:
             - name: tmp
               mountPath: /tmp
           securityContext:
+            allowPrivilegeEscalation: true
+            runAsUser: 0
             capabilities:
               drop:
                 - ALL
               add:
-                - SETGID
-                - SETUID
-                - SYS_ADMIN # Needed for Chrome sandbox
-            allowPrivilegeEscalation: true # Required for Chrome
-            runAsUser: 0 # Chrome in this image needs root
+                - SYS_ADMIN
             seccompProfile:
               type: RuntimeDefault
           readinessProbe:
