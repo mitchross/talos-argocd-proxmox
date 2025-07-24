@@ -25,23 +25,17 @@ spec:
           image: busybox
           command: ['sh', '-c', 'mkdir -p /run /var/lib/nginx/logs && chmod 777 /run /var/lib/nginx/logs']
           volumeMounts:
-            - name: run-volume
-              mountPath: /run
             - name: nginx-logs
               mountPath: /var/lib/nginx/logs
+            - name: nginx-run
+              mountPath: /run
           securityContext:
             runAsUser: 0
         - name: init-cache
           image: busybox
-          command:
-            - /bin/sh
-            - -c
-            - |
-              mkdir -p /cache/templates-views
-              chown -R 1000:1000 /cache
-              chmod -R 755 /cache
+          command: ['sh', '-c', 'chmod 777 /cache']
           volumeMounts:
-            - name: cache-volume
+            - name: proxitok-cache
               mountPath: /cache
           securityContext:
             runAsUser: 0
@@ -83,22 +77,22 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 15
           volumeMounts:
-            - name: cache-volume
+            - name: proxitok-cache
               mountPath: /cache
-            - name: run-volume
-              mountPath: /run
             - name: nginx-logs
               mountPath: /var/lib/nginx/logs
+            - name: nginx-run
+              mountPath: /run
       volumes:
-        - name: run-volume
-          emptyDir: {}
         - name: nginx-logs
+          emptyDir: {}
+        - name: nginx-run
           emptyDir: {}
   volumeClaimTemplates:
     - apiVersion: v1
       kind: PersistentVolumeClaim
       metadata:
-        name: cache-volume
+        name: proxitok-cache
       spec:
         accessModes: ["ReadWriteOnce"]
         storageClassName: longhorn
