@@ -19,43 +19,6 @@ spec:
         fsGroup: 0
         seccompProfile:
           type: RuntimeDefault
-      initContainers:
-        - name: setup-chrome-wrapper
-          image: busybox
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              # Backup original chromium launcher and binary
-              cp /usr/lib/chromium/chromium-launcher.sh /usr/lib/chromium/chromium-launcher.sh.orig
-              cp /usr/lib/chromium/chromium /usr/lib/chromium/chromium.orig
-
-              # Replace the launcher script to add --no-sandbox
-              cat > /usr/lib/chromium/chromium-launcher.sh << 'EOF'
-              #!/bin/sh
-              exec /usr/lib/chromium/chromium.orig --no-sandbox "$@"
-              EOF
-              chmod +x /usr/lib/chromium/chromium-launcher.sh
-
-              # Also create a wrapper for the direct chromium binary path
-              cat > /usr/lib/chromium/chromium << 'EOF'
-              #!/bin/sh
-              exec /usr/lib/chromium/chromium.orig --no-sandbox "$@"
-              EOF
-              chmod +x /usr/lib/chromium/chromium
-
-              # Create the chrome symlink that ChromeDriver expects
-              ln -sf /usr/lib/chromium/chromium /usr/lib/chromium/chrome
-
-              echo "Chrome wrapper installed successfully"
-          volumeMounts:
-            - name: usr-lib-chromium
-              mountPath: /usr/lib/chromium
-          securityContext:
-            runAsUser: 0
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-              add: ["CHOWN", "FOWNER", "DAC_OVERRIDE"]
       containers:
         - name: chromedriver
           image: zenika/alpine-chrome:with-chromedriver
@@ -69,6 +32,14 @@ spec:
             - --disable-web-security
             - --verbose
             - --log-path=/tmp/chromedriver.log
+          # Set environment variables to force Chrome arguments
+          env:
+            - name: GOOGLE_CHROME_OPTS
+              value: "--no-sandbox --headless --disable-dev-shm-usage --disable-gpu"
+            - name: CHROME_OPTS
+              value: "--no-sandbox --headless --disable-dev-shm-usage --disable-gpu"
+            - name: CHROMIUM_FLAGS
+              value: "--no-sandbox --headless --disable-dev-shm-usage --disable-gpu"
           resources:
             requests:
               memory: "512Mi"
@@ -81,8 +52,9 @@ spec:
               mountPath: /dev/shm
             - name: tmp
               mountPath: /tmp
-            - name: usr-lib-chromium
-              mountPath: /usr/lib/chromium
+            - name: chrome-wrapper
+              mountPath: /usr/local/bin/chrome-wrapper.sh
+              subPath: chrome-wrapper.sh
           securityContext:
             capabilities:
               drop:
@@ -112,5 +84,7 @@ spec:
             sizeLimit: 3Gi
         - name: tmp
           emptyDir: {}
-        - name: usr-lib-chromium
-          emptyDir: {}
+        - name: chrome-wrapper
+          configMap:
+            name: chrome-wrapper-config
+            defaultMode: 0755
