@@ -37,6 +37,11 @@ spec:
               value: "/usr/bin/chromium-browser"
             - name: CHROME_PATH
               value: "/usr/bin/chromium-browser"
+            # Set default Chrome options for containerized execution
+            - name: GOOGLE_CHROME_OPTS
+              value: "--no-sandbox --headless --disable-dev-shm-usage --disable-gpu --disable-software-rasterizer --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-features=TranslateUI --disable-extensions --no-first-run --disable-default-apps"
+            - name: CHROME_OPTS
+              value: "--no-sandbox --headless --disable-dev-shm-usage --disable-gpu --disable-software-rasterizer --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-features=TranslateUI --disable-extensions --no-first-run --disable-default-apps"
           resources:
             requests:
               memory: "512Mi"
