@@ -15,6 +15,13 @@ data:
   CHROME_RETRIES: "3"
   API_REGION: "US"
   API_LANGUAGE: "en"
-  # Critical Chrome options for containerized environment - including --no-sandbox
+  # Try multiple Chrome option environment variable names
   CHROME_OPTIONS: "--no-sandbox --headless --disable-dev-shm-usage --disable-gpu --disable-software-rasterizer --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-features=TranslateUI --disable-extensions --no-first-run --disable-default-apps --disable-web-security --allow-running-insecure-content"
+  GOOGLE_CHROME_OPTS: "--no-sandbox --headless --disable-dev-shm-usage --disable-gpu"
+  CHROME_OPTS: "--no-sandbox --headless --disable-dev-shm-usage --disable-gpu"
+  CHROMIUM_FLAGS: "--no-sandbox --headless --disable-dev-shm-usage --disable-gpu"
+  SELENIUM_CHROME_OPTIONS: "--no-sandbox --headless --disable-dev-shm-usage --disable-gpu"
+  WEBDRIVER_CHROME_ARGS: "--no-sandbox --headless --disable-dev-shm-usage --disable-gpu"
+  # Alternative API configuration method
+  API_CHROME_ARGS: "--no-sandbox --headless --disable-dev-shm-usage --disable-gpu"
   API_USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
