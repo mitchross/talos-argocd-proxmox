@@ -14,10 +14,9 @@ spec:
         app: proxitok-chromedriver
     spec:
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
+        runAsNonRoot: false # Chrome needs to run as root in this image
+        runAsUser: 0
+        fsGroup: 0
         seccompProfile:
           type: RuntimeDefault
       containers:
@@ -25,17 +24,17 @@ spec:
           image: zenika/alpine-chrome:with-chromedriver
           ports:
             - containerPort: 9515
+          command: ["/usr/bin/chromedriver"]
           args:
-            - --no-sandbox
-            - --headless
-            - --disable-dev-shm-usage
-            - --disable-gpu
-            - --remote-debugging-port=9222
+            - --port=9515
+            - --whitelisted-ips=
+            - --verbose
+            - --log-path=/tmp/chromedriver.log
           env:
-            - name: CHROME_OPTS
-              value: "--disable-dev-shm-usage --no-sandbox --headless --disable-gpu --disable-software-rasterizer --remote-debugging-port=9222"
-            - name: CHROMEDRIVER_OPTS
-              value: "--verbose --whitelisted-ips=''"
+            - name: CHROME_BIN
+              value: "/usr/bin/chromium-browser"
+            - name: CHROME_PATH
+              value: "/usr/bin/chromium-browser"
           resources:
             requests:
               memory: "512Mi"
@@ -52,9 +51,12 @@ spec:
             capabilities:
               drop:
                 - ALL
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
-            runAsUser: 1000
+              add:
+                - SETGID
+                - SETUID
+                - SYS_ADMIN # Needed for Chrome sandbox
+            allowPrivilegeEscalation: true # Required for Chrome
+            runAsUser: 0 # Chrome in this image needs root
             seccompProfile:
               type: RuntimeDefault
           readinessProbe:
