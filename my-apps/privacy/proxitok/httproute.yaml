@@ -5,11 +5,9 @@ metadata:
   namespace: proxitok
 spec:
   parentRefs:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      name: gateway-external
+    - name: gateway-external # Must match your Gateway's metadata.name
       namespace: gateway
-      sectionName: https
+      sectionName: https # Must match your Gateway's listeners[].name
   hostnames:
     - "proxitok.vanillax.me"
   rules:
@@ -18,8 +16,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - group: ""
-          kind: Service
-          name: proxitok
+        - name: proxitok-web
           port: 8080
-          weight: 1

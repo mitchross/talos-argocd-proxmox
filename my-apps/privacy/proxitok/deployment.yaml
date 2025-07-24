@@ -1,12 +1,11 @@
-# proxitok-web-statefulset.yaml
+# proxitok-web-deployment.yaml
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: proxitok-web
   namespace: proxitok
 spec:
-  serviceName: proxitok-web
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: proxitok-web
@@ -16,29 +15,53 @@ spec:
         app: proxitok-web
     spec:
       securityContext:
-        fsGroup: 101
-        fsGroupChangePolicy: "OnRootMismatch"
+        fsGroup: 1000
       initContainers:
         - name: wait-for-redis
           image: busybox
           command: ['sh', '-c', 'until nc -z proxitok-redis.proxitok.svc.cluster.local 6379; do echo waiting for redis; sleep 2; done;']
-        - name: wait-for-chromedriver
+        - name: init-permissions
           image: busybox
-          command: ['sh', '-c', 'until nc -z proxitok-chromedriver.proxitok.svc.cluster.local 9515; do echo waiting for chromedriver; sleep 2; done;']
+          command: ['sh', '-c', 'mkdir -p /run /var/lib/nginx/logs && chmod 777 /run /var/lib/nginx/logs']
+          volumeMounts:
+            - name: run-volume
+              mountPath: /run
+            - name: nginx-logs
+              mountPath: /var/lib/nginx/logs
+          securityContext:
+            runAsUser: 0
+        - name: init-cache
+          image: busybox
+          command:
+            - /bin/sh
+            - -c
+            - |
+              mkdir -p /cache/templates-views
+              chown -R 1000:1000 /cache
+              chmod -R 755 /cache
+          volumeMounts:
+            - name: cache-volume
+              mountPath: /cache
+          securityContext:
+            runAsUser: 0
       containers:
         - name: proxitok-web
           image: ghcr.io/pablouser1/proxitok@sha256:1cbbff4b5b1c6ba8d585379ad71fc93950e340c3a5ae46dd3574e751a873bf8e
-          securityContext:
-            capabilities:
-              add:
-                - "CHOWN"
-                - "SETGID"
-                - "SETUID"
           ports:
             - containerPort: 8080
           envFrom:
             - configMapRef:
                 name: proxitok-config
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 1000
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - CHOWN
+                - SETGID
+                - SETUID
           resources:
             requests:
               memory: "256Mi"
@@ -59,25 +82,17 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 15
           volumeMounts:
-            - name: proxitok-cache
+            - name: cache-volume
               mountPath: /cache
+            - name: run-volume
+              mountPath: /run
             - name: nginx-logs
               mountPath: /var/lib/nginx/logs
-            - name: nginx-run
-              mountPath: /run
       volumes:
+        - name: cache-volume
+          persistentVolumeClaim:
+            claimName: proxitok-cache-pvc
+        - name: run-volume
+          emptyDir: {}
         - name: nginx-logs
           emptyDir: {}
-        - name: nginx-run
-          emptyDir: {}
-  volumeClaimTemplates:
-    - apiVersion: v1
-      kind: PersistentVolumeClaim
-      metadata:
-        name: proxitok-cache
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        storageClassName: longhorn
-        resources:
-          requests:
-            storage: 1Gi
