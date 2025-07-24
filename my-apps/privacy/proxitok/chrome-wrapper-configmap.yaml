@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chrome-wrapper-config
+  namespace: proxitok
+data:
+  chrome-wrapper.sh: "#!/bin/sh\n# Chrome wrapper that ensures --no-sandbox is always added\nexec /usr/lib/chromium/chromium --no-sandbox \"$@\" "

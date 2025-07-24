@@ -32,14 +32,6 @@ spec:
             - --disable-web-security
             - --verbose
             - --log-path=/tmp/chromedriver.log
-          # Set environment variables to force Chrome arguments
-          env:
-            - name: GOOGLE_CHROME_OPTS
-              value: "--no-sandbox --headless --disable-dev-shm-usage --disable-gpu"
-            - name: CHROME_OPTS
-              value: "--no-sandbox --headless --disable-dev-shm-usage --disable-gpu"
-            - name: CHROMIUM_FLAGS
-              value: "--no-sandbox --headless --disable-dev-shm-usage --disable-gpu"
           resources:
             requests:
               memory: "512Mi"
@@ -52,9 +44,6 @@ spec:
               mountPath: /dev/shm
             - name: tmp
               mountPath: /tmp
-            - name: chrome-wrapper
-              mountPath: /usr/local/bin/chrome-wrapper.sh
-              subPath: chrome-wrapper.sh
           securityContext:
             capabilities:
               drop:
@@ -84,7 +73,3 @@ spec:
             sizeLimit: 3Gi
         - name: tmp
           emptyDir: {}
-        - name: chrome-wrapper
-          configMap:
-            name: chrome-wrapper-config
-            defaultMode: 0755
