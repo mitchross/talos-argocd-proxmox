@@ -19,6 +19,26 @@ spec:
         fsGroup: 0
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+        - name: setup-chrome-wrapper
+          image: busybox
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              cat > /tmp/chrome-wrapper.sh << 'EOF'
+              #!/bin/sh
+              exec /usr/bin/chromium-browser --no-sandbox "$@"
+              EOF
+              chmod +x /tmp/chrome-wrapper.sh
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+              add: ["CHOWN", "FOWNER"]
       containers:
         - name: chromedriver
           image: zenika/alpine-chrome:with-chromedriver
@@ -34,14 +54,9 @@ spec:
             - --log-path=/tmp/chromedriver.log
           env:
             - name: CHROME_BIN
-              value: "/usr/bin/chromium-browser"
+              value: "/tmp/chrome-wrapper.sh"
             - name: CHROME_PATH
-              value: "/usr/bin/chromium-browser"
-            # Set default Chrome options for containerized execution
-            - name: GOOGLE_CHROME_OPTS
-              value: "--no-sandbox --headless --disable-dev-shm-usage --disable-gpu --disable-software-rasterizer --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-features=TranslateUI --disable-extensions --no-first-run --disable-default-apps"
-            - name: CHROME_OPTS
-              value: "--no-sandbox --headless --disable-dev-shm-usage --disable-gpu --disable-software-rasterizer --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-features=TranslateUI --disable-extensions --no-first-run --disable-default-apps"
+              value: "/tmp/chrome-wrapper.sh"
           resources:
             requests:
               memory: "512Mi"
