@@ -15,18 +15,11 @@ spec:
         app: proxitok-web
     spec:
       securityContext:
-        seccompProfile:
-          type: RuntimeDefault
+        fsGroup: 1000
       initContainers:
         - name: wait-for-redis
           image: busybox
           command: ['sh', '-c', 'until nc -z proxitok-redis.proxitok.svc.cluster.local 6379; do echo waiting for redis; sleep 2; done;']
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-            seccompProfile:
-              type: RuntimeDefault
         - name: init-permissions
           image: busybox
           command: ['sh', '-c', 'mkdir -p /run /var/lib/nginx/logs && chmod 777 /run /var/lib/nginx/logs']
@@ -36,11 +29,7 @@ spec:
             - name: nginx-logs
               mountPath: /var/lib/nginx/logs
           securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-            seccompProfile:
-              type: RuntimeDefault
+            runAsUser: 0
         - name: init-cache
           image: busybox
           command:
@@ -54,11 +43,7 @@ spec:
             - name: cache-volume
               mountPath: /cache
           securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-            seccompProfile:
-              type: RuntimeDefault
+            runAsUser: 0
       containers:
         - name: proxitok-web
           image: ghcr.io/pablouser1/proxitok@sha256:1cbbff4b5b1c6ba8d585379ad71fc93950e340c3a5ae46dd3574e751a873bf8e
@@ -69,12 +54,14 @@ spec:
                 name: proxitok-config
           securityContext:
             allowPrivilegeEscalation: false
-            runAsNonRoot: true
+            runAsUser: 1000
             capabilities:
               drop:
                 - ALL
-            seccompProfile:
-              type: RuntimeDefault
+              add:
+                - CHOWN
+                - SETGID
+                - SETUID
           resources:
             requests:
               memory: "256Mi"
