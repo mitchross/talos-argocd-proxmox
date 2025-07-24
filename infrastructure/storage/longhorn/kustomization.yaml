@@ -10,7 +10,7 @@ resources:
 helmCharts:
   - name: longhorn
     repo: https://charts.longhorn.io
-    version: 1.9.0
+    version: 1.9.1
     releaseName: longhorn
     namespace: longhorn-system
     valuesFile: values.yaml
