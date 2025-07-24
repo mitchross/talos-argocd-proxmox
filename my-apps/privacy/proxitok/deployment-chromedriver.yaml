@@ -25,20 +25,33 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
-              cat > /tmp/chrome-wrapper.sh << 'EOF'
+              # Backup original chrome binary
+              cp /usr/bin/chromium-browser /usr/bin/chromium-browser.orig
+              # Create wrapper script that adds --no-sandbox
+              cat > /usr/bin/chromium-browser << 'EOF'
               #!/bin/sh
-              exec /usr/bin/chromium-browser --no-sandbox "$@"
+              exec /usr/bin/chromium-browser.orig --no-sandbox "$@"
               EOF
-              chmod +x /tmp/chrome-wrapper.sh
+              chmod +x /usr/bin/chromium-browser
+              # Also replace the alternative path
+              cp /usr/lib/chromium/chrome /usr/lib/chromium/chrome.orig
+              cat > /usr/lib/chromium/chrome << 'EOF'
+              #!/bin/sh
+              exec /usr/lib/chromium/chrome.orig --no-sandbox "$@"
+              EOF
+              chmod +x /usr/lib/chromium/chrome
+              echo "Chrome wrapper installed successfully"
           volumeMounts:
-            - name: tmp
-              mountPath: /tmp
+            - name: usr-bin
+              mountPath: /usr/bin
+            - name: usr-lib-chromium
+              mountPath: /usr/lib/chromium
           securityContext:
             runAsUser: 0
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
-              add: ["CHOWN", "FOWNER"]
+              add: ["CHOWN", "FOWNER", "DAC_OVERRIDE"]
       containers:
         - name: chromedriver
           image: zenika/alpine-chrome:with-chromedriver
@@ -52,11 +65,6 @@ spec:
             - --disable-web-security
             - --verbose
             - --log-path=/tmp/chromedriver.log
-          env:
-            - name: CHROME_BIN
-              value: "/tmp/chrome-wrapper.sh"
-            - name: CHROME_PATH
-              value: "/tmp/chrome-wrapper.sh"
           resources:
             requests:
               memory: "512Mi"
@@ -69,6 +77,10 @@ spec:
               mountPath: /dev/shm
             - name: tmp
               mountPath: /tmp
+            - name: usr-bin
+              mountPath: /usr/bin
+            - name: usr-lib-chromium
+              mountPath: /usr/lib/chromium
           securityContext:
             capabilities:
               drop:
@@ -97,4 +109,8 @@ spec:
             medium: Memory
             sizeLimit: 3Gi
         - name: tmp
+          emptyDir: {}
+        - name: usr-bin
+          emptyDir: {}
+        - name: usr-lib-chromium
           emptyDir: {}
