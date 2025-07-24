@@ -28,21 +28,17 @@ spec:
       containers:
         - name: proxitok-web
           image: ghcr.io/pablouser1/proxitok@sha256:1cbbff4b5b1c6ba8d585379ad71fc93950e340c3a5ae46dd3574e751a873bf8e
+          securityContext:
+            capabilities:
+              add:
+                - "CHOWN"
+                - "SETGID"
+                - "SETUID"
           ports:
             - containerPort: 8080
           envFrom:
             - configMapRef:
                 name: proxitok-config
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsUser: 1000
-            capabilities:
-              drop:
-                - ALL
-              add:
-                - CHOWN
-                - SETGID
-                - SETUID
           resources:
             requests:
               memory: "256Mi"
