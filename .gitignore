@@ -103,3 +103,6 @@ credentials.base64
 # Mac OS
 .DS_Store
 /infrastructure/argocd/charts
+/my-apps/privacy/proxitok/source
+/my-apps/privacy/proxitok/docker/misc
+/my-apps/privacy/proxitok/docker
