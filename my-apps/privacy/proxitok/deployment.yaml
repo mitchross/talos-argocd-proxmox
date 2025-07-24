@@ -16,10 +16,20 @@ spec:
     spec:
       securityContext:
         fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       initContainers:
         - name: wait-for-redis
           image: busybox
           command: ['sh', '-c', 'until nc -z proxitok-redis.proxitok.svc.cluster.local 6379; do echo waiting for redis; sleep 2; done;']
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
         - name: init-permissions
           image: busybox
           command: ['sh', '-c', 'mkdir -p /run /var/lib/nginx/logs && chmod 777 /run /var/lib/nginx/logs']
@@ -30,6 +40,12 @@ spec:
               mountPath: /var/lib/nginx/logs
           securityContext:
             runAsUser: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+              add: ["CHOWN", "FOWNER", "DAC_OVERRIDE"]
+            seccompProfile:
+              type: RuntimeDefault
         - name: init-cache
           image: busybox
           command:
@@ -44,6 +60,12 @@ spec:
               mountPath: /cache
           securityContext:
             runAsUser: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+              add: ["CHOWN", "FOWNER", "DAC_OVERRIDE"]
+            seccompProfile:
+              type: RuntimeDefault
       containers:
         - name: proxitok-web
           image: ghcr.io/pablouser1/proxitok@sha256:1cbbff4b5b1c6ba8d585379ad71fc93950e340c3a5ae46dd3574e751a873bf8e
@@ -55,6 +77,7 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             runAsUser: 1000
+            runAsNonRoot: true
             capabilities:
               drop:
                 - ALL
@@ -62,6 +85,8 @@ spec:
                 - CHOWN
                 - SETGID
                 - SETUID
+            seccompProfile:
+              type: RuntimeDefault
           resources:
             requests:
               memory: "256Mi"
