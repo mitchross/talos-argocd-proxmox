@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: node-problem-detector-config
+  namespace: node-problem-detector
+data:
+  # Main configuration for Node Problem Detector
+  config.yaml: |
+    apiVersion: node.k8s.io/v1alpha1
+    kind: NodeProblemDetectorConfiguration
+    # Custom problem rules for automatic cleanup
+    problemDaemon:
+      customPluginMonitor:
+        - name: "evicted-pod-cleanup"
+          path: "/custom-plugins/evicted-pod-cleanup.sh"
+          timeout: "30s"
+        - name: "failed-pod-cleanup"
+          path: "/custom-plugins/failed-pod-cleanup.sh"
+          timeout: "30s"
+        - name: "disk-pressure-monitor"
+          path: "/custom-plugins/disk-pressure-monitor.sh"
+          timeout: "60s"
+        - name: "memory-pressure-monitor"
+          path: "/custom-plugins/memory-pressure-monitor.sh"
+          timeout: "60s"
+        - name: "orphaned-pvc-cleanup"
+          path: "/custom-plugins/orphaned-pvc-cleanup.sh"
+          timeout: "120s"
+        - name: "completed-job-cleanup"
+          path: "/custom-plugins/completed-job-cleanup.sh"
+          timeout: "300s"
+
+    # Problem rules for automatic node condition updates
+    rules:
+      - type: "Temporary"
+        reason: "EvictedPodDetected"
+        pattern: "Pod.*was evicted"
+        message: "Pod was evicted due to resource pressure"
+      - type: "Temporary"
+        reason: "FailedPodDetected"
+        pattern: "Pod.*failed"
+        message: "Pod failed and needs cleanup"
+      - type: "Temporary"
+        reason: "DiskPressureDetected"
+        pattern: "disk pressure"
+        message: "Node experiencing disk pressure"
+      - type: "Temporary"
+        reason: "MemoryPressureDetected"
+        pattern: "memory pressure"
+        message: "Node experiencing memory pressure"
+      - type: "Temporary"
+        reason: "OrphanedPVCDetected"
+        pattern: "orphaned.*PVC"
+        message: "Orphaned PVC detected"
+      - type: "Temporary"
+        reason: "CompletedJobDetected"
+        pattern: "completed.*job"
+        message: "Completed job needs cleanup"
+  # Custom cleanup scripts
+  evicted-pod-cleanup.sh: "#!/bin/bash\n# Clean up evicted pods automatically\nset -euo pipefail\n\nNAMESPACE=\"${1:-}\"\nNODE_NAME=\"${2:-}\"\n\nif [ -z \"$NAMESPACE\" ] || [ -z \"$NODE_NAME\" ]; then\n    echo \"Usage: $0 <namespace> <node-name>\"\n    exit 1\nfi\n\n# Find and delete evicted pods on this node\nEVICTED_PODS=$(kubectl get pods --all-namespaces --field-selector=status.phase=Evicted,spec.nodeName=$NODE_NAME -o jsonpath='{range .items[*]}{.metadata.namespace}{\" \"}{.metadata.name}{\"\\n\"}{end}' 2>/dev/null || true)\n\nif [ -n \"$EVICTED_PODS\" ]; then\n    echo \"$(date): Found evicted pods on node $NODE_NAME:\"\n    echo \"$EVICTED_PODS\"\n    \n    echo \"$EVICTED_PODS\" | while read -r ns pod; do\n        if [ -n \"$ns\" ] && [ -n \"$pod\" ]; then\n            echo \"$(date): Deleting evicted pod $ns/$pod\"\n            kubectl delete pod \"$pod\" -n \"$ns\" --ignore-not-found=true\n        fi\n    done\n    \n    echo \"$(date): Cleaned up evicted pods on node $NODE_NAME\"\nelse\n    echo \"$(date): No evicted pods found on node $NODE_NAME\"\nfi\n"
+  failed-pod-cleanup.sh: "#!/bin/bash\n# Clean up failed pods automatically\nset -euo pipefail\n\nNAMESPACE=\"${1:-}\"\nNODE_NAME=\"${2:-}\"\n\nif [ -z \"$NAMESPACE\" ] || [ -z \"$NODE_NAME\" ]; then\n    echo \"Usage: $0 <namespace> <node-name>\"\n    exit 1\nfi\n\n# Find and delete failed pods on this node (older than 1 hour)\nFAILED_PODS=$(kubectl get pods --all-namespaces --field-selector=status.phase=Failed,spec.nodeName=$NODE_NAME -o jsonpath='{range .items[*]}{.metadata.namespace}{\" \"}{.metadata.name}{\" \"}{.metadata.creationTimestamp}{\"\\n\"}{end}' 2>/dev/null || true)\n\nif [ -n \"$FAILED_PODS\" ]; then\n    echo \"$(date): Found failed pods on node $NODE_NAME:\"\n    echo \"$FAILED_PODS\"\n    \n    echo \"$FAILED_PODS\" | while read -r ns pod timestamp; do\n        if [ -n \"$ns\" ] && [ -n \"$pod\" ]; then\n            # Check if pod is older than 1 hour\n            CREATION_TIME=$(date -d \"$timestamp\" +%s 2>/dev/null || echo \"0\")\n            CURRENT_TIME=$(date +%s)\n            AGE_SECONDS=$((CURRENT_TIME - CREATION_TIME))\n            \n            if [ \"$AGE_SECONDS\" -gt 3600 ]; then  # 1 hour = 3600 seconds\n                echo \"$(date): Deleting old failed pod $ns/$pod (age: ${AGE_SECONDS}s)\"\n                kubectl delete pod \"$pod\" -n \"$ns\" --ignore-not-found=true\n            else\n                echo \"$(date): Skipping recent failed pod $ns/$pod (age: ${AGE_SECONDS}s)\"\n            fi\n        fi\n    done\n    \n    echo \"$(date): Cleaned up old failed pods on node $NODE_NAME\"\nelse\n    echo \"$(date): No failed pods found on node $NODE_NAME\"\nfi\n"
+  disk-pressure-monitor.sh: "#!/bin/bash\n# Monitor disk pressure and trigger cleanup\nset -euo pipefail\n\nNODE_NAME=\"${1:-}\"\n\nif [ -z \"$NODE_NAME\" ]; then\n    echo \"Usage: $0 <node-name>\"\n    exit 1\nfi\n\n# Check disk usage on the node\nDISK_USAGE=$(kubectl get nodes $NODE_NAME -o jsonpath='{.status.conditions[?(@.type==\"DiskPressure\")].status}' 2>/dev/null || echo \"Unknown\")\n\nif [ \"$DISK_USAGE\" = \"True\" ]; then\n    echo \"$(date): Disk pressure detected on node $NODE_NAME\"\n    \n    # Trigger cleanup of temporary files\n    kubectl exec -n node-problem-detector -c node-problem-detector -- find /tmp -type f -mtime +1 -delete 2>/dev/null || true\n    kubectl exec -n node-problem-detector -c node-problem-detector -- find /var/tmp -type f -mtime +1 -delete 2>/dev/null || true\n    \n    # Clean up empty directories\n    kubectl exec -n node-problem-detector -c node-problem-detector -- find /tmp -type d -empty -delete 2>/dev/null || true\n    kubectl exec -n node-problem-detector -c node-problem-detector -- find /var/tmp -type d -empty -delete 2>/dev/null || true\n    \n    echo \"$(date): Disk pressure cleanup completed on node $NODE_NAME\"\nelse\n    echo \"$(date): No disk pressure detected on node $NODE_NAME\"\nfi\n"
+  memory-pressure-monitor.sh: "#!/bin/bash\n# Monitor memory pressure and trigger cleanup\nset -euo pipefail\n\nNODE_NAME=\"${1:-}\"\n\nif [ -z \"$NODE_NAME\" ]; then\n    echo \"Usage: $0 <node-name>\"\n    exit 1\nfi\n\n# Check memory pressure on the node\nMEMORY_PRESSURE=$(kubectl get nodes $NODE_NAME -o jsonpath='{.status.conditions[?(@.type==\"MemoryPressure\")].status}' 2>/dev/null || echo \"Unknown\")\n\nif [ \"$MEMORY_PRESSURE\" = \"True\" ]; then\n    echo \"$(date): Memory pressure detected on node $NODE_NAME\"\n    \n    # Trigger memory cleanup\n    kubectl exec -n node-problem-detector -c node-problem-detector -- sync 2>/dev/null || true\n    kubectl exec -n node-problem-detector -c node-problem-detector -- echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true\n    \n    echo \"$(date): Memory pressure cleanup completed on node $NODE_NAME\"\nelse\n    echo \"$(date): No memory pressure detected on node $NODE_NAME\"\nfi\n"
+  orphaned-pvc-cleanup.sh: "#!/bin/bash\n# Clean up orphaned PVCs that are not bound to any pod\nset -euo pipefail\n\nNAMESPACE=\"${1:-}\"\n\nif [ -z \"$NAMESPACE\" ]; then\n    echo \"Usage: $0 <namespace>\"\n    exit 1\nfi\n\n# Find PVCs that are not bound to any pod\nORPHANED_PVCS=$(kubectl get pvc -n $NAMESPACE --no-headers 2>/dev/null | grep -v \"Bound\" | awk '{print $1}' || true)\n\nif [ -n \"$ORPHANED_PVCS\" ]; then\n    echo \"$(date): Found orphaned PVCs in namespace $NAMESPACE:\"\n    echo \"$ORPHANED_PVCS\"\n    \n    echo \"$ORPHANED_PVCS\" | while read -r pvc; do\n        if [ -n \"$pvc\" ]; then\n            # Check if PVC is older than 24 hours\n            PVC_AGE=$(kubectl get pvc $pvc -n $NAMESPACE -o jsonpath='{.metadata.creationTimestamp}' 2>/dev/null || echo \"\")\n            if [ -n \"$PVC_AGE\" ]; then\n                CREATION_TIME=$(date -d \"$PVC_AGE\" +%s 2>/dev/null || echo \"0\")\n                CURRENT_TIME=$(date +%s)\n                AGE_SECONDS=$((CURRENT_TIME - CREATION_TIME))\n                \n                if [ \"$AGE_SECONDS\" -gt 86400 ]; then  # 24 hours = 86400 seconds\n                    echo \"$(date): Deleting old orphaned PVC $NAMESPACE/$pvc (age: ${AGE_SECONDS}s)\"\n                    kubectl delete pvc \"$pvc\" -n \"$NAMESPACE\" --ignore-not-found=true\n                else\n                    echo \"$(date): Skipping recent orphaned PVC $NAMESPACE/$pvc (age: ${AGE_SECONDS}s)\"\n                fi\n            fi\n        fi\n    done\n    \n    echo \"$(date): Cleaned up orphaned PVCs in namespace $NAMESPACE\"\nelse\n    echo \"$(date): No orphaned PVCs found in namespace $NAMESPACE\"\nfi\n"
+  completed-job-cleanup.sh: "#!/bin/bash\n# Clean up completed jobs automatically\nset -euo pipefail\n\nNAMESPACE=\"${1:-}\"\n\nif [ -z \"$NAMESPACE\" ]; then\n    echo \"Usage: $0 <namespace>\"\n    exit 1\nfi\n\n# Find completed jobs older than 1 hour\nCOMPLETED_JOBS=$(kubectl get jobs -n $NAMESPACE --no-headers 2>/dev/null | grep \"Complete\\|Failed\" | awk '{print $1}' || true)\n\nif [ -n \"$COMPLETED_JOBS\" ]; then\n    echo \"$(date): Found completed jobs in namespace $NAMESPACE:\"\n    echo \"$COMPLETED_JOBS\"\n    \n    echo \"$COMPLETED_JOBS\" | while read -r job; do\n        if [ -n \"$job\" ]; then\n            # Check job completion time\n            COMPLETION_TIME=$(kubectl get job $job -n $NAMESPACE -o jsonpath='{.status.completionTime}' 2>/dev/null || echo \"\")\n            if [ -n \"$COMPLETION_TIME\" ]; then\n                COMPLETION_TIMESTAMP=$(date -d \"$COMPLETION_TIME\" +%s 2>/dev/null || echo \"0\")\n                CURRENT_TIME=$(date +%s)\n                AGE_SECONDS=$((CURRENT_TIME - COMPLETION_TIMESTAMP))\n                \n                if [ \"$AGE_SECONDS\" -gt 3600 ]; then  # 1 hour = 3600 seconds\n                    echo \"$(date): Deleting old completed job $NAMESPACE/$job (completed ${AGE_SECONDS}s ago)\"\n                    kubectl delete job \"$job\" -n \"$NAMESPACE\" --ignore-not-found=true\n                else\n                    echo \"$(date): Skipping recent completed job $NAMESPACE/$job (completed ${AGE_SECONDS}s ago)\"\n                fi\n            fi\n        fi\n    done\n    \n    echo \"$(date): Cleaned up completed jobs in namespace $NAMESPACE\"\nelse\n    echo \"$(date): No completed jobs found in namespace $NAMESPACE\"\nfi "
