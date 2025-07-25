@@ -48,6 +48,12 @@ graph TB
 - **Promtail**: Log collection agent
 - **Gateway**: HTTP access gateway
 
+### 🧹 Automatic Cleanup (node-problem-detector/)
+- **Node Problem Detector**: Automatic cleanup of evicted pods, failed pods, orphaned PVCs, and completed jobs
+- **Resource Pressure Monitoring**: Responds to disk and memory pressure
+- **Proactive Maintenance**: Prevents accumulation of failed resources
+- **Talos Compatibility**: Optimized for Talos Linux security model
+
 ## 🔧 Key Optimizations Applied
 
 ### ✅ Version Updates
@@ -78,6 +84,7 @@ graph TB
 - Cilium CNI monitoring
 - Longhorn storage monitoring
 - Gateway API monitoring
+- Node Problem Detector monitoring and alerting
 
 ## 🚀 Quick Start
 
