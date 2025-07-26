@@ -44,15 +44,14 @@ daemonSet:
     - key: node-role.kubernetes.io/master
       operator: Exists
       effect: NoSchedule
-  # Security context - adjusted for Pod Security Standards
+  # Security context
   securityContext:
-    runAsNonRoot: true
-    runAsUser: 1000
-    allowPrivilegeEscalation: false
+    privileged: true
+    allowPrivilegeEscalation: true
     capabilities:
-      drop:
-        - ALL
-    readOnlyRootFilesystem: false
+      add:
+        - SYS_ADMIN
+        - SYS_PTRACE
   # Resource limits
   resources:
     requests:
@@ -61,36 +60,67 @@ daemonSet:
     limits:
       cpu: "200m"
       memory: "200Mi"
-  # Volume mounts - simplified for security compliance
+  # Volume mounts for Talos
   volumeMounts:
+    - name: log
+      mountPath: /var/log
+      readOnly: true
     - name: localtime
       mountPath: /etc/localtime
       readOnly: true
-    - name: custom-config
-      mountPath: /config
+    - name: talos-config
+      mountPath: /etc/talos
       readOnly: true
-  # Volumes - simplified for security compliance
+    - name: talos-state
+      mountPath: /var/lib/talos
+      readOnly: true
+  # Volumes for Talos
   volumes:
+    - name: log
+      hostPath:
+        path: /var/log
     - name: localtime
       hostPath:
         path: /etc/localtime
-        type: FileOrCreate
-    - name: custom-config
-      configMap:
-        name: node-problem-detector-custom-config
+    - name: talos-config
+      hostPath:
+        path: /etc/talos
+    - name: talos-state
+      hostPath:
+        path: /var/lib/talos
 # Configuration for different monitors
 config:
-  # Kernel monitor configuration - disabled for security
+  # Kernel monitor configuration
   kernelMonitor:
-    enabled: false
-  # Docker monitor configuration - disabled for security
+    enabled: true
+    logPath: /var/log/journal
+    lookback: "5m"
+    bufferSize: 10
+    rules:
+      - type: "temporary"
+        reason: "OOMKilling"
+        pattern: "Killed process .+ \\(.+\\).*"
+      - type: "temporary"
+        reason: "TaskHung"
+        pattern: "task .+ blocked for more than .+ seconds"
+      - type: "permanent"
+        reason: "KernelDeadlock"
+        pattern: "kernel:possible deadlock in .+"
+  # Docker monitor configuration
   dockerMonitor:
-    enabled: false
+    enabled: true
+    logPath: /var/log/journal
+    lookback: "5m"
+    bufferSize: 10
+    rules:
+      - type: "temporary"
+        reason: "DockerHung"
+        pattern: "docker daemon is not responding"
   # System stats monitor
   systemStatsMonitor:
     enabled: true
     metricsPort: 20257
-  # Custom plugin monitor - simplified
+  # Custom plugin monitor
   customPluginMonitor:
     enabled: true
     plugins:
@@ -100,6 +130,9 @@ config:
       - name: "talos-memory-pressure"
         path: "/custom-plugins/talos-memory-pressure-monitor.sh"
         timeout: "60s"
+      - name: "talos-system-monitor"
+        path: "/custom-plugins/talos-system-monitor.sh"
+        timeout: "120s"
 # Service configuration
 service:
   enabled: true
@@ -134,22 +167,33 @@ customScripts:
     # Monitor disk pressure on Talos nodes
     NODE_NAME="$1"
 
-    # Check disk usage using kubectl instead of direct filesystem access
-    DISK_USAGE=$(kubectl get nodes $NODE_NAME -o jsonpath='{.status.conditions[?(@.type=="DiskPressure")].status}' 2>/dev/null || echo "Unknown")
+    # Check disk usage on Talos
+    DISK_USAGE=$(df /var/lib/talos | tail -1 | awk '{print $5}' | sed 's/%//')
 
-    if [ "$DISK_USAGE" = "True" ]; then
-      echo "WARNING: Disk pressure detected on $NODE_NAME"
-      kubectl create event --type=Warning --reason=DiskPressure --message="Disk pressure detected on node $NODE_NAME" --field-selector involvedObject.name=$NODE_NAME 2>/dev/null || true
+    if [ "$DISK_USAGE" -gt 85 ]; then
+      echo "WARNING: High disk usage on $NODE_NAME: ${DISK_USAGE}%"
+      kubectl create event --type=Warning --reason=DiskPressure --message="Disk usage is ${DISK_USAGE}% on node $NODE_NAME" --field-selector involvedObject.name=$NODE_NAME 2>/dev/null || true
+    fi
+
+    if [ "$DISK_USAGE" -gt 90 ]; then
+      echo "CRITICAL: Critical disk usage on $NODE_NAME: ${DISK_USAGE}%"
+      kubectl create event --type=Warning --reason=DiskPressure --message="Critical disk usage ${DISK_USAGE}% on node $NODE_NAME" --field-selector involvedObject.name=$NODE_NAME 2>/dev/null || true
     fi
   talos-memory-pressure-monitor.sh: |
     #!/bin/bash
     # Monitor memory pressure on Talos nodes
     NODE_NAME="$1"
 
-    # Check memory pressure using kubectl
-    MEMORY_PRESSURE=$(kubectl get nodes $NODE_NAME -o jsonpath='{.status.conditions[?(@.type=="MemoryPressure")].status}' 2>/dev/null || echo "Unknown")
+    # Get memory usage
+    MEMORY_USAGE=$(free | grep Mem | awk '{printf "%.0f", $3/$2 * 100.0}')
 
-    if [ "$MEMORY_PRESSURE" = "True" ]; then
-      echo "WARNING: Memory pressure detected on $NODE_NAME"
-      kubectl create event --type=Warning --reason=MemoryPressure --message="Memory pressure detected on node $NODE_NAME" --field-selector involvedObject.name=$NODE_NAME 2>/dev/null || true
+    if [ "$MEMORY_USAGE" -gt 85 ]; then
+      echo "WARNING: High memory usage on $NODE_NAME: ${MEMORY_USAGE}%"
+      kubectl create event --type=Warning --reason=MemoryPressure --message="Memory usage is ${MEMORY_USAGE}% on node $NODE_NAME" --field-selector involvedObject.name=$NODE_NAME 2>/dev/null || true
     fi
+
+    if [ "$MEMORY_USAGE" -gt 90 ]; then
+      echo "CRITICAL: Critical memory usage on $NODE_NAME: ${MEMORY_USAGE}%"
+      kubectl create event --type=Warning --reason=MemoryPressure --message="Critical memory usage ${MEMORY_USAGE}% on node $NODE_NAME" --field-selector involvedObject.name=$NODE_NAME 2>/dev/null || true
+    fi
+  talos-system-monitor.sh: "#!/bin/bash\n# Monitor Talos system health\nNODE_NAME=\"$1\"\n\n# Check Talos service status\nif ! systemctl is-active --quiet talos; then\n  echo \"WARNING: Talos service is not running on $NODE_NAME\"\n  kubectl create event --type=Warning --reason=TalosServiceDown --message=\"Talos service is not running on node $NODE_NAME\" --field-selector involvedObject.name=$NODE_NAME 2>/dev/null || true\nfi\n\n# Check for kernel issues\nif dmesg | grep -q \"kernel panic\\|segfault\\|oops\"; then\n  echo \"CRITICAL: Kernel issues detected on $NODE_NAME\"\n  kubectl create event --type=Warning --reason=KernelIssue --message=\"Kernel issues detected on node $NODE_NAME\" --field-selector involvedObject.name=$NODE_NAME 2>/dev/null || true\nfi "
