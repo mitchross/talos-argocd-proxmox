@@ -1,0 +1,138 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-problem-detector
+  namespace: node-problem-detector
+  labels:
+    app: node-problem-detector
+    app.kubernetes.io/name: node-problem-detector
+    app.kubernetes.io/component: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: node-problem-detector
+  template:
+    metadata:
+      labels:
+        app: node-problem-detector
+        app.kubernetes.io/name: node-problem-detector
+        app.kubernetes.io/component: monitoring
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "20257"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: node-problem-detector
+      hostNetwork: true
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: node-problem-detector
+          image: registry.k8s.io/node-problem-detector:v0.9.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - "/node-problem-detector"
+            - "--config.system-log-monitor=/config/kernel-monitor.json,/config/docker-monitor.json"
+            - "--config.custom-plugin-monitor=/config/custom-plugin-monitor.json"
+            - "--config.apiserver-override=https://kubernetes.default.svc?inClusterConfig=true&auth=delegate"
+            - "--v=2"
+          securityContext:
+            privileged: true
+            allowPrivilegeEscalation: true
+            capabilities:
+              add:
+                - SYS_ADMIN
+                - SYS_PTRACE
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "50Mi"
+            limits:
+              cpu: "200m"
+              memory: "200Mi"
+          volumeMounts:
+            - name: log
+              mountPath: /var/log
+              readOnly: true
+            - name: localtime
+              mountPath: /etc/localtime
+              readOnly: true
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: custom-plugins
+              mountPath: /custom-plugins
+              readOnly: true
+            # Talos-specific mounts
+            - name: talos-config
+              mountPath: /etc/talos
+              readOnly: true
+            - name: talos-state
+              mountPath: /var/lib/talos
+              readOnly: true
+          ports:
+            - name: metrics
+              containerPort: 20257
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 20257
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 20257
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+        - name: cleanup-cron
+          image: bitnami/kubectl:latest
+          command:
+            - "/bin/bash"
+            - "-c"
+            - "# Run cleanup tasks periodically\nwhile true; do\n  echo \"$(date): Running periodic cleanup tasks...\"\n  \n  # Get current node name\n  NODE_NAME=$(hostname)\n  \n  # Run cleanup for all namespaces\n  for ns in $(kubectl get namespaces -o jsonpath='{range .items[*]}{.metadata.name}{\"\\n\"}{end}'); do\n    echo \"$(date): Cleaning up namespace: $ns\"\n    \n    # Clean up evicted pods\n    kubectl exec -n node-problem-detector -c node-problem-detector -- /custom-plugins/evicted-pod-cleanup.sh \"$ns\" \"$NODE_NAME\" 2>/dev/null || true\n    \n    # Clean up failed pods\n    kubectl exec -n node-problem-detector -c node-problem-detector -- /custom-plugins/failed-pod-cleanup.sh \"$ns\" \"$NODE_NAME\" 2>/dev/null || true\n    \n    # Clean up orphaned PVCs\n    kubectl exec -n node-problem-detector -c node-problem-detector -- /custom-plugins/orphaned-pvc-cleanup.sh \"$ns\" 2>/dev/null || true\n    \n    # Clean up completed jobs\n    kubectl exec -n node-problem-detector -c node-problem-detector -- /custom-plugins/completed-job-cleanup.sh \"$ns\" 2>/dev/null || true\n  done\n  \n  # Monitor node pressure\n  kubectl exec -n node-problem-detector -c node-problem-detector -- /custom-plugins/disk-pressure-monitor.sh \"$NODE_NAME\" 2>/dev/null || true\n  kubectl exec -n node-problem-detector -c node-problem-detector -- /custom-plugins/memory-pressure-monitor.sh \"$NODE_NAME\" 2>/dev/null || true\n  \n  echo \"$(date): Periodic cleanup completed, sleeping for 10 minutes...\"\n  sleep 600\ndone\n"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "32Mi"
+            limits:
+              cpu: "100m"
+              memory: "64Mi"
+      volumes:
+        - name: log
+          hostPath:
+            path: /var/log
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+        - name: config
+          configMap:
+            name: node-problem-detector-config
+        - name: custom-plugins
+          configMap:
+            name: node-problem-detector-config
+            defaultMode: 0755
+        # Talos-specific volumes
+        - name: talos-config
+          hostPath:
+            path: /etc/talos
+        - name: talos-state
+          hostPath:
+            path: /var/lib/talos

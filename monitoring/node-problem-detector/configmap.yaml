@@ -1,0 +1,219 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: node-problem-detector-config
+  namespace: node-problem-detector
+  labels:
+    app: node-problem-detector
+    app.kubernetes.io/name: node-problem-detector
+    app.kubernetes.io/component: monitoring
+data:
+  kernel-monitor.json: |
+    {
+      "plugin": "journald",
+      "pluginConfig": {
+        "source": "kernel"
+      },
+      "logPath": "/var/log/journal",
+      "lookback": "5m",
+      "bufferSize": 10,
+      "source": "kernel-monitor",
+      "conditions": [
+        {
+          "type": "KernelDeadlock",
+          "reason": "KernelHasNoDeadlock",
+          "message": "kernel has no deadlock"
+        }
+      ],
+      "rules": [
+        {
+          "type": "temporary",
+          "reason": "OOMKilling",
+          "pattern": "Killed process .+ \\(.+\\).*"
+        },
+        {
+          "type": "temporary",
+          "reason": "TaskHung",
+          "pattern": "task .+ blocked for more than .+ seconds"
+        },
+        {
+          "type": "permanent",
+          "reason": "KernelDeadlock",
+          "pattern": "kernel:possible deadlock in .+"
+        }
+      ]
+    }
+  docker-monitor.json: |
+    {
+      "plugin": "journald",
+      "pluginConfig": {
+        "source": "docker"
+      },
+      "logPath": "/var/log/journal",
+      "lookback": "5m",
+      "bufferSize": 10,
+      "source": "docker-monitor",
+      "conditions": [
+        {
+          "type": "DockerHung",
+          "reason": "DockerNotHung",
+          "message": "docker is not hung"
+        }
+      ],
+      "rules": [
+        {
+          "type": "temporary",
+          "reason": "DockerHung",
+          "pattern": "docker daemon is not responding"
+        }
+      ]
+    }
+  custom-plugin-monitor.json: |
+    {
+      "plugin": "custom",
+      "pluginConfig": {
+        "invoker": "custom-plugin-monitor"
+      },
+      "source": "custom-plugin-monitor",
+      "conditions": [
+        {
+          "type": "CustomProblem",
+          "reason": "NoCustomProblem",
+          "message": "no custom problem detected"
+        }
+      ],
+      "rules": [
+        {
+          "type": "temporary",
+          "reason": "CustomProblem",
+          "pattern": "custom problem detected"
+        }
+      ]
+    }
+  # Talos-specific monitoring scripts
+  talos-disk-pressure-monitor.sh: |
+    #!/bin/bash
+    # Monitor disk pressure on Talos nodes
+    NODE_NAME="$1"
+
+    # Check disk usage on Talos
+    DISK_USAGE=$(df /var/lib/talos | tail -1 | awk '{print $5}' | sed 's/%//')
+
+    if [ "$DISK_USAGE" -gt 85 ]; then
+      echo "WARNING: High disk usage on $NODE_NAME: ${DISK_USAGE}%"
+      # Create event for high disk usage
+      kubectl create event --type=Warning --reason=DiskPressure --message="Disk usage is ${DISK_USAGE}% on node $NODE_NAME" --field-selector involvedObject.name=$NODE_NAME 2>/dev/null || true
+    fi
+
+    # Check for disk pressure conditions
+    if [ "$DISK_USAGE" -gt 90 ]; then
+      echo "CRITICAL: Critical disk usage on $NODE_NAME: ${DISK_USAGE}%"
+      # Create event for critical disk usage
+      kubectl create event --type=Warning --reason=DiskPressure --message="Critical disk usage ${DISK_USAGE}% on node $NODE_NAME" --field-selector involvedObject.name=$NODE_NAME 2>/dev/null || true
+    fi
+  talos-memory-pressure-monitor.sh: |
+    #!/bin/bash
+    # Monitor memory pressure on Talos nodes
+    NODE_NAME="$1"
+
+    # Get memory usage
+    MEMORY_USAGE=$(free | grep Mem | awk '{printf "%.0f", $3/$2 * 100.0}')
+
+    if [ "$MEMORY_USAGE" -gt 85 ]; then
+      echo "WARNING: High memory usage on $NODE_NAME: ${MEMORY_USAGE}%"
+      # Create event for high memory usage
+      kubectl create event --type=Warning --reason=MemoryPressure --message="Memory usage is ${MEMORY_USAGE}% on node $NODE_NAME" --field-selector involvedObject.name=$NODE_NAME 2>/dev/null || true
+    fi
+
+    # Check for memory pressure conditions
+    if [ "$MEMORY_USAGE" -gt 90 ]; then
+      echo "CRITICAL: Critical memory usage on $NODE_NAME: ${MEMORY_USAGE}%"
+      # Create event for critical memory usage
+      kubectl create event --type=Warning --reason=MemoryPressure --message="Critical memory usage ${MEMORY_USAGE}% on node $NODE_NAME" --field-selector involvedObject.name=$NODE_NAME 2>/dev/null || true
+    fi
+  talos-system-monitor.sh: |
+    #!/bin/bash
+    # Monitor Talos system health
+    NODE_NAME="$1"
+
+    # Check Talos service status
+    if ! systemctl is-active --quiet talos; then
+      echo "WARNING: Talos service is not running on $NODE_NAME"
+      kubectl create event --type=Warning --reason=TalosServiceDown --message="Talos service is not running on node $NODE_NAME" --field-selector involvedObject.name=$NODE_NAME 2>/dev/null || true
+    fi
+
+    # Check for kernel issues
+    if dmesg | grep -q "kernel panic\|segfault\|oops"; then
+      echo "CRITICAL: Kernel issues detected on $NODE_NAME"
+      kubectl create event --type=Warning --reason=KernelIssue --message="Kernel issues detected on node $NODE_NAME" --field-selector involvedObject.name=$NODE_NAME 2>/dev/null || true
+    fi
+  evicted-pod-cleanup.sh: |
+    #!/bin/bash
+    # Clean up evicted pods
+    NAMESPACE="$1"
+    NODE_NAME="$2"
+
+    # Find and delete evicted pods on this node
+    EVICTED_PODS=$(kubectl get pods -n "$NAMESPACE" --field-selector spec.nodeName="$NODE_NAME" -o jsonpath='{range .items[?(@.status.phase=="Failed")]}{.metadata.name}{"\n"}{end}' 2>/dev/null)
+
+    if [ -n "$EVICTED_PODS" ]; then
+      echo "Cleaning up evicted pods in namespace $NAMESPACE on node $NODE_NAME"
+      echo "$EVICTED_PODS" | while read -r pod; do
+        if [ -n "$pod" ]; then
+          echo "Deleting evicted pod: $pod"
+          kubectl delete pod "$pod" -n "$NAMESPACE" --grace-period=0 --force 2>/dev/null || true
+        fi
+      done
+    fi
+  failed-pod-cleanup.sh: |
+    #!/bin/bash
+    # Clean up failed pods
+    NAMESPACE="$1"
+    NODE_NAME="$2"
+
+    # Find and delete failed pods on this node
+    FAILED_PODS=$(kubectl get pods -n "$NAMESPACE" --field-selector spec.nodeName="$NODE_NAME" -o jsonpath='{range .items[?(@.status.phase=="Failed")]}{.metadata.name}{"\n"}{end}' 2>/dev/null)
+
+    if [ -n "$FAILED_PODS" ]; then
+      echo "Cleaning up failed pods in namespace $NAMESPACE on node $NODE_NAME"
+      echo "$FAILED_PODS" | while read -r pod; do
+        if [ -n "$pod" ]; then
+          echo "Deleting failed pod: $pod"
+          kubectl delete pod "$pod" -n "$NAMESPACE" --grace-period=0 --force 2>/dev/null || true
+        fi
+      done
+    fi
+  orphaned-pvc-cleanup.sh: |
+    #!/bin/bash
+    # Clean up orphaned PVCs
+    NAMESPACE="$1"
+
+    # Find PVCs that are not bound to any PV
+    ORPHANED_PVCS=$(kubectl get pvc -n "$NAMESPACE" -o jsonpath='{range .items[?(@.status.phase=="Pending")]}{.metadata.name}{"\n"}{end}' 2>/dev/null)
+
+    if [ -n "$ORPHANED_PVCS" ]; then
+      echo "Cleaning up orphaned PVCs in namespace $NAMESPACE"
+      echo "$ORPHANED_PVCS" | while read -r pvc; do
+        if [ -n "$pvc" ]; then
+          echo "Deleting orphaned PVC: $pvc"
+          kubectl delete pvc "$pvc" -n "$NAMESPACE" 2>/dev/null || true
+        fi
+      done
+    fi
+  completed-job-cleanup.sh: |
+    #!/bin/bash
+    # Clean up completed jobs
+    NAMESPACE="$1"
+
+    # Find completed jobs older than 1 hour
+    COMPLETED_JOBS=$(kubectl get jobs -n "$NAMESPACE" -o jsonpath='{range .items[?(@.status.succeeded>0 && @.status.conditions[?(@.type=="Complete")].lastTransitionTime<"2024-01-01T00:00:00Z")]}{.metadata.name}{"\n"}{end}' 2>/dev/null)
+
+    if [ -n "$COMPLETED_JOBS" ]; then
+      echo "Cleaning up completed jobs in namespace $NAMESPACE"
+      echo "$COMPLETED_JOBS" | while read -r job; do
+        if [ -n "$job" ]; then
+          echo "Deleting completed job: $job"
+          kubectl delete job "$job" -n "$NAMESPACE" 2>/dev/null || true
+        fi
+      done
+    fi
