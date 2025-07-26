@@ -32,8 +32,10 @@ spec:
             requests:
               cpu: 500m
               memory: 1000Mi
+              ephemeral-storage: "30Gi" # 
             limits:
               memory: 8000Mi
+              ephemeral-storage: "40Gi" 
           envFrom:
             - configMapRef:
                 name: ollama-webui-configmap
