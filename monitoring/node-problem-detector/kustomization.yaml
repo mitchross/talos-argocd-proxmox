@@ -7,6 +7,8 @@ resources:
   - configmap.yaml
   - deployment.yaml
   - service.yaml
+  - servicemonitor.yaml
+  - alerts.yaml
 commonLabels:
   app.kubernetes.io/name: node-problem-detector
   app.kubernetes.io/component: monitoring
