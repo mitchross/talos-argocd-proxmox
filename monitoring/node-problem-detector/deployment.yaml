@@ -68,12 +68,8 @@ spec:
             - name: custom-plugins
               mountPath: /custom-plugins
               readOnly: true
-            # Talos-specific mounts
-            - name: talos-config
-              mountPath: /etc/talos
-              readOnly: true
-            - name: talos-state
-              mountPath: /var/lib/talos
+            - name: kubeconfig
+              mountPath: /root/.kube
               readOnly: true
           ports:
             - name: metrics
@@ -115,6 +111,10 @@ spec:
             limits:
               cpu: "100m"
               memory: "64Mi"
+          volumeMounts:
+            - name: kubeconfig
+              mountPath: /root/.kube
+              readOnly: true
       volumes:
         - name: log
           hostPath:
@@ -129,10 +129,7 @@ spec:
           configMap:
             name: node-problem-detector-config
             defaultMode: 0755
-        # Talos-specific volumes
-        - name: talos-config
-          hostPath:
-            path: /etc/talos
-        - name: talos-state
-          hostPath:
-            path: /var/lib/talos
+        - name: kubeconfig
+          secret:
+            secretName: node-problem-detector-kubeconfig
+            defaultMode: 0600
