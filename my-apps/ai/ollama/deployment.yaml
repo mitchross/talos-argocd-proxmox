@@ -38,10 +38,12 @@ spec:
               cpu: "4000m"
               memory: 16Gi
               nvidia.com/gpu: "20"
+              ephemeral-storage: "40Gi"
             requests:
               cpu: "1000m"
               memory: 8Gi
               nvidia.com/gpu: "20"
+              ephemeral-storage: "20Gi"
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
