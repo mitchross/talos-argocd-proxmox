@@ -1,0 +1,9 @@
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClass: longhorn
+service:
+  http:
+    type: ClusterIP
+  ssh:
+    type: ClusterIP

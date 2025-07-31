@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: gitea
+resources:
+  - namespace.yaml
+  - httproute.yaml
+helmCharts:
+  - name: gitea
+    repo: https://dl.gitea.com/charts/
+    version: 10.0.0
+    releaseName: gitea
+    namespace: gitea
+    valuesFile: values.yaml
