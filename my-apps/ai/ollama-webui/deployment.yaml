@@ -24,7 +24,7 @@ spec:
       containers:
         - name: ollama-webui
           # renovate: datasource=docker depName=ghcr.io/open-webui/open-webui
-          image: ghcr.io/open-webui/open-webui:latest-cuda@sha256:3e4baecdc7c63a2fc3e3a3aec2f763eb34dd8ea73269b694d3efdf061d91e370
+          image: ghcr.io/open-webui/open-webui:latest-cuda@sha256:985636e9f6a53c2e441cbcc2631a9469ff514557beb319eff780645e219ba7fe
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
