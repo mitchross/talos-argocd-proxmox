@@ -5,6 +5,8 @@ metadata:
   name: proxitok-web
   namespace: proxitok
 spec:
+  strategy:
+    type: Recreate
   replicas: 1
   selector:
     matchLabels:

@@ -76,6 +76,8 @@ prometheus:
 alertmanager:
   enabled: true
   alertmanagerSpec:
+    strategy:
+      type: Recreate
     # Storage for alertmanager
     storage:
       volumeClaimTemplate:
@@ -106,6 +108,8 @@ alertmanager:
 # Grafana Configuration
 grafana:
   enabled: true
+  deploymentStrategy:
+    type: Recreate
   # Admin credentials
   adminPassword: "prom-operator"
   # Persistence

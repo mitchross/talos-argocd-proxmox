@@ -37,9 +37,11 @@ spec:
           allowEmpty: false
         syncOptions:
           - CreateNamespace=true
+          - ServerSideApply=true
           - RespectIgnoreDifferences=true
           - ApplyOutOfSyncOnly=true
-          - ServerSideApply=true
+          - Replace=false
+          - IgnoreMissingTemplate=true
 ignoreDifferences:
   - group: apiextensions.k8s.io
     kind: CustomResourceDefinition

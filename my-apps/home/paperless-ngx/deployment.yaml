@@ -4,6 +4,8 @@ metadata:
   name: paperless-ngx
   namespace: paperless-ngx
 spec:
+  strategy:
+    type: Recreate
   replicas: 1
   selector:
     matchLabels:

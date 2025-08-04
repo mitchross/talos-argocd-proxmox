@@ -6,6 +6,8 @@ metadata:
   labels:
     app.kubernetes.io/name: homepage-dashboard
 spec:
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: homepage-dashboard

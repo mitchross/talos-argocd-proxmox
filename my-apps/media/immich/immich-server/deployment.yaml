@@ -4,6 +4,8 @@ metadata:
   name: immich-server
   namespace: immich
 spec:
+  strategy:
+    type: Recreate
   replicas: 1
   selector:
     matchLabels:

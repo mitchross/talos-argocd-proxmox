@@ -4,6 +4,8 @@ metadata:
   name: ollama-webui
   namespace: ollama-webui
 spec:
+  strategy:
+    type: Recreate
   replicas: 1
   selector:
     matchLabels:

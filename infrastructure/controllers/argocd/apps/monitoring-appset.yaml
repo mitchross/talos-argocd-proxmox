@@ -31,9 +31,11 @@ spec:
           allowEmpty: false
         syncOptions:
           - CreateNamespace=true
+          - ServerSideApply=true
           - RespectIgnoreDifferences=true
           - ApplyOutOfSyncOnly=true
-          - ServerSideApply=true
+          - Replace=false
+          - IgnoreMissingTemplate=true
         retry:
           limit: 5
           backoff:
