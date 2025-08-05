@@ -80,7 +80,7 @@ spec:
               mountPath: /root/.cache/huggingface
           livenessProbe:
             httpGet:
-              path: /health
+              path: /healthz
               port: 8000
             initialDelaySeconds: 120
             periodSeconds: 30
@@ -88,7 +88,7 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /health
+              path: /healthz
               port: 8000
             initialDelaySeconds: 60
             periodSeconds: 10
