@@ -1,0 +1,6 @@
+---
+# Namespace for vLLM
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vllm
