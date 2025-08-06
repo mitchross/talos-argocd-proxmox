@@ -45,12 +45,12 @@ spec:
             - "python3"
             - "-m"
             - "vllm.entrypoints.openai.api_server"
-          args:
-            - "--model=TheBloke/Llama-3.1-70B-Instruct-AWQ"
-            - "--quantization=awq"
-            - "--tensor-parallel-size=2"
-            - "--max-model-len=32768"
-            - "--gpu-memory-utilization=0.95"
+          # args:
+          #   - "--model=TheBloke/Llama-3.1-70B-Instruct-AWQ"
+          #   - "--quantization=awq"
+          #   - "--tensor-parallel-size=2"
+          #   - "--max-model-len=32768"
+          #   - "--gpu-memory-utilization=0.95"
           ports:
             - containerPort: 8000
               name: http
