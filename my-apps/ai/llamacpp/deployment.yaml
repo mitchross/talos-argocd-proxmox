@@ -25,7 +25,7 @@ spec:
           effect: "NoSchedule"
       containers:
         - name: llamacpp
-          image: ghcr.io/ggml-org/llama.cpp:latest
+          image: ghcr.io/ggml-org/llama.cpp:full-cuda-b6089
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
           args:
