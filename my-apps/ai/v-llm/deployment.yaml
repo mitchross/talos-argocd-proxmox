@@ -66,12 +66,12 @@ spec:
             limits:
               cpu: "8000m"
               memory: 32Gi
-            
+              nvidia.com/gpu: "20"
               ephemeral-storage: 40Gi
             requests:
               cpu: "2000m"
               memory: 16Gi
-            
+              nvidia.com/gpu: "20"
               ephemeral-storage: 20Gi
           volumeMounts:
             - name: models
