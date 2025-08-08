@@ -7,7 +7,8 @@ provisioner: smb.csi.k8s.io
 parameters:
   source: //192.168.10.133/k8s/comfyui
   csi.storage.k8s.io/node-stage-secret-name: smbcreds
-  csi.storage.k8s.io/node-stage-secret-namespace: comfyui 
+  # ✅ CORRECTED: Point to the namespace where the secret is actually created
+  csi.storage.k8s.io/node-stage-secret-namespace: csi-driver-smb 
 mountOptions:
   - dir_mode=0777
   - file_mode=0777
@@ -16,6 +17,7 @@ mountOptions:
   - iocharset=utf8
   - rsize=1048576
   - wsize=1048576
+  - vers=3.0 # ✅ ADDED: For consistency and compatibility
 reclaimPolicy: Retain
 volumeBindingMode: Immediate
 allowVolumeExpansion: true
