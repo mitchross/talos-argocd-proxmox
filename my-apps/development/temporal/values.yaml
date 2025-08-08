@@ -2,7 +2,7 @@ server:
   enabled: true
   image:
     repository: temporalio/server
-    tag: 1.28.0
+    tag: 1.28.1
     pullPolicy: IfNotPresent
   replicaCount: 1
   podAnnotations:
