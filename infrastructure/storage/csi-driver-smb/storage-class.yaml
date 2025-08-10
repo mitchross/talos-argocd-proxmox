@@ -10,14 +10,10 @@ parameters:
   # ✅ CORRECTED: Point to the namespace where the secret is actually created
   csi.storage.k8s.io/node-stage-secret-namespace: csi-driver-smb 
 mountOptions:
-  - dir_mode=0777
-  - file_mode=0777
-  - noperm
-  - cache=strict
-  - iocharset=utf8
-  - rsize=1048576
-  - wsize=1048576
-  - vers=3.0 # ✅ ADDED: For consistency and compatibility
+    - dir_mode=0770
+    - file_mode=0660
+    - vers=3.0
+    - noserverino # Recommended for stability
 reclaimPolicy: Retain
 volumeBindingMode: Immediate
 allowVolumeExpansion: true
@@ -34,11 +30,10 @@ parameters:
   csi.storage.k8s.io/node-stage-secret-name: smbcreds
   csi.storage.k8s.io/node-stage-secret-namespace: csi-driver-smb
 mountOptions:
-  - dir_mode=0777
-  - file_mode=0777
-  - noperm
-  - mfsymlinks
-  - vers=3.0
+    - dir_mode=0770
+    - file_mode=0660
+    - vers=3.0
+    - noserverino # Recommended for stability
 reclaimPolicy: Retain
 volumeBindingMode: Immediate
 allowVolumeExpansion: true
@@ -55,11 +50,10 @@ parameters:
   csi.storage.k8s.io/node-stage-secret-name: smbcreds
   csi.storage.k8s.io/node-stage-secret-namespace: csi-driver-smb
 mountOptions:
-  - dir_mode=0777
-  - file_mode=0777
-  - noperm
-  - mfsymlinks
-  - vers=3.0
+    - dir_mode=0770
+    - file_mode=0660
+    - vers=3.0
+    - noserverino # Recommended for stability
 reclaimPolicy: Retain
 volumeBindingMode: Immediate
 allowVolumeExpansion: true
