@@ -29,7 +29,7 @@ spec:
           effect: "NoSchedule"
       containers:
         - name: ollama
-          image: ollama/ollama:0.11.3
+          image: ollama/ollama:0.11.4
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 11434
