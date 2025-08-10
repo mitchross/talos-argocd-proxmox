@@ -26,7 +26,7 @@ spec:
       containers:
         - name: ollama-webui
           # renovate: datasource=docker depName=ghcr.io/open-webui/open-webui
-          image: ghcr.io/open-webui/open-webui:latest-cuda@sha256:d367d2d70351ed4ad5d4e177b8c546fb5af2eaa08522201e10fbefd2a320dfbc
+          image: ghcr.io/open-webui/open-webui:latest@sha256:ceab1b44eb5e3987aeb93bd8b3dce5cb6ad9876beda8c229cb06d42a3e79c7ac
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -34,7 +34,7 @@ spec:
             requests:
               cpu: 500m
               memory: 1000Mi
-              ephemeral-storage: "30Gi" # 
+              ephemeral-storage: "30Gi" 
             limits:
               memory: 8000Mi
               ephemeral-storage: "40Gi" 
