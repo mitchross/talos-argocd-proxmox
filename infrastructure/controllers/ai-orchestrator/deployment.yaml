@@ -1,0 +1,136 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-orchestrator
+  namespace: ai-orchestrator
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  labels:
+    app: ai-orchestrator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-orchestrator
+  template:
+    metadata:
+      labels:
+        app: ai-orchestrator
+    spec:
+      serviceAccountName: ai-orchestrator
+      containers:
+      - name: orchestrator
+        image: ghcr.io/library/busybox:latest
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        command: [ "/bin/sh", "-c" ]
+        args:
+        - |
+          echo "Starting AI Orchestrator (v2 - with cooldowns)";
+          apk add --no-cache curl jq coreutils >/dev/null 2>&1 || true;
+
+          is_on_cooldown() {
+            local file_path=$1
+            local cooldown_seconds=$2
+            if [ -f "$file_path" ]; then
+              local last_action_time=$(stat -c %Y "$file_path")
+              local current_time=$(date +%s)
+              local time_diff=$((current_time - last_action_time))
+              if [ $time_diff -lt $cooldown_seconds ]; then
+                echo "[orchestrator] Cooldown active for $1. ($((cooldown_seconds - time_diff))s left)"
+                return 0
+              fi
+            fi
+            return 1
+          }
+
+          while true; do
+            CFG=/config/config.yaml
+            PROM_URL=$(grep 'url:' $CFG | awk '{print $2}')
+            O_IDLE_UTIL=$(grep 'idleGpuUtilPercent:' $CFG | awk '{print $2}')
+            O_IDLE_RATE=$(grep 'idleRequestRate:' $CFG | awk '{print $2}')
+            O_SCALE_DOWN_COOLDOWN=$(( $(grep 'scaleDownToOneCooldownMinutes:' $CFG | awk '{print $2}') * 60 ))
+            O_SCALE_UP_COOLDOWN=$(( $(grep 'scaleUpToTwoCooldownMinutes:' $CFG | awk '{print $2}') * 60 ))
+            C_ACTIVITY_RATE=$(grep 'activityRequestRate:' $CFG | awk '{print $2}')
+
+            prom() { curl -sG --data-urlencode "query=$1" "$PROM_URL/api/v1/query" | jq -r '.data.result[0].value[1] // 0'; }
+            O_REQ_Q=$(grep -A1 'ollamaRequestRate:' $CFG | tail -n1 | sed 's/^ *//')
+            C_REQ_Q=$(grep -A1 'comfyuiRequestRate:' $CFG | tail -n1 | sed 's/^ *//')
+            GPU_Q_TEMPLATE=$(grep -A1 'gpuUtil:' $CFG | tail -n1 | sed 's/^ *//')
+
+            O_RATE=$(prom "$O_REQ_Q")
+            C_RATE=$(prom "$C_REQ_Q")
+
+            if kubectl -n ollama get deploy ollama >/dev/null 2>&1; then
+              O_DEP=$(kubectl -n ollama get deploy ollama -o json)
+              CUR_GPU=$(echo "$O_DEP" | jq -r '.spec.template.spec.containers[0].resources.limits["nvidia.com/gpu"]')
+              
+              O_POD_NAME=$(kubectl -n ollama get pods -l app=ollama -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+              if [ -n "$O_POD_NAME" ]; then
+                O_NODE_NAME=$(kubectl -n ollama get pod "$O_POD_NAME" -o jsonpath='{.spec.nodeName}')
+                GPU_Q=$(echo "$GPU_Q_TEMPLATE" | sed "s/%NODE_NAME%/$O_NODE_NAME/g")
+                GPU_UTIL=$(prom "$GPU_Q")
+              else
+                GPU_UTIL=0
+              fi
+
+              if [ "$CUR_GPU" = "2" ]; then
+                if awk "BEGIN {exit !($GPU_UTIL < $O_IDLE_UTIL && $O_RATE < $O_IDLE_RATE)}"; then
+                  if ! is_on_cooldown "/tmp/ollama_scaled_up" "$O_SCALE_DOWN_COOLDOWN"; then
+                    echo "[orchestrator] Ollama idle. Scaling down to 1 GPU.";
+                    kubectl -n ollama patch deploy ollama --type='json' -p='[{"op":"replace","path":"/spec/template/spec/containers/0/resources/limits/nvidia.com~1gpu","value":"1"},{"op":"replace","path":"/spec/template/spec/containers/0/resources/requests/nvidia.com~1gpu","value":"1"}]' >/dev/null
+                    touch /tmp/ollama_scaled_down
+                  fi
+                fi
+              elif [ "$CUR_GPU" = "1" ]; then
+                if awk "BEGIN {exit !($O_RATE >= $O_IDLE_RATE)}"; then
+                  if ! is_on_cooldown "/tmp/ollama_scaled_down" "$O_SCALE_UP_COOLDOWN"; then
+                    echo "[orchestrator] Ollama demand detected. Scaling up to 2 GPUs.";
+                    echo "[orchestrator] Making space for Ollama. Scaling down ComfyUI."
+                    kubectl -n comfyui scale deploy comfyui --replicas=0 >/dev/null 2>&1 || true
+                    
+                    kubectl -n ollama patch deploy ollama --type='json' -p='[{"op":"replace","path":"/spec/template/spec/containers/0/resources/limits/nvidia.com~1gpu","value":"2"},{"op":"replace","path":"/spec/template/spec/containers/0/resources/requests/nvidia.com~1gpu","value":"2"}]' >/dev/null
+                    touch /tmp/ollama_scaled_up
+                  fi
+                fi
+              fi
+            fi
+
+            OLLAMA_MODE=$(kubectl -n ollama get deploy ollama -o jsonpath='{.spec.template.spec.containers[0].resources.limits["nvidia.com/gpu"]}' 2>/dev/null)
+            if [ "$OLLAMA_MODE" = "1" ] && kubectl -n comfyui get deploy comfyui >/dev/null 2>&1; then
+              C_REP=$(kubectl -n comfyui get deploy comfyui -o jsonpath='{.spec.replicas}')
+              
+              if [ "$C_REP" = "0" ]; then
+                if awk "BEGIN {exit !($C_RATE >= $C_ACTIVITY_RATE)}"; then
+                  echo "[orchestrator] ComfyUI activity detected. Scaling up."
+                  kubectl -n comfyui scale deploy comfyui --replicas=1 >/dev/null
+                fi
+              elif [ "$C_REP" = "1" ]; then
+                if awk "BEGIN {exit !($C_RATE < $C_ACTIVITY_RATE)}"; then
+                  echo "[orchestrator] ComfyUI idle. Scaling down."
+                  kubectl -n comfyui scale deploy comfyui --replicas=0 >/dev/null
+                fi
+              fi
+            else
+              CURRENT_REPLICAS=$(kubectl -n comfyui get deploy comfyui -o jsonpath='{.spec.replicas}' 2>/dev/null)
+              if [ "$CURRENT_REPLICAS" = "1" ]; then
+                  echo "[orchestrator] Ollama not in single-GPU mode. Ensuring ComfyUI is scaled down."
+                  kubectl -n comfyui scale deploy comfyui --replicas=0 >/dev/null 2>&1 || true
+              fi
+            fi
+
+            sleep 60;
+          done
+        volumeMounts:
+        - name: config
+          mountPath: /config
+      volumes:
+      - name: config
+        configMap:
+          name: ai-orchestrator-config

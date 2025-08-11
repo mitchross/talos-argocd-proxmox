@@ -17,10 +17,5 @@ data:
         passDeviceSpecs: false
         deviceListStrategy: "envvar"
         deviceIDStrategy: "uuid"
-    sharing:
-      timeSlicing:
-        renameByDefault: false
-        failRequestsGreaterThanOne: false
-        resources:
-        - name: nvidia.com/gpu
-          replicas: 20
+    # Time slicing removed to expose only physical GPUs (2x RTX 3090)
+    # Previous sharing.timeSlicing replicas:20 disabled for full performance

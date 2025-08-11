@@ -3,6 +3,11 @@ kind: Deployment
 metadata:
   name: ollama
   namespace: ollama
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    ai.orchestrator/managed: "true"
+    ai.orchestrator/gpu-mode: "dual"
+    # checksum/config: <populated-by-kustomize> # add later via configMapGenerator if desired
   labels:
     app.kubernetes.io/name: ollama
     app.kubernetes.io/component: llm-server
@@ -19,6 +24,9 @@ spec:
         app: ollama
         app.kubernetes.io/name: ollama
         app.kubernetes.io/component: llm-server
+      annotations:
+        ai.orchestrator/managed: "true"
+        ai.orchestrator/gpu-mode: "dual"
     spec:
       runtimeClassName: nvidia
       priorityClassName: gpu-workload-high
@@ -27,6 +35,17 @@ spec:
           operator: "Equal"
           value: "true"
           effect: "NoSchedule"
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values: [comfyui]
+                topologyKey: kubernetes.io/hostname
       containers:
         - name: ollama
           image: ollama/ollama:0.11.4
@@ -37,20 +56,18 @@ spec:
               protocol: TCP
           resources:
             limits:
-              cpu: "4000m"
-              memory: 16Gi
-              nvidia.com/gpu: "20"
-              ephemeral-storage: "40Gi"
+              cpu: "6000m"
+              memory: 32Gi
+              nvidia.com/gpu: "2"
             requests:
-              cpu: "1000m"
-              memory: 8Gi
-              nvidia.com/gpu: "20"
-              ephemeral-storage: "20Gi"
+              cpu: "6000m"
+              memory: 32Gi
+              nvidia.com/gpu: "2"
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
-            runAsNonRoot: false # Ollama needs root for now
+            runAsNonRoot: false
             readOnlyRootFilesystem: false
             seccompProfile:
               type: RuntimeDefault
@@ -72,7 +89,7 @@ spec:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: 30
+            initialDelaySeconds: 120
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
@@ -80,7 +97,7 @@ spec:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: 15
+            initialDelaySeconds: 40
             periodSeconds: 5
             timeoutSeconds: 5
             failureThreshold: 3
@@ -93,3 +110,4 @@ spec:
             name: ollama-configmap
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
+      # Add a PodDisruptionBudget separately if >1 replica later
