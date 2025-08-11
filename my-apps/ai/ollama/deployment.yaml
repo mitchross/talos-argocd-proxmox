@@ -83,6 +83,10 @@ spec:
           value: "/root/.ollama/models"
         - name: OLLAMA_CONFIG
           value: "/etc/ollama/ollama.json"
+        - name: HOME
+          value: "/root"
+        - name: OLLAMA_HOME
+          value: "/root/.ollama"
         volumeMounts:
         - name: models
           mountPath: /root/.ollama
