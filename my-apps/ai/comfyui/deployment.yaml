@@ -22,6 +22,12 @@ spec:
         ai.orchestrator/managed: "true"
         ai.orchestrator/gpu-required: "1"
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
       # Node selector for GPU nodes
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
@@ -46,6 +52,13 @@ spec:
       - name: comfyui
         # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu124-megapak
         image: yanwk/comfyui-boot:cu124-megapak-20250707
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          readOnlyRootFilesystem: false
+          seccompProfile:
+            type: RuntimeDefault
         imagePullPolicy: IfNotPresent
         workingDir: /root
         ports:

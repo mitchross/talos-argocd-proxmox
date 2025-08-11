@@ -30,6 +30,12 @@ spec:
     spec:
       runtimeClassName: nvidia
       priorityClassName: gpu-workload-high
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
       tolerations:
         - key: "gpu"
           operator: "Equal"
@@ -67,7 +73,6 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
-            runAsNonRoot: false
             readOnlyRootFilesystem: false
             seccompProfile:
               type: RuntimeDefault
