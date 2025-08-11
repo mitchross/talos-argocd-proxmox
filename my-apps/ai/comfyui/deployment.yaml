@@ -10,7 +10,7 @@ metadata:
 spec:
   strategy:
     type: Recreate
-  replicas: 0  # orchestrator will scale to 1 when Ollama yields a GPU
+  replicas: 0 # orchestrator will scale to 1 when Ollama yields a GPU
   selector:
     matchLabels:
       app: comfyui
@@ -40,14 +40,14 @@ spec:
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 50
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: app
-                      operator: In
-                      values: [ollama]
-                topologyKey: kubernetes.io/hostname
+          - weight: 50
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values: [ ollama ]
+              topologyKey: kubernetes.io/hostname
       containers:
       - name: comfyui
         # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu124-megapak
@@ -55,7 +55,7 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
-            drop: ["ALL"]
+            drop: [ "ALL" ]
           readOnlyRootFilesystem: false
           seccompProfile:
             type: RuntimeDefault
