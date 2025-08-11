@@ -6,8 +6,8 @@ metadata:
 data:
   ollama.json: |
     {
-      "models_path": "/root/.ollama/models",            // PVC (SMB) mount path
-      "max_memory": "44G",                              // Leave headroom for driver/overhead
+      "models_path": "/models",
+      "max_memory": "38G",
       "gpu_layers": "auto",
       "cuda_devices": [0, 1],
       "max_parallel_gpu_requests": 2

@@ -3,14 +3,10 @@ kind: Deployment
 metadata:
   name: comfyui
   namespace: comfyui
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
-    ai.orchestrator/managed: "true"
-    ai.orchestrator/gpu-required: "1"
 spec:
   strategy:
     type: Recreate
-  replicas: 0  # orchestrator will scale to 1 when Ollama yields a GPU
+  replicas: 1
   selector:
     matchLabels:
       app: comfyui
@@ -18,71 +14,57 @@ spec:
     metadata:
       labels:
         app: comfyui
-      annotations:
-        ai.orchestrator/managed: "true"
-        ai.orchestrator/gpu-required: "1"
     spec:
       # Node selector for GPU nodes
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
       priorityClassName: gpu-workload-preemptible
       tolerations:
-      - key: "gpu"
-        operator: "Equal"
-        value: "true"
-        effect: "NoSchedule"
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 50
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: app
-                      operator: In
-                      values: [ollama]
-                topologyKey: kubernetes.io/hostname
+        - key: "gpu"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"
       containers:
-      - name: comfyui
-        # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu124-megapak
-        image: yanwk/comfyui-boot:cu124-megapak-20250707
-        imagePullPolicy: IfNotPresent
-        workingDir: /root
-        ports:
-        - containerPort: 8188
-        env:
-        - name: CLI_ARGS
-          value: "--listen 0.0.0.0 --port 8188"
-        resources:
-          requests:
-            memory: "8Gi"
-            cpu: "2"
-            nvidia.com/gpu: "1"
-          limits:
-            memory: "24Gi"
-            cpu: "8"
-            nvidia.com/gpu: "1" # single GPU; orchestrator may scale replicas 0/1
-        volumeMounts:
-        # The image expects a persistent volume at /root to store ComfyUI, models, and outputs.
-        - name: comfyui-storage
-          mountPath: /root
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 8188
-          initialDelaySeconds: 300 # Increased for large downloads on first start
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 6
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 8188
-          initialDelaySeconds: 1500 # Increased for large downloads on first start
-          periodSeconds: 30
-          timeoutSeconds: 10
-          failureThreshold: 3
+        - name: comfyui
+          # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu124-megapak
+          image: yanwk/comfyui-boot:cu124-megapak-20250707
+          imagePullPolicy: IfNotPresent
+          workingDir: /root
+          ports:
+            - containerPort: 8188
+          env:
+            - name: CLI_ARGS
+              value: "--listen 0.0.0.0 --port 8188"
+          resources:
+            requests:
+              memory: "8Gi"
+              cpu: "2"
+              nvidia.com/gpu: "1"
+            limits:
+              memory: "24Gi"
+              cpu: "8"
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            # The image expects a persistent volume at /root to store ComfyUI, models, and outputs.
+            - name: comfyui-storage
+              mountPath: /root
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8188
+            initialDelaySeconds: 300 # Increased for large downloads on first start
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8188
+            initialDelaySeconds: 1500 # Increased for large downloads on first start
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
       volumes:
-      - name: comfyui-storage
-        persistentVolumeClaim:
-          claimName: comfyui-storage
+        - name: comfyui-storage
+          persistentVolumeClaim:
+            claimName: comfyui-storage
