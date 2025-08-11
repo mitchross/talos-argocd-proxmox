@@ -3,7 +3,6 @@ kind: Kustomization
 namespace: netbox
 resources:
 - namespace.yaml
-- service.yaml
 - httproute.yaml
 helmCharts:
 - name: netbox
