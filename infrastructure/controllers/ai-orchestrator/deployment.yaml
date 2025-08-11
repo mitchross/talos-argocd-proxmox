@@ -20,7 +20,7 @@ spec:
       serviceAccountName: ai-orchestrator
       containers:
       - name: orchestrator
-        image: alpine:latest
+        image: ghcr.io/containerd/busybox:1.32
         imagePullPolicy: IfNotPresent
         resources:
           requests:
