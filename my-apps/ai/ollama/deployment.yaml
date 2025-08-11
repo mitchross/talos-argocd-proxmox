@@ -23,73 +23,73 @@ spec:
       runtimeClassName: nvidia
       priorityClassName: gpu-workload-high
       tolerations:
-        - key: "gpu"
-          operator: "Equal"
-          value: "true"
-          effect: "NoSchedule"
+      - key: "gpu"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
       containers:
-        - name: ollama
-          image: ollama/ollama:0.11.4
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 11434
-              name: http
-              protocol: TCP
-          resources:
-            limits:
-              cpu: "4000m"
-              memory: 16Gi
-              nvidia.com/gpu: "20"
-              ephemeral-storage: "40Gi"
-            requests:
-              cpu: "1000m"
-              memory: 8Gi
-              nvidia.com/gpu: "20"
-              ephemeral-storage: "20Gi"
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-            runAsNonRoot: false # Ollama needs root for now
-            readOnlyRootFilesystem: false
-            seccompProfile:
-              type: RuntimeDefault
-          env:
-            - name: OLLAMA_HOST
-              value: "0.0.0.0:11434"
-            - name: OLLAMA_MODELS
-              value: "/root/.ollama/models"
-            - name: OLLAMA_CONFIG
-              value: "/etc/ollama/ollama.json"
-          volumeMounts:
-            - name: models
-              mountPath: /root/.ollama
-            - name: config
-              mountPath: /etc/ollama/ollama.json
-              subPath: ollama.json
-              readOnly: true
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-            initialDelaySeconds: 30
-            periodSeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
-            initialDelaySeconds: 15
-            periodSeconds: 5
-            timeoutSeconds: 5
-            failureThreshold: 3
-      volumes:
+      - name: ollama
+        image: ollama/ollama:0.11.4
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 11434
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "4000m"
+            memory: 16Gi
+            nvidia.com/gpu: "20"
+            ephemeral-storage: "40Gi"
+          requests:
+            cpu: "1000m"
+            memory: 8Gi
+            nvidia.com/gpu: "20"
+            ephemeral-storage: "20Gi"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ "ALL" ]
+          runAsNonRoot: false # Ollama needs root for now
+          readOnlyRootFilesystem: false
+          seccompProfile:
+            type: RuntimeDefault
+        env:
+        - name: OLLAMA_HOST
+          value: "0.0.0.0:11434"
+        - name: OLLAMA_MODELS
+          value: "/root/.ollama/models"
+        - name: OLLAMA_CONFIG
+          value: "/etc/ollama/ollama.json"
+        volumeMounts:
         - name: models
-          persistentVolumeClaim:
-            claimName: ollama-storage-pvc
+          mountPath: /root/.ollama
         - name: config
-          configMap:
-            name: ollama-configmap
+          mountPath: /etc/ollama/ollama.json
+          subPath: ollama.json
+          readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: models
+        persistentVolumeClaim:
+          claimName: ollama-storage-pvc
+      - name: config
+        configMap:
+          name: ollama-configmap
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
