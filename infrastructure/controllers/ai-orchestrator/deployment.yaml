@@ -20,7 +20,7 @@ spec:
       serviceAccountName: ai-orchestrator
       containers:
       - name: orchestrator
-        image: ghcr.io/library/busybox:latest
+        image: ghcr.io/containerd/busybox:1.32
         imagePullPolicy: IfNotPresent
         resources:
           requests:
