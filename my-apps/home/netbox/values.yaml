@@ -1,7 +1,7 @@
 # Minimal NetBox values; using bundled PostgreSQL and Valkey for simplicity.
 
 allowedHosts:
-- netbox.vanillax.me
+  - netbox.vanillax.me
 
 postgresql:
   enabled: true
