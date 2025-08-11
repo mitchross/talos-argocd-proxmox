@@ -1,0 +1,28 @@
+# Minimal NetBox values; using bundled PostgreSQL and Valkey for simplicity.
+
+allowedHosts:
+  - netbox.vanillax.me
+
+postgresql:
+  enabled: true
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: longhorn
+
+valkey:
+  enabled: true
+
+persistence:
+  enabled: true
+  storageClass: longhorn
+  size: 10Gi
+
+worker:
+  enabled: true
+
+metrics:
+  enabled: false
+  serviceMonitor:
+    enabled: false

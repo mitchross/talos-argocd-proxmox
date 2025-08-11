@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: netbox
+resources:
+  - namespace.yaml
+  - service.yaml
+  - httproute.yaml
+helmCharts:
+  - name: netbox
+    repo: oci://ghcr.io/netbox-community/netbox-chart
+    version: 6.1.6
+    releaseName: netbox
+    namespace: netbox
+    valuesFile: values.yaml
