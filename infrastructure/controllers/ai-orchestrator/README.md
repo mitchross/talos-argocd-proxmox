@@ -19,7 +19,7 @@ Purpose: Automatically manages GPU allocation between Ollama (primary) and Comfy
           v                                         v
                    +--------------------------------+
                    |        AI Orchestrator         |
-                   |  (Alpine shell, curl + kubectl + jq)
+                   |  (BusyBox loop, curl + kubectl)|
                    +--------------------------------+
                          |            |
                Patch resources       Scale replicas
@@ -59,55 +59,79 @@ Legend:
 - Demand condition: Ollama req rate >= 0.02 r/s.
 - ComfyUI activity: ComfyUI req rate >= 0.02 r/s.
 
-## Important: NVIDIA Time-Slicing vs Physical GPUs
-- If the device plugin exposes time-sliced GPUs, your node may show "40" allocatable for 2x3090 (20 slices per card). In that mode, nvidia.com/gpu: 1 = one slice, not a full GPU.
-- The orchestrator assumes physical-GPU semantics (2=two GPUs, 1=one GPU). To match that intent, either:
-  1) Disable time-slicing in the NVIDIA device plugin (recommended for max performance), OR
-  2) Change the orchestrator patch counts to 40 (dual/full) and 20 (single) to align with your slice configuration.
+## Sequence (Idle Downgrade)
+```
+User inactivity -> Metrics reflect low util & requests -> Orchestrator
+poll cycle -> JSONPatch Ollama GPUs 2→1 -> One GPU freed.
+```
 
-> Tip: Run `kubectl get nodes -o custom-columns=NAME:.metadata.name,GPUS:.status.allocatable.'nvidia\.com/gpu'` to see if you are in slice mode.
+## Sequence (ComfyUI Opportunistic Start)
+```
+User hits ComfyUI -> Request metric rises -> Orchestrator sees
+Ollama at 1 GPU -> scale comfyui replicas 0→1 (gets 1 GPU).
+```
+
+## Sequence (Ollama Reclaim)
+```
+New Ollama traffic while ComfyUI active -> Orchestrator detects demand
+-> scale comfyui 1→0 -> patch Ollama 1→2.
+```
 
 ## Components
 - ConfigMap `ai-orchestrator-config`: thresholds and PromQL queries.
-- Deployment `ai-orchestrator`: alpine shell loop using curl + jq + kubectl.
+- Deployment `ai-orchestrator`: busybox shell loop using curl + jq + kubectl.
 - RBAC: scoped Roles in `ollama` and `comfyui` namespaces to patch deployments.
-- PodSecurity: both Ollama and ComfyUI run as non-root with fsGroup for PVC writes.
 
 ## Metrics / Queries
 Adjust queries in `configmap.yaml` to match actual metric names if different:
 - `ollamaRequestRate`: request rate for Ollama API.
 - `comfyuiRequestRate`: HTTP hits to ComfyUI.
-- `gpuUtil`: average GPU utilization (from DCGM exporter). Template includes %NODE_NAME% substitution.
+- `gpuUtil`: average GPU utilization (from DCGM exporter).
 
 ## Annotations
-- Ollama: `ai.orchestrator/gpu-mode` used for bookkeeping.
-- ComfyUI: `ai.orchestrator/gpu-required: "1"` is honored (only starts when one GPU is free).
+Ollama Deployment annotated with:
+- `ai.orchestrator/gpu-mode: dual|single` (bookkeeping)
+ComfyUI annotated with:
+- `ai.orchestrator/managed: true`
 
 ## Idle Criteria
 Default:
 - GPU utilization <10%
-- Request rate <0.02 req/sec (≈1 req per 50s)
+- Request rate <0.02 req/sec (≈1 req per 50s) over 5m window
 - Conditions true at poll time triggers downgrade.
 
 ## Scaling Actions
-- Patch Ollama resources nvidia.com/gpu 2→1 or 1→2 (or 40→20/20→40 in slice mode).
+- Patch Ollama resources nvidia.com/gpu 2→1 or 1→2.
 - Scale ComfyUI replicas 0↔1.
 
-## How to Test Quickly
-- Orchestrator running:
-  - `kubectl -n ai-orchestrator logs deploy/ai-orchestrator --tail=100`
-- Prometheus up (clean JSON):
-  - `kubectl -n prometheus-stack run tmp-curl --rm -i --restart=Never --image=curlimages/curl:8.8.0 -- sh -lc 'curl -s "http://kube-prometheus-stack-prometheus.prometheus-stack:9090/api/v1/query?query=up" | jq -r .status'`
-- Check GPU counts and replicas:
-  - `kubectl -n ollama get deploy ollama -o jsonpath='{.spec.template.spec.containers[0].resources.limits[nvidia.com/gpu]}' ; echo`
-  - `kubectl -n comfyui get deploy comfyui -o jsonpath='{.spec.replicas}' ; echo`
+## Limitations / Future Improvements
+- Prototype shell loop; rewrite in Go/Python for reliability (state, cooldowns, metrics batching).
+- Add per-action cooldown annotations to avoid flapping.
+- Validate metric names existence before acting.
+- Use dedicated ServiceAccount with least privileges (already scoped) + networkPolicy.
+- Optionally expose a manual override (HTTP endpoint) to force modes.
 
 ## ArgoCD Drift Handling
 Dynamic patches cause ArgoCD drift. Configure generated Applications to ignore:
 - Ollama container[0] resources (GPU changes)
-- ComfyUI spec.replicas (and optionally resources)
+- ComfyUI spec.replicas
 
-Example (ApplicationSet): see repo `infrastructure/controllers/argocd/apps/my-apps-appset.yaml`.
+Example `ignoreDifferences` (added via ApplicationSet template):
+```
+ignoreDifferences:
+- group: apps
+  kind: Deployment
+  name: ollama
+  namespace: ollama
+  jsonPointers:
+  - /spec/template/spec/containers/0/resources
+- group: apps
+  kind: Deployment
+  name: comfyui
+  namespace: comfyui
+  jsonPointers:
+  - /spec/replicas
+```
 
 ## Sync Waves (Target)
 1. Monitoring (Prometheus + DCGM) : wave 0
@@ -115,5 +139,5 @@ Example (ApplicationSet): see repo `infrastructure/controllers/argocd/apps/my-ap
 3. Core AI Apps (Ollama/ComfyUI)  : wave 2
 4. Orchestrator                   : wave 3
 
-If you stay with time-slicing and want me to switch orchestrator to patch 40/20 instead of 2/1, say the word.
+Ensure waves updated in ApplicationSets or via per-application annotations.
 

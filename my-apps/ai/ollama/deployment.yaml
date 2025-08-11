@@ -37,82 +37,82 @@ spec:
         fsGroup: 10001
         fsGroupChangePolicy: OnRootMismatch
       tolerations:
-      - key: "gpu"
-        operator: "Equal"
-        value: "true"
-        effect: "NoSchedule"
+        - key: "gpu"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 50
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: app
-                  operator: In
-                  values: [ comfyui ]
-              topologyKey: kubernetes.io/hostname
+            - weight: 50
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values: [comfyui]
+                topologyKey: kubernetes.io/hostname
       containers:
-      - name: ollama
-        image: ollama/ollama:0.11.4
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 11434
-          name: http
-          protocol: TCP
-        resources:
-          limits:
-            cpu: "6000m"
-            memory: 32Gi
-            nvidia.com/gpu: "2"
-          requests:
-            cpu: "6000m"
-            memory: 32Gi
-            nvidia.com/gpu: "2"
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop: [ "ALL" ]
-          readOnlyRootFilesystem: false
-          seccompProfile:
-            type: RuntimeDefault
-        env:
-        - name: OLLAMA_HOST
-          value: "0.0.0.0:11434"
-        - name: OLLAMA_MODELS
-          value: "/root/.ollama/models"
-        - name: OLLAMA_CONFIG
-          value: "/etc/ollama/ollama.json"
-        volumeMounts:
-        - name: models
-          mountPath: /root/.ollama
-        - name: config
-          mountPath: /etc/ollama/ollama.json
-          subPath: ollama.json
-          readOnly: true
-        livenessProbe:
-          httpGet:
-            path: /
-            port: http
-          initialDelaySeconds: 120
-          periodSeconds: 30
-          timeoutSeconds: 5
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /
-            port: http
-          initialDelaySeconds: 40
-          periodSeconds: 5
-          timeoutSeconds: 5
-          failureThreshold: 3
+        - name: ollama
+          image: ollama/ollama:0.11.4
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 11434
+              name: http
+              protocol: TCP
+          resources:
+            limits:
+              cpu: "6000m"
+              memory: 32Gi
+              nvidia.com/gpu: "2"
+            requests:
+              cpu: "6000m"
+              memory: 32Gi
+              nvidia.com/gpu: "2"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: false
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: OLLAMA_HOST
+              value: "0.0.0.0:11434"
+            - name: OLLAMA_MODELS
+              value: "/root/.ollama/models"
+            - name: OLLAMA_CONFIG
+              value: "/etc/ollama/ollama.json"
+          volumeMounts:
+            - name: models
+              mountPath: /root/.ollama
+            - name: config
+              mountPath: /etc/ollama/ollama.json
+              subPath: ollama.json
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 40
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
       volumes:
-      - name: models
-        persistentVolumeClaim:
-          claimName: ollama-storage-pvc
-      - name: config
-        configMap:
-          name: ollama-configmap
+        - name: models
+          persistentVolumeClaim:
+            claimName: ollama-storage-pvc
+        - name: config
+          configMap:
+            name: ollama-configmap
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
       # Add a PodDisruptionBudget separately if >1 replica later
