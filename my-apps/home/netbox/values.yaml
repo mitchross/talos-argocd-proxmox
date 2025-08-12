@@ -5,6 +5,12 @@ allowedHosts:
 
 postgresql:
   enabled: true
+  auth:
+    username: netbox
+    database: netbox
+    password: "change-me-netbox"
+    # Optional but recommended to set as well
+    postgresPassword: "change-me-postgres"
   primary:
     persistence:
       enabled: true
