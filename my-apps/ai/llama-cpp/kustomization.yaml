@@ -9,4 +9,4 @@ resources:
   - service.yaml
   - httproute.yaml
 
-namespace: ollama
+namespace: llama-cpp
