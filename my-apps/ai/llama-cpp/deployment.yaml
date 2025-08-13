@@ -57,23 +57,23 @@ spec:
           mountPath: /app/config.yaml
           subPath: config.yaml
           readOnly: true
-        # Health probes for the llama-swap proxy
+        # Health probes for the llama-swap proxy (adjusted for dual GPU setup)
         livenessProbe:
           httpGet:
             path: /health
             port: http
-          initialDelaySeconds: 60
-          periodSeconds: 30
-          timeoutSeconds: 10
+          initialDelaySeconds: 120
+          periodSeconds: 60
+          timeoutSeconds: 15
           failureThreshold: 3
         readinessProbe:
           httpGet:
             path: /health
             port: http
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 5
       volumes:
       - name: models-storage
         persistentVolumeClaim:
