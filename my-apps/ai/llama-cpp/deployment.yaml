@@ -17,7 +17,6 @@ spec:
       labels:
         app: llama-swap
     spec:
-      # Using your existing GPU scheduling configuration
       runtimeClassName: nvidia
       priorityClassName: gpu-workload-high
       tolerations:
@@ -27,24 +26,24 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: llama-swap
-        # This image contains the llama-swap proxy
         image: ghcr.io/mostlygeek/llama-swap:cuda
         imagePullPolicy: IfNotPresent
-        command:
-          - "/usr/local/bin/llama-swap"
+        
+        # --- FIX: Changed command to call the executable directly by name ---
+        # The shell will find 'llama-swap' in the container's PATH.
+        command: ["/bin/sh", "-c"]
         args:
-          - "--config"
-          - "/app/config.yaml"
+          - "exec llama-swap --config /app/config.yaml"
+
         ports:
-        - containerPort: 8080 # Llama Swap's default port
+        - containerPort: 8080
           name: http
           protocol: TCP
-        # Using the same resource requests as your Ollama setup
         resources:
           limits:
             cpu: "4000m"
             memory: 16Gi
-            nvidia.com/gpu: "1" # Adjusted to 1 GPU, as llama.cpp typically uses one per process
+            nvidia.com/gpu: "1"
             ephemeral-storage: "40Gi"
           requests:
             cpu: "1000m"
@@ -52,15 +51,13 @@ spec:
             nvidia.com/gpu: "1"
             ephemeral-storage: "20Gi"
         volumeMounts:
-        # Mount your SMB share containing the .gguf model files
         - name: models-storage
           mountPath: /models
-        # Mount the configuration file for llama-swap
         - name: config-volume
-          mountPath: /app/config.yaml # Llama-swap looks for config here by default
+          mountPath: /app/config.yaml
           subPath: config.yaml
           readOnly: true
-        # Probes now point to llama-swap's health endpoint
+        # Probes are correct for the llama-swap proxy
         livenessProbe:
           httpGet:
             path: /healthz
@@ -80,6 +77,5 @@ spec:
       - name: config-volume
         configMap:
           name: llama-swap-config
-      # Ensure the pod is scheduled on a node with an NVIDIA GPU
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
