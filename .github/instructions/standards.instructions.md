@@ -125,6 +125,28 @@ Each app directory contains:
     app.kubernetes.io/component: <component>
   ```
 
+## Service Configuration for HTTPRoute
+
+**CRITICAL**: Services used with HTTPRoute MUST include a named port:
+
+```yaml
+apiVersion: v1
+kind: Service
+spec:
+  ports:
+    - name: http          # REQUIRED for HTTPRoute
+      protocol: TCP
+      port: 8080
+      targetPort: http
+```
+
+**Without the `name: http` field, HTTPRoute will fail silently!**
+
+Common port names:
+- `http` - For HTTP services (most common)
+- `https` - For HTTPS services 
+- `grpc` - For gRPC services
+
 # Cluster Tooling
 
 - Kubernetes: K3s
