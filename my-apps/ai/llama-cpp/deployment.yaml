@@ -36,9 +36,9 @@ spec:
           - "/app/config.yaml"
 
         ports:
-        - containerPort: 8080
-          name: http
-          protocol: TCP
+            - name: http
+              containerPort: 8080
+              protocol: TCP
         resources:
           limits:
             cpu: "4000m"
