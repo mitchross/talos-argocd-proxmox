@@ -10,25 +10,25 @@ data:
     models:
       # Model 1: Qwen3 Coder Q4_K_M - 32K context, faster inference
       qwen3-coder-q4-32k:
-        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf -c 32768 -ngl 99 --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --tensor-split 0.5,0.5 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05 --jinja --cache-type-k q4_1 --cache-type-v f16"
+        cmd: "/app/llama-server -m /models/models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf -c 32768 -ngl 99 --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --tensor-split 0.5,0.5 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05 --jinja --cache-type-k q4_1 --cache-type-v f16"
         health_check_path: "/health"
         timeout: 600s
 
       # Model 2: Qwen3 Coder Q5_K_M - 32K context, higher quality
       qwen3-coder-q5-32k:
-        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q5_K_M.gguf -c 32768 -ngl 99 --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --tensor-split 0.5,0.5 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05 --jinja --cache-type-k q4_1 --cache-type-v f16"
+        cmd: "/app/llama-server -m /models/models/Qwen3-Coder-30B-A3B-Instruct-Q5_K_M.gguf -c 32768 -ngl 99 --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --tensor-split 0.5,0.5 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05 --jinja --cache-type-k q4_1 --cache-type-v f16"
         health_check_path: "/health"
         timeout: 600s
 
       # Model 3: Qwen3 Coder Q4_K_M - Full 256K context for repository analysis
       qwen3-coder-q4-256k:
-        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf -c 262144 -ngl 99 --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --tensor-split 0.5,0.5 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05 --jinja --cache-type-k q4_1 --cache-type-v q4_1"
+        cmd: "/app/llama-server -m /models/models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf -c 262144 -ngl 99 --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --tensor-split 0.5,0.5 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05 --jinja --cache-type-k q4_1 --cache-type-v q4_1"
         health_check_path: "/health"
         timeout: 900s
 
       # Model 4: Qwen3 Coder Q5_K_M - Full 256K context with highest quality
       qwen3-coder-q5-256k:
-        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q5_K_M.gguf -c 262144 -ngl 99 --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --tensor-split 0.5,0.5 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05 --jinja --cache-type-k q4_1 --cache-type-v q4_1"
+        cmd: "/app/llama-server -m /models/models/Qwen3-Coder-30B-A3B-Instruct-Q5_K_M.gguf -c 262144 -ngl 99 --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --tensor-split 0.5,0.5 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05 --jinja --cache-type-k q4_1 --cache-type-v q4_1"
         health_check_path: "/health"
         timeout: 900s
         
