@@ -7,7 +7,11 @@ data:
   # ---------------------------------------------------------------------------
   # Core Settings
   # ---------------------------------------------------------------------------
-  OLLAMA_BASE_URL: "http://llama-swap-service.llama-cpp.svc.cluster.local:8080"
+  # Configure Open WebUI to use llama-swap via OpenAI API (not Ollama API)
+  OPENAI_API_BASE_URL: "http://llama-swap-service.llama-cpp.svc.cluster.local:8080/v1"
+  OPENAI_API_KEY: "sk-required"
+  # Keep Ollama API disabled since llama-swap doesn't implement it
+  ENABLE_OLLAMA_API: "false"
   DEFAULT_MODELS: "qwen3-coder-q5-32k" # Default to Q5 32K model for best balance
   CONTEXT_WINDOW: "32768" # Qwen3-Coder supports up to 32k tokens natively  
   TEMPERATURE: "0.7" # Optimized for Qwen3-Coder

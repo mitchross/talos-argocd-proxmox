@@ -30,15 +30,15 @@ spec:
         imagePullPolicy: IfNotPresent
 
         # --- FINAL FIX: Using the correct, confirmed path to the executable ---
-        command: ["/app/llama-swap"]
+        command: [ "/app/llama-swap" ]
         args:
-          - "--config"
-          - "/app/config.yaml"
+        - "--config"
+        - "/app/config.yaml"
 
         ports:
-            - name: http
-              containerPort: 8080
-              protocol: TCP
+        - name: http
+          containerPort: 8080
+          protocol: TCP
         resources:
           limits:
             cpu: "8000m"
