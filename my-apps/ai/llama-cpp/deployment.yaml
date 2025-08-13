@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llama-swap
+  namespace: llama-cpp
+  labels:
+    app: llama-swap
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llama-swap
+  template:
+    metadata:
+      labels:
+        app: llama-swap
+    spec:
+      # Using your existing GPU scheduling configuration
+      runtimeClassName: nvidia
+      priorityClassName: gpu-workload-high
+      tolerations:
+      - key: "gpu"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      containers:
+      - name: llama-swap
+        # This image contains both the llama-swap proxy and the llama-server binary
+        image: ghcr.io/ggerganov/llama.cpp:full-cuda
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080 # Llama Swap's default port
+          name: http
+          protocol: TCP
+        # Using the same resource requests as your Ollama setup
+        resources:
+          limits:
+            cpu: "4000m"
+            memory: 16Gi
+            nvidia.com/gpu: "1" # Adjusted to 1 GPU, as llama.cpp typically uses one per process
+            ephemeral-storage: "40Gi"
+          requests:
+            cpu: "1000m"
+            memory: 8Gi
+            nvidia.com/gpu: "1"
+            ephemeral-storage: "20Gi"
+        volumeMounts:
+        # Mount your SMB share containing the .gguf model files
+        - name: models-storage
+          mountPath: /models
+        # Mount the configuration file for llama-swap
+        - name: config-volume
+          mountPath: /app/config.yaml # Llama-swap looks for config here by default
+          subPath: config.yaml
+          readOnly: true
+        # Probes now point to llama-swap's health endpoint
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 5
+      volumes:
+      - name: models-storage
+        persistentVolumeClaim:
+          claimName: llama-cpp-models-pvc
+      - name: config-volume
+        configMap:
+          name: llama-swap-config
+      # Ensure the pod is scheduled on a node with an NVIDIA GPU
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"

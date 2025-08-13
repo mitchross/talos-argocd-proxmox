@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: llama-cpp-models-pvc
+  namespace: llama-cpp
+spec:
+  accessModes:
+    - ReadWriteOnce # Or ReadWriteMany if your SMB CSI driver supports it
+  resources:
+    requests:
+      storage: 150Gi
+  storageClassName: llama-cpp-smb # Using your existing SMB StorageClass
