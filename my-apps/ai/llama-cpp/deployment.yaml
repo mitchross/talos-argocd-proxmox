@@ -28,11 +28,12 @@ spec:
       - name: llama-swap
         image: ghcr.io/mostlygeek/llama-swap:cuda
         imagePullPolicy: IfNotPresent
-        
-        # --- THIS IS A TEMPORARY COMMAND FOR DEBUGGING ---
-        # It keeps the container running so you can connect to it.
-        command: ["sleep"]
-        args: ["infinity"]
+
+        # --- FINAL FIX: Using the correct, confirmed path to the executable ---
+        command: ["/app/llama-swap"]
+        args:
+          - "--config"
+          - "/app/config.yaml"
 
         ports:
         - containerPort: 8080
@@ -56,6 +57,19 @@ spec:
           mountPath: /app/config.yaml
           subPath: config.yaml
           readOnly: true
+        # Health probes for the llama-swap proxy
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 5
       volumes:
       - name: models-storage
         persistentVolumeClaim:
