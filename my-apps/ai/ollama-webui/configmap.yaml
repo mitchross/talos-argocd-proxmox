@@ -7,11 +7,11 @@ data:
   # ---------------------------------------------------------------------------
   # Core Settings
   # ---------------------------------------------------------------------------
-  OLLAMA_BASE_URL: "http://ollama.ollama.svc.cluster.local:11434"
-  DEFAULT_MODELS: "qwen3:30b" # Set your default model (quantized for 24GB GPU)
-  CONTEXT_WINDOW: "32768" # Qwen3 supports up to 32k tokens
-  TEMPERATURE: "0.6"
-  TOP_P: "0.95"
+  OLLAMA_BASE_URL: "http://llama-swap-service.llama-cpp.svc.cluster.local:8080"
+  DEFAULT_MODELS: "qwen3-coder-q5-32k" # Default to Q5 32K model for best balance
+  CONTEXT_WINDOW: "32768" # Qwen3-Coder supports up to 32k tokens natively  
+  TEMPERATURE: "0.7" # Optimized for Qwen3-Coder
+  TOP_P: "0.8" # Optimized for Qwen3-Coder
   WEBUI_SECRET_KEY: "ollama-webui" # Change this to a secure, random string for production
   # When False, all configurations are read from this ConfigMap on every restart.
   # When True, settings changed in the UI are persisted in the database and override this file.
