@@ -10,13 +10,13 @@ data:
       # Model 1: Qwen3 Coder Q4_K_M
       qwen3-coder-q4:
         # This command points to your Q4 model file.
-        cmd: "llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf -c 8192 -ngl 99 --host 0.0.0.0 --port 8080"
+        cmd: "llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf -c 8192 -ngl 99 --host 0.0.0.0 --port ${PORT}"
         health_check_path: "/health"
         timeout: 300s # Unloads the model after 5 minutes of inactivity
 
       # Model 2: Qwen3 Coder Q5_K_M
       qwen3-coder-q5:
         # This command points to your Q5 model file.
-        cmd: "llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q5_K_M.gguf -c 8192 -ngl 99 --host 0.0.0.0 --port 8080"
+        cmd: "llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q5_K_M.gguf -c 8192 -ngl 99 --host 0.0.0.0 --port ${PORT}"
         health_check_path: "/health"
         timeout: 300s

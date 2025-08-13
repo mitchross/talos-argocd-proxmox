@@ -27,9 +27,14 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: llama-swap
-        # This image contains both the llama-swap proxy and the llama-server binary
-        image: ghcr.io/ggerganov/llama.cpp:full-cuda
+        # This image contains the llama-swap proxy
+        image: ghcr.io/mostlygeek/llama-swap:cuda
         imagePullPolicy: IfNotPresent
+        command:
+          - "/usr/local/bin/llama-swap"
+        args:
+          - "--config"
+          - "/app/config.yaml"
         ports:
         - containerPort: 8080 # Llama Swap's default port
           name: http
