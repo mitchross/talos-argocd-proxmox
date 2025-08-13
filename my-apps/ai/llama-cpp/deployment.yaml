@@ -60,16 +60,20 @@ spec:
         # Health probes for the llama-swap proxy
         livenessProbe:
           httpGet:
-            path: /healthz
+            path: /health
             port: http
-          initialDelaySeconds: 30
+          initialDelaySeconds: 60
           periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /healthz
+            path: /health
             port: http
-          initialDelaySeconds: 15
-          periodSeconds: 5
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
       volumes:
       - name: models-storage
         persistentVolumeClaim:

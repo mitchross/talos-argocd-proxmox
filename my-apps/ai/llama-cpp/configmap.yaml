@@ -5,18 +5,20 @@ metadata:
   namespace: llama-cpp
 data:
   config.yaml: |
-    # Llama Swap will read this file to know which models to serve.
+    # Llama Swap configuration for model management
     models:
-      # Model 1: Qwen3 Coder Q4_K_M
+      # Model 1: Qwen3 Coder Q4_K_M - Faster inference, lower memory
       qwen3-coder-q4:
-        # This command points to your Q4 model file.
-        cmd: "llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf -c 8192 -ngl 99 --host 0.0.0.0 --port ${PORT}"
-        health_check_path: "/health"
-        timeout: 300s # Unloads the model after 5 minutes of inactivity
-
-      # Model 2: Qwen3 Coder Q5_K_M
-      qwen3-coder-q5:
-        # This command points to your Q5 model file.
-        cmd: "llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q5_K_M.gguf -c 8192 -ngl 99 --host 0.0.0.0 --port ${PORT}"
+        cmd: "llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf -c 8192 -ngl 99 --host 0.0.0.0 --port ${PORT} --threads 4 --threads-batch 4"
         health_check_path: "/health"
         timeout: 300s
+
+      # Model 2: Qwen3 Coder Q5_K_M - Better quality, higher memory
+      qwen3-coder-q5:
+        cmd: "llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q5_K_M.gguf -c 8192 -ngl 99 --host 0.0.0.0 --port ${PORT} --threads 4 --threads-batch 4"
+        health_check_path: "/health"
+        timeout: 300s
+        
+    # Global settings
+    default_model: "qwen3-coder-q4"
+    health_check_interval: "30s"
