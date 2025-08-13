@@ -41,15 +41,15 @@ spec:
               protocol: TCP
         resources:
           limits:
-            cpu: "4000m"
-            memory: 16Gi
-            nvidia.com/gpu: "1"
-            ephemeral-storage: "40Gi"
+            cpu: "8000m"
+            memory: 32Gi
+            nvidia.com/gpu: "2"
+            ephemeral-storage: "60Gi"
           requests:
-            cpu: "1000m"
-            memory: 8Gi
-            nvidia.com/gpu: "1"
-            ephemeral-storage: "20Gi"
+            cpu: "2000m"
+            memory: 16Gi
+            nvidia.com/gpu: "2"
+            ephemeral-storage: "30Gi"
         volumeMounts:
         - name: models-storage
           mountPath: /models
