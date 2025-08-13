@@ -7,7 +7,8 @@ spec:
   selector:
     app: llama-swap
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 8080 # Exposes the service on port 8080
       targetPort: http # Forwards traffic to the container's 'http' port (8080)
   type: ClusterIP # Use NodePort or LoadBalancer if you need external access

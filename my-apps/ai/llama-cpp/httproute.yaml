@@ -15,23 +15,10 @@ spec:
     - matches:
         - path:
             type: PathPrefix
-            value: /ui
+            value: /
       backendRefs:
         - group: ""
           kind: Service
           name: llama-swap-service
           port: 8080
           weight: 1
-    - matches:
-        - path:
-            type: Exact
-            value: /
-      filters:
-        - type: RequestRedirect
-          requestRedirect:
-            scheme: https
-            hostname: llama.vanillax.me
-            path:
-              type: ReplaceFullPath
-              replaceFullPath: /ui
-            statusCode: 302
