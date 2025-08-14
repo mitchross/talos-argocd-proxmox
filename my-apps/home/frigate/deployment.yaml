@@ -15,6 +15,12 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/hostname: talos-cluster-gpu-worker-00
+      runtimeClassName: nvidia
+      tolerations:
+      - key: "gpu"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
       containers:
         - name: frigate
           image: ghcr.io/blakeblackshear/frigate:0.16.0-beta4
@@ -22,6 +28,11 @@ spec:
           env:
             - name: TZ
               value: "America/New_York"
+            # NVIDIA GPU environment variables
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "compute,utility,video"
             - name: FRIGATE_MQTT_USER
               valueFrom:
                 secretKeyRef:
@@ -56,9 +67,11 @@ spec:
             requests:
               cpu: 1000m
               memory: 2Gi
+              nvidia.com/gpu: "1"  # Minimum for AI object detection
             limits:
               memory: 12Gi
               cpu: 12000m
+              nvidia.com/gpu: "1"  # Minimum for AI object detection
           securityContext:
             privileged: true
             allowPrivilegeEscalation: true
