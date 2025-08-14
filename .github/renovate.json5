@@ -15,6 +15,7 @@
   argocd: {
     managerFilePatterns: [
       '/^infra/.+\\.yaml$/',
+      '/^infrastructure/.+\\.yaml$/',
       '/^apps/.+\\.yaml$/',
       '/^my-apps/.+\\.yaml$/',
       '/^monitoring/.+\\.yaml$/',
@@ -23,6 +24,7 @@
   kubernetes: {
     managerFilePatterns: [
       '/^infra/.+\\.yaml$/',
+      '/^infrastructure/.+\\.yaml$/',
       '/^apps/.+\\.yaml$/',
       '/^my-apps/.+\\.yaml$/',
       '/^monitoring/.+\\.yaml$/',
