@@ -34,6 +34,18 @@ spec:
         args:
         - "--config"
         - "/app/config.yaml"
+        
+        env:
+        # GPU Timeslicing optimization
+        - name: CUDA_VISIBLE_DEVICES
+          value: "all"
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "all"
+        # Enable GPU memory fraction management for timeslicing
+        - name: CUDA_MPS_PIPE_DIRECTORY
+          value: "/tmp/nvidia-mps"
+        - name: CUDA_MPS_LOG_DIRECTORY
+          value: "/tmp/nvidia-log"
 
         ports:
         - name: http
@@ -41,15 +53,15 @@ spec:
           protocol: TCP
         resources:
           limits:
-            cpu: "8000m"
-            memory: 32Gi
-            nvidia.com/gpu: "2"
-            ephemeral-storage: "60Gi"
+            cpu: "6000m"
+            memory: 24Gi
+            nvidia.com/gpu: "2"  # Request 2 GPU timeslices
+            ephemeral-storage: "50Gi"
           requests:
             cpu: "2000m"
-            memory: 16Gi
-            nvidia.com/gpu: "2"
-            ephemeral-storage: "30Gi"
+            memory: 12Gi
+            nvidia.com/gpu: "2"  # Request 2 GPU timeslices
+            ephemeral-storage: "25Gi"
         volumeMounts:
         - name: models-storage
           mountPath: /models
