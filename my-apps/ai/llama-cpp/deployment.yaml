@@ -45,13 +45,13 @@ spec:
         resources:
           limits:
             cpu: "6000m"
-            memory: 24Gi
-            nvidia.com/gpu: "16" # Maximum priority - 50% of total GPU slices
+            memory: 48Gi
+            nvidia.com/gpu: "32" # Maximum priority - 100% of total GPU slices
             ephemeral-storage: "50Gi"
           requests:
             cpu: "2000m"
-            memory: 12Gi
-            nvidia.com/gpu: "16" # Maximum priority - 50% of total GPU slices
+            memory: 24Gi
+            nvidia.com/gpu: "32" # Maximum priority - 100% of total GPU slices
             ephemeral-storage: "25Gi"
         volumeMounts:
         - name: models-storage
