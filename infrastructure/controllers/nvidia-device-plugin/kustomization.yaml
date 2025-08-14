@@ -7,16 +7,16 @@ metadata:
     app.kubernetes.io/name: nvidia-device-plugin
     app.kubernetes.io/component: device-plugin
 resources:
-  - namespace.yaml
-  - runtime.yaml
-  - rbac.yaml
-  - config.yaml
-  - service.yaml
-  - nvidia-device-plugin.yml
-  # Test pods (uncomment to deploy)
-  # - nvidia-test-pod.yaml
-  # - nvidia-timeslice-test.yaml
-  - nvidia-powerlimit-job.yaml
+- namespace.yaml
+- runtime.yaml
+- rbac.yaml
+- config.yaml
+- service.yaml
+- nvidia-device-plugin.yml
+# Test pods (uncomment to deploy)
+# - nvidia-test-pod.yaml
+# - nvidia-timeslice-test.yaml
+- nvidia-powerlimit-daemonset.yaml
 commonLabels:
   app.kubernetes.io/part-of: gpu-infrastructure
 # If the static nvidia-device-plugin.yml doesn't specify a namespace,
@@ -30,20 +30,20 @@ commonLabels:
 # ensure its Pod template specifies 'runtimeClassName: nvidia'.
 # If not, you can add a patch here:
 patchesStrategicMerge:
-  - |-
-    apiVersion: apps/v1
-    kind: DaemonSet
-    metadata:
-      name: nvidia-device-plugin-daemonset
-      namespace: gpu-device-plugin
-    spec:
-      template:
-        spec:
-          runtimeClassName: nvidia
-          # Ensure tolerations for NVIDIA GPUs are present if needed,
-          # often they are included in the official static manifest.
-          # Example:
-          # tolerations:
-          # - key: nvidia.com/gpu
-          #   operator: Exists
-          #   effect: NoSchedule
+- |-
+  apiVersion: apps/v1
+  kind: DaemonSet
+  metadata:
+    name: nvidia-device-plugin-daemonset
+    namespace: gpu-device-plugin
+  spec:
+    template:
+      spec:
+        runtimeClassName: nvidia
+        # Ensure tolerations for NVIDIA GPUs are present if needed,
+        # often they are included in the official static manifest.
+        # Example:
+        # tolerations:
+        # - key: nvidia.com/gpu
+        #   operator: Exists
+        #   effect: NoSchedule

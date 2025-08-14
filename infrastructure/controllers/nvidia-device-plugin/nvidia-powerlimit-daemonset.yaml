@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-powerlimit-daemonset
+  namespace: gpu-device-plugin
+  labels:
+    app.kubernetes.io/name: nvidia-powerlimit
+spec:
+  selector:
+    matchLabels:
+      name: nvidia-powerlimit
+  template:
+    metadata:
+      labels:
+        name: nvidia-powerlimit
+    spec:
+      runtimeClassName: nvidia
+      tolerations:
+      - key: "nvidia.com/gpu"
+        operator: "Exists"
+        effect: "NoSchedule"
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
+      containers:
+      - name: set-power-limit
+        image: nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04
+        command: [ "/bin/bash", "-c" ]
+        args:
+        - |
+          set -e
+          echo "Setting power limits to 280W on all available GPUs..."
+          nvidia-smi -pl 280
+          echo "Updated GPU power limits:"
+          nvidia-smi --query-gpu=index,power.limit --format=csv
+        securityContext:
+          privileged: true
+      restartPolicy: Always
