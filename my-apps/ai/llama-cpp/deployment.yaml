@@ -20,9 +20,8 @@ spec:
       runtimeClassName: nvidia
       priorityClassName: gpu-workload-high
       tolerations:
-      - key: "gpu"
-        operator: "Equal"
-        value: "true"
+      - key: "nvidia.com/gpu"
+        operator: "Exists"
         effect: "NoSchedule"
       containers:
       - name: llama-swap
