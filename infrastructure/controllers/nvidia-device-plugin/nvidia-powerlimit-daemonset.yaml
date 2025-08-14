@@ -18,29 +18,29 @@ spec:
       restartPolicy: Always
       runtimeClassName: nvidia
       tolerations:
-        - key: nvidia.com/gpu
-          operator: Exists
-          effect: NoSchedule
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
       initContainers:
-        - name: set-power-limit
-          image: nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04
-          command: ["/bin/bash", "-c"]
-          args:
-            - |
-              echo "Setting power limits to 280W on GPU 0 and 1..."
-              nvidia-smi -i 0 -pl 280
-              nvidia-smi -i 1 -pl 280
-              nvidia-smi --query-gpu=index,power.limit --format=csv
-          securityContext:
-            allowPrivilegeEscalation: true
-            capabilities:
-              add: ["SYS_ADMIN"]
-            runAsUser: 0
-          resources:
-            limits:
-              nvidia.com/gpu: 1  # Reduced to use only 1 GPU slice
+      - name: set-power-limit
+        image: nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04
+        command: [ "/bin/bash", "-c" ]
+        args:
+        - |
+          echo "Setting power limits to 280W on GPU 0 and 1..."
+          nvidia-smi -i 0 -pl 280
+          nvidia-smi -i 1 -pl 280
+          nvidia-smi --query-gpu=index,power.limit --format=csv
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            add: [ "SYS_ADMIN" ]
+          runAsUser: 0
+        resources:
+          limits:
+            nvidia.com/gpu: 1 # Reduced to use only 1 GPU slice
       containers:
-        - name: pause
-          image: gcr.io/google-containers/pause:3.9
+      - name: pause
+        image: gcr.io/google-containers/pause:3.9
