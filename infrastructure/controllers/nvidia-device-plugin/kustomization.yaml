@@ -13,7 +13,10 @@ resources:
   - config.yaml
   - service.yaml
   - nvidia-device-plugin.yml
-  - nvidia-powerlimit-daemonset.yaml
+  # Test pods (uncomment to deploy)
+  # - nvidia-test-pod.yaml
+  # - nvidia-timeslice-test.yaml
+  - nvidia-powerlimit-job.yaml
 commonLabels:
   app.kubernetes.io/part-of: gpu-infrastructure
 # If the static nvidia-device-plugin.yml doesn't specify a namespace,

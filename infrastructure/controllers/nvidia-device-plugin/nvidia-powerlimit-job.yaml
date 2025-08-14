@@ -1,0 +1,62 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nvidia-powerlimit-setup
+  namespace: gpu-device-plugin
+  labels:
+    app.kubernetes.io/name: nvidia-powerlimit
+    app.kubernetes.io/component: gpu-admin
+spec:
+  completions: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nvidia-powerlimit
+    spec:
+      restartPolicy: Never
+      runtimeClassName: nvidia
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
+      containers:
+      - name: set-power-limit
+        image: nvcr.io/nvidia/cuda:12.4-runtime-ubuntu22.04
+        command: [ "/bin/bash", "-c" ]
+        args:
+        - |
+          echo "Current GPU status:"
+          nvidia-smi --query-gpu=index,name,power.limit,power.draw --format=csv
+          echo ""
+          echo "Setting power limits to 280W on all available GPUs..."
+          
+          # Get number of GPUs and set power limit for each
+          GPU_COUNT=$(nvidia-smi --query-gpu=count --format=csv,noheader,nounits)
+          echo "Found $GPU_COUNT GPUs"
+          
+          for ((i=0; i<$GPU_COUNT; i++)); do
+            echo "Setting power limit for GPU $i to 280W..."
+            nvidia-smi -i $i -pl 280 || echo "Failed to set power limit for GPU $i"
+          done
+          
+          echo ""
+          echo "Updated GPU power limits:"
+          nvidia-smi --query-gpu=index,power.limit --format=csv
+          echo "Power limit setup completed successfully"
+        env:
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "all"
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: "all"
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            add: [ "SYS_ADMIN" ]
+          runAsUser: 0
+        resources:
+          limits:
+            nvidia.com/gpu: 2  # Access to both GPUs for power management
+          requests:
+            nvidia.com/gpu: 2
