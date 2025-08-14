@@ -13,9 +13,6 @@ resources:
   - config.yaml
   - service.yaml
   - nvidia-device-plugin.yml
-  # Test pods (uncomment to deploy)
-  # - nvidia-test-pod.yaml
-  # - nvidia-timeslice-test.yaml
   - nvidia-powerlimit-daemonset.yaml
 commonLabels:
   app.kubernetes.io/part-of: gpu-infrastructure

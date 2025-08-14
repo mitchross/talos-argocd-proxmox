@@ -19,7 +19,7 @@ metadata:
   namespace: gpu-device-plugin
   labels:
     app.kubernetes.io/name: nvidia-device-plugin
-    app.kubernetes.io/version: "v0.17.2"
+    app.kubernetes.io/version: "v0.17.3"
     app.kubernetes.io/component: device-plugin
     app.kubernetes.io/managed-by: kustomize
 spec:
@@ -35,7 +35,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: nvidia-device-plugin
-        app.kubernetes.io/version: "v0.17.2"
+        app.kubernetes.io/version: "v0.17.3"
         app.kubernetes.io/component: device-plugin
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ""
@@ -65,7 +65,7 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
       # renovate: datasource=docker depName=nvcr.io/nvidia/k8s-device-plugin
-      - image: nvcr.io/nvidia/k8s-device-plugin:v0.17.2
+      - image: nvcr.io/nvidia/k8s-device-plugin:v0.17.3
         name: nvidia-device-plugin-ctr
         imagePullPolicy: IfNotPresent
         args:
