@@ -26,7 +26,7 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: llama-swap
-        image: ghcr.io/mostlygeek/llama-swap:cuda
+        image: ghcr.io/mostlygeek/llama-swap:v150-cuda-b6140
         imagePullPolicy: IfNotPresent
 
         # --- FINAL FIX: Using the correct, confirmed path to the executable ---
