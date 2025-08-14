@@ -34,7 +34,7 @@ spec:
         args:
         - "--config"
         - "/app/config.yaml"
-        
+
         env:
         # GPU Timeslicing optimization
         - name: CUDA_VISIBLE_DEVICES
@@ -55,12 +55,12 @@ spec:
           limits:
             cpu: "6000m"
             memory: 24Gi
-            nvidia.com/gpu: "2"  # Request 2 GPU timeslices
+            nvidia.com/gpu: "2" # Request 2 GPU timeslices
             ephemeral-storage: "50Gi"
           requests:
             cpu: "2000m"
             memory: 12Gi
-            nvidia.com/gpu: "2"  # Request 2 GPU timeslices
+            nvidia.com/gpu: "2" # Request 2 GPU timeslices
             ephemeral-storage: "25Gi"
         volumeMounts:
         - name: models-storage
