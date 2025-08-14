@@ -22,7 +22,7 @@ spec:
           operator: Exists
           effect: NoSchedule
       nodeSelector:
-        feature.node.kubernetes.io/pci-10de.present: "true"
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
       initContainers:
         - name: set-power-limit
           image: nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04
@@ -40,7 +40,7 @@ spec:
             runAsUser: 0
           resources:
             limits:
-              nvidia.com/gpu: 2
+              nvidia.com/gpu: 1  # Reduced to use only 1 GPU slice
       containers:
         - name: pause
           image: gcr.io/google-containers/pause:3.9

@@ -22,102 +22,102 @@ spec:
         value: "true"
         effect: "NoSchedule"
       containers:
-        - name: frigate
-          image: ghcr.io/blakeblackshear/frigate:0.16.0-beta4
-          imagePullPolicy: IfNotPresent
-          env:
-            - name: TZ
-              value: "America/New_York"
-            # NVIDIA GPU environment variables
-            - name: NVIDIA_VISIBLE_DEVICES
-              value: "all"
-            - name: NVIDIA_DRIVER_CAPABILITIES
-              value: "compute,utility,video"
-            - name: FRIGATE_MQTT_USER
-              valueFrom:
-                secretKeyRef:
-                  name: frigate-secrets
-                  key: FRIGATE_MQTT_USER
-            - name: FRIGATE_MQTT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: frigate-secrets
-                  key: FRIGATE_MQTT_PASSWORD
-            - name: FRIGATE_NEST_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: frigate-secrets
-                  key: NEST_CLIENT_ID
-            - name: FRIGATE_NEST_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: frigate-secrets
-                  key: NEST_CLIENT_SECRET
-            - name: FRIGATE_NEST_PROJECT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: frigate-secrets
-                  key: NEST_PROJECT_ID
-            - name: FRIGATE_NEST_REFRESH_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: frigate-secrets
-                  key: NEST_REFRESH_TOKEN
-          resources:
-            requests:
-              cpu: 1000m
-              memory: 2Gi
-              nvidia.com/gpu: "1"  # Minimum for AI object detection
-            limits:
-              memory: 12Gi
-              cpu: 12000m
-              nvidia.com/gpu: "1"  # Minimum for AI object detection
-          securityContext:
-            privileged: true
-            allowPrivilegeEscalation: true
-          livenessProbe:
-            httpGet:
-              path: /api/version
-              port: 5000
-            initialDelaySeconds: 0
-            periodSeconds: 10
-            timeoutSeconds: 1
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /api/version
-              port: 5000
-            initialDelaySeconds: 0
-            periodSeconds: 10
-            timeoutSeconds: 1
-            failureThreshold: 3
-          volumeMounts:
-            - name: config-dir
-              mountPath: /config
-            - name: config-file
-              mountPath: /config/config.yml
-              subPath: config.yml
-            - name: media
-              mountPath: /media
-            - name: cache
-              mountPath: /dev/shm
-            - name: usb
-              mountPath: /dev/bus/usb
-      volumes:
+      - name: frigate
+        image: ghcr.io/blakeblackshear/frigate:0.16.0-beta4
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: TZ
+          value: "America/New_York"
+        # NVIDIA GPU environment variables
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "all"
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: "compute,utility,video"
+        - name: FRIGATE_MQTT_USER
+          valueFrom:
+            secretKeyRef:
+              name: frigate-secrets
+              key: FRIGATE_MQTT_USER
+        - name: FRIGATE_MQTT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: frigate-secrets
+              key: FRIGATE_MQTT_PASSWORD
+        - name: FRIGATE_NEST_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: frigate-secrets
+              key: NEST_CLIENT_ID
+        - name: FRIGATE_NEST_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: frigate-secrets
+              key: NEST_CLIENT_SECRET
+        - name: FRIGATE_NEST_PROJECT_ID
+          valueFrom:
+            secretKeyRef:
+              name: frigate-secrets
+              key: NEST_PROJECT_ID
+        - name: FRIGATE_NEST_REFRESH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: frigate-secrets
+              key: NEST_REFRESH_TOKEN
+        resources:
+          requests:
+            cpu: 1000m
+            memory: 2Gi
+            nvidia.com/gpu: "1" # Minimum for AI object detection
+          limits:
+            memory: 12Gi
+            cpu: 12000m
+            nvidia.com/gpu: "1" # Minimum for AI object detection
+        securityContext:
+          privileged: true
+          allowPrivilegeEscalation: true
+        livenessProbe:
+          httpGet:
+            path: /api/version
+            port: 5000
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 1
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/version
+            port: 5000
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 1
+          failureThreshold: 3
+        volumeMounts:
         - name: config-dir
-          emptyDir: {}
+          mountPath: /config
         - name: config-file
-          configMap:
-            name: frigate-configmap
-            defaultMode: 0644
+          mountPath: /config/config.yml
+          subPath: config.yml
         - name: media
-          persistentVolumeClaim:
-            claimName: frigate-media
+          mountPath: /media
         - name: cache
-          emptyDir:
-            medium: Memory
-            sizeLimit: 4Gi
+          mountPath: /dev/shm
         - name: usb
-          hostPath:
-            path: /dev/bus/usb
-            type: Directory
+          mountPath: /dev/bus/usb
+      volumes:
+      - name: config-dir
+        emptyDir: {}
+      - name: config-file
+        configMap:
+          name: frigate-configmap
+          defaultMode: 644
+      - name: media
+        persistentVolumeClaim:
+          claimName: frigate-media
+      - name: cache
+        emptyDir:
+          medium: Memory
+          sizeLimit: 4Gi
+      - name: usb
+        hostPath:
+          path: /dev/bus/usb
+          type: Directory
