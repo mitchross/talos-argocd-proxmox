@@ -14,8 +14,8 @@ data:
       failOnInitError: false
       nvidiaDriverRoot: "/"
       plugin:
-        passDeviceSpecs: false
-        deviceListStrategy: "envvar"
+        passDeviceSpecs: true
+        deviceListStrategy: "volume-mounts"
         deviceIDStrategy: "uuid"
     sharing:
       timeSlicing:
