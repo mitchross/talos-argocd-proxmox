@@ -12,8 +12,8 @@ data:
   OPENAI_API_KEY: "sk-required"
   # Keep Ollama API disabled since llama-swap doesn't implement it
   ENABLE_OLLAMA_API: "false"
-  DEFAULT_MODELS: "qwen3-coder-instruct-q5-32k" # Default to Q5 32K model for best balance
-  CONTEXT_WINDOW: "32768" # Qwen3-Coder supports up to 32k tokens natively  
+  DEFAULT_MODELS: "qwen3-coder-instruct-q8-256k" # Default to Q8 256K model for best quality
+  CONTEXT_WINDOW: "262144" # Qwen3-Coder supports up to 256k tokens  
   TEMPERATURE: "0.7" # Optimized for Qwen3-Coder
   TOP_P: "0.8" # Optimized for Qwen3-Coder
   WEBUI_SECRET_KEY: "ollama-webui" # Change this to a secure, random string for production
