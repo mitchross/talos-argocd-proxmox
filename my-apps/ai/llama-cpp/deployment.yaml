@@ -35,23 +35,8 @@ spec:
         - "/app/config.yaml"
 
         env:
-        # GPU Timeslicing optimization
-        - name: CUDA_VISIBLE_DEVICES
-          value: "all"
         - name: NVIDIA_VISIBLE_DEVICES
           value: "all"
-        - name: NVIDIA_DRIVER_CAPABILITIES
-          value: "compute,utility"
-        # Enable GPU memory fraction management for timeslicing
-        - name: CUDA_MPS_PIPE_DIRECTORY
-          value: "/tmp/nvidia-mps"
-        - name: CUDA_MPS_LOG_DIRECTORY
-          value: "/tmp/nvidia-log"
-        # Force CUDA device detection
-        - name: CUDA_DEVICE_ORDER
-          value: "PCI_BUS_ID"
-        - name: NVIDIA_REQUIRE_CUDA
-          value: "cuda>=11.0"
 
         ports:
         - name: http
