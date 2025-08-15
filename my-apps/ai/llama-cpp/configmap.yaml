@@ -10,34 +10,40 @@ data:
     models:
       # Model 1: Qwen3 Coder Instruct Q4_K_M - 32K context, faster inference
       qwen3-coder-instruct-q4-32k:
-        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf -c 32768 -ngl 99 --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05  --jinja"
+        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf -c 32768 -ngl 99 -dev 0,1 -sm layer -ts 1,1 -mg 0 --flash-attn --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05 --jinja"
         health_check_path: "/health"
         timeout: 600s
 
       # Model 2: Qwen3 Coder Instruct Q5_K_M - 32K context, higher quality
       qwen3-coder-instruct-q5-32k:
-        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q5_K_M.gguf -c 32768 -ngl 99 --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05  --jinja"
+        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q5_K_M.gguf -c 32768 -ngl 99 -dev 0,1 -sm layer -ts 1,1 -mg 0 --flash-attn --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05 --jinja"
         health_check_path: "/health"
         timeout: 600s
 
       # Model 3: Qwen3 Coder Instruct Q4_K_M - Full 256K context for repository analysis
       qwen3-coder-instruct-q4-256k:
-        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf -c 262144 -ngl 99 --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05  --jinja"
+        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf -c 262144 -ngl 99 -dev 0,1 -sm layer -ts 1,1 -mg 0 -ctk q4_0 -ctv q4_0 -ub 128 -nkvo --flash-attn --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05 --jinja"
         health_check_path: "/health"
         timeout: 900s
 
       # Model 4: Qwen3 Coder Instruct Q5_K_M - Full 256K context with highest quality
       qwen3-coder-instruct-q5-256k:
-        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q5_K_M.gguf -c 262144 -ngl 99 --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05  --jinja"
+        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q5_K_M.gguf -c 262144 -ngl 99 -dev 0,1 -sm layer -ts 1,1 -mg 0 -ctk q4_0 -ctv q4_0 -ub 128 -nkvo --flash-attn --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05 --jinja"
         health_check_path: "/health"
         timeout: 900s
 
       # Model 5: Qwen3 Coder Instruct Q8_K_XL - Full 256K context with highest quality
       qwen3-coder-instruct-q8-256k:
-        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q8_K_XL.gguf -c 262144 -ngl 99 --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05 --jinja"
+        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q8_K_XL.gguf -c 262144 -ngl 99 -dev 0,1 -sm layer -ts 1,1 -mg 0 -ctk q4_0 -ctv q4_0 -ub 128 -nkvo --flash-attn --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05 --jinja"
         health_check_path: "/health"
         timeout: 900s
-        
+
+      # Model 6: Qwen3 Coder Instruct Q8_K_XL - 32K context, maximum accuracy that fits better
+      qwen3-coder-instruct-q8-32k:
+        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q8_K_XL.gguf -c 32768 -ngl 99 -dev 0,1 -sm layer -ts 1,1 -mg 0 --flash-attn --host 0.0.0.0 --port ${PORT} --threads -1 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0.0 --repeat-penalty 1.05 --jinja"
+        health_check_path: "/health"
+        timeout: 600s
+
     # Global settings optimized for Qwen3-Coder with tool calling support
-    default_model: "qwen3-coder-instruct-q8-256k"
+    default_model: "qwen3-coder-instruct-q4-256k"
     health_check_interval: "30s"

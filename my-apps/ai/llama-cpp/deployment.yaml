@@ -37,6 +37,12 @@ spec:
         env:
         - name: NVIDIA_VISIBLE_DEVICES
           value: "all"
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0,1"
+        - name: GGML_CUDA_ENABLE_UNIFIED_MEMORY
+          value: "1"
+        - name: GGML_CUDA_PEER_MAX_BATCH_SIZE
+          value: "128"
 
         ports:
         - name: http
@@ -46,12 +52,12 @@ spec:
           limits:
             cpu: "6000m"
             memory: 48Gi
-            nvidia.com/gpu: "32" # Maximum priority - 100% of total GPU slices
+            nvidia.com/gpu: "2"
             ephemeral-storage: "50Gi"
           requests:
             cpu: "2000m"
             memory: 24Gi
-            nvidia.com/gpu: "32" # Maximum priority - 100% of total GPU slices
+            nvidia.com/gpu: "2"
             ephemeral-storage: "25Gi"
         volumeMounts:
         - name: models-storage
