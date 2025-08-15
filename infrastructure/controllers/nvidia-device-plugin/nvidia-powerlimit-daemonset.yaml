@@ -23,7 +23,7 @@ spec:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
       containers:
       - name: set-power-limit
-        image: nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04
+        image: nvcr.io/nvidia/cuda:12.9.1-base-ubuntu22.04
         command: [ "/bin/bash", "-c" ]
         args:
         - |
