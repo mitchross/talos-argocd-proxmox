@@ -7,7 +7,7 @@ resources:
 helmCharts:
   - name: loki
     repo: https://grafana.github.io/helm-charts
-    version: 6.35.1
+    version: 6.36.0
     releaseName: loki
     valuesFile: values.yaml
     includeCRDs: true
