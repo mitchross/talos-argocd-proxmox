@@ -18,5 +18,5 @@ data:
         deviceListStrategy: "volume-mounts"
         deviceIDStrategy: "uuid"
     resources:
+      gpus:
       - name: nvidia.com/gpu
-  # Full physical GPUs only; no time slicing configured
