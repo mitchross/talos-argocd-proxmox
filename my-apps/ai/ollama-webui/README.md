@@ -57,4 +57,4 @@ Open WebUI: https://ollama-webui.vanillax.me
 🚀 qwen3-coder-q4-200k - If you need even more context
 ⚖️ qwen3-coder-q4-128k - Fallback if 160K causes issues
 💎 qwen3-coder-q5-120k - When you need higher quality
-🛡️ qwen3-coder-q4-96k - Guaranteed stable option
+🛡️ qwen3-coder-q4-96k - Guaranteed stable option 

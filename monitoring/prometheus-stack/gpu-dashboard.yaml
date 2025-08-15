@@ -7,4 +7,241 @@ metadata:
     grafana_dashboard: "1"
     app.kubernetes.io/name: grafana-dashboards
 data:
-  gpu-monitoring.json: "{\n  \"annotations\": {\n    \"list\": [\n      {\n        \"builtIn\": 1,\n        \"datasource\": \"-- Grafana --\",\n        \"enable\": true,\n        \"hide\": true,\n        \"iconColor\": \"rgba(0, 211, 255, 1)\",\n        \"name\": \"Annotations & Alerts\",\n        \"type\": \"dashboard\"\n      }\n    ]\n  },\n  \"editable\": true,\n  \"gnetId\": null,\n  \"graphTooltip\": 0,\n  \"id\": null,\n  \"links\": [],\n  \"panels\": [\n    {\n      \"datasource\": \"Prometheus\",\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\": \"palette-classic\"\n          },\n          \"custom\": {\n            \"axisLabel\": \"\",\n            \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\": {\n              \"legend\": false,\n              \"tooltip\": false,\n              \"vis\": false\n            },\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\": {\n              \"type\": \"linear\"\n            },\n            \"showPoints\": \"never\",\n            \"spanNulls\": false,\n            \"stacking\": {\n              \"group\": \"A\",\n              \"mode\": \"none\"\n            },\n            \"thresholdsStyle\": {\n              \"mode\": \"off\"\n            }\n          },\n          \"max\": 100,\n          \"min\": 0,\n          \"unit\": \"percent\"\n        }\n      },\n      \"gridPos\": {\n        \"h\": 8,\n        \"w\": 12,\n        \"x\": 0,\n        \"y\": 0\n      },\n      \"id\": 1,\n      \"options\": {\n        \"legend\": {\n          \"calcs\": [],\n          \"displayMode\": \"list\",\n          \"placement\": \"bottom\"\n        },\n        \"tooltip\": {\n          \"mode\": \"single\"\n        }\n      },\n      \"targets\": [\n        {\n          \"expr\": \"DCGM_FI_DEV_GPU_UTIL\",\n          \"interval\": \"\",\n          \"legendFormat\": \"GPU {{gpu}} on {{kubernetes_node}}\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"GPU Utilization\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\": \"Prometheus\",\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\": \"palette-classic\"\n          },\n          \"custom\": {\n            \"axisLabel\": \"\",\n            \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\": {\n              \"legend\": false,\n              \"tooltip\": false,\n              \"vis\": false\n            },\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\": {\n              \"type\": \"linear\"\n            },\n            \"showPoints\": \"never\",\n            \"spanNulls\": false,\n            \"stacking\": {\n              \"group\": \"A\",\n              \"mode\": \"none\"\n            },\n            \"thresholdsStyle\": {\n              \"mode\": \"off\"\n            }\n          },\n          \"unit\": \"bytes\"\n        }\n      },\n      \"gridPos\": {\n        \"h\": 8,\n        \"w\": 12,\n        \"x\": 12,\n        \"y\": 0\n      },\n      \"id\": 2,\n      \"options\": {\n        \"legend\": {\n          \"calcs\": [],\n          \"displayMode\": \"list\",\n          \"placement\": \"bottom\"\n        },\n        \"tooltip\": {\n          \"mode\": \"single\"\n        }\n      },\n      \"targets\": [\n        {\n          \"expr\": \"DCGM_FI_DEV_FB_USED * 1024 * 1024\",\n          \"interval\": \"\",\n          \"legendFormat\": \"Used - GPU {{gpu}} on {{kubernetes_node}}\",\n          \"refId\": \"A\"\n        },\n        {\n          \"expr\": \"DCGM_FI_DEV_FB_TOTAL * 1024 * 1024\",\n          \"interval\": \"\",\n          \"legendFormat\": \"Total - GPU {{gpu}} on {{kubernetes_node}}\",\n          \"refId\": \"B\"\n        }\n      ],\n      \"title\": \"GPU Memory Usage\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\": \"Prometheus\",\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\": \"palette-classic\"\n          },\n          \"custom\": {\n            \"axisLabel\": \"\",\n            \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\": {\n              \"legend\": false,\n              \"tooltip\": false,\n              \"vis\": false\n            },\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\": {\n              \"type\": \"linear\"\n            },\n            \"showPoints\": \"never\",\n            \"spanNulls\": false,\n            \"stacking\": {\n              \"group\": \"A\",\n              \"mode\": \"none\"\n            },\n            \"thresholdsStyle\": {\n              \"mode\": \"off\"\n            }\n          },\n          \"unit\": \"celsius\"\n        }\n      },\n      \"gridPos\": {\n        \"h\": 8,\n        \"w\": 12,\n        \"x\": 0,\n        \"y\": 8\n      },\n      \"id\": 3,\n      \"options\": {\n        \"legend\": {\n          \"calcs\": [],\n          \"displayMode\": \"list\",\n          \"placement\": \"bottom\"\n        },\n        \"tooltip\": {\n          \"mode\": \"single\"\n        }\n      },\n      \"targets\": [\n        {\n          \"expr\": \"DCGM_FI_DEV_GPU_TEMP\",\n          \"interval\": \"\",\n          \"legendFormat\": \"GPU {{gpu}} on {{kubernetes_node}}\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"GPU Temperature\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\": \"Prometheus\",\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\": \"palette-classic\"\n          },\n          \"custom\": {\n            \"axisLabel\": \"\",\n            \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\": {\n              \"legend\": false,\n              \"tooltip\": false,\n              \"vis\": false\n            },\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\": {\n              \"type\": \"linear\"\n            },\n            \"showPoints\": \"never\",\n            \"spanNulls\": false,\n            \"stacking\": {\n              \"group\": \"A\",\n              \"mode\": \"none\"\n            },\n            \"thresholdsStyle\": {\n              \"mode\": \"off\"\n            }\n          },\n          \"unit\": \"watt\"\n        }\n      },\n      \"gridPos\": {\n        \"h\": 8,\n        \"w\": 12,\n        \"x\": 12,\n        \"y\": 8\n      },\n      \"id\": 4,\n      \"options\": {\n        \"legend\": {\n          \"calcs\": [],\n          \"displayMode\": \"list\",\n          \"placement\": \"bottom\"\n        },\n        \"tooltip\": {\n          \"mode\": \"single\"\n        }\n      },\n      \"targets\": [\n        {\n          \"expr\": \"DCGM_FI_DEV_POWER_USAGE\",\n          \"interval\": \"\",\n          \"legendFormat\": \"GPU {{gpu}} on {{kubernetes_node}}\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"GPU Power Usage\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\": \"Prometheus\",\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\": \"palette-classic\"\n          },\n          \"custom\": {\n            \"axisLabel\": \"\",\n            \"axisPlacement\": \"auto\",\n            \"barAlignment\": 0,\n            \"drawStyle\": \"line\",\n            \"fillOpacity\": 10,\n            \"gradientMode\": \"none\",\n            \"hideFrom\": {\n              \"legend\": false,\n              \"tooltip\": false,\n              \"vis\": false\n            },\n            \"lineInterpolation\": \"linear\",\n            \"lineWidth\": 1,\n            \"pointSize\": 5,\n            \"scaleDistribution\": {\n              \"type\": \"linear\"\n            },\n            \"showPoints\": \"never\",\n            \"spanNulls\": false,\n            \"stacking\": {\n              \"group\": \"A\",\n              \"mode\": \"none\"\n            },\n            \"thresholdsStyle\": {\n              \"mode\": \"off\"\n            }\n          },\n          \"unit\": \"hertz\"\n        }\n      },\n      \"gridPos\": {\n        \"h\": 8,\n        \"w\": 12,\n        \"x\": 0,\n        \"y\": 16\n      },\n      \"id\": 5,\n      \"options\": {\n        \"legend\": {\n          \"calcs\": [],\n          \"displayMode\": \"list\",\n          \"placement\": \"bottom\"\n        },\n        \"tooltip\": {\n          \"mode\": \"single\"\n        }\n      },\n      \"targets\": [\n        {\n          \"expr\": \"DCGM_FI_DEV_SM_CLOCK * 1000000\",\n          \"interval\": \"\",\n          \"legendFormat\": \"SM Clock - GPU {{gpu}} on {{kubernetes_node}}\",\n          \"refId\": \"A\"\n        },\n        {\n          \"expr\": \"DCGM_FI_DEV_MEM_CLOCK * 1000000\",\n          \"interval\": \"\",\n          \"legendFormat\": \"Memory Clock - GPU {{gpu}} on {{kubernetes_node}}\",\n          \"refId\": \"B\"\n        }\n      ],\n      \"title\": \"GPU Clock Speeds\",\n      \"type\": \"timeseries\"\n    },\n    {\n      \"datasource\": \"Prometheus\",\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"color\": {\n            \"mode\": \"thresholds\"\n          },\n          \"custom\": {\n            \"align\": \"auto\",\n            \"displayMode\": \"auto\"\n          },\n          \"mappings\": [],\n          \"thresholds\": {\n            \"mode\": \"absolute\",\n            \"steps\": [\n              {\n                \"color\": \"green\",\n                \"value\": null\n              }\n            ]\n          }\n        }\n      },\n      \"gridPos\": {\n        \"h\": 8,\n        \"w\": 12,\n        \"x\": 12,\n        \"y\": 16\n      },\n      \"id\": 6,\n      \"options\": {\n        \"showHeader\": true\n      },\n      \"targets\": [\n        {\n          \"expr\": \"DCGM_FI_DEV_GPU_UTIL\",\n          \"format\": \"table\",\n          \"instant\": true,\n          \"interval\": \"\",\n          \"legendFormat\": \"\",\n          \"refId\": \"A\"\n        }\n      ],\n      \"title\": \"GPU Status Overview\",\n      \"transformations\": [\n        {\n          \"id\": \"organize\",\n          \"options\": {\n            \"excludeByName\": {\n              \"__name__\": true,\n              \"Time\": true,\n              \"job\": true,\n              \"instance\": true\n            },\n            \"indexByName\": {},\n            \"renameByName\": {\n              \"Value\": \"Utilization %\",\n              \"kubernetes_node\": \"Node\",\n              \"gpu\": \"GPU\"\n            }\n          }\n        }\n      ],\n      \"type\": \"table\"\n    },\n    {\n      \"title\": \"GPU Fan Speed\",\n      \"type\": \"timeseries\",\n      \"targets\": [\n        {\n          \"expr\": \"DCGM_FI_DEV_FAN_SPEED\",\n          \"legendFormat\": \"GPU {{gpu}} on {{kubernetes_node}}\"\n        }\n      ],\n      \"gridPos\": {\n        \"h\": 8,\n        \"w\": 12,\n        \"x\": 0,\n        \"y\": 24\n      }\n    },\n    {\n      \"title\": \"GPU Power Limit\",\n      \"type\": \"timeseries\",\n      \"targets\": [\n        {\n          \"expr\": \"DCGM_FI_DEV_POWER_LIMIT\",\n          \"legendFormat\": \"GPU {{gpu}} on {{kubernetes_node}}\"\n        }\n      ],\n      \"gridPos\": {\n        \"h\": 8,\n        \"w\": 12,\n        \"x\": 12,\n        \"y\": 24\n      }\n    }\n  ],\n  \"refresh\": \"30s\",\n  \"schemaVersion\": 27,\n  \"style\": \"dark\",\n  \"tags\": [\"gpu\", \"nvidia\", \"dcgm\"],\n  \"templating\": {\n    \"list\": []\n  },\n  \"time\": {\n    \"from\": \"now-1h\",\n    \"to\": \"now\"\n  },\n  \"timepicker\": {},\n  \"timezone\": \"\",\n  \"title\": \"GPU Monitoring Dashboard\",\n  \"uid\": \"gpu-monitoring\",\n  \"version\": 1\n} "
+  gpu-monitoring.json: |
+    {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": "-- Grafana --",
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": { "legend": false, "tooltip": false, "vis": false },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": { "type": "linear" },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": { "group": "A", "mode": "none" },
+                "thresholdsStyle": { "mode": "off" }
+              },
+              "max": 100,
+              "min": 0,
+              "unit": "percent"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "id": 1,
+          "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+          "targets": [
+            { "expr": "DCGM_FI_DEV_GPU_UTIL", "interval": "", "legendFormat": "GPU {{gpu}} on {{kubernetes_node}}", "refId": "A" }
+          ],
+          "title": "GPU Utilization",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": { "legend": false, "tooltip": false, "vis": false },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": { "type": "linear" },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": { "group": "A", "mode": "none" },
+                "thresholdsStyle": { "mode": "off" }
+              },
+              "unit": "bytes"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "id": 2,
+          "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+          "targets": [
+            { "expr": "DCGM_FI_DEV_FB_USED * 1024 * 1024", "interval": "", "legendFormat": "Used - GPU {{gpu}} on {{kubernetes_node}}", "refId": "A" },
+            { "expr": "DCGM_FI_DEV_FB_TOTAL * 1024 * 1024", "interval": "", "legendFormat": "Total - GPU {{gpu}} on {{kubernetes_node}}", "refId": "B" }
+          ],
+          "title": "GPU Memory Usage",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": { "legend": false, "tooltip": false, "vis": false },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": { "type": "linear" },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": { "group": "A", "mode": "none" },
+                "thresholdsStyle": { "mode": "off" }
+              },
+              "unit": "celsius"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "id": 3,
+          "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+          "targets": [ { "expr": "DCGM_FI_DEV_GPU_TEMP", "interval": "", "legendFormat": "GPU {{gpu}} on {{kubernetes_node}}", "refId": "A" } ],
+          "title": "GPU Temperature",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": { "legend": false, "tooltip": false, "vis": false },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": { "type": "linear" },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": { "group": "A", "mode": "none" },
+                "thresholdsStyle": { "mode": "off" }
+              },
+              "unit": "watt"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "id": 4,
+          "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+          "targets": [ { "expr": "DCGM_FI_DEV_POWER_USAGE", "interval": "", "legendFormat": "GPU {{gpu}} on {{kubernetes_node}}", "refId": "A" } ],
+          "title": "GPU Power Usage",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "gradientMode": "none",
+                "hideFrom": { "legend": false, "tooltip": false, "vis": false },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": { "type": "linear" },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": { "group": "A", "mode": "none" },
+                "thresholdsStyle": { "mode": "off" }
+              },
+              "unit": "hertz"
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+          "id": 5,
+          "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+          "targets": [
+            { "expr": "DCGM_FI_DEV_SM_CLOCK * 1000000", "interval": "", "legendFormat": "SM Clock - GPU {{gpu}} on {{kubernetes_node}}", "refId": "A" },
+            { "expr": "DCGM_FI_DEV_MEM_CLOCK * 1000000", "interval": "", "legendFormat": "Memory Clock - GPU {{gpu}} on {{kubernetes_node}}", "refId": "B" }
+          ],
+          "title": "GPU Clock Speeds",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "custom": { "align": "auto", "displayMode": "auto" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+          "id": 6,
+          "options": { "showHeader": true },
+          "targets": [ { "expr": "DCGM_FI_DEV_GPU_UTIL", "format": "table", "instant": true, "interval": "", "legendFormat": "", "refId": "A" } ],
+          "title": "GPU Status Overview",
+          "transformations": [ { "id": "organize", "options": { "excludeByName": { "__name__": true, "Time": true, "job": true, "instance": true }, "indexByName": {}, "renameByName": { "Value": "Utilization %", "kubernetes_node": "Node", "gpu": "GPU" } } } ],
+          "type": "table"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": { "defaults": { "unit": "percent" } },
+          "title": "GPU Fan Speed",
+          "type": "timeseries",
+          "targets": [ { "expr": "DCGM_FI_DEV_FAN_SPEED", "legendFormat": "GPU {{gpu}} on {{kubernetes_node}}" } ],
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 }
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": { "defaults": { "unit": "watt" } },
+          "title": "GPU Power Limit",
+          "type": "timeseries",
+          "targets": [ { "expr": "DCGM_FI_DEV_POWER_LIMIT", "legendFormat": "GPU {{gpu}} on {{kubernetes_node}}" } ],
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 }
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 27,
+      "style": "dark",
+      "tags": ["gpu", "nvidia", "dcgm"],
+      "templating": { "list": [] },
+      "time": { "from": "now-1h", "to": "now" },
+      "timepicker": {},
+      "timezone": "",
+      "title": "GPU Monitoring Dashboard",
+      "uid": "gpu-monitoring",
+      "version": 1
+    }
