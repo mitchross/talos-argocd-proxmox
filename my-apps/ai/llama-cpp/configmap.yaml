@@ -5,46 +5,47 @@ metadata:
   namespace: llama-cpp
 data:
   config.yaml: |
-    # Llama Swap configuration optimized for Qwen3-Coder with dual RTX 3090s (48GB VRAM total)
+    # Optimal configuration for Qwen3-Coder on dual RTX 3090s (48GB VRAM)
+    # Focused on maximum context length while maintaining performance
     models:
-      # Model 1: Qwen3 Coder Q4_K_M - 80K context, optimal for dual 3090s
-      qwen3-coder-q4-80k:
-        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf -c 81920 -ngl 99 --split-mode layer --tensor-split 1,1 --flash-attn --host 0.0.0.0 --port ${PORT} --threads 16 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --repeat-penalty 1.05"
+      # PRIMARY: Q4_K_M with 160K context - OPTIMAL for dual 3090s
+      qwen3-coder-q4-160k:
+        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf -c 163840 -ngl 99 --split-mode layer --tensor-split 1,1 --flash-attn --fa-seq-len 163840 --cache-type-k q4_0 --cache-type-v q4_0 --host 0.0.0.0 --port ${PORT} --threads 16 --threads-batch 6 --temp 0.7 --top-p 0.8 --top-k 20 --repeat-penalty 1.05 --mlock"
+        health_check_path: "/health"
+        timeout: 900s
+
+      # AGGRESSIVE: Q4_K_M with 200K context - MAXIMUM attempt
+      qwen3-coder-q4-200k:
+        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf -c 204800 -ngl 99 --split-mode layer --tensor-split 1,1 --flash-attn --fa-seq-len 204800 --cache-type-k q4_0 --cache-type-v q4_0 --host 0.0.0.0 --port ${PORT} --threads 14 --threads-batch 4 --temp 0.7 --top-p 0.8 --top-k 20 --repeat-penalty 1.05 --mlock --no-kv-offload"
+        health_check_path: "/health"
+        timeout: 1200s
+
+      # BALANCED: Q4_K_M with 128K context - RELIABLE performance
+      qwen3-coder-q4-128k:
+        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf -c 131072 -ngl 99 --split-mode layer --tensor-split 1,1 --flash-attn --fa-seq-len 131072 --cache-type-k f16 --cache-type-v q4_0 --host 0.0.0.0 --port ${PORT} --threads 16 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --repeat-penalty 1.05 --mlock"
+        health_check_path: "/health"
+        timeout: 720s
+
+      # HIGH QUALITY: Q5_K_M with 120K context - BEST quality/context balance
+      qwen3-coder-q5-120k:
+        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q5_K_M.gguf -c 122880 -ngl 99 --split-mode layer --tensor-split 1,1 --flash-attn --fa-seq-len 122880 --cache-type-k q4_0 --cache-type-v q4_0 --host 0.0.0.0 --port ${PORT} --threads 16 --threads-batch 6 --temp 0.7 --top-p 0.8 --top-k 20 --repeat-penalty 1.05 --mlock"
+        health_check_path: "/health"
+        timeout: 900s
+
+      # FALLBACK: Q4_K_M with 96K context - GUARANTEED to work
+      qwen3-coder-q4-96k:
+        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf -c 98304 -ngl 99 --split-mode layer --tensor-split 1,1 --flash-attn --fa-seq-len 98304 --cache-type-k f16 --cache-type-v f16 --host 0.0.0.0 --port ${PORT} --threads 16 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --repeat-penalty 1.05 --mlock"
         health_check_path: "/health"
         timeout: 600s
 
-      # Model 2: Qwen3 Coder Q4_K_M - 64K context, balanced performance
-      qwen3-coder-q4-64k:
-        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf -c 65536 -ngl 99 --split-mode layer --tensor-split 1,1 --flash-attn --host 0.0.0.0 --port ${PORT} --threads 16 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --repeat-penalty 1.05"
+      # MAXIMUM QUALITY: Q8_K_XL with 64K context - BEST quality possible
+      qwen3-coder-q8-64k:
+        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q8_K_XL.gguf -c 65536 -ngl 99 --split-mode layer --tensor-split 1,1 --flash-attn --fa-seq-len 65536 --cache-type-k q4_0 --cache-type-v q4_0 --host 0.0.0.0 --port ${PORT} --threads 16 --threads-batch 6 --temp 0.7 --top-p 0.8 --top-k 20 --repeat-penalty 1.05 --mlock"
         health_check_path: "/health"
-        timeout: 600s
+        timeout: 720s
 
-      # Model 3: Qwen3 Coder Q5_K_M - 64K context, higher quality
-      qwen3-coder-q5-64k:
-        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q5_K_M.gguf -c 65536 -ngl 99 --split-mode layer --tensor-split 1,1 --flash-attn --host 0.0.0.0 --port ${PORT} --threads 16 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --repeat-penalty 1.05"
-        health_check_path: "/health"
-        timeout: 600s
-
-      # Model 4: Qwen3 Coder Q5_K_M - 48K context, safe for memory
-      qwen3-coder-q5-48k:
-        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-Q5_K_M.gguf -c 49152 -ngl 99 --split-mode layer --tensor-split 1,1 --flash-attn --host 0.0.0.0 --port ${PORT} --threads 16 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --repeat-penalty 1.05"
-        health_check_path: "/health"
-        timeout: 600s
-
-      # Model 5: Qwen3 Coder Q8_K_XL - 32K context, maximum quality
-      qwen3-coder-q8-32k:
-        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q8_K_XL.gguf -c 32768 -ngl 99 --split-mode layer --tensor-split 1,1 --flash-attn --host 0.0.0.0 --port ${PORT} --threads 16 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --repeat-penalty 1.05"
-        health_check_path: "/health"
-        timeout: 600s
-
-      # Model 6: Qwen3 Coder Q8_K_XL - 24K context, very conservative
-      qwen3-coder-q8-24k:
-        cmd: "/app/llama-server -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q8_K_XL.gguf -c 24576 -ngl 99 --split-mode layer --tensor-split 1,1 --flash-attn --host 0.0.0.0 --port ${PORT} --threads 16 --threads-batch 8 --temp 0.7 --top-p 0.8 --top-k 20 --repeat-penalty 1.05"
-        health_check_path: "/health"
-        timeout: 600s
-
-    # Global settings
-    default_model: "qwen3-coder-q4-80k"
+    # Global settings optimized for maximum context
+    default_model: "qwen3-coder-q4-160k"
     health_check_interval: "30s"
-    swap_timeout: "120s"
-    cleanup_timeout: "60s"
+    swap_timeout: "180s"
+    cleanup_timeout: "90s"
