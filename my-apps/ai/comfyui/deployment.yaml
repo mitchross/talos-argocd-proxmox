@@ -39,11 +39,11 @@ spec:
           requests:
             memory: "8Gi"
             cpu: "2"
-            nvidia.com/gpu: "8" # Second priority - 25% of total
+            nvidia.com/gpu: "1"
           limits:
             memory: "24Gi"
             cpu: "8"
-            nvidia.com/gpu: "8" # Second priority - 25% of total
+            nvidia.com/gpu: "1"
         volumeMounts:
         # The image expects a persistent volume at /root to store ComfyUI, models, and outputs.
         - name: comfyui-storage

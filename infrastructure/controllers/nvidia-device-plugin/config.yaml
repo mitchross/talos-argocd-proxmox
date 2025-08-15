@@ -17,10 +17,7 @@ data:
         passDeviceSpecs: true
         deviceListStrategy: "volume-mounts"
         deviceIDStrategy: "uuid"
+    # Disable time slicing to use full physical GPUs only
     sharing:
       timeSlicing:
-        renameByDefault: false
-        failRequestsGreaterThanOne: false  # Allow multi-GPU slice requests for llama-cpp
-        resources:
-        - name: nvidia.com/gpu
-          replicas: 16  # Optimized for 2 physical GPUs = 32 total slices
+        resources: []
