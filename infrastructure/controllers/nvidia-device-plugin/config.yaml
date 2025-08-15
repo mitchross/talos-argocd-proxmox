@@ -17,6 +17,8 @@ data:
         passDeviceSpecs: true
         deviceListStrategy: "volume-mounts"
         deviceIDStrategy: "uuid"
+    resources:
+      - name: nvidia.com/gpu
     # Disable time slicing to use full physical GPUs only
     sharing:
       timeSlicing:
