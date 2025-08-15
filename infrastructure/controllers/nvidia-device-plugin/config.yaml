@@ -17,5 +17,3 @@ data:
         passDeviceSpecs: true
         deviceListStrategy: "volume-mounts"
         deviceIDStrategy: "uuid"
-    resources:
-      - name: nvidia.com/gpu
