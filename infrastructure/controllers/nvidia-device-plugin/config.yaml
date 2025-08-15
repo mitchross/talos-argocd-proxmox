@@ -18,5 +18,4 @@ data:
         deviceListStrategy: "volume-mounts"
         deviceIDStrategy: "uuid"
     resources:
-      gpus:
       - name: nvidia.com/gpu
