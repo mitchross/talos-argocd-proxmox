@@ -5,6 +5,7 @@ metadata:
   namespace: gpu-device-plugin
   labels:
     app.kubernetes.io/name: nvidia-powerlimit
+    app.kubernetes.io/component: power-management
 spec:
   selector:
     matchLabels:
@@ -13,25 +14,80 @@ spec:
     metadata:
       labels:
         name: nvidia-powerlimit
+        app.kubernetes.io/name: nvidia-powerlimit
     spec:
       runtimeClassName: nvidia
       tolerations:
       - key: "nvidia.com/gpu"
         operator: "Exists"
         effect: "NoSchedule"
+      - key: "CriticalAddonsOnly"
+        operator: "Exists"
+      - key: "node-role.kubernetes.io/control-plane"
+        operator: "Exists"
+        effect: "NoSchedule"
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
-      containers:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      priorityClassName: "system-node-critical"
+      initContainers:
       - name: set-power-limit
-        image: nvcr.io/nvidia/cuda:13.0.0-base-ubuntu22.04
-        command: [ "/bin/bash", "-c" ]
+        image: nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04
+        command: ["/bin/bash", "-c"]
         args:
         - |
           set -e
-          echo "Setting power limits to 280W on all available GPUs..."
+          echo "=== NVIDIA GPU Power Management for Talos 1.10 ==="
+          echo "Detected RTX 3090 GPUs:"
+          nvidia-smi --query-gpu=index,name,power.limit,power.default_limit --format=csv
+          echo ""
+          echo "Setting power limits to 280W (recommended for RTX 3090 stability)..."
           nvidia-smi -pl 280
-          echo "Updated GPU power limits:"
-          nvidia-smi --query-gpu=index,power.limit --format=csv
+          echo ""
+          echo "=== Updated GPU Configuration ==="
+          nvidia-smi --query-gpu=index,name,power.limit --format=csv
+          echo ""
+          echo "✅ Power limit configuration completed successfully"
         securityContext:
           privileged: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+      containers:
+      - name: power-monitor
+        image: nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          echo "=== NVIDIA Power Monitor Started ==="
+          echo "Monitoring power limits every 30 minutes for RTX 3090 stability..."
+          while true; do
+            sleep 1800  # 30 minutes
+            echo "$(date): Checking GPU power limits..."
+            nvidia-smi --query-gpu=index,name,power.limit --format=csv,noheader,nounits | while read line; do
+              gpu_index=$(echo $line | cut -d',' -f1 | tr -d ' ')
+              gpu_name=$(echo $line | cut -d',' -f2 | tr -d ' ')
+              current_limit=$(echo $line | cut -d',' -f3 | tr -d ' ')
+              if [ "$current_limit" != "280.00" ]; then
+                echo "WARNING: GPU $gpu_index ($gpu_name) power limit is $current_limit W, resetting to 280W"
+                nvidia-smi -i $gpu_index -pl 280
+              else
+                echo "OK: GPU $gpu_index ($gpu_name) power limit is correct: $current_limit W"
+              fi
+            done
+          done
+        securityContext:
+          privileged: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
       restartPolicy: Always

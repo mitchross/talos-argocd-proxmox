@@ -1,68 +1,98 @@
-# NVIDIA Device Plugin for Kubernetes with Time Slicing
+# NVIDIA Device Plugin for Kubernetes - RTX 3090 + Talos 1.10
 
-This directory contains a production-ready deployment of the NVIDIA Device Plugin for Kubernetes with CUDA time slicing support, optimized for Talos Linux.
+This directory contains a production-ready deployment of the NVIDIA Device Plugin for Kubernetes, optimized for **RTX 3090** GPUs on **Talos Linux 1.10**.
 
-## 🚀 Features
+## 🎯 Configuration Summary
 
-- **Latest Version**: NVIDIA Device Plugin v0.17.2
-- **Time Slicing**: 10x GPU sharing capability
-- **Production Ready**: Complete RBAC, monitoring, health checks
-- **Security Hardened**: Non-root containers, read-only filesystem
-- **Talos Compatible**: Optimized for Talos Linux environments
-- **Monitoring**: Prometheus metrics integration
+- **GPU**: RTX 3090 (Consumer/Gaming GPU)
+- **Time Slicing**: ❌ Disabled (not supported on RTX 3090)
+- **Power Limiting**: ✅ Enabled (280W for stability)
+- **Talos Version**: 1.10
+- **Device Plugin**: v0.17.3
 
-## 📋 Prerequisites
+## 📋 Prerequisites for Talos 1.10
 
-Before deploying, ensure:
+Before deploying, ensure your Talos configuration includes:
 
-1. **Talos Linux** with NVIDIA extensions installed:
-   - `nvidia-container-toolkit-production`
-   - `nonfree-kmod-nvidia-production`
+### 1. NVIDIA Extensions
+```yaml
+machine:
+  install:
+    extensions:
+      - image: ghcr.io/siderolabs/nvidia-container-toolkit:535.154.05-v1.14.6
+      - image: ghcr.io/siderolabs/nonfree-kmod-nvidia:535.154.05-v1.7.6
+```
 
-2. **Kernel modules loaded** (via Talos machine config):
-   ```yaml
-   machine:
-     kernel:
-       modules:
-         - name: nvidia
-         - name: nvidia_uvm
-         - name: nvidia_drm
-         - name: nvidia_modeset
-   ```
+### 2. Kernel Modules
+```yaml
+machine:
+  kernel:
+    modules:
+      - name: nvidia
+      - name: nvidia_uvm
+      - name: nvidia_drm
+      - name: nvidia_modeset
+```
 
-3. **Container runtime configured** for NVIDIA:
-   ```yaml
-   machine:
-     files:
-       - op: create
-         content: |
-           [plugins]
-             [plugins."io.containerd.cri.v1.runtime"]
-               [plugins."io.containerd.cri.v1.runtime".containerd]
-                 default_runtime_name = "nvidia"
-         path: /etc/cri/conf.d/20-customization.part
-   ```
+### 3. Container Runtime Configuration
+```yaml
+machine:
+  files:
+    - op: create
+      content: |
+        [plugins]
+          [plugins."io.containerd.cri.v1.runtime"]
+            [plugins."io.containerd.cri.v1.runtime".containerd]
+              default_runtime_name = "nvidia"
+      path: /etc/cri/conf.d/20-customization.part
+```
 
-## 🛠️ Deployment
+## 🚀 Deployment
 
 ### Quick Deploy
 ```bash
-kubectl apply -k infrastructure/controllers/nvidia-device-plugin/
+kubectl apply -k .
 ```
 
-### Verify Deployment
+### Step-by-Step Deployment
 ```bash
+# 1. Create namespace and RBAC
+kubectl apply -f namespace.yaml
+kubectl apply -f rbac.yaml
+kubectl apply -f runtime.yaml
+
+# 2. Deploy device plugin
+kubectl apply -f nvidia-device-plugin.yml
+
+# 3. Deploy power limiting (important for RTX 3090!)
+kubectl apply -f nvidia-powerlimit-daemonset.yaml
+
+# 4. Optional: Deploy monitoring service
+kubectl apply -f service.yaml
+```
+
+## 🔍 Verification
+
+### Check Deployment Status
+```bash
+# Check all pods are running
+kubectl get pods -n gpu-device-plugin
+
 # Check DaemonSet status
 kubectl get daemonset -n gpu-device-plugin
 
-# Check pod status
-kubectl get pods -n gpu-device-plugin
-
-# Verify GPU capacity (should show 10x multiplication)
+# Verify GPU capacity (should show 1 per RTX 3090)
 kubectl describe nodes | grep nvidia.com/gpu
+```
 
-# Check device plugin logs
+### Check Device Plugin Logs
+```bash
 kubectl logs -n gpu-device-plugin -l app.kubernetes.io/name=nvidia-device-plugin
+```
+
+### Check Power Limit Logs
+```bash
+kubectl logs -n gpu-device-plugin -l app.kubernetes.io/name=nvidia-powerlimit
 ```
 
 ## 🧪 Testing
@@ -70,147 +100,116 @@ kubectl logs -n gpu-device-plugin -l app.kubernetes.io/name=nvidia-device-plugin
 ### Basic GPU Test
 ```bash
 # Uncomment nvidia-test-pod.yaml in kustomization.yaml, then:
-kubectl apply -k infrastructure/controllers/nvidia-device-plugin/
+kubectl apply -k .
 kubectl logs -n gpu-device-plugin nvidia-test
 ```
 
-### Time Slicing Test
+### Manual Test
 ```bash
-# Deploy multiple workloads to test sharing
-for i in {1..3}; do
-  kubectl run gpu-test-$i --image=nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04 --restart=Never --overrides='{"spec":{"runtimeClassName":"nvidia","tolerations":[{"key":"nvidia.com/gpu","operator":"Exists","effect":"NoSchedule"}],"nodeSelector":{"nvidia.com/gpu.present":"true"},"containers":[{"name":"gpu-test-'$i'","image":"nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04","resources":{"limits":{"nvidia.com/gpu":"1"}},"command":["nvidia-smi"]}]}}'
-done
+kubectl run gpu-test --image=nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04 --restart=Never --rm -it --overrides='{"spec":{"runtimeClassName":"nvidia","tolerations":[{"key":"nvidia.com/gpu","operator":"Exists","effect":"NoSchedule"}],"nodeSelector":{"feature.node.kubernetes.io/pci-0300_10de.present":"true"},"containers":[{"name":"gpu-test","image":"nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04","resources":{"limits":{"nvidia.com/gpu":"1"}},"command":["nvidia-smi"]}]}}'
 ```
 
-#### Alternative Test Commands
+## ⚡ Power Management for RTX 3090
+
+The RTX 3090 has a default power limit of 350W, which can cause thermal issues in containerized environments. This setup automatically limits power to 280W for optimal stability.
+
+### Power Limit Features
+- **Initial Setup**: Sets 280W limit on startup
+- **Monitoring**: Checks every 30 minutes and resets if needed
+- **Logging**: Detailed logs for troubleshooting
+- **Auto-Recovery**: Resets limits if they drift
+
+### Manual Power Check
 ```bash
-# Simple test without node selector (recommended for most setups)
-kubectl run gpu-test --image=nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04 --restart=Never --rm -it --overrides='{"spec":{"runtimeClassName":"nvidia","tolerations":[{"key":"nvidia.com/gpu","operator":"Exists","effect":"NoSchedule"}],"containers":[{"name":"gpu-test","image":"nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04","resources":{"limits":{"nvidia.com/gpu":"1"}},"command":["nvidia-smi"]}]}}'
-
-# Test with GPU Operator labels (for Talos/GPU Operator setups)
-kubectl run gpu-test --image=nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04 --restart=Never --rm -it --overrides='{"spec":{"runtimeClassName":"nvidia","tolerations":[{"key":"nvidia.com/gpu","operator":"Exists","effect":"NoSchedule"}],"nodeSelector":{"nvidia.com/gpu.present":"true"},"containers":[{"name":"gpu-test","image":"nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04","resources":{"limits":{"nvidia.com/gpu":"1"}},"command":["nvidia-smi"]}]}}'
-
-# Test with node-type selector (if using custom node labels)
-kubectl run gpu-test --image=nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04 --restart=Never --rm -it --overrides='{"spec":{"runtimeClassName":"nvidia","tolerations":[{"key":"nvidia.com/gpu","operator":"Exists","effect":"NoSchedule"}],"nodeSelector":{"node-type":"gpu-worker"},"containers":[{"name":"gpu-test","image":"nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04","resources":{"limits":{"nvidia.com/gpu":"1"}},"command":["nvidia-smi"]}]}}'
+# Check current power limits
+kubectl run power-check --image=nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04 --restart=Never --rm -it --overrides='{"spec":{"runtimeClassName":"nvidia","tolerations":[{"key":"nvidia.com/gpu","operator":"Exists","effect":"NoSchedule"}],"nodeSelector":{"feature.node.kubernetes.io/pci-0300_10de.present":"true"},"containers":[{"name":"power-check","image":"nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04","command":["nvidia-smi","--query-gpu=index,name,power.limit,power.draw","--format=csv"]}]}}'
 ```
-
-## 📊 Configuration
-
-### Time Slicing Settings
-Edit `config.yaml` to modify time slicing behavior:
-
-```yaml
-sharing:
-  timeSlicing:
-    renameByDefault: false          # Keep nvidia.com/gpu name
-    failRequestsGreaterThanOne: true # Prevent resource hogging
-    resources:
-    - name: nvidia.com/gpu
-      replicas: 10                  # Number of shared instances per GPU
-```
-
-### Common Configurations
-
-| Replicas | Use Case | Description |
-|----------|----------|-------------|
-| 2-5 | Development | Light sharing for dev workloads |
-| 10 | Production | Balanced sharing for mixed workloads |
-| 20+ | CI/CD | High sharing for short-running jobs |
 
 ## 🔧 Troubleshooting
 
 ### Common Issues
 
-1. **No GPU capacity shown**
+1. **No GPU detected**
    ```bash
-   # Check if device plugin pods are running
-   kubectl get pods -n gpu-device-plugin
+   # Check if NVIDIA drivers are loaded
+   kubectl exec -it <device-plugin-pod> -- lsmod | grep nvidia
    
-   # Check logs for errors
-   kubectl logs -n gpu-device-plugin -l app.kubernetes.io/name=nvidia-device-plugin
-   ```
-
-2. **Pods stuck in Pending**
-   ```bash
-   # Check node has NVIDIA GPUs
-   kubectl describe node <node-name> | grep nvidia.com/gpu
-   
-   # Verify node selector matches
+   # Verify PCI device detection
    kubectl get nodes --show-labels | grep pci-10de
    ```
 
-3. **Container runtime errors**
+2. **Power limits not applied**
    ```bash
-   # Check if NVIDIA runtime is configured
-   kubectl describe pod <failing-pod>
+   # Check power limit pod logs
+   kubectl logs -n gpu-device-plugin -l name=nvidia-powerlimit
    
-   # Verify runtime class exists
-   kubectl get runtimeclass nvidia
+   # Manually verify
+   kubectl exec -it <power-pod> -- nvidia-smi -q -d POWER
+   ```
+
+3. **Pods stuck in Pending**
+   ```bash
+   # Check GPU capacity
+   kubectl describe node <gpu-node> | grep nvidia.com/gpu
+   
+   # Check pod events
+   kubectl describe pod <stuck-pod>
    ```
 
 ### Debug Commands
-
 ```bash
-# Check GPU detection on node
-kubectl get pcidevices -n <node> | grep NVIDIA
+# Check GPU nodes
+kubectl get nodes -l feature.node.kubernetes.io/pci-0300_10de.present=true
 
-# Verify kernel modules
-kubectl exec -it <device-plugin-pod> -- lsmod | grep nvidia
+# Check runtime class
+kubectl get runtimeclass nvidia
 
 # Test NVIDIA runtime
 kubectl run nvidia-debug --image=nvidia/cuda:12.4.1-base-ubuntu22.04 --restart=Never --rm -it --overrides='{"spec":{"runtimeClassName":"nvidia","containers":[{"name":"nvidia-debug","image":"nvidia/cuda:12.4.1-base-ubuntu22.04","command":["nvidia-smi"]}]}}'
 ```
 
-## 📈 Monitoring
+## 📊 Expected Results
 
-The device plugin exposes Prometheus metrics on port 2112:
-
-- **Endpoint**: `http://<pod-ip>:2112/metrics`
-- **Service**: `nvidia-device-plugin-metrics.gpu-device-plugin.svc.cluster.local:2112`
-- **Health Check**: `http://<pod-ip>:2112/health`
-
-### Grafana Dashboard
-
-Monitor GPU utilization and time slicing effectiveness:
-- Device plugin health and restarts
-- GPU allocation vs availability
-- Time slicing efficiency metrics
-
-## 🔒 Security
-
-This deployment follows security best practices:
-
-- ✅ Non-root containers (UID 65534)
-- ✅ Read-only root filesystem
-- ✅ Dropped all capabilities
-- ✅ Seccomp profile enabled
-- ✅ Resource limits enforced
-- ✅ RBAC with minimal permissions
+After successful deployment:
+- **GPU Capacity**: Each RTX 3090 shows as `nvidia.com/gpu: 1`
+- **Power Limit**: GPUs limited to 280W
+- **Resource Sharing**: One GPU per pod (no time slicing)
+- **Stability**: Better thermal management in Talos environment
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   GPU Workload  │    │   GPU Workload   │    │   GPU Workload  │
-│ (nvidia.com/gpu │    │ (nvidia.com/gpu  │    │ (nvidia.com/gpu │
-│      = 1)       │    │      = 1)        │    │      = 1)       │
-└─────────┬───────┘    └─────────┬────────┘    └─────────┬───────┘
-          │                      │                       │
-          └──────────────────────┼───────────────────────┘
-                                 │
-                    ┌────────────▼────────────┐
-                    │   NVIDIA Device Plugin  │
-                    │   (Time Slicing: 10x)   │
-                    └────────────┬────────────┘
-                                 │
-                    ┌────────────▼────────────┐
-                    │     Physical GPU        │
-                    │   (1 GPU → 10 shares)   │
-                    └─────────────────────────┘
+┌─────────────────┐
+│   GPU Workload  │
+│ (nvidia.com/gpu │
+│      = 1)       │
+└─────────┬───────┘
+          │
+┌─────────▼───────┐
+│ NVIDIA Device   │
+│     Plugin      │
+│  (No Sharing)   │
+└─────────┬───────┘
+          │
+┌─────────▼───────┐
+│   RTX 3090      │
+│   (280W Limit)  │
+└─────────────────┘
 ```
+
+## 🔐 Security
+
+This deployment follows security best practices:
+- ✅ Non-root containers where possible
+- ✅ Read-only root filesystem
+- ✅ Dropped capabilities
+- ✅ Seccomp profiles
+- ✅ Resource limits
+- ✅ RBAC with minimal permissions
 
 ## 📚 References
 
 - [NVIDIA k8s-device-plugin](https://github.com/NVIDIA/k8s-device-plugin)
-- [Talos GPU Workloads Guide](https://www.siderolabs.com/blog/ai-workloads-on-talos-linux/)
-- [CUDA Time Slicing Documentation](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/gpu-sharing.html) 
+- [Talos GPU Guide](https://www.talos.dev/v1.10/advanced/gpu/)
+- [RTX 3090 Specifications](https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3090/)
+- [Talos 1.10 Release Notes](https://github.com/siderolabs/talos/releases/tag/v1.10.0)

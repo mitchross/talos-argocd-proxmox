@@ -17,3 +17,6 @@ data:
         passDeviceSpecs: true
         deviceListStrategy: "volume-mounts"
         deviceIDStrategy: "uuid"
+    resources:
+      nvidia.com/gpu:
+        pattern: "*"

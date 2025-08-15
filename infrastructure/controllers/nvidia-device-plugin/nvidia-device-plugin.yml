@@ -68,8 +68,7 @@ spec:
       - image: nvcr.io/nvidia/k8s-device-plugin:v0.17.3
         name: nvidia-device-plugin-ctr
         imagePullPolicy: IfNotPresent
-        args:
-        - --config-file=/etc/nvidia-device-plugin/config.yaml
+        # No config file needed for basic GPU detection
         env:
         - name: FAIL_ON_INIT_ERROR
           value: "false"
@@ -106,17 +105,11 @@ spec:
         volumeMounts:
         - name: device-plugin
           mountPath: /var/lib/kubelet/device-plugins
-        - name: config
-          mountPath: /etc/nvidia-device-plugin
-          readOnly: true
         - name: nvidia-config-dir
           mountPath: /etc/nvidia
       volumes:
       - name: device-plugin
         hostPath:
           path: /var/lib/kubelet/device-plugins
-      - name: config
-        configMap:
-          name: nvidia-device-plugin-config
       - name: nvidia-config-dir
         emptyDir: {}

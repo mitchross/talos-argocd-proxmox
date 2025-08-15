@@ -10,25 +10,16 @@ resources:
 - namespace.yaml
 - runtime.yaml
 - rbac.yaml
-- config.yaml
+# config.yaml removed - not needed for RTX 3090 without time slicing
 - service.yaml
 - nvidia-device-plugin.yml
+- nvidia-powerlimit-daemonset.yaml
 # Test pods (uncomment to deploy)
 # - nvidia-test-pod.yaml
-# - nvidia-timeslice-test.yaml
-- nvidia-powerlimit-daemonset.yaml
 commonLabels:
   app.kubernetes.io/part-of: gpu-infrastructure
-# If the static nvidia-device-plugin.yml doesn't specify a namespace,
-# or if it specifies a different one (e.g., kube-system),
-# you might need a patch to set the namespace for the DaemonSet.
-# However, the top-level 'namespace: gpu-device-plugin' in this kustomization
-# should handle this for resources defined within nvidia-device-plugin.yml
-# that don't explicitly set their own namespace.
 
-# If the DaemonSet in nvidia-device-plugin.yml needs to use the 'nvidia' RuntimeClass,
-# ensure its Pod template specifies 'runtimeClassName: nvidia'.
-# If not, you can add a patch here:
+# Ensure RuntimeClass is properly set
 patchesStrategicMerge:
 - |-
   apiVersion: apps/v1
@@ -40,10 +31,3 @@ patchesStrategicMerge:
     template:
       spec:
         runtimeClassName: nvidia
-        # Ensure tolerations for NVIDIA GPUs are present if needed,
-        # often they are included in the official static manifest.
-        # Example:
-        # tolerations:
-        # - key: nvidia.com/gpu
-        #   operator: Exists
-        #   effect: NoSchedule
