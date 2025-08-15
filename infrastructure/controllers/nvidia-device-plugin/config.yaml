@@ -19,7 +19,4 @@ data:
         deviceIDStrategy: "uuid"
     resources:
       - name: nvidia.com/gpu
-    # Disable time slicing to use full physical GPUs only
-    sharing:
-      timeSlicing:
-        resources: []
+  # Full physical GPUs only; no time slicing configured
