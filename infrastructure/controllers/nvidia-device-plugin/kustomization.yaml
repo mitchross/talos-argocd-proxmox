@@ -15,7 +15,7 @@ resources:
 # The NVIDIA device plugin DaemonSet is managed by the GPU Operator.
 # Remove it here to avoid conflicts and duplicate registrations.
 # - nvidia-device-plugin.yml
-- nvidia-powerlimit-daemonset.yaml
+#- nvidia-powerlimit-daemonset.yaml
 # Test pods (uncomment to deploy)
 # - nvidia-test-pod.yaml
 commonLabels:
