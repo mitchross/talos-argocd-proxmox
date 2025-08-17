@@ -25,14 +25,46 @@ helmCharts:
         config:
           name: time-slicing-config
           default: config.yaml
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+          - key: "gpu"
+            operator: Equal
+            value: "true"
+            effect: NoSchedule
       migManager:
         enabled: false
       gfd:
         enabled: true
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+          - key: "gpu"
+            operator: Equal
+            value: "true"
+            effect: NoSchedule
       dcgmExporter:
         enabled: true
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+          - key: "gpu"
+            operator: Equal
+            value: "true"
+            effect: NoSchedule
       validator:
         driver:
           env:
             - name: DISABLE_DEV_CHAR_SYMLINK_CREATION
               value: "true"
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+          - key: "gpu"
+            operator: Equal
+            value: "true"
+            effect: NoSchedule
