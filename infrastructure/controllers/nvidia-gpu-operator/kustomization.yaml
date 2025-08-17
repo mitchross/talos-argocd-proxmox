@@ -22,6 +22,22 @@ helmCharts:
         enabled: false
       devicePlugin:
         enabled: true
+        nodeSelector:
+          feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+          - key: "gpu"
+            operator: Equal
+            value: "true"
+            effect: NoSchedule
+          - key: node-role.kubernetes.io/master
+            operator: Exists
+            effect: NoSchedule
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+            effect: NoSchedule
         config:
           name: time-slicing-config
           default: config.yaml
@@ -29,8 +45,58 @@ helmCharts:
         enabled: false
       gfd:
         enabled: true
+        nodeSelector:
+          feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+          - key: "gpu"
+            operator: Equal
+            value: "true"
+            effect: NoSchedule
+          - key: node-role.kubernetes.io/master
+            operator: Exists
+            effect: NoSchedule
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+            effect: NoSchedule
+      dcgmExporter:
+        enabled: true
+        nodeSelector:
+          feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+          - key: "gpu"
+            operator: Equal
+            value: "true"
+            effect: NoSchedule
+          - key: node-role.kubernetes.io/master
+            operator: Exists
+            effect: NoSchedule
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+            effect: NoSchedule
       validator:
         driver:
           env:
             - name: DISABLE_DEV_CHAR_SYMLINK_CREATION
               value: "true"
+        nodeSelector:
+          feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        tolerations:
+          - key: nvidia.com/gpu
+            operator: Exists
+            effect: NoSchedule
+          - key: "gpu"
+            operator: Equal
+            value: "true"
+            effect: NoSchedule
+          - key: node-role.kubernetes.io/master
+            operator: Exists
+            effect: NoSchedule
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+            effect: NoSchedule
