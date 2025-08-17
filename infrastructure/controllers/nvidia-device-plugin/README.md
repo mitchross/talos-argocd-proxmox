@@ -1,14 +1,14 @@
-# NVIDIA Device Plugin for Kubernetes - RTX 3090 + Talos 1.10
+# NVIDIA GPUs on Talos 1.10 — Operator‑Managed Device Plugin (RTX 3090)
 
-This directory contains a production-ready deployment of the NVIDIA Device Plugin for Kubernetes, optimized for **RTX 3090** GPUs on **Talos Linux 1.10**.
+This repository uses the NVIDIA GPU Operator to install and manage the NVIDIA Device Plugin. This directory now provides the `RuntimeClass`, optional monitoring `Service`, and a power‑limit DaemonSet for **RTX 3090** on **Talos Linux 1.10**. The standalone Device Plugin DaemonSet is intentionally not applied here to avoid conflicts with the Operator‑managed plugin.
 
 ## 🎯 Configuration Summary
 
 - **GPU**: RTX 3090 (Consumer/Gaming GPU)
-- **Time Slicing**: ❌ Disabled (not supported on RTX 3090)
+- **Time Slicing**: ✅ Enabled via GPU Operator (default 10 slices/GPU)
 - **Power Limiting**: ✅ Enabled (280W for stability)
 - **Talos Version**: 1.10
-- **Device Plugin**: v0.17.3
+- **Device Plugin**: Installed and managed by GPU Operator
 
 ## 📋 Prerequisites for Talos 1.10
 
@@ -49,37 +49,27 @@ machine:
 
 ## 🚀 Deployment
 
-### Quick Deploy
+### Quick Deploy (recommended order)
 ```bash
-kubectl apply -k .
-```
+# 1) Node Feature Discovery
+kustomize build infrastructure/controllers/node-feature-discovery | kubectl apply -f -
 
-### Step-by-Step Deployment
-```bash
-# 1. Create namespace and RBAC
-kubectl apply -f namespace.yaml
-kubectl apply -f rbac.yaml
-kubectl apply -f runtime.yaml
+# 2) GPU Operator (manages device plugin and time-slicing)
+kustomize build infrastructure/controllers/nvidia-gpu-operator | kubectl apply -f -
 
-# 2. Deploy device plugin
-kubectl apply -f nvidia-device-plugin.yml
-
-# 3. Deploy power limiting (important for RTX 3090!)
-kubectl apply -f nvidia-powerlimit-daemonset.yaml
-
-# 4. Optional: Deploy monitoring service
-kubectl apply -f service.yaml
+# 3) RuntimeClass + power limit (from this folder)
+kubectl apply -k infrastructure/controllers/nvidia-device-plugin
 ```
 
 ## 🔍 Verification
 
 ### Check Deployment Status
 ```bash
-# Check all pods are running
-kubectl get pods -n gpu-device-plugin
+# GPU Operator components
+kubectl get pods -n gpu-operator
 
-# Check DaemonSet status
-kubectl get daemonset -n gpu-device-plugin
+# Device Plugin DaemonSet (created by the operator)
+kubectl get daemonset -A | grep nvidia-device-plugin
 
 # Verify GPU capacity (should show 1 per RTX 3090)
 kubectl describe nodes | grep nvidia.com/gpu
@@ -87,7 +77,7 @@ kubectl describe nodes | grep nvidia.com/gpu
 
 ### Check Device Plugin Logs
 ```bash
-kubectl logs -n gpu-device-plugin -l app.kubernetes.io/name=nvidia-device-plugin
+kubectl logs -n gpu-operator -l app.kubernetes.io/name=nvidia-device-plugin
 ```
 
 ### Check Power Limit Logs
@@ -99,9 +89,9 @@ kubectl logs -n gpu-device-plugin -l app.kubernetes.io/name=nvidia-powerlimit
 
 ### Basic GPU Test
 ```bash
-# Uncomment nvidia-test-pod.yaml in kustomization.yaml, then:
-kubectl apply -k .
-kubectl logs -n gpu-device-plugin nvidia-test
+# Use the test pod provided with the GPU Operator setup
+kubectl apply -f infrastructure/controllers/nvidia-gpu-operator/test-pod.yaml
+kubectl logs -n gpu-operator cuda-vectoradd -f
 ```
 
 ### Manual Test
@@ -171,30 +161,33 @@ kubectl run nvidia-debug --image=nvidia/cuda:12.4.1-base-ubuntu22.04 --restart=N
 ## 📊 Expected Results
 
 After successful deployment:
-- **GPU Capacity**: Each RTX 3090 shows as `nvidia.com/gpu: 1`
+- **GPU Capacity**: With time-slicing set to 10, each RTX 3090 shows as `nvidia.com/gpu: 10`
 - **Power Limit**: GPUs limited to 280W
-- **Resource Sharing**: One GPU per pod (no time slicing)
+- **Resource Sharing**: Pods request slices: `nvidia.com/gpu: "1"` = one slice, `"2"` = two slices
 - **Stability**: Better thermal management in Talos environment
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────┐
-│   GPU Workload  │
-│ (nvidia.com/gpu │
-│      = 1)       │
-└─────────┬───────┘
-          │
-┌─────────▼───────┐
-│ NVIDIA Device   │
-│     Plugin      │
-│  (No Sharing)   │
-└─────────┬───────┘
-          │
-┌─────────▼───────┐
-│   RTX 3090      │
-│   (280W Limit)  │
-└─────────────────┘
+┌────────────────────────┐
+│     GPU Workloads      │
+│   (time-sliced reqs)   │
+└──────────┬─────────────┘
+           │
+┌──────────▼─────────────┐
+│  NVIDIA Device Plugin  │
+│ (managed by Operator)  │
+└──────────┬─────────────┘
+           │
+┌──────────▼─────────────┐
+│     NVIDIA GPU Op.     │
+│  (time-slicing config) │
+└──────────┬─────────────┘
+           │
+┌──────────▼─────────────┐
+│       RTX 3090         │
+│     (280W power cap)   │
+└────────────────────────┘
 ```
 
 ## 🔐 Security
@@ -210,6 +203,7 @@ This deployment follows security best practices:
 ## 📚 References
 
 - [NVIDIA k8s-device-plugin](https://github.com/NVIDIA/k8s-device-plugin)
+- [NVIDIA GPU Operator](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/)
 - [Talos GPU Guide](https://www.talos.dev/v1.10/advanced/gpu/)
 - [RTX 3090 Specifications](https://www.nvidia.com/en-us/geforce/graphics-cards/30-series/rtx-3090/)
 - [Talos 1.10 Release Notes](https://github.com/siderolabs/talos/releases/tag/v1.10.0)
