@@ -10,7 +10,7 @@ resources:
 - namespace.yaml
 - runtime.yaml
 - rbac.yaml
-# config.yaml removed - not needed for RTX 3090 without time slicing
+- config.yaml
 - service.yaml
 # The NVIDIA device plugin DaemonSet is managed by the GPU Operator.
 # Remove it here to avoid conflicts and duplicate registrations.
