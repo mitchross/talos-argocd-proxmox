@@ -25,6 +25,8 @@ helmCharts:
         config:
           name: time-slicing-config
           default: config.yaml
+        nodeSelector:
+          feature.node.kubernetes.io/pci-0300_10de.present: "true"
         tolerations:
           - key: nvidia.com/gpu
             operator: Exists
@@ -37,6 +39,8 @@ helmCharts:
         enabled: false
       gfd:
         enabled: true
+        nodeSelector:
+          feature.node.kubernetes.io/pci-0300_10de.present: "true"
         tolerations:
           - key: nvidia.com/gpu
             operator: Exists
@@ -47,6 +51,8 @@ helmCharts:
             effect: NoSchedule
       dcgmExporter:
         enabled: true
+        nodeSelector:
+          feature.node.kubernetes.io/pci-0300_10de.present: "true"
         tolerations:
           - key: nvidia.com/gpu
             operator: Exists
@@ -60,6 +66,8 @@ helmCharts:
           env:
             - name: DISABLE_DEV_CHAR_SYMLINK_CREATION
               value: "true"
+        nodeSelector:
+          feature.node.kubernetes.io/pci-0300_10de.present: "true"
         tolerations:
           - key: nvidia.com/gpu
             operator: Exists
