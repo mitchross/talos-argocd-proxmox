@@ -23,6 +23,8 @@ spec:
   nodeStatusExporter:
     enabled: true
   operator:
-    defaultRuntime: docker # This might need to be nvidia if Talos sets it as default via the other patch
+    defaultRuntime: containerd # Talos uses containerd
+    runtimeClass: nvidia
   toolkit:
-    enabled: false # Talos provides the toolkit
+    enabled: true # Enable toolkit validation for Talos
+    installDir: /usr/local/nvidia

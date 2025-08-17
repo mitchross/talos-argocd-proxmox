@@ -6,8 +6,19 @@ metadata:
 data:
   config.yaml: |
     version: v1
+    flags:
+      migStrategy: "none"
+      failOnInitError: false
+      nvidiaDriverRoot: "/"
+      plugin:
+        passDeviceSpecs: true
+        deviceListStrategy: "volume-mounts"
+        deviceIDStrategy: "uuid"
     sharing:
       timeSlicing:
         resources:
           - name: nvidia.com/gpu
-            replicas: 10
+            replicas: 4
+    resources:
+      nvidia.com/gpu:
+        pattern: "*"
