@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: cuda-vectoradd
-  namespace: nvidia-device-plugin
+  namespace: gpu-operator
 spec:
   restartPolicy: OnFailure
   containers:
@@ -11,3 +11,4 @@ spec:
     resources:
       limits:
         nvidia.com/gpu: "1"
+  runtimeClassName: nvidia

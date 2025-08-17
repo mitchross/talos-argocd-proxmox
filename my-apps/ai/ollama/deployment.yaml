@@ -23,6 +23,9 @@ spec:
       runtimeClassName: nvidia
       priorityClassName: gpu-workload-high
       tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
       - key: "gpu"
         operator: "Equal"
         value: "true"

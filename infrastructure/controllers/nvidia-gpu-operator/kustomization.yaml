@@ -12,6 +12,10 @@ helmCharts:
     namespace: gpu-operator
     includeCRDs: true
     valuesInline:
+      operator:
+        defaultRuntime: containerd
+      nfd:
+        enabled: false
       driver:
         enabled: false
       toolkit:

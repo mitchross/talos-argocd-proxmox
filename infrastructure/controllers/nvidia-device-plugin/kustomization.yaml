@@ -12,22 +12,11 @@ resources:
 - rbac.yaml
 # config.yaml removed - not needed for RTX 3090 without time slicing
 - service.yaml
-- nvidia-device-plugin.yml
+# The NVIDIA device plugin DaemonSet is managed by the GPU Operator.
+# Remove it here to avoid conflicts and duplicate registrations.
+# - nvidia-device-plugin.yml
 - nvidia-powerlimit-daemonset.yaml
 # Test pods (uncomment to deploy)
 # - nvidia-test-pod.yaml
 commonLabels:
   app.kubernetes.io/part-of: gpu-infrastructure
-
-# Ensure RuntimeClass is properly set
-patchesStrategicMerge:
-- |-
-  apiVersion: apps/v1
-  kind: DaemonSet
-  metadata:
-    name: nvidia-device-plugin-daemonset
-    namespace: gpu-device-plugin
-  spec:
-    template:
-      spec:
-        runtimeClassName: nvidia
