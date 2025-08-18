@@ -5,6 +5,7 @@ resources:
 - namespace.yaml
 - time-slicing-config.yaml
 - external-secret.yaml
+- preinstalled-validation-daemonset.yaml
 helmCharts:
 - name: gpu-operator
   repo: https://helm.ngc.nvidia.com/nvidia
