@@ -4,6 +4,8 @@ metadata:
   name: cluster-policy
   namespace: gpu-operator
 spec:
+  imagePullSecrets:
+    - nvcr-secret
   validator:
     driver:
       env:

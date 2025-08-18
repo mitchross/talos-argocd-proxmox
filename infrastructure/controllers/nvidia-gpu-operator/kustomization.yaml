@@ -4,6 +4,7 @@ namespace: gpu-operator
 resources:
 - namespace.yaml
 - time-slicing-config.yaml
+- external-secret.yaml
 helmCharts:
 - name: gpu-operator
   repo: https://helm.ngc.nvidia.com/nvidia
