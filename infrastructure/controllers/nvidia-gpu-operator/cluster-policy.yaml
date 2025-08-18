@@ -5,12 +5,12 @@ metadata:
   namespace: gpu-operator
 spec:
   imagePullSecrets:
-    - nvcr-secret
+  - nvcr-secret
   validator:
     driver:
       env:
-        - name: DISABLE_DEV_CHAR_SYMLINK_CREATION
-          value: "true"
+      - name: DISABLE_DEV_CHAR_SYMLINK_CREATION
+        value: "true"
   daemonsets: {}
   dcgm:
     enabled: false
