@@ -61,10 +61,6 @@ helmCharts:
         value: "true"
         effect: NoSchedule
     validator:
-      driver:
-        env:
-        - name: DISABLE_DEV_CHAR_SYMLINK_CREATION
-          value: "true"
       nodeSelector: {}
       tolerations:
       - key: nvidia.com/gpu
