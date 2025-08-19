@@ -18,5 +18,8 @@ resources:
 - nvidia-powerlimit-daemonset.yaml
 # Test pods (uncomment to deploy)
 # - nvidia-test-pod.yaml
-commonLabels:
-  app.kubernetes.io/part-of: gpu-infrastructure
+labels:
+- pairs:
+    app.kubernetes.io/part-of: gpu-infrastructure
+  includeSelectors: true
+  includeTemplates: true

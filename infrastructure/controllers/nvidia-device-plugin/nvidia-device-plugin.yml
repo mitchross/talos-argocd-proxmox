@@ -55,8 +55,7 @@ spec:
         name: nvidia-device-plugin-ctr
         imagePullPolicy: IfNotPresent
         args:
-        # Start without config file to get basic functionality working
-        # - --config-file=/etc/nvidia/config.yaml
+        - --config-file=/etc/nvidia/config.yaml
         - --pass-device-specs=true
         env:
         - name: FAIL_ON_INIT_ERROR
