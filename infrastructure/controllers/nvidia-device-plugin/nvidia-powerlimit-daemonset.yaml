@@ -26,6 +26,11 @@ spec:
       - key: "node-role.kubernetes.io/control-plane"
         operator: "Exists"
         effect: "NoSchedule"
+      # Add any custom taints you have on your GPU nodes
+      - key: "gpu"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
       hostNetwork: true
@@ -39,16 +44,31 @@ spec:
         - |
           set -e
           echo "=== NVIDIA GPU Power Management for Talos 1.10 ==="
-          echo "Detected RTX 3090 GPUs:"
+          
+          # Wait for nvidia-smi to be available
+          until nvidia-smi > /dev/null 2>&1; do
+            echo "Waiting for nvidia-smi to be available..."
+            sleep 5
+          done
+          
+          echo "Detected GPUs:"
           nvidia-smi --query-gpu=index,name,power.limit,power.default_limit --format=csv
           echo ""
-          echo "Setting power limits to 280W (recommended for RTX 3090 stability)..."
-          nvidia-smi -pl 280
+          
+          # Set power limits for RTX 3090 (adjust if you have different GPUs)
+          echo "Setting power limits to 300W (conservative for RTX 3090 with time-slicing)..."
+          nvidia-smi -pl 300
+          
           echo ""
           echo "=== Updated GPU Configuration ==="
           nvidia-smi --query-gpu=index,name,power.limit --format=csv
           echo ""
           echo "✅ Power limit configuration completed successfully"
+          
+          # Verify persistence settings
+          echo "Setting persistence mode..."
+          nvidia-smi -pm 1
+          
         securityContext:
           privileged: true
         resources:
@@ -56,7 +76,7 @@ spec:
             cpu: 100m
             memory: 128Mi
           limits:
-            cpu: 200m
+            cpu: 500m
             memory: 256Mi
       containers:
       - name: power-monitor
@@ -65,21 +85,33 @@ spec:
         args:
         - |
           echo "=== NVIDIA Power Monitor Started ==="
-          echo "Monitoring power limits every 30 minutes for RTX 3090 stability..."
+          echo "Monitoring power limits every 30 minutes for RTX 3090 stability with time-slicing..."
+          
           while true; do
             sleep 1800  # 30 minutes
-            echo "$(date): Checking GPU power limits..."
+            echo "$(date): Checking GPU power limits and persistence..."
+            
+            # Check and fix power limits
             nvidia-smi --query-gpu=index,name,power.limit --format=csv,noheader,nounits | while read line; do
               gpu_index=$(echo $line | cut -d',' -f1 | tr -d ' ')
               gpu_name=$(echo $line | cut -d',' -f2 | tr -d ' ')
               current_limit=$(echo $line | cut -d',' -f3 | tr -d ' ')
-              if [ "$current_limit" != "280.00" ]; then
-                echo "WARNING: GPU $gpu_index ($gpu_name) power limit is $current_limit W, resetting to 280W"
-                nvidia-smi -i $gpu_index -pl 280
+              
+              if [ "$current_limit" != "300.00" ]; then
+                echo "WARNING: GPU $gpu_index ($gpu_name) power limit is $current_limit W, resetting to 300W"
+                nvidia-smi -i $gpu_index -pl 300
               else
                 echo "OK: GPU $gpu_index ($gpu_name) power limit is correct: $current_limit W"
               fi
             done
+            
+            # Ensure persistence mode is enabled
+            nvidia-smi -pm 1 > /dev/null 2>&1 || echo "Warning: Could not set persistence mode"
+            
+            # Show current GPU utilization (helpful for time-slicing monitoring)
+            echo "Current GPU utilization:"
+            nvidia-smi --query-gpu=index,utilization.gpu,utilization.memory --format=csv
+            echo "---"
           done
         securityContext:
           privileged: true

@@ -17,6 +17,11 @@ data:
         passDeviceSpecs: true
         deviceListStrategy: "volume-mounts"
         deviceIDStrategy: "uuid"
+    sharing:
+      timeSlicing:
+        resources:
+          - name: nvidia.com/gpu
+            replicas: 4
     resources:
       nvidia.com/gpu:
         pattern: "*"

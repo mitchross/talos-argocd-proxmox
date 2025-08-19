@@ -68,7 +68,9 @@ spec:
       - image: nvcr.io/nvidia/k8s-device-plugin:v0.17.3
         name: nvidia-device-plugin-ctr
         imagePullPolicy: IfNotPresent
-        # No config file needed for basic GPU detection
+        # Enable config file for time-slicing
+        args:
+          - --config-file=/etc/nvidia/config.yaml
         env:
         - name: FAIL_ON_INIT_ERROR
           value: "false"
@@ -105,11 +107,13 @@ spec:
         volumeMounts:
         - name: device-plugin
           mountPath: /var/lib/kubelet/device-plugins
-        - name: nvidia-config-dir
+        - name: nvidia-config
           mountPath: /etc/nvidia
+          readOnly: true
       volumes:
       - name: device-plugin
         hostPath:
           path: /var/lib/kubelet/device-plugins
-      - name: nvidia-config-dir
-        emptyDir: {}
+      - name: nvidia-config
+        configMap:
+          name: nvidia-device-plugin-config

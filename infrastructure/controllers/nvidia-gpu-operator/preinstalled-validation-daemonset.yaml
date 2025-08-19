@@ -19,34 +19,34 @@ spec:
       nodeSelector:
         node-type: gpu-worker
       tolerations:
-        - key: nvidia.com/gpu
-          operator: Exists
-          effect: NoSchedule
-        - key: "gpu"
-          operator: Equal
-          value: "true"
-          effect: NoSchedule
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      - key: "gpu"
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
       hostPID: true
       containers:
-        - name: marker
-          image: busybox:1.36
-          securityContext:
-            privileged: true
-          command:
-            - /bin/sh
-            - -c
-            - |
-              set -eu
-              mkdir -p /host-run/nvidia/validations
-              touch /host-run/nvidia/validations/driver-ready
-              touch /host-run/nvidia/validations/toolkit-ready
-              echo "Markers present:" && ls -l /host-run/nvidia/validations
-              sleep infinity
-          volumeMounts:
-            - name: host-run
-              mountPath: /host-run
-      volumes:
+      - name: marker
+        image: busybox:1.36
+        securityContext:
+          privileged: true
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -eu
+          mkdir -p /host-run/nvidia/validations
+          touch /host-run/nvidia/validations/driver-ready
+          touch /host-run/nvidia/validations/toolkit-ready
+          echo "Markers present:" && ls -l /host-run/nvidia/validations
+          sleep infinity
+        volumeMounts:
         - name: host-run
-          hostPath:
-            path: /run
-            type: Directory
+          mountPath: /host-run
+      volumes:
+      - name: host-run
+        hostPath:
+          path: /run
+          type: Directory

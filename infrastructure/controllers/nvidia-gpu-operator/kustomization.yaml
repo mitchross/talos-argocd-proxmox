@@ -3,69 +3,69 @@ kind: Kustomization
 namespace: gpu-operator
 resources:
 - namespace.yaml
-- time-slicing-config.yaml
-- external-secret.yaml
-helmCharts:
-- name: gpu-operator
-  repo: https://helm.ngc.nvidia.com/nvidia
-  version: v25.3.0
-  releaseName: gpu-operator
-  namespace: gpu-operator
-  includeCRDs: true
-  valuesInline:
-    operator:
-      defaultRuntime: containerd
-    nfd:
-      enabled: false
-    driver:
-      enabled: false
-    toolkit:
-      enabled: false
-    devicePlugin:
-      enabled: true
-      config:
-        name: time-slicing-config
-        default: config.yaml
-      nodeSelector: {}
-      tolerations:
-      - key: nvidia.com/gpu
-        operator: Exists
-        effect: NoSchedule
-      - key: "gpu"
-        operator: Equal
-        value: "true"
-        effect: NoSchedule
-    migManager:
-      enabled: false
-    gfd:
-      enabled: true
-      nodeSelector: {}
-      tolerations:
-      - key: nvidia.com/gpu
-        operator: Exists
-        effect: NoSchedule
-      - key: "gpu"
-        operator: Equal
-        value: "true"
-        effect: NoSchedule
-    dcgmExporter:
-      enabled: true
-      nodeSelector: {}
-      tolerations:
-      - key: nvidia.com/gpu
-        operator: Exists
-        effect: NoSchedule
-      - key: "gpu"
-        operator: Equal
-        value: "true"
-        effect: NoSchedule
-    validator:
-      nodeSelector: {}
-      tolerations:
-      - key: nvidia.com/gpu
-        operator: Exists
-        effect: NoSchedule
-      - key: "gpu"
-        operator: Equal
-        value: "true"
-        effect: NoSchedule
+# - time-slicing-config.yaml
+# - external-secret.yaml
+# helmCharts:
+# - name: gpu-operator
+#   repo: https://helm.ngc.nvidia.com/nvidia
+#   version: v25.3.0
+#   releaseName: gpu-operator
+#   namespace: gpu-operator
+#   includeCRDs: true
+#   valuesInline:
+#     operator:
+#       defaultRuntime: containerd
+#     nfd:
+#       enabled: false
+#     driver:
+#       enabled: false
+#     toolkit:
+#       enabled: false
+#     devicePlugin:
+#       enabled: true
+#       config:
+#         name: time-slicing-config
+#         default: config.yaml
+#       nodeSelector: {}
+#       tolerations:
+#       - key: nvidia.com/gpu
+#         operator: Exists
+#         effect: NoSchedule
+#       - key: "gpu"
+#         operator: Equal
+#         value: "true"
+#         effect: NoSchedule
+#     migManager:
+#       enabled: false
+#     gfd:
+#       enabled: true
+#       nodeSelector: {}
+#       tolerations:
+#       - key: nvidia.com/gpu
+#         operator: Exists
+#         effect: NoSchedule
+#       - key: "gpu"
+#         operator: Equal
+#         value: "true"
+#         effect: NoSchedule
+#     dcgmExporter:
+#       enabled: true
+#       nodeSelector: {}
+#       tolerations:
+#       - key: nvidia.com/gpu
+#         operator: Exists
+#         effect: NoSchedule
+#       - key: "gpu"
+#         operator: Equal
+#         value: "true"
+#         effect: NoSchedule
+#     validator:
+#       nodeSelector: {}
+#       tolerations:
+#       - key: nvidia.com/gpu
+#         operator: Exists
+#         effect: NoSchedule
+#       - key: "gpu"
+#         operator: Equal
+#         value: "true"
+#         effect: NoSchedule

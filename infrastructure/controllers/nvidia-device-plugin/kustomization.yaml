@@ -12,10 +12,10 @@ resources:
 - rbac.yaml
 - config.yaml
 - service.yaml
-# The NVIDIA device plugin DaemonSet is managed by the GPU Operator.
-# Remove it here to avoid conflicts and duplicate registrations.
-# - nvidia-device-plugin.yml
-#- nvidia-powerlimit-daemonset.yaml
+# Enable the NVIDIA device plugin DaemonSet for standalone deployment
+- nvidia-device-plugin.yml
+# Optional: Enable power limit management for RTX 3090 stability
+- nvidia-powerlimit-daemonset.yaml
 # Test pods (uncomment to deploy)
 # - nvidia-test-pod.yaml
 commonLabels:
