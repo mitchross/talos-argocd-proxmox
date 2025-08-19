@@ -93,7 +93,7 @@ spec:
           mountPath: /var/lib/kubelet/device-plugins
         - name: nvidia-config
           mountPath: /etc/nvidia
-          readOnly: true
+          readOnly: false
         - name: dev
           mountPath: /dev
         - name: sys
