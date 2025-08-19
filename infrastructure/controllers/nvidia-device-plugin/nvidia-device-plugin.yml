@@ -50,6 +50,17 @@ spec:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
+      initContainers:
+      - image: busybox:1.36
+        name: copy-nvidia-config
+        command: [ 'sh', '-c', 'cp /tmp/config/config.yaml /etc/nvidia/config.yaml' ]
+        volumeMounts:
+        - name: nvidia-config-map-volume
+          mountPath: /tmp/config
+          readOnly: true
+        - name: nvidia-config
+          mountPath: /etc/nvidia
+          readOnly: false
       containers:
       - image: nvcr.io/nvidia/k8s-device-plugin:v0.17.3
         name: nvidia-device-plugin-ctr
@@ -103,9 +114,11 @@ spec:
       - name: device-plugin
         hostPath:
           path: /var/lib/kubelet/device-plugins
-      - name: nvidia-config
+      - name: nvidia-config-map-volume
         configMap:
           name: nvidia-device-plugin-config
+      - name: nvidia-config
+        emptyDir: {}
       - name: dev
         hostPath:
           path: /dev
