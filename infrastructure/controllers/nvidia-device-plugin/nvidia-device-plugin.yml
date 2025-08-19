@@ -94,9 +94,6 @@ spec:
           readOnly: true
         - name: dev
           mountPath: /dev
-        - name: proc-driver-nvidia
-          mountPath: /proc/driver/nvidia
-          readOnly: true
         - name: sys
           mountPath: /sys
           readOnly: true
@@ -110,9 +107,6 @@ spec:
       - name: dev
         hostPath:
           path: /dev
-      - name: proc-driver-nvidia
-        hostPath:
-          path: /proc/driver/nvidia
       - name: sys
         hostPath:
           path: /sys

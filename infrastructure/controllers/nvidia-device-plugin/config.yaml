@@ -15,13 +15,11 @@ data:
       nvidiaDriverRoot: "/"
       plugin:
         passDeviceSpecs: true
-        deviceListStrategy: "volume-mounts"
+        deviceListStrategy: "envvar"
         deviceIDStrategy: "uuid"
-    sharing:
-      timeSlicing:
-        resources:
-          - name: nvidia.com/gpu
-            replicas: 4
-    resources:
-      nvidia.com/gpu:
-        pattern: "*"
+    # Comment out time-slicing for now to get basic functionality working first
+    # sharing:
+    #   timeSlicing:
+    #     resources:
+    #       - name: nvidia.com/gpu
+    #         replicas: 4
