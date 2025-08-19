@@ -1,9 +1,7 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: nv        args:
-          - --config-file=/etc/nvidia/config.yaml
-          - --pass-device-specs=true-device-plugin-daemonset
+  name: nvidia-device-plugin-daemonset
   namespace: gpu-device-plugin
   labels:
     app.kubernetes.io/name: nvidia-device-plugin
@@ -57,9 +55,8 @@ spec:
         name: nvidia-device-plugin-ctr
         imagePullPolicy: IfNotPresent
         args:
-        # Start without config file to get basic functionality working
-        # - --config-file=/etc/nvidia/config.yaml
-        - --pass-device-specs=true
+          - --config-file=/etc/nvidia/config.yaml
+          - --pass-device-specs=true
         env:
         - name: FAIL_ON_INIT_ERROR
           value: "false"
