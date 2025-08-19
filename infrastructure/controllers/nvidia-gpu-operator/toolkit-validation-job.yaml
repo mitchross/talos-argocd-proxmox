@@ -13,7 +13,7 @@ spec:
       hostPID: true
       containers:
       - name: toolkit-validator
-        image: busybox:1.35
+        image: busybox:1.37
         command:
         - /bin/sh
         - -c
