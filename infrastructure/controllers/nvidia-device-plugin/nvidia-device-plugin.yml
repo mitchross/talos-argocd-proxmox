@@ -1,9 +1,7 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: nv        args:
-          - --config-file=/etc/nvidia/config.yaml
-          - --pass-device-specs=true-device-plugin-daemonset
+  name: nvidia-device-plugin-daemonset
   namespace: gpu-device-plugin
   labels:
     app.kubernetes.io/name: nvidia-device-plugin
