@@ -1,7 +1,9 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: nvidia-device-plugin-daemonset
+  name: nv        args:
+          - --config-file=/etc/nvidia/config.yaml
+          - --pass-device-specs=true-device-plugin-daemonset
   namespace: gpu-device-plugin
   labels:
     app.kubernetes.io/name: nvidia-device-plugin
@@ -55,9 +57,9 @@ spec:
         name: nvidia-device-plugin-ctr
         imagePullPolicy: IfNotPresent
         args:
-          # Start without config file to get basic functionality working
-          # - --config-file=/etc/nvidia/config.yaml
-          - --pass-device-specs=true
+        # Start without config file to get basic functionality working
+        # - --config-file=/etc/nvidia/config.yaml
+        - --pass-device-specs=true
         env:
         - name: FAIL_ON_INIT_ERROR
           value: "false"
@@ -92,10 +94,9 @@ spec:
         volumeMounts:
         - name: device-plugin
           mountPath: /var/lib/kubelet/device-plugins
-        # Remove config mount for now - will add back after basic functionality works
-        # - name: nvidia-config
-        #   mountPath: /etc/nvidia
-        #   readOnly: true
+        - name: nvidia-config
+          mountPath: /etc/nvidia
+          readOnly: true
         - name: dev
           mountPath: /dev
         - name: sys
@@ -105,9 +106,9 @@ spec:
       - name: device-plugin
         hostPath:
           path: /var/lib/kubelet/device-plugins
-      # - name: nvidia-config
-      #   configMap:
-      #     name: nvidia-device-plugin-config
+      - name: nvidia-config
+        configMap:
+          name: nvidia-device-plugin-config
       - name: dev
         hostPath:
           path: /dev
