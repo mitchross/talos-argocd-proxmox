@@ -55,7 +55,8 @@ spec:
         name: nvidia-device-plugin-ctr
         imagePullPolicy: IfNotPresent
         args:
-          - --config-file=/etc/nvidia/config.yaml
+          # Start without config file to get basic functionality working
+          # - --config-file=/etc/nvidia/config.yaml
           - --pass-device-specs=true
         env:
         - name: FAIL_ON_INIT_ERROR
@@ -79,6 +80,8 @@ spec:
           privileged: true
           # Allow access to host devices
           allowPrivilegeEscalation: true
+          # Allow writes for nvidia-container-cli
+          readOnlyRootFilesystem: false
         resources:
           requests:
             cpu: 50m
@@ -89,9 +92,10 @@ spec:
         volumeMounts:
         - name: device-plugin
           mountPath: /var/lib/kubelet/device-plugins
-        - name: nvidia-config
-          mountPath: /etc/nvidia
-          readOnly: true
+        # Remove config mount for now - will add back after basic functionality works
+        # - name: nvidia-config
+        #   mountPath: /etc/nvidia
+        #   readOnly: true
         - name: dev
           mountPath: /dev
         - name: sys
@@ -101,9 +105,9 @@ spec:
       - name: device-plugin
         hostPath:
           path: /var/lib/kubelet/device-plugins
-      - name: nvidia-config
-        configMap:
-          name: nvidia-device-plugin-config
+      # - name: nvidia-config
+      #   configMap:
+      #     name: nvidia-device-plugin-config
       - name: dev
         hostPath:
           path: /dev
