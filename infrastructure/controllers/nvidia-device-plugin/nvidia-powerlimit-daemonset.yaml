@@ -38,7 +38,7 @@ spec:
       priorityClassName: "system-node-critical"
       initContainers:
       - name: set-power-limit
-        image: nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04
+        image: nvcr.io/nvidia/cuda:12.9.1-base-ubuntu22.04
         command: ["/bin/bash", "-c"]
         args:
         - |
@@ -80,7 +80,7 @@ spec:
             memory: 256Mi
       containers:
       - name: power-monitor
-        image: nvcr.io/nvidia/cuda:12.4.1-base-ubuntu22.04
+        image: nvcr.io/nvidia/cuda:12.9.1-base-ubuntu22.04
         command: ["/bin/bash", "-c"]
         args:
         - |
