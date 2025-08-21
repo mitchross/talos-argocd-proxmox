@@ -29,7 +29,7 @@ spec:
       hostPID: true
       containers:
       - name: marker
-        image: busybox:1.36
+        image: busybox:1.37
         securityContext:
           privileged: true
         command:
