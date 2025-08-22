@@ -31,7 +31,7 @@ spec:
       containers:
       - name: comfyui
         # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu124-megapak
-        image: yanwk/comfyui-boot:cu124-megapak-20250707
+        image: yanwk/comfyui-boot:cu126-megapak-20250821
         imagePullPolicy: IfNotPresent
         workingDir: /root
         ports:
