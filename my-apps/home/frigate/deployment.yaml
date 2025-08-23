@@ -24,7 +24,7 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: frigate
-        image: ghcr.io/blakeblackshear/frigate:0.16.0-beta4
+        image: ghcr.io/blakeblackshear/frigate:0.16.0-tensorrt
         imagePullPolicy: IfNotPresent
         env:
         - name: TZ
