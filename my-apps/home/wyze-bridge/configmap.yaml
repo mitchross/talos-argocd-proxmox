@@ -6,7 +6,6 @@ metadata:
 data:
   WB_AUTH: "False"
   TZ: "America/Detroit"
-  FILTER_NAMES: Pet Cam, Dog Cam 2, Garage
   FILTER_BLOCK: "True"
   QUALITY: "HD120"
   ROTATE_DOOR: "True"
