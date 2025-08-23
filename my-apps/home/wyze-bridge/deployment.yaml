@@ -13,9 +13,11 @@ spec:
       labels:
         app: wyze-bridge
     spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: wyze-bridge
-          image: ghcr.io/idisposable/docker-wyze-bridge:sha-b886424e7c0d9640abf720712fe6ef067db6bac6
+          image: ghcr.io/idisposable/docker-wyze-bridge:3.12.2
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 1935
@@ -29,3 +31,9 @@ spec:
                 name: wyze-bridge-config
             - secretRef:
                 name: wyze-bridge-secrets
+          volumeMounts:
+            - name: wyze-cache
+              mountPath: /config
+      volumes:
+        - name: wyze-cache
+          emptyDir: {}
