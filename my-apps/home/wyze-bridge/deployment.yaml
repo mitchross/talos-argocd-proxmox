@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: wyze-bridge
-        image: ghcr.io/idisposable/docker-wyze-bridge:3.12.2
+        image: ghcr.io/idisposable/docker-wyze-bridge:3.11.1
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 1935

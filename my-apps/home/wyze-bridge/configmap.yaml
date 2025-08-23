@@ -12,5 +12,6 @@ data:
   WB_IP: "192.168.10.46"
   LOG_LEVEL: "debug"
   ON_DEMAND: "True"
+  FORCE_IOTC_DETAIL: "True"
   # Add any other non-sensitive environment variables here
   # WB_IP: "your.node.ip.address"
