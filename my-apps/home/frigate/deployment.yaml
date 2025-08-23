@@ -4,8 +4,7 @@ metadata:
   name: frigate
   namespace: frigate
 spec:
-  # Temporarily scaled to 0 to free GPUs for llama-cpp testing
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app: frigate
