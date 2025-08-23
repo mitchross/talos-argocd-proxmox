@@ -95,7 +95,7 @@ spec:
         volumeMounts:
         - name: config-dir
           mountPath: /config
-        - name: config-file
+        - name: frigate-config-volume
           mountPath: /config/config.yml
           subPath: config.yml
         - name: media
@@ -107,10 +107,10 @@ spec:
       volumes:
       - name: config-dir
         emptyDir: {}
-      - name: config-file
+      - name: frigate-config-volume
         configMap:
           name: frigate-configmap
-          defaultMode: 644
+          defaultMode: 0644
       - name: media
         persistentVolumeClaim:
           claimName: frigate-media
