@@ -16,24 +16,24 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       containers:
-        - name: wyze-bridge
-          image: ghcr.io/idisposable/docker-wyze-bridge:3.12.2
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 1935
-            - containerPort: 8554
-            - containerPort: 8888
-            - containerPort: 8889
-            - containerPort: 8189
-            - containerPort: 5000
-          envFrom:
-            - configMapRef:
-                name: wyze-bridge-config
-            - secretRef:
-                name: wyze-bridge-secrets
-          volumeMounts:
-            - name: wyze-cache
-              mountPath: /config
-      volumes:
+      - name: wyze-bridge
+        image: ghcr.io/idisposable/docker-wyze-bridge:3.12.2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 1935
+        - containerPort: 8554
+        - containerPort: 8888
+        - containerPort: 8889
+        - containerPort: 8189
+        - containerPort: 5000
+        envFrom:
+        - configMapRef:
+            name: wyze-bridge-config
+        - secretRef:
+            name: wyze-bridge-secrets
+        volumeMounts:
         - name: wyze-cache
-          emptyDir: {}
+          mountPath: /config
+      volumes:
+      - name: wyze-cache
+        emptyDir: {}
