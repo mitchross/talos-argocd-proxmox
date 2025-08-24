@@ -16,7 +16,7 @@ spec:
       hostNetwork: true
       containers:
       - name: wyze-bridge
-        image: ghcr.io/idisposable/docker-wyze-bridge:3.11.1
+        image: ghcr.io/idisposable/docker-wyze-bridge:3.12.3
         imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:
