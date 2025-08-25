@@ -48,7 +48,12 @@ prometheus:
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
     # Additional scrape configs for custom monitoring
-    additionalScrapeConfigs: []
+    additionalScrapeConfigs: 
+      - job_name: 'frigate'
+        static_configs:
+          - targets: ['frigate.vanillax.me']
+        metrics_path: /api/metrics
+        scheme: https
     # Remote write configuration (for external storage if needed)
     remoteWrite: []
     # Alerting configuration
