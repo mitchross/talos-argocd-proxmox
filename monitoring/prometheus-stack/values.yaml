@@ -53,7 +53,7 @@ prometheus:
         metrics_path: /api/metrics
         scheme: https
         static_configs:
-          - targets: ['frigate.vanillax.me:443']
+          - targets: ['frigate.vanillax.me']
         # If your Frigate instance uses a self-signed certificate, set insecure_skip_verify: true
         tls_config:
           insecure_skip_verify: false

@@ -1,0 +1,110 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frigate-dashboard
+  namespace: prometheus-stack
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/name: grafana-dashboards
+data:
+  frigate-monitoring.json: |
+    {
+      "annotations": { "list": [ { "builtIn": 1, "datasource": "-- Grafana --", "enable": true, "hide": true, "iconColor": "rgba(0, 211, 255, 1)", "name": "Annotations & Alerts", "type": "dashboard" } ] },
+      "editable": true,
+      "gnetId": null,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "gridPos": { "h": 6, "w": 12, "x": 0, "y": 0 },
+          "id": 1,
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+          "targets": [ { "expr": "frigate_detection_total_fps", "interval": "", "legendFormat": "total detection fps", "refId": "A" } ],
+          "title": "Detection - Total FPS",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": { "defaults": { "unit": "s" } },
+          "gridPos": { "h": 6, "w": 12, "x": 12, "y": 0 },
+          "id": 2,
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+          "targets": [ { "expr": "frigate_service_uptime_seconds", "interval": "", "legendFormat": "uptime", "refId": "A" } ],
+          "title": "Frigate Service Uptime",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": { "defaults": { "unit": "fps" } },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+          "id": 3,
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+          "targets": [ { "expr": "frigate_camera_fps", "interval": "", "legendFormat": "{{camera_name}}", "refId": "A" } ],
+          "title": "Camera FPS",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": { "defaults": { "unit": "fps" } },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+          "id": 4,
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+          "targets": [ { "expr": "frigate_detection_fps", "interval": "", "legendFormat": "{{camera_name}}", "refId": "A" } ],
+          "title": "Detection FPS per Camera",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": { "defaults": { "unit": "percent" } },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+          "id": 5,
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+          "targets": [ { "expr": "frigate_cpu_usage_percent", "interval": "", "legendFormat": "{{name}} {{process}}", "refId": "A" } ],
+          "title": "Process CPU %",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": { "defaults": { "unit": "percent" } },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+          "id": 6,
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+          "targets": [ { "expr": "frigate_mem_usage_percent", "interval": "", "legendFormat": "{{name}}", "refId": "A" } ],
+          "title": "Process Memory %",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": { "defaults": { "unit": "percent" } },
+          "gridPos": { "h": 6, "w": 12, "x": 0, "y": 22 },
+          "id": 7,
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+          "targets": [ { "expr": "frigate_gpu_usage_percent", "interval": "", "legendFormat": "{{gpu_name}}", "refId": "A" } ],
+          "title": "GPU Utilization",
+          "type": "timeseries"
+        },
+        {
+          "datasource": "Prometheus",
+          "fieldConfig": { "defaults": { "unit": "bytes" } },
+          "gridPos": { "h": 6, "w": 12, "x": 12, "y": 22 },
+          "id": 8,
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "single" } },
+          "targets": [ { "expr": "frigate_storage_free_bytes", "interval": "", "legendFormat": "{{storage}}", "refId": "A" } ],
+          "title": "Storage Free Bytes",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 27,
+      "style": "dark",
+      "tags": ["frigate","camera","security"],
+      "templating": { "list": [] },
+      "time": { "from": "now-1h", "to": "now" },
+      "timezone": "",
+      "title": "Frigate Monitoring Dashboard",
+      "uid": "frigate-monitoring",
+      "version": 1
+    }
