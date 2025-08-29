@@ -6,10 +6,15 @@ metadata:
   labels:
     app: tubearchivist
     type: config
+  annotations:
+    # Longhorn backup settings - Standard tier for media configuration
+    longhorn.io/recurring-job-source: enabled
+    longhorn.io/recurring-job-group: standard
+    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
-  storageClassName: tubearchivist-smb
+  storageClassName: longhorn
   accessModes:
-    - ReadWriteMany
+  - ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
@@ -41,9 +46,9 @@ metadata:
     app: tubearchivist
     type: cache
 spec:
-  storageClassName: tubearchivist-smb
+  storageClassName: longhorn
   accessModes:
-    - ReadWriteMany
+  - ReadWriteOnce
   resources:
     requests:
       storage: 20Gi
