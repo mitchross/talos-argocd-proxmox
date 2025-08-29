@@ -5,11 +5,11 @@ metadata:
   namespace: archivist-es
 spec:
   ports:
-    - name: http
-      port: 9200
-      targetPort: 9200
-    - name: transport
-      port: 9300
-      targetPort: 9300
+  - name: http
+    port: 9200
+    targetPort: 9200
+  - name: transport
+    port: 9300
+    targetPort: 9300
   selector:
     app: archivist-es
