@@ -16,10 +16,10 @@ spec:
         app: tubearchivist
     spec:
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
+        runAsNonRoot: false
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
       containers:
       - name: tubearchivist
         image: bbilly1/tubearchivist:latest
@@ -41,6 +41,8 @@ spec:
           value: "1000"
         - name: TA_HOST
           value: "http://tubearchivist.vanillax.me:8000"
+        - name: PATH
+          value: "/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
         volumeMounts:
         - name: config
           mountPath: /config
