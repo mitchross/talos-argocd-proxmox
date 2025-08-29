@@ -18,3 +18,4 @@ resources:
 - pvc.yaml
 - deployment.yaml
 - httproute.yaml
+- archivist-es/kustomization.yaml
