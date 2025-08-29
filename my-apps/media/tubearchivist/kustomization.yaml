@@ -4,17 +4,17 @@ commonLabels:
   app: tubearchivist
 
 configMapGenerator:
-  - name: tubearchivist-env
-    namespace: tubearchivist
-    literals:
-      - TZ=America/Detroit
-      - TA_USERNAME=tubearchivist
-      - TA_PASSWORD=verysecret
-      - ELASTIC_PASSWORD=verysecret
+- name: tubearchivist-env
+  namespace: tubearchivist
+  literals:
+  - TZ=America/Detroit
+  - TA_USERNAME=tubearchivist
+  - TA_PASSWORD=verysecret
+  - ELASTIC_PASSWORD=verysecret
 
 resources:
-  - ns.yaml
-  # - svc.yaml
-  # - pvc.yaml
-  # - deployment.yaml
-  # - httproute.yaml
+- ns.yaml
+# - svc.yaml
+# - pvc.yaml
+# - deployment.yaml
+# - httproute.yaml

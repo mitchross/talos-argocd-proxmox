@@ -13,11 +13,10 @@ metadata:
 spec:
   storageClassName: longhorn
   accessModes:
-    - ReadWriteOnce
+  - ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
-
 ---
 
 apiVersion: v1
@@ -31,11 +30,10 @@ metadata:
 spec:
   storageClassName: tubearchivist-smb
   accessModes:
-    - ReadWriteMany
+  - ReadWriteMany
   resources:
     requests:
       storage: 1Ti
-
 ---
 
 apiVersion: v1
@@ -49,7 +47,7 @@ metadata:
 spec:
   storageClassName: longhorn
   accessModes:
-    - ReadWriteOnce
+  - ReadWriteOnce
   resources:
     requests:
       storage: 20Gi

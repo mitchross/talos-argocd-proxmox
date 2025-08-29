@@ -21,47 +21,47 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
       containers:
-        - name: tubearchivist
-          image: bbilly1/tubearchivist:latest
-          imagePullPolicy: IfNotPresent
-          ports:
-            - name: http
-              containerPort: 8000
-          envFrom:
-            - configMapRef:
-                name: tubearchivist-env
-          env:
-            - name: ES_URL
-              value: "http://archivist-es.archivist-es.svc.cluster.local:9200"
-            - name: REDIS_CON
-              value: "redis://redis-external.redis-instance.svc.cluster.local:6379"
-            - name: HOST_UID
-              value: "1000"
-            - name: HOST_GID
-              value: "1000"
-            - name: TA_HOST
-              value: "http://tubearchivist.vanillax.me:8000"
-          volumeMounts:
-            - name: config
-              mountPath: /config
-            - name: youtube
-              mountPath: /youtube
-            - name: cache
-              mountPath: /cache
-          resources:
-            requests:
-              cpu: 200m
-              memory: 256Mi
-            limits:
-              cpu: 1000m
-              memory: 1Gi
-      volumes:
+      - name: tubearchivist
+        image: bbilly1/tubearchivist:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: tubearchivist-env
+        env:
+        - name: ES_URL
+          value: "http://archivist-es.archivist-es.svc.cluster.local:9200"
+        - name: REDIS_CON
+          value: "redis://redis-external.redis-instance.svc.cluster.local:6379"
+        - name: HOST_UID
+          value: "1000"
+        - name: HOST_GID
+          value: "1000"
+        - name: TA_HOST
+          value: "http://tubearchivist.vanillax.me:8000"
+        volumeMounts:
         - name: config
-          persistentVolumeClaim:
-            claimName: tubearchivist-config-pvc
+          mountPath: /config
         - name: youtube
-          persistentVolumeClaim:
-            claimName: tubearchivist-media-pvc
+          mountPath: /youtube
         - name: cache
-          persistentVolumeClaim:
-            claimName: tubearchivist-cache-pvc
+          mountPath: /cache
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: tubearchivist-config-pvc
+      - name: youtube
+        persistentVolumeClaim:
+          claimName: tubearchivist-media-pvc
+      - name: cache
+        persistentVolumeClaim:
+          claimName: tubearchivist-cache-pvc
