@@ -41,6 +41,8 @@ spec:
           value: "-Xms1g -Xmx1g"
         - name: xpack.security.enabled
           value: "true"
+        - name: network.host
+          value: "0.0.0.0"
         - name: ELASTIC_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -48,6 +50,25 @@ spec:
               key: elastic-password
         - name: path.repo
           value: "/usr/share/elasticsearch/data/snapshot"
+        readinessProbe:
+          tcpSocket:
+            port: 9200
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+        livenessProbe:
+          tcpSocket:
+            port: 9200
+          initialDelaySeconds: 60
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 6
+        startupProbe:
+          tcpSocket:
+            port: 9200
+          failureThreshold: 30
+          periodSeconds: 10
         ports:
         - containerPort: 9200
           name: http
