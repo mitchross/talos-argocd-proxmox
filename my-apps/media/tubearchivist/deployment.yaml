@@ -32,7 +32,7 @@ spec:
             name: tubearchivist-env
         env:
         - name: ES_URL
-          value: "http://archivist-es:9200"
+          value: "http://elastic:verysecret@archivist-es:9200"
         - name: ES_USERNAME
           value: "elastic"
         - name: REDIS_CON
