@@ -38,7 +38,9 @@ spec:
         - name: discovery.type
           value: single-node
         - name: ES_JAVA_OPTS
-          value: "-Xms512m -Xmx512m"
+          value: "-Xms1g -Xmx1g"
+        - name: xpack.security.enabled
+          value: "true"
         - name: ELASTIC_PASSWORD
           valueFrom:
             secretKeyRef:
