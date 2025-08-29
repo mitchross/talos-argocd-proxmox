@@ -31,10 +31,15 @@ spec:
         - configMapRef:
             name: tubearchivist-env
         env:
-        - name: ES_URL
-          value: "http://elastic:verysecret@archivist-es.tubearchivist.svc.cluster.local:9200"
+        - name: ES_HOSTS
+          value: http://archivist-es.tubearchivist.svc.cluster.local:9200
         - name: ES_USERNAME
-          value: "elastic"
+          value: elastic
+        - name: ELASTIC_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: archivist-es-secret
+              key: elastic-password
         - name: REDIS_CON
           value: "redis://redis-external.redis-instance.svc.cluster.local:6379"
         - name: HOST_UID
@@ -45,8 +50,6 @@ spec:
           value: "http://tubearchivist.vanillax.me:8000"
         - name: PATH
           value: "/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-        - name: ELASTIC_PASSWORD
-          value: "verysecret"
         volumeMounts:
         - name: config
           mountPath: /config
