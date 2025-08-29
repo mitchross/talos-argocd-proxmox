@@ -1,0 +1,17 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: tubearchivist-smb
+provisioner: smb.csi.k8s.io
+parameters:
+  source: "//192.168.10.133/k8s/tubearchivist"
+  csi.storage.k8s.io/node-stage-secret-name: smbcreds
+  csi.storage.k8s.io/node-stage-secret-namespace: csi-driver-smb
+mountOptions:
+  - dir_mode=0770
+  - file_mode=0660
+  - vers=3.0
+  - noserverino
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
