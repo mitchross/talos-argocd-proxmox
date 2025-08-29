@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: archivist-es
-  namespace: archivist-es
+  namespace: tubearchivist
 spec:
   serviceName: archivist-es
   replicas: 1

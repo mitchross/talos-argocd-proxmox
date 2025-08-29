@@ -32,7 +32,7 @@ spec:
             name: tubearchivist-env
         env:
         - name: ES_URL
-          value: "http://archivist-es.archivist-es.svc.cluster.local:9200"
+          value: "http://archivist-es:9200"
         - name: REDIS_CON
           value: "redis://redis-external.redis-instance.svc.cluster.local:6379"
         - name: HOST_UID
