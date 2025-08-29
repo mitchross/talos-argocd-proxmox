@@ -10,7 +10,6 @@ configMapGenerator:
   - TZ=America/Detroit
   - TA_USERNAME=tubearchivist
   - TA_PASSWORD=verysecret
-  - ELASTIC_PASSWORD=verysecret
 
 resources:
 - ns.yaml
