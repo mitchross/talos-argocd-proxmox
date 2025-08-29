@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: es-connect-test
+  namespace: tubearchivist
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: es-test
+        image: curlimages/curl:8.2.1
+        command: [ "sh", "-c" ]
+        args:
+        - |
+          echo "=== HTTP (no auth) ===";
+          curl -sS -m 5 http://archivist-es:9200/ || echo "HTTP failed";
+          echo "\n=== HTTPS (insecure) ===";
+          curl -sS -k -m 5 https://archivist-es:9200/ || echo "HTTPS failed";
+          echo "\n=== HTTP with basic auth (elastic) ===";
+          curl -sS -m 5 -u elastic:verysecret http://archivist-es:9200/_cluster/health || echo "HTTP+auth failed";
+          echo "\n=== HTTPS with basic auth (elastic, insecure) ===";
+          curl -sS -k -m 5 -u elastic:verysecret https://archivist-es:9200/_cluster/health || echo "HTTPS+auth failed";
+          echo "\n=== DNS lookup ===";
+          nslookup archivist-es || true;
+      # no service account, minimal privileges
+      dnsPolicy: ClusterFirst

@@ -4,3 +4,4 @@ resources:
 - secret.yaml
 - service.yaml
 - statefulset.yaml
+- es-connect-test.yaml
