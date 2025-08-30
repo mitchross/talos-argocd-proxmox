@@ -7,7 +7,7 @@ resources:
 helmCharts:
 - name: netbox
   repo: oci://ghcr.io/netbox-community/netbox-chart
-  version: 6.1.12
+  version: 6.1.15
   releaseName: netbox
   namespace: netbox
   valuesFile: values.yaml
