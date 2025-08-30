@@ -26,7 +26,7 @@ spec:
           mountPath: /usr/share/elasticsearch/data
       containers:
       - name: elasticsearch
-        image: docker.elastic.co/elasticsearch/elasticsearch:8.18.2
+        image: bbilly1/tubearchivist-es
         resources:
           requests:
             memory: 1Gi
@@ -77,6 +77,9 @@ spec:
         volumeMounts:
         - name: es-data
           mountPath: /usr/share/elasticsearch/data
+        securityContext:
+          capabilities:
+            add: ["IPC_LOCK"]
   volumeClaimTemplates:
   - metadata:
       name: es-data
