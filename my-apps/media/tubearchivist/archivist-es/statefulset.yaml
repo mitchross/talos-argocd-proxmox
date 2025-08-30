@@ -77,9 +77,6 @@ spec:
         volumeMounts:
         - name: es-data
           mountPath: /usr/share/elasticsearch/data
-        securityContext:
-          capabilities:
-            add: ["IPC_LOCK"]
   volumeClaimTemplates:
   - metadata:
       name: es-data
