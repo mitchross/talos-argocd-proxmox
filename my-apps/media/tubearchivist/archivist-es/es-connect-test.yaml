@@ -9,21 +9,27 @@ spec:
     spec:
       restartPolicy: Never
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        seccompProfile:
-          type: RuntimeDefault
+        runAsNonRoot: false
+        runAsUser: 0
       containers:
       - name: es-test
-        image: curlimages/curl:8.2.1
-        command: [ "sh", "-c" ]
+        image: bbilly1/tubearchivist:latest
+        command: [ "python", "-c" ]
         args:
         - |
-          echo "Attempting to connect to Elasticsearch with authentication...";
-          curl -sS -f -u elastic:verysecret http://archivist-es:9200/_cluster/health && echo "\n\nSUCCESS: Successfully connected to Elasticsearch." || echo "\n\nFAILURE: Could not connect to Elasticsearch.";
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-      dnsPolicy: ClusterFirst
+          import requests
+          import os
+
+          es_url = "http://archivist-es:9200"
+          password = "verysecret"
+          user = "elastic"
+
+          try:
+              print("Attempting to connect to Elasticsearch using Python requests from within the tubearchivist image...")
+              response = requests.get(f"{es_url}/_cluster/health", auth=(user, password), timeout=5)
+              response.raise_for_status()
+              print("\nSUCCESS: Successfully connected to Elasticsearch.")
+              print(response.text)
+          except requests.exceptions.RequestException as e:
+              print(f"\nFAILURE: Could not connect to Elasticsearch.")
+              print(e)
