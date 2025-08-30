@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tubearchivist-env
+  namespace: tubearchivist
+data:
+  TZ: "America/Detroit"
+  TA_USERNAME: "tubearchivist"
+  TA_PASSWORD: "verysecret"
+  ES_URL: "http://archivist-es.tubearchivist.svc.cluster.local:9200"
+  REDIS_CON: "redis://redis-external.redis-instance.svc.cluster.local:6379"
+  HOST_UID: "1000"
+  HOST_GID: "1000"
+  TA_HOST: "http://tubearchivist.vanillax.me:8000"
+  ELASTIC_PASSWORD: "verysecret"

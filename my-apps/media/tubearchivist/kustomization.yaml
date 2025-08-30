@@ -3,14 +3,6 @@ kind: Kustomization
 commonLabels:
   app: tubearchivist
 
-configMapGenerator:
-- name: tubearchivist-env
-  namespace: tubearchivist
-  literals:
-  - TZ=America/Detroit
-  - TA_USERNAME=tubearchivist
-  - TA_PASSWORD=verysecret
-
 resources:
 - ns.yaml
 - svc.yaml
@@ -18,3 +10,6 @@ resources:
 - deployment.yaml
 - httproute.yaml
 - archivist-es
+- configmap.yaml
+
+namespace: tubearchivist
