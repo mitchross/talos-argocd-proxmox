@@ -8,6 +8,11 @@ spec:
   template:
     spec:
       restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: es-test
         image: curlimages/curl:8.2.1
@@ -24,5 +29,9 @@ spec:
           curl -sS -k -m 5 -u elastic:verysecret https://archivist-es:9200/_cluster/health || echo "HTTPS+auth failed";
           echo "\n=== DNS lookup ===";
           nslookup archivist-es || true;
-      # no service account, minimal privileges
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
       dnsPolicy: ClusterFirst
