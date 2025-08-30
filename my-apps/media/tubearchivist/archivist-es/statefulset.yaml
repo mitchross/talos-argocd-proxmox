@@ -41,6 +41,8 @@ spec:
           value: "-Xms1g -Xmx1g"
         - name: xpack.security.enabled
           value: "true"
+        - name: xpack.security.http.ssl.enabled
+          value: "false"
         - name: network.host
           value: "0.0.0.0"
         - name: ELASTIC_PASSWORD
