@@ -20,6 +20,17 @@ spec:
         runAsUser: 0
         runAsGroup: 0
         fsGroup: 0
+      initContainers:
+      - name: dns-check
+        image: busybox
+        command: ["sh", "-c", "nslookup archivist-es.tubearchivist.svc.cluster.local"]
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 50m
+            memory: 64Mi
       containers:
       - name: tubearchivist
         image: bbilly1/tubearchivist:latest
