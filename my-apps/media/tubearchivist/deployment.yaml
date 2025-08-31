@@ -27,7 +27,7 @@ spec:
         - /bin/sh
         - -c
         - |
-          until wget -q --spider 'http://archivist-es:9200/_cluster/health?wait_for_status=yellow&timeout=1s'; do
+          until wget --user=elastic --password=verysecret -q --spider 'http://archivist-es:9200/_cluster/health?wait_for_status=yellow&timeout=1s'; do
             echo "Waiting for Elasticsearch..."
             sleep 2
           done
