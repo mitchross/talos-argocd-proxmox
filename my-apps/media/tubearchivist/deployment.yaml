@@ -55,7 +55,6 @@ spec:
           limits:
             cpu: 1000m
             memory: 1Gi
-        command: ["sleep", "3600"]
       volumes:
       - name: config
         persistentVolumeClaim:
