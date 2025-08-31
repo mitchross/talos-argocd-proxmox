@@ -3,16 +3,17 @@ kind: Service
 metadata:
   name: archivist-es
   namespace: tubearchivist
+  annotations:
+    lbipam.cilium.io/ips: "192.168.10.34"
 spec:
-  type: LoadBalancer
-  externalIPs:
-  - 192.168.10.34  # Static IP from the Cilium IP pool
-  ports:
-  - name: http
-    port: 9200
-    targetPort: 9200
-  - name: transport
-    port: 9300
-    targetPort: 9300
   selector:
     app: archivist-es
+  ports:
+    - name: http
+      port: 9200
+      targetPort: 9200
+    - name: transport
+      port: 9300
+      targetPort: 9300
+  type: LoadBalancer
+  loadBalancerClass: io.cilium/l2-announcer
