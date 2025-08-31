@@ -55,10 +55,7 @@ spec:
           limits:
             cpu: 1000m
             memory: 1Gi
-        lifecycle:
-          postStart:
-            exec:
-              command: ["/bin/sh", "-c", "apt-get update && apt-get install -y dnsutils"]
+        command: ["sleep", "3600"]
       volumes:
       - name: config
         persistentVolumeClaim:
