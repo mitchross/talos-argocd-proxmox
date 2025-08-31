@@ -4,6 +4,9 @@ metadata:
   name: archivist-es
   namespace: tubearchivist
 spec:
+  type: LoadBalancer
+  externalIPs:
+  - 192.168.10.32  # Static IP from the Cilium IP pool
   ports:
   - name: http
     port: 9200
