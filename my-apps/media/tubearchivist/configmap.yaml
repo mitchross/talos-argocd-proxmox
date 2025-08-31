@@ -7,7 +7,7 @@ data:
   TZ: "America/Detroit"
   TA_USERNAME: "tubearchivist"
   TA_PASSWORD: "verysecret"
-  ES_URL: "http://192.168.10.34:9200"
+  ES_URL: "http://archivist-es:9200"
   REDIS_CON: "redis://redis-external.redis-instance.svc.cluster.local:6379"
   HOST_UID: "1000"
   HOST_GID: "1000"
