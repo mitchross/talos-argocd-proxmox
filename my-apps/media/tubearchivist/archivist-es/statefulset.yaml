@@ -26,7 +26,7 @@ spec:
           mountPath: /usr/share/elasticsearch/data
       containers:
       - name: elasticsearch
-        image: bbilly1/tubearchivist-es
+        image: elastic/elasticsearch:8.18.6
         resources:
           requests:
             memory: 1Gi

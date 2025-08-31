@@ -42,7 +42,7 @@ spec:
             memory: 64Mi
       containers:
       - name: tubearchivist
-        image: elastic/elasticsearch:8.18.6
+        image: bbilly1/tubearchivist:latest
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
