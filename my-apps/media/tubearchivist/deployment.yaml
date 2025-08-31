@@ -21,9 +21,16 @@ spec:
         runAsGroup: 0
         fsGroup: 0
       initContainers:
-      - name: dns-check
+      - name: wait-for-es
         image: busybox
-        command: ["sh", "-c", "nslookup archivist-es.tubearchivist.svc.cluster.local"]
+        command:
+        - /bin/sh
+        - -c
+        - |
+          until wget -q --spider 'http://archivist-es:9200/_cluster/health?wait_for_status=yellow&timeout=1s'; do
+            echo "Waiting for Elasticsearch..."
+            sleep 2
+          done
         resources:
           requests:
             cpu: 10m
