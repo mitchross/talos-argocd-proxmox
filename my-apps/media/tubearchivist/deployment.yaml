@@ -27,10 +27,12 @@ spec:
         - /bin/sh
         - -c
         - |
+          echo "Init container started."
           until wget -q --spider 'http://elastic:verysecret@archivist-es:9200/_cluster/health?wait_for_status=yellow&timeout=1s'; do
             echo "Waiting for Elasticsearch..."
             sleep 2
           done
+          echo "Elasticsearch is ready."
         resources:
           requests:
             cpu: 10m
