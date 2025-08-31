@@ -17,13 +17,6 @@ spec:
       securityContext:
         runAsUser: 1000
         fsGroup: 1000
-      initContainers:
-      - name: fix-permissions
-        image: busybox:1.37
-        command: [ "sh", "-c", "mkdir -p /usr/share/elasticsearch/data/snapshot && chown -R 1000:1000 /usr/share/elasticsearch/data || true" ]
-        volumeMounts:
-        - name: es-data
-          mountPath: /usr/share/elasticsearch/data
       containers:
       - name: elasticsearch
         image: elastic/elasticsearch:8.18.6
