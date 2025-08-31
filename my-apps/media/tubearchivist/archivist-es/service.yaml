@@ -3,8 +3,6 @@ kind: Service
 metadata:
   name: archivist-es
   namespace: tubearchivist
-  annotations:
-    lbipam.cilium.io/ips: "192.168.10.34"
 spec:
   selector:
     app: archivist-es
@@ -15,5 +13,4 @@ spec:
     - name: transport
       port: 9300
       targetPort: 9300
-  type: LoadBalancer
-  loadBalancerClass: io.cilium/l2-announcer
+  type: ClusterIP
