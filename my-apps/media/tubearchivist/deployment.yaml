@@ -55,6 +55,10 @@ spec:
           limits:
             cpu: 1000m
             memory: 1Gi
+        lifecycle:
+          postStart:
+            exec:
+              command: ["sh", "-c", "apk add --no-cache bind-tools"]
       volumes:
       - name: config
         persistentVolumeClaim:
