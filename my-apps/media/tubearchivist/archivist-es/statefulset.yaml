@@ -52,6 +52,8 @@ spec:
               key: elastic-password
         - name: path.repo
           value: "/usr/share/elasticsearch/data/snapshot"
+        - name: xpack.ml.enabled
+          value: "false"
         readinessProbe:
           tcpSocket:
             port: 9200
