@@ -19,7 +19,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: elasticsearch
-        image: elastic/elasticsearch:8.18.6
+        image: elastic/elasticsearch:8.19.3
         resources:
           requests:
             memory: 1Gi
