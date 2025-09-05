@@ -12,11 +12,15 @@ spec:
   selector:
     matchLabels:
       app: llama-swap
+  # Keep only the latest ReplicaSet, clean up old ones
+  revisionHistoryLimit: 1
   template:
     metadata:
       labels:
         app: llama-swap
     spec:
+      # Restart policy for failed containers
+      restartPolicy: Always
       runtimeClassName: nvidia
       priorityClassName: gpu-workload-high
       tolerations:
