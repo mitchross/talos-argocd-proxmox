@@ -344,7 +344,7 @@ Automated backups are configured with different tiers:
   - [ArgoCD Setup](docs/argocd.md) - **Enterprise GitOps patterns and self-management**
   - [Network Configuration](docs/network.md)
   - [Storage Configuration](docs/storage.md)
-  - [**Longhorn Backup & Disaster Recovery**](docs/longhorn-backup-guide.md) 🗄️ - **TrueNAS Scale integration**
+  - [**Backup & Recovery**](docs/backup-recovery.md) 🗄️ - **Simple backup and disaster recovery guide**
   - [Security Setup](docs/security.md)
   - [GPU Configuration](docs/gpu.md)
   - [External Services](docs/external-services.md)

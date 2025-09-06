@@ -328,11 +328,90 @@ kubectl describe backup backup-name -n longhorn-system
 
 ### Single Volume Recovery
 
+For single application restores, use this proven workflow based on [Longhorn community best practices](https://medium.com/@mahdad.ghasemian/restoring-data-using-longhorn-528c33535915):
+
+#### Step-by-Step Manual Restore Process
+
+1. **Scale Down the Application**:
+   ```bash
+   # For Deployments
+   kubectl scale deployment/app-name --replicas=0 -n namespace
+   
+   # For StatefulSets (e.g., PostgreSQL)
+   kubectl scale statefulset/postgresql --replicas=0 -n postgresql
+   ```
+
+2. **Wait for Volume to Detach**:
+   ```bash
+   # Monitor volume status until detached
+   kubectl get volumes -n longhorn-system -w
+   # Volume must be completely detached before proceeding
+   ```
+
+3. **Note the Current Volume Name**:
+   ```bash
+   # Find the volume name (format: pvc-<uuid>)
+   kubectl get pv | grep namespace/pvc-name
+   # Example output: pvc-1be4dafb-399f-40d4-ac87-205eb56c2f44
+   ```
+
+4. **Delete the Old Volume** (via Longhorn UI):
+   - Navigate to Longhorn UI → Volumes
+   - Find and delete the specified volume
+   - Confirm deletion
+
+5. **Restore the Backup to a New Volume** (via Longhorn UI):
+   - Go to Backup → Select backup to restore  
+   - **Critical**: Assign the new volume the **exact same name** from step 3
+   - Example: `pvc-1be4dafb-399f-40d4-ac87-205eb56c2f44`
+   - Start restore process
+
+6. **Wait for Restore Process to Complete**:
+   ```bash
+   # Monitor restore progress
+   kubectl get volumes -n longhorn-system -w
+   # Volume status should show as "Healthy"
+   ```
+
+7. **Create Persistent Volume (PV) / Persistent Volume Claim (PVC)**:
+   - Navigate to Longhorn UI → Volume → Operations → Create PV/PVC
+   - **Ensure "Create PVC" option is checked**
+   - **Ensure "Use Previous PVC" option is checked**
+   - This creates the bridge between restored volume and original PVC
+
+8. **Wait for PV/PVC to be Available**:
+   ```bash
+   # Verify PVC is bound to the restored volume
+   kubectl get pvc -n namespace
+   kubectl get pv | grep pvc-name
+   ```
+
+9. **Scale Up the Application**:
+   ```bash
+   # Restore original replica count
+   kubectl scale deployment/app-name --replicas=1 -n namespace
+   # or
+   kubectl scale statefulset/postgresql --replicas=1 -n postgresql
+   ```
+
+#### Why This Process Works
+
+- **Volume Name Matching**: Using the exact same volume name ensures Kubernetes can reconnect to the data
+- **PV/PVC Bridge**: The "Use Previous PVC" option creates the necessary binding between the restored volume and the original PVC
+- **Sequential Process**: Each step must complete before proceeding to prevent race conditions
+
+#### Alternative: CLI-Based Restore
+
+For automated scenarios, use our restoration scripts:
+
 ```bash
 # 1. Identify the backup to restore
 kubectl get backups -n longhorn-system | grep volume-name
 
-# 2. Create new volume from backup
+# 2. Use our restoration script
+./scripts/restore-from-backups.sh
+
+# 3. Or create volume manually from backup
 kubectl apply -f - <<EOF
 apiVersion: longhorn.io/v1beta2
 kind: Volume
@@ -344,10 +423,6 @@ spec:
   numberOfReplicas: 3
   size: "20Gi"
 EOF
-
-# 3. Update PVC to use new volume
-kubectl patch pvc pvc-name -n namespace --type='merge' \
-  -p='{"spec":{"volumeName":"recovered-volume"}}'
 ```
 
 ### Emergency Procedures
