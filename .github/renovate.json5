@@ -11,6 +11,7 @@
     'argocd',
     'terraform',
     'dockerfile',
+    'regex',
   ],
   argocd: {
     managerFilePatterns: [
@@ -99,9 +100,9 @@
   customManagers: [
     {
       customType: 'regex',
-      managerFilePatterns: [
-        '/iac/talos/talconfig.yaml/',
-      ],
+        managerFilePatterns: [
+          '/^iac/talos/talconfig\.yaml$/',
+        ],
       matchStrings: [
         'talosVersion:\\s*(?<currentValue>v[0-9.]+)',
       ],
@@ -110,9 +111,9 @@
     },
     {
       customType: 'regex',
-      managerFilePatterns: [
-        '/iac/talos/talconfig.yaml/',
-      ],
+        managerFilePatterns: [
+          '/^iac/talos/talconfig\.yaml$/',
+        ],
       matchStrings: [
         'kubernetesVersion:\\s*(?<currentValue>v[0-9.]+)',
       ],
