@@ -64,6 +64,11 @@ kind: PersistentVolumeClaim
 metadata:
   name: redis-data
   namespace: searxng
+  annotations:
+    # Longhorn backup settings - Standard tier for search cache
+    longhorn.io/recurring-job-source: enabled
+    longhorn.io/recurring-job-group: standard  
+    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
     - ReadWriteOnce

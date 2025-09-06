@@ -19,6 +19,11 @@ metadata:
   labels:
     app: mosquitto
     type: storage
+  annotations:
+    # Longhorn backup settings - Important tier for MQTT broker data
+    longhorn.io/recurring-job-source: enabled
+    longhorn.io/recurring-job-group: important
+    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
     - ReadWriteOnce

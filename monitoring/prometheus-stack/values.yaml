@@ -19,6 +19,12 @@ prometheus:
     # Storage configuration with Longhorn
     storageSpec:
       volumeClaimTemplate:
+        metadata:
+          annotations:
+            # Longhorn backup settings - Important tier for monitoring data
+            longhorn.io/recurring-job-source: enabled
+            longhorn.io/recurring-job-group: important
+            volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
         spec:
           storageClassName: longhorn
           accessModes:
@@ -89,6 +95,12 @@ alertmanager:
     # Storage for alertmanager
     storage:
       volumeClaimTemplate:
+        metadata:
+          annotations:
+            # Longhorn backup settings - Important tier for alerting data
+            longhorn.io/recurring-job-source: enabled
+            longhorn.io/recurring-job-group: important
+            volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
         spec:
           storageClassName: longhorn
           accessModes:
@@ -127,6 +139,11 @@ grafana:
     size: 5Gi
     accessModes:
       - ReadWriteOnce
+    annotations:
+      # Longhorn backup settings - Important tier for dashboard data
+      longhorn.io/recurring-job-source: enabled
+      longhorn.io/recurring-job-group: important
+      volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
   # Resource allocation
   resources:
     requests:
