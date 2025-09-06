@@ -2,7 +2,7 @@
 # renovate: datasource=docker depName=ghcr.io/siderolabs/installer
 talosVersion: v1.10.6
 # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
-kubernetesVersion: v1.33.2
+kubernetesVersion: v1.34.0
 # Cluster configuration
 clusterName: proxmox-talos-cluster
 endpoint: https://192.168.10.100:6443
