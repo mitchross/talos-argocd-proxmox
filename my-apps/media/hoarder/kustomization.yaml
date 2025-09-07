@@ -13,6 +13,7 @@ resources:
   - hoarder/externalsecret.yaml
   - hoarder/httproute.yaml
   - hoarder/pvc-data.yaml
+  - hoarder/pv-restored.yaml
   # Meilisearch resources
   - meilisearch/deployment-meilisearch.yaml
   - meilisearch/service-meilisearch.yaml
