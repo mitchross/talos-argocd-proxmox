@@ -5,7 +5,7 @@ metadata:
   labels:
     app: hoarder-chrome
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app: hoarder-chrome
