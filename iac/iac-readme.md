@@ -234,7 +234,7 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/downloa
 # Argo CD Bootstrap
 kubectl create namespace argocd
 kubectl kustomize --enable-helm infrastructure/controllers/argocd | kubectl apply -f -
-kubectl apply -f infrastructure/controllers/argocd/projects.yaml
+kubectl apply -f infrastructure/controllers/argocd/apps/projects.yaml
 
 # Wait for Argo CD
 kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
