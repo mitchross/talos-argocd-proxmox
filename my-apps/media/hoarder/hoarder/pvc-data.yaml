@@ -15,7 +15,7 @@ metadata:
     longhorn.io/volume-name: hoarder-restored
 spec:
   accessModes:
-    - ReadWriteOnce
+  - ReadWriteOnce
   resources:
     requests:
       storage: 10Gi

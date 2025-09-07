@@ -2,19 +2,19 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: hoarder
 resources:
-  - namespace.yaml
-  # Chrome resources
-  - chrome/deployment-chrome.yaml
-  - chrome/service-chrome.yaml
-  # Hoarder resources
-  - hoarder/configmap.yaml
-  - hoarder/deployment-web.yaml
-  - hoarder/service-web.yaml
-  - hoarder/externalsecret.yaml
-  - hoarder/httproute.yaml
-  - hoarder/pvc-data.yaml
-  - hoarder/pv-restored.yaml
-  # Meilisearch resources
-  - meilisearch/deployment-meilisearch.yaml
-  - meilisearch/service-meilisearch.yaml
-  - meilisearch/pvc-meilisearch.yaml
+- namespace.yaml
+# Chrome resources
+- chrome/deployment-chrome.yaml
+- chrome/service-chrome.yaml
+# Hoarder resources
+- hoarder/configmap.yaml
+- hoarder/deployment-web.yaml
+- hoarder/service-web.yaml
+- hoarder/externalsecret.yaml
+- hoarder/httproute.yaml
+- hoarder/pvc-data.yaml
+- hoarder/pv-restored.yaml
+# Meilisearch resources
+- meilisearch/deployment-meilisearch.yaml
+- meilisearch/service-meilisearch.yaml
+- meilisearch/pvc-meilisearch.yaml
