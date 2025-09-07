@@ -4,263 +4,195 @@ talosVersion: v1.11.0
 # renovate: datasource=docker depName=ghcr.io/siderolabs/kubelet
 kubernetesVersion: v1.34.0
 # Cluster configuration
-clusterName: proxmox-talos-cluster
-endpoint: https://192.168.10.100:6443
+clusterName: proxmox-talos-prod-cluster
+endpoint: https://${CONTROL_PLANE_ENDPOINT_IP}:6443
 clusterPodNets:
-  - 10.14.0.0/16
+- 10.14.0.0/16
 clusterSvcNets:
-  - 10.15.0.0/16
-# Common schematic for all nodes.
-# This will be merged with node-specific schematics.
-schematic:
-  customization:
-    systemExtensions:
-      officialExtensions:
-            - siderolabs/amd-ucode
-            - siderolabs/gasket-driver
-            - siderolabs/iscsi-tools
-            - siderolabs/nfsd
-            - siderolabs/qemu-guest-agent
-            - siderolabs/util-linux-tools
+- 10.15.0.0/16
+# NOTE: Using pre-built Image Factory schematics, so dynamic schematic customization is removed.
+# Non-GPU schematic ID: dc60c70fb44bd81b1bce5b3978a68a59c929f4a36395cea9df21a24c1fa1dd33
+# GPU schematic ID:     274c5c6e739dbb359c1ad19c304a5c064d23f00baaa18c556bb460ee08483ab2
 # Node configurations
 nodes:
-  # Control plane nodes
-  - hostname: talos-cluster-control-00
-    controlPlane: true
-    ipAddress: 192.168.10.100
-    installDisk: /dev/sda
-    networkInterfaces:
-      - deviceSelector:
-          hardwareAddr: "bc:24:11:a4:b2:97"
-        dhcp: false
-        addresses:
-          - 192.168.10.100/24
-        routes:
-          - network: 0.0.0.0/0
-            gateway: 192.168.10.1
-  # - hostname: talos-cluster-control-01
-  #   controlPlane: true
-  #   ipAddress: 192.168.10.101
-  #   installDisk: /dev/sda
-  #   networkInterfaces:
-  #     - deviceSelector:
-  #         hardwareAddr: "bc:24:11:ed:73:bf"
-  #       dhcp: false
-  #       addresses:
-  #         - 192.168.10.101/24
-  #       routes:
-  #         - network: 0.0.0.0/0
-  #           gateway: 192.168.10.1
-  # - hostname: talos-cluster-control-02
-  #   controlPlane: true
-  #   ipAddress: 192.168.10.102
-  #   installDisk: /dev/sda
-  #   networkInterfaces:
-  #     - deviceSelector:
-  #         hardwareAddr: "bc:24:11:98:6b:13"
-  #       dhcp: false
-  #       addresses:
-  #         - 192.168.10.102/24
-  #       routes:
-  #         - network: 0.0.0.0/0
-  #           gateway: 192.168.10.1
-  # GPU worker node
-  - hostname: talos-cluster-gpu-worker-00
-    controlPlane: false
-    ipAddress: 192.168.10.200
-    installDisk: /dev/sda
-    schematic:
-      customization:
-        systemExtensions:
-          officialExtensions:
-            - siderolabs/amd-ucode
-            - siderolabs/gasket-driver
-            - siderolabs/iscsi-tools
-            - siderolabs/nfsd
-            - siderolabs/nonfree-kmod-nvidia-production
-            - siderolabs/nvidia-container-toolkit-production
-            - siderolabs/qemu-guest-agent
-            - siderolabs/util-linux-tools
-    networkInterfaces:
-      - deviceSelector:
-          hardwareAddr: "bc:24:11:77:86:5f"
-        dhcp: false
-        addresses:
-          - 192.168.10.200/24
-        routes:
-          - network: 0.0.0.0/0
-            gateway: 192.168.10.1
-    nodeLabels:
-      node-type: gpu-worker
-    patches:
-      - |-
-        machine:
-          kernel:
-            modules:
-              - name: nvidia
-              - name: nvidia_uvm
-              - name: nvidia_drm
-              - name: nvidia_modeset
-          files:
-            - path: /etc/cri/conf.d/20-customization.part
-              op: create
-              content: |
-                [plugins]
-                  [plugins."io.containerd.cri.v1.runtime"]
-                    [plugins."io.containerd.cri.v1.runtime".containerd]
-                      default_runtime_name = "nvidia"
-  # Regular worker nodes
-  - hostname: talos-cluster-worker-01
-    controlPlane: false
-    ipAddress: 192.168.10.201
-    installDisk: /dev/sda
-    schematic:
-      customization:
-        systemExtensions:
-          officialExtensions:
-            - siderolabs/amd-ucode
-            - siderolabs/gasket-driver
-            - siderolabs/iscsi-tools
-            - siderolabs/nfsd
-            - siderolabs/qemu-guest-agent
-            - siderolabs/util-linux-tools
-    networkInterfaces:
-      - deviceSelector:
-          hardwareAddr: "bc:24:11:4c:99:a2"
-        dhcp: false
-        addresses:
-          - 192.168.10.201/24
-        routes:
-          - network: 0.0.0.0/0
-            gateway: 192.168.10.1
-    nodeLabels:
-      node-type: worker
-    patches:
-      - |-
-        machine:
-          files:
-            - path: /etc/cri/conf.d/20-customization.part
-              op: create
-              content: |
-                [plugins]
-                  [plugins."io.containerd.cri.v1.runtime"]
-                    [plugins."io.containerd.cri.v1.runtime".containerd]
-                      default_runtime_name = "runc"
-  - hostname: talos-cluster-worker-02
-    controlPlane: false
-    ipAddress: 192.168.10.203
-    installDisk: /dev/sda
-    schematic:
-      customization:
-        systemExtensions:
-          officialExtensions:
-            - siderolabs/amd-ucode
-            - siderolabs/gasket-driver
-            - siderolabs/iscsi-tools
-            - siderolabs/nfsd
-            - siderolabs/qemu-guest-agent
-            - siderolabs/util-linux-tools
-    networkInterfaces:
-      - deviceSelector:
-          hardwareAddr: "bc:24:11:ad:82:0d"
-        dhcp: false
-        addresses:
-          - 192.168.10.203/24
-        routes:
-          - network: 0.0.0.0/0
-            gateway: 192.168.10.1
-    nodeLabels:
-      node-type: worker
-    patches:
-      - |-
-        machine:
-          files:
-            - path: /etc/cri/conf.d/20-customization.part
-              op: create
-              content: |
-                [plugins]
-                  [plugins."io.containerd.cri.v1.runtime"]
-                    [plugins."io.containerd.cri.v1.runtime".containerd]
-                      default_runtime_name = "runc"
-# Global patches
-patches:
-  # Network configuration
+# Control plane node (from Terraform)
+- hostname: ${TALOS_CONTROL_PLANE_NAME_0}
+  controlPlane: true
+  ipAddress: ${TALOS_CONTROL_PLANE_IP_0}
+  installDisk: /dev/sda
+  networkInterfaces:
+  - deviceSelector:
+      hardwareAddr: "${TALOS_CONTROL_PLANE_MAC_0}"
+    dhcp: false
+    addresses:
+    - ${TALOS_CONTROL_PLANE_IP_0}/24
+    routes:
+    - network: 0.0.0.0/0
+      gateway: ${GATEWAY_IP}
+
+# Worker nodes (from Terraform)
+- hostname: ${TALOS_WORKER_NAME_1}
+  controlPlane: false
+  ipAddress: ${TALOS_WORKER_IP_1}
+  installDisk: /dev/sda
+  networkInterfaces:
+  - deviceSelector:
+      hardwareAddr: "${TALOS_WORKER_MAC_1}"
+    dhcp: false
+    addresses:
+    - ${TALOS_WORKER_IP_1}/24
+    routes:
+    - network: 0.0.0.0/0
+      gateway: ${GATEWAY_IP}
+  nodeLabels:
+    node-type: worker
+
+# Additional worker node (from Terraform)
+- hostname: ${TALOS_WORKER_NAME_2}
+  controlPlane: false
+  ipAddress: ${TALOS_WORKER_IP_2}
+  installDisk: /dev/sda
+  networkInterfaces:
+  - deviceSelector:
+      hardwareAddr: "${TALOS_WORKER_MAC_2}"
+    dhcp: false
+    addresses:
+    - ${TALOS_WORKER_IP_2}/24
+    routes:
+    - network: 0.0.0.0/0
+      gateway: ${GATEWAY_IP}
+  nodeLabels:
+    node-type: worker
+
+# GPU worker node (from Terraform)
+- hostname: ${TALOS_GPU_WORKER_NAME_0}
+  controlPlane: false
+  ipAddress: ${TALOS_GPU_WORKER_IP_0}
+  installDisk: /dev/sda
+  # GPU node uses a different pre-built schematic (LTS Nvidia extensions)
+  networkInterfaces:
+  - deviceSelector:
+      hardwareAddr: "${TALOS_GPU_WORKER_MAC_0}"
+    dhcp: false
+    addresses:
+    - ${TALOS_GPU_WORKER_IP_0}/24
+    routes:
+    - network: 0.0.0.0/0
+      gateway: ${GATEWAY_IP}
+  nodeLabels:
+    node-type: gpu-worker
+  patches:
   - |-
     machine:
-      network:
-        nameservers:
-          - 1.1.1.1
-          - 1.0.0.1
-  # Time configuration
-  - |- 
-    machine:
-      time:
-        disabled: false
-        servers:
-          - time.cloudflare.com
-  # Common kernel modules and sysctls
-  - |-
-    machine:
-      sysctls:
-        vm.nr_hugepages: "1024"
-        net.core.bpf_jit_harden: 1
       kernel:
         modules:
-          - name: nvme_tcp
-          - name: vfio_pci
-          - name: uio_pci_generic
+          - name: nvidia
+          - name: nvidia_uvm
+          - name: nvidia_drm
+          - name: nvidia_modeset
+      files:
+        - path: /etc/cri/conf.d/20-customization.part
+          op: create
+          content: |
+            [plugins]
+              [plugins."io.containerd.cri.v1.runtime"]
+                [plugins."io.containerd.cri.v1.runtime".containerd]
+                  default_runtime_name = "nvidia"
+  # Pin GPU schematic image so NVIDIA modules/toolkit are present
+  - |-
+    machine:
+      install:
+        image: factory.talos.dev/metal-installer/274c5c6e739dbb359c1ad19c304a5c064d23f00baaa18c556bb460ee08483ab2:v1.11.0
+# Global patches
+patches:
+# Network configuration
+- |-
+  machine:
+    network:
+      nameservers:
+        - 1.1.1.1
+        - 1.0.0.1
+# Time configuration
+- |-
+  machine:
+    time:
+      disabled: false
+      servers:
+        - time.cloudflare.com
+# Common kernel modules and sysctls
+- |-
+  machine:
+    sysctls:
+      vm.nr_hugepages: "1024"
+      net.core.bpf_jit_harden: 1
+    kernel:
+      modules:
+        - name: nvme_tcp
+        - name: vfio_pci
+        - name: uio_pci_generic
 # Control plane specific configuration
 controlPlane:
   patches:
-    # Default containerd runtime for control plane nodes
-    - |-
-      machine:
-        files:
-          - path: /etc/cri/conf.d/20-customization.part
-            op: create
-            content: |
-              [plugins]
-                [plugins."io.containerd.cri.v1.runtime"]
-                  [plugins."io.containerd.cri.v1.runtime".containerd]
-                    default_runtime_name = "runc"
-    # Cluster configuration
-    - |-
-      cluster:
-        controllerManager:
-          extraArgs:
-            bind-address: 0.0.0.0
-        proxy:
-          disabled: true
-        scheduler:
-          extraArgs:
-            bind-address: 0.0.0.0
-    # CNI configuration
-    - |-
-      cluster:
-        network:
-          cni:
-            name: none
-    # Node labels for control plane nodes that should not be load balancers
-    - |-
-      machine:
-        nodeLabels:
-          node.kubernetes.io/exclude-from-external-load-balancers: ""
+  # Default containerd runtime for control plane nodes
+  - |-
+    machine:
+      files:
+        - path: /etc/cri/conf.d/20-customization.part
+          op: create
+          content: |
+            [plugins]
+              [plugins."io.containerd.cri.v1.runtime"]
+                [plugins."io.containerd.cri.v1.runtime".containerd]
+                  default_runtime_name = "runc"
+  # Cluster configuration
+  - |-
+    cluster:
+      controllerManager:
+        extraArgs:
+          bind-address: 0.0.0.0
+      proxy:
+        disabled: true
+      scheduler:
+        extraArgs:
+          bind-address: 0.0.0.0
+  # CNI configuration
+  - |-
+    cluster:
+      network:
+        cni:
+          name: none
+  # Node labels for control plane nodes that should not be load balancers
+  - |-
+    machine:
+      nodeLabels:
+        node.kubernetes.io/exclude-from-external-load-balancers: ""
+  # Explicitly pin control plane image (same as non-GPU workers)
+  - |-
+    machine:
+      install:
+        image: factory.talos.dev/metal-installer/dc60c70fb44bd81b1bce5b3978a68a59c929f4a36395cea9df21a24c1fa1dd33:v1.11.0
 # Worker specific configuration
 worker:
   patches:
-    # Longhorn storage configuration
-    - |-
-      machine:
-        kubelet:
-          extraMounts:
-            - destination: /var/lib/longhorn
-              type: bind
-              source: /var/lib/longhorn
-              options:
-                - bind
-                - rshared
-                - rw
-        disks:
-          - device: /dev/sdb
-            partitions:
-              - mountpoint: /var/mnt/longhorn_sdb
+  # Pin non-GPU worker image (GPU node has its own node-level override)
+  - |-
+    machine:
+      install:
+        image: factory.talos.dev/metal-installer/dc60c70fb44bd81b1bce5b3978a68a59c929f4a36395cea9df21a24c1fa1dd33:v1.11.0
+  # Longhorn storage configuration
+  - |-
+    machine:
+      kubelet:
+        extraMounts:
+          - destination: /var/lib/longhorn
+            type: bind
+            source: /var/lib/longhorn
+            options:
+              - bind
+              - rshared
+              - rw
+      disks:
+        - device: /dev/sdb
+          partitions:
+            - mountpoint: /var/mnt/longhorn_sdb
+  # (Optional future) Override GPU node image separately; applied via node-specific patch if needed.

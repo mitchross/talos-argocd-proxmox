@@ -47,11 +47,36 @@ variable "nodes" {
     additional_disk_storage = optional(string, "datapool")
   }))
   default = [
-    { name = "talos-master-00", vmid = 200, role = "controlplane", ip = "192.168.10.100", cores = 6, memory = 16000, disk_size = "48G", mac_address = "BC:24:11:A4:B2:97", tags = ["talos", "controlplane"] },
-    { name = "talos-master-01", vmid = 201, role = "controlplane", ip = "192.168.10.101", cores = 6, memory = 16000, disk_size = "48G", mac_address = "BC:24:11:ED:73:BF", tags = ["talos", "controlplane"] },
-    { name = "talos-master-02", vmid = 202, role = "controlplane", ip = "192.168.10.102", cores = 6, memory = 16000, disk_size = "48G", mac_address = "BC:24:11:98:6B:13", tags = ["talos", "controlplane"] },
-    { name = "talos-worker-01", vmid = 301, role = "worker", ip = "192.168.10.201", cores = 8, memory = 18000, disk_size = "64G", additional_disk_size = "712G", mac_address = "BC:24:11:4C:99:A2", tags = ["talos", "worker"] },
-    { name = "talos-worker-02", vmid = 303, role = "worker", ip = "192.168.10.203", cores = 8, memory = 18000, disk_size = "64G", additional_disk_size = "712G", mac_address = "BC:24:11:AD:82:0D", tags = ["talos", "worker"] },
-    { name = "talos-gpu-worker-00", vmid = 300, role = "worker-gpu", ip = "192.168.10.200", cores = 8, memory = 65000, disk_size = "64G", additional_disk_size = "712G", mac_address = "BC:24:11:77:86:5F", tags = ["talos", "worker", "gpu"] }
+    { name = "talos-master-00", vmid = 2000, role = "controlplane", ip = "192.168.10.101", cores = 6, memory = 16000, disk_size = "48G", mac_address = "BC:24:21:A4:B2:97", tags = ["talos", "controlplane"] },
+    { name = "talos-worker-01", vmid = 3001, role = "worker", ip = "192.168.10.211", cores = 8, memory = 18000, disk_size = "64G", additional_disk_size = "112G", mac_address = "BC:24:21:4C:99:A2", tags = ["talos", "worker"] },
+    { name = "talos-worker-02", vmid = 3002, role = "worker", ip = "192.168.10.213", cores = 8, memory = 18000, disk_size = "64G", additional_disk_size = "112G", mac_address = "BC:24:21:AD:82:0D", tags = ["talos", "worker"] },
   ]
+}
+
+variable "talos_iso_file" {
+  description = "Default Proxmox storage reference to the uploaded Talos ISO for regular nodes, e.g. local:iso/talos-1.10.6.iso"
+  type        = string
+}
+
+variable "talos_gpu_iso_file" {
+  description = "Proxmox storage reference to the uploaded Talos GPU-enabled ISO, e.g. local:iso/talos-1.10.6-gpu.iso"
+  type        = string
+  default     = null
+}
+
+variable "disk_storage" {
+  description = "Primary datastore ID for the main VM disk (e.g. local, local-zfs, zfs1)"
+  type        = string
+}
+
+variable "additional_disk_storage" {
+  description = "Datastore ID for any additional data disks (if nodes specify additional_disk_size)."
+  type        = string
+  default     = "local"
+}
+
+variable "network_bridge" {
+  description = "Proxmox bridge to attach VM NICs to (e.g. vmbr0)."
+  type        = string
+  default     = "vmbr0"
 }

@@ -1,0 +1,41 @@
+# Copy to cluster.auto.tfvars (git-ignored) and fill in real values.
+# This file is an example; Terraform will NOT auto-load it until you remove the .example suffix.
+
+# --- Proxmox Connection (credentials.auto.tfvars already suggested for secrets) ---
+# proxmox_api_url      = "https://192.168.10.13:8006/api2/json"
+# proxmox_node         = "proxmox-threadripper"
+# proxmox_api_token    = "root@pam!iac=<token>"   # keep secret (place in credentials.auto.tfvars ideally)
+# proxmox_pool         = ""                        # optional
+# proxmox_ssh_password = "<proxmox-root-password>" # or set via environment TF_VAR_proxmox_ssh_password
+
+# --- Talos ISO (uploaded manually to Proxmox ISO storage) ---
+# Use factory.talos.dev output OR official Talos release ISO
+# Path pattern: <storage>:iso/<filename>
+talos_iso_file = "local:iso/talos-1.10.6.iso"
+
+# --- Storage Selection ---
+# Primary system disk datastore
+# Choose one visible on your node: e.g. local, local-zfs, zfs1, zfs2, zfs3
+# Run in Proxmox host: pvesh get /nodes/<node>/storage
+
+disk_storage = "local"
+
+# Datastore for any additional data disks (only used when nodes declare additional_disk_size)
+additional_disk_storage = "zfs1"
+
+# --- Network ---
+# Bridge for VM NICs (check Proxmox node network config)
+network_bridge = "vmbr0"
+
+# --- Node Shape (override var.nodes entirely if you want custom layout) ---
+# You can supply a custom nodes list by creating a tfvars entry like below.
+# Omit this block to use the default nodes in variables.tf.
+# Example:
+# nodes = [
+#   { name = "talos-master-00", vmid = 400, role = "controlplane", ip = "192.168.10.100", cores = 6, memory = 16000, disk_size = "48G", mac_address = "BC:24:11:A4:B2:97" },
+#   { name = "talos-worker-01", vmid = 411, role = "worker", ip = "192.168.10.201", cores = 8, memory = 18000, disk_size = "64G", additional_disk_size = "712G", mac_address = "BC:24:11:4C:99:A2" }
+# ]
+
+# After populating required values run:
+# terraform plan -out .tfplan
+# terraform apply .tfplan

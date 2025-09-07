@@ -1,11 +1,2 @@
-# Terraform files
-*.tfstate
-*.tfstate.*
-.terraform/
-.terraform.lock.hcl
-*.tfplan*
-
-# Credentials
-credentials.sh
-credentials.auto.tfvars
-.env 
+# Consolidated at repo root .gitignore. This stub left intentionally.
+# (Patterns for Terraform state, plans, and credentials now live in /.gitignore)
