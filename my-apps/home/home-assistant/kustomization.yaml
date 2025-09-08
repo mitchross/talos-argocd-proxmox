@@ -10,12 +10,12 @@ metadata:
 
 # Resource ordering for proper deployment
 resources:
-  - namespace.yaml
-  - storageclass-restore.yaml
-  - pvc.yaml
-  - service.yaml
-  - deployment.yaml
-  - httproute.yaml# Common labels applied to all resources
+- namespace.yaml
+- storageclass-restore.yaml
+- pvc.yaml
+- service.yaml
+- deployment.yaml
+- httproute.yaml
 commonLabels:
   app.kubernetes.io/managed-by: kustomize
   environment: production
