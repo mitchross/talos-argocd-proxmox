@@ -12,7 +12,7 @@ parameters:
   numberOfReplicas: "3"
   staleReplicaTimeout: "30"
   # Restore from backup - this is the proper Longhorn way!
-  fromBackup: "s3://longhorn-backups@us-east-1/?backup=backup-pvc-90bdde5c-f7c4-4f85-9fc5-b58970dc4c74&volume=pvc-90bdde5c-f7c4-4f85-9fc5-b58970dc4c74"
+  fromBackup: "s3://longhorn-backups@us-east-1/?backup=backup-7ba307e33826482c&volume=pvc-9f9bdadc-f7ca-4185-9fc3-3d897802a574"
   fsType: "ext4"
   # Keep backup settings
   recurringJobSelector: '[{"name":"important", "isGroup":true}]'
