@@ -1,0 +1,18 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-restore-hoarder
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "3"
+  staleReplicaTimeout: "30"
+  # Restore from backup - this is the proper Longhorn way!
+  fromBackup: "s3://longhorn-backups@us-east-1/?backup=backup-2c79fbbc958246dd&volume=pvc-e6115cbe-d941-48fe-9998-eb6468cd87d2"
+  fsType: "ext4"
+  # Keep backup settings
+  recurringJobSelector: '[{"name":"important", "isGroup":true}]'

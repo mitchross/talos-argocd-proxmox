@@ -11,13 +11,10 @@ metadata:
     longhorn.io/recurring-job-source: enabled
     longhorn.io/recurring-job-group: important
     volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
-    # Reference the restored Longhorn volume
-    longhorn.io/volume-name: hoarder-restored
 spec:
   accessModes:
   - ReadWriteOnce
   resources:
     requests:
       storage: 10Gi
-  storageClassName: longhorn
-  volumeName: hoarder-restored
+  storageClassName: longhorn-restore-hoarder
