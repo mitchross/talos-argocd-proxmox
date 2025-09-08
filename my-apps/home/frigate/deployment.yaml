@@ -13,8 +13,6 @@ spec:
       labels:
         app: frigate
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: talos-cluster-gpu-worker-00
       runtimeClassName: nvidia
       tolerations:
       - key: "gpu"
