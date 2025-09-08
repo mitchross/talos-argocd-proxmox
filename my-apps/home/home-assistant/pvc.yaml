@@ -12,13 +12,10 @@ metadata:
     longhorn.io/recurring-job-source: enabled
     longhorn.io/recurring-job-group: important
     volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
-    # Reference the restored Longhorn volume
-    longhorn.io/volume-name: home-assistant-recovered
 spec:
   accessModes:
-    - ReadWriteOnce
+  - ReadWriteOnce
   resources:
     requests:
       storage: 10Gi
-  storageClassName: longhorn
-  volumeName: home-assistant-recovered
+  storageClassName: longhorn-restore-home-assistant

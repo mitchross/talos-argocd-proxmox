@@ -11,27 +11,25 @@ metadata:
 # Resource ordering for proper deployment
 resources:
   - namespace.yaml
-  - pv-recovered.yaml
+  - storageclass-restore.yaml
   - pvc.yaml
   - service.yaml
   - deployment.yaml
-  - httproute.yaml
-
-# Common labels applied to all resources
+  - httproute.yaml# Common labels applied to all resources
 commonLabels:
   app.kubernetes.io/managed-by: kustomize
   environment: production
 
 generatorOptions:
   disableNameSuffixHash: true
-  
+
 configMapGenerator:
-  - name: home-assistant-config
-    files:
-      - configuration.yaml
-      - automations.yaml
-      - scripts.yaml
-      - scenes.yaml
-    options:
-      # Better ConfigMap handling
-      disableNameSuffixHash: true
+- name: home-assistant-config
+  files:
+  - configuration.yaml
+  - automations.yaml
+  - scripts.yaml
+  - scenes.yaml
+  options:
+    # Better ConfigMap handling
+    disableNameSuffixHash: true

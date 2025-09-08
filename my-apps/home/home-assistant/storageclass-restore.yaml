@@ -1,0 +1,18 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-restore-home-assistant
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "3"
+  staleReplicaTimeout: "30"
+  # Restore from backup - this is the proper Longhorn way!
+  fromBackup: "s3://longhorn-backups@us-east-1/?backup=backup-pvc-90bdde5c-f7c4-4f85-9fc5-b58970dc4c74&volume=pvc-90bdde5c-f7c4-4f85-9fc5-b58970dc4c74"
+  fsType: "ext4"
+  # Keep backup settings
+  recurringJobSelector: '[{"name":"important", "isGroup":true}]'
