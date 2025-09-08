@@ -11,6 +11,7 @@ metadata:
 # Resource ordering for proper deployment
 resources:
   - namespace.yaml
+  - pv-recovered.yaml
   - pvc.yaml
   - service.yaml
   - deployment.yaml
