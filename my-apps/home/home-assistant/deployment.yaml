@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/part-of: smart-home
     app.kubernetes.io/version: stable
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
