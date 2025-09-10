@@ -7,9 +7,10 @@ spec:
   selector:
     app: comfyui
   ports:
-    - port: 8188
-      targetPort: 8188
-      protocol: TCP
+  - name: http
+    port: 8188
+    targetPort: 8188
+    protocol: TCP
   type: ClusterIP
 ---
 apiVersion: v1
@@ -21,8 +22,8 @@ spec:
   selector:
     app: comfyui
   ports:
-    - port: 8188
-      targetPort: 8188
-      nodePort: 30188
-      protocol: TCP
+  - port: 8188
+    targetPort: 8188
+    nodePort: 30188
+    protocol: TCP
   type: NodePort

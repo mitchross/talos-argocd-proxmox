@@ -13,8 +13,8 @@ metadata:
     volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
-    - ReadWriteOnce
+  - ReadWriteOnce
   resources:
     requests:
       storage: 10Gi
-  storageClassName: longhorn
+  storageClassName: longhorn-restore-hoarder

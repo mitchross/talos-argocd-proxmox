@@ -30,15 +30,21 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: comfyui
-        # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu124-megapak
-        image: yanwk/comfyui-boot:cu126-megapak-20250821
+        # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu129-megapak
+        # renovate: datasource=docker depName=yanwk/comfyui-boot versioning=regex:^cu129-megapak-(?<major>\d{4})(?<minor>\d{2})(?<patch>\d{2})$
+        image: yanwk/comfyui-boot:cu129-megapak
         imagePullPolicy: IfNotPresent
         workingDir: /root
         ports:
         - containerPort: 8188
         env:
         - name: CLI_ARGS
-          value: "--listen 0.0.0.0 --port 8188"
+          value: "--fast --listen 0.0.0.0 --port 8188"
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: comfyui-secrets
+              key: HF_TOKEN
         resources:
           requests:
             memory: "8Gi"
@@ -49,7 +55,7 @@ spec:
             cpu: "8"
             nvidia.com/gpu: "1"
         volumeMounts:
-        # The image expects a persistent volume at /root to store ComfyUI, models, and outputs.
+        # Single storage volume at /root - container handles internal structure
         - name: comfyui-storage
           mountPath: /root
         readinessProbe:

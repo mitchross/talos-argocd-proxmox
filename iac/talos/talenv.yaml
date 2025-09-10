@@ -1,0 +1,24 @@
+# talenv.yaml - Talos environment variables for talhelper
+# Extracted from terraform/talos-cluster/cluster.auto.tfvars
+# Generated on Sat Sep  6 18:38:49 EDT 2025
+
+# Network Configuration
+GATEWAY_IP: "192.168.10.1"
+CONTROL_PLANE_ENDPOINT_IP: "192.168.10.100"
+
+# Node Configuration
+TALOS_CONTROL_PLANE_IP_0: "192.168.10.100"
+TALOS_CONTROL_PLANE_MAC_0: "AC:24:21:A4:B2:97"
+TALOS_CONTROL_PLANE_NAME_0: "talos-prod-control-01"
+TALOS_WORKER_IP_1: "192.168.10.111"
+TALOS_WORKER_MAC_1: "AC:24:21:4C:99:A1"
+TALOS_WORKER_NAME_1: "talos-prod-worker-01"
+TALOS_WORKER_IP_2: "192.168.10.112"
+TALOS_WORKER_MAC_2: "AC:24:21:4C:99:A2"
+TALOS_WORKER_NAME_2: "talos-prod-worker-02"
+TALOS_GPU_WORKER_IP_0: "192.168.10.113"
+TALOS_GPU_WORKER_MAC_0: "AC:24:21:AD:82:A3"
+TALOS_GPU_WORKER_NAME_0: "talos-prod-gpu-worker-03"
+
+# Usage with talhelper:
+# talhelper genconfig --env-file talenv.yaml

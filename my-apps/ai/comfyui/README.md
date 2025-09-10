@@ -1,16 +1,30 @@
+````markdown
 # ComfyUI on Kubernetes (Talos) with ArgoCD
 
-This directory contains Kubernetes manifests to deploy ComfyUI with GPU support on Talos Linux via ArgoCD. The setup leverages the built-in, automated setup process of the `yanwk/comfyui-boot` container image.
+This directory contains Kubernetes manifests to deploy ComfyUI with GPU support on Talos Linux via ArgoCD. The setup leverages the built-in, automated setup process of the `yanwk/comfyui-boot` container image and matches the Docker reference implementation.
 
 ## File Structure
 
 - `namespace.yaml` - ComfyUI namespace
-- `pvc.yaml` - Persistent Volume Claim for the `/root` directory, where the image stores all data (180GB, Longhorn single replica)
-- `deployment.yaml` - Main ComfyUI deployment that relies on the image's internal entrypoint for setup
-- `service.yaml` - ClusterIP and NodePort services
+- `pvc.yaml` - Multiple Persistent Volume Claims for organized storage
+- `deployment.yaml` - Main ComfyUI deployment with GPU support
+- `service.yaml` - ClusterIP service with named port for HTTPRoute
 - `httproute.yaml` - HTTPRoute configuration for Gateway API
+- `externalsecret.yaml` - External secret for Hugging Face integration
 - `kustomization.yaml` - Kustomize configuration
 - `README.md` - This documentation
+
+## Storage Organization
+
+Based on the Docker reference implementation, storage is organized as follows:
+
+- `comfyui-storage` (50Gi) - Main application data at `/root`
+- `comfyui-models` (200Gi) - Models storage at `/root/ComfyUI/models`
+- `comfyui-hf-cache` (100Gi) - Hugging Face cache at `/root/.cache/huggingface/hub`
+- `comfyui-torch-cache` (50Gi) - PyTorch cache at `/root/.cache/torch/hub`
+- `comfyui-input` (20Gi) - Input files at `/root/ComfyUI/input`
+- `comfyui-output` (100Gi) - Generated outputs at `/root/ComfyUI/output`
+- `comfyui-workflows` (5Gi) - Workflows at `/root/ComfyUI/user/default/workflows`
 
 ## Prerequisites for Talos
 
@@ -46,8 +60,20 @@ The container's entrypoint will handle the setup automatically upon pod creation
 ## Features
 
 ### Container Image
-- Uses `yanwk/comfyui-boot:cu124-megapak-20250707` - an all-in-one image optimized for GPU workloads.
-- Includes ComfyUI, Python 3.12, CUDA 12.4, and all necessary dependencies.
+- Uses `yanwk/comfyui-boot:cu129-megapak` - an all-in-one image optimized for GPU workloads.
+- Includes ComfyUI, Python 3.12, CUDA 12.9, and all necessary dependencies.
+- Optimized for RTX 40 series and newer GPUs with fast loading and PyTorch cross-attention.
+
+### CLI Arguments
+The deployment uses optimized CLI arguments:
+- `--fast` - Optimized for RTX 40 series and newer GPUs
+- `--use-pytorch-cross-attention` - Disable xFormers, recommended for Blackwell GPUs
+- `--listen 0.0.0.0 --port 8188` - Network configuration for Kubernetes
+
+### Hugging Face Integration
+- Automatic token injection via ExternalSecret from 1Password
+- Cached models and transformers stored in dedicated volumes
+- Environment variable `HF_HOME` properly configured
 
 ### Fully Automated Setup
 - The container's internal entrypoint handles all downloads and setup.

@@ -5,3 +5,11 @@ proxmox-talos-cluster-talos-cluster-gpu-worker-00.yaml
 proxmox-talos-cluster-talos-cluster-worker-01.yaml
 proxmox-talos-cluster-talos-cluster-worker-02.yaml
 talosconfig
+proxmox-talos-prod-cluster-talos-prod-control-01.yaml
+proxmox-talos-prod-cluster-talos-prod-worker-01.yaml
+proxmox-talos-prod-cluster-talos-prod-worker-02.yaml
+proxmox-talos-prod-cluster-talos-prod-gpu-worker-03.yaml
+proxmox-talos-prod-cluster-talos-prod-control-01.yaml
+proxmox-talos-prod-cluster-talos-prod-worker-01.yaml
+proxmox-talos-prod-cluster-talos-prod-worker-02.yaml
+proxmox-talos-prod-cluster-talos-prod-gpu-worker-03.yaml
