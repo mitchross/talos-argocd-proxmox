@@ -32,7 +32,7 @@ spec:
       - name: comfyui
         # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu124-megapak
         # renovate: datasource=docker depName=yanwk/comfyui-boot versioning=regex:^cu126-megapak-(?<major>\d{4})(?<minor>\d{2})(?<patch>\d{2})$
-        image: yanwk/comfyui-boot:cu126-megapak-20250821
+        image: yanwk/comfyui-boot:cu126-megapak-20250908
         imagePullPolicy: IfNotPresent
         workingDir: /root
         ports:
