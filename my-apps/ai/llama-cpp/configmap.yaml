@@ -13,7 +13,7 @@ data:
           -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf \
           -c 131072 -ngl 99 --split-mode layer --tensor-split 1,1 \
           --rope-scaling yarn --rope-scale 4 \
-          --flash-attn --cache-type-k q4_0 --cache-type-v q4_0 \
+          --flash-attn auto --cache-type-k q4_0 --cache-type-v q4_0 \
           --host 0.0.0.0 --port ${PORT} --threads -1 --mlock"
         gpu_mode: "dual"
         health_check_path: "/health"
@@ -25,7 +25,7 @@ data:
           -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf \
           -c 163840 -ngl 99 --split-mode layer --tensor-split 1,1 \
           --rope-scaling yarn --rope-scale 5 \
-          --flash-attn --cache-type-k q4_0 --cache-type-v q4_0 \
+          --flash-attn auto --cache-type-k q4_0 --cache-type-v q4_0 \
           --host 0.0.0.0 --port ${PORT} --threads -1 --mlock"
         gpu_mode: "dual"
         health_check_path: "/health"
@@ -36,7 +36,7 @@ data:
         cmd: "/app/llama-server \
           -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q8_K_XL.gguf \
           -c 65536 -ngl 99 --split-mode layer --tensor-split 1,1 \
-          --flash-attn --cache-type-k f16 --cache-type-v f16 \
+          --flash-attn auto --cache-type-k f16 --cache-type-v f16 \
           --host 0.0.0.0 --port ${PORT} --threads -1 --mlock"
         gpu_mode: "dual"
         health_check_path: "/health"
@@ -48,7 +48,7 @@ data:
           -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf \
           -c 65536 -ngl 99 --split-mode layer --tensor-split 1,0 \
           --rope-scaling linear --rope-scale 2 \
-          --flash-attn --cache-type-k q4_0 --cache-type-v q4_0 \
+          --flash-attn auto --cache-type-k q4_0 --cache-type-v q4_0 \
           --host 0.0.0.0 --port ${PORT} --threads -1 --mlock"
         gpu_mode: "single"
         health_check_path: "/health"
