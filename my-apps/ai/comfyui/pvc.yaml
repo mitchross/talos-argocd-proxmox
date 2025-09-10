@@ -5,7 +5,7 @@ metadata:
   namespace: comfyui
 spec:
   accessModes:
-    - ReadWriteOnce
+  - ReadWriteMany
   resources:
     requests:
       storage: 250Gi
