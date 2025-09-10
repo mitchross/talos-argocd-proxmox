@@ -29,7 +29,8 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: llama-swap
-        image: ghcr.io/mostlygeek/llama-swap:v150-cuda-b6140
+        # renovate: datasource=docker depName=ghcr.io/mostlygeek/llama-swap
+        image: ghcr.io/mostlygeek/llama-swap:v158-cuda-b6425
         imagePullPolicy: IfNotPresent
 
         # --- FINAL FIX: Using the correct, confirmed path to the executable ---
