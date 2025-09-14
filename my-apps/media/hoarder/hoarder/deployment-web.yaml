@@ -18,7 +18,7 @@ spec:
         runAsGroup: 1001
       containers:
         - name: hoarder
-          image: ghcr.io/karakeep-app/karakeep:release@sha256:092a2d9c7e5b34655b0833dc22de7e271c7dd165cf17b3205013b3493bfaae4c
+          image: ghcr.io/karakeep-app/karakeep:release@sha256:abd7d6b11b1b8fa3593d1971f886a74850ba8d6a99291218b150207d5a60378e
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
