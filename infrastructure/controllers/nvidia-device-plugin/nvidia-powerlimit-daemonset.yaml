@@ -38,37 +38,37 @@ spec:
       priorityClassName: "system-node-critical"
       initContainers:
       - name: set-power-limit
-        image: nvcr.io/nvidia/cuda:13.0.1-base-ubuntu22.04
-        command: ["/bin/bash", "-c"]
+        image: nvidia/cuda:12.4.1-base-ubuntu22.04
+        command: [ "/bin/bash", "-c" ]
         args:
         - |
           set -e
           echo "=== NVIDIA GPU Power Management for Talos 1.10 ==="
-          
+
           # Wait for nvidia-smi to be available
           until nvidia-smi > /dev/null 2>&1; do
             echo "Waiting for nvidia-smi to be available..."
             sleep 5
           done
-          
+
           echo "Detected GPUs:"
           nvidia-smi --query-gpu=index,name,power.limit,power.default_limit --format=csv
           echo ""
-          
+
           # Set power limits for RTX 3090 (adjust if you have different GPUs)
           echo "Setting power limits to 300W (conservative for RTX 3090 with time-slicing)..."
           nvidia-smi -pl 300
-          
+
           echo ""
           echo "=== Updated GPU Configuration ==="
           nvidia-smi --query-gpu=index,name,power.limit --format=csv
           echo ""
           echo "✅ Power limit configuration completed successfully"
-          
+
           # Verify persistence settings
           echo "Setting persistence mode..."
           nvidia-smi -pm 1
-          
+
         securityContext:
           privileged: true
         resources:
@@ -80,13 +80,13 @@ spec:
             memory: 256Mi
       containers:
       - name: power-monitor
-        image: nvcr.io/nvidia/cuda:13.0.1-base-ubuntu22.04
-        command: ["/bin/bash", "-c"]
+        image: nvidia/cuda:12.4.1-base-ubuntu22.04
+        command: [ "/bin/bash", "-c" ]
         args:
         - |
           echo "=== NVIDIA Power Monitor Started ==="
           echo "Monitoring power limits every 30 minutes for RTX 3090 stability with time-slicing..."
-          
+
           while true; do
             sleep 1800  # 30 minutes
             echo "$(date): Checking GPU power limits and persistence..."
