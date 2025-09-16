@@ -5,11 +5,11 @@ commonLabels:
 
 resources:
 - ns.yaml
-- svc.yaml
-- pvc.yaml
-- deployment.yaml
-- httproute.yaml
-- archivist-es
-- configmap.yaml
+# - svc.yaml
+# - pvc.yaml
+# - deployment.yaml
+# - httproute.yaml
+# - archivist-es
+# - configmap.yaml
 
 namespace: tubearchivist
