@@ -1,12 +1,12 @@
-kind: Deployment
 apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: tubearchivist
   namespace: tubearchivist
+  labels:
+    app: tubearchivist
 spec:
   replicas: 1
-  strategy:
-    type: Recreate
   selector:
     matchLabels:
       app: tubearchivist
@@ -16,61 +16,60 @@ spec:
         app: tubearchivist
     spec:
       securityContext:
-        runAsNonRoot: false
-        runAsUser: 0
-        runAsGroup: 0
-        fsGroup: 0
-      initContainers:
-      - name: wait-for-es
-        image: busybox
-        command:
-        - /bin/sh
-        - -c
-        - |
-          echo "Init container started."
-          until wget -q --spider 'http://elastic:verysecret@archivist-es:9200/_cluster/health?wait_for_status=yellow&timeout=1s'; do
-            echo "Waiting for Elasticsearch..."
-            sleep 2
-          done
-          echo "Elasticsearch is ready."
-        resources:
-          requests:
-            cpu: 10m
-            memory: 16Mi
-          limits:
-            cpu: 50m
-            memory: 64Mi
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: tubearchivist
-        image: bbilly1/tubearchivist:latest
+        image: ghcr.io/mitchross/tubearchivist:develop
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
           containerPort: 8000
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         envFrom:
         - configMapRef:
-            name: tubearchivist-env
+            name: tubearchivist-config
+        - secretRef:
+            name: tubearchivist-secrets
         volumeMounts:
-        - name: config
-          mountPath: /config
-        - name: youtube
-          mountPath: /youtube
         - name: cache
           mountPath: /cache
+        - name: media
+          mountPath: /youtube
+        readinessProbe:
+          httpGet:
+            path: /api/health/
+            port: 8000
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+        livenessProbe:
+          httpGet:
+            path: /api/health/
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 20
+          timeoutSeconds: 5
+          failureThreshold: 6
         resources:
           requests:
-            cpu: 200m
+            cpu: 100m
             memory: 256Mi
           limits:
-            cpu: 1000m
-            memory: 1Gi
+            cpu: "2"
+            memory: 2Gi
       volumes:
-      - name: config
-        persistentVolumeClaim:
-          claimName: tubearchivist-config-pvc
-      - name: youtube
-        persistentVolumeClaim:
-          claimName: tubearchivist-media-pvc
       - name: cache
         persistentVolumeClaim:
-          claimName: tubearchivist-cache-pvc
+          claimName: cache-pvc
+      - name: media
+        persistentVolumeClaim:
+          claimName: media-pvc

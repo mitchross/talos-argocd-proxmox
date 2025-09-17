@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: archivist-redis
+  namespace: tubearchivist
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: archivist-redis
+  template:
+    metadata:
+      labels:
+        app: archivist-redis
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: redis
+        image: redis:7
+        ports:
+        - containerPort: 6379
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        command:
+        - redis-server
+        - --save
+        - ""
+        - --appendonly
+        - "no"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+      volumes:
+      - name: redis-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: archivist-redis
+  namespace: tubearchivist
+spec:
+  selector:
+    app: archivist-redis
+  ports:
+  - port: 6379
+    targetPort: 6379

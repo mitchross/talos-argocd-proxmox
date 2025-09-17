@@ -4,12 +4,15 @@ commonLabels:
   app: tubearchivist
 
 resources:
-- ns.yaml
-# - svc.yaml
-# - pvc.yaml
-# - deployment.yaml
-# - httproute.yaml
-# - archivist-es
-# - configmap.yaml
+  - ns.yaml
+  - svc.yaml
+  - deployment.yaml
+  - configmap.yaml
+  - pvc.yaml
+  - storageclass.yaml
+  - httproute.yaml
+  - archivist-es/service.yaml
+  - archivist-es/statefulset.yaml
+  - redis.yaml
 
 namespace: tubearchivist
