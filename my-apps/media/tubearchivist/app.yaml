@@ -44,7 +44,7 @@ spec:
           mountPath: /youtube
         readinessProbe:
           httpGet:
-            path: /api/health/
+            path: /health
             port: 8000
           initialDelaySeconds: 20
           periodSeconds: 10
@@ -52,7 +52,7 @@ spec:
           failureThreshold: 6
         livenessProbe:
           httpGet:
-            path: /api/health/
+            path: /health
             port: 8000
           initialDelaySeconds: 60
           periodSeconds: 20
