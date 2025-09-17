@@ -28,7 +28,7 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
-            drop: ["ALL"]
+            drop: [ "ALL" ]
         env:
         - name: ELASTIC_PASSWORD
           valueFrom:
@@ -61,3 +61,15 @@ spec:
       - name: es-data
         persistentVolumeClaim:
           claimName: es-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: archivist-es
+  namespace: tubearchivist
+spec:
+  selector:
+    app: archivist-es
+  ports:
+  - port: 9200
+    targetPort: 9200

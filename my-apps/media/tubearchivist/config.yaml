@@ -8,9 +8,7 @@ data:
   ES_URL: http://archivist-es:9200
   REDIS_CON: redis://archivist-redis:6379
   TA_HOST: http://tubearchivist.talos:8000
-
 ---
-
 apiVersion: v1
 kind: Secret
 metadata:
