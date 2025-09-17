@@ -4,9 +4,7 @@ resources:
 - namespace.yaml
 - config.yaml
 - storage.yaml
-- deployment.yaml
-- svc.yaml
+- app.yaml
 - http-route.yaml
 - redis.yaml
 - elasticsearch.yaml
-
