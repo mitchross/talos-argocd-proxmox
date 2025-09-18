@@ -36,6 +36,8 @@ spec:
             - --config
             - /etc/cloudflared/config/config.yaml
             - run
+            - --protocol
+            - http2
           livenessProbe:
             httpGet:
               path: /ready
