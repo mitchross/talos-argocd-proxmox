@@ -16,5 +16,5 @@ metadata:
   namespace: tubearchivist
 stringData:
   ELASTIC_PASSWORD: verysecret
-  TA_USERNAME: tubearchivist
+  TA_USERNAME: vanillax
   TA_PASSWORD: verysecret
