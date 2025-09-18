@@ -6,8 +6,8 @@ metadata:
 data:
   TZ: America/New_York
   ES_URL: http://archivist-es:9200
-  REDIS_CON: redis://archivist-redis:6379
-  TA_HOST: http://tubearchivist.talos:8000
+  REDIS_CON: redis://archivist-redis.tubearchivist.svc.cluster.local:6379
+  TA_HOST: https://tube.vanillax.me
 ---
 apiVersion: v1
 kind: Secret
