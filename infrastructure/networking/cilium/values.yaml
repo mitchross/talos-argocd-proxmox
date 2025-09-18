@@ -10,10 +10,10 @@ kubeProxyReplacement: true
 #   subnets/VLANs) or in cloud environments where the underlying network cannot route pod IPs.
 #
 # This cluster's nodes are all on the same L2 network, so native routing is used.
-routingMode: native
+routingMode: tunnel
 # When using native routing, the pod CIDR must be specified.
 # This value is derived from the `clusterPodNets` field in `iac/talos/talconfig.yaml`.
-ipv4NativeRoutingCIDR: 10.14.0.0/16
+# ipv4NativeRoutingCIDR: 10.14.0.0/16
 bpf:
   masquerade: true
 # Point to one of the control plane nodes initially
