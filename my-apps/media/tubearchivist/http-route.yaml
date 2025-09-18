@@ -5,15 +5,20 @@ metadata:
   namespace: tubearchivist
 spec:
   parentRefs:
-  - name: external-gateway
-    namespace: networking
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal
+      namespace: gateway
   hostnames:
-  - "tubearchivist.talos"
+    - tube.vanillax.me
   rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /
-    backendRefs:
-    - name: tubearchivist
-      port: 8000
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: tubearchivist
+          port: 8000
+          weight: 1
