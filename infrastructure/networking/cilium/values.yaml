@@ -2,7 +2,15 @@ cluster:
   name: talos-default
   id: 1
 kubeProxyReplacement: true
-tunnel: disabled
+# Cilium Routing Mode
+#
+# - "native" (Direct Routing): Use when all cluster nodes are on the same L2 network.
+#   This is more performant as it avoids the overhead of encapsulation.
+# - "tunnel" (Encapsulation): Use when nodes are on different L2 networks (e.g., different
+#   subnets/VLANs) or in cloud environments where the underlying network cannot route pod IPs.
+#
+# This cluster's nodes are all on the same L2 network, so native routing is used.
+routingMode: native
 bpf:
   masquerade: true
 # Point to one of the control plane nodes initially
