@@ -2,6 +2,9 @@ cluster:
   name: talos-default
   id: 1
 kubeProxyReplacement: true
+tunnel: disabled
+bpf:
+  masquerade: true
 # Point to one of the control plane nodes initially
 # Once VIP is working, this can be updated to the VIP
 k8sServiceHost: localhost
