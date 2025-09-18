@@ -16,11 +16,12 @@ metadata:
   name: media-pvc
   namespace: tubearchivist
 spec:
-  accessModes: [ "ReadWriteOnce" ]
-  storageClassName: longhorn
+  accessModes:
+  - ReadWriteMany
+  storageClassName: tubearchivist-smb
   resources:
     requests:
-      storage: 50Gi
+      storage: 1Ti
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
