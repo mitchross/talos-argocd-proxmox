@@ -22,7 +22,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: redis
-        image: redis:7
+        image: redis:8
         ports:
         - containerPort: 6379
         securityContext:
