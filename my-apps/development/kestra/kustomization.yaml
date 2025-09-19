@@ -11,7 +11,7 @@ resources:
 helmCharts:
   - name: kestra
     repo: https://helm.kestra.io/
-    version: 1.0.2
+    version: 1.0.3
     releaseName: kestra
     namespace: kestra
     valuesFile: values.yaml
