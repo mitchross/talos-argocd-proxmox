@@ -19,18 +19,18 @@ postgresql:
 
 valkey:
   enabled: true
+  configuration: |
+    # Disable AOF to avoid I/O errors
+    appendonly no
+    # Enable RDB persistence instead
+    save 900 1
+    save 300 10
+    save 60 10000
   master:
     persistence:
       enabled: true
       size: 8Gi
       storageClass: longhorn
-    configuration: |
-      # Disable AOF to avoid I/O errors
-      appendonly no
-      # Enable RDB persistence instead
-      save 900 1
-      save 300 10
-      save 60 10000
 
 persistence:
   enabled: true
