@@ -1,8 +1,8 @@
 # Minimal NetBox values; using bundled PostgreSQL and Valkey for simplicity.
 
-# Set a global security context to ensure pods have correct volume permissions on Talos.
+# Set a global pod security context to ensure pods have correct volume permissions on Talos.
 # The fsGroup allows the pod's user to write to the persistent volume.
-securityContext:
+podSecurityContext:
   fsGroup: 101
 
 allowedHosts:
