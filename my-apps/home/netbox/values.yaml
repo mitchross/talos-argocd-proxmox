@@ -1,21 +1,29 @@
 # Minimal NetBox values; using bundled PostgreSQL and Valkey for simplicity.
 
+# Set a global security context to ensure pods have correct volume permissions on Talos.
+# The fsGroup allows the pod's user to write to the persistent volume.
+securityContext:
+  fsGroup: 101
+
 allowedHosts:
 - netbox.vanillax.me
 
 postgresql:
   enabled: true
+  # Apply security context for the PostgreSQL container as well.
+  primary:
+    podSecurityContext:
+      fsGroup: 26 # The default user ID for postgres in the bitnami image
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: longhorn
   auth:
     username: netbox
     database: netbox
     password: "0sMMxAr+CtY03x5Ji9WxsuuLjnRZ8urH194x+zd3Fzg="
     # Optional but recommended to set as well
     postgresPassword: "Y3RPsv/oCRVAuzFrI979VKiizSNl+eLy/m1CyAG41Ys="
-  primary:
-    persistence:
-      enabled: true
-      size: 10Gi
-      storageClass: longhorn
 
 valkey:
   enabled: true
