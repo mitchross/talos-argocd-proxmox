@@ -8,9 +8,9 @@ postgresql:
   auth:
     username: netbox
     database: netbox
-    password: "change-me-netbox"
+    password: "0sMMxAr+CtY03x5Ji9WxsuuLjnRZ8urH194x+zd3Fzg="
     # Optional but recommended to set as well
-    postgresPassword: "change-me-postgres"
+    postgresPassword: "Y3RPsv/oCRVAuzFrI979VKiizSNl+eLy/m1CyAG41Ys="
   primary:
     persistence:
       enabled: true
@@ -19,6 +19,18 @@ postgresql:
 
 valkey:
   enabled: true
+  master:
+    persistence:
+      enabled: true
+      size: 8Gi
+      storageClass: longhorn
+    configuration: |
+      # Disable AOF to avoid I/O errors
+      appendonly no
+      # Enable RDB persistence instead
+      save 900 1
+      save 300 10
+      save 60 10000
 
 persistence:
   enabled: true
