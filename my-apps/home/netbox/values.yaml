@@ -30,11 +30,20 @@ valkey:
   auth:
     enabled: true
     password: "change-me"
+  # Apply security context and disable persistence for both master and replicas
   master:
+    podSecurityContext:
+      fsGroup: 1001
+    persistence:
+      enabled: false
     configuration: |
-      # Disable persistence like TubeArchivist
       appendonly no
       save ""
+  replica:
+    podSecurityContext:
+      fsGroup: 1001
+    persistence:
+      enabled: false
 
 persistence:
   enabled: true
