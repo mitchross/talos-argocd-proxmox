@@ -43,6 +43,9 @@ persistence:
 
 worker:
   enabled: true
+  # Disable the wait-for-backend init container which causes a deadlock
+  waitForBackend:
+    enabled: false
 
 metrics:
   enabled: false
