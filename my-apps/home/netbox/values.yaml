@@ -28,7 +28,8 @@ postgresql:
 valkey:
   enabled: true
   auth:
-    enabled: false
+    enabled: true
+    password: "change-me"
   master:
     configuration: |
       # Disable persistence like TubeArchivist
