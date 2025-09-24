@@ -18,10 +18,22 @@ spec:
         app.kubernetes.io/component: backend
     spec:
       securityContext:
-        runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+      initContainers:
+      - name: copy-app
+        image: ghcr.io/mitchross/sticktock/backend:latest
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            cp -r /usr/src/app/* /app-working/
+            chown -R 1000:1000 /app-working/
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - name: app-working
+          mountPath: /app-working
       containers:
       - name: backend
         image: ghcr.io/mitchross/sticktock/backend:latest
@@ -46,6 +58,8 @@ spec:
           mountPath: /var/local/sticktock
         - name: tmp
           mountPath: /tmp
+        - name: app-working
+          mountPath: /usr/src/app
         resources:
           requests:
             memory: "512Mi"
@@ -70,4 +84,6 @@ spec:
         persistentVolumeClaim:
           claimName: sticktock-data-pvc
       - name: tmp
+        emptyDir: {}
+      - name: app-working
         emptyDir: {}
