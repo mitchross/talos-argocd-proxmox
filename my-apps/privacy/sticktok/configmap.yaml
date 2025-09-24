@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sticktock-config
+  namespace: sticktock
+  labels:
+    app.kubernetes.io/name: sticktock
+    app.kubernetes.io/component: config
+data:
+  NODE_ENV: "production"
