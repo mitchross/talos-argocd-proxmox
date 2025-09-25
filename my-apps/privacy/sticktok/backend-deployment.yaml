@@ -76,5 +76,3 @@ spec:
           claimName: sticktock-data-pvc
       - name: tmp
         emptyDir: {}
-      - name: app-working
-        emptyDir: {}
