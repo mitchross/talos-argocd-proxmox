@@ -39,6 +39,8 @@ spec:
         volumeMounts:
         - name: tmp
           mountPath: /tmp
+        - name: nextjs-cache
+          mountPath: /app/.next/cache
         resources:
           requests:
             memory: "256Mi"
@@ -48,4 +50,6 @@ spec:
             cpu: "250m"
       volumes:
       - name: tmp
+        emptyDir: {}
+      - name: nextjs-cache
         emptyDir: {}
