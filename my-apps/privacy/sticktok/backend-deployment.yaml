@@ -25,6 +25,18 @@ spec:
       containers:
       - name: backend
         image: ghcr.io/mitchross/sticktock/backend:latest
+        workingDir: /app-workspace
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            cd /app-workspace
+            if [ ! -d /var/local/sticktock/public ]; then
+              mkdir -p /var/local/sticktock/public
+            fi
+            if [ ! -L public ] && [ ! -d public ]; then
+              ln -sf /var/local/sticktock/public public
+            fi
+            exec node /usr/src/app/dist/index.js
         ports:
         - name: http
           containerPort: 2000
@@ -46,11 +58,10 @@ spec:
         volumeMounts:
         - name: sticktock-data
           mountPath: /var/local/sticktock
-        - name: sticktock-data
-          mountPath: /usr/src/app/public
-          subPath: public
         - name: tmp
           mountPath: /tmp
+        - name: app-workspace
+          mountPath: /app-workspace
         resources:
           requests:
             memory: "512Mi"
@@ -75,4 +86,6 @@ spec:
         persistentVolumeClaim:
           claimName: sticktock-data-pvc
       - name: tmp
+        emptyDir: {}
+      - name: app-workspace
         emptyDir: {}
