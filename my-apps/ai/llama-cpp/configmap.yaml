@@ -76,6 +76,16 @@ data:
         health_check_path: "/health"
         timeout: 900s
 
+      magistral-small-40k-dual:
+        cmd: "/app/llama-server \
+          -m /models/Magistral-Small-2509-UD-Q8_K_XL.gguf \
+          -c 40960 -ngl 99 --split-mode layer --tensor-split 1,1 \
+          --cache-type-k f16 --cache-type-v f16 \
+          --host 0.0.0.0 --port ${PORT} --threads -1 --mlock --jinja"
+        gpu_mode: "dual"
+        health_check_path: "/health"
+        timeout: 900s
+
     # Global defaults
     default_model: "qwen3-coder-ud-q4-128k-dual"
     health_check_interval: "30s"
