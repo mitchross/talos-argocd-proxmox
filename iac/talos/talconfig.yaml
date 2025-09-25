@@ -6,6 +6,8 @@ kubernetesVersion: v1.34.1
 # Cluster configuration
 clusterName: proxmox-talos-prod-cluster
 endpoint: https://${CONTROL_PLANE_ENDPOINT_IP}:6443
+additionalApiServerCertSans:
+- 192.168.10.199
 clusterPodNets:
 - 10.14.0.0/16
 clusterSvcNets:
@@ -15,7 +17,7 @@ clusterSvcNets:
 # GPU schematic ID:     274c5c6e739dbb359c1ad19c304a5c064d23f00baaa18c556bb460ee08483ab2
 # Node configurations
 nodes:
-# Control plane node (from Terraform)
+# Control plane nodes (from Terraform)
 - hostname: ${TALOS_CONTROL_PLANE_NAME_0}
   controlPlane: true
   ipAddress: ${TALOS_CONTROL_PLANE_IP_0}
@@ -26,6 +28,36 @@ nodes:
     dhcp: false
     addresses:
     - ${TALOS_CONTROL_PLANE_IP_0}/24
+    routes:
+    - network: 0.0.0.0/0
+      gateway: ${GATEWAY_IP}
+
+# Additional control plane node
+- hostname: ${TALOS_CONTROL_PLANE_NAME_1}
+  controlPlane: true
+  ipAddress: ${TALOS_CONTROL_PLANE_IP_1}
+  installDisk: /dev/sda
+  networkInterfaces:
+  - deviceSelector:
+      hardwareAddr: "${TALOS_CONTROL_PLANE_MAC_1}"
+    dhcp: false
+    addresses:
+    - ${TALOS_CONTROL_PLANE_IP_1}/24
+    routes:
+    - network: 0.0.0.0/0
+      gateway: ${GATEWAY_IP}
+
+# Third control plane node
+- hostname: ${TALOS_CONTROL_PLANE_NAME_2}
+  controlPlane: true
+  ipAddress: ${TALOS_CONTROL_PLANE_IP_2}
+  installDisk: /dev/sda
+  networkInterfaces:
+  - deviceSelector:
+      hardwareAddr: "${TALOS_CONTROL_PLANE_MAC_2}"
+    dhcp: false
+    addresses:
+    - ${TALOS_CONTROL_PLANE_IP_2}/24
     routes:
     - network: 0.0.0.0/0
       gateway: ${GATEWAY_IP}
@@ -64,7 +96,7 @@ nodes:
   nodeLabels:
     node-type: worker
 
-# GPU worker node (from Terraform)
+# GPU worker nodes (from Terraform)
 - hostname: ${TALOS_GPU_WORKER_NAME_0}
   controlPlane: false
   ipAddress: ${TALOS_GPU_WORKER_IP_0}
@@ -103,6 +135,47 @@ nodes:
     machine:
       install:
         image: factory.talos.dev/metal-installer/274c5c6e739dbb359c1ad19c304a5c064d23f00baaa18c556bb460ee08483ab2:v1.11.0
+
+# Additional GPU worker node
+- hostname: ${TALOS_GPU_WORKER_NAME_1}
+  controlPlane: false
+  ipAddress: ${TALOS_GPU_WORKER_IP_1}
+  installDisk: /dev/sda
+  # GPU node uses a different pre-built schematic (LTS Nvidia extensions)
+  networkInterfaces:
+  - deviceSelector:
+      hardwareAddr: "${TALOS_GPU_WORKER_MAC_1}"
+    dhcp: false
+    addresses:
+    - ${TALOS_GPU_WORKER_IP_1}/24
+    routes:
+    - network: 0.0.0.0/0
+      gateway: ${GATEWAY_IP}
+  nodeLabels:
+    node-type: gpu-worker
+  patches:
+  - |-
+    machine:
+      kernel:
+        modules:
+          - name: nvidia
+          - name: nvidia_uvm
+          - name: nvidia_drm
+          - name: nvidia_modeset
+      files:
+        - path: /etc/cri/conf.d/20-customization.part
+          op: create
+          content: |
+            [plugins]
+              [plugins."io.containerd.cri.v1.runtime"]
+                [plugins."io.containerd.cri.v1.runtime".containerd]
+                  default_runtime_name = "nvidia"
+  # Pin GPU schematic image so NVIDIA modules/toolkit are present
+  - |-
+    machine:
+      install:
+        image: factory.talos.dev/metal-installer/274c5c6e739dbb359c1ad19c304a5c064d23f00baaa18c556bb460ee08483ab2:v1.11.0
+
 # Global patches
 patches:
 # Network configuration
