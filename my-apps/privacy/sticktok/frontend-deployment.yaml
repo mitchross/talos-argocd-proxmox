@@ -23,7 +23,8 @@ spec:
         fsGroup: 1000
       containers:
       - name: frontend
-        image: ghcr.io/mitchross/sticktock/frontend:latest
+        image: ghcr.io/mitchross/sticktock/frontend:latest@sha256:55892c53108828cd8935d001dc0f1681f053419c5acd099496279935b55ef80e
+
         ports:
         - containerPort: 3000
         env:
@@ -32,6 +33,9 @@ spec:
             configMapKeyRef:
               name: sticktock-config
               key: NODE_ENV
+        envFrom:
+        - configMapRef:
+            name: sticktock-config
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: false

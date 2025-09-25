@@ -23,9 +23,13 @@ spec:
         fsGroup: 1000
       containers:
       - name: backend
-        image: ghcr.io/mitchross/sticktock/backend:latest
+        image: ghcr.io/mitchross/sticktock/backend:latest@sha256:9d2d315c221ae10b6807da5dc3d170078585822508cda4323d34b8f89822bd8f
+
         ports:
         - containerPort: 2000
+        envFrom:
+        - configMapRef:
+            name: sticktock-config
         env:
         - name: NODE_ENV
           valueFrom:
