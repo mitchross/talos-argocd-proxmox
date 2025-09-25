@@ -20,5 +20,23 @@ TALOS_GPU_WORKER_IP_0: "192.168.10.113"
 TALOS_GPU_WORKER_MAC_0: "AC:24:21:AD:82:A3"
 TALOS_GPU_WORKER_NAME_0: "talos-prod-gpu-worker-03"
 
+# Additional Control Plane Node
+TALOS_CONTROL_PLANE_IP_1: "192.168.10.101"
+TALOS_CONTROL_PLANE_MAC_1: "BC:24:11:3A:F0:18"
+TALOS_CONTROL_PLANE_NAME_1: "talos-prod-control-02"
+
+# Third Control Plane Node
+TALOS_CONTROL_PLANE_IP_2: "192.168.10.102"
+TALOS_CONTROL_PLANE_MAC_2: "00:a0:98:11:22:f4"
+TALOS_CONTROL_PLANE_NAME_2: "talos-prod-control-03"
+
+# Additional GPU Worker Node
+TALOS_GPU_WORKER_IP_1: "192.168.10.114"
+TALOS_GPU_WORKER_MAC_1: "BC:24:11:9F:D5:EA"
+TALOS_GPU_WORKER_NAME_1: "talos-prod-gpu-small-worker-04"
+
+## PVE node 2 (for future expansion)
+
+
 # Usage with talhelper:
 # talhelper genconfig --env-file talenv.yaml
