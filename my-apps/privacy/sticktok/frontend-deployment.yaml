@@ -27,12 +27,6 @@ spec:
 
         ports:
         - containerPort: 3000
-        env:
-        - name: NODE_ENV
-          valueFrom:
-            configMapKeyRef:
-              name: sticktock-config
-              key: NODE_ENV
         envFrom:
         - configMapRef:
             name: sticktock-config
