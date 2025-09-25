@@ -1,8 +1,11 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: sticktok
+  name: sticktock
   namespace: sticktock
+  labels:
+    app.kubernetes.io/name: sticktock
+    app.kubernetes.io/component: routing
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
@@ -11,7 +14,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - sticktok.vanillax.me
+    - sticktock.vanillax.me
   rules:
     - matches:
         - path:
@@ -20,7 +23,9 @@ spec:
       filters:
         - type: URLRewrite
           urlRewrite:
-            replacePrefixMatch: /
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
       backendRefs:
         - kind: Service
           name: sticktock-backend-service

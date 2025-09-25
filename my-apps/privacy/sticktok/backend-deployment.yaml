@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sticktock-backend
-  namespace: sticktok
+  namespace: sticktock
   labels:
     app.kubernetes.io/name: sticktock-backend
     app.kubernetes.io/component: backend
