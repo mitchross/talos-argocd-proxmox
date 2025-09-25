@@ -3,9 +3,6 @@ kind: HTTPRoute
 metadata:
   name: sticktok
   namespace: sticktock
-  labels:
-    app.kubernetes.io/name: sticktok
-    app.kubernetes.io/component: routing
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
@@ -23,9 +20,7 @@ spec:
       filters:
         - type: URLRewrite
           urlRewrite:
-            path:
-              type: ReplacePrefixMatch
-              replacePrefixMatch: /
+            replacePrefixMatch: /
       backendRefs:
         - kind: Service
           name: sticktock-backend-service

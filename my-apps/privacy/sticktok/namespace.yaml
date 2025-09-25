@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: sticktock
+  name: sticktok
   labels:
-    app.kubernetes.io/name: sticktock
+    app.kubernetes.io/name: sticktok
     app.kubernetes.io/component: privacy
