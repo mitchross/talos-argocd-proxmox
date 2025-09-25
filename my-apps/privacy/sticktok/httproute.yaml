@@ -15,6 +15,7 @@ spec:
       sectionName: https
   hostnames:
     - "sticktock.vanillax.me"
+    - "sticktok.vanillax.me"
   rules:
     - matches:
         - path:
