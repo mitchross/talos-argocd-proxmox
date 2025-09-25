@@ -9,7 +9,9 @@ metadata:
 data:
   NODE_ENV: "production"
   NEXT_PUBLIC_BASE_DOMAIN: "sticktok.vanillax.me"
-  NEXT_PUBLIC_FRONTEND_URL: "https://sticktok.vanillax.me"
-  NEXT_PUBLIC_API_URL: ""
+  NEXT_PUBLIC_BASE_DOMAIN: "sticktock.vanillax.me"
+  NEXT_PUBLIC_FRONTEND_URL: "https://sticktock.vanillax.me"
+  # Public API URL used by client-side code. Keep as the externally routable hostname (no trailing /api)
+  NEXT_PUBLIC_API_URL: "https://sticktock.vanillax.me"
   API_URL_FOR_SERVER: "http://sticktock-backend-service:2000"
   FRONTEND_URL_FOR_SERVER_SELF: "http://sticktock-frontend-service:3000"
