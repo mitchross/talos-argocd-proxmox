@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: sticktock-config
-  namespace: sticktok
+  namespace: sticktock
   labels:
     app.kubernetes.io/name: sticktock
     app.kubernetes.io/component: config
