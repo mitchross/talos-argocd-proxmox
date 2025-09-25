@@ -18,22 +18,10 @@ spec:
         app.kubernetes.io/component: backend
     spec:
       securityContext:
+        runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
-      initContainers:
-      - name: copy-app
-        image: ghcr.io/mitchross/sticktock/backend:latest
-        command: ["/bin/sh", "-c"]
-        args:
-          - |
-            cp -r /usr/src/app/* /app-working/
-            chown -R 1000:1000 /app-working/
-        securityContext:
-          runAsUser: 0
-        volumeMounts:
-        - name: app-working
-          mountPath: /app-working
       containers:
       - name: backend
         image: ghcr.io/mitchross/sticktock/backend:latest
@@ -47,6 +35,8 @@ spec:
             configMapKeyRef:
               name: sticktock-config
               key: NODE_ENV
+        - name: PUBLIC_DIR
+          value: "/var/local/sticktock/public"
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: false
