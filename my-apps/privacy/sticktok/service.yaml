@@ -7,14 +7,14 @@ metadata:
     app.kubernetes.io/name: sticktock-backend
     app.kubernetes.io/component: backend
 spec:
-  type: ClusterIP
+  selector:
+    app: sticktock-backend
   ports:
     - name: http
       protocol: TCP
       port: 2000
-      targetPort: http
-  selector:
-    app.kubernetes.io/name: sticktock-backend
+      targetPort: 2000
+  type: ClusterIP
 ---
 apiVersion: v1
 kind: Service
@@ -25,11 +25,11 @@ metadata:
     app.kubernetes.io/name: sticktock-frontend
     app.kubernetes.io/component: frontend
 spec:
-  type: ClusterIP
+  selector:
+    app: sticktock-frontend
   ports:
     - name: http
       protocol: TCP
       port: 3000
-      targetPort: http
-  selector:
-    app.kubernetes.io/name: sticktock-frontend
+      targetPort: 3000
+  type: ClusterIP
