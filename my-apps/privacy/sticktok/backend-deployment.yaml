@@ -46,10 +46,11 @@ spec:
         volumeMounts:
         - name: sticktock-data
           mountPath: /var/local/sticktock
+        - name: sticktock-data
+          mountPath: /usr/src/app/public
+          subPath: public
         - name: tmp
           mountPath: /tmp
-        - name: app-working
-          mountPath: /usr/src/app
         resources:
           requests:
             memory: "512Mi"
