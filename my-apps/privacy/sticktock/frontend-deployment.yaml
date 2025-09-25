@@ -23,7 +23,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: frontend
-        image: ghcr.io/mitchross/sticktock/frontend:latest@sha256:55892c53108828cd8935d001dc0f1681f053419c5acd099496279935b55ef80e
+        image: ghcr.io/mitchross/sticktock/frontend:latest@sha256:7a86addc99c3426ce986a2cd786a1d94623085256dc02850d87dc7b4519c98f5
 
         ports:
         - containerPort: 3000
