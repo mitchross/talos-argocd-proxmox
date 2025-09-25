@@ -30,13 +30,16 @@ spec:
         args:
           - |
             cd /app-workspace
-            if [ ! -d /var/local/sticktock/public ]; then
-              mkdir -p /var/local/sticktock/public
-            fi
+            # Copy necessary files from the original app directory
+            cp -r /usr/src/app/* /app-workspace/ 2>/dev/null || true
+            # Ensure data directory exists
+            mkdir -p /var/local/sticktock/public
+            # Create symlink if it doesn't exist
             if [ ! -L public ] && [ ! -d public ]; then
               ln -sf /var/local/sticktock/public public
             fi
-            exec node /usr/src/app/dist/index.js
+            # Start the application
+            exec node dist/index.js
         ports:
         - name: http
           containerPort: 2000
