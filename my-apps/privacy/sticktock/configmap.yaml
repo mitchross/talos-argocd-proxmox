@@ -10,6 +10,6 @@ data:
   NODE_ENV: "production"
   NEXT_PUBLIC_BASE_DOMAIN: "sticktok.vanillax.me"
   NEXT_PUBLIC_FRONTEND_URL: "https://sticktok.vanillax.me"
-  NEXT_PUBLIC_API_URL: "https://sticktok.vanillax.me/api"
+  NEXT_PUBLIC_API_URL: ""
   API_URL_FOR_SERVER: "http://sticktock-backend-service:2000"
   FRONTEND_URL_FOR_SERVER_SELF: "http://sticktock-frontend-service:3000"
