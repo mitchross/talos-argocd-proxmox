@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sticktock-backend
+  name: sticktock-frontend
   namespace: sticktock
   labels:
-    app.kubernetes.io/name: sticktock-backend
-    app.kubernetes.io/component: backend
+    app.kubernetes.io/name: sticktock-frontend
+    app.kubernetes.io/component: frontend
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: sticktock-backend
+      app: sticktock-frontend
   template:
     metadata:
       labels:
-        app: sticktock-backend
+        app: sticktock-frontend
     spec:
       securityContext:
         runAsNonRoot: true
@@ -22,17 +22,14 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
       containers:
-      - name: backend
-        image: ghcr.io/mitchross/sticktock/backend:latest@sha256:9d2d315c221ae10b6807da5dc3d170078585822508cda4323d34b8f89822bd8f
+      - name: frontend
+        image: ghcr.io/mitchross/sticktock/frontend:latest@sha256:7a86addc99c3426ce986a2cd786a1d94623085256dc02850d87dc7b4519c98f5
 
         ports:
-        - containerPort: 2000
+        - containerPort: 3000
         envFrom:
         - configMapRef:
             name: sticktock-config
-        env:
-        - name: DATABASE_URL
-          value: "file:/var/local/sticktock/prisma-db.sqlite"
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: false
@@ -40,20 +37,19 @@ spec:
             drop:
             - ALL
         volumeMounts:
-        - name: sticktock-data
-          mountPath: /var/local/sticktock
         - name: tmp
           mountPath: /tmp
+        - name: nextjs-cache
+          mountPath: /app/.next/cache
         resources:
           requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
             memory: "512Mi"
             cpu: "250m"
-          limits:
-            memory: "1Gi"
-            cpu: "500m"
       volumes:
-      - name: sticktock-data
-        persistentVolumeClaim:
-          claimName: sticktock-data-pvc
       - name: tmp
+        emptyDir: {}
+      - name: nextjs-cache
         emptyDir: {}
