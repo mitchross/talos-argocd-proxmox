@@ -1,10 +1,10 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: sticktock
+  name: sticktok
   namespace: sticktock
   labels:
-    app.kubernetes.io/name: sticktock
+    app.kubernetes.io/name: sticktok
     app.kubernetes.io/component: routing
 spec:
   parentRefs:
@@ -14,7 +14,7 @@ spec:
       namespace: gateway
       sectionName: https
   hostnames:
-    - "sticktock.vanillax.me"
+    - "sticktok.vanillax.me"
   rules:
     - matches:
         - path:
