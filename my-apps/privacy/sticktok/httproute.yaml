@@ -21,6 +21,9 @@ spec:
         - type: URLRewrite
           urlRewrite:
             replacePrefixMatch: /
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
       backendRefs:
         - kind: Service
           name: sticktock-backend-service
