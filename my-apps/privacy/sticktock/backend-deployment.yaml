@@ -32,27 +32,43 @@ spec:
         env:
         - name: DATABASE_URL
           value: "file:/var/local/sticktock/prisma-db.sqlite"
+        # Playwright/Chrome needs these environment variables for headless operation
+        - name: PLAYWRIGHT_BROWSERS_PATH
+          value: "/home/node/.cache/ms-playwright"
+        - name: NODE_ENV
+          value: "production"
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: false
           capabilities:
             drop:
             - ALL
+            # Playwright/Chrome needs SYS_ADMIN for sandboxing or you must use --no-sandbox
+            # We're using --no-sandbox in the code, so no need to add SYS_ADMIN
         volumeMounts:
         - name: sticktock-data
           mountPath: /var/local/sticktock
         - name: tmp
           mountPath: /tmp
+        # Chrome needs /dev/shm for shared memory - critical for browser operation
+        - name: dshm
+          mountPath: /dev/shm
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "250m"
-          limits:
             memory: "1Gi"
             cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
       volumes:
       - name: sticktock-data
         persistentVolumeClaim:
           claimName: sticktock-data-pvc
       - name: tmp
         emptyDir: {}
+      # Chrome/Playwright requires shared memory - without this Chrome will crash
+      # Size should be at least 512Mi, ideally 1Gi for complex pages
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 1Gi
