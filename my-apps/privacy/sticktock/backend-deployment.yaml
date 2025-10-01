@@ -23,7 +23,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: backend
-        image: ghcr.io/mitchross/sticktock/backend:latest@sha256:5ba7f76529b5c4f7c33ab9527ceb76079ab4580d54ad25f81c586a7c91823250
+        image: ghcr.io/mitchross/sticktock/backend:latest@sha256:732a90522acdc5b0354e223cb87069387d70ab698c071c18d738fcd567a80744
         ports:
         - containerPort: 2000
         envFrom:
