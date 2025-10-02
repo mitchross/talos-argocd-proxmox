@@ -17,6 +17,7 @@ spec:
         argocd.argoproj.io/sync-wave: "2"
     spec:
       project: my-apps
+      revisionHistoryLimit: 3
       source:
         repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
         targetRevision: HEAD
