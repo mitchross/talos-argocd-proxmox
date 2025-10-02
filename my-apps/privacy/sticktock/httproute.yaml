@@ -16,6 +16,7 @@ spec:
   hostnames:
     - sticktock.vanillax.me
   rules:
+    # Route API requests to backend (with URL rewrite to remove /api prefix)
     - matches:
         - path:
             type: PathPrefix
@@ -30,6 +31,50 @@ spec:
         - kind: Service
           name: sticktock-backend-service
           port: 2000
+    
+    # Route static assets to backend (videos, thumbnails, authors, audio, images)
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /videos/
+      backendRefs:
+        - kind: Service
+          name: sticktock-backend-service
+          port: 2000
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /thumbnails/
+      backendRefs:
+        - kind: Service
+          name: sticktock-backend-service
+          port: 2000
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /authors/
+      backendRefs:
+        - kind: Service
+          name: sticktock-backend-service
+          port: 2000
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /audio/
+      backendRefs:
+        - kind: Service
+          name: sticktock-backend-service
+          port: 2000
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /images/
+      backendRefs:
+        - kind: Service
+          name: sticktock-backend-service
+          port: 2000
+    
+    # Route everything else to frontend
     - matches:
         - path:
             type: PathPrefix
