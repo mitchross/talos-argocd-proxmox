@@ -55,14 +55,16 @@ prometheus:
     ruleSelectorNilUsesHelmValues: false
     # Additional scrape configs for custom monitoring
     additionalScrapeConfigs:
-      - job_name: 'frigate'
-        metrics_path: /api/metrics
-        scheme: https
-        static_configs:
-          - targets: ['frigate.vanillax.me']
-        # If your Frigate instance uses a self-signed certificate, set insecure_skip_verify: true
-        tls_config:
-          insecure_skip_verify: false
+      # NOTE: Frigate metrics are scraped via ServiceMonitor if configured
+      # External scraping via HTTPS is commented out to avoid cert issues
+      # - job_name: 'frigate'
+      #   metrics_path: /api/metrics
+      #   scheme: https
+      #   static_configs:
+      #     - targets: ['frigate.vanillax.me']
+      #   tls_config:
+      #     insecure_skip_verify: false
+      []
     # Remote write configuration (for external storage if needed)
     remoteWrite: []
     # Alerting configuration
@@ -75,17 +77,6 @@ prometheus:
       enabled: true
       cacheSize: 500MB
       cacheTTL: 10m
-    # Add Thanos sidecar
-    thanos:
-      version: v0.36.1 # Latest Thanos version
-      objectStorageConfig:
-        key: thanos.yaml
-        name: thanos-objstore-config
-    # Configure downsampling for 1y retention
-    compact:
-      retentionResolutionRaw: 1y
-      retentionResolution5m: 1y
-      retentionResolution1h: 1y
 # Alertmanager Configuration
 alertmanager:
   enabled: true
@@ -176,13 +167,6 @@ grafana:
             matcherRegex: "(?:logger=rpc\\.server|report).*?(?:traceID|trace_id)=([a-f\\d]+)"
             name: TraceID
             url: "$${__value.raw}"
-    - name: AdditionalDataSource
-      type: prometheus
-      access: proxy
-      url: http://additional-prometheus.svc.cluster.local
-      jsonData:
-        timeout: 60
-        httpMethod: POST
     - name: Tempo
       type: tempo
       access: proxy

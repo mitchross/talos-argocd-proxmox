@@ -1,4 +1,8 @@
 loki:
+  # Ensure proper namespace resolution for backend services
+  commonConfig:
+    path_prefix: /var/loki
+    replication_factor: 3
   storage:
     type: "s3"
     bucketNames:
