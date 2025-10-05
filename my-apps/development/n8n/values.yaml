@@ -1,0 +1,85 @@
+n8n:
+  replicaCount: 1
+  
+  image:
+    repository: n8nio/n8n
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  
+  service:
+    type: ClusterIP
+    port: 5678
+    targetPort: 5678
+    # CRITICAL: Named port required for HTTPRoute
+    portName: http
+  
+  persistence:
+    enabled: true
+    existingClaim: "n8n-data"
+    accessMode: ReadWriteOnce
+    size: 10Gi
+  
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  
+  env:
+    # Basic Configuration
+    N8N_HOST: "n8n.vanillax.me"
+    N8N_PORT: "5678"
+    N8N_PROTOCOL: "https"
+    
+    # Execution Configuration
+    EXECUTIONS_MODE: "regular"
+    EXECUTIONS_TIMEOUT: "3600"
+    EXECUTIONS_TIMEOUT_MAX: "7200"
+    
+    # Security
+    N8N_METRICS: "true"
+    N8N_DIAGNOSTICS_ENABLED: "false"
+    
+    # Webhook Configuration
+    WEBHOOK_URL: "https://n8n.vanillax.me/"
+    
+    # Timezone
+    GENERIC_TIMEZONE: "America/New_York"
+    TZ: "America/New_York"
+  
+  # Security context
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  
+  # Probes
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: 5678
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  
+  readinessProbe:
+    httpGet:
+      path: /healthz
+      port: 5678
+    initialDelaySeconds: 15
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+# PostgreSQL for production use (optional, can be enabled later)
+postgresql:
+  enabled: false
+  auth:
+    username: n8n
+    database: n8n
+  persistence:
+    enabled: true
+    size: 10Gi

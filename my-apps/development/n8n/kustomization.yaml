@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: n8n
+commonLabels:
+  app.kubernetes.io/name: n8n
+  app.kubernetes.io/managed-by: argocd
+resources:
+  - namespace.yaml
+  - httproute.yaml
+  - pvc.yaml
+helmCharts:
+  - name: n8n
+    repo: https://8gears.container-registry.com/chartrepo/library/
+    version: 0.26.0
+    releaseName: n8n
+    namespace: n8n
+    valuesFile: values.yaml
