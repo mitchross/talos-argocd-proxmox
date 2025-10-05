@@ -2,10 +2,13 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   name: longhorn-backup-alerts
-  namespace: monitoring
+  namespace: prometheus-stack
   labels:
-    app: kube-prometheus-stack
-    release: prometheus
+    app.kubernetes.io/name: kube-prometheus-stack
+    app.kubernetes.io/instance: kube-prometheus-stack
+    app.kubernetes.io/managed-by: Helm
+    prometheus: kube-prometheus-stack-prometheus
+    role: alert-rules
 spec:
   groups:
     - name: longhorn.backup
