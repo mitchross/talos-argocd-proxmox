@@ -1,5 +1,21 @@
 loki:
   # Ensure proper namespace resolution for backend services
+  # Fix for ArgoCD namespace detection issue
+  structuredConfig:
+    common:
+      ring:
+        kvstore:
+          store: memberlist
+    memberlist:
+      join_members:
+        - loki-memberlist.loki-stack.svc.cluster.local
+    bloom_build:
+      enabled: false
+      planner_address: loki-backend-headless.loki-stack.svc.cluster.local:9095
+    bloom_gateway:
+      enabled: false
+      client:
+        addresses: dnssrvnoa+_grpc._tcp.loki-backend-headless.loki-stack.svc.cluster.local
   commonConfig:
     path_prefix: /var/loki
     replication_factor: 3
