@@ -15,6 +15,12 @@ configs:
     url: "https://argocd.vanillax.me"
     # Enable Helm support in Kustomize builds
     kustomize.buildOptions: "--enable-helm"
+    # Ignore Gateway API HTTPRoute parentRefs normalization
+    resource.customizations.ignoreDifferences.gateway.networking.k8s.io_HTTPRoute: |
+      jqPathExpressions:
+      - '.spec.parentRefs[]? | select(.group == null or .kind == null)'
+      jsonPointers:
+      - /spec/parentRefs
 # Argo CD server settings
 server:
   # We are not using the chart's built-in ingress
