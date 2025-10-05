@@ -10,7 +10,7 @@ defaultSettings:
   # -- Percentage of minimum available disk capacity.
   # This was changed from the default of 25 to 10 to resolve the replica
   # scheduling failure you experienced.
-  storageMinimalAvailablePercentage: 10
+  storageMinimalAvailablePercentage: "10"
   # -- Percentage of storage that can be allocated relative to hard drive capacity.
   # The default is 100. You can increase this for thin provisioning.
   storageOverProvisioningPercentage: "100"
