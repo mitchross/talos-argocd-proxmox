@@ -9,12 +9,13 @@ commonLabels:
 
 resources:
   - namespace.yaml
-  - rbac.yaml
-  - statefulset.yaml
-  - service.yaml
   - httproute.yaml
 
-configMapGenerator:
-  - name: garage-config
-    files:
-      - garage.toml
+helmCharts:
+  - name: garage
+    repo: https://git.deuxfleurs.fr/api/packages/Deuxfleurs/helm
+    version: 1.0.0
+    releaseName: garage
+    namespace: garage
+    valuesFile: values.yaml
+    includeCRDs: false
