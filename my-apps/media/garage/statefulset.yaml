@@ -36,10 +36,6 @@ spec:
       - name: garage
         image: dxflrs/garage:v1.0.0
         imagePullPolicy: IfNotPresent
-        command:
-        - /garage
-        args:
-        - server
         ports:
         - name: s3-api
           containerPort: 3900
