@@ -12,6 +12,7 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
+      serviceAccountName: garage
       containers:
         - name: init-cluster
           image: bitnami/kubectl:latest
