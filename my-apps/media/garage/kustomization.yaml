@@ -12,7 +12,6 @@ resources:
   - namespace.yaml
   - rbac.yaml
   - secret.yaml
-  - secret-gen-job.yaml
   - statefulset.yaml
   - service.yaml
   - httproute.yaml

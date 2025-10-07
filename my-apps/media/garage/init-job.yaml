@@ -4,9 +4,6 @@ kind: Job
 metadata:
   name: garage-init
   namespace: garage
-  annotations:
-    argocd.argoproj.io/hook: PostSync
-    argocd.argoproj.io/hook-delete-policy: HookSucceeded
 spec:
   ttlSecondsAfterFinished: 300
   template:
