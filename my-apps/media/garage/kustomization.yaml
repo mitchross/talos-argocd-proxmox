@@ -2,20 +2,21 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: garage
 
-commonLabels:
-  app: garage
-  app.kubernetes.io/name: garage
-  app.kubernetes.io/component: storage
+labels:
+  - pairs:
+      app: garage
+      app.kubernetes.io/name: garage
+      app.kubernetes.io/component: storage
 
 resources:
   - namespace.yaml
+  - rbac.yaml
+  - statefulset.yaml
+  - service.yaml
   - httproute.yaml
+  - init-job.yaml
 
-helmCharts:
-  - name: garage
-    repo: https://git.deuxfleurs.fr/api/packages/Deuxfleurs/helm
-    version: 1.0.0
-    releaseName: garage
-    namespace: garage
-    valuesFile: values.yaml
-    includeCRDs: false
+configMapGenerator:
+  - name: garage-config
+    files:
+      - garage.toml
