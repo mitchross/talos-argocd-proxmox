@@ -102,6 +102,8 @@ s3cmd ls s3://my-bucket/
 - **Compression**: Level 1 enabled for bandwidth efficiency
 - **Database Engine**: LMDB (lightweight, embedded)
 - **Region**: Custom region "garage"
+- **Discovery**: Kubernetes service-based (automatic peer detection via `garage-rpc` service)
+- **RBAC**: ServiceAccount with role to read endpoints in garage namespace
 
 ## Scaling
 
