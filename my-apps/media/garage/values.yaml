@@ -1,0 +1,26 @@
+garage:
+  replicationFactor: 3
+
+deployment:
+  replicaCount: 3
+
+persistence:
+  meta:
+    storageClass: "longhorn"
+    size: 1Gi
+  data:
+    storageClass: "longhorn"
+    size: 10Gi
+
+# Disable ingress since we're using Gateway API
+ingress:
+  s3:
+    api:
+      enabled: false
+  k2v:
+    api:
+      enabled: false
+  web:
+    enabled: false
+  admin:
+    enabled: false
