@@ -12,54 +12,42 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
-      serviceAccountName: garage
       containers:
         - name: init-cluster
-          image: dxflrs/garage:v1.0.0
+          image: bitnami/kubectl:latest
           command:
-            - /bin/sh
+            - /bin/bash
             - -c
             - |
               set -e
               echo "Waiting for Garage nodes to be ready..."
               sleep 30
               
-              # Get list of nodes
-              NODES=$(/garage status -f json | jq -r '.nodes[] | select(.role == null) | .id' || true)
+              # Get node status from garage-0 pod
+              echo "Checking cluster status..."
+              kubectl exec -n garage garage-0 -- /garage status || true
+              
+              # Get list of nodes without roles
+              NODES=$(kubectl exec -n garage garage-0 -- /garage status 2>&1 | grep "NO ROLE" | awk '{print $1}' || true)
               
               if [ -z "$NODES" ]; then
-                echo "All nodes already have roles assigned or no nodes found"
-                /garage status
+                echo "All nodes already have roles assigned"
+                kubectl exec -n garage garage-0 -- /garage status
                 exit 0
               fi
               
-              echo "Found unassigned nodes, configuring layout..."
+              echo "Found unassigned nodes: $NODES"
+              echo "Configuring layout..."
               
               # Assign capacity to each node (100GB each)
               for NODE_ID in $NODES; do
                 echo "Assigning capacity to node $NODE_ID"
-                /garage layout assign $NODE_ID -z dc1 -c 100G
+                kubectl exec -n garage garage-0 -- /garage layout assign $NODE_ID -z dc1 -c 100G
               done
               
               # Apply the layout
               echo "Applying layout configuration..."
-              /garage layout apply --version 1
+              kubectl exec -n garage garage-0 -- /garage layout apply --version 1
               
               echo "Garage cluster initialized successfully!"
-              /garage status
-          env:
-            - name: GARAGE_RPC_SECRET_FILE
-              value: /mnt/meta/rpc-secret
-          volumeMounts:
-            - name: meta
-              mountPath: /mnt/meta
-            - name: config
-              mountPath: /etc/garage.toml
-              subPath: garage.toml
-      volumes:
-        - name: meta
-          persistentVolumeClaim:
-            claimName: meta-garage-0
-        - name: config
-          configMap:
-            name: garage-config
+              kubectl exec -n garage garage-0 -- /garage status
