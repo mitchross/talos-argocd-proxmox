@@ -20,6 +20,7 @@ A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux f
 - [MinIO S3 Backup Configuration](#-minio-s3-backup-configuration)
 - [Documentation](#-documentation)
 - [Troubleshooting](#-troubleshooting)
+- [Upgrade](#upgrade)
 
 ## 📋 Prerequisites
 
@@ -439,3 +440,32 @@ The patterns and structure remain the same - this is **production-grade GitOps**
 ## 📜 License
 
 MIT License - See [LICENSE](LICENSE) for details
+
+## Upgrade
+
+This repo includes a guided, repeatable process to upgrade Longhorn to v1.10.x safely.
+
+- Read the runbook: `docs/runbooks/longhorn-1.10-upgrade.md`
+- Key steps:
+  - Normalize CRD conversion spec (older installs may leave webhook fields)
+  - Migrate all Longhorn CRDs to stored version `v1beta2` (mandatory for v1.10)
+  - Sync the Longhorn Helm release via ArgoCD and validate
+
+Quick commands from repo root:
+
+```bash
+# 1) Fix legacy CRD conversion blocks atomically
+./scripts/longhorn-fix-crd-conversion.sh
+
+# 2) Migrate CRD storedVersions to v1beta2 (safe to re-run)
+./scripts/longhorn-v110-crd-migration.sh
+
+# 3) Verify only v1beta2 is present
+kubectl get crd -l app.kubernetes.io/name=longhorn -o=jsonpath='{range .items[*]}{.metadata.name}{": "}{.status.storedVersions}{"\n"}{end}'
+
+# 4) Re-sync Longhorn in ArgoCD and verify pods in longhorn-system
+```
+
+Notes:
+- The chart is pinned in `infrastructure/storage/longhorn/kustomization.yaml` and values in `infrastructure/storage/longhorn/values.yaml`.
+- We avoid per-engine JSON booleans in values to sidestep a known 1.10.0 parsing issue; revisit when broadly enabling the V2 data engine.
