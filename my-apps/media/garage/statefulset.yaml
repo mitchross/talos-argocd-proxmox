@@ -22,16 +22,20 @@ spec:
         - sh
         - -c
         - |
-          if [ ! -f /mnt/meta/rpc-secret ]; then
-            head -c 32 /dev/urandom | hexdump -v -e '/1 "%02x"' > /mnt/meta/rpc-secret
-          fi
+          # Generate admin token (pod-specific)
           if [ ! -f /mnt/meta/admin-token ]; then
             head -c 32 /dev/urandom | base64 > /mnt/meta/admin-token
+            chmod 600 /mnt/meta/admin-token
           fi
-          chmod 600 /mnt/meta/rpc-secret /mnt/meta/admin-token
+          # Copy shared RPC secret from Secret to meta volume
+          cp /secrets/rpc-secret /mnt/meta/rpc-secret
+          chmod 600 /mnt/meta/rpc-secret
         volumeMounts:
         - name: meta
           mountPath: /mnt/meta
+        - name: rpc-secret
+          mountPath: /secrets
+          readOnly: true
       containers:
       - name: garage
         image: dxflrs/garage:v1.0.0
@@ -87,6 +91,10 @@ spec:
       - name: config
         configMap:
           name: garage-config
+      - name: rpc-secret
+        secret:
+          secretName: garage-rpc-secret
+          defaultMode: 0400
   volumeClaimTemplates:
   - metadata:
       name: meta
