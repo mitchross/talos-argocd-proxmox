@@ -17,16 +17,16 @@ spec:
       serviceAccountName: garage
       initContainers:
       - name: init-secrets
-        image: dxflrs/garage:v1.0.0
+        image: busybox:latest
         command:
-        - /bin/sh
+        - sh
         - -c
         - |
           if [ ! -f /mnt/meta/rpc-secret ]; then
-            openssl rand -hex 32 > /mnt/meta/rpc-secret
+            head -c 32 /dev/urandom | hexdump -v -e '/1 "%02x"' > /mnt/meta/rpc-secret
           fi
           if [ ! -f /mnt/meta/admin-token ]; then
-            openssl rand -base64 32 > /mnt/meta/admin-token
+            head -c 32 /dev/urandom | base64 > /mnt/meta/admin-token
           fi
           chmod 600 /mnt/meta/rpc-secret /mnt/meta/admin-token
         volumeMounts:
