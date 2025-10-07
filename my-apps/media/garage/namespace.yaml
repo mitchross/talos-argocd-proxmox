@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: garage
+  labels:
+    app.kubernetes.io/name: garage
+    app.kubernetes.io/component: storage

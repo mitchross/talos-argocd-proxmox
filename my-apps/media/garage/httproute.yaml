@@ -1,0 +1,74 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: garage-s3-api
+  namespace: garage
+spec:
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: gateway-internal
+    namespace: gateway
+  hostnames:
+  - "s3.vanillax.me"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - group: ""
+      kind: Service
+      name: garage-s3-api
+      port: 3900
+      weight: 1
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: garage-web
+  namespace: garage
+spec:
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: gateway-internal
+    namespace: gateway
+  hostnames:
+  - "s3-web.vanillax.me"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - group: ""
+      kind: Service
+      name: garage-web
+      port: 3902
+      weight: 1
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: garage-admin
+  namespace: garage
+spec:
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: gateway-internal
+    namespace: gateway
+  hostnames:
+  - "garage-admin.vanillax.me"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - group: ""
+      kind: Service
+      name: garage-admin
+      port: 3903
+      weight: 1
