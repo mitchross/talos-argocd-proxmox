@@ -5,11 +5,13 @@ Garage is a lightweight, distributed S3-compatible object storage system designe
 ## Architecture
 
 - **Replicas**: 3 StatefulSet pods for high availability
+- **Discovery**: Kubernetes service discovery (automatic peer detection)
 - **Storage**: 
   - Meta: 1Gi per pod (LMDB metadata)
   - Data: 10Gi per pod (object storage)
   - StorageClass: `longhorn`
 - **Networking**: Gateway API (HTTPRoute)
+- **RBAC**: ServiceAccount with endpoint discovery permissions
 
 ## Endpoints
 
@@ -19,16 +21,23 @@ Garage is a lightweight, distributed S3-compatible object storage system designe
 
 ## Post-Deployment Setup
 
-After deployment, you need to configure the Garage cluster layout:
+After deployment, Garage nodes will automatically discover each other via Kubernetes service discovery. You need to configure the cluster layout:
 
-### 1. Generate RPC Secret (First Time Only)
+### 1. Wait for all pods to be ready
 
 ```bash
-kubectl exec -n garage garage-0 -- garage node id
-# Repeat for garage-1 and garage-2
+kubectl get pods -n garage
+# Wait for all 3 pods to be Running
 ```
 
-### 2. Configure Cluster Layout
+### 2. Check cluster status
+
+```bash
+kubectl exec -n garage garage-0 -- ./garage status
+# You should see all 3 nodes connected
+```
+
+### 3. Configure Cluster Layout
 
 ```bash
 # Get node IDs
