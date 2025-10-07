@@ -4,7 +4,7 @@ metadata:
   name: garage
   namespace: garage
 spec:
-  serviceName: garage
+  serviceName: garage-rpc
   replicas: 3
   selector:
     matchLabels:
@@ -14,10 +14,30 @@ spec:
       labels:
         app: garage
     spec:
+      serviceAccountName: garage
+      initContainers:
+      - name: init-secrets
+        image: dxflrs/garage:v1.0.0
+        command:
+        - /bin/sh
+        - -c
+        - |
+          if [ ! -f /mnt/meta/rpc-secret ]; then
+            openssl rand -hex 32 > /mnt/meta/rpc-secret
+          fi
+          if [ ! -f /mnt/meta/admin-token ]; then
+            openssl rand -base64 32 > /mnt/meta/admin-token
+          fi
+          chmod 600 /mnt/meta/rpc-secret /mnt/meta/admin-token
+        volumeMounts:
+        - name: meta
+          mountPath: /mnt/meta
       containers:
       - name: garage
         image: dxflrs/garage:v1.0.0
         imagePullPolicy: IfNotPresent
+        args:
+        - server
         ports:
         - name: s3-api
           containerPort: 3900
@@ -34,6 +54,8 @@ spec:
         env:
         - name: RUST_LOG
           value: "garage=info"
+        - name: GARAGE_CONFIG_FILE
+          value: "/etc/garage/garage.toml"
         volumeMounts:
         - name: meta
           mountPath: /mnt/meta
@@ -41,6 +63,7 @@ spec:
           mountPath: /mnt/data
         - name: config
           mountPath: /etc/garage
+          readOnly: true
         livenessProbe:
           httpGet:
             path: /health
