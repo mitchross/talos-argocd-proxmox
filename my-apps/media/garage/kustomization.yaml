@@ -9,6 +9,7 @@ commonLabels:
 
 resources:
   - namespace.yaml
+  - rbac.yaml
   - statefulset.yaml
   - service.yaml
   - httproute.yaml
