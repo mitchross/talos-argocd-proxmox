@@ -8,12 +8,15 @@ replication_factor = 3
 compression_level = 1
 
 rpc_bind_addr = "[::]:3901"
+rpc_public_addr = "$(hostname).garage-rpc.garage.svc.cluster.local:3901"
 rpc_secret_file = "/mnt/meta/rpc-secret"
 
-[kubernetes_discovery]
-namespace = "garage"
-service_name = "garage-rpc"
-skip_crd = true
+# Bootstrap peers using stable DNS names
+bootstrap_peers = [
+  "garage-0.garage-rpc.garage.svc.cluster.local:3901",
+  "garage-1.garage-rpc.garage.svc.cluster.local:3901",
+  "garage-2.garage-rpc.garage.svc.cluster.local:3901",
+]
 
 [s3_api]
 s3_region = "garage"
