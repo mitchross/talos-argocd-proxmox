@@ -11,8 +11,11 @@ metadata:
   namespace: garage
 rules:
 - apiGroups: [""]
-  resources: ["endpoints"]
+  resources: ["services", "endpoints"]
   verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
