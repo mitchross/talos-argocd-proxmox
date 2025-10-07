@@ -8,14 +8,14 @@ Garage is a lightweight, distributed S3-compatible object storage system designe
 - **Storage**: 
   - Meta: 1Gi per pod (LMDB metadata)
   - Data: 10Gi per pod (object storage)
-  - StorageClass: `openebs-hostpath`
+  - StorageClass: `longhorn`
 - **Networking**: Gateway API (HTTPRoute)
 
 ## Endpoints
 
-- **S3 API**: `http://s3.local.vanillax.net` (port 3900)
-- **Web Interface**: `http://s3-web.local.vanillax.net` (port 3902)
-- **Admin API**: `http://garage-admin.local.vanillax.net` (port 3903)
+- **S3 API**: `http://s3.vanillax.me` (port 3900)
+- **Web Interface**: `http://s3-web.vanillax.me` (port 3902)
+- **Admin API**: `http://garage-admin.vanillax.me` (port 3903)
 
 ## Post-Deployment Setup
 
@@ -80,8 +80,8 @@ s3cmd --configure
 # Access Key: [from 'garage key info my-app-key']
 # Secret Key: [from 'garage key info my-app-key']
 # Default Region: garage
-# S3 Endpoint: s3.local.vanillax.net
-# DNS-style bucket: %(bucket)s.s3.local.vanillax.net
+# S3 Endpoint: s3.vanillax.me
+# DNS-style bucket: %(bucket)s.s3.vanillax.me
 
 # Test
 s3cmd ls s3://my-bucket/
