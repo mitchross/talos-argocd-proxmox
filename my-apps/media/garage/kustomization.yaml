@@ -2,22 +2,22 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: garage
 
-labels:
-  - pairs:
-      app: garage
-      app.kubernetes.io/name: garage
-      app.kubernetes.io/component: storage
+# labels:
+#   - pairs:
+#       app: garage
+#       app.kubernetes.io/name: garage
+#       app.kubernetes.io/component: storage
 
-resources:
-  - namespace.yaml
-  - rbac.yaml
-  - secret.yaml
-  - statefulset.yaml
-  - service.yaml
-  - httproute.yaml
-  - init-job.yaml
+# resources:
+#   - namespace.yaml
+#   - rbac.yaml
+#   - secret.yaml
+#   - statefulset.yaml
+#   - service.yaml
+#   - httproute.yaml
+#   - init-job.yaml
 
-configMapGenerator:
-  - name: garage-config
-    files:
-      - garage.toml
+# configMapGenerator:
+#   - name: garage-config
+#     files:
+#       - garage.toml
