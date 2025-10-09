@@ -12,6 +12,10 @@ persistence:
     storageClass: "longhorn"
     size: "10Gi"
 
+monitoring:
+  metrics:
+    enabled: true
+
 ingress:
   s3:
     api:
