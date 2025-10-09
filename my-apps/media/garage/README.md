@@ -4,76 +4,88 @@ Garage is a lightweight, distributed S3-compatible object storage system designe
 
 ## Architecture
 
+- **Deployment**: ArgoCD Application → Garage Helm chart from Git
 - **Replicas**: 3 StatefulSet pods for high availability
-- **Discovery**: Kubernetes service discovery (automatic peer detection)
+- **Replication**: Mode 3 (3 copies of data)
 - **Storage**: 
   - Meta: 1Gi per pod (LMDB metadata)
   - Data: 10Gi per pod (object storage)
   - StorageClass: `longhorn`
-- **Networking**: Gateway API (HTTPRoute)
-- **RBAC**: ServiceAccount with endpoint discovery permissions
+- **Networking**: Gateway API (HTTPRoute) - no Ingress
+- **Auto-init**: Kubernetes Job assigns layout after pods are ready
+
+## GitOps Deployment
+
+This application is fully managed by ArgoCD:
+
+1. **`garage-app.yaml`**: ArgoCD Application that deploys Garage Helm chart from Git
+2. **`init-layout-job.yaml`**: Kubernetes Job that automatically configures cluster layout
+3. **`httproute.yaml`**: Gateway API routes for S3 API and web interface
+4. **`namespace.yaml`**: Garage namespace
+
+### How It Works
+
+```
+ArgoCD syncs → Helm chart deploys → Pods start → Init Job runs → Cluster ready
+```
+
+The init job waits for all 3 pods to be ready, then:
+- Collects node IDs from each pod
+- Assigns all nodes to zone "home" with 100G capacity
+- Applies layout version 1
+- Verifies cluster status
+
+**Everything is automatic!** Just commit and push changes to Git.
 
 ## Endpoints
 
 - **S3 API**: `http://s3.vanillax.me` (port 3900)
 - **Web Interface**: `http://s3-web.vanillax.me` (port 3902)
-- **Admin API**: `http://garage-admin.vanillax.me` (port 3903)
+- **Internal DNS**: `http://garage-s3-api.garage.svc.cluster.local:3900`
 
-## Post-Deployment Setup
+## Manual Operations (if needed)
 
-After deployment, Garage nodes will automatically discover each other via Kubernetes service discovery. You need to configure the cluster layout:
-
-### 1. Wait for all pods to be ready
-
-```bash
-kubectl get pods -n garage
-# Wait for all 3 pods to be Running
-```
-
-### 2. Check cluster status
+### Check Cluster Status
 
 ```bash
 kubectl exec -n garage garage-0 -- ./garage status
-# You should see all 3 nodes connected
 ```
 
-### 3. Configure Cluster Layout
-
-```bash
-# Get node IDs
-NODE_0=$(kubectl exec -n garage garage-0 -- garage node id)
-NODE_1=$(kubectl exec -n garage garage-1 -- garage node id)
-NODE_2=$(kubectl exec -n garage garage-2 -- garage node id)
-
-# Assign capacity and zones
-kubectl exec -n garage garage-0 -- garage layout assign -z dc1 -c 10G $NODE_0
-kubectl exec -n garage garage-0 -- garage layout assign -z dc1 -c 10G $NODE_1
-kubectl exec -n garage garage-0 -- garage layout assign -z dc1 -c 10G $NODE_2
-
-# Show the new layout
-kubectl exec -n garage garage-0 -- garage layout show
-
-# Apply the layout
-kubectl exec -n garage garage-0 -- garage layout apply --version 1
-
-# Check cluster status
-kubectl exec -n garage garage-0 -- garage status
-```
-
-### 3. Create Keys and Buckets
+### Create Keys and Buckets
 
 ```bash
 # Create a key
-kubectl exec -n garage garage-0 -- garage key create my-app-key
+kubectl exec -n garage garage-0 -- ./garage key create my-app-key
+
+# Note the Key ID and Secret Key from output
+KEY_ID="GK..."
 
 # Create a bucket
-kubectl exec -n garage garage-0 -- garage bucket create my-bucket
+kubectl exec -n garage garage-0 -- ./garage bucket create my-bucket
 
-# Allow the key to access the bucket
-kubectl exec -n garage garage-0 -- garage bucket allow my-bucket --read --write --key my-app-key
+# Grant permissions
+kubectl exec -n garage garage-0 -- ./garage bucket allow my-bucket --read --write --key $KEY_ID
 
 # Get bucket info
-kubectl exec -n garage garage-0 -- garage bucket info my-bucket
+kubectl exec -n garage garage-0 -- ./garage bucket info my-bucket
+```
+
+## Migrating from Manual Helm Install
+
+If you previously installed Garage manually with `helm install`, you need to either:
+
+**Option 1: Uninstall and let ArgoCD take over**
+```bash
+helm uninstall garage -n garage
+# ArgoCD will redeploy automatically
+```
+
+**Option 2: Adopt existing resources**
+```bash
+# Label existing resources so ArgoCD can manage them
+kubectl label -n garage statefulset/garage app.kubernetes.io/instance=garage-helm
+kubectl label -n garage service/garage-s3-api app.kubernetes.io/instance=garage-helm
+kubectl label -n garage service/garage-s3-web app.kubernetes.io/instance=garage-helm
 ```
 
 ### 4. Test S3 Access

@@ -1,0 +1,40 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: garage-init-layout
+  namespace: garage
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: init-layout
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Waiting for all garage pods to be ready..."
+              kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=garage -n garage --timeout=300s
+              
+              echo "Assigning roles to all 3 nodes..."
+              for i in 0 1 2; do
+                echo "Processing garage-$i..."
+                ID=$(kubectl exec -n garage garage-$i -- ./garage node id -q)
+                echo "  Node ID: $ID"
+                kubectl exec -n garage garage-$i -- ./garage layout assign "$ID" -z home -c 100G
+              done
+              
+              echo "Reviewing staged layout..."
+              kubectl exec -n garage garage-0 -- ./garage layout show
+              
+              echo "Applying layout (version 1)..."
+              kubectl exec -n garage garage-0 -- ./garage layout apply --version 1
+              
+              echo "Verifying cluster status..."
+              kubectl exec -n garage garage-0 -- ./garage status
+              
+              echo "✅ Garage cluster initialized successfully!"
