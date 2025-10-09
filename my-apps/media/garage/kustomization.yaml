@@ -4,5 +4,6 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - garage-app.yaml
-  - httproute.yaml
+  - rbac.yaml
   - init-layout-job.yaml
+  - httproute.yaml

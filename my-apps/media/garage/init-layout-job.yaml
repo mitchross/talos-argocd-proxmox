@@ -8,6 +8,7 @@ spec:
   ttlSecondsAfterFinished: 300
   template:
     spec:
+      serviceAccountName: garage-init
       restartPolicy: OnFailure
       containers:
         - name: init-layout
