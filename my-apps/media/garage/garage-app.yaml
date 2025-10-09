@@ -14,27 +14,18 @@ spec:
     path: script/helm/garage
     helm:
       releaseName: garage
-      values: |
-        garage:
-          replicationMode: "3"
-        
-        deployment:
-          replicaCount: 3
-        
-        persistence:
-          meta:
-            storageClass: "longhorn"
-            size: "1Gi"
-          data:
-            storageClass: "longhorn"
-            size: "10Gi"
-        
-        ingress:
-          s3:
-            api:
-              enabled: false
-            web:
-              enabled: false
+      valueFiles:
+        - $values/my-apps/media/garage/values.yaml
+  
+  sources:
+    - repoURL: https://git.deuxfleurs.fr/Deuxfleurs/garage.git
+      targetRevision: v1.0.0
+      path: script/helm/garage
+      helm:
+        releaseName: garage
+    - repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+      targetRevision: HEAD
+      ref: values
   
   destination:
     server: https://kubernetes.default.svc
