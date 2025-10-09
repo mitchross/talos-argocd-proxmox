@@ -25,29 +25,32 @@ Garage is a lightweight, distributed S3-compatible object storage system designe
 
 ## GitOps Deployment
 
-This application uses **two ArgoCD Applications** working together:
+This application uses **two ArgoCD Applications** working together, both defined in this directory:
 
 ### 1. `garage-helm` (Helm Deployment)
-- **Location**: `infrastructure/controllers/argocd/apps/garage-helm.yaml`
-- **Purpose**: Deploys Garage Helm chart from Git repository
+- **Defined in**: `garage-app.yaml` (this directory)
+- **Purpose**: Deploys Garage Helm chart from Git repository  
 - **Manages**: StatefulSet, Service, ConfigMap, PVCs
-- **Source**: https://git.deuxfleurs.fr/Deuxfleurs/garage.git
+- **Configuration**: `values.yaml` (this directory)
+- **Helm Chart Source**: https://git.deuxfleurs.fr/Deuxfleurs/garage.git
 
 ### 2. `my-apps-garage` (Supporting Resources)
-- **Location**: `my-apps/media/garage/` (auto-discovered by ApplicationSet)
+- **Auto-discovered**: By ApplicationSet from `my-apps/media/garage/`
 - **Purpose**: Manages cluster-specific resources
-- **Manages**: Namespace, RBAC, HTTPRoutes, Init Job
-- **Source**: Your GitHub repo via Kustomize
+- **Manages**: Namespace, RBAC, HTTPRoutes, Init Job, and the garage-helm Application
+- **Source**: Kustomize manifests in this directory
 
 **Why two apps?**  
-The ApplicationSet pattern (`my-apps/*/*`) expects Kustomize manifests, but Garage's Helm chart is only available in a Git repo (not a public Helm registry). The solution: Helm app handles core deployment, Kustomize app handles supporting resources.
+The `garage-helm` Application uses ArgoCD's multi-source feature to combine the Helm chart from Garage's Git repo with values from your GitHub repo. The `my-apps-garage` Application (via ApplicationSet) deploys everything including the `garage-helm` Application definition.
 
 ### Files in This Directory:
-1. **`rbac.yaml`**: ServiceAccount and RBAC for init job
-2. **`init-layout-job.yaml`**: Kubernetes Job that automatically configures cluster layout
-3. **`httproute.yaml`**: Gateway API routes for S3 API and web interface
-4. **`namespace.yaml`**: Garage namespace
-5. **`kustomization.yaml`**: Ties supporting resources together
+1. **`garage-app.yaml`**: ArgoCD Application for Helm chart deployment
+2. **`values.yaml`**: Helm values (3 replicas, Longhorn storage, etc.)
+3. **`rbac.yaml`**: ServiceAccount and RBAC for init job
+4. **`init-layout-job.yaml`**: Kubernetes Job that automatically configures cluster layout
+5. **`httproute.yaml`**: Gateway API routes for S3 API and web interface
+6. **`namespace.yaml`**: Garage namespace
+7. **`kustomization.yaml`**: Ties all resources together
 
 ### How It Works
 
