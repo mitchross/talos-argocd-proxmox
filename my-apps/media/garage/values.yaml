@@ -1,0 +1,20 @@
+garage:
+  replicationMode: "3"
+
+deployment:
+  replicaCount: 3
+
+persistence:
+  meta:
+    storageClass: "longhorn"
+    size: "1Gi"
+  data:
+    storageClass: "longhorn"
+    size: "10Gi"
+
+ingress:
+  s3:
+    api:
+      enabled: false
+    web:
+      enabled: false
