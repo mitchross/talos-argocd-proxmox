@@ -1,5 +1,7 @@
 garage:
   replicationMode: "3"
+  rpcSecret: "change-this-rpc-secret-to-something-secure"
+  adminToken: "z5+ws4PTvaBkTvEp2FFH/pKSJuYOHDuPCMkeQbhzN9s="
 
 deployment:
   replicaCount: 3
