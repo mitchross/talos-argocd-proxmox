@@ -26,7 +26,7 @@ spec:
               protocol: TCP
           env:
             - name: API_BASE_URL
-              value: "http://garage.garage.svc.cluster.local:3903"
+              value: "http://garage-metrics.garage.svc.cluster.local:3903"
             - name: S3_ENDPOINT_URL
               value: "http://garage.garage.svc.cluster.local:3900"
             - name: S3_REGION
