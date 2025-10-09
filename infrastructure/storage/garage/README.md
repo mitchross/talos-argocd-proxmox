@@ -69,8 +69,20 @@ The init job waits for all 3 pods to be ready, then:
 ## Endpoints
 
 - **S3 API**: `http://s3.vanillax.me` (port 3900)
-- **Web Interface**: `http://s3-web.vanillax.me` (port 3902)
-- **Internal DNS**: `http://garage-s3-api.garage.svc.cluster.local:3900`
+- **Web Interface**: `http://s3-web.vanillax.me` (port 3902) - Static website hosting
+- **Admin Web UI**: `http://garage-ui.vanillax.me` (port 3909) - Garage Web UI for administration
+- **Internal DNS**: `http://garage.garage.svc.cluster.local:3900`
+
+## Garage Web UI
+
+The Garage Web UI provides a browser-based interface for:
+- Browsing buckets and objects
+- Uploading/downloading files
+- Managing keys and permissions
+- Monitoring cluster health
+- Viewing cluster layout
+
+Access at: `http://garage-ui.vanillax.me`
 
 ## Manual Operations (if needed)
 

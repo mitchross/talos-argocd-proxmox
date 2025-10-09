@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: garage-webui
+  namespace: garage
+  labels:
+    app: garage-webui
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: garage-webui
+  template:
+    metadata:
+      labels:
+        app: garage-webui
+    spec:
+      containers:
+        - name: garage-webui
+          image: khairul169/garage-webui:latest
+          ports:
+            - name: http
+              containerPort: 3909
+              protocol: TCP
+          env:
+            - name: API_BASE_URL
+              value: "http://garage.garage.svc.cluster.local:3903"
+            - name: S3_ENDPOINT_URL
+              value: "http://garage.garage.svc.cluster.local:3900"
+            - name: S3_REGION
+              value: "garage"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
