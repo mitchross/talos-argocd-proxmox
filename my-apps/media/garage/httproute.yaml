@@ -19,7 +19,7 @@ spec:
     backendRefs:
     - group: ""
       kind: Service
-      name: garage-s3-api
+      name: garage
       port: 3900
       weight: 1
 ---
@@ -45,6 +45,6 @@ spec:
     backendRefs:
     - group: ""
       kind: Service
-      name: garage-s3-web
+      name: garage
       port: 3902
       weight: 1

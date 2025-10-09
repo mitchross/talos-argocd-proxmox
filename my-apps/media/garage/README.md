@@ -2,10 +2,19 @@
 
 Garage is a lightweight, distributed S3-compatible object storage system designed for self-hosting.
 
+## ✅ Deployment Status
+
+**Fully operational and managed by ArgoCD!**
+
+- ✅ 3 Garage pods running
+- ✅ Cluster layout initialized (3 nodes, zone: home, 100G capacity each)
+- ✅ HTTPRoutes configured for web access
+- ✅ Auto-initialization via Kubernetes Job
+
 ## Architecture
 
 - **Deployment**: ArgoCD Application → Garage Helm chart from Git
-- **Replicas**: 3 StatefulSet pods for high availability
+- **Replicas**: 3 StatefulSet pods for high availability  
 - **Replication**: Mode 3 (3 copies of data)
 - **Storage**: 
   - Meta: 1Gi per pod (LMDB metadata)
@@ -16,12 +25,29 @@ Garage is a lightweight, distributed S3-compatible object storage system designe
 
 ## GitOps Deployment
 
-This application is fully managed by ArgoCD:
+This application uses **two ArgoCD Applications** working together:
 
-1. **`garage-app.yaml`**: ArgoCD Application that deploys Garage Helm chart from Git
+### 1. `garage-helm` (Helm Deployment)
+- **Location**: `infrastructure/controllers/argocd/apps/garage-helm.yaml`
+- **Purpose**: Deploys Garage Helm chart from Git repository
+- **Manages**: StatefulSet, Service, ConfigMap, PVCs
+- **Source**: https://git.deuxfleurs.fr/Deuxfleurs/garage.git
+
+### 2. `my-apps-garage` (Supporting Resources)
+- **Location**: `my-apps/media/garage/` (auto-discovered by ApplicationSet)
+- **Purpose**: Manages cluster-specific resources
+- **Manages**: Namespace, RBAC, HTTPRoutes, Init Job
+- **Source**: Your GitHub repo via Kustomize
+
+**Why two apps?**  
+The ApplicationSet pattern (`my-apps/*/*`) expects Kustomize manifests, but Garage's Helm chart is only available in a Git repo (not a public Helm registry). The solution: Helm app handles core deployment, Kustomize app handles supporting resources.
+
+### Files in This Directory:
+1. **`rbac.yaml`**: ServiceAccount and RBAC for init job
 2. **`init-layout-job.yaml`**: Kubernetes Job that automatically configures cluster layout
 3. **`httproute.yaml`**: Gateway API routes for S3 API and web interface
 4. **`namespace.yaml`**: Garage namespace
+5. **`kustomization.yaml`**: Ties supporting resources together
 
 ### How It Works
 
