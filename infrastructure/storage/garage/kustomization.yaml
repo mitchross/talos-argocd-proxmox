@@ -7,3 +7,6 @@ resources:
   - init-layout-job.yaml
   - httproute.yaml
   - garage-app.yaml
+  - webui-deployment.yaml
+  - webui-service.yaml
+  - webui-httproute.yaml

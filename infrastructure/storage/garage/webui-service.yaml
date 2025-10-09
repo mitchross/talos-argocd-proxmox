@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: garage-webui
+  namespace: garage
+  labels:
+    app: garage-webui
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3909
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: garage-webui
