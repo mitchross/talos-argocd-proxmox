@@ -3,7 +3,9 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
-  - garage-app.yaml
   - rbac.yaml
   - init-layout-job.yaml
   - httproute.yaml
+
+# Note: garage-app.yaml is deployed separately as a standalone ArgoCD Application
+# It's not included here to avoid nested Application management

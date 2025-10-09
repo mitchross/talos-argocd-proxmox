@@ -6,16 +6,8 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "2"
 spec:
-  project: my-apps
+  project: infrastructure
   revisionHistoryLimit: 3
-  source:
-    repoURL: https://git.deuxfleurs.fr/Deuxfleurs/garage.git
-    targetRevision: v1.0.0
-    path: script/helm/garage
-    helm:
-      releaseName: garage
-      valueFiles:
-        - $values/my-apps/media/garage/values.yaml
   
   sources:
     - repoURL: https://git.deuxfleurs.fr/Deuxfleurs/garage.git
@@ -23,6 +15,8 @@ spec:
       path: script/helm/garage
       helm:
         releaseName: garage
+        valueFiles:
+          - $values/infrastructure/storage/garage/values.yaml
     - repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
       targetRevision: HEAD
       ref: values
