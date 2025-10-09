@@ -35,6 +35,7 @@ spec:
     name: gateway-internal
     namespace: gateway
   hostnames:
+  - "*.s3-web.vanillax.me"
   - "s3-web.vanillax.me"
   rules:
   - matches:
@@ -44,31 +45,6 @@ spec:
     backendRefs:
     - group: ""
       kind: Service
-      name: garage-web
+      name: garage-s3-web
       port: 3902
-      weight: 1
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: garage-admin
-  namespace: garage
-spec:
-  parentRefs:
-  - group: gateway.networking.k8s.io
-    kind: Gateway
-    name: gateway-internal
-    namespace: gateway
-  hostnames:
-  - "garage-admin.vanillax.me"
-  rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /
-    backendRefs:
-    - group: ""
-      kind: Service
-      name: garage-admin
-      port: 3903
       weight: 1

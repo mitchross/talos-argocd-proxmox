@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: garage-helm
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: my-apps
+  revisionHistoryLimit: 3
+  source:
+    repoURL: https://git.deuxfleurs.fr/Deuxfleurs/garage.git
+    targetRevision: v1.0.0
+    path: script/helm/garage
+    helm:
+      releaseName: garage
+      values: |
+        garage:
+          replicationMode: "3"
+        
+        deployment:
+          replicaCount: 3
+        
+        persistence:
+          meta:
+            storageClass: "longhorn"
+            size: "1Gi"
+          data:
+            storageClass: "longhorn"
+            size: "10Gi"
+        
+        ingress:
+          s3:
+            api:
+              enabled: false
+            web:
+              enabled: false
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: garage
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  
+  info:
+    - name: 'Description'
+      value: 'Garage S3 Storage - Helm deployment from Git'
