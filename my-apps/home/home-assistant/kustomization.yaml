@@ -23,13 +23,13 @@ commonLabels:
 generatorOptions:
   disableNameSuffixHash: true
 
-# configMapGenerator:
-# - name: home-assistant-config
-#   files:
-#   - configuration.yaml
-#   - automations.yaml
-#   - scripts.yaml
-#   - scenes.yaml
-#   options:
-#     # Better ConfigMap handling
-#     disableNameSuffixHash: true
+configMapGenerator:
+- name: home-assistant-config
+  files:
+  - configuration.yaml
+  - automations.yaml
+  - scripts.yaml
+  - scenes.yaml
+  options:
+    # Better ConfigMap handling
+    disableNameSuffixHash: true
