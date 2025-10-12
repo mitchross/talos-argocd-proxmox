@@ -100,8 +100,8 @@ spec:
   preserveResourcesOnDeletion: true # Safety feature!
   generators:
     - git:
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        revision: HEAD
+        repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+        revision: main
         # Discover any directory matching the pattern.
         directories:
           - path: "my-apps/*/*"
@@ -113,8 +113,9 @@ spec:
     spec:
       project: my-apps
       source:
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        targetRevision: HEAD
+        source:
+      repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+      targetRevision: main
         # Path points to the discovered directory.
         path: '{{path}}'
         # Enable Helm charts for Kustomize

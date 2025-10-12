@@ -5,15 +5,15 @@ metadata:
   namespace: argocd
 spec:
   generators:
-    - git:
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        revision: HEAD
-        directories:
-          - path: infrastructure/controllers/*
-          - path: infrastructure/database/*/*
-          - path: infrastructure/networking/*
-          - path: infrastructure/storage/*
-          - path: infrastructure/crds
+  - git:
+      repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+      revision: main
+      directories:
+      - path: infrastructure/controllers/*
+      - path: infrastructure/database/*/*
+      - path: infrastructure/networking/*
+      - path: infrastructure/storage/*
+      - path: infrastructure/crds
   template:
     metadata:
       name: '{{path.basename}}'
@@ -25,8 +25,8 @@ spec:
       project: infrastructure
       revisionHistoryLimit: 3
       source:
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        targetRevision: HEAD
+        repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+        targetRevision: main
         path: '{{path}}'
       destination:
         server: https://kubernetes.default.svc
@@ -37,12 +37,12 @@ spec:
           selfHeal: true
           allowEmpty: false
         syncOptions:
-          - CreateNamespace=true
-          - ServerSideApply=true
-          - RespectIgnoreDifferences=true
-          - ApplyOutOfSyncOnly=true
-          - Replace=false
-          - IgnoreMissingTemplate=true
+        - CreateNamespace=true
+        - ServerSideApply=true
+        - RespectIgnoreDifferences=true
+        - ApplyOutOfSyncOnly=true
+        - Replace=false
+        - IgnoreMissingTemplate=true
         retry:
           limit: 5
           backoff:

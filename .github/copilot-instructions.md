@@ -1,4 +1,4 @@
-# GitHub Copilot Instructions for k3s-argocd-proxmox
+# GitHub Copilot Instructions for talos-argocd-proxmox
 
 ## Project Overview
 
