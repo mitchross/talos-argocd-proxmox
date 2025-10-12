@@ -1,5 +1,5 @@
 cluster:
-  name: talos-default
+  name: talos-proxmox-prod
   id: 1
 kubeProxyReplacement: true
 # Cilium Routing Mode
@@ -10,14 +10,14 @@ kubeProxyReplacement: true
 #   subnets/VLANs) or in cloud environments where the underlying network cannot route pod IPs.
 #
 # This cluster's nodes are all on the same L2 network, so native routing is used.
-routingMode: tunnel
+routingMode: native
 # When using native routing, the pod CIDR must be specified.
 # This value is derived from the `clusterPodNets` field in `iac/talos/talconfig.yaml`.
-# ipv4NativeRoutingCIDR: 10.14.0.0/16
+ipv4NativeRoutingCIDR: 10.14.0.0/16
 bpf:
   masquerade: true
-# Point to one of the control plane nodes initially
-# Once VIP is working, this can be updated to the VIP
+# Point to kubePrism running on localhost
+# kubePrism automatically load balances to all control plane nodes via Omni's SideroLink
 k8sServiceHost: localhost
 k8sServicePort: 7445
 securityContext:
