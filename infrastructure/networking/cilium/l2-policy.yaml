@@ -1,10 +1,21 @@
+---
 apiVersion: cilium.io/v2alpha1
 kind: CiliumL2AnnouncementPolicy
 metadata:
-  name: main-l2-policy
+  name: l2-policy
   namespace: kube-system
 spec:
+  # Announce LoadBalancer IPs on all network interfaces starting with 'e'
+  # This typically matches: eth0, eno1, enp*, etc.
   interfaces:
-    - 'e*'
-  loadBalancerIPs: true
-  externalIPs: true
+    - ^e.*
+  
+  # Announce for all LoadBalancer services
+  serviceSelector:
+    matchLabels: {}
+  
+  # Use all nodes for L2 announcements (high availability)
+  nodeSelector:
+    matchExpressions:
+      - key: node-role.kubernetes.io/control-plane
+        operator: DoesNotExist

@@ -1,20 +1,22 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
 # kubePrism (localhost:7445) handles control plane HA via Omni's SideroLink
 # Only need service LoadBalancer resources for applications
+
 resources:
-- announce.yaml
 - ip-pool.yaml
 - l2-policy.yaml
-# Control plane VIP resources removed - kubePrism handles this
-# - vip-pool.yaml
-# - kube-apiserver-vip.yaml
-# - control-plane-l2-policy.yaml
+- l2-announcement.yaml
+
 helmCharts:
 - name: cilium
   repo: https://helm.cilium.io
   version: 1.18.2
-  releaseName: "cilium"
+  releaseName: cilium
   includeCRDs: true
   namespace: kube-system
   valuesFile: values.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true

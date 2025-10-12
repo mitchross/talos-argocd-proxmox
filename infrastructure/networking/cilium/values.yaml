@@ -1,107 +1,76 @@
+# Cilium Helm Values for Talos Proxmox Production Cluster
+# Cluster Configuration
 cluster:
   name: talos-proxmox-prod
   id: 1
-kubeProxyReplacement: true
-# Cilium Routing Mode
-#
-# - "native" (Direct Routing): Use when all cluster nodes are on the same L2 network.
-#   This is more performant as it avoids the overhead of encapsulation.
-# - "tunnel" (Encapsulation): Use when nodes are on different L2 networks (e.g., different
-#   subnets/VLANs) or in cloud environments where the underlying network cannot route pod IPs.
-#
-# This cluster's nodes are all on the same L2 network, so native routing is used.
-routingMode: native
-# When using native routing, the pod CIDR must be specified.
-# This value is derived from the `clusterPodNets` field in `iac/talos/talconfig.yaml`.
-ipv4NativeRoutingCIDR: 10.14.0.0/16
-bpf:
-  masquerade: true
-# Point to kubePrism running on localhost
-# kubePrism automatically load balances to all control plane nodes via Omni's SideroLink
+
+# Kubernetes API Configuration (kubePrism via SideroLink)
 k8sServiceHost: localhost
-k8sServicePort: 7445
+k8sServicePort: "7445"
+
+# Kube-proxy Replacement
+kubeProxyReplacement: true
+
+# Talos-specific Security Context (required for init containers)
 securityContext:
   capabilities:
-    ciliumAgent: [ CHOWN, KILL, NET_ADMIN, NET_RAW, IPC_LOCK, SYS_ADMIN, SYS_RESOURCE, DAC_OVERRIDE, FOWNER, SETGID, SETUID ]
-    cleanCiliumState: [ NET_ADMIN, SYS_ADMIN, SYS_RESOURCE ]
+    ciliumAgent:
+      - CHOWN
+      - KILL
+      - NET_ADMIN
+      - NET_RAW
+      - IPC_LOCK
+      - SYS_ADMIN
+      - SYS_RESOURCE
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    cleanCiliumState:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - SYS_RESOURCE
+
+# Talos-specific cgroup configuration
 cgroup:
   autoMount:
     enabled: false
   hostRoot: /sys/fs/cgroup
-# https://docs.cilium.io/en/stable/network/concepts/ipam/
+
+# Routing Configuration
+routingMode: native
+autoDirectNodeRoutes: true
+ipv4NativeRoutingCIDR: 10.14.0.0/16
+
+# IPAM Configuration
 ipam:
   mode: kubernetes
-operator:
-  rollOutPods: true
-  replicas: 1
-  resources:
-    limits:
-      cpu: 500m
-      memory: 256Mi
-    requests:
-      cpu: 50m
-      memory: 128Mi
-# Roll out cilium agent pods automatically when ConfigMap is updated.
-rollOutCiliumPods: true
-resources:
-  limits:
-    cpu: 1000m
-    memory: 1Gi
-  requests:
-    cpu: 200m
-    memory: 512Mi
-debug:
+
+# Enable Socket-level Load Balancing (critical for pod-to-service connectivity)
+socketLB:
   enabled: true
-# Increase rate limit when doing L2 announcements and Gateway API operations
-k8sClientRateLimit:
-  qps: 50
-  burst: 200
+  hostNamespaceOnly: false
+
+# BPF Host Routing
+bpf:
+  masquerade: true
+
+# L2 Announcements for LoadBalancer Services
 l2announcements:
   enabled: true
-externalIPs:
-  enabled: true
-loadBalancer:
-  acceleration: best-effort
-  # https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#maglev-consistent-hashing
-  algorithm: maglev
+
+# Gateway API Support
 gatewayAPI:
   enabled: true
-  enableAlpn: true
-envoy:
-  securityContext:
-    capabilities:
-      keepCapNetBindService: true
-      envoy: [ NET_ADMIN, PERFMON, BPF ]
+
+# Hubble (Observability)
 hubble:
   enabled: true
-  metrics:
-    enabled:
-    - dns:query;ignoreAAAA
-    - drop
-    - tcp
-    - flow
-    - icmp
-    - http
   relay:
     enabled: true
-    rollOutPods: true
   ui:
     enabled: true
-    rollOutPods: true
-ingressController:
-  enabled: false
-  default: true
-  loadbalancerMode: shared
-  service:
-    annotations:
-      io.cilium/lb-ipam-ips: 192.168.10.40
-# mTLS
-authentication:
-  enabled: false
-  mutual:
-    spire:
-      enabled: false
-      install:
-        server:
-          dataStorage:
-            storageClass: cilium-spire-sc
+
+# Operator Configuration
+operator:
+  replicas: 1

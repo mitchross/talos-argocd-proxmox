@@ -152,6 +152,8 @@ This final step uses our "App of Apps" pattern to bootstrap the entire cluster. 
 # 1. Apply the ArgoCD main components and CRDs
 # This deploys the ArgoCD Helm chart, which creates the CRDs and controller.
 kustomize build infrastructure/controllers/argocd --enable-helm | kubectl apply -f -
+# NOTE: You'll see an error about "no matches for kind Application" - this is EXPECTED!
+# The root.yaml Application can't be applied until the CRDs are established in step 2.
 
 # 2. Wait for the ArgoCD CRDs to be established in the cluster
 # This command pauses until the Kubernetes API server recognizes the 'Application' resource type.
@@ -339,7 +341,7 @@ Automated backups are configured with different tiers:
 | **Standard** | Daily | Weekly | 4 weeks |
 
 ## 📋 Documentation
-- **[View Documentation Online](https://mitchross.github.io/k3s-argocd-proxmox)** - Full documentation website
+- **[View Documentation Online](https://mitchross.github.io/talos-argocd-proxmox)** - Full documentation website
 - **[Local Documentation](docs/)** - Browse documentation in the repository:
   - [ArgoCD Setup](docs/argocd.md) - **Enterprise GitOps patterns and self-management**
   - [Network Configuration](docs/network.md)

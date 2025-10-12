@@ -4,11 +4,11 @@ metadata:
   name: root
   namespace: argocd
   finalizers:
-    - resources-finalizer.argocd.argoproj.io
+  - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git # TODO: Replace with your repository URL
+    repoURL: https://github.com/mitchross/talos-argocd-proxmox.git # TODO: Replace with your repository URL
     path: infrastructure/controllers/argocd/apps
     targetRevision: HEAD
   destination:

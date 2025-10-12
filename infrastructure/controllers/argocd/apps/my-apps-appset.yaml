@@ -5,11 +5,11 @@ metadata:
   namespace: argocd
 spec:
   generators:
-    - git:
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        revision: HEAD
-        directories:
-          - path: my-apps/*/*
+  - git:
+      repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+      revision: main
+      directories:
+      - path: my-apps/*/*
   template:
     metadata:
       name: 'my-apps-{{path.basename}}'
@@ -19,8 +19,8 @@ spec:
       project: my-apps
       revisionHistoryLimit: 3
       source:
-        repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
-        targetRevision: HEAD
+        repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+        targetRevision: main
         path: '{{path}}'
       destination:
         server: https://kubernetes.default.svc
@@ -31,12 +31,12 @@ spec:
           selfHeal: true
           allowEmpty: false
         syncOptions:
-          - CreateNamespace=true
-          - ServerSideApply=true
-          - RespectIgnoreDifferences=true
-          - ApplyOutOfSyncOnly=true
-          - Replace=false
-          - IgnoreMissingTemplate=true
+        - CreateNamespace=true
+        - ServerSideApply=true
+        - RespectIgnoreDifferences=true
+        - ApplyOutOfSyncOnly=true
+        - Replace=false
+        - IgnoreMissingTemplate=true
         retry:
           limit: 5
           backoff:
@@ -44,5 +44,5 @@ spec:
             factor: 2
             maxDuration: 3m
       info:
-        - name: 'Description'
-          value: 'Application: {{path.basename}}'
+      - name: 'Description'
+        value: 'Application: {{path.basename}}'
