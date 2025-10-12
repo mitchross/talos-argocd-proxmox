@@ -22,16 +22,16 @@ kubectl patch validatingwebhookconfiguration ${WEBHOOK} \
 
 migration_time="$(date +%Y-%m-%dT%H:%M:%S)"
 echo "Finding Longhorn CRDs with stored v1beta1 resources..."
-crds="$(kubectl get crd -l app.kubernetes.io/name=longhorn -o json | jq -r '.items[] | select(.status.storedVersions | index("v1beta1")) | .metadata.name')"
+mapfile -t crds < <(kubectl get crd -l app.kubernetes.io/name=longhorn -o json | jq -r '.items[] | select(.status.storedVersions | index("v1beta1")) | .metadata.name')
 
-if [ -z "${crds}" ]; then
+if [ ${#crds[@]} -eq 0 ]; then
   echo "No CRDs report v1beta1 in storedVersions. Skipping migration."
 else
-  echo "CRDs to migrate: ${crds}"
-  for crd in ${crds}; do
+  echo "CRDs to migrate: ${crds[*]}"
+  for crd in "${crds[@]}"; do
     echo "Migrating ${crd} ..."
-    names="$(kubectl -n "${NS}" get "${crd}" -o jsonpath='{.items[*].metadata.name}' || true)"
-    for name in ${names}; do
+    mapfile -t names < <(kubectl -n "${NS}" get "${crd}" -o jsonpath='{.items[*].metadata.name}') || true
+    for name in "${names[@]:-}"; do
       echo "  Patching ${crd}/${name} with migration-time annotation"
       kubectl patch "${crd}" "${name}" -n "${NS}" --type=merge -p='{"metadata":{"annotations":{"migration-time":"'"${migration_time}"'"}}}' || true
     done
