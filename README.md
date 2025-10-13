@@ -128,21 +128,20 @@ This cluster uses [1Password Connect](https://developer.1password.com/docs/conne
 
 3.  **Create Kubernetes Secrets**:
     ```bash
-    # IMPORTANT: Place your generated `1password-credentials.json` in the root of this repository first.
-    kubectl create secret generic 1password-credentials \
-      --from-file=1password-credentials.json \
-      --namespace 1passwordconnect
+    export OP_CREDENTIALS=$(op read op://homelabproxmox/1passwordconnect/1password-credentials.json | base64 | tr -d '\n')
+    export OP_CONNECT_TOKEN=$(op read 'op://homelabproxmox/1password-operator-token/credential')
 
-    # Replace YOUR_CONNECT_TOKEN with your actual token
-    export CONNECT_TOKEN="YOUR_CONNECT_TOKEN"
+    kubectl create secret generic 1password-credentials \
+      --namespace 1passwordconnect \
+      --from-literal=1password-credentials.json="$OP_CREDENTIALS"
 
     kubectl create secret generic 1password-operator-token \
-      --from-literal=token=$CONNECT_TOKEN \
-      --namespace 1passwordconnect
+      --namespace 1passwordconnect \
+      --from-literal=token="$OP_CONNECT_TOKEN"
 
     kubectl create secret generic 1passwordconnect \
-      --from-literal=token=$CONNECT_TOKEN \
-      --namespace external-secrets
+      --namespace external-secrets \
+      --from-literal=token="$OP_CONNECT_TOKEN"
     ```
 
 ### 6. Bootstrap ArgoCD & Deploy The Stack
