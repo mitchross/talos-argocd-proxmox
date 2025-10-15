@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vertd
+  namespace: vert
+  labels:
+    app.kubernetes.io/name: vertd
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vertd
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vertd
+    spec:
+      containers:
+        - name: vertd
+          image: ghcr.io/vert-sh/vertd:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 24153
+          env:
+            # Uncomment to force GPU vendor detection if needed
+            # - name: VERTD_FORCE_GPU
+            #   value: nvidia # or amd, intel
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          volumeMounts:
+            - name: dev-dri
+              mountPath: /dev/dri
+              readOnly: true
+      volumes:
+        - name: dev-dri
+          hostPath:
+            path: /dev/dri
+            type: DirectoryOrCreate
+      # For NVIDIA GPU nodes, set runtimeClassName and tolerations if using GPU runtime
+      # runtimeClassName: nvidia
+      # tolerations:
+      #   - key: nvidia.com/gpu
+      #     operator: Exists
+      #     effect: NoSchedule
+      # nodeSelector:
+      #   feature.node.kubernetes.io/pci-0300_10de.present: "true"
