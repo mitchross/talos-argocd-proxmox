@@ -15,8 +15,6 @@ spec:
   template:
     metadata:
       labels:
-            - name: PUB_VERTD_URL
-              value: "http://vertd.vert.svc.cluster.local:24153"
         app.kubernetes.io/name: vert
     spec:
       containers:
@@ -36,8 +34,8 @@ spec:
             #   value: "http://vertd.development.svc.cluster.local:24153"
           resources:
             requests:
-              cpu: 100m
-              memory: 128Mi
+              cpu: 50m
+              memory: 64Mi
             limits:
               cpu: 500m
               memory: 512Mi
