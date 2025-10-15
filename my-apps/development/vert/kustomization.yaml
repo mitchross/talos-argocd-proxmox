@@ -5,3 +5,5 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+  - vertd-deployment.yaml
+  - vertd-service.yaml

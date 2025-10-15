@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: vertd
+  namespace: vert
+spec:
+  selector:
+    app.kubernetes.io/name: vertd
+  ports:
+    - name: http
+      port: 24153
+      targetPort: 24153
+      protocol: TCP
