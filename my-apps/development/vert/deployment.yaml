@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vert
+  namespace: vert
+  labels:
+    app.kubernetes.io/name: vert
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vert
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vert
+    spec:
+      containers:
+        - name: vert
+          image: ghcr.io/vert-sh/vert:latest@sha256:0dcb6d3e374e401d8a28d58c74574e03ae6777e6d0811f314fe0121a64aabf55
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+          env:
+            - name: PUB_ENV
+              value: "production"
+            - name: PUB_HOSTNAME
+              value: "vert.vanillax.me"
+            # Optional: Configure vertd URL for video conversion
+            # - name: PUB_VERTD_URL
+            #   value: "http://vertd.development.svc.cluster.local:24153"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
