@@ -14,8 +14,8 @@ data:
       migStrategy: "none"
       failOnInitError: false
       nvidiaDriverRoot: "/"
-      nvidiaDevRoot: "/"              # ADD THIS LINE
-      deviceDiscoveryStrategy: "nvml"  # ADD THIS LINE
+      nvidiaDevRoot: "/"
+      deviceDiscoveryStrategy: "nvml"
       plugin:
         passDeviceSpecs: true
         deviceListStrategy: "envvar"
