@@ -63,6 +63,12 @@ l2announcements:
   leaseRenewDeadline: "5s"
   leaseRetryPeriod: "2s"
 
+# Enable XDP acceleration (REQUIRED for Talos L2 announcements)
+# Fixes kernel ARP dropping issue between XDP and TC in Talos 1.9+
+# See: https://github.com/cilium/cilium/discussions/36829
+loadBalancer:
+  acceleration: best-effort
+
 # Increase API rate limits for L2 announcer lease management
 # Formula: QPS = #services * (1 / leaseRenewDeadline)
 # With 15 services: 15 * (1/5) = 3 QPS, so 20 QPS gives headroom
