@@ -4,8 +4,9 @@ metadata:
   name: nvidia-device-plugin-config
   namespace: gpu-device-plugin
   labels:
-    app.kubernetes.io/name: nvidia-device-plugin
     app.kubernetes.io/component: device-plugin
+    app.kubernetes.io/name: nvidia-device-plugin
+    app.kubernetes.io/part-of: gpu-infrastructure
 data:
   config.yaml: |
     version: v1
@@ -13,11 +14,12 @@ data:
       migStrategy: "none"
       failOnInitError: false
       nvidiaDriverRoot: "/"
+      nvidiaDevRoot: "/"              # ADD THIS LINE
+      deviceDiscoveryStrategy: "nvml"  # ADD THIS LINE
       plugin:
         passDeviceSpecs: true
         deviceListStrategy: "envvar"
         deviceIDStrategy: "uuid"
-    # Enable time-slicing with 4 replicas per GPU (4 * 2 = 8 total GPU resources)
     sharing:
       timeSlicing:
         resources:
