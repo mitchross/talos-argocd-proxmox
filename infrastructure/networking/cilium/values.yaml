@@ -58,6 +58,17 @@ bpf:
 # L2 Announcements for LoadBalancer Services
 l2announcements:
   enabled: true
+  # Increase lease duration to reduce API calls
+  leaseDuration: "15s"
+  leaseRenewDeadline: "5s"
+  leaseRetryPeriod: "2s"
+
+# Increase API rate limits for L2 announcer lease management
+# Formula: QPS = #services * (1 / leaseRenewDeadline)
+# With 15 services: 15 * (1/5) = 3 QPS, so 20 QPS gives headroom
+k8sClientRateLimit:
+  qps: 20
+  burst: 40
 
 # Gateway API Support
 gatewayAPI:
