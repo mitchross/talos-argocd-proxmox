@@ -20,6 +20,7 @@ spec:
         prometheus.io/port: "9400"
         prometheus.io/path: "/metrics"
     spec:
+      runtimeClassName: nvidia
       hostNetwork: true
       hostPID: true
       tolerations:
