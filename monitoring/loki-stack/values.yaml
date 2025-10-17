@@ -24,6 +24,11 @@ loki:
   querier:
     # Default is 4, if you have enough memory and CPU you can increase, reduce if OOMing
     max_concurrent: 4
+  # Configure query scheduler for read pods
+  query_scheduler:
+    use_scheduler_ring: true
+  frontend_worker:
+    scheduler_address: loki-backend.loki-stack.svc.cluster.local:9095
   pattern_ingester:
     enabled: true
   limits_config:
