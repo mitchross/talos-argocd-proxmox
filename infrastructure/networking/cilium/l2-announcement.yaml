@@ -11,13 +11,10 @@ spec:
   interfaces:
     - ^e.*
   
-  # Apply to all services with LoadBalancer type
+  # Apply to all LoadBalancer services (match all since l2-policy below handles filtering)
+  # Note: Can't match on spec.type, so we match all and let loadBalancerIPs: true handle it
   serviceSelector:
-    matchExpressions:
-      - key: io.kubernetes.service.type
-        operator: In
-        values:
-          - LoadBalancer
+    matchLabels: {}
   
   # Use worker nodes only (control plane nodes excluded)
   nodeSelector:
