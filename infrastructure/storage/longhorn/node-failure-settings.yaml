@@ -15,12 +15,13 @@ metadata:
 value: "delete-both-statefulset-and-deployment-pod"
 
 ---
-# Automatically delete orphaned data when all replicas are lost
+# Automatically delete orphaned resources when all replicas are lost
 # This prevents PVCs from getting stuck in Terminating state
+# Correct setting name: orphan-resource-auto-deletion (not orphan-auto-deletion)
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
-  name: orphan-auto-deletion
+  name: orphan-resource-auto-deletion
   namespace: longhorn-system
 value: "true"
 
@@ -39,22 +40,23 @@ value: "block-if-contains-last-replica"
 # Increase storage reserved percentage to prevent "insufficient storage" errors
 # Current: 10% - This was too low and caused your volume creation failures
 # Recommended: 25% for production
+# Correct setting name: storage-reserved-percentage-for-default-disk (not storage-reserved-percentage-default)
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
-  name: storage-reserved-percentage-default
+  name: storage-reserved-percentage-for-default-disk
   namespace: longhorn-system
 value: "25"
 
 ---
 # Enable fast replica rebuild for quicker recovery
-# Already configured in values.yaml but ensuring it's set correctly
+# NOTE: Must be a plain boolean string, not JSON format
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
   name: fast-replica-rebuild-enabled
   namespace: longhorn-system
-value: '{"v1":"true"}'
+value: "true"
 
 ---
 # Allow concurrent replica rebuilds per node
@@ -81,10 +83,19 @@ value: "true"
 ---
 # Automatically detach volumes on node failure after timeout
 # This allows volumes to be reattached to healthy nodes
-# Default: 6 minutes
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
   name: kubernetes-cluster-autoscaler-enabled
+  namespace: longhorn-system
+value: "true"
+
+---
+# Auto-delete pods when volumes are detached unexpectedly
+# Helps recover from node failures more quickly
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: auto-delete-pod-when-volume-detached-unexpectedly
   namespace: longhorn-system
 value: "true"
