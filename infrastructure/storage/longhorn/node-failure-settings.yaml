@@ -17,13 +17,14 @@ value: "delete-both-statefulset-and-deployment-pod"
 ---
 # Automatically delete orphaned resources when all replicas are lost
 # This prevents PVCs from getting stuck in Terminating state
-# Correct setting name: orphan-resource-auto-deletion (not orphan-auto-deletion)
+# Format: semicolon-separated list of resource types
+# Valid types: replica-data (replica data store), instance (engine and replica runtime)
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
   name: orphan-resource-auto-deletion
   namespace: longhorn-system
-value: "true"
+value: "replica-data;instance"
 
 ---
 # Block node drain if it contains the last healthy replica
