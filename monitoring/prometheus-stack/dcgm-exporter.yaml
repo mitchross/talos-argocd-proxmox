@@ -56,6 +56,9 @@ spec:
             - name: sys
               mountPath: /host/sys
               readOnly: true
+            - name: nvidia-dev
+              mountPath: /dev
+              readOnly: false
           resources:
             requests:
               cpu: 100m
@@ -82,6 +85,9 @@ spec:
         - name: sys
           hostPath:
             path: /sys
+        - name: nvidia-dev
+          hostPath:
+            path: /dev
 ---
 apiVersion: v1
 kind: Service
