@@ -59,9 +59,9 @@ worker:
   # Disable the wait-for-backend init container which causes a deadlock
   waitForBackend:
     enabled: false
-  # Worker doesn't need the media volume mounted since it accesses via API
-  persistence:
-    enabled: false
+  # Mount media volume as read-only to avoid Multi-Attach errors with RWO storage
+  # Worker doesn't need write access to media files
+  readOnlyPersistence: true
 
 metrics:
   enabled: false
