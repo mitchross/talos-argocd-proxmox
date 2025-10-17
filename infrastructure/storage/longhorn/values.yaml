@@ -12,7 +12,8 @@ defaultSettings:
   replicaAutoBalance: "best-effort"
   # Ensure new consolidated settings that can be per-engine stay simple scalars for V1-only clusters
   # These avoid parse errors like strconv.ParseBool/Int seen in manager logs when JSON strings are provided.
-  fastReplicaRebuildEnabled: '{"v1":"false"}'
+  # Note: Use plain boolean for fastReplicaRebuildEnabled, not JSON format
+  fastReplicaRebuildEnabled: "true"
   engineReplicaTimeout: '{"v1":"8"}'
   guaranteedInstanceManagerCPU: "12"
 # -- Disables the pre-upgrade check job. This is recommended for GitOps tools
