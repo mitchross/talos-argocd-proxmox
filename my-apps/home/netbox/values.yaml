@@ -49,11 +49,18 @@ persistence:
   enabled: true
   storageClass: longhorn
   size: 10Gi
+  # Longhorn doesn't support RWX easily, so we disable persistence for worker
+  # Worker doesn't need to write media files, only read them via the API
+  accessModes:
+    - ReadWriteOnce
 
 worker:
   enabled: true
   # Disable the wait-for-backend init container which causes a deadlock
   waitForBackend:
+    enabled: false
+  # Worker doesn't need the media volume mounted since it accesses via API
+  persistence:
     enabled: false
 
 metrics:
