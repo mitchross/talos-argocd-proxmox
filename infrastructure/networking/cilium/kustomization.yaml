@@ -1,133 +1,22 @@
----
-# Kustomization for Cilium CNI on Talos with Sidero Omni
-# This kustomization deploys Cilium with L2 LoadBalancer support
-#
-# Architecture:
-# - kubePrism (localhost:7445) handles control plane HA via Omni's SideroLink
-# - Cilium provides CNI networking and LoadBalancer services
-# - L2 announcements enable LoadBalancer IPs without external load balancer
-#
-# Deployment Order:
-# 1. Cilium Helm Chart (CNI and networking)
-# 2. CiliumLoadBalancerIPPool (IP address ranges)
-# 3. CiliumL2AnnouncementPolicy (L2 announcement configuration)
-#
-# IMPORTANT: Deploy with Helm support enabled:
-#   kustomize build . --enable-helm | kubectl apply -f -
-#
-# Or if using kubectl kustomize (older versions may not support --enable-helm):
-#   kubectl apply -k . --enable-helm
-#
-# Note: The --enable-helm flag is required to render the Helm chart
-
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-metadata:
-  name: cilium-kustomization
-  annotations:
-    config.kubernetes.io/index: '0'
-    config.kubernetes.io/path: 'cilium'
+# kubePrism (localhost:7445) handles control plane HA via Omni's SideroLink
+# Only need service LoadBalancer resources for applications
 
-# ============================================================================
-# NAMESPACE
-# ============================================================================
-namespace: kube-system
-
-# ============================================================================
-# LABELS
-# ============================================================================
-# Common labels applied to all resources (using 'labels' instead of deprecated 'commonLabels')
-labels:
-  - pairs:
-      app.kubernetes.io/managed-by: kustomize
-      app.kubernetes.io/part-of: cilium
-
-# ============================================================================
-# RESOURCES
-# ============================================================================
-# Cilium Custom Resources (CRs) applied after Helm chart installation
 resources:
-  - ip-pool.yaml        # CiliumLoadBalancerIPPool
-  - l2-policy.yaml      # CiliumL2AnnouncementPolicy
+- ip-pool.yaml
+- l2-policy.yaml
+- l2-announcement.yaml
 
-# Note: l2-announcement.yaml is consolidated into l2-policy.yaml
-# Remove l2-announcement.yaml from resources list to avoid duplication
-
-# ============================================================================
-# HELM CHARTS
-# ============================================================================
 helmCharts:
-  - name: cilium
-    repo: https://helm.cilium.io
-    version: 1.18.2
-    releaseName: cilium
-    namespace: kube-system
-    includeCRDs: true
-    valuesFile: values.yaml
-    
-    # Optional: Inline values overrides
-    # valuesInline:
-    #   cluster:
-    #     name: talos-proxmox-prod
+- name: cilium
+  repo: https://helm.cilium.io
+  version: 1.18.2
+  releaseName: cilium
+  includeCRDs: true
+  namespace: kube-system
+  valuesFile: values.yaml
 
-# ============================================================================
-# GENERATOR OPTIONS
-# ============================================================================
 generatorOptions:
   disableNameSuffixHash: true
-  
-  # Add labels to generated resources
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-
-  # Add annotations to generated resources
-  annotations:
-    config.kubernetes.io/index: '0'
-
-# ============================================================================
-# BUILD OPTIONS
-# ============================================================================
-# Uncomment to add configuration for resource ordering
-# configurations:
-#   - kustomizeconfig.yaml
-
-# ============================================================================
-# PATCHES (OPTIONAL)
-# ============================================================================
-# Uncomment to apply patches to resources
-# patches:
-#   - path: patch-cilium-config.yaml
-#     target:
-#       kind: ConfigMap
-#       name: cilium-config
-
-# ============================================================================
-# REPLACEMENTS (OPTIONAL)
-# ============================================================================
-# Uncomment to use replacement transformations
-# replacements:
-#   - source:
-#       kind: ConfigMap
-#       name: cilium-config
-#       fieldPath: data.cluster-name
-#     targets:
-#       - select:
-#           kind: Deployment
-#           name: cilium-operator
-#         fieldPaths:
-#           - spec.template.spec.containers.[name=cilium-operator].env.[name=CLUSTER_NAME].value
-
-# ============================================================================
-# IMAGES (OPTIONAL)
-# ============================================================================
-# Uncomment to override image versions or use private registry
-# images:
-#   - name: quay.io/cilium/cilium
-#     newTag: v1.18.2
-#   - name: quay.io/cilium/operator-generic
-#     newTag: v1.18.2
-
-# ============================================================================
-# END OF KUSTOMIZATION
-# ============================================================================

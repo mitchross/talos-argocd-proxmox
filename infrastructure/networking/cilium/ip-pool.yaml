@@ -1,57 +1,17 @@
 ---
-# CiliumLoadBalancerIPPool defines the IP range for LoadBalancer services
-# This pool will be used by Cilium to assign external IPs to services of type LoadBalancer
 apiVersion: cilium.io/v2alpha1
 kind: CiliumLoadBalancerIPPool
 metadata:
   name: first-pool
   namespace: kube-system
-  labels:
-    app.kubernetes.io/name: cilium-ip-pool
-    app.kubernetes.io/component: loadbalancer
 spec:
-  # Service Selector (empty = match all LoadBalancer services)
-  # You can use matchLabels or matchExpressions to target specific services
+  blocks:
+    - cidr: "192.168.10.32/27"
+      # This provides IPs from 192.168.10.32 to 192.168.10.63
+      # Reserve specific IPs for known services:
+      # - 192.168.10.49: Gateway External
+      # - 192.168.10.50: Gateway Internal
+      # - Remaining 30 IPs for other LoadBalancer services
+  allowFirstLastIPs: "No"
   serviceSelector:
     matchLabels: {}
-  
-  # IP Blocks Configuration
-  blocks:
-    # CIDR: 192.168.10.32/27
-    # Range: 192.168.10.32 - 192.168.10.63 (32 IPs total)
-    # Usable: 30 IPs (with allowFirstLastIPs: "No")
-    #
-    # Reserved IPs (for reference):
-    # - 192.168.10.49: Gateway External (example)
-    # - 192.168.10.50: Gateway Internal (example)
-    # - Remaining ~28 IPs for other LoadBalancer services
-    - cidr: "192.168.10.32/27"
-  
-  # Disable first and last IPs in the CIDR (network and broadcast)
-  # "Yes" = Allow .32 and .63
-  # "No"  = Skip .32 and .63 (recommended for compatibility)
-  allowFirstLastIPs: "No"
-  
-  # Disabled Configuration (controls whether this pool is active)
-  disabled: false
-
----
-# Optional: Additional IP Pool Example
-# Uncomment if you need multiple IP pools for different purposes
-# apiVersion: cilium.io/v2alpha1
-# kind: CiliumLoadBalancerIPPool
-# metadata:
-#   name: dmz-pool
-#   namespace: kube-system
-#   labels:
-#     app.kubernetes.io/name: cilium-ip-pool
-#     app.kubernetes.io/component: loadbalancer
-#     environment: dmz
-# spec:
-#   serviceSelector:
-#     matchLabels:
-#       environment: dmz
-#   blocks:
-#     - cidr: "192.168.10.64/27"  # Different subnet for DMZ services
-#   allowFirstLastIPs: "No"
-#   disabled: false
