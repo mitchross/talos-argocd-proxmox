@@ -1,21 +1,106 @@
 ---
+# CiliumL2AnnouncementPolicy configures Layer 2 network announcements for LoadBalancer services
+# This policy determines which nodes announce which services and on which interfaces
+#
+# How it works:
+# 1. Cilium uses Gratuitous ARP (IPv4) or Neighbor Discovery (IPv6) to announce IPs
+# 2. Multiple nodes can announce the same IP for high availability
+# 3. The network will route traffic to the "best" announcing node based on network topology
 apiVersion: cilium.io/v2alpha1
 kind: CiliumL2AnnouncementPolicy
 metadata:
-  name: l2-policy
+  name: default-l2-policy
   namespace: kube-system
+  labels:
+    app.kubernetes.io/name: cilium-l2-policy
+    app.kubernetes.io/component: loadbalancer
 spec:
-  # Announce LoadBalancer IPs on all network interfaces starting with 'e'
-  # This typically matches: eth0, eno1, enp*, etc.
-  interfaces:
-    - ^e.*
-  
-  # Announce for all LoadBalancer services
+  # ============================================================================
+  # SERVICE SELECTOR
+  # ============================================================================
+  # Which services this policy applies to
+  # Empty matchLabels = all LoadBalancer services
   serviceSelector:
     matchLabels: {}
   
-  # Use all nodes for L2 announcements (high availability)
+  # ============================================================================
+  # NODE SELECTOR
+  # ============================================================================
+  # Which nodes should announce the LoadBalancer IPs
+  # This configuration excludes control plane nodes for best practices
   nodeSelector:
     matchExpressions:
+      # Only use worker nodes (exclude control plane)
       - key: node-role.kubernetes.io/control-plane
         operator: DoesNotExist
+  
+  # Alternative node selector options:
+  # 
+  # Option 1: Use ALL nodes (including control plane)
+  # nodeSelector:
+  #   matchLabels: {}
+  #
+  # Option 2: Use nodes with specific label
+  # nodeSelector:
+  #   matchLabels:
+  #     cilium.io/l2-announcer: "true"
+  #
+  # Option 3: Use nodes in specific zones
+  # nodeSelector:
+  #   matchExpressions:
+  #     - key: topology.kubernetes.io/zone
+  #       operator: In
+  #       values:
+  #         - zone-a
+  #         - zone-b
+  
+  # ============================================================================
+  # INTERFACE SELECTOR
+  # ============================================================================
+  # Network interfaces to use for L2 announcements
+  # Regex pattern matching interface names
+  interfaces:
+    - ^e.*  # Matches: eth0, eth1, eno1, enp0s3, enx*, etc.
+  
+  # Common interface patterns:
+  # - ^e.*       : All interfaces starting with 'e' (eth, eno, enp, enx)
+  # - ^eth[0-9]+ : Ethernet interfaces (eth0, eth1, eth2, etc.)
+  # - ^eno[0-9]+ : Onboard ethernet (eno1, eno2, etc.)
+  # - ^enp.*     : PCI ethernet (enp0s3, enp1s0, etc.)
+  # - ^bond.*    : Bonded interfaces (bond0, bond1, etc.)
+  
+  # ============================================================================
+  # IP ANNOUNCEMENT CONFIGURATION
+  # ============================================================================
+  # Announce LoadBalancer service IPs (required for LoadBalancer services)
+  loadBalancerIPs: true
+  
+  # Announce service ExternalIPs (optional, uncomment if needed)
+  # externalIPs: true
+
+---
+# Optional: High-Priority L2 Policy for Critical Services
+# Uncomment if you need dedicated nodes for critical services
+#
+# apiVersion: cilium.io/v2alpha1
+# kind: CiliumL2AnnouncementPolicy
+# metadata:
+#   name: critical-services-l2-policy
+#   namespace: kube-system
+#   labels:
+#     app.kubernetes.io/name: cilium-l2-policy
+#     app.kubernetes.io/component: loadbalancer
+#     priority: critical
+# spec:
+#   serviceSelector:
+#     matchLabels:
+#       priority: critical
+#   
+#   nodeSelector:
+#     matchLabels:
+#       node-role.kubernetes.io/loadbalancer: "true"
+#   
+#   interfaces:
+#     - ^e.*
+#   
+#   loadBalancerIPs: true
