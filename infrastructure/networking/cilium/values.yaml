@@ -1,289 +1,93 @@
-# Cilium Helm Values for Talos Proxmox Production Cluster with Sidero Omni
-# Version: 1.18.2
-# Date: 2025-10-19
-
-# ============================================================================
-# CLUSTER CONFIGURATION
-# ============================================================================
+# Cilium Helm Values for Talos Proxmox Production Cluster
+# Cluster Configuration
 cluster:
   name: talos-proxmox-prod
   id: 1
 
-# ============================================================================
-# KUBERNETES API CONFIGURATION (kubePrism via SideroLink)
-# ============================================================================
-# Sidero Omni provides kubePrism on localhost:7445 for control plane HA
+# Kubernetes API Configuration (kubePrism via SideroLink)
 k8sServiceHost: localhost
 k8sServicePort: "7445"
 
-# ============================================================================
-# KUBE-PROXY REPLACEMENT
-# ============================================================================
+# Kube-proxy Replacement
 kubeProxyReplacement: true
 
-# ============================================================================
-# TALOS-SPECIFIC SECURITY CONTEXT
-# ============================================================================
-# Required for init containers and Talos security model
+# Talos-specific Security Context (required for init containers)
 securityContext:
   capabilities:
     ciliumAgent:
-      - CHOWN
-      - KILL
-      - NET_ADMIN
-      - NET_RAW
-      - IPC_LOCK
-      - SYS_ADMIN
-      - SYS_RESOURCE
-      - DAC_OVERRIDE
-      - FOWNER
-      - SETGID
-      - SETUID
+    - CHOWN
+    - KILL
+    - NET_ADMIN
+    - NET_RAW
+    - IPC_LOCK
+    - SYS_ADMIN
+    - SYS_RESOURCE
+    - DAC_OVERRIDE
+    - FOWNER
+    - SETGID
+    - SETUID
     cleanCiliumState:
-      - NET_ADMIN
-      - SYS_ADMIN
-      - SYS_RESOURCE
+    - NET_ADMIN
+    - SYS_ADMIN
+    - SYS_RESOURCE
 
-# ============================================================================
-# TALOS-SPECIFIC CGROUP CONFIGURATION
-# ============================================================================
+# Talos-specific cgroup configuration
 cgroup:
   autoMount:
     enabled: false
   hostRoot: /sys/fs/cgroup
 
-# ============================================================================
-# CNI CONFIGURATION
-# ============================================================================
-cni:
-  exclusive: false  # Important for Talos compatibility
-  install: true
-  binPath: /opt/cni/bin  # Standard CNI binary path (writable on Talos)
-
-# ============================================================================
-# ROUTING CONFIGURATION
-# ============================================================================
+# Routing Configuration
 routingMode: native
 autoDirectNodeRoutes: true
 ipv4NativeRoutingCIDR: 10.14.0.0/16
 
-# Note: 'tunnel' and 'tunnelProtocol' were removed in Cilium v1.15
-# With routingMode: native, tunneling is automatically disabled
-
-# ============================================================================
-# IPAM CONFIGURATION
-# ============================================================================
+# IPAM Configuration
 ipam:
   mode: kubernetes
 
-# IPv4/IPv6 Configuration
-ipv4:
-  enabled: true
-ipv6:
-  enabled: false
-
-# ============================================================================
-# SOCKET-LEVEL LOAD BALANCING
-# ============================================================================
-# Critical for pod-to-service connectivity in Talos
+# Enable Socket-level Load Balancing (critical for pod-to-service connectivity)
 socketLB:
   enabled: true
   hostNamespaceOnly: false
 
-# ============================================================================
-# BPF CONFIGURATION
-# ============================================================================
+# BPF Host Routing
 bpf:
   masquerade: true
-  tproxy: true
-  
-  # CRITICAL for Talos 1.8+:
-  # Talos Linux's forwardKubeDNSToHost (enabled by default since Talos 1.8+) 
-  # doesn't work with Cilium's eBPF Host-Routing unless this is set to true.
-  # Without this, DNS will NOT work!
-  # Reference: https://docs.cilium.io/en/latest/installation/k8s-install-helm/#talos
-  hostLegacyRouting: true
-  
-# BPF Host Routing
-bpfClockProbe: true
-enableRuntimeDeviceDetection: true
 
-# ============================================================================
-# BANDWIDTH MANAGER (OPTIONAL BUT RECOMMENDED)
-# ============================================================================
-# Note: BBR requires BPF host routing which needs additional configuration
-bandwidthManager:
-  enabled: true
-  bbr: false  # Disabled: BBR requires BPF host routing
-
-# ============================================================================
-# L2 ANNOUNCEMENTS FOR LOADBALANCER SERVICES
-# ============================================================================
+# L2 Announcements for LoadBalancer Services
 l2announcements:
   enabled: true
-  # Tuned lease settings to reduce API calls while maintaining HA
+  # Increase lease duration to reduce API calls
   leaseDuration: "15s"
   leaseRenewDeadline: "5s"
   leaseRetryPeriod: "2s"
 
-# ============================================================================
-# LOADBALANCER CONFIGURATION
-# ============================================================================
 # Enable XDP acceleration (REQUIRED for Talos L2 announcements)
 # Fixes kernel ARP dropping issue between XDP and TC in Talos 1.9+
-# Reference: https://github.com/cilium/cilium/discussions/36829
+# See: https://github.com/cilium/cilium/discussions/36829
 loadBalancer:
   acceleration: best-effort
-  mode: dsr
-  dsrDispatch: opt
 
-# ============================================================================
-# API RATE LIMITS
-# ============================================================================
 # Increase API rate limits for L2 announcer lease management
 # Formula: QPS = #services * (1 / leaseRenewDeadline)
-# With 15 services: 15 * (1/5) = 3 QPS, 20 QPS provides headroom
+# With 15 services: 15 * (1/5) = 3 QPS, so 20 QPS gives headroom
 k8sClientRateLimit:
   qps: 20
   burst: 40
 
-# ============================================================================
-# GATEWAY API SUPPORT
-# ============================================================================
+# Gateway API Support
 gatewayAPI:
   enabled: true
 
-# ============================================================================
-# HUBBLE (OBSERVABILITY)
-# ============================================================================
+# Hubble (Observability)
 hubble:
   enabled: true
-  
-  # Hubble Metrics
-  metrics:
-    enabled:
-      - dns:query
-      - drop
-      - tcp
-      - flow
-      - icmp
-      - http
-    
-    # Enable if using Prometheus Operator
-    serviceMonitor:
-      enabled: false
-    
-    # Dashboards
-    dashboards:
-      enabled: false
-  
-  # Hubble Relay
   relay:
     enabled: true
-    rollOutPods: true
-    replicas: 1
-  
-  # Hubble UI
   ui:
     enabled: true
-    rollOutPods: true
-    replicas: 1
-    ingress:
-      enabled: false
-      # Uncomment if you want to expose via ingress
-      # hosts:
-      #   - hubble-ui.your-domain.com
-      # tls:
-      #   - secretName: hubble-ui-tls
-      #     hosts:
-      #       - hubble-ui.your-domain.com
 
-# ============================================================================
-# OPERATOR CONFIGURATION
-# ============================================================================
+# Operator Configuration
 operator:
   replicas: 1
-  rollOutPods: true  # Auto-restart pods on config changes
-  
-  # Prometheus metrics (enable if using Prometheus)
-  prometheus:
-    enabled: false
-    serviceMonitor:
-      enabled: false
-  
-  # Reduce log verbosity in production
-  # debug: false
-
-# ============================================================================
-# CILIUM AGENT CONFIGURATION
-# ============================================================================
-# Enable auto-rollout of agent pods when ConfigMap changes
-rollOutCiliumPods: true
-
-# Enable Prometheus metrics (optional)
-prometheus:
-  enabled: false
-  serviceMonitor:
-    enabled: false
-
-# Debug mode (disable in production)
-debug:
-  enabled: false
-
-# ============================================================================
-# PERFORMANCE TUNING
-# ============================================================================
-# Increase MTU if your network supports it (default: auto-detect)
-# mtu: 1500
-
-# Enable direct routing between nodes on same L2 network
-# directRoutingDevice: eth0  # Adjust to your primary interface
-
-# ============================================================================
-# INGRESS CONTROLLER (OPTIONAL)
-# ============================================================================
-ingressController:
-  enabled: false  # Set to true if using Cilium as ingress controller
-  default: false
-  loadbalancerMode: shared
-  
-  # Default TLS secret for ingress
-  # defaultSecretNamespace: kube-system
-  # defaultSecretName: cilium-ingress-tls
-
-# ============================================================================
-# SERVICE MESH (OPTIONAL)
-# ============================================================================
-# Uncomment to enable Envoy-based service mesh features
-# envoy:
-#   enabled: true
-
-# ============================================================================
-# ENCRYPTION (OPTIONAL)
-# ============================================================================
-# Uncomment to enable encryption for pod-to-pod traffic
-# encryption:
-#   enabled: true
-#   type: wireguard
-#   nodeEncryption: false
-
-# ============================================================================
-# EGRESS GATEWAY (OPTIONAL)
-# ============================================================================
-# Uncomment to enable egress gateway for specific pods
-# egressGateway:
-#   enabled: true
-
-# ============================================================================
-# NODE CONFIGURATION
-# ============================================================================
-# Keep state on node restart
-keepDeprecatedProbes: false
-keepDeprecatedLabels: false
-
-# Clean state on agent startup
-cleanState: false
-
-# ============================================================================
-# END OF CONFIGURATION
-# ============================================================================
