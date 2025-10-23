@@ -12,6 +12,9 @@ resources:
   - httproute.yaml
   - network-policy.yaml
 
+patches:
+  - path: service-patches.yaml
+
 helmCharts:
   - name: immich
     repo: oci://ghcr.io/immich-app/immich-charts
