@@ -15,13 +15,11 @@ spec:
   template:
     metadata:
       labels:
-            - name: PUB_VERTD_URL
-              value: "http://vertd.vert.svc.cluster.local:24153"
         app.kubernetes.io/name: vert
     spec:
       containers:
         - name: vert
-          image: ghcr.io/vert-sh/vert:latest@sha256:0dcb6d3e374e401d8a28d58c74574e03ae6777e6d0811f314fe0121a64aabf55
+          image: ghcr.io/vert-sh/vert:latest@sha256:08aefd746ecf0dd10d702e6562393a2b950a605a785338cc31a6ca64599970f4
           imagePullPolicy: Always
           ports:
             - name: http
@@ -36,8 +34,8 @@ spec:
             #   value: "http://vertd.development.svc.cluster.local:24153"
           resources:
             requests:
-              cpu: 100m
-              memory: 128Mi
+              cpu: 50m
+              memory: 64Mi
             limits:
               cpu: 500m
               memory: 512Mi

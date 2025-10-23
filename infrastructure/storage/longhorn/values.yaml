@@ -6,13 +6,14 @@ defaultSettings:
   # NOTE: Longhorn 1.10 consolidates settings for V1/V2 data engines. Use either
   # a single scalar or a JSON string with per-engine values like {"v1":"...","v2":"..."} when needed.
   defaultDataPath: "/var/lib/longhorn"
-  storageMinimalAvailablePercentage: "10"
+  storageMinimalAvailablePercentage: "25"
   storageOverProvisioningPercentage: "100"
   allowRecurringJobWhileVolumeDetached: "true"
   replicaAutoBalance: "best-effort"
   # Ensure new consolidated settings that can be per-engine stay simple scalars for V1-only clusters
   # These avoid parse errors like strconv.ParseBool/Int seen in manager logs when JSON strings are provided.
-  fastReplicaRebuildEnabled: '{"v1":"false"}'
+  # Note: Use plain boolean for fastReplicaRebuildEnabled, not JSON format
+  fastReplicaRebuildEnabled: "true"
   engineReplicaTimeout: '{"v1":"8"}'
   guaranteedInstanceManagerCPU: "12"
 # -- Disables the pre-upgrade check job. This is recommended for GitOps tools

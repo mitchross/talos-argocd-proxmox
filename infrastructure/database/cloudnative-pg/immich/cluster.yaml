@@ -22,9 +22,9 @@ spec:
       logging_collector: "on"
       log_statement: "all"
     shared_preload_libraries:
-      - "vectors.so"
+    - "vectors.so"
     pg_hba:
-      - host all all 0.0.0.0/0 md5
+    - host all all 0.0.0.0/0 md5
   bootstrap:
     initdb:
       database: immich
@@ -32,18 +32,19 @@ spec:
       secret:
         name: immich-db-secret
       postInitSQL:
-        - ALTER ROLE immich WITH SUPERUSER;
+      - ALTER ROLE immich WITH SUPERUSER;
       postInitApplicationSQL:
-        - CREATE SCHEMA IF NOT EXISTS immich AUTHORIZATION immich;
-        - CREATE EXTENSION IF NOT EXISTS "vectors";
-        - CREATE EXTENSION IF NOT EXISTS "cube";
-        - CREATE EXTENSION IF NOT EXISTS "earthdistance";
-        - GRANT ALL ON SCHEMA vectors TO immich;
-        - GRANT SELECT ON TABLE pg_vector_index_stat TO immich;
-        - ALTER DATABASE immich SET search_path TO '"$user", public, vectors';
-        - ALTER SCHEMA vectors OWNER TO "immich";
-        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA vectors TO "immich";
-        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "immich";
+      - CREATE SCHEMA IF NOT EXISTS immich AUTHORIZATION immich;
+      - CREATE SCHEMA IF NOT EXISTS vectors;
+      - CREATE EXTENSION IF NOT EXISTS "vectors" SCHEMA vectors;
+      - CREATE EXTENSION IF NOT EXISTS "cube";
+      - CREATE EXTENSION IF NOT EXISTS "earthdistance";
+      - GRANT ALL ON SCHEMA vectors TO immich;
+      - GRANT SELECT ON TABLE vectors.pg_vector_index_stat TO immich;
+      - ALTER DATABASE immich SET search_path TO "$user", public, vectors;
+      - ALTER SCHEMA vectors OWNER TO "immich";
+      - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA vectors TO "immich";
+      - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "immich";
   storage:
     size: 20Gi
     storageClass: longhorn
@@ -53,20 +54,20 @@ spec:
   managed:
     services:
       additional:
-        - selectorType: rw
-          updateStrategy: patch
-          serviceTemplate:
-            metadata:
-              name: immich-postgres-external
-              annotations:
-                lbipam.cilium.io/ips: "192.168.10.41"
-            spec:
-              type: LoadBalancer
-              ports:
-                - name: postgres
-                  port: 5432
-                  targetPort: 5432
-                  protocol: TCP
+      - selectorType: rw
+        updateStrategy: patch
+        serviceTemplate:
+          metadata:
+            name: immich-postgres-external
+            annotations:
+              lbipam.cilium.io/ips: "192.168.10.41"
+          spec:
+            type: LoadBalancer
+            ports:
+            - name: postgres
+              port: 5432
+              targetPort: 5432
+              protocol: TCP
   enableSuperuserAccess: true
   monitoring:
     enablePodMonitor: true

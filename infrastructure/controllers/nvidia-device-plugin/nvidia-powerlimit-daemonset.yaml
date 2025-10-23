@@ -4,71 +4,49 @@ metadata:
   name: nvidia-powerlimit-daemonset
   namespace: gpu-device-plugin
   labels:
-    app.kubernetes.io/name: nvidia-powerlimit
     app.kubernetes.io/component: power-management
+    app.kubernetes.io/name: nvidia-powerlimit
+    app.kubernetes.io/part-of: gpu-infrastructure
 spec:
   selector:
     matchLabels:
-      name: nvidia-powerlimit
+      app.kubernetes.io/component: power-management
+      app.kubernetes.io/name: nvidia-powerlimit
   template:
     metadata:
       labels:
-        name: nvidia-powerlimit
+        app.kubernetes.io/component: power-management
         app.kubernetes.io/name: nvidia-powerlimit
     spec:
       runtimeClassName: nvidia
-      tolerations:
-      - key: "nvidia.com/gpu"
-        operator: "Exists"
-        effect: "NoSchedule"
-      - key: "CriticalAddonsOnly"
-        operator: "Exists"
-      - key: "node-role.kubernetes.io/control-plane"
-        operator: "Exists"
-        effect: "NoSchedule"
-      # Add any custom taints you have on your GPU nodes
-      - key: "gpu"
-        operator: "Equal"
-        value: "true"
-        effect: "NoSchedule"
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
       hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
-      priorityClassName: "system-node-critical"
-      initContainers:
-      - name: set-power-limit
+      hostPID: true
+      containers:
+      - name: nvidia-powerlimit
         image: nvidia/cuda:12.9.1-base-ubuntu22.04
-        command: [ "/bin/bash", "-c" ]
-        args:
+        command:
+        - /bin/bash
+        - -c
         - |
-          set -e
-          echo "=== NVIDIA GPU Power Management for Talos 1.10 ==="
-
-          # Wait for nvidia-smi to be available
-          until nvidia-smi > /dev/null 2>&1; do
-            echo "Waiting for nvidia-smi to be available..."
-            sleep 5
-          done
-
-          echo "Detected GPUs:"
-          nvidia-smi --query-gpu=index,name,power.limit,power.default_limit --format=csv
-          echo ""
-
-          # Set power limits for RTX 3090 (adjust if you have different GPUs)
-          echo "Setting power limits to 300W (conservative for RTX 3090 with time-slicing)..."
-          nvidia-smi -pl 300
-
-          echo ""
-          echo "=== Updated GPU Configuration ==="
-          nvidia-smi --query-gpu=index,name,power.limit --format=csv
-          echo ""
-          echo "✅ Power limit configuration completed successfully"
-
-          # Verify persistence settings
-          echo "Setting persistence mode..."
-          nvidia-smi -pm 1
-
+          # Set power limit for all GPUs
+          if command -v nvidia-smi &> /dev/null; then
+            GPU_COUNT=$(nvidia-smi --query-gpu=count --format=csv,noheader | head -n1)
+            echo "Found $GPU_COUNT GPUs"
+            for i in $(seq 0 $((GPU_COUNT-1))); do
+              echo "Setting GPU $i power limit to 350W"
+              nvidia-smi -i $i -pl 350 || echo "Failed to set power limit for GPU $i"
+            done
+          else
+            echo "nvidia-smi not found"
+          fi
+          # Keep container running
+          sleep infinity
         securityContext:
           privileged: true
         resources:
@@ -78,48 +56,3 @@ spec:
           limits:
             cpu: 500m
             memory: 256Mi
-      containers:
-      - name: power-monitor
-        image: nvidia/cuda:12.9.1-base-ubuntu22.04
-        command: [ "/bin/bash", "-c" ]
-        args:
-        - |
-          echo "=== NVIDIA Power Monitor Started ==="
-          echo "Monitoring power limits every 30 minutes for RTX 3090 stability with time-slicing..."
-
-          while true; do
-            sleep 1800  # 30 minutes
-            echo "$(date): Checking GPU power limits and persistence..."
-            
-            # Check and fix power limits
-            nvidia-smi --query-gpu=index,name,power.limit --format=csv,noheader,nounits | while read line; do
-              gpu_index=$(echo $line | cut -d',' -f1 | tr -d ' ')
-              gpu_name=$(echo $line | cut -d',' -f2 | tr -d ' ')
-              current_limit=$(echo $line | cut -d',' -f3 | tr -d ' ')
-              
-              if [ "$current_limit" != "300.00" ]; then
-                echo "WARNING: GPU $gpu_index ($gpu_name) power limit is $current_limit W, resetting to 300W"
-                nvidia-smi -i $gpu_index -pl 300
-              else
-                echo "OK: GPU $gpu_index ($gpu_name) power limit is correct: $current_limit W"
-              fi
-            done
-            
-            # Ensure persistence mode is enabled
-            nvidia-smi -pm 1 > /dev/null 2>&1 || echo "Warning: Could not set persistence mode"
-            
-            # Show current GPU utilization (helpful for time-slicing monitoring)
-            echo "Current GPU utilization:"
-            nvidia-smi --query-gpu=index,utilization.gpu,utilization.memory --format=csv
-            echo "---"
-          done
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            cpu: 50m
-            memory: 64Mi
-          limits:
-            cpu: 100m
-            memory: 128Mi
-      restartPolicy: Always

@@ -1,0 +1,19 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-immich-to-database
+  namespace: cloudnative-pg
+spec:
+  description: "Allow Immich pods to connect to the CloudNativePG database."
+  endpointSelector:
+    matchLabels:
+      app: immich
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            "k8s:io.kubernetes.pod.namespace": immich
+            "app.kubernetes.io/name": immich
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP

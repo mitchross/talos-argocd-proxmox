@@ -1,0 +1,36 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloudnative-pg-operator-full-rbac
+  labels:
+    app.kubernetes.io/name: cloudnative-pg
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-10"
+rules:
+# Allow the operator to manage core resources needed for database clusters
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - events
+  - serviceaccounts
+  verbs:
+  - "*"
+# Allow the operator to manage all PostgreSQL CNPG resources
+- apiGroups:
+  - postgresql.cnpg.io
+  resources:
+  - "*"
+  verbs:
+  - "*"
+# Allow the operator to create and manage RBAC resources
+# This is required for the operator to create rolebindings for database pods
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  - roles
+  verbs:
+  - "*"

@@ -12,17 +12,6 @@ spec:
       app: jellyfin
   template:
     spec:
-      # Pod affinity to ensure all jellyfin pods stay on same node (RWO volumes requirement)
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-              - key: app
-                operator: In
-                values:
-                - jellyfin
-            topologyKey: kubernetes.io/hostname
       nodeSelector:
         kubernetes.io/hostname: vanillax-ai
       securityContext:
