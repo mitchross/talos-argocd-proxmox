@@ -27,10 +27,13 @@ spec:
           - name: cert-vanillax
             kind: Secret
             group: "" # required
+        # No QUIC/HTTP3 for internal gateway - only HTTP/2 and HTTP/1.1
+        options:
+          gateway.networking.k8s.io/alpn-protocols: "h2,http/1.1"
       allowedRoutes:
         namespaces:
           from: All
-    # New TCP listener for PostgreSQL
+    # TCP listener for PostgreSQL
     - name: postgres
       protocol: TCP
       port: 5432
