@@ -8,6 +8,26 @@ podSecurityContext:
 allowedHosts:
 - netbox.vanillax.me
 
+# Pod affinity to ensure all NetBox pods (main app, worker, housekeeping)
+# are scheduled on the same node when using ReadWriteOnce (RWO) volumes.
+# This prevents Multi-Attach errors with Longhorn RWO storage.
+affinity:
+  podAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+    - labelSelector:
+        matchExpressions:
+        - key: app.kubernetes.io/name
+          operator: In
+          values:
+          - netbox
+        - key: app.kubernetes.io/component
+          operator: In
+          values:
+          - netbox
+          - worker
+          - housekeeping
+      topologyKey: kubernetes.io/hostname
+
 postgresql:
   enabled: true
   # Apply security context for the PostgreSQL container as well.
@@ -49,12 +69,34 @@ persistence:
   enabled: true
   storageClass: longhorn
   size: 10Gi
+  # Longhorn doesn't support RWX easily, so we disable persistence for worker
+  # Worker doesn't need to write media files, only read them via the API
+  accessModes:
+    - ReadWriteOnce
 
 worker:
   enabled: true
   # Disable the wait-for-backend init container which causes a deadlock
   waitForBackend:
     enabled: false
+  # Mount media volume as read-only to avoid Multi-Attach errors with RWO storage
+  # Worker doesn't need write access to media files
+  readOnlyPersistence: true
+  # Pod affinity to ensure worker is scheduled on the same node as main NetBox app
+  affinity:
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - netbox
+          - key: app.kubernetes.io/component
+            operator: In
+            values:
+            - netbox
+        topologyKey: kubernetes.io/hostname
 
 metrics:
   enabled: false

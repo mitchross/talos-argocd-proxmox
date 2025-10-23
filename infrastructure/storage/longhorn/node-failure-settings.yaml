@@ -1,0 +1,102 @@
+# Longhorn Node Failure and Recovery Settings
+# These settings prevent the issues you experienced with faulted volumes
+# when nodes were removed from the cluster.
+
+---
+# CRITICAL: Automatically delete pods when a node goes down
+# This allows Longhorn to reschedule replicas to healthy nodes
+# Current: do-nothing (causes volumes to stay faulted)
+# Options: do-nothing, delete-deployment-pod, delete-statefulset-pod, delete-both-statefulset-and-deployment-pod
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: node-down-pod-deletion-policy
+  namespace: longhorn-system
+value: "delete-both-statefulset-and-deployment-pod"
+
+---
+# Automatically delete orphaned resources when all replicas are lost
+# This prevents PVCs from getting stuck in Terminating state
+# Format: semicolon-separated list of resource types
+# Valid types: replica-data (replica data store), instance (engine and replica runtime)
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: orphan-resource-auto-deletion
+  namespace: longhorn-system
+value: "replica-data;instance"
+
+---
+# Block node drain if it contains the last healthy replica
+# This prevents accidental data loss when draining nodes
+# Current: already set to block-if-contains-last-replica ✓
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: node-drain-policy
+  namespace: longhorn-system
+value: "block-if-contains-last-replica"
+
+---
+# Increase storage reserved percentage to prevent "insufficient storage" errors
+# Current: 10% - This was too low and caused your volume creation failures
+# Recommended: 25% for production
+# Correct setting name: storage-reserved-percentage-for-default-disk (not storage-reserved-percentage-default)
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: storage-reserved-percentage-for-default-disk
+  namespace: longhorn-system
+value: "25"
+
+---
+# Enable fast replica rebuild for quicker recovery
+# NOTE: Must be a plain boolean string, not JSON format
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: fast-replica-rebuild-enabled
+  namespace: longhorn-system
+value: "true"
+
+---
+# Allow concurrent replica rebuilds per node
+# Helps recover faster when multiple volumes are affected
+# Current: 5 (good default)
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: concurrent-replica-rebuild-per-node-limit
+  namespace: longhorn-system
+value: "5"
+
+---
+# Disable scheduling on cordoned nodes
+# Prevents new replicas from being placed on nodes being drained
+# Current: true ✓
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: disable-scheduling-on-cordoned-node
+  namespace: longhorn-system
+value: "true"
+
+---
+# Automatically detach volumes on node failure after timeout
+# This allows volumes to be reattached to healthy nodes
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: kubernetes-cluster-autoscaler-enabled
+  namespace: longhorn-system
+value: "true"
+
+---
+# Auto-delete pods when volumes are detached unexpectedly
+# Helps recover from node failures more quickly
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: auto-delete-pod-when-volume-detached-unexpectedly
+  namespace: longhorn-system
+value: "true"

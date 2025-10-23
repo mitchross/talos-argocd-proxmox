@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cloudnative-pg-operator-full-rbac
+  labels:
+    app.kubernetes.io/name: cloudnative-pg
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-10"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloudnative-pg-operator-full-rbac
+subjects:
+- kind: ServiceAccount
+  name: cloudnative-pg-operator
+  namespace: cloudnative-pg

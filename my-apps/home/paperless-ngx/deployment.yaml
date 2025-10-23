@@ -15,6 +15,18 @@ spec:
       labels:
         app: paperless-ngx
     spec:
+      # Pod affinity to ensure all paperless pods stay on same node (RWO volumes requirement)
+      # This prevents Multi-Attach errors if replicas are increased
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - paperless-ngx
+            topologyKey: kubernetes.io/hostname
       containers:
         - name: paperless-ngx
           image: ghcr.io/paperless-ngx/paperless-ngx:latest
