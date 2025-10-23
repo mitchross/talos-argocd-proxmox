@@ -5,12 +5,12 @@ metadata:
   namespace: immich
 spec:
   parentRefs:
-    - name: internal
-      namespace: network
+    - name: gateway-internal
+      namespace: gateway
       sectionName: https
   hostnames:
     - "photos.vanillax.me"
   rules:
     - backendRefs:
-        - name: immich-server  # Chart creates service with this name
-          port: 3001
+        - name: immich-server
+          port: 2283
