@@ -62,6 +62,9 @@ server:
     main:
       replicas: 1
       strategy: Recreate  # Required for RWO volumes
+      pod:
+        labels:
+          app.kubernetes.io/component: server
       containers:
         main:
           image:
@@ -81,6 +84,8 @@ server:
       ports:
         http:
           port: 2283
+      selector:
+        app.kubernetes.io/component: server
 
   ingress:
     main:
@@ -103,6 +108,9 @@ machine-learning:
     main:
       replicas: 1
       strategy: Recreate
+      pod:
+        labels:
+          app.kubernetes.io/component: machine-learning
       containers:
         main:
           image:
@@ -137,6 +145,8 @@ machine-learning:
       ports:
         http:
           port: 3003
+      selector:
+        app.kubernetes.io/component: machine-learning
 
   persistence:
     cache:

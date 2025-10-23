@@ -21,3 +21,4 @@ spec:
           name: frigate-http
           port: 5000
           weight: 1
+
