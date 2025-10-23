@@ -75,6 +75,13 @@ server:
               cpu: 2000m
               memory: 2Gi
 
+  service:
+    main:
+      controller: main
+      ports:
+        http:
+          port: 2283
+
   ingress:
     main:
       enabled: false  # Using Gateway API HTTPRoute instead
@@ -123,6 +130,13 @@ machine-learning:
                     operator: In
                     values:
                       - gpu-worker
+
+  service:
+    main:
+      controller: main
+      ports:
+        http:
+          port: 3003
 
   persistence:
     cache:
