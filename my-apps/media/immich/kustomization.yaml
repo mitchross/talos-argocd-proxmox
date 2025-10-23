@@ -10,6 +10,7 @@ resources:
   - library-pvc.yaml
   - externalsecret.yaml
   - httproute.yaml
+   - network-policy.yaml
 
 helmCharts:
   - name: immich
