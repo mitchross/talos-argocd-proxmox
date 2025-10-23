@@ -1,0 +1,134 @@
+# Immich Helm Chart Configuration
+# Chart: immich-0.10.1 (Latest release: October 20, 2024)
+# Based on: https://github.com/immich-app/immich-charts/blob/main/charts/immich/values.yaml
+# Common Library: bjw-s/common 4.3.0
+
+## These entries are shared between all the Immich components
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          tag: v2.0.0  # Default Immich version, update as needed
+        env:
+          # Database connection (CloudNativePG with pgvector/vectorchord)
+          DB_HOSTNAME: "immich-database-rw.cloudnative-pg.svc.cluster.local"
+          DB_PORT: "5432"
+          DB_DATABASE_NAME: "immich"
+          DB_USERNAME: "immich"
+          DB_PASSWORD:
+            valueFrom:
+              secretKeyRef:
+                name: immich-db-credentials
+                key: password
+          # Redis connection (using shared Redis instance)
+          REDIS_HOSTNAME: "redis-master.redis-instance.svc.cluster.local"
+          REDIS_PORT: "6379"
+          # ML service URL (templated by chart)
+          IMMICH_MACHINE_LEARNING_URL: '{{ printf "http://%s-machine-learning:3003" .Release.Name }}'
+
+immich:
+  metrics:
+    # Enabling this will create service monitors for Prometheus operator
+    enabled: false
+
+  persistence:
+    # Main data store for all photos shared between components
+    library:
+      # You MUST create this PVC separately - chart doesn't auto-create it
+      existingClaim: "immich-library"
+
+  # Configuration is immich-config.json converted to YAML
+  # ref: https://immich.app/docs/install/config-file/
+  configuration:
+    trash:
+      enabled: true
+      days: 30
+    storageTemplate:
+      enabled: true
+      template: "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}"
+
+# Dependencies
+
+valkey:
+  # Using external Redis instance, so disable bundled Valkey
+  enabled: false
+
+# Immich components
+
+server:
+  enabled: true
+  controllers:
+    main:
+      replicas: 1
+      strategy: Recreate  # Required for RWO volumes
+      containers:
+        main:
+          image:
+            repository: ghcr.io/immich-app/immich-server
+            pullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+
+  ingress:
+    main:
+      enabled: false  # Using Gateway API HTTPRoute instead
+      # If you want to use Ingress, enable and configure:
+      # enabled: true
+      # className: nginx
+      # annotations:
+      #   nginx.ingress.kubernetes.io/proxy-body-size: "0"
+      # hosts:
+      #   - host: photos.vanillax.me
+      #     paths:
+      #       - path: "/"
+      #         service:
+      #           identifier: main
+
+machine-learning:
+  enabled: true
+  controllers:
+    main:
+      replicas: 1
+      strategy: Recreate
+      containers:
+        main:
+          image:
+            repository: ghcr.io/immich-app/immich-machine-learning
+            pullPolicy: IfNotPresent
+          env:
+            TRANSFORMERS_CACHE: /cache
+            HF_XET_CACHE: /cache/huggingface-xet
+            MPLCONFIGDIR: /cache/matplotlib-config
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+      # Prefer GPU nodes for ML workloads
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-type
+                    operator: In
+                    values:
+                      - gpu-worker
+
+  persistence:
+    cache:
+      enabled: true
+      size: 10Gi
+      # Use PVC to persist ML models and avoid re-downloading on restart
+      type: persistentVolumeClaim
+      accessMode: ReadWriteOnce
+      storageClass: longhorn

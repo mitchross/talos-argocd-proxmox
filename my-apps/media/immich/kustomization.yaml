@@ -4,7 +4,18 @@ namespace: immich
 commonLabels:
   app.kubernetes.io/name: immich
   app.kubernetes.io/managed-by: argocd
+
 resources:
-  # - common
-  # - immich-server
-  - immich-machine-learning
+  - namespace.yaml
+  - library-pvc.yaml
+  - externalsecret.yaml
+  - httproute.yaml
+
+helmCharts:
+  - name: immich
+    repo: oci://ghcr.io/immich-app/immich-charts
+    version: 0.10.1
+    releaseName: immich
+    namespace: immich
+    valuesFile: values.yaml
+    includeCRDs: false

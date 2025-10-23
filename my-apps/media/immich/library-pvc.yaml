@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-library
+  namespace: immich
+  labels:
+    app.kubernetes.io/name: immich
+    app.kubernetes.io/component: library
+  annotations:
+    # Longhorn backup settings - Critical tier for photo library (daily backups)
+    longhorn.io/recurring-job-source: enabled
+    longhorn.io/recurring-job-group: critical
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi  # Adjust based on your photo library size
+  storageClassName: longhorn
