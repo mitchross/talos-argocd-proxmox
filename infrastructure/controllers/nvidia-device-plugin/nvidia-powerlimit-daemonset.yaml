@@ -29,7 +29,7 @@ spec:
       hostPID: true
       containers:
       - name: nvidia-powerlimit
-        image: nvidia/cuda:12.9.1-base-ubuntu22.04
+        image: nvidia/cuda:12.6.0-base-ubuntu22.04
         command:
         - /bin/bash
         - -c
