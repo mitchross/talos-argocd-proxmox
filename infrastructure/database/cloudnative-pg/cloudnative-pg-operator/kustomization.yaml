@@ -8,6 +8,8 @@ commonAnnotations:
   argocd.argoproj.io/sync-wave: "-10"
 resources:
   - namespace.yaml
+  - clusterrole-full-rbac.yaml
+  - clusterrolebinding-full-rbac.yaml
 helmCharts:
   - name: cloudnative-pg
     repo: https://cloudnative-pg.github.io/charts
