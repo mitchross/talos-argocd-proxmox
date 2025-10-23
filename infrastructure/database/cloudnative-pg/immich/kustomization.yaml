@@ -4,6 +4,8 @@ namespace: cloudnative-pg
 commonLabels:
   app.kubernetes.io/name: immich-db
   app.kubernetes.io/managed-by: argocd
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "-5"
 resources:
   - cluster.yaml
   - externalsecret.yaml

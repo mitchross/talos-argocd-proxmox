@@ -4,5 +4,7 @@ namespace: cloudnative-pg
 commonLabels:
   app.kubernetes.io/name: postgres-global-secrets
   app.kubernetes.io/managed-by: argocd
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "-8"
 resources:
   - externalsecret.yaml
