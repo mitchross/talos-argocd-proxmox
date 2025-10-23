@@ -248,5 +248,95 @@ kubectl describe application my-apps-nginx-development -n argocd
 | **ArgoCD UI not accessible** | Check the `http-route.yaml` and the status of the Gateway API or ingress controller. |
 | **Nested kustomization Helm issues** | The 2025 structure flattens nested kustomizations to avoid `--enable-helm` inheritance issues. If you see Helm chart errors, ensure the chart is defined at the ApplicationSet target level, not nested. |
 
+## 📊 ApplicationSet Sync Behavior
+
+### Why All Apps Show "Syncing" on Every Commit
+
+When you push any commit to the repository, you may notice in tools like Lens that all applications show activity or "re-syncing" status, even if you only changed one specific application (e.g., `nvidia-device-plugin`).
+
+**This is expected behavior** and not a problem. Here's why:
+
+#### How ApplicationSet Git Directory Generators Work
+
+ApplicationSets with Git Directory Generators are designed to discover new applications by scanning directory patterns on each evaluation:
+
+```yaml
+generators:
+- git:
+    repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+    revision: main
+    directories:
+    - path: infrastructure/controllers/*
+    - path: monitoring/*
+    - path: my-apps/*/*
+```
+
+When a new commit is pushed:
+1. **ApplicationSet Controller** detects the change via webhook or polling
+2. **Directory scan** happens across ALL matching paths to discover any new applications
+3. **Application reconciliation** runs for each discovered app to check if it's out of sync
+4. **Sync evaluation** determines which apps actually need changes applied
+
+#### What Actually Happens
+
+- ✅ **Reconciliation/Evaluation**: All apps are checked (this is what you see in Lens)
+- ✅ **Sync Only Changed Apps**: Only apps with actual changes are synced to the cluster
+- ✅ **No Unnecessary Changes**: With `ApplyOutOfSyncOnly=true`, ArgoCD only applies changes to resources that differ
+
+#### The Key Sync Option
+
+All our ApplicationSets include this critical option:
+
+```yaml
+syncOptions:
+- ApplyOutOfSyncOnly=true  # Only sync resources that actually changed
+```
+
+This means:
+- ArgoCD **evaluates** all apps to determine sync status
+- ArgoCD **only applies changes** to apps that are actually out of sync
+- The cluster resources themselves are **not modified** unless there are real changes
+
+#### Why Not Use Path-Based Filtering?
+
+**Git Directory Generators** need to scan all directories to discover new applications. There are alternatives, but they come with tradeoffs:
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| **Current (Directory Generator)** | Simple, auto-discovers new apps, no extra files needed | Evaluates all apps on every commit (but doesn't apply changes) |
+| **Split ApplicationSets** | Only evaluates apps in changed areas | More ApplicationSet files to manage |
+| **SCM Provider + Files** | More efficient change detection | Requires marker files in each app directory |
+| **requeueAfterSeconds** | Less frequent evaluations | Just delays the problem, doesn't solve it |
+
+#### What You See in Lens vs Reality
+
+When viewing events in Lens:
+- **"Syncing" status**: ArgoCD is checking if the app needs updates (reconciliation)
+- **"Synced" status**: ArgoCD confirmed the app matches Git (no changes applied)
+- **"OutOfSync → Synced"**: ArgoCD actually applied changes to cluster resources
+
+The first two are just status checks and don't modify cluster resources.
+
+#### Verification
+
+To verify that only changed apps are actually syncing resources:
+
+```bash
+# Watch ArgoCD application events
+kubectl get events -n argocd --sort-by='.lastTimestamp' -w
+
+# Check if resources are actually being applied
+kubectl get events -A --sort-by='.lastTimestamp' | grep -v "argocd"
+
+# View specific application sync history
+argocd app history <app-name>
+```
+
+#### Conclusion
+
+The "re-syncing" activity you see is **evaluation overhead**, not unnecessary resource changes. This is a reasonable tradeoff for the simplicity of automatic application discovery without marker files. The cluster resources themselves remain unchanged unless there are actual differences in Git.
+
+If this evaluation overhead becomes a performance issue (it typically doesn't in homelabs), consider splitting ApplicationSets by area or adding `requeueAfterSeconds: 300` to reduce polling frequency.
+
 ### ArgoCD Self-Management
 ```
