@@ -2,9 +2,9 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: meilisearch-pvc
-  namespace: hoarder
+  namespace: karakeep
   labels:
-    app: hoarder
+    app: karakeep
     type: meilisearch-storage
   annotations:
     # Longhorn backup settings - Standard tier for search index (recreatable)

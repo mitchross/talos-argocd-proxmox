@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hoarder-chrome
+  name: karakeep-chrome
   labels:
-    app: hoarder-chrome
+    app: karakeep-chrome
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: hoarder-chrome
+      app: karakeep-chrome
   template:
     metadata:
       labels:
-        app: hoarder-chrome
+        app: karakeep-chrome
     spec:
       containers:
         - name: chrome

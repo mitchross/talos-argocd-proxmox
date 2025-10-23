@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hoarder-web
+  name: karakeep-web
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: hoarder-web
+      app: karakeep-web
   template:
     metadata:
       labels:
-        app: hoarder-web
+        app: karakeep-web
     spec:
       securityContext:
         fsGroup: 1001
         runAsUser: 1001
         runAsGroup: 1001
       containers:
-        - name: hoarder
+        - name: karakeep
           image: ghcr.io/karakeep-app/karakeep:release@sha256:abd7d6b11b1b8fa3593d1971f886a74850ba8d6a99291218b150207d5a60378e
           imagePullPolicy: Always
           ports:
@@ -35,9 +35,9 @@ spec:
             periodSeconds: 20
           env:
             - name: MEILI_ADDR
-              value: http://hoarder-meilisearch.hoarder.svc.cluster.local:7700
+              value: http://karakeep-meilisearch.karakeep.svc.cluster.local:7700
             - name: BROWSER_WEB_URL
-              value: http://hoarder-chrome.hoarder.svc.cluster.local:9222
+              value: http://karakeep-chrome.karakeep.svc.cluster.local:9222
             - name: DATA_DIR
               value: /data
               # Add OPENAI_API_KEY to the ConfigMap if necessary
@@ -46,9 +46,9 @@ spec:
               name: data
           envFrom:
             - secretRef:
-                name: hoarder-secret
+                name: karakeep-secret
             - configMapRef:
-                name: hoarder-configuration
+                name: karakeep-configuration
       volumes:
         - name: data
           persistentVolumeClaim:
