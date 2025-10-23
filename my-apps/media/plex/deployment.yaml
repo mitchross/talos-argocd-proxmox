@@ -15,6 +15,17 @@ spec:
       labels:
         app: plex
     spec:
+      # Pod affinity to ensure all plex pods stay on same node (RWO volumes requirement)
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - plex
+            topologyKey: kubernetes.io/hostname
       nodeSelector:
         topology.kubernetes.io/zone: abel
       securityContext:

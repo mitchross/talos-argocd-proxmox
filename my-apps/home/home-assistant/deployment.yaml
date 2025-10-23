@@ -29,6 +29,18 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       # Add restart policy for better reliability
       restartPolicy: Always
+      # Pod affinity to ensure all home-assistant pods stay on same node (RWO volume requirement)
+      # This prevents Multi-Attach errors if replicas are increased
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - home-assistant
+            topologyKey: kubernetes.io/hostname
       containers:
         - name: home-assistant
           image: "ghcr.io/home-assistant/home-assistant:stable"

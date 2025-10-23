@@ -54,7 +54,19 @@ n8n:
     runAsUser: 1000
     runAsGroup: 1000
     fsGroup: 1000
-  
+
+  # Pod affinity to ensure all n8n pods stay on same node (RWO volumes requirement)
+  affinity:
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - n8n
+        topologyKey: kubernetes.io/hostname
+
   # Probes
   livenessProbe:
     httpGet:
