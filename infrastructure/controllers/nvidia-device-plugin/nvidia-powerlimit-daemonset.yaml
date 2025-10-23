@@ -29,6 +29,9 @@ spec:
       hostPID: true
       containers:
       - name: nvidia-powerlimit
+        # renovate: ignore
+        # Pinned to CUDA 12.6 - compatible with Talos NVIDIA driver 570.172.08
+        # Driver 570.x supports up to CUDA 12.7, DO NOT upgrade to 12.9+
         image: nvidia/cuda:12.6.0-base-ubuntu22.04
         command:
         - /bin/bash

@@ -2,9 +2,9 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: data-pvc
-  namespace: hoarder
+  namespace: karakeep
   labels:
-    app: hoarder
+    app: karakeep
     type: data-storage
   annotations:
     # Longhorn backup settings - Important tier for bookmark/note data
@@ -17,4 +17,4 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: longhorn-restore-hoarder
+  storageClassName: longhorn-restore-karakeep

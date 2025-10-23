@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: hoarder-web
+  name: karakeep-chrome
 spec:
   selector:
-    app: hoarder-web
+    app: karakeep-chrome
   ports:
     - protocol: TCP
-      port: 3000
-      targetPort: 3000
+      port: 9222
+      targetPort: 9222
   type: ClusterIP

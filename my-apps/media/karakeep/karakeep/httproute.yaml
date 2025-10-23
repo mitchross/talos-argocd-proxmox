@@ -1,8 +1,8 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: hoarder
-  namespace: hoarder
+  name: karakeep
+  namespace: karakeep
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
@@ -10,7 +10,7 @@ spec:
       name: gateway-external
       namespace: gateway
   hostnames:
-    - "hoarder.vanillax.me"
+    - "karakeep.vanillax.me"
   rules:
     - matches:
         - path:
@@ -19,6 +19,6 @@ spec:
       backendRefs:
         - group: ""
           kind: Service
-          name: hoarder-web
+          name: karakeep-web
           port: 3000
           weight: 1
