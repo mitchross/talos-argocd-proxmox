@@ -2,22 +2,266 @@
 
 ## Overview
 
+This document describes the complete network architecture including external (Cloudflare-proxied) and internal (Firewalla DNS) traffic flows.
+
+## Complete Network Topology
+
 ```mermaid
-graph TD
-    subgraph "Physical Topology"
-        A[Internet Gateway] --> B[Switch]
-        B --> C[Talos Node]
+graph TB
+    subgraph Internet["🌐 Internet"]
+        ExtUser[External User<br/>anywhere.com]
     end
-    subgraph "Logical Topology"
-        D[Internet] --> E[Cloudflare]
-        E --> F[Cloudflare Tunnel]
-        F --> G[Gateway API]
-        G --> H[Cilium Service Mesh]
-        H --> I[Kubernetes Service]
-        I --> J[Pod]
+
+    subgraph Home["🏠 Home Network - 192.168.10.0/24"]
+        Firewalla[Firewalla<br/>192.168.10.1<br/>Gateway & DNS]
+        IntUser[Internal User<br/>Phone/Laptop]
+
+        subgraph Cluster["☸️ Talos Kubernetes Cluster"]
+            ExtGW[External Gateway<br/>192.168.10.49<br/>TCP 80,443]
+            IntGW[Internal Gateway<br/>192.168.10.50<br/>TCP 80,443,5432]
+
+            subgraph Services["Services"]
+                ArgoCD[ArgoCD<br/>argocd-server:80]
+                Llama[Llama WebUI<br/>ollama-webui:80]
+                Immich[Immich<br/>immich:80]
+            end
+        end
     end
-    style C fill:#f9f,stroke:#333
-    style H fill:#bbf,stroke:#333
+
+    subgraph CF["☁️ Cloudflare"]
+        CFDNS[Cloudflare DNS<br/>*.vanillax.me]
+        CFProxy[Cloudflare Proxy<br/>HTTP/3 QUIC Enabled]
+        CFTunnel[Cloudflare Tunnel<br/>cloudflared pod]
+    end
+
+    %% External Flow - Goes through Cloudflare
+    ExtUser -->|1. DNS: argocd.vanillax.me| CFDNS
+    CFDNS -->|2. Returns Cloudflare IP| ExtUser
+    ExtUser -->|3. HTTPS/QUIC Request| CFProxy
+    CFProxy -->|4. Tunnel Connection| CFTunnel
+    CFTunnel -->|5. HTTP to 192.168.10.49:80| ExtGW
+    ExtGW -->|6. Route via HTTPRoute| ArgoCD
+
+    %% Internal Flow - Direct via Firewalla DNS
+    IntUser -->|1. DNS: llama.vanillax.me| Firewalla
+    Firewalla -->|2. Returns 192.168.10.50| IntUser
+    IntUser -->|3. HTTPS Request<br/>NO CLOUDFLARE| IntGW
+    IntGW -->|4. Route via HTTPRoute| Llama
+
+    %% Styling
+    classDef external fill:#ff6b6b,stroke:#c92a2a,color:#fff
+    classDef internal fill:#51cf66,stroke:#2f9e44,color:#fff
+    classDef cloudflare fill:#f59f00,stroke:#e67700,color:#fff
+    classDef gateway fill:#339af0,stroke:#1971c2,color:#fff
+
+    class ExtUser,ExtGW external
+    class IntUser,IntGW,Firewalla internal
+    class CFDNS,CFProxy,CFTunnel cloudflare
+    class ArgoCD,Llama,Immich gateway
+```
+
+## Traffic Flow Details
+
+### 🔴 External Flow (Internet → Cloudflare → External Gateway)
+
+```mermaid
+sequenceDiagram
+    participant EU as External User<br/>(Internet)
+    participant CF as Cloudflare DNS
+    participant CFP as Cloudflare Proxy<br/>(HTTP/3 QUIC)
+    participant CFT as Cloudflare Tunnel<br/>(cloudflared pod)
+    participant EGW as External Gateway<br/>192.168.10.49
+    participant SVC as K8s Service
+    participant POD as Pod
+
+    Note over EU,POD: Example: argocd.vanillax.me from Internet
+
+    EU->>CF: DNS Query: argocd.vanillax.me
+    CF->>EU: Cloudflare Proxy IP (104.x.x.x)
+
+    EU->>CFP: HTTPS/HTTP3 Request (may use QUIC)
+    Note over CFP: QUIC/HTTP3 handled by Cloudflare<br/>Not your gateways
+
+    CFP->>CFT: Tunnel Connection (HTTP/2)
+    Note over CFT: Runs in cluster<br/>Connects to Cloudflare
+
+    CFT->>EGW: HTTP Request to 192.168.10.49:80
+    Note over EGW: Cilium Gateway<br/>Terminates TLS
+
+    EGW->>SVC: Route via HTTPRoute
+    SVC->>POD: Forward to Pod
+    POD->>SVC: Response
+    SVC->>EGW: Response
+    EGW->>CFT: Response
+    CFT->>CFP: Response
+    CFP->>EU: HTTPS/HTTP3 Response
+```
+
+### 🟢 Internal Flow (Home Network → Firewalla DNS → Internal Gateway)
+
+```mermaid
+sequenceDiagram
+    participant IU as Internal User<br/>(Phone/Laptop)
+    participant FW as Firewalla DNS<br/>192.168.10.1
+    participant IGW as Internal Gateway<br/>192.168.10.50
+    participant SVC as K8s Service
+    participant POD as Pod
+
+    Note over IU,POD: Example: llama.vanillax.me from home network
+
+    IU->>FW: DNS Query: llama.vanillax.me
+    Note over FW: Custom DNS Record<br/>*.vanillax.me → 192.168.10.50
+
+    FW->>IU: IP: 192.168.10.50
+
+    IU->>IGW: HTTPS Request (TCP 443)
+    Note over IU,IGW: NO CLOUDFLARE<br/>Direct connection<br/>Client may attempt HTTP/3
+
+    Note over IGW: Cilium Gateway<br/>Terminates TLS<br/>cert-manager cert
+
+    IGW->>SVC: Route via HTTPRoute
+    SVC->>POD: Forward to Pod
+    POD->>SVC: Response
+    SVC->>IGW: Response
+    IGW->>IU: HTTPS Response
+```
+
+## IP Address Allocation
+
+### Physical Network (Home LAN)
+| Component | IP Address | Purpose | Ports |
+|-----------|------------|---------|-------|
+| Firewalla | 192.168.10.1 | Gateway, DNS, Firewall | DNS:53, HTTP:80, HTTPS:443 |
+| Talos Nodes | 192.168.10.x | Kubernetes nodes | Various |
+| **External Gateway** | **192.168.10.49** | Public-facing services via Cloudflare Tunnel | HTTP:80, HTTPS:443 |
+| **Internal Gateway** | **192.168.10.50** | LAN-only services (no Cloudflare) | HTTP:80, HTTPS:443, TCP:5432 |
+
+### Cluster Networks
+| Network | CIDR | Purpose |
+|---------|------|---------|
+| Pod Network | 10.14.0.0/16 | Cilium pod CIDR |
+| Service Network | 10.43.0.0/16 | Kubernetes services |
+| LoadBalancer Pool | 192.168.10.49-50 | Cilium L2 announcements |
+
+## DNS Resolution Paths
+
+### External Domains (Cloudflare DNS)
+```
+User Query: argocd.vanillax.me
+→ Cloudflare Authoritative DNS
+→ Returns: Cloudflare Proxy IP (104.x.x.x)
+→ Traffic flows through Cloudflare → Tunnel → External Gateway (192.168.10.49)
+```
+
+### Internal Domains (Firewalla Custom DNS)
+```
+User Query: llama.vanillax.me (from home network)
+→ Firewalla DNS (192.168.10.1)
+→ Custom DNS Override: *.vanillax.me → 192.168.10.50
+→ Returns: 192.168.10.50
+→ Traffic flows directly: User → Internal Gateway (192.168.10.50)
+→ NO CLOUDFLARE INVOLVED
+```
+
+## ERR_QUIC_PROTOCOL_ERROR Root Cause Analysis
+
+### Problem Statement
+When accessing **internal routes** like `argocd.vanillax.me` or `llama.vanillax.me` from the home network, browsers show `ERR_QUIC_PROTOCOL_ERROR`.
+
+### Why This Happens (Internal Routes)
+
+Even though internal routes **don't go through Cloudflare**, the error still occurs because:
+
+1. **Browser Behavior**: Modern browsers (Chrome, Edge) remember that a domain supports HTTP/3 via **Alt-Svc headers** or **HTTPS RR records**
+2. **Domain Matching**: When you access `argocd.vanillax.me` externally (via Cloudflare with HTTP/3), the browser caches that `*.vanillax.me` supports QUIC
+3. **Internal Access Attempt**: When you later access the same domain internally (via Firewalla DNS → 192.168.10.50), the browser still tries HTTP/3/QUIC
+4. **Gateway Limitation**: Cilium Gateway (without Envoy) doesn't support QUIC → Connection fails → ERR_QUIC_PROTOCOL_ERROR
+
+### Traffic Path Analysis
+
+#### Internal Route - argocd.vanillax.me (ERROR OCCURRED HERE)
+```
+Browser (at home) → DNS query to Firewalla
+                  ↓
+Firewalla DNS returns 192.168.10.50 (internal gateway)
+                  ↓
+Browser TRIED UDP 443 (QUIC) because it remembered HTTP/3 support from Cloudflare
+                  ↓
+❌ Internal Gateway (192.168.10.50) doesn't handle QUIC
+                  ↓
+ERR_QUIC_PROTOCOL_ERROR
+
+FIX: Gateway now advertises ONLY h2,http/1.1 (no h3)
+     Browser won't attempt QUIC anymore
+```
+
+#### External Route - argocd.vanillax.me (via Cloudflare - Works Fine)
+```
+Browser (on internet) → DNS query to Cloudflare DNS
+                       ↓
+Cloudflare returns Cloudflare Proxy IP
+                       ↓
+Browser may use HTTP/3 QUIC to Cloudflare (handled by CF)
+                       ↓
+✅ Cloudflare terminates QUIC, sends HTTP/2 to Tunnel
+                       ↓
+Tunnel → External Gateway (192.168.10.49) via HTTP/2 → Service
+```
+
+### Solution: Disable QUIC Advertisement on Gateways
+
+Since **neither gateway needs QUIC support**:
+- External gateway receives HTTP/2 from Cloudflare Tunnel (not QUIC)
+- Internal gateway receives direct HTTPS from LAN clients (not QUIC)
+- QUIC/HTTP3 only happens between end users and Cloudflare's edge
+
+**The fix**: Explicitly disable HTTP/3 advertisement by only advertising HTTP/2 and HTTP/1.1 via ALPN protocols.
+
+#### Changes Made
+
+1. **Internal Gateway** (`gw-internal.yaml:32`): Set ALPN to `h2,http/1.1` (no h3)
+2. **External Gateway** (not changed): Already uses `h2,http/1.1` by default
+3. **Cilium**: No Envoy HTTP/3 configuration needed
+
+This prevents browsers from attempting QUIC connections to your gateways, which don't support it.
+
+### Alternative Solutions (Not Recommended)
+
+#### Option 1: Clear Browser QUIC Cache (Temporary)
+- **What**: Clear browser Alt-Svc cache: `chrome://net-internals/#sockets` → Flush socket pools
+- **Why**: Forces browser to forget HTTP/3 support
+- **Downside**: Temporary fix, comes back after external access
+
+#### Option 2: Use Separate Domains
+- **What**: Use different domains for internal vs external (e.g., `argocd.local` vs `argocd.vanillax.me`)
+- **Why**: Browser won't confuse the two
+- **Downside**: More complex DNS management, different URLs
+
+### Recommended Path Forward
+
+1. **Apply the gateway changes** (already made)
+2. **Test internal access** to confirm QUIC errors are resolved
+3. **Clear browser QUIC cache** once to force re-negotiation
+4. **Verify** that browsers use HTTP/2 instead of attempting QUIC
+
+### Validation Commands
+
+```bash
+# Apply gateway changes
+kubectl apply -f infrastructure/networking/gateway/gw-internal.yaml
+
+# Check gateway status
+kubectl get gateway -n gateway gateway-internal -o yaml
+
+# Test from internal network (verbose to see protocol negotiation)
+curl -v https://argocd.vanillax.me
+
+# Check negotiated protocol (should be HTTP/2 or HTTP/1.1, NOT h3)
+curl -I https://argocd.vanillax.me
+
+# Clear browser QUIC cache (Chrome/Edge)
+# Navigate to: chrome://net-internals/#sockets
+# Click "Flush socket pools"
 ```
 
 ## Declarative Networking with ArgoCD & Talos
