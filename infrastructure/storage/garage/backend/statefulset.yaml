@@ -3,6 +3,9 @@ kind: StatefulSet
 metadata:
   name: garage
   namespace: garage
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   serviceName: garage-internal
   replicas: 3
