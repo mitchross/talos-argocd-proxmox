@@ -30,8 +30,11 @@ data:
     api_bind_addr = "[::]:3903"
     admin_token_file = "/etc/garage/secrets/admin-token"
 
-  # Minimal config for init job - no local storage directories
+  # Minimal config for init job - uses /tmp for metadata (not actually used for remote operations)
   garage-client.toml: |
+    metadata_dir = "/tmp/meta"
+    data_dir = "/tmp/data"
+
     rpc_secret_file = "/etc/garage/secrets/rpc-secret"
     rpc_bind_addr = "[::]:3901"
 
