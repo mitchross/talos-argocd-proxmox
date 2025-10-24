@@ -62,22 +62,22 @@ spec:
           limits:
             cpu: 2000m
             memory: 2Gi
+        startupProbe:
+          tcpSocket:
+            port: 3903
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          failureThreshold: 30
         livenessProbe:
-          httpGet:
-            path: /health
+          tcpSocket:
             port: 3903
-          initialDelaySeconds: 120
           periodSeconds: 30
-          timeoutSeconds: 10
-          failureThreshold: 10
+          failureThreshold: 3
         readinessProbe:
-          httpGet:
-            path: /health
+          tcpSocket:
             port: 3903
-          initialDelaySeconds: 120
           periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 60
+          failureThreshold: 3
       volumes:
       - name: config
         configMap:
