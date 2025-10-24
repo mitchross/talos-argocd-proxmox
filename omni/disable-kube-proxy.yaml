@@ -1,0 +1,20 @@
+# Disable kube-proxy since Cilium is handling it
+# Apply this to ALL machines (control plane + workers)
+#
+# Why: Cilium is configured with kubeProxyReplacement: true
+# See: infrastructure/networking/cilium/values.yaml:12
+#
+# Without this, both kube-proxy and Cilium fight over:
+# - Service LoadBalancer health check ports
+# - iptables rules
+# - Connection tracking
+#
+# Apply in Omni:
+# 1. Go to cluster → Config Patches
+# 2. Create patch targeting all machines
+# 3. Paste this content
+
+cluster:
+  proxy:
+    # Disable kube-proxy - Cilium replaces it entirely
+    disabled: true
