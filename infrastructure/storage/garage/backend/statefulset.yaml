@@ -14,6 +14,7 @@ spec:
       labels:
         app: garage
     spec:
+      serviceAccountName: garage
       containers:
       - name: garage
         image: dxflrs/garage:v2.1.0
@@ -36,6 +37,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: GARAGE_RPC_PUBLIC_ADDR
+          value: "$(POD_IP):3901"
         - name: GARAGE_ALLOW_WORLD_READABLE_SECRETS
           value: "true"
         volumeMounts:
