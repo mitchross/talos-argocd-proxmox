@@ -45,34 +45,34 @@ spec:
           # Connect to all nodes via headless service DNS
           for i in 0 1 2; do
             echo "Connecting to garage-$i..."
-            /usr/local/bin/garage -c /etc/garage.toml node connect garage-$i.garage-internal.garage.svc.cluster.local:3901 || true
+            /usr/local/bin/garage -c /etc/garage-client.toml node connect garage-$i.garage-internal.garage.svc.cluster.local:3901 || true
           done
 
           sleep 10
 
           echo "Checking cluster status..."
-          /usr/local/bin/garage -c /etc/garage.toml status
+          /usr/local/bin/garage -c /etc/garage-client.toml status
 
           echo "Configuring cluster layout..."
 
           # Get all node IDs and assign capacity to each
-          for node_id in $(/usr/local/bin/garage -c /etc/garage.toml status | grep -oE '[0-9a-f]{16}' | head -3); do
+          for node_id in $(/usr/local/bin/garage -c /etc/garage-client.toml status | grep -oE '[0-9a-f]{16}' | head -3); do
             echo "Assigning capacity to node $node_id..."
-            /usr/local/bin/garage -c /etc/garage.toml layout assign -z dc1 -c 10G $node_id || true
+            /usr/local/bin/garage -c /etc/garage-client.toml layout assign -z dc1 -c 10G $node_id || true
           done
 
           echo "Applying layout..."
-          /usr/local/bin/garage -c /etc/garage.toml layout apply --version 1 || true
+          /usr/local/bin/garage -c /etc/garage-client.toml layout apply --version 1 || true
 
           echo "Cluster initialization complete"
-          /usr/local/bin/garage -c /etc/garage.toml status
+          /usr/local/bin/garage -c /etc/garage-client.toml status
         env:
         - name: GARAGE_ALLOW_WORLD_READABLE_SECRETS
           value: "true"
         volumeMounts:
         - name: config
-          mountPath: /etc/garage.toml
-          subPath: garage.toml
+          mountPath: /etc/garage-client.toml
+          subPath: garage-client.toml
         - name: secrets
           mountPath: /etc/garage/secrets
           readOnly: true

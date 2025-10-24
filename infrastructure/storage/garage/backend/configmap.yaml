@@ -29,3 +29,11 @@ data:
     [admin]
     api_bind_addr = "[::]:3903"
     admin_token_file = "/etc/garage/secrets/admin-token"
+
+  # Minimal config for init job - no local storage directories
+  garage-client.toml: |
+    rpc_secret_file = "/etc/garage/secrets/rpc-secret"
+
+    [admin]
+    api_bind_addr = "garage-0.garage-internal.garage.svc.cluster.local:3903"
+    admin_token_file = "/etc/garage/secrets/admin-token"
