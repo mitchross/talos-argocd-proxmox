@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: garage-config
+  namespace: garage
+data:
+  garage.toml: |
+    metadata_dir = "/mnt/meta"
+    data_dir = "/mnt/data"
+
+    db_engine = "lmdb"
+
+    replication_factor = 2
+
+    compression_level = 1
+
+    rpc_bind_addr = "[::]:3901"
+    rpc_public_addr = "$(POD_IP):3901"
+    rpc_secret_file = "/etc/garage/secrets/rpc-secret"
+
+    [s3_api]
+    s3_region = "garage"
+    api_bind_addr = "[::]:3900"
+    root_domain = ".s3.garage.vanillax.me"
+
+    [s3_web]
+    bind_addr = "[::]:3902"
+    root_domain = ".web.garage.vanillax.me"
+
+    [admin]
+    api_bind_addr = "[::]:3903"
+    admin_token_file = "/etc/garage/secrets/admin-token"
+
+    [kubernetes_discovery]
+    namespace = "garage"
+    service_name = "garage-internal"
+    skip_crd = false
