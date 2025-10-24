@@ -63,16 +63,18 @@ spec:
           httpGet:
             path: /health
             port: 3903
-          initialDelaySeconds: 30
+          initialDelaySeconds: 120
           periodSeconds: 30
           timeoutSeconds: 10
+          failureThreshold: 10
         readinessProbe:
           httpGet:
             path: /health
             port: 3903
-          initialDelaySeconds: 10
+          initialDelaySeconds: 120
           periodSeconds: 10
           timeoutSeconds: 5
+          failureThreshold: 60
       volumes:
       - name: config
         configMap:
