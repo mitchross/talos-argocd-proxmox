@@ -3,7 +3,8 @@
     "allow": [
       "Bash(kubectl logs:*)",
       "Bash(kubectl get:*)",
-      "Bash(kubectl exec:*)"
+      "Bash(kubectl exec:*)",
+      "Bash(kubectl create:*)"
     ],
     "deny": [],
     "ask": []
