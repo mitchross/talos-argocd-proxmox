@@ -49,29 +49,35 @@ spec:
           echo "Discovering node IDs and connecting nodes..."
 
           # Collect node IDs by querying admin API of each pod
-          declare -a NODE_IDS
+          NODE_ID_0=""
+          NODE_ID_1=""
+          NODE_ID_2=""
+
           for i in 0 1 2; do
             echo "Getting node ID from garage-$i..."
             NODE_ID=$(curl -s -H "Authorization: Bearer $GARAGE_ADMIN_TOKEN" \
               "http://garage-$i.garage-internal.garage.svc.cluster.local:3903/v1/status" | \
               grep -o '"node":"[^"]*"' | head -1 | cut -d'"' -f4)
             if [ -n "$NODE_ID" ]; then
-              NODE_IDS[$i]="$NODE_ID"
+              eval "NODE_ID_$i='$NODE_ID'"
               echo "  garage-$i node ID: $NODE_ID"
             else
               echo "  Failed to get node ID from garage-$i"
             fi
           done
 
-          # Connect all nodes together
-          export GARAGE_RPC_HOST="${NODE_IDS[0]}@garage-0.garage-internal.garage.svc.cluster.local:3901"
+          # Connect all nodes together using node 0 as the primary
+          export GARAGE_RPC_HOST="${NODE_ID_0}@garage-0.garage-internal.garage.svc.cluster.local:3901"
 
-          for i in 1 2; do
-            if [ -n "${NODE_IDS[$i]}" ]; then
-              echo "Connecting node $i to the cluster..."
-              /usr/local/bin/garage node connect "${NODE_IDS[$i]}@garage-$i.garage-internal.garage.svc.cluster.local:3901" || true
-            fi
-          done
+          if [ -n "$NODE_ID_1" ]; then
+            echo "Connecting node 1 to the cluster..."
+            /usr/local/bin/garage node connect "${NODE_ID_1}@garage-1.garage-internal.garage.svc.cluster.local:3901" || true
+          fi
+
+          if [ -n "$NODE_ID_2" ]; then
+            echo "Connecting node 2 to the cluster..."
+            /usr/local/bin/garage node connect "${NODE_ID_2}@garage-2.garage-internal.garage.svc.cluster.local:3901" || true
+          fi
 
           sleep 10
 
@@ -80,11 +86,11 @@ spec:
 
           echo "Configuring cluster layout..."
 
-          # Get all node IDs and assign capacity to each
-          for node_id in "${NODE_IDS[@]}"; do
-            if [ -n "$node_id" ]; then
-              echo "Assigning capacity to node $node_id..."
-              /usr/local/bin/garage layout assign -z dc1 -c 10G "$node_id" || true
+          # Assign capacity to each node
+          for NODE_ID in "$NODE_ID_0" "$NODE_ID_1" "$NODE_ID_2"; do
+            if [ -n "$NODE_ID" ]; then
+              echo "Assigning capacity to node $NODE_ID..."
+              /usr/local/bin/garage layout assign -z dc1 -c 10G "$NODE_ID" || true
             fi
           done
 
