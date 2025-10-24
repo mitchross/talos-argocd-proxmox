@@ -51,9 +51,17 @@ socketLB:
   enabled: true
   hostNamespaceOnly: false
 
+# Enable Bandwidth Manager for better TCP performance
+bandwidthManager:
+  enabled: true
+  bbr: true  # Enable BBR congestion control
+
 # BPF Host Routing
 bpf:
   masquerade: true
+  # Connection tracking improvements for better session handling
+  ctTcpTimeout: 21600  # 6 hours (default is 6 hours but explicit is better)
+  ctAnyTimeout: 3600   # 1 hour for non-TCP connections
 
 # L2 Announcements for LoadBalancer Services
 l2announcements:
@@ -79,6 +87,12 @@ k8sClientRateLimit:
 # Gateway API Support
 gatewayAPI:
   enabled: true
+  # CRITICAL FIX: Use Local externalTrafficPolicy to preserve source IP
+  # and enable proper connection tracking. This fixes intermittent connectivity.
+  externalTrafficPolicy: Local
+  # Enable session affinity for consistent routing
+  sessionAffinity: true
+  sessionAffinityTimeoutSeconds: 10800  # 3 hours
 
 # Hubble (Observability)
 hubble:
@@ -90,4 +104,13 @@ hubble:
 
 # Operator Configuration
 operator:
-  replicas: 1
+  # CRITICAL FIX: Run 2 replicas for HA - single replica is a SPOF
+  replicas: 2
+  # Ensure replicas run on different nodes
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            io.cilium/app: operator
+        topologyKey: kubernetes.io/hostname
