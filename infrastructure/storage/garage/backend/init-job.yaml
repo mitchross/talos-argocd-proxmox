@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: garage-init
+  namespace: garage
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 5
+  template:
+    metadata:
+      labels:
+        app: garage-init
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: init
+        image: dxflrs/garage:v2.1.0
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - |
+          set -e
+
+          echo "Waiting for Garage pods to initialize and discover each other..."
+          sleep 90
+
+          echo "Configuring cluster layout..."
+
+          # Show current layout
+          garage -c /etc/garage.toml layout show || true
+
+          # Get node IDs and assign capacity
+          garage -c /etc/garage.toml layout assign -z dc1 -c 10G $(garage -c /etc/garage.toml node id -q) || true
+
+          # Apply layout
+          garage -c /etc/garage.toml layout apply --version 1 || true
+
+          echo "Cluster initialization complete"
+          garage -c /etc/garage.toml status
+        volumeMounts:
+        - name: config
+          mountPath: /etc/garage.toml
+          subPath: garage.toml
+        - name: secrets
+          mountPath: /etc/garage/secrets
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: garage-config
+      - name: secrets
+        secret:
+          secretName: garage-secrets
