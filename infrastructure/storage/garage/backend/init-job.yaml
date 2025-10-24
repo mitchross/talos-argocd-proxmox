@@ -40,6 +40,9 @@ spec:
 
           echo "Cluster initialization complete"
           garage -c /etc/garage.toml status
+        env:
+        - name: GARAGE_ALLOW_WORLD_READABLE_SECRETS
+          value: "true"
         volumeMounts:
         - name: config
           mountPath: /etc/garage.toml

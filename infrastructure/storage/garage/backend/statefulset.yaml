@@ -36,6 +36,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: GARAGE_ALLOW_WORLD_READABLE_SECRETS
+          value: "true"
         volumeMounts:
         - name: meta
           mountPath: /mnt/meta
