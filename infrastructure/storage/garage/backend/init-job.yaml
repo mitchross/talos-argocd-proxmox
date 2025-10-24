@@ -24,18 +24,31 @@ spec:
         - |
           set -e
 
-          echo "Waiting for Garage pods to initialize and discover each other..."
-          sleep 90
+          echo "Waiting for Garage pods to start..."
+          sleep 60
+
+          echo "Connecting cluster nodes manually..."
+
+          # Connect to all nodes via headless service DNS
+          for i in 0 1 2; do
+            echo "Connecting to garage-$i..."
+            garage -c /etc/garage.toml node connect garage-$i.garage-internal.garage.svc.cluster.local:3901 || true
+          done
+
+          sleep 10
+
+          echo "Checking cluster status..."
+          garage -c /etc/garage.toml status
 
           echo "Configuring cluster layout..."
 
-          # Show current layout
-          garage -c /etc/garage.toml layout show || true
+          # Get all node IDs and assign capacity to each
+          for node_id in $(garage -c /etc/garage.toml status | grep -oE '[0-9a-f]{16}' | head -3); do
+            echo "Assigning capacity to node $node_id..."
+            garage -c /etc/garage.toml layout assign -z dc1 -c 10G $node_id || true
+          done
 
-          # Get node IDs and assign capacity
-          garage -c /etc/garage.toml layout assign -z dc1 -c 10G $(garage -c /etc/garage.toml node id -q) || true
-
-          # Apply layout
+          echo "Applying layout..."
           garage -c /etc/garage.toml layout apply --version 1 || true
 
           echo "Cluster initialization complete"
