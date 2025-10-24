@@ -46,48 +46,39 @@ spec:
           export GARAGE_RPC_SECRET=$(cat /etc/garage/secrets/rpc-secret)
           export GARAGE_ADMIN_TOKEN=$(cat /etc/garage/secrets/admin-token)
 
-          echo "Discovering node IDs and connecting nodes..."
+          echo "Discovering and connecting cluster nodes..."
 
-          # Collect node IDs by querying admin API of each pod
-          NODE_ID_0=""
-          NODE_ID_1=""
-          NODE_ID_2=""
-
+          # Connect to each node individually to discover them
+          # The nodes will automatically discover each other via RPC
           for i in 0 1 2; do
-            echo "Getting node ID from garage-$i..."
-            NODE_ID=$(curl -s -H "Authorization: Bearer $GARAGE_ADMIN_TOKEN" \
-              "http://garage-$i.garage-internal.garage.svc.cluster.local:3903/v1/status" | \
-              grep -o '"node":"[^"]*"' | head -1 | cut -d'"' -f4)
-            if [ -n "$NODE_ID" ]; then
-              eval "NODE_ID_$i='$NODE_ID'"
-              echo "  garage-$i node ID: $NODE_ID"
-            else
-              echo "  Failed to get node ID from garage-$i"
-            fi
+            echo "Discovering garage-$i..."
+            export GARAGE_RPC_HOST="garage-$i.garage-internal.garage.svc.cluster.local:3901"
+            /usr/local/bin/garage status 2>&1 || echo "  Node $i not yet connected"
           done
 
-          # Connect all nodes together using node 0 as the primary
-          export GARAGE_RPC_HOST="${NODE_ID_0}@garage-0.garage-internal.garage.svc.cluster.local:3901"
+          # Use node 0 as the primary for cluster operations
+          export GARAGE_RPC_HOST="garage-0.garage-internal.garage.svc.cluster.local:3901"
 
-          if [ -n "$NODE_ID_1" ]; then
-            echo "Connecting node 1 to the cluster..."
-            /usr/local/bin/garage node connect "${NODE_ID_1}@garage-1.garage-internal.garage.svc.cluster.local:3901" || true
-          fi
+          sleep 5
 
-          if [ -n "$NODE_ID_2" ]; then
-            echo "Connecting node 2 to the cluster..."
-            /usr/local/bin/garage node connect "${NODE_ID_2}@garage-2.garage-internal.garage.svc.cluster.local:3901" || true
-          fi
-
-          sleep 10
-
-          echo "Checking cluster status..."
+          echo "Getting cluster status..."
           /usr/local/bin/garage status
 
           echo "Configuring cluster layout..."
 
-          # Assign capacity to each node
-          for NODE_ID in "$NODE_ID_0" "$NODE_ID_1" "$NODE_ID_2"; do
+          # Extract all node IDs from status and assign capacity
+          NODE_IDS=$(/usr/local/bin/garage status 2>/dev/null | grep -oE '^[0-9a-f]{16}' || echo "")
+
+          if [ -z "$NODE_IDS" ]; then
+            echo "ERROR: No nodes found in cluster!"
+            exit 1
+          fi
+
+          echo "Found nodes:"
+          echo "$NODE_IDS"
+
+          # Assign capacity to each discovered node
+          echo "$NODE_IDS" | while read -r NODE_ID; do
             if [ -n "$NODE_ID" ]; then
               echo "Assigning capacity to node $NODE_ID..."
               /usr/local/bin/garage layout assign -z dc1 -c 10G "$NODE_ID" || true
