@@ -7,7 +7,7 @@ kind: Kustomization
 resources:
 - ip-pool.yaml
 - l2-policy.yaml
-- l2-announcement.yaml
+# REMOVED: l2-announcement.yaml (duplicate of l2-policy.yaml - was causing ARP conflicts)
 
 helmCharts:
 - name: cilium
