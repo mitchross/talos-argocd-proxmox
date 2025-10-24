@@ -42,22 +42,38 @@ spec:
 
           echo "Connecting cluster nodes manually..."
 
-          # Set credentials and connection from secrets
+          # Set credentials from secrets
           export GARAGE_RPC_SECRET=$(cat /etc/garage/secrets/rpc-secret)
           export GARAGE_ADMIN_TOKEN=$(cat /etc/garage/secrets/admin-token)
-          export GARAGE_RPC_HOST=garage-0.garage-internal.garage.svc.cluster.local:3901
 
-          # Connect to all nodes via headless service DNS
+          echo "Discovering node IDs and connecting nodes..."
+
+          # Collect node IDs by querying admin API of each pod
+          declare -a NODE_IDS
           for i in 0 1 2; do
-            echo "Connecting to garage-$i..."
-            export GARAGE_RPC_HOST=garage-$i.garage-internal.garage.svc.cluster.local:3901
-            /usr/local/bin/garage node connect garage-$i.garage-internal.garage.svc.cluster.local:3901 || true
+            echo "Getting node ID from garage-$i..."
+            NODE_ID=$(curl -s -H "Authorization: Bearer $GARAGE_ADMIN_TOKEN" \
+              "http://garage-$i.garage-internal.garage.svc.cluster.local:3903/v1/status" | \
+              grep -o '"node":"[^"]*"' | head -1 | cut -d'"' -f4)
+            if [ -n "$NODE_ID" ]; then
+              NODE_IDS[$i]="$NODE_ID"
+              echo "  garage-$i node ID: $NODE_ID"
+            else
+              echo "  Failed to get node ID from garage-$i"
+            fi
+          done
+
+          # Connect all nodes together
+          export GARAGE_RPC_HOST="${NODE_IDS[0]}@garage-0.garage-internal.garage.svc.cluster.local:3901"
+
+          for i in 1 2; do
+            if [ -n "${NODE_IDS[$i]}" ]; then
+              echo "Connecting node $i to the cluster..."
+              /usr/local/bin/garage node connect "${NODE_IDS[$i]}@garage-$i.garage-internal.garage.svc.cluster.local:3901" || true
+            fi
           done
 
           sleep 10
-
-          # Reset to garage-0 for cluster operations
-          export GARAGE_RPC_HOST=garage-0.garage-internal.garage.svc.cluster.local:3901
 
           echo "Checking cluster status..."
           /usr/local/bin/garage status
@@ -65,9 +81,11 @@ spec:
           echo "Configuring cluster layout..."
 
           # Get all node IDs and assign capacity to each
-          for node_id in $(/usr/local/bin/garage status | grep -oE '[0-9a-f]{16}' | head -3); do
-            echo "Assigning capacity to node $node_id..."
-            /usr/local/bin/garage layout assign -z dc1 -c 10G $node_id || true
+          for node_id in "${NODE_IDS[@]}"; do
+            if [ -n "$node_id" ]; then
+              echo "Assigning capacity to node $node_id..."
+              /usr/local/bin/garage layout assign -z dc1 -c 10G "$node_id" || true
+            fi
           done
 
           echo "Applying layout..."
