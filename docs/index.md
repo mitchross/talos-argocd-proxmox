@@ -54,6 +54,7 @@ This cluster follows a clean three-tier architecture:
 
 - [ArgoCD Setup Guide](argocd.md#installation)
 - [Network Configuration](network.md)
+  - [Cilium Gateway Architecture](network/cilium-gateway-architecture.md) - Deep dive into L2 LoadBalancer and traffic flow
 - [Storage Setup](storage.md)
 - [Security Configuration](secrets.md)
 - [GPU Setup](gpu.md)

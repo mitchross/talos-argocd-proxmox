@@ -163,6 +163,129 @@ User Query: llama.vanillax.me (from home network)
 → NO CLOUDFLARE INVOLVED
 ```
 
+## Cilium Gateway Architecture & Connection Tracking
+
+### Gateway Load Balancing with Cilium Envoy
+
+The Cilium Gateway API implementation uses **Cilium Envoy** pods as L7 proxies. Understanding this architecture is critical for troubleshooting connectivity issues:
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        Client[Client Browser]
+    end
+
+    subgraph "L2 Announcement Layer"
+        VIP[Gateway VIP<br/>192.168.10.50<br/>L2 ARP Announced]
+    end
+
+    subgraph "Node Layer - Worker Nodes Only"
+        Node1[Worker Node 1<br/>192.168.10.111]
+        Node2[Worker Node 2<br/>192.168.10.112]
+        Node3[Worker Node 3<br/>192.168.10.113]
+        Node4[Worker Node 4<br/>192.168.10.114]
+    end
+
+    subgraph "Cilium Envoy Layer"
+        Envoy1[cilium-envoy Pod<br/>on Node 1]
+        Envoy2[cilium-envoy Pod<br/>on Node 2]
+        Envoy3[cilium-envoy Pod<br/>on Node 3]
+        Envoy4[cilium-envoy Pod<br/>on Node 4]
+    end
+
+    subgraph "Backend Services"
+        ArgoCD[argocd-server Pod]
+        Longhorn[longhorn-frontend Pod]
+        Grafana[grafana Pod]
+    end
+
+    Client -->|1. ARP: Who has 192.168.10.50?| VIP
+    VIP -->|2. L2 announces from one node| Node1
+    Client -->|3. TCP SYN to 192.168.10.50:443| Node1
+
+    Node1 -.->|externalTrafficPolicy: Cluster<br/>SNAT + round-robin| Envoy1
+    Node1 -.->|Can route to ANY envoy| Envoy2
+    Node1 -.->|Breaks connection tracking| Envoy3
+
+    Node1 ==>|externalTrafficPolicy: Local<br/>ONLY local envoy| Envoy1
+
+    Envoy1 --> ArgoCD
+    Envoy2 --> Longhorn
+    Envoy3 --> Grafana
+
+    classDef problem fill:#ff6b6b,stroke:#c92a2a,color:#fff
+    classDef solution fill:#51cf66,stroke:#2f9e44,color:#fff
+    classDef vip fill:#339af0,stroke:#1971c2,color:#fff
+
+    class Envoy2,Envoy3 problem
+    class Envoy1 solution
+    class VIP vip
+```
+
+### Critical Issue: externalTrafficPolicy: Cluster (FIXED)
+
+**Problem**: Prior to 2025-10-23, gateway services used `externalTrafficPolicy: Cluster`, which caused intermittent connectivity failures.
+
+#### Root Cause Analysis
+
+1. **L2 Announcement** - Cilium announces the gateway VIP (192.168.10.50) from ONE worker node via ARP
+2. **Traffic arrives** at that specific node's network interface
+3. **With `externalTrafficPolicy: Cluster`**:
+   - kube-proxy/eBPF SNATs the traffic (changes source IP)
+   - Load balances across ALL cilium-envoy pods on ALL nodes
+   - Different requests from the same client can hit different envoy pods
+   - Breaks HTTP connection tracking and session persistence
+4. **Symptoms**:
+   - One browser works, another doesn't (different envoy instances)
+   - Accessing one service "triggers" another to work (new connection hits working envoy)
+   - Intermittent 502/504 errors
+   - WebSocket connections fail randomly
+
+#### Solution: externalTrafficPolicy: Local
+
+```yaml
+# infrastructure/networking/cilium/values.yaml
+gatewayAPI:
+  enabled: true
+  externalTrafficPolicy: Local     # ← CRITICAL FIX
+  sessionAffinity: true
+  sessionAffinityTimeoutSeconds: 10800  # 3 hours
+```
+
+**Why this fixes it**:
+- Traffic arriving at Node1 ONLY routes to cilium-envoy on Node1
+- No SNAT (source IP preserved)
+- Consistent connection tracking
+- Same client always hits same envoy pod (during L2 announcement lease)
+- Session affinity ensures consistency even if L2 announcement migrates
+
+**Trade-off**: If the node handling L2 announcements fails, there's a brief interruption during failover (typically 1-2 seconds as another node takes over ARP).
+
+### L2 Announcement Policy Optimization
+
+**Issue Found**: Duplicate L2AnnouncementPolicy resources (`default-l2-announcement` and `l2-policy`) caused ARP conflicts.
+
+**Fix**: Removed duplicate policy (infrastructure/networking/cilium/l2-announcement.yaml.disabled)
+
+**Current Configuration**:
+```yaml
+# infrastructure/networking/cilium/l2-policy.yaml
+apiVersion: cilium.io/v2alpha1
+kind: CiliumL2AnnouncementPolicy
+metadata:
+  name: l2-policy
+spec:
+  interfaces:
+    - ^e.*  # eth0, ens18, etc.
+  loadBalancerIPs: true
+  nodeSelector:
+    matchExpressions:
+      - key: node-role.kubernetes.io/control-plane
+        operator: DoesNotExist  # Only worker nodes announce
+```
+
+**Why worker nodes only**: Control plane nodes are excluded to ensure L2 announcements come from stable worker nodes, reducing announcement churn during control plane maintenance.
+
 ## ERR_QUIC_PROTOCOL_ERROR Root Cause Analysis
 
 ### Problem Statement
@@ -359,7 +482,209 @@ kubectl get pods -n kube-system -l k8s-app=kube-dns
 kubectl get pods -n cloudflared
 ```
 
+## Cilium Performance Optimizations (Applied 2025-10-23)
+
+### Bandwidth Manager & BBR Congestion Control
+
+```yaml
+# infrastructure/networking/cilium/values.yaml
+bandwidthManager:
+  enabled: true
+  bbr: true  # Bottleneck Bandwidth and Round-trip propagation time
+```
+
+**Benefits**:
+- Better TCP throughput for large file transfers
+- Reduced latency for interactive applications
+- Better handling of network congestion
+
+### Connection Tracking Tuning
+
+```yaml
+bpf:
+  masquerade: true
+  ctTcpTimeout: 21600  # 6 hours
+  ctAnyTimeout: 3600   # 1 hour for non-TCP connections
+```
+
+**Why this matters**:
+- Prevents premature connection cleanup for long-lived HTTP/2 connections
+- Handles WebSocket connections properly
+- Reduces connection resets during idle periods
+
+### High Availability - Cilium Operator
+
+```yaml
+operator:
+  replicas: 2  # Previously 1 - was a SPOF
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            io.cilium/app: operator
+        topologyKey: kubernetes.io/hostname
+```
+
+**Impact**:
+- Eliminates single point of failure during operator restarts
+- Ensures continuous gateway reconciliation
+- Improves cluster stability during upgrades
+
 ## Troubleshooting
+
+### Common Connectivity Issues
+
+#### Symptom: Intermittent 502/504 Gateway Errors
+
+**Diagnosis**:
+```bash
+# Check if externalTrafficPolicy is set to Local
+kubectl get svc -n gateway cilium-gateway-gateway-internal -o yaml | grep externalTrafficPolicy
+
+# Should show: externalTrafficPolicy: Local
+# If it shows "Cluster", the fix hasn't been applied
+```
+
+**Fix**: Apply Cilium values update and restart gateway pods:
+```bash
+kubectl apply -k infrastructure/networking/cilium/
+kubectl delete pod -n kube-system -l app.kubernetes.io/name=cilium-envoy
+```
+
+#### Symptom: One Browser Works, Another Doesn't
+
+**Root Cause**: Different browser sessions hitting different Envoy pods due to `externalTrafficPolicy: Cluster`
+
+**Fix**: See above - ensure `externalTrafficPolicy: Local` is applied
+
+#### Symptom: Accessing one service makes another service work
+
+**Root Cause**: Connection to working Envoy pod triggering successful subsequent connections
+
+**Fix**: See above - ensure `externalTrafficPolicy: Local` and `sessionAffinity: true`
+
+#### Symptom: Cilium Envoy pods showing gRPC timeout errors
+
+**Diagnosis**:
+```bash
+kubectl logs -n kube-system -l app.kubernetes.io/name=cilium-envoy --tail=100 | grep -i "timeout\|error"
+```
+
+**Common errors**:
+- `gRPC config: initial fetch timed out` - Usually resolves on its own
+- `remote connection failure` - Check cilium-agent communication
+
+**Fix**:
+```bash
+# Restart cilium-agent on the affected node
+kubectl delete pod -n kube-system cilium-<pod-id>
+
+# If persistent, check Cilium agent logs
+kubectl logs -n kube-system cilium-<pod-id> | grep -i envoy
+```
+
+### Monitoring Cilium Health
+
+#### Check Overall Cilium Status
+
+```bash
+# Get status from any Cilium pod
+kubectl exec -n kube-system cilium-<pod-id> -- cilium status --verbose
+
+# Look for:
+# - KubeProxyReplacement: True
+# - Gateway API: Enabled
+# - L2 Announcements: Enabled
+# - All controllers: healthy
+```
+
+#### Monitor L2 Announcements
+
+```bash
+# Check which node is announcing which VIP
+kubectl exec -n kube-system cilium-<pod-id> -- cilium bpf lb list | grep "192.168.10.50\|192.168.10.49"
+
+# Check L2 announcement policy
+kubectl get ciliuml2announcementpolicy -A
+
+# Should show only ONE policy: l2-policy
+# If you see "default-l2-announcement", delete it
+```
+
+#### Verify Gateway Service Configuration
+
+```bash
+# Check internal gateway service
+kubectl get svc -n gateway cilium-gateway-gateway-internal -o yaml
+
+# Verify these fields:
+# spec.externalTrafficPolicy: Local
+# spec.sessionAffinity: ClientIP (if sessionAffinity is enabled)
+# status.loadBalancer.ingress[0].ip: 192.168.10.50
+```
+
+#### Monitor Gateway HTTPRoutes
+
+```bash
+# List all HTTPRoutes and their status
+kubectl get httproute -A -o wide
+
+# Check specific route status
+kubectl describe httproute argocd -n argocd
+
+# Look for:
+# Status.Parents[].Conditions:
+#   - Type: Accepted, Status: True
+#   - Type: ResolvedRefs, Status: True
+```
+
+### Performance Troubleshooting
+
+#### Check Bandwidth Manager Status
+
+```bash
+kubectl exec -n kube-system cilium-<pod-id> -- cilium status | grep -i bandwidth
+
+# Should show: BandwidthManager: Enabled
+```
+
+#### Monitor Connection Tracking
+
+```bash
+# View connection tracking entries
+kubectl exec -n kube-system cilium-<pod-id> -- cilium bpf ct list global
+
+# Check for stale connections
+kubectl exec -n kube-system cilium-<pod-id> -- cilium monitor --type drop
+```
+
+### Using Hubble for Deep Inspection
+
+Hubble provides L7 visibility into all traffic flowing through Cilium.
+
+#### Access Hubble UI
+
+```bash
+kubectl port-forward -n kube-system svc/hubble-ui 12000:80
+# Open http://localhost:12000 in browser
+```
+
+#### Hubble CLI Commands
+
+```bash
+# Watch traffic to/from a specific service
+kubectl exec -n kube-system cilium-<pod-id> -- hubble observe --service argocd/argocd-server
+
+# Monitor dropped packets
+kubectl exec -n kube-system cilium-<pod-id> -- hubble observe --verdict DROPPED
+
+# Check HTTP/HTTPS traffic
+kubectl exec -n kube-system cilium-<pod-id> -- hubble observe --protocol http
+
+# Filter by specific pod
+kubectl exec -n kube-system cilium-<pod-id> -- hubble observe --pod argocd/argocd-server-<pod-id>
+```
 
 | Issue Type | Troubleshooting Steps |
 |------------|----------------------|
@@ -377,6 +702,135 @@ kubectl get pods -n cloudflared
 4. **Regularly validate ArgoCD sync status for networking manifests**
 5. **Monitor Cilium, Gateway API, and DNS metrics in Prometheus/Grafana**
 6. **Document all customizations and keep manifests up to date**
+
+## Configuration Change History
+
+### 2025-10-23: Critical Cilium Gateway Fixes
+
+**Issues Identified**:
+1. Gateway services using `externalTrafficPolicy: Cluster` causing intermittent connectivity
+2. No session affinity leading to request routing inconsistency
+3. Duplicate L2AnnouncementPolicy resources causing ARP conflicts
+4. Single Cilium operator replica creating single point of failure
+5. Cilium Envoy gRPC timeout errors
+6. Missing performance optimizations (bandwidth manager, BBR)
+
+**Changes Applied**:
+
+```yaml
+# infrastructure/networking/cilium/values.yaml
+gatewayAPI:
+  externalTrafficPolicy: Local        # Changed from: Cluster
+  sessionAffinity: true               # Added
+  sessionAffinityTimeoutSeconds: 10800  # Added
+
+operator:
+  replicas: 2                          # Changed from: 1
+  affinity:                            # Added
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            io.cilium/app: operator
+        topologyKey: kubernetes.io/hostname
+
+bandwidthManager:                      # Added
+  enabled: true
+  bbr: true
+
+bpf:
+  masquerade: true
+  ctTcpTimeout: 21600                  # Added
+  ctAnyTimeout: 3600                   # Added
+```
+
+**Files Modified**:
+- `infrastructure/networking/cilium/values.yaml` - Gateway traffic policy and HA fixes
+- `infrastructure/networking/cilium/kustomization.yaml` - Removed duplicate L2 policy reference
+- `infrastructure/networking/cilium/l2-announcement.yaml` - Renamed to `.disabled`
+
+**Expected Impact**:
+- ✅ Consistent connectivity across all browsers and clients
+- ✅ Eliminated "one browser works, another doesn't" issue
+- ✅ Fixed "accessing one service triggers another" behavior
+- ✅ Better TCP performance with BBR congestion control
+- ✅ Improved HA with 2 operator replicas
+- ✅ No more L2 ARP conflicts
+
+**Validation Commands**:
+```bash
+# Verify externalTrafficPolicy
+kubectl get svc -n gateway cilium-gateway-gateway-internal -o yaml | grep externalTrafficPolicy
+
+# Check operator replica count
+kubectl get deployment -n kube-system cilium-operator
+
+# Verify L2 announcement policies (should only show one)
+kubectl get ciliuml2announcementpolicy -A
+
+# Test connectivity
+curl -v https://argocd.vanillax.me
+```
+
+## Key Lessons Learned
+
+### 1. externalTrafficPolicy Matters for L2 LoadBalancers
+
+When using Cilium L2 announcements (or MetalLB), **always use `externalTrafficPolicy: Local`**:
+- Preserves source IP
+- Ensures traffic stays on the node handling L2 ARP
+- Prevents SNAT and connection tracking issues
+- Critical for consistent L7 gateway behavior
+
+**Only use `Cluster` when**:
+- You have a hardware load balancer in front
+- You need to distribute load across all nodes
+- You don't care about source IP preservation
+
+### 2. Duplicate CRs Cause Subtle Issues
+
+Having multiple `CiliumL2AnnouncementPolicy` resources with similar selectors causes:
+- ARP announcement race conditions
+- Unpredictable failover behavior
+- Intermittent connectivity issues
+
+**Always verify**: `kubectl get ciliuml2announcementpolicy -A` shows exactly what you expect.
+
+### 3. Single-Replica Operators Are Single Points of Failure
+
+For critical components like Cilium operator:
+- Run at least 2 replicas
+- Use pod anti-affinity to spread across nodes
+- Monitor operator health in production
+
+### 4. Cilium Envoy gRPC Timeouts Are Usually Benign
+
+Initial gRPC fetch timeouts during Envoy startup are normal and resolve themselves. Only investigate if:
+- Timeouts persist beyond 5 minutes
+- You see connection failures in application logs
+- Hubble shows dropped packets
+
+### 5. Session Affinity + externalTrafficPolicy: Local = Consistent Routing
+
+For Gateway API with L2 LoadBalancers:
+```yaml
+externalTrafficPolicy: Local    # Keeps traffic on announcing node
+sessionAffinity: true            # Stickiness during node migration
+sessionAffinityTimeoutSeconds: 10800  # 3 hours
+```
+
+This combination provides:
+- Consistent routing during normal operation
+- Graceful handling during node failures
+- Predictable behavior for debugging
+
+## References
+
+- [Cilium Gateway API Documentation](https://docs.cilium.io/en/stable/network/servicemesh/gateway-api/gateway-api/)
+- [Kubernetes externalTrafficPolicy](https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip)
+- [Cilium L2 Announcements](https://docs.cilium.io/en/stable/network/l2-announcements/)
+- [BBR Congestion Control](https://cloud.google.com/blog/products/networking/tcp-bbr-congestion-control-comes-to-gcp-your-internet-just-got-faster)
+- [Hubble Observability](https://docs.cilium.io/en/stable/observability/hubble/)
 
 ## Traffic Flow
 
