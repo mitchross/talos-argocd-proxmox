@@ -51,9 +51,10 @@ garage:
       web:
         port: 3902
 
-    # Admin API service
-    admin:
-      port: 3903
+  # Enable monitoring to expose admin API port 3903
+  monitoring:
+    metrics:
+      enabled: true
 
   # S3 region name
   s3:
