@@ -55,8 +55,8 @@ spec:
           echo "Cluster status response:"
           echo "$STATUS"
 
-          # Extract all node IDs
-          NODE_IDS=$(echo "$STATUS" | grep -o '"id":"[^"]*"' | cut -d'"' -f4)
+          # Extract all node IDs (handle multi-line JSON)
+          NODE_IDS=$(echo "$STATUS" | grep -oE '"id"[[:space:]]*:[[:space:]]*"[a-f0-9]{64}"' | grep -oE '[a-f0-9]{64}')
 
           if [ -z "$NODE_IDS" ]; then
             echo "ERROR: No nodes found in cluster!"
