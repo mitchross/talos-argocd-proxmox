@@ -27,14 +27,25 @@ spec:
           env:
             - name: API_BASE_URL
               value: "http://garage-admin.garage.svc.cluster.local:3903"
+            - name: APIBASEURL
+              value: "http://garage-admin.garage.svc.cluster.local:3903"
             - name: API_ADMIN_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: garage-webui-secret
+                  key: admin-token
+            - name: APIADMINKEY
               valueFrom:
                 secretKeyRef:
                   name: garage-webui-secret
                   key: admin-token
             - name: S3_ENDPOINT_URL
               value: "http://garage.garage.svc.cluster.local:3900"
+            - name: S3ENDPOINTURL
+              value: "http://garage.garage.svc.cluster.local:3900"
             - name: S3_REGION
+              value: "garage"
+            - name: S3REGION
               value: "garage"
           volumeMounts:
             - name: config
