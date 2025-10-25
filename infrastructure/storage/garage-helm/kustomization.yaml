@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - externalsecret.yaml
+  - service-admin.yaml
   - http-route-s3.yaml
   - http-route-admin.yaml
   - application.yaml
