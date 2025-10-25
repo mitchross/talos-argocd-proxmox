@@ -21,15 +21,10 @@ garage:
   # This makes nodes discover each other automatically - no manual init job needed!
   kubernetesSkipCrd: false
 
-  # Reference existing secret created by ExternalSecret
-  rpcSecret:
-    existingSecret: "garage-secrets"
-    key: "rpc-secret"
-
-  # Admin token from existing secret
-  adminToken:
-    existingSecret: "garage-secrets"
-    key: "admin-token"
+  # Secrets - will be injected by ArgoCD from ESO-created secret
+  # These are placeholder values that will be overridden by Application parameters
+  rpcSecret: ""
+  adminToken: ""
 
   # Persistence configuration using Longhorn
   persistence:
