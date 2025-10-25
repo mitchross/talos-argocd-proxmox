@@ -24,7 +24,7 @@ spec:
               protocol: TCP
           env:
             - name: API_BASE_URL
-              value: "http://garage-metrics.garage.svc.cluster.local:3903"
+              value: "http://garage-admin.garage.svc.cluster.local:3903"
             - name: API_ADMIN_KEY
               valueFrom:
                 secretKeyRef:
