@@ -17,4 +17,4 @@ spec:
             value: /
       backendRefs:
         - name: garage-webui
-          port: 80
+          port: 3909
