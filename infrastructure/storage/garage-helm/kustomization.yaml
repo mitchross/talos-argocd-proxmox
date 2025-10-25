@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: garage
 resources:
   - namespace.yaml
+  - externalsecret.yaml
   - http-route-s3.yaml
   - http-route-admin.yaml
 helmCharts:
