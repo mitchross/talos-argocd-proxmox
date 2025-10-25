@@ -28,12 +28,16 @@ spec:
             - name: API_ADMIN_KEY
               valueFrom:
                 secretKeyRef:
-                  name: garage-webui-secret
+                  name: garage-webui-config
                   key: admin-token
             - name: S3_ENDPOINT_URL
               value: "http://garage.garage.svc.cluster.local:3900"
             - name: S3_REGION
               value: "garage"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/garage.toml
+              subPath: garage.toml
           resources:
             requests:
               cpu: 50m
@@ -41,3 +45,7 @@ spec:
             limits:
               cpu: 200m
               memory: 256Mi
+      volumes:
+        - name: config
+          secret:
+            secretName: garage-webui-config
