@@ -35,6 +35,11 @@ spec:
     - /spec/rules/0/backendRefs/0/group
     - /spec/rules/0/backendRefs/0/kind
     - /spec/rules/0/backendRefs/0/weight
+  # Ignore the Secret since ESO manages it
+  - group: ""
+    kind: Secret
+    name: garage-rpc-secret
+    namespace: garage
 
   syncPolicy:
     automated:

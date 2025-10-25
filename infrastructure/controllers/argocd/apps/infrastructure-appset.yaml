@@ -43,6 +43,13 @@ spec:
         - ApplyOutOfSyncOnly=true
         - Replace=false
         - IgnoreMissingTemplate=true
+      ignoreDifferences:
+      - group: gateway.networking.k8s.io
+        kind: HTTPRoute
+        jsonPointers:
+        - /spec/rules/0/backendRefs/0/group
+        - /spec/rules/0/backendRefs/0/kind
+        - /spec/rules/0/backendRefs/0/weight
         retry:
           limit: 5
           backoff:
