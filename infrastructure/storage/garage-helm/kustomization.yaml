@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: garage
+resources:
+  - namespace.yaml
+  - http-route-s3.yaml
+  - http-route-admin.yaml
+helmCharts:
+  - name: garage
+    repo: https://deuxfleurs.github.io/charts
+    version: 0.8.0
+    releaseName: garage
+    includeCRDs: true
+    valuesFile: values.yaml

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: garage-webui
+  labels:
+    app.kubernetes.io/name: garage-webui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: garage-webui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: garage-webui
+    spec:
+      containers:
+        - name: webui
+          image: khairul169/garage-webui:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3909
+              protocol: TCP
+          env:
+            - name: API_BASE_URL
+              value: "http://garage.garage.svc.cluster.local:3903"
+            - name: API_ADMIN_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: garage-webui-secret
+                  key: admin-token
+            - name: S3_ENDPOINT_URL
+              value: "http://garage.garage.svc.cluster.local:3900"
+            - name: S3_REGION
+              value: "garage"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
