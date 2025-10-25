@@ -83,16 +83,5 @@ garage:
     minAvailable: 2
 
   # Environment-specific settings
-  # Inject secrets from ESO-created secret via environment variables
   environment:
     GARAGE_ALLOW_WORLD_READABLE_SECRETS: "true"
-    GARAGE_RPC_SECRET:
-      valueFrom:
-        secretKeyRef:
-          name: garage-secrets
-          key: rpc_secret
-    GARAGE_ADMIN_TOKEN:
-      valueFrom:
-        secretKeyRef:
-          name: garage-secrets
-          key: admin_token
