@@ -21,6 +21,9 @@ spec:
           # Number of Garage instances to deploy
           replicaCount: 3
 
+          # Database engine - explicit for clarity
+          dbEngine: "lmdb"
+
           # Image configuration
           image:
             repository: dxflrs/garage
