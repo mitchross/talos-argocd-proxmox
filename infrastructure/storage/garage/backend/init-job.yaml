@@ -46,50 +46,53 @@ spec:
           export GARAGE_RPC_SECRET=$(cat /etc/garage/secrets/rpc-secret)
           export GARAGE_ADMIN_TOKEN=$(cat /etc/garage/secrets/admin-token)
 
-          echo "Discovering and connecting cluster nodes..."
+          echo "Discovering garage nodes via admin API..."
 
-          # Connect to each node individually to discover them
-          # The nodes will automatically discover each other via RPC
-          for i in 0 1 2; do
-            echo "Discovering garage-$i..."
-            export GARAGE_RPC_HOST="garage-$i.garage-internal.garage.svc.cluster.local:3901"
-            /usr/local/bin/garage status 2>&1 || echo "  Node $i not yet connected"
-          done
+          # Get cluster status from admin API
+          STATUS=$(curl -s -H "Authorization: Bearer $GARAGE_ADMIN_TOKEN" \
+            http://garage-admin.garage.svc.cluster.local:3903/v0/status)
 
-          # Use node 0 as the primary for cluster operations
-          export GARAGE_RPC_HOST="garage-0.garage-internal.garage.svc.cluster.local:3901"
+          echo "Cluster status response:"
+          echo "$STATUS"
 
-          sleep 5
-
-          echo "Getting cluster status..."
-          /usr/local/bin/garage status
-
-          echo "Configuring cluster layout..."
-
-          # Extract all node IDs from status and assign capacity
-          NODE_IDS=$(/usr/local/bin/garage status 2>/dev/null | grep -oE '^[0-9a-f]{16}' || echo "")
+          # Extract node IDs
+          NODE_IDS=$(echo "$STATUS" | grep -o '"id":"[^"]*"' | cut -d'"' -f4)
 
           if [ -z "$NODE_IDS" ]; then
             echo "ERROR: No nodes found in cluster!"
+            echo "Full response: $STATUS"
             exit 1
           fi
 
-          echo "Found nodes:"
-          echo "$NODE_IDS"
+          NODE_COUNT=$(echo "$NODE_IDS" | wc -l)
+          echo "Found $NODE_COUNT node(s)"
 
-          # Assign capacity to each discovered node
-          echo "$NODE_IDS" | while read -r NODE_ID; do
-            if [ -n "$NODE_ID" ]; then
-              echo "Assigning capacity to node $NODE_ID..."
-              /usr/local/bin/garage layout assign -z dc1 -c 10G "$NODE_ID" || true
-            fi
+          echo "Configuring cluster layout..."
+
+          # Build layout configuration
+          LAYOUT_UPDATES="[]"
+          for NODE_ID in $NODE_IDS; do
+            echo "Adding node $NODE_ID to layout (zone: dc1, capacity: 10GB)..."
+
+            # Add node to layout via API
+            curl -X PATCH -H "Authorization: Bearer $GARAGE_ADMIN_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"id\":\"$NODE_ID\",\"zone\":\"dc1\",\"capacity\":10000000000}" \
+              http://garage-admin.garage.svc.cluster.local:3903/v0/layout || echo "  Failed to update node $NODE_ID"
           done
 
-          echo "Applying layout..."
-          /usr/local/bin/garage layout apply --version 1 || true
+          sleep 2
 
-          echo "Cluster initialization complete"
-          /usr/local/bin/garage status
+          echo "Applying layout version 1..."
+          curl -X POST -H "Authorization: Bearer $GARAGE_ADMIN_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"version":1}' \
+            http://garage-admin.garage.svc.cluster.local:3903/v0/layout/apply || echo "  Failed to apply layout"
+
+          echo "Cluster initialization complete!"
+          echo "Final cluster status:"
+          curl -s -H "Authorization: Bearer $GARAGE_ADMIN_TOKEN" \
+            http://garage-admin.garage.svc.cluster.local:3903/v0/status | grep -o '"id":"[^"]*"'
         env:
         - name: GARAGE_ALLOW_WORLD_READABLE_SECRETS
           value: "true"
