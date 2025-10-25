@@ -99,9 +99,10 @@ spec:
           sleep 2
 
           echo "Applying cluster layout..."
+          # Apply the staged layout (send empty object to apply whatever is staged)
           APPLY_RESPONSE=$(curl -s -X POST -H "Authorization: Bearer $GARAGE_ADMIN_TOKEN" \
             -H "Content-Type: application/json" \
-            -d '{"version":1}' \
+            -d '{}' \
             http://garage-admin.garage.svc.cluster.local:3903/v2/ApplyClusterLayout)
           echo "$APPLY_RESPONSE"
 
