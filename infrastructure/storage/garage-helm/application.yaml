@@ -18,18 +18,6 @@ spec:
         releaseName: garage
         valueFiles:
           - $values/infrastructure/storage/garage-helm/values.yaml
-        # Inject secrets from ESO-created secret into Helm values
-        parameters:
-          - name: garage.rpcSecret
-            valueFrom:
-              secretKeyRef:
-                name: garage-secrets
-                key: rpc_secret
-          - name: garage.adminToken
-            valueFrom:
-              secretKeyRef:
-                name: garage-secrets
-                key: admin_token
 
     # Source 2: Our repository with values.yaml
     - repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
