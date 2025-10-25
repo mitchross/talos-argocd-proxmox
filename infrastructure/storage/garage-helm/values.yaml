@@ -28,7 +28,6 @@ garage:
 
   # Persistence configuration using Longhorn
   persistence:
-    enabled: true
 
     meta:
       storageClass: "longhorn"
