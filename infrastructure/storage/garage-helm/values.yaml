@@ -21,8 +21,8 @@ garage:
   # This makes nodes discover each other automatically - no manual init job needed!
   kubernetesSkipCrd: false
 
-  # Secrets - will be injected by ArgoCD from ESO-created secret
-  # These are placeholder values that will be overridden by Application parameters
+  # Secrets - these need to be provided as strings
+  # Since we can't use ArgoCD helm.parameters.valueFrom, we'll inject via environment
   rpcSecret: ""
   adminToken: ""
 
@@ -83,5 +83,16 @@ garage:
     minAvailable: 2
 
   # Environment-specific settings
+  # Inject secrets from ESO-created secret via environment variables
   environment:
     GARAGE_ALLOW_WORLD_READABLE_SECRETS: "true"
+    GARAGE_RPC_SECRET:
+      valueFrom:
+        secretKeyRef:
+          name: garage-secrets
+          key: rpc_secret
+    GARAGE_ADMIN_TOKEN:
+      valueFrom:
+        secretKeyRef:
+          name: garage-secrets
+          key: admin_token
