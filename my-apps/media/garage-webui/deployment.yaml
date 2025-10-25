@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: garage-webui
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
   labels:
     app.kubernetes.io/name: garage-webui
 spec:
@@ -28,7 +30,7 @@ spec:
             - name: API_ADMIN_KEY
               valueFrom:
                 secretKeyRef:
-                  name: garage-webui-config
+                  name: garage-webui-secret
                   key: admin-token
             - name: S3_ENDPOINT_URL
               value: "http://garage.garage.svc.cluster.local:3900"
@@ -47,5 +49,5 @@ spec:
               memory: 256Mi
       volumes:
         - name: config
-          secret:
-            secretName: garage-webui-config
+          configMap:
+            name: garage-webui-config
