@@ -1,0 +1,120 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: garage
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://git.deuxfleurs.fr/Deuxfleurs/garage.git
+    targetRevision: main
+    path: scripts/helm/garage
+    helm:
+      releaseName: garage
+      values: |
+        garage:
+          # Replication factor - data stored on 2 nodes minimum
+          replicationFactor: 2
+
+          # Number of Garage instances to deploy
+          replicaCount: 3
+
+          # Image configuration
+          image:
+            repository: dxflrs/garage
+            tag: v2.1.0
+            pullPolicy: IfNotPresent
+
+          # CRITICAL: Enable Kubernetes CRD for automatic node discovery
+          # This makes nodes discover each other automatically - no manual init job needed!
+          kubernetesSkipCrd: false
+
+          # Reference existing secret created by ExternalSecret
+          rpcSecret:
+            existingSecret: "garage-secrets"
+            key: "rpc-secret"
+
+          # Admin token from existing secret
+          adminToken:
+            existingSecret: "garage-secrets"
+            key: "admin-token"
+
+          # Persistence configuration using Longhorn
+          persistence:
+            enabled: true
+
+            meta:
+              storageClass: "longhorn"
+              size: 3Gi
+              accessMode: ReadWriteOnce
+
+            data:
+              storageClass: "longhorn"
+              size: 30Gi
+              accessMode: ReadWriteOnce
+
+          # Service configuration
+          service:
+            type: ClusterIP
+
+            # S3 API service
+            s3:
+              api:
+                port: 3900
+              web:
+                port: 3902
+
+            # Admin API service
+            admin:
+              port: 3903
+
+          # S3 region name
+          s3:
+            region: garage
+
+          # Resource limits
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+
+          # Security context
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop:
+                - ALL
+
+          # Pod disruption budget for high availability
+          podDisruptionBudget:
+            enabled: true
+            minAvailable: 2
+
+          # Environment-specific settings
+          environment:
+            GARAGE_ALLOW_WORLD_READABLE_SECRETS: "true"
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: garage
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
