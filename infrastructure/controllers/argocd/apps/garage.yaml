@@ -1,10 +1,12 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
-metadata:
+meta
   name: garage
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default
+  project: infrastructure
   source:
     repoURL: https://git.deuxfleurs.fr/Deuxfleurs/garage.git
     targetRevision: main-v2
@@ -12,12 +14,6 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-      # Use chart versioning instead of overriding image.tag (recommended)
-      # But if you must pin the image:
-      parameters:
-        - name: image.tag
-          value: "v2.0.0"
-      # Ensure Helm treats this as a chart (not raw manifests)
       releaseName: garage
   destination:
     server: https://kubernetes.default.svc
@@ -30,10 +26,8 @@ spec:
       - CreateNamespace=true
       - RespectIgnoreDifferences=true
   ignoreDifferences:
-    # Ignore auto-generated secrets (rpcSecret, admin-token)
     - group: ""
       kind: Secret
       name: garage
-      namespace: garage
       jsonPointers:
         - /data
