@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
-metadata:
+meta
   name: garage-webui
-  namespace: garage-webui
+  namespace: garage
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: garage-webui
   template:
-    metadata:
+    meta
       labels:
         app: garage-webui
     spec:
@@ -28,12 +28,6 @@ spec:
             secretKeyRef:
               name: garage
               key: admin-token
-        # Optional auth
-        # - name: AUTH_USER_PASS
-        #   valueFrom:
-        #     secretKeyRef:
-        #       name: garage-webui-auth
-        #       key: user-pass
         resources:
           requests:
             memory: "64Mi"
