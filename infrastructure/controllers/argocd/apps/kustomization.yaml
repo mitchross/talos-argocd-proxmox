@@ -5,3 +5,4 @@ resources:
   - infrastructure-appset.yaml
   - monitoring-appset.yaml
   - my-apps-appset.yaml
+  - garage.yaml
