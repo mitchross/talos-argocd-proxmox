@@ -9,7 +9,7 @@ spec:
     matchLabels:
       app: garage-webui
   template:
-    meta
+    metadata:
       labels:
         app: garage-webui
     spec:
