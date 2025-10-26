@@ -1,6 +1,6 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
-meta
+metadata:
   name: garage
   namespace: argocd
   finalizers:
