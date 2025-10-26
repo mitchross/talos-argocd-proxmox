@@ -12,10 +12,13 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-      # Optional: override image if needed
+      # Use chart versioning instead of overriding image.tag (recommended)
+      # But if you must pin the image:
       parameters:
         - name: image.tag
-          value: v2.0.0
+          value: "v2.0.0"
+      # Ensure Helm treats this as a chart (not raw manifests)
+      releaseName: garage
   destination:
     server: https://kubernetes.default.svc
     namespace: garage
@@ -25,3 +28,12 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - RespectIgnoreDifferences=true
+  ignoreDifferences:
+    # Ignore auto-generated secrets (rpcSecret, admin-token)
+    - group: ""
+      kind: Secret
+      name: garage
+      namespace: garage
+      jsonPointers:
+        - /data
