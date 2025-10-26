@@ -4,7 +4,5 @@ namespace: garage
 resources:
    - deployment.yaml
    - service.yaml
-  # - externalsecret.yaml
    - http-route.yaml
-  # - network-policy.yaml
-  # - configmap.yaml
+
