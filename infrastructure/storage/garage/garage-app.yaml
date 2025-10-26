@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: garage
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://git.deuxfleurs.fr/Deuxfleurs/garage.git
+    targetRevision: main-v2
+    path: script/helm/garage
+    helm:
+      valueFiles:
+        - values.yaml
+      # Optional: override image if needed
+      parameters:
+        - name: image.tag
+          value: v2.0.0
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: garage
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

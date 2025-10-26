@@ -1,0 +1,33 @@
+deployment:
+  replicaCount: 1
+
+garage:
+  replicationFactor: "1"
+  rpcBindAddr: "[::]:3901"
+  # Optional: set explicit secrets (or let Helm auto-generate)
+  # rpcSecret: "e3f7b02fde991488ab9b20a803019c44b2d46edf989527558d464decab8463b1"
+  s3:
+    api:
+      region: "garage"
+      rootDomain: ".s3.garage.local"
+    web:
+      rootDomain: ".web.garage.local"
+      index: "index.html"
+  # admin token will be auto-generated and stored in Secret `garage`
+
+persistence:
+  enabled: true
+  meta:
+    size: "1Gi"
+    storageClass: "longhorn"  # or "openebs-hostpath", "longhorn", etc.
+  
+    size: "10Gi"
+    storageClass: "longhorn"
+
+service:
+  type: ClusterIP
+
+# Optional: enable metrics if you want Prometheus scraping
+# monitoring:
+#   metrics:
+#     enabled: true
