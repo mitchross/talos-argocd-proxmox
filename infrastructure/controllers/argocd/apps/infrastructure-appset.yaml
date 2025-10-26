@@ -14,6 +14,7 @@ spec:
       - path: infrastructure/networking/*
       - path: infrastructure/storage/*
       - path: infrastructure/crds
+      - path: infrastructure/storage-helm/*
   template:
     metadata:
       name: '{{path.basename}}'
