@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: garage-webui-config
+  namespace: garage
+data:
+  garage.toml: |
+    # Minimal garage.toml used by the web UI. Adjust paths/domains as needed.
+    metadata_dir = "/var/lib/garage/meta"
+    data_dir = "/var/lib/garage/data"
+    db_engine = "sqlite"
+
+    rpc_bind_addr = "[::]:3901"
+    rpc_public_addr = "garage.garage.svc.cluster.local:3901"
+
+    [s3_api]
+    s3_region = "garage"
+    api_bind_addr = "[::]:3900"
+    root_domain = ".s3.cluster.local"
+
+    [admin]
+    api_bind_addr = "[::]:3903"
+    # Do NOT put admin_token here in git. The Web UI will pick it up from the
+    # API_ADMIN_KEY env var (we store that in a Secret).

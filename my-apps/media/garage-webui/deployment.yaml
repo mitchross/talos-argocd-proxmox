@@ -24,8 +24,28 @@ spec:
           value: "http://garage.garage.svc.cluster.local:3903"
         - name: S3_ENDPOINT_URL
           value: "http://garage.garage.svc.cluster.local:3900"
+        - name: CONFIG_PATH
+          value: "/etc/garage.toml"
         - name: API_ADMIN_KEY
-          value: "2ec9bf4ca836db5d7ad57903d91bdb5e5365fc062fa74b228fc1fc916fef6ebe"
+          valueFrom:
+            secretKeyRef:
+              name: garage-webui-secret
+              key: API_ADMIN_KEY
+        volumeMounts:
+        - name: config
+          mountPath: /etc/garage.toml
+          subPath: garage.toml
+          readOnly: true
+        livenessProbe:
+          tcpSocket:
+            port: 3909
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 3909
+          initialDelaySeconds: 5
+          periodSeconds: 10
         resources:
           requests:
             memory: "64Mi"
@@ -33,3 +53,10 @@ spec:
           limits:
             memory: "128Mi"
             cpu: "100m"
+      volumes:
+      - name: config
+        configMap:
+          name: garage-webui-config
+          items:
+            - key: garage.toml
+              path: garage.toml

@@ -7,5 +7,6 @@ spec:
   selector:
     app: garage-webui
   ports:
-    - port: 3909
+    - name: http
+      port: 3909
       targetPort: 3909
