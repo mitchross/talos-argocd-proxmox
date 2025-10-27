@@ -1,3 +1,4 @@
+# my-apps/media/garage-webui/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -23,13 +24,8 @@ spec:
           value: "http://garage.garage.svc.cluster.local:3903"
         - name: S3_ENDPOINT_URL
           value: "http://garage.garage.svc.cluster.local:3900"
-        - name: S3_REGION
-          value: "garage"
         - name: API_ADMIN_KEY
-          valueFrom:
-            secretKeyRef:
-              name: garage
-              key: admin-token
+          value: "2ec9bf4ca836db5d7ad57903d91bdb5e5365fc062fa74b228fc1fc916fef6ebe"
         resources:
           requests:
             memory: "64Mi"
