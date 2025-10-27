@@ -1,11 +1,15 @@
+# infrastructure/controllers/argocd/apps/values.yaml
 deployment:
   replicaCount: 1
 
 garage:
   replicationFactor: "1"
   rpcBindAddr: "[::]:3901"
-  # Optional: set explicit secrets (or let Helm auto-generate)
-  # rpcSecret: "e3f7b02fde991488ab9b20a803019c44b2d46edf989527558d464decab8463b1"
+  # Generate these with: openssl rand -hex 32
+  admin_token: "2ec9bf4ca836db5d7ad57903d91bdb5e5365fc062fa74b228fc1fc916fef6ebe"
+  metrics_token: "2ec9bf4ca836db5d7ad57903d91bdb5e5365fc062fa74b228fc1fc916fef6ebe"
+  dbEngine: "lmdb"  # or "sqlite" if preferred
+
   s3:
     api:
       region: "garage"
@@ -13,21 +17,20 @@ garage:
     web:
       rootDomain: ".web.garage.local"
       index: "index.html"
-  # admin token will be auto-generated and stored in Secret `garage`
 
 persistence:
   enabled: true
   meta:
     size: "1Gi"
-    storageClass: "longhorn"  # or "openebs-hostpath", "longhorn", etc.
-  
+    storageClass: "longhorn"
+  data:
     size: "10Gi"
     storageClass: "longhorn"
 
 service:
   type: ClusterIP
 
-# Optional: enable metrics if you want Prometheus scraping
+# Optional: enable metrics for Prometheus
 # monitoring:
 #   metrics:
 #     enabled: true
