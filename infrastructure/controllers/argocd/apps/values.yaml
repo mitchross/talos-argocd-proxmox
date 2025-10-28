@@ -29,6 +29,23 @@ persistence:
 
 service:
   type: ClusterIP
+  # Ensure admin API is exposed through the Service so in-cluster clients (webui)
+  # can reach port 3903. The upstream chart will render these ports if it uses
+  # a `service.ports` values structure. If the chart uses a different shape,
+  # adapt accordingly.
+  ports:
+    - name: s3-api
+      port: 3900
+      targetPort: 3900
+      protocol: TCP
+    - name: s3-web
+      port: 3902
+      targetPort: 3902
+      protocol: TCP
+    - name: admin
+      port: 3903
+      targetPort: 3903
+      protocol: TCP
 
 # Optional: enable metrics for Prometheus
 # monitoring:
