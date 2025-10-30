@@ -5,62 +5,137 @@ metadata:
   namespace: llama-cpp
 data:
   config.yaml: |
-    # Optimized Qwen3 models for dual RTX 3090s (48GB total VRAM)
     models:
-      # PRIMARY: Qwen3-30B-A3B-Thinking - Best all-around for technical/coding
       qwen3-thinking-ud-q3-128k:
-        cmd: "/app/llama-server \
-          -m /models/Qwen3-30B-A3B-Thinking-2507-UD-Q3_K_XL.gguf \
-          -c 131072 \
-          -ngl 99 \
-          --split-mode layer \
-          --tensor-split 1,1 \
-          --host 0.0.0.0 \
-          --port ${PORT} \
-          --threads -1 \
-          --flash-attn \
-          --cache-type-k q4_0 \
-          --cache-type-v q4_0 \
-          --temp 0.6 \
-          --top-p 0.95 \
-          --top-k 20 \
-          --min-p 0.0 \
-          --repeat-penalty 1.0 \
-          --presence-penalty 1.0 \
-          --jinja \
-          --reasoning-format none \
-          --mlock"
-        gpu_mode: "dual"
-        health_check_path: "/health"
+        cmd: >-
+          /app/llama-server
+          -m /models/Qwen3-30B-A3B-Thinking-2507-UD-Q3_K_XL.gguf
+          -c 131072
+          -ngl 99
+          --split-mode layer
+          --tensor-split 1,1
+          --host 0.0.0.0
+          --port ${PORT}
+          --threads -1
+          --flash-attn
+          --cache-type-k q4_0
+          --cache-type-v q4_0
+          --temp 0.6
+          --top-p 0.95
+          --top-k 20
+          --min-p 0.0
+          --repeat-penalty 1.0
+          --presence-penalty 1.0
+          --jinja
+          --reasoning-format none
+          --mlock
+        gpu_mode: dual
+        health_check_path: /health
         timeout: 720s
 
-      # Extended context for thinking model (256K native support)
       qwen3-thinking-ud-q3-256k:
-        cmd: "/app/llama-server \
-          -m /models/Qwen3-30B-A3B-Thinking-2507-UD-Q3_K_XL.gguf \
-          -c 262144 \
-          -ngl 99 \
-          --split-mode layer \
-          --tensor-split 1,1 \
-          --host 0.0.0.0 \
-          --port ${PORT} \
-          --threads -1 \
-          --flash-attn \
-          --cache-type-k q4_0 \
-          --cache-type-v q4_0 \
-          --temp 0.6 \
-          --top-p 0.95 \
-          --top-k 20 \
-          --min-p 0.0 \
-          --presence-penalty 1.0 \
-          --jinja \
-          --reasoning-format none \
-          --mlock"
-        gpu_mode: "dual"
-        health_check_path: "/health"
+        cmd: >-
+          /app/llama-server
+          -m /models/Qwen3-30B-A3B-Thinking-2507-UD-Q3_K_XL.gguf
+          -c 262144
+          -ngl 99
+          --split-mode layer
+          --tensor-split 1,1
+          --host 0.0.0.0
+          --port ${PORT}
+          --threads -1
+          --flash-attn
+          --cache-type-k q4_0
+          --cache-type-v q4_0
+          --temp 0.6
+          --top-p 0.95
+          --top-k 20
+          --min-p 0.0
+          --presence-penalty 1.0
+          --jinja
+          --reasoning-format none
+          --mlock
+        gpu_mode: dual
+        health_check_path: /health
         timeout: 900s
 
-      # CODING SPECIALIST: Qwen3-Coder - Best for agentic coding workflows
       qwen3-coder-ud-q4-128k:
-        cmd: "/app/llama-server \
-    
+        cmd: >-
+          /app/llama-server
+          -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf
+          -c 131072
+          -ngl 99
+          --split-mode layer
+          --tensor-split 1,1
+          --host 0.0.0.0
+          --port ${PORT}
+          --threads -1
+          --flash-attn
+          --cache-type-k q4_0
+          --cache-type-v q4_0
+          --temp 0.7
+          --top-p 0.8
+          --top-k 20
+          --min-p 0.0
+          --repeat-penalty 1.05
+          --jinja
+          --mlock
+        gpu_mode: dual
+        health_check_path: /health
+        timeout: 720s
+
+      qwen3-coder-ud-q4-256k:
+        cmd: >-
+          /app/llama-server
+          -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf
+          -c 262144
+          -ngl 99
+          --split-mode layer
+          --tensor-split 1,1
+          --host 0.0.0.0
+          --port ${PORT}
+          --threads -1
+          --flash-attn
+          --cache-type-k q4_0
+          --cache-type-v q4_0
+          --temp 0.7
+          --top-p 0.8
+          --top-k 20
+          --min-p 0.0
+          --repeat-penalty 1.05
+          --jinja
+          --mlock
+        gpu_mode: dual
+        health_check_path: /health
+        timeout: 900s
+
+      qwen3-thinking-ud-q2-128k:
+        cmd: >-
+          /app/llama-server
+          -m /models/Qwen3-30B-A3B-Thinking-2507-UD-Q2_K_XL.gguf
+          -c 131072
+          -ngl 99
+          --split-mode layer
+          --tensor-split 1,1
+          --host 0.0.0.0
+          --port ${PORT}
+          --threads -1
+          --flash-attn
+          --cache-type-k q4_0
+          --cache-type-v q4_0
+          --temp 0.6
+          --top-p 0.95
+          --top-k 20
+          --min-p 0.0
+          --presence-penalty 1.0
+          --jinja
+          --reasoning-format none
+          --mlock
+        gpu_mode: dual
+        health_check_path: /health
+        timeout: 600s
+
+    default_model: qwen3-thinking-ud-q3-128k
+    health_check_interval: 30s
+    swap_timeout: 180s
+    cleanup_timeout: 90s
