@@ -50,9 +50,9 @@ spec:
         - /spec/rules/0/backendRefs/0/group
         - /spec/rules/0/backendRefs/0/kind
         - /spec/rules/0/backendRefs/0/weight
-        retry:
-          limit: 5
-          backoff:
-            duration: 5s
-            factor: 2
-            maxDuration: 3m
+      retry:
+        limit: 5
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 3m
