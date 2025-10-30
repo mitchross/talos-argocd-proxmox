@@ -5,89 +5,62 @@ metadata:
   namespace: llama-cpp
 data:
   config.yaml: |
-    # Simplified Qwen3-Coder configs
+    # Optimized Qwen3 models for dual RTX 3090s (48GB total VRAM)
     models:
-      # Default dual-GPU fast balanced
-      qwen3-coder-ud-q4-128k-dual:
+      # PRIMARY: Qwen3-30B-A3B-Thinking - Best all-around for technical/coding
+      qwen3-thinking-ud-q3-128k:
         cmd: "/app/llama-server \
-          -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf \
-          -c 131072 -ngl 99 --split-mode layer --tensor-split 1,1 \
-          --rope-scaling yarn --rope-scale 4 \
-          --cache-type-k q4_0 --cache-type-v q4_0 \
-          --host 0.0.0.0 --port ${PORT} --threads -1 --mlock"
+          -m /models/Qwen3-30B-A3B-Thinking-2507-UD-Q3_K_XL.gguf \
+          -c 131072 \
+          -ngl 99 \
+          --split-mode layer \
+          --tensor-split 1,1 \
+          --host 0.0.0.0 \
+          --port ${PORT} \
+          --threads -1 \
+          --flash-attn \
+          --cache-type-k q4_0 \
+          --cache-type-v q4_0 \
+          --temp 0.6 \
+          --top-p 0.95 \
+          --top-k 20 \
+          --min-p 0.0 \
+          --repeat-penalty 1.0 \
+          --presence-penalty 1.0 \
+          --jinja \
+          --reasoning-format none \
+          --mlock"
         gpu_mode: "dual"
         health_check_path: "/health"
         timeout: 720s
 
-      # Extended context dual-GPU
-      qwen3-coder-ud-q4-160k-dual:
+      # Extended context for thinking model (256K native support)
+      qwen3-thinking-ud-q3-256k:
         cmd: "/app/llama-server \
-          -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf \
-          -c 163840 -ngl 99 --split-mode layer --tensor-split 1,1 \
-          --rope-scaling yarn --rope-scale 5 \
-          --cache-type-k q4_0 --cache-type-v q4_0 \
-          --host 0.0.0.0 --port ${PORT} --threads -1 --mlock"
+          -m /models/Qwen3-30B-A3B-Thinking-2507-UD-Q3_K_XL.gguf \
+          -c 262144 \
+          -ngl 99 \
+          --split-mode layer \
+          --tensor-split 1,1 \
+          --host 0.0.0.0 \
+          --port ${PORT} \
+          --threads -1 \
+          --flash-attn \
+          --cache-type-k q4_0 \
+          --cache-type-v q4_0 \
+          --temp 0.6 \
+          --top-p 0.95 \
+          --top-k 20 \
+          --min-p 0.0 \
+          --presence-penalty 1.0 \
+          --jinja \
+          --reasoning-format none \
+          --mlock"
         gpu_mode: "dual"
         health_check_path: "/health"
         timeout: 900s
 
-      # High quality dual-GPU
-      qwen3-coder-ud-q8-64k-dual:
+      # CODING SPECIALIST: Qwen3-Coder - Best for agentic coding workflows
+      qwen3-coder-ud-q4-128k:
         cmd: "/app/llama-server \
-          -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q8_K_XL.gguf \
-          -c 65536 -ngl 99 --split-mode layer --tensor-split 1,1 \
-          --cache-type-k f16 --cache-type-v f16 \
-          --host 0.0.0.0 --port ${PORT} --threads -1 --mlock"
-        gpu_mode: "dual"
-        health_check_path: "/health"
-        timeout: 720s
-
-      # Single GPU fallback (smaller VRAM footprint)
-      qwen3-coder-ud-q4-64k-single:
-        cmd: "/app/llama-server \
-          -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf \
-          -c 65536 -ngl 99 --split-mode layer --tensor-split 1,0 \
-          --rope-scaling linear --rope-scale 2 \
-          --cache-type-k q4_0 --cache-type-v q4_0 \
-          --host 0.0.0.0 --port ${PORT} --threads -1 --mlock"
-        gpu_mode: "single"
-        health_check_path: "/health"
-        timeout: 600s
-
-      # High quality dual-GPU
-      gpt-oss-20b-ud-q8-16k-dual:
-        cmd: "/app/llama-server \
-          -m /models/gpt-oss-20b-UD-Q8_K_XL.gguf \
-          -c 16384 -ngl 99 --split-mode layer --tensor-split 1,1 \
-          --cache-type-k f16 --cache-type-v f16 \
-          --host 0.0.0.0 --port ${PORT} --threads -1 --mlock"
-        gpu_mode: "dual"
-        health_check_path: "/health"
-        timeout: 720s
-
-      # Long context high quality dual-GPU
-      gpt-oss-20b-ud-q8-128k-dual:
-        cmd: "/app/llama-server \
-          -m /models/gpt-oss-20b-UD-Q8_K_XL.gguf \
-          -c 131072 -ngl 99 --split-mode layer --tensor-split 1,1 \
-          --cache-type-k f16 --cache-type-v f16 \
-          --host 0.0.0.0 --port ${PORT} --threads -1 --mlock"
-        gpu_mode: "dual"
-        health_check_path: "/health"
-        timeout: 900s
-
-      magistral-small-40k-dual:
-        cmd: "/app/llama-server \
-          -m /models/Magistral-Small-2509-UD-Q8_K_XL.gguf \
-          -c 40960 -ngl 99 --split-mode layer --tensor-split 1,1 \
-          --cache-type-k f16 --cache-type-v f16 \
-          --host 0.0.0.0 --port ${PORT} --threads -1 --mlock --jinja"
-        gpu_mode: "dual"
-        health_check_path: "/health"
-        timeout: 900s
-
-    # Global defaults
-    default_model: "qwen3-coder-ud-q4-128k-dual"
-    health_check_interval: "30s"
-    swap_timeout: "180s"
-    cleanup_timeout: "90s"
+    
