@@ -30,7 +30,7 @@ spec:
       containers:
       - name: llama-swap
         # renovate: datasource=docker depName=ghcr.io/mostlygeek/llama-swap
-        image: ghcr.io/mostlygeek/llama-swap:v169-cuda
+        image: ghcr.io/mostlygeek/llama-swap:v168-cuda-b6830
         imagePullPolicy: IfNotPresent
 
         # --- FINAL FIX: Using the correct, confirmed path to the executable ---
