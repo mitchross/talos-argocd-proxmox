@@ -17,7 +17,7 @@ data:
           --host 0.0.0.0
           --port ${PORT}
           --threads -1
-          --flash-attn
+          --flash-attn auto 
           --cache-type-k q4_0
           --cache-type-v q4_0
           --temp 0.6
@@ -44,7 +44,7 @@ data:
           --host 0.0.0.0
           --port ${PORT}
           --threads -1
-          --flash-attn
+          --flash-attn auto
           --cache-type-k q4_0
           --cache-type-v q4_0
           --temp 0.6
@@ -70,7 +70,7 @@ data:
           --host 0.0.0.0
           --port ${PORT}
           --threads -1
-          --flash-attn
+          --flash-attn auto 
           --cache-type-k q4_0
           --cache-type-v q4_0
           --temp 0.7
@@ -95,7 +95,7 @@ data:
           --host 0.0.0.0
           --port ${PORT}
           --threads -1
-          --flash-attn
+          --flash-attn auto 
           --cache-type-k q4_0
           --cache-type-v q4_0
           --temp 0.7
@@ -120,7 +120,7 @@ data:
           --host 0.0.0.0
           --port ${PORT}
           --threads -1
-          --flash-attn
+          --flash-attn auto 
           --cache-type-k q4_0
           --cache-type-v q4_0
           --temp 0.6
