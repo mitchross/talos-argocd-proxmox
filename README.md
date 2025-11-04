@@ -111,8 +111,17 @@ talosctl apply-config --nodes <node-ip-2> --file iac/talos/clusterconfig/<node-2
 ### 4. Install Gateway API CRDs
 This is a prerequisite for Cilium's Gateway API integration.
 ```bash
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.3.0/standard-install.yaml
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.3.0/experimental-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
+```
+### Install Cilium CNI with Gateway API support
+```bash
+kubectl kustomize infrastructure/networking/cilium --enable-helm | kubectl apply -f -
+
+
+# Verify Cilium is running
+kubectl get pods -n kube-system -l k8s-app=cilium
 ```
 
 ### 5. Configure Secret Management
@@ -128,6 +137,7 @@ This cluster uses [1Password Connect](https://developer.1password.com/docs/conne
 
 3.  **Create Kubernetes Secrets**:
     ```bash
+    eval $(op signin)
     export OP_CREDENTIALS=$(op read op://homelabproxmox/1passwordconnect/1password-credentials.json | base64 | tr -d '\n')
     export OP_CONNECT_TOKEN=$(op read 'op://homelabproxmox/1password-operator-token/credential')
 

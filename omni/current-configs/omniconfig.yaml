@@ -1,0 +1,7 @@
+contexts:
+    default:
+        url: https://omni.vanillax.me
+        auth:
+            siderov1:
+                identity: mitchross09@gmail.com
+context: default

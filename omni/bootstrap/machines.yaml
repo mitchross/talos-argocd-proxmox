@@ -1,0 +1,36 @@
+# Machine Inventory for Talos Cluster
+# Update UUIDs with actual machine IDs from: omnictl get machines
+
+# Control Plane Nodes (3)
+control_plane:
+- uuid: "c981110a-846d-41b5-8427-d5948f2e955a"
+  name: "talos-prod-control-01"
+  ip: "192.168.10.100"
+
+- uuid: "a2b8beb3-aa01-4e6e-a2b2-a9771f013084"
+  name: "talos-prod-control-02"
+  ip: "192.168.10.101"
+
+- uuid: "4c4c4544-0037-4810-8044-b7c04f4b3032"
+  name: "talos-prod-control-03"
+  ip: "192.168.10.102"
+
+# GPU Worker Nodes (2)
+gpu_workers:
+- uuid: "96d96f1d-c0ab-43c1-ac25-7ab22e965ede"
+  name: "talos-prod-gpu-worker-01"
+  ip: "192.168.10.113"
+
+- uuid: "de9a314d-c1bb-4f37-99ff-d226157bac28"
+  name: "talos-prod-gpu-worker-02"
+  ip: "192.168.10.114"
+
+# Regular Worker Nodes (no GPU)
+workers:
+- uuid: "b6ac0c65-9aee-40bf-bd51-feaeb27ae3a3"
+  name: "talos-prod-worker-01"
+  ip: "192.168.10.111"
+
+- uuid: "d7af9bfb-811d-493d-b0fe-51e3127ef774"
+  name: "talos-prod-worker-02"
+  ip: "192.168.10.112"
