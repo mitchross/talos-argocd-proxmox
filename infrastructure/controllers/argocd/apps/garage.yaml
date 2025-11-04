@@ -9,7 +9,7 @@ spec:
   project: infrastructure
   source:
     repoURL: https://git.deuxfleurs.fr/Deuxfleurs/garage.git
-    targetRevision: main-v2
+    targetRevision: v2.1.0
     path: script/helm/garage
     helm:
       valueFiles:
