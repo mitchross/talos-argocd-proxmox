@@ -1,0 +1,134 @@
+kind: Cluster
+name: talos-proxmox
+kubernetes:
+  version: v1.34.1
+talos:
+  version: v1.11.3
+---
+kind: ControlPlane
+machines:
+- c981110a-846d-41b5-8427-d5948f2e955a
+- a2b8beb3-aa01-4e6e-a2b2-a9771f013084
+- 4c4c4544-0037-4810-8044-b7c04f4b3032
+patches:
+- idOverride: 400-talos-proxmox-control-planes-untaint
+  inline:
+    cluster:
+      allowSchedulingOnControlPlanes: true
+---
+kind: Workers
+machines:
+- 96d96f1d-c0ab-43c1-ac25-7ab22e965ede
+- de9a314d-c1bb-4f37-99ff-d226157bac28
+- b6ac0c65-9aee-40bf-bd51-feaeb27ae3a3
+- d7af9bfb-811d-493d-b0fe-51e3127ef774
+---
+kind: Machine
+name: c981110a-846d-41b5-8427-d5948f2e955a
+---
+kind: Machine
+name: c981110a-846d-41b5-8427-d5948f2e955a
+patches:
+- name: set-hostname-talos-prod-control-01
+  inline:
+    machine:
+      network:
+        hostname: talos-prod-control-01
+      nodeLabels:
+        node-role: control-plane
+        management-ip: "192.168.10.100"
+        topology.kubernetes.io/zone: proxmox
+- name: control-plane-config
+  file: patches/control-plane.yaml
+---
+kind: Machine
+name: a2b8beb3-aa01-4e6e-a2b2-a9771f013084
+patches:
+- name: set-hostname-talos-prod-control-02
+  inline:
+    machine:
+      network:
+        hostname: talos-prod-control-02
+      nodeLabels:
+        node-role: control-plane
+        management-ip: "192.168.10.101"
+        topology.kubernetes.io/zone: proxmox
+- name: control-plane-config
+  file: patches/control-plane.yaml
+---
+kind: Machine
+name: 4c4c4544-0037-4810-8044-b7c04f4b3032
+patches:
+- name: set-hostname-talos-prod-control-03
+  inline:
+    machine:
+      network:
+        hostname: talos-prod-control-03
+      nodeLabels:
+        node-role: control-plane
+        management-ip: "192.168.10.102"
+        topology.kubernetes.io/zone: proxmox
+- name: control-plane-config
+  file: patches/control-plane.yaml
+---
+kind: Machine
+name: 96d96f1d-c0ab-43c1-ac25-7ab22e965ede
+patches:
+- name: set-hostname-talos-prod-gpu-worker-01
+  inline:
+    machine:
+      network:
+        hostname: talos-prod-gpu-worker-01
+      nodeLabels:
+        node-role: gpu-worker
+        management-ip: "192.168.10.113"
+        topology.kubernetes.io/zone: proxmox
+        nvidia.com/gpu: "true"
+- name: gpu-worker-config
+  file: patches/gpu-worker.yaml
+---
+kind: Machine
+name: de9a314d-c1bb-4f37-99ff-d226157bac28
+patches:
+- name: set-hostname-talos-prod-gpu-worker-02
+  inline:
+    machine:
+      network:
+        hostname: talos-prod-gpu-worker-02
+      nodeLabels:
+        node-role: gpu-worker
+        management-ip: "192.168.10.114"
+        topology.kubernetes.io/zone: proxmox
+        nvidia.com/gpu: "true"
+- name: gpu-worker-config
+  file: patches/gpu-worker.yaml
+---
+kind: Machine
+name: b6ac0c65-9aee-40bf-bd51-feaeb27ae3a3
+patches:
+- name: set-hostname-talos-prod-worker-01
+  inline:
+    machine:
+      network:
+        hostname: talos-prod-worker-01
+      nodeLabels:
+        node-role: worker
+        management-ip: "192.168.10.111"
+        topology.kubernetes.io/zone: proxmox
+- name: regular-worker-config
+  file: patches/regular-worker.yaml
+---
+kind: Machine
+name: d7af9bfb-811d-493d-b0fe-51e3127ef774
+patches:
+- name: set-hostname-talos-prod-worker-02
+  inline:
+    machine:
+      network:
+        hostname: talos-prod-worker-02
+      nodeLabels:
+        node-role: worker
+        management-ip: "192.168.10.112"
+        topology.kubernetes.io/zone: proxmox
+- name: regular-worker-config
+  file: patches/regular-worker.yaml

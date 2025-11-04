@@ -1,0 +1,27 @@
+machine:
+  time:
+    disabled: false
+    servers:
+    - time.cloudflare.com
+
+  features:
+    kubePrism:
+      enabled: true
+      port: 7445
+    hostDNS:
+      enabled: true
+      forwardKubeDNSToHost: true
+
+cluster:
+  proxy:
+    disabled: true
+
+  sysctls:
+    fs.inotify.max_user_watches: "1048576"
+    fs.inotify.max_user_instances: "8192"
+
+  kernel:
+    modules:
+    - name: br_netfilter
+      parameters:
+      - nf_conntrack_max=131072
