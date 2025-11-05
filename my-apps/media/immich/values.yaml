@@ -67,7 +67,7 @@ server:
         main:
           image:
             repository: ghcr.io/immich-app/immich-server
-            tag: v2.1.0  # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
+            tag: v2.2.2  # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
             pullPolicy: IfNotPresent
           resources:
             requests:
