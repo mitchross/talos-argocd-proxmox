@@ -1,0 +1,46 @@
+# Critical: Longhorn must be deployed after Cilium (wave 1)
+# Storage layer depends on networking being fully operational
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: longhorn
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app.kubernetes.io/part-of: infrastructure
+spec:
+  project: infrastructure
+  source:
+    repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+    targetRevision: main
+    path: infrastructure/storage/longhorn
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: longhorn-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
+    - RespectIgnoreDifferences=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 5m
+  # Longhorn health checks ensure storage is ready before
+  # other applications that need PVCs can be deployed
+  ignoreDifferences:
+  - group: ""
+    kind: ConfigMap
+    jsonPointers:
+    - /data
+  - group: ""
+    kind: Secret
+    jsonPointers:
+    - /data

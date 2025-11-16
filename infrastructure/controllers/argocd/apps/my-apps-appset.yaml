@@ -14,7 +14,7 @@ spec:
     metadata:
       name: 'my-apps-{{path.basename}}'
       annotations:
-        argocd.argoproj.io/sync-wave: "2"
+        argocd.argoproj.io/sync-wave: "4"
     spec:
       project: my-apps
       revisionHistoryLimit: 3
