@@ -1,7 +1,7 @@
 # Cilium Helm Values for Talos Proxmox Production Cluster
 # Cluster Configuration
 cluster:
-  name: talos-proxmox-prod
+  name: talos-prod-cluster
   id: 1
 
 # Kubernetes API Configuration (kubePrism via SideroLink)
