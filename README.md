@@ -4,11 +4,22 @@
 
 A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux for K8s), ArgoCD, and Cilium, with integrated Cloudflare Tunnel for secure external access. Built for both home lab and production environments using **enterprise-grade GitOps patterns**.
 
+## 🎯 Choose Your Bootstrap Method
+
+This repository supports two bootstrap approaches:
+
+| Method | Best For | Guide |
+|--------|----------|-------|
+| **🚀 Omni + Sidero Proxmox** | Recommended for new deployments. Web UI cluster management, automated provisioning, simplified operations. | **[BOOTSTRAP.md](BOOTSTRAP.md)** ⭐ |
+| **⚙️ Manual Talos** | Advanced users who want full control over Talos configuration with `talhelper` and `talosctl`. | See [Quick Start](#-quick-start) below |
+
+> **Using Omni?** Skip the manual setup below and jump to **[BOOTSTRAP.md](BOOTSTRAP.md)** for the streamlined workflow.
+
 ## 📋 Table of Contents
 
 - [Prerequisites](#-prerequisites)
 - [Architecture](#-architecture)
-- [Quick Start](#-quick-start)
+- [Quick Start](#-quick-start) (Manual Talos Method)
   - [1. System Dependencies](#1-system-dependencies)
   - [2. Generate Talos Configs](#2-generate-talos-configs)
   - [3. Boot & Bootstrap Talos Nodes](#3-boot--bootstrap-talos-nodes)
@@ -61,7 +72,11 @@ graph TD;
 - **GPU Integration**: Full NVIDIA GPU support via Talos system extensions and GPU Operator
 - **Zero SSH**: All node management via Talosctl API
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Manual Talos Method)
+
+> **Note:** If you're using Omni + Sidero Proxmox Provider, see **[BOOTSTRAP.md](BOOTSTRAP.md)** instead.
+
+This section covers the traditional manual Talos bootstrap process using `talhelper` and `talosctl`.
 
 ### 1. System Dependencies
 ```bash
