@@ -24,7 +24,7 @@ Once your cluster is provisioned and running via Omni, follow these steps to ins
 
 ### Step 1: Install Cilium CNI
 
-Omni provisions Talos clusters without a CNI pre-installed. Install Cilium with Gateway API support:
+Omni provisions Talos clusters without a CNI pre-installed. Install Cilium manually to get the cluster functional:
 
 ```bash
 cilium install \
@@ -46,6 +46,8 @@ cilium install \
 - `gatewayAPI.*` - Enables Kubernetes Gateway API support for modern ingress
 - `cgroup.autoMount.enabled=false` - Required for Talos OS
 - `k8sServiceHost/Port` - Direct API server access
+
+> **Note:** After ArgoCD is deployed, it will take over Cilium management using **Sync Wave 0** to ensure it's always deployed first, before Longhorn and other components. This prevents race conditions.
 
 ### Step 2: Install Gateway API CRDs
 
@@ -151,7 +153,36 @@ kubectl apply -f infrastructure/controllers/argocd/root.yaml
 
 ## What Happens Next?
 
-ArgoCD now manages everything from Git:
+ArgoCD now manages everything from Git using **Sync Waves** to prevent race conditions:
+
+### Deployment Order (Sync Waves)
+
+ArgoCD deploys applications in a specific order to avoid race conditions and SSD thrashing:
+
+| Wave | Component | Purpose | Why This Order? |
+|------|-----------|---------|-----------------|
+| **0** | **Cilium** | CNI networking | Foundation - everything depends on networking |
+| **1** | **Longhorn** | Storage layer | Needs stable networking; other apps need storage |
+| **2** | **Infrastructure** | Core services (cert-manager, external-secrets, databases, etc.) | Depends on networking and storage being ready |
+| **3** | **Monitoring** | Prometheus, Grafana, alerts | Monitors the infrastructure |
+| **4** | **My-Apps** | User applications | Runs on top of everything else |
+
+**Why Sync Waves Matter:**
+- **Prevents race conditions** - Cilium won't be reinstalled while Longhorn is deploying
+- **Eliminates SSD thrashing** - Longhorn waits for Cilium to be fully healthy
+- **Ensures stability** - Each layer is healthy before the next begins
+- **Proper dependencies** - Apps that need PVCs deploy after Longhorn is ready
+
+**What You'll See:**
+1. **Wave 0**: Cilium deploys and becomes healthy
+2. **Wave 1**: Longhorn deploys after Cilium is ready
+3. **Wave 2**: Infrastructure components deploy in parallel
+4. **Wave 3**: Monitoring stack deploys
+5. **Wave 4**: Your applications deploy last
+
+### Automated GitOps Management
+
+Once sync waves complete:
 
 1. **ArgoCD Self-Management** - ArgoCD manages its own configuration and upgrades
 2. **ApplicationSet Discovery** - Scans repository for applications in:
