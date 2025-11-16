@@ -67,7 +67,7 @@ server:
         main:
           image:
             repository: ghcr.io/immich-app/immich-server
-            tag: v2.2.2  # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
+            tag: v2.2.3  # renovate: datasource=docker depName=ghcr.io/immich-app/immich-server
             pullPolicy: IfNotPresent
           resources:
             requests:
@@ -114,7 +114,7 @@ machine-learning:
         main:
           image:
             repository: ghcr.io/immich-app/immich-machine-learning
-            tag: v2.2.2  # renovate: datasource=docker depName=ghcr.io/immich-app/immich-machine-learning
+            tag: v2.2.3  # renovate: datasource=docker depName=ghcr.io/immich-app/immich-machine-learning
             pullPolicy: IfNotPresent
           env:
             TRANSFORMERS_CACHE: /cache
