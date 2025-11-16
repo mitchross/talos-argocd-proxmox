@@ -1,0 +1,163 @@
+# ==============================================================================
+# PROXMOX INFRASTRUCTURE PROVIDER CONFIGURATION
+# ==============================================================================
+# Copy this file to config.yaml and fill in your Proxmox details
+# DO NOT commit config.yaml to version control - it contains credentials!
+
+proxmox:
+  # Proxmox API endpoint
+  # Format: https://[proxmox-host]:[port]/api2/json
+  # Default port: 8006
+  url: "https://192.168.1.100:8006/api2/json"
+
+  # Skip SSL certificate verification
+  # Set to true for self-signed certificates (common for Proxmox)
+  # Set to false for production with valid certificates
+  insecureSkipVerify: true
+
+  # ==============================================================================
+  # AUTHENTICATION: Choose ONE method below
+  # ==============================================================================
+
+  # OPTION 1: API Token (RECOMMENDED for production)
+  # More secure - no password stored, can be revoked independently
+  # Format: username@realm!tokenid=secret
+  # Create in Proxmox: Datacenter → Permissions → API Tokens
+  apiToken: "user@pve!tokenid=your-token-secret-here"
+
+  # OPTION 2: Username/Password (easier for testing)
+  # Comment out apiToken above to use this method
+  # username: "root"
+  # password: "your-proxmox-password-here"
+  # realm: "pam"  # Common realms: pam (Linux users) or pve (Proxmox users)
+
+# ==============================================================================
+# MACHINE CLASS CONFIGURATION EXAMPLES
+# ==============================================================================
+# Machine classes define VM specifications and are created in Omni UI
+# These examples show common configurations and storage selection patterns
+
+# Example 1: Small Worker Node
+# ----------------------------
+# cpu: 4
+# memory: 8192  # 8GB in MB
+# disk: 100     # 100GB
+# storage: |
+#   storage.filter(s, s.type == "lvmthin" && s.enabled && s.active)[0].storage
+
+# Example 2: Large Worker Node with ZFS
+# --------------------------------------
+# cpu: 8
+# memory: 16384  # 16GB in MB
+# disk: 200      # 200GB
+# storage: |
+#   storage.filter(s, s.type == "zfspool" && s.enabled && s.active)[0].storage
+
+# Example 3: Control Plane Node
+# ------------------------------
+# cpu: 4
+# memory: 8192
+# disk: 50
+# storage: |
+#   storage.filter(s, s.type == "lvmthin" && s.enabled && s.active)[0].storage
+
+# Example 4: GPU Worker Node
+# --------------------------
+# cpu: 8
+# memory: 32768  # 32GB in MB
+# disk: 200
+# storage: |
+#   storage.filter(s, s.type == "zfspool" && s.enabled && s.active)[0].storage
+# Note: GPU passthrough must be configured manually in Proxmox
+
+# ==============================================================================
+# STORAGE SELECTION (CEL Expression Examples)
+# ==============================================================================
+# The provider uses CEL (Common Expression Language) to select storage
+# dynamically based on Proxmox storage pool characteristics
+
+# Select first available LVM-Thin storage:
+# storage.filter(s, s.type == "lvmthin" && s.enabled && s.active)[0].storage
+
+# Select specific storage by name:
+# storage.filter(s, s.storage == "local-lvm")[0].storage
+
+# Select ZFS pool:
+# storage.filter(s, s.type == "zfspool" && s.enabled && s.active)[0].storage
+
+# Select Ceph storage:
+# storage.filter(s, s.type == "rbd" && s.enabled && s.active)[0].storage
+
+# Select storage with most free space:
+# storage.filter(s, s.enabled && s.active).max(s, s.avail).storage
+
+# Select directory storage:
+# storage.filter(s, s.type == "dir" && s.enabled && s.active)[0].storage
+
+# Select NFS storage:
+# storage.filter(s, s.type == "nfs" && s.enabled && s.active)[0].storage
+
+# ==============================================================================
+# AVAILABLE STORAGE FIELDS
+# ==============================================================================
+# Use these fields in your CEL expressions:
+#
+# s.storage  - Storage name (string)
+# s.type     - Storage type (lvmthin, zfspool, dir, nfs, rbd, etc.)
+# s.enabled  - Storage is enabled (boolean)
+# s.active   - Storage is active (boolean)
+# s.avail    - Available space in bytes (integer)
+# s.total    - Total space in bytes (integer)
+# s.used     - Used space in bytes (integer)
+
+# ==============================================================================
+# PROXMOX USER PERMISSIONS (for dedicated user)
+# ==============================================================================
+# If not using root@pam, create a dedicated user with these permissions:
+#
+# - VM.Allocate
+# - VM.Config.Disk
+# - VM.Config.CPU
+# - VM.Config.Memory
+# - VM.Config.Network
+# - VM.Config.Options
+# - Datastore.AllocateSpace
+# - Datastore.Audit
+#
+# Create user in Proxmox:
+#   pveum user add omni@pve
+#   pveum passwd omni@pve
+#   pveum aclmod / -user omni@pve -role PVEVMAdmin
+#
+# Then update username above to: omni@pve
+
+# ==============================================================================
+# KNOWN LIMITATIONS
+# ==============================================================================
+# Current provider limitations (as of beta):
+#
+# - Single disk per VM only (multiple disk support is a potential feature)
+# - Basic networking (uses default Proxmox bridge)
+# - No automatic GPU passthrough configuration
+# - Limited advanced Proxmox features
+#
+# See: https://github.com/siderolabs/omni-infra-provider-proxmox/issues
+
+# ==============================================================================
+# TROUBLESHOOTING
+# ==============================================================================
+# If you encounter issues:
+#
+# 1. Check provider logs:
+#    docker compose logs -f omni-infra-provider-proxmox
+#
+# 2. Verify Proxmox API access:
+#    curl -k https://proxmox-host:8006/api2/json/version
+#
+# 3. Test credentials:
+#    pvesh get /version --username root@pam
+#
+# 4. Check storage pools:
+#    pvesh get /storage
+#
+# 5. Verify network connectivity between provider and Proxmox

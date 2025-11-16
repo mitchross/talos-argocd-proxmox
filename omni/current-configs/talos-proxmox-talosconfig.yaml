@@ -1,9 +1,0 @@
-context: omni-talos-proxmox
-contexts:
-    omni-talos-proxmox:
-        endpoints:
-            - https://omni.vanillax.me
-        auth:
-            siderov1:
-                identity: mitchross09@gmail.com
-        cluster: talos-proxmox

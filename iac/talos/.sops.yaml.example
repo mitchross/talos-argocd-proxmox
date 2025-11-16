@@ -1,8 +1,0 @@
-# SOPS Configuration Example
-# Copy this to .sops.yaml and replace with your actual age public key
-
----
-creation_rules:
-  - age: >-
-      age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-      

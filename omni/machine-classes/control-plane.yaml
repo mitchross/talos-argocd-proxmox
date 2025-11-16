@@ -1,0 +1,20 @@
+---
+# omnictl apply -f control-plane.yaml
+metadata:
+  namespace: default
+  type: MachineClasses.omni.sidero.dev
+  id: proxmox-control-plane
+spec:
+  matchlabels: []
+  autoprovision:
+    providerid: proxmox
+    kernelargs: []
+    metavalues: []
+    providerdata: |
+      cores: 4
+      sockets: 1
+      memory: 16000
+      disk_size: 60
+      network_bridge: vmbr0
+      storage_selector: name == "ssd512gb"
+      grpctunnel: 0
