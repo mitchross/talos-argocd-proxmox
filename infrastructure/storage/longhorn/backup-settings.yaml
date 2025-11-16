@@ -31,26 +31,30 @@ metadata:
   namespace: longhorn-system
 value: "true"
 ---
-# Backup compression method (update existing setting)
+# Backup compression method
+# OPTIMIZED: Using lz4 instead of gzip for faster compression with minimal size difference
+# lz4 is 2-3x faster than gzip, which matters during backup windows
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
   name: backup-compression-method
   namespace: longhorn-system
-value: "gzip" # Options: none, lz4, gzip
+value: "lz4" # Options: none, lz4, gzip
 ---
-# Backup concurrent limit (update existing setting)
+# Backup concurrent limit
+# OPTIMIZED: Increased from 2 to 3 to better utilize your 4-worker cluster
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
   name: backup-concurrent-limit
   namespace: longhorn-system
-value: "2"
+value: "3"
 ---
 # Volume backup restore concurrent limit
+# OPTIMIZED: Increased from 2 to 3 for faster restores
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
   name: concurrent-volume-backup-restore-per-node-limit
   namespace: longhorn-system
-value: "2"
+value: "3"
