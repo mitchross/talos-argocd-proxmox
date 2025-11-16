@@ -102,37 +102,68 @@ kubectl create secret generic 1passwordconnect \
 
 ### Step 4: Bootstrap ArgoCD
 
-Deploy ArgoCD using Kustomize with Helm integration:
+Deploy ArgoCD and enable GitOps self-management.
+
+**Option A: Use the Bootstrap Script (Recommended)**
 
 ```bash
-# Apply ArgoCD components and CRDs
-kustomize build infrastructure/controllers/argocd --enable-helm | kubectl apply -f -
+# Run the bootstrap script
+./scripts/bootstrap-argocd.sh
 ```
 
-**Note:** You may see an error about `no matches for kind Application` - this is expected and will be resolved in the next step.
+This script:
+- Creates the ArgoCD namespace
+- Installs ArgoCD using Helm (works around kustomize/helm compatibility issues)
+- Waits for CRDs and server to be ready
+- Applies the root Application to enable self-management
+- Shows you how to access the UI and get the admin password
 
-**Wait for ArgoCD to be ready:**
+**Option B: Manual Steps**
+
+If you prefer to run commands manually:
+
 ```bash
-# Wait for CRDs to be established
-echo "Waiting for ArgoCD CRDs..."
+# 1. Create namespace
+kubectl apply -f infrastructure/controllers/argocd/ns.yaml
+
+# 2. Install ArgoCD with Helm
+helm upgrade --install argocd argo-cd \
+  --repo https://argoproj.github.io/argo-helm \
+  --version 9.1.3 \
+  --namespace argocd \
+  --values infrastructure/controllers/argocd/values.yaml \
+  --wait \
+  --timeout 10m
+
+# 3. Wait for CRDs to be established
 kubectl wait --for condition=established --timeout=60s crd/applications.argoproj.io
 
-# Wait for ArgoCD server to be available
-echo "Waiting for ArgoCD server..."
+# 4. Wait for ArgoCD server to be available
 kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
-```
 
-### Step 5: Deploy Root Application
+# 5. Apply HTTPRoute (if using Gateway API ingress)
+kubectl apply -f infrastructure/controllers/argocd/http-route.yaml
 
-Apply the root Application to start the GitOps sync loop:
-
-```bash
+# 6. Apply root Application to enable self-management
 kubectl apply -f infrastructure/controllers/argocd/root.yaml
 ```
 
-**Note:** You might need to run this command twice if ArgoCD hasn't fully initialized.
+### Step 5: Verify ArgoCD Deployment
 
-### Step 6: Refresh ArgoCD Applications
+Once ArgoCD is deployed, verify it's working:
+
+```bash
+# Check ArgoCD pods are running
+kubectl get pods -n argocd
+
+# Check applications are being created
+kubectl get applications -n argocd
+
+# View sync waves in action
+kubectl get applications -n argocd -o custom-columns=NAME:.metadata.name,WAVE:.metadata.annotations.argocd\\.argoproj\\.io/sync-wave,STATUS:.status.sync.status
+```
+
+### Step 6: Access ArgoCD UI (Optional)
 
 1. **Port-forward to ArgoCD UI:**
    ```bash
