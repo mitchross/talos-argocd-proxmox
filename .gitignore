@@ -70,6 +70,19 @@ id_ed25519*
 *.env # WARNING: Can ignore non-secret .env files too!
 infra/controllers/external-secrets/external-secrets-token.env
 
+# GPG keys
+*.asc
+
+# Sidero Omni / Proxmox provider (generated secrets & runtime configs)
+omni/omni/.env
+omni/proxmox-provider/.env
+omni/proxmox-provider/config.yaml
+
+# Examples explicitly tracked (override above ignores)
+!omni/omni/omni.env.example
+!omni/proxmox-provider/.env.example
+!omni/proxmox-provider/config.yaml.example
+
 # K8s / Infra Specific
 /infrastructure/controllers/argocd/charts # Downloaded charts
 /omni/apps/kube-system/cilium/charts # Downloaded charts (if still relevant)

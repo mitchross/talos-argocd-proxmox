@@ -1,0 +1,28 @@
+---
+# omnictl apply -f gpu-worker.yaml
+metadata:
+  namespace: default
+  type: MachineClasses.omni.sidero.dev
+  id: proxmox-gpu-worker
+spec:
+  matchlabels: []
+  autoprovision:
+    providerid: proxmox
+    kernelargs: []
+    metavalues: []
+    providerdata: |
+      cores: 8
+      sockets: 1
+      memory: 32768
+      disk_size: 400
+      network_bridge: vmbr0
+      storage_selector: name == "ssdpool"
+      grpctunnel: 0
+
+# Note: GPU passthrough must be configured manually in Proxmox after VM creation
+# The provider creates the VM, then you need to:
+# 1. Shut down the VM
+# 2. Add GPU via Proxmox UI: Hardware → Add → PCI Device
+# 3. Select your NVIDIA GPU
+# 4. Start the VM
+# 5. Apply Talos GPU extensions (see talos-configs/gpu-worker-patch.yaml)

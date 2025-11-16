@@ -1,0 +1,20 @@
+---
+# omnictl apply -f worker.yaml
+metadata:
+  namespace: default
+  type: MachineClasses.omni.sidero.dev
+  id: proxmox-worker
+spec:
+  matchlabels: []
+  autoprovision:
+    providerid: proxmox
+    kernelargs: []
+    metavalues: []
+    providerdata: |
+      cores: 8
+      sockets: 1
+      memory: 32000
+      disk_size: 350
+      network_bridge: vmbr0
+      storage_selector: name == "ssdpool"
+      grpctunnel: 0

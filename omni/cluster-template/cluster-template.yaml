@@ -1,0 +1,90 @@
+# omnictl cluster template sync -v -f cluster-template-working.yaml
+---
+kind: Cluster
+name: talos-prod-cluster
+labels:
+  cluster-id: "1"
+kubernetes:
+  version: v1.34.1
+talos:
+  version: v1.11.5
+patches:
+  - name: disable-default-cni
+    inline:
+      cluster:
+        network:
+          cni:
+            name: none
+        proxy:
+          disabled: true
+---
+kind: ControlPlane
+machineClass:
+  name: proxmox-control-plane
+  size: 3
+systemExtensions:
+  - siderolabs/iscsi-tools
+  - siderolabs/nfsd
+  #- siderolabs/qemu-guest-agent
+  - siderolabs/util-linux-tools
+---
+kind: Workers
+name: workers
+machineClass:
+  name: proxmox-worker
+  size: 3
+systemExtensions:
+  - siderolabs/iscsi-tools
+  - siderolabs/nfsd
+  #- siderolabs/qemu-guest-agent 
+  - siderolabs/util-linux-tools
+patches:
+  - name: worker-labels
+    inline:
+      machine:
+        nodeLabels:
+          node-role.kubernetes.io/worker: ""
+  - name: longhorn-storage
+    inline:
+      machine:
+        kubelet:
+          extraMounts:
+            - destination: /var/lib/longhorn
+              type: bind
+              source: /var/local/longhorn
+              options:
+                - bind
+                - rshared
+                - rw
+---
+kind: Workers
+name: gpu-workers
+machineClass:
+  name: proxmox-gpu-worker
+  size: 1
+systemExtensions:
+  - siderolabs/iscsi-tools
+  - siderolabs/nfsd
+  #- siderolabs/qemu-guest-agent
+  - siderolabs/util-linux-tools
+  - siderolabs/nonfree-kmod-nvidia
+  - siderolabs/nvidia-container-toolkit
+patches:
+  - name: worker-labels
+    inline:
+      machine:
+        nodeLabels:
+          node-role.kubernetes.io/worker: ""
+  - file: patches/gpu-worker.yaml
+  - name: longhorn-storage
+    inline:
+      machine:
+        kubelet:
+          extraMounts:
+            - destination: /var/lib/longhorn
+              type: bind
+              source: /var/local/longhorn
+              options:
+                - bind
+                - rshared
+                - rw
