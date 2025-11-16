@@ -15,7 +15,8 @@ defaultSettings:
   # Note: Use plain boolean for fastReplicaRebuildEnabled, not JSON format
   fastReplicaRebuildEnabled: "true"
   engineReplicaTimeout: '{"v1":"8"}'
-  guaranteedInstanceManagerCPU: "12"
+  # Reduced from 12 to 8 for homelab - still provides good performance with less CPU reservation
+  guaranteedInstanceManagerCPU: "8"
 # -- Disables the pre-upgrade check job. This is recommended for GitOps tools
 # like ArgoCD to prevent sync failures.
 preUpgradeChecker:
@@ -24,7 +25,13 @@ persistence:
   # -- Specifies the default Longhorn StorageClass.
   defaultClass: true
   # -- Default number of replicas for volumes.
-  defaultClassReplicaCount: 3
+  # OPTIMIZED: Reduced from 3 to 2 for homelab
+  # - Still provides redundancy (can lose 1 node)
+  # - 50% less IO overhead (2 writes instead of 3)
+  # - 50% less network traffic between nodes
+  # - 33% more usable storage (50% vs 33% efficiency)
+  # - Should reduce worker IO pressure from 37-42% to ~25-30%
+  defaultClassReplicaCount: 2
   # -- Default filesystem type.
   defaultFsType: ext4
   # -- Reclaim policy for the default storage class.
