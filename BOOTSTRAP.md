@@ -193,20 +193,24 @@ ArgoCD deploys applications in a specific order to avoid race conditions and SSD
 | Wave | Component | Purpose | Why This Order? |
 |------|-----------|---------|-----------------|
 | **0** | **Cilium** | CNI networking | Foundation - everything depends on networking |
-| **1** | **1Password Connect, External Secrets, Longhorn, Garage** | Secret management and storage | 1Password → External Secrets → Longhorn (needs secrets for backups) |
-| **2** | **Infrastructure** | Core services (cert-manager, databases, GPU operators, etc.) | Depends on networking, secrets, and storage being ready |
+| **0** | **1Password Connect** | Secret backend | Required by External Secrets Operator |
+| **0** | **External Secrets Operator** | Secret management CRDs | Longhorn needs ExternalSecret CRD for backup credentials |
+| **1** | **Longhorn** | Storage layer | Needs networking + secret CRDs; other apps need storage |
+| **1** | **Garage** | S3-compatible object storage | Needs storage layer |
+| **2** | **Infrastructure** | Core services (cert-manager, GPU operators, databases, etc.) | Depends on networking and storage being ready |
 | **3** | **Monitoring** | Prometheus, Grafana, alerts | Monitors the infrastructure |
 | **4** | **My-Apps** | User applications | Runs on top of everything else |
 
 **Why Sync Waves Matter:**
 - **Prevents race conditions** - Cilium won't be reinstalled while Longhorn is deploying
-- **Eliminates SSD thrashing** - Longhorn waits for Cilium to be fully healthy
+- **Eliminates SSD thrashing** - Longhorn waits for Cilium + secrets to be fully healthy
 - **Ensures stability** - Each layer is healthy before the next begins
 - **Proper dependencies** - Apps that need PVCs deploy after Longhorn is ready
+- **Secret management** - ExternalSecret CRDs exist before resources try to use them
 
 **What You'll See:**
-1. **Wave 0**: Cilium deploys and becomes healthy
-2. **Wave 1**: 1Password Connect → External Secrets Operator → Longhorn and Garage deploy in parallel
+1. **Wave 0**: Cilium, 1Password Connect, and External Secrets Operator deploy in parallel
+2. **Wave 1**: Longhorn and Garage deploy after networking + secrets are ready
 3. **Wave 2**: Infrastructure components deploy in parallel
 4. **Wave 3**: Monitoring stack deploys
 5. **Wave 4**: Your applications deploy last
