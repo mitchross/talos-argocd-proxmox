@@ -12,6 +12,17 @@ spec:
       revision: main
       directories:
       - path: infrastructure/controllers/*
+        exclude: true  # Exclude all controllers to avoid duplicates
+      - path: infrastructure/controllers/1passwordconnect
+      - path: infrastructure/controllers/cert-manager
+      - path: infrastructure/controllers/external-secrets
+      - path: infrastructure/controllers/gpu-priority-classes
+      - path: infrastructure/controllers/intel-device-plugins
+      - path: infrastructure/controllers/node-feature-discovery
+      - path: infrastructure/controllers/nvidia-device-plugin
+      - path: infrastructure/controllers/nvidia-gpu-operator
+      # NOTE: infrastructure/controllers/argocd is intentionally excluded
+      # ArgoCD manages itself via the bootstrap Helm installation
       - path: infrastructure/database/*/*
       - path: infrastructure/networking/*
         exclude: true  # Exclude all networking to avoid duplicates
