@@ -1,12 +1,14 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - projects.yaml
-  # Critical applications with specific sync waves to prevent race conditions
-  - cilium-app.yaml        # Wave 0 - Networking foundation
-  - longhorn-app.yaml      # Wave 1 - Storage foundation
-  # ApplicationSets for automatic discovery
-  - infrastructure-appset.yaml  # Wave 2
-  - monitoring-appset.yaml      # Wave 3
-  - my-apps-appset.yaml         # Wave 4
-  - garage.yaml
+- projects.yaml
+# Critical applications with specific sync waves to prevent race conditions
+- cilium-app.yaml # Wave 0 - Networking foundation
+- 1passwordconnect.yaml # Wave 1 - Secret backend (needed by External Secrets)
+- external-secrets.yaml # Wave 1 - Secret management (needed by Longhorn)
+- longhorn-app.yaml # Wave 1 - Storage foundation
+# ApplicationSets for automatic discovery
+- infrastructure-appset.yaml # Wave 2
+- monitoring-appset.yaml # Wave 3
+- my-apps-appset.yaml # Wave 4
+- garage.yaml

@@ -193,8 +193,8 @@ ArgoCD deploys applications in a specific order to avoid race conditions and SSD
 | Wave | Component | Purpose | Why This Order? |
 |------|-----------|---------|-----------------|
 | **0** | **Cilium** | CNI networking | Foundation - everything depends on networking |
-| **1** | **Longhorn** | Storage layer | Needs stable networking; other apps need storage |
-| **2** | **Infrastructure** | Core services (cert-manager, external-secrets, databases, etc.) | Depends on networking and storage being ready |
+| **1** | **1Password Connect, External Secrets, Longhorn, Garage** | Secret management and storage | 1Password → External Secrets → Longhorn (needs secrets for backups) |
+| **2** | **Infrastructure** | Core services (cert-manager, databases, GPU operators, etc.) | Depends on networking, secrets, and storage being ready |
 | **3** | **Monitoring** | Prometheus, Grafana, alerts | Monitors the infrastructure |
 | **4** | **My-Apps** | User applications | Runs on top of everything else |
 
@@ -206,7 +206,7 @@ ArgoCD deploys applications in a specific order to avoid race conditions and SSD
 
 **What You'll See:**
 1. **Wave 0**: Cilium deploys and becomes healthy
-2. **Wave 1**: Longhorn deploys after Cilium is ready
+2. **Wave 1**: 1Password Connect → External Secrets Operator → Longhorn and Garage deploy in parallel
 3. **Wave 2**: Infrastructure components deploy in parallel
 4. **Wave 3**: Monitoring stack deploys
 5. **Wave 4**: Your applications deploy last
