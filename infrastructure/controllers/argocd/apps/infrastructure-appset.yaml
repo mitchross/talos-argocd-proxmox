@@ -11,26 +11,32 @@ spec:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
       revision: main
       directories:
-      - path: infrastructure/controllers/*
+      # Controllers (argocd managed via Helm, cilium has its own app)
+      - path: infrastructure/controllers/1passwordconnect
+      - path: infrastructure/controllers/cert-manager
+      - path: infrastructure/controllers/external-secrets
+      - path: infrastructure/controllers/gpu-priority-classes
+      - path: infrastructure/controllers/intel-device-plugins
+      - path: infrastructure/controllers/node-feature-discovery
+      - path: infrastructure/controllers/nvidia-device-plugin
+      - path: infrastructure/controllers/nvidia-gpu-operator
+      # Databases
       - path: infrastructure/database/*/*
-      - path: infrastructure/networking/*
-        exclude: true  # Exclude all networking to avoid duplicates
+      # Networking (cilium has its own app)
       - path: infrastructure/networking/cloudflared
       - path: infrastructure/networking/coredns
       - path: infrastructure/networking/gateway
-      - path: infrastructure/storage/*
-        exclude: true  # Exclude all storage to avoid duplicates
+      # Storage (longhorn has its own app)
       - path: infrastructure/storage/container-registry
       - path: infrastructure/storage/csi-driver-nfs
       - path: infrastructure/storage/csi-driver-smb
       - path: infrastructure/storage/local-storage
       - path: infrastructure/storage/openebs
+      # CRDs
       - path: infrastructure/crds
   template:
     metadata:
       name: '{{path.basename}}'
-      annotations:
-        argocd.argoproj.io/sync-wave: "2"
       labels:
         app.kubernetes.io/part-of: infrastructure
     spec:

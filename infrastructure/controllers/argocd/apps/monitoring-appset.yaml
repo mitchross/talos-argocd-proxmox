@@ -15,8 +15,6 @@ spec:
   template:
     metadata:
       name: 'monitoring-{{path.basename}}'
-      annotations:
-        argocd.argoproj.io/sync-wave: "3"
     spec:
       project: monitoring
       revisionHistoryLimit: 3
