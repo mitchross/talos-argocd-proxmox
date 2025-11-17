@@ -3,8 +3,11 @@ kind: Kustomization
 resources:
   - projects.yaml
   # Critical applications with specific sync waves to prevent race conditions
-  - cilium-app.yaml        # Wave 0 - Networking foundation
-  - longhorn-app.yaml      # Wave 1 - Storage foundation
+  # Wave 0: Foundation components (networking + secrets infrastructure)
+  - cilium-app.yaml            # Wave 0 - Networking foundation
+  - 1passwordconnect-app.yaml  # Wave 0 - Secret backend (required by External Secrets)
+  - external-secrets-app.yaml  # Wave 0 - External Secrets CRDs (required by Longhorn)
+  - longhorn-app.yaml          # Wave 1 - Storage foundation
   # ApplicationSets for automatic discovery
   - infrastructure-appset.yaml  # Wave 2
   - monitoring-appset.yaml      # Wave 3

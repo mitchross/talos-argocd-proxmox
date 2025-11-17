@@ -11,10 +11,8 @@ spec:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
       revision: main
       directories:
-      # Controllers (argocd managed via Helm, cilium has its own app)
-      - path: infrastructure/controllers/1passwordconnect
+      # Controllers (argocd managed via Helm, cilium/external-secrets/1password have their own apps)
       - path: infrastructure/controllers/cert-manager
-      - path: infrastructure/controllers/external-secrets
       - path: infrastructure/controllers/gpu-priority-classes
       - path: infrastructure/controllers/intel-device-plugins
       - path: infrastructure/controllers/node-feature-discovery
