@@ -3,7 +3,7 @@ kind: Kustomization
 namespace: longhorn-system
 resources:
   - namespace.yaml
-  - httproute.yaml
+  #- httproute.yaml
   - backup-settings.yaml
   - recurring-jobs.yaml
   - externalsecret.yaml
