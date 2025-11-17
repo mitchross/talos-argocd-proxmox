@@ -3,16 +3,13 @@ kind: ApplicationSet
 metadata:
   name: infrastructure
   namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
 spec:
   generators:
   - git:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
       revision: main
       directories:
-      - path: infrastructure/controllers/*
-        exclude: true  # Exclude all controllers to avoid duplicates
+      # Controllers (argocd managed via Helm, cilium has its own app)
       - path: infrastructure/controllers/1passwordconnect
       - path: infrastructure/controllers/cert-manager
       - path: infrastructure/controllers/external-secrets
@@ -21,27 +18,23 @@ spec:
       - path: infrastructure/controllers/node-feature-discovery
       - path: infrastructure/controllers/nvidia-device-plugin
       - path: infrastructure/controllers/nvidia-gpu-operator
-      # NOTE: infrastructure/controllers/argocd is intentionally excluded
-      # ArgoCD manages itself via the bootstrap Helm installation
+      # Databases
       - path: infrastructure/database/*/*
-      - path: infrastructure/networking/*
-        exclude: true  # Exclude all networking to avoid duplicates
+      # Networking (cilium has its own app)
       - path: infrastructure/networking/cloudflared
       - path: infrastructure/networking/coredns
       - path: infrastructure/networking/gateway
-      - path: infrastructure/storage/*
-        exclude: true  # Exclude all storage to avoid duplicates
+      # Storage (longhorn has its own app)
       - path: infrastructure/storage/container-registry
       - path: infrastructure/storage/csi-driver-nfs
       - path: infrastructure/storage/csi-driver-smb
       - path: infrastructure/storage/local-storage
       - path: infrastructure/storage/openebs
+      # CRDs
       - path: infrastructure/crds
   template:
     metadata:
       name: '{{path.basename}}'
-      annotations:
-        argocd.argoproj.io/sync-wave: "2"
       labels:
         app.kubernetes.io/part-of: infrastructure
     spec:

@@ -19,9 +19,10 @@ spec:
     server: https://kubernetes.default.svc
     namespace: kube-system
   syncPolicy:
-    # NOTE: Auto-sync disabled to respect sync waves
-    # Cilium will sync via root application during bootstrap
-    # After initial deployment, you can manually enable automated sync
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
     syncOptions:
     - CreateNamespace=true
     - ServerSideApply=true
