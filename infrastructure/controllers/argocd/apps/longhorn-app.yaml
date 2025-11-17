@@ -19,10 +19,9 @@ spec:
     server: https://kubernetes.default.svc
     namespace: longhorn-system
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-      allowEmpty: false
+    # NOTE: Auto-sync disabled to respect sync waves
+    # Longhorn will sync via root application after Cilium (wave 0) is healthy
+    # After initial deployment, you can manually enable automated sync
     syncOptions:
     - CreateNamespace=true
     - ServerSideApply=true
