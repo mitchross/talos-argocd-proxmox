@@ -27,7 +27,6 @@ spec:
     - CreateNamespace=true
     - ServerSideApply=true
     - RespectIgnoreDifferences=true
-    - SkipDryRunOnMissingResource=true
     retry:
       limit: 10
       backoff:
@@ -47,5 +46,7 @@ spec:
     - /data
   - group: gateway.networking.k8s.io
     kind: HTTPRoute
-    jqPathExpressions:
-    - .status
+    jsonPointers:
+    - /spec/rules/0/backendRefs/0/group
+    - /spec/rules/0/backendRefs/0/kind
+    - /spec/rules/0/backendRefs/0/weight
