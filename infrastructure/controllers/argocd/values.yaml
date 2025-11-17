@@ -21,6 +21,12 @@ configs:
       - '.spec.parentRefs[]? | select(.group == null or .kind == null)'
       jsonPointers:
       - /spec/parentRefs
+    # Custom health check for HTTPRoute - consider healthy even if parent Gateway doesn't exist yet
+    resource.customizations.health.gateway.networking.k8s.io_HTTPRoute: |
+      hs = {}
+      hs.status = "Healthy"
+      hs.message = "HTTPRoute is synced"
+      return hs
     # Enable Application health check for app-of-apps sync waves
     # This was removed in ArgoCD 1.8 but is needed for sync waves to work properly
     resource.customizations.health.argoproj.io_Application: |

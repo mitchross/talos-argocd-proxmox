@@ -6,7 +6,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "2"
   finalizers:
-    - resources-finalizer.argocd.argoproj.io
+  - resources-finalizer.argocd.argoproj.io
 spec:
   project: infrastructure
   source:
@@ -15,7 +15,7 @@ spec:
     path: script/helm/garage
     helm:
       valueFiles:
-        - values.yaml
+      - values.yaml
       releaseName: garage
   destination:
     server: https://kubernetes.default.svc
@@ -25,11 +25,11 @@ spec:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=true
-      - RespectIgnoreDifferences=true
+    - CreateNamespace=true
+    - RespectIgnoreDifferences=true
   ignoreDifferences:
-    - group: ""
-      kind: Secret
-      name: garage
-      jsonPointers:
-        - /data
+  - group: ""
+    kind: Secret
+    name: garage
+    jsonPointers:
+    - /data
