@@ -139,10 +139,10 @@ grafana:
   resources:
     requests:
       cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 500m
       memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
   # Security context
   securityContext:
     runAsNonRoot: true
@@ -234,22 +234,19 @@ kubelet:
   enabled: true
   serviceMonitor:
     interval: 30s
+# Talos hides these bind addresses, so we disable scraping to avoid target down alerts
 kubeApiServer:
   enabled: true
   serviceMonitor:
     interval: 30s
 kubeControllerManager:
-  enabled: true
-  serviceMonitor:
-    interval: 30s
+  enabled: false
 kubeScheduler:
-  enabled: true
-  serviceMonitor:
-    interval: 30s
+  enabled: false
 kubeEtcd:
-  enabled: true
-  serviceMonitor:
-    interval: 30s
+  enabled: false
+kubeProxy:
+  enabled: false
 coreDns:
   enabled: true
   serviceMonitor:
