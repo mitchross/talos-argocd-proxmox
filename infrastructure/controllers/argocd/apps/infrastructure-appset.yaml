@@ -60,6 +60,10 @@ spec:
         - /spec/rules/0/backendRefs/0/group
         - /spec/rules/0/backendRefs/0/kind
         - /spec/rules/0/backendRefs/0/weight
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        jsonPointers:
+        - /status
       retry:
         limit: 5
         backoff:
