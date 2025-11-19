@@ -72,6 +72,18 @@ graph TD;
 - **GPU Integration**: Full NVIDIA GPU support via Talos system extensions and GPU Operator
 - **Zero SSH**: All node management via Talosctl API
 
+### 🌊 Sync Wave Architecture
+
+The cluster uses **ArgoCD Sync Waves** to strictly order deployments, preventing "chicken-and-egg" dependency issues:
+
+1.  **Wave 0 (Foundation)**: Networking (Cilium) & Secrets (1Password/External Secrets)
+2.  **Wave 1 (Storage)**: Persistent Storage (Longhorn) & Object Storage (Garage)
+3.  **Wave 2 (System)**: Core Infrastructure (Cert-Manager, Databases, GPU)
+4.  **Wave 3 (Monitoring)**: Observability Stack (Prometheus, Grafana)
+5.  **Wave 4 (Apps)**: User Workloads
+
+*See [docs/argocd.md](docs/argocd.md) for the deep dive on health checks and dependency management.*
+
 ## 🚀 Quick Start (Manual Talos Method)
 
 > **Note:** If you're using Omni + Sidero Proxmox Provider, see **[BOOTSTRAP.md](BOOTSTRAP.md)** instead.
