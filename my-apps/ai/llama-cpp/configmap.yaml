@@ -324,7 +324,7 @@ data:
       kimi-k2-thinking-q3ks-128k:
         cmd: >-
           /app/llama-server
-          -m /models/moonshotai_Kimi-K2-Thinking-Q3_K_S.gguf
+          -m /models/moonshotai_Kimi-K2-Thinking-Q3_K_S-00001-of-00010.gguf
           -c 131072
           -b 4096
           -ub 4096
