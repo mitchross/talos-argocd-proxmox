@@ -4,6 +4,11 @@ kind: CiliumL2AnnouncementPolicy
 metadata:
   name: l2-policy
   namespace: kube-system
+  annotations:
+    # Apply AFTER Cilium core is running to prevent announcement disruption
+    argocd.argoproj.io/sync-wave: "1"
+    # Prevent unnecessary syncs that disrupt L2 announcements
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
 spec:
   # CRITICAL: Enable L2 announcements for LoadBalancer IPs
   loadBalancerIPs: true
