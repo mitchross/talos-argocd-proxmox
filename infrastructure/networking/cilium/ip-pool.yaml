@@ -4,6 +4,11 @@ kind: CiliumLoadBalancerIPPool
 metadata:
   name: first-pool
   namespace: kube-system
+  annotations:
+    # Apply AFTER Cilium core is running to prevent IP pool disruption
+    argocd.argoproj.io/sync-wave: "1"
+    # Prevent unnecessary syncs that disrupt LoadBalancer IPs
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
 spec:
   blocks:
     - cidr: "192.168.10.32/27"
