@@ -143,10 +143,11 @@ data:
           -b 4096
           -ub 4096
           -ngl 99
+          -ot .*ffn_.*exps.*=CPU
           --host 0.0.0.0
           --port ${PORT}
-          --threads 56
-          --threads-batch 56
+          --threads 24
+          --threads-batch 12
           --flash-attn on
           --cache-type-k q4_0
           --cache-type-v q4_0
@@ -173,10 +174,11 @@ data:
           -b 4096
           -ub 4096
           -ngl 99
+          -ot .*ffn_.*exps.*=CPU
           --host 0.0.0.0
           --port ${PORT}
-          --threads 56
-          --threads-batch 56
+          --threads 24
+          --threads-batch 12
           --flash-attn on
           --cache-type-k q4_0
           --cache-type-v q4_0
@@ -203,10 +205,11 @@ data:
           -b 4096
           -ub 4096
           -ngl 99
+          -ot .*ffn_.*exps.*=CPU
           --host 0.0.0.0
           --port ${PORT}
-          --threads 56
-          --threads-batch 56
+          --threads 24
+          --threads-batch 12
           --flash-attn on
           --cache-type-k q4_0
           --cache-type-v q4_0
@@ -233,10 +236,11 @@ data:
           -b 4096
           -ub 4096
           -ngl 99
+          -ot .*ffn_.*exps.*=CPU
           --host 0.0.0.0
           --port ${PORT}
-          --threads 56
-          --threads-batch 56
+          --threads 24
+          --threads-batch 12
           --flash-attn on
           --cache-type-k q4_0
           --cache-type-v q4_0
@@ -263,10 +267,11 @@ data:
           -b 4096
           -ub 4096
           -ngl 99
+          -ot .*ffn_.*exps.*=CPU
           --host 0.0.0.0
           --port ${PORT}
-          --threads 56
-          --threads-batch 56
+          --threads 24
+          --threads-batch 12
           --flash-attn on
           --cache-type-k q4_0
           --cache-type-v q4_0
@@ -293,10 +298,11 @@ data:
           -b 4096
           -ub 4096
           -ngl 99
+          -ot .*ffn_.*exps.*=CPU
           --host 0.0.0.0
           --port ${PORT}
-          --threads 56
-          --threads-batch 56
+          --threads 24
+          --threads-batch 12
           --flash-attn on
           --cache-type-k q4_0
           --cache-type-v q4_0
@@ -323,10 +329,11 @@ data:
           -b 4096
           -ub 4096
           -ngl 99
+          -ot .*ffn_.*exps.*=CPU
           --host 0.0.0.0
           --port ${PORT}
-          --threads 56
-          --threads-batch 56
+          --threads 24
+          --threads-batch 12
           --flash-attn on
           --cache-type-k q4_0
           --cache-type-v q4_0
