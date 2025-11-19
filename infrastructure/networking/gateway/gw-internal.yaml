@@ -23,6 +23,7 @@ spec:
       port: 443
       hostname: "*.vanillax.me"
       tls:
+        mode: Terminate
         certificateRefs:
           - name: cert-vanillax
             kind: Secret
@@ -37,3 +38,6 @@ spec:
     - name: postgres
       protocol: TCP
       port: 5432
+      allowedRoutes:
+        namespaces:
+          from: Same
