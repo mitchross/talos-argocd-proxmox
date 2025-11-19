@@ -4,7 +4,7 @@ tempo:
       backend: s3
       s3:
         bucket: tempo-bucket
-        endpoint: minio.loki-stack.svc:9000
+        endpoint: loki-minio.loki-stack.svc:9000
         access_key: minio
         secret_key: minio123
         insecure: true
