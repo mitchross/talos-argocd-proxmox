@@ -54,11 +54,13 @@ cilium install \
 Install both standard and experimental Gateway API resources:
 
 ```bash
-# Apply experimental features with server-side apply
-kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
 
 # Apply standard Gateway API CRDs
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
+
+# Apply experimental features with server-side apply
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
+
 ```
 
 **Verify Cilium is running:**

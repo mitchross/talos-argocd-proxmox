@@ -38,13 +38,48 @@ loki:
 deploymentMode: SimpleScalable
 backend:
   replicas: 2
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
 read:
   replicas: 2
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
 write:
-  replicas: 3 # To ensure data durability with replication
+  replicas: 3
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
 # Enable minio for storage
 minio:
   enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
 gateway:
   service:
     type: LoadBalancer
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
