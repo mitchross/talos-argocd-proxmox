@@ -66,6 +66,14 @@ write:
 # Enable minio for storage
 minio:
   enabled: true
+  buckets:
+    - name: tempo-bucket
+      policy: none
+      purge: false
+  persistence:
+    enabled: true
+    storageClass: longhorn
+    size: 50Gi
   resources:
     requests:
       cpu: 100m
