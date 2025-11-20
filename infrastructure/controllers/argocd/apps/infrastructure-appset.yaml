@@ -53,6 +53,12 @@ spec:
         - ApplyOutOfSyncOnly=true
         - Replace=false
         - IgnoreMissingTemplate=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
       ignoreDifferences:
       - group: gateway.networking.k8s.io
         kind: HTTPRoute
@@ -64,9 +70,3 @@ spec:
         kind: Gateway
         jsonPointers:
         - /status
-      retry:
-        limit: 5
-        backoff:
-          duration: 5s
-          factor: 2
-          maxDuration: 3m
