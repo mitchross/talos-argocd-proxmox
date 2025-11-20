@@ -71,3 +71,13 @@ spec:
         kind: Gateway
         jsonPointers:
         - /status
+      - group: postgresql.cnpg.io
+        kind: Cluster
+        jsonPointers:
+        - /status
+        - /metadata/generation
+      - group: external-secrets.io
+        kind: ExternalSecret
+        jsonPointers:
+        - /status
+
