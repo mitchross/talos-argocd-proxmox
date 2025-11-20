@@ -50,6 +50,11 @@ spec:
         - /spec/rules/0/backendRefs/0/group
         - /spec/rules/0/backendRefs/0/kind
         - /spec/rules/0/backendRefs/0/weight
+      - group: external-secrets.io
+        kind: ExternalSecret
+        jsonPointers:
+        - /status
+
       info:
       - name: 'Description'
         value: 'Application: {{path.basename}}'
