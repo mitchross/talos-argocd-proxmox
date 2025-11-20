@@ -11,21 +11,22 @@ spec:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
       revision: main
       directories:
-      - path: infrastructure/controllers/*
-      - path: infrastructure/networking/*
-      - path: infrastructure/storage/*
+      - path: infrastructure/controllers/cert-manager
+      - path: infrastructure/controllers/gpu-priority-classes
+      - path: infrastructure/controllers/intel-device-plugins
+      - path: infrastructure/controllers/node-feature-discovery
+      - path: infrastructure/controllers/nvidia-device-plugin
+      - path: infrastructure/controllers/nvidia-gpu-operator
+      - path: infrastructure/networking/cloudflared
+      - path: infrastructure/networking/coredns
+      - path: infrastructure/networking/gateway
+      - path: infrastructure/storage/container-registry
+      - path: infrastructure/storage/csi-driver-nfs
+      - path: infrastructure/storage/csi-driver-smb
+      - path: infrastructure/storage/local-storage
+      - path: infrastructure/storage/openebs
       - path: infrastructure/database/*/*
       - path: infrastructure/crds
-
-      # EXCLUDES: These are managed by standalone Apps for Sync Wave control (Wave 0/1)
-      # or are the ArgoCD controller itself.
-      exclude:
-      - path: infrastructure/controllers/argocd
-      - path: infrastructure/controllers/1passwordconnect
-      - path: infrastructure/controllers/external-secrets
-      - path: infrastructure/networking/cilium
-      - path: infrastructure/storage/longhorn
-      - path: infrastructure/storage/garage
   template:
     metadata:
       name: '{{path.basename}}'
