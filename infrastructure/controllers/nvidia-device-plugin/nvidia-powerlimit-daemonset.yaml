@@ -42,8 +42,8 @@ spec:
             GPU_COUNT=$(nvidia-smi --query-gpu=count --format=csv,noheader | head -n1)
             echo "Found $GPU_COUNT GPUs"
             for i in $(seq 0 $((GPU_COUNT-1))); do
-              echo "Setting GPU $i power limit to 350W"
-              nvidia-smi -i $i -pl 350 || echo "Failed to set power limit for GPU $i"
+              echo "Setting GPU $i power limit to 275W"
+              nvidia-smi -i $i -pl 275 || echo "Failed to set power limit for GPU $i"
             done
           else
             echo "nvidia-smi not found"
