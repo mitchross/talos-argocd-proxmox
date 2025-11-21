@@ -20,7 +20,8 @@ spec:
       max_wal_size: "2GB"
       wal_compression: "on"
       logging_collector: "on"
-      log_statement: "all"
+      log_statement: "ddl"  # Changed from "all" - only log DDL statements for better performance
+      log_min_duration_statement: "1000"  # Log slow queries (>1s) for performance monitoring
     shared_preload_libraries:
     - "vchord.so"
     pg_hba:
