@@ -14,3 +14,7 @@ spec:
     - backendRefs:
         - name: immich-server
           port: 2283
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
