@@ -50,10 +50,12 @@ spec:
         - /spec/rules/0/backendRefs/0/group
         - /spec/rules/0/backendRefs/0/kind
         - /spec/rules/0/backendRefs/0/weight
+        - /status
       - group: external-secrets.io
         kind: ExternalSecret
         jsonPointers:
         - /status
+        - /metadata/generation
 
       info:
       - name: 'Description'
