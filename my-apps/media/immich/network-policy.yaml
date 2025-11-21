@@ -7,7 +7,7 @@ spec:
   description: "Allow Immich pods to connect to the CloudNativePG database."
   endpointSelector:
     matchLabels:
-      app: immich
+      cnpg.io/cluster: immich-database
   ingress:
     - fromEndpoints:
         - matchLabels:
