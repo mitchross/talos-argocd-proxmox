@@ -19,7 +19,6 @@ controllers:
               secretKeyRef:
                 name: immich-db-credentials
                 key: password
-          DB_VECTOR_EXTENSION: "vchord"
           # Redis connection (using shared Redis instance)
           REDIS_HOSTNAME: "redis-master.redis-instance.svc.cluster.local"
           REDIS_PORT: "6379"
