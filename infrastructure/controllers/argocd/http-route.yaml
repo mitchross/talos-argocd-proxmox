@@ -2,24 +2,25 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: argocd
+  namespace: argocd
 spec:
   parentRefs:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      name: gateway-internal
-      namespace: gateway
-      sectionName: https
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: gateway-internal
+    namespace: gateway
+    sectionName: https
 
   hostnames:
-    - "argocd.vanillax.me"
+  - "argocd.vanillax.me"
   rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
-        - group: ""
-          kind: Service
-          name: argocd-server
-          port: 80
-          weight: 1
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - group: ""
+      kind: Service
+      name: argocd-server
+      port: 80
+      weight: 1
