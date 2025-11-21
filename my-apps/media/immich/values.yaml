@@ -50,9 +50,8 @@ immich:
       template: "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}"
 
 # Dependencies
-
-postgresql:
-  enabled: false
+# Note: PostgreSQL subchart was removed in chart v0.10.0
+# Using external CloudNativePG instance instead (see cluster.yaml)
 
 valkey:
   # Using external Redis instance, so disable bundled Valkey
