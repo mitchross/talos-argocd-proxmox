@@ -98,6 +98,6 @@ data:
         timeout: 720s
 
     default_model: kimi-k2-thinking-128k
-    health_check_interval: 30s
-    swap_timeout: 180s
-    cleanup_timeout: 90s
+    health_check_interval: 60s
+    swap_timeout: 600s
+    cleanup_timeout: 120s
