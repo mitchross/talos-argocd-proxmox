@@ -1,5 +1,5 @@
 # Immich Helm Chart Configuration
-# Chart: immich-0.10.1 (Latest release: October 20, 2024)
+# Chart: immich-0.10.3 (Latest release: November 14, 2025)
 # Based on: https://github.com/immich-app/immich-charts/blob/main/charts/immich/values.yaml
 # Common Library: bjw-s/common 4.3.0
 
@@ -19,9 +19,12 @@ controllers:
               secretKeyRef:
                 name: immich-db-credentials
                 key: password
+          DB_VECTOR_EXTENSION: "vchord"
           # Redis connection (using shared Redis instance)
           REDIS_HOSTNAME: "redis-master.redis-instance.svc.cluster.local"
           REDIS_PORT: "6379"
+          # Immich server configuration
+          IMMICH_PORT: "2283"
           # ML service URL (templated by chart)
           IMMICH_MACHINE_LEARNING_URL: '{{ printf "http://%s-machine-learning:3003" .Release.Name }}'
 
