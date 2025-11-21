@@ -17,7 +17,7 @@ patches:
 
 helmCharts:
   - name: immich
-    repo: oci://ghcr.io/immich-app/immich-charts
+    repo: https://immich-app.github.io/immich-charts
     version: 0.10.3
     releaseName: immich
     namespace: immich

@@ -9,6 +9,8 @@ spec:
       kind: Gateway
       name: gateway-internal
       namespace: gateway
+      sectionName: https
+
   hostnames:
     - "longhorn.vanillax.me" # You can change this hostname
   rules:
