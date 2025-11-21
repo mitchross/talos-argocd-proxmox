@@ -20,8 +20,8 @@ data:
           --threads 24
           --threads-batch 12
           --flash-attn on
-          --cache-type-k q4_0
-          --cache-type-v q4_0
+          --cache-type-k q8_0
+          --cache-type-v q8_0
           --parallel 1
           --special
           --no-warmup
@@ -50,8 +50,8 @@ data:
           --threads 24
           --threads-batch 12
           --flash-attn on
-          --cache-type-k q4_0
-          --cache-type-v q4_0
+          --cache-type-k q8_0
+          --cache-type-v q8_0
           --parallel 1
           --special
           --no-warmup
@@ -79,8 +79,8 @@ data:
           --threads 24
           --threads-batch 12
           --flash-attn on
-          --cache-type-k q4_0
-          --cache-type-v q4_0
+          --cache-type-k q8_0
+          --cache-type-v q8_0
           --parallel 1
           --special
           --no-warmup
