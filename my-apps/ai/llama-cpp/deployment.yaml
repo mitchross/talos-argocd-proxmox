@@ -71,23 +71,8 @@ spec:
           mountPath: /app/config.yaml
           subPath: config.yaml
           readOnly: true
-        # Health probes for the llama-swap proxy (adjusted for dual GPU setup)
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: http
-          initialDelaySeconds: 10
-          periodSeconds: 60
-          timeoutSeconds: 15
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: http
-          initialDelaySeconds: 10
-          periodSeconds: 15
-          timeoutSeconds: 10
-          failureThreshold: 5
+        # Health probes disabled - large models (442GB) can take 5+ minutes to load
+        # and K8s health checks would kill the pod during model loading
       volumes:
       - name: models-storage
         persistentVolumeClaim:

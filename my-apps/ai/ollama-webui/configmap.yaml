@@ -14,14 +14,14 @@ data:
   # Keep Ollama API disabled since llama-swap doesn't implement it
   ENABLE_OLLAMA_API: "false"
   
-  # Updated default model to new Qwen3-Thinking (best overall)
-  DEFAULT_MODELS: "qwen3-thinking-ud-q3-128k"
-  
-  # Updated context window to 128K (default) - models support up to 256K
+  # Available models: kimi-k2-thinking-128k (default), gpt-oss-20b-128k, qwen3-thinking-128k
+  DEFAULT_MODELS: "kimi-k2-thinking-128k"
+
+  # Context window set to 128K (all models support this)
   CONTEXT_WINDOW: "131072"
-  
-  # Optimized for Qwen3-Thinking (matches llama-swap config)
-  TEMPERATURE: "0.6"
+
+  # Optimized for Kimi K2 reasoning (matches llama-swap config)
+  TEMPERATURE: "0.7"
   TOP_P: "0.95"
   
   WEBUI_SECRET_KEY: "ollama-webui" # Change this to a secure, random string for production
