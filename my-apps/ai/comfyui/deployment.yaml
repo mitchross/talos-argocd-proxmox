@@ -51,8 +51,8 @@ spec:
             cpu: "2"
             nvidia.com/gpu: "1"
           limits:
-            memory: "24Gi"
-            cpu: "8"
+            memory: "80Gi"
+            cpu: "16"
             nvidia.com/gpu: "1"
         volumeMounts:
         # Single storage volume at /root - container handles internal structure
