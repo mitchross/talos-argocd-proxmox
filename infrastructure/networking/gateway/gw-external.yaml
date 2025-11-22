@@ -5,6 +5,7 @@ metadata:
   namespace: gateway
   labels:
     external-dns: "true"
+    external-dns-gateway: gateway-external
   annotations:
     cert-manager.io/cluster-issuer: cloudflare-cluster-issuer
 spec:
