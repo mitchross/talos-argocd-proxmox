@@ -4,8 +4,9 @@ metadata:
   name: vert-route
   namespace: vert
   annotations:
-    # ExternalDNS will create a CNAME record pointing to the Cloudflare Tunnel
-    external-dns.alpha.kubernetes.io/target: "9c427450-dcfe-4eed-934c-cd41298f347e.cfargotunnel.com"
+    # ExternalDNS will create a CNAME record pointing to external.vanillax.me
+    # which then points to the Cloudflare Tunnel
+    external-dns.alpha.kubernetes.io/target: "external.vanillax.me"
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
