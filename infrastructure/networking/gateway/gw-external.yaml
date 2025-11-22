@@ -3,6 +3,8 @@ kind: Gateway
 metadata:
   name: gateway-external
   namespace: gateway
+  labels:
+    external-dns: "true"
   annotations:
     cert-manager.io/cluster-issuer: cloudflare-cluster-issuer
     # Force ExternalDNS to create CNAME to external.vanillax.me instead of A record to Gateway IP

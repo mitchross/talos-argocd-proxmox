@@ -30,6 +30,7 @@ txtPrefix: "external-dns-" # Prefix for TXT records
 # Only process HTTPRoutes with external-dns=true label
 extraArgs:
   - --label-filter=external-dns=true
+  - --gateway-label-filter=external-dns=true
 
 # Logging
 logLevel: info
