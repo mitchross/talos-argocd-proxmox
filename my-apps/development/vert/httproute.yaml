@@ -8,7 +8,7 @@ metadata:
   annotations:
     # ExternalDNS will create a CNAME record pointing to external.vanillax.me
     # which then points to the Cloudflare Tunnel
-    external-dns.alpha.kubernetes.io/target: "external.vanillax.me"
+    external-dns.alpha.kubernetes.io/target: "vanillax.me"
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
