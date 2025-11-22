@@ -12,6 +12,7 @@ spec:
       revision: main
       directories:
       - path: infrastructure/controllers/cert-manager
+      - path: infrastructure/controllers/external-dns
       - path: infrastructure/controllers/gpu-priority-classes
       - path: infrastructure/controllers/intel-device-plugins
       - path: infrastructure/controllers/node-feature-discovery
