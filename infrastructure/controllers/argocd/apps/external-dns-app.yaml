@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-dns
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3" # After cert-manager and secrets
+  labels:
+    app.kubernetes.io/part-of: infrastructure
+spec:
+  project: infrastructure
+  source:
+    repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+    targetRevision: main
+    path: infrastructure/controllers/external-dns
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: external-dns
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
