@@ -1,0 +1,63 @@
+# OPTIONAL: Explicit Cloudflare Tunnel Config
+# This is a more explicit version that lists each external service individually
+# instead of using a wildcard. Use this if you want to be extra cautious.
+#
+# To use this:
+# 1. Rename this file to config.yaml
+# 2. Update kustomization.yaml to use this file instead
+#
+# NOTE: The wildcard approach in the default config.yaml is equally secure
+# because DNS records control what reaches the tunnel. This is just more explicit.
+
+tunnel: threadripper
+protocol: http2
+credentials-file: /etc/cloudflared/credentials/credentials.json
+metrics: 0.0.0.0:2000
+no-autoupdate: true
+loglevel: info # Reduced from debug for production
+transport-loglevel: info
+
+ingress:
+  # Test endpoint
+  - hostname: hello.vanillax.me
+    service: hello_world
+
+  # External services only (no internal services)
+  - hostname: search.vanillax.me
+    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
+    originRequest:
+      noTLSVerify: true
+      originServerName: search.vanillax.me
+
+  - hostname: proxitok.vanillax.me
+    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
+    originRequest:
+      noTLSVerify: true
+      originServerName: proxitok.vanillax.me
+
+  - hostname: libreddit.vanillax.me
+    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
+    originRequest:
+      noTLSVerify: true
+      originServerName: libreddit.vanillax.me
+
+  - hostname: karakeep.vanillax.me
+    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
+    originRequest:
+      noTLSVerify: true
+      originServerName: karakeep.vanillax.me
+
+  - hostname: vert.vanillax.me
+    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
+    originRequest:
+      noTLSVerify: true
+      originServerName: vert.vanillax.me
+
+  - hostname: it-tools.vanillax.me
+    service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
+    originRequest:
+      noTLSVerify: true
+      originServerName: it-tools.vanillax.me
+
+  # Catch-all 404
+  - service: http_status:404
