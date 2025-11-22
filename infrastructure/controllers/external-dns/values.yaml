@@ -31,6 +31,7 @@ txtPrefix: "external-dns-" # Prefix for TXT records
 extraArgs:
   - --label-filter=external-dns=true
   - --gateway-label-filter=external-dns-gateway=gateway-external
+  - --cloudflare-proxied  # Enable Cloudflare proxy for all records
 
 # Logging
 logLevel: info
