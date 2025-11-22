@@ -4,11 +4,7 @@ metadata:
   name: searxng
   namespace: searxng
   labels:
-    external-dns: "true"  # Enable ExternalDNS for this route
-  annotations:
-    # ExternalDNS will create a CNAME record pointing to vanillax.me
-    # which then points to the Cloudflare Tunnel
-    external-dns.alpha.kubernetes.io/target: "vanillax.me"
+    external-dns: "true"  # Enable external-DNS for this route
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
