@@ -26,9 +26,10 @@ registry: txt
 txtOwnerId: talos-cluster # Unique identifier for this cluster
 txtPrefix: "external-dns-" # Prefix for TXT records
 
-# Label selector - CRITICAL: Only process HTTPRoutes with this label
-# This ensures internal services without the label are ignored
-labelFilter: external-dns=true
+# CRITICAL: Label-based filtering using CLI args for reliability
+# Only process HTTPRoutes with external-dns=true label
+extraArgs:
+  - --label-filter=external-dns=true
 
 # Logging
 logLevel: info
