@@ -1,5 +1,5 @@
 tunnel: threadripper
-protocol: http2
+protocol: quic
 credentials-file: /etc/cloudflared/credentials/credentials.json
 metrics: 0.0.0.0:2000
 no-autoupdate: true
@@ -31,7 +31,6 @@ ingress:
     service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
     originRequest:
       noTLSVerify: true
-      originServerName: "*.vanillax.me"
       logHeaders: true
       headers:
         - name: CF-Connecting-IP
