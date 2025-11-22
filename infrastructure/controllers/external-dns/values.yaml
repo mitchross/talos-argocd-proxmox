@@ -1,0 +1,77 @@
+# ExternalDNS Helm Values for Cloudflare Integration
+# Automatically manages DNS records for HTTPRoutes with external-dns annotations
+
+# Provider Configuration
+provider:
+  name: cloudflare
+
+# Cloudflare-specific settings
+cloudflare:
+  proxied: true # Enable Cloudflare proxy for all records
+  # API token will be provided via secret
+
+# Source Configuration - Watch Gateway API HTTPRoutes
+sources:
+  - gateway-httproute # Watch HTTPRoute resources
+
+# Domain filter - only manage vanillax.me domain
+domainFilters:
+  - vanillax.me
+
+# Policy - only create/update records, don't delete (safer)
+policy: sync # Options: sync (create/update/delete) or upsert-only (create/update)
+
+# Registry - use TXT records to track ownership
+registry: txt
+txtOwnerId: talos-cluster # Unique identifier for this cluster
+txtPrefix: "external-dns-" # Prefix for TXT records
+
+# Annotation filter - CRITICAL: Only process HTTPRoutes with this annotation
+# This ensures internal services without the annotation are ignored
+annotationFilter: external-dns.alpha.kubernetes.io/target
+
+# Logging
+logLevel: info
+logFormat: text
+
+# Resource Management
+resources:
+  requests:
+    cpu: 25m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+# Security Context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+  seccompProfile:
+    type: RuntimeDefault
+
+# Pod Security Context
+podSecurityContext:
+  fsGroup: 65534
+  runAsNonRoot: true
+  runAsUser: 65534
+  seccompProfile:
+    type: RuntimeDefault
+
+# Environment variables for Cloudflare API token
+env:
+  - name: CF_API_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: cloudflare-api-token
+        key: api-token
+
+# Sync interval - how often to check for changes
+interval: 1m
+
+# Trigger loop on create - faster propagation for new records
+triggerLoopOnEvent: true

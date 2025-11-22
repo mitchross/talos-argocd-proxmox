@@ -1,0 +1,47 @@
+# Firewalla Local DNS Configuration for vanillax.me
+# Generated: Sat Nov 22 04:25:01 UTC 2025
+
+# ==========================================
+# EXTERNAL SERVICES (Optional - for LAN speed)
+# Point to gateway-external (192.168.10.49)
+# ==========================================
+
+ittools.vanillax.me    192.168.10.49
+karakeep.vanillax.me    192.168.10.49
+libreddit.vanillax.me    192.168.10.49
+proxitok.vanillax.me    192.168.10.49
+search.vanillax.me    192.168.10.49
+vert.vanillax.me    192.168.10.49
+
+# ==========================================
+# INTERNAL SERVICES (Required - LAN ONLY!)
+# Point to gateway-internal (192.168.10.50)
+# NEVER add these to Cloudflare!
+# ==========================================
+
+argocd.vanillax.me    192.168.10.50
+comfyui.vanillax.me    192.168.10.50
+echo.vanillax.me    192.168.10.50
+frigate.vanillax.me    192.168.10.50
+garage.vanillax.me    192.168.10.50
+gitea.vanillax.me    192.168.10.50
+headlamp.vanillax.me    192.168.10.50
+homeassistant.vanillax.me    192.168.10.50
+homepage.vanillax.me    192.168.10.50
+jellyfin.vanillax.me    192.168.10.50
+khoj.vanillax.me    192.168.10.50
+llama.vanillax.me    192.168.10.50
+longhorn.vanillax.me#Youcanchangethishostname    192.168.10.50
+n8n.vanillax.me    192.168.10.50
+nestmtx.vanillax.me    192.168.10.50
+netbox.vanillax.me    192.168.10.50
+nginx.vanillax.me    192.168.10.50
+ollama.vanillax.me    192.168.10.50
+ollamawebui.vanillax.me    192.168.10.50
+paperless.vanillax.me    192.168.10.50
+photos.vanillax.me    192.168.10.50
+redis.vanillax.me    192.168.10.50
+registry.vanillax.me    192.168.10.50
+temporal.vanillax.me    192.168.10.50
+tube.vanillax.me    192.168.10.50
+wyzebridge.vanillax.me    192.168.10.50

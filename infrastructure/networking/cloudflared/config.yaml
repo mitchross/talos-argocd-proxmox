@@ -27,6 +27,12 @@ ingress:
         - name: X-Forwarded-For
         - name: Accept-Language
         - name: User-Agent
+  # Wildcard for all external services
+  # SECURITY: This wildcard is intentional and secure because:
+  # 1. Only services with DNS records (managed by ExternalDNS) can reach the tunnel
+  # 2. Internal services (gateway-internal) have NO Cloudflare DNS records
+  # 3. HTTPRoutes enforce specific hostname matching
+  # 4. If you prefer explicit listing, see config-explicit.yaml.example
   - hostname: "*.vanillax.me"
     service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
     originRequest:
