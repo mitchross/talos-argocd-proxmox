@@ -5,8 +5,7 @@ metadata:
   namespace: vert
   annotations:
     # ExternalDNS will create a CNAME record pointing to the Cloudflare Tunnel
-    # Replace TUNNEL_ID with your actual Cloudflare Tunnel ID
-    external-dns.alpha.kubernetes.io/target: "TUNNEL_ID.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/target: "9c427450-dcfe-4eed-934c-cd41298f347e.cfargotunnel.com"
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
