@@ -26,9 +26,9 @@ registry: txt
 txtOwnerId: talos-cluster # Unique identifier for this cluster
 txtPrefix: "external-dns-" # Prefix for TXT records
 
-# Annotation filter - CRITICAL: Only process HTTPRoutes with this annotation
-# This ensures internal services without the annotation are ignored
-annotationFilter: external-dns.alpha.kubernetes.io/target
+# Label selector - CRITICAL: Only process HTTPRoutes with this label
+# This ensures internal services without the label are ignored
+labelFilter: external-dns=true
 
 # Logging
 logLevel: info
