@@ -31,6 +31,7 @@ ingress:
     service: https://cilium-gateway-gateway-external.gateway.svc.cluster.local:443
     originRequest:
       noTLSVerify: true
+      originServerName: "*.vanillax.me"
       logHeaders: true
       headers:
         - name: CF-Connecting-IP
