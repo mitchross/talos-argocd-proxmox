@@ -2,16 +2,16 @@ apiVersion: "cilium.io/v2"
 kind: CiliumNetworkPolicy
 metadata:
   name: allow-immich-to-database
-  namespace: cloudnative-pg
+  namespace: default
 spec:
-  description: "Allow Immich pods to connect to the CloudNativePG database."
+  description: "Allow Immich pods to connect to the Crunchy Data PostgreSQL database."
   endpointSelector:
     matchLabels:
-      cnpg.io/cluster: immich-database
+      postgres-operator.crunchydata.com/cluster: immich
   ingress:
     - fromEndpoints:
         - matchLabels:
-            "k8s:io.kubernetes.pod.namespace": immich
+            "k8s:io.kubernetes.pod.namespace": default
             "app.kubernetes.io/name": immich
       toPorts:
         - ports:
