@@ -7,7 +7,6 @@ resources:
 - chrome/deployment-chrome.yaml
 - chrome/service-chrome.yaml
 # karakeep resources
-- karakeep/storageclass-restore.yaml
 - karakeep/configmap.yaml
 - karakeep/deployment-web.yaml
 - karakeep/service-web.yaml
