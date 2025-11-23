@@ -10,9 +10,6 @@ metadata:
     # Critical data tier ensures hourly snapshots and daily backups
     data-tier: critical
   annotations:
-    # Longhorn backup settings - Important tier for smart home data
-    longhorn.io/recurring-job-source: enabled
-    longhorn.io/recurring-job-group: important
     volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
