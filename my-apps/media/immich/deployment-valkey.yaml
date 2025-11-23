@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: immich-valkey
-  namespace: default
+  namespace: immich
   labels:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: valkey
