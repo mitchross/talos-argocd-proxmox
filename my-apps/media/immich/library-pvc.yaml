@@ -7,9 +7,6 @@ metadata:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: library
   annotations:
-    # Longhorn backup settings - Critical tier for photo library (daily backups)
-    longhorn.io/recurring-job-source: enabled
-    longhorn.io/recurring-job-group: critical
 spec:
   accessModes:
     - ReadWriteOnce
