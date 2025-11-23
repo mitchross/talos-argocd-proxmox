@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-ml-cache
+  namespace: immich
+  labels:
+    app.kubernetes.io/name: immich
+    app.kubernetes.io/component: machine-learning
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: longhorn
