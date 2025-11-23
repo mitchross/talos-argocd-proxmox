@@ -3,7 +3,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: immich-server
-  namespace: default
+  namespace: immich
   labels:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: server
@@ -30,7 +30,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: immich-machine-learning
-  namespace: default
+  namespace: immich
   labels:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: machine-learning
@@ -49,7 +49,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: immich-valkey
-  namespace: default
+  namespace: immich
   labels:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: valkey

@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: immich-machine-learning
-  namespace: default
+  namespace: immich
   labels:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: machine-learning
@@ -29,7 +29,7 @@ spec:
           protocol: TCP
         env:
         - name: REDIS_HOSTNAME
-          value: "immich-valkey.default.svc.cluster.local"
+          value: "immich-valkey.immich.svc.cluster.local"
         - name: REDIS_PORT
           value: "6379"
         - name: MPLCONFIGDIR
