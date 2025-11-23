@@ -1,0 +1,19 @@
+# Crunchy Data PostgreSQL Operator configuration
+# https://github.com/CrunchyData/postgres-operator
+
+# Operator deployment
+controllerManager:
+  manager:
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+# Enable debug logging (set to false for production)
+debug: false
+
+# Disable telemetry collection
+disableTelemetry: true
