@@ -1,0 +1,13 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: default
+resources:
+  - cluster-crunchy.yaml
+  - externalsecret-crunchy.yaml
+configMapGenerator:
+  - name: immich-postgres-init
+    files:
+      - init.sql=./resources/init.sql
+generatorOptions:
+  disableNameSuffixHash: true

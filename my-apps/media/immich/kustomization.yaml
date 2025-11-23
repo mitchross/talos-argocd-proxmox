@@ -9,18 +9,11 @@ labels:
 resources:
   - namespace.yaml
   - library-pvc.yaml
+  - ml-cache-pvc.yaml
   - externalsecret.yaml
   - httproute.yaml
   - network-policy.yaml
-
-patches:
-  - path: service-patches.yaml
-
-helmCharts:
-  - name: immich
-    repo: https://immich-app.github.io/immich-charts
-    version: 0.10.3
-    releaseName: immich
-    namespace: immich
-    valuesFile: values.yaml
-    includeCRDs: false
+  - deployment-server.yaml
+  - deployment-machine-learning.yaml
+  - deployment-valkey.yaml
+  - services.yaml

@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-valkey
+  namespace: immich
+  labels:
+    app.kubernetes.io/name: immich
+    app.kubernetes.io/component: valkey
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: immich
+      app.kubernetes.io/component: valkey
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: immich
+        app.kubernetes.io/component: valkey
+    spec:
+      containers:
+      - name: valkey
+        image: ghcr.io/valkey-io/valkey:9.0.0
+        ports:
+        - name: valkey
+          containerPort: 6379
+          protocol: TCP
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - valkey-cli ping | grep PONG
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - valkey-cli ping | grep PONG
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        startupProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - valkey-cli ping | grep PONG
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
