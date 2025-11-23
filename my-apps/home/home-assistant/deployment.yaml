@@ -41,6 +41,26 @@ spec:
                 values:
                 - home-assistant
             topologyKey: kubernetes.io/hostname
+      initContainers:
+        - name: install-hacs
+          image: alpine:latest
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              if [ ! -d "/config/custom_components/hacs" ]; then
+                echo "HACS not found, installing..."
+                apk add --no-cache bash wget unzip
+                wget -O - https://get.hacs.xyz | bash -
+              else
+                echo "HACS already installed"
+              fi
+          volumeMounts:
+            - name: config
+              mountPath: /config
       containers:
         - name: home-assistant
           image: "ghcr.io/home-assistant/home-assistant:stable"
