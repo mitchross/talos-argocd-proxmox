@@ -12,7 +12,6 @@ resources:
   - ml-cache-pvc.yaml
   - externalsecret.yaml
   - httproute.yaml
-  - network-policy.yaml
   - deployment-server.yaml
   - deployment-machine-learning.yaml
   - deployment-valkey.yaml
