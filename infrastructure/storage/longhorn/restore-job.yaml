@@ -1,0 +1,176 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: restore-controller
+  namespace: longhorn-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: restore-controller-role
+rules:
+  - apiGroups: ["longhorn.io"]
+    resources: ["backupvolumes", "backups"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumes", "persistentvolumeclaims"]
+    verbs: ["get", "list", "create", "patch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: restore-controller-binding
+subjects:
+  - kind: ServiceAccount
+    name: restore-controller
+    namespace: longhorn-system
+roleRef:
+  kind: ClusterRole
+    name: restore-controller-role
+    apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: restore-critical-volumes
+  namespace: longhorn-system
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "argocd.argoproj.io/sync-wave": "2" # Run after Longhorn (Wave 1) but before Apps
+spec:
+  template:
+    spec:
+      serviceAccountName: restore-controller
+      restartPolicy: OnFailure
+      containers:
+        - name: restore-controller
+          image: bitnami/kubectl:latest
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -e
+              
+              echo "Starting Automated Restore Controller (Dynamic Mode)..."
+              
+              # Configuration: List of Critical PVCs to Restore
+              # Format: "Namespace/PVC-Name"
+              # We only restore these if they don't exist yet.
+              CRITICAL_PVCS=(
+                "karakeep/data-pvc"
+                "home-assistant/home-assistant-config"
+                "immich/immich-library"
+                "n8n/n8n-data"
+                "paperless-ngx/paperless-data-pvc"
+                "paperless-ngx/paperless-media-pvc"
+              )
+              
+              # Wait for Longhorn CRDs
+              echo "Waiting for BackupVolumes CRD..."
+              kubectl wait --for=condition=established --timeout=60s crd/backupvolumes.longhorn.io || echo "CRD not ready yet, proceeding anyway..."
+
+              # Wait for BackupVolumes to be populated from S3
+              echo "Waiting for BackupVolumes to sync from S3..."
+              for i in {1..30}; do
+                COUNT=$(kubectl get backupvolumes -n longhorn-system --no-headers 2>/dev/null | wc -l)
+                if [ "$COUNT" -gt "0" ]; then
+                  echo "Found $COUNT BackupVolumes. Proceeding."
+                  break
+                fi
+                echo "No BackupVolumes found yet. Waiting... ($i/30)"
+                sleep 5
+              done
+
+              # Get all BackupVolumes with their PVC info
+              # Format: BackupVolumeName|PVCName|Namespace
+              echo "Building Backup Index..."
+              # Note: We use a temporary file because bash arrays and pipes can be tricky
+              kubectl get backupvolumes -n longhorn-system -o jsonpath='{range .items[*]}{.metadata.name}|{.status.kubernetesStatus.pvcName}|{.status.kubernetesStatus.namespace}{"\n"}{end}' > /tmp/backup_index.txt
+              
+              for target in "${CRITICAL_PVCS[@]}"; do
+                IFS='/' read -r target_ns target_pvc <<< "$target"
+                
+                echo "------------------------------------------------"
+                echo "Processing Target: $target_ns/$target_pvc"
+                
+                # Check if PV already exists for this PVC (by checking our managed label)
+                # Or just check if a PV exists that claims this PVC?
+                # We'll stick to our naming convention pv-restore-<app> for simplicity in this script,
+                # but ideally we should check if the PVC is already bound.
+                
+                PV_NAME="pv-restore-${target_pvc}"
+                if kubectl get pv "$PV_NAME" >/dev/null 2>&1; then
+                  echo "PV $PV_NAME already exists. Skipping."
+                  continue
+                fi
+
+                # Find matching BackupVolume
+                # We look for a line in index that matches |$target_pvc|$target_ns
+                MATCH=$(grep "|${target_pvc}|${target_ns}$" /tmp/backup_index.txt | head -n 1)
+                
+                if [ -z "$MATCH" ]; then
+                  echo "WARNING: No backup found for $target_ns/$target_pvc. Skipping."
+                  continue
+                fi
+                
+                BACKUP_VOL_NAME=$(echo "$MATCH" | cut -d'|' -f1)
+                echo "Found matching BackupVolume: $BACKUP_VOL_NAME"
+                
+                # Get Latest Backup Name
+                LATEST_BACKUP=$(kubectl get backupvolume "$BACKUP_VOL_NAME" -n longhorn-system -o jsonpath='{.status.lastBackupName}')
+                
+                if [ -z "$LATEST_BACKUP" ]; then
+                  echo "BackupVolume found but no backups inside. Skipping."
+                  continue
+                fi
+                
+                echo "Latest Backup: $LATEST_BACKUP"
+                
+                # Construct Backup URL
+                BACKUP_TARGET=$(kubectl get backuptarget default -n longhorn-system -o jsonpath='{.spec.backupTargetURL}' 2>/dev/null || echo "")
+                if [ -z "$BACKUP_TARGET" ]; then
+                   BACKUP_TARGET=$(kubectl get cm longhorn-backup-config -n longhorn-system -o jsonpath='{.data.backup-target}')
+                fi
+                [[ "${BACKUP_TARGET}" != */ ]] && BACKUP_TARGET="${BACKUP_TARGET}/"
+                
+                FULL_BACKUP_URL="${BACKUP_TARGET}?backup=${LATEST_BACKUP}&volume=${BACKUP_VOL_NAME}"
+                
+                # Create PV
+                echo "Creating PV $PV_NAME..."
+                cat <<EOF | kubectl apply -f -
+              apiVersion: v1
+              kind: PersistentVolume
+              metadata:
+                name: $PV_NAME
+                labels:
+                  restored-from: "$LATEST_BACKUP"
+                  managed-by: restore-controller
+              spec:
+                capacity:
+                  storage: 10Gi # Defaulting to 10Gi, Longhorn will resize if needed/possible
+                accessModes:
+                  - ReadWriteOnce
+                persistentVolumeReclaimPolicy: Retain
+                storageClassName: longhorn
+                csi:
+                  driver: driver.longhorn.io
+                  fsType: ext4
+                  volumeAttributes:
+                    numberOfReplicas: "3"
+                    staleReplicaTimeout: "30"
+                    fromBackup: "$FULL_BACKUP_URL"
+                claimRef:
+                  name: $target_pvc
+                  namespace: $target_ns
+              EOF
+                
+                # Ensure Namespace exists
+                kubectl create ns "$target_ns" --dry-run=client -o yaml | kubectl apply -f -
+                
+                echo "Restored $target_ns/$target_pvc from $LATEST_BACKUP"
+              done
+              
+              echo "Restore process completed."

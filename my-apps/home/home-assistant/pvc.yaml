@@ -7,6 +7,8 @@ metadata:
     app.kubernetes.io/name: home-assistant
     app.kubernetes.io/component: home-automation
     app.kubernetes.io/part-of: smart-home
+    # Critical data tier ensures hourly snapshots and daily backups
+    data-tier: critical
   annotations:
     # Longhorn backup settings - Important tier for smart home data
     longhorn.io/recurring-job-source: enabled
@@ -18,4 +20,4 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: longhorn-restore-home-assistant
+  storageClassName: longhorn
