@@ -1,63 +1,145 @@
-apiVersion: postgresql.cnpg.io/v1
-kind: Cluster
+---
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
 metadata:
-  name: immich-database
-  namespace: cloudnative-pg
-  labels:
-    app: immich
+  name: immich
+  namespace: default
+  annotations:
+    postgres-operator.crunchydata.com/autoCreateUserSchema: "true"
 spec:
-  instances: 1
-  imageName: ghcr.io/tensorchord/cloudnative-vectorchord:16.9-0.4.3
-  resources:
-    requests:
-      memory: 1Gi
-      cpu: 500m
-    limits:
-      memory: 2Gi
-  postgresql:
+  # https://docs.immich.app/administration/postgres-standalone/#updating-vectorchord
+  image: ghcr.io/waifulabs/crunchydata-vectorchord:ubi9-17.6-2542@sha256:b8355912ae6f4891744288565f58ac19530517d5c1876b4f5cc252796dc5d790
+  postgresVersion: 17
+  databaseInitSQL:
+    name: immich-postgres-init
+    key: init.sql
+  config:
     parameters:
-      shared_buffers: "512MB"
-      max_wal_size: "2GB"
-      wal_compression: "on"
-      logging_collector: "on"
-      log_statement: "ddl"  # Changed from "all" - only log DDL statements for better performance
-      log_min_duration_statement: "1000"  # Log slow queries (>1s) for performance monitoring
-    shared_preload_libraries:
-    - "vchord.so"
-    pg_hba:
-    - host all all 0.0.0.0/0 md5
-  bootstrap:
-    initdb:
-      database: immich
-      owner: immich
-      secret:
-        name: immich-db-secret
-      postInitApplicationSQL:
-      - CREATE EXTENSION IF NOT EXISTS "vchord" CASCADE;
-      - CREATE EXTENSION IF NOT EXISTS "earthdistance" CASCADE;
-  storage:
-    size: 20Gi
-    storageClass: longhorn
-  walStorage:
-    size: 5Gi
-    storageClass: longhorn
-  managed:
-    services:
-      additional:
-      - selectorType: rw
-        updateStrategy: patch
-        serviceTemplate:
-          metadata:
-            name: immich-postgres-external
-            annotations:
-              lbipam.cilium.io/ips: "192.168.10.41"
-          spec:
-            type: LoadBalancer
-            ports:
-            - name: postgres
-              port: 5432
-              targetPort: 5432
-              protocol: TCP
-  enableSuperuserAccess: true
+      shared_preload_libraries: "vchord.so"
   monitoring:
-    enablePodMonitor: true
+    pgmonitor:
+      exporter:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64M
+          limits:
+            memory: 512M
+  patroni:
+    dynamicConfiguration:
+      synchronous_mode: true
+      postgresql:
+        max_wal_size: 5GB
+        synchronous_commit: "on"
+        parameters:
+          max_connections: 500
+  instances:
+    - name: postgres
+      replicas: 3
+      metadata:
+        labels:
+          app.kubernetes.io/name: immich
+      dataVolumeClaimSpec:
+        storageClassName: longhorn
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 20Gi
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchLabels:
+                postgres-operator.crunchydata.com/cluster: immich
+                postgres-operator.crunchydata.com/instance-set: postgres
+  users:
+    # Superuser
+    - name: "postgres"
+      databases: ["postgres"]
+      options: "SUPERUSER"
+      password:
+        type: AlphaNumeric
+    # Applications
+    - name: "immich"
+      databases: ["immich"]
+      options: "CREATEDB CREATEROLE"
+      password:
+        type: AlphaNumeric
+  backups:
+    pgbackrest:
+      configuration:
+        - secret:
+            name: immich-postgres-secret
+      global:
+        compress-type: "bz2"
+        compress-level: "9"
+        repo2-block: "y"
+        repo2-bundle: "y"
+        repo2-path: /
+        repo2-retention-full: "7"
+        repo2-retention-full-type: time
+        repo2-s3-uri-style: path
+      jobs:
+        ttlSecondsAfterFinished: 60
+      manual:
+        repoName: repo2
+        options:
+          - --type=full
+      metadata:
+        labels:
+          app.kubernetes.io/name: "postgres-backup"
+      repos:
+        - name: repo2
+          s3:
+            bucket: immich-postgres
+            endpoint: s3.us-west-004.backblazeb2.com
+            region: us-west-004
+          schedules:
+            full: "30 2 * * 0"
+            incremental: "30 2 * * 1-6/2"
+      restore:
+        enabled: false
+        repoName: repo2
+        options:
+          - --type=full
+  dataSource:
+    pgbackrest:
+      stanza: db
+      configuration:
+        - secret:
+            name: immich-postgres-secret
+      global:
+        compress-type: "bz2"
+        compress-level: "9"
+        repo2-block: "y"
+        repo2-bundle: "y"
+        repo2-path: /
+        repo2-retention-full: "7"
+        repo2-retention-full-type: time
+        repo2-s3-uri-style: path
+      repo:
+        name: repo2
+        s3:
+          bucket: immich-postgres
+          endpoint: s3.us-west-004.backblazeb2.com
+          region: us-west-004
+      options: []
+  proxy:
+    pgBouncer:
+      port: 5432
+      replicas: 2
+      config:
+        global:
+          pool_mode: session
+          client_tls_sslmode: prefer
+          default_pool_size: "100"
+          max_client_conn: "500"
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/cluster: immich
+              postgres-operator.crunchydata.com/role: "postgres-bouncer"
