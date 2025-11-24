@@ -12,14 +12,12 @@ spec:
   selector:
     matchLabels:
       app: llama-swap
-  # Keep only the latest ReplicaSet, clean up old ones
   revisionHistoryLimit: 1
   template:
     metadata:
       labels:
         app: llama-swap
     spec:
-      # Restart policy for failed containers
       restartPolicy: Always
       runtimeClassName: nvidia
       priorityClassName: gpu-workload-high
@@ -29,11 +27,8 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: llama-swap
-        # renovate: datasource=docker depName=ghcr.io/mostlygeek/llama-swap versioning=regex:^v(?<major>\d+)-cuda-b(?<patch>\d+)$
         image: ghcr.io/mostlygeek/llama-swap:v173-cuda-b7122
         imagePullPolicy: IfNotPresent
-
-        # --- FINAL FIX: Using the correct, confirmed path to the executable ---
         command: [ "/app/llama-swap" ]
         args:
         - "--config"
@@ -44,8 +39,10 @@ spec:
           value: "all"
         - name: CUDA_VISIBLE_DEVICES
           value: "0,1"
+        # Unified Memory allows the GPU to access System RAM seamlessly
         - name: GGML_CUDA_ENABLE_UNIFIED_MEMORY
           value: "1"
+        # Helps with P2P communication between the 3090s
         - name: GGML_CUDA_PEER_MAX_BATCH_SIZE
           value: "128"
 
@@ -53,17 +50,21 @@ spec:
         - name: http
           containerPort: 8080
           protocol: TCP
+        
         resources:
           limits:
-            cpu: "6000m"
-            memory: 48Gi
+            # CRITICAL FIX: Increased CPU for massive RAM bandwidth
+            cpu: "24000m"  
+            # CRITICAL FIX: Must match your model size (~443GB) + overhead
+            memory: 460Gi  
             nvidia.com/gpu: "2"
             ephemeral-storage: "50Gi"
           requests:
-            cpu: "2000m"
-            memory: 24Gi
+            cpu: "8000m"
+            memory: 400Gi
             nvidia.com/gpu: "2"
             ephemeral-storage: "25Gi"
+            
         volumeMounts:
         - name: models-storage
           mountPath: /models
@@ -71,8 +72,10 @@ spec:
           mountPath: /app/config.yaml
           subPath: config.yaml
           readOnly: true
-        # Health probes disabled - large models (442GB) can take 5+ minutes to load
-        # and K8s health checks would kill the pod during model loading
+        # Mount shared memory for Dual GPU communication
+        - name: dshm
+          mountPath: /dev/shm
+
       volumes:
       - name: models-storage
         persistentVolumeClaim:
@@ -80,5 +83,11 @@ spec:
       - name: config-volume
         configMap:
           name: llama-swap-config
+      # Shared memory volume for multi-GPU efficiency
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 4Gi
+          
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
