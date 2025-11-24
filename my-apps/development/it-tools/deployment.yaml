@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: it-tools
-          image: ghcr.io/sharevb/it-tools:nightly@sha256:577e540fc5e3fb338a9d7543d02a18fed90ff62a49f46deaf5fc30588280840a
+          image: ghcr.io/sharevb/it-tools:nightly@sha256:2bc14fa7ae08a9e00adedc4e4d6756d850eeae5950b12e1e5710c01f68950686
           imagePullPolicy: Always
           env:
             - name: TZ
