@@ -3,7 +3,7 @@ apiVersion: postgres-operator.crunchydata.com/v1beta1
 kind: PostgresCluster
 metadata:
   name: immich
-  namespace: default
+  namespace: immich
   annotations:
     postgres-operator.crunchydata.com/autoCreateUserSchema: "true"
 spec:
