@@ -15,8 +15,18 @@ This repository supports two bootstrap approaches:
 
 > **Using Omni?** Skip the manual setup below and jump to **[BOOTSTRAP.md](BOOTSTRAP.md)** for the streamlined workflow.
 
+## 📦 Repositories & Resources
+
+| Resource | Description |
+|----------|-------------|
+| [Omni](https://github.com/siderolabs/omni) | SaaS-simple deployment of Kubernetes on your own hardware |
+| [Proxmox Infra Provider](https://github.com/siderolabs/omni-infra-provider-proxmox) | Proxmox infrastructure provider for Omni |
+| [Starter Repo](https://github.com/mitchross/sidero-omni-talos-proxmox-starter) | Full config & automation for Sidero Omni + Talos + Proxmox |
+| [Reference Guide](https://www.virtualizationhowto.com/2025/08/how-to-install-talos-omni-on-prem-for-effortless-kubernetes-management/) | VirtualizationHowTo guide for Talos Omni on-prem setup |
+
 ## 📋 Table of Contents
 
+- [Repositories & Resources](#-repositories--resources)
 - [Prerequisites](#-prerequisites)
 - [Architecture](#-architecture)
 - [Quick Start](#-quick-start) (Manual Talos Method)
