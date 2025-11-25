@@ -40,8 +40,25 @@ ffmpeg:
 # Re-adding go2rtc with Nest cameras via Home Assistant API
 # Using the correct echo:curl syntax from official documentation
 go2rtc:
+  # Nest configuration for direct access (lower latency)
+  # Device IDs can be found in the go2rtc dashboard after restart
+  nest:
+    client_id: "${NEST_CLIENT_ID}"
+    client_secret: "${NEST_CLIENT_SECRET}"
+    project_id: "${NEST_PROJECT_ID}"
+    refresh_token: "${NEST_REFRESH_TOKEN}"
+
   streams:
-    # Nest cameras via Home Assistant (using HA's Nest integration)
+    # --- Direct Nest Streams (Recommended) ---
+    # Uncomment and replace <DEVICE_ID> with the ID from go2rtc dashboard
+    # backyard-nest: "nest:<DEVICE_ID>"
+    # garage-inside-nest: "nest:<DEVICE_ID>"
+    # garage-outside-nest: "nest:<DEVICE_ID>"
+    # front-porch-nest: "nest:<DEVICE_ID>"
+    # living-room-nest: "nest:<DEVICE_ID>"
+    # kitchen-nest: "nest:<DEVICE_ID>"
+
+    # --- Fallback: Nest cameras via Home Assistant Proxy ---
     backyard-nest:
       - "ffmpeg:http://home-assistant.home-assistant.svc.cluster.local:8123/api/camera_proxy_stream/camera.backyard_camera#video=copy#audio=copy#http_headers=Authorization: Bearer ${HA_TOKEN}"
     garage-inside-nest:

@@ -5,6 +5,11 @@ metadata:
   namespace: llama-cpp
 data:
   config.yaml: |
+    # Global settings
+    healthCheckTimeout: 1200
+    logLevel: info
+    startPort: 5800
+
     models:
       kimi-k2-thinking-128k:
         cmd: >-
@@ -14,24 +19,27 @@ data:
           -b 4096
           -ub 4096
           -ngl 99
-          -ot .ffn_(up)_exps.=CPU
+          -ot ".ffn_(up)_exps.=CPU"
           --host 0.0.0.0
           --port ${PORT}
           --threads 52
           --threads-batch 28
-          --flash-attn on
+          -fa
           --cache-type-k q8_0
           --cache-type-v q8_0
           --parallel 2
           --special
           --no-warmup
-          --temp 1.0
-          --min-p 0.01
           --jinja
           --mlock
-        gpu_mode: dual
-        health_check_path: /health
-        timeout: 1200s
+        env:
+          - "CUDA_VISIBLE_DEVICES=0,1"
+        checkEndpoint: /health
+        ttl: 0
+        aliases:
+          - "kimi-k2"
+          - "kimi"
+
       gpt-oss-20b-128k:
         cmd: >-
           /app/llama-server
@@ -44,19 +52,21 @@ data:
           --port ${PORT}
           --threads 48
           --threads-batch 24
-          --flash-attn on
+          -fa
           --cache-type-k q8_0
           --cache-type-v q8_0
           --parallel 2
           --special
           --no-warmup
-          --temp 0.7
-          --min-p 0.05
           --jinja
           --mlock
-        gpu_mode: dual
-        health_check_path: /health
-        timeout: 720s
+        env:
+          - "CUDA_VISIBLE_DEVICES=0,1"
+        checkEndpoint: /health
+        ttl: 0
+        aliases:
+          - "gpt-oss"
+
       qwen3-thinking-128k:
         cmd: >-
           /app/llama-server
@@ -69,20 +79,78 @@ data:
           --port ${PORT}
           --threads 48
           --threads-batch 24
-          --flash-attn on
+          -fa
           --cache-type-k q8_0
           --cache-type-v q8_0
           --parallel 2
           --special
           --no-warmup
-          --temp 0.6
-          --min-p 0.05
           --jinja
           --mlock
-        gpu_mode: dual
-        health_check_path: /health
-        timeout: 720s
-    default_model: kimi-k2-thinking-128k
-    health_check_interval: 60s
-    swap_timeout: 600s
-    cleanup_timeout: 120s
+        env:
+          - "CUDA_VISIBLE_DEVICES=0,1"
+        checkEndpoint: /health
+        ttl: 0
+        aliases:
+          - "qwen3-thinking"
+          - "qwen3"
+
+      qwen3-coder-q8:
+        cmd: >-
+          /app/llama-server
+          -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q8_K_XL.gguf
+          -c 65536
+          -b 4096
+          -ub 4096
+          -ngl 99
+          --host 0.0.0.0
+          --port ${PORT}
+          --threads 48
+          --threads-batch 24
+          -fa
+          --cache-type-k q8_0
+          --cache-type-v q8_0
+          --parallel 2
+          --special
+          --no-warmup
+          --jinja
+          --mlock
+        env:
+          - "CUDA_VISIBLE_DEVICES=0,1"
+        checkEndpoint: /health
+        ttl: 0
+        aliases:
+          - "qwen3-coder"
+          - "coder"
+
+      magistral-small:
+        cmd: >-
+          /app/llama-server
+          -m /models/Magistral-Small-2509-UD-Q8_K_XL.gguf
+          -c 65536
+          -b 4096
+          -ub 4096
+          -ngl 99
+          --host 0.0.0.0
+          --port ${PORT}
+          --threads 48
+          --threads-batch 24
+          -fa
+          --cache-type-k q8_0
+          --cache-type-v q8_0
+          --parallel 2
+          --special
+          --no-warmup
+          --jinja
+          --mlock
+        env:
+          - "CUDA_VISIBLE_DEVICES=0,1"
+        checkEndpoint: /health
+        ttl: 0
+        aliases:
+          - "magistral"
+
+    hooks:
+      on_startup:
+        preload:
+          - "kimi-k2-thinking-128k"
