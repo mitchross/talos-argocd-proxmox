@@ -5,86 +5,36 @@ metadata:
   namespace: llama-cpp
 data:
   config.yaml: |
-    # Global settings
-    healthCheckTimeout: 1200
+    # llama-swap config for dual RTX 3090 + 450GB RAM
+    healthCheckTimeout: 900
     logLevel: info
     startPort: 5800
 
     models:
-      kimi-k2-thinking-128k:
-        cmd: >-
-          /app/llama-server
-          -m /models/Kimi-K2-Thinking-UD-Q2_K_XL-00001-of-00008.gguf
-          -c 131072
-          -b 4096
-          -ub 4096
-          -ngl 99
-          -ot ".ffn_(up)_exps.=CPU"
-          --host 0.0.0.0
-          --port ${PORT}
-          --threads 52
-          --threads-batch 28
-          -fa
-          --cache-type-k q8_0
-          --cache-type-v q8_0
-          --parallel 2
-          --special
-          --no-warmup
-          --jinja
-          --mlock
-        env:
-          - "CUDA_VISIBLE_DEVICES=0,1"
-        checkEndpoint: /health
-        ttl: 0
-        aliases:
-          - "kimi-k2"
-          - "kimi"
-
-      gpt-oss-20b-128k:
-        cmd: >-
-          /app/llama-server
-          -m /models/gpt-oss-20b-UD-Q8_K_XL.gguf
-          -c 131072
-          -b 4096
-          -ub 4096
-          -ngl 99
-          --host 0.0.0.0
-          --port ${PORT}
-          --threads 48
-          --threads-batch 24
-          -fa
-          --cache-type-k q8_0
-          --cache-type-v q8_0
-          --parallel 2
-          --special
-          --no-warmup
-          --jinja
-          --mlock
-        env:
-          - "CUDA_VISIBLE_DEVICES=0,1"
-        checkEndpoint: /health
-        ttl: 0
-        aliases:
-          - "gpt-oss"
-
-      qwen3-thinking-128k:
+      # ============================================================
+      # QWEN3 THINKING - Your main reasoning models
+      # ============================================================
+      
+      qwen3-thinking-ud-q3-128k:
+        name: "Qwen3 Thinking Q3 128K"
         cmd: >-
           /app/llama-server
           -m /models/Qwen3-30B-A3B-Thinking-2507-UD-Q3_K_XL.gguf
           -c 131072
-          -b 4096
-          -ub 4096
           -ngl 99
+          --split-mode layer
+          --tensor-split 1,1
           --host 0.0.0.0
           --port ${PORT}
-          --threads 48
-          --threads-batch 24
+          --threads -1
           -fa
-          --cache-type-k q8_0
-          --cache-type-v q8_0
-          --parallel 2
-          --special
-          --no-warmup
+          --cache-type-k q4_0
+          --cache-type-v q4_0
+          --temp 0.6
+          --top-p 0.95
+          --top-k 20
+          --min-p 0.0
+          --presence-penalty 1.0
           --jinja
           --mlock
         env:
@@ -93,26 +43,92 @@ data:
         ttl: 0
         aliases:
           - "qwen3-thinking"
-          - "qwen3"
+          - "qwen3-think"
 
-      qwen3-coder-q8:
+      qwen3-thinking-ud-q3-256k:
+        name: "Qwen3 Thinking Q3 256K"
         cmd: >-
           /app/llama-server
-          -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q8_K_XL.gguf
-          -c 65536
-          -b 4096
-          -ub 4096
+          -m /models/Qwen3-30B-A3B-Thinking-2507-UD-Q3_K_XL.gguf
+          -c 262144
           -ngl 99
+          --split-mode layer
+          --tensor-split 1,1
           --host 0.0.0.0
           --port ${PORT}
-          --threads 48
-          --threads-batch 24
+          --threads -1
           -fa
-          --cache-type-k q8_0
-          --cache-type-v q8_0
-          --parallel 2
-          --special
-          --no-warmup
+          --cache-type-k q4_0
+          --cache-type-v q4_0
+          --temp 0.6
+          --top-p 0.95
+          --top-k 20
+          --min-p 0.0
+          --presence-penalty 1.0
+          --jinja
+          --mlock
+        env:
+          - "CUDA_VISIBLE_DEVICES=0,1"
+        checkEndpoint: /health
+        ttl: 0
+        aliases:
+          - "qwen3-thinking-256k"
+          - "qwen3-think-long"
+
+      qwen3-thinking-ud-q2-128k:
+        name: "Qwen3 Thinking Q2 128K"
+        cmd: >-
+          /app/llama-server
+          -m /models/Qwen3-30B-A3B-Thinking-2507-UD-Q2_K_XL.gguf
+          -c 131072
+          -ngl 99
+          --split-mode layer
+          --tensor-split 1,1
+          --host 0.0.0.0
+          --port ${PORT}
+          --threads -1
+          -fa
+          --cache-type-k q4_0
+          --cache-type-v q4_0
+          --temp 0.6
+          --top-p 0.95
+          --top-k 20
+          --min-p 0.0
+          --presence-penalty 1.0
+          --jinja
+          --mlock
+        env:
+          - "CUDA_VISIBLE_DEVICES=0,1"
+        checkEndpoint: /health
+        ttl: 0
+        aliases:
+          - "qwen3-thinking-q2"
+          - "qwen3-think-small"
+
+      # ============================================================
+      # QWEN3 CODER
+      # ============================================================
+      
+      qwen3-coder-ud-q4-128k:
+        name: "Qwen3 Coder Q4 128K"
+        cmd: >-
+          /app/llama-server
+          -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf
+          -c 131072
+          -ngl 99
+          --split-mode layer
+          --tensor-split 1,1
+          --host 0.0.0.0
+          --port ${PORT}
+          --threads -1
+          -fa
+          --cache-type-k q4_0
+          --cache-type-v q4_0
+          --temp 0.7
+          --top-p 0.8
+          --top-k 20
+          --min-p 0.0
+          --repeat-penalty 1.05
           --jinja
           --mlock
         env:
@@ -123,24 +139,155 @@ data:
           - "qwen3-coder"
           - "coder"
 
-      magistral-small:
+      qwen3-coder-ud-q4-256k:
+        name: "Qwen3 Coder Q4 256K"
+        cmd: >-
+          /app/llama-server
+          -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q4_K_XL.gguf
+          -c 262144
+          -ngl 99
+          --split-mode layer
+          --tensor-split 1,1
+          --host 0.0.0.0
+          --port ${PORT}
+          --threads -1
+          -fa
+          --cache-type-k q4_0
+          --cache-type-v q4_0
+          --temp 0.7
+          --top-p 0.8
+          --top-k 20
+          --min-p 0.0
+          --repeat-penalty 1.05
+          --jinja
+          --mlock
+        env:
+          - "CUDA_VISIBLE_DEVICES=0,1"
+        checkEndpoint: /health
+        ttl: 0
+        aliases:
+          - "qwen3-coder-256k"
+          - "coder-long"
+
+      qwen3-coder-ud-q8-64k:
+        name: "Qwen3 Coder Q8 64K"
+        description: "Highest quality coder, shorter context"
+        cmd: >-
+          /app/llama-server
+          -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q8_K_XL.gguf
+          -c 65536
+          -ngl 99
+          --split-mode layer
+          --tensor-split 1,1
+          --host 0.0.0.0
+          --port ${PORT}
+          --threads -1
+          -fa
+          --cache-type-k q4_0
+          --cache-type-v q4_0
+          --temp 0.7
+          --top-p 0.8
+          --top-k 20
+          --min-p 0.0
+          --repeat-penalty 1.05
+          --jinja
+          --mlock
+        env:
+          - "CUDA_VISIBLE_DEVICES=0,1"
+        checkEndpoint: /health
+        ttl: 0
+        aliases:
+          - "qwen3-coder-hq"
+          - "coder-hq"
+
+      # ============================================================
+      # KIMI K2 - Massive MoE, needs CPU offload
+      # ============================================================
+      
+      kimi-k2-thinking-q2-128k:
+        name: "Kimi K2 Thinking Q2 128K"
+        description: "1T MoE - experts offloaded to CPU"
+        cmd: >-
+          /app/llama-server
+          -m /models/Kimi-K2-Thinking-UD-Q2_K_XL-00001-of-00008.gguf
+          -c 131072
+          -ngl 99
+          -ot ".ffn_(up|down|gate)_exps.=CPU"
+          --split-mode layer
+          --tensor-split 1,1
+          --host 0.0.0.0
+          --port ${PORT}
+          --threads 52
+          --threads-batch 28
+          -fa
+          --cache-type-k q4_0
+          --cache-type-v q4_0
+          --parallel 1
+          --special
+          --no-warmup
+          --jinja
+          --mlock
+        env:
+          - "CUDA_VISIBLE_DEVICES=0,1"
+          - "GGML_CUDA_ENABLE_UNIFIED_MEMORY=1"
+        checkEndpoint: /health
+        ttl: 0
+        aliases:
+          - "kimi-k2"
+          - "kimi"
+
+      kimi-k2-thinking-q3-64k:
+        name: "Kimi K2 Thinking Q3 64K"
+        description: "1T MoE Q3 - higher quality, reduced context"
+        cmd: >-
+          /app/llama-server
+          -m /models/Kimi-K2-Thinking-Q3_K_S-00001-of-00010.gguf
+          -c 65536
+          -ngl 99
+          -ot ".ffn_(up|down|gate)_exps.=CPU"
+          --split-mode layer
+          --tensor-split 1,1
+          --host 0.0.0.0
+          --port ${PORT}
+          --threads 52
+          --threads-batch 28
+          -fa
+          --cache-type-k q4_0
+          --cache-type-v q4_0
+          --parallel 1
+          --special
+          --no-warmup
+          --jinja
+          --mlock
+        env:
+          - "CUDA_VISIBLE_DEVICES=0,1"
+          - "GGML_CUDA_ENABLE_UNIFIED_MEMORY=1"
+        checkEndpoint: /health
+        ttl: 0
+        aliases:
+          - "kimi-k2-hq"
+          - "kimi-q3"
+
+      # ============================================================
+      # MAGISTRAL - Mistral reasoning
+      # ============================================================
+      
+      magistral-small-64k:
+        name: "Magistral Small Q8 64K"
         cmd: >-
           /app/llama-server
           -m /models/Magistral-Small-2509-UD-Q8_K_XL.gguf
           -c 65536
-          -b 4096
-          -ub 4096
           -ngl 99
+          --split-mode layer
+          --tensor-split 1,1
           --host 0.0.0.0
           --port ${PORT}
-          --threads 48
-          --threads-batch 24
+          --threads -1
           -fa
-          --cache-type-k q8_0
-          --cache-type-v q8_0
-          --parallel 2
-          --special
-          --no-warmup
+          --cache-type-k q4_0
+          --cache-type-v q4_0
+          --temp 0.7
           --jinja
           --mlock
         env:
@@ -149,8 +296,66 @@ data:
         ttl: 0
         aliases:
           - "magistral"
+          - "mistral-reasoning"
 
+      # ============================================================
+      # GPT-OSS - Fast small model
+      # ============================================================
+      
+      gpt-oss-20b-8k:
+        name: "GPT-OSS 20B Q8 8K"
+        description: "Fast general purpose - short context for speed"
+        cmd: >-
+          /app/llama-server
+          -m /models/gpt-oss-20b-UD-Q8_K_XL.gguf
+          -c 8192
+          -ngl 99
+          --split-mode layer
+          --tensor-split 1,1
+          --host 0.0.0.0
+          --port ${PORT}
+          --threads 16
+          -fa
+          --cache-type-k q8_0
+          --cache-type-v q8_0
+          --temp 0.7
+          --jinja
+        env:
+          - "CUDA_VISIBLE_DEVICES=0,1"
+        checkEndpoint: /health
+        ttl: 300
+        aliases:
+          - "gpt-oss"
+          - "gpt-fast"
+
+      gpt-oss-20b-32k:
+        name: "GPT-OSS 20B Q8 32K"
+        description: "Fast general purpose - medium context"
+        cmd: >-
+          /app/llama-server
+          -m /models/gpt-oss-20b-UD-Q8_K_XL.gguf
+          -c 32768
+          -ngl 99
+          --split-mode layer
+          --tensor-split 1,1
+          --host 0.0.0.0
+          --port ${PORT}
+          --threads -1
+          -fa
+          --cache-type-k q4_0
+          --cache-type-v q4_0
+          --temp 0.7
+          --jinja
+          --mlock
+        env:
+          - "CUDA_VISIBLE_DEVICES=0,1"
+        checkEndpoint: /health
+        ttl: 300
+        aliases:
+          - "gpt-oss-32k"
+
+    # Preload your main model on startup
     hooks:
       on_startup:
         preload:
-          - "kimi-k2-thinking-128k"
+          - "qwen3-thinking-ud-q3-128k"
