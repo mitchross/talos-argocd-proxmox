@@ -43,17 +43,17 @@ go2rtc:
   streams:
     # Nest cameras via Home Assistant (using HA's Nest integration)
     backyard-nest:
-      - "ffmpeg:http://home-assistant.home-assistant.svc.cluster.local:8123/api/camera_proxy_stream/camera.backyard_camera#video=copy#audio=copy"
+      - "ffmpeg:http://home-assistant.home-assistant.svc.cluster.local:8123/api/camera_proxy_stream/camera.backyard_camera#video=copy#audio=copy#http_headers=Authorization: Bearer ${HA_TOKEN}"
     garage-inside-nest:
-      - "ffmpeg:http://home-assistant.home-assistant.svc.cluster.local:8123/api/camera_proxy_stream/camera.garage_inside#video=copy#audio=copy"
+      - "ffmpeg:http://home-assistant.home-assistant.svc.cluster.local:8123/api/camera_proxy_stream/camera.garage_inside#video=copy#audio=copy#http_headers=Authorization: Bearer ${HA_TOKEN}"
     garage-outside-nest:
-      - "ffmpeg:http://home-assistant.home-assistant.svc.cluster.local:8123/api/camera_proxy_stream/camera.garage_camera#video=copy#audio=copy"
+      - "ffmpeg:http://home-assistant.home-assistant.svc.cluster.local:8123/api/camera_proxy_stream/camera.garage_camera#video=copy#audio=copy#http_headers=Authorization: Bearer ${HA_TOKEN}"
     front-porch-nest:
-      - "ffmpeg:http://home-assistant.home-assistant.svc.cluster.local:8123/api/camera_proxy_stream/camera.front_porch_doorbell#video=copy#audio=copy"
+      - "ffmpeg:http://home-assistant.home-assistant.svc.cluster.local:8123/api/camera_proxy_stream/camera.front_porch_doorbell#video=copy#audio=copy#http_headers=Authorization: Bearer ${HA_TOKEN}"
     living-room-nest:
-      - "ffmpeg:http://home-assistant.home-assistant.svc.cluster.local:8123/api/camera_proxy_stream/camera.living_room_camera#video=copy#audio=copy"
+      - "ffmpeg:http://home-assistant.home-assistant.svc.cluster.local:8123/api/camera_proxy_stream/camera.living_room_camera#video=copy#audio=copy#http_headers=Authorization: Bearer ${HA_TOKEN}"
     kitchen-nest:
-      - "ffmpeg:http://home-assistant.home-assistant.svc.cluster.local:8123/api/camera_proxy_stream/camera.kitchen_camera#video=copy#audio=copy"
+      - "ffmpeg:http://home-assistant.home-assistant.svc.cluster.local:8123/api/camera_proxy_stream/camera.kitchen_camera#video=copy#audio=copy#http_headers=Authorization: Bearer ${HA_TOKEN}"
 cameras:
   # Keep working shed and driveway cameras
   shed:
