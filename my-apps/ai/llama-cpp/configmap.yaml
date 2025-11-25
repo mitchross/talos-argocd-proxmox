@@ -6,36 +6,32 @@ metadata:
 data:
   config.yaml: |
     models:
-      kimi-k2-thinking-16k:
+      kimi-k2-thinking-128k:
         cmd: >-
           /app/llama-server
-          -m /models/Kimi-K2-Thinking-Q3_K_S-00001-of-00010.gguf
-          -c 16384
+          -m /models/Kimi-K2-Thinking-UD-Q2_K_XL-00001-of-00008.gguf
+          -c 131072
           -b 4096
           -ub 4096
           -ngl 99
-          -ot ".ffn_(up|down)_exps.=CPU"
+          -ot .ffn_(up)_exps.=CPU
           --host 0.0.0.0
           --port ${PORT}
-          --threads -1
-          --flash-attn on
+          --threads 52
+          --threads-batch 28
+          -fa
           --cache-type-k q8_0
           --cache-type-v q8_0
-          --parallel 1
+          --parallel 2
           --special
           --no-warmup
           --temp 1.0
-          --top-p 1.0
-          --top-k 40
           --min-p 0.01
-          --repeat-penalty 1.0
           --jinja
-          --reasoning-format cot
           --mlock
-        gpu_mode: single
+        gpu_mode: dual
         health_check_path: /health
-        timeout: 1000s
-
+        timeout: 1200s
       gpt-oss-20b-128k:
         cmd: >-
           /app/llama-server
@@ -46,24 +42,21 @@ data:
           -ngl 99
           --host 0.0.0.0
           --port ${PORT}
-          --threads -1
-          --flash-attn on
+          --threads 48
+          --threads-batch 24
+          -fa
           --cache-type-k q8_0
           --cache-type-v q8_0
-          --parallel 1
+          --parallel 2
           --special
           --no-warmup
           --temp 0.7
-          --top-p 0.95
-          --top-k 40
           --min-p 0.05
-          --repeat-penalty 1.05
           --jinja
           --mlock
-        gpu_mode: single
+        gpu_mode: dual
         health_check_path: /health
         timeout: 720s
-
       qwen3-thinking-128k:
         cmd: >-
           /app/llama-server
@@ -74,27 +67,22 @@ data:
           -ngl 99
           --host 0.0.0.0
           --port ${PORT}
-          --threads -1
-          --flash-attn on
+          --threads 48
+          --threads-batch 24
+          -fa
           --cache-type-k q8_0
           --cache-type-v q8_0
-          --parallel 1
+          --parallel 2
           --special
           --no-warmup
           --temp 0.6
-          --top-p 0.95
-          --top-k 20
           --min-p 0.05
-          --repeat-penalty 1.0
-          --presence-penalty 1.0
           --jinja
-          --reasoning-format none
           --mlock
-        gpu_mode: single
+        gpu_mode: dual
         health_check_path: /health
         timeout: 720s
-
-    default_model: kimi-k2-thinking-16k
+    default_model: kimi-k2-thinking-128k
     health_check_interval: 60s
     swap_timeout: 600s
     cleanup_timeout: 120s
