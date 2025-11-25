@@ -6,13 +6,14 @@ metadata:
 data:
   config.yaml: |
     # llama-swap config for dual RTX 3090 + 450GB RAM
+    # Driver 570 / CUDA 12.8
     healthCheckTimeout: 900
     logLevel: info
     startPort: 5800
 
     models:
       # ============================================================
-      # QWEN3 THINKING - Your main reasoning models
+      # QWEN3 THINKING
       # ============================================================
       
       qwen3-thinking-ud-q3-128k:
@@ -27,7 +28,7 @@ data:
           --host 0.0.0.0
           --port ${PORT}
           --threads -1
-          -fa
+          --flash-attn auto
           --cache-type-k q4_0
           --cache-type-v q4_0
           --temp 0.6
@@ -57,7 +58,7 @@ data:
           --host 0.0.0.0
           --port ${PORT}
           --threads -1
-          -fa
+          --flash-attn auto
           --cache-type-k q4_0
           --cache-type-v q4_0
           --temp 0.6
@@ -73,7 +74,6 @@ data:
         ttl: 0
         aliases:
           - "qwen3-thinking-256k"
-          - "qwen3-think-long"
 
       qwen3-thinking-ud-q2-128k:
         name: "Qwen3 Thinking Q2 128K"
@@ -87,7 +87,7 @@ data:
           --host 0.0.0.0
           --port ${PORT}
           --threads -1
-          -fa
+          --flash-attn auto
           --cache-type-k q4_0
           --cache-type-v q4_0
           --temp 0.6
@@ -103,7 +103,6 @@ data:
         ttl: 0
         aliases:
           - "qwen3-thinking-q2"
-          - "qwen3-think-small"
 
       # ============================================================
       # QWEN3 CODER
@@ -121,7 +120,7 @@ data:
           --host 0.0.0.0
           --port ${PORT}
           --threads -1
-          -fa
+          --flash-attn auto
           --cache-type-k q4_0
           --cache-type-v q4_0
           --temp 0.7
@@ -151,7 +150,7 @@ data:
           --host 0.0.0.0
           --port ${PORT}
           --threads -1
-          -fa
+          --flash-attn auto
           --cache-type-k q4_0
           --cache-type-v q4_0
           --temp 0.7
@@ -167,11 +166,9 @@ data:
         ttl: 0
         aliases:
           - "qwen3-coder-256k"
-          - "coder-long"
 
       qwen3-coder-ud-q8-64k:
-        name: "Qwen3 Coder Q8 64K"
-        description: "Highest quality coder, shorter context"
+        name: "Qwen3 Coder Q8 64K (HQ)"
         cmd: >-
           /app/llama-server
           -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q8_K_XL.gguf
@@ -182,7 +179,7 @@ data:
           --host 0.0.0.0
           --port ${PORT}
           --threads -1
-          -fa
+          --flash-attn auto
           --cache-type-k q4_0
           --cache-type-v q4_0
           --temp 0.7
@@ -198,10 +195,9 @@ data:
         ttl: 0
         aliases:
           - "qwen3-coder-hq"
-          - "coder-hq"
 
       # ============================================================
-      # KIMI K2 - Massive MoE, needs CPU offload
+      # KIMI K2 - 1T MoE with CPU offload for experts
       # ============================================================
       
       kimi-k2-thinking-q2-128k:
@@ -219,7 +215,7 @@ data:
           --port ${PORT}
           --threads 52
           --threads-batch 28
-          -fa
+          --flash-attn auto
           --cache-type-k q4_0
           --cache-type-v q4_0
           --parallel 1
@@ -238,7 +234,7 @@ data:
 
       kimi-k2-thinking-q3-64k:
         name: "Kimi K2 Thinking Q3 64K"
-        description: "1T MoE Q3 - higher quality, reduced context"
+        description: "1T MoE Q3 - higher quality"
         cmd: >-
           /app/llama-server
           -m /models/Kimi-K2-Thinking-Q3_K_S-00001-of-00010.gguf
@@ -251,7 +247,7 @@ data:
           --port ${PORT}
           --threads 52
           --threads-batch 28
-          -fa
+          --flash-attn auto
           --cache-type-k q4_0
           --cache-type-v q4_0
           --parallel 1
@@ -265,11 +261,10 @@ data:
         checkEndpoint: /health
         ttl: 0
         aliases:
-          - "kimi-k2-hq"
           - "kimi-q3"
 
       # ============================================================
-      # MAGISTRAL - Mistral reasoning
+      # MAGISTRAL
       # ============================================================
       
       magistral-small-64k:
@@ -284,7 +279,7 @@ data:
           --host 0.0.0.0
           --port ${PORT}
           --threads -1
-          -fa
+          --flash-attn auto
           --cache-type-k q4_0
           --cache-type-v q4_0
           --temp 0.7
@@ -296,15 +291,13 @@ data:
         ttl: 0
         aliases:
           - "magistral"
-          - "mistral-reasoning"
 
       # ============================================================
       # GPT-OSS - Fast small model
       # ============================================================
       
       gpt-oss-20b-8k:
-        name: "GPT-OSS 20B Q8 8K"
-        description: "Fast general purpose - short context for speed"
+        name: "GPT-OSS 20B Q8 8K (Fast)"
         cmd: >-
           /app/llama-server
           -m /models/gpt-oss-20b-UD-Q8_K_XL.gguf
@@ -315,7 +308,7 @@ data:
           --host 0.0.0.0
           --port ${PORT}
           --threads 16
-          -fa
+          --flash-attn auto
           --cache-type-k q8_0
           --cache-type-v q8_0
           --temp 0.7
@@ -328,33 +321,6 @@ data:
           - "gpt-oss"
           - "gpt-fast"
 
-      gpt-oss-20b-32k:
-        name: "GPT-OSS 20B Q8 32K"
-        description: "Fast general purpose - medium context"
-        cmd: >-
-          /app/llama-server
-          -m /models/gpt-oss-20b-UD-Q8_K_XL.gguf
-          -c 32768
-          -ngl 99
-          --split-mode layer
-          --tensor-split 1,1
-          --host 0.0.0.0
-          --port ${PORT}
-          --threads -1
-          -fa
-          --cache-type-k q4_0
-          --cache-type-v q4_0
-          --temp 0.7
-          --jinja
-          --mlock
-        env:
-          - "CUDA_VISIBLE_DEVICES=0,1"
-        checkEndpoint: /health
-        ttl: 300
-        aliases:
-          - "gpt-oss-32k"
-
-    # Preload your main model on startup
     hooks:
       on_startup:
         preload:
