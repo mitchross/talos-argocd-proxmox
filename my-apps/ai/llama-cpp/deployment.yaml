@@ -25,6 +25,9 @@ spec:
       - key: "nvidia.com/gpu"
         operator: "Exists"
         effect: "NoSchedule"
+      securityContext:
+        fsGroup: 10001
+        fsGroupChangePolicy: "OnRootMismatch"
       containers:
       - name: llama-swap
         image: ghcr.io/mostlygeek/llama-swap:v173-cuda-b7122
@@ -38,6 +41,10 @@ spec:
           value: "all"
         - name: CUDA_VISIBLE_DEVICES
           value: "0,1"
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: "compute,utility"
+        - name: LD_LIBRARY_PATH
+          value: "/usr/local/nvidia/lib64:/usr/local/cuda/lib64"
         - name: GGML_CUDA_ENABLE_UNIFIED_MEMORY
           value: "1"
         - name: GGML_CUDA_PEER_MAX_BATCH_SIZE
@@ -49,13 +56,13 @@ spec:
         
         resources:
           limits:
-            cpu: "52000m"  # Increased to match thread count
-            memory: 440Gi  # Adjusted for UD-Q2_K_XL (381GB) + overhead
+            cpu: "52000m"
+            memory: 440Gi
             nvidia.com/gpu: "2"
             ephemeral-storage: "50Gi"
           requests:
             cpu: "12000m"
-            memory: 390Gi  # Slightly higher request
+            memory: 390Gi
             nvidia.com/gpu: "2"
             ephemeral-storage: "25Gi"
             
@@ -78,7 +85,7 @@ spec:
       - name: dshm
         emptyDir:
           medium: Memory
-          sizeLimit: 8Gi  # Increased for dual GPU
+          sizeLimit: 8Gi
           
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
