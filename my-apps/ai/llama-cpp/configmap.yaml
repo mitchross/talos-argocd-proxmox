@@ -19,7 +19,7 @@ data:
           --port ${PORT}
           --threads 52
           --threads-batch 28
-          -fa
+          --flash-attn on
           --cache-type-k q8_0
           --cache-type-v q8_0
           --parallel 2
@@ -44,7 +44,7 @@ data:
           --port ${PORT}
           --threads 48
           --threads-batch 24
-          -fa
+          --flash-attn on
           --cache-type-k q8_0
           --cache-type-v q8_0
           --parallel 2
@@ -69,7 +69,7 @@ data:
           --port ${PORT}
           --threads 48
           --threads-batch 24
-          -fa
+          --flash-attn on
           --cache-type-k q8_0
           --cache-type-v q8_0
           --parallel 2
