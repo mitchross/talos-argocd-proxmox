@@ -33,19 +33,15 @@ spec:
         args:
         - "--config"
         - "/app/config.yaml"
-
         env:
         - name: NVIDIA_VISIBLE_DEVICES
           value: "all"
         - name: CUDA_VISIBLE_DEVICES
           value: "0,1"
-        # Unified Memory allows the GPU to access System RAM seamlessly
         - name: GGML_CUDA_ENABLE_UNIFIED_MEMORY
           value: "1"
-        # Helps with P2P communication between the 3090s
         - name: GGML_CUDA_PEER_MAX_BATCH_SIZE
           value: "128"
-
         ports:
         - name: http
           containerPort: 8080
@@ -53,15 +49,13 @@ spec:
         
         resources:
           limits:
-            # CRITICAL FIX: Increased CPU for massive RAM bandwidth
-            cpu: "24000m"  
-            # CRITICAL FIX: Must match your model size (~443GB) + overhead
-            memory: 460Gi  
+            cpu: "52000m"  # Increased to match thread count
+            memory: 440Gi  # Adjusted for UD-Q2_K_XL (381GB) + overhead
             nvidia.com/gpu: "2"
             ephemeral-storage: "50Gi"
           requests:
-            cpu: "8000m"
-            memory: 400Gi
+            cpu: "12000m"
+            memory: 390Gi  # Slightly higher request
             nvidia.com/gpu: "2"
             ephemeral-storage: "25Gi"
             
@@ -72,10 +66,8 @@ spec:
           mountPath: /app/config.yaml
           subPath: config.yaml
           readOnly: true
-        # Mount shared memory for Dual GPU communication
         - name: dshm
           mountPath: /dev/shm
-
       volumes:
       - name: models-storage
         persistentVolumeClaim:
@@ -83,11 +75,10 @@ spec:
       - name: config-volume
         configMap:
           name: llama-swap-config
-      # Shared memory volume for multi-GPU efficiency
       - name: dshm
         emptyDir:
           medium: Memory
-          sizeLimit: 4Gi
+          sizeLimit: 8Gi  # Increased for dual GPU
           
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
