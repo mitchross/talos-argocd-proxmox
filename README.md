@@ -390,17 +390,7 @@ Automated backups are configured with different tiers:
 - **[View Documentation Online](https://mitchross.github.io/talos-argocd-proxmox)** - Full documentation website
 - **[Local Documentation](docs/)** - Browse documentation in the repository:
   - [ArgoCD Setup](docs/argocd.md) - **Enterprise GitOps patterns and self-management**
-  - [Network Configuration](docs/network.md)
-  - [Storage Configuration](docs/storage.md)
-  - [**Backup & Recovery**](docs/backup-recovery.md) 🗄️ - **Simple backup and disaster recovery guide**
-  - [Security Setup](docs/security.md)
-  - [GPU Configuration](docs/gpu.md)
-  - [External Services](docs/external-services.md)
-  - [Project Structure](docs/structure.md)
-
-### 🚨 Emergency Runbooks
-- [**Longhorn Emergency Procedures**](docs/runbooks/longhorn-emergency-procedures.md) - **Critical storage recovery**
-- [Monitoring Runbooks](docs/runbooks/monitoring.md)
+  - [Storage Architecture](docs/storage-architecture.md) - Storage configuration and architecture
 
 ## 💻 Hardware Stack
 ```
@@ -486,4 +476,4 @@ The patterns and structure remain the same - this is **production-grade GitOps**
 
 ## 📜 License
 
-MIT License - See [LICENSE](LICENSE) for details
+MIT License
