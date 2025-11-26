@@ -15,8 +15,18 @@ This repository supports two bootstrap approaches:
 
 > **Using Omni?** Skip the manual setup below and jump to **[BOOTSTRAP.md](BOOTSTRAP.md)** for the streamlined workflow.
 
+## 📦 Repositories & Resources
+
+| Resource | Description |
+|----------|-------------|
+| [Omni](https://github.com/siderolabs/omni) | SaaS-simple deployment of Kubernetes on your own hardware |
+| [Proxmox Infra Provider](https://github.com/siderolabs/omni-infra-provider-proxmox) | Proxmox infrastructure provider for Omni |
+| [Starter Repo](https://github.com/mitchross/sidero-omni-talos-proxmox-starter) | Full config & automation for Sidero Omni + Talos + Proxmox |
+| [Reference Guide](https://www.virtualizationhowto.com/2025/08/how-to-install-talos-omni-on-prem-for-effortless-kubernetes-management/) | VirtualizationHowTo guide for Talos Omni on-prem setup |
+
 ## 📋 Table of Contents
 
+- [Repositories & Resources](#-repositories--resources)
 - [Prerequisites](#-prerequisites)
 - [Architecture](#-architecture)
 - [Quick Start](#-quick-start) (Manual Talos Method)
@@ -380,17 +390,7 @@ Automated backups are configured with different tiers:
 - **[View Documentation Online](https://mitchross.github.io/talos-argocd-proxmox)** - Full documentation website
 - **[Local Documentation](docs/)** - Browse documentation in the repository:
   - [ArgoCD Setup](docs/argocd.md) - **Enterprise GitOps patterns and self-management**
-  - [Network Configuration](docs/network.md)
-  - [Storage Configuration](docs/storage.md)
-  - [**Backup & Recovery**](docs/backup-recovery.md) 🗄️ - **Simple backup and disaster recovery guide**
-  - [Security Setup](docs/security.md)
-  - [GPU Configuration](docs/gpu.md)
-  - [External Services](docs/external-services.md)
-  - [Project Structure](docs/structure.md)
-
-### 🚨 Emergency Runbooks
-- [**Longhorn Emergency Procedures**](docs/runbooks/longhorn-emergency-procedures.md) - **Critical storage recovery**
-- [Monitoring Runbooks](docs/runbooks/monitoring.md)
+  - [Storage Architecture](docs/storage-architecture.md) - Storage configuration and architecture
 
 ## 💻 Hardware Stack
 ```
@@ -476,4 +476,4 @@ The patterns and structure remain the same - this is **production-grade GitOps**
 
 ## 📜 License
 
-MIT License - See [LICENSE](LICENSE) for details
+MIT License
