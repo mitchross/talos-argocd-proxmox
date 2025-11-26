@@ -14,8 +14,8 @@ data:
   # Keep Ollama API disabled since llama-swap doesn't implement it
   ENABLE_OLLAMA_API: "false"
   
-  # Available models: kimi-k2-thinking-128k (default), gpt-oss-20b-128k, qwen3-thinking-128k
-  DEFAULT_MODELS: "kimi-k2-thinking-128k"
+  # Available models: qwen3-vl (default), qwen3-thinking, qwen3-coder, gpt-oss, magistral
+  DEFAULT_MODELS: "qwen3-vl"
 
   # Context window set to 128K (all models support this)
   CONTEXT_WINDOW: "131072"
