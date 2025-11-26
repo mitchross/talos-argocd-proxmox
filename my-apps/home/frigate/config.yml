@@ -42,6 +42,10 @@ ffmpeg:
 go2rtc:
   streams:
     # Nest cameras using direct Nest integration (native go2rtc support)
+    shed:
+      - rtsp://192.168.10.46:8554/shed
+    driveway:
+      - rtsp://192.168.10.46:8554/driveway
     backyard-nest:
       - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEsZ6SReCC2ZtlYVvLI6UNQZlzwKQjWv1pkYzQ1NztwVsr1NqV1iYNb-3StU8yO6-xiZVnirwztAMMqnd0KRlGHyJKc"
     garage-inside-nest:
@@ -59,8 +63,9 @@ cameras:
   shed:
     enabled: true
     ffmpeg:
+      input_args: preset-rtsp-restream-low-latency
       inputs:
-        - path: rtsp://192.168.10.46:8554/shed
+        - path: rtsp://127.0.0.1:8554/shed
           roles:
             - detect
             - record
@@ -74,8 +79,9 @@ cameras:
   driveway:
     enabled: true
     ffmpeg:
+      input_args: preset-rtsp-restream-low-latency
       inputs:
-        - path: rtsp://192.168.10.46:8554/driveway
+        - path: rtsp://127.0.0.1:8554/driveway
           roles:
             - detect
             - record
