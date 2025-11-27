@@ -49,7 +49,7 @@ go2rtc:
     garage-outside-nest:
       - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEsLUBYvPpbrvkZE3ir7qdib-rPCuK5gOUjGNAsPpI-JKhu2tv0tmTY2j5zhLmyLt9Mxa6ZkQTjyT1BrP_EdF523vZI"
     front-porch-nest:
-      - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEtoyaiDgotGDqDsbmu6D40w0Rb8ZLrrjMfxdXgXuD-39y9pPzfDXFLQpCC2ZC3-t8nYsizVoaUTXOshmma5yPr7n3s"
+      - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEtoyaiDgotGDqDsbmu6D40w0Rb8ZLrrjMfxdXgXuD-39y9pPzfDXFLQpCC2ZC3-t8nYsizVoaUTXOshmma5yPr7n3s&protocols=RTSP"
     living-room-nest:
       - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEv5tLwvH71E3vUblbN0ZG1t8gDbTk4Gqcj7MuHGMniuTScOiemnu3ux2aji7VV_x-cBBbWe6u2zXU2lmOcUdxsLjnc"
     kitchen-nest:
