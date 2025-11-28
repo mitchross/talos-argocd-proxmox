@@ -60,8 +60,8 @@ The container's entrypoint will handle the setup automatically upon pod creation
 ## Features
 
 ### Container Image
-- Uses `yanwk/comfyui-boot:cu129-megapak` - an all-in-one image optimized for GPU workloads.
-- Includes ComfyUI, Python 3.12, CUDA 12.9, and all necessary dependencies.
+- Uses `yanwk/comfyui-boot:cu128-megapak` - an all-in-one image optimized for GPU workloads.
+- Includes ComfyUI, Python 3.12, CUDA 12.8, and all necessary dependencies.
 - Optimized for RTX 40 series and newer GPUs with fast loading and PyTorch cross-attention.
 
 ### CLI Arguments

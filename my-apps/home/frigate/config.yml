@@ -42,18 +42,19 @@ ffmpeg:
 go2rtc:
   streams:
     # Nest cameras using direct Nest integration (native go2rtc support)
+    # Added &protocols=WEB_RTC&video=h264&audio=opus for better compatibility
     backyard-nest:
-      - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEsZ6SReCC2ZtlYVvLI6UNQZlzwKQjWv1pkYzQ1NztwVsr1NqV1iYNb-3StU8yO6-xiZVnirwztAMMqnd0KRlGHyJKc"
+      - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEsZ6SReCC2ZtlYVvLI6UNQZlzwKQjWv1pkYzQ1NztwVsr1NqV1iYNb-3StU8yO6-xiZVnirwztAMMqnd0KRlGHyJKc&protocols=WEB_RTC&video=h264&audio=opus"
     garage-inside-nest:
-      - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEs6xJSbcP_WS7rsPKtaG8GdwxdrIcuIewmed2hsPvmh58WggGkDixnwnifuchUSGZB6eQaxQu7t-CNJZL-An6qiEG8"
+      - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEs6xJSbcP_WS7rsPKtaG8GdwxdrIcuIewmed2hsPvmh58WggGkDixnwnifuchUSGZB6eQaxQu7t-CNJZL-An6qiEG8&protocols=WEB_RTC&video=h264&audio=opus"
     garage-outside-nest:
-      - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEsLUBYvPpbrvkZE3ir7qdib-rPCuK5gOUjGNAsPpI-JKhu2tv0tmTY2j5zhLmyLt9Mxa6ZkQTjyT1BrP_EdF523vZI"
+      - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEsLUBYvPpbrvkZE3ir7qdib-rPCuK5gOUjGNAsPpI-JKhu2tv0tmTY2j5zhLmyLt9Mxa6ZkQTjyT1BrP_EdF523vZI&protocols=WEB_RTC&video=h264&audio=opus"
     front-porch-nest:
       - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEtoyaiDgotGDqDsbmu6D40w0Rb8ZLrrjMfxdXgXuD-39y9pPzfDXFLQpCC2ZC3-t8nYsizVoaUTXOshmma5yPr7n3s&protocols=RTSP"
     living-room-nest:
-      - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEv5tLwvH71E3vUblbN0ZG1t8gDbTk4Gqcj7MuHGMniuTScOiemnu3ux2aji7VV_x-cBBbWe6u2zXU2lmOcUdxsLjnc"
+      - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEv5tLwvH71E3vUblbN0ZG1t8gDbTk4Gqcj7MuHGMniuTScOiemnu3ux2aji7VV_x-cBBbWe6u2zXU2lmOcUdxsLjnc&protocols=WEB_RTC&video=h264&audio=opus"
     kitchen-nest:
-      - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEuNP2NFY_qy6L9xdYaaMkjwAKiOWBL7c1VaveNbDlguT_nY0u_Ibcx14EtpzDOOdRigBA21vDzWEa_5t7gJl-nH0Hc"
+      - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEuNP2NFY_qy6L9xdYaaMkjwAKiOWBL7c1VaveNbDlguT_nY0u_Ibcx14EtpzDOOdRigBA21vDzWEa_5t7gJl-nH0Hc&protocols=WEB_RTC&video=h264&audio=opus"
 cameras:
   # Keep working shed and driveway cameras
   shed:
@@ -91,11 +92,14 @@ cameras:
     enabled: true
     ffmpeg:
       input_args: preset-rtsp-restream-low-latency
+      output_args:
+        record: preset-record-generic-audio-aac
       inputs:
-        - path: rtsp://127.0.0.1:8554/backyard-nest?video
+        - path: rtsp://127.0.0.1:8554/backyard-nest?video&audio
           roles:
             - detect
             - record
+            - audio
     detect:
       enabled: true
       width: 1280
@@ -113,11 +117,14 @@ cameras:
     enabled: true
     ffmpeg:
       input_args: preset-rtsp-restream-low-latency
+      output_args:
+        record: preset-record-generic-audio-aac
       inputs:
-        - path: rtsp://127.0.0.1:8554/garage-inside-nest?video
+        - path: rtsp://127.0.0.1:8554/garage-inside-nest?video&audio
           roles:
             - detect
             - record
+            - audio
     detect:
       enabled: true
       width: 1280
@@ -133,11 +140,14 @@ cameras:
     enabled: true
     ffmpeg:
       input_args: preset-rtsp-restream-low-latency
+      output_args:
+        record: preset-record-generic-audio-aac
       inputs:
-        - path: rtsp://127.0.0.1:8554/garage-outside-nest?video
+        - path: rtsp://127.0.0.1:8554/garage-outside-nest?video&audio
           roles:
             - detect
             - record
+            - audio
     detect:
       enabled: true
       width: 1280
@@ -153,11 +163,14 @@ cameras:
     enabled: true
     ffmpeg:
       input_args: preset-rtsp-restream-low-latency
+      output_args:
+        record: preset-record-generic-audio-aac
       inputs:
-        - path: rtsp://127.0.0.1:8554/front-porch-nest?video
+        - path: rtsp://127.0.0.1:8554/front-porch-nest?video&audio
           roles:
             - detect
             - record
+            - audio
     detect:
       enabled: true
       width: 1280
@@ -175,11 +188,14 @@ cameras:
     enabled: true
     ffmpeg:
       input_args: preset-rtsp-restream-low-latency
+      output_args:
+        record: preset-record-generic-audio-aac
       inputs:
-        - path: rtsp://127.0.0.1:8554/living-room-nest?video
+        - path: rtsp://127.0.0.1:8554/living-room-nest?video&audio
           roles:
             - detect
             - record
+            - audio
     detect:
       enabled: true
       width: 1280
@@ -196,11 +212,14 @@ cameras:
     enabled: true
     ffmpeg:
       input_args: preset-rtsp-restream-low-latency
+      output_args:
+        record: preset-record-generic-audio-aac
       inputs:
-        - path: rtsp://127.0.0.1:8554/kitchen-nest?video
+        - path: rtsp://127.0.0.1:8554/kitchen-nest?video&audio
           roles:
             - detect
             - record
+            - audio
     detect:
       enabled: true
       width: 1280
