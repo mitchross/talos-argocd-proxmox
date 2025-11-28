@@ -43,17 +43,17 @@ go2rtc:
   streams:
     # Nest cameras via Home Assistant WebRTC proxy
     backyard-nest:
-      - "homeassistant://home-assistant.home-assistant:8123?token={HA_TOKEN}&camera=camera.backyard_camera"
+      - "homeassistant://home-assistant.home-assistant:8123?token=${HA_TOKEN}&camera=camera.backyard_camera"
     garage-inside-nest:
-      - "homeassistant://home-assistant.home-assistant:8123?token={HA_TOKEN}&camera=camera.garage_inside"
+      - "homeassistant://home-assistant.home-assistant:8123?token=${HA_TOKEN}&camera=camera.garage_inside"
     garage-outside-nest:
-      - "homeassistant://home-assistant.home-assistant:8123?token={HA_TOKEN}&camera=camera.garage_camera"
+      - "homeassistant://home-assistant.home-assistant:8123?token=${HA_TOKEN}&camera=camera.garage_camera"
     front-porch-nest:
-      - "homeassistant://home-assistant.home-assistant:8123?token={HA_TOKEN}&camera=camera.front_porch_doorbell"
+      - "homeassistant://home-assistant.home-assistant:8123?token=${HA_TOKEN}&camera=camera.front_porch_doorbell"
     living-room-nest:
-      - "homeassistant://home-assistant.home-assistant:8123?token={HA_TOKEN}&camera=camera.living_room_camera"
+      - "homeassistant://home-assistant.home-assistant:8123?token=${HA_TOKEN}&camera=camera.living_room_camera"
     kitchen-nest:
-      - "homeassistant://home-assistant.home-assistant:8123?token={HA_TOKEN}&camera=camera.kitchen_camera"
+      - "homeassistant://home-assistant.home-assistant:8123?token=${HA_TOKEN}&camera=camera.kitchen_camera"
 cameras:
   # Keep working shed and driveway cameras
   shed:
