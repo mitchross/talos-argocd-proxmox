@@ -13,7 +13,6 @@ spec:
       labels:
         app: wyze-bridge
     spec:
-      hostNetwork: true
       containers:
       - name: wyze-bridge
         image: ghcr.io/idisposable/docker-wyze-bridge:3.12.3
