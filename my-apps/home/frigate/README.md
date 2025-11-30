@@ -45,4 +45,52 @@ Follow **Phase 2, 3, and 4** of that guide carefully. Key steps include:
 -   **`deployment.yaml`**: Mounts the data from the `frigate-secrets` Secret as environment variables (e.g., `FRIGATE_NEST_CLIENT_ID`) into the Frigate container.
 -   **`config.yml`**: Contains the primary Frigate configuration. The `go2rtc.streams` section is populated with the `nest:` provider string, which includes placeholders for the environment variables and the unique `device_id` for each camera.
 
-This setup ensures that no sensitive credentials are hardcoded in the repository, adhering to GitOps best practices. 
+This setup ensures that no sensitive credentials are hardcoded in the repository, adhering to GitOps best practices.
+
+## Troubleshooting
+
+### Common Issues
+
+**401 Unauthorized Errors**
+- Ensure the OAuth Consent Screen Publishing status is set to **"In production"** (not "Testing")
+- Verify you're using the **enabled** client secret in Google Cloud Console
+- Check that the refresh token hasn't expired (tokens in Testing mode expire after 7 days)
+- Force refresh the ExternalSecret: `kubectl annotate externalsecret frigate-secrets -n frigate force-sync="$(date +%s)" --overwrite`
+
+**400 Bad Request Errors**
+- Try switching the camera protocol from `RTSP` to `WEB_RTC` (or vice versa)
+- Most 2021+ Nest cameras work best with `&protocols=WEB_RTC&video=h264&audio=opus`
+
+**Invalid Client Errors**
+- Verify the OAuth client has `https://www.google.com` in Authorized redirect URIs
+- Ensure client_id and client_secret match the **enabled** secret in Google Cloud Console
+
+### Verifying Camera Streams
+
+Check that all cameras are connected and streaming:
+
+```bash
+# Check go2rtc stream status
+kubectl exec -n frigate deployment/frigate -- curl -s http://127.0.0.1:1984/api/streams | \
+  jq -r 'to_entries[] | select(.key | endswith("-nest")) | "\(.key): \(.value.producers[0].format_name // "not connected") - \(.value.producers[0].bytes_recv // 0) bytes"'
+```
+
+Expected output for working cameras:
+```
+backyard-nest: nest/webrtc - 3921351 bytes
+garage-inside-nest: nest/webrtc - 9738102 bytes
+garage-outside-nest: nest/webrtc - 10256527 bytes
+front-porch-nest: nest/webrtc - 306955 bytes
+kitchen-nest: nest/webrtc - 9016256 bytes
+living-room-nest: nest/webrtc - 10817595 bytes
+```
+
+### Current Camera Configuration
+
+All cameras are configured with WebRTC protocol:
+- `backyard-nest`: WebRTC
+- `garage-inside-nest`: WebRTC
+- `garage-outside-nest`: WebRTC
+- `front-porch-nest`: WebRTC
+- `kitchen-nest`: WebRTC
+- `living-room-nest`: WebRTC 
