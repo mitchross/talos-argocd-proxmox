@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: vert
-          image: ghcr.io/vert-sh/vert:latest@sha256:ac1bafe627c72f6dcb3a03357a455be58913e51fa6fc822dbc5ba7b6b842c134
+          image: ghcr.io/vert-sh/vert:latest@sha256:3bab22ecb5581a1438d6b966ddfd7d8677ffd348ca84af53e008d5763a585860
           imagePullPolicy: Always
           ports:
             - name: http
