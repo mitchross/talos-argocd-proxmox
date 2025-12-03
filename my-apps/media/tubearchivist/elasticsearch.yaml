@@ -22,7 +22,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: elasticsearch
-        image: docker.elastic.co/elasticsearch/elasticsearch:9.2.1
+        image: docker.elastic.co/elasticsearch/elasticsearch:9.2.2
         ports:
         - containerPort: 9200
         securityContext:
