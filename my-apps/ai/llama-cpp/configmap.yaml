@@ -81,14 +81,15 @@ data:
           - "instruct"
 
       # ============================================================
-      # QWEN3 VL
+      # QWEN3 VL - Vision Models (32B Thinking)
       # ============================================================
-      
+
       qwen3-vl:
-        name: "Qwen3 VL Q6"
+        name: "Qwen3 VL 32B Q6 (High Quality)"
         cmd: >-
           /app/llama-server
-          -m /models/Qwen3-VL-30B-A3B-Thinking-UD-Q6_K_XL.gguf
+          -m /models/Qwen3-VL-32B-Thinking-Q6_K.gguf
+          --mmproj /models/mmproj-F16.gguf
           -c 40960
           -ngl 99
           --split-mode layer
@@ -113,6 +114,39 @@ data:
         aliases:
           - "vl"
           - "vision"
+          - "qwen3-vl-q6"
+
+      qwen3-vl-fast:
+        name: "Qwen3 VL 32B IQ4 (Fast)"
+        cmd: >-
+          /app/llama-server
+          -m /models/Qwen3-VL-32B-Thinking-IQ4_XS.gguf
+          --mmproj /models/mmproj-F16.gguf
+          -c 40960
+          -ngl 99
+          --split-mode layer
+          --tensor-split 1,1
+          --host 0.0.0.0
+          --port ${PORT}
+          --threads -1
+          --flash-attn auto
+          --cache-type-k q8_0
+          --cache-type-v q8_0
+          --temp 1.0
+          --top-p 0.95
+          --top-k 20
+          --min-p 0.0
+          --presence-penalty 0.0
+          --jinja
+          --mlock
+        env:
+          - "CUDA_VISIBLE_DEVICES=0,1"
+        checkEndpoint: /health
+        ttl: 0
+        aliases:
+          - "vl-fast"
+          - "vision-fast"
+          - "qwen3-vl-iq4"
 
       # ============================================================
       # OSS FALLBACK (GPT-OSS / MAGISTRAL)
