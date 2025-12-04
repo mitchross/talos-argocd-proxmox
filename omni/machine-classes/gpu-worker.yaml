@@ -11,10 +11,10 @@ spec:
     kernelargs: []
     metavalues: []
     providerdata: |
-      cores: 8
-      sockets: 1
-      memory: 32768
-      disk_size: 400
+      cores: 12
+      sockets: 2
+      memory: 480000
+      disk_size: 450
       network_bridge: vmbr0
       storage_selector: name == "ssdpool"
       grpctunnel: 0

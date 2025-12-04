@@ -1,0 +1,66 @@
+# ==============================================================================
+# Sidero Omni + Talos + Proxmox Starter Kit - Git Ignore
+# ==============================================================================
+
+# Secrets and credentials
+# DO NOT commit these files - they contain sensitive information
+omni/omni.env
+omni/.env
+proxmox-provider/.env
+proxmox-provider/config.yaml
+
+# GPG keys (encryption keys for etcd)
+*.asc
+omni.asc
+
+# SSL certificates and keys
+*.crt
+*.key
+*.pem
+cloudflare.ini
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Etcd data
+etcd/
+**/etcd/
+
+# Logs
+*.log
+logs/
+
+# OS specific
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE specific
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Docker
+docker-compose.override.yml
+
+# Local development
+local/
+.local/
+
+# ==============================================================================
+# Files that SHOULD be committed (override above rules if needed)
+# ==============================================================================
+!omni/omni.env.example
+!proxmox-provider/.env.example
+!proxmox-provider/config.yaml.example
+!talos-configs/*.yaml
