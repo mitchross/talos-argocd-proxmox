@@ -35,6 +35,7 @@ data:
           --top-p 0.95
           --top-k 20
           --min-p 0.0
+          --repeat-penalty 1.0
           --presence-penalty 0.0
           --jinja
           --mlock
@@ -69,7 +70,8 @@ data:
           --top-p 0.8
           --top-k 20
           --min-p 0.0
-          --repeat-penalty 1.05
+          --repeat-penalty 1.0
+          --presence-penalty 1.5
           --jinja
           --mlock
         env:
@@ -104,6 +106,7 @@ data:
           --top-p 0.95
           --top-k 20
           --min-p 0.0
+          --repeat-penalty 1.0
           --presence-penalty 0.0
           --jinja
           --mlock
@@ -136,6 +139,7 @@ data:
           --top-p 0.95
           --top-k 20
           --min-p 0.0
+          --repeat-penalty 1.0
           --presence-penalty 0.0
           --jinja
           --mlock
