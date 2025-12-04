@@ -25,7 +25,7 @@ spec:
       containers:
         - name: libreddit
           image: mitchross09/redlib:latest
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
                 name: libreddit-env
