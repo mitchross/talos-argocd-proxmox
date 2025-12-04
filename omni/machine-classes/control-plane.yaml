@@ -16,5 +16,5 @@ spec:
       memory: 16000
       disk_size: 60
       network_bridge: vmbr0
-      storage_selector: name == "ssd512gb"
+      storage_selector: name == "ssdpool"
       grpctunnel: 0

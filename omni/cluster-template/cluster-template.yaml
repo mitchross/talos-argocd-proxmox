@@ -5,7 +5,7 @@ name: talos-prod-cluster
 labels:
   cluster-id: "1"
 kubernetes:
-  version: v1.34.1
+  version: v1.34.2
 talos:
   version: v1.11.5
 patches:
@@ -25,7 +25,7 @@ machineClass:
 systemExtensions:
   - siderolabs/iscsi-tools
   - siderolabs/nfsd
-  #- siderolabs/qemu-guest-agent
+  - siderolabs/qemu-guest-agent
   - siderolabs/util-linux-tools
 ---
 kind: Workers
@@ -36,7 +36,7 @@ machineClass:
 systemExtensions:
   - siderolabs/iscsi-tools
   - siderolabs/nfsd
-  #- siderolabs/qemu-guest-agent 
+  - siderolabs/qemu-guest-agent 
   - siderolabs/util-linux-tools
 patches:
   - name: worker-labels
@@ -65,10 +65,10 @@ machineClass:
 systemExtensions:
   - siderolabs/iscsi-tools
   - siderolabs/nfsd
-  #- siderolabs/qemu-guest-agent
+  - siderolabs/qemu-guest-agent
   - siderolabs/util-linux-tools
-  - siderolabs/nonfree-kmod-nvidia
-  - siderolabs/nvidia-container-toolkit
+  - siderolabs/nonfree-kmod-nvidia-production
+  - siderolabs/nvidia-container-toolkit-production
 patches:
   - name: worker-labels
     inline:
