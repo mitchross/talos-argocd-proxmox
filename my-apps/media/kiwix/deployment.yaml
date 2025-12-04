@@ -17,6 +17,10 @@ spec:
       labels:
         app.kubernetes.io/name: kiwix
     spec:
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
       containers:
         - name: kiwix
           image: ghcr.io/kiwix/kiwix-serve:latest
