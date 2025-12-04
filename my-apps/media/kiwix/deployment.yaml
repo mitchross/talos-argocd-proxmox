@@ -24,6 +24,7 @@ spec:
       containers:
         - name: kiwix
           image: ghcr.io/kiwix/kiwix-serve:latest
+          imagePullPolicy: IfNotPresent
           args:
             - "*.zim"
           ports:
