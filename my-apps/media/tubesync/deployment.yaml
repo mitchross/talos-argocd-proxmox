@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tubesync
+  namespace: tubesync
+  labels:
+    app: tubesync
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tubesync
+  template:
+    metadata:
+      labels:
+        app: tubesync
+    spec:
+      containers:
+      - name: tubesync
+        image: ghcr.io/meeb/tubesync:sha-84a23bf
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 4848
+        env:
+        - name: TZ
+          value: America/New_York
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: media
+          mountPath: /downloads
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: "1"
+            memory: 1Gi
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: config-pvc
+      - name: media
+        persistentVolumeClaim:
+          claimName: media-pvc
