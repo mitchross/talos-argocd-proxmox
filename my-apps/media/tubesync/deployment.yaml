@@ -15,15 +15,6 @@ spec:
       labels:
         app: tubesync
     spec:
-      securityContext:
-        fsGroup: 1000
-      initContainers:
-      - name: init-permissions
-        image: busybox
-        command: ['sh', '-c', 'mkdir -p /downloads/cache']
-        volumeMounts:
-        - name: media
-          mountPath: /downloads
       containers:
       - name: tubesync
         image: ghcr.io/meeb/tubesync:v0.15.12
@@ -34,9 +25,9 @@ spec:
         - name: TZ
           value: America/New_York
         - name: PUID
-          value: "1000"
+          value: "0"
         - name: PGID
-          value: "1000"
+          value: "0"
         volumeMounts:
         - name: config
           mountPath: /config
