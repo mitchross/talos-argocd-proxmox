@@ -17,6 +17,8 @@ spec:
       labels:
         app.kubernetes.io/name: fizzy
     spec:
+      securityContext:
+        fsGroup: 1000
       containers:
         - name: fizzy
           image: ghcr.io/basecamp/fizzy:sha-d729cf5
