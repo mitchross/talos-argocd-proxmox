@@ -1,0 +1,29 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: fizzy-route
+  namespace: fizzy
+  labels:
+    external-dns: "true"
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "vanillax.me"
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-external
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - "fizzy.vanillax.me"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: fizzy
+          port: 3000
+          weight: 1
