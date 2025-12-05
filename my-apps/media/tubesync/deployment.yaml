@@ -15,6 +15,13 @@ spec:
       labels:
         app: tubesync
     spec:
+      initContainers:
+      - name: init-permissions
+        image: busybox
+        command: ['sh', '-c', 'mkdir -p /downloads/cache && chown -R 1000:1000 /downloads']
+        volumeMounts:
+        - name: media
+          mountPath: /downloads
       containers:
       - name: tubesync
         image: ghcr.io/meeb/tubesync:v0.15.12
