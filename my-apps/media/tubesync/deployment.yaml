@@ -15,10 +15,12 @@ spec:
       labels:
         app: tubesync
     spec:
+      securityContext:
+        fsGroup: 1000
       initContainers:
       - name: init-permissions
         image: busybox
-        command: ['sh', '-c', 'mkdir -p /downloads/cache && chown -R 1000:1000 /downloads']
+        command: ['sh', '-c', 'mkdir -p /downloads/cache']
         volumeMounts:
         - name: media
           mountPath: /downloads
