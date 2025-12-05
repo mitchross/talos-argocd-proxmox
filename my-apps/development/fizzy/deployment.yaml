@@ -27,7 +27,7 @@ spec:
             - name: TZ
               value: America/Detroit
             - name: RAILS_ENV
-              value: production
+              value: development
             - name: SECRET_KEY_BASE
               valueFrom:
                 secretKeyRef:
