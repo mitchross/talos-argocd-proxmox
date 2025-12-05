@@ -27,12 +27,18 @@ spec:
             - name: TZ
               value: America/Detroit
             - name: RAILS_ENV
-              value: development
+              value: production
             - name: SECRET_KEY_BASE
               valueFrom:
                 secretKeyRef:
                   name: fizzy-secrets
                   key: SECRET_KEY_BASE
+            - name: SMTP_ADDRESS
+              value: mailpit.mailpit.svc.cluster.local
+            - name: SMTP_PORT
+              value: "1025"
+            - name: SMTP_DOMAIN
+              value: vanillax.me
           ports:
             - name: http
               containerPort: 3000
