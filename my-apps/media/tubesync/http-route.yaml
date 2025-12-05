@@ -10,7 +10,7 @@ spec:
     name: gateway-internal
     namespace: gateway
   hostnames:
-  - tubesync.vanillax.me
+  - tube.vanillax.me
   rules:
   - matches:
     - path:
