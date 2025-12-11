@@ -1,0 +1,9 @@
+context: omni-prod-talos-prod-cluster
+contexts:
+    omni-prod-talos-prod-cluster:
+        endpoints:
+            - https://omni.vanillax.me
+        auth:
+            siderov1:
+                identity: mitchross09@gmail.com
+        cluster: talos-prod-cluster
