@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: llama-swap-service
+  name: llama-cpp-service
   namespace: llama-cpp
 spec:
   selector:
-    app: llama-swap
+    app: llama-cpp-server
   ports:
   - name: http
     protocol: TCP
