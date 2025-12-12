@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: llama-swap
+  name: llama-cpp-server
   namespace: llama-cpp
   labels:
-    app: llama-swap
+    app: llama-cpp-server
 spec:
   strategy:
     type: Recreate
   replicas: 1
   selector:
     matchLabels:
-      app: llama-swap
+      app: llama-cpp-server
   revisionHistoryLimit: 1
   template:
     metadata:
       labels:
-        app: llama-swap
+        app: llama-cpp-server
     spec:
       restartPolicy: Always
       runtimeClassName: nvidia
@@ -33,15 +33,27 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       
       containers:
-        - name: llama-swap
-          # Latest image - works with driver 570 / CUDA 12.8
-          image: ghcr.io/mostlygeek/llama-swap:v173-cuda-b7122
+        - name: llama-cpp-server
+          # Official llama.cpp server with CUDA support
+          image: ghcr.io/ggml-org/llama.cpp:server-cuda
           imagePullPolicy: IfNotPresent
-          
-          command: ["/app/llama-swap"]
+
+          command: ["/llama-server"]
           args:
-            - "--config"
-            - "/config/config.yaml"
+            - "--models-dir"
+            - "/models"
+            - "--models-max"
+            - "4"
+            - "--models-preset"
+            - "/config/presets.ini"
+            - "-c"
+            - "65536"
+            - "-ngl"
+            - "99"
+            - "--host"
+            - "0.0.0.0"
+            - "--port"
+            - "8080"
           
           env:
             - name: NVIDIA_VISIBLE_DEVICES
@@ -117,10 +129,10 @@ spec:
         
         - name: config-volume
           configMap:
-            name: llama-swap-config
+            name: llama-cpp-config
             items:
-              - key: config.yaml
-                path: config.yaml
+              - key: presets.ini
+                path: presets.ini
         
         - name: dshm
           emptyDir:

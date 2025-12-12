@@ -1,213 +1,134 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: llama-swap-config
+  name: llama-cpp-config
   namespace: llama-cpp
 data:
-  config.yaml: |
-    # llama-swap config for dual RTX 3090 + 450GB RAM
+  presets.ini: |
+    # llama.cpp router mode presets for dual RTX 3090 + 450GB RAM
     # Driver 570 / CUDA 12.8
-    healthCheckTimeout: 900
-    logLevel: info
-    startPort: 5800
 
-    models:
-      # ============================================================
-      # QWEN3 THINKING
-      # ============================================================
-      
-      qwen3-thinking:
-        name: "Qwen3 Thinking Q6"
-        cmd: >-
-          /app/llama-server
-          -m /models/Qwen3-30B-A3B-Thinking-2507-UD-Q6_K_XL.gguf
-          -c 40960
-          -ngl 99
-          --split-mode layer
-          --tensor-split 1,1
-          --host 0.0.0.0
-          --port ${PORT}
-          --threads -1
-          --flash-attn auto
-          --cache-type-k q8_0
-          --cache-type-v q8_0
-          --temp 1.0
-          --top-p 0.95
-          --top-k 20
-          --min-p 0.0
-          --repeat-penalty 1.0
-          --presence-penalty 0.0
-          --jinja
-          --mlock
-        env:
-          - "CUDA_VISIBLE_DEVICES=0,1"
-        checkEndpoint: /health
-        ttl: 0
-        aliases:
-          - "qwen3-think"
-          - "thinking"
+    # ============================================================
+    # QWEN3 THINKING
+    # ============================================================
+    [Qwen3-30B-A3B-Thinking-2507-UD-Q6_K_XL.gguf]
+    model = /models/Qwen3-30B-A3B-Thinking-2507-UD-Q6_K_XL.gguf
+    alias = qwen3-thinking,qwen3-think,thinking
+    ctx-size = 40960
+    n-gpu-layers = 99
+    split-mode = layer
+    tensor-split = 1,1
+    threads = -1
+    flash-attn = 1
+    cache-type-k = q8_0
+    cache-type-v = q8_0
+    temp = 1.0
+    top-p = 0.95
+    top-k = 20
+    min-p = 0.0
+    repeat-penalty = 1.0
+    presence-penalty = 0.0
+    jinja = 1
+    mlock = 1
 
-      # ============================================================
-      # QWEN3 CODER (INSTRUCT)
-      # ============================================================
-      
-      qwen3-coder:
-        name: "Qwen3 Coder Q6"
-        cmd: >-
-          /app/llama-server
-          -m /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q6_K_M.gguf
-          -c 65536
-          -ngl 99
-          --split-mode layer
-          --tensor-split 1,1
-          --host 0.0.0.0
-          --port ${PORT}
-          --threads -1
-          --flash-attn auto
-          --cache-type-k q8_0
-          --cache-type-v q8_0
-          --temp 0.7
-          --top-p 0.8
-          --top-k 20
-          --min-p 0.0
-          --repeat-penalty 1.0
-          --presence-penalty 1.5
-          --jinja
-          --mlock
-        env:
-          - "CUDA_VISIBLE_DEVICES=0,1"
-        checkEndpoint: /health
-        ttl: 0
-        aliases:
-          - "coder"
-          - "instruct"
+    # ============================================================
+    # QWEN3 CODER (INSTRUCT)
+    # ============================================================
+    [Qwen3-Coder-30B-A3B-Instruct-UD-Q6_K_M.gguf]
+    model = /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q6_K_M.gguf
+    alias = qwen3-coder,coder,instruct
+    ctx-size = 65536
+    n-gpu-layers = 99
+    split-mode = layer
+    tensor-split = 1,1
+    threads = -1
+    flash-attn = 1
+    cache-type-k = q8_0
+    cache-type-v = q8_0
+    temp = 0.7
+    top-p = 0.8
+    top-k = 20
+    min-p = 0.0
+    repeat-penalty = 1.0
+    presence-penalty = 1.5
+    jinja = 1
+    mlock = 1
 
-      # ============================================================
-      # QWEN3 VL - Vision Models (32B Thinking)
-      # ============================================================
+    # ============================================================
+    # QWEN3 VL - Vision Models (32B Thinking)
+    # ============================================================
+    [Qwen3-VL-32B-Thinking-Q6_K.gguf]
+    model = /models/Qwen3-VL-32B-Thinking-Q6_K.gguf
+    alias = qwen3-vl,vl,vision,qwen3-vl-q6
+    mmproj = /models/mmproj-F16.gguf
+    ctx-size = 40960
+    n-gpu-layers = 99
+    split-mode = layer
+    tensor-split = 1,1
+    threads = -1
+    flash-attn = 1
+    cache-type-k = q8_0
+    cache-type-v = q8_0
+    temp = 1.0
+    top-p = 0.95
+    top-k = 20
+    min-p = 0.0
+    repeat-penalty = 1.0
+    presence-penalty = 0.0
+    jinja = 1
+    mlock = 1
 
-      qwen3-vl:
-        name: "Qwen3 VL 32B Q6 (High Quality)"
-        cmd: >-
-          /app/llama-server
-          -m /models/Qwen3-VL-32B-Thinking-Q6_K.gguf
-          --mmproj /models/mmproj-F16.gguf
-          -c 40960
-          -ngl 99
-          --split-mode layer
-          --tensor-split 1,1
-          --host 0.0.0.0
-          --port ${PORT}
-          --threads -1
-          --flash-attn auto
-          --cache-type-k q8_0
-          --cache-type-v q8_0
-          --temp 1.0
-          --top-p 0.95
-          --top-k 20
-          --min-p 0.0
-          --repeat-penalty 1.0
-          --presence-penalty 0.0
-          --jinja
-          --mlock
-        env:
-          - "CUDA_VISIBLE_DEVICES=0,1"
-        checkEndpoint: /health
-        ttl: 0
-        aliases:
-          - "vl"
-          - "vision"
-          - "qwen3-vl-q6"
+    [Qwen3-VL-32B-Thinking-IQ4_XS.gguf]
+    model = /models/Qwen3-VL-32B-Thinking-IQ4_XS.gguf
+    alias = qwen3-vl-fast,vl-fast,vision-fast,qwen3-vl-iq4
+    mmproj = /models/mmproj-F16.gguf
+    ctx-size = 40960
+    n-gpu-layers = 99
+    split-mode = layer
+    tensor-split = 1,1
+    threads = -1
+    flash-attn = 1
+    cache-type-k = q8_0
+    cache-type-v = q8_0
+    temp = 1.0
+    top-p = 0.95
+    top-k = 20
+    min-p = 0.0
+    repeat-penalty = 1.0
+    presence-penalty = 0.0
+    jinja = 1
+    mlock = 1
 
-      qwen3-vl-fast:
-        name: "Qwen3 VL 32B IQ4 (Fast)"
-        cmd: >-
-          /app/llama-server
-          -m /models/Qwen3-VL-32B-Thinking-IQ4_XS.gguf
-          --mmproj /models/mmproj-F16.gguf
-          -c 40960
-          -ngl 99
-          --split-mode layer
-          --tensor-split 1,1
-          --host 0.0.0.0
-          --port ${PORT}
-          --threads -1
-          --flash-attn auto
-          --cache-type-k q8_0
-          --cache-type-v q8_0
-          --temp 1.0
-          --top-p 0.95
-          --top-k 20
-          --min-p 0.0
-          --repeat-penalty 1.0
-          --presence-penalty 0.0
-          --jinja
-          --mlock
-        env:
-          - "CUDA_VISIBLE_DEVICES=0,1"
-        checkEndpoint: /health
-        ttl: 0
-        aliases:
-          - "vl-fast"
-          - "vision-fast"
-          - "qwen3-vl-iq4"
+    # ============================================================
+    # OSS FALLBACK (GPT-OSS / MAGISTRAL)
+    # ============================================================
+    [gpt-oss-20b-UD-Q8_K_XL.gguf]
+    model = /models/gpt-oss-20b-UD-Q8_K_XL.gguf
+    alias = gpt-oss,gpt-fast
+    ctx-size = 16384
+    n-gpu-layers = 99
+    split-mode = layer
+    tensor-split = 1,1
+    threads = 16
+    flash-attn = 1
+    cache-type-k = q8_0
+    cache-type-v = q8_0
+    temp = 1.0
+    top-p = 1.0
+    top-k = 0
+    jinja = 1
 
-      # ============================================================
-      # OSS FALLBACK (GPT-OSS / MAGISTRAL)
-      # ============================================================
-      
-      gpt-oss:
-        name: "GPT-OSS 20B Q8"
-        cmd: >-
-          /app/llama-server
-          -m /models/gpt-oss-20b-UD-Q8_K_XL.gguf
-          -c 16384
-          -ngl 99
-          --split-mode layer
-          --tensor-split 1,1
-          --host 0.0.0.0
-          --port ${PORT}
-          --threads 16
-          --flash-attn auto
-          --cache-type-k q8_0
-          --cache-type-v q8_0
-          --temp 1.0
-          --top-p 1.0
-          --top-k 0
-          --jinja
-        env:
-          - "CUDA_VISIBLE_DEVICES=0,1"
-        checkEndpoint: /health
-        ttl: 300
-        aliases:
-          - "gpt-fast"
-
-      magistral:
-        name: "Magistral Small Q8"
-        cmd: >-
-          /app/llama-server
-          -m /models/Magistral-Small-2509-UD-Q8_K_XL.gguf
-          -c 32768
-          -ngl 99
-          --split-mode layer
-          --tensor-split 1,1
-          --host 0.0.0.0
-          --port ${PORT}
-          --threads -1
-          --flash-attn auto
-          --cache-type-k q8_0
-          --cache-type-v q8_0
-          --temp 0.7
-          --jinja
-          --mlock
-        env:
-          - "CUDA_VISIBLE_DEVICES=0,1"
-        checkEndpoint: /health
-        ttl: 0
-        aliases:
-          - "magistral-hq"
-
-    hooks:
-      on_startup:
-        preload:
-          - "qwen3-vl"
+    [Magistral-Small-2509-UD-Q8_K_XL.gguf]
+    model = /models/Magistral-Small-2509-UD-Q8_K_XL.gguf
+    alias = magistral,magistral-hq
+    ctx-size = 32768
+    n-gpu-layers = 99
+    split-mode = layer
+    tensor-split = 1,1
+    threads = -1
+    flash-attn = 1
+    cache-type-k = q8_0
+    cache-type-v = q8_0
+    temp = 0.7
+    jinja = 1
+    mlock = 1
