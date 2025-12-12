@@ -3,10 +3,10 @@ tempo:
     trace:
       backend: s3
       s3:
-        bucket: tempo-bucket
-        endpoint: loki-minio.loki-stack.svc:9000
-        access_key: minio
-        secret_key: minio123
+        bucket: tempo-traces
+        endpoint: tempo-minio.monitoring.svc:9000
+        access_key: tempo
+        secret_key: temposecret123
         insecure: true
   retention: 72h
   resources:
@@ -16,3 +16,25 @@ tempo:
     limits:
       cpu: 500m
       memory: 512Mi
+
+# Deploy dedicated MinIO for Tempo
+minio:
+  enabled: true
+  mode: standalone
+  rootUser: tempo
+  rootPassword: temposecret123
+  buckets:
+    - name: tempo-traces
+      policy: none
+      purge: false
+  persistence:
+    enabled: true
+    storageClass: longhorn
+    size: 10Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
