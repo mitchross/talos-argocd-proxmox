@@ -22,122 +22,106 @@ spec:
       runtimeClassName: nvidia
       priorityClassName: gpu-workload-high
       terminationGracePeriodSeconds: 300
-
       tolerations:
-      - key: "nvidia.com/gpu"
-        operator: "Exists"
-        effect: "NoSchedule"
-
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
       securityContext:
         fsGroup: 10001
         fsGroupChangePolicy: "OnRootMismatch"
-
       containers:
-      - name: llama-cpp-server
-        # Official llama.cpp server with CUDA support
-        image: ghcr.io/ggml-org/llama.cpp:server-cuda-b7361
-        imagePullPolicy: IfNotPresent
-
-        command: ["/app/llama-server"]
-        args:
-        - "--models-dir"
-        - "/models"
-        - "--models-max"
-        - "4"
-        - "--models-preset"
-        - "/config/presets.ini"
-        - "-c"
-        - "65536"
-        - "-ngl"
-        - "99"
-        - "--host"
-        - "0.0.0.0"
-        - "--port"
-        - "8080"
-
-        env:
-        - name: NVIDIA_VISIBLE_DEVICES
-          value: "all"
-        - name: CUDA_VISIBLE_DEVICES
-          value: "0,1"
-        - name: NVIDIA_DRIVER_CAPABILITIES
-          value: "compute,utility"
-        - name: LD_LIBRARY_PATH
-          value: "/usr/local/nvidia/lib64:/usr/local/cuda/lib64"
-        - name: GGML_CUDA_ENABLE_UNIFIED_MEMORY
-          value: "1"
-        - name: GGML_CUDA_PEER_MAX_BATCH_SIZE
-          value: "128"
-
-        ports:
-        - name: http
-          containerPort: 8080
-          protocol: TCP
-
-        startupProbe:
-          httpGet:
-            path: /health
-            port: http
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 120
-
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: http
-          initialDelaySeconds: 60
-          periodSeconds: 30
-          timeoutSeconds: 10
-          failureThreshold: 3
-
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: http
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-
-        resources:
-          limits:
-            cpu: "52"
-            memory: 440Gi
-            nvidia.com/gpu: "2"
-            ephemeral-storage: "50Gi"
-          requests:
-            cpu: "12"
-            memory: 390Gi
-            nvidia.com/gpu: "2"
-            ephemeral-storage: "25Gi"
-
-        volumeMounts:
-        - name: models-storage
-          mountPath: /models
-        - name: config-volume
-          mountPath: /config
-          readOnly: true
-        - name: dshm
-          mountPath: /dev/shm
-
+        - name: llama-cpp-server
+          image: ghcr.io/ggml-org/llama.cpp:server-cuda-b7361
+          imagePullPolicy: IfNotPresent
+          command: ["/app/llama-server"]
+          args:
+            - "--models-dir"
+            - "/models"
+            - "--models-max"
+            - "4"
+            - "--models-preset"
+            - "/config/presets.ini"
+            - "-c"
+            - "65536"
+            - "-ngl"
+            - "99"
+            - "--host"
+            - "0.0.0.0"
+            - "--port"
+            - "8080"
+          env:
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: "all"
+            - name: CUDA_VISIBLE_DEVICES
+              value: "0,1"
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "compute,utility"
+            - name: LD_LIBRARY_PATH
+              value: "/usr/local/nvidia/lib64:/usr/local/cuda/lib64"
+            - name: GGML_CUDA_ENABLE_UNIFIED_MEMORY
+              value: "1"
+            - name: GGML_CUDA_PEER_MAX_BATCH_SIZE
+              value: "128"
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 120
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            limits:
+              cpu: "52"
+              memory: 440Gi
+              nvidia.com/gpu: "2"
+              ephemeral-storage: "50Gi"
+            requests:
+              cpu: "12"
+              memory: 390Gi
+              nvidia.com/gpu: "2"
+              ephemeral-storage: "25Gi"
+          volumeMounts:
+            - name: models-storage
+              mountPath: /models
+            - name: config-volume
+              mountPath: /config
+              readOnly: true
+            - name: dshm
+              mountPath: /dev/shm
       volumes:
-      - name: models-storage
-        persistentVolumeClaim:
-          claimName: llama-cpp-models-pvc
-
-      - name: config-volume
-        configMap:
-          name: llama-cpp-config
-          items:
-          - key: presets.ini
-            path: presets.ini
-
-      - name: dshm
-        emptyDir:
-          medium: Memory
-          sizeLimit: 32Gi
-
+        - name: models-storage
+          persistentVolumeClaim:
+            claimName: llama-cpp-models-pvc
+        - name: config-volume
+          configMap:
+            name: llama-cpp-config
+            items:
+              - key: presets.ini
+                path: presets.ini
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 32Gi
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
