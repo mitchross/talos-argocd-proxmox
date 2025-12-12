@@ -38,7 +38,7 @@ spec:
         image: ghcr.io/ggml-org/llama.cpp:server-cuda-b7361
         imagePullPolicy: IfNotPresent
 
-        command: [ "/llama-server" ]
+          command: ["/app/llama-server"]
         args:
         - "--models-dir"
         - "/models"
