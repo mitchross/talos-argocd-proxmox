@@ -4,7 +4,7 @@ metadata:
   name: wyze-bridge
   namespace: wyze-bridge
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app: wyze-bridge
