@@ -1,14 +1,18 @@
-[real_ip]
-
-# Number of values to trust for X-Forwarded-For.
-
-x_for = 2
+[botdetection]
 
 # The prefix defines the number of leading bits in an address that are compared
 # to determine whether or not an address is part of a (client) network.
-
 ipv4_prefix = 32
 ipv6_prefix = 48
+
+# Trust proxies - extract client IP from X-Forwarded-For
+trusted_proxies = [
+  '127.0.0.0/8',
+  '::1',
+  '10.0.0.0/8',
+  '172.16.0.0/12',
+  '192.168.0.0/16',
+]
 
 [botdetection.ip_limit]
 

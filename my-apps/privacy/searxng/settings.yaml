@@ -17,8 +17,8 @@ server:
         Access-Control-Allow-Origin: "*"
         Access-Control-Allow-Methods: "GET, POST, OPTIONS"
 
-redis:
-    url: redis://redis:6379
+valkey:
+    url: valkey://redis:6379/0
 
 search:
     safe_search: 0

@@ -10,5 +10,5 @@ data:
   SEARXNG_BIND_ADDRESS: "0.0.0.0"
   SEARXNG_BASE_URL: "https://search.vanillax.me"
   SEARXNG_INSTANCE_NAME: "vanillax"
-  SEARXNG_REDIS_URL: "redis://redis:6379"
+  SEARXNG_VALKEY_URL: "valkey://redis:6379/0"
   SEARXNG_LIMITER: "true"
