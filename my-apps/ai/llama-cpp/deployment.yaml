@@ -35,8 +35,6 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["/app/llama-server"]
           args:
-            - "--models-dir"
-            - "/models"
             - "--models-max"
             - "4"
             - "--models-preset"
