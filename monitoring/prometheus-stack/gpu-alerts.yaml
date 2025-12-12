@@ -8,135 +8,135 @@ metadata:
     release: kube-prometheus-stack
 spec:
   groups:
-    - name: gpu.rules
-      rules:
-        # GPU Utilization Rules
-        - alert: GPUHighUtilization
-          expr: DCGM_FI_DEV_GPU_UTIL > 90
-          for: 5m
-          labels:
-            severity: warning
-          annotations:
-            summary: "GPU {{ $labels.gpu }} high utilization"
-            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has been running at {{ $value }}% utilization for more than 5 minutes."
-        - alert: GPUCriticalUtilization
-          expr: DCGM_FI_DEV_GPU_UTIL > 95
-          for: 2m
-          labels:
-            severity: critical
-          annotations:
-            summary: "GPU {{ $labels.gpu }} critical utilization"
-            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has been running at {{ $value }}% utilization for more than 2 minutes."
-        # GPU Memory Rules
-        - alert: GPUHighMemoryUsage
-          expr: (DCGM_FI_DEV_FB_USED / DCGM_FI_DEV_FB_TOTAL) * 100 > 85
-          for: 5m
-          labels:
-            severity: warning
-          annotations:
-            summary: "GPU {{ $labels.gpu }} high memory usage"
-            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} memory usage is {{ $value }}%."
-        - alert: GPUCriticalMemoryUsage
-          expr: (DCGM_FI_DEV_FB_USED / DCGM_FI_DEV_FB_TOTAL) * 100 > 95
-          for: 2m
-          labels:
-            severity: critical
-          annotations:
-            summary: "GPU {{ $labels.gpu }} critical memory usage"
-            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} memory usage is {{ $value }}%."
-        # GPU Temperature Rules
-        - alert: GPUHighTemperature
-          expr: DCGM_FI_DEV_GPU_TEMP > 80
-          for: 5m
-          labels:
-            severity: warning
-          annotations:
-            summary: "GPU {{ $labels.gpu }} high temperature"
-            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} temperature is {{ $value }}°C."
-        - alert: GPUCriticalTemperature
-          expr: DCGM_FI_DEV_GPU_TEMP > 90
-          for: 2m
-          labels:
-            severity: critical
-          annotations:
-            summary: "GPU {{ $labels.gpu }} critical temperature"
-            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} temperature is {{ $value }}°C."
-        # GPU Power Rules
-        - alert: GPUHighPowerDraw
-          expr: DCGM_FI_DEV_POWER_USAGE > 400
-          for: 5m
-          labels:
-            severity: warning
-          annotations:
-            summary: "GPU {{ $labels.gpu }} high power consumption"
-            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} is drawing {{ $value }}W of power."
-        # GPU Down/Unavailable
-        - alert: GPUDown
-          expr: up{job="dcgm-exporter-metrics"} == 0
-          for: 2m
-          labels:
-            severity: critical
-          annotations:
-            summary: "GPU monitoring down"
-            description: "DCGM exporter on node {{ $labels.kubernetes_node }} has been down for more than 2 minutes."
-        # GPU Clock Speed
-        - alert: GPULowClockSpeed
-          expr: DCGM_FI_DEV_SM_CLOCK < 500
-          for: 10m
-          labels:
-            severity: warning
-          annotations:
-            summary: "GPU {{ $labels.gpu }} low clock speed"
-            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} clock speed is only {{ $value }}MHz."
-        # XID Errors - Hardware Issues
-        - alert: GPUXidErrors
-          expr: increase(DCGM_FI_DEV_XID_ERRORS[5m]) > 0
-          for: 1m
-          labels:
-            severity: critical
-          annotations:
-            summary: "GPU {{ $labels.gpu }} XID errors detected"
-            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has reported XID errors. This indicates a potential hardware issue. XID code may indicate driver issues, memory errors, or GPU faults."
-        # PCIe Errors
-        - alert: GPUPCIeReplayErrors
-          expr: increase(DCGM_FI_DEV_PCIE_REPLAY_COUNTER[5m]) > 10
-          for: 5m
-          labels:
-            severity: warning
-          annotations:
-            summary: "GPU {{ $labels.gpu }} PCIe replay errors"
-            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} is experiencing PCIe replay errors ({{ $value }} in last 5m). This may indicate PCIe bus issues or signal integrity problems."
-        # ECC Errors (for supported GPUs)
-        - alert: GPUECCErrors
-          expr: increase(DCGM_FI_DEV_ECC_DBE_VOL_TOTAL[5m]) > 0
-          for: 1m
-          labels:
-            severity: critical
-          annotations:
-            summary: "GPU {{ $labels.gpu }} uncorrectable ECC errors"
-            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has uncorrectable ECC memory errors. This is a critical hardware issue that may cause computation errors."
-        - alert: GPUECCSingleBitErrors
-          expr: increase(DCGM_FI_DEV_ECC_SBE_VOL_TOTAL[5m]) > 100
-          for: 5m
-          labels:
-            severity: warning
-          annotations:
-            summary: "GPU {{ $labels.gpu }} excessive correctable ECC errors"
-            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has excessive single-bit ECC errors ({{ $value }} in 5m). Memory may be degrading."
-        # Throttling Detection
-        - alert: GPUThermalThrottling
-          expr: DCGM_FI_DEV_THERMAL_VIOLATION > 0
-          for: 2m
-          labels:
-            severity: warning
-          annotations:
-            summary: "GPU {{ $labels.gpu }} thermal throttling"
-            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} is thermally throttling. Check cooling system."
-        - alert: GPUPowerThrottling
-          expr: DCGM_FI_DEV_POWER_VIOLATION > 0
-          for: 5m
-          labels:
-            severity: warning
-          annotations:
-            summary: "GPU {{ $labels.gpu }} power throttling"
-            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} is power throttling. Consider increasing power limit or reducing workload."
+  - name: gpu.rules
+    rules:
+    # GPU Utilization Rules
+    - alert: GPUHighUtilization
+      expr: DCGM_FI_DEV_GPU_UTIL > 90
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "GPU {{ $labels.gpu }} high utilization"
+        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has been running at {{ $value }}% utilization for more than 5 minutes."
+    - alert: GPUCriticalUtilization
+      expr: DCGM_FI_DEV_GPU_UTIL > 95
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "GPU {{ $labels.gpu }} critical utilization"
+        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has been running at {{ $value }}% utilization for more than 2 minutes."
+    # GPU Memory Rules
+    - alert: GPUHighMemoryUsage
+      expr: (DCGM_FI_DEV_FB_USED / DCGM_FI_DEV_FB_TOTAL) * 100 > 85
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "GPU {{ $labels.gpu }} high memory usage"
+        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} memory usage is {{ $value }}%."
+    - alert: GPUCriticalMemoryUsage
+      expr: (DCGM_FI_DEV_FB_USED / DCGM_FI_DEV_FB_TOTAL) * 100 > 95
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "GPU {{ $labels.gpu }} critical memory usage"
+        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} memory usage is {{ $value }}%."
+    # GPU Temperature Rules
+    - alert: GPUHighTemperature
+      expr: DCGM_FI_DEV_GPU_TEMP > 80
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "GPU {{ $labels.gpu }} high temperature"
+        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} temperature is {{ $value }}°C."
+    - alert: GPUCriticalTemperature
+      expr: DCGM_FI_DEV_GPU_TEMP > 90
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "GPU {{ $labels.gpu }} critical temperature"
+        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} temperature is {{ $value }}°C."
+    # GPU Power Rules
+    - alert: GPUHighPowerDraw
+      expr: DCGM_FI_DEV_POWER_USAGE > 400
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "GPU {{ $labels.gpu }} high power consumption"
+        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} is drawing {{ $value }}W of power."
+    # GPU Down/Unavailable
+    - alert: GPUDown
+      expr: up{job="dcgm-exporter-metrics"} == 0
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "GPU monitoring down"
+        description: "DCGM exporter on node {{ $labels.kubernetes_node }} has been down for more than 2 minutes."
+    # GPU Clock Speed
+    - alert: GPULowClockSpeed
+      expr: DCGM_FI_DEV_SM_CLOCK < 500
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: "GPU {{ $labels.gpu }} low clock speed"
+        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} clock speed is only {{ $value }}MHz."
+    # XID Errors - Hardware Issues
+    - alert: GPUXidErrors
+      expr: increase(DCGM_FI_DEV_XID_ERRORS[5m]) > 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "GPU {{ $labels.gpu }} XID errors detected"
+        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has reported XID errors. This indicates a potential hardware issue. XID code may indicate driver issues, memory errors, or GPU faults."
+    # PCIe Errors
+    - alert: GPUPCIeReplayErrors
+      expr: increase(DCGM_FI_DEV_PCIE_REPLAY_COUNTER[5m]) > 10
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "GPU {{ $labels.gpu }} PCIe replay errors"
+        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} is experiencing PCIe replay errors ({{ $value }} in last 5m). This may indicate PCIe bus issues or signal integrity problems."
+    # ECC Errors (for supported GPUs)
+    - alert: GPUECCErrors
+      expr: increase(DCGM_FI_DEV_ECC_DBE_VOL_TOTAL[5m]) > 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "GPU {{ $labels.gpu }} uncorrectable ECC errors"
+        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has uncorrectable ECC memory errors. This is a critical hardware issue that may cause computation errors."
+    - alert: GPUECCSingleBitErrors
+      expr: increase(DCGM_FI_DEV_ECC_SBE_VOL_TOTAL[5m]) > 100
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "GPU {{ $labels.gpu }} excessive correctable ECC errors"
+        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has excessive single-bit ECC errors ({{ $value }} in 5m). Memory may be degrading."
+    # Throttling Detection
+    - alert: GPUThermalThrottling
+      expr: DCGM_FI_DEV_THERMAL_VIOLATION > 0
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: "GPU {{ $labels.gpu }} thermal throttling"
+        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} is thermally throttling. Check cooling system."
+    - alert: GPUPowerThrottling
+      expr: DCGM_FI_DEV_POWER_VIOLATION > 0
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "GPU {{ $labels.gpu }} power throttling"
+        description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} is power throttling. Consider increasing power limit or reducing workload."
