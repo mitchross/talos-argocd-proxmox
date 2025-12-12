@@ -16,25 +16,3 @@ tempo:
     limits:
       cpu: 500m
       memory: 512Mi
-
-# Deploy dedicated MinIO for Tempo
-minio:
-  enabled: true
-  mode: standalone
-  rootUser: tempo
-  rootPassword: temposecret123
-  buckets:
-    - name: tempo-traces
-      policy: none
-      purge: false
-  persistence:
-    enabled: true
-    storageClass: longhorn
-    size: 10Gi
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      cpu: 200m
-      memory: 256Mi
