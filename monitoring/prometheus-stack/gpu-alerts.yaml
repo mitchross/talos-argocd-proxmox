@@ -88,3 +88,55 @@ spec:
           annotations:
             summary: "GPU {{ $labels.gpu }} low clock speed"
             description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} clock speed is only {{ $value }}MHz."
+        # XID Errors - Hardware Issues
+        - alert: GPUXidErrors
+          expr: increase(DCGM_FI_DEV_XID_ERRORS[5m]) > 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "GPU {{ $labels.gpu }} XID errors detected"
+            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has reported XID errors. This indicates a potential hardware issue. XID code may indicate driver issues, memory errors, or GPU faults."
+        # PCIe Errors
+        - alert: GPUPCIeReplayErrors
+          expr: increase(DCGM_FI_DEV_PCIE_REPLAY_COUNTER[5m]) > 10
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "GPU {{ $labels.gpu }} PCIe replay errors"
+            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} is experiencing PCIe replay errors ({{ $value }} in last 5m). This may indicate PCIe bus issues or signal integrity problems."
+        # ECC Errors (for supported GPUs)
+        - alert: GPUECCErrors
+          expr: increase(DCGM_FI_DEV_ECC_DBE_VOL_TOTAL[5m]) > 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "GPU {{ $labels.gpu }} uncorrectable ECC errors"
+            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has uncorrectable ECC memory errors. This is a critical hardware issue that may cause computation errors."
+        - alert: GPUECCSingleBitErrors
+          expr: increase(DCGM_FI_DEV_ECC_SBE_VOL_TOTAL[5m]) > 100
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "GPU {{ $labels.gpu }} excessive correctable ECC errors"
+            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} has excessive single-bit ECC errors ({{ $value }} in 5m). Memory may be degrading."
+        # Throttling Detection
+        - alert: GPUThermalThrottling
+          expr: DCGM_FI_DEV_THERMAL_VIOLATION > 0
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "GPU {{ $labels.gpu }} thermal throttling"
+            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} is thermally throttling. Check cooling system."
+        - alert: GPUPowerThrottling
+          expr: DCGM_FI_DEV_POWER_VIOLATION > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "GPU {{ $labels.gpu }} power throttling"
+            description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} is power throttling. Consider increasing power limit or reducing workload."
