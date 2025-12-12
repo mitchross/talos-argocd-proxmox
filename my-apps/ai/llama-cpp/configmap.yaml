@@ -1,104 +1,111 @@
-# ---------- SINGLE-lean ----------
-[gpt-oss-20b-Q8-single]
-model = /models/gpt-oss-20b-UD-Q8_K_XL.gguf
-alias = gpt-oss-single
-ctx-size = 16384
-n-gpu-layers = 99
-split-mode = layer
-tensor-split = 1,0
-threads = 16
-flash-attn = 1
-cache-type-k = q8_0
-cache-type-v = q8_0
-temp = 1.0
-top-p = 1.0
-top-k = 0
-jinja = 1
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: llama-cpp-config
+  namespace: llama-cpp
+data:
+  presets.ini: |
+    # ---------- SINGLE ----------
+    [gpt-oss-20b-Q8-single]
+    model = /models/gpt-oss-20b-UD-Q8_K_XL.gguf
+    alias = gpt-oss-single
+    ctx-size = 16384
+    n-gpu-layers = 99
+    split-mode = layer
+    tensor-split = 1,0
+    threads = 16
+    flash-attn = 1
+    cache-type-k = q8_0
+    cache-type-v = q8_0
+    temp = 1.0
+    top-p = 1.0
+    top-k = 0
+    jinja = 1
 
-[Magistral-Small-2509-Q8-single]
-model = /models/Magistral-Small-2509-UD-Q8_K_XL.gguf
-alias = magistral-single
-ctx-size = 32768
-n-gpu-layers = 99
-split-mode = layer
-tensor-split = 1,0
-threads = -1
-flash-attn = 1
-cache-type-k = q8_0
-cache-type-v = q8_0
-temp = 0.7
-jinja = 1
-mlock = 1
+    [Magistral-Small-2509-Q8-single]
+    model = /models/Magistral-Small-2509-UD-Q8_K_XL.gguf
+    alias = magistral-single
+    ctx-size = 32768
+    n-gpu-layers = 99
+    split-mode = layer
+    tensor-split = 1,0
+    threads = -1
+    flash-attn = 1
+    cache-type-k = q8_0
+    cache-type-v = q8_0
+    temp = 0.7
+    jinja = 1
+    mlock = 1
 
-[Qwen3-VL-32B-Thinking-IQ4_XS-single]
-model = /models/Qwen3-VL-32B-Thinking-IQ4_XS.gguf
-alias = qwen3-vl-single
-mmproj = /models/mmproj-F16.gguf
-ctx-size = 40960
-n-gpu-layers = 99
-split-mode = layer
-tensor-split = 1,0
-threads = -1
-flash-attn = 1
-cache-type-k = q8_0
-cache-type-v = q8_0
-temp = 1.0
-top-p = 0.95
-top-k = 20
-jinja = 1
-mlock = 1
+    [Qwen3-VL-32B-Thinking-IQ4_XS-single]
+    model = /models/Qwen3-VL-32B-Thinking-IQ4_XS.gguf
+    alias = qwen3-vl-single
+    mmproj = /models/mmproj-F16.gguf
+    ctx-size = 40960
+    n-gpu-layers = 99
+    split-mode = layer
+    tensor-split = 1,0
+    threads = -1
+    flash-attn = 1
+    cache-type-k = q8_0
+    cache-type-v = q8_0
+    temp = 1.0
+    top-p = 0.95
+    top-k = 20
+    jinja = 1
+    mlock = 1
 
-# ---------- DUAL ----------
-[Qwen3-VL-30B-Thinking-Q6_K_XL-dual]
-model = /models/Qwen3-VL-30B-A3B-Thinking-UD-Q6_K_XL.gguf
-alias = qwen3-vl30b-dual
-mmproj = /models/mmproj-F16.gguf
-ctx-size = 40960
-n-gpu-layers = 99
-split-mode = layer
-tensor-split = 1,1
-threads = -1
-flash-attn = 1
-cache-type-k = q8_0
-cache-type-v = q8_0
-temp = 1.0
-top-p = 0.95
-top-k = 20
-jinja = 1
-mlock = 1
+    # ---------- DUAL ----------
+    [Qwen3-VL-30B-Thinking-Q6_K_XL-dual]
+    model = /models/Qwen3-VL-30B-A3B-Thinking-UD-Q6_K_XL.gguf
+    alias = qwen3-vl30b-dual
+    mmproj = /models/mmproj-F16.gguf
+    ctx-size = 40960
+    n-gpu-layers = 99
+    split-mode = layer
+    tensor-split = 1,1
+    threads = -1
+    flash-attn = 1
+    cache-type-k = q8_0
+    cache-type-v = q8_0
+    temp = 1.0
+    top-p = 0.95
+    top-k = 20
+    jinja = 1
+    mlock = 1
 
-[Qwen3-VL-32B-Thinking-Q6_K-dual]
-model = /models/Qwen3-VL-32B-Thinking-Q6_K.gguf
-alias = qwen3-vl32b-dual
-mmproj = /models/mmproj-F16.gguf
-ctx-size = 40960
-n-gpu-layers = 99
-split-mode = layer
-tensor-split = 1,1
-threads = -1
-flash-attn = 1
-cache-type-k = q8_0
-cache-type-v = q8_0
-temp = 1.0
-top-p = 0.95
-top-k = 20
-jinja = 1
-mlock = 1
+    [Qwen3-VL-32B-Thinking-Q6_K-dual]
+    model = /models/Qwen3-VL-32B-Thinking-Q6_K.gguf
+    alias = qwen3-vl32b-dual
+    mmproj = /models/mmproj-F16.gguf
+    ctx-size = 40960
+    n-gpu-layers = 99
+    split-mode = layer
+    tensor-split = 1,1
+    threads = -1
+    flash-attn = 1
+    cache-type-k = q8_0
+    cache-type-v = q8_0
+    temp = 1.0
+    top-p = 0.95
+    top-k = 20
+    jinja = 1
+    mlock = 1
 
-[Qwen3-Coder-30B-Instruct-Q8_K_XL-dual]
-model = /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q8_K_XL.gguf
-alias = qwen3-coder-dual
-ctx-size = 65536
-n-gpu-layers = 99
-split-mode = layer
-tensor-split = 1,1
-threads = -1
-flash-attn = 1
-cache-type-k = q8_0
-cache-type-v = q8_0
-temp = 0.7
-top-p = 0.8
-top-k = 20
-presence-penalty = 1.5
-jinja = 1
-mlock = 1
+    [Qwen3-Coder-30B-Instruct-Q8_K_XL-dual]
+    model = /models/Qwen3-Coder-30B-A3B-Instruct-UD-Q8_K_XL.gguf
+    alias = qwen3-coder-dual
+    ctx-size = 65536
+    n-gpu-layers = 99
+    split-mode = layer
+    tensor-split = 1,1
+    threads = -1
+    flash-attn = 1
+    cache-type-k = q8_0
+    cache-type-v = q8_0
+    temp = 0.7
+    top-p = 0.8
+    top-k = 20
+    presence-penalty = 1.5
+    jinja = 1
+    mlock = 1
