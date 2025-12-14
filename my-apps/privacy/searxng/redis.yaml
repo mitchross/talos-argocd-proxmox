@@ -17,6 +17,8 @@ spec:
       labels:
         app: redis
     spec:
+      securityContext:
+        fsGroup: 999  # redis group - ensures PVC is writable
       containers:
         - name: redis
           image: redis:8-alpine
@@ -35,8 +37,8 @@ spec:
               cpu: 100m
               memory: 128Mi
           securityContext:
-            readOnlyRootFilesystem: true
             runAsUser: 999 # redis user
+            runAsGroup: 999
             allowPrivilegeEscalation: false
             capabilities:
               drop:
