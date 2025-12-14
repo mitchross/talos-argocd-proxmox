@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pairdrop
+  namespace: pairdrop
+spec:
+  ports:
+  - name: http # REQUIRED for HTTPRoute
+    port: 3000
+    targetPort: 3000
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: pairdrop
