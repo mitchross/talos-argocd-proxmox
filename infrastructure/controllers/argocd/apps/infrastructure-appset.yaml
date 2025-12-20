@@ -18,6 +18,7 @@ spec:
       - path: infrastructure/controllers/node-feature-discovery
       - path: infrastructure/controllers/nvidia-device-plugin
       - path: infrastructure/controllers/nvidia-gpu-operator
+      - path: infrastructure/controllers/postgres-operator
       - path: infrastructure/networking/cloudflared
       - path: infrastructure/networking/coredns
       - path: infrastructure/networking/gateway
