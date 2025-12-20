@@ -33,36 +33,40 @@ spec:
         parameters:
           max_connections: 500
   instances:
-    - name: postgres
-      replicas: 3
-      metadata:
-        labels:
-          app.kubernetes.io/name: immich
-      dataVolumeClaimSpec:
-        storageClassName: longhorn
-        accessModes: ["ReadWriteOnce"]
-        resources:
-          requests:
-            storage: 20Gi
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - topologyKey: kubernetes.io/hostname
-            labelSelector:
-              matchLabels:
-                postgres-operator.crunchydata.com/cluster: immich
-                postgres-operator.crunchydata.com/instance-set: postgres
+  - name: postgres
+    replicas: 3
+    metadata:
+      labels:
+        app.kubernetes.io/name: immich
+    dataVolumeClaimSpec:
+      storageClassName: longhorn
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 20Gi
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+        - topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              postgres-operator.crunchydata.com/cluster: immich
+              postgres-operator.crunchydata.com/instance-set: postgres
   users:
-    # Superuser
-    - name: "postgres"
-      databases: ["postgres"]
-      options: "SUPERUSER"
-      password:
-        type: AlphaNumeric
-    # Applications - using password from 1Password
-    - name: "immich"
-      databases: ["immich"]
-      options: "CREATEDB CREATEROLE"
+  # Superuser
+  - name: "postgres"
+    databases: [ "postgres" ]
+    options: "SUPERUSER"
+    password:
+      type: AlphaNumeric
+  # Applications - using password from 1Password
+  - name: "immich"
+    databases: [ "immich" ]
+    options: "CREATEDB CREATEROLE"
+    password:
+      secretKeyRef:
+        name: immich-db-password
+        key: password
   proxy:
     pgBouncer:
       port: 5432
@@ -74,10 +78,10 @@ spec:
           default_pool_size: "100"
           max_client_conn: "500"
       topologySpreadConstraints:
-        - maxSkew: 1
-          topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: DoNotSchedule
-          labelSelector:
-            matchLabels:
-              postgres-operator.crunchydata.com/cluster: immich
-              postgres-operator.crunchydata.com/role: "postgres-bouncer"
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            postgres-operator.crunchydata.com/cluster: immich
+            postgres-operator.crunchydata.com/role: "postgres-bouncer"
