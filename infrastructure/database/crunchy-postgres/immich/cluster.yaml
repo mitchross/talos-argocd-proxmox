@@ -64,9 +64,7 @@ spec:
       databases: ["immich"]
       options: "CREATEDB CREATEROLE"
       password:
-        secretKeyRef:
-          name: immich-db-user-secret
-          key: password
+        type: AlphaNumeric
   proxy:
     pgBouncer:
       port: 5432
