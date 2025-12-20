@@ -51,7 +51,7 @@ spec:
         - name: DB_URL
           valueFrom:
             secretKeyRef:
-              name: immich-pguser-immich
+              name: immich-db-password
               key: uri
         - name: REDIS_HOSTNAME
           value: "immich-valkey.immich.svc.cluster.local"
