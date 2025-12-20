@@ -20,6 +20,14 @@ spec:
         app.kubernetes.io/name: immich
         app.kubernetes.io/component: server
     spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: immich
+                app.kubernetes.io/component: machine-learning
+            topologyKey: kubernetes.io/hostname
       containers:
       - name: immich-server
         image: ghcr.io/immich-app/immich-server:v2.3.1@sha256:f8d06a32b1b2a81053d78e40bf8e35236b9faefb5c3903ce9ca8712c9ed78445
