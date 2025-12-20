@@ -63,8 +63,6 @@ spec:
     - name: "immich"
       databases: ["immich"]
       options: "CREATEDB CREATEROLE"
-      password:
-        type: AlphaNumeric
   proxy:
     pgBouncer:
       port: 5432
