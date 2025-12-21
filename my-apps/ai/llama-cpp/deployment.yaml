@@ -21,7 +21,7 @@ spec:
       restartPolicy: Always
       runtimeClassName: nvidia
       priorityClassName: gpu-workload-high
-      terminationGracePeriodSeconds: 300
+      terminationGracePeriodSeconds: 300 # Kept for 400GB memory unmapping time
       tolerations:
         - key: "nvidia.com/gpu"
           operator: "Exists"
@@ -43,6 +43,8 @@ spec:
             - "65536"
             - "-ngl"
             - "99"
+            - "-fa"     # Flash Attention: mandatory for long-context MoE
+            - "--jinja" # Required for Unsloth 2.0 Thinking models
             - "--host"
             - "0.0.0.0"
             - "--port"
@@ -57,13 +59,14 @@ spec:
             - name: LD_LIBRARY_PATH
               value: "/usr/local/nvidia/lib64:/usr/local/cuda/lib64"
             - name: GGML_CUDA_ENABLE_UNIFIED_MEMORY
-              value: "1"
+              value: "1" # Vital for Kimi-K2 1T model to bridge VRAM and 400GB RAM
             - name: GGML_CUDA_PEER_MAX_BATCH_SIZE
               value: "128"
           ports:
             - name: http
               containerPort: 8080
               protocol: TCP
+          # ... [Probes preserved as per your original file] ...
           startupProbe:
             httpGet:
               path: /health
@@ -91,11 +94,11 @@ spec:
           resources:
             limits:
               cpu: "52"
-              memory: 440Gi
+              memory: 440Gi   # Matches your physical 400GB + overhead
               nvidia.com/gpu: "2"
               ephemeral-storage: "150Gi"
             requests:
-              cpu: "12"
+              cpu: "32"       # Optimized for MoE expert fetching on CPU
               memory: 390Gi
               nvidia.com/gpu: "2"
               ephemeral-storage: "25Gi"
