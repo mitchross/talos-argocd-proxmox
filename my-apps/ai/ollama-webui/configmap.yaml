@@ -5,71 +5,57 @@ metadata:
   namespace: ollama-webui
 data:
   # ---------------------------------------------------------------------------
-  # Core Settings
+  # Core API Connections
   # ---------------------------------------------------------------------------
-  # Configure Open WebUI to use llama-swap via OpenAI API (not Ollama API)
   OPENAI_API_BASE_URL: "http://llama-swap-service.llama-cpp.svc.cluster.local:8080/v1"
   OPENAI_API_KEY: "sk-required"
-  
-  # Keep Ollama API disabled since llama-swap doesn't implement it
   ENABLE_OLLAMA_API: "false"
   
-  # Available models:
-  # - qwen3-vl (32B Thinking Q6 - High Quality, default)
-  # - qwen3-vl-fast (32B Thinking IQ4 - Faster)
-  # - qwen3-thinking (30B)
-  # - qwen3-coder (30B Instruct)
-  # - gpt-oss, magistral (fallback)
-  DEFAULT_MODELS: "qwen3-vl"
+  # Semantic Routing for Unsloth 2.0
+  DEFAULT_MODELS: "manager"
+  WHITELISTED_MODELS: "reasoning,dev,manager,expert,vision"
 
-  # Context window optimized for Qwen3 models
+  # Hardware-Optimized Parameters
   CONTEXT_WINDOW: "131072"
-
-  # Default UI settings (Qwen3 Thinking models use: temp=1.0, top_p=0.95)
   TEMPERATURE: "1.0"
-  TOP_P: "0.95"
+  TOP_P: "1.0"
+  MIN_P: "0.05"
   
-  WEBUI_SECRET_KEY: "ollama-webui" # Change this to a secure, random string for production
-  
-  # When False, all configurations are read from this ConfigMap on every restart.
-  # When True, settings changed in the UI are persisted in the database and override this file.
+  # UI & Reasoning Logic
+  SHOW_THOUGHTS: "True" 
   ENABLE_PERSISTENT_CONFIG: "True"
+  WEBUI_SECRET_KEY: "ollama-webui"
   
   # ---------------------------------------------------------------------------
-  # Web Search (formerly RAG Web Search)
+  # Web Search
   # ---------------------------------------------------------------------------
   ENABLE_WEB_SEARCH: "True"
   WEB_SEARCH_ENGINE: "searxng"
   WEB_SEARCH_CONCURRENT_REQUESTS: "10"
   SEARXNG_QUERY_URL: "http://searxng.searxng.svc.cluster.local:8080/search?q=<query>&format=json"
   WEB_SEARCH_RESULT_COUNT: "5"
-  
-  # Web Loader Settings
   ENABLE_WEB_LOADER_SSL_VERIFICATION: "True"
-  WEB_SEARCH_TRUST_ENV: "True" # Important for proxy support
+  WEB_SEARCH_TRUST_ENV: "True"
   
-  # Enable RAG for document integration
+  # ---------------------------------------------------------------------------
+  # RAG & Document Integration 
+  # ---------------------------------------------------------------------------
   ENABLE_RAG: "True"
-  
+  RAG_TOP_K: "5"
+  # Since you have 400GB RAM, you can increase RAG relevance
+  RAG_RELEVANCE_THRESHOLD: "0.0" 
+
   # ---------------------------------------------------------------------------
-  # Tools / Function Calling (MCP / OpenAPI)
+  # Tools / Function Calling 
   # ---------------------------------------------------------------------------
-  # Enable tools and function calling (Qwen3 models support this natively)
   ENABLE_TOOLS: "True"
-  
-  # MCP/OpenAPI Tools Configuration
-  # Format: OPENAPI_API_ENDPOINTS=name1:url1:key1;name2:url2:key2
+  # Pointing to your MCP proxies for Time and Multi-tool use
   OPENAPI_API_ENDPOINTS: "mcpo-time:http://mcpo.ollama-webui.svc.cluster.local:8000:mcp-demo-key;mcpo-multi:http://mcpo-multi.ollama-webui.svc.cluster.local:8001:mcp-multi-key"
   
   # ---------------------------------------------------------------------------
-  # Optional Features
+  # Media Features
   # ---------------------------------------------------------------------------
   ENABLE_IMAGE_GENERATION: "True"
   ENABLE_VOICE: "True"
-  
-  # For Speech-to-Text (STT), using the built-in local Whisper model
-  AUDIO_STT_ENGINE: ""
-  WHISPER_MODEL: "base" # Options: tiny, base, small, medium, large
-  
-  # For Text-to-Speech (TTS), using the browser's built-in engine
-  AUDIO_TTS_ENGINE: ""
+  AUDIO_STT_ENGINE: "whisper"
+  WHISPER_MODEL: "medium"
