@@ -93,7 +93,7 @@ spec:
               cpu: "52"
               memory: 440Gi
               nvidia.com/gpu: "2"
-              ephemeral-storage: "50Gi"
+              ephemeral-storage: "150Gi"
             requests:
               cpu: "12"
               memory: 390Gi
