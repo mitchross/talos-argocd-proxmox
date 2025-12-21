@@ -5,7 +5,7 @@ metadata:
   name: comfyui-smb
 provisioner: smb.csi.k8s.io
 parameters:
-  source: //192.168.10.133/k8s/comfyui
+  source: //172.31.250.1/k8s/comfyui
   csi.storage.k8s.io/node-stage-secret-name: smbcreds
   # ✅ CORRECTED: Point to the namespace where the secret is actually created
   csi.storage.k8s.io/node-stage-secret-namespace: csi-driver-smb 
@@ -26,7 +26,7 @@ metadata:
 provisioner: smb.csi.k8s.io
 parameters:
   # Point directly to the ollama subfolder on the SMB share
-  source: //192.168.10.133/k8s/ollama
+  source: //172.31.250.1/k8s/ollama
   csi.storage.k8s.io/node-stage-secret-name: smbcreds
   csi.storage.k8s.io/node-stage-secret-namespace: csi-driver-smb
 mountOptions:
@@ -46,7 +46,7 @@ metadata:
 provisioner: smb.csi.k8s.io
 parameters:
   # Point directly to the ollama subfolder on the SMB share
-  source: //192.168.10.133/k8s/frigate
+  source: //172.31.250.1/k8s/frigate
   csi.storage.k8s.io/node-stage-secret-name: smbcreds
   csi.storage.k8s.io/node-stage-secret-namespace: csi-driver-smb
 mountOptions:
@@ -66,7 +66,7 @@ metadata:
 provisioner: smb.csi.k8s.io
 parameters:
   # Point directly to the ollama subfolder on the SMB share
-  source: //192.168.10.133/k8s/llama-cpp
+  source: //172.31.250.1/k8s/llama-cpp
   csi.storage.k8s.io/node-stage-secret-name: smbcreds
   csi.storage.k8s.io/node-stage-secret-namespace: csi-driver-smb
 mountOptions:
@@ -86,7 +86,7 @@ metadata:
 provisioner: smb.csi.k8s.io
 parameters:
   # Point directly to the ollama subfolder on the SMB share
-  source: //192.168.10.133/k8s/tubearchivist
+  source: //172.31.250.1/k8s/tubearchivist
   csi.storage.k8s.io/node-stage-secret-name: smbcreds
   csi.storage.k8s.io/node-stage-secret-namespace: csi-driver-smb
 mountOptions:
@@ -105,7 +105,7 @@ metadata:
   name: kiwix-smb
 provisioner: smb.csi.k8s.io
 parameters:
-  source: //192.168.10.133/k8s/kiwix
+  source: //172.31.250.1/k8s/kiwix
   csi.storage.k8s.io/node-stage-secret-name: smbcreds
   csi.storage.k8s.io/node-stage-secret-namespace: csi-driver-smb
 mountOptions:
