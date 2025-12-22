@@ -98,7 +98,7 @@ spec:
               nvidia.com/gpu: "2"
               ephemeral-storage: "150Gi"
             requests:
-              cpu: "32"       # Optimized for MoE expert fetching on CPU
+              cpu: "24"       # Optimized for MoE expert fetching on CPU
               memory: 390Gi
               nvidia.com/gpu: "2"
               ephemeral-storage: "25Gi"
