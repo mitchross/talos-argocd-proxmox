@@ -8,18 +8,18 @@ data:
     # ==========================================================
     # SINGLE GPU ROLES (24GB VRAM)
     # ==========================================================
-    [reasoning-single]
+    [reasoning-single - nemotron3-nano-30b]
     model = /models/Nemotron-3-Nano-30B-A3B-UD-Q4_K_XL.gguf
-    alias = reasoning, chat, Nemotron-3-Nano-30B-A3B-UD-Q4_K_XL
+    alias = reasoning-single, reasoning, chat, nemotron3 nano30b
     ctx-size = 32768
     n-gpu-layers = 99
     temp = 1.0
     jinja = 1
     special = 1
 
-    [vision-single]
+    [vision-single - glm4v-flash]
     model = /models/GLM-4.6V-Flash-UD-Q8_K_XL.gguf
-    alias = vision, ocr, GLM-4.6V-Flash-UD-Q8_K_XL
+    alias = vision-single, vision, ocr, glm4v flash
     mmproj = /models/GLM-4.6V-Flash-mmproj.gguf
     ctx-size = 65536
     n-gpu-layers = 99
@@ -29,18 +29,18 @@ data:
     # ==========================================================
     # DUAL GPU ROLES (48GB VRAM)
     # ==========================================================
-    [dev-dual]
+    [dev-dual - devstral-small]
     model = /models/Devstral-Small-2-24B-Instruct-2512-UD-Q5_K_XL.gguf
-    alias = dev, coder, Devstral-Small-2-24B-Instruct-2512-UD-Q5_K_XL
+    alias = dev-dual, dev, coder, devstral small
     ctx-size = 65536
     n-gpu-layers = 99
     tensor-split = 1,1
     temp = 0.2
     jinja = 1
 
-    [manager-dual]
+    [manager-dual - qwen3-next]
     model = /models/Qwen3-Next-80B-A3B-Thinking-UD-Q4_K_XL.gguf
-    alias = manager, orchestrator, Qwen3-Next-80B-A3B-Thinking-UD-Q4_K_XL
+    alias = manager-dual, manager, orchestrator, qwen3 next
     ctx-size = 131072
     n-gpu-layers = 99
     tensor-split = 1,1
@@ -50,9 +50,9 @@ data:
     # ==========================================================
     # 400GB RAM HYBRID ROLE
     # ==========================================================
-    [expert-hybrid]
+    [expert-hybrid - kimi-k2]
     model = /models/Kimi-K2-Thinking-UD-Q2_K_XL.gguf
-    alias = expert, kimi, Kimi-K2-Thinking-UD-Q2_K_XL
+    alias = expert-hybrid, expert, kimi, kimi k2
     ctx-size = 98304
     n-gpu-layers = 99
     # VITAL: regex for Kimi-K2 to keep the 1T experts in your 400GB RAM
