@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: valkey
-        image: ghcr.io/valkey-io/valkey:9.0.0
+        image: ghcr.io/valkey-io/valkey:9.0.1
         ports:
         - name: valkey
           containerPort: 6379
