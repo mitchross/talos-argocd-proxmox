@@ -67,7 +67,6 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
-          # ... [Probes preserved as per your original file] ...
           startupProbe:
             httpGet:
               path: /health
