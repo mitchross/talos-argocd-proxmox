@@ -57,7 +57,7 @@ data:
     n-gpu-layers = 99
     # VITAL: regex for Kimi-K2 to keep the 1T experts in your 400GB RAM
     override-tensor = .ffn_.*_exps.=CPU
-    threads = 32
+    threads = 24
     temp = 1.0
     jinja = 1
     mlock = 1
