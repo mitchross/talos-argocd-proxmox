@@ -10,7 +10,7 @@ data:
     # ==========================================================
     [reasoning-single]
     model = /models/Nemotron-3-Nano-30B-A3B-UD-Q4_K_XL.gguf
-    alias = reasoning, chat
+    alias = reasoning, chat, Nemotron-3-Nano-30B-A3B-UD-Q4_K_XL
     ctx-size = 32768
     n-gpu-layers = 99
     temp = 1.0
@@ -19,7 +19,7 @@ data:
 
     [vision-single]
     model = /models/GLM-4.6V-Flash-UD-Q8_K_XL.gguf
-    alias = vision, ocr
+    alias = vision, ocr, GLM-4.6V-Flash-UD-Q8_K_XL
     mmproj = /models/GLM-4.6V-Flash-mmproj.gguf
     ctx-size = 65536
     n-gpu-layers = 99
@@ -31,7 +31,7 @@ data:
     # ==========================================================
     [dev-dual]
     model = /models/Devstral-Small-2-24B-Instruct-2512-UD-Q5_K_XL.gguf
-    alias = dev, coder
+    alias = dev, coder, Devstral-Small-2-24B-Instruct-2512-UD-Q5_K_XL
     ctx-size = 65536
     n-gpu-layers = 99
     tensor-split = 1,1
@@ -40,7 +40,7 @@ data:
 
     [manager-dual]
     model = /models/Qwen3-Next-80B-A3B-Thinking-UD-Q4_K_XL.gguf
-    alias = manager, orchestrator
+    alias = manager, orchestrator, Qwen3-Next-80B-A3B-Thinking-UD-Q4_K_XL
     ctx-size = 131072
     n-gpu-layers = 99
     tensor-split = 1,1
@@ -52,7 +52,7 @@ data:
     # ==========================================================
     [expert-hybrid]
     model = /models/Kimi-K2-Thinking-UD-Q2_K_XL.gguf
-    alias = expert, kimi
+    alias = expert, kimi, Kimi-K2-Thinking-UD-Q2_K_XL
     ctx-size = 98304
     n-gpu-layers = 99
     # VITAL: regex for Kimi-K2 to keep the 1T experts in your 400GB RAM
