@@ -93,6 +93,13 @@
       ],
       enabled: true,
     },
+    {
+      description: 'Handle llama.cpp custom versioning',
+      matchPackageNames: [
+        'ghcr.io/ggml-org/llama.cpp',
+      ],
+      versioning: 'regex:^server-cuda-b(?<major>\\d+)$',
+    },
   ],
   ignorePaths: [
     '**/charts/**',
