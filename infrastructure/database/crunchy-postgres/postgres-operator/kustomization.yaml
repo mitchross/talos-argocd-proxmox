@@ -6,7 +6,7 @@ resources:
 helmCharts:
   - name: pgo
     repo: oci://registry.developers.crunchydata.com/crunchydata
-    version: 5.8.5
+    version: 6.0.0
     releaseName: pgo
     namespace: postgres-operator
     valuesFile: values.yaml
