@@ -20,7 +20,7 @@ spec:
         runAsGroup: 1001
       containers:
         - name: meilisearch
-          image: getmeili/meilisearch:v1.31.0
+          image: getmeili/meilisearch:v1.11.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 7700
