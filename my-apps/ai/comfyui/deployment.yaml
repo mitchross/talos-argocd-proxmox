@@ -30,9 +30,9 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: comfyui
-        # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu128-megapak
-        # renovate: datasource=docker depName=yanwk/comfyui-boot versioning=regex:^cu128-megapak-(?<major>\d{4})(?<minor>\d{2})(?<patch>\d{2})$
-        image: yanwk/comfyui-boot:cu126-megapak-20251211
+        # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu126-slim
+        # renovate: datasource=docker depName=yanwk/comfyui-boot versioning=regex:^cu126-slim-(?<major>\d{4})(?<minor>\d{2})(?<patch>\d{2})$
+        image: yanwk/comfyui-boot:cu126-slim-20251222
         imagePullPolicy: IfNotPresent
         workingDir: /root
         ports:
