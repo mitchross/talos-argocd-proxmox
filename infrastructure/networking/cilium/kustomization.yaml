@@ -7,9 +7,10 @@ kind: Kustomization
 # NOTE: Apply ip-pool.yaml and l2-policy.yaml AFTER Cilium is running
 # These require Cilium CRDs to be installed first
 
-resources: 
+resources:
  - ip-pool.yaml
  - l2-policy.yaml
+ - policies/block-lan-access.yaml
 
 helmCharts:
 - name: cilium
