@@ -5,6 +5,8 @@ metadata:
   namespace: homepage-dashboard
   labels:
     app.kubernetes.io/name: homepage-dashboard
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   strategy:
     type: Recreate

@@ -8,6 +8,8 @@ metadata:
     app.kubernetes.io/component: home-automation
     app.kubernetes.io/part-of: smart-home
     app.kubernetes.io/version: stable
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
   strategy:

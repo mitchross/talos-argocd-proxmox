@@ -4,6 +4,8 @@ kind: Deployment
 metadata:
   name: proxitok-web
   namespace: proxitok
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   strategy:
     type: Recreate

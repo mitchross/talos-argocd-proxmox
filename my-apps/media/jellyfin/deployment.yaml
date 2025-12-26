@@ -3,6 +3,8 @@ apiVersion: apps/v1
 metadata:
   name: jellyfin
   namespace: jellyfin
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
   strategy:
