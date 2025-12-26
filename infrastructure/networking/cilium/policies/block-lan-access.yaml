@@ -1,0 +1,99 @@
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: default-deny-lan-egress
+spec:
+  description: "Block pods from accessing LAN - allow internet, cluster, and whitelisted storage"
+  endpointSelector: {}  # Applies to ALL pods
+
+  # ============================================
+  # INGRESS: Allow all legitimate traffic
+  # (cluster, host, and external via gateway)
+  # ============================================
+  ingress:
+    - fromEntities:
+        - cluster
+        - host
+        - world
+
+  egress:
+    # ============================================
+    # ALLOW: Internet (everything EXCEPT RFC1918)
+    # ============================================
+    - toCIDRSet:
+        - cidr: 0.0.0.0/0
+          except:
+            - 10.0.0.0/8
+            - 172.16.0.0/12
+            - 192.168.0.0/16
+
+    # ============================================
+    # ALLOW: All cluster-internal traffic
+    # (pods, services, nodes, kube-apiserver)
+    # ============================================
+    - toEntities:
+        - cluster
+        - host
+        - kube-apiserver
+
+    # ============================================
+    # ALLOW: LoadBalancer IP Pool (Cilium L2)
+    # Needed for pod-to-service via external IPs
+    # ============================================
+    - toCIDR:
+        - 192.168.10.32/27
+
+    # NOTE: Gateway (192.168.10.1) NOT whitelisted
+    # Internet works via toEntities:host, no direct gateway access needed
+    # This prevents pods from accessing router admin/SSH
+
+    # ============================================
+    # ALLOW: TrueNAS - NFS + SMB + MinIO Storage
+    # (NFS for Plex, SMB for Jellyfin, MinIO for Longhorn backups)
+    # ============================================
+    - toCIDR:
+        - 192.168.10.133/32
+      toPorts:
+        - ports:
+            - port: "2049"
+              protocol: TCP
+            - port: "111"
+              protocol: TCP
+            - port: "111"
+              protocol: UDP
+            - port: "445"
+              protocol: TCP
+            - port: "9000"
+              protocol: TCP
+
+    # ============================================
+    # ALLOW: TrueNAS - SMB Storage
+    # (Used by ComfyUI, Ollama, Frigate, etc.)
+    # ============================================
+    - toCIDR:
+        - 172.31.250.1/32
+      toPorts:
+        - ports:
+            - port: "445"
+              protocol: TCP
+
+    # ============================================
+    # ALLOW: Wyze Bridge RTSP (for Frigate)
+    # ============================================
+    - toCIDR:
+        - 192.168.10.46/32
+      toPorts:
+        - ports:
+            - port: "8554"
+              protocol: TCP
+
+    # ============================================
+    # ALLOW: Proxmox API (for Omni provider)
+    # Remove if not using Omni/Terraform in-cluster
+    # ============================================
+    - toCIDR:
+        - 192.168.10.14/32
+      toPorts:
+        - ports:
+            - port: "8006"
+              protocol: TCP

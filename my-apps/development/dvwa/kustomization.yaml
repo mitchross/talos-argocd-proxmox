@@ -1,0 +1,24 @@
+# ============================================================
+# WARNING: PENTEST / SECURITY TESTING ONLY
+# ============================================================
+# DVWA (Damn Vulnerable Web Application) is intentionally
+# insecure and should NOT be deployed in production.
+#
+# Use this ONLY for:
+#   - Testing network policies (LAN isolation)
+#   - Security training and education
+#   - Penetration testing exercises
+#
+# To enable: Uncomment deployment, service, and httproute
+# To disable: Comment them back out (default state)
+# ============================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: dvwa
+
+resources:
+  - ns.yaml
+  # - deployment.yaml
+  # - service.yaml
+  # - httproute.yaml

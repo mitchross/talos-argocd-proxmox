@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dvwa
+  namespace: dvwa
+  labels:
+    app: dvwa
+  annotations:
+    description: "DVWA - Damn Vulnerable Web Application for penetration testing"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dvwa
+  template:
+    metadata:
+      labels:
+        app: dvwa
+    spec:
+      containers:
+        - name: dvwa
+          image: vulnerables/web-dvwa:latest
+          ports:
+            - containerPort: 80
+              name: http
+          env:
+            - name: RECAPTCHA_PRIV_KEY
+              value: ""
+            - name: RECAPTCHA_PUB_KEY
+              value: ""
+            # Security level: low = easy to exploit for testing
+            - name: SECURITY_LEVEL
+              value: "low"
+            # Disable PHPIDS protection
+            - name: PHPIDS_ENABLED
+              value: "0"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"

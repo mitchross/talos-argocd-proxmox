@@ -13,7 +13,7 @@ data:
   
   # Semantic Routing for Unsloth 2.0
   DEFAULT_MODELS: "manager"
-  WHITELISTED_MODELS: "reasoning,dev,manager,expert,vision"
+  WHITELISTED_MODELS: ""
 
   # Hardware-Optimized Parameters
   CONTEXT_WINDOW: "131072"
