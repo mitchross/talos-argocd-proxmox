@@ -12,14 +12,16 @@ data:
   ENABLE_OLLAMA_API: "false"
   
   # Semantic Routing for Unsloth 2.0
-  DEFAULT_MODELS: "manager"
+  # Use reasoning (Nemotron) as default, vision (GLM-4.6V) for images
+  DEFAULT_MODELS: "reasoning-single - nemotron3-nano-30b"
   WHITELISTED_MODELS: ""
 
-  # Hardware-Optimized Parameters
+  # Hardware-Optimized Parameters (Nemotron-3 recommended: temp=1.0, top_p=1.0)
+  # For tool calling use: temp=0.6, top_p=0.95
   CONTEXT_WINDOW: "131072"
   TEMPERATURE: "1.0"
   TOP_P: "1.0"
-  MIN_P: "0.05"
+  MIN_P: "0.0"
   
   # UI & Reasoning Logic
   SHOW_THOUGHTS: "True" 
@@ -38,19 +40,23 @@ data:
   WEB_SEARCH_TRUST_ENV: "True"
   
   # ---------------------------------------------------------------------------
-  # RAG & Document Integration 
+  # RAG & Document Integration
   # ---------------------------------------------------------------------------
   ENABLE_RAG: "True"
-  RAG_TOP_K: "5"
-  # Since you have 400GB RAM, you can increase RAG relevance
-  RAG_RELEVANCE_THRESHOLD: "0.0" 
+  RAG_TOP_K: "10"
+  RAG_RELEVANCE_THRESHOLD: "0.0"
+  CHUNK_SIZE: "1500"
+  CHUNK_OVERLAP: "100"
+  # PDF extraction for document uploads
+  PDF_EXTRACT_IMAGES: "True"
+  ENABLE_RAG_HYBRID_SEARCH: "True" 
 
   # ---------------------------------------------------------------------------
   # Tools / Function Calling 
   # ---------------------------------------------------------------------------
   ENABLE_TOOLS: "True"
-  # Pointing to your MCP proxies for Time and Multi-tool use
-  OPENAPI_API_ENDPOINTS: "mcpo-time:http://mcpo.ollama-webui.svc.cluster.local:8000:mcp-demo-key;mcpo-multi:http://mcpo-multi.ollama-webui.svc.cluster.local:8001:mcp-multi-key"
+  # MCP proxies for tools, multi-tools, and Kiwix knowledge base
+  OPENAPI_API_ENDPOINTS: "mcpo-time:http://mcpo.ollama-webui.svc.cluster.local:8000:mcp-demo-key;mcpo-multi:http://mcpo-multi.ollama-webui.svc.cluster.local:8001:mcp-multi-key;mcpo-kiwix:http://mcpo-kiwix.ollama-webui.svc.cluster.local:8002:mcp-kiwix-key"
   
   # ---------------------------------------------------------------------------
   # Media Features
@@ -59,3 +65,14 @@ data:
   ENABLE_VOICE: "True"
   AUDIO_STT_ENGINE: "whisper"
   WHISPER_MODEL: "medium"
+  # Text-to-speech for voice responses
+  AUDIO_TTS_ENGINE: "openai"
+  AUDIO_TTS_VOICE: "alloy"
+
+  # ---------------------------------------------------------------------------
+  # Chat Experience
+  # ---------------------------------------------------------------------------
+  ENABLE_MESSAGE_RATING: "True"
+  ENABLE_COMMUNITY_SHARING: "False"
+  ENABLE_AUTOCOMPLETE_GENERATION: "True"
+  AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH: "2048"

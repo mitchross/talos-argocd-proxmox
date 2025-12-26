@@ -4,7 +4,9 @@ resources:
   - namespace.yaml
   - configmap.yaml
   - deployment.yaml
- # - mcpo-deployment.yaml
+  # - mcpo-deployment.yaml
+  - mcp-config.yaml
+  - mcp-kiwix.yaml
   - service.yaml
   - pvc.yaml
   - httproute.yaml

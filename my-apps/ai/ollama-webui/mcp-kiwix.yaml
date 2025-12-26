@@ -1,0 +1,97 @@
+# Kiwix MCP Server - uses fetch to query Kiwix HTTP API
+# Kiwix service: http://kiwix.kiwix.svc.cluster.local:8080
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcpo-kiwix
+  namespace: ollama-webui
+  labels:
+    app: mcpo-kiwix
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcpo-kiwix
+  template:
+    metadata:
+      labels:
+        app: mcpo-kiwix
+    spec:
+      containers:
+        - name: mcpo-kiwix
+          image: ghcr.io/open-webui/mcpo:main
+          ports:
+            - containerPort: 8002
+              name: http
+          env:
+            - name: PORT
+              value: "8002"
+            - name: HOST
+              value: "0.0.0.0"
+          args:
+            - "--port"
+            - "8002"
+            - "--api-key"
+            - "mcp-kiwix-key"
+            - "--config"
+            - "/app/config/config.json"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          volumeMounts:
+            - name: kiwix-config
+              mountPath: /app/config
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      volumes:
+        - name: kiwix-config
+          configMap:
+            name: mcp-kiwix-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mcp-kiwix-config
+  namespace: ollama-webui
+data:
+  config.json: |
+    {
+      "mcpServers": {
+        "fetch": {
+          "command": "uvx",
+          "args": ["mcp-server-fetch"]
+        }
+      }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcpo-kiwix
+  namespace: ollama-webui
+  labels:
+    app: mcpo-kiwix
+spec:
+  selector:
+    app: mcpo-kiwix
+  ports:
+    - name: http
+      port: 8002
+      targetPort: 8002
+  type: ClusterIP
