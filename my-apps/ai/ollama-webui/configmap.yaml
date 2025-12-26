@@ -7,7 +7,7 @@ data:
   # ---------------------------------------------------------------------------
   # Core API Connections
   # ---------------------------------------------------------------------------
-  OPENAI_API_BASE_URL: "http://llama-swap-service.llama-cpp.svc.cluster.local:8080/v1"
+  OPENAI_API_BASE_URL: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
   OPENAI_API_KEY: "sk-required"
   ENABLE_OLLAMA_API: "false"
   
