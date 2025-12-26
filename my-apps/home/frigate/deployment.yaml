@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: frigate
   namespace: frigate
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   replicas: 0
   selector:

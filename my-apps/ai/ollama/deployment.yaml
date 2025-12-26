@@ -6,6 +6,8 @@ metadata:
   labels:
     app.kubernetes.io/name: ollama
     app.kubernetes.io/component: llm-server
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   strategy:
     type: Recreate

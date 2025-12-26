@@ -5,6 +5,8 @@ metadata:
   namespace: libreddit
   labels:
     app.kubernetes.io/name: libreddit
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   selector:
     matchLabels:

@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: ollama-webui
   namespace: ollama-webui
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   strategy:
     type: Recreate

@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: wyze-bridge
   namespace: wyze-bridge
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   replicas: 0
   selector:

@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: paperless-ngx
   namespace: paperless-ngx
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   strategy:
     type: Recreate

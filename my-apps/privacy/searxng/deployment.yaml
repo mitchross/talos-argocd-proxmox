@@ -5,6 +5,8 @@ metadata:
   namespace: searxng
   labels:
     app.kubernetes.io/name: searxng
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   replicas: 3
   selector:
