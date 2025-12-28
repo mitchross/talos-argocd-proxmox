@@ -4,11 +4,11 @@
 
 ### 1. Deploy Updated Configuration
 ```bash
-kubectl apply -k my-apps/ai/ollama-webui/
+kubectl apply -k my-apps/ai/open-webui/
 ```
 
 ### 2. Manual UI Configuration (if environment variables don't work)
-1. Open Open WebUI: https://ollama-webui.vanillax.me
+1. Open Open WebUI: https://open-webui.vanillax.me
 2. Go to **Settings** → **Web Search**
 3. Enable **Web Search** toggle
 4. Set **Web Search Engine** to `searxng`
@@ -78,17 +78,17 @@ bash my-apps/privacy/searxng/test-api.sh
 
 3. **Check Open WebUI logs**:
    ```bash
-   kubectl logs -n ollama-webui deployment/ollama-webui -f
+   kubectl logs -n open-webui deployment/open-webui -f
    ```
 
 4. **Verify environment variables are loaded**:
    ```bash
-   kubectl exec -n ollama-webui deployment/ollama-webui -- env | grep RAG
+   kubectl exec -n open-webui deployment/open-webui -- env | grep RAG
    ```
 
 5. **Test connectivity from Open WebUI pod**:
    ```bash
-   kubectl exec -n ollama-webui deployment/ollama-webui -- \
+   kubectl exec -n open-webui deployment/open-webui -- \
      curl "https://search.vanillax.me/search?q=test&format=json"
    ```
 

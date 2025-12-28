@@ -180,7 +180,7 @@ ExternalDNS will recreate them automatically with proper ownership tracking (TXT
 🔒 gitea.vanillax.me
 🔒 n8n.vanillax.me
 🔒 ollama.vanillax.me
-🔒 ollama-webui.vanillax.me
+🔒 open-webui.vanillax.me
 🔒 ... and 12+ more
 
 These remain LAN-only and never touch Cloudflare.
