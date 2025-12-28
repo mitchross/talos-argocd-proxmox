@@ -49,15 +49,15 @@ spec:
               mountPath: /app/config
           readinessProbe:
             httpGet:
-              path: /health
+              path: /docs
               port: 8002
-            initialDelaySeconds: 15
+            initialDelaySeconds: 30
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /health
+              path: /docs
               port: 8002
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 30
       volumes:
         - name: kiwix-config
