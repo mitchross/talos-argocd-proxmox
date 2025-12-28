@@ -75,15 +75,15 @@ spec:
               mountPath: /tmp
           readinessProbe:
             httpGet:
-              path: /health
+              path: /docs
               port: 8001
-            initialDelaySeconds: 15
+            initialDelaySeconds: 30
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /health
+              path: /docs
               port: 8001
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 30
       volumes:
         - name: mcp-config
