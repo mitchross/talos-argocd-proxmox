@@ -62,11 +62,12 @@ data:
     min-p = 0.0
     jinja = 1
 
-    # ==========================================================
+    #==========================================================
     # 400GB RAM HYBRID ROLE
     # ==========================================================
     [expert-hybrid - kimi-k2]
-    model = /models/Kimi-K2-Thinking-UD-Q2_K_XL.gguf
+    # Pointing to the first shard inside the nested folder
+    model = /models/UD-Q2_K_XL/Kimi-K2-Thinking-UD-Q2_K_XL-00001-of-00008.gguf
     alias = expert-hybrid, expert, kimi, kimi k2
     ctx-size = 98304
     n-gpu-layers = 99
