@@ -58,6 +58,10 @@ spec:
         # Single storage volume at /root - container handles internal structure
         - name: comfyui-storage
           mountPath: /root
+        # ComfyUI Manager config with security_level = normal
+        - name: manager-config
+          mountPath: /root/ComfyUI/user/__manager/config.ini
+          subPath: config.ini
         readinessProbe:
           httpGet:
             path: /
@@ -78,3 +82,6 @@ spec:
       - name: comfyui-storage
         persistentVolumeClaim:
           claimName: comfyui-storage
+      - name: manager-config
+        configMap:
+          name: comfyui-manager-config
