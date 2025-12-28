@@ -6,6 +6,6 @@ resources:
 helmCharts:
   - name: reloader
     repo: https://stakater.github.io/stakater-charts
-    version: 1.2.1
+    version: 2.2.7
     releaseName: reloader
     valuesFile: values.yaml
