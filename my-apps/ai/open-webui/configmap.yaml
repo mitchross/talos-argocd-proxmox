@@ -41,21 +41,18 @@ data:
   WEB_SEARCH_TRUST_ENV: "True"
 
   # ---------------------------------------------------------------------------
-  # RAG & Document Integration
+  # RAG & Document Integration (for PDFs, text files, etc.)
+  # Note: HAR files use the HAR Analyzer function instead of RAG
   # ---------------------------------------------------------------------------
   ENABLE_RAG: "True"
   RAG_TOP_K: "10"
   RAG_RELEVANCE_THRESHOLD: "0.0"
   CHUNK_SIZE: "1500"
   CHUNK_OVERLAP: "100"
-  # PDF extraction for document uploads
   PDF_EXTRACT_IMAGES: "True"
   ENABLE_RAG_HYBRID_SEARCH: "True"
-
-  # File upload settings for HAR analysis
-  RAG_FILE_MAX_SIZE: "100"           # Max 100MB per file (HAR files can be large)
-  RAG_FILE_MAX_COUNT: "10"           # Max 10 files per upload
-  CONTENT_EXTRACTION_ENGINE: "default"  # Use default extraction (handles JSON/text)
+  RAG_FILE_MAX_SIZE: "100"
+  RAG_FILE_MAX_COUNT: "10"
 
   # ---------------------------------------------------------------------------
   # Tools / Function Calling
