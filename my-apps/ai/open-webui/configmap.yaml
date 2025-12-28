@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ollama-webui-configmap
-  namespace: ollama-webui
+  name: open-webui-configmap
+  namespace: open-webui
 data:
   # ---------------------------------------------------------------------------
   # Core API Connections
@@ -11,7 +11,7 @@ data:
   OPENAI_API_BASE_URL: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
   OPENAI_API_KEY: "sk-required"
   ENABLE_OLLAMA_API: "false"
-  
+
   # Semantic Routing for Unsloth 2.0
   # Use reasoning (Nemotron) as default, vision (GLM-4.6V) for images
   DEFAULT_MODELS: "reasoning-single - nemotron3-nano-30b"
@@ -23,12 +23,12 @@ data:
   TEMPERATURE: "1.0"
   TOP_P: "1.0"
   MIN_P: "0.0"
-  
+
   # UI & Reasoning Logic
-  SHOW_THOUGHTS: "True" 
+  SHOW_THOUGHTS: "True"
   ENABLE_PERSISTENT_CONFIG: "True"
-  WEBUI_SECRET_KEY: "ollama-webui"
-  
+  WEBUI_SECRET_KEY: "open-webui"
+
   # ---------------------------------------------------------------------------
   # Web Search
   # ---------------------------------------------------------------------------
@@ -39,7 +39,7 @@ data:
   WEB_SEARCH_RESULT_COUNT: "5"
   ENABLE_WEB_LOADER_SSL_VERIFICATION: "True"
   WEB_SEARCH_TRUST_ENV: "True"
-  
+
   # ---------------------------------------------------------------------------
   # RAG & Document Integration
   # ---------------------------------------------------------------------------
@@ -50,15 +50,33 @@ data:
   CHUNK_OVERLAP: "100"
   # PDF extraction for document uploads
   PDF_EXTRACT_IMAGES: "True"
-  ENABLE_RAG_HYBRID_SEARCH: "True" 
+  ENABLE_RAG_HYBRID_SEARCH: "True"
 
   # ---------------------------------------------------------------------------
-  # Tools / Function Calling 
+  # Tools / Function Calling
   # ---------------------------------------------------------------------------
   ENABLE_TOOLS: "True"
   # MCP proxies for tools, multi-tools, and Kiwix knowledge base
-  OPENAPI_API_ENDPOINTS: "mcpo-time:http://mcpo.ollama-webui.svc.cluster.local:8000:mcp-demo-key;mcpo-multi:http://mcpo-multi.ollama-webui.svc.cluster.local:8001:mcp-multi-key;mcpo-kiwix:http://mcpo-kiwix.ollama-webui.svc.cluster.local:8002:mcp-kiwix-key"
-  
+  OPENAPI_API_ENDPOINTS: "mcpo-time:http://mcpo.open-webui.svc.cluster.local:8000:mcp-demo-key;mcpo-multi:http://mcpo-multi.open-webui.svc.cluster.local:8001:mcp-multi-key;mcpo-kiwix:http://mcpo-kiwix.open-webui.svc.cluster.local:8002:mcp-kiwix-key"
+  # Use main model for tool/function calling
+  TASK_MODEL: "reasoning-single - nemotron3-nano-30b"
+  TASK_MODEL_EXTERNAL: "reasoning-single - nemotron3-nano-30b"
+
+  # ---------------------------------------------------------------------------
+  # Default System Prompt (Kiwix RAG)
+  # ---------------------------------------------------------------------------
+  DEFAULT_SYSTEM_PROMPT: |
+    You have access to an offline encyclopedia (Kiwix) via the 'fetch' tool.
+    The Kiwix server is located at: http://kiwix.kiwix.svc.cluster.local:8080
+
+    To search for information:
+    1. Use the 'fetch' tool to search: "http://kiwix.kiwix.svc.cluster.local:8080/search?pattern=YOUR_SEARCH_QUERY"
+    2. The result will be an HTML page containing search results. Read the links from this page.
+    3. To read an article, use 'fetch' again on the article URL found in the search results (e.g., "http://kiwix.kiwix.svc.cluster.local:8080/content/wikipedia_en_all_maxi_2025-08/Article_Name").
+
+    When asked about general knowledge or historical facts, ALWAYS check the offline encyclopedia first using these steps.
+    CITE your sources by referencing the article title.
+
   # ---------------------------------------------------------------------------
   # Media Features
   # ---------------------------------------------------------------------------

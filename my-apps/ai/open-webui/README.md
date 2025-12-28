@@ -20,12 +20,12 @@ Enhanced Open WebUI deployment with internet search capabilities and Model Conte
 
 Apply all configurations:
 ```bash
-kubectl apply -k my-apps/ai/ollama-webui/
+kubectl apply -k my-apps/ai/open-webui/
 ```
 
 Optional advanced MCP features:
 ```bash
-kubectl apply -f my-apps/ai/ollama-webui/mcp-config.yaml
+kubectl apply -f my-apps/ai/open-webui/mcp-config.yaml
 ```
 
 ## Configuration
@@ -36,12 +36,12 @@ Web search is automatically enabled with SearXNG integration. Click the '+' butt
 ### MCP Tools
 Add MCP tools in Open WebUI:
 1. Go to **Settings → Tools**
-2. Add endpoint: `http://mcpo.ollama-webui.svc.cluster.local:8000`
+2. Add endpoint: `http://mcpo.open-webui.svc.cluster.local:8000`
 3. API Key: `mcp-demo-key`
 
 ## Access
 
-Open WebUI: https://ollama-webui.vanillax.me
+Open WebUI: https://open-webui.vanillax.me
 
 ## Files
 

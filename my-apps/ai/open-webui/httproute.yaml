@@ -1,0 +1,27 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: open-webui
+  namespace: open-webui
+spec:
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: gateway-internal
+    namespace: gateway
+  hostnames:
+  - "open-webui.vanillax.me"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    timeouts:
+      request: 30m
+      backendRequest: 30m
+    backendRefs:
+    - group: ""
+      kind: Service
+      name: open-webui
+      port: 8080
+      weight: 1

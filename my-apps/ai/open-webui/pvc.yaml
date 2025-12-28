@@ -2,10 +2,10 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ollama-webui-data
-  namespace: ollama-webui
+  name: open-webui-data
+  namespace: open-webui
   labels:
-    app.kubernetes.io/name: ollama-webui
+    app.kubernetes.io/name: open-webui
     app.kubernetes.io/component: ai-interface
   annotations:
     # Longhorn backup settings - Important tier for AI chat history
@@ -14,7 +14,7 @@ metadata:
     volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
-    - ReadWriteOnce
+  - ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
@@ -24,10 +24,10 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ollama-webui-storage-pvc
-  namespace: ollama-webui
+  name: open-webui-storage-pvc
+  namespace: open-webui
   labels:
-    app.kubernetes.io/name: ollama-webui
+    app.kubernetes.io/name: open-webui
     app.kubernetes.io/component: ai-interface
   annotations:
     # Longhorn backup settings - Important tier for AI chat data
@@ -36,7 +36,7 @@ metadata:
     volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
-    - ReadWriteOnce
+  - ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
