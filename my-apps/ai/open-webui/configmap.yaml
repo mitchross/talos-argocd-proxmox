@@ -17,6 +17,9 @@ data:
   DEFAULT_MODELS: "reasoning-single - nemotron3-nano-30b"
   WHITELISTED_MODELS: ""
 
+  # Vision Models - tell Open WebUI which models support images
+  VISION_MODELS: "vision-single - glm4v-flash"
+
   # Hardware-Optimized Parameters (Nemotron-3 recommended: temp=1.0, top_p=1.0)
   # For tool calling use: temp=0.6, top_p=0.95
   CONTEXT_WINDOW: "131072"
