@@ -20,7 +20,7 @@ spec:
         runAsGroup: 1001
       containers:
         - name: karakeep
-          image: ghcr.io/karakeep-app/karakeep:release@sha256:bbdc3274bbe510cac32551b2a8825019f61d23c261ddb8baa9bb4311caed31c4
+          image: ghcr.io/karakeep-app/karakeep:release@sha256:2724d4a9a6d13a7fa3babf53b9245767aae56c34f06042a8463ee983c6b41caf
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
