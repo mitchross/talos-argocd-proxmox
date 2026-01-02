@@ -59,8 +59,6 @@ spec:
               value: "0,1"
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: "compute,utility"
-            - name: LD_LIBRARY_PATH
-              value: "/usr/local/nvidia/lib64:/usr/local/cuda/lib64"
             - name: GGML_CUDA_ENABLE_UNIFIED_MEMORY
               value: "1" # Vital for Kimi-K2 1T model to bridge VRAM and 400GB RAM
             - name: GGML_CUDA_PEER_MAX_BATCH_SIZE
