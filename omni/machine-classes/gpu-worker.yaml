@@ -1,5 +1,17 @@
 ---
 # omnictl apply -f gpu-worker.yaml
+#
+# Proxmox Provider Config Options (Enhanced Build):
+#   cores, sockets, memory, disk_size: Basic VM specs
+#   storage_selector: CEL expression to select Proxmox storage
+#   disk_ssd, disk_discard, disk_iothread, disk_cache, disk_aio: Disk performance
+#   cpu_type: CPU type (host for GPU passthrough)
+#   machine_type: q35 for native PCIe passthrough
+#   numa, hugepages, balloon: GPU/HPC optimizations
+#   additional_nics: Extra NICs for storage networks
+#
+# Note: qemu-guest-agent is auto-installed by the provider
+#
 metadata:
   namespace: default
   type: MachineClasses.omni.sidero.dev
@@ -11,18 +23,39 @@ spec:
     kernelargs: []
     metavalues: []
     providerdata: |
-      cores: 12
+      cores: 16
       sockets: 2
       memory: 480000
       disk_size: 450
       network_bridge: vmbr0
       storage_selector: name == "ssdpool"
-      grpctunnel: 0
+      # Disk performance (SSD/NVMe optimization)
+      disk_ssd: true
+      disk_discard: true
+      disk_iothread: true
+      disk_cache: none
+      disk_aio: io_uring
+      # GPU passthrough optimizations
+      cpu_type: host
+      machine_type: q35
+      numa: true
+      # hugepages: 1GB  # Requires host config: echo 256 > /proc/sys/vm/nr_hugepages
+      balloon: false
+      # GPU passthrough using Proxmox Resource Mappings (2x GPUs)
+      pci_devices:
+        - mapping: nvidia-gpu-1
+          pcie: true
+        - mapping: nvidia-gpu-2
+          pcie: true
+      # 10G storage network (vmbr1 -> ens19 in Talos)
+      additional_nics:
+        - bridge: vmbr1
+          firewall: false
 
-# Note: GPU passthrough must be configured manually in Proxmox after VM creation
-# The provider creates the VM, then you need to:
-# 1. Shut down the VM
+# GPU Passthrough Setup:
+# With enhanced provider, VM is pre-configured for GPU. Just:
+# 1. Shut down the VM in Proxmox
 # 2. Add GPU via Proxmox UI: Hardware → Add → PCI Device
-# 3. Select your NVIDIA GPU
+# 3. Select your NVIDIA GPU (All Functions + PCI-Express)
 # 4. Start the VM
-# 5. Apply Talos GPU extensions (see talos-configs/gpu-worker-patch.yaml)
+# 5. GPU extensions are configured in the cluster template patches

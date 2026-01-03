@@ -1,5 +1,17 @@
 ---
 # omnictl apply -f control-plane.yaml
+#
+# Proxmox Provider Config Options (Enhanced Build):
+#   cores, sockets, memory, disk_size: Basic VM specs
+#   storage_selector: CEL expression to select Proxmox storage
+#   disk_ssd, disk_discard, disk_iothread, disk_cache, disk_aio: Disk performance
+#   cpu_type: CPU type (host, x86-64-v2-AES)
+#   machine_type: q35 for PCIe passthrough, i440fx for legacy
+#   numa, hugepages, balloon: HPC/GPU optimizations
+#   additional_nics: Extra NICs for storage networks
+#
+# Note: qemu-guest-agent is auto-installed by the provider
+#
 metadata:
   namespace: default
   type: MachineClasses.omni.sidero.dev
@@ -16,5 +28,10 @@ spec:
       memory: 16000
       disk_size: 60
       network_bridge: vmbr0
-      storage_selector: name == "ssdpool"
-      grpctunnel: 0
+      storage_selector: name == "fastpool"
+      # Disk performance (SSD/NVMe optimization)
+      disk_ssd: true
+      disk_discard: true
+      disk_iothread: true
+      disk_cache: none
+      disk_aio: io_uring
