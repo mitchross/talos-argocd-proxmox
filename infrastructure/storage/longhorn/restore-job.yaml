@@ -29,8 +29,8 @@ subjects:
     namespace: longhorn-system
 roleRef:
   kind: ClusterRole
-    name: restore-controller-role
-    apiGroup: rbac.authorization.k8s.io
+  name: restore-controller-role
+  apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: batch/v1
 kind: Job
