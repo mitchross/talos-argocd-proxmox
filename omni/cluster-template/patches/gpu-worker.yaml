@@ -1,4 +1,12 @@
 machine:
+  network:
+    interfaces:
+      - interface: ens18
+        dhcp: true
+      - interface: ens19
+        dhcp: false
+        addresses:
+          - 172.31.250.10/24
   kernel:
     modules:
       - name: nvidia
