@@ -30,10 +30,10 @@ spec:
             - containerPort: 3923
               name: http
           env:
+            - name: TZ
+              value: "America/Detroit"
             - name: PRTY_NO_TLS
               value: "1"
-            - name: X_CFG
-              value: "/cfg/copyparty.conf"
           volumeMounts:
             - name: media
               mountPath: /w/media
