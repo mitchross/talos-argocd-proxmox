@@ -1,0 +1,15 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: searxng-redis-restore
+  namespace: searxng
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: searxng-redis-volsync-secret
+    copyMethod: Direct
+    storageClassName: longhorn
+    accessModes:
+      - ReadWriteOnce
+    capacity: 1Gi
