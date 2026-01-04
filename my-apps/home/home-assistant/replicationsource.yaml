@@ -1,0 +1,17 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: home-assistant-config-backup
+  namespace: home-assistant
+spec:
+  sourcePVC: home-assistant-config
+  trigger:
+    schedule: "0 2 * * *"
+  restic:
+    pruneIntervalDays: 7
+    repository: home-assistant-volsync-secret
+    retain:
+      daily: 14
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    cacheStorageClassName: longhorn
