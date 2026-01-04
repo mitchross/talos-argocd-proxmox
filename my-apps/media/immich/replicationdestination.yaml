@@ -1,0 +1,15 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: immich-library-restore
+  namespace: immich
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: immich-volsync-secret
+    copyMethod: Direct
+    storageClassName: longhorn
+    accessModes:
+      - ReadWriteOnce
+    capacity: 100Gi
