@@ -15,3 +15,6 @@ resources:
   # - svc.yaml
   # - pvc.yaml
   # - deployment.yaml
+  - volsync-secret.yaml
+  - replicationsource.yaml
+  - replicationdestination.yaml
