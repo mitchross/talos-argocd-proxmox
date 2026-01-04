@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - ns.yaml
   - media-pvc.yaml
+  - config-pvc.yaml
   - deployment.yaml
   - svc.yaml
   - httproute.yaml

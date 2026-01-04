@@ -17,6 +17,12 @@ spec:
       labels:
         app: copyparty
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: "Always"
       containers:
         - name: copyparty
           image: acj21/copyparty:latest
@@ -24,11 +30,15 @@ spec:
             - containerPort: 3923
               name: http
           env:
-            - name: E
-              value: "id:rw:a"
+            - name: PRTY_NO_TLS
+              value: "1"
+            - name: X_CFG
+              value: "/cfg/copyparty.conf"
           volumeMounts:
             - name: media
-              mountPath: /mnt/media
+              mountPath: /w/media
+            - name: config
+              mountPath: /cfg
           resources:
             requests:
               cpu: 100m
@@ -40,3 +50,6 @@ spec:
         - name: media
           persistentVolumeClaim:
             claimName: copyparty-media
+        - name: config
+          persistentVolumeClaim:
+            claimName: copyparty-config-pvc
