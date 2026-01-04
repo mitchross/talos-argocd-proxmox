@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copyparty
+  namespace: copyparty
+  labels:
+    app: copyparty
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: copyparty
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: copyparty
+    spec:
+      containers:
+        - name: copyparty
+          image: acj21/copyparty:latest
+          ports:
+            - containerPort: 3923
+              name: http
+          env:
+            - name: E
+              value: "id:rw:a"
+          volumeMounts:
+            - name: media
+              mountPath: /mnt/media
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+      volumes:
+        - name: media
+          persistentVolumeClaim:
+            claimName: copyparty-media
