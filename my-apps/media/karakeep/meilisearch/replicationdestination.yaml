@@ -1,0 +1,15 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: meilisearch-restore
+  namespace: karakeep
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: meilisearch-volsync-secret
+    copyMethod: Direct
+    storageClassName: longhorn
+    accessModes:
+      - ReadWriteOnce
+    capacity: 10Gi
