@@ -1,0 +1,19 @@
+# VolSync Helm chart values
+# https://github.com/backube/volsync
+
+# Metrics configuration
+metrics:
+  # Enable Prometheus metrics
+  disableAuth: true
+
+# Resource configuration for the controller
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Enable CRDs installation
+manageCRDs: true
