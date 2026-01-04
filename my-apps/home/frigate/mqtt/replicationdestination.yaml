@@ -1,0 +1,15 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: mosquitto-storage-pvc-restore
+  namespace: frigate
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: mqtt-volsync-secret
+    copyMethod: Direct
+    storageClassName: longhorn
+    accessModes:
+      - ReadWriteOnce
+    capacity: 1Gi
