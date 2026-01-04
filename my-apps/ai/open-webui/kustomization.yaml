@@ -10,4 +10,8 @@ resources:
 - service.yaml
 - pvc.yaml
 - httproute.yaml
+- function-loader-job.yaml
+- volsync-secret.yaml
+- replicationsource.yaml
+- replicationdestination.yaml
 namespace: open-webui
