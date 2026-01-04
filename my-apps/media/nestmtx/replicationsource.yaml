@@ -1,0 +1,17 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: nestmtx-data-backup
+  namespace: nestmtx
+spec:
+  sourcePVC: nestmtx-storage-pvc
+  trigger:
+    schedule: "0 2 * * *"
+  restic:
+    pruneIntervalDays: 7
+    repository: nestmtx-volsync-secret
+    retain:
+      daily: 14
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    cacheStorageClassName: longhorn
