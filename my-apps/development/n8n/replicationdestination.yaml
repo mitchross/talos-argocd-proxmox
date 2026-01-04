@@ -1,0 +1,15 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: n8n-data-restore
+  namespace: n8n
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: n8n-volsync-secret
+    copyMethod: Direct
+    storageClassName: longhorn
+    accessModes:
+      - ReadWriteOnce
+    capacity: 10Gi
