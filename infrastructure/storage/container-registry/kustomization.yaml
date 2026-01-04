@@ -8,4 +8,7 @@ resources:
   - service.yaml
   - pvc.yaml
   - configmap.yaml
-  - httproute.yaml 
+  - httproute.yaml
+  - volsync-secret.yaml
+  - replicationsource.yaml
+  - replicationdestination.yaml

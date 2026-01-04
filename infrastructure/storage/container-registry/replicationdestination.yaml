@@ -1,0 +1,15 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: container-registry-restore
+  namespace: kube-system
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: container-registry-volsync-secret
+    copyMethod: Direct
+    storageClassName: longhorn
+    accessModes:
+      - ReadWriteOnce
+    capacity: 10Gi
