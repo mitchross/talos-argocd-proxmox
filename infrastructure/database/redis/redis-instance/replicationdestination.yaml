@@ -1,0 +1,15 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: redis-data-restore
+  namespace: redis-instance
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: redis-volsync-secret
+    copyMethod: Direct
+    storageClassName: longhorn
+    accessModes:
+      - ReadWriteOnce
+    capacity: 10Gi
