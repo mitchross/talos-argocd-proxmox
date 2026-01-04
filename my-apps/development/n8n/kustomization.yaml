@@ -9,6 +9,9 @@ resources:
   - namespace.yaml
   - httproute.yaml
   - pvc.yaml
+  - volsync-secret.yaml
+  - replicationsource.yaml
+  - replicationdestination.yaml
 helmCharts:
   - name: n8n
     repo: oci://8gears.container-registry.com/library
