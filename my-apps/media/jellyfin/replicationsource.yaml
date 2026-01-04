@@ -1,0 +1,17 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: jellyfin-config-backup
+  namespace: jellyfin
+spec:
+  sourcePVC: jellyfin-config-pvc
+  trigger:
+    schedule: "0 2 * * *"
+  restic:
+    pruneIntervalDays: 7
+    repository: jellyfin-volsync-secret
+    retain:
+      daily: 14
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    cacheStorageClassName: longhorn
