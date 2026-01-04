@@ -8,5 +8,8 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+  - volsync-secret.yaml
+  - replicationsource.yaml
+  - replicationdestination.yaml
 
 namespace: fizzy
