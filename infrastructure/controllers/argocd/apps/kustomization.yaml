@@ -8,6 +8,7 @@ resources:
   - 1passwordconnect.yaml  # Wave 0 - Secret backend (required by External Secrets)
   - external-secrets.yaml  # Wave 0 - External Secrets CRDs (required by Longhorn)
   - longhorn-app.yaml      # Wave 1 - Storage foundation
+  - volsync-app.yaml       # Wave 1 - PVC backup and replication
   # ApplicationSets for automatic discovery
   - infrastructure-appset.yaml  # Wave 2
   - monitoring-appset.yaml      # Wave 3
