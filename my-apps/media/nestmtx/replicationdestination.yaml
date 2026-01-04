@@ -1,0 +1,15 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: nestmtx-data-restore
+  namespace: nestmtx
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: nestmtx-volsync-secret
+    copyMethod: Direct
+    storageClassName: longhorn
+    accessModes:
+      - ReadWriteOnce
+    capacity: 10Gi
