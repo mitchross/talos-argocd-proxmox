@@ -1,0 +1,15 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: nginx-storage-restore
+  namespace: nginx-example
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: nginx-volsync-secret
+    copyMethod: Direct
+    storageClassName: longhorn
+    accessModes:
+      - ReadWriteOnce
+    capacity: 1Gi

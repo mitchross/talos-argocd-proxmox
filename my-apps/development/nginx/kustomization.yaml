@@ -8,5 +8,8 @@ resources:
   - service.yaml
   - pvc.yaml
   - httproute.yaml
+  - volsync-secret.yaml
+  - replicationsource.yaml
+  - replicationdestination.yaml
 
 namespace: nginx-example
