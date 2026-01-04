@@ -1,0 +1,17 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: meilisearch-backup
+  namespace: karakeep
+spec:
+  sourcePVC: meilisearch-pvc
+  trigger:
+    schedule: "0 2 * * *"
+  restic:
+    pruneIntervalDays: 7
+    repository: meilisearch-volsync-secret
+    retain:
+      daily: 14
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    cacheStorageClassName: longhorn
