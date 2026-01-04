@@ -10,9 +10,6 @@ defaultSettings:
   storageOverProvisioningPercentage: "100"
   allowRecurringJobWhileVolumeDetached: "true"
   replicaAutoBalance: "best-effort"
-  # Ensure all new volumes automatically get the "default" backup schedule
-  # (Daily snapshots + Weekly backups)
-  default-recurring-job-group: "default"
   # Ensure new consolidated settings that can be per-engine stay simple scalars for V1-only clusters
   # These avoid parse errors like strconv.ParseBool/Int seen in manager logs when JSON strings are provided.
   # Note: Use plain boolean for fastReplicaRebuildEnabled, not JSON format
