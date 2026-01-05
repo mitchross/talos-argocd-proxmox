@@ -1,63 +1,67 @@
 apiVersion: apps/v1
 kind: Deployment
-metadata:
+metadata: 
   name: copyparty
   namespace: copyparty
   labels:
     app: copyparty
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: copyparty
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels:
         app: copyparty
-    spec:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
-        fsGroupChangePolicy: "Always"
+    spec: 
       containers:
-        - name: copyparty
-          image: copyparty/ac:latest
-          ports:
-            - containerPort: 3923
-              name: http
-          env:
-            - name: TZ
-              value: "America/Detroit"
-            - name: PRTY_NO_TLS
-              value: "1"
-            - name: X_CFG
-              value: "/cfg/copyparty.conf"
-          volumeMounts:
-            - name: media
-              mountPath: /w/media
-            - name: db
-              mountPath: /cfg/hists
-            - name: config-file
-              mountPath: /cfg/copyparty.conf
-              subPath: copyparty.conf
-          resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-            limits:
-              cpu: 1000m
-              memory: 1Gi
+      - name: copyparty
+        image: copyparty/ac:latest
+        ports:
+        - name: http
+          containerPort: 3923
+          protocol: TCP
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        - name: config
+          mountPath: /cfg/copyparty.conf
+          subPath: copyparty.conf
+        env:
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        - name: TZ
+          value: "America/Detroit"
+        - name: X_CFG
+          value: "/cfg/copyparty.conf"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port:  http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe: 
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
       volumes:
-        - name: media
-          persistentVolumeClaim:
-            claimName: copyparty-media
-        - name: db
-          persistentVolumeClaim:
-            claimName: copyparty-config-pvc
-        - name: config-file
-          configMap:
-            name: copyparty-config
+      - name:  data
+        persistentVolumeClaim:
+          claimName:  copyparty-data
+      - name: config
+        configMap: 
+          name: copyparty-config
