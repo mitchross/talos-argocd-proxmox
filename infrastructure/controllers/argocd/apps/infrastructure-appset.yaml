@@ -28,7 +28,6 @@ spec:
       - path: infrastructure/storage/csi-driver-smb
       - path: infrastructure/storage/local-storage
       - path: infrastructure/storage/openebs
-      - path: infrastructure/storage/snapshot-controller
       - path: infrastructure/database/*/*
       - path: infrastructure/crds
   template:
