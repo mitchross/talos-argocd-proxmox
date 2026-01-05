@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: snapshot-controller
+helmCharts:
+  - name: snapshot-controller
+    repo: https://piraeus.io/helm-charts/
+    version: 3.0.6
+    releaseName: snapshot-controller
+    includeCRDs: true
+    namespace: snapshot-controller
+    valuesFile: values.yaml
+resources:
+  - namespace.yaml
