@@ -34,11 +34,16 @@ spec:
               value: "America/Detroit"
             - name: PRTY_NO_TLS
               value: "1"
+            - name: X_CFG
+              value: "/cfg/copyparty.conf"
           volumeMounts:
             - name: media
               mountPath: /w/media
-            - name: config
-              mountPath: /cfg
+            - name: db
+              mountPath: /cfg/hists
+            - name: config-file
+              mountPath: /cfg/copyparty.conf
+              subPath: copyparty.conf
           resources:
             requests:
               cpu: 100m
@@ -50,6 +55,9 @@ spec:
         - name: media
           persistentVolumeClaim:
             claimName: copyparty-media
-        - name: config
+        - name: db
           persistentVolumeClaim:
             claimName: copyparty-config-pvc
+        - name: config-file
+          configMap:
+            name: copyparty-config
