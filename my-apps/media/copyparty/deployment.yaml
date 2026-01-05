@@ -25,7 +25,7 @@ spec:
         fsGroupChangePolicy: "Always"
       containers:
         - name: copyparty
-          image: acj21/copyparty:latest
+          image: copyparty/ac:latest
           ports:
             - containerPort: 3923
               name: http
