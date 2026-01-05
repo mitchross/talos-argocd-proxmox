@@ -1,0 +1,11 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: khoj-daily-backup
+  namespace: cloudnative-pg
+spec:
+  schedule: "0 3 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: khoj-database
+  immediate: true
