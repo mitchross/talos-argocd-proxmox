@@ -198,6 +198,7 @@ ArgoCD deploys applications in a specific order to avoid race conditions and SSD
 | **0** | **1Password Connect** | Secret backend | Required by External Secrets Operator |
 | **0** | **External Secrets Operator** | Secret management CRDs | Longhorn needs ExternalSecret CRD for backup credentials |
 | **1** | **Longhorn** | Storage layer | Needs networking + secret CRDs; other apps need storage |
+| **1** | **Snapshot Controller** | Storage API | Provides VolumeSnapshot CRDs required by VolSync |
 | **1** | **Garage** | S3-compatible object storage | Needs storage layer |
 | **2** | **Infrastructure** | Core services (cert-manager, GPU operators, databases, etc.) | Depends on networking and storage being ready |
 | **3** | **Monitoring** | Prometheus, Grafana, alerts | Monitors the infrastructure |

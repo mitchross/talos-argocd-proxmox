@@ -6,6 +6,7 @@ This document outlines the storage architecture for the cluster, focusing on dat
 
 The cluster uses a layered storage approach:
 - **Longhorn**: Distributed block storage for runtime replication (2 replicas per volume)
+- **Snapshot Controller**: Manages VolumeSnapshot lifecycles and CRDs
 - **VolSync**: Daily backups of all PVCs to S3 using Restic
 - **Database-native backups**: CloudNativePG and Crunchy Postgres backup directly to S3
 
@@ -199,6 +200,7 @@ mc ls rustfs/volsync/home-assistant/
 | Component | Location |
 |-----------|----------|
 | VolSync operator | `infrastructure/storage/volsync/` |
+| Snapshot Controller | `infrastructure/storage/snapshot-controller/` |
 | Longhorn (replication only) | `infrastructure/storage/longhorn/` |
 | App VolSync configs | `my-apps/<category>/<app>/replicationsource.yaml` |
 | CNPG backup config | `infrastructure/database/cloudnative-pg/*/cluster.yaml` |
