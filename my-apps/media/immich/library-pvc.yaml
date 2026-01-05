@@ -14,7 +14,3 @@ spec:
     requests:
       storage: 100Gi  # Adjust based on your photo library size
   storageClassName: longhorn
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: immich-library-restore

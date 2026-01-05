@@ -103,8 +103,7 @@ container-registry, redis, mqtt, searxng, fizzy, nginx, jellyfin, nestmtx, homep
 
 Each app has:
 - `ReplicationSource` - Defines backup schedule and retention
-- `ReplicationDestination` - Dormant restore definition (no trigger)
-- `PVC` - References ReplicationDestination via `dataSourceRef`
+- `ReplicationDestination` - Dormant restore definition (triggered manually when needed)
 - `ExternalSecret` - Pulls S3 credentials from 1Password
 
 ### Database Backups (Native)
@@ -124,43 +123,53 @@ PostgreSQL databases use their native backup tools:
 
 ## 3. Disaster Recovery
 
-### Volume Populator Pattern (Automatic Restore)
+### Defense Layers
 
-PVCs use the **Volume Populator** pattern for automatic restore:
+- **Layer 1 (Longhorn)**: Runtime replication across nodes - survives single node failure
+- **Layer 2 (VolSync)**: S3 backups to RustFS - survives complete cluster loss
 
-```yaml
-# In each app's PVC
-spec:
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: <app>-restore
+### Restoring a PVC (VolSync)
+
+When you need to restore a PVC from backup:
+
+1. **Scale down the application** (to release the PVC):
+```bash
+kubectl scale deployment <app> -n <namespace> --replicas=0
 ```
 
-**How it works:**
-1. PVC references a dormant ReplicationDestination (no trigger)
-2. When PVC is newly created (no existing Longhorn volume), Kubernetes uses the dataSourceRef
-3. VolSync automatically restores from S3 backup to populate the new PVC
-4. If Longhorn already has the data, dataSourceRef is ignored
-
-**This enables zero-intervention restore:**
-- Deploy app → PVC created → auto-restore from S3 → app starts with data
-- Longhorn replication is Layer 1 (node failure)
-- S3 backup is Layer 2 (cluster loss)
-
-### Manual Restore (if needed)
-
-For manual restore scenarios, you can trigger the ReplicationDestination:
-
+2. **Delete the existing PVC** (if corrupted/lost):
 ```bash
-# Add manual trigger to force restore
+kubectl delete pvc <pvc-name> -n <namespace>
+```
+
+3. **Trigger the ReplicationDestination**:
+```bash
 kubectl patch replicationdestination <app>-restore -n <namespace> \
   --type merge \
   -p '{"spec":{"trigger":{"manual":"restore-'$(date +%s)'"}}}'
-
-# Wait for restore to complete
-kubectl get replicationdestination <app>-restore -n <namespace> -w
 ```
+
+4. **Wait for restore to complete** (creates a new PVC with restored data):
+```bash
+kubectl get replicationdestination <app>-restore -n <namespace> -w
+# Look for: latestImage showing the restored snapshot
+```
+
+5. **Rename/recreate the PVC** to match what the app expects, or update app to use the restored PVC name.
+
+6. **Scale up the application**:
+```bash
+kubectl scale deployment <app> -n <namespace> --replicas=1
+```
+
+### Full Cluster Rebuild
+
+After a complete cluster rebuild:
+
+1. Deploy infrastructure (ArgoCD, External Secrets, Longhorn, VolSync)
+2. Deploy apps - PVCs will be created empty
+3. For each app needing data, trigger ReplicationDestination restore
+4. Apps will start with restored data
 
 ### Restoring a Database
 
@@ -191,7 +200,7 @@ After a complete cluster rebuild:
 |---------|-------------------|---------------|
 | Backup tool | Longhorn built-in | VolSync + Restic |
 | Backup schedule | RecurringJobs (tiered) | Tiered: hourly (critical) + daily (non-critical) |
-| Restore method | Hardcoded restore-job.yaml | Volume Populator (automatic on PVC create) |
+| Restore method | Hardcoded restore-job.yaml | Trigger ReplicationDestination manually |
 | Database backups | PVC snapshots (inconsistent) | Native WAL archiving (consistent) |
 | Complexity | Multiple tiers, shell scripts | Declarative YAML per app |
 

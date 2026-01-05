@@ -18,7 +18,3 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: container-registry-restore
