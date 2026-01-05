@@ -7,9 +7,6 @@ metadata:
     app: proxitok
     type: cache
   annotations:
-    # Longhorn backup settings - Standard tier for cache data
-    longhorn.io/recurring-job-source: enabled
-    longhorn.io/recurring-job-group: standard
     volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
