@@ -48,8 +48,8 @@ spec:
     # This prevents pods from accessing router admin/SSH
 
     # ============================================
-    # ALLOW: TrueNAS - NFS + SMB + MinIO Storage
-    # (NFS for Plex, SMB for Jellyfin, MinIO for Longhorn backups)
+    # ALLOW: TrueNAS - NFS + SMB + RustFS Storage
+    # (NFS for Plex, SMB for Jellyfin, RustFS for VolSync backups)
     # ============================================
     - toCIDR:
         - 192.168.10.133/32
@@ -62,6 +62,8 @@ spec:
             - port: "111"
               protocol: UDP
             - port: "445"
+              protocol: TCP
+            - port: "30292"
               protocol: TCP
             - port: "9000"
               protocol: TCP
