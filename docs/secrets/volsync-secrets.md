@@ -2,19 +2,20 @@
 
 ## Required 1Password Items
 
-Before VolSync backups will work, you need to create one new item in 1Password.
+Before VolSync backups will work, you need the `rustfs` item in 1Password.
 
-### volsync-kopia
+### rustfs
 
-Create a new **Password** item in your 1Password vault:
+Create a **Password** item in your 1Password vault:
 
 | Field | Value |
 |-------|-------|
-| **Item name** | `volsync-kopia` |
-| **Field name** | `password` |
-| **Value** | A strong random password (32+ characters) |
+| **Item name** | `rustfs` |
+| **access_key** | RustFS access key |
+| **secret_key** | RustFS secret key |
+| **restic_password** | A strong random password (32+ characters) |
 
-This password encrypts all Kopia/Restic backup repositories stored in S3.
+The `restic_password` encrypts all backup repositories stored in S3.
 
 **Generate a secure password:**
 ```bash
@@ -23,41 +24,46 @@ openssl rand -base64 32
 
 Example output: `K7x9mP2nL4qR8vT1wY5zA3cF6hJ0bN+dG=`
 
-### Existing Items Used
-
-The VolSync configuration also uses your existing `minio` item:
-
-| Item | Fields Used |
-|------|-------------|
-| `minio` | `minio_access_key`, `minio_secret_key` |
-
-These should already exist from your Longhorn backup configuration.
-
 ## Verification
 
-After creating the `volsync-kopia` item, verify the ExternalSecrets are syncing:
+After creating the `rustfs` item, verify the ExternalSecrets are syncing:
 
 ```bash
-# Check VolSync system secret
-kubectl get externalsecret -n volsync-system
-
 # Check app-level secrets (example)
 kubectl get externalsecret -n home-assistant
+
+# View secret details
+kubectl get externalsecret home-assistant-volsync-secret -n home-assistant -o yaml
 ```
 
 All ExternalSecrets should show `SecretSynced` status.
 
 ## S3 Bucket Setup
 
-Ensure these buckets exist in your RustFS/MinIO (192.168.10.133):
+Ensure the `volsync` bucket exists in RustFS (192.168.10.133:30292):
 
 | Bucket | Purpose |
 |--------|---------|
-| `volsync-backups` | VolSync PVC backups (Kopia repositories) |
-| `postgres-backups` | CNPG and Crunchy database backups |
+| `volsync` | VolSync PVC backups (Restic repositories) |
 
-Create them if they don't exist:
+Create it if it doesn't exist:
 ```bash
-mc mb truenas/volsync-backups
-mc mb truenas/postgres-backups
+mc alias set rustfs http://192.168.10.133:30292 <access_key> <secret_key>
+mc mb rustfs/volsync
 ```
+
+## Secret Structure
+
+Each app has an ExternalSecret that creates a Secret with this structure:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: <app>-volsync-secret
+type: Opaque
+stringData:
+  RESTIC_REPOSITORY: s3:http://192.168.10.133:30292/volsync/<app>
+  RESTIC_PASSWORD: <from 1Password rustfs.restic_password>
+  AWS_ACCESS_KEY_ID: <from 1Password rustfs.access_key>
+  AWS_SECRET_ACCESS_KEY: <from 1Password rustfs.secret_key>
