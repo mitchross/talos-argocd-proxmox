@@ -17,8 +17,4 @@ spec:
     requests:
       storage: 3Gi
   storageClassName: longhorn
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: homepage-config-restore
 

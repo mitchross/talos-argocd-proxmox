@@ -16,10 +16,6 @@ spec:
     requests:
       storage: 5Gi
   storageClassName: longhorn
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: open-webui-data-restore
 ---
 # Add the missing PVC that the deployment is referencing
 apiVersion: v1
