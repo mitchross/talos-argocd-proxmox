@@ -9,3 +9,4 @@ commonAnnotations:
 resources:
   - cluster.yaml
   - externalsecret.yaml
+  - scheduled-backup.yaml

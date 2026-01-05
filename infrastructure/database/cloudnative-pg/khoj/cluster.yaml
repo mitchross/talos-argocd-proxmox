@@ -63,3 +63,19 @@ spec:
   enableSuperuserAccess: true
   monitoring:
     enablePodMonitor: true
+  backup:
+    barmanObjectStore:
+      destinationPath: s3://postgres-backups/cnpg/khoj
+      endpointURL: http://192.168.10.133:9000
+      s3Credentials:
+        accessKeyId:
+          name: cnpg-s3-credentials
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: cnpg-s3-credentials
+          key: AWS_SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+      data:
+        compression: gzip
+    retentionPolicy: "14d"
