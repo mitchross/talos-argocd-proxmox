@@ -1,0 +1,5 @@
+replicaCount: 2
+
+image:
+  repository: registry.k8s.io/sig-storage/snapshot-controller
+  tag: v8.2.0
