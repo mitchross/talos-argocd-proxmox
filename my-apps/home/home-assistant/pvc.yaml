@@ -7,8 +7,6 @@ metadata:
     app.kubernetes.io/name: home-assistant
     app.kubernetes.io/component: home-automation
     app.kubernetes.io/part-of: smart-home
-    # Critical data tier ensures hourly snapshots and daily backups
-    data-tier: critical
   annotations:
     volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:

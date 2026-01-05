@@ -7,9 +7,6 @@ metadata:
     app.kubernetes.io/name: nginx
     app.kubernetes.io/component: development
   annotations:
-    # Longhorn backup settings - Standard tier for development data
-    longhorn.io/recurring-job-source: enabled
-    longhorn.io/recurring-job-group: standard
     volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   storageClassName: longhorn

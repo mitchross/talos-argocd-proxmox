@@ -8,9 +8,6 @@ metadata:
     app.kubernetes.io/name: open-webui
     app.kubernetes.io/component: ai-interface
   annotations:
-    # Longhorn backup settings - Important tier for AI chat history
-    longhorn.io/recurring-job-source: enabled
-    longhorn.io/recurring-job-group: important
     volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
@@ -30,9 +27,6 @@ metadata:
     app.kubernetes.io/name: open-webui
     app.kubernetes.io/component: ai-interface
   annotations:
-    # Longhorn backup settings - Important tier for AI chat data
-    longhorn.io/recurring-job-source: enabled
-    longhorn.io/recurring-job-group: important
     volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
