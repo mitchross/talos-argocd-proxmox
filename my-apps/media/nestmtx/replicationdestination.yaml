@@ -4,8 +4,6 @@ metadata:
   name: nestmtx-data-restore
   namespace: nestmtx
 spec:
-  trigger:
-    manual: restore-once
   restic:
     repository: nestmtx-volsync-secret
     copyMethod: Snapshot

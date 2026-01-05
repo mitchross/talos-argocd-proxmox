@@ -4,8 +4,6 @@ metadata:
   name: open-webui-data-restore
   namespace: open-webui
 spec:
-  trigger:
-    manual: restore-once
   restic:
     repository: open-webui-volsync-secret
     copyMethod: Snapshot

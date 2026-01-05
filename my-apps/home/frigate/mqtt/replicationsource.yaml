@@ -6,7 +6,7 @@ metadata:
 spec:
   sourcePVC: mosquitto-storage-pvc
   trigger:
-    schedule: "0 2 * * *"
+    schedule: "0 2 * * *"  # Daily (non-critical)
   restic:
     pruneIntervalDays: 7
     repository: mqtt-volsync-secret

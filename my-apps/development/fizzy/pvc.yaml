@@ -13,3 +13,7 @@ spec:
   resources:
     requests:
       storage: 5Gi
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: fizzy-data-restore

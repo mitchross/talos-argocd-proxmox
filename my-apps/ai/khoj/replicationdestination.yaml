@@ -4,8 +4,6 @@ metadata:
   name: khoj-config-restore
   namespace: khoj
 spec:
-  trigger:
-    manual: restore-once
   restic:
     repository: khoj-volsync-secret
     copyMethod: Snapshot

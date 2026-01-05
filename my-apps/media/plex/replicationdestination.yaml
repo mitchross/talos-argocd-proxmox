@@ -4,8 +4,6 @@ metadata:
   name: plex-config-restore
   namespace: plex
 spec:
-  trigger:
-    manual: restore-once
   restic:
     repository: plex-volsync-secret
     copyMethod: Snapshot

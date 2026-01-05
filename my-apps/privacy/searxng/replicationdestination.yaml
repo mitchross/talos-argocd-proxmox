@@ -4,8 +4,6 @@ metadata:
   name: searxng-redis-restore
   namespace: searxng
 spec:
-  trigger:
-    manual: restore-once
   restic:
     repository: searxng-redis-volsync-secret
     copyMethod: Snapshot

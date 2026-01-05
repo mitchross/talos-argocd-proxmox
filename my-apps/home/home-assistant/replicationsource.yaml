@@ -6,12 +6,13 @@ metadata:
 spec:
   sourcePVC: home-assistant-config
   trigger:
-    schedule: "0 2 * * *"
+    schedule: "0 * * * *"  # Hourly (critical)
   restic:
     pruneIntervalDays: 7
     repository: home-assistant-volsync-secret
     retain:
-      daily: 14
+      hourly: 24
+      daily: 7
     copyMethod: Snapshot
     storageClassName: longhorn
     cacheStorageClassName: longhorn

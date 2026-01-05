@@ -15,4 +15,8 @@ spec:
   resources:
     requests:
       storage: 1Gi
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: jellyfin-config-restore
 

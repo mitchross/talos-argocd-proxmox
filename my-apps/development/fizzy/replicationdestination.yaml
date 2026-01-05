@@ -4,8 +4,6 @@ metadata:
   name: fizzy-data-restore
   namespace: fizzy
 spec:
-  trigger:
-    manual: restore-once
   restic:
     repository: fizzy-volsync-secret
     copyMethod: Snapshot
