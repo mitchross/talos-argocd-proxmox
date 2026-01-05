@@ -7,8 +7,7 @@ generatorOptions:
 
 resources:
   - ns.yaml
-  - media-pvc.yaml
-  - config-pvc.yaml
+  - data-pvc.yaml
   - deployment.yaml
   - svc.yaml
   - httproute.yaml
