@@ -8,3 +8,8 @@ resources:
   - deployment.yaml
   - svc.yaml
   - httproute.yaml
+
+configMapGenerator:
+  - name: copyparty-config
+    files:
+      - copyparty.conf
