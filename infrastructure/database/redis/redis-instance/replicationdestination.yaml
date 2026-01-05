@@ -4,8 +4,6 @@ metadata:
   name: redis-data-restore
   namespace: redis-instance
 spec:
-  trigger:
-    manual: restore-once
   restic:
     repository: redis-volsync-secret
     copyMethod: Direct

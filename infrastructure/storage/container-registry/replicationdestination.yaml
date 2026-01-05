@@ -4,8 +4,6 @@ metadata:
   name: container-registry-restore
   namespace: kube-system
 spec:
-  trigger:
-    manual: restore-once
   restic:
     repository: container-registry-volsync-secret
     copyMethod: Direct

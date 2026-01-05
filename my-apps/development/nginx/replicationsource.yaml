@@ -6,7 +6,7 @@ metadata:
 spec:
   sourcePVC: nginx-storage
   trigger:
-    schedule: "0 2 * * *"
+    schedule: "0 2 * * *"  # Daily (non-critical)
   restic:
     pruneIntervalDays: 7
     repository: nginx-volsync-secret

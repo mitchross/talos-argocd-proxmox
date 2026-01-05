@@ -6,7 +6,7 @@ metadata:
 spec:
   sourcePVC: fizzy-data
   trigger:
-    schedule: "0 2 * * *"
+    schedule: "0 2 * * *"  # Daily (non-critical)
   restic:
     pruneIntervalDays: 7
     repository: fizzy-volsync-secret

@@ -4,8 +4,6 @@ metadata:
   name: home-assistant-config-restore
   namespace: home-assistant
 spec:
-  trigger:
-    manual: restore-once
   restic:
     repository: home-assistant-volsync-secret
     copyMethod: Snapshot

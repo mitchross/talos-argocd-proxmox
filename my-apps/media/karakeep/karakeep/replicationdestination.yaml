@@ -4,8 +4,6 @@ metadata:
   name: karakeep-data-restore
   namespace: karakeep
 spec:
-  trigger:
-    manual: restore-once
   restic:
     repository: karakeep-volsync-secret
     copyMethod: Snapshot

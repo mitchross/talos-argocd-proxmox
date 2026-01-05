@@ -4,8 +4,6 @@ metadata:
   name: immich-library-restore
   namespace: immich
 spec:
-  trigger:
-    manual: restore-once
   restic:
     repository: immich-volsync-secret
     copyMethod: Snapshot

@@ -4,8 +4,6 @@ metadata:
   name: paperless-data-pvc-restore
   namespace: paperless-ngx
 spec:
-  trigger:
-    manual: restore-once
   restic:
     repository: paperless-ngx-volsync-secret
     copyMethod: Snapshot

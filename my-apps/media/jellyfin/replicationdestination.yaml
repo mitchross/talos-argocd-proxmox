@@ -4,8 +4,6 @@ metadata:
   name: jellyfin-config-restore
   namespace: jellyfin
 spec:
-  trigger:
-    manual: restore-once
   restic:
     repository: jellyfin-volsync-secret
     copyMethod: Snapshot

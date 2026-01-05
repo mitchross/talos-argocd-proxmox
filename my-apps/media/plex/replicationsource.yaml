@@ -6,7 +6,7 @@ metadata:
 spec:
   sourcePVC: plex-config-pvc
   trigger:
-    schedule: "0 2 * * *"
+    schedule: "0 2 * * *"  # Daily (non-critical)
   restic:
     pruneIntervalDays: 7
     repository: plex-volsync-secret
