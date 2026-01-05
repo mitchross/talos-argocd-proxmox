@@ -20,6 +20,7 @@ spec:
       containers:
       - name: copyparty
         image: copyparty/ac:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - name: http
           containerPort: 3923
