@@ -74,12 +74,28 @@ graph LR
 
 ### PVC Backups (VolSync)
 
-All application PVCs are backed up daily at 2 AM using VolSync with Restic:
+Application PVCs are backed up using VolSync with Restic, with a tiered schedule:
+
+**Critical Apps (Hourly):**
+home-assistant, paperless-ngx, karakeep, meilisearch, n8n, immich, open-webui, khoj
+
+| Setting | Value |
+|---------|-------|
+| Schedule | `0 * * * *` (hourly) |
+| Retention | 24 hourly + 7 daily |
+
+**Non-Critical Apps (Daily):**
+container-registry, redis, mqtt, searxng, fizzy, nginx, jellyfin, nestmtx, homepage-dashboard, plex
 
 | Setting | Value |
 |---------|-------|
 | Schedule | `0 2 * * *` (daily at 2 AM) |
 | Retention | 14 days |
+
+**Common Settings:**
+
+| Setting | Value |
+|---------|-------|
 | Backend | Restic |
 | Target | RustFS S3 on TrueNAS (192.168.10.133:30292) |
 | Bucket | `volsync` |
@@ -87,7 +103,8 @@ All application PVCs are backed up daily at 2 AM using VolSync with Restic:
 
 Each app has:
 - `ReplicationSource` - Defines backup schedule and retention
-- `ReplicationDestination` - Pre-provisioned for restore capability
+- `ReplicationDestination` - Dormant restore definition (no trigger)
+- `PVC` - References ReplicationDestination via `dataSourceRef`
 - `ExternalSecret` - Pulls S3 credentials from 1Password
 
 ### Database Backups (Native)
@@ -107,29 +124,42 @@ PostgreSQL databases use their native backup tools:
 
 ## 3. Disaster Recovery
 
-### Restoring a PVC (VolSync)
+### Volume Populator Pattern (Automatic Restore)
 
-When you need to restore a PVC from backup:
+PVCs use the **Volume Populator** pattern for automatic restore:
 
-1. **Trigger the ReplicationDestination**:
-```bash
-kubectl patch replicationdestination <app>-restore -n <namespace> \
-  --type merge \
-  -p '{"spec":{"trigger":{"manual":"restore-'$(date +%s)'"}}}'
-```
-
-2. **Wait for restore to complete**:
-```bash
-kubectl get replicationdestination <app>-restore -n <namespace> -w
-```
-
-3. **Update PVC to use restored data** (if needed):
 ```yaml
+# In each app's PVC
 spec:
   dataSourceRef:
     kind: ReplicationDestination
     apiGroup: volsync.backube
     name: <app>-restore
+```
+
+**How it works:**
+1. PVC references a dormant ReplicationDestination (no trigger)
+2. When PVC is newly created (no existing Longhorn volume), Kubernetes uses the dataSourceRef
+3. VolSync automatically restores from S3 backup to populate the new PVC
+4. If Longhorn already has the data, dataSourceRef is ignored
+
+**This enables zero-intervention restore:**
+- Deploy app → PVC created → auto-restore from S3 → app starts with data
+- Longhorn replication is Layer 1 (node failure)
+- S3 backup is Layer 2 (cluster loss)
+
+### Manual Restore (if needed)
+
+For manual restore scenarios, you can trigger the ReplicationDestination:
+
+```bash
+# Add manual trigger to force restore
+kubectl patch replicationdestination <app>-restore -n <namespace> \
+  --type merge \
+  -p '{"spec":{"trigger":{"manual":"restore-'$(date +%s)'"}}}'
+
+# Wait for restore to complete
+kubectl get replicationdestination <app>-restore -n <namespace> -w
 ```
 
 ### Restoring a Database
@@ -159,11 +189,11 @@ After a complete cluster rebuild:
 
 | Feature | Before (Longhorn) | Now (VolSync) |
 |---------|-------------------|---------------|
-| Backup tool | Longhorn built-in | VolSync + Kopia |
-| Backup schedule | RecurringJobs (tiered) | Single daily schedule |
-| Restore method | Hardcoded restore-job.yaml | Declarative ReplicationDestination |
+| Backup tool | Longhorn built-in | VolSync + Restic |
+| Backup schedule | RecurringJobs (tiered) | Tiered: hourly (critical) + daily (non-critical) |
+| Restore method | Hardcoded restore-job.yaml | Volume Populator (automatic on PVC create) |
 | Database backups | PVC snapshots (inconsistent) | Native WAL archiving (consistent) |
-| Complexity | Multiple tiers, shell scripts | Simple, uniform config |
+| Complexity | Multiple tiers, shell scripts | Declarative YAML per app |
 
 ## 5. Monitoring
 
