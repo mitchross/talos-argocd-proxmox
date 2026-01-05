@@ -4,6 +4,7 @@ kind: Kustomization
 namespace: immich
 resources:
 - cluster.yaml
+- pgo-s3-credentials.yaml
 configMapGenerator:
 - name: immich-postgres-init
   files:
