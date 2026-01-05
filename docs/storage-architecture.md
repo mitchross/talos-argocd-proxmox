@@ -4,11 +4,41 @@ This document outlines the storage architecture for the cluster, focusing on dat
 
 ## Overview
 
-The cluster uses **Longhorn** as the distributed block storage system. It provides highly available persistent storage for Kubernetes workloads and integrates with S3 for off-site backups.
+The cluster uses a layered storage approach:
+- **Longhorn**: Distributed block storage for runtime replication (2 replicas per volume)
+- **VolSync**: Daily backups of all PVCs to S3 using Kopia/Restic
+- **Database-native backups**: CloudNativePG and Crunchy Postgres backup directly to S3
+
+## Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Talos Cluster                            │
+│  ┌──────────────────┐    ┌──────────────────┐                  │
+│  │   App PVCs       │    │  Postgres DBs    │                  │
+│  │  (Longhorn)      │    │  (CNPG/Crunchy)  │                  │
+│  └────────┬─────────┘    └────────┬─────────┘                  │
+│           │                       │                             │
+│           ▼                       ▼                             │
+│  ┌──────────────────┐    ┌──────────────────┐                  │
+│  │    VolSync       │    │  Native PG       │                  │
+│  │  (Kopia daily)   │    │  WAL + Backups   │                  │
+│  └────────┬─────────┘    └────────┬─────────┘                  │
+│           │                       │                             │
+└───────────┼───────────────────────┼─────────────────────────────┘
+            │                       │
+            ▼                       ▼
+     ┌─────────────────────────────────────┐
+     │   RustFS (S3) on TrueNAS            │
+     │   192.168.10.133                    │
+     │   ├── volsync-backups/              │
+     │   └── postgres-backups/             │
+     └─────────────────────────────────────┘
+```
 
 ## 1. Normal Operation (Write Path)
 
-When an application writes data, it flows through the Kubernetes storage stack to Longhorn, which replicates it across nodes.
+When an application writes data, it flows through Kubernetes to Longhorn, which maintains 2 replicas:
 
 ```mermaid
 graph LR
@@ -23,82 +53,150 @@ graph LR
 
     subgraph "Longhorn Storage Engine"
         PV --> LH_Vol[Longhorn Volume]
-        LH_Vol --> Replica1[Replica 1 (Node A)]
-        LH_Vol --> Replica2[Replica 2 (Node B)]
+        LH_Vol --> Replica1[Replica 1 Node A]
+        LH_Vol --> Replica2[Replica 2 Node B]
     end
 
     style App fill:#f9f,stroke:#333,stroke-width:2px
     style LH_Vol fill:#bbf,stroke:#333,stroke-width:2px
 ```
 
-## 2. Backup Strategy (Automatic)
+**Longhorn provides:**
+- Runtime replication (survives single node failure)
+- Fast replica rebuild
+- Automatic rebalancing
 
-Backups are handled automatically by Longhorn's **Recurring Jobs**.
-- **Snapshots**: Local, instant point-in-time copies (kept for hours/days).
-- **Backups**: Deduplicated, compressed chunks sent to S3 (kept for days/weeks).
+**Longhorn does NOT provide:**
+- Off-cluster backups (handled by VolSync)
+- Point-in-time recovery (handled by VolSync)
 
-We use `RecurringJob` groups to assign policies:
-- **default**: Daily snapshot, Weekly backup (Applied to ALL new volumes).
-- **critical**: Hourly snapshot, Daily backup (Applied via `data-tier: critical` label).
+## 2. Backup Strategy
 
-```mermaid
-graph TD
-    subgraph "Cluster"
-        Volume[Longhorn Volume]
-        Job[Recurring Job] -- Triggers --> Snapshot[Local Snapshot]
-    end
+### PVC Backups (VolSync)
 
-    subgraph "Off-site Storage (S3)"
-        BackupStore[S3 Bucket]
-    end
+All application PVCs are backed up daily at 2 AM using VolSync with Kopia:
 
-    Snapshot -- "Deduplicated Upload" --> BackupStore
+| Setting | Value |
+|---------|-------|
+| Schedule | `0 2 * * *` (daily at 2 AM) |
+| Retention | 14 days |
+| Backend | Kopia (Restic-compatible) |
+| Target | RustFS S3 on TrueNAS |
+| Copy Method | Snapshot |
 
-    style Job fill:#f96,stroke:#333,stroke-width:2px
-    style BackupStore fill:#6f6,stroke:#333,stroke-width:2px
+Each app has:
+- `ReplicationSource` - Defines backup schedule and retention
+- `ReplicationDestination` - Pre-provisioned for restore capability
+- `ExternalSecret` - Pulls S3 credentials from 1Password
+
+### Database Backups (Native)
+
+PostgreSQL databases use their native backup tools:
+
+**CloudNativePG (khoj, paperless)**
+- Barman for WAL archiving
+- Daily base backups at 3 AM
+- 14-day retention
+- Point-in-time recovery capable
+
+**Crunchy Postgres (immich)**
+- pgBackRest for backups
+- Weekly full + daily differential
+- 14-day retention
+
+## 3. Disaster Recovery
+
+### Restoring a PVC (VolSync)
+
+When you need to restore a PVC from backup:
+
+1. **Trigger the ReplicationDestination**:
+```bash
+kubectl patch replicationdestination <app>-restore -n <namespace> \
+  --type merge \
+  -p '{"spec":{"trigger":{"manual":"restore-'$(date +%s)'"}}}'
 ```
 
-## 3. Disaster Recovery (The "Magic" Restore)
-
-When the cluster is destroyed and rebuilt, data is restored from S3.
-
-### The "Magic" Explained
-The "magic" is now powered by the **Automated Restore Job** (`restore-job.yaml`). It runs automatically when the cluster starts.
-
-1.  **Nuke & Rebuild**: Cluster is wiped. Longhorn installs.
-2.  **Connect S3**: Longhorn connects to S3 and syncs backup metadata.
-3.  **Dynamic Discovery**: The Restore Job scans **ALL** backups.
-4.  **Match & Restore**: It finds the **LATEST** backup for your critical apps (e.g., `karakeep/data-pvc`) and creates a PV for it.
-5.  **Bind**: Your App starts, sees the PV, and binds instantly.
-
-```mermaid
-sequenceDiagram
-    participant Admin
-    participant Longhorn
-    participant S3
-    participant Job as Restore Job
-    participant App
-
-    Note over Admin, App: Cluster Rebuilt (Empty State)
-    
-    Longhorn->>S3: Sync Backup Metadata
-    
-    Job->>Longhorn: "Do we have backups for Karakeep?"
-    Longhorn-->>Job: "Yes, latest is from 2AM"
-    
-    Job->>Longhorn: Restore Volume from 2AM Backup
-    Longhorn->>S3: Download Data
-    Longhorn->>Longhorn: Reconstruct Volume
-    
-    Job->>App: Create PV "pv-restore-karakeep"
-    
-    App->>Longhorn: Mount Volume
-    Note over App: Application Starts with FRESH Data!
+2. **Wait for restore to complete**:
+```bash
+kubectl get replicationdestination <app>-restore -n <namespace> -w
 ```
 
-### Why `longhorn-restore-karakeep` was "Out of Norm"
-The `longhorn-restore-karakeep` StorageClass contained a hardcoded `fromBackup` parameter.
-- **Pros**: Instant restore without scripts.
-- **Cons**: It pins the volume to *that specific backup forever*. If you write new data and restart, it might revert to the old backup depending on reclaim policy. It's not meant for general use.
+3. **Update PVC to use restored data** (if needed):
+```yaml
+spec:
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: <app>-restore
+```
 
-**Best Practice**: Use the standard `longhorn` class. The **Automated Restore Job** will handle the disaster recovery binding for you.
+### Restoring a Database
+
+**CloudNativePG:**
+```yaml
+spec:
+  bootstrap:
+    recovery:
+      source: <cluster-name>
+      # Optional: recoveryTarget for point-in-time
+```
+
+**Crunchy Postgres:**
+Use pgBackRest restore commands or recreate cluster with recovery settings.
+
+### Full Cluster Rebuild
+
+After a complete cluster rebuild:
+
+1. Deploy infrastructure (ArgoCD, External Secrets, Longhorn, VolSync)
+2. VolSync operator syncs with S3
+3. For each app, trigger ReplicationDestination to restore data
+4. Deploy applications - they bind to restored PVCs
+
+## 4. What Changed from Longhorn Backups
+
+| Feature | Before (Longhorn) | Now (VolSync) |
+|---------|-------------------|---------------|
+| Backup tool | Longhorn built-in | VolSync + Kopia |
+| Backup schedule | RecurringJobs (tiered) | Single daily schedule |
+| Restore method | Hardcoded restore-job.yaml | Declarative ReplicationDestination |
+| Database backups | PVC snapshots (inconsistent) | Native WAL archiving (consistent) |
+| Complexity | Multiple tiers, shell scripts | Simple, uniform config |
+
+## 5. Monitoring
+
+### Check VolSync Status
+```bash
+# All ReplicationSources
+kubectl get replicationsource -A
+
+# Specific app
+kubectl describe replicationsource home-assistant-config-backup -n home-assistant
+```
+
+### Check Database Backups
+```bash
+# CNPG
+kubectl get backup -n cloudnative-pg
+
+# Crunchy
+kubectl exec -it <postgres-pod> -n postgres-operator -- pgbackrest info
+```
+
+### S3 Bucket Contents
+```bash
+mc ls truenas/volsync-backups/
+mc ls truenas/postgres-backups/
+```
+
+## 6. Configuration Files
+
+| Component | Location |
+|-----------|----------|
+| VolSync operator | `infrastructure/storage/volsync/` |
+| Longhorn (replication only) | `infrastructure/storage/longhorn/` |
+| App VolSync configs | `my-apps/<category>/<app>/replicationsource.yaml` |
+| CNPG backup config | `infrastructure/database/cloudnative-pg/*/cluster.yaml` |
+| Crunchy backup config | `infrastructure/database/crunchy-postgres/*/cluster.yaml` |
+| 1Password setup | `docs/secrets/volsync-secrets.md` |
