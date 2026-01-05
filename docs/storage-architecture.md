@@ -6,7 +6,7 @@ This document outlines the storage architecture for the cluster, focusing on dat
 
 The cluster uses a layered storage approach:
 - **Longhorn**: Distributed block storage for runtime replication (2 replicas per volume)
-- **VolSync**: Daily backups of all PVCs to S3 using Kopia/Restic
+- **VolSync**: Daily backups of all PVCs to S3 using Restic
 - **Database-native backups**: CloudNativePG and Crunchy Postgres backup directly to S3
 
 ## Architecture Diagram
@@ -22,7 +22,7 @@ The cluster uses a layered storage approach:
 │           ▼                       ▼                             │
 │  ┌──────────────────┐    ┌──────────────────┐                  │
 │  │    VolSync       │    │  Native PG       │                  │
-│  │  (Kopia daily)   │    │  WAL + Backups   │                  │
+│  │  (Restic daily)  │    │  WAL + Backups   │                  │
 │  └────────┬─────────┘    └────────┬─────────┘                  │
 │           │                       │                             │
 └───────────┼───────────────────────┼─────────────────────────────┘
@@ -30,9 +30,8 @@ The cluster uses a layered storage approach:
             ▼                       ▼
      ┌─────────────────────────────────────┐
      │   RustFS (S3) on TrueNAS            │
-     │   192.168.10.133                    │
-     │   ├── volsync-backups/              │
-     │   └── postgres-backups/             │
+     │   192.168.10.133:30292              │
+     │   └── volsync/<app>/                │
      └─────────────────────────────────────┘
 ```
 
@@ -74,14 +73,15 @@ graph LR
 
 ### PVC Backups (VolSync)
 
-All application PVCs are backed up daily at 2 AM using VolSync with Kopia:
+All application PVCs are backed up daily at 2 AM using VolSync with Restic:
 
 | Setting | Value |
 |---------|-------|
 | Schedule | `0 2 * * *` (daily at 2 AM) |
 | Retention | 14 days |
-| Backend | Kopia (Restic-compatible) |
-| Target | RustFS S3 on TrueNAS |
+| Backend | Restic |
+| Target | RustFS S3 on TrueNAS (192.168.10.133:30292) |
+| Bucket | `volsync` |
 | Copy Method | Snapshot |
 
 Each app has:
@@ -186,8 +186,12 @@ kubectl exec -it <postgres-pod> -n postgres-operator -- pgbackrest info
 
 ### S3 Bucket Contents
 ```bash
-mc ls truenas/volsync-backups/
-mc ls truenas/postgres-backups/
+# VolSync backups (RustFS)
+mc alias set rustfs http://192.168.10.133:30292 <access_key> <secret_key>
+mc ls rustfs/volsync/
+
+# List specific app backup
+mc ls rustfs/volsync/home-assistant/
 ```
 
 ## 6. Configuration Files
