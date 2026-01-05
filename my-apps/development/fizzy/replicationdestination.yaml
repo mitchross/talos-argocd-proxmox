@@ -8,7 +8,7 @@ spec:
     manual: restore-once
   restic:
     repository: fizzy-volsync-secret
-    copyMethod: Direct
+    copyMethod: Snapshot
     storageClassName: longhorn
     accessModes:
       - ReadWriteOnce

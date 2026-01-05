@@ -12,6 +12,6 @@ spec:
     repository: home-assistant-volsync-secret
     retain:
       daily: 14
-    copyMethod: Direct
+    copyMethod: Snapshot
     storageClassName: longhorn
     cacheStorageClassName: longhorn
