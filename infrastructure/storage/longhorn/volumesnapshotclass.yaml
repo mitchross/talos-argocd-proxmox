@@ -1,0 +1,9 @@
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: longhorn
+  # Set as default snapshot class
+  annotations:
+    snapshot.storage.k8s.io/is-default-class: "true"
+driver: driver.longhorn.io
+deletionPolicy: Delete
