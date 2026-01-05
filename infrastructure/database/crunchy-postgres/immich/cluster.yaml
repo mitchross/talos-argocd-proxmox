@@ -65,6 +65,30 @@ spec:
     options: "CREATEDB CREATEROLE"
     password:
       type: AlphaNumeric
+  backups:
+    pgbackrest:
+      image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi9-2.54.2-0
+      configuration:
+        - secret:
+            name: pgo-s3-credentials
+      global:
+        repo1-retention-full: "14"
+        repo1-retention-full-type: count
+        repo1-path: /pgbackrest/pgo/immich/repo1
+        repo1-s3-uri-style: path
+      manual:
+        repoName: repo1
+        options:
+          - --type=full
+      repos:
+        - name: repo1
+          s3:
+            bucket: postgres-backups
+            endpoint: 192.168.10.133:9000
+            region: us-east-1
+          schedules:
+            full: "0 3 * * 0"
+            differential: "0 3 * * 1-6"
   proxy:
     pgBouncer:
       port: 5432
