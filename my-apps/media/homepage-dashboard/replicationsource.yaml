@@ -12,6 +12,6 @@ spec:
     repository: homepage-volsync-secret
     retain:
       daily: 14
-    copyMethod: Snapshot
+    copyMethod: Direct
     storageClassName: longhorn
     cacheStorageClassName: longhorn
