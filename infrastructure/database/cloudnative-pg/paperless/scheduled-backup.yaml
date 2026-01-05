@@ -1,0 +1,11 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: paperless-daily-backup
+  namespace: cloudnative-pg
+spec:
+  schedule: "0 3 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: paperless-database
+  immediate: true
