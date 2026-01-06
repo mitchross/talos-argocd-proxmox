@@ -7,33 +7,49 @@ This document outlines the storage architecture for the cluster, focusing on dat
 The cluster uses a layered storage approach:
 - **Longhorn**: Distributed block storage for runtime replication (2 replicas per volume)
 - **Snapshot Controller**: Manages VolumeSnapshot lifecycles and CRDs
-- **VolSync**: Daily backups of all PVCs to S3 using Restic
+- **VolSync**: Scheduled backups of all PVCs to S3 using Restic + automatic restore via Volume Populator
 - **Database-native backups**: CloudNativePG and Crunchy Postgres backup directly to S3
 
 ## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Talos Cluster                            │
-│  ┌──────────────────┐    ┌──────────────────┐                  │
-│  │   App PVCs       │    │  Postgres DBs    │                  │
-│  │  (Longhorn)      │    │  (CNPG/Crunchy)  │                  │
-│  └────────┬─────────┘    └────────┬─────────┘                  │
-│           │                       │                             │
-│           ▼                       ▼                             │
-│  ┌──────────────────┐    ┌──────────────────┐                  │
-│  │    VolSync       │    │  Native PG       │                  │
-│  │  (Restic daily)  │    │  WAL + Backups   │                  │
-│  └────────┬─────────┘    └────────┬─────────┘                  │
-│           │                       │                             │
-└───────────┼───────────────────────┼─────────────────────────────┘
-            │                       │
-            ▼                       ▼
-     ┌─────────────────────────────────────┐
-     │   RustFS (S3) on TrueNAS            │
-     │   192.168.10.133:30292              │
-     │   └── volsync/<app>/                │
-     └─────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                             Talos Cluster                                    │
+│                                                                             │
+│  ┌────────────────────────────────────────────────────────────────────────┐ │
+│  │                         Normal Operation                                │ │
+│  │                                                                        │ │
+│  │   App PVC ──► ReplicationSource ──► S3 (backup on schedule)           │ │
+│  │      ▲              (hourly/daily)                                     │ │
+│  │      │                                    │                            │ │
+│  │      │         ReplicationDestination ◄───┘                            │ │
+│  │      │           (syncs 30 min after backup)                           │ │
+│  │      │                    │                                            │ │
+│  │      │                    ▼                                            │ │
+│  │      │              latestImage                                        │ │
+│  │      │            (VolumeSnapshot)                                     │ │
+│  │      │                    │                                            │ │
+│  │      └────────────────────┘                                            │ │
+│  │         (dataSourceRef for auto-restore)                               │ │
+│  └────────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+│  ┌────────────────────────────────────────────────────────────────────────┐ │
+│  │                      When PVC is Deleted                                │ │
+│  │                                                                        │ │
+│  │   1. ArgoCD recreates PVC with dataSourceRef                          │ │
+│  │   2. Volume Populator sees dataSourceRef → ReplicationDestination     │ │
+│  │   3. Creates PVC from latestImage snapshot                            │ │
+│  │   4. Data is automatically restored!                                  │ │
+│  └────────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+                    │
+                    ▼
+     ┌─────────────────────────────────┐
+     │   RustFS (S3) on TrueNAS        │
+     │   192.168.10.133:30292          │
+     │   └── volsync/<app>/            │
+     └─────────────────────────────────┘
 ```
 
 ## 1. Normal Operation (Write Path)
@@ -65,10 +81,11 @@ graph LR
 - Runtime replication (survives single node failure)
 - Fast replica rebuild
 - Automatic rebalancing
+- VolumeSnapshots for VolSync
 
 **Longhorn does NOT provide:**
 - Off-cluster backups (handled by VolSync)
-- Point-in-time recovery (handled by VolSync)
+- Automatic restore on PVC deletion (handled by Volume Populator)
 
 ## 2. Backup Strategy
 
@@ -79,18 +96,20 @@ Application PVCs are backed up using VolSync with Restic, with a tiered schedule
 **Critical Apps (Hourly):**
 home-assistant, paperless-ngx, karakeep, meilisearch, n8n, immich, open-webui, khoj
 
-| Setting | Value |
-|---------|-------|
-| Schedule | `0 * * * *` (hourly) |
-| Retention | 24 hourly + 7 daily |
+| Component | Schedule | Purpose |
+|-----------|----------|---------|
+| ReplicationSource | `0 * * * *` (hourly at :00) | Backup PVC → S3 |
+| ReplicationDestination | `30 * * * *` (hourly at :30) | Sync S3 → latestImage |
+| Retention | 24 hourly + 7 daily | |
 
 **Non-Critical Apps (Daily):**
 container-registry, redis, mqtt, searxng, fizzy, nginx, jellyfin, nestmtx, homepage-dashboard, plex
 
-| Setting | Value |
-|---------|-------|
-| Schedule | `0 2 * * *` (daily at 2 AM) |
-| Retention | 14 days |
+| Component | Schedule | Purpose |
+|-----------|----------|---------|
+| ReplicationSource | `0 2 * * *` (daily at 2:00 AM) | Backup PVC → S3 |
+| ReplicationDestination | `30 2 * * *` (daily at 2:30 AM) | Sync S3 → latestImage |
+| Retention | 14 days | |
 
 **Common Settings:**
 
@@ -102,8 +121,9 @@ container-registry, redis, mqtt, searxng, fizzy, nginx, jellyfin, nestmtx, homep
 | Copy Method | Snapshot |
 
 Each app has:
-- `ReplicationSource` - Defines backup schedule and retention
-- `ReplicationDestination` - Dormant restore definition (triggered manually when needed)
+- `ReplicationSource` - Backs up PVC to S3 on schedule
+- `ReplicationDestination` - Syncs from S3, maintains `latestImage` snapshot for auto-restore
+- `PVC.dataSourceRef` - Points to ReplicationDestination for Volume Populator
 - `ExternalSecret` - Pulls S3 credentials from 1Password
 
 ### Database Backups (Native)
@@ -121,98 +141,121 @@ PostgreSQL databases use their native backup tools:
 - Weekly full + daily differential
 - 14-day retention
 
-## 3. Disaster Recovery
+## 3. Automatic Restore (Volume Populator)
 
-### Defense Layers
+### How It Works
 
-- **Layer 1 (Longhorn)**: Runtime replication across nodes - survives single node failure
-- **Layer 2 (VolSync)**: S3 backups to RustFS - survives complete cluster loss
+When a PVC is deleted (accidentally or intentionally) and ArgoCD recreates it:
 
-### Restoring a PVC (VolSync)
+1. **PVC has `dataSourceRef`** pointing to ReplicationDestination
+2. **Volume Populator** detects the dataSourceRef
+3. **Looks up `latestImage`** from ReplicationDestination (a VolumeSnapshot)
+4. **Creates PVC** from that snapshot
+5. **Data is restored automatically** - no manual intervention!
 
-When you need to restore a PVC from backup:
+### Storage Overhead
 
-1. **Scale down the application** (to release the PVC):
+For automatic restore to work, each app needs:
+- ReplicationDestination cache PVC (~1Gi)
+- ReplicationDestination dest PVC (same size as app PVC)
+- latestImage VolumeSnapshot
+
+**Total overhead**: ~2Gi + 1x PVC size per app
+
+### ArgoCD Configuration
+
+PVC `spec.dataSourceRef` is immutable after creation. ArgoCD is configured to ignore this field:
+
+```yaml
+# In ApplicationSet
+ignoreDifferences:
+- group: ""
+  kind: PersistentVolumeClaim
+  jqPathExpressions:
+  - .spec.dataSourceRef
+  - .spec.dataSource
+  - .spec.volumeName
+```
+
+This allows:
+- Existing PVCs: ArgoCD ignores the dataSourceRef difference
+- New PVCs: Created with dataSourceRef, Volume Populator triggers restore
+
+## 4. Disaster Recovery Scenarios
+
+### Scenario 1: App Deleted in ArgoCD UI
+
+1. User deletes app in ArgoCD → PVC is deleted
+2. ArgoCD recreates app (auto-sync)
+3. New PVC created with `dataSourceRef`
+4. Volume Populator restores from `latestImage`
+5. **Data restored automatically!**
+
+### Scenario 2: Accidental PVC Deletion
+
+1. `kubectl delete pvc <name> -n <namespace>`
+2. ArgoCD detects missing PVC, recreates it
+3. Volume Populator restores from `latestImage`
+4. **Data restored automatically!**
+
+### Scenario 3: Full Cluster Rebuild
+
+1. Bootstrap new Talos cluster
+2. Deploy ArgoCD (GitOps)
+3. ArgoCD deploys all apps from Git
+4. ReplicationDestinations sync from S3, create `latestImage` snapshots
+5. PVCs are created with `dataSourceRef`
+6. Volume Populator creates PVCs from snapshots
+7. **All data restored automatically!**
+
+### Scenario 4: Manual Restore (Override)
+
+If you need to restore to a specific point in time:
+
+1. Scale down the application:
 ```bash
 kubectl scale deployment <app> -n <namespace> --replicas=0
 ```
 
-2. **Delete the existing PVC** (if corrupted/lost):
+2. Delete the existing PVC:
 ```bash
 kubectl delete pvc <pvc-name> -n <namespace>
 ```
 
-3. **Trigger the ReplicationDestination**:
+3. Trigger manual restore (optional - to get latest from S3):
 ```bash
 kubectl patch replicationdestination <app>-restore -n <namespace> \
   --type merge \
   -p '{"spec":{"trigger":{"manual":"restore-'$(date +%s)'"}}}'
 ```
 
-4. **Wait for restore to complete** (creates a new PVC with restored data):
-```bash
-kubectl get replicationdestination <app>-restore -n <namespace> -w
-# Look for: latestImage showing the restored snapshot
-```
+4. Wait for sync, then let ArgoCD recreate the PVC (or manually create it)
 
-5. **Rename/recreate the PVC** to match what the app expects, or update app to use the restored PVC name.
-
-6. **Scale up the application**:
+5. Scale up the application:
 ```bash
 kubectl scale deployment <app> -n <namespace> --replicas=1
 ```
 
-### Full Cluster Rebuild
+## 5. Defense Layers Summary
 
-After a complete cluster rebuild:
+| Layer | Protects Against | Recovery Time | Manual Intervention |
+|-------|------------------|---------------|---------------------|
+| Longhorn replicas | Node failure | Instant | None |
+| VolSync + Volume Populator | App/PVC deletion | ~1-2 minutes | None |
+| VolSync S3 backups | Cluster loss | ~5-15 minutes | Deploy GitOps |
 
-1. Deploy infrastructure (ArgoCD, External Secrets, Longhorn, VolSync)
-2. Deploy apps - PVCs will be created empty
-3. For each app needing data, trigger ReplicationDestination restore
-4. Apps will start with restored data
-
-### Restoring a Database
-
-**CloudNativePG:**
-```yaml
-spec:
-  bootstrap:
-    recovery:
-      source: <cluster-name>
-      # Optional: recoveryTarget for point-in-time
-```
-
-**Crunchy Postgres:**
-Use pgBackRest restore commands or recreate cluster with recovery settings.
-
-### Full Cluster Rebuild
-
-After a complete cluster rebuild:
-
-1. Deploy infrastructure (ArgoCD, External Secrets, Longhorn, VolSync)
-2. VolSync operator syncs with S3
-3. For each app, trigger ReplicationDestination to restore data
-4. Deploy applications - they bind to restored PVCs
-
-## 4. What Changed from Longhorn Backups
-
-| Feature | Before (Longhorn) | Now (VolSync) |
-|---------|-------------------|---------------|
-| Backup tool | Longhorn built-in | VolSync + Restic |
-| Backup schedule | RecurringJobs (tiered) | Tiered: hourly (critical) + daily (non-critical) |
-| Restore method | Hardcoded restore-job.yaml | Trigger ReplicationDestination manually |
-| Database backups | PVC snapshots (inconsistent) | Native WAL archiving (consistent) |
-| Complexity | Multiple tiers, shell scripts | Declarative YAML per app |
-
-## 5. Monitoring
+## 6. Monitoring
 
 ### Check VolSync Status
 ```bash
-# All ReplicationSources
+# All ReplicationSources (backups)
 kubectl get replicationsource -A
 
-# Specific app
-kubectl describe replicationsource home-assistant-config-backup -n home-assistant
+# All ReplicationDestinations (restore points)
+kubectl get replicationdestination -A
+
+# Check if latestImage exists (required for auto-restore)
+kubectl get replicationdestination -A -o jsonpath='{range .items[*]}{.metadata.namespace}/{.metadata.name}: {.status.latestImage.name}{"\n"}{end}'
 ```
 
 ### Check Database Backups
@@ -234,14 +277,17 @@ mc ls rustfs/volsync/
 mc ls rustfs/volsync/home-assistant/
 ```
 
-## 6. Configuration Files
+## 7. Configuration Files
 
 | Component | Location |
 |-----------|----------|
 | VolSync operator | `infrastructure/storage/volsync/` |
 | Snapshot Controller | `infrastructure/storage/snapshot-controller/` |
 | Longhorn (replication only) | `infrastructure/storage/longhorn/` |
-| App VolSync configs | `my-apps/<category>/<app>/replicationsource.yaml` |
+| App ReplicationSource | `my-apps/<category>/<app>/replicationsource.yaml` |
+| App ReplicationDestination | `my-apps/<category>/<app>/replicationdestination.yaml` |
+| App PVC (with dataSourceRef) | `my-apps/<category>/<app>/pvc.yaml` |
+| ArgoCD ignoreDifferences | `infrastructure/controllers/argocd/apps/*-appset.yaml` |
 | CNPG backup config | `infrastructure/database/cloudnative-pg/*/cluster.yaml` |
 | Crunchy backup config | `infrastructure/database/crunchy-postgres/*/cluster.yaml` |
 | 1Password setup | `docs/secrets/volsync-secrets.md` |
