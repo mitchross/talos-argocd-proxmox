@@ -1,0 +1,17 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: registry-pvc-restore
+  namespace: kube-system
+spec:
+  trigger:
+    schedule: "30 2 * * *"  # Daily at 2:30 AM (30 min after backup)
+  restic:
+    repository: container-registry-volsync-secret
+    copyMethod: Direct
+    storageClassName: longhorn
+    accessModes:
+      - ReadWriteOnce
+    capacity: 10Gi
+    cacheStorageClassName: longhorn
+    cacheCapacity: 1Gi

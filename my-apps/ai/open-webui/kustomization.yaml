@@ -13,4 +13,5 @@ resources:
 - function-loader-job.yaml
 - volsync-secret.yaml
 - replicationsource.yaml
+- replicationdestination.yaml
 namespace: open-webui

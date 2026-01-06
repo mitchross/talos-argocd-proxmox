@@ -15,3 +15,7 @@ spec:
   resources:
     requests:
       storage: 1Gi
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: nginx-storage-restore

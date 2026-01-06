@@ -16,6 +16,10 @@ spec:
   resources:
     requests:
       storage: 12Gi
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: plex-config-pvc-restore
 ---
 apiVersion: v1
 kind: PersistentVolume

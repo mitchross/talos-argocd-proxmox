@@ -9,5 +9,6 @@ resources:
   - httproute.yaml
   - volsync-secret.yaml
   - replicationsource.yaml
+  - replicationdestination.yaml
 
 namespace: nestmtx

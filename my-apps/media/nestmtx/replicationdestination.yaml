@@ -1,0 +1,17 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: nestmtx-storage-pvc-restore
+  namespace: nestmtx
+spec:
+  trigger:
+    schedule: "30 2 * * *"  # Daily at 2:30 AM (30 min after backup)
+  restic:
+    repository: nestmtx-volsync-secret
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    accessModes:
+      - ReadWriteOnce
+    capacity: 10Gi
+    cacheStorageClassName: longhorn
+    cacheCapacity: 1Gi
