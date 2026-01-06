@@ -15,6 +15,10 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: paperless-data-pvc-restore
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

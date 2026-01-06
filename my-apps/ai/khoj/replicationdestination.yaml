@@ -1,0 +1,17 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: khoj-config-pvc-restore
+  namespace: khoj
+spec:
+  trigger:
+    schedule: "30 * * * *"  # Hourly at :30 (30 min after backup)
+  restic:
+    repository: khoj-volsync-secret
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    accessModes:
+      - ReadWriteOnce
+    capacity: 1Gi
+    cacheStorageClassName: longhorn
+    cacheCapacity: 1Gi

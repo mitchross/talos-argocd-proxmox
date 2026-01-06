@@ -16,4 +16,8 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: nestmtx-storage-pvc-restore
 

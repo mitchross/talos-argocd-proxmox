@@ -28,6 +28,10 @@ spec:
     requests:
       storage: 1Gi
   storageClassName: longhorn
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: mosquitto-storage-pvc-restore
 
 ---
 apiVersion: apps/v1

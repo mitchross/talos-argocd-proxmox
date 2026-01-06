@@ -18,3 +18,7 @@ spec:
   resources:
     requests:
       storage: 10Gi
+  dataSourceRef:
+    kind: ReplicationDestination
+    apiGroup: volsync.backube
+    name: registry-pvc-restore

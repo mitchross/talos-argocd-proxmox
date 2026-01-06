@@ -10,6 +10,7 @@ resources:
   - redis.yaml
   - volsync-secret.yaml
   - replicationsource.yaml
+  - replicationdestination.yaml
 configMapGenerator:
   - name: searxng-config-settings
     files:
