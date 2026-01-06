@@ -12,6 +12,7 @@ spec:
     repository: redis-volsync-secret
     retain:
       daily: 14
-    copyMethod: Direct
+    copyMethod: Snapshot
+    volumeSnapshotClassName: longhorn
     storageClassName: longhorn
     cacheStorageClassName: longhorn
