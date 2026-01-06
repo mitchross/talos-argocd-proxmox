@@ -9,6 +9,7 @@ spec:
   restic:
     repository: open-webui-volsync-secret
     copyMethod: Snapshot
+    volumeSnapshotClassName: longhorn
     storageClassName: longhorn
     accessModes:
       - ReadWriteOnce

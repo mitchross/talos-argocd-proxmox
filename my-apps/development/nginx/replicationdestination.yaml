@@ -9,6 +9,7 @@ spec:
   restic:
     repository: nginx-volsync-secret
     copyMethod: Snapshot
+    volumeSnapshotClassName: longhorn
     storageClassName: longhorn
     accessModes:
       - ReadWriteOnce

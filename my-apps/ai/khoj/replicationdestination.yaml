@@ -9,6 +9,7 @@ spec:
   restic:
     repository: khoj-volsync-secret
     copyMethod: Snapshot
+    volumeSnapshotClassName: longhorn
     storageClassName: longhorn
     accessModes:
       - ReadWriteOnce
