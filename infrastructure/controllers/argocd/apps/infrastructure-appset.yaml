@@ -86,7 +86,7 @@ spec:
       # PVC fields that are immutable after creation - needed for Volume Populator
       - group: ""
         kind: PersistentVolumeClaim
-        jsonPointers:
-        - /spec/dataSourceRef
-        - /spec/dataSource
-        - /spec/volumeName
+        jqPathExpressions:
+        - .spec.dataSourceRef
+        - .spec.dataSource
+        - .spec.volumeName
