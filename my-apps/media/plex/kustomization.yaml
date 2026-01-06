@@ -17,4 +17,3 @@ resources:
   # - deployment.yaml
   - volsync-secret.yaml
   - replicationsource.yaml
-  - replicationdestination.yaml

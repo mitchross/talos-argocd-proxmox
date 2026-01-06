@@ -18,4 +18,3 @@ resources:
   - services.yaml
   - volsync-secret.yaml
   - replicationsource.yaml
-  - replicationdestination.yaml

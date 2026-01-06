@@ -15,11 +15,9 @@ resources:
 - karakeep/pvc-data.yaml
 - karakeep/volsync-secret.yaml
 - karakeep/replicationsource.yaml
-- karakeep/replicationdestination.yaml
 # Meilisearch resources
 - meilisearch/deployment-meilisearch.yaml
 - meilisearch/service-meilisearch.yaml
 - meilisearch/pvc-meilisearch.yaml
 - meilisearch/volsync-secret.yaml
 - meilisearch/replicationsource.yaml
-- meilisearch/replicationdestination.yaml
