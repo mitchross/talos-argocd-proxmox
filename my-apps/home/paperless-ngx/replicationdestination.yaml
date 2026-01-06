@@ -9,6 +9,7 @@ spec:
   restic:
     repository: paperless-ngx-volsync-secret
     copyMethod: Snapshot
+    volumeSnapshotClassName: longhorn
     storageClassName: longhorn
     accessModes:
       - ReadWriteOnce

@@ -9,6 +9,7 @@ spec:
   restic:
     repository: home-assistant-volsync-secret
     copyMethod: Snapshot
+    volumeSnapshotClassName: longhorn
     storageClassName: longhorn
     accessModes:
       - ReadWriteOnce
