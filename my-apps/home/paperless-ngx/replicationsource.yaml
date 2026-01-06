@@ -14,5 +14,6 @@ spec:
       hourly: 24
       daily: 7
     copyMethod: Snapshot
+    volumeSnapshotClassName: longhorn
     storageClassName: longhorn
     cacheStorageClassName: longhorn
