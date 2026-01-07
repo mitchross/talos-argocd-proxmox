@@ -3,6 +3,7 @@ kind: ClusterPolicy
 metadata:
   name: generate-volsync-backup
   annotations:
+    argocd.argoproj.io/sync-wave: "2"
     policies.kyverno.io/title: Generate VolSync Backup Resources
     policies.kyverno.io/description: >-
       Automatically generates ReplicationSource and ReplicationDestination
