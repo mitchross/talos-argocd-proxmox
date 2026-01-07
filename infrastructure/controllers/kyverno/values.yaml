@@ -6,6 +6,22 @@ admissionController:
     requests:
       cpu: 100m
       memory: 128Mi
+  rbac:
+    clusterRole:
+      extraResources:
+        - apiGroups:
+            - volsync.backube
+          resources:
+            - replicationsources
+            - replicationdestinations
+          verbs:
+            - create
+            - delete
+            - get
+            - list
+            - patch
+            - update
+            - watch
 
 backgroundController:
   replicas: 1
@@ -15,6 +31,22 @@ backgroundController:
     requests:
       cpu: 100m
       memory: 64Mi
+  rbac:
+    clusterRole:
+      extraResources:
+        - apiGroups:
+            - volsync.backube
+          resources:
+            - replicationsources
+            - replicationdestinations
+          verbs:
+            - create
+            - delete
+            - get
+            - list
+            - patch
+            - update
+            - watch
 
 cleanupController:
   replicas: 1
