@@ -30,7 +30,6 @@ spec:
       - path: infrastructure/storage/local-storage
       - path: infrastructure/storage/openebs
       - path: infrastructure/database/*/*
-      - path: infrastructure/policies/volsync-backup
       - path: infrastructure/crds
   template:
     metadata:
