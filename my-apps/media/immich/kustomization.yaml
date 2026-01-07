@@ -17,5 +17,3 @@ resources:
   - deployment-valkey.yaml
   - services.yaml
   - volsync-secret.yaml
-  - replicationsource.yaml
-  - replicationdestination.yaml
