@@ -6,6 +6,7 @@ metadata:
   labels:
     app: karakeep
     type: data-storage
+    backup: "hourly"
   annotations:
     volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
@@ -19,3 +20,4 @@ spec:
     kind: ReplicationDestination
     apiGroup: volsync.backube
     name: data-pvc-restore
+

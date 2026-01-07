@@ -6,6 +6,7 @@ metadata:
   labels:
     app: karakeep
     type: meilisearch-storage
+    backup: "hourly"
   annotations:
     volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:

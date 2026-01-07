@@ -9,8 +9,6 @@ resources:
   - pvc.yaml
   - service.yaml
   - volsync-secret.yaml
-  - replicationsource.yaml
-  - replicationdestination.yaml
 helmCharts:
   - name: redis
     repo: oci://registry-1.docker.io/bitnamicharts
