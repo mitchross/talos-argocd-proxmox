@@ -1,5 +1,11 @@
 admissionController:
   replicas: 1
+  container:
+    extraArgs:
+      #  Override the default service account names - Helm uses Release.Namespace
+      # which resolves to 'argocd' when deployed via ArgoCD, but resources are in 'kyverno'
+      backgroundServiceAccountName: "system:serviceaccount:kyverno:kyverno-background-controller"
+      reportsServiceAccountName: "system:serviceaccount:kyverno:kyverno-reports-controller"
   resources:
     limits:
       memory: 384Mi
