@@ -4,6 +4,7 @@ namespace: volsync-system
 resources:
   - namespace.yaml
   - externalsecret.yaml
+  - sync-cronjob.yaml
 helmCharts:
   - name: volsync
     repo: https://backube.github.io/helm-charts

@@ -7,8 +7,6 @@ metadata:
     app: karakeep
     type: meilisearch-storage
     backup: "hourly"
-  annotations:
-    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
     - ReadWriteOnce
@@ -16,3 +14,4 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
+  # dataSourceRef is added dynamically by Kyverno if a backup exists

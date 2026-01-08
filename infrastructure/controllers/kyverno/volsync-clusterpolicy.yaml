@@ -6,15 +6,61 @@ metadata:
     argocd.argoproj.io/sync-wave: "2"
     policies.kyverno.io/title: Generate VolSync Backup Resources
     policies.kyverno.io/description: >-
-      Automatically generates ReplicationSource and ReplicationDestination
+      Automatically generates ExternalSecret, ReplicationSource, and ReplicationDestination
       for PVCs labeled with backup=hourly or backup=daily.
-      Requires namespace annotation: volsync.backube/privileged-movers: "true"
+      User only needs: 1) PVC with backup label, 2) namespace annotation volsync.backube/privileged-movers: "true"
 spec:
   generateExisting: true
   rules:
     # ============================================
     # HOURLY BACKUP TIER (Critical Apps)
     # ============================================
+
+    # Rule 0a: Generate ExternalSecret for hourly backups (S3 credentials)
+    - name: generate-hourly-externalsecret
+      match:
+        any:
+          - resources:
+              kinds:
+                - PersistentVolumeClaim
+              selector:
+                matchLabels:
+                  backup: "hourly"
+      generate:
+        apiVersion: external-secrets.io/v1
+        kind: ExternalSecret
+        name: "{{request.object.metadata.name}}-volsync-secret"
+        namespace: "{{request.object.metadata.namespace}}"
+        synchronize: true
+        data:
+          spec:
+            refreshInterval: "1h"
+            secretStoreRef:
+              kind: ClusterSecretStore
+              name: 1password
+            target:
+              name: "{{request.object.metadata.name}}-volsync-secret"
+              creationPolicy: Owner
+              template:
+                engineVersion: v2
+                data:
+                  RESTIC_REPOSITORY: "s3:http://192.168.10.133:30292/volsync/{{request.object.metadata.namespace}}-{{request.object.metadata.name}}"
+                  RESTIC_PASSWORD: "{{ `{{ .restic_password }}` }}"
+                  AWS_ACCESS_KEY_ID: "{{ `{{ .access_key }}` }}"
+                  AWS_SECRET_ACCESS_KEY: "{{ `{{ .secret_key }}` }}"
+            data:
+              - secretKey: access_key
+                remoteRef:
+                  key: rustfs
+                  property: access_key
+              - secretKey: secret_key
+                remoteRef:
+                  key: rustfs
+                  property: secret_key
+              - secretKey: restic_password
+                remoteRef:
+                  key: rustfs
+                  property: restic_password
 
     # Rule 1: Generate ReplicationSource for hourly backups
     - name: generate-hourly-replicationsource
@@ -49,6 +95,8 @@ spec:
               cacheStorageClassName: longhorn
 
     # Rule 2: Generate ReplicationDestination for hourly backups
+    # NOTE: synchronize: false means RD persists when PVC is deleted (for restore)
+    # Uses manual trigger - sync-cronjob.yaml handles coordinated syncing of ALL RDs
     - name: generate-hourly-replicationdestination
       match:
         any:
@@ -63,14 +111,15 @@ spec:
         kind: ReplicationDestination
         name: "{{request.object.metadata.name}}-restore"
         namespace: "{{request.object.metadata.namespace}}"
-        synchronize: true
+        synchronize: false
         data:
           spec:
             trigger:
-              schedule: "30 * * * *"
+              # Manual trigger - sync-cronjob patches this every 15 min
+              manual: restore-once
             restic:
               repository: "{{request.object.metadata.name}}-volsync-secret"
-              copyMethod: Snapshot
+              copyMethod: Direct
               volumeSnapshotClassName: longhorn
               storageClassName: longhorn
               accessModes:
@@ -86,6 +135,52 @@ spec:
     # ============================================
     # DAILY BACKUP TIER (Non-Critical Apps)
     # ============================================
+
+    # Rule 0b: Generate ExternalSecret for daily backups (S3 credentials)
+    - name: generate-daily-externalsecret
+      match:
+        any:
+          - resources:
+              kinds:
+                - PersistentVolumeClaim
+              selector:
+                matchLabels:
+                  backup: "daily"
+      generate:
+        apiVersion: external-secrets.io/v1
+        kind: ExternalSecret
+        name: "{{request.object.metadata.name}}-volsync-secret"
+        namespace: "{{request.object.metadata.namespace}}"
+        synchronize: true
+        data:
+          spec:
+            refreshInterval: "1h"
+            secretStoreRef:
+              kind: ClusterSecretStore
+              name: 1password
+            target:
+              name: "{{request.object.metadata.name}}-volsync-secret"
+              creationPolicy: Owner
+              template:
+                engineVersion: v2
+                data:
+                  RESTIC_REPOSITORY: "s3:http://192.168.10.133:30292/volsync/{{request.object.metadata.namespace}}-{{request.object.metadata.name}}"
+                  RESTIC_PASSWORD: "{{ `{{ .restic_password }}` }}"
+                  AWS_ACCESS_KEY_ID: "{{ `{{ .access_key }}` }}"
+                  AWS_SECRET_ACCESS_KEY: "{{ `{{ .secret_key }}` }}"
+            data:
+              - secretKey: access_key
+                remoteRef:
+                  key: rustfs
+                  property: access_key
+              - secretKey: secret_key
+                remoteRef:
+                  key: rustfs
+                  property: secret_key
+              - secretKey: restic_password
+                remoteRef:
+                  key: rustfs
+                  property: restic_password
 
     # Rule 3: Generate ReplicationSource for daily backups
     - name: generate-daily-replicationsource
@@ -119,6 +214,8 @@ spec:
               cacheStorageClassName: longhorn
 
     # Rule 4: Generate ReplicationDestination for daily backups
+    # NOTE: synchronize: false means RD persists when PVC is deleted (for restore)
+    # Uses manual trigger - sync-cronjob.yaml handles coordinated syncing of ALL RDs
     - name: generate-daily-replicationdestination
       match:
         any:
@@ -133,14 +230,15 @@ spec:
         kind: ReplicationDestination
         name: "{{request.object.metadata.name}}-restore"
         namespace: "{{request.object.metadata.namespace}}"
-        synchronize: true
+        synchronize: false
         data:
           spec:
             trigger:
-              schedule: "30 2 * * *"
+              # Manual trigger - sync-cronjob patches this every 15 min
+              manual: restore-once
             restic:
               repository: "{{request.object.metadata.name}}-volsync-secret"
-              copyMethod: Snapshot
+              copyMethod: Direct
               volumeSnapshotClassName: longhorn
               storageClassName: longhorn
               accessModes:

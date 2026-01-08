@@ -7,13 +7,12 @@ metadata:
     app: karakeep
     type: data-storage
     backup: "hourly"
-  annotations:
-    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
-  - ReadWriteOnce
+    - ReadWriteOnce
   resources:
     requests:
       storage: 10Gi
   storageClassName: longhorn
+  # dataSourceRef is added dynamically by Kyverno if a backup exists
 
