@@ -1,78 +1,112 @@
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
-  name: add-volsync-restore-datasource
+  name: volsync-auto-restore
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
-    policies.kyverno.io/title: Add VolSync dataSourceRef for Automatic Restore
+    # NOTE: No sync-wave needed - mutate policies are webhooks that intercept
+    # CREATE requests, they don't run during ArgoCD sync phases
+    policies.kyverno.io/title: Auto-Restore PVCs from VolSync Backups
+    policies.kyverno.io/category: Backup
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: PersistentVolumeClaim
     policies.kyverno.io/description: >-
-      Automatically adds dataSourceRef to PVCs with backup labels when a corresponding
-      ReplicationDestination exists with latestImage. This enables automatic disaster
-      recovery - if a PVC is deleted and recreated, it will restore from the latest backup.
+      Automatically adds dataSourceRef to PVCs labeled with backup=hourly or backup=daily
+      when a ReplicationDestination exists with a latestImage snapshot. This enables
+      zero-touch disaster recovery - when a PVC is deleted and recreated, it automatically
+      restores from the latest backup. For new apps (no backup exists), the PVC is created
+      normally without dataSourceRef.
 spec:
+  # This policy only applies to CREATE operations (not updates)
+  background: false
   rules:
-    - name: add-datasource-for-hourly-backups
+    # ============================================
+    # HOURLY BACKUP TIER - Auto Restore
+    # ============================================
+    - name: auto-restore-hourly-backup
       match:
         any:
           - resources:
               kinds:
                 - PersistentVolumeClaim
+              operations:
+                - CREATE
               selector:
                 matchLabels:
                   backup: "hourly"
-      # Only mutate if ReplicationDestination exists and has latestImage
+      # Fetch the ReplicationDestination to check for latestImage
+      context:
+        - name: rdName
+          variable:
+            value: "{{request.object.metadata.name}}-restore"
+        - name: rdExists
+          apiCall:
+            urlPath: "/apis/volsync.backube/v1alpha1/namespaces/{{request.object.metadata.namespace}}/replicationdestinations/{{request.object.metadata.name}}-restore"
+            jmesPath: "metadata.name || ''"
+        - name: latestImage
+          apiCall:
+            urlPath: "/apis/volsync.backube/v1alpha1/namespaces/{{request.object.metadata.namespace}}/replicationdestinations/{{request.object.metadata.name}}-restore"
+            jmesPath: "status.latestImage.name || ''"
+      # Only mutate if:
+      # 1. RD exists and has latestImage (backup exists to restore from)
+      # 2. PVC doesn't already have dataSourceRef
       preconditions:
         all:
-          - key: "{{request.operation}}"
-            operator: Equals
-            value: "CREATE"
-          - key: "{{request.object.spec.dataSourceRef || 'null'}}"
-            operator: Equals
-            value: "null"
-      context:
-        - name: replicationdest
-          apiCall:
-            urlPath: "/apis/volsync.backube/v1alpha1/namespaces/{{request.namespace}}/replicationdestinations/{{request.object.metadata.name}}-restore"
-            jmesPath: "status.latestImage || 'null'"
+          - key: "{{ latestImage }}"
+            operator: NotEquals
+            value: ""
+          - key: "{{ request.object.spec.dataSourceRef || '' }}"
+            operator: AnyIn
+            value:
+              - ""
+              - "null"
       mutate:
         patchStrategicMerge:
           spec:
             dataSourceRef:
               apiGroup: volsync.backube
               kind: ReplicationDestination
-              name: "{{request.object.metadata.name}}-restore"
-            # Only apply if latestImage exists
-            +(dataSourceRef): "{{ replicationdest != 'null' }}"
+              name: "{{ rdName }}"
 
-    - name: add-datasource-for-daily-backups
+    # ============================================
+    # DAILY BACKUP TIER - Auto Restore
+    # ============================================
+    - name: auto-restore-daily-backup
       match:
         any:
           - resources:
               kinds:
                 - PersistentVolumeClaim
+              operations:
+                - CREATE
               selector:
                 matchLabels:
                   backup: "daily"
-      # Only mutate if ReplicationDestination exists and has latestImage
+      context:
+        - name: rdName
+          variable:
+            value: "{{request.object.metadata.name}}-restore"
+        - name: rdExists
+          apiCall:
+            urlPath: "/apis/volsync.backube/v1alpha1/namespaces/{{request.object.metadata.namespace}}/replicationdestinations/{{request.object.metadata.name}}-restore"
+            jmesPath: "metadata.name || ''"
+        - name: latestImage
+          apiCall:
+            urlPath: "/apis/volsync.backube/v1alpha1/namespaces/{{request.object.metadata.namespace}}/replicationdestinations/{{request.object.metadata.name}}-restore"
+            jmesPath: "status.latestImage.name || ''"
       preconditions:
         all:
-          - key: "{{request.operation}}"
-            operator: Equals
-            value: "CREATE"
-          - key: "{{request.object.spec.dataSourceRef || 'null'}}"
-            operator: Equals
-            value: "null"
-      context:
-        - name: replicationdest
-          apiCall:
-            urlPath: "/apis/volsync.backube/v1alpha1/namespaces/{{request.namespace}}/replicationdestinations/{{request.object.metadata.name}}-restore"
-            jmesPath: "status.latestImage || 'null'"
+          - key: "{{ latestImage }}"
+            operator: NotEquals
+            value: ""
+          - key: "{{ request.object.spec.dataSourceRef || '' }}"
+            operator: AnyIn
+            value:
+              - ""
+              - "null"
       mutate:
         patchStrategicMerge:
           spec:
             dataSourceRef:
               apiGroup: volsync.backube
               kind: ReplicationDestination
-              name: "{{request.object.metadata.name}}-restore"
-            # Only apply if latestImage exists
-            +(dataSourceRef): "{{ replicationdest != 'null' }}"
+              name: "{{ rdName }}"
