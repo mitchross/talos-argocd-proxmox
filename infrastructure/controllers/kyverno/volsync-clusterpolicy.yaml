@@ -154,6 +154,10 @@ spec:
             refreshInterval: "1h"
             secretStoreRef:
               kind: ClusterSecretStore
+              name: 1password
+            target:
+              name: "{{request.object.metadata.name}}-volsync-secret"
+              creationPolicy: Owner
             data:
               - secretKey: AWS_ACCESS_KEY_ID
                 remoteRef:
@@ -166,11 +170,7 @@ spec:
               - secretKey: RESTIC_PASSWORD
                 remoteRef:
                   key: rustfs
-                  property: restic_passworde
-              - secretKey: pvc
-                remoteRef:
-                  key: rustfs
-                  property: pvc_name
+                  property: restic_password
 
     # Rule 3: Generate ReplicationSource for daily backups
     - name: generate-daily-replicationsource
@@ -202,6 +202,10 @@ spec:
               volumeSnapshotClassName: longhorn
               storageClassName: longhorn
               cacheStorageClassName: longhorn
+              moverSecurityContext:
+                runAsUser: 0
+                runAsGroup: 0
+                fsGroup: 0
 
     # Rule 4: Generate ReplicationDestination for daily backups
     # NOTE: synchronize: false means RD persists when PVC is deleted (for restore)
@@ -217,10 +221,6 @@ spec:
                   backup: "daily"
       generate:
         apiVersion: volsync.backube/v1alpha1
-              moverSecurityContext:
-                runAsUser: 0
-                runAsGroup: 0
-                fsGroup: 0
         kind: ReplicationDestination
         name: "{{request.object.metadata.name}}-restore"
         namespace: "{{request.object.metadata.namespace}}"
@@ -249,16 +249,17 @@ spec:
     # PATCH RULE: Add RESTIC_REPOSITORY to Secret
     # ============================================
 
-    # Add the RESTIC_REPOSITORY field to volsync Secrets
-    # (ExternalSecret generates AWS_* and RESTIC_PASSWORD, we add the computed RESTIC_REPOSITORY)
+    # Add the RESTIC_REPOSITORY field to volsync Secrets after ExternalSecret creates them
+    # (ExternalSecret generates AWS_* and RESTIC_PASSWORD from 1Password)
     - name: patch-volsync-secret-repository
       match:
         any:
           - resources:
               kinds:
                 - Secret
-              names:
-                - "*-volsync-secret"
+              selector:
+                matchLabels:
+                  app.kubernetes.io/managed-by: external-secrets
       mutate:
         patchStrategicMerge:
           data:
