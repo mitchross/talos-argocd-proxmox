@@ -16,8 +16,8 @@ spec:
     # HOURLY BACKUP TIER (Critical Apps)
     # ============================================
 
-    # Rule 0a: Generate ExternalSecret for hourly backups (S3 credentials)
-    - name: generate-hourly-externalsecret
+    # Rule 0a: Generate Secret for hourly backups (S3 credentials with computed RESTIC_REPOSITORY)
+    - name: generate-hourly-secret
       match:
         any:
           - resources:
@@ -26,38 +26,26 @@ spec:
               selector:
                 matchLabels:
                   backup: "hourly"
+      context:
+        - name: baseSecret
+          apiCall:
+            jmesPath: 'data'
+            urlPath: "/api/v1/namespaces/{{request.object.metadata.namespace}}/secrets/volsync-rustfs-base"
       generate:
-        apiVersion: external-secrets.io/v1
-        kind: ExternalSecret
+        apiVersion: v1
+        kind: Secret
         name: "{{request.object.metadata.name}}-volsync-secret"
         namespace: "{{request.object.metadata.namespace}}"
         synchronize: true
         data:
-          spec:
-            refreshInterval: "1h"
-            secretStoreRef:
-              kind: ClusterSecretStore
-              name: 1password
-            target:
-              name: "{{request.object.metadata.name}}-volsync-secret"
-              creationPolicy: Owner
-            data:
-              - secretKey: AWS_ACCESS_KEY_ID
-                remoteRef:
-                  key: rustfs
-                  property: access_key
-              - secretKey: AWS_SECRET_ACCESS_KEY
-                remoteRef:
-                  key: rustfs
-                  property: secret_key
-              - secretKey: RESTIC_PASSWORD
-                remoteRef:
-                  key: rustfs
-                  property: restic_password
-              - secretKey: RESTIC_REPOSITORY
-                remoteRef:
-                  key: rustfs
-                  property: restic_repository
+          metadata:
+            labels:
+              volsync.backube/secret-type: restic
+          data:
+            AWS_ACCESS_KEY_ID: "{{baseSecret.AWS_ACCESS_KEY_ID}}"
+            AWS_SECRET_ACCESS_KEY: "{{baseSecret.AWS_SECRET_ACCESS_KEY}}"
+            RESTIC_PASSWORD: "{{baseSecret.RESTIC_PASSWORD}}"
+            RESTIC_REPOSITORY: "{{base64_encode('s3:http://192.168.10.133:30292/volsync/{{request.object.metadata.namespace}}-{{request.object.metadata.name}}')}}"
 
     # Rule 1: Generate ReplicationSource for hourly backups
     - name: generate-hourly-replicationsource
@@ -137,8 +125,8 @@ spec:
     # DAILY BACKUP TIER (Non-Critical Apps)
     # ============================================
 
-    # Rule 0b: Generate ExternalSecret for daily backups (S3 credentials)
-    - name: generate-daily-externalsecret
+    # Rule 0b: Generate Secret for daily backups (S3 credentials with computed RESTIC_REPOSITORY)
+    - name: generate-daily-secret
       match:
         any:
           - resources:
@@ -147,38 +135,26 @@ spec:
               selector:
                 matchLabels:
                   backup: "daily"
+      context:
+        - name: baseSecret
+          apiCall:
+            jmesPath: 'data'
+            urlPath: "/api/v1/namespaces/{{request.object.metadata.namespace}}/secrets/volsync-rustfs-base"
       generate:
-        apiVersion: external-secrets.io/v1
-        kind: ExternalSecret
+        apiVersion: v1
+        kind: Secret
         name: "{{request.object.metadata.name}}-volsync-secret"
         namespace: "{{request.object.metadata.namespace}}"
         synchronize: true
         data:
-          spec:
-            refreshInterval: "1h"
-            secretStoreRef:
-              kind: ClusterSecretStore
-              name: 1password
-            target:
-              name: "{{request.object.metadata.name}}-volsync-secret"
-              creationPolicy: Owner
-            data:
-              - secretKey: AWS_ACCESS_KEY_ID
-                remoteRef:
-                  key: rustfs
-                  property: access_key
-              - secretKey: AWS_SECRET_ACCESS_KEY
-                remoteRef:
-                  key: rustfs
-                  property: secret_key
-              - secretKey: RESTIC_PASSWORD
-                remoteRef:
-                  key: rustfs
-                  property: restic_password
-              - secretKey: RESTIC_REPOSITORY
-                remoteRef:
-                  key: rustfs
-                  property: restic_repository
+          metadata:
+            labels:
+              volsync.backube/secret-type: restic
+          data:
+            AWS_ACCESS_KEY_ID: "{{baseSecret.AWS_ACCESS_KEY_ID}}"
+            AWS_SECRET_ACCESS_KEY: "{{baseSecret.AWS_SECRET_ACCESS_KEY}}"
+            RESTIC_PASSWORD: "{{baseSecret.RESTIC_PASSWORD}}"
+            RESTIC_REPOSITORY: "{{base64_encode('s3:http://192.168.10.133:30292/volsync/{{request.object.metadata.namespace}}-{{request.object.metadata.name}}')}}"
 
     # Rule 3: Generate ReplicationSource for daily backups
     - name: generate-daily-replicationsource
