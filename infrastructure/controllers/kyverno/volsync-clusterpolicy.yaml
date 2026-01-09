@@ -45,9 +45,9 @@ spec:
                 engineVersion: v2
                 data:
                   RESTIC_REPOSITORY: "s3:http://192.168.10.133:30292/volsync/{{request.object.metadata.namespace}}-{{request.object.metadata.name}}"
-                  RESTIC_PASSWORD: "{{ .restic_password }}"
-                  AWS_ACCESS_KEY_ID: "{{ .access_key }}"
-                  AWS_SECRET_ACCESS_KEY: "{{ .secret_key }}"
+                  RESTIC_PASSWORD: '{{ "{{ .restic_password }}" }}'
+                  AWS_ACCESS_KEY_ID: '{{ "{{ .access_key }}" }}'
+                  AWS_SECRET_ACCESS_KEY: '{{ "{{ .secret_key }}" }}'
             data:
               - secretKey: access_key
                 remoteRef:
@@ -169,9 +169,9 @@ spec:
                 engineVersion: v2
                 data:
                   RESTIC_REPOSITORY: "s3:http://192.168.10.133:30292/volsync/{{request.object.metadata.namespace}}-{{request.object.metadata.name}}"
-                  RESTIC_PASSWORD: "{{ .restic_password }}"
-                  AWS_ACCESS_KEY_ID: "{{ .access_key }}"
-                  AWS_SECRET_ACCESS_KEY: "{{ .secret_key }}"
+                  RESTIC_PASSWORD: '{{ "{{ .restic_password }}" }}'
+                  AWS_ACCESS_KEY_ID: '{{ "{{ .access_key }}" }}'
+                  AWS_SECRET_ACCESS_KEY: '{{ "{{ .secret_key }}" }}'
             data:
               - secretKey: access_key
                 remoteRef:
