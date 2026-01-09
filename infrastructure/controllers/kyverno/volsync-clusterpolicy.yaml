@@ -41,16 +41,23 @@ spec:
             target:
               name: "{{request.object.metadata.name}}-volsync-secret"
               creationPolicy: Owner
+              template:
+                engineVersion: v2
+                data:
+                  RESTIC_REPOSITORY: "s3:http://192.168.10.133:30292/volsync/{{request.object.metadata.namespace}}-{{request.object.metadata.name}}"
+                  RESTIC_PASSWORD: "{{ .restic_password }}"
+                  AWS_ACCESS_KEY_ID: "{{ .access_key }}"
+                  AWS_SECRET_ACCESS_KEY: "{{ .secret_key }}"
             data:
-              - secretKey: AWS_ACCESS_KEY_ID
+              - secretKey: access_key
                 remoteRef:
                   key: rustfs
                   property: access_key
-              - secretKey: AWS_SECRET_ACCESS_KEY
+              - secretKey: secret_key
                 remoteRef:
                   key: rustfs
                   property: secret_key
-              - secretKey: RESTIC_PASSWORD
+              - secretKey: restic_password
                 remoteRef:
                   key: rustfs
                   property: restic_password
@@ -158,16 +165,23 @@ spec:
             target:
               name: "{{request.object.metadata.name}}-volsync-secret"
               creationPolicy: Owner
+              template:
+                engineVersion: v2
+                data:
+                  RESTIC_REPOSITORY: "s3:http://192.168.10.133:30292/volsync/{{request.object.metadata.namespace}}-{{request.object.metadata.name}}"
+                  RESTIC_PASSWORD: "{{ .restic_password }}"
+                  AWS_ACCESS_KEY_ID: "{{ .access_key }}"
+                  AWS_SECRET_ACCESS_KEY: "{{ .secret_key }}"
             data:
-              - secretKey: AWS_ACCESS_KEY_ID
+              - secretKey: access_key
                 remoteRef:
                   key: rustfs
                   property: access_key
-              - secretKey: AWS_SECRET_ACCESS_KEY
+              - secretKey: secret_key
                 remoteRef:
                   key: rustfs
                   property: secret_key
-              - secretKey: RESTIC_PASSWORD
+              - secretKey: restic_password
                 remoteRef:
                   key: rustfs
                   property: restic_password
@@ -245,22 +259,4 @@ spec:
                 runAsGroup: 0
                 fsGroup: 0
 
-    # ============================================
-    # PATCH RULE: Add RESTIC_REPOSITORY to Secret
-    # ============================================
 
-    # Add the RESTIC_REPOSITORY field to volsync Secrets after ExternalSecret creates them
-    # (ExternalSecret generates AWS_* and RESTIC_PASSWORD from 1Password)
-    - name: patch-volsync-secret-repository
-      match:
-        any:
-          - resources:
-              kinds:
-                - Secret
-              selector:
-                matchLabels:
-                  app.kubernetes.io/managed-by: external-secrets
-      mutate:
-        patchStrategicMerge:
-          data:
-            RESTIC_REPOSITORY: "{{ base64_encode(concat('s3:http://192.168.10.133:30292/volsync/', request.object.metadata.namespace, '-', request.object.metadata.name)) }}"
