@@ -1,8 +1,27 @@
 # VolSync Migration Design
 
 **Date:** 2026-01-04
-**Status:** Approved
+**Status:** ~~Approved~~ **SUPERSEDED** ✅
 **Goal:** Replace Longhorn backup/restore with VolSync + database-native backups
+
+---
+
+## ⚠️ IMPLEMENTATION CHANGED
+
+This design was **superseded by Kyverno auto-generation architecture** on 2026-01-08.
+
+**What changed:**
+- ❌ **Old approach:** Manual ReplicationSource/Destination YAML per app (36+ files)
+- ✅ **New approach:** Single Kyverno ClusterPolicy auto-generates everything from PVC labels
+
+**See current implementation:**
+- [storage-architecture.md](../storage-architecture.md) - Current zero-touch architecture
+- [infrastructure/controllers/kyverno/volsync-clusterpolicy.yaml](../../infrastructure/controllers/kyverno/volsync-clusterpolicy.yaml) - Generate policy
+- [infrastructure/controllers/kyverno/volsync-restore-mutate.yaml](../../infrastructure/controllers/kyverno/volsync-restore-mutate.yaml) - Auto-restore policy
+
+**Original design below for historical reference:**
+
+---
 
 ## Problem Statement
 

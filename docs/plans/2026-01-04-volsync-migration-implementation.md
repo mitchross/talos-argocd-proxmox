@@ -1,5 +1,24 @@
 # VolSync Migration Implementation Plan
 
+---
+
+## ⚠️ THIS PLAN IS OBSOLETE
+
+**Status:** ❌ **REPLACED** (2026-01-08)
+
+**This manual approach was replaced with Kyverno auto-generation:**
+- Single ClusterPolicy generates ExternalSecret + ReplicationSource + ReplicationDestination
+- Just add `backup: "hourly"` or `backup: "daily"` label to PVC
+- Zero manual YAML files needed (down from 36+ files)
+
+**See current implementation:**
+- [storage-architecture.md](../storage-architecture.md)
+- [infrastructure/controllers/kyverno/volsync-clusterpolicy.yaml](../../infrastructure/controllers/kyverno/volsync-clusterpolicy.yaml)
+
+---
+
+**Original plan below for historical reference:**
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Replace Longhorn backup/restore with VolSync + database-native backups for reliable daily backups to RustFS.

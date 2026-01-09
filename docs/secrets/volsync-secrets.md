@@ -1,8 +1,10 @@
 # VolSync Secrets Setup
 
-## Required 1Password Items
+## ✅ Fully Automated via Kyverno
 
-Before VolSync backups will work, you need the `rustfs` item in 1Password.
+**You only need ONE 1Password item - Kyverno auto-generates everything else!**
+
+## Required 1Password Item
 
 ### rustfs
 
@@ -24,16 +26,21 @@ openssl rand -base64 32
 
 Example output: `K7x9mP2nL4qR8vT1wY5zA3cF6hJ0bN+dG=`
 
+**That's it!** When you add `backup: "hourly"` or `backup: "daily"` to a PVC, Kyverno automatically:
+1. Generates an ExternalSecret pulling from the `rustfs` 1Password item
+2. Creates a Kubernetes Secret with S3 credentials
+3. No manual YAML creation needed!
+
 ## Verification
 
-After creating the `rustfs` item, verify the ExternalSecrets are syncing:
+After creating the `rustfs` item and labeling PVCs, verify auto-generated ExternalSecrets:
 
 ```bash
-# Check app-level secrets (example)
-kubectl get externalsecret -n home-assistant
+# Check all auto-generated ExternalSecrets (Kyverno created these!)
+kubectl get externalsecret -A | grep volsync
 
-# View secret details
-kubectl get externalsecret home-assistant-volsync-secret -n home-assistant -o yaml
+# View a specific auto-generated ExternalSecret
+kubectl get externalsecret karakeep-data-volsync-secret -n karakeep -o yaml
 ```
 
 All ExternalSecrets should show `SecretSynced` status.
@@ -52,18 +59,19 @@ mc alias set rustfs http://192.168.10.133:30292 <access_key> <secret_key>
 mc mb rustfs/volsync
 ```
 
-## Secret Structure
+## Auto-Generated Secret Structure
 
-Each app has an ExternalSecret that creates a Secret with this structure:
+Kyverno generates an ExternalSecret for each labeled PVC that creates:
 
 ```yaml
 apiVersion: v1
 kind: Secret
 metadata:
-  name: <app>-volsync-secret
+  name: <pvc-name>-volsync-secret
+  namespace: <pvc-namespace>
 type: Opaque
 stringData:
-  RESTIC_REPOSITORY: s3:http://192.168.10.133:30292/volsync/<app>
+  RESTIC_REPOSITORY: s3:http://192.168.10.133:30292/volsync/<namespace>-<pvc>
   RESTIC_PASSWORD: <from 1Password rustfs.restic_password>
   AWS_ACCESS_KEY_ID: <from 1Password rustfs.access_key>
   AWS_SECRET_ACCESS_KEY: <from 1Password rustfs.secret_key>
