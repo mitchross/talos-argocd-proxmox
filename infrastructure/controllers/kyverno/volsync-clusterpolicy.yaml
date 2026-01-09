@@ -68,6 +68,7 @@ spec:
             sourcePVC: "{{request.object.metadata.name}}"
             trigger:
               schedule: "0 * * * *"
+              manual: "initial"
             restic:
               pruneIntervalDays: 7
               repository: "{{request.object.metadata.name}}-volsync-secret"
@@ -177,6 +178,7 @@ spec:
             sourcePVC: "{{request.object.metadata.name}}"
             trigger:
               schedule: "0 2 * * *"
+              manual: "initial"
             restic:
               pruneIntervalDays: 7
               repository: "{{request.object.metadata.name}}-volsync-secret"
