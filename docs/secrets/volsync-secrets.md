@@ -16,8 +16,11 @@ Create a **Password** item in your 1Password vault:
 | **access_key** | RustFS access key |
 | **secret_key** | RustFS secret key |
 | **restic_password** | A strong random password (32+ characters) |
+| **restic_repository** | `s3:http://192.168.10.133:30292/volsync/` |
 
 The `restic_password` encrypts all backup repositories stored in S3.
+
+The `restic_repository` is the S3 endpoint - each PVC will have its namespace and name appended automatically.
 
 **Generate a secure password:**
 ```bash
