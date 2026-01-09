@@ -41,23 +41,16 @@ spec:
             target:
               name: "{{request.object.metadata.name}}-volsync-secret"
               creationPolicy: Owner
-              template:
-                engineVersion: v2
-                data:
-                  RESTIC_REPOSITORY: "s3:http://192.168.10.133:30292/volsync/{{request.object.metadata.namespace}}-{{request.object.metadata.name}}"
-                  RESTIC_PASSWORD: "{{ `{{ .restic_password }}` }}"
-                  AWS_ACCESS_KEY_ID: "{{ `{{ .access_key }}` }}"
-                  AWS_SECRET_ACCESS_KEY: "{{ `{{ .secret_key }}` }}"
             data:
-              - secretKey: access_key
+              - secretKey: AWS_ACCESS_KEY_ID
                 remoteRef:
                   key: rustfs
                   property: access_key
-              - secretKey: secret_key
+              - secretKey: AWS_SECRET_ACCESS_KEY
                 remoteRef:
                   key: rustfs
                   property: secret_key
-              - secretKey: restic_password
+              - secretKey: RESTIC_PASSWORD
                 remoteRef:
                   key: rustfs
                   property: restic_password
@@ -93,6 +86,10 @@ spec:
               volumeSnapshotClassName: longhorn
               storageClassName: longhorn
               cacheStorageClassName: longhorn
+              moverSecurityContext:
+                runAsUser: 0
+                runAsGroup: 0
+                fsGroup: 0
 
     # Rule 2: Generate ReplicationDestination for hourly backups
     # NOTE: synchronize: false means RD persists when PVC is deleted (for restore)
@@ -157,30 +154,23 @@ spec:
             refreshInterval: "1h"
             secretStoreRef:
               kind: ClusterSecretStore
-              name: 1password
-            target:
-              name: "{{request.object.metadata.name}}-volsync-secret"
-              creationPolicy: Owner
-              template:
-                engineVersion: v2
-                data:
-                  RESTIC_REPOSITORY: "s3:http://192.168.10.133:30292/volsync/{{request.object.metadata.namespace}}-{{request.object.metadata.name}}"
-                  RESTIC_PASSWORD: "{{ `{{ .restic_password }}` }}"
-                  AWS_ACCESS_KEY_ID: "{{ `{{ .access_key }}` }}"
-                  AWS_SECRET_ACCESS_KEY: "{{ `{{ .secret_key }}` }}"
             data:
-              - secretKey: access_key
+              - secretKey: AWS_ACCESS_KEY_ID
                 remoteRef:
                   key: rustfs
                   property: access_key
-              - secretKey: secret_key
+              - secretKey: AWS_SECRET_ACCESS_KEY
                 remoteRef:
                   key: rustfs
                   property: secret_key
-              - secretKey: restic_password
+              - secretKey: RESTIC_PASSWORD
                 remoteRef:
                   key: rustfs
-                  property: restic_password
+                  property: restic_passworde
+              - secretKey: pvc
+                remoteRef:
+                  key: rustfs
+                  property: pvc_name
 
     # Rule 3: Generate ReplicationSource for daily backups
     - name: generate-daily-replicationsource
@@ -227,6 +217,10 @@ spec:
                   backup: "daily"
       generate:
         apiVersion: volsync.backube/v1alpha1
+              moverSecurityContext:
+                runAsUser: 0
+                runAsGroup: 0
+                fsGroup: 0
         kind: ReplicationDestination
         name: "{{request.object.metadata.name}}-restore"
         namespace: "{{request.object.metadata.namespace}}"
