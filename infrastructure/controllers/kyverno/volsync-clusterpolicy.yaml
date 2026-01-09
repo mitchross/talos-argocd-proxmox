@@ -41,26 +41,23 @@ spec:
             target:
               name: "{{request.object.metadata.name}}-volsync-secret"
               creationPolicy: Owner
-              template:
-                engineVersion: v2
-                data:
-                  RESTIC_REPOSITORY: "s3:http://192.168.10.133:30292/volsync/{{request.object.metadata.namespace}}-{{request.object.metadata.name}}"
-                  RESTIC_PASSWORD: '{{ "{{" }} .restic_password {{ "}}" }}'
-                  AWS_ACCESS_KEY_ID: '{{ "{{" }} .access_key {{ "}}" }}'
-                  AWS_SECRET_ACCESS_KEY: '{{ "{{" }} .secret_key {{ "}}" }}'
             data:
-              - secretKey: access_key
+              - secretKey: AWS_ACCESS_KEY_ID
                 remoteRef:
                   key: rustfs
                   property: access_key
-              - secretKey: secret_key
+              - secretKey: AWS_SECRET_ACCESS_KEY
                 remoteRef:
                   key: rustfs
                   property: secret_key
-              - secretKey: restic_password
+              - secretKey: RESTIC_PASSWORD
                 remoteRef:
                   key: rustfs
                   property: restic_password
+              - secretKey: RESTIC_REPOSITORY
+                remoteRef:
+                  key: rustfs
+                  property: restic_repository
 
     # Rule 1: Generate ReplicationSource for hourly backups
     - name: generate-hourly-replicationsource
@@ -165,26 +162,23 @@ spec:
             target:
               name: "{{request.object.metadata.name}}-volsync-secret"
               creationPolicy: Owner
-              template:
-                engineVersion: v2
-                data:
-                  RESTIC_REPOSITORY: "s3:http://192.168.10.133:30292/volsync/{{request.object.metadata.namespace}}-{{request.object.metadata.name}}"
-                  RESTIC_PASSWORD: '{{ "{{" }} .restic_password {{ "}}" }}'
-                  AWS_ACCESS_KEY_ID: '{{ "{{" }} .access_key {{ "}}" }}'
-                  AWS_SECRET_ACCESS_KEY: '{{ "{{" }} .secret_key {{ "}}" }}'
             data:
-              - secretKey: access_key
+              - secretKey: AWS_ACCESS_KEY_ID
                 remoteRef:
                   key: rustfs
                   property: access_key
-              - secretKey: secret_key
+              - secretKey: AWS_SECRET_ACCESS_KEY
                 remoteRef:
                   key: rustfs
                   property: secret_key
-              - secretKey: restic_password
+              - secretKey: RESTIC_PASSWORD
                 remoteRef:
                   key: rustfs
                   property: restic_password
+              - secretKey: RESTIC_REPOSITORY
+                remoteRef:
+                  key: rustfs
+                  property: restic_repository
 
     # Rule 3: Generate ReplicationSource for daily backups
     - name: generate-daily-replicationsource
