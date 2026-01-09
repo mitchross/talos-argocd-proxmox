@@ -244,3 +244,22 @@ spec:
                 runAsUser: 0
                 runAsGroup: 0
                 fsGroup: 0
+
+    # ============================================
+    # PATCH RULE: Add RESTIC_REPOSITORY to Secret
+    # ============================================
+
+    # Add the RESTIC_REPOSITORY field to volsync Secrets
+    # (ExternalSecret generates AWS_* and RESTIC_PASSWORD, we add the computed RESTIC_REPOSITORY)
+    - name: patch-volsync-secret-repository
+      match:
+        any:
+          - resources:
+              kinds:
+                - Secret
+              names:
+                - "*-volsync-secret"
+      mutate:
+        patchStrategicMerge:
+          data:
+            RESTIC_REPOSITORY: "{{ base64_encode(concat('s3:http://192.168.10.133:30292/volsync/', request.object.metadata.namespace, '-', request.object.metadata.name)) }}"
