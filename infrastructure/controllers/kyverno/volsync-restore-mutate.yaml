@@ -34,18 +34,16 @@ spec:
                 matchLabels:
                   backup: "hourly"
       # Fetch the ReplicationDestination to check for latestImage
+      # Note: default:{} handles 404 when RD doesn't exist (new app, no backup yet)
       context:
         - name: rdName
           variable:
             value: "{{request.object.metadata.name}}-restore"
-        - name: rdExists
-          apiCall:
-            urlPath: "/apis/volsync.backube/v1alpha1/namespaces/{{request.object.metadata.namespace}}/replicationdestinations/{{request.object.metadata.name}}-restore"
-            jmesPath: "metadata.name || ''"
         - name: latestImage
           apiCall:
             urlPath: "/apis/volsync.backube/v1alpha1/namespaces/{{request.object.metadata.namespace}}/replicationdestinations/{{request.object.metadata.name}}-restore"
             jmesPath: "status.latestImage.name || ''"
+            default: {}
       # Only mutate if:
       # 1. RD exists and has latestImage (backup exists to restore from)
       # 2. PVC doesn't already have dataSourceRef
@@ -81,18 +79,16 @@ spec:
               selector:
                 matchLabels:
                   backup: "daily"
+      # Note: default:{} handles 404 when RD doesn't exist (new app, no backup yet)
       context:
         - name: rdName
           variable:
             value: "{{request.object.metadata.name}}-restore"
-        - name: rdExists
-          apiCall:
-            urlPath: "/apis/volsync.backube/v1alpha1/namespaces/{{request.object.metadata.namespace}}/replicationdestinations/{{request.object.metadata.name}}-restore"
-            jmesPath: "metadata.name || ''"
         - name: latestImage
           apiCall:
             urlPath: "/apis/volsync.backube/v1alpha1/namespaces/{{request.object.metadata.namespace}}/replicationdestinations/{{request.object.metadata.name}}-restore"
             jmesPath: "status.latestImage.name || ''"
+            default: {}
       preconditions:
         all:
           - key: "{{ latestImage }}"
