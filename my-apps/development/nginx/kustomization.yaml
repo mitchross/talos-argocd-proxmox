@@ -8,6 +8,5 @@ resources:
   - service.yaml
   - pvc.yaml
   - httproute.yaml
-  - volsync-secret.yaml
 
 namespace: nginx-example

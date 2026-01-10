@@ -6,6 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: container-registry
     app.kubernetes.io/component: infrastructure
+    backup: "daily"
   annotations:
     # Longhorn backup settings - Critical tier for infrastructure
     longhorn.io/recurring-job-source: enabled
@@ -18,7 +19,4 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: registry-pvc-restore
+  # dataSourceRef is added dynamically by Kyverno if a backup exists

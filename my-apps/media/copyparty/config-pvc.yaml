@@ -3,6 +3,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: copyparty-config-pvc
   namespace: copyparty
+  labels:
+    app: copyparty
+    type: config
+    backup: "daily"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -10,3 +14,4 @@ spec:
     requests:
       storage: 1Gi
   storageClassName: longhorn
+  # dataSourceRef is added dynamically by Kyverno if a backup exists

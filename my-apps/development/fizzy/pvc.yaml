@@ -6,6 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: fizzy
     app.kubernetes.io/component: kanban
+    backup: "daily"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -13,7 +14,4 @@ spec:
   resources:
     requests:
       storage: 5Gi
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: fizzy-data-restore
+  # dataSourceRef is added dynamically by Kyverno if a backup exists

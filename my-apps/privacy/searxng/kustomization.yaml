@@ -8,7 +8,6 @@ resources:
   - httproute.yaml
   - secret.yaml
   - redis.yaml
-  - volsync-secret.yaml
 configMapGenerator:
   - name: searxng-config-settings
     files:

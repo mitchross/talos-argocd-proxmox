@@ -6,6 +6,7 @@ metadata:
   labels:
     app: jellyfin
     type: config
+    backup: "daily"
   annotations:
     volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
@@ -15,8 +16,5 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: jellyfin-config-pvc-restore
+  # dataSourceRef is added dynamically by Kyverno if a backup exists
 

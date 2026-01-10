@@ -7,6 +7,5 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
-  - volsync-secret.yaml
 
 namespace: nestmtx

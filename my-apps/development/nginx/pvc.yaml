@@ -6,6 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: nginx
     app.kubernetes.io/component: development
+    backup: "daily"
   annotations:
     volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
@@ -15,7 +16,4 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: nginx-storage-restore
+  # dataSourceRef is added dynamically by Kyverno if a backup exists

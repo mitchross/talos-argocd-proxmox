@@ -7,16 +7,12 @@ metadata:
     app.kubernetes.io/name: home-assistant
     app.kubernetes.io/component: home-automation
     app.kubernetes.io/part-of: smart-home
-  annotations:
-    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
+    backup: "hourly"
 spec:
   accessModes:
-  - ReadWriteOnce
+    - ReadWriteOnce
   resources:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: home-assistant-config-restore
+  # dataSourceRef is added dynamically by Kyverno if a backup exists

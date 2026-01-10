@@ -7,5 +7,4 @@ resources:
   - service.yaml
   - httproute.yaml
   - externalsecret.yaml
-  - volsync-secret.yaml
 namespace: khoj

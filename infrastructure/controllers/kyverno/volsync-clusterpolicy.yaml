@@ -6,9 +6,9 @@ metadata:
     argocd.argoproj.io/sync-wave: "2"
     policies.kyverno.io/title: Generate VolSync Backup Resources
     policies.kyverno.io/description: >-
-      Automatically generates ExternalSecret, ReplicationSource, and ReplicationDestination
+      Automatically generates Secret (with computed RESTIC_REPOSITORY), ReplicationSource, and ReplicationDestination
       for PVCs labeled with backup=hourly or backup=daily.
-      User only needs: 1) PVC with backup label, 2) namespace annotation volsync.backube/privileged-movers: "true"
+      User only needs: 1) PVC with backup label, 2) namespace label+annotation volsync.backube/privileged-movers: "true"
 spec:
   generateExisting: true
   rules:
@@ -45,7 +45,7 @@ spec:
             AWS_ACCESS_KEY_ID: "{{baseSecret.AWS_ACCESS_KEY_ID}}"
             AWS_SECRET_ACCESS_KEY: "{{baseSecret.AWS_SECRET_ACCESS_KEY}}"
             RESTIC_PASSWORD: "{{baseSecret.RESTIC_PASSWORD}}"
-            RESTIC_REPOSITORY: "{{base64_encode('s3:http://192.168.10.133:30292/volsync/{{request.object.metadata.namespace}}-{{request.object.metadata.name}}')}}"
+            RESTIC_REPOSITORY: "{{base64_encode('s3:http://192.168.10.133:30292/volsync-backup/{{request.object.metadata.namespace}}-{{request.object.metadata.name}}')}}"
 
     # Rule 1: Generate ReplicationSource for hourly backups
     - name: generate-hourly-replicationsource
@@ -155,7 +155,7 @@ spec:
             AWS_ACCESS_KEY_ID: "{{baseSecret.AWS_ACCESS_KEY_ID}}"
             AWS_SECRET_ACCESS_KEY: "{{baseSecret.AWS_SECRET_ACCESS_KEY}}"
             RESTIC_PASSWORD: "{{baseSecret.RESTIC_PASSWORD}}"
-            RESTIC_REPOSITORY: "{{base64_encode('s3:http://192.168.10.133:30292/volsync/{{request.object.metadata.namespace}}-{{request.object.metadata.name}}')}}"
+            RESTIC_REPOSITORY: "{{base64_encode('s3:http://192.168.10.133:30292/volsync-backup/{{request.object.metadata.namespace}}-{{request.object.metadata.name}}')}}"
 
     # Rule 3: Generate ReplicationSource for daily backups
     - name: generate-daily-replicationsource

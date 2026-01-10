@@ -5,3 +5,4 @@ metadata:
   labels:
     app.kubernetes.io/name: n8n
     app.kubernetes.io/component: workflow-automation
+    volsync.backube/privileged-movers: "true"

@@ -11,5 +11,4 @@ resources:
 - pvc.yaml
 - httproute.yaml
 - function-loader-job.yaml
-- volsync-secret.yaml
 namespace: open-webui

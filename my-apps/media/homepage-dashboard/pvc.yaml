@@ -7,6 +7,7 @@ metadata:
   labels:
     app: homepage
     type: config
+    backup: "daily"
   annotations:
     volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
@@ -17,8 +18,5 @@ spec:
     requests:
       storage: 3Gi
   storageClassName: longhorn
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: homepage-config-pvc-restore
+  # dataSourceRef is added dynamically by Kyverno if a backup exists
 
