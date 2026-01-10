@@ -43,7 +43,10 @@ spec:
           apiCall:
             urlPath: "/apis/volsync.backube/v1alpha1/namespaces/{{request.object.metadata.namespace}}/replicationdestinations/{{request.object.metadata.name}}-restore"
             jmesPath: "status.latestImage.name || ''"
-            default: {}
+            default:
+              status:
+                latestImage:
+                  name: ""
       # Only mutate if:
       # 1. RD exists and has latestImage (backup exists to restore from)
       # 2. PVC doesn't already have dataSourceRef
@@ -88,7 +91,10 @@ spec:
           apiCall:
             urlPath: "/apis/volsync.backube/v1alpha1/namespaces/{{request.object.metadata.namespace}}/replicationdestinations/{{request.object.metadata.name}}-restore"
             jmesPath: "status.latestImage.name || ''"
-            default: {}
+            default:
+              status:
+                latestImage:
+                  name: ""
       preconditions:
         all:
           - key: "{{ latestImage }}"
