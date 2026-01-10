@@ -5,7 +5,7 @@ resources:
 - namespace.yaml
 - rbac-patch.yaml
 - volsync-clusterpolicy.yaml
-- volsync-restore-mutate.yaml
+# - volsync-restore-mutate.yaml  # TEMP DISABLED: needs fix for handling missing RD
 helmCharts:
 - name: kyverno
   repo: https://kyverno.github.io/kyverno
