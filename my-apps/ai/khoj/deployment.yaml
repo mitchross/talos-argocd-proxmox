@@ -120,7 +120,7 @@ spec:
       volumes:
       - name: config
         persistentVolumeClaim:
-          claimName: khoj-config-pvc
+          claimName: config
       - name: models
         persistentVolumeClaim:
           claimName: khoj-models-pvc

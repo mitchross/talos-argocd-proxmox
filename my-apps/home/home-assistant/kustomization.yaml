@@ -23,7 +23,7 @@ generatorOptions:
   disableNameSuffixHash: true
 
 configMapGenerator:
-- name: home-assistant-config
+- name: config
   files:
   - configuration.yaml
   - automations.yaml

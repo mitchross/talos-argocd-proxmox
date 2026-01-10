@@ -88,4 +88,4 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: nestmtx-storage-pvc
+            claimName: storage

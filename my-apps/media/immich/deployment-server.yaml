@@ -79,7 +79,7 @@ spec:
       volumes:
       - name: library
         persistentVolumeClaim:
-          claimName: immich-library
+          claimName: library
       - name: geocoding
         emptyDir: {}
       - name: transformers

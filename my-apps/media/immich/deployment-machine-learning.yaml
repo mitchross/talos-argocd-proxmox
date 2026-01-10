@@ -88,4 +88,4 @@ spec:
           claimName: immich-ml-cache
       - name: library
         persistentVolumeClaim:
-          claimName: immich-library
+          claimName: library

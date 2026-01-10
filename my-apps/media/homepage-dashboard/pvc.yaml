@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: homepage-config-pvc
+  name: config
   namespace: homepage-dashboard
   labels:
     app: homepage

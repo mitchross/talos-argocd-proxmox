@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: copyparty-config-pvc
+  name: config
   namespace: copyparty
   labels:
     app: copyparty

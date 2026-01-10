@@ -71,10 +71,10 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: paperless-data-pvc
+            claimName: data
         - name: media
           persistentVolumeClaim:
-            claimName: paperless-media-pvc
+            claimName: media
         - name: export
           persistentVolumeClaim:
             claimName: paperless-export-pvc

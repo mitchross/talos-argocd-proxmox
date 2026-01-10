@@ -30,4 +30,4 @@ spec:
       volumes:
         - name: registry-data
           persistentVolumeClaim:
-            claimName: registry-pvc
+            claimName: registry

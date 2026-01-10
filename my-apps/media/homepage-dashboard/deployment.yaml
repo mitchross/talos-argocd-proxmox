@@ -60,7 +60,7 @@ spec:
       volumes:
         - name: config
           persistentVolumeClaim:
-            claimName: homepage-config-pvc
+            claimName: config
         - name: homepage-config
           configMap:
             name: homepage-config
