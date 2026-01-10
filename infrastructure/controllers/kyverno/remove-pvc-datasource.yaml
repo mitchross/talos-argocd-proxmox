@@ -1,0 +1,23 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: remove-pvc-datasource
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    policies.kyverno.io/title: Remove dataSource from new PVCs
+    policies.kyverno.io/description: >-
+      Automatically removes spec.dataSource from new PVCs to prevent binding issues.
+      DataSource should only be set when explicitly restoring from backup, not by default.
+      This ensures PVCs bind immediately to fresh storage rather than waiting for restore.
+spec:
+  rules:
+  - name: remove-datasource-on-create
+    match:
+      any:
+      - resources:
+          kinds:
+          - PersistentVolumeClaim
+    mutate:
+      patchStrategicMerge:
+        spec:
+          dataSource: null
