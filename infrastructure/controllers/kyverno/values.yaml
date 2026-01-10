@@ -77,10 +77,10 @@ policyReportsCleanup:
   image:
     registry: registry.k8s.io
     repository: kubectl
-    tag: 'v1.30.2'
+    tag: 'v1.35.0'
 
 webhooksCleanup:
   image:
     registry: registry.k8s.io
     repository: kubectl
-    tag: 'v1.30.2'
+    tag: 'v1.35.0'
