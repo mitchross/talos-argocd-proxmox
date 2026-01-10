@@ -15,7 +15,6 @@ resources:
 - service.yaml
 - deployment.yaml
 - httproute.yaml
-- volsync-secret.yaml
 commonLabels:
   app.kubernetes.io/managed-by: kustomize
   environment: production

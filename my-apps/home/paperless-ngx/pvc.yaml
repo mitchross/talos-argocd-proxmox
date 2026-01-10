@@ -6,8 +6,7 @@ metadata:
   labels:
     app: paperless-ngx
     type: data
-  annotations:
-    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
+    backup: "hourly"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -15,10 +14,7 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: paperless-data-pvc-restore
+  # dataSourceRef is added dynamically by Kyverno if a backup exists
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -28,8 +24,7 @@ metadata:
   labels:
     app: paperless-ngx
     type: media
-  annotations:
-    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
+    backup: "hourly"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -37,6 +32,7 @@ spec:
     requests:
       storage: 20Gi
   storageClassName: longhorn
+  # dataSourceRef is added dynamically by Kyverno if a backup exists
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -46,8 +42,6 @@ metadata:
   labels:
     app: paperless-ngx
     type: export
-  annotations:
-    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
     - ReadWriteOnce
@@ -64,8 +58,6 @@ metadata:
   labels:
     app: paperless-ngx
     type: consume
-  annotations:
-    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
     - ReadWriteOnce

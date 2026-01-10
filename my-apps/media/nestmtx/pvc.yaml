@@ -7,6 +7,7 @@ metadata:
   labels:
     app: nestmtx
     type: storage
+    backup: "daily"
   annotations:
     volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
@@ -16,8 +17,5 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: nestmtx-storage-pvc-restore
+  # dataSourceRef is added dynamically by Kyverno if a backup exists
 

@@ -16,7 +16,7 @@ Create a **Password** item in your 1Password vault:
 | **access_key** | RustFS access key |
 | **secret_key** | RustFS secret key |
 | **restic_password** | A strong random password (32+ characters) |
-| **restic_repository** | `s3:http://192.168.10.133:30292/volsync/` |
+| **restic_repository** | `s3:http://192.168.10.133:30292/volsync-backup/` |
 
 The `restic_password` encrypts all backup repositories stored in S3.
 
@@ -50,16 +50,16 @@ All ExternalSecrets should show `SecretSynced` status.
 
 ## S3 Bucket Setup
 
-Ensure the `volsync` bucket exists in RustFS (192.168.10.133:30292):
+Ensure the `volsync-backup` bucket exists in RustFS (192.168.10.133:30292):
 
 | Bucket | Purpose |
 |--------|---------|
-| `volsync` | VolSync PVC backups (Restic repositories) |
+| `volsync-backup` | VolSync PVC backups (Restic repositories) |
 
 Create it if it doesn't exist:
 ```bash
 mc alias set rustfs http://192.168.10.133:30292 <access_key> <secret_key>
-mc mb rustfs/volsync
+mc mb rustfs/volsync-backup
 ```
 
 ## Auto-Generated Secret Structure
@@ -74,7 +74,7 @@ metadata:
   namespace: <pvc-namespace>
 type: Opaque
 stringData:
-  RESTIC_REPOSITORY: s3:http://192.168.10.133:30292/volsync/<namespace>-<pvc>
+  RESTIC_REPOSITORY: s3:http://192.168.10.133:30292/volsync-backup/<namespace>-<pvc>
   RESTIC_PASSWORD: <from 1Password rustfs.restic_password>
   AWS_ACCESS_KEY_ID: <from 1Password rustfs.access_key>
   AWS_SECRET_ACCESS_KEY: <from 1Password rustfs.secret_key>

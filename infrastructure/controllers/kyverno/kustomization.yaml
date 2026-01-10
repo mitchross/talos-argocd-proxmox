@@ -3,7 +3,7 @@ kind: Kustomization
 namespace: kyverno
 resources:
   - namespace.yaml
-  - volsync-rbac.yaml
+  - rbac-patch.yaml
   - volsync-clusterpolicy.yaml
   - volsync-restore-mutate.yaml
 helmCharts:

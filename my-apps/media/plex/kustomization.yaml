@@ -12,7 +12,6 @@ configMapGenerator:
 
 resources:
   - ns.yaml
+  - pvc.yaml
   # - svc.yaml
-  # - pvc.yaml
   # - deployment.yaml
-  - volsync-secret.yaml

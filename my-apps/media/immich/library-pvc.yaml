@@ -6,15 +6,12 @@ metadata:
   labels:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: library
-  annotations:
+    backup: "hourly"
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 100Gi  # Adjust based on your photo library size
+      storage: 100Gi
   storageClassName: longhorn
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: immich-library-restore
+  # dataSourceRef is added dynamically by Kyverno if a backup exists

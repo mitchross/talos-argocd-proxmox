@@ -1,4 +1,3 @@
-# PV definition removed
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -7,21 +6,16 @@ metadata:
   labels:
     app.kubernetes.io/name: open-webui
     app.kubernetes.io/component: ai-interface
-  annotations:
-    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
+    backup: "hourly"
 spec:
   accessModes:
-  - ReadWriteOnce
+    - ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
   storageClassName: longhorn
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: open-webui-data-restore
+  # dataSourceRef is added dynamically by Kyverno if a backup exists
 ---
-# Add the missing PVC that the deployment is referencing
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -30,12 +24,12 @@ metadata:
   labels:
     app.kubernetes.io/name: open-webui
     app.kubernetes.io/component: ai-interface
-  annotations:
-    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
+    backup: "hourly"
 spec:
   accessModes:
-  - ReadWriteOnce
+    - ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
   storageClassName: longhorn
+  # dataSourceRef is added dynamically by Kyverno if a backup exists

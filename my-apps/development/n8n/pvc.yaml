@@ -6,6 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: n8n
     app.kubernetes.io/component: workflow-automation
+    backup: "hourly"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -13,7 +14,4 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: n8n-data-restore
+  # dataSourceRef is added dynamically by Kyverno if a backup exists

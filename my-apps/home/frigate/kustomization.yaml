@@ -5,7 +5,6 @@ resources:
   - namespace.yaml
   - pvc.yaml
   - mqtt/mqtt.yaml
-  - mqtt/volsync-secret.yaml
   - service.yaml
   - httproute.yaml
   - externalsecret.yaml

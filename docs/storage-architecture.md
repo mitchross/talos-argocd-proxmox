@@ -14,10 +14,14 @@ The cluster uses a layered storage approach with **zero-touch backup and restore
 
 **User only needs to:**
 1. Add `backup: "hourly"` or `backup: "daily"` label to PVC
-2. Ensure namespace has `volsync.backube/privileged-movers: "true"` annotation
+2. Ensure namespace has `volsync.backube/privileged-movers: "true"` **label** (for base credentials)
+3. Ensure namespace has `volsync.backube/privileged-movers: "true"` **annotation** (for VolSync movers)
+
+**System automatically provides:**
+- **ClusterExternalSecret** creates `volsync-rustfs-base` secret in labeled namespaces (base S3 credentials from 1Password)
 
 **Kyverno automatically generates:**
-- ExternalSecret (S3 credentials)
+- Secret with computed `RESTIC_REPOSITORY` (per-PVC path)
 - ReplicationSource (backups)
 - ReplicationDestination (restore points)
 - dataSourceRef on PVC (if backup exists)
@@ -27,18 +31,21 @@ The cluster uses a layered storage approach with **zero-touch backup and restore
 │                           ZERO-TOUCH VOLSYNC ARCHITECTURE                        │
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                 │
-│   USER PROVIDES:                      KYVERNO AUTO-GENERATES:                   │
+│   USER PROVIDES:                      SYSTEM AUTO-GENERATES:                    │
 │   ┌─────────────────────┐            ┌─────────────────────────────────────┐   │
-│   │ PVC                 │            │ ExternalSecret                      │   │
-│   │   labels:           │ ────────►  │   (S3 creds from 1Password)         │   │
+│   │ PVC                 │            │ volsync-rustfs-base (per namespace) │   │
+│   │   labels:           │            │   (ClusterExternalSecret → Secret)  │   │
 │   │     backup: hourly  │            │                                     │   │
-│   └─────────────────────┘            │ ReplicationSource                   │   │
-│                                      │   (hourly backups to S3)            │   │
-│   ┌─────────────────────┐            │                                     │   │
-│   │ Namespace           │            │ ReplicationDestination              │   │
-│   │   annotations:      │            │   (persists for restore)            │   │
+│   └─────────────────────┘            │ {pvc}-volsync-secret (per PVC)      │   │
+│                                      │   (Kyverno apiCall + base64 encode) │   │
+│   ┌─────────────────────┐   ───────► │                                     │   │
+│   │ Namespace           │            │ ReplicationSource                   │   │
+│   │   labels:           │            │   (hourly/daily backups to S3)      │   │
 │   │     volsync...true  │            │                                     │   │
-│   └─────────────────────┘            │ dataSourceRef on PVC                │   │
+│   │   annotations:      │            │ ReplicationDestination              │   │
+│   │     volsync...true  │            │   (persists for restore)            │   │
+│   └─────────────────────┘            │                                     │   │
+│                                      │ dataSourceRef on PVC                │   │
 │                                      │   (only if backup exists)           │   │
 │                                      └─────────────────────────────────────┘   │
 │                                                                                 │
@@ -54,7 +61,7 @@ The cluster uses a layered storage approach with **zero-touch backup and restore
 │  ┌────────────────────────────────────────────────────────────────────────────┐ │
 │  │                         NEW APP (First Deployment)                          │ │
 │  │                                                                             │ │
-│  │   PVC created ──► Kyverno generates: ExternalSecret + RS + RD              │ │
+│  │   PVC created ──► Kyverno generates: Secret + RS + RD                      │ │
 │  │       │                                                                     │ │
 │  │       │          Kyverno mutate checks: Does RD have latestImage?          │ │
 │  │       │                     │                                               │ │
@@ -93,7 +100,7 @@ The cluster uses a layered storage approach with **zero-touch backup and restore
      ┌─────────────────────────────────┐
      │   RustFS (S3) on TrueNAS        │
      │   192.168.10.133:30292          │
-     │   └── volsync/<ns>-<pvc>/       │
+     │   └── volsync-backup/<ns>-<pvc>/       │
      └─────────────────────────────────┘
 ```
 
@@ -106,18 +113,19 @@ When Kyverno sees a PVC with `backup: hourly` or `backup: daily` label:
 ```mermaid
 graph TD
     A[PVC Created with backup label] --> B[Kyverno Generate Policy]
-    B --> C[Generate ExternalSecret]
-    B --> D[Generate ReplicationSource]
-    B --> E[Generate ReplicationDestination]
+    B --> C[Read volsync-rustfs-base via apiCall]
+    C --> D[Generate Secret with computed RESTIC_REPOSITORY]
+    B --> E[Generate ReplicationSource]
+    B --> F[Generate ReplicationDestination]
 
-    C --> F[S3 credentials from 1Password]
-    D --> G[Hourly/Daily backups to S3]
-    E --> H[Syncs from S3, creates latestImage]
+    D --> G[Per-PVC S3 path: volsync-backup/namespace-pvcname]
+    E --> H[Hourly/Daily backups to S3]
+    F --> I[Syncs from S3, creates latestImage]
 
     style A fill:#90EE90
-    style C fill:#FFB6C1
-    style D fill:#87CEEB
-    style E fill:#DDA0DD
+    style D fill:#FFB6C1
+    style E fill:#87CEEB
+    style F fill:#DDA0DD
 ```
 
 ### Mutate Policy (`volsync-auto-restore`)
@@ -183,7 +191,7 @@ graph LR
     end
 
     subgraph "Kyverno Generated"
-        PVC -.-> ES[ExternalSecret]
+        PVC -.-> SEC[Secret]
         PVC -.-> RS[ReplicationSource]
         PVC -.-> RD[ReplicationDestination]
     end
@@ -222,17 +230,26 @@ spec:
 | Hourly | `backup: "hourly"` | Every hour at :00 | 24 hourly + 7 daily | Critical apps |
 | Daily | `backup: "daily"` | Daily at 2:00 AM | 14 days | Non-critical apps |
 
-### What Kyverno Creates
+### What Gets Created
 
-For each labeled PVC, Kyverno generates:
+**Per Namespace (via ClusterExternalSecret):**
+
+| Resource | Name | Purpose |
+|----------|------|---------|
+| Secret | `volsync-rustfs-base` | Base S3 credentials from 1Password |
+
+**Per PVC (via Kyverno Generate Policy):**
 
 | Resource | Name Pattern | Purpose |
 |----------|--------------|---------|
-| ExternalSecret | `{pvc-name}-volsync-secret` | S3 credentials from 1Password |
+| Secret | `{pvc-name}-volsync-secret` | S3 creds + computed RESTIC_REPOSITORY |
 | ReplicationSource | `{pvc-name}-backup` | Backs up to S3 on schedule |
 | ReplicationDestination | `{pvc-name}-restore` | Syncs from S3, maintains latestImage |
 
-**S3 Repository Path:** `s3://volsync/{namespace}-{pvc-name}/`
+**S3 Repository Path:** `s3://volsync-backup/{namespace}-{pvc-name}/`
+
+**Why direct Secret instead of ExternalSecret?**
+Kyverno can't pass ExternalSecret Go templates (`{{ .value }}`) without interpreting them as Kyverno variables. By using Kyverno's `apiCall` to read the base secret and `base64_encode()` to compute RESTIC_REPOSITORY, we avoid this conflict.
 
 ### Database Backups (Native)
 
@@ -288,13 +305,14 @@ This ensures backup data is always available for restore, even after app deletio
 
 ```
 1. User creates PVC with backup: hourly label
-2. Kyverno generates ExternalSecret, RS, RD
-3. Kyverno mutate: No latestImage → no dataSourceRef
-4. PVC created with empty volume
-5. App starts with empty data
-6. First backup runs at next :00
-7. Sync CronJob runs (every 15 min) → triggers RD → creates latestImage
-8. Future restores will work!
+2. ClusterExternalSecret ensures volsync-rustfs-base exists in namespace
+3. Kyverno generates Secret (with RESTIC_REPOSITORY), RS, RD
+4. Kyverno mutate: No latestImage → no dataSourceRef
+5. PVC created with empty volume
+6. App starts with empty data
+7. First backup runs at next :00 (creates Longhorn snapshot, runs restic)
+8. Sync CronJob runs (every 15 min) → triggers RD → creates latestImage
+9. Future restores will work!
 ```
 
 **Result:** App starts fresh, backups begin automatically.
@@ -369,15 +387,17 @@ kubectl scale deployment <app> -n <namespace> --replicas=1
 
 ## 6. Onboarding New Apps
 
-### Step 1: Add namespace annotation (once per namespace)
+### Step 1: Add namespace label AND annotation (once per namespace)
 
 ```yaml
 apiVersion: v1
 kind: Namespace
 metadata:
   name: my-app
+  labels:
+    volsync.backube/privileged-movers: "true"  # Triggers ClusterExternalSecret
   annotations:
-    volsync.backube/privileged-movers: "true"
+    volsync.backube/privileged-movers: "true"  # Allows VolSync privileged movers
 ```
 
 ### Step 2: Add backup label to PVC
@@ -397,7 +417,9 @@ spec:
   storageClassName: longhorn
 ```
 
-**Done!** Kyverno handles everything else.
+**Done!** The system handles everything else:
+1. ClusterExternalSecret creates `volsync-rustfs-base` in the namespace
+2. Kyverno generates per-PVC Secret, RS, and RD
 
 ## 7. Monitoring
 
@@ -417,8 +439,11 @@ NAMESPACE:.metadata.namespace,\
 NAME:.metadata.name,\
 LATEST_IMAGE:.status.latestImage.name
 
-# Check Kyverno-generated ExternalSecrets
-kubectl get externalsecret -A | grep volsync
+# Check Kyverno-generated Secrets
+kubectl get secret -A | grep volsync-secret
+
+# Check base secrets exist in namespaces
+kubectl get secret -A | grep volsync-rustfs-base
 ```
 
 ### Verify Backups in S3
@@ -426,10 +451,10 @@ kubectl get externalsecret -A | grep volsync
 ```bash
 # List all backup repositories
 mc alias set rustfs http://192.168.10.133:30292 <access_key> <secret_key>
-mc ls rustfs/volsync/
+mc ls rustfs/volsync-backup/
 
 # Check specific app backup
-mc ls rustfs/volsync/karakeep-data-pvc/
+mc ls rustfs/volsync-backup/karakeep-data-pvc/
 ```
 
 ## 8. Configuration Files
@@ -437,11 +462,14 @@ mc ls rustfs/volsync/karakeep-data-pvc/
 | Component | Location |
 |-----------|----------|
 | VolSync operator | `infrastructure/storage/volsync/` |
+| ClusterExternalSecret (base creds) | `infrastructure/storage/volsync/rustfs-credentials.yaml` |
 | Sync CronJob | `infrastructure/storage/volsync/sync-cronjob.yaml` |
 | Kyverno generate policy | `infrastructure/controllers/kyverno/volsync-clusterpolicy.yaml` |
 | Kyverno mutate policy | `infrastructure/controllers/kyverno/volsync-restore-mutate.yaml` |
+| Kyverno RBAC for Secrets | `infrastructure/controllers/kyverno/rbac-patch.yaml` |
 | Snapshot Controller | `infrastructure/storage/snapshot-controller/` |
 | Longhorn | `infrastructure/storage/longhorn/` |
+| Cilium network policy | `infrastructure/networking/cilium/policies/block-lan-access.yaml` |
 | ArgoCD ignoreDifferences | `infrastructure/controllers/argocd/apps/*-appset.yaml` |
 | 1Password secret (rustfs) | Configured in 1Password vault |
 
@@ -455,11 +483,17 @@ kubectl describe pvc <name> -n <namespace>
 kubectl get replicationdestination <name>-restore -n <namespace> -o yaml
 ```
 
-### ExternalSecret not creating Secret
+### Secret missing or incomplete
 
 ```bash
-kubectl get externalsecret <pvc>-volsync-secret -n <namespace> -o yaml
-kubectl describe externalsecret <pvc>-volsync-secret -n <namespace>
+# Check if base secret exists in namespace
+kubectl get secret volsync-rustfs-base -n <namespace>
+
+# Check if per-PVC secret was generated
+kubectl get secret <pvc>-volsync-secret -n <namespace> -o yaml
+
+# Verify RESTIC_REPOSITORY is set (should be base64 encoded)
+kubectl get secret <pvc>-volsync-secret -n <namespace> -o jsonpath='{.data.RESTIC_REPOSITORY}' | base64 -d
 ```
 
 ### ReplicationSource not backing up
@@ -469,10 +503,39 @@ kubectl get replicationsource <pvc>-backup -n <namespace> -o yaml
 kubectl logs -n volsync-system -l app.kubernetes.io/name=volsync
 ```
 
+### VolumeSnapshot stuck (READYTOUSE: false)
+
+This usually means Longhorn can't reach its backup target. Check:
+
+```bash
+# Check snapshot status and error
+kubectl describe volumesnapshot -n <namespace>
+
+# Common errors:
+# - "connection refused" to backup target → Check Cilium network policy
+# - "access denied" → Check Longhorn backup credentials
+
+# Fix: Delete stuck snapshots to let VolSync retry
+kubectl delete volumesnapshot -n <namespace> --all
+
+# Verify Cilium allows traffic to backup target (192.168.10.133:9000)
+kubectl get ciliumclusterwidenetworkpolicy default-deny-lan-egress -o yaml | grep -A5 "9000"
+```
+
 ### Force sync ReplicationDestination
 
 ```bash
 kubectl patch replicationdestination <pvc>-restore -n <namespace> \
   --type merge \
   -p '{"spec":{"trigger":{"manual":"sync-'$(date +%s)'"}}}'
+```
+
+### Check backup job logs
+
+```bash
+# Find the backup job
+kubectl get jobs -n <namespace> | grep volsync
+
+# Check logs
+kubectl logs -n <namespace> -l job-name=volsync-src-<pvc>-backup
 ```

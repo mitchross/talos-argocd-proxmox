@@ -4,3 +4,4 @@ metadata:
   name: immich
   labels:
     app.kubernetes.io/name: immich
+    volsync.backube/privileged-movers: "true"

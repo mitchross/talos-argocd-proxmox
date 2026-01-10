@@ -6,6 +6,7 @@ metadata:
   labels:
     app: redis
     component: master
+    backup: "hourly"
   annotations:
     # Longhorn backup settings - Critical tier for database
     longhorn.io/recurring-job-source: enabled
@@ -18,7 +19,4 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: redis-data-redis-master-0-restore
+  # dataSourceRef is added dynamically by Kyverno if a backup exists
