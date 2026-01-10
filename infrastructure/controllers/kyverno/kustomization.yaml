@@ -13,10 +13,6 @@ helmCharts:
   releaseName: kyverno
   valuesFile: values.yaml
 
-commonMetadata:
-  annotations:
-    argocd.argoproj.io/compare-result: "false"
-
 patchesJson6902:
 - target:
     group: apiextensions.k8s.io
