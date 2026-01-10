@@ -2,7 +2,27 @@
 
 ## ✅ Fully Automated via Kyverno
 
-**You only need ONE 1Password item - Kyverno auto-generates everything else!**
+**Zero-touch backup system: Create PVC with label → automatic backups!**
+
+### How It Works
+
+1. **Label a PVC** with `backup: "hourly"` or `backup: "daily"`
+2. **Kyverno auto-generates**:
+   - Secret with S3 credentials (unique path per PVC)
+   - ReplicationSource (backup scheduler)
+   - ReplicationDestination (restore capability)
+3. **Backups run automatically** on schedule
+4. **PVCs bind immediately** to fresh storage (no restore blocking)
+
+### Disaster Recovery (Manual Restore)
+
+When you need to restore from backup:
+1. Create new PVC (without dataSource)
+2. Wait for PVC to bind
+3. Patch PVC to add `dataSourceRef` pointing to ReplicationDestination
+4. VolSync populates PVC from latest backup snapshot
+
+No manual YAML creation. No pending PVCs. **Set and forget.**
 
 ## Required 1Password Item
 
@@ -18,9 +38,14 @@ Create a **Password** item in your 1Password vault:
 | **restic_password** | A strong random password (32+ characters) |
 | **restic_repository** | `s3:http://192.168.10.133:30292/volsync-backup/` |
 
-The `restic_password` encrypts all backup repositories stored in S3.
+**Path Structure:** Kyverno computes unique paths as `volsync-backup/namespace/pvcname`
 
-The `restic_repository` is the S3 endpoint - each PVC will have its namespace and name appended automatically.
+Example paths:
+- `volsync-backup/karakeep/data-pvc`
+- `volsync-backup/immich/library`
+- `volsync-backup/home-assistant/config`
+
+The `restic_password` encrypts all backup repositories stored in S3.
 
 **Generate a secure password:**
 ```bash
@@ -30,23 +55,37 @@ openssl rand -base64 32
 Example output: `K7x9mP2nL4qR8vT1wY5zA3cF6hJ0bN+dG=`
 
 **That's it!** When you add `backup: "hourly"` or `backup: "daily"` to a PVC, Kyverno automatically:
-1. Generates an ExternalSecret pulling from the `rustfs` 1Password item
-2. Creates a Kubernetes Secret with S3 credentials
-3. No manual YAML creation needed!
+1. Removes any `dataSource` field (prevents binding issues)
+2. Generates Secret with S3 credentials (unique path: `namespace/pvcname`)
+3. Creates ReplicationSource (backup scheduler)
+4. Creates ReplicationDestination (restore capability)
+5. PVC binds immediately to fresh storage and backups begin
+
+**No manual YAML. No pending PVCs. No touching VolSync resources directly.**
 
 ## Verification
 
-After creating the `rustfs` item and labeling PVCs, verify auto-generated ExternalSecrets:
+After creating the `rustfs` item and labeling PVCs, verify auto-generated resources:
 
 ```bash
-# Check all auto-generated ExternalSecrets (Kyverno created these!)
-kubectl get externalsecret -A | grep volsync
+# Check all PVCs with backup labels
+kubectl get pvc -A -l backup
 
-# View a specific auto-generated ExternalSecret
-kubectl get externalsecret karakeep-data-volsync-secret -n karakeep -o yaml
+# Check auto-generated Secrets (Kyverno created these!)
+kubectl get secret -A -l volsync.backube/secret-type=restic
+
+# Check ReplicationSources (backup schedulers)
+kubectl get replicationsource -A
+
+# Check backup status
+kubectl get replicationsource -n <namespace> <pvc>-backup -o yaml
 ```
 
-All ExternalSecrets should show `SecretSynced` status.
+All Secrets should have the `volsync.backube/secret-type: restic` label and contain:
+- `RESTIC_REPOSITORY` (unique path: `s3:.../volsync-backup/namespace/pvcname`)
+- `RESTIC_PASSWORD`
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
 
 ## S3 Bucket Setup
 
@@ -62,19 +101,58 @@ mc alias set rustfs http://192.168.10.133:30292 <access_key> <secret_key>
 mc mb rustfs/volsync-backup
 ```
 
-## Auto-Generated Secret Structure
+## Auto-Generated Resources
 
-Kyverno generates an ExternalSecret for each labeled PVC that creates:
+For each PVC with `backup: hourly` or `backup: daily`, Kyverno creates:
 
+### Secret
 ```yaml
 apiVersion: v1
 kind: Secret
 metadata:
   name: <pvc-name>-volsync-secret
   namespace: <pvc-namespace>
+  labels:
+    volsync.backube/secret-type: restic
 type: Opaque
-stringData:
-  RESTIC_REPOSITORY: s3:http://192.168.10.133:30292/volsync-backup/<namespace>-<pvc>
-  RESTIC_PASSWORD: <from 1Password rustfs.restic_password>
-  AWS_ACCESS_KEY_ID: <from 1Password rustfs.access_key>
-  AWS_SECRET_ACCESS_KEY: <from 1Password rustfs.secret_key>
+data:
+  RESTIC_REPOSITORY: <base64: s3://.../<namespace>/<pvcname>>
+  RESTIC_PASSWORD: <base64: from 1Password>
+  AWS_ACCESS_KEY_ID: <base64: from 1Password>
+  AWS_SECRET_ACCESS_KEY: <base64: from 1Password>
+```
+
+### ReplicationSource (Backup Scheduler)
+```yaml
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: <pvc-name>-backup
+spec:
+  sourcePVC: <pvc-name>
+  trigger:
+    schedule: "0 * * * *"  # hourly tier
+    manual: "initial"      # allows manual triggers
+  restic:
+    repository: <pvc-name>-volsync-secret
+    pruneIntervalDays: 7
+    retain:
+      hourly: 24
+      daily: 7
+```
+
+### ReplicationDestination (Restore Capability)
+```yaml
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: <pvc-name>-restore
+spec:
+  trigger:
+    manual: restore-once
+  restic:
+    repository: <pvc-name>-volsync-secret
+    copyMethod: Direct
+```
+
+**All generated automatically by Kyverno ClusterPolicy `generate-volsync-backup`**
