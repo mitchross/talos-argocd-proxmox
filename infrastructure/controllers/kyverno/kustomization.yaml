@@ -12,3 +12,27 @@ helmCharts:
   version: 3.6.1
   releaseName: kyverno
   valuesFile: values.yaml
+
+commonMetadata:
+  annotations:
+    argocd.argoproj.io/compare-result: "false"
+
+patchesJson6902:
+- target:
+    group: apiextensions.k8s.io
+    kind: CustomResourceDefinition
+    name: clusterpolicies.kyverno.io
+  patch: |-
+    - op: replace
+      path: /metadata/annotations
+      value:
+        argocd.argoproj.io/sync-options: Prune=false
+- target:
+    group: apiextensions.k8s.io
+    kind: CustomResourceDefinition
+    name: policies.kyverno.io
+  patch: |-
+    - op: replace
+      path: /metadata/annotations
+      value:
+        argocd.argoproj.io/sync-options: Prune=false
