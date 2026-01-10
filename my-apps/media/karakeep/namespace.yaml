@@ -5,4 +5,4 @@ metadata:
   labels:
     volsync.backube/privileged-movers: "true"
   annotations:
-    volsync.backube/privileged-movers: "true" 
+    volsync.backube/privileged-movers: "true"

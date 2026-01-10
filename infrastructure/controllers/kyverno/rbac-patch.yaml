@@ -7,14 +7,14 @@ metadata:
     app.kubernetes.io/instance: kyverno
     app.kubernetes.io/part-of: kyverno
 rules:
-  # Required for context apiCall to read volsync-rustfs-base secret
-  - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: ["get", "list", "watch"]
-  # Required to generate per-PVC volsync secrets
-  - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: ["create", "update", "delete"]
+# Required for context apiCall to read volsync-rustfs-base secret
+- apiGroups: [ "" ]
+  resources: [ "secrets" ]
+  verbs: [ "get", "list", "watch" ]
+# Required to generate per-PVC volsync secrets
+- apiGroups: [ "" ]
+  resources: [ "secrets" ]
+  verbs: [ "create", "update", "delete" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -29,9 +29,9 @@ roleRef:
   kind: ClusterRole
   name: kyverno:background-controller:volsync
 subjects:
-  - kind: ServiceAccount
-    name: kyverno-background-controller
-    namespace: kyverno
+- kind: ServiceAccount
+  name: kyverno-background-controller
+  namespace: kyverno
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -42,10 +42,10 @@ metadata:
     app.kubernetes.io/instance: kyverno
     app.kubernetes.io/part-of: kyverno
 rules:
-  # Required for admission webhook to validate policies that use context apiCall for Secrets
-  - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: ["get", "list"]
+# Required for admission webhook to validate policies that use context apiCall for Secrets
+- apiGroups: [ "" ]
+  resources: [ "secrets" ]
+  verbs: [ "get", "list" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -60,6 +60,6 @@ roleRef:
   kind: ClusterRole
   name: kyverno:admission-controller:volsync
 subjects:
-  - kind: ServiceAccount
-    name: kyverno-admission-controller
-    namespace: kyverno
+- kind: ServiceAccount
+  name: kyverno-admission-controller
+  namespace: kyverno

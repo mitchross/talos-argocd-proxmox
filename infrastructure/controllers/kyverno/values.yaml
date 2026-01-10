@@ -15,19 +15,19 @@ admissionController:
   rbac:
     clusterRole:
       extraResources:
-        - apiGroups:
-            - volsync.backube
-          resources:
-            - replicationsources
-            - replicationdestinations
-          verbs:
-            - create
-            - delete
-            - get
-            - list
-            - patch
-            - update
-            - watch
+      - apiGroups:
+        - volsync.backube
+        resources:
+        - replicationsources
+        - replicationdestinations
+        verbs:
+        - create
+        - delete
+        - get
+        - list
+        - patch
+        - update
+        - watch
 
 backgroundController:
   replicas: 1
@@ -40,19 +40,19 @@ backgroundController:
   rbac:
     clusterRole:
       extraResources:
-        - apiGroups:
-            - volsync.backube
-          resources:
-            - replicationsources
-            - replicationdestinations
-          verbs:
-            - create
-            - delete
-            - get
-            - list
-            - patch
-            - update
-            - watch
+      - apiGroups:
+        - volsync.backube
+        resources:
+        - replicationsources
+        - replicationdestinations
+        verbs:
+        - create
+        - delete
+        - get
+        - list
+        - patch
+        - update
+        - watch
 
 cleanupController:
   replicas: 1
