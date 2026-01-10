@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: plex-config-pvc
+  name: config
   namespace: plex
   labels:
     app: plex

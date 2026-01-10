@@ -24,7 +24,7 @@ helmCharts:
           enabled: true
           size: 10Gi
           storageClass: longhorn
-          existingClaim: redis-data-redis-master-0
+          existingClaim: redis-master-0
         service:
           type: ClusterIP
           ports:

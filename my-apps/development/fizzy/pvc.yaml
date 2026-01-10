@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: fizzy-data
+  name: data
   namespace: fizzy
   labels:
     app.kubernetes.io/name: fizzy

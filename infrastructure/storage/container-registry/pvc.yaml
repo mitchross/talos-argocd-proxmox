@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: registry-pvc
+  name: registry
   namespace: kube-system
   labels:
     app.kubernetes.io/name: container-registry

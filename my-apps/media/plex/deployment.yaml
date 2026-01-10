@@ -73,7 +73,7 @@ spec:
       volumes:
         - name: config
           persistentVolumeClaim:
-            claimName: plex-config-pvc
+            claimName: config
         - name: media
           nfs:
             server: 192.168.10.133

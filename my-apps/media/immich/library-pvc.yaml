@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: immich-library
+  name: library
   namespace: immich
   labels:
     app.kubernetes.io/name: immich

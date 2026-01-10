@@ -55,4 +55,4 @@ spec:
       volumes:
         - name: fizzy-storage
           persistentVolumeClaim:
-            claimName: fizzy-data
+            claimName: data

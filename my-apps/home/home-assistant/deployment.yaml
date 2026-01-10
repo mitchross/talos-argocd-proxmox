@@ -170,7 +170,7 @@ spec:
       volumes:
         - name: config
           persistentVolumeClaim:
-            claimName: home-assistant-config
+            claimName: config
         - name: config-files
           configMap:
-            name: home-assistant-config
+            name: config
