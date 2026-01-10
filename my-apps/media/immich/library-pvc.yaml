@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: library
-    backup: "hourly"
+    # backup: "hourly"  # DISABLED during bootstrap - will re-enable after DB is ready
 spec:
   accessModes:
     - ReadWriteOnce
