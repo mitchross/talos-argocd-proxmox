@@ -28,6 +28,13 @@ spec:
         operator: "Equal"
         value: "true"
         effect: "NoSchedule"
+      initContainers:
+      - name: git-config
+        image: alpine/git
+        command: ["sh", "-c", "git config --global core.fileMode false || true"]
+        volumeMounts:
+        - name: comfyui-storage
+          mountPath: /root
       containers:
       - name: comfyui
         # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu128-slim
