@@ -14,72 +14,82 @@ Add a label to your PVC → Backups happen automatically → Restores happen aut
 
 That's it. No clicking buttons. No running restore commands. No editing configs.
 
-### How It Works (Simple Version)
+### How It Works (Smart Restore)
+
+The architecture uses a **"Look Before You Leap"** strategy to decide whether to restore data or start fresh.
 
 When you deploy an app with `backup: "hourly"` on its PVC:
 
-1. **If no backup exists** → App starts with fresh/empty storage, backups begin automatically
-2. **If backup exists in S3** → App automatically restores from the latest backup
+1. **Kyverno Intercepts**: Before the PVC is created, Kyverno pauses and checks S3.
+2. **S3 Check**: Kyverno pings the S3 bucket via an internal Service (`rustfs`).
+    - **Found (200 OK):** Kyverno says "Ah, this is a restore!" and creates a restore job.
+    - **Missing (404):** Kyverno says "New App!" and lets it start empty.
+3. **VolSync Response**: If a restore job was created, VolSync populates the PVC *before* the app starts.
 
 The system figures out which scenario you're in and does the right thing.
 
 ---
 
-## What Problems Does This Solve?
+## Architecture
 
-### Problem 1: "My cluster died, how do I restore?"
+### Components
 
-**Old way:** Manually restore each app's data from backups, one by one.
+```mermaid
+graph TD
+    subgraph "External Storage"
+        S3[("S3 / TrueNAS<br/>(192.168.10.133)")]
+    end
 
-**This system:** Rebuild your cluster, deploy apps, data restores automatically.
+    subgraph "Kubernetes Cluster"
+        subgraph "Volsync System"
+            B[("Service: rustfs")] --> S3
+            V[("VolSync Operator")]
+        end
 
-### Problem 2: "I removed an app and want it back with my old data"
+        subgraph "Policy Engine"
+            K[("Kyverno")]
+            P_Smart[("Policy: Smart Restore")]
+        end
 
-**Old way:** Hope you have backups, manually restore them.
+        subgraph "Application Namespace"
+            PVC[("PVC: data-claim")]
+            RD[("ReplicationDestination<br/>(Restore Job)")]
+            RS[("ReplicationSource<br/>(Backup Job)")]
+        end
+    end
 
-**This system:** Re-add the app to ArgoCD, your old data comes back automatically.
+    %% Flows
+    K -- "1. apiCall (HEAD)" --> B
+    B -.-> S3
+    
+    %% Decision Logic
+    K -- "2a. If 200 OK (Found)" --> RD
+    RD -- "3. Pull Data" --> S3
+    RD -- "4. Populate" --> PVC
+    
+    K -- "2b. If 404 (Missing)" --> PVC
+    PVC -- "5. Start Fresh" --> RS
+    RS -- "6. Push Backups" --> S3
 
-### Problem 3: "I don't want to add backup boilerplate to every app"
-
-**Old way:** Copy-paste 100+ lines of backup configuration for each app.
-
-**This system:** Add one label: `backup: "hourly"`. Done.
-
----
-
-## The User Experience
-
-### For App Developers
-
-Just add this label to your PVC:
-
-```yaml
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: my-app-data
-  labels:
-    backup: "hourly"  # <-- This is all you need
-spec:
-  accessModes: ["ReadWriteOnce"]
-  resources:
-    requests:
-      storage: 10Gi
+    classDef external fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef policy fill:#ffd,stroke:#333,stroke-width:2px;
+    classDef storage fill:#dfd,stroke:#333,stroke-width:2px;
+    classDef app fill:#eef,stroke:#333,stroke-width:2px;
+    
+    class S3 external;
+    class K,P_Smart policy;
+    class B,V,RD,RS storage;
+    class PVC app;
 ```
 
-Everything else is automatic:
-- Backups run hourly to S3
-- If you delete and re-add the app, data restores automatically
-- If you rebuild the cluster, data restores automatically
-- If it's a fresh install, the app starts with empty storage (as expected)
+### Component Roles
 
-### What You Should NEVER Have To Do
-
-- Click "restore" in any UI
-- Run restore commands manually
-- Edit configuration to switch between "fresh" and "restore" modes
-- Remember which apps have backups
-- Manually trigger backup jobs
+| Component | Resource | Purpose |
+| :--- | :--- | :--- |
+| **Kyverno** | `ClusterPolicy/volsync-smart-restore` | **The Brain.** Performs an `apiCall` to S3 to check if a backup exists. If yes, generates the `ReplicationDestination`. |
+| **Kyverno** | `ClusterPolicy/generate-volsync-backup` | **The Safety.** Automatically generates the `ReplicationSource` so future backups happen. |
+| **VolSync** | `Service/rustfs` | **The Bridge.** Maps the external TrueNAS IP (192.168.10.133) to an internal DNS name so Kyverno can reach it. |
+| **VolSync** | `ReplicationDestination` | **The Restore.** Instructs VolSync to populate a PVC from S3. Validates data integrity before binding. |
 
 ---
 
@@ -90,188 +100,55 @@ Everything else is automatic:
 You're setting up a brand new cluster with no previous data.
 
 **What happens:**
-1. You deploy your apps via ArgoCD
-2. Each app with `backup: "hourly"` starts with empty storage
-3. Backups begin automatically in the background
-4. S3 now has your data for future restores
+1. You deploy your apps via ArgoCD.
+2. Kyverno checks S3 for `s3://backups/ns/app`. Result: **404 Not Found**.
+3. Kyverno allows the PVC to be created *without* a restore source.
+4. App starts with empty storage.
+5. Kyverno generates a `ReplicationSource`, starting hourly backups.
 
-**Result:** Apps work normally, backups are set up for the future.
+**Result:** Apps work normally, clean slate.
 
 ### Scenario 2: Cluster Rebuild (Disaster Recovery)
 
 Your cluster died. You rebuild it from scratch.
 
 **What happens:**
-1. You bootstrap ArgoCD and infrastructure
-2. The system discovers your existing backups in S3
-3. When apps deploy, they automatically restore from S3
-4. Your data is back without any manual steps
+1. You bootstrap ArgoCD.
+2. Kyverno checks S3. Result: **200 OK** (Backup found!).
+3. Kyverno generates a `ReplicationDestination` pointing to that backup.
+4. Kyverno mutates the PVC to add `dataSourceRef: ReplicationDestination`.
+5. The PVC stays "Pending" while VolSync pulls data from S3.
+6. Once restored, the PVC binds, and the Pod starts.
 
-**Result:** Full recovery with zero manual intervention.
-
-### Scenario 3: Add a New App
-
-You add a new app to an existing cluster.
-
-**What happens:**
-- Same as Scenario 1 - no backup exists for this app yet
-- Starts fresh, backups begin automatically
-
-### Scenario 4: Remove and Re-add an App
-
-You remove an app from ArgoCD (maybe to test, maybe by accident). A week later, you want it back.
-
-**What happens:**
-1. When you removed the app, the S3 backup remained (backups are external)
-2. When you re-add the app, the system finds the old backup
-3. Your data is automatically restored
-
-**Result:** Your bookmarks, settings, data - all back automatically.
-
----
-
-## Architecture
-
-### Components
-
-```
-                                 ┌─────────────────┐
-                                 │                 │
-                                 │  S3 (External)  │  Backups live here
-                                 │                 │  Survives cluster death
-                                 │                 │
-                                 └────────┬────────┘
-                                          │
-                    ┌─────────────────────┼─────────────────────┐
-                    │                     │                     │
-                    │              KUBERNETES CLUSTER           │
-                    │                     │                     │
-                    │    ┌────────────────┼────────────────┐    │
-                    │    │                │                │    │
-                    │    │    ┌───────────▼───────────┐    │    │
-                    │    │    │                       │    │    │
-                    │    │    │       VOLSYNC         │    │    │
-                    │    │    │                       │    │    │
-                    │    │    │  ReplicationSource    │    │    │
-                    │    │    │  (backs up to S3)     │    │    │
-                    │    │    │                       │    │    │
-                    │    │    │  ReplicationDestination    │    │
-                    │    │    │  (restores from S3)   │    │    │
-                    │    │    │                       │    │    │
-                    │    │    └───────────┬───────────┘    │    │
-                    │    │                │                │    │
-                    │    │    ┌───────────▼───────────┐    │    │
-                    │    │    │                       │    │    │
-                    │    │    │       KYVERNO         │    │    │
-                    │    │    │    (Policy Engine)    │    │    │
-                    │    │    │                       │    │    │
-                    │    │    │  - Auto-creates       │    │    │
-                    │    │    │    backup resources   │    │    │
-                    │    │    │  - Auto-configures    │    │    │
-                    │    │    │    restore            │    │    │
-                    │    │    │                       │    │    │
-                    │    │    └───────────┬───────────┘    │    │
-                    │    │                │                │    │
-                    │    │    ┌───────────▼───────────┐    │    │
-                    │    │    │                       │    │    │
-                    │    │    │      LONGHORN         │    │    │
-                    │    │    │   (Storage Driver)    │    │    │
-                    │    │    │                       │    │    │
-                    │    │    │  - Provisions PVCs    │    │    │
-                    │    │    │  - Restores from      │    │    │
-                    │    │    │    snapshots          │    │    │
-                    │    │    │                       │    │    │
-                    │    │    └───────────────────────┘    │    │
-                    │    │                                 │    │
-                    │    └─────────────────────────────────┘    │
-                    │                                           │
-                    └───────────────────────────────────────────┘
-```
-
-### How the Pieces Fit Together
-
-| Component | Role |
-|-----------|------|
-| **S3 (RustFS)** | External storage for backups. Survives cluster rebuilds. |
-| **VolSync** | Kubernetes operator that handles backup/restore via restic |
-| **Kyverno** | Policy engine that auto-generates backup resources when it sees the `backup` label |
-| **Longhorn** | Storage driver that provisions volumes and supports restoring from snapshots |
-| **ArgoCD** | GitOps controller that deploys apps (not backup-specific, but orchestrates everything) |
-
----
-
-## Why VolSync Instead of Longhorn Backup?
-
-Longhorn has built-in backup to S3, but it requires clicking "Restore" in the Longhorn UI. That violates our "zero manual intervention" principle.
-
-VolSync can be fully automated through Kubernetes resources - no UI clicks needed.
-
----
-
-## Storage Requirements
-
-The storage system must support:
-
-1. **Pod migration** - Pods can move between nodes without losing data
-2. **CSI Volume Populator** - Ability to restore from external snapshots
-3. **No UI dependency** - All operations via Kubernetes resources
-
-Currently using **Longhorn**. Alternatives like OpenEBS or Rook-Ceph could work if they meet these requirements.
+**Result:** Fully automated recovery. Zero interaction.
 
 ---
 
 ## Technical Details
 
-For the technical deep-dive including:
-- The timing challenges with Kubernetes admission webhooks
-- Detailed sequence diagrams for each scenario
-- Problems encountered and solutions
-- Implementation steps
+### The "Bridge" (Service)
+Since policies run inside the cluster, they need to reach external storage reliably. We create a Service `rustfs` that points to `192.168.10.133`.
+- **Why?** It allows using `http://rustfs/...` in policies instead of hardcoded IPs. 
+- **Benefit:** If the Storage IP changes, you update one Service file, not 50 policies.
 
-See: [volsync-implementation-plan.md](./volsync-implementation-plan.md)
-
----
-
-## FAQ
-
-### Q: What if I don't want an app to be backed up?
-
-Don't add the `backup` label to its PVC. Simple.
-
-### Q: How often do backups run?
-
-With `backup: "hourly"`, backups run every hour. You can also use `backup: "daily"`.
-
-### Q: How much storage do backups use?
-
-Backups use restic which does deduplication. Only changed blocks are stored after the first backup.
-
-### Q: Can I restore to a specific point in time?
-
-Not automatically. The system always restores from the latest backup. For point-in-time recovery, you'd need manual intervention.
-
-### Q: What happens if S3 is unavailable during restore?
-
-The PVC will be stuck pending until S3 is available. The system doesn't fall back to fresh storage automatically (that could cause data loss).
-
-### Q: Is database data safe to backup this way?
-
-For simple databases, yes. For production databases like PostgreSQL, you should use database-native backup tools (like pgBackRest) that ensure consistency. This system is best for:
-- Application config files
-- Media libraries
-- Simple SQLite databases
-- User uploads
+### The "Smart" Policy (apiCall)
+Kyverno 1.10+ supports `apiCall` context variables. We use this to perform an HTTP HEAD request.
+- **Method:** `HEAD` (lightweight, just checks existence)
+- **Target:** `http://rustfs.volsync-system.svc:9000/volsync-backups/<namespace>/<pvc-name>`
+- **Logic:**
+  - `if response.code == 200` -> **RESTORE**
+  - `if response.code == 404` -> **FRESH**
 
 ---
 
 ## Current Implementation Status
 
-| Component | Status |
-|-----------|--------|
-| VolSync Operator | Deployed |
-| Longhorn Storage | Deployed |
-| Kyverno Policies | Partially implemented (needs work) |
-| Pre-warm CronJob | Not yet implemented |
-| S3 Bucket | Configured |
+| Component | Status | Notes |
+|-----------|--------|-------|
+| VolSync Operator | ✅ Deployed | |
+| Longhorn Storage | ✅ Deployed | |
+| **Service Bridge** | ✅ Implemented | `rustfs-service.yaml` maps to 192.168.10.133 |
+| **Smart Policy** | ✅ Implemented | `volsync-smart-restore.yaml` uses apiCall |
+| Pre-warm CronJob | ❌ Removed | Replaced by Smart Policy |
 
-See the [implementation plan](./volsync-implementation-plan.md) for next steps.
+See the [implementation plan](./volsync-implementation-plan.md) for deeper technical specs.

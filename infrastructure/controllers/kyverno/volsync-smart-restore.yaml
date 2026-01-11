@@ -1,0 +1,134 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: volsync-smart-protection
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    policies.kyverno.io/title: VolSync Smart Protection
+    policies.kyverno.io/description: >-
+      The "Brain" of the storage system.
+      1. Mutates PVCs to attach to backups IF they exist (Smart Restore).
+      2. Generates Restore Jobs (RD) IF backups exist.
+      3. Generates Backup Jobs (RS) always.
+spec:
+  validationFailureAction: enforce
+  background: false # We need immediate mutation for the PVC
+  rules:
+    # ------------------------------------------------------------------
+    # RULE 1: SMART MUTATE (Add dataSourceRef)
+    # ------------------------------------------------------------------
+    - name: link-restore-if-exists
+      match:
+        any:
+          - resources:
+              kinds: ["PersistentVolumeClaim"]
+              selector:
+                matchLabels:
+                  backup: "hourly"
+      context:
+        - name: repoCheck
+          apiCall:
+            urlPath: "/volsync-backups/{{ request.namespace }}/{{ request.object.metadata.name }}/config"
+            service:
+              name: rustfs
+              namespace: volsync-system
+              port: 9000
+            method: HEAD
+            jmesPath: "" 
+      preconditions:
+        all:
+          - key: "{{ repoCheck.code }}"
+            operator: Equals
+            value: 200
+      mutate:
+        patchStrategicMerge:
+          spec:
+            dataSourceRef:
+              kind: ReplicationDestination
+              apiGroup: volsync.backube
+              name: "{{ request.object.metadata.name }}-restore"
+
+    # ------------------------------------------------------------------
+    # RULE 2: SMART GENERATE (Create Restore Job)
+    # ------------------------------------------------------------------
+    - name: generate-restore-job
+      match:
+        any:
+          - resources:
+              kinds: ["PersistentVolumeClaim"]
+              selector:
+                matchLabels:
+                  backup: "hourly"
+      # Context must be repeated for separate rule
+      context:
+        - name: repoCheck
+          apiCall:
+            urlPath: "/volsync-backups/{{ request.namespace }}/{{ request.object.metadata.name }}/config"
+            service:
+              name: rustfs
+              namespace: volsync-system
+              port: 9000
+            method: HEAD
+            jmesPath: "" 
+      preconditions:
+        all:
+          - key: "{{ repoCheck.code }}"
+            operator: Equals
+            value: 200
+      generate:
+        apiVersion: volsync.backube/v1alpha1
+        kind: ReplicationDestination
+        name: "{{ request.object.metadata.name }}-restore"
+        namespace: "{{ request.object.metadata.namespace }}"
+        synchronize: true
+        data:
+          spec:
+            trigger:
+              manual: "restore-on-create"
+            restic:
+              repository: "s3:http://rustfs.volsync-system.svc:9000/volsync-backups/{{ request.object.metadata.namespace }}/{{ request.object.metadata.name }}"
+              copyMethod: Direct
+              storageClassName: "longhorn"
+              volumeSnapshotClassName: "longhorn"
+              cacheStorageClassName: "longhorn"
+              cacheAccessModes: ["ReadWriteOnce"]
+              cacheCapacity: "2Gi"
+              destinationPVC: "{{ request.object.metadata.name }}"
+              retain: 
+                hourly: 24
+                daily: 7
+
+    # ------------------------------------------------------------------
+    # RULE 3: ALWAYS BACKUP (Create Backup Job)
+    # ------------------------------------------------------------------
+    - name: generate-backup-job
+      match:
+        any:
+          - resources:
+              kinds: ["PersistentVolumeClaim"]
+              selector:
+                matchLabels:
+                  backup: "hourly"
+      generate:
+        apiVersion: volsync.backube/v1alpha1
+        kind: ReplicationSource
+        name: "{{ request.object.metadata.name }}-backup"
+        namespace: "{{ request.object.metadata.namespace }}"
+        synchronize: true
+        data:
+          spec:
+            sourcePVC: "{{ request.object.metadata.name }}"
+            trigger:
+              schedule: "0 * * * *"
+            restic:
+              pruneIntervalDays: 10
+              repository: "s3:http://rustfs.volsync-system.svc:9000/volsync-backups/{{ request.object.metadata.namespace }}/{{ request.object.metadata.name }}"
+              copyMethod: Direct
+              storageClassName: "longhorn"
+              volumeSnapshotClassName: "longhorn"
+              cacheStorageClassName: "longhorn"
+              cacheAccessModes: ["ReadWriteOnce"]
+              cacheCapacity: "2Gi"
+              retain:
+                hourly: 24
+                daily: 7
