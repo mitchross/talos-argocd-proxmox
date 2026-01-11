@@ -6,11 +6,11 @@ It uses a **Service Bridge** to allow Kyverno to "look before it leaps" by check
 
 ## Core Components
 
-### 1. The Bridge (Service)
-**File:** `infrastructure/storage/volsync/rustfs-service.yaml`
-Maps the external NAS IP (192.168.10.133) to an internal DNS name `rustfs.volsync-system`.
-*   **Protocol:** TCP/9000
-*   **Purpose:** Allows policies to target `http://rustfs.volsync-system:9000/...`
+### 1. The Bridge (Direct IP)
+**Strategy:** Direct Connection
+Instead of creating a Kubernetes Service (which causes ArgoCD sync issues for external IPs), we connect directly to the TrueNAS IP.
+*   **Target:** `192.168.10.133` (Port 9000)
+*   **Benefit:** Zero-friction GitOps state (no "ExcludedResourceWarning").
 
 ### 2. The Credentials (ExternalSecret)
 **File:** `infrastructure/storage/volsync/rustfs-credentials.yaml` (Existing)
@@ -27,10 +27,9 @@ Logic: "Check for Restic Config. If found, Restore. Else, Backup."
 
 **Rule 2: Smart Restore (Conditional)**
 *   Trigger: PVC `backup: hourly`
-*   **Context (apiCall):**
-    *   Target: `http://rustfs.volsync-system:9000/volsync-backups/<ns>/<pvc>/config`
-    *   Method: `HEAD`
-    *   Note: Checking `/config` verifies it's a valid Restic repo, not just an empty folder.
+*   **(apiCall):**
+    *   Target: `http://192.168.10.133:9000/volsync-backups/<ns>/<pvc>/config` (Direct IP)
+    *   Method: `GET` (Kyverno compatible)
 *   **Condition:** Response == 200 OK.
 *   **Action:** Create `ReplicationDestination`.
 
