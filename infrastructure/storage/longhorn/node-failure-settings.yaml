@@ -57,7 +57,7 @@ kind: Setting
 metadata:
   name: fast-replica-rebuild-enabled
   namespace: longhorn-system
-value: '{"v1":"true","v2":"true"}'
+value: "true"
 
 ---
 # Allow concurrent replica rebuilds per node
