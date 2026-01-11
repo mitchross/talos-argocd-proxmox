@@ -4,11 +4,11 @@ metadata:
   name: remove-pvc-datasource
   annotations:
     argocd.argoproj.io/sync-wave: "2"
-    policies.kyverno.io/title: Remove dataSource from new PVCs
+    policies.kyverno.io/title: Remove dataSource and dataSourceRef from new PVCs
     policies.kyverno.io/description: >-
-      Automatically removes spec.dataSource from new PVCs to prevent binding issues.
-      DataSource should only be set when explicitly restoring from backup, not by default.
-      This ensures PVCs bind immediately to fresh storage rather than waiting for restore.
+      Automatically removes spec.dataSource and spec.dataSourceRef from new PVCs to prevent
+      binding issues with VolSync restore. This ensures PVCs bind immediately to fresh storage
+      rather than waiting for ReplicationDestination restore jobs that may not exist.
 spec:
   rules:
   - name: remove-datasource-on-create
@@ -18,6 +18,8 @@ spec:
           kinds:
           - PersistentVolumeClaim
     mutate:
-      patchStrategicMerge:
-        spec:
-          dataSource: null
+      patchesJson6902: |-
+        - op: remove
+          path: /spec/dataSource
+        - op: remove
+          path: /spec/dataSourceRef
