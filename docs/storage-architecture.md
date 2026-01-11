@@ -1,45 +1,45 @@
 # Storage Architecture & Disaster Recovery
 
-This document outlines the storage architecture for the cluster, focusing on data persistence, backup strategies, and disaster recovery workflows.
+This document outlines the storage architecture for the cluster, focusing on the **Zero-Touch Backup & Restore** system powered by VolSync and Kyverno.
 
 ## Overview
 
-The cluster uses a layered storage approach with **zero-touch backup and restore**:
-- **Longhorn**: Distributed block storage for runtime replication (2 replicas per volume)
-- **Snapshot Controller**: Manages VolumeSnapshot lifecycles and CRDs
-- **VolSync + Kyverno**: Fully automated backup/restore - just label your PVC!
-- **Database-native backups**: CloudNativePG and Crunchy Postgres backup directly to S3
+The cluster uses a "Smart Restore" strategy. When a PersistentVolumeClaim (PVC) is created, the system checks if a backup *already exists* in the offsite storage (TrueNAS S3) before deciding what to do.
 
-## Zero-Touch Architecture (Smart Restore)
+-   **Backup Found?** -> Automatically trigger a Restore.
+-   **Backup Missing?** -> Automatically configure a fresh Backup schedule.
+
+## Zero-Touch Architecture (Direct IP Strategy)
+
+To ensure maximum stability and avoid GitOps sync issues, the system connects directly to the offsite storage IP.
 
 **User only needs to:**
-1. Add `backup: "hourly"` or `backup: "daily"` label to PVC
-2. Ensure namespace has `volsync.backube/privileged-movers: "true"` **label** (for base credentials)
-3. Ensure namespace has `volsync.backube/privileged-movers: "true"` **annotation** (for VolSync movers)
+1.  Add `backup: "hourly"` (or `daily`) label to any PVC.
+2.  That's it. (Credentials are auto-injected).
 
 **System automatically provides:**
-- **Kyverno** makes a smart decision:
-    - If backup exists? -> Creates Restore Job.
-    - If new app? -> Creates Backup Job.
+1.  **Smart Mutation:** Kyverno checks `http://192.168.10.133:9000/.../config`.
+2.  **Conditional Logic:**
+    *   **200 OK:** Adds `dataSourceRef` to the PVC (forcing it to wait for restore).
+    *   **404 Not Found:** Lets PVC start empty.
+3.  **Resource Generation:**
+    *   **Backup Job:** Always created (`ReplicationSource`).
+    *   **Restore Job:** Created ONLY if data exists (`ReplicationDestination`).
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│                           ZERO-TOUCH VOLSYNC ARCHITECTURE                        │
+│                           SMART RESTORE ARCHITECTURE                            │
 ├─────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                 │
 │   USER PROVIDES:                      SYSTEM AUTO-GENERATES:                    │
 │   ┌─────────────────────┐            ┌─────────────────────────────────────┐   │
-│   │ PVC                 │            │ volsync-rustfs-base (per namespace) │   │
-│   │   labels:           │            │   (ClusterExternalSecret → Secret)  │   │
+│   │ PVC                 │            │ volsync-smart-protection            │   │
+│   │   labels:           │            │   (ClusterPolicy)                   │   │
 │   │     backup: hourly  │            │                                     │   │
-│   └─────────────────────┘            │ {pvc}-volsync-secret (per PVC)      │   │
-│                                      │   (Kyverno apiCall + base64 encode) │   │
-│                                      │                                     │   │
-│                                      │ ReplicationSource                   │   │
-│                                      │   (hourly/daily backups to S3)      │   │
-│                                      │                                     │   │
-│                                      │ ReplicationDestination              │   │
-│                                      │   (Creates ONLY if backup exists)   │   │
+│   └─────────────────────┘            │   1. Checks 192.168.10.133 (GET)    │   │
+│                                      │   2. Mutates PVC (if found)         │   │
+│                                      │   3. Creates Backup Job (always)    │   │
+│                                      │   4. Creates Restore Job (if found) │   │
 │                                      └─────────────────────────────────────┘   │
 │                                                                                 │
 └─────────────────────────────────────────────────────────────────────────────────┘
@@ -54,121 +54,89 @@ graph TD
     end
 
     subgraph "Kubernetes Cluster"
-        subgraph "Volsync System"
-            B[("Service: rustfs")] --> S3
-            V[("VolSync Operator")]
-        end
-
         subgraph "Policy Engine"
-            K[("Kyverno")]
-            P_Smart[("Policy: Smart Restore")]
+            K[("Kyverno Policy<br/>(Smart Restore)")]
         end
 
         subgraph "Application Namespace"
             PVC[("PVC: data-claim")]
-            RD[("ReplicationDestination<br/>(Restore Job)")]
-            RS[("ReplicationSource<br/>(Backup Job)")]
+            RD[("Restore Job<br/>(ReplicationDestination)")]
+            RS[("Backup Job<br/>(ReplicationSource)")]
         end
     end
 
     %% Flows
-    K -- "1. apiCall (HEAD)" --> B
-    B -.-> S3
+    K -- "1. apiCall (GET)" --> S3
     
     %% Decision Logic
     K -- "2a. If 200 OK (Found)" --> RD
     RD -- "3. Pull Data" --> S3
-    RD -- "4. Populate" --> PVC
+    RD -- "4. Link to PVC" --> PVC
     
     K -- "2b. If 404 (Missing)" --> PVC
     PVC -- "5. Start Fresh" --> RS
     RS -- "6. Push Backups" --> S3
 ```
 
-## Kyverno Policies
+## Kyverno Policy Details
 
-### Smart Restore Policy (`volsync-smart-restore`)
-**The "Look Before You Leap" logic.**
-- Trigger: PVC creation.
-- Check: `apiCall` (HTTP HEAD) to S3 bucket.
-- Action:
-    - If HTTP 200: Generate `ReplicationDestination`.
-    - If HTTP 404: Do nothing (Allow fresh install).
+All logic is consolidated into a single policy: **`infrastructure/controllers/kyverno/volsync-smart-restore.yaml`**.
 
-### Generate Policy (`generate-volsync-backup`)
-**The "Backup Insurance".**
-- Trigger: PVC creation (always).
-- Action: Generate `ReplicationSource`.
-- Result: Ensures all fresh apps eventually get backed up.
+### Rules
+1.  **`link-restore-if-exists` (Mutate)**
+    *   **Check:** `GET http://192.168.10.133:9000/.../config`
+    *   **Action:** If 200, adds `dataSourceRef: ReplicationDestination` to the PVC.
+    *   **Why:** This pauses the PVC binding until VolSync populates the volume.
 
-### Mutate Policy (`volsync-auto-restore`)
-**The "Connection".**
-- Trigger: PVC creation.
-- Check: Does `ReplicationDestination` exist?
-- Action: If yes, add `dataSourceRef` to PVC.
-- Result: PVC waits for VolSync to restore data before binding.
+2.  **`generate-restore-job` (Generate)**
+    *   **Check:** Same as above.
+    *   **Action:** Creates the `ReplicationDestination` CRD that actually performs the download.
+
+3.  **`generate-backup-job` (Generate)**
+    *   **Check:** None (Always runs).
+    *   **Action:** Creates `ReplicationSource` to ensure the new data is backed up going forward.
 
 ## 4. Disaster Recovery Scenarios
 
 ### Scenario 1: New App (First Deployment)
 ```
-1. User creates PVC with backup: hourly label.
-2. Kyverno checks S3: 404 Not Found.
-3. Kyverno allows PVC creation WITHOUT dataSourceRef.
-4. App starts with empty volume.
-5. Kyverno generates ReplicationSource.
-6. First backup runs.
+1. User creates PVC.
+2. Kyverno checks S3 -> 404.
+3. PVC created empty (ready immediately).
+4. Kyverno creates Backup Job.
+5. First backup runs in 1 hour.
 ```
 
-### Scenario 2: Cluster Rebuild (Disaster Recovery)
+### Scenario 2: Cluster Rebuild (Total DR)
 ```
-1. Bootstrap new Cluster.
-2. ArgoCD syncs app.
-3. Kyverno checks S3: 200 OK (Found backup!).
-4. Kyverno generates ReplicationDestination.
-5. Kyverno mutates PVC to add dataSourceRef.
-6. PVC waits (Pending) while VolSync pulls data.
-7. Volume restores -> Pod starts.
-```
-
-### Scenario 3: Manual Restore (Specific Point in Time)
-```bash
-# 1. Scale down the application
-kubectl scale deployment <app> -n <namespace> --replicas=0
-
-# 2. Delete the PVC
-kubectl delete pvc <pvc-name> -n <namespace>
-
-# 3. (Optional) Update ReplicationDestination to point to older snapshot if needed
-#    ArgoCD will typically re-sync the latest.
-
-# 4. ArgoCD recreates PVC
-#    Kyverno sees backup exists -> generates RD -> restores.
+1. Cluster is rebuilt. ArgoCD installs app.
+2. Kyverno checks S3 -> 200.
+3. Kyverno creates Restore Job.
+4. Kyverno Links PVC to Restore Job.
+5. Pod waits in Pending...
+6. VolSync downloads data...
+7. PVC binds. Pod starts.
 ```
 
-## 5. Defense Layers Summary
-
-| Layer | Protects Against | Recovery Time | Manual Intervention |
-|-------|------------------|---------------|---------------------|
-| Longhorn replicas | Node failure | Instant | None |
-| VolSync + Kyverno | Cluster loss | ~5-15 minutes | None (Zero Touch) |
-
-## 8. Configuration Files
+## 5. Configuration Files
 
 | Component | Location |
 |-----------|----------|
-| VolSync operator | `infrastructure/storage/volsync/` |
-| **RustFS Service** | `infrastructure/storage/volsync/rustfs-service.yaml` |
-| **Smart Restore Policy** | `infrastructure/controllers/kyverno/volsync-smart-restore.yaml` |
-| Generate Policy | `infrastructure/controllers/kyverno/volsync-clusterpolicy.yaml` |
-| Mutate Policy | `infrastructure/controllers/kyverno/volsync-auto-restore.yaml` |
+| **Smart Policy (The Brain)** | `infrastructure/controllers/kyverno/volsync-smart-restore.yaml` |
+| **VolSync Kustomization** | `infrastructure/storage/volsync/kustomization.yaml` |
+| **Credentials** | `infrastructure/storage/volsync/rustfs-credentials.yaml` |
 
-## 9. Troubleshooting
+## 6. Troubleshooting
 
-### Kyverno apiCall Failed
-If Kyverno cannot reach S3, check the Service Bridge:
+### "OutOfSync" in ArgoCD?
+This is usually cosmetic due to Kyverno status updates.
+We have applied `ignoreDifferences` in the AppSet to silence `ClusterPolicy` status fields.
+If it persists, verify your local Git matches the API Server.
+
+### Manual Restore
+To force a restore to a specific point in time:
 ```bash
-kubectl get svc rustfs -n volsync-system
-kubectl describe endpoints rustfs -n volsync-system
-# Should point to 192.168.10.133:9000
+kubectl delete pvc <pvc-name>
+# Update the ReplicationDestination spec if needed to point to a specific snapshot ID
+# Re-create PVC (ArgoCD will do this).
 ```
