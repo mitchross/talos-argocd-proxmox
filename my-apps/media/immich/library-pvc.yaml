@@ -9,7 +9,7 @@ metadata:
     # backup: "hourly"  # DISABLED during bootstrap - will re-enable after DB is ready
 spec:
   accessModes:
-    - ReadWriteOnce
+  - ReadWriteOnce
   resources:
     requests:
       storage: 100Gi
