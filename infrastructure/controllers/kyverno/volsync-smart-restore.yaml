@@ -27,12 +27,9 @@ spec:
                   backup: "hourly"
       context:
         - name: repoCheck
+        - name: repoCheck
           apiCall:
-            urlPath: "/volsync-backups/{{ request.namespace }}/{{ request.object.metadata.name }}/config"
-            service:
-              name: rustfs
-              namespace: volsync-system
-              port: 9000
+            urlPath: "http://rustfs.volsync-system.svc:9000/volsync-backups/{{ request.namespace }}/{{ request.object.metadata.name }}/config"
             method: HEAD
             jmesPath: "" 
       preconditions:
@@ -62,12 +59,9 @@ spec:
       # Context must be repeated for separate rule
       context:
         - name: repoCheck
+        - name: repoCheck
           apiCall:
-            urlPath: "/volsync-backups/{{ request.namespace }}/{{ request.object.metadata.name }}/config"
-            service:
-              name: rustfs
-              namespace: volsync-system
-              port: 9000
+            urlPath: "http://rustfs.volsync-system.svc:9000/volsync-backups/{{ request.namespace }}/{{ request.object.metadata.name }}/config"
             method: HEAD
             jmesPath: "" 
       preconditions:
