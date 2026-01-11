@@ -5,7 +5,7 @@ resources:
   - namespace.yaml
   - externalsecret.yaml
   - rustfs-credentials.yaml
-  - sync-cronjob.yaml
+  - rustfs-service.yaml
 helmCharts:
   - name: volsync
     repo: https://backube.github.io/helm-charts
