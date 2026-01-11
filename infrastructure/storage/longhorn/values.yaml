@@ -12,9 +12,9 @@ defaultSettings:
   replicaAutoBalance: "best-effort"
   # Ensure new consolidated settings that can be per-engine stay simple scalars for V1-only clusters
   # These avoid parse errors like strconv.ParseBool/Int seen in manager logs when JSON strings are provided.
-  # Note: Use plain boolean for fastReplicaRebuildEnabled, not JSON format
+  # Note: Use plain values, not JSON format - JSON causes "mismatched data engines" errors
   fastReplicaRebuildEnabled: "true"
-  engineReplicaTimeout: '{"v1":"8"}'
+  engineReplicaTimeout: "8"
   # Reduced from 12 to 8 for homelab - still provides good performance with less CPU reservation
   guaranteedInstanceManagerCPU: "8"
 # -- Disables the pre-upgrade check job. This is recommended for GitOps tools
