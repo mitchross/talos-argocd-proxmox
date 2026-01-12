@@ -19,8 +19,6 @@ metadata:
   labels:
     app: mosquitto
     type: storage
-  annotations:
-    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
     - ReadWriteOnce
@@ -28,10 +26,6 @@ spec:
     requests:
       storage: 1Gi
   storageClassName: longhorn
-  dataSourceRef:
-    kind: ReplicationDestination
-    apiGroup: volsync.backube
-    name: mosquitto-storage-pvc-restore
 
 ---
 apiVersion: apps/v1
