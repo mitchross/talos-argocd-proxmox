@@ -6,3 +6,16 @@ replicaCount: 2
 image:
   repository: registry.k8s.io/sig-storage/snapshot-controller
   tag: v8.4.0
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - snapshot-controller
+          topologyKey: kubernetes.io/hostname
