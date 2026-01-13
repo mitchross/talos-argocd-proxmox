@@ -20,7 +20,7 @@ echo ""
 echo "⎈ Installing ArgoCD via Helm..."
 helm upgrade --install argocd argo-cd \
   --repo https://argoproj.github.io/argo-helm \
-  --version 9.1.3 \
+  --version 9.3.0 \
   --namespace argocd \
   --values "$ROOT_DIR/infrastructure/controllers/argocd/values.yaml" \
   --wait \

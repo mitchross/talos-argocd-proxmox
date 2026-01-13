@@ -47,8 +47,10 @@ This repository supports two bootstrap approaches:
 - Proxmox VMs or bare metal (see hardware below)
 - Domain configured in Cloudflare
 - 1Password account for secrets management
-- [Talosctl](https://www.talos.dev/v1.10/introduction/getting-started/) and [Talhelper](https://github.com/budimanjojo/talhelper) installed
-- `kubectl`, `kustomize`, `sops` installed locally
+- **Omni account** (recommended) or manual Talos setup
+- `kubectl` and `helm` installed locally
+
+> **See [BOOTSTRAP.md](BOOTSTRAP.md) for detailed prerequisites and setup instructions.**
 
 ## 🏗️ Architecture
 
@@ -94,201 +96,70 @@ The cluster uses **ArgoCD Sync Waves** to strictly order deployments, preventing
 
 *See [docs/argocd.md](docs/argocd.md) for the deep dive on health checks and dependency management.*
 
-## 🚀 Quick Start (Manual Talos Method)
+## 🚀 Quick Start
 
-> **Note:** If you're using Omni + Sidero Proxmox Provider, see **[BOOTSTRAP.md](BOOTSTRAP.md)** instead.
+The cluster bootstrap process is fully documented in **[BOOTSTRAP.md](BOOTSTRAP.md)**. Follow that guide for step-by-step instructions.
 
-This section covers the traditional manual Talos bootstrap process using `talhelper` and `talosctl`.
+**Quick Overview:**
+1. **Provision Cluster** - Use Omni + Sidero Proxmox Provider (recommended) or manual Talos
+2. **Install Cilium** - CNI networking with Gateway API support
+3. **Configure Secrets** - Set up 1Password Connect and External Secrets
+4. **Bootstrap ArgoCD** - Deploy GitOps controller using the bootstrap script
+5. **Watch It Deploy** - ArgoCD automatically discovers and syncs all applications
 
-### 1. System Dependencies
-```bash
-# On your macOS workstation using Homebrew
-brew install talosctl sops yq kubectl kustomize
-brew install budimanjojo/tap/talhelper
+### Automated Deployment
 
-# For Linux/Windows, please see the official installation docs for each tool.
-```
+Once ArgoCD is bootstrapped, it automatically:
+- Syncs all applications from Git using **Sync Waves** (prevents race conditions)
+- Manages its own configuration (self-managing GitOps)
+- Discovers new applications by directory structure (no manual Application manifests)
+- Maintains cluster state declaratively
 
-### 2. Generate Talos Configs
-```bash
-# Navigate to the Talos configuration directory
-cd iac/talos
-
-# Edit talconfig.yaml to match your cluster topology and node IPs
-# Then, generate the encrypted secrets file
-talhelper gensecret > talsecret.sops.yaml
-
-# IMPORTANT: You must encrypt the file with SOPS for Talos to use it
-sops --encrypt --in-place talsecret.sops.yaml
-
-# Generate the machine configs for each node
-talhelper genconfig
-```
-
-### 3. Boot & Bootstrap Talos Nodes
-- Boot each VM or bare-metal host with its corresponding generated ISO from `iac/talos/clusterconfig/`.
-- Set your `TALOSCONFIG` and `KUBECONFIG` environment variables to point to the generated files.
-```bash
-# Set environment variables for your shell session
-export TALOSCONFIG=./iac/talos/clusterconfig/talosconfig
-export KUBECONFIG=./iac/talos/clusterconfig/kubeconfig
-```
-- Bootstrap the cluster on a **single control plane node**.
-```bash
-# Run ONCE on a single control plane node IP
-talosctl bootstrap --nodes <control-plane-ip>
-```
-- Apply the machine configuration to all nodes in the cluster. This command should be run from the root of the repository after setting `TALOSCONFIG`.
-```bash
-talosctl apply-config --nodes <node-ip-1> --file iac/talos/clusterconfig/<node-1-name>.yaml
-talosctl apply-config --nodes <node-ip-2> --file iac/talos/clusterconfig/<node-2-name>.yaml
-# ... repeat for all nodes
-```
-
-### 4. Install Gateway API CRDs
-This is a prerequisite for Cilium's Gateway API integration.
-```bash
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
-kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
-```
-### Install Cilium CNI with Gateway API support
-```bash
-kubectl kustomize infrastructure/networking/cilium --enable-helm | kubectl apply -f -
-
-
-# Verify Cilium is running
-kubectl get pods -n kube-system -l k8s-app=cilium
-```
-
-### 5. Configure Secret Management
-This cluster uses [1Password Connect](https://developer.1password.com/docs/connect) and [External Secrets Operator](https://external-secrets.io/) to manage secrets.
-
-1.  **Generate 1Password Connect Credentials**: Follow the [1Password documentation](https://developer.1password.com/docs/connect/get-started#step-2-deploy-the-1password-connect-server) to generate your `1password-credentials.json` file and your access token.
-
-2.  **Create Namespaces**:
-    ```bash
-    kubectl create namespace 1passwordconnect
-    kubectl create namespace external-secrets
-    ```
-
-3.  **Create Kubernetes Secrets**:
-    ```bash
-    eval $(op signin)
-    export OP_CREDENTIALS=$(op read op://homelabproxmox/1passwordconnect/1password-credentials.json | base64 | tr -d '\n')
-    export OP_CONNECT_TOKEN=$(op read 'op://homelabproxmox/1password-operator-token/credential')
-
-    kubectl create secret generic 1password-credentials \
-      --namespace 1passwordconnect \
-      --from-literal=1password-credentials.json="$OP_CREDENTIALS"
-
-    kubectl create secret generic 1password-operator-token \
-      --namespace 1passwordconnect \
-      --from-literal=token="$OP_CONNECT_TOKEN"
-
-    kubectl create secret generic 1passwordconnect \
-      --namespace external-secrets \
-      --from-literal=token="$OP_CONNECT_TOKEN"
-    ```
-
-### 6. Bootstrap ArgoCD & Deploy The Stack
-This final step uses our "App of Apps" pattern to bootstrap the entire cluster. This is a multi-step process to avoid race conditions with CRD installation.
-
-```bash
-# 1. Apply the ArgoCD main components and CRDs
-# This deploys the ArgoCD Helm chart, which creates the CRDs and controller.
-kustomize build infrastructure/controllers/argocd --enable-helm | kubectl apply -f -
-# NOTE: You'll see an error about "no matches for kind Application" - this is EXPECTED!
-# The root.yaml Application can't be applied until the CRDs are established in step 2.
-
-# 2. Wait for the ArgoCD CRDs to be established in the cluster
-# This command pauses until the Kubernetes API server recognizes the 'Application' resource type.
-echo "Waiting for ArgoCD CRDs to be established..."
-kubectl wait --for condition=established --timeout=60s crd/applications.argoproj.io
-
-# 3. Wait for the ArgoCD server to be ready
-# This ensures the ArgoCD server is running before we apply the root application.
-echo "Waiting for ArgoCD server to be available..."
-kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
-
-# 4. Apply the Root Application
-# Now that ArgoCD is running and its CRDs are ready, we can apply the 'root' application
-# to kickstart the self-managing GitOps loop.
-echo "Applying the root application..."
-kubectl apply -f infrastructure/controllers/argocd/root.yaml
-```
-**That's it!** You have successfully and reliably bootstrapped the cluster.
-
-### What Happens Next Automatically?
-
-1.  **ArgoCD Syncs Itself**: The `root` Application tells ArgoCD to sync the contents of `infrastructure/argocd/apps/`.
-2.  **Projects & AppSets Created**: ArgoCD creates the `AppProject`s and the three `ApplicationSet`s (`infrastructure`, `monitoring`, `my-apps`).
-3.  **Applications Discovered**: The `ApplicationSet`s scan the repository for any directories matching their defined paths (e.g., `infrastructure/*`, `monitoring/*`, `my-apps/*/*`) and create the corresponding ArgoCD `Application` resources.
-4.  **Cluster Reconciliation**: ArgoCD syncs all discovered applications, building the entire cluster state declaratively from Git.
+**See [BOOTSTRAP.md](BOOTSTRAP.md) for complete instructions.**
 
 ## 🔍 Verification
-After the final step, you can monitor the deployment and verify that everything is working correctly.
+After bootstrap completes, verify everything is working:
 
 ```bash
-# Check Talos node health (run for each node)
-talosctl health --nodes <node-ip>
-
-# Watch ArgoCD sync status
-# The `STATUS` column should eventually show `Synced` for all applications
+# Watch ArgoCD sync status (STATUS should show 'Synced')
 kubectl get applications -n argocd -w
 
-# Verify all pods are running across the cluster
-# It may take 10-15 minutes for all images to pull and pods to become Ready.
+# Verify all pods are running (may take 10-15 minutes)
 kubectl get pods -A
 
-# Check that secrets have been populated by External Secrets
+# Check External Secrets are populated
 kubectl get externalsecret -A
-# You should see secrets like `cloudflare-api-credentials` in the `cert-manager` namespace
 
-# Verify the Longhorn UI is accessible and backups are configured
+# Verify Longhorn backups configured
 kubectl get backuptarget -n longhorn-system
+
+# View sync waves in action
+kubectl get applications -n argocd -o custom-columns=NAME:.metadata.name,WAVE:.metadata.annotations.argocd\.argoproj\.io/sync-wave,STATUS:.status.sync.status
 ```
 
-## 🛡️ Talos-Specific Notes
-- **No SSH**: All management via `talosctl` API
-- **Immutable OS**: No package manager, no shell
-- **Declarative**: All config in Git, applied via Talhelper/Talosctl
-- **System Extensions**: GPU, storage, and other drivers enabled via config
-- **SOPS**: Used for encrypting Talos secrets
-- **No plaintext secrets in Git**
+**Full verification steps in [BOOTSTRAP.md](BOOTSTRAP.md#verification)**
 
-#### Upgrading Nodes
-When a new version of Talos is released or system extensions in `iac/talos/talconfig.yaml` are changed, follow this process to upgrade your nodes. This method uses the direct `upgrade` command to ensure the new system image is correctly applied, which is more reliable than `apply-config` for image changes.
+## 🛡️ Talos OS Features
+- **No SSH**: All management via API (Omni UI or `talosctl`)
+- **Immutable OS**: No package manager, no shell access
+- **Declarative**: All config stored in Git or Omni
+- **System Extensions**: GPU, storage drivers enabled at boot
+- **Secure by Default**: Minimal attack surface
 
-**Important:** Always upgrade control plane nodes **one at a time**, waiting for each node to successfully reboot and rejoin the cluster before proceeding to the next. This prevents losing etcd quorum. Worker nodes can be upgraded in parallel after the control plane is healthy.
+### Node Management
 
-1.  **Update Configuration**:
-    Modify `iac/talos/talconfig.yaml` with the new `talosVersion` or changes to `systemExtensions`.
+**Using Omni (Recommended):**
+- Manage all nodes through Omni web UI
+- Automated Talos upgrades
+- Visual cluster health monitoring
+- No manual `talosctl` commands needed
 
-2.  **Ensure Environment is Set**:
-    Make sure your `TALOSCONFIG` variable is pointing to your generated cluster configuration file as described in the Quick Start.
+**Manual Talos:**
+- See `iac/talos/` directory for configuration
+- Use `talosctl` for node operations
+- Requires `talhelper` for config generation
 
-3.  **Upgrade a Control Plane Node**:
-    Run the following commands from the root of the repository. Replace `<node-name>` and `<node-ip>` with the target node's details. Run this for each control plane node sequentially.
-
-    ```bash
-    # Example for the first control plane node
-    NODE_NAME="talos-cluster-control-00"
-    NODE_IP="192.168.10.100" # Replace with your node's IP
-    INSTALLER_URL=$(talhelper genurl installer -c iac/talos/talconfig.yaml -n "$NODE_NAME")
-    talosctl upgrade --nodes "$NODE_IP" --image "$INSTALLER_URL"
-    ```
-    Wait for the command to complete and verify the node is healthy with `talosctl health --nodes <node-ip>` before moving to the next control plane node.
-
-4.  **Upgrade Worker Nodes**:
-    Once the control plane is fully upgraded and healthy, you can upgrade the worker nodes. These can be run in parallel from separate terminals.
-    ```bash
-    # Example for the GPU worker node
-    NODE_NAME="talos-cluster-gpu-worker-00"
-    NODE_IP="192.168.10.200" # Replace with your node's IP
-    INSTALLER_URL=$(talhelper genurl installer -c iac/talos/talconfig.yaml -n "$NODE_NAME")
-    talosctl upgrade --nodes "$NODE_IP" --image "$INSTALLER_URL"
-    ```
+> **For manual Talos setup and upgrades, see legacy documentation in `iac/talos/README.md`**
 
 ## 🗄️ MinIO S3 Backup Configuration
 
