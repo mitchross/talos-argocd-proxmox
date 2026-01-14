@@ -4,7 +4,7 @@ metadata:
   name: infrastructure
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "4"
 spec:
   generators:
   - git:
@@ -28,7 +28,10 @@ spec:
       - path: infrastructure/storage/csi-driver-nfs
       - path: infrastructure/storage/csi-driver-smb
       - path: infrastructure/storage/local-storage
+      - path: infrastructure/storage/longhorn
       - path: infrastructure/storage/openebs
+      - path: infrastructure/storage/snapshot-controller
+      - path: infrastructure/storage/volsync
       - path: infrastructure/database/*/*
       - path: infrastructure/crds
   template:

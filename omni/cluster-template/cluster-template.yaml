@@ -5,28 +5,34 @@ name: talos-prod-cluster
 labels:
   cluster-id: "1"
 kubernetes:
-  version: v1.35.0
+  version: v1.34.1
 talos:
-  version: v1.12.0
+  version: v1.11.6
 patches:
-  - name: disable-default-cni
-    inline:
-      cluster:
-        network:
-          cni:
-            name: none
-        proxy:
-          disabled: true
+- name: disable-default-cni
+  inline:
+    cluster:
+      network:
+        cni:
+          name: none
+      proxy:
+        disabled: true
+- name: dns-resolver # DNS resolver configuration
+  inline:
+    machine:
+      network:
+        nameservers:
+        - 192.168.10.1
 ---
 kind: ControlPlane
 machineClass:
   name: proxmox-control-plane
   size: 3
 systemExtensions:
-  - siderolabs/iscsi-tools
-  - siderolabs/nfsd
-  - siderolabs/qemu-guest-agent
-  - siderolabs/util-linux-tools
+- siderolabs/iscsi-tools
+- siderolabs/nfsd
+- siderolabs/qemu-guest-agent
+- siderolabs/util-linux-tools
 ---
 kind: Workers
 name: workers
@@ -34,28 +40,28 @@ machineClass:
   name: proxmox-worker
   size: 3
 systemExtensions:
-  - siderolabs/iscsi-tools
-  - siderolabs/nfsd
-  - siderolabs/qemu-guest-agent 
-  - siderolabs/util-linux-tools
+- siderolabs/iscsi-tools
+- siderolabs/nfsd
+- siderolabs/qemu-guest-agent
+- siderolabs/util-linux-tools
 patches:
-  - name: worker-labels
-    inline:
-      machine:
-        nodeLabels:
-          node-role.kubernetes.io/worker: ""
-  - name: longhorn-storage
-    inline:
-      machine:
-        kubelet:
-          extraMounts:
-            - destination: /var/lib/longhorn
-              type: bind
-              source: /var/local/longhorn
-              options:
-                - bind
-                - rshared
-                - rw
+- name: worker-labels
+  inline:
+    machine:
+      nodeLabels:
+        node-role.kubernetes.io/worker: ""
+- name: longhorn-storage
+  inline:
+    machine:
+      kubelet:
+        extraMounts:
+        - destination: /var/lib/longhorn
+          type: bind
+          source: /var/local/longhorn
+          options:
+          - bind
+          - rshared
+          - rw
 ---
 kind: Workers
 name: gpu-workers
@@ -63,28 +69,29 @@ machineClass:
   name: proxmox-gpu-worker
   size: 1
 systemExtensions:
-  - siderolabs/iscsi-tools
-  - siderolabs/nfsd
-  - siderolabs/qemu-guest-agent
-  - siderolabs/util-linux-tools
-  - siderolabs/nonfree-kmod-nvidia-production
-  - siderolabs/nvidia-container-toolkit-production
+- siderolabs/iscsi-tools
+- siderolabs/nfsd
+- siderolabs/qemu-guest-agent
+- siderolabs/util-linux-tools
+- siderolabs/nonfree-kmod-nvidia-production
+- siderolabs/nvidia-container-toolkit-production
 patches:
-  - name: worker-labels
-    inline:
-      machine:
-        nodeLabels:
-          node-role.kubernetes.io/worker: ""
-  - file: patches/gpu-worker.yaml
-  - name: longhorn-storage
-    inline:
-      machine:
-        kubelet:
-          extraMounts:
-            - destination: /var/lib/longhorn
-              type: bind
-              source: /var/local/longhorn
-              options:
-                - bind
-                - rshared
-                - rw
+- name: gpu-worker-labels
+  inline:
+    machine:
+      nodeLabels:
+        gpu-worker: "true"
+        nvidia.com/gpu: "true"
+- file: patches/gpu-worker.yaml
+- name: longhorn-storage
+  inline:
+    machine:
+      kubelet:
+        extraMounts:
+        - destination: /var/lib/longhorn
+          type: bind
+          source: /var/local/longhorn
+          options:
+          - bind
+          - rshared
+          - rw
