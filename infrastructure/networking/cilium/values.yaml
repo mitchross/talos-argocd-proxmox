@@ -1,4 +1,8 @@
 # Cilium Helm Values for Talos Proxmox Production Cluster
+# ArgoCD Sync Wave: 0 (Foundation - must deploy before everything else)
+annotations:
+  argocd.argoproj.io/sync-wave: "0"
+
 # Cluster Configuration
 cluster:
   name: talos-prod-cluster
@@ -54,14 +58,14 @@ socketLB:
 # Enable Bandwidth Manager for better TCP performance
 bandwidthManager:
   enabled: true
-  bbr: true  # Enable BBR congestion control
+  bbr: true # Enable BBR congestion control
 
 # BPF Host Routing
 bpf:
   masquerade: true
   # Connection tracking improvements for better session handling
-  ctTcpTimeout: 21600  # 6 hours (default is 6 hours but explicit is better)
-  ctAnyTimeout: 3600   # 1 hour for non-TCP connections
+  ctTcpTimeout: 21600 # 6 hours (default is 6 hours but explicit is better)
+  ctAnyTimeout: 3600 # 1 hour for non-TCP connections
 
 # L2 Announcements for LoadBalancer Services
 l2announcements:
@@ -92,7 +96,7 @@ gatewayAPI:
   externalTrafficPolicy: Local
   # Enable session affinity for consistent routing
   sessionAffinity: true
-  sessionAffinityTimeoutSeconds: 10800  # 3 hours
+  sessionAffinityTimeoutSeconds: 10800 # 3 hours
 
 # Hubble (Observability)
 hubble:

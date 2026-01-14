@@ -4,7 +4,7 @@ metadata:
   name: my-apps
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/sync-wave: "6"
 spec:
   generators:
   - git:

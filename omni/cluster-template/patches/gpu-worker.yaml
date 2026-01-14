@@ -1,17 +1,32 @@
+# GPU Worker Talos Configuration
+# Network topology:
+#   ens18 (net0/vmbr0) - Main LAN 192.168.10.x (DHCP) - 2.5G over switch
+#   ens19 (net1/vmbr1) - Storage 172.31.250.x (static) - 10G DAC direct to TrueNAS
+#
+# IMPORTANT: ens18 MUST be the default route for kubelet to register correctly
 machine:
   network:
     interfaces:
-      - interface: ens18
-        dhcp: true
-      - interface: ens19
-        dhcp: false
-        addresses:
-          - 172.31.250.10/24
+    - interface: ens18
+      dhcp: true
+      dhcpOptions:
+        routeMetric: 100
+    - interface: ens19
+      dhcp: false
+      addresses:
+      - 172.31.250.10/24
+      routes:
+      - network: 172.31.250.0/24
+        metric: 200
+  kubelet:
+    nodeIP:
+      validSubnets:
+      - 192.168.10.0/24
   kernel:
     modules:
-      - name: nvidia
-      - name: nvidia_uvm
-      - name: nvidia_drm
-      - name: nvidia_modeset
+    - name: nvidia
+    - name: nvidia_uvm
+    - name: nvidia_drm
+    - name: nvidia_modeset
   sysctls:
     net.core.bpf_jit_harden: 1
