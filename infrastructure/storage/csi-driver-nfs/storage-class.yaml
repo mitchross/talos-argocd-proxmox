@@ -1,0 +1,31 @@
+# ComfyUI NFS storage class (10G DAC)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-storageclass-comfyui
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: 172.31.250.1
+  share: /mnt/BigTank/k8s/comfyui
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+mountOptions:
+  - nfsvers=4.1
+  - nolock
+  - tcp
+---
+# llama-cpp NFS storage class (10G DAC)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-storageclass-llama-cpp
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: 172.31.250.1
+  share: /mnt/BigTank/k8s/llama-cpp
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+mountOptions:
+  - nfsvers=4.1
+  - nolock
+  - tcp

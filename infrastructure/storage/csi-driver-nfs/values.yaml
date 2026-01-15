@@ -1,13 +1,2 @@
 storageClass:
-  create: true
-  name: nfs-storageclass-comfyui
-  provisioner: nfs.csi.k8s.io
-  parameters:
-    server: 192.168.10.133
-    share: /mnt/BigTank/k8s/comfyui
-  reclaimPolicy: Retain
-  volumeBindingMode: Immediate
-  mountOptions:
-    - "nfsvers=4.1"
-    - "nolock"
-    - "tcp"
+  create: false

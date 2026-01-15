@@ -11,3 +11,4 @@ helmCharts:
     valuesFile: values.yaml
 resources:
   - namespace.yaml
+  - storage-class.yaml

@@ -5,8 +5,8 @@ metadata:
   namespace: llama-cpp
 spec:
   accessModes:
-    - ReadWriteOnce # Or ReadWriteMany if your SMB CSI driver supports it
+    - ReadWriteMany
   resources:
     requests:
       storage: 150Gi
-  storageClassName: llama-cpp-smb # Using your existing SMB StorageClass
+  storageClassName: nfs-storageclass-llama-cpp
