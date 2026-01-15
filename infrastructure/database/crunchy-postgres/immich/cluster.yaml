@@ -26,10 +26,10 @@ spec:
             memory: 512M
   patroni:
     dynamicConfiguration:
-      synchronous_mode: true
+      synchronous_mode: false  # Disabled for single replica
       postgresql:
         max_wal_size: 5GB
-        synchronous_commit: "on"
+        synchronous_commit: "off"  # Disabled for single replica
         parameters:
           max_connections: 500
   instances:
