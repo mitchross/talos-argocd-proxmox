@@ -2,8 +2,32 @@ persistence:
   enabled: true
   size: 10Gi
   storageClass: longhorn
+
 service:
   http:
     type: ClusterIP
   ssh:
     type: ClusterIP
+
+# Reduce HA overhead for homelab
+postgresql-ha:
+  enabled: true
+  postgresql:
+    replicaCount: 1  # Reduced from 3
+    persistence:
+      size: 10Gi
+      storageClass: longhorn
+  pgpool:
+    replicaCount: 1  # Reduced from default
+
+# Use single valkey instead of cluster
+valkey-cluster:
+  enabled: false
+
+valkey:
+  enabled: true
+  architecture: standalone
+  primary:
+    persistence:
+      size: 2Gi
+      storageClass: longhorn
