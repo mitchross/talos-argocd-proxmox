@@ -15,6 +15,8 @@ spec:
   config:
     parameters:
       shared_preload_libraries: "vchord.so"
+    pg_hba:
+      - "host all all 10.244.0.0/16 md5"  # Allow pod network without SSL
   monitoring:
     pgmonitor:
       exporter:
