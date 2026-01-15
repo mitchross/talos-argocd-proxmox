@@ -1,0 +1,11 @@
+# 2.5G LAN NFS CSI Controller
+# Runs on any worker node (all can reach 192.168.10.133)
+
+storageClass:
+  create: false
+
+# Controller on any non-control-plane node
+controller:
+  runOnControlPlane: false
+  runOnMaster: false
+  # No nodeSelector - can run on any worker

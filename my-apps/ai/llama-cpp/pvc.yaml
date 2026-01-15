@@ -9,4 +9,4 @@ spec:
   resources:
     requests:
       storage: 150Gi
-  storageClassName: nfs-storageclass-llama-cpp
+  storageClassName: nfs-llama-cpp-10g

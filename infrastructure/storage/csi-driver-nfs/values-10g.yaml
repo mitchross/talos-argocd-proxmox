@@ -1,0 +1,16 @@
+# 10G DAC NFS CSI Controller
+# Runs on GPU worker node (has access to 172.31.250.1)
+
+storageClass:
+  create: false
+
+# Controller on GPU node only (has 10G DAC access)
+controller:
+  runOnControlPlane: false
+  runOnMaster: false
+  nodeSelector:
+    feature.node.kubernetes.io/pci-0300_10de.present: "true"
+  tolerations:
+    - key: "nvidia.com/gpu"
+      operator: "Exists"
+      effect: "NoSchedule"
