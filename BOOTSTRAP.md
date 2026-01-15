@@ -199,7 +199,7 @@ ArgoCD deploys applications in a specific order to avoid race conditions and SSD
 | **0** | **External Secrets Operator** | Secret management CRDs | Longhorn needs ExternalSecret CRD for backup credentials |
 | **1** | **Longhorn** | Storage layer | Needs networking + secret CRDs; other apps need storage |
 | **1** | **Snapshot Controller** | Storage API | Provides VolumeSnapshot CRDs required by VolSync |
-| **1** | **Garage** | S3-compatible object storage | Needs storage layer |
+| **1** | **VolSync** | PVC backup/restore | Needs storage + snapshot controller |
 | **2** | **Infrastructure** | Core services (cert-manager, GPU operators, databases, etc.) | Depends on networking and storage being ready |
 | **3** | **Monitoring** | Prometheus, Grafana, alerts | Monitors the infrastructure |
 | **4** | **My-Apps** | User applications | Runs on top of everything else |
@@ -213,7 +213,7 @@ ArgoCD deploys applications in a specific order to avoid race conditions and SSD
 
 **What You'll See:**
 1. **Wave 0**: Cilium, 1Password Connect, and External Secrets Operator deploy in parallel
-2. **Wave 1**: Longhorn and Garage deploy after networking + secrets are ready
+2. **Wave 1**: Longhorn, Snapshot Controller, and VolSync deploy after networking + secrets are ready
 3. **Wave 2**: Infrastructure components deploy in parallel
 4. **Wave 3**: Monitoring stack deploys
 5. **Wave 4**: Your applications deploy last
