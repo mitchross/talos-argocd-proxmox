@@ -34,7 +34,7 @@ spec:
           max_connections: 500
   instances:
   - name: postgres
-    replicas: 3
+    replicas: 1  # Reduced from 3 for homelab
     metadata:
       labels:
         app.kubernetes.io/name: immich
@@ -68,7 +68,7 @@ spec:
   proxy:
     pgBouncer:
       port: 5432
-      replicas: 2
+      replicas: 1  # Reduced from 2 for homelab
       config:
         global:
           pool_mode: session
