@@ -26,7 +26,7 @@ spec:
       cores: 16
       sockets: 1
       memory: 64000
-      disk_size: 450
+      disk_size: 500
       network_bridge: vmbr0
       storage_selector: name == "ssdpool"
       # Disk performance (SSD/NVMe optimization)

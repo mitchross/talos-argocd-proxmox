@@ -34,7 +34,7 @@ To solve the "chicken-and-egg" problem of bootstrapping a cluster (e.g., needing
 | Wave | Phase | Components | Description |
 |------|-------|------------|-------------|
 | **0** | **Foundation** | `cilium`, `1password-connect`, `external-secrets` | **Networking & Secrets**. The absolute minimum required for other pods to start and pull credentials. |
-| **1** | **Storage** | `longhorn`, `garage` | **Persistence**. Depends on Wave 0 for Pod-to-Pod communication and S3 backup credentials. |
+| **1** | **Storage** | `longhorn`, `snapshot-controller`, `volsync` | **Persistence**. Depends on Wave 0 for Pod-to-Pod communication and secrets. |
 | **2** | **System** | `cert-manager`, `gpu-operator`, `databases` | **Core Services**. Depends on Storage (PVCs) and Networking (Ingress/Gateway). |
 | **3** | **Observability** | `kube-prometheus-stack`, `loki` | **Monitoring**. Monitors the healthy stack. |
 | **4** | **User** | `my-apps/*` | **Workloads**. The actual applications running on the cluster. |

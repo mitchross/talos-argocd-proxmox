@@ -6,7 +6,7 @@ defaultSettings:
   # NOTE: Longhorn 1.10 consolidates settings for V1/V2 data engines. Use either
   # a single scalar or a JSON string with per-engine values like {"v1":"...","v2":"..."} when needed.
   defaultDataPath: "/var/lib/longhorn"
-  storageMinimalAvailablePercentage: "25"
+  storageMinimalAvailablePercentage: "10"
   storageOverProvisioningPercentage: "100"
   allowRecurringJobWhileVolumeDetached: "true"
   replicaAutoBalance: "best-effort"

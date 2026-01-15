@@ -167,7 +167,6 @@ machine:
 **HTTPRoutes:**
 - ArgoCD: `argocd.vanillax.me`
 - Longhorn: `longhorn.vanillax.me`
-- Garage (new): `garage.vanillax.me`
 - Many others...
 
 ## Network Flow Examples

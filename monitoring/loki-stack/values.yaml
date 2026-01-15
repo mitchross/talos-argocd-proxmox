@@ -1,15 +1,20 @@
 loki:
   commonConfig:
     path_prefix: /var/loki
-    replication_factor: 3
+    replication_factor: 2
   storage:
     type: "s3"
     bucketNames:
-      chunks: loki-chunks
-      ruler: loki-ruler
-      admin: loki-admin
+      chunks: loki
+      ruler: loki
+      admin: loki
     s3:
+      endpoint: http://192.168.10.133:30293
       region: us-east-1
+      secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+      accessKeyId: ${AWS_ACCESS_KEY_ID}
+      s3ForcePathStyle: true
+      insecure: true
   schemaConfig:
     configs:
     - from: "2024-04-01"
@@ -22,9 +27,7 @@ loki:
   ingester:
     chunk_encoding: snappy
   querier:
-    # Default is 4, if you have enough memory and CPU you can increase, reduce if OOMing
     max_concurrent: 4
-  # Configure query scheduler for read pods
   query_scheduler:
     use_scheduler_ring: true
   frontend_worker:
@@ -45,6 +48,9 @@ backend:
     limits:
       cpu: 500m
       memory: 1Gi
+  extraEnvFrom:
+  - secretRef:
+      name: loki-s3-credentials
 read:
   replicas: 2
   resources:
@@ -54,6 +60,9 @@ read:
     limits:
       cpu: 1000m
       memory: 1Gi
+  extraEnvFrom:
+  - secretRef:
+      name: loki-s3-credentials
 write:
   replicas: 3
   resources:
@@ -63,20 +72,13 @@ write:
     limits:
       cpu: 500m
       memory: 1Gi
-# Enable minio for storage
+  extraEnvFrom:
+  - secretRef:
+      name: loki-s3-credentials
+# DISABLED - Using external S3 (TrueNAS RustFS) instead
+# This saves ~200Gi of Longhorn storage
 minio:
-  enabled: true
-  persistence:
-    enabled: true
-    storageClass: longhorn
-    size: 50Gi
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 500m
-      memory: 1Gi
+  enabled: false
 gateway:
   service:
     type: LoadBalancer
