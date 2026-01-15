@@ -1,3 +1,23 @@
+# Static PV - mounts NFS share root directly (not a CSI-created subdirectory)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: comfyui-nfs-pv
+spec:
+  capacity:
+    storage: 250Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-comfyui-10g
+  nfs:
+    server: 172.31.250.1
+    path: /mnt/BigTank/k8s/comfyui
+  mountOptions:
+    - nfsvers=4.1
+    - nolock
+    - tcp
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -5,8 +25,9 @@ metadata:
   namespace: comfyui
 spec:
   accessModes:
-  - ReadWriteMany
+    - ReadWriteMany
   resources:
     requests:
       storage: 250Gi
   storageClassName: nfs-comfyui-10g
+  volumeName: comfyui-nfs-pv

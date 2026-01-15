@@ -1,3 +1,23 @@
+# Static PV - mounts NFS share root directly (not a CSI-created subdirectory)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: llama-cpp-nfs-pv
+spec:
+  capacity:
+    storage: 150Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-llama-cpp-10g
+  nfs:
+    server: 172.31.250.1
+    path: /mnt/BigTank/k8s/llama-cpp
+  mountOptions:
+    - nfsvers=4.1
+    - nolock
+    - tcp
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -10,3 +30,4 @@ spec:
     requests:
       storage: 150Gi
   storageClassName: nfs-llama-cpp-10g
+  volumeName: llama-cpp-nfs-pv
