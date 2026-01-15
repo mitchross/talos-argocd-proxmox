@@ -37,9 +37,9 @@ spec:
           mountPath: /root
       containers:
       - name: comfyui
-        # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu128-slim
-        # renovate: datasource=docker depName=yanwk/comfyui-boot versioning=regex:^cu128-slim-(?<major>\d{4})(?<minor>\d{2})(?<patch>\d{2})$
-        image: yanwk/comfyui-boot:cu128-slim-20251229
+        # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu128-megapak-pt29
+        # renovate: datasource=docker depName=yanwk/comfyui-boot versioning=regex:^cu128-megapak-pt29-(?<year>\d{4})(?<month>\d{2})(?<day>\d{2})$
+        image: yanwk/comfyui-boot:cu128-megapak-pt29-20260115
         imagePullPolicy: IfNotPresent
         workingDir: /root
         ports:
