@@ -6,9 +6,9 @@ metadata:
 data:
   config.ini: |
     [default]
-    preview_method = none
+    preview_method = auto
     git_exe =
-    use_uv = False
+    use_uv = True
     channel_url = https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main
     share_option = all
     bypass_ssl = False
