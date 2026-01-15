@@ -3,11 +3,12 @@ tempo:
     trace:
       backend: s3
       s3:
-        bucket: tempo-traces
-        endpoint: tempo-minio.monitoring.svc:9000
-        access_key: tempo
-        secret_key: temposecret123
+        bucket: tempo
+        endpoint: 192.168.10.133:30293
+        access_key: ${AWS_ACCESS_KEY_ID}
+        secret_key: ${AWS_SECRET_ACCESS_KEY}
         insecure: true
+        forcepathstyle: true
   retention: 72h
   resources:
     requests:
@@ -16,3 +17,6 @@ tempo:
     limits:
       cpu: 500m
       memory: 512Mi
+  extraEnvFrom:
+  - secretRef:
+      name: tempo-s3-credentials
