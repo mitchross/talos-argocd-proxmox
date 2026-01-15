@@ -2,13 +2,21 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: csi-driver-nfs
 helmCharts:
+  # 10G DAC controller - runs on GPU node (can reach 172.31.250.1)
   - name: csi-driver-nfs
     repo: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts
     version: 4.12.1
-    releaseName: csi-driver-nfs
+    releaseName: csi-driver-nfs-10g
     includeCRDs: true
     namespace: csi-driver-nfs
-    valuesFile: values.yaml
+    valuesFile: values-10g.yaml
+  # 2.5G LAN controller - runs on any worker (can reach 192.168.10.133)
+  - name: csi-driver-nfs
+    repo: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts
+    version: 4.12.1
+    releaseName: csi-driver-nfs-2g
+    namespace: csi-driver-nfs
+    valuesFile: values-2g.yaml
 resources:
   - namespace.yaml
   - storage-class.yaml
