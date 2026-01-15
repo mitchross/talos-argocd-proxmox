@@ -1,10 +1,12 @@
-# 10G DAC NFS CSI Controller
-# Runs on GPU worker node (has access to 172.31.250.1)
+# Single NFS CSI deployment
+# Controller runs on GPU node which has access to BOTH networks:
+#   - 172.31.250.1 (10G DAC) for GPU workloads
+#   - 192.168.10.133 (2.5G LAN) for other workloads
 
 storageClass:
   create: false
 
-# Controller on GPU node only (has 10G DAC access)
+# Controller on GPU node (has dual network access)
 controller:
   runOnControlPlane: false
   runOnMaster: false
