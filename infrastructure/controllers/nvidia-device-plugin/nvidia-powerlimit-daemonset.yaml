@@ -30,32 +30,39 @@ spec:
       containers:
       - name: nvidia-powerlimit
         # renovate: ignore
-        # Pinned to CUDA 12.6 - compatible with Talos NVIDIA driver 570.172.08
-        # Driver 570.x supports up to CUDA 12.7, DO NOT upgrade to 12.9+
-        image: nvidia/cuda:12.9.1-base-ubuntu22.04
+        # CUDA 12.8 - matches Talos NVIDIA driver 570.172.08
+        image: nvidia/cuda:12.8.1-base-ubuntu22.04
         command:
         - /bin/bash
         - -c
         - |
+          set -e
+          echo "Waiting for nvidia-smi..."
+          until nvidia-smi &> /dev/null; do
+            echo "nvidia-smi not ready, waiting..."
+            sleep 5
+          done
           # Set power limit for all GPUs
-          if command -v nvidia-smi &> /dev/null; then
-            GPU_COUNT=$(nvidia-smi --query-gpu=count --format=csv,noheader | head -n1)
-            echo "Found $GPU_COUNT GPUs"
-            for i in $(seq 0 $((GPU_COUNT-1))); do
-              echo "Setting GPU $i power limit to 275W"
-              nvidia-smi -i $i -pl 275 || echo "Failed to set power limit for GPU $i"
-            done
-          else
-            echo "nvidia-smi not found"
-          fi
+          GPU_COUNT=$(nvidia-smi --query-gpu=count --format=csv,noheader | head -n1)
+          echo "Found $GPU_COUNT GPUs"
+          for i in $(seq 0 $((GPU_COUNT-1))); do
+            echo "Setting GPU $i power limit to 275W"
+            nvidia-smi -i $i -pl 275 || echo "Failed to set power limit for GPU $i"
+          done
+          echo "Power limits set successfully, sleeping..."
           # Keep container running
-          sleep infinity
+          exec sleep infinity
         securityContext:
           privileged: true
+        env:
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "all"
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: "utility"
         resources:
           requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
             cpu: 100m
             memory: 128Mi
-          limits:
-            cpu: 500m
-            memory: 256Mi
