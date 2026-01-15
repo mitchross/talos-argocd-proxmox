@@ -28,7 +28,7 @@ spec:
       context:
         - name: repoCheck
           apiCall:
-            urlPath: "http://192.168.10.133:9000/volsync-backups/{{ request.namespace }}/{{ request.object.metadata.name }}/config"
+            urlPath: "http://192.168.10.133:30293/volsync-backups/{{ request.namespace }}/{{ request.object.metadata.name }}/config"
             method: GET
             jmesPath: "" 
       preconditions:
@@ -59,7 +59,7 @@ spec:
       context:
         - name: repoCheck
           apiCall:
-            urlPath: "http://192.168.10.133:9000/volsync-backups/{{ request.namespace }}/{{ request.object.metadata.name }}/config"
+            urlPath: "http://192.168.10.133:30293/volsync-backups/{{ request.namespace }}/{{ request.object.metadata.name }}/config"
             method: GET
             jmesPath: "" 
       preconditions:
@@ -78,7 +78,7 @@ spec:
             trigger:
               manual: "restore-on-create"
             restic:
-              repository: "s3:http://192.168.10.133:9000/volsync-backups/{{ request.object.metadata.namespace }}/{{ request.object.metadata.name }}"
+              repository: "s3:http://192.168.10.133:30293/volsync-backups/{{ request.object.metadata.namespace }}/{{ request.object.metadata.name }}"
               copyMethod: Direct
               storageClassName: "longhorn"
               volumeSnapshotClassName: "longhorn"
@@ -114,7 +114,7 @@ spec:
               schedule: "0 * * * *"
             restic:
               pruneIntervalDays: 10
-              repository: "s3:http://192.168.10.133:9000/volsync-backups/{{ request.object.metadata.namespace }}/{{ request.object.metadata.name }}"
+              repository: "s3:http://192.168.10.133:30293/volsync-backups/{{ request.object.metadata.namespace }}/{{ request.object.metadata.name }}"
               copyMethod: Direct
               storageClassName: "longhorn"
               volumeSnapshotClassName: "longhorn"
