@@ -12,7 +12,6 @@ spec:
   description: "Infrastructure components like controllers, networking, and storage."
   sourceRepos:
   - https://github.com/mitchross/talos-argocd-proxmox.git
-  - https://git.deuxfleurs.fr/Deuxfleurs/garage.git
   destinations:
   - namespace: '*'
     server: https://kubernetes.default.svc

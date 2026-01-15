@@ -14,4 +14,3 @@ resources:
   - infrastructure-appset.yaml  # Wave 2
   - monitoring-appset.yaml      # Wave 3
   - my-apps-appset.yaml         # Wave 4
-  - garage.yaml
