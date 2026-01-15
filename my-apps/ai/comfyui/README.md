@@ -6,7 +6,7 @@ This directory contains Kubernetes manifests to deploy ComfyUI with GPU support 
 ## File Structure
 
 - `namespace.yaml` - ComfyUI namespace
-- `pvc.yaml` - Multiple Persistent Volume Claims for organized storage
+- `pvc.yaml` - Persistent Volume Claim for storage
 - `deployment.yaml` - Main ComfyUI deployment with GPU support
 - `service.yaml` - ClusterIP service with named port for HTTPRoute
 - `httproute.yaml` - HTTPRoute configuration for Gateway API
@@ -16,15 +16,9 @@ This directory contains Kubernetes manifests to deploy ComfyUI with GPU support 
 
 ## Storage Organization
 
-Based on the Docker reference implementation, storage is organized as follows:
+Single unified storage volume:
 
-- `comfyui-storage` (50Gi) - Main application data at `/root`
-- `comfyui-models` (200Gi) - Models storage at `/root/ComfyUI/models`
-- `comfyui-hf-cache` (100Gi) - Hugging Face cache at `/root/.cache/huggingface/hub`
-- `comfyui-torch-cache` (50Gi) - PyTorch cache at `/root/.cache/torch/hub`
-- `comfyui-input` (20Gi) - Input files at `/root/ComfyUI/input`
-- `comfyui-output` (100Gi) - Generated outputs at `/root/ComfyUI/output`
-- `comfyui-workflows` (5Gi) - Workflows at `/root/ComfyUI/user/default/workflows`
+- `comfyui-storage` - Main application data at `/root` (container handles internal structure)
 
 ## Prerequisites for Talos
 
@@ -60,20 +54,32 @@ The container's entrypoint will handle the setup automatically upon pod creation
 ## Features
 
 ### Container Image
-- Uses `yanwk/comfyui-boot:cu128-megapak` - an all-in-one image optimized for GPU workloads.
-- Includes ComfyUI, Python 3.12, CUDA 12.8, and all necessary dependencies.
-- Optimized for RTX 40 series and newer GPUs with fast loading and PyTorch cross-attention.
+- Uses `yanwk/comfyui-boot:cu128-megapak-pt29` - MEGAPAK image with PyTorch 2.9.1 and CUDA 12.8
+- Includes ComfyUI, Python 3.12, GCC 11, and 40+ custom nodes pre-installed
+- Pre-installed performance libraries: SageAttention 2.2.0, FlashAttention 2.8.3, Nunchaku, SpargeAttention
+- Includes CUDA development kit for compiling PyTorch C++ extensions
 
 ### CLI Arguments
-The deployment uses optimized CLI arguments:
-- `--fast` - Optimized for RTX 40 series and newer GPUs
-- `--use-pytorch-cross-attention` - Disable xFormers, recommended for Blackwell GPUs
+The deployment uses optimized CLI arguments for RTX 3090 (Ampere):
+- `--use-sage-attention` - SageAttention for optimized attention on Ampere GPUs
 - `--listen 0.0.0.0 --port 8188` - Network configuration for Kubernetes
+
+### Environment Variables
+- `TORCH_CUDA_ARCH_LIST=8.6` - RTX 3090 compute capability (Ampere)
+- `CMAKE_ARGS` - CUDA optimizations for building extensions (fast math, cuBLAS)
+- `HF_TOKEN` - HuggingFace token via ExternalSecret
+
+### Attention Compatibility (for this image)
+| GPU Architecture | SageAttention | FlashAttention | xFormers |
+|------------------|---------------|----------------|----------|
+| Blackwell (RTX 5090) | ✔️ | ✔️ | ✔️ |
+| Ada Lovelace (RTX 4090) | ✔️ | ✔️ | ✔️ |
+| Ampere (RTX 3090) | ✔️ | ✔️ | ✔️ |
+| Turing (RTX 2080) | ❌ | ❌ | ✔️ |
 
 ### Hugging Face Integration
 - Automatic token injection via ExternalSecret from 1Password
-- Cached models and transformers stored in dedicated volumes
-- Environment variable `HF_HOME` properly configured
+- Cached models and transformers stored in storage volume
 
 ### Fully Automated Setup
 - The container's internal entrypoint handles all downloads and setup.
