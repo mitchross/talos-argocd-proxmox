@@ -23,7 +23,7 @@ metadata:
       - Backups protect data going forward (Restic keeps retention/history)
 spec:
   validationFailureAction: Enforce
-  background: false
+  background: true
   rules:
     # ------------------------------------------------------------------
     # RULE 1: GENERATE PER-PVC SECRET (copies base creds + full repo path)
@@ -43,7 +43,8 @@ spec:
             jmesPath: "data"
       preconditions:
         all:
-          - key: "{{ baseSecret }}"
+          # Check that base secret has the required keys
+          - key: "{{ baseSecret.AWS_ACCESS_KEY_ID || '' }}"
             operator: NotEquals
             value: ""
       generate:
