@@ -4,3 +4,4 @@ metadata:
   name: volsync-test
   labels:
     app.kubernetes.io/name: volsync-test
+    volsync.backube/privileged-movers: "true"
