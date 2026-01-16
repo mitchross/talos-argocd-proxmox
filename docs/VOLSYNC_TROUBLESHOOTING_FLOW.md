@@ -290,3 +290,10 @@ kubectl describe replicationsource -n default test-pvc-backup
 - Lost "smart restore" (checking if backup exists before creating)
 - But gained reliability (no external calls during policy)
 - Manual restore still works with ReplicationDestination
+
+---
+
+## DETAILED SESSION NOTES - Jan 16, 2026 (23:00-23:15 UTC)
+
+### Complete troubleshooting notes appended at end of file - see commit message for full session context
+
