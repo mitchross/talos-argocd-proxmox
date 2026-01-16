@@ -7,23 +7,63 @@ metadata:
     policies.kyverno.io/title: VolSync Protection (Safe Mode)
     policies.kyverno.io/description: >-
       Fully automated VolSync backup/restore for PVCs labeled backup=hourly.
-      
+
       ZERO-TOUCH WORKFLOW:
       1. Create PVC with label backup=hourly
-      2. Restore job auto-triggers immediately (if S3 backup exists, restores it)
-      3. Backup job starts on hourly schedule
-      4. Done - completely automated!
-      
+      2. Policy generates: Secret (S3 creds), ReplicationDestination (restore), ReplicationSource (backup)
+      3. Restore job auto-triggers immediately (if S3 backup exists, restores it)
+      4. Backup job starts on hourly schedule
+
+      PREREQUISITE: Namespace must have label volsync.backube/privileged-movers=true
+      to receive the volsync-rustfs-base secret via ClusterExternalSecret.
+
       SAFETY: Restore runs FIRST (on PVC creation), backup starts on next hour.
-      - If backup exists in S3 → restored automatically
-      - If no backup exists → restore fails gracefully, app creates fresh data
+      - If backup exists in S3 -> restored automatically
+      - If no backup exists -> restore fails gracefully, app creates fresh data
       - Backups protect data going forward (Restic keeps retention/history)
 spec:
   validationFailureAction: Enforce
   background: false
   rules:
     # ------------------------------------------------------------------
-    # RULE 1: GENERATE BACKUP JOB (Runs hourly automatically)
+    # RULE 1: GENERATE PER-PVC SECRET (copies base creds + full repo path)
+    # ------------------------------------------------------------------
+    - name: generate-volsync-secret
+      match:
+        any:
+          - resources:
+              kinds: ["PersistentVolumeClaim"]
+              selector:
+                matchLabels:
+                  backup: "hourly"
+      context:
+        - name: baseSecret
+          apiCall:
+            urlPath: "/api/v1/namespaces/{{request.object.metadata.namespace}}/secrets/volsync-rustfs-base"
+            jmesPath: "data"
+      preconditions:
+        all:
+          - key: "{{ baseSecret }}"
+            operator: NotEquals
+            value: ""
+      generate:
+        apiVersion: v1
+        kind: Secret
+        name: "{{ request.object.metadata.name }}-volsync-secret"
+        namespace: "{{ request.object.metadata.namespace }}"
+        synchronize: true
+        data:
+          type: Opaque
+          data:
+            # Copy credentials from base secret (already base64 encoded)
+            AWS_ACCESS_KEY_ID: "{{ baseSecret.AWS_ACCESS_KEY_ID }}"
+            AWS_SECRET_ACCESS_KEY: "{{ baseSecret.AWS_SECRET_ACCESS_KEY }}"
+            RESTIC_PASSWORD: "{{ baseSecret.RESTIC_PASSWORD }}"
+            # Build full repository path: base + pvc-name (clean bucket names)
+            RESTIC_REPOSITORY: "{{ base64_encode(concat(base64_decode(baseSecret.RESTIC_REPOSITORY_BASE), request.object.metadata.name)) }}"
+
+    # ------------------------------------------------------------------
+    # RULE 2: GENERATE BACKUP JOB (Runs hourly automatically)
     # ------------------------------------------------------------------
     - name: generate-backup-job
       match:
@@ -46,7 +86,7 @@ spec:
               schedule: "0 * * * *"
             restic:
               pruneIntervalDays: 10
-              repository: "s3:http://192.168.10.133:30292/volsync-backup/{{ request.object.metadata.namespace }}/{{ request.object.metadata.name }}"
+              repository: "{{ request.object.metadata.name }}-volsync-secret"
               copyMethod: Direct
               storageClassName: "longhorn"
               volumeSnapshotClassName: "longhorn"
@@ -58,7 +98,7 @@ spec:
                 daily: 7
 
     # ------------------------------------------------------------------
-    # RULE 2: GENERATE RESTORE JOB (auto-trigger once on PVC creation)
+    # RULE 3: GENERATE RESTORE JOB (auto-trigger once on PVC creation)
     # ------------------------------------------------------------------
     - name: generate-restore-job
       match:
@@ -80,7 +120,7 @@ spec:
               # Auto-trigger ONCE when PVC is created (unique timestamp prevents re-runs)
               manual: "auto-restore-{{ request.object.metadata.creationTimestamp }}"
             restic:
-              repository: "s3:http://192.168.10.133:30292/volsync-backup/{{ request.object.metadata.namespace }}/{{ request.object.metadata.name }}"
+              repository: "{{ request.object.metadata.name }}-volsync-secret"
               copyMethod: Direct
               storageClassName: "longhorn"
               volumeSnapshotClassName: "longhorn"
