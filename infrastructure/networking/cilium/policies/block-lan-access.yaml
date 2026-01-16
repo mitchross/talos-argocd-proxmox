@@ -65,6 +65,8 @@ spec:
               protocol: TCP
             - port: "30292"
               protocol: TCP
+            - port: "30293"
+              protocol: TCP
             - port: "9000"
               protocol: TCP
 
