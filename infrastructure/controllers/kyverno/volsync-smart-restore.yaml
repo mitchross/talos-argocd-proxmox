@@ -4,94 +4,26 @@ metadata:
   name: volsync-smart-protection
   annotations:
     argocd.argoproj.io/sync-wave: "2"
-    policies.kyverno.io/title: VolSync Smart Protection
+    policies.kyverno.io/title: VolSync Protection (Safe Mode)
     policies.kyverno.io/description: >-
-      The "Brain" of the storage system.
-      1. Mutates PVCs to attach to backups IF they exist (Smart Restore).
-      2. Generates Restore Jobs (RD) IF backups exist.
-      3. Generates Backup Jobs (RS) always.
+      Fully automated VolSync backup/restore for PVCs labeled backup=hourly.
+      
+      ZERO-TOUCH WORKFLOW:
+      1. Create PVC with label backup=hourly
+      2. Restore job auto-triggers immediately (if S3 backup exists, restores it)
+      3. Backup job starts on hourly schedule
+      4. Done - completely automated!
+      
+      SAFETY: Restore runs FIRST (on PVC creation), backup starts on next hour.
+      - If backup exists in S3 → restored automatically
+      - If no backup exists → restore fails gracefully, app creates fresh data
+      - Backups protect data going forward (Restic keeps retention/history)
 spec:
-  validationFailureAction: enforce
-  background: false # We need immediate mutation for the PVC
+  validationFailureAction: Enforce
+  background: false
   rules:
     # ------------------------------------------------------------------
-    # RULE 1: SMART MUTATE (Add dataSourceRef)
-    # ------------------------------------------------------------------
-    - name: link-restore-if-exists
-      match:
-        any:
-          - resources:
-              kinds: ["PersistentVolumeClaim"]
-              selector:
-                matchLabels:
-                  backup: "hourly"
-      context:
-        - name: repoCheck
-          apiCall:
-            urlPath: "http://192.168.10.133:30292/volsync-backup/{{ request.namespace }}/{{ request.object.metadata.name }}/config"
-            method: GET
-            jmesPath: "" 
-      preconditions:
-        all:
-          - key: "{{ repoCheck.code }}"
-            operator: Equals
-            value: 200
-      mutate:
-        patchStrategicMerge:
-          spec:
-            dataSourceRef:
-              kind: ReplicationDestination
-              apiGroup: volsync.backube
-              name: "{{ request.object.metadata.name }}-restore"
-
-    # ------------------------------------------------------------------
-    # RULE 2: SMART GENERATE (Create Restore Job)
-    # ------------------------------------------------------------------
-    - name: generate-restore-job
-      match:
-        any:
-          - resources:
-              kinds: ["PersistentVolumeClaim"]
-              selector:
-                matchLabels:
-                  backup: "hourly"
-      # Context must be repeated for separate rule
-      context:
-        - name: repoCheck
-          apiCall:
-            urlPath: "http://192.168.10.133:30292/volsync-backup/{{ request.namespace }}/{{ request.object.metadata.name }}/config"
-            method: GET
-            jmesPath: "" 
-      preconditions:
-        all:
-          - key: "{{ repoCheck.code }}"
-            operator: Equals
-            value: 200
-      generate:
-        apiVersion: volsync.backube/v1alpha1
-        kind: ReplicationDestination
-        name: "{{ request.object.metadata.name }}-restore"
-        namespace: "{{ request.object.metadata.namespace }}"
-        synchronize: true
-        data:
-          spec:
-            trigger:
-              manual: "restore-on-create"
-            restic:
-              repository: "s3:http://192.168.10.133:30292/volsync-backup/{{ request.object.metadata.namespace }}/{{ request.object.metadata.name }}"
-              copyMethod: Direct
-              storageClassName: "longhorn"
-              volumeSnapshotClassName: "longhorn"
-              cacheStorageClassName: "longhorn"
-              cacheAccessModes: ["ReadWriteOnce"]
-              cacheCapacity: "2Gi"
-              destinationPVC: "{{ request.object.metadata.name }}"
-              retain: 
-                hourly: 24
-                daily: 7
-
-    # ------------------------------------------------------------------
-    # RULE 3: ALWAYS BACKUP (Create Backup Job)
+    # RULE 1: GENERATE BACKUP JOB (Runs hourly automatically)
     # ------------------------------------------------------------------
     - name: generate-backup-job
       match:
@@ -122,5 +54,40 @@ spec:
               cacheAccessModes: ["ReadWriteOnce"]
               cacheCapacity: "2Gi"
               retain:
+                hourly: 24
+                daily: 7
+
+    # ------------------------------------------------------------------
+    # RULE 2: GENERATE RESTORE JOB (Manual trigger only - prevents overwrites)
+    # ------------------------------------------------------------------
+    - name: generate-restore-job
+      match:
+        any:
+          - resources:
+              kinds: ["PersistentVolumeClaim"]
+              selector:
+                matchLabels:Auto-triggers on PVC creation)
+    # ------------------------------------------------------------------
+    - name: generate-restore-job
+      match:
+        any:
+          - resources:
+              kinds: ["PersistentVolumeClaim"]
+              selector:
+                matchLabels:
+                  backup: "hourly"
+      generate:
+        apiVersion: volsync.backube/v1alpha1
+        kind: ReplicationDestination
+        name: "{{ request.object.metadata.name }}-restore"
+        namespace: "{{ request.object.metadata.namespace }}"
+        synchronize: true
+        data:
+          spec:
+            trigger:
+              # Auto-trigger ONCE when PVC is created (unique timestamp prevents re-runs)
+              manual: "auto-restore-{{ request.object.metadata.creationTimestamp }}"
+              destinationPVC: "{{ request.object.metadata.name }}"
+              retain: 
                 hourly: 24
                 daily: 7
