@@ -58,15 +58,7 @@ spec:
                 daily: 7
 
     # ------------------------------------------------------------------
-    # RULE 2: GENERATE RESTORE JOB (Manual trigger only - prevents overwrites)
-    # ------------------------------------------------------------------
-    - name: generate-restore-job
-      match:
-        any:
-          - resources:
-              kinds: ["PersistentVolumeClaim"]
-              selector:
-                matchLabels:Auto-triggers on PVC creation)
+    # RULE 2: GENERATE RESTORE JOB (auto-trigger once on PVC creation)
     # ------------------------------------------------------------------
     - name: generate-restore-job
       match:
@@ -87,7 +79,9 @@ spec:
             trigger:
               # Auto-trigger ONCE when PVC is created (unique timestamp prevents re-runs)
               manual: "auto-restore-{{ request.object.metadata.creationTimestamp }}"
-              destinationPVC: "{{ request.object.metadata.name }}"
-              retain: 
-                hourly: 24
-                daily: 7
+            destinationPVC: "{{ request.object.metadata.name }}"
+            restic:
+              repository: "s3:http://192.168.10.133:30292/volsync-backup/{{ request.object.metadata.namespace }}/{{ request.object.metadata.name }}"
+              copyMethod: Direct
+              storageClassName: "longhorn"
+              volumeSnapshotClassName: "longhorn"
