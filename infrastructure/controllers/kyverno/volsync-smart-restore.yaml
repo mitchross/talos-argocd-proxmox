@@ -79,9 +79,10 @@ spec:
             trigger:
               # Auto-trigger ONCE when PVC is created (unique timestamp prevents re-runs)
               manual: "auto-restore-{{ request.object.metadata.creationTimestamp }}"
-            destinationPVC: "{{ request.object.metadata.name }}"
             restic:
               repository: "s3:http://192.168.10.133:30292/volsync-backup/{{ request.object.metadata.namespace }}/{{ request.object.metadata.name }}"
               copyMethod: Direct
               storageClassName: "longhorn"
               volumeSnapshotClassName: "longhorn"
+              accessModes: ["ReadWriteOnce"]
+              capacity: "{{ request.object.spec.resources.requests.storage }}"
