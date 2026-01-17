@@ -31,7 +31,7 @@ spec:
       - name: nvidia-powerlimit
         # renovate: ignore
         # CUDA 12.8 - matches Talos NVIDIA driver 570.172.08
-        image: nvidia/cuda:12.8.1-base-ubuntu22.04
+        image: nvidia/cuda:12.9.1-base-ubuntu22.04
         command:
         - /bin/bash
         - -c
