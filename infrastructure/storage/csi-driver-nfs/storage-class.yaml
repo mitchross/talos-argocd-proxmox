@@ -1,16 +1,15 @@
 # =============================================================================
-# 10G DAC NFS Storage Classes (172.31.250.1) - GPU workloads only
-# For non-GPU workloads, use SMB storage classes on 2.5G network
+# 10G NFS Storage Classes (192.168.10.133) - via 10G switch
 # =============================================================================
 
-# ComfyUI NFS storage class (10G DAC)
+# ComfyUI NFS storage class (10G)
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: nfs-comfyui-10g
 provisioner: nfs.csi.k8s.io
 parameters:
-  server: 172.31.250.1
+  server: 192.168.10.133
   share: /mnt/BigTank/k8s/comfyui
 reclaimPolicy: Retain
 volumeBindingMode: Immediate
@@ -19,14 +18,14 @@ mountOptions:
   - nolock
   - tcp
 ---
-# llama-cpp NFS storage class (10G DAC)
+# llama-cpp NFS storage class (10G)
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: nfs-llama-cpp-10g
 provisioner: nfs.csi.k8s.io
 parameters:
-  server: 172.31.250.1
+  server: 192.168.10.133
   share: /mnt/BigTank/k8s/llama-cpp
 reclaimPolicy: Retain
 volumeBindingMode: Immediate

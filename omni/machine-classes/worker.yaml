@@ -35,7 +35,4 @@ spec:
       disk_iothread: true
       disk_cache: none
       disk_aio: io_uring
-      # 10G storage network (vmbr1 -> ens19 in Talos)
-      additional_nics:
-        - bridge: vmbr1
-          firewall: false
+      # Storage via 10G switch (192.168.10.133) - no dedicated NIC needed

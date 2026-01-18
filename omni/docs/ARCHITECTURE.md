@@ -83,42 +83,33 @@ This document explains how all the components work together in the Omni + Talos 
 
 ## Network Architecture
 
-### Dual Network Design (Management + Storage)
+### Network Design (10G Switch)
 
-This setup uses two separate networks for optimal performance and isolation:
+All traffic uses a single network via 10G switch:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ Physical Network Layout                                         │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  Management Network (vmbr0 / ens18)                            │
+│  Main Network (vmbr0 / ens18) - 10G Switch                     │
 │  ├── 192.168.10.0/24 (DHCP)                                    │
 │  ├── All management traffic                                     │
 │  ├── SideroLink tunnels to Omni                                │
 │  ├── Inter-node cluster communication                          │
+│  ├── Storage traffic to TrueNAS (192.168.10.133)              │
 │  └── Default gateway for internet access                       │
-│                                                                 │
-│  Storage Network (vmbr1 / ens19)                               │
-│  ├── 172.31.250.0/24 (Static IPs)                              │
-│  ├── 10G DAC direct connection to TrueNAS                      │
-│  ├── No gateway (isolated network)                             │
-│  ├── SMB/NFS/iSCSI storage traffic only                        │
-│  └── Low latency, high throughput storage access               │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│ IP Assignments - Storage Network (172.31.250.0/24)              │
+│ Key IP Assignments                                              │
 ├─────────────────────────────────────────────────────────────────┤
-│  172.31.250.1    - TrueNAS (DAC)                               │
-│  172.31.250.21   - Worker 1                                    │
-│  172.31.250.22   - Worker 2                                    │
-│  172.31.250.23   - Worker 3                                    │
-│  172.31.250.30   - GPU Worker                                  │
-│                                                                 │
-│  Note: Control planes don't need storage network access -       │
-│        only worker nodes run storage-dependent workloads        │
+│  192.168.10.133  - TrueNAS (10G via switch)                    │
+│  192.168.10.14   - Proxmox                                     │
+│  192.168.10.x    - Workers (DHCP)                              │
+│  192.168.10.x    - Control Planes (DHCP)                       │
+│  192.168.10.x    - GPU Worker (DHCP)                           │
 └─────────────────────────────────────────────────────────────────┘
 ```
 

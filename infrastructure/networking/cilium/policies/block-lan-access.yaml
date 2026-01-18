@@ -71,17 +71,6 @@ spec:
               protocol: TCP
 
     # ============================================
-    # ALLOW: TrueNAS - SMB Storage
-    # (Used by ComfyUI, Ollama, Frigate, etc.)
-    # ============================================
-    - toCIDR:
-        - 172.31.250.1/32
-      toPorts:
-        - ports:
-            - port: "445"
-              protocol: TCP
-
-    # ============================================
     # ALLOW: Wyze Bridge RTSP (for Frigate)
     # ============================================
     - toCIDR:
