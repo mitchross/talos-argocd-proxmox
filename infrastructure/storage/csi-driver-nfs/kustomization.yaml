@@ -2,8 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: csi-driver-nfs
 helmCharts:
-  # Single NFS CSI deployment - controller on GPU node (has access to BOTH networks)
-  # GPU node can reach 172.31.250.1 (10G DAC) AND 192.168.10.133 (2.5G LAN)
+  # NFS CSI deployment - all nodes reach TrueNAS via 10G switch
   - name: csi-driver-nfs
     repo: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts
     version: 4.12.1

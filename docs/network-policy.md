@@ -105,8 +105,7 @@ These specific IPs are allowed on specific ports only:
 
 | IP | Hostname | Allowed Ports | Purpose |
 |----|----------|---------------|---------|
-| 192.168.10.133 | TrueNAS | 2049 (NFS), 111 (RPC), 445 (SMB), 9000 (MinIO) | Storage backend |
-| 172.31.250.1 | TrueNAS SMB | 445 (SMB) | SMB shares for apps |
+| 192.168.10.133 | TrueNAS | 2049 (NFS), 111 (RPC), 445 (SMB), 9000 (MinIO), 30292-30293 (RustFS) | Storage backend (10G) |
 | 192.168.10.46 | Wyze Bridge | 8554 (RTSP) | Camera streams for Frigate |
 | 192.168.10.14 | Proxmox | 8006 (API) | Omni/Terraform integration |
 | 192.168.10.32/27 | LB Pool | All | Cilium L2 LoadBalancer IPs |

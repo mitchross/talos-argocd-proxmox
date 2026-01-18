@@ -1,18 +1,9 @@
-# Single NFS CSI deployment
-# Controller runs on GPU node which has access to BOTH networks:
-#   - 172.31.250.1 (10G DAC) for GPU workloads
-#   - 192.168.10.133 (2.5G LAN) for other workloads
+# NFS CSI deployment
+# All nodes can reach TrueNAS at 192.168.10.133 via 10G switch
 
 storageClass:
   create: false
 
-# Controller on GPU node (has dual network access)
 controller:
   runOnControlPlane: false
   runOnMaster: false
-  nodeSelector:
-    feature.node.kubernetes.io/pci-0300_10de.present: "true"
-  tolerations:
-    - key: "nvidia.com/gpu"
-      operator: "Exists"
-      effect: "NoSchedule"

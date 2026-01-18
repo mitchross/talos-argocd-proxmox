@@ -47,10 +47,7 @@ spec:
           pcie: true
         - mapping: nvidia-gpu-2
           pcie: true
-      # 10G storage network (vmbr1 -> ens19 in Talos)
-      additional_nics:
-        - bridge: vmbr1
-          firewall: false
+      # Storage via 10G switch (192.168.10.133) - no dedicated NIC needed
 
 # GPU Passthrough Setup:
 # With enhanced provider, VM is pre-configured for GPU. Just:
