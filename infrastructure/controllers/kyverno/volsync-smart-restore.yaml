@@ -60,8 +60,8 @@ spec:
             AWS_ACCESS_KEY_ID: "{{ baseSecret.AWS_ACCESS_KEY_ID }}"
             AWS_SECRET_ACCESS_KEY: "{{ baseSecret.AWS_SECRET_ACCESS_KEY }}"
             RESTIC_PASSWORD: "{{ baseSecret.RESTIC_PASSWORD }}"
-            # Build full repository path: base + pvc-name (clean bucket names)
-            RESTIC_REPOSITORY: "{{ base64_encode(concat(base64_decode(baseSecret.RESTIC_REPOSITORY_BASE), request.object.metadata.name)) }}"
+            # Build full repository path: base + namespace/pvc-name
+            RESTIC_REPOSITORY: "{{ base64_encode(join('', [base64_decode(baseSecret.RESTIC_REPOSITORY_BASE), request.object.metadata.namespace, '/', request.object.metadata.name])) }}"
 
     # ------------------------------------------------------------------
     # RULE 2: GENERATE BACKUP JOB (Runs hourly automatically)
