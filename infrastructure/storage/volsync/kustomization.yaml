@@ -5,6 +5,7 @@ resources:
   - namespace.yaml
   - externalsecret.yaml
   - rustfs-credentials.yaml
+  - volumesnapshotclass.yaml
 helmCharts:
   - name: volsync
     repo: https://backube.github.io/helm-charts
