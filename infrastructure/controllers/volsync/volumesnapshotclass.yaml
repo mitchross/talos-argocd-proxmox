@@ -1,0 +1,12 @@
+---
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: longhorn-snapclass
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    snapshot.storage.kubernetes.io/is-default-class: "true"
+driver: driver.longhorn.io
+deletionPolicy: Delete
+parameters:
+  type: snap
