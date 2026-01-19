@@ -20,7 +20,6 @@ spec:
       - path: infrastructure/controllers/nvidia-gpu-operator
       - path: infrastructure/controllers/postgres-operator
       - path: infrastructure/controllers/reloader
-      - path: infrastructure/controllers/pvc-plumber
       - path: infrastructure/controllers/kyverno
       - path: infrastructure/networking/cloudflared
       - path: infrastructure/networking/coredns
