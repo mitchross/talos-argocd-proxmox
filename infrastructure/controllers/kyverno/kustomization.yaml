@@ -4,7 +4,7 @@ namespace: kyverno
 resources:
 - namespace.yaml
 - rbac-patch.yaml
-- volsync-smart-restore.yaml
+- policies/volsync-pvc-backup-restore.yaml
 helmCharts:
 - name: kyverno
   repo: https://kyverno.github.io/kyverno
