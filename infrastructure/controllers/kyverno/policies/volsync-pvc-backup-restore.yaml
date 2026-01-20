@@ -96,25 +96,21 @@ spec:
               template:
                 engineVersion: v2
                 data:
-                  # Use double curly braces and properly escape for Go templates
-                  RESTIC_REPOSITORY: "{{`{{ .restic_repository }}{{request.object.metadata.namespace}}/{{request.object.metadata.name}}`}}"
-                  RESTIC_PASSWORD: "{{`{{ .restic_password }}`}}"
-                  AWS_ACCESS_KEY_ID: "{{`{{ .access_key }}`}}"
-                  AWS_SECRET_ACCESS_KEY: "{{`{{ .secret_key }}`}}"
+                  # These will be filled by External Secrets from the data below
+                  RESTIC_REPOSITORY: s3:http://minio.volsync-system.svc.cluster.local:9000/rustfs/{{request.object.metadata.namespace}}/{{request.object.metadata.name}}
+                  RESTIC_PASSWORD: placeholder
+                  AWS_ACCESS_KEY_ID: placeholder
+                  AWS_SECRET_ACCESS_KEY: placeholder
             data:
-              - secretKey: access_key
+              - secretKey: AWS_ACCESS_KEY_ID
                 remoteRef:
                   key: rustfs
                   property: k8s-admin-access-key
-              - secretKey: secret_key
+              - secretKey: AWS_SECRET_ACCESS_KEY
                 remoteRef:
                   key: rustfs
                   property: k8s-admin-secret-key
-              - secretKey: restic_repository
-                remoteRef:
-                  key: rustfs
-                  property: restic_repository
-              - secretKey: restic_password
+              - secretKey: RESTIC_PASSWORD
                 remoteRef:
                   key: rustfs
                   property: restic_password
