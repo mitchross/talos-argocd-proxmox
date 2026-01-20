@@ -89,7 +89,7 @@ spec:
             refreshInterval: 1h
             secretStoreRef:
               kind: ClusterSecretStore
-              name: onepassword-connect
+              name: 1password
             target:
               name: "volsync-{{request.object.metadata.name}}"
               creationPolicy: Owner
