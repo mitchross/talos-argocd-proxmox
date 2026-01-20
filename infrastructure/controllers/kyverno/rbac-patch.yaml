@@ -7,14 +7,18 @@ metadata:
     app.kubernetes.io/instance: kyverno
     app.kubernetes.io/part-of: kyverno
 rules:
-# Required for context apiCall to read volsync-rustfs-base secret
+# Required for context apiCall to read secrets
 - apiGroups: [ "" ]
   resources: [ "secrets" ]
-  verbs: [ "get", "list", "watch" ]
-# Required to generate per-PVC volsync secrets
-- apiGroups: [ "" ]
-  resources: [ "secrets" ]
-  verbs: [ "create", "update", "delete" ]
+  verbs: [ "get", "list", "watch", "create", "update", "delete" ]
+# Required to generate ExternalSecrets for per-PVC credentials
+- apiGroups: [ "external-secrets.io" ]
+  resources: [ "externalsecrets" ]
+  verbs: [ "get", "list", "watch", "create", "update", "delete" ]
+# Required to generate VolSync ReplicationSource and ReplicationDestination
+- apiGroups: [ "volsync.backube" ]
+  resources: [ "replicationsources", "replicationdestinations" ]
+  verbs: [ "get", "list", "watch", "create", "update", "delete" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
