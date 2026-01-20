@@ -96,11 +96,11 @@ spec:
               template:
                 engineVersion: v2
                 data:
-                  # Build full repository path: base + namespace/pvc-name
-                  RESTIC_REPOSITORY: "{{ .restic_repository }}{{request.object.metadata.namespace}}/{{request.object.metadata.name}}"
-                  RESTIC_PASSWORD: "{{ .restic_password }}"
-                  AWS_ACCESS_KEY_ID: "{{ .access_key }}"
-                  AWS_SECRET_ACCESS_KEY: "{{ .secret_key }}"
+                  # Use double curly braces and properly escape for Go templates
+                  RESTIC_REPOSITORY: "{{`{{ .restic_repository }}{{request.object.metadata.namespace}}/{{request.object.metadata.name}}`}}"
+                  RESTIC_PASSWORD: "{{`{{ .restic_password }}`}}"
+                  AWS_ACCESS_KEY_ID: "{{`{{ .access_key }}`}}"
+                  AWS_SECRET_ACCESS_KEY: "{{`{{ .secret_key }}`}}"
             data:
               - secretKey: access_key
                 remoteRef:
