@@ -76,7 +76,7 @@ spec:
                 - kyverno
       generate:
         synchronize: true
-        apiVersion: external-secrets.io/v1beta1
+        apiVersion: external-secrets.io/v1
         kind: ExternalSecret
         name: "volsync-{{request.object.metadata.name}}"
         namespace: "{{request.object.metadata.namespace}}"
