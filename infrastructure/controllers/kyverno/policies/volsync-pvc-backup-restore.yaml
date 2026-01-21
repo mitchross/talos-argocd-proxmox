@@ -15,12 +15,15 @@ spec:
   background: true
   rules:
     # Rule 1: Conditionally add dataSourceRef if backup exists in S3
+    # IMPORTANT: Only trigger on CREATE to avoid race conditions during PVC deletion
     - name: add-datasource-if-backup-exists
       match:
         any:
           - resources:
               kinds:
                 - PersistentVolumeClaim
+              operations:
+                - CREATE
               selector:
                 matchExpressions:
                   - key: backup
@@ -56,12 +59,15 @@ spec:
               name: "{{request.object.metadata.name}}-restore"
 
     # Rule 2: Generate ExternalSecret for per-PVC restic repository
+    # IMPORTANT: Only trigger on CREATE to avoid race conditions during PVC deletion
     - name: generate-restic-secret
       match:
         any:
           - resources:
               kinds:
                 - PersistentVolumeClaim
+              operations:
+                - CREATE
               selector:
                 matchExpressions:
                   - key: backup
