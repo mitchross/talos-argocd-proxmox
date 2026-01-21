@@ -102,11 +102,11 @@ spec:
               template:
                 engineVersion: v2
                 data:
-                  # These will be filled by External Secrets from the data below
+                  # Kyverno escaping: {{ "{{" }} outputs literal {{ for External Secrets
                   RESTIC_REPOSITORY: s3:http://192.168.10.133:30292/volsync-backup/{{request.object.metadata.namespace}}/{{request.object.metadata.name}}
-                  RESTIC_PASSWORD: placeholder
-                  AWS_ACCESS_KEY_ID: placeholder
-                  AWS_SECRET_ACCESS_KEY: placeholder
+                  RESTIC_PASSWORD: '{{ "{{" }} .RESTIC_PASSWORD {{ "}}" }}'
+                  AWS_ACCESS_KEY_ID: '{{ "{{" }} .AWS_ACCESS_KEY_ID {{ "}}" }}'
+                  AWS_SECRET_ACCESS_KEY: '{{ "{{" }} .AWS_SECRET_ACCESS_KEY {{ "}}" }}'
             data:
               - secretKey: AWS_ACCESS_KEY_ID
                 remoteRef:
