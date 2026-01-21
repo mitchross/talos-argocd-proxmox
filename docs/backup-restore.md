@@ -140,12 +140,110 @@ volsync-backup/
 │       └── snapshots/      # Snapshot metadata
 ```
 
+## Critical Implementation Details
+
+### Kyverno Policy: Operations Filter (Race Condition Fix)
+
+**Problem:** Without an operations filter, Kyverno intercepts ALL PVC operations including DELETE, preventing PVC deletion.
+
+**Solution:** All rules must include `operations: [CREATE]`:
+
+```yaml
+match:
+  any:
+    - resources:
+        kinds:
+          - PersistentVolumeClaim
+        operations:
+          - CREATE  # CRITICAL: Only trigger on create, not delete
+        selector:
+          matchExpressions:
+            - key: backup
+              operator: In
+              values: ["hourly", "daily"]
+```
+
+### External Secrets: mergePolicy (Template + Data Merge)
+
+**Problem:** Kyverno uses `{{ }}` syntax, External Secrets uses `{{ }}` syntax. They conflict.
+
+**Solution:** Use `mergePolicy: Merge` to combine:
+- `template.data` - RESTIC_REPOSITORY (Kyverno substitutes namespace/pvc-name)
+- `data` section - Credentials fetched from 1Password
+
+```yaml
+target:
+  name: "volsync-{{request.object.metadata.name}}"
+  creationPolicy: Owner
+  template:
+    engineVersion: v2
+    mergePolicy: Merge  # CRITICAL: Merge template with fetched data
+    data:
+      # Kyverno substitutes these variables at generate time
+      RESTIC_REPOSITORY: "s3:http://192.168.10.133:30292/volsync-backup/{{request.object.metadata.namespace}}/{{request.object.metadata.name}}"
+data:
+  # External Secrets fetches these from 1Password and merges them
+  - secretKey: AWS_ACCESS_KEY_ID
+    remoteRef:
+      key: rustfs
+      property: k8s-admin-access-key
+  - secretKey: AWS_SECRET_ACCESS_KEY
+    remoteRef:
+      key: rustfs
+      property: k8s-admin-secret-key
+  - secretKey: RESTIC_PASSWORD
+    remoteRef:
+      key: rustfs
+      property: restic_password
+```
+
+**Result:** Secret contains all 4 required fields:
+- `RESTIC_REPOSITORY` - from template (Kyverno-substituted)
+- `AWS_ACCESS_KEY_ID` - from 1Password
+- `AWS_SECRET_ACCESS_KEY` - from 1Password
+- `RESTIC_PASSWORD` - from 1Password
+
+### Kyverno RBAC Requirements
+
+Kyverno needs permissions to generate ExternalSecrets and VolSync resources:
+
+```yaml
+# infrastructure/controllers/kyverno/rbac-patch.yaml
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list", "watch", "create", "update", "delete"]
+- apiGroups: ["external-secrets.io"]
+  resources: ["externalsecrets"]
+  verbs: ["get", "list", "watch", "create", "update", "delete"]
+- apiGroups: ["volsync.backube"]
+  resources: ["replicationsources", "replicationdestinations"]
+  verbs: ["get", "list", "watch", "create", "update", "delete"]
+```
+
 ## Troubleshooting
 
 ### PVC Stuck in Pending
 1. Check if ReplicationDestination exists: `kubectl get replicationdestination -n <namespace>`
 2. Check pvc-plumber logs: `kubectl logs -n volsync-system -l app.kubernetes.io/name=pvc-plumber`
 3. Check VolSync mover pod: `kubectl get pods -n <namespace> | grep volsync`
+
+### PVC Stuck in Terminating (Race Condition)
+**Symptom:** PVCs won't delete, Kyverno keeps intercepting patches.
+
+**Cause:** Missing `operations: [CREATE]` filter in Kyverno policy.
+
+**Fix:** Ensure all rules have `operations: [CREATE]` in match clause.
+
+### Secret Missing Credentials
+**Symptom:** VolSync fails with "access_key: placeholder" or missing credentials.
+
+**Cause:** `mergePolicy: Replace` (default) overwrites fetched data with template.
+
+**Fix:** Add `mergePolicy: Merge` to ExternalSecret template.
+
+**Verify:** `kubectl get secret volsync-<pvc-name> -n <namespace> -o json | jq '.data | keys'`
+Should show: `["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "RESTIC_PASSWORD", "RESTIC_REPOSITORY"]`
 
 ### Backup Not Running
 1. Check ReplicationSource: `kubectl get replicationsource -n <namespace>`
@@ -154,9 +252,9 @@ volsync-backup/
 
 ### Test pvc-plumber
 ```bash
-kubectl port-forward -n volsync-system svc/pvc-plumber 8080:80
-curl http://localhost:8080/exists/karakeep/data-pvc
-# Expected: {"exists":true} or {"exists":false}
+kubectl run -n volsync-system test --rm -it --image=curlimages/curl --restart=Never -- \
+  curl -s http://pvc-plumber.volsync-system.svc.cluster.local/exists/karakeep/data-pvc
+# Expected: {"exists":true,"keyCount":1} or {"exists":false}
 ```
 
 ## Excluded Namespaces
