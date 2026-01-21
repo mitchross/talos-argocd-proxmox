@@ -6,8 +6,7 @@ spec:
   selector:
     app: karakeep-web
   ports:
-    - name: http
-      protocol: TCP
-      port: 3000
-      targetPort: 3000
+  - protocol: TCP
+    port: 3000
+    targetPort: 3000
   type: ClusterIP
