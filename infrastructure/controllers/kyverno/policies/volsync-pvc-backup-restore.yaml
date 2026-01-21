@@ -101,6 +101,7 @@ spec:
               creationPolicy: Owner
               template:
                 engineVersion: v2
+                mergePolicy: Merge
                 metadata:
                   labels:
                     app.kubernetes.io/managed-by: kyverno
