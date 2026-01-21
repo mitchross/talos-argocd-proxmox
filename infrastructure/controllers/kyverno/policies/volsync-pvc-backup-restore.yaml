@@ -103,7 +103,7 @@ spec:
                 engineVersion: v2
                 data:
                   # These will be filled by External Secrets from the data below
-                  RESTIC_REPOSITORY: s3:http://minio.volsync-system.svc.cluster.local:9000/rustfs/{{request.object.metadata.namespace}}/{{request.object.metadata.name}}
+                  RESTIC_REPOSITORY: s3:http://192.168.10.133:30292/volsync-backup/{{request.object.metadata.namespace}}/{{request.object.metadata.name}}
                   RESTIC_PASSWORD: placeholder
                   AWS_ACCESS_KEY_ID: placeholder
                   AWS_SECRET_ACCESS_KEY: placeholder
