@@ -42,6 +42,7 @@ The system automatically backs up PVCs to S3-compatible storage (RustFS/MinIO) a
 
 ### 3. Kyverno ClusterPolicy
 - Triggers on PVCs with label `backup: hourly` or `backup: daily`
+- **Only triggers on CREATE operations** (not UPDATE/DELETE) to avoid race conditions
 - Calls pvc-plumber to check for existing backups
 - Generates:
   - ExternalSecret (per-PVC S3 credentials)
