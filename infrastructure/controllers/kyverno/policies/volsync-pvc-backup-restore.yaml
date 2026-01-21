@@ -177,12 +177,15 @@ spec:
                 fsGroup: 568
 
     # Rule 4: Generate ReplicationDestination (restore capability)
+    # IMPORTANT: Only trigger on CREATE to avoid race conditions during PVC deletion
     - name: generate-replication-destination
       match:
         any:
           - resources:
               kinds:
                 - PersistentVolumeClaim
+              operations:
+                - CREATE
               selector:
                 matchExpressions:
                   - key: backup
