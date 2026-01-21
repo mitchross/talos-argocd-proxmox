@@ -122,12 +122,15 @@ spec:
                   property: restic_password
 
     # Rule 3: Generate ReplicationSource (backup schedule)
+    # IMPORTANT: Only trigger on CREATE to avoid race conditions during PVC deletion
     - name: generate-replication-source
       match:
         any:
           - resources:
               kinds:
                 - PersistentVolumeClaim
+              operations:
+                - CREATE
               selector:
                 matchExpressions:
                   - key: backup
