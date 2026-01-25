@@ -32,6 +32,7 @@ spec:
       - path: infrastructure/storage/openebs
       - path: infrastructure/storage/snapshot-controller
       - path: infrastructure/storage/volsync
+      - path: infrastructure/storage/kopia-ui
       - path: infrastructure/database/*/*
       - path: infrastructure/crds
   template:
@@ -87,6 +88,9 @@ spec:
         kind: ExternalSecret
         jsonPointers:
         - /status
+        - /spec/data/*/remoteRef/conversionStrategy
+        - /spec/data/*/remoteRef/decodingStrategy
+        - /spec/data/*/remoteRef/metadataPolicy
       - group: kyverno.io
         kind: ClusterPolicy
         jsonPointers:

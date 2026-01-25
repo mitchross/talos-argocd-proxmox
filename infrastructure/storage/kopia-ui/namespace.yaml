@@ -1,0 +1,7 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kopia-ui
+  labels:
+    app.kubernetes.io/name: kopia-ui
