@@ -56,6 +56,9 @@ spec:
         jsonPointers:
         - /status
         - /metadata/generation
+        - /spec/data/*/remoteRef/conversionStrategy
+        - /spec/data/*/remoteRef/decodingStrategy
+        - /spec/data/*/remoteRef/metadataPolicy
       # PVC fields that are immutable after creation - needed for Volume Populator
       - group: ""
         kind: PersistentVolumeClaim
