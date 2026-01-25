@@ -1,10 +1,11 @@
 # VolSync Helm chart values
-# https://github.com/backube/volsync
+# Using perfectra1n fork for Kopia mover support
+# https://github.com/perfectra1n/volsync
 
-# Use image that includes Kopia mover support
+# Use perfectra1n image that includes Kopia mover
 image: &image
-  repository: ghcr.io/backube/volsync
-  tag: 0.11.0
+  repository: ghcr.io/perfectra1n/volsync
+  tag: 0.17.6
 
 # Set all mover images to same version
 kopia: *image
@@ -16,7 +17,6 @@ syncthing: *image
 
 # Metrics configuration
 metrics:
-  # Enable Prometheus metrics
   disableAuth: true
 
 # Resource configuration for the controller
