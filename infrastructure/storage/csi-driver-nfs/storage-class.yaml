@@ -17,6 +17,10 @@ mountOptions:
   - nfsvers=4.1
   - nolock
   - tcp
+  - rsize=1048576
+  - wsize=1048576
+  - noatime
+  - nconnect=4
 ---
 # llama-cpp NFS storage class (10G)
 apiVersion: storage.k8s.io/v1
@@ -33,3 +37,7 @@ mountOptions:
   - nfsvers=4.1
   - nolock
   - tcp
+  - rsize=1048576
+  - wsize=1048576
+  - noatime
+  - nconnect=4
