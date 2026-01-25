@@ -1,6 +1,19 @@
 # VolSync Helm chart values
 # https://github.com/backube/volsync
 
+# Use image that includes Kopia mover support
+image: &image
+  repository: ghcr.io/backube/volsync
+  tag: 0.11.0
+
+# Set all mover images to same version
+kopia: *image
+rclone: *image
+restic: *image
+rsync: *image
+rsync-tls: *image
+syncthing: *image
+
 # Metrics configuration
 metrics:
   # Enable Prometheus metrics
@@ -17,3 +30,9 @@ resources:
 
 # Enable CRDs installation
 manageCRDs: true
+
+# Pod security
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
