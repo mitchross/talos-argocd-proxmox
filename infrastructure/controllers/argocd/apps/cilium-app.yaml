@@ -41,3 +41,25 @@ spec:
     name: hubble-ca-cert
     jsonPointers:
     - /data
+  # Ignore auto-generated Cilium CA certificates to prevent reconciliation loops
+  # These secrets contain dynamically generated certs that Cilium manages internally
+  - kind: Secret
+    name: cilium-ca
+    namespace: kube-system
+    jsonPointers:
+      - /data/ca.crt
+      - /data/ca.key
+  - kind: Secret
+    name: hubble-server-certs
+    namespace: kube-system
+    jsonPointers:
+      - /data/ca.crt
+      - /data/tls.crt
+      - /data/tls.key
+  - kind: Secret
+    name: hubble-relay-client-certs
+    namespace: kube-system
+    jsonPointers:
+      - /data/ca.crt
+      - /data/tls.crt
+      - /data/tls.key
