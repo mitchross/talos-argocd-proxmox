@@ -5,11 +5,12 @@ metadata:
   name: volsync-pvc-backup-restore
   annotations:
     argocd.argoproj.io/sync-wave: "4"
-    policies.kyverno.io/title: VolSync PVC Backup and Restore
+    policies.kyverno.io/title: VolSync PVC Backup and Restore (Kopia)
     policies.kyverno.io/description: >-
       Automatically configures VolSync backup and restore for PVCs with the
-      label backup: "hourly" or backup: "daily". Checks S3 for existing backup
-      via pvc-plumber and conditionally enables restore via VolumePopulator.
+      label backup: "hourly" or backup: "daily". Uses Kopia for faster backups
+      with compression. Checks S3 for existing backup via pvc-plumber and
+      conditionally enables restore via VolumePopulator.
 spec:
   mutateExistingOnPolicyUpdate: false
   background: true
@@ -58,9 +59,9 @@ spec:
               kind: ReplicationDestination
               name: "{{request.object.metadata.name}}-restore"
 
-    # Rule 2: Generate ExternalSecret for per-PVC restic repository
+    # Rule 2: Generate ExternalSecret for per-PVC Kopia repository
     # IMPORTANT: Only trigger on CREATE to avoid race conditions during PVC deletion
-    - name: generate-restic-secret
+    - name: generate-kopia-secret
       match:
         any:
           - resources:
@@ -107,20 +108,25 @@ spec:
                     app.kubernetes.io/managed-by: kyverno
                     volsync.backup/pvc: "{{request.object.metadata.name}}"
                 data:
-                  RESTIC_REPOSITORY: "s3:http://192.168.10.133:30292/volsync-backup/{{request.object.metadata.namespace}}/{{request.object.metadata.name}}"
+                  # Kopia S3 repository configuration
+                  # Per-PVC path within bucket: namespace/pvc-name
+                  KOPIA_S3_BUCKET: "volsync-backup"
+                  KOPIA_S3_ENDPOINT: "192.168.10.133:30292"
+                  KOPIA_S3_PREFIX: "{{request.object.metadata.namespace}}/{{request.object.metadata.name}}"
+                  KOPIA_S3_DISABLE_TLS: "true"
             data:
-              - secretKey: AWS_ACCESS_KEY_ID
+              - secretKey: KOPIA_S3_ACCESS_KEY_ID
                 remoteRef:
                   key: rustfs
                   property: k8s-admin-access-key
-              - secretKey: AWS_SECRET_ACCESS_KEY
+              - secretKey: KOPIA_S3_SECRET_ACCESS_KEY
                 remoteRef:
                   key: rustfs
                   property: k8s-admin-secret-key
-              - secretKey: RESTIC_PASSWORD
+              - secretKey: KOPIA_PASSWORD
                 remoteRef:
                   key: rustfs
-                  property: restic_password
+                  property: kopia_password
 
     # Rule 3: Generate ReplicationSource (backup schedule)
     # IMPORTANT: Only trigger on CREATE to avoid race conditions during PVC deletion
@@ -160,14 +166,18 @@ spec:
             trigger:
               # Use label value for schedule: hourly = every hour, daily = once per day at 2am
               schedule: "{{ request.object.metadata.labels.backup == 'hourly' && '0 * * * *' || '0 2 * * *' }}"
-            restic:
-              pruneIntervalDays: 7
+            kopia:
               repository: "volsync-{{request.object.metadata.name}}"
+              # Kopia-specific optimizations
+              compression: zstd-fastest
+              parallelism: 2
+              # Retention policy
               retain:
                 hourly: 24
                 daily: 7
                 weekly: 4
                 monthly: 2
+              # Snapshot-based backup via Longhorn
               copyMethod: Snapshot
               storageClassName: longhorn
               volumeSnapshotClassName: longhorn-snapclass
@@ -213,7 +223,7 @@ spec:
           spec:
             trigger:
               manual: restore-once
-            restic:
+            kopia:
               repository: "volsync-{{request.object.metadata.name}}"
               copyMethod: Snapshot
               storageClassName: longhorn

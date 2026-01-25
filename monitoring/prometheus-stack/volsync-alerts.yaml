@@ -1,0 +1,185 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: volsync-alerts
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack
+    app.kubernetes.io/instance: kube-prometheus-stack
+    app.kubernetes.io/managed-by: Helm
+    prometheus: kube-prometheus-stack-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: volsync.backup
+      rules:
+        # VolSync Controller Health
+        - alert: VolSyncControllerDown
+          expr: absent(up{job=~".*volsync.*"} == 1)
+          for: 5m
+          labels:
+            severity: critical
+            component: volsync
+            category: backup
+          annotations:
+            summary: "VolSync controller is down"
+            description: |
+              VolSync controller has been unavailable for more than 5 minutes.
+              This means backups and restores cannot be processed.
+
+              Troubleshooting:
+              1. Check VolSync deployment: kubectl get deploy -n volsync-system
+              2. Check pod logs: kubectl logs -n volsync-system -l app.kubernetes.io/name=volsync
+              3. Check events: kubectl get events -n volsync-system --sort-by='.lastTimestamp'
+            runbook_url: "https://volsync.readthedocs.io/en/stable/usage/index.html"
+
+        # Volume Out of Sync
+        - alert: VolSyncVolumeOutOfSync
+          expr: volsync_volume_out_of_sync == 1
+          for: 5m
+          labels:
+            severity: critical
+            component: volsync
+            category: backup
+          annotations:
+            summary: "VolSync volume out of sync: {{ $labels.obj_namespace }}/{{ $labels.obj_name }}"
+            description: |
+              ReplicationSource {{ $labels.obj_namespace }}/{{ $labels.obj_name }} is out of sync.
+              This means the last backup attempt failed or never completed.
+
+              Troubleshooting:
+              1. Check ReplicationSource status: kubectl get replicationsource {{ $labels.obj_name }} -n {{ $labels.obj_namespace }} -o yaml
+              2. Check mover pod logs: kubectl logs -n {{ $labels.obj_namespace }} -l volsync.backube/replicationsource={{ $labels.obj_name }}
+              3. Check secret exists: kubectl get secret volsync-{{ $labels.obj_name }} -n {{ $labels.obj_namespace }}
+              4. Verify S3 connectivity and credentials
+            runbook_url: "https://volsync.readthedocs.io/en/stable/usage/index.html"
+
+        # Missed Scheduled Backup
+        - alert: VolSyncMissedScheduledBackup
+          expr: |
+            (
+              time() - volsync_missed_intervals_total > 0
+            ) and (
+              increase(volsync_missed_intervals_total[1h]) > 0
+            )
+          for: 10m
+          labels:
+            severity: warning
+            component: volsync
+            category: backup
+          annotations:
+            summary: "VolSync missed scheduled backup: {{ $labels.obj_namespace }}/{{ $labels.obj_name }}"
+            description: |
+              ReplicationSource {{ $labels.obj_namespace }}/{{ $labels.obj_name }} has missed scheduled backup intervals.
+
+              This could indicate:
+              - Previous backup still running (long backup time)
+              - Resource constraints preventing mover pod scheduling
+              - PVC access issues
+
+              Actions:
+              1. Check for running mover pods: kubectl get pods -n {{ $labels.obj_namespace }} -l volsync.backube/replicationsource={{ $labels.obj_name }}
+              2. Check ReplicationSource status
+              3. Review backup duration trends
+            runbook_url: "https://volsync.readthedocs.io/en/stable/usage/index.html"
+
+        # Sync Duration Too Long
+        - alert: VolSyncDurationTooLong
+          expr: volsync_sync_duration_seconds > 3600
+          for: 5m
+          labels:
+            severity: warning
+            component: volsync
+            category: backup
+          annotations:
+            summary: "VolSync backup taking too long: {{ $labels.obj_namespace }}/{{ $labels.obj_name }}"
+            description: |
+              ReplicationSource {{ $labels.obj_namespace }}/{{ $labels.obj_name }} backup is taking more than 1 hour.
+              Duration: {{ $value | humanizeDuration }}
+
+              This could indicate:
+              - Large amount of changed data
+              - Slow network to S3 backend
+              - Resource constraints
+
+              Actions:
+              1. Check mover pod resource usage
+              2. Review S3 endpoint performance
+              3. Consider adjusting parallelism or compression settings
+            runbook_url: "https://volsync.readthedocs.io/en/stable/usage/index.html"
+
+    - name: volsync.restore
+      rules:
+        # Restore Taking Too Long
+        - alert: VolSyncRestoreTooLong
+          expr: |
+            (
+              kube_persistentvolumeclaim_status_phase{phase="Pending"} == 1
+            ) and on (persistentvolumeclaim, namespace) (
+              kube_persistentvolumeclaim_info{volumeattributesclass=~".*volsync.*"} == 1
+            )
+          for: 15m
+          labels:
+            severity: warning
+            component: volsync
+            category: restore
+          annotations:
+            summary: "VolSync restore PVC pending too long: {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}"
+            description: |
+              PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} has been pending for more than 15 minutes
+              while waiting for VolSync restore.
+
+              Troubleshooting:
+              1. Check ReplicationDestination: kubectl get replicationdestination -n {{ $labels.namespace }}
+              2. Check mover pod: kubectl get pods -n {{ $labels.namespace }} -l volsync.backube/replicationdestination
+              3. Check if backup exists in S3
+              4. Verify pvc-plumber service is running
+            runbook_url: "https://volsync.readthedocs.io/en/stable/usage/index.html"
+
+    - name: volsync.health
+      rules:
+        # pvc-plumber Service Health
+        - alert: PvcPlumberDown
+          expr: |
+            absent(up{job=~".*pvc-plumber.*"} == 1)
+            or
+            (up{job=~".*pvc-plumber.*"} == 0)
+          for: 2m
+          labels:
+            severity: critical
+            component: pvc-plumber
+            category: backup
+          annotations:
+            summary: "pvc-plumber service is down"
+            description: |
+              pvc-plumber service is unavailable. This will cause Kyverno policy
+              to fail when checking for existing backups during PVC creation.
+
+              New PVCs with backup labels will not get dataSourceRef for restore.
+
+              Troubleshooting:
+              1. Check deployment: kubectl get deploy pvc-plumber -n volsync-system
+              2. Check pod logs: kubectl logs -n volsync-system -l app.kubernetes.io/name=pvc-plumber
+              3. Test endpoint: kubectl run -it --rm test --image=curlimages/curl --restart=Never -- curl http://pvc-plumber.volsync-system.svc.cluster.local/healthz
+            runbook_url: "https://github.com/mitchross/pvc-plumber"
+
+        # Kopia Repository Maintenance (if using KopiaMaintenance)
+        - alert: VolSyncKopiaMaintenanceFailed
+          expr: |
+            kube_job_status_failed{job_name=~"kopia-maint.*"} > 0
+          for: 5m
+          labels:
+            severity: warning
+            component: volsync
+            category: maintenance
+          annotations:
+            summary: "Kopia maintenance job failed: {{ $labels.job_name }}"
+            description: |
+              Kopia maintenance job {{ $labels.job_name }} has failed.
+              This may lead to repository bloat over time.
+
+              Actions:
+              1. Check job logs: kubectl logs -n {{ $labels.namespace }} job/{{ $labels.job_name }}
+              2. Verify S3 connectivity
+              3. Consider running manual maintenance
+            runbook_url: "https://kopia.io/docs/advanced/maintenance/"
