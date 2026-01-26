@@ -111,6 +111,8 @@ spec:
                   KOPIA_REPOSITORY: "s3://volsync-kopia/{{request.object.metadata.namespace}}/{{request.object.metadata.name}}"
                   # S3 endpoint for non-AWS S3 (RustFS/MinIO)
                   AWS_S3_ENDPOINT: "http://192.168.10.133:30292"
+                  # Disable TLS since endpoint is HTTP
+                  KOPIA_S3_DISABLE_TLS: "true"
             data:
               - secretKey: AWS_ACCESS_KEY_ID
                 remoteRef:
