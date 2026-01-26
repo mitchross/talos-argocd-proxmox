@@ -110,7 +110,7 @@ spec:
                 data:
                   # Kopia S3 repository configuration
                   # Full S3 URL with path: s3://bucket/namespace/pvc-name
-                  KOPIA_REPOSITORY: "s3://volsync-backup/{{request.object.metadata.namespace}}/{{request.object.metadata.name}}"
+                  KOPIA_REPOSITORY: "s3://volsync-kopia/{{request.object.metadata.namespace}}/{{request.object.metadata.name}}"
                   # S3 endpoint for non-AWS S3 (RustFS/MinIO)
                   AWS_S3_ENDPOINT: "http://192.168.10.133:30292"
             data:
