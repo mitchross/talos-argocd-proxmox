@@ -127,6 +127,7 @@ spec:
 
     # Rule 3: Generate ReplicationSource (backup schedule)
     - name: generate-replication-source
+      skipBackgroundRequests: false
       match:
         any:
           - resources:
