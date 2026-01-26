@@ -8,8 +8,8 @@ resources:
   - volumesnapshotclass.yaml
 helmCharts:
   - name: volsync
-    repo: https://backube.github.io/helm-charts
-    version: 0.14.0
+    repo: https://perfectra1n.github.io/volsync
+    version: 0.17.6
     releaseName: volsync
     namespace: volsync-system
     valuesFile: values.yaml
