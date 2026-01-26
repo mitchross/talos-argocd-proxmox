@@ -109,17 +109,16 @@ spec:
                     volsync.backup/pvc: "{{request.object.metadata.name}}"
                 data:
                   # Kopia S3 repository configuration
-                  # Per-PVC path within bucket: namespace/pvc-name
-                  KOPIA_S3_BUCKET: "volsync-backup"
-                  KOPIA_S3_ENDPOINT: "192.168.10.133:30292"
-                  KOPIA_S3_PREFIX: "{{request.object.metadata.namespace}}/{{request.object.metadata.name}}"
-                  KOPIA_S3_DISABLE_TLS: "true"
+                  # Full S3 URL with path: s3://bucket/namespace/pvc-name
+                  KOPIA_REPOSITORY: "s3://volsync-backup/{{request.object.metadata.namespace}}/{{request.object.metadata.name}}"
+                  # S3 endpoint for non-AWS S3 (RustFS/MinIO)
+                  AWS_S3_ENDPOINT: "http://192.168.10.133:30292"
             data:
-              - secretKey: KOPIA_S3_ACCESS_KEY_ID
+              - secretKey: AWS_ACCESS_KEY_ID
                 remoteRef:
                   key: rustfs
                   property: k8s-admin-access-key
-              - secretKey: KOPIA_S3_SECRET_ACCESS_KEY
+              - secretKey: AWS_SECRET_ACCESS_KEY
                 remoteRef:
                   key: rustfs
                   property: k8s-admin-secret-key
