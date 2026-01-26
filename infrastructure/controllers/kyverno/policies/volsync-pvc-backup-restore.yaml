@@ -184,6 +184,7 @@ spec:
 
     # Rule 4: Generate ReplicationDestination (restore capability)
     - name: generate-replication-destination
+      skipBackgroundRequests: false
       match:
         any:
           - resources:
