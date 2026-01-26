@@ -9,7 +9,7 @@ resources:
 helmCharts:
   - name: volsync
     repo: https://perfectra1n.github.io/volsync/charts
-    version: 0.17.6
+    version: 0.18.2
     releaseName: volsync
     namespace: volsync-system
     valuesFile: values.yaml
