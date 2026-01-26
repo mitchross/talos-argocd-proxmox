@@ -8,7 +8,7 @@ resources:
   - volumesnapshotclass.yaml
 helmCharts:
   - name: volsync
-    repo: https://perfectra1n.github.io/volsync
+    repo: https://perfectra1n.github.io/volsync/charts
     version: 0.17.6
     releaseName: volsync
     namespace: volsync-system
