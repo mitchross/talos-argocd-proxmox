@@ -61,6 +61,7 @@ spec:
 
     # Rule 2: Generate ExternalSecret for per-PVC Kopia repository
     - name: generate-kopia-secret
+      skipBackgroundRequests: false
       match:
         any:
           - resources:
