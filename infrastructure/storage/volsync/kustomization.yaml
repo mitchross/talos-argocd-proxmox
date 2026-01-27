@@ -3,9 +3,8 @@ kind: Kustomization
 namespace: volsync-system
 resources:
   - namespace.yaml
-  - externalsecret.yaml
-  - rustfs-credentials.yaml
   - volumesnapshotclass.yaml
+  - mutatingadmissionpolicy.yaml
 helmCharts:
   - name: volsync
     repo: https://perfectra1n.github.io/volsync/charts
