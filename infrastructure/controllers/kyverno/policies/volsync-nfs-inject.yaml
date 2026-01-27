@@ -11,7 +11,7 @@ metadata:
       access the shared repository on TrueNAS.
 spec:
   rules:
-    - name: inject-nfs-volume
+    - name: inject-nfs-volume-add-volume
       match:
         any:
           - resources:
@@ -30,11 +30,21 @@ spec:
                     nfs:
                       server: "192.168.10.133"
                       path: "/mnt/BigTank/k8s/volsync-kopia-nfs"
+    - name: inject-nfs-volume-add-mounts
+      match:
+        any:
+          - resources:
+              kinds:
+                - Job
+              selector:
+                matchLabels:
+                  app.kubernetes.io/created-by: volsync
+      mutate:
         foreach:
           - list: "request.object.spec.template.spec.containers"
             patchesJson6902: |-
               - op: add
-                path: /spec/template/spec/containers/{{@index}}/volumeMounts/-
+                path: /spec/template/spec/containers/{{elementIndex}}/volumeMounts/-
                 value:
                   name: repository
                   mountPath: /repository
