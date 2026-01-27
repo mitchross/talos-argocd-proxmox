@@ -24,50 +24,19 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: kopia
-          image: ghcr.io/kopia/kopia:0.22
-          command:
-            - /bin/sh
-            - -c
-            - |
-              # Connect to the S3 repository (karakeep/data-pvc as example)
-              kopia repository connect s3 \
-                --bucket=volsync-kopia \
-                --prefix=karakeep/data-pvc \
-                --endpoint=${AWS_S3_ENDPOINT} \
-                --access-key=${AWS_ACCESS_KEY_ID} \
-                --secret-access-key=${AWS_SECRET_ACCESS_KEY} \
-                --password=${KOPIA_PASSWORD} \
-                --disable-tls \
-                --config-file=/app/config/repository.config \
-                --cache-directory=/app/cache
-              # Start the server
-              exec kopia server start \
-                --address=0.0.0.0:80 \
-                --server-control-password=${KOPIA_PASSWORD} \
-                --server-username=admin \
-                --server-password=${KOPIA_PASSWORD} \
-                --insecure \
-                --without-password \
-                --config-file=/app/config/repository.config \
-                --cache-directory=/app/cache
+          image: ghcr.io/home-operations/kopia:0.22.3
+          args:
+            - --without-password
           env:
+            - name: KOPIA_WEB_ENABLED
+              value: "true"
+            - name: KOPIA_WEB_PORT
+              value: "80"
             - name: KOPIA_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: kopia-ui-secret
                   key: KOPIA_PASSWORD
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: kopia-ui-secret
-                  key: AWS_ACCESS_KEY_ID
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: kopia-ui-secret
-                  key: AWS_SECRET_ACCESS_KEY
-            - name: AWS_S3_ENDPOINT
-              value: "192.168.10.133:30292"
             - name: TZ
               value: "America/New_York"
           ports:
@@ -98,18 +67,30 @@ spec:
               cpu: 10m
               memory: 128Mi
             limits:
-              memory: 512Mi
+              memory: 1Gi
           volumeMounts:
-            - name: cache
-              mountPath: /app/cache
+            - name: repository
+              mountPath: /repository
             - name: config
-              mountPath: /app/config
+              mountPath: /config/repository.config
+              subPath: repository.config
+            - name: cache
+              mountPath: /config/cache
+            - name: logs
+              mountPath: /config/logs
             - name: tmp
               mountPath: /tmp
       volumes:
+        - name: repository
+          nfs:
+            server: 192.168.10.133
+            path: /mnt/BigTank/k8s/volsync-kopia-nfs
+        - name: config
+          configMap:
+            name: kopia-ui-config
         - name: cache
           emptyDir: {}
-        - name: config
+        - name: logs
           emptyDir: {}
         - name: tmp
           emptyDir: {}

@@ -119,3 +119,7 @@ credentials.base64
 /my-apps/privacy/proxitok/source
 /my-apps/privacy/proxitok/docker/misc
 /my-apps/privacy/proxitok/docker
+
+# Reference implementations (not deployed)
+/home-ops/
+/reference/

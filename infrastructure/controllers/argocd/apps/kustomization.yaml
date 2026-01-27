@@ -9,8 +9,7 @@ resources:
   - external-secrets.yaml  # Wave 0 - External Secrets CRDs (required by Longhorn)
   - longhorn-app.yaml      # Wave 1 - Storage foundation
   - snapshot-controller-app.yaml # Wave 1 - VolumeSnapshot controller + CRDs
-  - volsync-app.yaml       # Wave 1 - PVC backup and replication
-  - pvc-plumber-app.yaml   # Wave 2 - Backup existence checker (before Kyverno)
+  - volsync-app.yaml       # Wave 1 - PVC backup and replication (Kopia + NFS)
   # ApplicationSets for automatic discovery
   - infrastructure-appset.yaml  # Wave 4
   - monitoring-appset.yaml      # Wave 3

@@ -1,0 +1,20 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kopia-ui-config
+  namespace: kopia-ui
+data:
+  repository.config: |
+    {
+      "storage": {
+        "type": "filesystem",
+        "config": {
+          "path": "/repository"
+        }
+      },
+      "hostname": "kopia-ui",
+      "username": "volsync",
+      "description": "VolSync Kopia NFS Repository",
+      "enableActions": false
+    }

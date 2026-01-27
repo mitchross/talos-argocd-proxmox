@@ -51,7 +51,7 @@ spec:
               1. Check ReplicationSource status: kubectl get replicationsource {{ $labels.obj_name }} -n {{ $labels.obj_namespace }} -o yaml
               2. Check mover pod logs: kubectl logs -n {{ $labels.obj_namespace }} -l volsync.backube/replicationsource={{ $labels.obj_name }}
               3. Check secret exists: kubectl get secret volsync-{{ $labels.obj_name }} -n {{ $labels.obj_namespace }}
-              4. Verify S3 connectivity and credentials
+              4. Verify NFS connectivity
             runbook_url: "https://volsync.readthedocs.io/en/stable/usage/index.html"
 
         # Missed Scheduled Backup
@@ -99,12 +99,12 @@ spec:
 
               This could indicate:
               - Large amount of changed data
-              - Slow network to S3 backend
+              - Slow network to NFS backend
               - Resource constraints
 
               Actions:
               1. Check mover pod resource usage
-              2. Review S3 endpoint performance
+              2. Review NFS performance
               3. Consider adjusting parallelism or compression settings
             runbook_url: "https://volsync.readthedocs.io/en/stable/usage/index.html"
 
@@ -132,37 +132,11 @@ spec:
               Troubleshooting:
               1. Check ReplicationDestination: kubectl get replicationdestination -n {{ $labels.namespace }}
               2. Check mover pod: kubectl get pods -n {{ $labels.namespace }} -l volsync.backube/replicationdestination
-              3. Check if backup exists in S3
-              4. Verify pvc-plumber service is running
+              3. Check if backup exists on NFS
             runbook_url: "https://volsync.readthedocs.io/en/stable/usage/index.html"
 
     - name: volsync.health
       rules:
-        # pvc-plumber Service Health
-        - alert: PvcPlumberDown
-          expr: |
-            absent(up{job=~".*pvc-plumber.*"} == 1)
-            or
-            (up{job=~".*pvc-plumber.*"} == 0)
-          for: 2m
-          labels:
-            severity: critical
-            component: pvc-plumber
-            category: backup
-          annotations:
-            summary: "pvc-plumber service is down"
-            description: |
-              pvc-plumber service is unavailable. This will cause Kyverno policy
-              to fail when checking for existing backups during PVC creation.
-
-              New PVCs with backup labels will not get dataSourceRef for restore.
-
-              Troubleshooting:
-              1. Check deployment: kubectl get deploy pvc-plumber -n volsync-system
-              2. Check pod logs: kubectl logs -n volsync-system -l app.kubernetes.io/name=pvc-plumber
-              3. Test endpoint: kubectl run -it --rm test --image=curlimages/curl --restart=Never -- curl http://pvc-plumber.volsync-system.svc.cluster.local/healthz
-            runbook_url: "https://github.com/mitchross/pvc-plumber"
-
         # Kopia Repository Maintenance (if using KopiaMaintenance)
         - alert: VolSyncKopiaMaintenanceFailed
           expr: |
@@ -180,6 +154,6 @@ spec:
 
               Actions:
               1. Check job logs: kubectl logs -n {{ $labels.namespace }} job/{{ $labels.job_name }}
-              2. Verify S3 connectivity
+              2. Verify NFS connectivity
               3. Consider running manual maintenance
             runbook_url: "https://kopia.io/docs/advanced/maintenance/"
