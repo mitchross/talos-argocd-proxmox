@@ -5,6 +5,7 @@ resources:
 - namespace.yaml
 - rbac-patch.yaml
 - policies/volsync-pvc-backup-restore.yaml
+- policies/volsync-nfs-inject.yaml
 helmCharts:
 - name: kyverno
   repo: https://kyverno.github.io/kyverno
