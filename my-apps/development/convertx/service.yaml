@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: convertx
+  namespace: convertx
+spec:
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: convertx
