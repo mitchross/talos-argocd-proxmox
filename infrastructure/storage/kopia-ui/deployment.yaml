@@ -24,16 +24,32 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: kopia
-          image: ghcr.io/kopia/kopia:0.18.2
-          args:
-            - server
-            - start
-            - --address=0.0.0.0:80
-            - --server-control-password=$(KOPIA_PASSWORD)
-            - --server-username=admin
-            - --server-password=$(KOPIA_PASSWORD)
-            - --insecure
-            - --without-password
+          image: ghcr.io/kopia/kopia:0.22
+          command:
+            - /bin/sh
+            - -c
+            - |
+              # Connect to the S3 repository (karakeep/data-pvc as example)
+              kopia repository connect s3 \
+                --bucket=volsync-kopia \
+                --prefix=karakeep/data-pvc \
+                --endpoint=${AWS_S3_ENDPOINT} \
+                --access-key=${AWS_ACCESS_KEY_ID} \
+                --secret-access-key=${AWS_SECRET_ACCESS_KEY} \
+                --password=${KOPIA_PASSWORD} \
+                --disable-tls \
+                --config-file=/app/config/repository.config \
+                --cache-directory=/app/cache
+              # Start the server
+              exec kopia server start \
+                --address=0.0.0.0:80 \
+                --server-control-password=${KOPIA_PASSWORD} \
+                --server-username=admin \
+                --server-password=${KOPIA_PASSWORD} \
+                --insecure \
+                --without-password \
+                --config-file=/app/config/repository.config \
+                --cache-directory=/app/cache
           env:
             - name: KOPIA_PASSWORD
               valueFrom:
@@ -50,6 +66,8 @@ spec:
                 secretKeyRef:
                   name: kopia-ui-secret
                   key: AWS_SECRET_ACCESS_KEY
+            - name: AWS_S3_ENDPOINT
+              value: "192.168.10.133:30292"
             - name: TZ
               value: "America/New_York"
           ports:
