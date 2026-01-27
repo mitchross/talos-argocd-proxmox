@@ -4,7 +4,6 @@ namespace: volsync-system
 resources:
   - namespace.yaml
   - volumesnapshotclass.yaml
-  - mutatingadmissionpolicy.yaml
 helmCharts:
   - name: volsync
     repo: https://perfectra1n.github.io/volsync/charts

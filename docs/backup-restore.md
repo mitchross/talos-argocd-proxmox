@@ -49,7 +49,7 @@ The system automatically backs up PVCs to NFS storage on TrueNAS using **Kopia**
 - **Path:** `/mnt/BigTank/k8s/volsync-kopia-nfs`
 - **Encryption:** Kopia encrypts all data with KOPIA_PASSWORD
 
-### 2. MutatingAdmissionPolicy
+### 2. Kyverno NFS Injection Policy
 - Automatically injects NFS mount into all VolSync mover jobs
 - Mounts `/repository` from TrueNAS NFS share
 - No per-app configuration needed
@@ -214,8 +214,8 @@ The following namespaces are excluded from automatic backup:
 
 | File | Purpose |
 |------|---------|
-| `infrastructure/storage/volsync/` | VolSync Helm chart + MutatingAdmissionPolicy |
-| `infrastructure/storage/volsync/mutatingadmissionpolicy.yaml` | Injects NFS mount into mover pods |
+| `infrastructure/storage/volsync/` | VolSync Helm chart |
+| `infrastructure/controllers/kyverno/policies/volsync-nfs-inject.yaml` | Injects NFS mount into mover pods |
 | `infrastructure/storage/kopia-ui/` | Kopia web UI for browsing backups |
 | `infrastructure/controllers/kyverno/policies/volsync-pvc-backup-restore.yaml` | Kyverno policy |
 | `monitoring/prometheus-stack/volsync-alerts.yaml` | Prometheus alerting rules |

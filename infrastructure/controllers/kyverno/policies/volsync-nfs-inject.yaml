@@ -1,0 +1,40 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: volsync-nfs-inject
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+    policies.kyverno.io/title: VolSync NFS Mount Injection
+    policies.kyverno.io/description: >-
+      Injects NFS volume mount into VolSync mover jobs so Kopia can
+      access the shared repository on TrueNAS.
+spec:
+  rules:
+    - name: inject-nfs-volume
+      match:
+        any:
+          - resources:
+              kinds:
+                - Job
+              selector:
+                matchLabels:
+                  app.kubernetes.io/created-by: volsync
+      mutate:
+        patchStrategicMerge:
+          spec:
+            template:
+              spec:
+                volumes:
+                  - name: repository
+                    nfs:
+                      server: "192.168.10.133"
+                      path: "/mnt/BigTank/k8s/volsync-kopia-nfs"
+        foreach:
+          - list: "request.object.spec.template.spec.containers"
+            patchesJson6902: |-
+              - op: add
+                path: /spec/template/spec/containers/{{@index}}/volumeMounts/-
+                value:
+                  name: repository
+                  mountPath: /repository
