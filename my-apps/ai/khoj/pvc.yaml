@@ -6,7 +6,7 @@ metadata:
   labels:
     app: khoj
     type: config
-    backup: "hourly"
+    # backup: "hourly"  # Disabled - khoj-server scaled to 0
 spec:
   accessModes:
     - ReadWriteOnce
