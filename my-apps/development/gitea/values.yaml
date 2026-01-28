@@ -2,6 +2,8 @@ persistence:
   enabled: true
   size: 10Gi
   storageClass: longhorn
+  labels:
+    backup: "daily"
 
 service:
   http:
