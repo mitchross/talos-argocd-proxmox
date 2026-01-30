@@ -22,7 +22,6 @@ data:
 
     PORT = 8080
     KOPIA_CONFIG = "/config/repository.config"
-    KOPIA_BIN = "/kopia-bin/kopia"
 
     class PVCPlumberHandler(http.server.BaseHTTPRequestHandler):
         def log_message(self, format, *args):
@@ -62,7 +61,7 @@ data:
             source = f"{pvc}-backup@{namespace}"
             try:
                 result = subprocess.run(
-                    [KOPIA_BIN, "--config-file", KOPIA_CONFIG, "snapshot", "list", source, "--json"],
+                    ["kopia", "--config-file", KOPIA_CONFIG, "snapshot", "list", source, "--json"],
                     capture_output=True,
                     text=True,
                     timeout=10
@@ -88,7 +87,6 @@ data:
     if __name__ == "__main__":
         print(f"[pvc-plumber] Starting server on port {PORT}")
         print(f"[pvc-plumber] Using config: {KOPIA_CONFIG}")
-        print(f"[pvc-plumber] Kopia binary: {KOPIA_BIN}")
         server = http.server.HTTPServer(("", PORT), PVCPlumberHandler)
         server.serve_forever()
 ---
@@ -141,22 +139,10 @@ spec:
         fsGroup: 568
         seccompProfile:
           type: RuntimeDefault
-      initContainers:
-        # Copy kopia binary from kopia image to shared volume
-        - name: install-kopia
-          image: ghcr.io/home-operations/kopia:0.22.3
-          command: ["sh", "-c", "cp /app/kopia /kopia-bin/kopia && chmod +x /kopia-bin/kopia"]
-          volumeMounts:
-            - name: kopia-bin
-              mountPath: /kopia-bin
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
       containers:
         - name: pvc-plumber
-          image: python:3.12-alpine
+          # Use perfectra1n volsync image which has both kopia and python
+          image: ghcr.io/perfectra1n/volsync:kopia-main-20250107
           command: ["python3", "/scripts/server.py"]
           ports:
             - name: http
@@ -202,12 +188,10 @@ spec:
               subPath: repository.config
             - name: scripts
               mountPath: /scripts
-            - name: kopia-bin
-              mountPath: /kopia-bin
             - name: tmp
               mountPath: /tmp
             - name: cache
-              mountPath: /root/.cache
+              mountPath: /.cache
       volumes:
         - name: repository
           nfs:
@@ -220,8 +204,6 @@ spec:
           configMap:
             name: pvc-plumber-script
             defaultMode: 0755
-        - name: kopia-bin
-          emptyDir: {}
         - name: tmp
           emptyDir: {}
         - name: cache
