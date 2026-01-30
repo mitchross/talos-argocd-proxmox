@@ -11,7 +11,7 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: libreddit
-  replicas: 0
+  replicas: 1
   strategy:
     type: RollingUpdate
   template:
