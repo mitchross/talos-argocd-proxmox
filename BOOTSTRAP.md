@@ -28,6 +28,7 @@ Omni provisions Talos clusters without a CNI pre-installed. Install Cilium manua
 
 ```bash
 cilium install \
+    --set cluster.name=talos-prod-cluster \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
     --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
@@ -40,6 +41,8 @@ cilium install \
     --set gatewayAPI.enableAlpn=true \
     --set gatewayAPI.enableAppProtocol=true
 ```
+
+> **Important:** The `cluster.name` must match the value in `infrastructure/networking/cilium/values.yaml` to ensure Hubble certificates have the correct SANs when ArgoCD takes over management.
 
 **Why these settings?**
 - `kubeProxyReplacement=true` - Cilium replaces kube-proxy for better performance
