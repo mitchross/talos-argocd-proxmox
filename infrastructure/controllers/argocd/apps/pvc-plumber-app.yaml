@@ -11,7 +11,7 @@ metadata:
 spec:
   project: infrastructure
   source:
-    repoURL: https://github.com/mitchross/k3s-argocd-proxmox.git
+    repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
     targetRevision: main
     path: infrastructure/controllers/pvc-plumber
   destination:
