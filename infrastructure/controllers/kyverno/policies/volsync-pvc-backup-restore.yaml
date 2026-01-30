@@ -15,6 +15,50 @@ spec:
   mutateExistingOnPolicyUpdate: false
   background: true
   rules:
+    # Rule 0: Conditionally add dataSourceRef if backup exists in Kopia
+    # IMPORTANT: Only trigger on CREATE to avoid race conditions during PVC deletion
+    - name: add-datasource-if-backup-exists
+      match:
+        any:
+          - resources:
+              kinds:
+                - PersistentVolumeClaim
+              operations:
+                - CREATE
+              selector:
+                matchExpressions:
+                  - key: backup
+                    operator: In
+                    values: ["hourly", "daily"]
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - volsync-system
+                - kyverno
+      context:
+        - name: backupCheck
+          apiCall:
+            method: GET
+            service:
+              url: "http://pvc-plumber.volsync-system.svc.cluster.local/exists/{{request.object.metadata.namespace}}/{{request.object.metadata.name}}"
+      preconditions:
+        all:
+          - key: "{{ backupCheck.exists || false }}"
+            operator: Equals
+            value: true
+          - key: "{{ request.object.spec.dataSourceRef || '' }}"
+            operator: Equals
+            value: ""
+      mutate:
+        patchStrategicMerge:
+          spec:
+            dataSourceRef:
+              apiGroup: volsync.backube
+              kind: ReplicationDestination
+              name: "{{request.object.metadata.name}}-restore"
+
     # Rule 1: Generate ExternalSecret for Kopia repository credentials
     - name: generate-kopia-secret
       skipBackgroundRequests: false
