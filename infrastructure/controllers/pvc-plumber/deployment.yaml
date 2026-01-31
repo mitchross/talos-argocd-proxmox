@@ -40,6 +40,11 @@ spec:
               value: "/repository"
             - name: LOG_LEVEL
               value: "info"
+            - name: KOPIA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pvc-plumber-kopia
+                  key: KOPIA_PASSWORD
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
