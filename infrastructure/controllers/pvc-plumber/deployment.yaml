@@ -1,117 +1,4 @@
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: pvc-plumber-script
-  namespace: volsync-system
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-data:
-  server.py: |
-    #!/usr/bin/env python3
-    """
-    pvc-plumber: HTTP service that checks if Kopia backups exist for PVCs.
-    Used by Kyverno to conditionally add dataSourceRef for restore.
-    """
-    import http.server
-    import json
-    import subprocess
-    import os
-    import re
-    from urllib.parse import urlparse
-
-    PORT = 8080
-    KOPIA_CONFIG = "/config/repository.config"
-
-    class PVCPlumberHandler(http.server.BaseHTTPRequestHandler):
-        def log_message(self, format, *args):
-            print(f"[pvc-plumber] {args[0]}")
-
-        def send_json(self, data, status=200):
-            self.send_response(status)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps(data).encode())
-
-        def do_GET(self):
-            path = urlparse(self.path).path
-
-            # Health checks
-            if path in ["/healthz", "/readyz"]:
-                self.send_json({"status": "ok"})
-                return
-
-            # Check backup exists: /exists/{namespace}/{pvc}
-            match = re.match(r"^/exists/([^/]+)/([^/]+)$", path)
-            if match:
-                namespace = match.group(1)
-                pvc = match.group(2)
-                exists = self.check_backup_exists(namespace, pvc)
-                self.send_json({"exists": exists, "namespace": namespace, "pvc": pvc})
-                return
-
-            # Unknown endpoint
-            self.send_json({"error": "not found", "path": path}, 404)
-
-        def check_backup_exists(self, namespace, pvc):
-            """
-            Check if Kopia snapshot exists for the given namespace/pvc.
-            Snapshot source format: {pvc}-backup@{namespace}:/data
-            """
-            source = f"{pvc}-backup@{namespace}"
-            try:
-                result = subprocess.run(
-                    ["kopia", "--config-file", KOPIA_CONFIG, "snapshot", "list", source, "--json"],
-                    capture_output=True,
-                    text=True,
-                    timeout=10
-                )
-                if result.returncode == 0:
-                    snapshots = json.loads(result.stdout) if result.stdout.strip() else []
-                    exists = len(snapshots) > 0
-                    print(f"[pvc-plumber] {namespace}/{pvc}: found {len(snapshots)} snapshots, exists={exists}")
-                    return exists
-                else:
-                    print(f"[pvc-plumber] {namespace}/{pvc}: kopia returned {result.returncode}, stderr={result.stderr}")
-                    return False
-            except subprocess.TimeoutExpired:
-                print(f"[pvc-plumber] {namespace}/{pvc}: timeout checking snapshots")
-                return False
-            except json.JSONDecodeError as e:
-                print(f"[pvc-plumber] {namespace}/{pvc}: JSON decode error: {e}")
-                return False
-            except Exception as e:
-                print(f"[pvc-plumber] {namespace}/{pvc}: error: {e}")
-                return False
-
-    if __name__ == "__main__":
-        print(f"[pvc-plumber] Starting server on port {PORT}")
-        print(f"[pvc-plumber] Using config: {KOPIA_CONFIG}")
-        server = http.server.HTTPServer(("", PORT), PVCPlumberHandler)
-        server.serve_forever()
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: pvc-plumber-config
-  namespace: volsync-system
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-data:
-  repository.config: |
-    {
-      "storage": {
-        "type": "filesystem",
-        "config": {
-          "path": "/repository"
-        }
-      },
-      "hostname": "pvc-plumber",
-      "username": "volsync",
-      "description": "VolSync Kopia NFS Repository",
-      "enableActions": false
-    }
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -141,19 +28,18 @@ spec:
           type: RuntimeDefault
       containers:
         - name: pvc-plumber
-          # Use perfectra1n volsync image which has both kopia and python
-          image: ghcr.io/perfectra1n/volsync:kopia-main-20250107
-          command: ["python3", "/scripts/server.py"]
+          image: ghcr.io/mitchross/pvc-plumber:0.2.0
           ports:
             - name: http
               containerPort: 8080
               protocol: TCP
           env:
-            - name: KOPIA_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: pvc-plumber-secret
-                  key: KOPIA_PASSWORD
+            - name: BACKEND_TYPE
+              value: "kopia-fs"
+            - name: KOPIA_REPOSITORY_PATH
+              value: "/repository"
+            - name: LOG_LEVEL
+              value: "info"
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -163,10 +49,10 @@ spec:
           resources:
             requests:
               cpu: 10m
-              memory: 64Mi
+              memory: 32Mi
             limits:
               cpu: 100m
-              memory: 128Mi
+              memory: 64Mi
           livenessProbe:
             httpGet:
               path: /healthz
@@ -177,37 +63,17 @@ spec:
             httpGet:
               path: /readyz
               port: http
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
             periodSeconds: 10
           volumeMounts:
             - name: repository
               mountPath: /repository
               readOnly: true
-            - name: config
-              mountPath: /config/repository.config
-              subPath: repository.config
-            - name: scripts
-              mountPath: /scripts
-            - name: tmp
-              mountPath: /tmp
-            - name: cache
-              mountPath: /.cache
       volumes:
         - name: repository
           nfs:
             server: 192.168.10.133
             path: /mnt/BigTank/k8s/volsync-kopia-nfs
-        - name: config
-          configMap:
-            name: pvc-plumber-config
-        - name: scripts
-          configMap:
-            name: pvc-plumber-script
-            defaultMode: 0755
-        - name: tmp
-          emptyDir: {}
-        - name: cache
-          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
