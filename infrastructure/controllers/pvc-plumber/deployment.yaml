@@ -53,9 +53,11 @@ spec:
               value: "/tmp/kopia/cache"
             - name: HOME
               value: "/tmp"
+            - name: USER
+              value: "plumber"
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
+            readOnlyRootFilesystem: false
             capabilities:
               drop:
                 - ALL
