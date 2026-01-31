@@ -45,6 +45,14 @@ spec:
                 secretKeyRef:
                   name: pvc-plumber-kopia
                   key: KOPIA_PASSWORD
+            - name: KOPIA_CONFIG_PATH
+              value: "/tmp/kopia/config/repository.config"
+            - name: KOPIA_LOG_DIR
+              value: "/tmp/kopia/logs"
+            - name: KOPIA_CACHE_DIRECTORY
+              value: "/tmp/kopia/cache"
+            - name: HOME
+              value: "/tmp"
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -74,11 +82,15 @@ spec:
             - name: repository
               mountPath: /repository
               readOnly: true
+            - name: kopia-tmp
+              mountPath: /tmp/kopia
       volumes:
         - name: repository
           nfs:
             server: 192.168.10.133
             path: /mnt/BigTank/k8s/volsync-kopia-nfs
+        - name: kopia-tmp
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
