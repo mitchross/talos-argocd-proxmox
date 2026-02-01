@@ -117,6 +117,7 @@ spec:
                   property: kopia_password
 
     # Rule 2: Generate ReplicationSource (backup schedule)
+    # IMPORTANT: Only create backup AFTER PVC is Bound to avoid conflicts with restore
     - name: generate-replication-source
       skipBackgroundRequests: false
       match:
@@ -136,6 +137,13 @@ spec:
                 - kube-system
                 - volsync-system
                 - kyverno
+      preconditions:
+        all:
+          # Only create backup ReplicationSource after PVC is Bound
+          # This prevents backup from running during restore (when PVC is Pending)
+          - key: "{{ request.object.status.phase || 'Pending' }}"
+            operator: Equals
+            value: "Bound"
       generate:
         synchronize: true
         apiVersion: volsync.backube/v1alpha1
