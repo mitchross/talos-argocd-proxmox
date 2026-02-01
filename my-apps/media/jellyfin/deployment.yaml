@@ -38,7 +38,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: jellyfin
-          image: ghcr.io/jellyfin/jellyfin:10.11.5
+          image: ghcr.io/jellyfin/jellyfin:10.11.6
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
