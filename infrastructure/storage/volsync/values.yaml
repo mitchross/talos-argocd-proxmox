@@ -5,7 +5,7 @@
 # Use perfectra1n image that includes Kopia mover
 image: &image
   repository: ghcr.io/perfectra1n/volsync
-  tag: 0.17.6
+  tag: 0.17.7
 
 # Set all mover images to same version
 kopia: *image
