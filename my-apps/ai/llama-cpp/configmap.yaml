@@ -6,13 +6,13 @@ metadata:
 data:
   presets.ini: |
     # ==========================================================
-    # SINGLE GPU ROLES (24GB VRAM)
+    # REASONING (24GB VRAM) - Nemotron-3-Nano
     # ==========================================================
-    [reasoning-single - nemotron3-nano-30b]
+    [reasoning - nemotron3-nano]
     # Unsloth docs: temp=1.0, top-p=1.0 for chat; temp=0.6, top-p=0.95 for tools
     # NoPE architecture - no YaRN needed, supports up to 1M context
     model = /models/Nemotron-3-Nano-30B-A3B-UD-Q4_K_XL.gguf
-    alias = reasoning-single, reasoning, chat, nemotron3 nano30b
+    alias = reasoning, chat, nemotron, nemotron3 nano
     ctx-size = 32768
     n-gpu-layers = 99
     temp = 1.0
@@ -20,60 +20,40 @@ data:
     jinja = 1
     special = 1
 
-    [vision-single - glm4v-flash]
-    # Unsloth docs: temp=1.0, top-p=0.95, top-k=40, jinja required
-    # May output Chinese - use system prompt "Respond in English"
-    model = /models/GLM-4.6V-Flash-UD-Q8_K_XL.gguf
-    alias = vision-single, vision, ocr, glm4v flash
-    mmproj = /models/GLM-4.6V-Flash-mmproj.gguf
+    # ==========================================================
+    # CODING (48GB VRAM) - Qwen3-Coder-Next
+    # ==========================================================
+    [coder - qwen3-coder-next]
+    # Unsloth docs: temp=1.0, top_p=0.95, top_k=40, min_p=0.01
+    # Non-thinking mode for rapid code generation, 256K context native
+    # 80B total / 3B active (MoE) - Hybrid DeltaNet + Gated Attention
+    model = /models/Qwen3-Coder-Next-UD-Q3_K_XL.gguf
+    alias = coder, code, qwen3-coder, qwen3 coder next
     ctx-size = 65536
     n-gpu-layers = 99
+    tensor-split = 1,1
     temp = 1.0
     top-p = 0.95
     top-k = 40
-    jinja = 1
-
-    # ==========================================================
-    # DUAL GPU ROLES (48GB VRAM)
-    # ==========================================================
-    [dev-dual - devstral-small]
-    # Unsloth docs: temp=0.15, min-p=0.01, jinja required
-    # Max context 262K tokens
-    model = /models/Devstral-Small-2-24B-Instruct-2512-UD-Q5_K_XL.gguf
-    alias = dev-dual, dev, coder, devstral small
-    ctx-size = 65536
-    n-gpu-layers = 99
-    tensor-split = 1,1
-    temp = 0.15
     min-p = 0.01
     jinja = 1
 
-    [manager-dual - qwen3-next]
-    # Unsloth docs (Thinking model): temp=0.6, top-p=0.95, top-k=20, min-p=0.0
-    # Auto-adds <think> tags, max context 262K
-    model = /models/Qwen3-Next-80B-A3B-Thinking-UD-Q4_K_XL.gguf
-    alias = manager-dual, manager, orchestrator, qwen3 next
-    ctx-size = 131072
+    # ==========================================================
+    # VISION (48GB VRAM) - Qwen3-VL-30B-A3B-Thinking
+    # ==========================================================
+    [vision - qwen3-vl-thinking]
+    # HF discussion: temp=1.0, top_p=0.95, top_k=20, min_p=0.0, presence_penalty=1.5
+    # Thinking mode for detailed image analysis
+    # 30B total / 3B active (MoE), 256K context native
+    model = /models/Qwen3-VL-30B-A3B-Thinking-Q8_0.gguf
+    mmproj = /models/mmproj-F16.gguf
+    alias = vision, image, ocr, qwen3 vl
+    ctx-size = 32768
     n-gpu-layers = 99
     tensor-split = 1,1
-    temp = 0.6
+    temp = 1.0
     top-p = 0.95
     top-k = 20
     min-p = 0.0
+    presence-penalty = 1.5
     jinja = 1
-
-    #==========================================================
-    # 400GB RAM HYBRID ROLE
-    # ==========================================================
-    [expert-hybrid - kimi-k2]
-    # Pointing to the first shard inside the nested folder
-    model = /models/UD-Q2_K_XL/Kimi-K2-Thinking-UD-Q2_K_XL-00001-of-00008.gguf
-    alias = expert-hybrid, expert, kimi, kimi k2
-    ctx-size = 98304
-    n-gpu-layers = 99
-    # VITAL: regex for Kimi-K2 to keep the 1T experts in your 400GB RAM
-    override-tensor = .ffn_.*_exps.=CPU
-    threads = 24
-    temp = 1.0
-    jinja = 1
-    mlock = 1
