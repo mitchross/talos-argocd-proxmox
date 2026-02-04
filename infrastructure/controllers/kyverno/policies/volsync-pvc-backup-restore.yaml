@@ -144,6 +144,11 @@ spec:
           - key: "{{ request.object.status.phase || 'Pending' }}"
             operator: Equals
             value: "Bound"
+          # Don't create backup until PVC is at least 2 hours old
+          # This prevents backing up empty data right after restore
+          - key: "{{ time_since('', '{{request.object.metadata.creationTimestamp}}', '') }}"
+            operator: GreaterThanOrEquals
+            value: "2h"
       generate:
         synchronize: true
         apiVersion: volsync.backube/v1alpha1
