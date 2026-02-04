@@ -34,13 +34,39 @@ The system automatically backs up PVCs to NFS storage on TrueNAS using **Kopia**
 │  (NFS inject)   │     └────────┬────────┘
 └─────────────────┘              │
                                  ▼
-┌─────────────────┐     ┌─────────────────┐
-│   TrueNAS NFS   │◀────│    Kyverno      │
-│ volsync-kopia-  │     │  ClusterPolicy  │
-│ nfs             │     │  (generates     │
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   TrueNAS NFS   │◀────│    Kyverno      │◀────│  pvc-plumber    │
+│ volsync-kopia-  │     │  ClusterPolicy  │     │  (backup check) │
+│ nfs             │     │  (generates     │     └─────────────────┘
 └─────────────────┘     │   resources)    │
                         └─────────────────┘
 ```
+
+## Automatic Restore Flow
+
+When a PVC is created with a backup label, the system automatically checks if a backup exists and restores it:
+
+```
+PVC Created ──▶ Kyverno Rule 0 ──▶ Calls pvc-plumber ──▶ Backup exists?
+                                                              │
+                    ┌─────────────────────────────────────────┴─────────┐
+                    │ YES                                               │ NO
+                    ▼                                                   ▼
+            Add dataSourceRef                                   No mutation
+            to PVC spec                                         (fresh PVC)
+                    │
+                    ▼
+            VolSync populates PVC
+            from Kopia backup
+                    │
+                    ▼
+            PVC becomes Bound ──▶ Kyverno Rule 2 ──▶ Creates ReplicationSource
+                                                    (backup schedule starts)
+```
+
+**Key protections:**
+- Backup ReplicationSource only created AFTER PVC is Bound (prevents backup/restore conflicts)
+- Restore uses VolumePopulator pattern (dataSourceRef) for atomic restore
 
 ## Components
 
@@ -54,19 +80,25 @@ The system automatically backs up PVCs to NFS storage on TrueNAS using **Kopia**
 - Mounts `/repository` from TrueNAS NFS share
 - No per-app configuration needed
 
-### 3. Kyverno ClusterPolicy
-- Triggers on PVCs with label `backup: hourly` or `backup: daily`
-- Generates:
-  - ExternalSecret (fetches KOPIA_PASSWORD from 1Password)
-  - ReplicationSource (backup schedule)
-  - ReplicationDestination (restore capability)
+### 3. pvc-plumber
+- HTTP service that checks if a backup exists in Kopia repository
+- Called by Kyverno before creating a PVC to determine if restore is needed
+- Image: `ghcr.io/mitchross/pvc-plumber`
+- Endpoint: `GET /exists/{namespace}/{pvc}` returns `{"exists": true/false}`
 
-### 4. VolSync
+### 4. Kyverno ClusterPolicy
+- Triggers on PVCs with label `backup: hourly` or `backup: daily`
+- **Rule 0 (mutate):** Calls pvc-plumber; if backup exists, adds `dataSourceRef` to trigger restore
+- **Rule 1 (generate):** Creates ExternalSecret (fetches KOPIA_PASSWORD from 1Password)
+- **Rule 2 (generate):** Creates ReplicationSource (backup schedule) - only after PVC is Bound
+- **Rule 3 (generate):** Creates ReplicationDestination (restore capability)
+
+### 5. VolSync
 - Performs actual backup/restore operations using **Kopia**
 - Uses Longhorn snapshots for consistent backups
 - Stores data on NFS with Kopia encryption and zstd compression
 
-### 5. Kopia UI (Optional)
+### 6. Kopia UI (Optional)
 - Web interface to browse backups
 - Accessible at `kopia-ui.{domain}`
 - Mounts same NFS share as VolSync
@@ -214,6 +246,7 @@ The following namespaces are excluded from automatic backup:
 
 | File | Purpose |
 |------|---------|
+| `infrastructure/controllers/pvc-plumber/` | Backup existence checker service |
 | `infrastructure/storage/volsync/` | VolSync Helm chart |
 | `infrastructure/controllers/kyverno/policies/volsync-nfs-inject.yaml` | Injects NFS mount into mover pods |
 | `infrastructure/storage/kopia-ui/` | Kopia web UI for browsing backups |
