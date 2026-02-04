@@ -30,7 +30,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       containers:
       - name: immich-server
-        image: ghcr.io/immich-app/immich-server:v2.4.1@sha256:e6a6298e67ae077808fdb7d8d5565955f60b0708191576143fc02d30ab1389d1
+        image: ghcr.io/immich-app/immich-server:v2.5.2@sha256:8ac5a6d471fbb6fcfec6bc34854dd5a947c1795547f0d9345d9bf1803d1209e3
         ports:
         - name: http
           containerPort: 2283

@@ -38,8 +38,8 @@ spec:
       containers:
       - name: comfyui
         # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu128-megapak-pt29
-        # renovate: datasource=docker depName=yanwk/comfyui-boot versioning=regex:^cu128-megapak-pt29-(?<year>\d{4})(?<month>\d{2})(?<day>\d{2})$
-        image: yanwk/comfyui-boot:cu128-megapak-pt29-20260115
+        # renovate: datasource=docker depName=yanwk/comfyui-boot
+        image: yanwk/comfyui-boot:cu128-megapak-pt29@sha256:604970b4c35f99ecd028e22378b7fe5583df495e4b3811f4505afcda076b38b0
         imagePullPolicy: IfNotPresent
         workingDir: /root
         ports:
