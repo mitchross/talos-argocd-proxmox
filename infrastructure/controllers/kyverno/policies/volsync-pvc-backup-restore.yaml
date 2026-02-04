@@ -57,7 +57,7 @@ spec:
             dataSourceRef:
               apiGroup: volsync.backube
               kind: ReplicationDestination
-              name: "{{request.object.metadata.name}}-restore"
+              name: "{{request.object.metadata.name}}-volsync"
 
     # Rule 1: Generate ExternalSecret for Kopia repository credentials
     - name: generate-kopia-secret
@@ -207,7 +207,7 @@ spec:
         synchronize: true
         apiVersion: volsync.backube/v1alpha1
         kind: ReplicationDestination
-        name: "{{request.object.metadata.name}}-restore"
+        name: "{{request.object.metadata.name}}-volsync"
         namespace: "{{request.object.metadata.namespace}}"
         data:
           metadata:
