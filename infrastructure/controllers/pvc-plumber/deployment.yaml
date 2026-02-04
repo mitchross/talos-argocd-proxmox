@@ -83,7 +83,7 @@ spec:
           volumeMounts:
             - name: repository
               mountPath: /repository
-              readOnly: true
+              readOnly: false
             - name: kopia-tmp
               mountPath: /tmp/kopia
       volumes:
