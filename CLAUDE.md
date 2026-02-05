@@ -114,20 +114,20 @@ Applications deploy in strict order to prevent race conditions:
 
 | Wave | Component | Purpose |
 |------|-----------|---------|
-| **-10** | Database Operators | CloudNative PG, Crunchy Postgres operators |
-| **0** | Foundation | Cilium (CNI), 1Password Connect, External Secrets Operator |
+| **0** | Foundation | Cilium (CNI), ArgoCD, 1Password Connect, External Secrets, AppProjects |
 | **1** | Storage | Longhorn, VolumeSnapshot Controller, VolSync |
-| **2** | System Services | Cert-Manager, External-DNS, GPU Operators, **Kyverno** (policies), Reloader |
-| **3** | Monitoring | Prometheus Stack, Loki, Tempo |
-| **4** | Infrastructure AppSet | Discovers `infrastructure/*` applications (Kyverno policies active) |
+| **2** | PVC Plumber | Backup existence checker (must run before Kyverno policies in Wave 4) |
+| **4** | Infrastructure AppSet | Deploys from explicit path list: cert-manager, external-dns, GPU operators, Kyverno, gateway, databases, etc. |
 | **5** | Monitoring AppSet | Discovers `monitoring/*` applications |
 | **6** | My-Apps AppSet | Discovers `my-apps/*/*` applications |
 
 **Why this matters**:
 - Longhorn won't deploy until Cilium + External Secrets are healthy
-- Apps won't deploy until storage exists
-- Kyverno policies are active before apps create PVCs (enables automatic backup)
+- PVC Plumber (Wave 2) must run before Infrastructure AppSet (Wave 4) because Kyverno policies call PVC Plumber API
+- Kyverno, cert-manager, GPU operators etc. deploy via Infrastructure AppSet (Wave 4) before user apps (Wave 6)
 - This prevents "chicken-and-egg" dependency issues and SSD thrashing
+
+**Important**: The Infrastructure AppSet uses an explicit list of paths (not glob discovery). To add a new infrastructure component, you must add its path to `infrastructure/controllers/argocd/apps/infrastructure-appset.yaml`.
 
 ## Directory Structure
 
@@ -813,4 +813,8 @@ kubectl exec -it gpu-pod -n app-name -- nvidia-smi
 - **[BOOTSTRAP.md](BOOTSTRAP.md)** - Complete cluster bootstrap guide
 - **[README.md](README.md)** - Overview and architecture diagrams
 - **[.github/copilot-instructions.md](.github/copilot-instructions.md)** - Detailed development patterns
-- **[docs/](docs/)** - Additional documentation (ArgoCD, storage, networking)
+- **[.github/instructions/](/.github/instructions/)** - Domain-specific instructions (ArgoCD, GPU, Talos, standards)
+- **[docs/backup-restore.md](docs/backup-restore.md)** - Detailed backup/restore workflow with architecture diagrams
+- **[docs/network-topology.md](docs/network-topology.md)** - Network architecture details
+- **[docs/network-policy.md](docs/network-policy.md)** - Cilium network policies
+- **[docs/argocd.md](docs/argocd.md)** - ArgoCD-specific documentation
