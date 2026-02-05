@@ -63,7 +63,7 @@ Located at: `infrastructure/networking/cilium/policies/block-lan-access.yaml`
 | Pod-to-Pod (cluster) | **ALLOWED** | Inter-service communication |
 | Kube-apiserver | **ALLOWED** | Kubernetes operations |
 | DNS (CoreDNS) | **ALLOWED** | Name resolution |
-| TrueNAS (specific ports) | **ALLOWED** | NFS/SMB/MinIO storage |
+| TrueNAS (specific ports) | **ALLOWED** | NFS/SMB/RustFS storage |
 | LoadBalancer IPs | **ALLOWED** | Cilium L2 announcements |
 
 ## Policy Architecture
@@ -73,7 +73,7 @@ graph TD
     subgraph "Egress Rules"
         Internet[Internet<br/>0.0.0.0/0 EXCEPT RFC1918]
         Cluster[Cluster Entities<br/>pods, nodes, apiserver]
-        Storage[Whitelisted Storage<br/>TrueNAS: ports 2049,445,9000]
+        Storage[Whitelisted Storage<br/>TrueNAS: NFS,SMB,RustFS]
         LB[LoadBalancer Pool<br/>192.168.10.32/27]
     end
 
@@ -105,7 +105,7 @@ These specific IPs are allowed on specific ports only:
 
 | IP | Hostname | Allowed Ports | Purpose |
 |----|----------|---------------|---------|
-| 192.168.10.133 | TrueNAS | 2049 (NFS), 111 (RPC), 445 (SMB), 9000 (MinIO), 30292-30293 (RustFS) | Storage backend (10G) |
+| 192.168.10.133 | TrueNAS | 2049 (NFS), 111 (RPC), 445 (SMB), 9000, 30292-30293 (RustFS S3) | Storage backend (10G) |
 | 192.168.10.46 | Wyze Bridge | 8554 (RTSP) | Camera streams for Frigate |
 | 192.168.10.14 | Proxmox | 8006 (API) | Omni/Terraform integration |
 | 192.168.10.32/27 | LB Pool | All | Cilium L2 LoadBalancer IPs |

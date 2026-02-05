@@ -44,7 +44,7 @@ graph TB
 - **kube-state-metrics**: Kubernetes resource metrics
 
 ### 📝 Log Aggregation (loki-stack/)
-- **Loki**: Log aggregation and storage (SingleBinary mode with filesystem storage)
+- **Loki**: Log aggregation and storage (SimpleScalable mode with RustFS S3 backend)
 - **Promtail**: Log collection agent
 - **Gateway**: HTTP access gateway
 

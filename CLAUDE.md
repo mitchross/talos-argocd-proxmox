@@ -809,7 +809,7 @@ kubectl exec -it gpu-pod -n app-name -- nvidia-smi
 
 - **[README.md](README.md)** - Bootstrap guide, architecture overview, and Omni/Proxmox setup
 - **[.github/copilot-instructions.md](.github/copilot-instructions.md)** - Detailed development patterns
-- **[.github/instructions/](/.github/instructions/)** - Domain-specific instructions (ArgoCD, GPU, Talos, standards)
+- **[.github/instructions/](.github/instructions/)** - Domain-specific instructions (ArgoCD, GPU, Talos, standards)
 - **[docs/pvc-plumber-full-flow.md](docs/pvc-plumber-full-flow.md)** - Complete PVC backup/restore flow from bare metal to automatic disaster recovery
 - **[docs/backup-restore.md](docs/backup-restore.md)** - Detailed backup/restore workflow with architecture diagrams
 - **[docs/network-topology.md](docs/network-topology.md)** - Network architecture details

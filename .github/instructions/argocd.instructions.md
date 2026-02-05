@@ -33,18 +33,18 @@ spec:
 
 ### Three-Tier Application Discovery
 1. **Infrastructure** (`infrastructure-appset.yaml`):
-   - Paths: `infrastructure/controllers/*`, `infrastructure/storage/*`, etc.
-   - Sync wave: "1" (after ArgoCD, before apps)
-   - Creates core cluster services
+   - Explicit path list (NOT glob discovery)
+   - Sync wave: "4" (after foundation, storage, and PVC Plumber)
+   - Creates core cluster services (cert-manager, Kyverno, GPU operators, databases, gateway, etc.)
 
 2. **Monitoring** (`monitoring-appset.yaml`):
    - Paths: `monitoring/*`
-   - Sync wave: "0" (early deployment)
+   - Sync wave: "5" (after infrastructure)
    - Creates observability stack
 
 3. **Applications** (`my-apps-appset.yaml`):
    - Paths: `my-apps/*/*` (nested directories)
-   - Sync wave: "2" (after infrastructure)
+   - Sync wave: "6" (after everything else)
    - Creates user applications
 
 ### Directory-Based Discovery
@@ -91,9 +91,12 @@ retry:
 ## Sync Waves and Dependencies
 
 ### Wave Ordering
-- Wave "0": Monitoring stack (Prometheus, Grafana)
-- Wave "1": Infrastructure (Cilium, Longhorn, cert-manager)
-- Wave "2": Applications (user workloads)
+- Wave "0": Foundation (Cilium, ArgoCD, 1Password Connect, External Secrets, AppProjects)
+- Wave "1": Storage (Longhorn, Snapshot Controller, VolSync)
+- Wave "2": PVC Plumber (backup existence checker)
+- Wave "4": Infrastructure ApplicationSet (cert-manager, Kyverno, GPU operators, databases, gateway)
+- Wave "5": Monitoring ApplicationSet (Prometheus, Grafana, Loki)
+- Wave "6": My-Apps ApplicationSet (user workloads)
 
 ### CRD Handling
 For infrastructure components that install CRDs:
