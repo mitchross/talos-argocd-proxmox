@@ -1,63 +1,34 @@
-# 🚀 Talos ArgoCD Proxmox Cluster
+# Talos ArgoCD Proxmox Cluster
 
-> Modern GitOps deployment structure using Talos OS, ArgoCD, and Cilium, with Proxmox virtualization
+> Production-grade GitOps Kubernetes cluster on Talos OS with self-managing ArgoCD, Cilium, and zero-touch PVC backup/restore
 
-A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux for K8s), ArgoCD, and Cilium, with integrated Cloudflare Tunnel for secure external access. Built for both home lab and production environments using **enterprise-grade GitOps patterns**.
+A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux for K8s), ArgoCD, and Cilium, running on Proxmox. Managed via **[Omni](https://github.com/siderolabs/omni)** (Sidero's Talos management platform) with the **[Proxmox Infrastructure Provider](https://github.com/siderolabs/omni-infra-provider-proxmox)** for automated node provisioning.
 
-## 🎯 Choose Your Bootstrap Method
+## Key Features
 
-This repository supports two bootstrap approaches:
+- **Self-Managing ArgoCD** - ArgoCD manages its own installation, upgrades, and ApplicationSets from Git
+- **Directory = Application** - Apps discovered automatically by directory path, no manual Application manifests
+- **Sync Wave Ordering** - Strict deployment ordering prevents race conditions
+- **Zero-Touch Backups** - Add a label to a PVC, get automatic Kopia backups to NFS with disaster recovery
+- **Gateway API** - Modern ingress via Cilium Gateway API (not legacy Ingress)
+- **GPU Support** - Full NVIDIA GPU support via Talos system extensions and GPU Operator
+- **Zero SSH** - All node management via Omni UI or Talos API
 
-| Method | Best For | Guide |
-|--------|----------|-------|
-| **🚀 Omni + Sidero Proxmox** | Recommended for new deployments. Web UI cluster management, automated provisioning, simplified operations. | **[BOOTSTRAP.md](BOOTSTRAP.md)** ⭐ |
-| **⚙️ Manual Talos** | Advanced users who want full control over Talos configuration with `talhelper` and `talosctl`. | See [Quick Start](#-quick-start) below |
-
-> **Using Omni?** Skip the manual setup below and jump to **[BOOTSTRAP.md](BOOTSTRAP.md)** for the streamlined workflow.
-
-## 📦 Repositories & Resources
+## Repositories & Resources
 
 | Resource | Description |
 |----------|-------------|
-| [Omni](https://github.com/siderolabs/omni) | SaaS-simple deployment of Kubernetes on your own hardware |
+| [Omni](https://github.com/siderolabs/omni) | Talos cluster management platform |
 | [Proxmox Infra Provider](https://github.com/siderolabs/omni-infra-provider-proxmox) | Proxmox infrastructure provider for Omni |
 | [Starter Repo](https://github.com/mitchross/sidero-omni-talos-proxmox-starter) | Full config & automation for Sidero Omni + Talos + Proxmox |
 | [Reference Guide](https://www.virtualizationhowto.com/2025/08/how-to-install-talos-omni-on-prem-for-effortless-kubernetes-management/) | VirtualizationHowTo guide for Talos Omni on-prem setup |
 
-## 📋 Table of Contents
-
-- [Repositories & Resources](#-repositories--resources)
-- [Prerequisites](#-prerequisites)
-- [Architecture](#-architecture)
-- [Quick Start](#-quick-start) (Manual Talos Method)
-  - [1. System Dependencies](#1-system-dependencies)
-  - [2. Generate Talos Configs](#2-generate-talos-configs)
-  - [3. Boot & Bootstrap Talos Nodes](#3-boot--bootstrap-talos-nodes)
-  - [4. Install Gateway API CRDs](#4-install-gateway-api-crds)
-  - [5. Configure Secret Management](#5-configure-secret-management)
-  - [6. Bootstrap ArgoCD & Deploy The Stack](#6-bootstrap-argocd--deploy-the-stack)
-- [Verification](#-verification)
-- [Talos-Specific Notes](#️-talos-specific-notes)
-- [MinIO S3 Backup Configuration](#-minio-s3-backup-configuration)
-- [Documentation](#-documentation)
-- [Troubleshooting](#-troubleshooting)
-
-## 📋 Prerequisites
-
-- Proxmox VMs or bare metal (see hardware below)
-- Domain configured in Cloudflare
-- 1Password account for secrets management
-- **Omni account** (recommended) or manual Talos setup
-- `kubectl` and `helm` installed locally
-
-> **See [BOOTSTRAP.md](BOOTSTRAP.md) for detailed prerequisites and setup instructions.**
-
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 graph TD;
     subgraph "Bootstrap Process (Manual)"
-        User(["👨‍💻 User"]) -- "kubectl apply -k" --> Kustomization["infrastructure/argocd/kustomization.yaml"];
+        User(["User"]) -- "kubectl apply -k" --> Kustomization["infrastructure/argocd/kustomization.yaml"];
         Kustomization -- "Deploys" --> ArgoCD["ArgoCD<br/>(from Helm Chart)"];
         Kustomization -- "Deploys" --> RootApp["Root Application<br/>(root.yaml)"];
     end
@@ -76,275 +47,225 @@ graph TD;
     style ArgoCD fill:#d9534f,stroke:#333
 ```
 
-### Key Features
-- **2025 Homelab GitOps Pattern**: Flattened ApplicationSets provide clean separation of concerns.
-- **Self-Managing ArgoCD**: ArgoCD manages its own installation, upgrades, and ApplicationSets from Git.
-- **Simple Directory Discovery**: Applications are discovered automatically based on their directory path. No extra files needed.
-- **Production Ready**: Proper error handling, retries, and monitoring integration.
-- **GPU Integration**: Full NVIDIA GPU support via Talos system extensions and GPU Operator
-- **Zero SSH**: All node management via Talosctl API
+### Sync Wave Architecture
 
-### 🌊 Sync Wave Architecture
+ArgoCD deploys applications in strict order to prevent dependency issues:
 
-The cluster uses **ArgoCD Sync Waves** to strictly order deployments, preventing "chicken-and-egg" dependency issues:
+| Wave | Component | Purpose |
+|------|-----------|---------|
+| **0** | Foundation | Cilium (CNI), ArgoCD, 1Password Connect, External Secrets, AppProjects |
+| **1** | Storage | Longhorn, VolumeSnapshot Controller, VolSync |
+| **2** | PVC Plumber | Backup existence checker (must run before Kyverno in Wave 4) |
+| **4** | Infrastructure AppSet | Cert-Manager, External-DNS, GPU Operators, Kyverno, Gateway, databases (explicit path list) |
+| **5** | Monitoring AppSet | Discovers `monitoring/*` (Prometheus, Grafana, Loki) |
+| **6** | My-Apps AppSet | Discovers `my-apps/*/*` (user applications) |
 
-1.  **Wave 0 (Foundation)**: Networking (Cilium) & Secrets (1Password/External Secrets)
-2.  **Wave 1 (Storage)**: Persistent Storage (Longhorn) & Object Storage (Garage)
-3.  **Wave 2 (System)**: Core Infrastructure (Cert-Manager, Databases, GPU)
-4.  **Wave 3 (Monitoring)**: Observability Stack (Prometheus, Grafana)
-5.  **Wave 4 (Apps)**: User Workloads
+## Prerequisites
 
-*See [docs/argocd.md](docs/argocd.md) for the deep dive on health checks and dependency management.*
+1. **Omni deployed and accessible** - See [Omni Setup Guide](omni/omni/README.md)
+2. **Sidero Proxmox Provider configured** - See [proxmox provider config](omni/proxmox-provider/)
+3. **Cluster created in Omni** - Talos cluster provisioned and healthy
+4. **kubectl access** - Download kubeconfig from Omni UI
+5. **Local tools installed**: `kubectl`, `kustomize`, `cilium` CLI, `1password` CLI (`op`)
 
-## 🚀 Quick Start
+## Bootstrap Process
 
-The cluster bootstrap process is fully documented in **[BOOTSTRAP.md](BOOTSTRAP.md)**. Follow that guide for step-by-step instructions.
+Once your cluster is provisioned via Omni, follow these steps to install the GitOps stack.
 
-**Quick Overview:**
-1. **Provision Cluster** - Use Omni + Sidero Proxmox Provider (recommended) or manual Talos
-2. **Install Cilium** - CNI networking with Gateway API support
-3. **Configure Secrets** - Set up 1Password Connect and External Secrets
-4. **Bootstrap ArgoCD** - Deploy GitOps controller using the bootstrap script
-5. **Watch It Deploy** - ArgoCD automatically discovers and syncs all applications
+### Step 1: Install Cilium CNI
 
-### Automated Deployment
-
-Once ArgoCD is bootstrapped, it automatically:
-- Syncs all applications from Git using **Sync Waves** (prevents race conditions)
-- Manages its own configuration (self-managing GitOps)
-- Discovers new applications by directory structure (no manual Application manifests)
-- Maintains cluster state declaratively
-
-**See [BOOTSTRAP.md](BOOTSTRAP.md) for complete instructions.**
-
-## 🔍 Verification
-After bootstrap completes, verify everything is working:
+Omni provisions Talos clusters without a CNI. Install Cilium to get networking functional:
 
 ```bash
-# Watch ArgoCD sync status (STATUS should show 'Synced')
+cilium install \
+    --set cluster.name=talos-prod-cluster \
+    --set ipam.mode=kubernetes \
+    --set kubeProxyReplacement=true \
+    --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
+    --set securityContext.capabilities.cleanCiliumState="{NET_ADMIN,SYS_ADMIN,SYS_RESOURCE}" \
+    --set cgroup.autoMount.enabled=false \
+    --set cgroup.hostRoot=/sys/fs/cgroup \
+    --set k8sServiceHost=localhost \
+    --set k8sServicePort=7445 \
+    --set gatewayAPI.enabled=true \
+    --set gatewayAPI.enableAlpn=true \
+    --set gatewayAPI.enableAppProtocol=true
+```
+
+> **Important:** `cluster.name` must match `infrastructure/networking/cilium/values.yaml` for Hubble certificate SANs. After ArgoCD deploys, it takes over Cilium management at Wave 0.
+
+### Step 2: Install Gateway API CRDs
+
+```bash
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
+```
+
+Verify Cilium:
+```bash
+cilium status
+kubectl get pods -n kube-system -l k8s-app=cilium
+```
+
+### Step 3: Pre-Seed 1Password Secrets
+
+```bash
+kubectl create namespace 1passwordconnect
+kubectl create namespace external-secrets
+
+eval $(op signin)
+
+export OP_CREDENTIALS=$(op read op://homelabproxmox/1passwordconnect/1password-credentials.json | base64 | tr -d '\n')
+export OP_CONNECT_TOKEN=$(op read 'op://homelabproxmox/1password-operator-token/credential')
+
+kubectl create secret generic 1password-credentials \
+  --namespace 1passwordconnect \
+  --from-literal=1password-credentials.json="$OP_CREDENTIALS"
+
+kubectl create secret generic 1password-operator-token \
+  --namespace 1passwordconnect \
+  --from-literal=token="$OP_CONNECT_TOKEN"
+
+kubectl create secret generic 1passwordconnect \
+  --namespace external-secrets \
+  --from-literal=token="$OP_CONNECT_TOKEN"
+```
+
+### Step 4: Bootstrap ArgoCD
+
+**Option A: Bootstrap Script (Recommended)**
+
+```bash
+./scripts/bootstrap-argocd.sh
+```
+
+**Option B: Manual Steps**
+
+```bash
+kubectl apply -f infrastructure/controllers/argocd/ns.yaml
+
+helm upgrade --install argocd argo-cd \
+  --repo https://argoproj.github.io/argo-helm \
+  --version 9.1.3 \
+  --namespace argocd \
+  --values infrastructure/controllers/argocd/values.yaml \
+  --wait \
+  --timeout 10m
+
+kubectl wait --for condition=established --timeout=60s crd/applications.argoproj.io
+kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
+
+kubectl apply -f infrastructure/controllers/argocd/http-route.yaml
+kubectl apply -f infrastructure/controllers/argocd/root.yaml
+```
+
+### Step 5: Verify
+
+```bash
+# Check ArgoCD pods
+kubectl get pods -n argocd
+
+# Watch applications sync (all should reach 'Synced')
 kubectl get applications -n argocd -w
 
-# Verify all pods are running (may take 10-15 minutes)
-kubectl get pods -A
-
-# Check External Secrets are populated
-kubectl get externalsecret -A
-
-# Verify Longhorn backups configured
-kubectl get backuptarget -n longhorn-system
-
-# View sync waves in action
-kubectl get applications -n argocd -o custom-columns=NAME:.metadata.name,WAVE:.metadata.annotations.argocd\.argoproj\.io/sync-wave,STATUS:.status.sync.status
+# View sync wave order
+kubectl get applications -n argocd -o custom-columns=NAME:.metadata.name,WAVE:.metadata.annotations.argocd\\.argoproj\\.io/sync-wave,STATUS:.status.sync.status
 ```
 
-**Full verification steps in [BOOTSTRAP.md](BOOTSTRAP.md#verification)**
-
-## 🛡️ Talos OS Features
-- **No SSH**: All management via API (Omni UI or `talosctl`)
-- **Immutable OS**: No package manager, no shell access
-- **Declarative**: All config stored in Git or Omni
-- **System Extensions**: GPU, storage drivers enabled at boot
-- **Secure by Default**: Minimal attack surface
-
-### Node Management
-
-**Using Omni (Recommended):**
-- Manage all nodes through Omni web UI
-- Automated Talos upgrades
-- Visual cluster health monitoring
-- No manual `talosctl` commands needed
-
-**Manual Talos:**
-- See `iac/talos/` directory for configuration
-- Use `talosctl` for node operations
-- Requires `talhelper` for config generation
-
-> **For manual Talos setup and upgrades, see legacy documentation in `iac/talos/README.md`**
-
-## 🗄️ MinIO S3 Backup Configuration
-
-This cluster uses **TrueNAS Scale MinIO** for S3-compatible storage backups, particularly for Longhorn persistent volume backups.
-
-### MinIO Setup on TrueNAS Scale
-
-1.  **Install MinIO App** in TrueNAS Scale Apps
-2.  **Access MinIO Console** at `http://192.168.10.133:9002`
-3.  **Configure via MinIO Client (mc)**:
+### Step 6: Access ArgoCD UI (Optional)
 
 ```bash
-# Access MinIO container shell in TrueNAS
-sudo docker exec -it <minio_container_name> /bin/sh
-
-# Set up MinIO client alias (use your MinIO root credentials)
-mc alias set local http://localhost:9000 minio <your-root-password>
-
-# Verify connection
-mc admin info local
-
-# Create dedicated user for Longhorn backups
-mc admin user add local longhorn-user SecurePassword123!
-
-# Create service account for the user (generates access keys)
-mc admin user svcacct add local longhorn-user --name "longhorn-backup-access"
-# Output: Access Key: ABC123XYZ789EXAMPLE0
-# Output: Secret Key: ExampleSecretKey123+RandomChars/ForDocumentation
-
-# Create backup bucket
-mc mb local/longhorn-backups
-
-# Create IAM policy for Longhorn bucket access
-cat > /tmp/longhorn-policy.json << 'EOF'
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:GetBucketLocation",
-        "s3:ListBucket",
-        "s3:ListBucketMultipartUploads"
-      ],
-      "Resource": "arn:aws:s3:::longhorn-backups"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:GetObject",
-        "s3:PutObject",
-        "s3:DeleteObject",
-        "s3:AbortMultipartUpload",
-        "s3:ListMultipartUploadParts"
-      ],
-      "Resource": "arn:aws:s3:::longhorn-backups/*"
-    }
-  ]
-}
-EOF
-
-# Apply the policy
-mc admin policy create local longhorn-backup-policy /tmp/longhorn-policy.json
-mc admin policy attach local longhorn-backup-policy --user longhorn-user
-
-# Verify setup
-mc ls local/longhorn-backups
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+# Open https://localhost:8080
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
 
-### 1Password Secret Management
+## What Happens After Bootstrap
 
-Store MinIO credentials securely in 1Password:
+ArgoCD takes over and manages everything from Git:
 
-1.  **Create 1Password item** named `minio`
-2.  **Add fields**:
-    -   `minio_access_key`: `ABC123XYZ789EXAMPLE0`
-    -   `minio_secret_key`: `ExampleSecretKey123+RandomChars/ForDocumentation`  
-    -   `minio_endpoint`: `http://192.168.10.133:9000`
+1. **Wave 0**: Cilium, 1Password Connect, External Secrets deploy in parallel
+2. **Wave 1**: Longhorn, Snapshot Controller, VolSync deploy after networking + secrets are ready
+3. **Wave 2**: PVC Plumber deploys (backup checker for Kyverno)
+4. **Wave 4**: Infrastructure AppSet deploys cert-manager, Kyverno, GPU operators, databases, gateway, etc.
+5. **Wave 5**: Monitoring AppSet deploys Prometheus, Grafana, Loki
+6. **Wave 6**: My-Apps AppSet deploys user applications
 
-### Longhorn S3 Backup Configuration
+New applications are discovered automatically by directory structure - add a directory with a `kustomization.yaml` and push to Git.
 
-The cluster automatically configures Longhorn to use MinIO via:
+## Cluster Access (Omni)
 
--   **External Secret**: `infrastructure/storage/longhorn/externalsecret.yaml`
--   **Backup Settings**: `infrastructure/storage/longhorn/backup-settings.yaml`
--   **Backup Target**: `s3://longhorn-backups@us-east-1/`
+- **Kubeconfig**: Download from Omni UI > your cluster > "Download Kubeconfig"
+- **Node management**: All done through Omni web UI (upgrades, configuration, patches)
+- **No `talosctl` needed**: Omni handles Talos upgrades and system extensions
 
-### Backup Schedule
+## Backup System
 
-Automated backups are configured with different tiers:
+All PVC backups use **Kopia on NFS** via VolSync, automated by Kyverno policies. Add `backup: "hourly"` or `backup: "daily"` label to any PVC and backups happen automatically with zero-touch disaster recovery.
 
-| Data Tier | Snapshot Frequency | Backup Frequency | Retention |
-|-----------|-------------------|------------------|-----------|
-| **Critical** | Hourly | Daily (2 AM) | 30 days |
-| **Important** | Every 4 hours | Daily (3 AM) | 14 days |
-| **Standard** | Daily | Weekly | 4 weeks |
+- **Backend**: Kopia filesystem repository on TrueNAS NFS (`192.168.10.133:/mnt/BigTank/k8s/volsync-kopia-nfs`)
+- **Encryption**: Kopia password from 1Password (`rustfs` item)
+- **Restore**: Automatic on PVC recreation - PVC Plumber checks for existing backups, Kyverno injects `dataSourceRef`
+- **Details**: See [docs/pvc-plumber-full-flow.md](docs/pvc-plumber-full-flow.md) and [docs/backup-restore.md](docs/backup-restore.md)
 
-## 📋 Documentation
-- **[View Documentation Online](https://mitchross.github.io/talos-argocd-proxmox)** - Full documentation website
-- **[Local Documentation](docs/)** - Browse documentation in the repository:
-  - [ArgoCD Setup](docs/argocd.md) - **Enterprise GitOps patterns and self-management**
-  - [Storage Architecture](docs/storage-architecture.md) - Storage configuration and architecture
+## Hardware
 
-## 💻 Hardware Stack
 ```
-🧠 Compute
+Compute
 ├── AMD Threadripper 2950X (16c/32t)
 ├── 128GB ECC DDR4 RAM
-├── 2× NVIDIA RTX 3090 24GB
+├── 2x NVIDIA RTX 3090 24GB
 └── Google Coral TPU
 
-💾 Storage
+Storage
 ├── 4TB ZFS RAID-Z2
 ├── NVMe OS Drive
-└── Longhorn/Local Path Storage for K8s
+└── Longhorn distributed storage for K8s
 
-🌐 Network
+Network
 ├── 2.5Gb Networking
 ├── Firewalla Gold
 └── Internal DNS Resolution
 ```
 
-## 🔄 Scaling Options
+## Troubleshooting
 
-While this setup uses a single node, you can add worker nodes for additional compute capacity:
+| Issue | Steps |
+|-------|-------|
+| **ArgoCD not syncing** | `kubectl get applicationsets -n argocd` / `kubectl describe applicationset infrastructure -n argocd` / Force refresh: delete and re-apply `root.yaml` |
+| **Cilium issues** | `cilium status` / `kubectl logs -n kube-system -l k8s-app=cilium` / `cilium connectivity test` |
+| **Storage issues** | `kubectl get pvc -A` / `kubectl get pods -n longhorn-system` |
+| **Secrets not syncing** | `kubectl get externalsecret -A` / `kubectl get pods -n 1passwordconnect` / `kubectl describe clustersecretstore 1password` |
+| **GPU issues** | `kubectl get nodes -l feature.node.kubernetes.io/pci-0300_10de.present=true` / `kubectl get pods -n gpu-operator` |
+| **Backup issues** | `kubectl get replicationsource -A` / `kubectl get pods -n volsync-system -l app.kubernetes.io/name=pvc-plumber` |
 
-| Scaling Type | Description | Benefits |
-|--------------|-------------|----------|
-| **Single Node** | All workloads on one server | Simplified storage, easier management |
-| **Worker Nodes** | Add compute-only nodes | Increased capacity without storage complexity |
-| **Multi-Master** | High availability control plane | Production-grade resilience |
-
-## 🔍 Troubleshooting
-
-| Issue Type | Troubleshooting Steps |
-|------------|----------------------|
-| **Talos Node Issues** | • `talosctl health`<br>• Check Talos logs: `talosctl logs -n <node-ip> -k` |
-| **ArgoCD Self-Management** | • `kubectl get application argocd -n argocd`<br>• Check ApplicationSet status<br>• Review ArgoCD logs |
-| **ApplicationSet Issues** | • `kubectl get applicationsets -n argocd`<br>• Check directory patterns<br>• Verify Git connectivity |
-| **Network Issues** | • Check Cilium status<br>• Verify Gateway API<br>• Test DNS resolution |
-| **Storage Issues** | • Verify PV binding<br>• Check Longhorn/Local PV logs<br>• Validate node affinity |
-| **Secrets Issues** | • Check External Secrets Operator logs<br>• Verify 1Password Connect status |
-| **GPU Issues** | • Check GPU node labels<br>• Verify NVIDIA Operator pods<br>• Check `nvidia-smi` on GPU nodes |
-
-### ArgoCD Application Cleanup
-If you need to remove all existing applications to rebuild:
+### Emergency Reset
 
 ```bash
-# Remove finalizers from all applications
+# Remove finalizers and delete all applications
 kubectl get applications -n argocd -o name | xargs -I{} kubectl patch {} -n argocd --type json -p '[{"op": "remove","path": "/metadata/finalizers"}]'
-
-# Delete all applications
 kubectl delete applications --all -n argocd
-
-# For stuck ApplicationSets
-kubectl get applicationsets -n argocd -o name | xargs -I{} kubectl patch {} -n argocd --type json -p '[{"op": "remove","path": "/metadata/finalizers"}]'
-kubectl delete applicationsets --all -n argocd
-
-# Bootstrap with the new 2025 homelab pattern
-# Note: This is the full, correct bootstrap sequence.
-kustomize build infrastructure/argocd --enable-helm | kubectl apply -f -
-kubectl wait --for condition=established --timeout=60s crd/applications.argoproj.io
-kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
-kubectl apply -f infrastructure/argocd/root.yaml
+./scripts/bootstrap-argocd.sh
 ```
 
-## 🚀 Taking to Production
+## Documentation
 
-This homelab setup translates directly to enterprise environments:
+- **[CLAUDE.md](CLAUDE.md)** - Full development guide and patterns for this repository
+- **[docs/pvc-plumber-full-flow.md](docs/pvc-plumber-full-flow.md)** - Complete PVC backup/restore flow diagram
+- **[docs/backup-restore.md](docs/backup-restore.md)** - Backup/restore workflow
+- **[docs/argocd.md](docs/argocd.md)** - ArgoCD GitOps patterns
+- **[docs/network-topology.md](docs/network-topology.md)** - Network architecture
+- **[docs/network-policy.md](docs/network-policy.md)** - Cilium network policies
+- **[omni/](omni/)** - Omni deployment configs, machine classes, and cluster templates
+  - **[omni/omni/README.md](omni/omni/README.md)** - Omni instance setup guide
+  - **[omni/docs/](omni/docs/)** - Architecture, operations, prerequisites, troubleshooting
 
-1.  **Replace Git repo** with your organization's repository
-2.  **Add proper RBAC** for team-based access
-3.  **Configure notifications** for Slack/Teams integration  
-4.  **Add policy enforcement** with tools like OPA Gatekeeper
-5.  **Implement proper secrets management** with External Secrets or Vault
-6.  **Add multi-cluster support** with ArgoCD ApplicationSets
+## Contributing
 
-The patterns and structure remain the same - this is **production-grade GitOps**.
+1. Fork the repository
+2. Create a feature branch
+3. Submit a pull request
 
-## 🤝 Contributing
-
-1.  Fork the repository
-2.  Create a feature branch
-3.  Submit a pull request
-
-## 📜 License
+## License
 
 MIT License

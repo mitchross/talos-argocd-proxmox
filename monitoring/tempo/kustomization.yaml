@@ -4,7 +4,6 @@ namespace: monitoring
 resources:
 - ns.yaml
 - externalsecret.yaml
-# Removed minio.yaml - using external S3 (TrueNAS RustFS)
 helmCharts:
 - name: tempo
   repo: https://grafana.github.io/helm-charts
