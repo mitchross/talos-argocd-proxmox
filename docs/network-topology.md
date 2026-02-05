@@ -53,7 +53,7 @@ The cluster uses a single network with 10G switch infrastructure:
 |--------|-----|---------|
 | Router/Gateway | 192.168.10.1 | Default route |
 | Proxmox (hp-server-1) | 192.168.10.14 | Hypervisor |
-| TrueNAS | 192.168.10.133 | NAS (NFS/SMB/MinIO S3) - 10G |
+| TrueNAS | 192.168.10.133 | NAS (NFS/SMB/RustFS S3) - 10G |
 | Control Plane 1 | 192.168.10.237 | K8s master |
 | Control Plane 2 | 192.168.10.76 | K8s master |
 | Control Plane 3 | 192.168.10.140 | K8s master |
@@ -98,8 +98,7 @@ The Cilium network policy allows these storage connections:
 |-------------|-------|---------|
 | 192.168.10.133 | 2049, 111 | NFS |
 | 192.168.10.133 | 445 | SMB |
-| 192.168.10.133 | 9000 | MinIO S3 |
-| 192.168.10.133 | 30292, 30293 | RustFS |
+| 192.168.10.133 | 9000, 30292, 30293 | RustFS S3 (Loki, Tempo, pgBackRest) |
 
 ## Troubleshooting
 

@@ -33,11 +33,12 @@ To solve the "chicken-and-egg" problem of bootstrapping a cluster (e.g., needing
 
 | Wave | Phase | Components | Description |
 |------|-------|------------|-------------|
-| **0** | **Foundation** | `cilium`, `1password-connect`, `external-secrets` | **Networking & Secrets**. The absolute minimum required for other pods to start and pull credentials. |
+| **0** | **Foundation** | `cilium`, `argocd`, `1password-connect`, `external-secrets`, `projects` | **Networking & Secrets**. The absolute minimum required for other pods to start and pull credentials. |
 | **1** | **Storage** | `longhorn`, `snapshot-controller`, `volsync` | **Persistence**. Depends on Wave 0 for Pod-to-Pod communication and secrets. |
-| **2** | **System** | `cert-manager`, `gpu-operator`, `databases` | **Core Services**. Depends on Storage (PVCs) and Networking (Ingress/Gateway). |
-| **3** | **Observability** | `kube-prometheus-stack`, `loki` | **Monitoring**. Monitors the healthy stack. |
-| **4** | **User** | `my-apps/*` | **Workloads**. The actual applications running on the cluster. |
+| **2** | **PVC Plumber** | `pvc-plumber` | **Backup checker**. Must be running before Kyverno policies in Wave 4 call its API. |
+| **4** | **Infrastructure** | `cert-manager`, `kyverno`, `gpu-operator`, `databases`, `gateway`, etc. | **Core Services** via ApplicationSet (explicit path list). |
+| **5** | **Monitoring** | `prometheus-stack`, `loki-stack`, `tempo` | **Observability** via ApplicationSet (discovers `monitoring/*`). |
+| **6** | **User** | `my-apps/*/*` | **Workloads** via ApplicationSet (discovers `my-apps/*/*`). |
 
 ### How It Works
 Each `Application` resource in `infrastructure/controllers/argocd/apps/` is annotated with a sync wave:
