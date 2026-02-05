@@ -13,5 +13,5 @@ resources:
   - pvc-plumber-app.yaml   # Wave 2 - Backup existence checker for restore
   # ApplicationSets for automatic discovery
   - infrastructure-appset.yaml  # Wave 4
-  - monitoring-appset.yaml      # Wave 3
-  - my-apps-appset.yaml         # Wave 4
+  - monitoring-appset.yaml      # Wave 5
+  - my-apps-appset.yaml         # Wave 6
