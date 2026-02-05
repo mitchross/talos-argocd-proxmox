@@ -668,10 +668,6 @@ kubectl describe pvc app-data -n app-name
 # Longhorn system status
 kubectl get pods -n longhorn-system
 kubectl get volumes -n longhorn-system
-
-# Check Longhorn backup status
-kubectl get backuptarget -n longhorn-system
-kubectl get backupvolume -n longhorn-system
 ```
 
 ### Backup/Restore Issues (Kyverno + VolSync)
@@ -801,6 +797,7 @@ kubectl exec -it gpu-pod -n app-name -- nvidia-smi
 | **PVC with automatic backup** | `my-apps/ai/khoj/pvc.yaml` (see backup label) |
 | **Kyverno backup policies** | `infrastructure/controllers/kyverno/policies/volsync-pvc-backup-restore.yaml` |
 | **PVC Plumber (restore checker)** | `infrastructure/controllers/pvc-plumber/` |
+| **Full backup/restore flow diagram** | `docs/pvc-plumber-full-flow.md` |
 | **VolSync configuration** | `infrastructure/storage/volsync/` |
 | **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
 | **Database with operator** | `infrastructure/database/crunchy-postgres/immich/` |
@@ -810,10 +807,10 @@ kubectl exec -it gpu-pod -n app-name -- nvidia-smi
 
 ## Additional Documentation
 
-- **[BOOTSTRAP.md](BOOTSTRAP.md)** - Complete cluster bootstrap guide
-- **[README.md](README.md)** - Overview and architecture diagrams
+- **[README.md](README.md)** - Bootstrap guide, architecture overview, and Omni/Proxmox setup
 - **[.github/copilot-instructions.md](.github/copilot-instructions.md)** - Detailed development patterns
 - **[.github/instructions/](/.github/instructions/)** - Domain-specific instructions (ArgoCD, GPU, Talos, standards)
+- **[docs/pvc-plumber-full-flow.md](docs/pvc-plumber-full-flow.md)** - Complete PVC backup/restore flow from bare metal to automatic disaster recovery
 - **[docs/backup-restore.md](docs/backup-restore.md)** - Detailed backup/restore workflow with architecture diagrams
 - **[docs/network-topology.md](docs/network-topology.md)** - Network architecture details
 - **[docs/network-policy.md](docs/network-policy.md)** - Cilium network policies

@@ -4,7 +4,6 @@ namespace: longhorn-system
 resources:
   - namespace.yaml
   #- httproute.yaml
-  - externalsecret.yaml
   - volumesnapshotclass.yaml
   - node-failure-settings.yaml
 helmCharts:

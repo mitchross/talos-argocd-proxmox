@@ -1,55 +1,44 @@
 ---
-applies_to: 
-  - "iac/talos/**"
+applies_to:
+  - "omni/**"
   - "**/*talos*"
 ---
 
 # Talos OS Management Instructions
 
 ## Overview
-Talos OS is an immutable Linux distribution designed for Kubernetes - no shell, no SSH, API-only management.
+Talos OS is an immutable Linux distribution designed for Kubernetes - no shell, no SSH, API-only management. This cluster is managed via **Omni** (Sidero's Talos management platform) with the Proxmox Infrastructure Provider.
 
 ## Key Concepts
 - **Immutable OS**: No package manager, all changes via configuration
-- **API-only**: All management via `talosctl`, never SSH
-- **Declarative**: Configuration defined in `iac/talos/talconfig.yaml`
+- **API-only**: All management via Omni UI, never SSH
+- **Declarative**: Configuration managed in Omni (machine classes, cluster templates)
 - **System Extensions**: Drivers and modules loaded at boot time
 
-## Configuration Management
+## Cluster Management via Omni
 
-### Talhelper Workflow
-```bash
-# Generate machine configs from talconfig.yaml
-cd iac/talos
-talhelper genconfig
+### Node Operations
+- **Provisioning**: Omni + Sidero Proxmox Provider handles VM creation and Talos installation
+- **Upgrades**: Managed through Omni UI (Talos version, system extensions)
+- **Configuration**: Machine classes and patches in `omni/` directory
+- **Kubeconfig**: Download from Omni UI > cluster > "Download Kubeconfig"
 
-# Generate installer URLs for upgrades
-talhelper genurl installer -c talconfig.yaml -n "<node-name>"
-```
+### Machine Classes
+Defined in `omni/machine-classes/`:
+- `control-plane.yaml` - Control plane nodes
+- `worker.yaml` - Regular worker nodes
+- `gpu-worker.yaml` - GPU worker nodes with NVIDIA extensions
 
-### Applying Changes
-```bash
-# For configuration changes (non-image changes)
-talosctl apply-config --nodes <node-ip> --file iac/talos/clusterconfig/<node>.yaml
+### Cluster Template
+`omni/cluster-template/cluster-template.yaml` defines the cluster layout with patches in `omni/cluster-template/patches/`.
 
-# For Talos version or system extension changes (requires reboot)
-INSTALLER_URL=$(talhelper genurl installer -c iac/talos/talconfig.yaml -n "<node-name>")
-talosctl upgrade --nodes "<node-ip>" --image "$INSTALLER_URL"
-```
-
-### Secrets Management
-- `talsecret.sops.yaml` contains cluster encryption keys
-- Always encrypted with SOPS before committing
-- Generated once with `talhelper gensecret > talsecret.sops.yaml`
-
-## Node Types and Configuration
+## Node Types
 
 ### Control Plane Nodes
 - Run etcd, kube-apiserver, kube-controller-manager
 - Default container runtime: `runc`
-- Label: `node.kubernetes.io/exclude-from-external-load-balancers`
 
-### GPU Worker Nodes  
+### GPU Worker Nodes
 - NVIDIA system extensions: `nonfree-kmod-nvidia-production`, `nvidia-container-toolkit-production`
 - Default container runtime: `nvidia`
 - Kernel modules: `nvidia`, `nvidia_uvm`, `nvidia_drm`, `nvidia_modeset`
@@ -65,7 +54,7 @@ System extensions are loaded at boot time and cannot be changed at runtime.
 
 ### Common Extensions
 - `siderolabs/amd-ucode`: AMD CPU microcode
-- `siderolabs/gasket-driver`: Google Coral TPU support  
+- `siderolabs/gasket-driver`: Google Coral TPU support
 - `siderolabs/iscsi-tools`: iSCSI storage support
 - `siderolabs/nfsd`: NFS server support
 - `siderolabs/qemu-guest-agent`: VM guest tools
@@ -83,7 +72,11 @@ System extensions are loaded at boot time and cannot be changed at runtime.
 
 ## Troubleshooting
 
-### Health Checks
+### From Omni UI
+- View node health, logs, and events directly in Omni
+- Trigger upgrades and configuration changes
+
+### From CLI (if needed)
 ```bash
 # Check node health
 talosctl health --nodes <node-ip>
@@ -97,13 +90,11 @@ talosctl logs -n <node-ip> kubelet  # kubelet logs
 ```
 
 ### Common Issues
-- **Config changes not applied**: Use `talosctl apply-config`, not `kubectl edit`
-- **GPU not available**: Verify system extensions in talconfig.yaml, may need upgrade
-- **Network issues**: Check static IP configuration in networkInterfaces
+- **Config changes not applied**: Use Omni UI, not `kubectl edit`
+- **GPU not available**: Verify system extensions in machine class, may need upgrade via Omni
+- **Network issues**: Check static IP configuration in Omni node patches
 
 ## Critical Rules
-- ❌ **Never SSH to nodes** - API-only management
-- ❌ **Never use `kubectl edit` for node config** - changes are ephemeral  
-- ✅ **Always regenerate configs** when changing talconfig.yaml
-- ✅ **Use `upgrade` command** for system extension changes
-- ✅ **Encrypt secrets with SOPS** before committing
+- Never SSH to nodes - API-only management
+- Never use `kubectl edit` for node config - changes are ephemeral
+- Use Omni UI for all node lifecycle operations (upgrades, patches, extensions)

@@ -4,7 +4,7 @@
 
 This is a **production-grade GitOps Kubernetes cluster** running on Talos OS with self-managing ArgoCD. The key differentiator is that ArgoCD manages its own configuration and automatically discovers applications through directory structure - no manual Application manifests needed.
 
-**Tech Stack**: Talos OS + K3s + ArgoCD + Cilium + Gateway API + Longhorn + 1Password + GPU support
+**Tech Stack**: Talos OS + ArgoCD + Cilium + Gateway API + Longhorn + 1Password + GPU support
 
 ## How This Project Works
 
@@ -28,16 +28,11 @@ monitoring/prometheus-stack/    → ArgoCD Application "prometheus-stack"
 ## Essential Commands for This Project
 
 ### Talos Cluster Management
+Nodes are managed via **Omni UI** (upgrades, configuration, patches). No `talhelper` or manual `talosctl` needed.
+
 ```bash
-# Node health check
+# Node health check (if needed from CLI)
 talosctl health --nodes <node-ip>
-
-# Apply config changes (for Talos settings)
-talosctl apply-config --nodes <node-ip> --file iac/talos/clusterconfig/<node>.yaml
-
-# Upgrade nodes (for Talos version/extensions changes)
-INSTALLER_URL=$(talhelper genurl installer -c iac/talos/talconfig.yaml -n "<node-name>")
-talosctl upgrade --nodes "<node-ip>" --image "$INSTALLER_URL"
 ```
 
 ### ArgoCD Bootstrap (Critical Sequence)
@@ -139,7 +134,7 @@ kubectl get pods -n gpu-operator
 ## Key Reference Files
 
 - **GitOps Core**: `infrastructure/controllers/argocd/root.yaml` + `infrastructure/controllers/argocd/apps/*-appset.yaml`
-- **Talos Config**: `iac/talos/talconfig.yaml` (complete node definitions)  
+- **Omni Config**: `omni/` (machine classes, cluster templates, patches)
 - **GPU Example**: `my-apps/ai/comfyui/` (complete GPU app pattern)
 - **Helm Pattern**: `infrastructure/controllers/1passwordconnect/kustomization.yaml`
 - **Web Access**: `my-apps/home/frigate/httproute.yaml` + service with named ports

@@ -4,6 +4,8 @@ annotations:
   argocd.argoproj.io/sync-wave: "0"
 
 # Cluster Configuration
+# IMPORTANT: cluster.name must match the --set cluster.name used during initial
+# cilium install at bootstrap. Mismatched names break Hubble certificate SANs.
 cluster:
   name: talos-prod-cluster
   id: 1
