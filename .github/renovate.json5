@@ -102,17 +102,17 @@
     },
     {
       description: 'Ignore NVIDIA CUDA updates (breaking changes)',
-      matchPackagePatterns: [
-        '^nvidia/cuda',
-      ],
       enabled: false,
+      matchPackageNames: [
+        '/^nvidia/cuda/',
+      ],
     },
     {
       description: 'Ignore Meilisearch updates (breaking changes)',
-      matchPackagePatterns: [
-        '^getmeili/meilisearch',
-      ],
       enabled: false,
+      matchPackageNames: [
+        '/^getmeili/meilisearch/',
+      ],
     },
   ],
   ignorePaths: [
