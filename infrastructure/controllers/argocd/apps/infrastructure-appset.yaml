@@ -86,11 +86,12 @@ spec:
         - /metadata/generation
       - group: external-secrets.io
         kind: ExternalSecret
-        jsonPointers:
-        - /status
-        - /spec/data/*/remoteRef/conversionStrategy
-        - /spec/data/*/remoteRef/decodingStrategy
-        - /spec/data/*/remoteRef/metadataPolicy
+        jqPathExpressions:
+        - .status
+        - .metadata.finalizers
+        - .spec.data[].remoteRef.conversionStrategy
+        - .spec.data[].remoteRef.decodingStrategy
+        - .spec.data[].remoteRef.metadataPolicy
       - group: kyverno.io
         kind: ClusterPolicy
         jsonPointers:

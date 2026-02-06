@@ -10,7 +10,8 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat\\(searxng\\): add VolSync backup configuration\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(kubectl describe:*)",
       "Bash(curl:*)",
-      "Bash(kubectl api-resources:*)"
+      "Bash(kubectl api-resources:*)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []
