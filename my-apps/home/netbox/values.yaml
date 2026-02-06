@@ -36,7 +36,7 @@ postgresql:
       fsGroup: 26 # The default user ID for postgres in the bitnami image
     persistence:
       enabled: true
-      size: 10Gi
+      size: 2Gi
       storageClass: longhorn
   auth:
     username: netbox
@@ -68,7 +68,7 @@ valkey:
 persistence:
   enabled: true
   storageClass: longhorn
-  size: 10Gi
+  size: 2Gi
   # Longhorn doesn't support RWX easily, so we disable persistence for worker
   # Worker doesn't need to write media files, only read them via the API
   accessModes:

@@ -17,8 +17,8 @@ n8n:
     enabled: true
     existingClaim: "data"
     accessMode: ReadWriteOnce
-    size: 10Gi
-  
+    size: 2Gi
+
   resources:
     requests:
       cpu: 100m

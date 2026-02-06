@@ -12,6 +12,6 @@ spec:
   - ReadWriteOnce
   resources:
     requests:
-      storage: 50Gi
+      storage: 20Gi
   storageClassName: longhorn
   # dataSourceRef is added dynamically by Kyverno if a backup exists
