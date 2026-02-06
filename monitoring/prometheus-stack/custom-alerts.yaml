@@ -24,8 +24,8 @@ spec:
             summary: "Kubernetes node {{ $labels.node }} is not ready"
             description: "Node {{ $labels.node }} has been not ready for more than 5 minutes."
         - alert: KubernetesPodCrashLooping
-          expr: rate(kube_pod_container_status_restarts_total[15m]) * 60 * 15 > 0
-          for: 2m
+          expr: rate(kube_pod_container_status_restarts_total[15m]) * 60 * 15 > 3
+          for: 5m
           labels:
             severity: warning
           annotations:
@@ -33,12 +33,12 @@ spec:
             description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) is restarting {{ printf \"%.2f\" $value }} times every 15 minutes."
         - alert: KubernetesPodNotReady
           expr: kube_pod_status_phase{phase=~"Pending|Unknown"} > 0
-          for: 5m
+          for: 10m
           labels:
             severity: warning
           annotations:
             summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is not ready"
-            description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready state for more than 5 minutes."
+            description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready state for more than 10 minutes."
     # Resource Usage Alerts
     - name: kubernetes.resources
       interval: 30s
@@ -73,17 +73,17 @@ spec:
       rules:
         - alert: ArgoCDApplicationNotSynced
           expr: argocd_app_info{sync_status!="Synced"} > 0
-          for: 10m
+          for: 15m
           labels:
             severity: warning
           annotations:
             summary: "ArgoCD Application {{ $labels.name }} is not synced"
-            description: "ArgoCD Application {{ $labels.name }} in project {{ $labels.project }} has been out of sync for more than 10 minutes."
+            description: "ArgoCD Application {{ $labels.name }} in project {{ $labels.project }} has been out of sync for more than 15 minutes."
         - alert: ArgoCDApplicationUnhealthy
-          expr: argocd_app_info{health_status!="Healthy"} > 0
-          for: 5m
+          expr: argocd_app_info{health_status!="Healthy",health_status!="Progressing"} > 0
+          for: 15m
           labels:
-            severity: critical
+            severity: warning
           annotations:
             summary: "ArgoCD Application {{ $labels.name }} is unhealthy"
             description: "ArgoCD Application {{ $labels.name }} in project {{ $labels.project }} is in an unhealthy state."
@@ -113,12 +113,12 @@ spec:
       rules:
         - alert: PrometheusTargetDown
           expr: up == 0
-          for: 2m
+          for: 10m
           labels:
-            severity: critical
+            severity: warning
           annotations:
             summary: "Prometheus target {{ $labels.instance }} is down"
-            description: "Prometheus target {{ $labels.instance }} for job {{ $labels.job }} has been down for more than 2 minutes."
+            description: "Prometheus target {{ $labels.instance }} for job {{ $labels.job }} has been down for more than 10 minutes."
         - alert: PrometheusConfigurationReloadFailure
           expr: prometheus_config_last_reload_successful != 1
           for: 5m
@@ -135,30 +135,6 @@ spec:
           annotations:
             summary: "Alertmanager configuration reload failure"
             description: "Alertmanager {{ $labels.instance }} configuration reload has failed."
-    # Custom Alert for High API Latency
-    - name: custom-api-latency
-      interval: 5m
-      rules:
-        - alert: HighAPILatency
-          expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="api"}[5m])) by (le)) > 0.5
-          for: 5m
-          labels:
-            severity: warning
-          annotations:
-            summary: "High API latency detected"
-            description: "The 95th percentile latency for API requests is above 500ms."
-    # Custom Alert for Database Connection Errors
-    - name: custom-database-connection-errors
-      interval: 5m
-      rules:
-        - alert: DatabaseConnectionErrors
-          expr: increase(db_connection_errors_total[5m]) > 5
-          for: 5m
-          labels:
-            severity: critical
-          annotations:
-            summary: "Database connection errors detected"
-            description: "More than 5 database connection errors occurred in the last 5 minutes."
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -185,21 +161,13 @@ spec:
           annotations:
             summary: "Container {{ $labels.container }} in {{ $labels.namespace }}/{{ $labels.pod }} has high memory usage"
             description: "Container {{ $labels.container }} memory usage is above 90% of its limit (current value: {{ printf \"%.2f\" $value }}%)"
-        - alert: ApplicationHighCPUUsage
-          expr: (rate(container_cpu_usage_seconds_total{container!="POD",container!=""}[5m])) / (container_spec_cpu_quota{container!="POD",container!=""}/container_spec_cpu_period{container!="POD",container!=""}) * 100 > 90
-          for: 10m
-          labels:
-            severity: warning
-          annotations:
-            summary: "Container {{ $labels.container }} in {{ $labels.namespace }}/{{ $labels.pod }} has high CPU usage"
-            description: "Container {{ $labels.container }} CPU usage is above 90% of its limit (current value: {{ printf \"%.2f\" $value }}%)"
     # Network and connectivity alerts
     - name: network.connectivity
       interval: 30s
       rules:
         - alert: PodNetworkUnavailable
           expr: kube_pod_status_phase{phase="Running"} unless on (namespace, pod) kube_pod_status_ready{condition="True"}
-          for: 5m
+          for: 10m
           labels:
             severity: warning
           annotations:
