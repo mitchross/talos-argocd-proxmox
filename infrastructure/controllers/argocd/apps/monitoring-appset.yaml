@@ -58,6 +58,13 @@ spec:
         - .spec.data[].remoteRef.conversionStrategy
         - .spec.data[].remoteRef.decodingStrategy
         - .spec.data[].remoteRef.metadataPolicy
+      - group: ""
+        kind: PersistentVolumeClaim
+        jqPathExpressions:
+        - .spec.dataSourceRef
+        - .spec.dataSource
+        - .spec.volumeName
+        - .spec.resources.requests.storage
       info:
       - name: 'Description'
         value: 'Monitoring component: {{path.basename}}'

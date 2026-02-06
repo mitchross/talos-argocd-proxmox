@@ -104,3 +104,4 @@ spec:
         - .spec.dataSourceRef
         - .spec.dataSource
         - .spec.volumeName
+        - .spec.resources.requests.storage
