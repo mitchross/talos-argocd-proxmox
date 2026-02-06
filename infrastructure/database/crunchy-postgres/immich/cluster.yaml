@@ -67,6 +67,25 @@ spec:
     options: "CREATEDB CREATEROLE"
     password:
       type: AlphaNumeric
+  backups:
+    pgbackrest:
+      configuration:
+      - secret:
+          name: pgo-s3-credentials
+      global:
+        repo1-path: /pgbackrest/immich
+        repo1-s3-uri-style: path
+        repo1-retention-full: "7"
+        repo1-retention-full-type: count
+      repos:
+      - name: repo1
+        s3:
+          bucket: postgres-backups
+          endpoint: 192.168.10.133:30293
+          region: us-east-1
+        schedules:
+          full: "0 2 * * 0"
+          differential: "0 2 * * 1-6"
   proxy:
     pgBouncer:
       port: 5432

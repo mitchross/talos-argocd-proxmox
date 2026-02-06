@@ -66,7 +66,7 @@ spec:
   backup:
     barmanObjectStore:
       destinationPath: s3://postgres-backups/cnpg/khoj
-      endpointURL: http://192.168.10.133:9000
+      endpointURL: http://192.168.10.133:30293
       s3Credentials:
         accessKeyId:
           name: cnpg-s3-credentials

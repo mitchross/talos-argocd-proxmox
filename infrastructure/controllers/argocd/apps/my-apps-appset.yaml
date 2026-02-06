@@ -53,12 +53,13 @@ spec:
         - /status
       - group: external-secrets.io
         kind: ExternalSecret
-        jsonPointers:
-        - /status
-        - /metadata/generation
-        - /spec/data/*/remoteRef/conversionStrategy
-        - /spec/data/*/remoteRef/decodingStrategy
-        - /spec/data/*/remoteRef/metadataPolicy
+        jqPathExpressions:
+        - .status
+        - .metadata.generation
+        - .metadata.finalizers
+        - .spec.data[].remoteRef.conversionStrategy
+        - .spec.data[].remoteRef.decodingStrategy
+        - .spec.data[].remoteRef.metadataPolicy
       # PVC fields that are immutable after creation - needed for Volume Populator
       - group: ""
         kind: PersistentVolumeClaim
