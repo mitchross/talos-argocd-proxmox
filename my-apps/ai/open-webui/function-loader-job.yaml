@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: load-har-analyzer-v4
+  name: load-har-analyzer-v5
   namespace: open-webui
   annotations:
     argocd.argoproj.io/hook: PostSync
@@ -11,79 +11,92 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
+      runtimeClassName: nvidia
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
+      tolerations:
+      - key: "gpu"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
       containers:
       - name: loader
-        image: curlimages/curl:latest
+        image: ghcr.io/open-webui/open-webui:cuda@sha256:268d2b1b1f66f2d3f9a4ac3e0f06e0f545e9d6aaf71027115861874120e7edde
         command:
-        - /bin/sh
+        - python3
         - -c
         - |
-          echo "Waiting for Open-WebUI to be ready..."
-          sleep 30
+          import sys
+          sys.path.insert(0, "/app/backend")
+          import os
+          os.environ.setdefault("DATA_DIR", "/app/backend/data")
 
-          API="http://open-webui.open-webui.svc.cluster.local:8080/api/v1"
-          FUNC_CODE=$(cat /functions/har-analyzer-function.py | jq -Rs .)
+          with open("/functions/har-analyzer-function.py") as f:
+              code = f.read()
 
-          if [ -z "$ADMIN_TOKEN" ]; then
-            echo "ADMIN_TOKEN not set — skipping auto-load."
-            echo "Import manually: Workspace > Functions > Add Function > paste code"
-            exit 0
-          fi
+          from open_webui.models.functions import Functions, FunctionForm, FunctionMeta
+          from open_webui.models.users import Users
 
-          AUTH="Authorization: Bearer $ADMIN_TOKEN"
-          CT="Content-Type: application/json"
+          # Find first admin user
+          users_data = Users.get_users()
+          admin_id = None
+          if isinstance(users_data, dict) and "users" in users_data:
+              for u in users_data["users"]:
+                  if u.role == "admin":
+                      admin_id = u.id
+                      break
 
-          PAYLOAD="{
-            \"id\": \"har_forensics_analyzer\",
-            \"name\": \"HAR Forensics Analyzer\",
-            \"type\": \"filter\",
-            \"content\": $FUNC_CODE,
-            \"meta\": {
-              \"description\": \"Filter: preprocesses uploaded .har files into forensic reports for LLM analysis\"
-            },
-            \"is_active\": true,
-            \"is_global\": true
-          }"
+          if not admin_id:
+              print("WARNING: No admin user found, using placeholder ID")
+              admin_id = "system"
 
-          # Try update first, then create
-          echo "Attempting to update existing function..."
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X POST "$API/functions/id/har_forensics_analyzer/update" \
-            -H "$AUTH" -H "$CT" -d "$PAYLOAD")
+          form = FunctionForm(
+              id="har_forensics_analyzer",
+              name="HAR Forensics Analyzer",
+              type="filter",
+              content=code,
+              meta=FunctionMeta(
+                  description="Filter: preprocesses uploaded .har files into forensic reports for LLM analysis"
+              )
+          )
 
-          if [ "$HTTP_CODE" = "200" ]; then
-            echo "Function updated successfully!"
-          else
-            echo "Update returned $HTTP_CODE, trying create..."
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-              -X POST "$API/functions/create" \
-              -H "$AUTH" -H "$CT" -d "$PAYLOAD")
+          existing = Functions.get_function_by_id("har_forensics_analyzer")
+          if existing:
+              result = Functions.update_function_by_id("har_forensics_analyzer", {
+                  "name": "HAR Forensics Analyzer",
+                  "type": "filter",
+                  "content": code,
+                  "meta": {"description": "Filter: preprocesses uploaded .har files into forensic reports for LLM analysis"},
+                  "is_active": True,
+                  "is_global": True,
+              })
+              print(f"Updated function: {result.id}")
+          else:
+              result = Functions.insert_new_function(admin_id, "filter", form)
+              if result:
+                  Functions.update_function_by_id("har_forensics_analyzer", {
+                      "is_active": True,
+                      "is_global": True,
+                  })
+                  print(f"Created function: {result.id}")
+              else:
+                  print("ERROR: Failed to create function")
+                  sys.exit(1)
 
-            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
-              echo "Function created successfully!"
-            else
-              echo "Create returned $HTTP_CODE — may need manual import."
-              echo "Workspace > Functions > Add > paste code from har-analyzer-function.py"
-            fi
-          fi
-
-          # Enable as global filter
-          echo "Enabling as global filter..."
-          curl -s -X POST "$API/functions/id/har_forensics_analyzer/toggle/global" \
-            -H "$AUTH" -H "$CT" || true
-
-          echo "Done!"
-        env:
-        - name: ADMIN_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: open-webui-admin-token
-              key: token
-              optional: true
+          print(f"Active: {result.is_active}, Global: {result.is_global}")
+          print("Done!")
+        envFrom:
+        - configMapRef:
+            name: open-webui-configmap
         volumeMounts:
         - name: functions
           mountPath: /functions
+        - name: data
+          mountPath: /app/backend/data
       volumes:
       - name: functions
         configMap:
           name: har-analyzer-function
+      - name: data
+        persistentVolumeClaim:
+          claimName: storage
