@@ -1,6 +1,6 @@
 persistence:
   enabled: true
-  size: 10Gi
+  size: 2Gi
   storageClass: longhorn
   labels:
     backup: "daily"
@@ -17,7 +17,7 @@ postgresql-ha:
   postgresql:
     replicaCount: 1  # Reduced from 3
     persistence:
-      size: 10Gi
+      size: 5Gi
       storageClass: longhorn
   pgpool:
     replicaCount: 1  # Reduced from default
@@ -31,5 +31,5 @@ valkey:
   architecture: standalone
   primary:
     persistence:
-      size: 2Gi
+      size: 1Gi
       storageClass: longhorn

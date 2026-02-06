@@ -16,7 +16,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 12Gi
+      storage: 5Gi
   # dataSourceRef is added dynamically by Kyverno if a backup exists
 ---
 apiVersion: v1
