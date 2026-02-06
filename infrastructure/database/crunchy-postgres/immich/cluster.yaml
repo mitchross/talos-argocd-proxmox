@@ -12,9 +12,6 @@ spec:
   databaseInitSQL:
     name: immich-postgres-init
     key: init.sql
-  authentication:
-    rules:
-      - hba: "host all all 10.244.0.0/16 md5"
   config:
     parameters:
       shared_preload_libraries: "vchord.so"
