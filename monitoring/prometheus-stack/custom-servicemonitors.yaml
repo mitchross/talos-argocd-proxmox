@@ -1,68 +1,5 @@
-# ServiceMonitor for ArgoCD
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: argocd-metrics
-  namespace: prometheus-stack
-  labels:
-    app.kubernetes.io/name: argocd
-    release: kube-prometheus-stack
-    prometheus: kube-prometheus-stack-prometheus
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: argocd-metrics
-  namespaceSelector:
-    matchNames:
-      - argocd
-  endpoints:
-    - port: metrics
-      interval: 30s
-      path: /metrics
----
-# ServiceMonitor for ArgoCD Server
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: argocd-server-metrics
-  namespace: prometheus-stack
-  labels:
-    app.kubernetes.io/name: argocd-server
-    release: kube-prometheus-stack
-    prometheus: kube-prometheus-stack-prometheus
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: argocd-server-metrics
-  namespaceSelector:
-    matchNames:
-      - argocd
-  endpoints:
-    - port: metrics
-      interval: 30s
-      path: /metrics
----
-# ServiceMonitor for ArgoCD Repo Server
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: argocd-repo-server-metrics
-  namespace: prometheus-stack
-  labels:
-    app.kubernetes.io/name: argocd-repo-server
-    release: kube-prometheus-stack
-    prometheus: kube-prometheus-stack-prometheus
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: argocd-repo-server
-  namespaceSelector:
-    matchNames:
-      - argocd
-  endpoints:
-    - port: metrics
-      interval: 30s
-      path: /metrics
+# ArgoCD metrics are handled by the argo-cd Helm chart's built-in ServiceMonitors
+# (enabled via per-component metrics.serviceMonitor.enabled in ArgoCD values.yaml)
 ---
 # ServiceMonitor for NVIDIA Device Plugin
 apiVersion: monitoring.coreos.com/v1
@@ -123,7 +60,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: longhorn-manager
+      app: longhorn-manager
   namespaceSelector:
     matchNames:
       - longhorn-system

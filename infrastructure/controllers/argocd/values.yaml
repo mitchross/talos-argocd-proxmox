@@ -64,6 +64,12 @@ server:
   # We are not using the chart's built-in ingress
   ingress:
     enabled: false
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
   resources:
     requests:
       cpu: 250m
@@ -74,6 +80,12 @@ server:
 # ApplicationSet controller settings
 applicationSet:
   enabled: true
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
   resources:
     requests:
       cpu: 250m
@@ -94,6 +106,14 @@ ha:
         memory: 512Mi
 # Argo CD controller settings
 controller:
+  metrics:
+    enabled: true
+    applicationLabels:
+      enabled: true
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
   resources:
     requests:
       cpu: 500m
@@ -103,6 +123,12 @@ controller:
       memory: 2Gi
 # Argo CD repo-server settings
 repoServer:
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
   resources:
     requests:
       cpu: 500m
@@ -113,14 +139,16 @@ repoServer:
 # Dex is disabled; external authentication (e.g. SSO) is used
 dex:
   enabled: false
-metrics:
-  enabled: true
-  serviceMonitor:
-    enabled: true
 notifications:
   enabled: true
   secret:
     create: true
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
 hpa:
   enabled: true
   minReplicas: 1
