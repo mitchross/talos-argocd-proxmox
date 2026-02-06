@@ -47,6 +47,8 @@ data:
   # RAG & Document Integration (for PDFs, text files, etc.)
   # ---------------------------------------------------------------------------
   ENABLE_RAG: "True"
+  USE_CUDA_DOCKER: "true"
+  RAG_EMBEDDING_BATCH_SIZE: "8"
   RAG_TOP_K: "10"
   RAG_RELEVANCE_THRESHOLD: "0.0"
   CHUNK_SIZE: "1500"
