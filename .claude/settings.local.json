@@ -11,7 +11,9 @@
       "Bash(kubectl describe:*)",
       "Bash(curl:*)",
       "Bash(kubectl api-resources:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(helm repo list:*)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ],
     "deny": [],
     "ask": []
