@@ -12,3 +12,10 @@ resources:
 - httproute.yaml
 - function-loader-job.yaml
 namespace: open-webui
+
+configMapGenerator:
+- name: har-analyzer-function
+  files:
+  - har-analyzer-function.py
+  options:
+    disableNameSuffixHash: true

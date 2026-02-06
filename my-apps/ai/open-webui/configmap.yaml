@@ -22,7 +22,7 @@ data:
 
   # Hardware-Optimized Parameters (Nemotron-3 recommended: temp=1.0, top_p=1.0)
   # For tool calling use: temp=0.6, top_p=0.95
-  CONTEXT_WINDOW: "65536"
+  CONTEXT_WINDOW: "131072"
   TEMPERATURE: "1.0"
   TOP_P: "1.0"
   MIN_P: "0.0"
@@ -45,7 +45,6 @@ data:
 
   # ---------------------------------------------------------------------------
   # RAG & Document Integration (for PDFs, text files, etc.)
-  # Note: HAR files use the HAR Analyzer function instead of RAG
   # ---------------------------------------------------------------------------
   ENABLE_RAG: "True"
   RAG_TOP_K: "10"
