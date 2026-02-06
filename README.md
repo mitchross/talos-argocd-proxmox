@@ -95,6 +95,8 @@ cilium install \
 ```
 
 > **Important:** `cluster.name` must match `infrastructure/networking/cilium/values.yaml` for Hubble certificate SANs. After ArgoCD deploys, it takes over Cilium management at Wave 0.
+>
+> If `cilium install` is run without `--set cluster.name=talos-prod-cluster`, certificates are generated for `default` or `kind-kind`. When ArgoCD later configures Cilium to expect `talos-prod-cluster`, the certificates will not match, causing TLS handshake failures in Hubble Relay (`x509: certificate signed by unknown authority`).
 
 ### Step 2: Install Gateway API CRDs
 
