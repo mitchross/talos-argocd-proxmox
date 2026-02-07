@@ -65,6 +65,7 @@ PVC Created ──▶ Kyverno Rule 0 ──▶ Calls pvc-plumber ──▶ Backu
 ```
 
 **Key protections:**
+- **Fail-closed gate:** PVC creation denied if PVC Plumber is unreachable (prevents empty PVCs during disaster recovery)
 - Backup ReplicationSource only created AFTER PVC is Bound (prevents backup/restore conflicts)
 - Restore uses VolumePopulator pattern (dataSourceRef) for atomic restore
 
@@ -88,10 +89,11 @@ PVC Created ──▶ Kyverno Rule 0 ──▶ Calls pvc-plumber ──▶ Backu
 
 ### 4. Kyverno ClusterPolicy
 - Triggers on PVCs with label `backup: hourly` or `backup: daily`
-- **Rule 0 (mutate):** Calls pvc-plumber; if backup exists, adds `dataSourceRef` to trigger restore
-- **Rule 1 (generate):** Creates ExternalSecret (fetches KOPIA_PASSWORD from 1Password)
-- **Rule 2 (generate):** Creates ReplicationSource (backup schedule) - only after PVC is Bound
-- **Rule 3 (generate):** Creates ReplicationDestination (restore capability)
+- **Rule 0 (validate, FAIL-CLOSED):** Calls pvc-plumber `/readyz`; if unreachable, **denies PVC creation** to prevent data loss during disaster recovery
+- **Rule 1 (mutate):** Calls pvc-plumber `/exists`; if backup exists, adds `dataSourceRef` to trigger restore
+- **Rule 2 (generate):** Creates ExternalSecret (fetches KOPIA_PASSWORD from 1Password)
+- **Rule 3 (generate):** Creates ReplicationSource (backup schedule) - only after PVC is Bound
+- **Rule 4 (generate):** Creates ReplicationDestination (restore capability)
 
 ### 5. VolSync
 - Performs actual backup/restore operations using **Kopia**
