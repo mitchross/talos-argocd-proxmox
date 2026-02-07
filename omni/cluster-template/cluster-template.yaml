@@ -23,6 +23,25 @@ patches:
       network:
         nameservers:
         - 192.168.10.1
+- name: node-performance
+  inline:
+    machine:
+      sysctls:
+        fs.inotify.max_user_watches: "1048576"
+        fs.inotify.max_user_instances: "8192"
+        fs.file-max: "2097152"
+        vm.swappiness: "10"
+        vm.max_map_count: "524288"
+        net.core.somaxconn: "65535"
+        net.core.rmem_max: "16777216"
+        net.core.wmem_max: "16777216"
+        net.ipv4.tcp_fastopen: "3"
+---
+kind: ControlPlane
+machineClass:
+  name: proxmox-control-plane
+  size: 3
+patches:
 - name: control-plane-performance
   inline:
     cluster:
@@ -45,24 +64,6 @@ patches:
       scheduler:
         extraArgs:
           kube-api-qps: "100"
-- name: node-performance
-  inline:
-    machine:
-      sysctls:
-        fs.inotify.max_user_watches: "1048576"
-        fs.inotify.max_user_instances: "8192"
-        fs.file-max: "2097152"
-        vm.swappiness: "10"
-        vm.max_map_count: "524288"
-        net.core.somaxconn: "65535"
-        net.core.rmem_max: "16777216"
-        net.core.wmem_max: "16777216"
-        net.ipv4.tcp_fastopen: "3"
----
-kind: ControlPlane
-machineClass:
-  name: proxmox-control-plane
-  size: 3
 systemExtensions:
 - siderolabs/iscsi-tools
 - siderolabs/nfsd
