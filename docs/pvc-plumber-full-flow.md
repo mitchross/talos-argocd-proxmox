@@ -180,8 +180,15 @@
 │  KYVERNO ADMISSION WEBHOOK INTERCEPTS                                               │
 │                                                                                     │
 │  "I see a PVC with backup: hourly (or daily)"                                      │
-│  "Let me check if a backup exists..."                                              │
 │                                                                                     │
+│  Step 1: Validate rule checks PVC Plumber health (FAIL-CLOSED)                     │
+│  ┌────────────────────────────────────────────────────────────────────────────┐    │
+│  │  HTTP GET http://pvc-plumber.volsync-system/readyz                        │    │
+│  │  If unreachable -> DENY PVC creation (apps retry via ArgoCD backoff)      │    │
+│  │  If healthy -> proceed to step 2                                          │    │
+│  └────────────────────────────────────────────────────────────────────────────┘    │
+│                                                                                     │
+│  Step 2: Mutate rule checks if backup exists                                       │
 │  ┌────────────────────────────────────────────────────────────────────────────┐    │
 │  │  HTTP GET http://pvc-plumber.volsync-system/exists/karakeep/data-pvc      │    │
 │  └────────────────────────────────────────────────────────────────────────────┘    │
@@ -204,7 +211,9 @@
 │  Returns JSON to Kyverno:                                                          │
 │    {"exists": true}   OR   {"exists": false}                                       │
 │                                                                                     │
-│  On ANY error (timeout, network, parse) -> {"exists": false} (fail-open)           │
+│  On ANY error (timeout, network, parse) -> {"exists": false}                       │
+│  NOTE: Kyverno validate rule DENIES PVC creation if PVC Plumber is unreachable    │
+│  (fail-closed). See Scenario 5 below.                                              │
 │                                                                                     │
 └─────────────────────────────────────────────────────────────────────────────────────┘
                                           │
@@ -404,6 +413,36 @@
 │  5. Backups begin after PVC is Bound + 2 hours old                                 │
 │                                                                                     │
 │  Result: New app starts fresh, automatically protected going forward               │
+│                                                                                     │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│ SCENARIO 5: PVC PLUMBER DOWN DURING DISASTER RECOVERY (FAIL-CLOSED)                │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                     │
+│  Your cluster died. You rebuild from scratch. NFS has all your Kopia backups.      │
+│  But PVC Plumber fails to start (bad config, NFS unreachable, etc.)               │
+│                                                                                     │
+│  1. New cluster bootstrapped                                                        │
+│  2. ArgoCD syncs apps                                                               │
+│  3. PVC Plumber (Wave 2) is unhealthy                                              │
+│  4. Kyverno (Wave 4) deploys with validate rule                                   │
+│  5. Apps (Wave 6) attempt to create PVCs with backup labels                        │
+│  6. Kyverno validate rule calls PVC Plumber /readyz -> UNREACHABLE                 │
+│  7. PVC creation DENIED                                                             │
+│  8. ArgoCD retries with exponential backoff (5s -> 10s -> 20s -> 40s -> 3m)        │
+│  9. Operator fixes PVC Plumber                                                     │
+│  10. PVC Plumber starts, /readyz returns 200                                       │
+│  11. ArgoCD retries -> PVC creates -> pvc-plumber finds backup -> data restored    │
+│                                                                                     │
+│  Result: Apps wait for PVC Plumber. Data safety over availability.                 │
+│          Human intervention required to fix PVC Plumber.                            │
+│                                                                                     │
+│  Trade-off: Apps with backup labels CANNOT deploy until PVC Plumber is healthy.    │
+│  Apps WITHOUT backup labels deploy normally and are unaffected.                     │
+│                                                                                     │
+│  Why this matters: Without this, apps deploy with empty PVCs and the restore       │
+│  window is permanently missed (Kyverno only checks on PVC CREATE).                 │
 │                                                                                     │
 └─────────────────────────────────────────────────────────────────────────────────────┘
 

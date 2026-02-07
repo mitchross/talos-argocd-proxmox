@@ -116,7 +116,7 @@ Applications deploy in strict order to prevent race conditions:
 |------|-----------|---------|
 | **0** | Foundation | Cilium (CNI), ArgoCD, 1Password Connect, External Secrets, AppProjects |
 | **1** | Storage | Longhorn, VolumeSnapshot Controller, VolSync |
-| **2** | PVC Plumber | Backup existence checker (must run before Kyverno policies in Wave 4) |
+| **2** | PVC Plumber | Backup existence checker (FAIL-CLOSED gate: PVC creation denied if Plumber is down) |
 | **4** | Infrastructure AppSet | Deploys from explicit path list: cert-manager, external-dns, GPU operators, Kyverno, gateway, databases, etc. |
 | **5** | Monitoring AppSet | Discovers `monitoring/*` applications |
 | **6** | My-Apps AppSet | Discovers `my-apps/*/*` applications |
@@ -124,6 +124,7 @@ Applications deploy in strict order to prevent race conditions:
 **Why this matters**:
 - Longhorn won't deploy until Cilium + External Secrets are healthy
 - PVC Plumber (Wave 2) must run before Infrastructure AppSet (Wave 4) because Kyverno policies call PVC Plumber API
+- **FAIL-CLOSED**: If PVC Plumber is down, Kyverno denies creation of backup-labeled PVCs. Apps retry via ArgoCD backoff until Plumber is healthy. This prevents data loss during disaster recovery.
 - Kyverno, cert-manager, GPU operators etc. deploy via Infrastructure AppSet (Wave 4) before user apps (Wave 6)
 - This prevents "chicken-and-egg" dependency issues and SSD thrashing
 
@@ -511,8 +512,9 @@ PVC populated from last backup
 **Location**: `infrastructure/controllers/kyverno/policies/`
 
 1. **volsync-pvc-backup-restore.yaml** - Main backup/restore automation
-   - Generates ExternalSecret, ReplicationSource, ReplicationDestination
+   - **FAIL-CLOSED**: Validate rule denies PVC creation if PVC Plumber is unreachable
    - Adds `dataSourceRef` if backup exists (via PVC Plumber)
+   - Generates ExternalSecret, ReplicationSource, ReplicationDestination
    - Excludes system namespaces (kube-system, volsync-system, kyverno)
 
 2. **volsync-nfs-inject.yaml** - NFS mount injection
@@ -536,9 +538,10 @@ PVC populated from last backup
 ```
 
 **Kyverno uses this to**:
-- Call PVC Plumber API during PVC CREATE operation
+- First validate PVC Plumber is healthy (`/readyz`) — if not, PVC creation is **denied** (fail-closed)
+- Then call PVC Plumber API (`/exists`) during PVC CREATE operation
 - If backup exists, add `dataSourceRef` to auto-restore
-- Prevents data loss when recreating PVCs
+- Prevents data loss when recreating PVCs or during disaster recovery
 
 ### Manual Backup Operations
 
