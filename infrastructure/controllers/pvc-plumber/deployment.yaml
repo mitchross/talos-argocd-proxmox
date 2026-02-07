@@ -27,72 +27,72 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: pvc-plumber
-          image: ghcr.io/mitchross/pvc-plumber:1.1.0
-          ports:
-            - name: http
-              containerPort: 8080
-              protocol: TCP
-          env:
-            - name: BACKEND_TYPE
-              value: "kopia-fs"
-            - name: KOPIA_REPOSITORY_PATH
-              value: "/repository"
-            - name: LOG_LEVEL
-              value: "info"
-            - name: KOPIA_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: pvc-plumber-kopia
-                  key: KOPIA_PASSWORD
-            - name: KOPIA_CONFIG_PATH
-              value: "/tmp/kopia/config/repository.config"
-            - name: KOPIA_LOG_DIR
-              value: "/tmp/kopia/logs"
-            - name: KOPIA_CACHE_DIRECTORY
-              value: "/tmp/kopia/cache"
-            - name: HOME
-              value: "/tmp"
-            - name: USER
-              value: "plumber"
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: false
-            capabilities:
-              drop:
-                - ALL
-          resources:
-            requests:
-              cpu: 10m
-              memory: 128Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 30
-          readinessProbe:
-            httpGet:
-              path: /readyz
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 10
-          volumeMounts:
-            - name: repository
-              mountPath: /repository
-              readOnly: false
-            - name: kopia-tmp
-              mountPath: /tmp/kopia
-      volumes:
+      - name: pvc-plumber
+        image: ghcr.io/mitchross/pvc-plumber:1.1.0
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        env:
+        - name: BACKEND_TYPE
+          value: "kopia-fs"
+        - name: KOPIA_REPOSITORY_PATH
+          value: "/repository"
+        - name: LOG_LEVEL
+          value: "info"
+        - name: KOPIA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: pvc-plumber-kopia
+              key: KOPIA_PASSWORD
+        - name: KOPIA_CONFIG_PATH
+          value: "/tmp/kopia/config/repository.config"
+        - name: KOPIA_LOG_DIR
+          value: "/tmp/kopia/logs"
+        - name: KOPIA_CACHE_DIRECTORY
+          value: "/tmp/kopia/cache"
+        - name: HOME
+          value: "/tmp"
+        - name: USER
+          value: "plumber"
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        volumeMounts:
         - name: repository
-          nfs:
-            server: 192.168.10.133
-            path: /mnt/BigTank/k8s/volsync-kopia-nfs
+          mountPath: /repository
+          readOnly: false
         - name: kopia-tmp
-          emptyDir: {}
+          mountPath: /tmp/kopia
+      volumes:
+      - name: repository
+        nfs:
+          server: 192.168.10.133
+          path: /mnt/BigTank/k8s/volsync-kopia-nfs
+      - name: kopia-tmp
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -108,7 +108,7 @@ spec:
   selector:
     app.kubernetes.io/name: pvc-plumber
   ports:
-    - name: http
-      port: 80
-      targetPort: http
-      protocol: TCP
+  - name: http
+    port: 80
+    targetPort: http
+    protocol: TCP
