@@ -84,21 +84,3 @@ spec:
         schedules:
           full: "0 2 * * 0"
           differential: "0 2 * * 1-6"
-  proxy:
-    pgBouncer:
-      port: 5432
-      replicas: 1  # Reduced from 2 for homelab
-      config:
-        global:
-          pool_mode: session
-          client_tls_sslmode: prefer
-          default_pool_size: "100"
-          max_client_conn: "500"
-      topologySpreadConstraints:
-      - maxSkew: 1
-        topologyKey: kubernetes.io/hostname
-        whenUnsatisfiable: DoNotSchedule
-        labelSelector:
-          matchLabels:
-            postgres-operator.crunchydata.com/cluster: immich
-            postgres-operator.crunchydata.com/role: "postgres-bouncer"
