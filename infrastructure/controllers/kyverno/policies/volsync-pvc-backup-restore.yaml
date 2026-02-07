@@ -15,7 +15,48 @@ spec:
   mutateExistingOnPolicyUpdate: false
   background: true
   rules:
-    # Rule 0: Conditionally add dataSourceRef if backup exists in Kopia
+    # Rule 0: Gate PVC creation on PVC Plumber availability (FAIL-CLOSED)
+    # If PVC Plumber is unreachable, DENY PVC creation to prevent data loss
+    # during disaster recovery. Apps retry via ArgoCD backoff until Plumber is healthy.
+    - name: require-pvc-plumber-available
+      match:
+        any:
+          - resources:
+              kinds:
+                - PersistentVolumeClaim
+              operations:
+                - CREATE
+              selector:
+                matchExpressions:
+                  - key: backup
+                    operator: In
+                    values: ["hourly", "daily"]
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - volsync-system
+                - kyverno
+      context:
+        - name: plumberHealth
+          apiCall:
+            method: GET
+            service:
+              url: "http://pvc-plumber.volsync-system.svc.cluster.local/readyz"
+      validate:
+        message: >-
+          PVC Plumber is not available. Backup-labeled PVCs cannot be created
+          until PVC Plumber is healthy in volsync-system namespace. This ensures
+          backup restoration works correctly during disaster recovery.
+        deny:
+          conditions:
+            all:
+              - key: "{{ plumberHealth || 'unavailable' }}"
+                operator: Equals
+                value: "unavailable"
+
+    # Rule 1: Conditionally add dataSourceRef if backup exists in Kopia
     # IMPORTANT: Only trigger on CREATE to avoid race conditions during PVC deletion
     - name: add-datasource-if-backup-exists
       match:
@@ -59,7 +100,7 @@ spec:
               kind: ReplicationDestination
               name: "{{request.object.metadata.name}}-backup"
 
-    # Rule 1: Generate ExternalSecret for Kopia repository credentials
+    # Rule 2: Generate ExternalSecret for Kopia repository credentials
     - name: generate-kopia-secret
       skipBackgroundRequests: false
       match:
@@ -116,7 +157,7 @@ spec:
                   key: rustfs
                   property: kopia_password
 
-    # Rule 2: Generate ReplicationSource (backup schedule)
+    # Rule 3: Generate ReplicationSource (backup schedule)
     # IMPORTANT: Only create backup AFTER PVC is Bound to avoid conflicts with restore
     - name: generate-replication-source
       skipBackgroundRequests: false
@@ -183,7 +224,7 @@ spec:
                 runAsGroup: 568
                 fsGroup: 568
 
-    # Rule 3: Generate ReplicationDestination (restore capability)
+    # Rule 4: Generate ReplicationDestination (restore capability)
     - name: generate-replication-destination
       skipBackgroundRequests: false
       match:
