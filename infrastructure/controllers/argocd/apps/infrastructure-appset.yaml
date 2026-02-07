@@ -37,6 +37,8 @@ spec:
   template:
     metadata:
       name: '{{path.basename}}'
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: '{{path}}'
       labels:
         app.kubernetes.io/part-of: infrastructure
     spec:

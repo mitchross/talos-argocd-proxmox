@@ -17,6 +17,11 @@ defaultSettings:
   engineReplicaTimeout: "8"
   # Reduced from 12 to 8 for homelab - still provides good performance with less CPU reservation
   guaranteedInstanceManagerCPU: "8"
+  # Performance: prefer local disk for reads when replica is on same node
+  defaultDataLocality: "best-effort"
+  # Cleanup: limit snapshot accumulation per volume
+  snapshotMaxCount: "10"
+  autoCleanupSystemGeneratedSnapshot: "true"
 # -- Disables the pre-upgrade check job. This is recommended for GitOps tools
 # like ArgoCD to prevent sync failures.
 preUpgradeChecker:
@@ -32,6 +37,7 @@ persistence:
   defaultClassReplicaCount: 1
   # -- Default filesystem type.
   defaultFsType: ext4
+  defaultDataLocality: best-effort
   # -- Reclaim policy for the default storage class.
   reclaimPolicy: Delete
 # -- Disable the default ingress creation, as you are managing it with a
