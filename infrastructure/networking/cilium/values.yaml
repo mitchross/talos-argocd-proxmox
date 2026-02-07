@@ -65,9 +65,13 @@ bandwidthManager:
 # BPF Host Routing
 bpf:
   masquerade: true
-  # Connection tracking improvements for better session handling
-  ctTcpTimeout: 21600 # 6 hours (default is 6 hours but explicit is better)
-  ctAnyTimeout: 3600 # 1 hour for non-TCP connections
+  ctTcpTimeout: 21600
+  ctAnyTimeout: 3600
+  # Performance: pre-allocate BPF map entries (reduces per-packet latency)
+  preallocateMaps: true
+
+# Performance: BIG TCP reduces CPU overhead for large transfers (kernel >= 5.19)
+enableIPv4BIGTCP: true
 
 # L2 Announcements for LoadBalancer Services
 l2announcements:
@@ -100,9 +104,20 @@ gatewayAPI:
   sessionAffinity: true
   sessionAffinityTimeoutSeconds: 10800 # 3 hours
 
+# Cilium agent resources
+resources:
+  requests:
+    cpu: 300m
+    memory: 300Mi
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+
 # Hubble (Observability)
 hubble:
   enabled: true
+  # Performance: increase event queue to prevent drops under load
+  eventQueueSize: 16384
   relay:
     enabled: true
   ui:
@@ -110,9 +125,14 @@ hubble:
 
 # Operator Configuration
 operator:
-  # CRITICAL FIX: Run 2 replicas for HA - single replica is a SPOF
   replicas: 2
-  # Ensure replicas run on different nodes
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
   affinity:
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:

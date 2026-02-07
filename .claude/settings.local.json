@@ -15,7 +15,15 @@
       "Bash(helm repo list:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(kubectl run:*)",
-      "Bash(kubectl rollout:*)"
+      "Bash(kubectl rollout:*)",
+      "WebFetch(domain:www.talos.dev)",
+      "WebFetch(domain:spegel.dev)",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "WebFetch(domain:docs.siderolabs.com)",
+      "WebFetch(domain:docs.cilium.io)",
+      "WebFetch(domain:longhorn.io)",
+      "WebFetch(domain:georg-schwarz.com)"
     ],
     "deny": [],
     "ask": []

@@ -6,15 +6,21 @@ global:
 # ConfigMaps and feature flags
 configs:
   params:
-    # This ensures the server knows it is running behind a gateway
-    # and should not handle TLS itself. This adds the --insecure flag
-    # to the argocd-server command.
     server.insecure: "true"
+    # Performance: increase parallel status checks (default 20, ~1 per 20 apps)
+    controller.status.processors: "50"
+    # Performance: increase concurrent sync operations (default 10)
+    controller.operation.processors: "25"
+    # Performance: limit concurrent manifest generations to prevent OOM
+    reposerver.parallelism.limit: "5"
+    # Performance: increase repo-server timeout for large Helm charts like prometheus-stack
+    controller.repo.server.timeout.seconds: "300"
   cm:
-    # URL for the UI to use
     url: "https://argocd.vanillax.me"
-    # Enable Helm support in Kustomize builds
     kustomize.buildOptions: "--enable-helm"
+    # Performance: add jitter to prevent all 60+ apps reconciling simultaneously
+    timeout.reconciliation: "180s"
+    timeout.reconciliation.jitter: "60s"
     # Ignore Gateway API HTTPRoute parentRefs normalization
     resource.customizations.ignoreDifferences.gateway.networking.k8s.io_HTTPRoute: |
       jqPathExpressions:
@@ -61,9 +67,12 @@ configs:
       return hs
 # Argo CD server settings
 server:
-  # We are not using the chart's built-in ingress
+  replicas: 2
   ingress:
     enabled: false
+  env:
+    - name: ARGOCD_GRPC_MAX_SIZE_MB
+      value: "200"
   metrics:
     enabled: true
     serviceMonitor:
@@ -72,11 +81,11 @@ server:
         release: kube-prometheus-stack
   resources:
     requests:
-      cpu: 250m
-      memory: 256Mi
+      cpu: 500m
+      memory: 512Mi
     limits:
-      cpu: 1000m
-      memory: 1Gi
+      cpu: 2000m
+      memory: 2Gi
 # ApplicationSet controller settings
 applicationSet:
   enabled: true
@@ -106,6 +115,15 @@ ha:
         memory: 512Mi
 # Argo CD controller settings
 controller:
+  env:
+    # Performance: increase K8s API client throughput
+    - name: ARGOCD_K8S_CLIENT_QPS
+      value: "50"
+    - name: ARGOCD_K8S_CLIENT_BURST
+      value: "100"
+    # Performance: split large app trees across Redis keys
+    - name: ARGOCD_APPLICATION_TREE_SHARD_SIZE
+      value: "100"
   metrics:
     enabled: true
     applicationLabels:
@@ -116,13 +134,17 @@ controller:
         release: kube-prometheus-stack
   resources:
     requests:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 1000m
+      memory: 1Gi
     limits:
-      cpu: 2000m
-      memory: 2Gi
+      cpu: 4000m
+      memory: 4Gi
 # Argo CD repo-server settings
 repoServer:
+  replicas: 2
+  env:
+    - name: ARGOCD_EXEC_TIMEOUT
+      value: "3m"
   metrics:
     enabled: true
     serviceMonitor:
@@ -131,11 +153,11 @@ repoServer:
         release: kube-prometheus-stack
   resources:
     requests:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 1000m
+      memory: 1Gi
     limits:
-      cpu: 2000m
-      memory: 2Gi
+      cpu: 4000m
+      memory: 4Gi
 # Dex is disabled; external authentication (e.g. SSO) is used
 dex:
   enabled: false
