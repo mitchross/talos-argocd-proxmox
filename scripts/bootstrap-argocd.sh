@@ -39,6 +39,9 @@ if ! cilium status --wait --wait-duration 30s &> /dev/null; then
   echo "       --set kubeProxyReplacement=true \\"
   echo "       --set k8sServiceHost=localhost \\"
   echo "       --set k8sServicePort=7445 \\"
+  echo "       --set hubble.enabled=false \\"
+  echo "       --set hubble.relay.enabled=false \\"
+  echo "       --set hubble.ui.enabled=false \\"
   echo "       --set gatewayAPI.enabled=true"
   echo ""
   exit 1
@@ -62,6 +65,9 @@ if [ -n "$RUNNING_VERSION" ] && [ "$RUNNING_VERSION" != "$EXPECTED_CILIUM_VERSIO
   echo "         --set kubeProxyReplacement=true \\"
   echo "         --set k8sServiceHost=localhost \\"
   echo "         --set k8sServicePort=7445 \\"
+  echo "         --set hubble.enabled=false \\"
+  echo "         --set hubble.relay.enabled=false \\"
+  echo "         --set hubble.ui.enabled=false \\"
   echo "         --set gatewayAPI.enabled=true"
   echo ""
   read -p "   Continue anyway? (y/N) " -n 1 -r

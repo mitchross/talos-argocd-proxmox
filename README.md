@@ -90,6 +90,9 @@ cilium install \
     --set cgroup.hostRoot=/sys/fs/cgroup \
     --set k8sServiceHost=localhost \
     --set k8sServicePort=7445 \
+    --set hubble.enabled=false \
+    --set hubble.relay.enabled=false \
+    --set hubble.ui.enabled=false \
     --set gatewayAPI.enabled=true \
     --set gatewayAPI.enableAlpn=true \
     --set gatewayAPI.enableAppProtocol=true
@@ -97,14 +100,9 @@ cilium install \
 
 > **Important — version must match:** The `cilium install` CLI version must match the Helm chart version in `infrastructure/networking/cilium/kustomization.yaml` (currently **1.19.0**). Use `cilium install --version 1.19.0` to pin it. If versions differ, ArgoCD upgrades Cilium at Wave 0 and regenerates some Hubble certs but not others, causing TLS handshake failures (`x509: certificate signed by unknown authority`) that block all sync waves.
 >
-> **Important — cluster name must match:** `cluster.name` must match `infrastructure/networking/cilium/values.yaml` for Hubble certificate SANs. If `cilium install` is run without `--set cluster.name=talos-prod-cluster`, certificates are generated for `default` or `kind-kind`, causing the same TLS failures.
+> **Important — Hubble is disabled at bootstrap on purpose:** The CLI install only provides basic CNI networking. ArgoCD enables Hubble at Wave 0 via the full `values.yaml` (which has `hubble.enabled: true`). This ensures ArgoCD is the sole owner of Hubble TLS certificates — no cert mismatch between CLI install and ArgoCD's Helm render. The `ignoreDifferences` in `cilium-app.yaml` then preserves those certs on subsequent syncs.
 >
-> **If Hubble Relay is crash-looping after bootstrap**, delete stale certs and restart:
-> ```bash
-> kubectl delete secret hubble-relay-client-certs hubble-server-certs -n kube-system
-> kubectl rollout restart deployment hubble-relay -n kube-system
-> kubectl rollout restart ds cilium -n kube-system
-> ```
+> **Important — cluster name must match:** `cluster.name` must match `infrastructure/networking/cilium/values.yaml` for Hubble certificate SANs. If `cilium install` is run without `--set cluster.name=talos-prod-cluster`, certificates are generated for `default` or `kind-kind`, causing TLS failures.
 
 ### Step 2: Install Gateway API CRDs
 
