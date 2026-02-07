@@ -4,11 +4,74 @@ set -euo pipefail
 # Bootstrap ArgoCD Script
 # This script works around kustomize --enable-helm compatibility issues
 # by using Helm directly, then letting ArgoCD self-manage
+#
+# Prerequisites:
+#   1. Cilium must be installed FIRST (provides CNI networking)
+#   2. Gateway API CRDs must be applied
+#   3. 1Password secrets must be pre-seeded
+#
+# See README.md for the full bootstrap sequence.
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
 
+# Expected Cilium version — must match infrastructure/networking/cilium/kustomization.yaml
+EXPECTED_CILIUM_VERSION="1.19.0"
+
 echo "🚀 Bootstrapping ArgoCD with sync waves..."
+
+# Pre-flight: Verify Cilium is installed and healthy at the correct version
+echo ""
+echo "🔍 Pre-flight: Checking Cilium..."
+
+if ! command -v cilium &> /dev/null; then
+  echo "❌ cilium CLI not found. Install it first: https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/"
+  exit 1
+fi
+
+if ! cilium status --wait --wait-duration 30s &> /dev/null; then
+  echo "❌ Cilium is not healthy. Install Cilium first:"
+  echo ""
+  echo "   cilium install \\"
+  echo "       --version $EXPECTED_CILIUM_VERSION \\"
+  echo "       --set cluster.name=talos-prod-cluster \\"
+  echo "       --set ipam.mode=kubernetes \\"
+  echo "       --set kubeProxyReplacement=true \\"
+  echo "       --set k8sServiceHost=localhost \\"
+  echo "       --set k8sServicePort=7445 \\"
+  echo "       --set gatewayAPI.enabled=true"
+  echo ""
+  exit 1
+fi
+
+RUNNING_VERSION=$(kubectl get ds cilium -n kube-system -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null | sed -E 's/.*:v([0-9]+\.[0-9]+\.[0-9]+).*/\1/' || true)
+
+if [ -n "$RUNNING_VERSION" ] && [ "$RUNNING_VERSION" != "$EXPECTED_CILIUM_VERSION" ]; then
+  echo "⚠️  WARNING: Cilium version mismatch!"
+  echo "   Running:  $RUNNING_VERSION"
+  echo "   Expected: $EXPECTED_CILIUM_VERSION (from Helm chart)"
+  echo ""
+  echo "   ArgoCD Wave 0 will upgrade Cilium $RUNNING_VERSION → $EXPECTED_CILIUM_VERSION"
+  echo "   This in-place upgrade can corrupt BPF state and break new pod networking."
+  echo ""
+  echo "   Recommended: Reinstall Cilium at the correct version first:"
+  echo "     cilium uninstall"
+  echo "     cilium install --version $EXPECTED_CILIUM_VERSION \\"
+  echo "         --set cluster.name=talos-prod-cluster \\"
+  echo "         --set ipam.mode=kubernetes \\"
+  echo "         --set kubeProxyReplacement=true \\"
+  echo "         --set k8sServiceHost=localhost \\"
+  echo "         --set k8sServicePort=7445 \\"
+  echo "         --set gatewayAPI.enabled=true"
+  echo ""
+  read -p "   Continue anyway? (y/N) " -n 1 -r
+  echo ""
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    exit 1
+  fi
+else
+  echo "✅ Cilium $RUNNING_VERSION is healthy and matches Helm chart ($EXPECTED_CILIUM_VERSION)"
+fi
 
 # Step 1: Create namespace
 echo ""
@@ -52,11 +115,13 @@ echo ""
 echo "✅ ArgoCD bootstrap complete!"
 echo ""
 echo "📊 ArgoCD will now sync applications in this order:"
-echo "   Wave 0: Cilium (networking) & Secrets"
-echo "   Wave 1: Longhorn (storage), Snapshot Controller & VolSync"
-echo "   Wave 2: Infrastructure (core services)"
-echo "   Wave 3: Monitoring (observability)"
-echo "   Wave 4: My-Apps (workloads)"
+echo "   Wave 0: Cilium (networking), 1Password Connect, External Secrets"
+echo "   Wave 1: Longhorn (storage), Snapshot Controller, VolSync"
+echo "   Wave 2: PVC Plumber (backup checker, FAIL-CLOSED gate)"
+echo "   Wave 3: Kyverno (policy engine, must register webhooks before app PVCs)"
+echo "   Wave 4: Infrastructure AppSet (cert-manager, GPU operators, gateway, etc.)"
+echo "   Wave 5: Monitoring AppSet (Prometheus, Grafana, Loki)"
+echo "   Wave 6: My-Apps AppSet (user workloads)"
 echo ""
 echo "🔍 Monitor progress with:"
 echo "   kubectl get applications -n argocd -w"

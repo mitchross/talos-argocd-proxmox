@@ -117,15 +117,17 @@ Applications deploy in strict order to prevent race conditions:
 | **0** | Foundation | Cilium (CNI), ArgoCD, 1Password Connect, External Secrets, AppProjects |
 | **1** | Storage | Longhorn, VolumeSnapshot Controller, VolSync |
 | **2** | PVC Plumber | Backup existence checker (FAIL-CLOSED gate: PVC creation denied if Plumber is down) |
-| **4** | Infrastructure AppSet | Deploys from explicit path list: cert-manager, external-dns, GPU operators, Kyverno, gateway, databases, etc. |
+| **3** | Kyverno | Policy engine (standalone App, must register webhooks before app PVCs are created) |
+| **4** | Infrastructure AppSet | Deploys from explicit path list: cert-manager, external-dns, GPU operators, gateway, databases, etc. |
 | **5** | Monitoring AppSet | Discovers `monitoring/*` applications |
 | **6** | My-Apps AppSet | Discovers `my-apps/*/*` applications |
 
 **Why this matters**:
 - Longhorn won't deploy until Cilium + External Secrets are healthy
-- PVC Plumber (Wave 2) must run before Infrastructure AppSet (Wave 4) because Kyverno policies call PVC Plumber API
+- PVC Plumber (Wave 2) must run before Kyverno (Wave 3) because Kyverno policies call PVC Plumber API
+- Kyverno (Wave 3) is a **standalone Application** (not in the Infrastructure AppSet) to guarantee its webhooks are registered before any app PVCs are created. ApplicationSets are considered "healthy" immediately upon creation, so putting Kyverno in an AppSet would race with app deployment.
 - **FAIL-CLOSED**: If PVC Plumber is down, Kyverno denies creation of backup-labeled PVCs. Apps retry via ArgoCD backoff until Plumber is healthy. This prevents data loss during disaster recovery.
-- Kyverno, cert-manager, GPU operators etc. deploy via Infrastructure AppSet (Wave 4) before user apps (Wave 6)
+- cert-manager, GPU operators etc. deploy via Infrastructure AppSet (Wave 4) before user apps (Wave 6)
 - This prevents "chicken-and-egg" dependency issues and SSD thrashing
 
 **Important**: The Infrastructure AppSet uses an explicit list of paths (not glob discovery). To add a new infrastructure component, you must add its path to `infrastructure/controllers/argocd/apps/infrastructure-appset.yaml`.

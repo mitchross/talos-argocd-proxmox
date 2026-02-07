@@ -80,6 +80,7 @@ Omni provisions Talos clusters without a CNI. Install Cilium to get networking f
 
 ```bash
 cilium install \
+    --version 1.19.0 \
     --set cluster.name=talos-prod-cluster \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
@@ -94,9 +95,16 @@ cilium install \
     --set gatewayAPI.enableAppProtocol=true
 ```
 
-> **Important:** `cluster.name` must match `infrastructure/networking/cilium/values.yaml` for Hubble certificate SANs. After ArgoCD deploys, it takes over Cilium management at Wave 0.
+> **Important — version must match:** The `cilium install` CLI version must match the Helm chart version in `infrastructure/networking/cilium/kustomization.yaml` (currently **1.19.0**). Use `cilium install --version 1.19.0` to pin it. If versions differ, ArgoCD upgrades Cilium at Wave 0 and regenerates some Hubble certs but not others, causing TLS handshake failures (`x509: certificate signed by unknown authority`) that block all sync waves.
 >
-> If `cilium install` is run without `--set cluster.name=talos-prod-cluster`, certificates are generated for `default` or `kind-kind`. When ArgoCD later configures Cilium to expect `talos-prod-cluster`, the certificates will not match, causing TLS handshake failures in Hubble Relay (`x509: certificate signed by unknown authority`).
+> **Important — cluster name must match:** `cluster.name` must match `infrastructure/networking/cilium/values.yaml` for Hubble certificate SANs. If `cilium install` is run without `--set cluster.name=talos-prod-cluster`, certificates are generated for `default` or `kind-kind`, causing the same TLS failures.
+>
+> **If Hubble Relay is crash-looping after bootstrap**, delete stale certs and restart:
+> ```bash
+> kubectl delete secret hubble-relay-client-certs hubble-server-certs -n kube-system
+> kubectl rollout restart deployment hubble-relay -n kube-system
+> kubectl rollout restart ds cilium -n kube-system
+> ```
 
 ### Step 2: Install Gateway API CRDs
 
