@@ -10,7 +10,6 @@ resources:
   - namespace.yaml
   - library-pvc.yaml
   - ml-cache-pvc.yaml
-  - externalsecret.yaml
   - httproute.yaml
   - deployment-server.yaml
   - deployment-machine-learning.yaml

@@ -48,11 +48,31 @@ spec:
           value: "172.31.0.0/16"
         - name: IMMICH_MEDIA_LOCATION
           value: /library
-        - name: DB_URL
+        - name: DB_HOSTNAME
           valueFrom:
             secretKeyRef:
               name: immich-pguser-immich
-              key: uri
+              key: host
+        - name: DB_PORT
+          valueFrom:
+            secretKeyRef:
+              name: immich-pguser-immich
+              key: port
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: immich-pguser-immich
+              key: user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: immich-pguser-immich
+              key: password
+        - name: DB_DATABASE_NAME
+          valueFrom:
+            secretKeyRef:
+              name: immich-pguser-immich
+              key: dbname
         - name: REDIS_HOSTNAME
           value: "immich-valkey.immich.svc.cluster.local"
         - name: REDIS_PORT
