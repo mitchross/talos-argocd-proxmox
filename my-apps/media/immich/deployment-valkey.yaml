@@ -21,6 +21,12 @@ spec:
       containers:
       - name: valkey
         image: ghcr.io/valkey-io/valkey:9.0.2
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            memory: 256Mi
         ports:
         - name: valkey
           containerPort: 6379
