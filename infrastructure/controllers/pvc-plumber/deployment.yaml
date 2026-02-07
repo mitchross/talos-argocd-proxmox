@@ -38,6 +38,8 @@ spec:
               value: "kopia-fs"
             - name: KOPIA_REPOSITORY_PATH
               value: "/repository"
+            - name: S3_ENDPOINT
+              value: "not-used"  # Required by app validation but not used with kopia-fs backend
             - name: LOG_LEVEL
               value: "info"
             - name: KOPIA_PASSWORD
