@@ -7,7 +7,7 @@ metadata:
     app: immich
 spec:
   instances: 1
-  imageName: ghcr.io/tensorchord/cloudnative-vectorchord:17.2-0.5.3
+  imageName: ghcr.io/tensorchord/cloudnative-vectorchord:17.2-v0.5.3
   resources:
     requests:
       memory: 1Gi
