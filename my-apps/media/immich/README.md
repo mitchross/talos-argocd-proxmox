@@ -49,7 +49,7 @@ Originals stay on NFS read-only; only thumbnails and ML embeddings are stored lo
 
 CloudNativePG (CNPG) manages the database at `infrastructure/database/cloudnative-pg/immich/`.
 
-- Image: `ghcr.io/tensorchord/cloudnative-vectorchord:17.2-0.5.3` (Postgres 17 + VectorChord)
+- Image: `ghcr.io/tensorchord/cloudnative-vectorchord:17.5-0.4.3` (Postgres 17.5 + VectorChord 0.4.3)
 - Extensions: vchord (CASCADE installs pgvector), vector, earthdistance (CASCADE installs cube)
 - Service: `immich-database-rw.cloudnative-pg.svc.cluster.local:5432`
 - Credentials: ExternalSecret from 1Password (`immich-db-credentials` in immich ns, `immich-app-secret` in cnpg ns)
@@ -73,9 +73,12 @@ no Patroni, no leader election, just a postgres instance with backup management.
 |-----|------|--------------|--------|
 | `library` | 50Gi | longhorn | Enable after stable |
 | `immich-ml-cache` | 10Gi | longhorn | No (re-downloadable) |
-| `nfs-photos` | 2Ti | `nfs-immich-photos` (CSI, read-only) | N/A (source of truth) |
+| `nfs-photos` | 2Ti | static PV (NFS CSI, read-only) | N/A (source of truth) |
 
-## NFS StorageClass
+## NFS Static PV
 
-The `nfs-immich-photos` StorageClass is defined in `infrastructure/storage/csi-driver-nfs/storage-class.yaml`.
-It uses `nfs.csi.k8s.io` provisioner with `ro` mount option pointing to `192.168.10.133:/mnt/BigTank/photos/All`.
+The `nfs-immich-photos` PersistentVolume is defined in `infrastructure/storage/csi-driver-nfs/storage-class.yaml`.
+It uses a **static PV** (not a StorageClass) because NFS CSI dynamic provisioning creates a new subdirectory
+per PVC, which doesn't work for mounting existing data. Static PVs point directly at the existing NFS share.
+
+Mount: `192.168.10.133:/mnt/BigTank/photos/All` (read-only via `ro` mount option).

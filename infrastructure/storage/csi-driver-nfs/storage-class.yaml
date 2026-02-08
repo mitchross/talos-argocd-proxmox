@@ -42,23 +42,36 @@ mountOptions:
   - noatime
   - nconnect=4
 ---
-# Immich photos NFS storage class (read-only external library)
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
+# =============================================================================
+# Static PVs for existing NFS directories (read-only)
+# =============================================================================
+# NFS CSI dynamic provisioner creates subdirectories per PVC — won't work for
+# mounting existing data. Use static PVs instead for pre-existing NFS shares.
+
+# Immich photos - read-only mount to TrueNAS photo library
+apiVersion: v1
+kind: PersistentVolume
 metadata:
   name: nfs-immich-photos
-provisioner: nfs.csi.k8s.io
-parameters:
-  server: 192.168.10.133
-  share: /mnt/BigTank/photos/All
-reclaimPolicy: Retain
-volumeBindingMode: Immediate
-mountOptions:
-  - nfsvers=4.1
-  - nolock
-  - tcp
-  - rsize=1048576
-  - wsize=1048576
-  - noatime
-  - nconnect=4
-  - ro
+spec:
+  capacity:
+    storage: 2Ti
+  accessModes:
+    - ReadOnlyMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=4.1
+    - nolock
+    - tcp
+    - rsize=1048576
+    - wsize=1048576
+    - noatime
+    - nconnect=4
+    - ro
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: nfs-immich-photos
+    volumeAttributes:
+      server: "192.168.10.133"
+      share: "/mnt/BigTank/photos/All"

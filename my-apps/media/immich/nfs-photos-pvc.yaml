@@ -8,8 +8,9 @@ metadata:
     app.kubernetes.io/component: external-library
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadOnlyMany
   resources:
     requests:
       storage: 2Ti
-  storageClassName: nfs-immich-photos
+  storageClassName: ""
+  volumeName: nfs-immich-photos
