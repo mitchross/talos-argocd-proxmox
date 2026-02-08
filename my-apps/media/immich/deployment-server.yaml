@@ -49,30 +49,21 @@ spec:
         - name: IMMICH_MEDIA_LOCATION
           value: /library
         - name: DB_HOSTNAME
-          valueFrom:
-            secretKeyRef:
-              name: immich-pguser-immich
-              key: host
+          value: "immich-database-rw.cloudnative-pg.svc.cluster.local"
         - name: DB_PORT
-          valueFrom:
-            secretKeyRef:
-              name: immich-pguser-immich
-              key: port
+          value: "5432"
         - name: DB_USERNAME
           valueFrom:
             secretKeyRef:
-              name: immich-pguser-immich
-              key: user
+              name: immich-db-credentials
+              key: username
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: immich-pguser-immich
+              name: immich-db-credentials
               key: password
         - name: DB_DATABASE_NAME
-          valueFrom:
-            secretKeyRef:
-              name: immich-pguser-immich
-              key: dbname
+          value: "immich"
         - name: REDIS_HOSTNAME
           value: "immich-valkey.immich.svc.cluster.local"
         - name: REDIS_PORT

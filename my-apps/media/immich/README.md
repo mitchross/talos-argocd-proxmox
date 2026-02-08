@@ -1,11 +1,11 @@
 # Immich - Photo Management
 
-Self-hosted photo/video management running on Kubernetes with Crunchy Postgres.
+Self-hosted photo/video management running on Kubernetes with CloudNativePG.
 
 ## Architecture
 
 ```
-immich-server (v2.5.5)     -> Postgres (PGO)  -> Longhorn PVC (20Gi)
+immich-server (v2.5.5)     -> Postgres (CNPG) -> Longhorn PVC (20Gi)
                             -> Valkey (Redis)
                             -> ML service
 immich-machine-learning     -> ML cache PVC (10Gi Longhorn)
@@ -47,18 +47,20 @@ Originals stay on NFS read-only; only thumbnails and ML embeddings are stored lo
 
 ## Database
 
-Crunchy Postgres Operator (PGO) manages the database at `infrastructure/database/crunchy-postgres/immich/`.
+CloudNativePG (CNPG) manages the database at `infrastructure/database/cloudnative-pg/immich/`.
 
-- Image: `crunchydata-vectorchord` (Postgres 17 + vector extensions)
-- Extensions: vchord, vector, cube, earthdistance
-- Connect directly to `immich-primary` (no PGBouncer)
-- PGO owns all credentials - no ExternalSecret needed
-- `pg_hba` configured for non-SSL connections from pods
+- Image: `ghcr.io/tensorchord/cloudnative-vectorchord:17.2-0.5.3` (Postgres 17 + VectorChord)
+- Extensions: vchord (CASCADE installs pgvector), vector, earthdistance (CASCADE installs cube)
+- Service: `immich-database-rw.cloudnative-pg.svc.cluster.local:5432`
+- Credentials: ExternalSecret from 1Password (`immich-db-credentials` in immich ns, `immich-app-secret` in cnpg ns)
+- S3 backups via Barman to RustFS (`192.168.10.133:30293`)
+- Daily scheduled backup at 2am
 
-### Important
+### Why CNPG over CrunchyData PGO
 
-- Do NOT use `autoCreateUserSchema` annotation - Immich expects `public` schema only
-- The `init.sql` drops any user-named schema as a safety net
+PGO uses Patroni for HA which is overkill for single-replica homelab. Patroni's DCS (leader election)
+gets corrupted when pods are hard-killed, causing unrecoverable standby loops. CNPG is simpler —
+no Patroni, no leader election, just a postgres instance with backup management.
 
 ## Networking
 
