@@ -1,33 +1,38 @@
 {
   "permissions": {
     "allow": [
-      "Bash(kubectl logs:*)",
-      "Bash(kubectl get:*)",
-      "Bash(kubectl exec:*)",
-      "Bash(kubectl create:*)",
-      "WebFetch(domain:backube.github.io)",
+      "Bash(kubectl:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat\\(searxng\\): add VolSync backup configuration\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(kubectl describe:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git stash:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git clone:*)",
       "Bash(curl:*)",
-      "Bash(kubectl api-resources:*)",
       "Bash(python3:*)",
-      "Bash(helm repo list:*)",
-      "WebFetch(domain:raw.githubusercontent.com)",
-      "Bash(kubectl run:*)",
-      "Bash(kubectl rollout:*)",
-      "WebFetch(domain:www.talos.dev)",
-      "WebFetch(domain:spegel.dev)",
-      "WebFetch(domain:github.com)",
-      "WebSearch",
-      "WebFetch(domain:docs.siderolabs.com)",
-      "WebFetch(domain:docs.cilium.io)",
-      "WebFetch(domain:longhorn.io)",
-      "WebFetch(domain:georg-schwarz.com)",
-      "Bash(gh issue view:*)",
-      "Bash(gh api:*)"
+      "Bash(helm:*)",
+      "Bash(gh:*)",
+      "WebFetch(domain:*)",
+      "WebSearch"
     ],
-    "deny": [],
-    "ask": []
+    "deny": [
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean:*)",
+      "Bash(git branch -D:*)",
+      "Bash(git branch -d:*)"
+    ],
+    "ask": [
+      "Bash(git merge:*)",
+      "Bash(git rebase:*)",
+      "Bash(git reset:*)",
+      "Bash(git revert:*)",
+      "Bash(git cherry-pick:*)"
+    ]
   }
 }
