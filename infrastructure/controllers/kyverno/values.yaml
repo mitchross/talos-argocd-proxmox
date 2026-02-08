@@ -62,6 +62,36 @@ cleanupController:
     requests:
       cpu: 100m
       memory: 64Mi
+  rbac:
+    clusterRole:
+      extraResources:
+      - apiGroups:
+        - ""
+        resources:
+        - persistentvolumeclaims
+        verbs:
+        - get
+        - list
+        - watch
+      - apiGroups:
+        - volsync.backube
+        resources:
+        - replicationsources
+        - replicationdestinations
+        verbs:
+        - get
+        - list
+        - watch
+        - delete
+      - apiGroups:
+        - external-secrets.io
+        resources:
+        - externalsecrets
+        verbs:
+        - get
+        - list
+        - watch
+        - delete
 
 reportsController:
   replicas: 1

@@ -523,6 +523,11 @@ PVC populated from last backup
    - Automatically injects NFS volume into VolSync mover jobs
    - No manual NFS configuration needed per app
 
+3. **volsync-orphan-cleanup.yaml** - Orphan resource cleanup (ClusterCleanupPolicy)
+   - Runs every 15 minutes
+   - Deletes orphaned ReplicationSource, ReplicationDestination, ExternalSecret when backup label is removed from PVC or PVC is deleted
+   - Prevents stale backup/restore jobs from running after disabling backups
+
 ### PVC Plumber Service
 
 **Purpose**: Checks Kopia repository for existing backups before PVC creation
