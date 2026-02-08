@@ -41,3 +41,24 @@ mountOptions:
   - wsize=1048576
   - noatime
   - nconnect=4
+---
+# Immich photos NFS storage class (read-only external library)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-immich-photos
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: 192.168.10.133
+  share: /mnt/BigTank/photos/All
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+mountOptions:
+  - nfsvers=4.1
+  - nolock
+  - tcp
+  - rsize=1048576
+  - wsize=1048576
+  - noatime
+  - nconnect=4
+  - ro

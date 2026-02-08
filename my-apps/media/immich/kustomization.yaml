@@ -8,6 +8,7 @@ labels:
 
 resources:
   - namespace.yaml
+  - nfs-photos-pvc.yaml
   - library-pvc.yaml
   - ml-cache-pvc.yaml
   - httproute.yaml

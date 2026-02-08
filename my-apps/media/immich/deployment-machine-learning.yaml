@@ -82,6 +82,9 @@ spec:
           mountPath: /cache
         - name: library
           mountPath: /library
+        - name: nfs-photos
+          mountPath: /mnt/photos
+          readOnly: true
       volumes:
       - name: cache
         persistentVolumeClaim:
@@ -89,3 +92,6 @@ spec:
       - name: library
         persistentVolumeClaim:
           claimName: library
+      - name: nfs-photos
+        persistentVolumeClaim:
+          claimName: nfs-photos
