@@ -19,6 +19,13 @@ spec:
       labels:
         app: mcpo-kiwix
     spec:
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
+      tolerations:
+      - key: "gpu"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
       containers:
       - name: mcpo-kiwix
         image: ghcr.io/open-webui/mcpo:main
