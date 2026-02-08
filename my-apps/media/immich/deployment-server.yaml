@@ -116,6 +116,9 @@ spec:
         volumeMounts:
         - name: library
           mountPath: /library
+        - name: nfs-photos
+          mountPath: /mnt/photos
+          readOnly: true
         - name: geocoding
           mountPath: /usr/src/app/.reverse-geocoding-dump
         - name: transformers
@@ -124,6 +127,9 @@ spec:
       - name: library
         persistentVolumeClaim:
           claimName: library
+      - name: nfs-photos
+        persistentVolumeClaim:
+          claimName: nfs-photos
       - name: geocoding
         emptyDir: {}
       - name: transformers
