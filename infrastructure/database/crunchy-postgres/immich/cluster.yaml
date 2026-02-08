@@ -30,6 +30,8 @@ spec:
         synchronous_commit: "off"  # Disabled for single replica
         parameters:
           max_connections: 500
+        pg_hba:
+          - "host all all 0.0.0.0/0 md5"
   instances:
   - name: postgres
     replicas: 1  # Reduced from 3 for homelab
