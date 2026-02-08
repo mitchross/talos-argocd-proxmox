@@ -23,7 +23,9 @@
       "WebFetch(domain:docs.siderolabs.com)",
       "WebFetch(domain:docs.cilium.io)",
       "WebFetch(domain:longhorn.io)",
-      "WebFetch(domain:georg-schwarz.com)"
+      "WebFetch(domain:georg-schwarz.com)",
+      "Bash(gh issue view:*)",
+      "Bash(gh api:*)"
     ],
     "deny": [],
     "ask": []

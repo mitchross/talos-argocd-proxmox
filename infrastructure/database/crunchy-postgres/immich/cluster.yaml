@@ -3,8 +3,6 @@ apiVersion: postgres-operator.crunchydata.com/v1
 kind: PostgresCluster
 metadata:
   name: immich
-  annotations:
-    postgres-operator.crunchydata.com/autoCreateUserSchema: "true"
 spec:
   # https://docs.immich.app/administration/postgres-standalone/#updating-vectorchord
   image: ghcr.io/waifulabs/crunchydata-vectorchord:ubi9-17.7-2550
