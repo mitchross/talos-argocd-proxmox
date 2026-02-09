@@ -628,10 +628,12 @@ kubectl apply -f pvc.yaml
 - Keep PVC names consistent for restore to work
 - Test restores periodically
 
+**Removing backups**: Just remove the `backup` label from the PVC. The `volsync-orphan-cleanup` ClusterCleanupPolicy runs every 15 minutes and automatically deletes orphaned ReplicationSource, ReplicationDestination, and ExternalSecret resources when the PVC no longer has a backup label.
+
 **DON'T**:
 - Add backup labels to system namespace PVCs (auto-excluded)
 - Change PVC name if you want automatic restore
-- Delete ReplicationSource/ReplicationDestination manually (Kyverno will recreate)
+- Delete ReplicationSource/ReplicationDestination manually (Kyverno will recreate them if label still present)
 - Use backup labels on non-Longhorn PVCs (snapshot support required)
 
 ## Debugging & Troubleshooting
@@ -806,6 +808,7 @@ kubectl exec -it gpu-pod -n app-name -- nvidia-smi
 | **Complex app with storage** | `my-apps/media/immich/` |
 | **PVC with automatic backup** | `my-apps/ai/khoj/pvc.yaml` (see backup label) |
 | **Kyverno backup policies** | `infrastructure/controllers/kyverno/policies/volsync-pvc-backup-restore.yaml` |
+| **Kyverno orphan cleanup** | `infrastructure/controllers/kyverno/policies/volsync-orphan-cleanup.yaml` |
 | **PVC Plumber (restore checker)** | `infrastructure/controllers/pvc-plumber/` |
 | **Full backup/restore flow diagram** | `docs/pvc-plumber-full-flow.md` |
 | **VolSync configuration** | `infrastructure/storage/volsync/` |

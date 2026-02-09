@@ -17,7 +17,8 @@
       "Bash(helm:*)",
       "Bash(gh:*)",
       "WebFetch(domain:*)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [
       "Bash(git push:*)",

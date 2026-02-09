@@ -95,6 +95,13 @@ PVC Created ──▶ Kyverno Rule 0 ──▶ Calls pvc-plumber ──▶ Backu
 - **Rule 3 (generate):** Creates ReplicationSource (backup schedule) - only after PVC is Bound
 - **Rule 4 (generate):** Creates ReplicationDestination (restore capability)
 
+### 4a. Kyverno ClusterCleanupPolicy (Orphan Cleanup)
+- **Runs every 15 minutes** to clean up orphaned backup resources
+- Targets ReplicationSource, ReplicationDestination, and ExternalSecret with labels `app.kubernetes.io/managed-by=kyverno` and `volsync.backup/pvc`
+- Checks if the corresponding PVC still has `backup: hourly` or `backup: daily` label
+- If label was removed or PVC no longer exists, **deletes the orphaned resources**
+- Prevents stale backup/restore jobs from running after backups are disabled
+
 ### 5. VolSync
 - Performs actual backup/restore operations using **Kopia**
 - Uses Longhorn snapshots for consistent backups
@@ -104,6 +111,20 @@ PVC Created ──▶ Kyverno Rule 0 ──▶ Calls pvc-plumber ──▶ Backu
 - Web interface to browse backups
 - Accessible at `kopia-ui.{domain}`
 - Mounts same NFS share as VolSync
+
+## How to Disable Backup for a PVC
+
+Remove the `backup` label from the PVC:
+
+```yaml
+metadata:
+  labels:
+    # backup: "hourly"   # Comment out or remove to disable backup
+```
+
+The `volsync-orphan-cleanup` ClusterCleanupPolicy runs every 15 minutes and automatically deletes the orphaned ReplicationSource, ReplicationDestination, and ExternalSecret. No manual cleanup needed.
+
+**Note:** Removing the label does NOT delete existing backups from NFS. The Kopia repository on TrueNAS retains all previous snapshots. To re-enable backups later, simply re-add the label.
 
 ## How to Enable Backup for a PVC
 
@@ -252,5 +273,6 @@ The following namespaces are excluded from automatic backup:
 | `infrastructure/storage/volsync/` | VolSync Helm chart |
 | `infrastructure/controllers/kyverno/policies/volsync-nfs-inject.yaml` | Injects NFS mount into mover pods |
 | `infrastructure/storage/kopia-ui/` | Kopia web UI for browsing backups |
-| `infrastructure/controllers/kyverno/policies/volsync-pvc-backup-restore.yaml` | Kyverno policy |
+| `infrastructure/controllers/kyverno/policies/volsync-pvc-backup-restore.yaml` | Kyverno backup/restore policy |
+| `infrastructure/controllers/kyverno/policies/volsync-orphan-cleanup.yaml` | Cleanup orphaned backup resources |
 | `monitoring/prometheus-stack/volsync-alerts.yaml` | Prometheus alerting rules |
