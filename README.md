@@ -125,7 +125,7 @@ kubectl create namespace external-secrets
 
 eval $(op signin)
 
-export OP_CREDENTIALS=$(op read op://homelabproxmox/1passwordconnect/1password-credentials.json | base64 | tr -d '\n')
+export OP_CREDENTIALS=$(op read op://homelabproxmox/1passwordconnect/1password-credentials.json)
 export OP_CONNECT_TOKEN=$(op read 'op://homelabproxmox/1password-operator-token/credential')
 
 kubectl create secret generic 1password-credentials \
