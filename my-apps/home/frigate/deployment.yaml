@@ -63,11 +63,6 @@ spec:
             secretKeyRef:
               name: frigate-secrets
               key: NEST_REFRESH_TOKEN
-        - name: HA_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: frigate-secrets
-              key: HA_TOKEN
         resources:
           requests:
             cpu: 1000m
