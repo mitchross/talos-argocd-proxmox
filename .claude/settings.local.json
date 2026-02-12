@@ -18,7 +18,9 @@
       "Bash(gh:*)",
       "WebFetch(domain:*)",
       "WebSearch",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:docs.frigate.video)",
+      "WebFetch(domain:developers.google.com)"
     ],
     "deny": [
       "Bash(git push:*)",
