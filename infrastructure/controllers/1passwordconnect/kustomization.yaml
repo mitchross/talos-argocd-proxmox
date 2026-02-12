@@ -8,7 +8,7 @@ commonAnnotations:
 helmCharts:
 - name: connect
   repo: https://1password.github.io/connect-helm-charts
-  version: 2.2.1
+  version: 2.3.0
   releaseName: 1password-connect
   valuesFile: values.yaml
   includeCRDs: true
