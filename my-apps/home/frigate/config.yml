@@ -55,22 +55,22 @@ go2rtc:
     kitchen-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEtnbEGv0Bh9GblHDv66SK0jKGBAbQ1Mnnkuki_YW4_XQJGgV_dZ-nlouy_oRShGc1_7PwBFabTHa8ovpRYEyb8CZVk&protocols=WEB_RTC&video=h264&audio=opus"
 cameras:
-  # Wyze camera via wyze-bridge
-  shed:
-    enabled: true
-    ffmpeg:
-      inputs:
-      - path: rtsp://192.168.10.46:8554/shed
-        roles:
-        - detect
-        - record
-    detect:
-      enabled: true
-      width: 1280
-      height: 720
-      fps: 5
-    live:
-      height: 1080
+  # Wyze camera via wyze-bridge (disabled - Wyze API auth broken)
+  # shed:
+  #   enabled: true
+  #   ffmpeg:
+  #     inputs:
+  #     - path: rtsp://192.168.10.46:8554/shed
+  #       roles:
+  #       - detect
+  #       - record
+  #   detect:
+  #     enabled: true
+  #     width: 1280
+  #     height: 720
+  #     fps: 5
+  #   live:
+  #     height: 1080
   # Add Nest cameras via go2rtc restream
   backyard:
     enabled: true
