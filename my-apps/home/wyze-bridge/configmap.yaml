@@ -10,7 +10,7 @@ data:
   QUALITY: "HD120"
   ROTATE_DOOR: "True"
   WB_IP: "192.168.10.46"
-  LOG_LEVEL: "debug"
+  LOG_LEVEL: "info"
   ON_DEMAND: "False"
   FORCE_IOTC_DETAIL: "True"
   # Add any other non-sensitive environment variables here

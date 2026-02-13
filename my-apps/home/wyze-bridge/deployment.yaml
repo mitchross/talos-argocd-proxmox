@@ -6,7 +6,9 @@ metadata:
   annotations:
     reloader.stakater.com/auto: "true"
 spec:
-  replicas: 0
+  replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: wyze-bridge
@@ -24,9 +26,46 @@ spec:
             name: wyze-bridge-config
         - secretRef:
             name: wyze-bridge-secrets
+        ports:
+        - containerPort: 1935
+          name: rtmp
+        - containerPort: 8554
+          name: rtsp
+        - containerPort: 8888
+          name: hls
+        - containerPort: 8889
+          name: webrtc
+        - containerPort: 8189
+          name: webrtc-ice
+          protocol: UDP
+        - containerPort: 5000
+          name: web-ui
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 60
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
         volumeMounts:
-        - name: wyze-cache
-          mountPath: /config
+        - name: wyze-tokens
+          mountPath: /tokens
       volumes:
-      - name: wyze-cache
+      - name: wyze-tokens
         emptyDir: {}

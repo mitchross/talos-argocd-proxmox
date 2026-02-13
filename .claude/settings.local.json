@@ -20,7 +20,8 @@
       "WebSearch",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:docs.frigate.video)",
-      "WebFetch(domain:developers.google.com)"
+      "WebFetch(domain:developers.google.com)",
+      "WebFetch(domain:go2rtc.org)"
     ],
     "deny": [
       "Bash(git push:*)",
