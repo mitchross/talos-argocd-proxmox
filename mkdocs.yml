@@ -1,0 +1,38 @@
+site_name: Talos ArgoCD Proxmox
+site_description: Production GitOps Kubernetes cluster on Talos OS
+repo_url: https://github.com/mitchross/talos-argocd-proxmox
+
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: blue
+  features:
+    - content.code.copy
+
+plugins:
+  - search
+  - mermaid2
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - tables
+
+nav:
+  - Home: index.md
+  - Architecture:
+      - ArgoCD & GitOps: argocd.md
+      - Network Topology: network-topology.md
+      - Network Security: network-policy.md
+  - Backup & Restore:
+      - Overview: backup-restore.md
+      - Full Flow: pvc-plumber-full-flow.md
