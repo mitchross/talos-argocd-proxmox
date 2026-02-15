@@ -21,7 +21,9 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:docs.frigate.video)",
       "WebFetch(domain:developers.google.com)",
-      "WebFetch(domain:go2rtc.org)"
+      "WebFetch(domain:go2rtc.org)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:api.github.com)"
     ],
     "deny": [
       "Bash(git push:*)",

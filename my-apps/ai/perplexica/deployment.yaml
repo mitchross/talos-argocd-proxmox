@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: perplexica
+  namespace: perplexica
+  labels:
+    app: perplexica
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: perplexica
+  template:
+    metadata:
+      labels:
+        app: perplexica
+    spec:
+      containers:
+        - name: perplexica
+          image: itzcrazykns1337/perplexica:slim-v1.12.0@sha256:6b0ab14429c6d120357877cce5894c55c35e7e016c2b55066a1559ac5682de8e
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: SEARXNG_API_URL
+              value: "http://searxng.searxng.svc.cluster.local:8080"
+            - name: OPENAI_BASE_URL
+              value: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
+            - name: OPENAI_API_KEY
+              value: "sk-no-key-required"
+          volumeMounts:
+            - name: data
+              mountPath: /home/perplexica/data
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: perplexica-data
