@@ -276,3 +276,28 @@ The following namespaces are excluded from automatic backup:
 | `infrastructure/controllers/kyverno/policies/volsync-pvc-backup-restore.yaml` | Kyverno backup/restore policy |
 | `infrastructure/controllers/kyverno/policies/volsync-orphan-cleanup.yaml` | Cleanup orphaned backup resources |
 | `monitoring/prometheus-stack/volsync-alerts.yaml` | Prometheus alerting rules |
+| `infrastructure/database/cloudnative-pg/` | CNPG database clusters (separate backup path) |
+
+## Database Backups (CNPG — Separate System)
+
+The PVC backup system above covers **application data**. Database backups use a **completely separate path**:
+
+| | PVC Backups | Database Backups |
+|---|---|---|
+| **Tool** | VolSync + Kopia | CNPG + Barman |
+| **Destination** | TrueNAS NFS | RustFS S3 (`s3://postgres-backups/cnpg/`) |
+| **Trigger** | Kyverno auto-generates on PVC label | CNPG ScheduledBackup resource |
+| **Auto-restore** | Yes (PVC Plumber + Kyverno) | **No** — manual recovery required |
+| **Schedule** | Hourly or daily (per PVC label) | Hourly + continuous WAL archiving |
+
+### Why databases don't use the PVC backup system
+
+- Filesystem-level backup of a running Postgres database can be inconsistent
+- Barman uses `pg_basebackup` + WAL archiving for point-in-time recovery
+- CNPG manages its own PVCs (names are auto-generated, can't add Kyverno labels)
+
+### Database disaster recovery
+
+After a cluster nuke, CNPG creates **fresh empty databases** — it does NOT auto-restore from Barman backups. Recovery requires manually bypassing ArgoCD (SSA + CNPG webhook conflict prevents recovery mode through GitOps).
+
+See **[docs/cnpg-disaster-recovery.md](cnpg-disaster-recovery.md)** for full recovery procedures.
