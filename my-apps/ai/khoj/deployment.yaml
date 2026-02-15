@@ -96,9 +96,11 @@ spec:
         - name: KHOJ_SEARXNG_URL
           value: https://searxng.vanillax.me
         - name: OPENAI_API_BASE
-          value: https://ollama.vanillax.me/v1
-        - name: KHOJ_OFFLINE_CHAT_MODEL
-          value: "true"
+          value: http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1
+        - name: OPENAI_API_KEY
+          value: "sk-required"
+        - name: KHOJ_CHAT_MODEL
+          value: "coder - qwen3-coder-next"
         - name: KHOJ_DOMAIN
           value: khoj.vanillax.me
         volumeMounts:

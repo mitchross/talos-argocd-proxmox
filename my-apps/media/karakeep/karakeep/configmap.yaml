@@ -10,8 +10,8 @@ data:
   OPENAI_BASE_URL: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
   OPENAI_API_KEY: "sk-required"
   OLLAMA_KEEP_ALIVE: "5m"
-  INFERENCE_TEXT_MODEL: "nemotron3 nano30b"
-  INFERENCE_IMAGE_MODEL: "vision"
+  INFERENCE_TEXT_MODEL: "coder - qwen3-coder-next"
+  INFERENCE_IMAGE_MODEL: "vision - qwen3-vl-thinking"
   EMBEDDING_TEXT_MODEL: "granite-embedding:278m"
   # For webhook functionality (new in 0.22.0)
   WEBHOOK_ENABLED: "false"
