@@ -24,20 +24,40 @@ spec:
       wal_compression: "on"
     pg_hba:
       - host all all 0.0.0.0/0 md5
+  # === DISASTER RECOVERY: using recovery mode to restore from Barman backup ===
+  # === After recovery completes, switch back to initdb (see comments below) ===
   bootstrap:
-    initdb:
-      database: immich
-      owner: immich
-      secret:
-        name: immich-app-secret
-      postInitApplicationSQL:
-        - CREATE EXTENSION IF NOT EXISTS vchord CASCADE;
-        - CREATE EXTENSION IF NOT EXISTS vector;
-        - CREATE EXTENSION IF NOT EXISTS earthdistance CASCADE;
-        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "immich";
-        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "immich";
-        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "immich";
-        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "immich";
+    recovery:
+      source: immich-backup
+  # === NORMAL OPERATION: uncomment initdb below, comment out recovery above ===
+  # bootstrap:
+  #   initdb:
+  #     database: immich
+  #     owner: immich
+  #     secret:
+  #       name: immich-app-secret
+  #     postInitApplicationSQL:
+  #       - CREATE EXTENSION IF NOT EXISTS vchord CASCADE;
+  #       - CREATE EXTENSION IF NOT EXISTS vector;
+  #       - CREATE EXTENSION IF NOT EXISTS earthdistance CASCADE;
+  #       - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "immich";
+  #       - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "immich";
+  #       - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "immich";
+  #       - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "immich";
+  externalClusters:
+    - name: immich-backup
+      barmanObjectStore:
+        destinationPath: s3://postgres-backups/cnpg/immich
+        endpointURL: http://192.168.10.133:30293
+        s3Credentials:
+          accessKeyId:
+            name: cnpg-s3-credentials
+            key: AWS_ACCESS_KEY_ID
+          secretAccessKey:
+            name: cnpg-s3-credentials
+            key: AWS_SECRET_ACCESS_KEY
+        wal:
+          compression: gzip
   storage:
     size: 20Gi
     storageClass: longhorn
