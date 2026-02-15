@@ -320,6 +320,49 @@ spec:
 - Data synced from external sources
 - System namespaces (auto-excluded anyway)
 - PVCs that will be frequently deleted/recreated
+- **CNPG database PVCs** — these use Barman to S3, not Kyverno/VolSync (see below)
+
+### Application with Database (CNPG CloudNativePG)
+
+Databases use **CloudNativePG** with Barman backups to RustFS S3 — a separate backup path from the PVC/VolSync system.
+
+```yaml
+# infrastructure/database/cloudnative-pg/<app>/cluster.yaml
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: <app>-database
+  namespace: cloudnative-pg
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.2
+  bootstrap:
+    initdb:
+      database: <app>
+      owner: <app>
+  storage:
+    size: 20Gi
+    storageClass: longhorn
+  backup:
+    barmanObjectStore:
+      serverName: <app>-database      # IMPORTANT: bump on DR recovery (see DR docs)
+      destinationPath: s3://postgres-backups/cnpg/<app>
+      endpointURL: http://192.168.10.133:30293
+      s3Credentials:
+        accessKeyId:
+          name: cnpg-s3-credentials
+          key: AWS_ACCESS_KEY_ID
+        secretAccessKey:
+          name: cnpg-s3-credentials
+          key: AWS_SECRET_ACCESS_KEY
+    retentionPolicy: "14d"
+```
+
+**Key differences from PVC backups**:
+- Backups use **Barman** (SQL-aware) to RustFS S3, not Kopia to NFS
+- **No automatic restore** — recovery requires manual intervention (see [Database DR docs](docs/cnpg-disaster-recovery.md))
+- **Cannot go through ArgoCD** for recovery — CNPG webhook + SSA = `initdb` always wins
+- `serverName` must be bumped after each recovery (e.g. `-v2`, `-v3`) to avoid WAL archive conflicts
 
 ## Configuration Patterns
 
@@ -636,6 +679,45 @@ kubectl apply -f pvc.yaml
 - Delete ReplicationSource/ReplicationDestination manually (Kyverno will recreate them if label still present)
 - Use backup labels on non-Longhorn PVCs (snapshot support required)
 
+### Database Disaster Recovery (CNPG)
+
+CNPG databases use Barman backups to S3 but **do NOT auto-restore**. After a cluster nuke:
+
+**Recovery procedure** (must bypass ArgoCD — SSA + CNPG webhook makes `initdb` always win):
+
+```bash
+# 1. Edit cluster.yaml: comment out initdb, uncomment recovery section
+# 2. Update externalClusters.serverName to match CURRENT backup.serverName
+# 3. Bump backup.serverName to next version (e.g. -v2 → -v3)
+# 4. Render and apply directly (bypass ArgoCD):
+kubectl kustomize infrastructure/database/cloudnative-pg/immich/ \
+  | awk '/^apiVersion: postgresql.cnpg.io\/v1/{p=1} p{print} /^---/{if(p) exit}' \
+  > /tmp/recovery.yaml
+
+# 5. Delete existing empty cluster and immediately create recovery version:
+kubectl delete cluster immich-database -n cloudnative-pg --wait=false; \
+  kubectl create -f /tmp/recovery.yaml
+
+# 6. Wait for recovery:
+kubectl get clusters -n cloudnative-pg -w
+
+# 7. Verify data:
+kubectl exec -n cloudnative-pg immich-database-1 -- \
+  psql -U postgres -d immich -c "SELECT count(*) FROM \"user\";"
+
+# 8. Revert cluster.yaml to initdb (keep new serverName in backup section)
+# 9. Commit and push — ArgoCD syncs, CNPG ignores bootstrap on existing clusters
+```
+
+**Current serverName versions** (track these — must match for recovery):
+| Database | Current backup serverName |
+|----------|--------------------------|
+| immich | `immich-database-v2` |
+| khoj | `khoj-database` (original) |
+| paperless | `paperless-database` (original) |
+
+See [docs/cnpg-disaster-recovery.md](docs/cnpg-disaster-recovery.md) for full details.
+
 ## Debugging & Troubleshooting
 
 ### ArgoCD Issues
@@ -813,7 +895,8 @@ kubectl exec -it gpu-pod -n app-name -- nvidia-smi
 | **Full backup/restore flow diagram** | `docs/pvc-plumber-full-flow.md` |
 | **VolSync configuration** | `infrastructure/storage/volsync/` |
 | **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
-| **Database with operator** | `infrastructure/database/crunchy-postgres/immich/` |
+| **Database with CNPG** | `infrastructure/database/cloudnative-pg/immich/` |
+| **CNPG disaster recovery** | `docs/cnpg-disaster-recovery.md` |
 | **Gateway API routing** | `infrastructure/networking/gateway/` |
 | **Custom monitoring** | `monitoring/prometheus-stack/custom-alerts.yaml` |
 | **Secret management** | Any app with `externalsecret.yaml` |
@@ -828,3 +911,4 @@ kubectl exec -it gpu-pod -n app-name -- nvidia-smi
 - **[docs/network-topology.md](docs/network-topology.md)** - Network architecture details
 - **[docs/network-policy.md](docs/network-policy.md)** - Cilium network policies
 - **[docs/argocd.md](docs/argocd.md)** - ArgoCD-specific documentation
+- **[docs/cnpg-disaster-recovery.md](docs/cnpg-disaster-recovery.md)** - CNPG database backup/restore and disaster recovery procedures
