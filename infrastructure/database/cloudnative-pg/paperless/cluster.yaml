@@ -23,6 +23,7 @@ spec:
       log_statement: "all"
     pg_hba:
       - host all all 0.0.0.0/0 md5
+  # === NORMAL OPERATION: initdb (comment out for DR recovery) ===
   bootstrap:
     initdb:
       database: paperless
@@ -34,6 +35,25 @@ spec:
         - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "paperless";
         - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "paperless";
         - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "paperless";
+  # === DISASTER RECOVERY: uncomment below, comment out initdb above ===
+  # === After recovery completes, revert back to initdb ===
+  # bootstrap:
+  #   recovery:
+  #     source: paperless-backup
+  # externalClusters:
+  #   - name: paperless-backup
+  #     barmanObjectStore:
+  #       destinationPath: s3://postgres-backups/cnpg/paperless
+  #       endpointURL: http://192.168.10.133:30293
+  #       s3Credentials:
+  #         accessKeyId:
+  #           name: cnpg-s3-credentials
+  #           key: AWS_ACCESS_KEY_ID
+  #         secretAccessKey:
+  #           name: cnpg-s3-credentials
+  #           key: AWS_SECRET_ACCESS_KEY
+  #       wal:
+  #         compression: gzip
   storage:
     size: 20Gi
     storageClass: longhorn
