@@ -13,8 +13,6 @@ spec:
       labels:
         app: khoj-sandbox
     spec:
-      nodeSelector:
-        feature.node.kubernetes.io/pci-0300_10de.present: "true"
       containers:
       - name: sandbox
         image: ghcr.io/khoj-ai/terrarium:latest
@@ -37,7 +35,7 @@ metadata:
 spec:
   strategy:
     type: Recreate
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app: khoj-server
@@ -46,17 +44,6 @@ spec:
       labels:
         app: khoj-server
     spec:
-      runtimeClassName: nvidia
-      priorityClassName: gpu-workload-preemptible
-      nodeSelector:
-        feature.node.kubernetes.io/pci-0300_10de.present: "true"
-      tolerations:
-      - key: nvidia.com/gpu
-        operator: Exists
-      - key: "gpu"
-        operator: "Equal"
-        value: "true"
-        effect: "NoSchedule"
       containers:
       - name: server
         image: ghcr.io/khoj-ai/khoj:latest
@@ -114,11 +101,9 @@ spec:
           requests:
             cpu: 500m
             memory: 1Gi
-            nvidia.com/gpu: "1"
           limits:
             cpu: 2000m
             memory: 4Gi
-            nvidia.com/gpu: "1"
       volumes:
       - name: config
         persistentVolumeClaim:
