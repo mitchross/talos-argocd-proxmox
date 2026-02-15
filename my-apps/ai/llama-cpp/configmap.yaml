@@ -29,7 +29,7 @@ data:
     # 80B total / 3B active (MoE) - Hybrid DeltaNet + Gated Attention
     model = /models/Qwen3-Coder-Next-UD-Q3_K_XL.gguf
     alias = coder, code, qwen3-coder, qwen3 coder next
-    ctx-size = 131072
+    ctx-size = 262144
     n-gpu-layers = 99
     tensor-split = 1,1
     temp = 1.0
