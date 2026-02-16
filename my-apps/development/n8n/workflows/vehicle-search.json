@@ -1,0 +1,292 @@
+{
+  "name": "Vehicle Search - Maverick / Ranger / F-150",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/30 * * * *"
+            }
+          ]
+        }
+      },
+      "id": "f0a1b2c3-0000-4000-8000-000000000001",
+      "name": "Every 30 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const searches = [\n  // === CARGURUS ===\n  // NOTE: Entity IDs (d2598, d333, d337) may need adjustment.\n  // To find correct ID: search on cargurus.com and copy the URL.\n  {\n    source: 'cargurus',\n    vehicle: 'maverick',\n    label: '2025 Ford Maverick',\n    url: 'https://www.cargurus.com/Cars/l-Used-Ford-Maverick-d2598?zip=49525&maxPrice=45000&maxMileage=25000&distance=100'\n  },\n  {\n    source: 'cargurus',\n    vehicle: 'ranger',\n    label: '2024+ Ford Ranger',\n    url: 'https://www.cargurus.com/Cars/l-Used-Ford-Ranger-d333?zip=49525&maxPrice=50000&maxMileage=25000&distance=100&minYear=2024'\n  },\n  {\n    source: 'cargurus',\n    vehicle: 'f150',\n    label: '2023 Ford F-150',\n    url: 'https://www.cargurus.com/Cars/l-Used-Ford-F-150-d337?zip=49525&maxPrice=48000&maxMileage=40000&distance=100&minYear=2023&maxYear=2024'\n  },\n  // === CARVANA ===\n  {\n    source: 'carvana',\n    vehicle: 'maverick',\n    label: '2025 Ford Maverick',\n    url: 'https://www.carvana.com/cars/ford-maverick?email=false&zip=49525'\n  },\n  {\n    source: 'carvana',\n    vehicle: 'ranger',\n    label: '2024+ Ford Ranger',\n    url: 'https://www.carvana.com/cars/ford-ranger?email=false&zip=49525'\n  },\n  {\n    source: 'carvana',\n    vehicle: 'f150',\n    label: '2023 Ford F-150',\n    url: 'https://www.carvana.com/cars/ford-f-150?email=false&zip=49525'\n  },\n  // === CARMAX ===\n  {\n    source: 'carmax',\n    vehicle: 'maverick',\n    label: '2025 Ford Maverick',\n    url: 'https://www.carmax.com/cars/ford/maverick?year=2025&maxprice=45000'\n  },\n  {\n    source: 'carmax',\n    vehicle: 'ranger',\n    label: '2024+ Ford Ranger',\n    url: 'https://www.carmax.com/cars/ford/ranger?year=2024&maxprice=50000'\n  },\n  {\n    source: 'carmax',\n    vehicle: 'f150',\n    label: '2023 Ford F-150',\n    url: 'https://www.carmax.com/cars/ford/f-150?year=2023&maxprice=48000'\n  }\n];\n\nreturn searches.map(s => ({ json: s }));"
+      },
+      "id": "f0a1b2c3-0000-4000-8000-000000000002",
+      "name": "Define Searches",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text",
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "f0a1b2c3-0000-4000-8000-000000000003",
+      "name": "Fetch Listings",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const searches = $('Define Searches').all();\nconst responses = $input.all();\nconst allListings = [];\n\nfor (let i = 0; i < responses.length; i++) {\n  const search = searches[i]?.json || {};\n  const { source, vehicle, label } = search;\n  let body = '';\n  const resp = responses[i].json;\n  if (typeof resp === 'string') body = resp;\n  else if (resp?.data) body = String(resp.data);\n  else body = JSON.stringify(resp);\n\n  if (!body || body.length < 50) {\n    allListings.push({ source, vehicle, title: '[No data] ' + label, url: search.url, description: 'Empty response from ' + source, price: 'N/A', _manual: true });\n    continue;\n  }\n\n  try {\n    {\n      let found = false;\n      const jsonLdBlocks = body.match(/<script[^>]*type\\s*=\\s*[\"']application\\/ld\\+json[\"'][^>]*>([\\s\\S]*?)<\\/script>/gi) || [];\n      for (const block of jsonLdBlocks) {\n        const jsonStr = block.replace(/<script[^>]*>/i, '').replace(/<\\/script>/i, '').trim();\n        try {\n          const data = JSON.parse(jsonStr);\n          const items = data['@type'] === 'ItemList' ? (data.itemListElement || []) : Array.isArray(data) ? data : [data];\n          for (const it of items) {\n            const v = it.item || it;\n            if (v['@type'] === 'Vehicle' || v['@type'] === 'Car' || v['@type'] === 'Product' || v.name) {\n              found = true;\n              allListings.push({\n                source: source.charAt(0).toUpperCase() + source.slice(1), vehicle,\n                title: v.name || v.description || '',\n                url: v.url || v['@id'] || '',\n                description: [v.mileageFromOdometer?.value ? v.mileageFromOdometer.value + ' miles' : '', v.color || ''].filter(Boolean).join(', ') || 'See listing',\n                price: v.offers?.price ? '$' + Number(v.offers.price).toLocaleString() : (v.offers?.lowPrice ? '$' + Number(v.offers.lowPrice).toLocaleString() : 'N/A')\n              });\n            }\n          }\n        } catch (e) { /* skip */ }\n      }\n\n      if (!found) {\n        const nextMatch = body.match(/<script[^>]*id=\"__NEXT_DATA__\"[^>]*>([\\s\\S]*?)<\\/script>/i);\n        if (nextMatch) {\n          try {\n            const nd = JSON.parse(nextMatch[1]);\n            const props = nd?.props?.pageProps || {};\n            for (const key of Object.keys(props)) {\n              const val = props[key];\n              if (Array.isArray(val) && val.length > 0 && (val[0].make || val[0].year || val[0].price)) {\n                found = true;\n                for (const v of val) {\n                  allListings.push({\n                    source: source.charAt(0).toUpperCase() + source.slice(1), vehicle,\n                    title: [v.year, v.make, v.model, v.trim].filter(Boolean).join(' '),\n                    url: v.url || v.vehicleUrl || v.listingUrl || '',\n                    description: (v.mileage || v.miles || 'N/A') + ' miles',\n                    price: v.price ? '$' + Number(v.price).toLocaleString() : 'N/A'\n                  });\n                }\n              }\n            }\n          } catch (e) { /* skip */ }\n        }\n      }\n\n      if (!found) {\n        const preMatch = body.match(/window\\.__(?:PRELOADED_STATE|INITIAL_STATE|APP_DATA)__?\\s*=\\s*({[\\s\\S]*?});?\\s*<\\/script>/i);\n        if (preMatch) {\n          try {\n            const st = JSON.parse(preMatch[1]);\n            const findVehicles = (obj, d) => {\n              if (d > 4 || !obj) return [];\n              if (Array.isArray(obj) && obj.length > 0 && obj[0] && (obj[0].make || obj[0].stockNumber || obj[0].year)) return obj;\n              if (typeof obj === 'object') for (const k of Object.keys(obj)) { const r = findVehicles(obj[k], d + 1); if (r.length > 0) return r; }\n              return [];\n            };\n            const vehicles = findVehicles(st, 0);\n            if (vehicles.length > 0) found = true;\n            for (const v of vehicles) {\n              allListings.push({\n                source: source.charAt(0).toUpperCase() + source.slice(1), vehicle,\n                title: [v.year, v.make, v.model, v.trim].filter(Boolean).join(' '),\n                url: v.url || (v.stockNumber ? 'https://www.carmax.com/car/' + v.stockNumber : ''),\n                description: (v.mileage || v.miles || 'N/A') + ' miles',\n                price: v.price ? '$' + Number(v.price).toLocaleString() : 'N/A'\n              });\n            }\n          } catch (e) { /* skip */ }\n        }\n      }\n\n      if (!found) {\n        allListings.push({ source: source.charAt(0).toUpperCase() + source.slice(1), vehicle, title: '[Check manually] ' + label, url: search.url, description: 'Could not auto-parse. Click URL to browse.', price: 'N/A', _manual: true });\n      }\n  } catch (e) {\n    allListings.push({ source: source.charAt(0).toUpperCase() + source.slice(1), vehicle, title: '[Error] ' + label + ': ' + e.message, url: search.url, description: 'Parse error', price: 'N/A', _error: true });\n  }\n}\n\nif (allListings.length === 0) return [];\nreturn allListings.map(l => ({ json: l }));"
+      },
+      "id": "f0a1b2c3-0000-4000-8000-000000000004",
+      "name": "Parse & Normalize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [750, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.seen) staticData.seen = {};\n\nconst items = $input.all();\nconst newItems = [];\nconst now = Date.now();\n\nfor (const [h, t] of Object.entries(staticData.seen)) {\n  if (now - t > 7 * 24 * 60 * 60 * 1000) delete staticData.seen[h];\n}\n\nfor (const item of items) {\n  const d = item.json;\n  if (d._manual || d._error) { newItems.push(item); continue; }\n  const hash = (d.source + '|' + d.title + '|' + d.price).toLowerCase();\n  if (!staticData.seen[hash]) {\n    staticData.seen[hash] = now;\n    newItems.push(item);\n  }\n}\n\nif (newItems.length === 0) return [];\nreturn newItems;"
+      },
+      "id": "f0a1b2c3-0000-4000-8000-000000000005",
+      "name": "Deduplicate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst real = items.filter(i => !i.json._error && !i.json._manual);\nconst manual = items.filter(i => i.json._manual);\n\nif (real.length === 0) {\n  const manualReport = manual.map(m => '- [Check manually] ' + (m.json.label || m.json.title) + ' on ' + m.json.source + ': ' + m.json.url).join('\\n');\n  return [{ json: { _skipLLM: true, report: 'No auto-parsed listings. Manual check links:\\n' + manualReport, manualLinks: manual.map(m => m.json) } }];\n}\n\nconst listingText = real.slice(0, 15).map((item, idx) => {\n  const d = item.json;\n  return '[' + idx + '] Source: ' + d.source + ' | Vehicle: ' + d.vehicle + '\\n    Title: ' + d.title + '\\n    Price: ' + d.price + '\\n    Details: ' + d.description + '\\n    URL: ' + d.url;\n}).join('\\n\\n');\n\nconst systemPrompt = 'You are a vehicle purchase advisor. Score each listing 1-10 based on how well it matches the buyer\\'s specific criteria.\\n\\n## Buyer\\'s Criteria\\n\\n### 2025 Ford Maverick (vehicle=maverick)\\n- Target trims: Tremor (+ Co-Pilot360 2.0), Lariat, or Lobo (+ Co-Pilot360 2.0)\\n- Condition: Used (<25k miles) or New\\n- Price: Lobo $34-36k, Tremor $36-40k, Lariat $35-38k\\n- CRITICAL: Lobo and Tremor MUST have Co-Pilot360 Assist 2.0 (ACC + Lane Centering). Lariat usually has it standard.\\n- Disqualify: base/XL trims, FWD-only base models\\n\\n### 2024+ Ford Ranger (vehicle=ranger)\\n- Target trims: XLT or better, AWD/4WD, SuperCrew\\n- Condition: Used (<25k miles)\\n- Price: XLT 4WD $36-39k, Lariat 4WD $44-48k\\n- CRITICAL: XLT must have Technology Package (Equipment Group 302A) for ACC + Lane Centering\\n- Disqualify: 2WD, regular cab, base trims\\n\\n### 2023 Ford F-150 PowerBoost (vehicle=f150)\\n- Target: XLT PowerBoost Hybrid\\n- Condition: Used (<40k miles)\\n- Price: $38-45k\\n- CRITICAL: Must be PowerBoost Hybrid. Strongly prefer 7.2kW Pro Power Onboard (not just 2.4kW)\\n- Disqualify: non-hybrid F-150s, base trims\\n\\n## Scoring\\n- 9-10: Perfect match (right trim, features likely, good price)\\n- 7-8: Strong match (needs VIN verification for packages)\\n- 5-6: Possible match (trim unclear or price high)\\n- 3-4: Weak match (wrong trim or missing features)\\n- 1-2: Poor match\\n\\nRespond ONLY with a JSON array:\\n[{\"index\": 0, \"score\": 8, \"reason\": \"brief explanation\"}, ...]';\n\nreturn [{ json: { systemPrompt, listingText, listings: real.slice(0, 15).map(i => i.json), manualLinks: manual.map(m => m.json) } }];"
+      },
+      "id": "f0a1b2c3-0000-4000-8000-000000000006",
+      "name": "Build Scoring Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": ""
+          },
+          "conditions": [
+            {
+              "id": "check-skip",
+              "leftValue": "={{ $json._skipLLM }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "notTrue"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "f0a1b2c3-0000-4000-8000-000000000007",
+      "name": "Has Scoreable Listings?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1500, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1/chat/completions",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'coder - qwen3-coder-next', messages: [ { role: 'system', content: $json.systemPrompt }, { role: 'user', content: 'Score these listings:\\n\\n' + $json.listingText } ], max_tokens: 2048, temperature: 0.2 }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "f0a1b2c3-0000-4000-8000-000000000008",
+      "name": "LLM: Score Listings",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1750, 250]
+    },
+    {
+      "parameters": {
+        "jsCode": "const llmResp = $input.first().json;\nconst prevData = $('Build Scoring Prompt').first().json;\nconst listings = prevData.listings || [];\nconst manualLinks = prevData.manualLinks || [];\n\nlet scores = [];\ntry {\n  let content = llmResp?.choices?.[0]?.message?.content || '[]';\n  content = content.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  const jsonMatch = content.match(/\\[[\\s\\S]*\\]/);\n  scores = JSON.parse(jsonMatch ? jsonMatch[0] : content);\n} catch (e) { scores = []; }\n\nconst allScored = scores\n  .filter(s => listings[s.index])\n  .map(s => ({ ...listings[s.index], score: s.score, reason: s.reason }))\n  .sort((a, b) => b.score - a.score);\n\nconst topMatches = allScored.filter(l => l.score >= 6);\n\n// Store results in static data for the dashboard\nconst sd = $getWorkflowStaticData('global');\nif (!sd.dashboardHistory) sd.dashboardHistory = [];\nconst entry = {\n  timestamp: new Date().toISOString(),\n  topMatches,\n  allScored,\n  manualLinks,\n  totalScanned: listings.length\n};\nsd.dashboardHistory.unshift(entry);\nif (sd.dashboardHistory.length > 48) sd.dashboardHistory = sd.dashboardHistory.slice(0, 48);\nsd.latestResults = entry;\n\nreturn [{ json: entry }];"
+      },
+      "id": "f0a1b2c3-0000-4000-8000-000000000009",
+      "name": "Format & Store Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 250]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst sd = $getWorkflowStaticData('global');\nif (!sd.dashboardHistory) sd.dashboardHistory = [];\nconst entry = {\n  timestamp: new Date().toISOString(),\n  topMatches: [],\n  allScored: [],\n  manualLinks: data.manualLinks || [],\n  totalScanned: 0\n};\nsd.dashboardHistory.unshift(entry);\nif (sd.dashboardHistory.length > 48) sd.dashboardHistory = sd.dashboardHistory.slice(0, 48);\nsd.latestResults = entry;\n\nreturn [{ json: entry }];"
+      },
+      "id": "f0a1b2c3-0000-4000-8000-000000000010",
+      "name": "Store Manual Links",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1750, 450]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "vehicle-dashboard",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "f0a1b2c3-0000-4000-8000-000000000011",
+      "name": "Dashboard Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst latest = sd.latestResults || null;\nconst history = sd.dashboardHistory || [];\n\nconst escHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\n\nlet matchesHtml = '';\nif (latest && latest.topMatches && latest.topMatches.length > 0) {\n  for (const m of latest.topMatches) {\n    const scoreColor = m.score >= 9 ? '#22c55e' : m.score >= 7 ? '#eab308' : '#f97316';\n    const vehicleEmoji = m.vehicle === 'maverick' ? '&#x1F69A;' : m.vehicle === 'ranger' ? '&#x1F699;' : '&#x1F6FB;';\n    matchesHtml += `<div style=\"background:#1e293b;border-radius:12px;padding:16px;margin-bottom:12px;border-left:4px solid ${scoreColor}\">`;\n    matchesHtml += `<div style=\"display:flex;justify-content:space-between;align-items:center;margin-bottom:8px\">`;\n    matchesHtml += `<span style=\"font-size:18px;font-weight:700;color:#f1f5f9\">${vehicleEmoji} ${escHtml(m.title)}</span>`;\n    matchesHtml += `<span style=\"background:${scoreColor};color:#000;padding:4px 12px;border-radius:20px;font-weight:700;font-size:14px\">${m.score}/10</span>`;\n    matchesHtml += `</div>`;\n    matchesHtml += `<div style=\"color:#94a3b8;font-size:14px;margin-bottom:6px\">${escHtml(m.source)} &middot; ${escHtml(m.price)} &middot; ${escHtml(m.description)}</div>`;\n    matchesHtml += `<div style=\"color:#cbd5e1;font-size:13px;margin-bottom:8px;font-style:italic\">${escHtml(m.reason)}</div>`;\n    if (m.url) matchesHtml += `<a href=\"${escHtml(m.url)}\" target=\"_blank\" style=\"color:#60a5fa;text-decoration:none;font-size:13px\">View Listing &rarr;</a>`;\n    matchesHtml += `</div>`;\n  }\n} else {\n  matchesHtml = '<div style=\"background:#1e293b;border-radius:12px;padding:24px;text-align:center;color:#64748b\">No high-scoring matches yet. Waiting for next scan...</div>';\n}\n\nlet manualHtml = '';\nif (latest && latest.manualLinks && latest.manualLinks.length > 0) {\n  for (const m of latest.manualLinks) {\n    manualHtml += `<a href=\"${escHtml(m.url)}\" target=\"_blank\" style=\"display:block;background:#1e293b;border-radius:8px;padding:12px;margin-bottom:8px;color:#60a5fa;text-decoration:none;font-size:14px\">`;\n    manualHtml += `${escHtml(m.source)} &middot; ${escHtml(m.label || m.title)} &rarr;`;\n    manualHtml += `</a>`;\n  }\n}\n\nlet historyHtml = '';\nfor (const h of history.slice(0, 10)) {\n  const d = new Date(h.timestamp);\n  const timeStr = d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });\n  const matches = h.topMatches?.length || 0;\n  const dot = matches > 0 ? '&#x1F7E2;' : '&#x26AA;';\n  historyHtml += `<div style=\"display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e293b;font-size:13px\">`;\n  historyHtml += `<span style=\"color:#94a3b8\">${timeStr}</span>`;\n  historyHtml += `<span>${dot} ${matches} match${matches !== 1 ? 'es' : ''} / ${h.totalScanned || 0} scanned</span>`;\n  historyHtml += `</div>`;\n}\n\nconst lastScan = latest ? new Date(latest.timestamp).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Never';\n\nconst html = `<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <title>Vehicle Search Dashboard</title>\n  <meta http-equiv=\"refresh\" content=\"300\">\n  <style>\n    * { margin:0; padding:0; box-sizing:border-box; }\n    body { background:#0f172a; color:#e2e8f0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; padding:24px; max-width:900px; margin:0 auto; }\n    h1 { font-size:24px; margin-bottom:4px; }\n    .subtitle { color:#64748b; font-size:14px; margin-bottom:24px; }\n    .section { margin-bottom:32px; }\n    .section-title { font-size:16px; font-weight:600; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; padding-bottom:8px; border-bottom:2px solid #1e293b; }\n    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:24px; }\n    .stat { background:#1e293b; border-radius:12px; padding:16px; text-align:center; }\n    .stat-value { font-size:28px; font-weight:700; }\n    .stat-label { font-size:12px; color:#64748b; margin-top:4px; }\n    .criteria { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:12px; margin-bottom:24px; }\n    .criteria-card { background:#1e293b; border-radius:8px; padding:12px; font-size:13px; }\n    .criteria-card h3 { font-size:14px; color:#f1f5f9; margin-bottom:4px; }\n    .criteria-card p { color:#94a3b8; }\n  </style>\n</head>\n<body>\n  <h1>Vehicle Search Dashboard</h1>\n  <div class=\"subtitle\">Last scan: ${lastScan} &middot; Auto-refreshes every 5 min &middot; Scanning every 30 min</div>\n\n  <div class=\"stats\">\n    <div class=\"stat\"><div class=\"stat-value\" style=\"color:#22c55e\">${latest?.topMatches?.length || 0}</div><div class=\"stat-label\">Top Matches</div></div>\n    <div class=\"stat\"><div class=\"stat-value\" style=\"color:#60a5fa\">${latest?.totalScanned || 0}</div><div class=\"stat-label\">Listings Scanned</div></div>\n    <div class=\"stat\"><div class=\"stat-value\" style=\"color:#a78bfa\">${Object.keys(sd.seen || {}).length}</div><div class=\"stat-label\">Total Seen (7d)</div></div>\n    <div class=\"stat\"><div class=\"stat-value\" style=\"color:#f97316\">${latest?.manualLinks?.length || 0}</div><div class=\"stat-label\">Manual Checks</div></div>\n  </div>\n\n  <div class=\"criteria\">\n    <div class=\"criteria-card\"><h3>&#x1F69A; 2025 Maverick</h3><p>Tremor/Lariat/Lobo + Co-Pilot360 2.0<br>$34-40k &middot; &lt;25k mi</p></div>\n    <div class=\"criteria-card\"><h3>&#x1F699; 2024+ Ranger</h3><p>XLT+ 4WD SuperCrew + Tech Pkg<br>$36-48k &middot; &lt;25k mi</p></div>\n    <div class=\"criteria-card\"><h3>&#x1F6FB; 2023 F-150 PowerBoost</h3><p>XLT Hybrid + 7.2kW Pro Power<br>$38-45k &middot; &lt;40k mi</p></div>\n  </div>\n\n  <div class=\"section\">\n    <div class=\"section-title\">Top Matches (Score 6+)</div>\n    ${matchesHtml}\n  </div>\n\n  ${manualHtml ? '<div class=\"section\"><div class=\"section-title\">Browse Manually</div>' + manualHtml + '</div>' : ''}\n\n  <div class=\"section\">\n    <div class=\"section-title\">Scan History</div>\n    ${historyHtml || '<div style=\"color:#64748b;font-size:13px\">No scan history yet.</div>'}\n  </div>\n\n  <div style=\"text-align:center;color:#475569;font-size:12px;margin-top:40px;padding-top:16px;border-top:1px solid #1e293b\">Powered by n8n + llama.cpp (Qwen3 Coder) &middot; Sources: CarGurus, Carvana, CarMax</div>\n</body>\n</html>`;\n\nreturn [{ json: { html } }];"
+      },
+      "id": "f0a1b2c3-0000-4000-8000-000000000012",
+      "name": "Generate Dashboard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [250, 600]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.html }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "id": "f0a1b2c3-0000-4000-8000-000000000013",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [500, 600]
+    }
+  ],
+  "connections": {
+    "Every 30 Minutes": {
+      "main": [
+        [
+          { "node": "Define Searches", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Define Searches": {
+      "main": [
+        [
+          { "node": "Fetch Listings", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Fetch Listings": {
+      "main": [
+        [
+          { "node": "Parse & Normalize", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Parse & Normalize": {
+      "main": [
+        [
+          { "node": "Deduplicate", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Deduplicate": {
+      "main": [
+        [
+          { "node": "Build Scoring Prompt", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Build Scoring Prompt": {
+      "main": [
+        [
+          { "node": "Has Scoreable Listings?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Has Scoreable Listings?": {
+      "main": [
+        [
+          { "node": "LLM: Score Listings", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Store Manual Links", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "LLM: Score Listings": {
+      "main": [
+        [
+          { "node": "Format & Store Results", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Dashboard Webhook": {
+      "main": [
+        [
+          { "node": "Generate Dashboard", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Generate Dashboard": {
+      "main": [
+        [
+          { "node": "Respond to Webhook", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "vehicle-search"
+    }
+  ],
+  "pinData": {}
+}
