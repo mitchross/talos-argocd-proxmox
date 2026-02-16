@@ -5,9 +5,9 @@ name: talos-prod-cluster
 labels:
   cluster-id: "1"
 kubernetes:
-  version: v1.34.1
+  version: v1.35.0
 talos:
-  version: v1.11.6
+  version: v1.12.4
 patches:
 - name: disable-default-cni
   inline:
@@ -19,10 +19,10 @@ patches:
         disabled: true
 - name: dns-resolver
   inline:
-    machine:
-      network:
-        nameservers:
-        - 192.168.10.1
+    apiVersion: v1alpha1
+    kind: ResolverConfig
+    nameservers:
+    - address: 192.168.10.1
 - name: node-performance
   inline:
     machine:
@@ -41,6 +41,11 @@ kind: ControlPlane
 machineClass:
   name: proxmox-control-plane
   size: 3
+systemExtensions:
+- siderolabs/iscsi-tools
+- siderolabs/nfs-utils
+- siderolabs/qemu-guest-agent
+- siderolabs/util-linux-tools
 patches:
 - name: control-plane-performance
   inline:
@@ -64,11 +69,6 @@ patches:
       scheduler:
         extraArgs:
           kube-api-qps: "100"
-systemExtensions:
-- siderolabs/iscsi-tools
-- siderolabs/nfsd
-- siderolabs/qemu-guest-agent
-- siderolabs/util-linux-tools
 ---
 kind: Workers
 name: workers
@@ -77,7 +77,7 @@ machineClass:
   size: 3
 systemExtensions:
 - siderolabs/iscsi-tools
-- siderolabs/nfsd
+- siderolabs/nfs-utils
 - siderolabs/qemu-guest-agent
 - siderolabs/util-linux-tools
 patches:
@@ -106,7 +106,7 @@ machineClass:
   size: 1
 systemExtensions:
 - siderolabs/iscsi-tools
-- siderolabs/nfsd
+- siderolabs/nfs-utils
 - siderolabs/qemu-guest-agent
 - siderolabs/util-linux-tools
 - siderolabs/nonfree-kmod-nvidia-production
@@ -118,6 +118,11 @@ patches:
       nodeLabels:
         gpu-worker: "true"
         nvidia.com/gpu: "true"
+- name: gpu-network-dhcp
+  inline:
+    apiVersion: v1alpha1
+    kind: DHCPv4Config
+    name: ens18
 - file: patches/gpu-worker.yaml
 - name: longhorn-storage
   inline:
