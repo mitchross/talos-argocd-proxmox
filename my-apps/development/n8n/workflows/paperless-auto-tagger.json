@@ -1,0 +1,404 @@
+{
+  "name": "Paperless Auto-Tagger",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/15 * * * *"
+            }
+          ]
+        }
+      },
+      "id": "e1f2a3b4-0000-4000-8000-000000000001",
+      "name": "Every 15 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://paperless-ngx.paperless-ngx.svc.cluster.local:8000/api/documents/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "tags__isnull",
+              "value": "true"
+            },
+            {
+              "name": "page_size",
+              "value": "25"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token aae1ac783fc4a009e614b7c688c98e8093dd6062"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e1f2a3b4-0000-4000-8000-000000000002",
+      "name": "Get Untagged Docs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst results = response.results || [];\n\nif (results.length === 0) {\n  return [];\n}\n\nreturn results.map(doc => ({\n  json: {\n    id: doc.id,\n    title: doc.title,\n    content: doc.content || '',\n    created: doc.created\n  }\n}));"
+      },
+      "id": "e1f2a3b4-0000-4000-8000-000000000003",
+      "name": "Extract Documents",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e1f2a3b4-0000-4000-8000-000000000004",
+      "name": "Loop Over Docs",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [750, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=http://paperless-ngx.paperless-ngx.svc.cluster.local:8000/api/documents/{{ $json.id }}/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token aae1ac783fc4a009e614b7c688c98e8093dd6062"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e1f2a3b4-0000-4000-8000-000000000005",
+      "name": "Get Doc Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://paperless-ngx.paperless-ngx.svc.cluster.local:8000/api/tags/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "page_size",
+              "value": "200"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token aae1ac783fc4a009e614b7c688c98e8093dd6062"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e1f2a3b4-0000-4000-8000-000000000006",
+      "name": "Get Existing Tags",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const doc = $('Get Doc Details').first().json;\nconst tagsResponse = $input.first().json;\nconst existingTags = (tagsResponse.results || []).map(t => t.name);\n\n// Truncate content to avoid exceeding LLM context\nconst maxContentLen = 4000;\nconst content = (doc.content || '').substring(0, maxContentLen);\n\nconst prompt = `Document title: \"${doc.title}\"\n\nDocument content:\n${content}\n\nExisting tags in the system:\n${JSON.stringify(existingTags)}\n\nBased on the document content, suggest 1-5 tags. Prefer existing tags from the list above. Only suggest a new tag if no existing tag fits well.\n\nRespond ONLY with valid JSON in this exact format, no other text:\n{\"existing_tags\": [\"tag1\", \"tag2\"], \"new_tags\": [\"tag3\"]}`;\n\nreturn [{\n  json: {\n    docId: doc.id,\n    docTitle: doc.title,\n    prompt: prompt,\n    existingTagsList: tagsResponse.results || []\n  }\n}];"
+      },
+      "id": "e1f2a3b4-0000-4000-8000-000000000007",
+      "name": "Build LLM Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1500, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1/chat/completions",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'coder - qwen3-coder-next', messages: [ { role: 'system', content: 'You are a document classifier for a personal document management system. You analyze document content and suggest relevant tags. Always respond with valid JSON only, no markdown fences, no explanation.' }, { role: 'user', content: $json.prompt } ], max_tokens: 256, temperature: 0.2 }) }}",
+        "options": {}
+      },
+      "id": "e1f2a3b4-0000-4000-8000-000000000008",
+      "name": "LLM: Classify Document",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1750, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const llmResponse = $input.first().json;\nconst prevData = $('Build LLM Prompt').first().json;\nconst docId = prevData.docId;\nconst existingTagsList = prevData.existingTagsList;\n\n// Parse LLM response\nlet llmContent = llmResponse?.choices?.[0]?.message?.content || '{}';\n\n// Strip markdown code fences if present\nllmContent = llmContent.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n\nlet suggested;\ntry {\n  suggested = JSON.parse(llmContent);\n} catch (e) {\n  // If parsing fails, try to extract JSON from the response\n  const jsonMatch = llmContent.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    try {\n      suggested = JSON.parse(jsonMatch[0]);\n    } catch (e2) {\n      suggested = { existing_tags: [], new_tags: [] };\n    }\n  } else {\n    suggested = { existing_tags: [], new_tags: [] };\n  }\n}\n\nconst existingTagNames = suggested.existing_tags || [];\nconst newTagNames = suggested.new_tags || [];\n\n// Map existing tag names to IDs\nconst tagNameToId = {};\nfor (const tag of existingTagsList) {\n  tagNameToId[tag.name.toLowerCase()] = tag.id;\n}\n\nconst matchedTagIds = [];\nfor (const name of existingTagNames) {\n  const id = tagNameToId[name.toLowerCase()];\n  if (id !== undefined) {\n    matchedTagIds.push(id);\n  }\n}\n\n// For new tags, we'll create them and collect IDs\nreturn [{\n  json: {\n    docId,\n    matchedTagIds,\n    newTagNames,\n    suggestedExisting: existingTagNames,\n    llmRaw: llmContent\n  }\n}];"
+      },
+      "id": "e1f2a3b4-0000-4000-8000-000000000009",
+      "name": "Parse & Match Tags",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": ""
+          },
+          "conditions": [
+            {
+              "id": "condition-new-tags",
+              "leftValue": "={{ $json.newTagNames.length }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "e1f2a3b4-0000-4000-8000-000000000010",
+      "name": "Has New Tags?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Split new tag names into individual items for creation\nconst data = $('Parse & Match Tags').first().json;\nconst newTagNames = data.newTagNames || [];\n\nreturn newTagNames.map(name => ({\n  json: {\n    tagName: name,\n    docId: data.docId,\n    matchedTagIds: data.matchedTagIds\n  }\n}));"
+      },
+      "id": "e1f2a3b4-0000-4000-8000-000000000011",
+      "name": "Split New Tags",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2500, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://paperless-ngx.paperless-ngx.svc.cluster.local:8000/api/tags/",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ name: $json.tagName }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token aae1ac783fc4a009e614b7c688c98e8093dd6062"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "e1f2a3b4-0000-4000-8000-000000000012",
+      "name": "Create New Tag",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2750, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect all newly created tag IDs and combine with matched IDs\nconst items = $input.all();\nconst prevData = $('Parse & Match Tags').first().json;\nconst matchedTagIds = prevData.matchedTagIds || [];\n\nconst newTagIds = items\n  .map(item => item.json?.id)\n  .filter(id => id !== undefined && id !== null);\n\nconst allTagIds = [...matchedTagIds, ...newTagIds];\n\nreturn [{\n  json: {\n    docId: prevData.docId,\n    tagIds: allTagIds\n  }\n}];"
+      },
+      "id": "e1f2a3b4-0000-4000-8000-000000000013",
+      "name": "Collect New Tag IDs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3000, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// No new tags to create, just pass through existing matched IDs\nconst data = $('Parse & Match Tags').first().json;\n\nreturn [{\n  json: {\n    docId: data.docId,\n    tagIds: data.matchedTagIds || []\n  }\n}];"
+      },
+      "id": "e1f2a3b4-0000-4000-8000-000000000014",
+      "name": "Use Existing Tags Only",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2500, 450]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://paperless-ngx.paperless-ngx.svc.cluster.local:8000/api/documents/{{ $json.docId }}/",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tags: $json.tagIds }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Token aae1ac783fc4a009e614b7c688c98e8093dd6062"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e1f2a3b4-0000-4000-8000-000000000015",
+      "name": "Apply Tags to Document",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3250, 300]
+    },
+    {
+      "parameters": {},
+      "id": "e1f2a3b4-0000-4000-8000-000000000016",
+      "name": "No Untagged Docs",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [750, 500]
+    }
+  ],
+  "connections": {
+    "Every 15 Minutes": {
+      "main": [
+        [
+          { "node": "Get Untagged Docs", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Get Untagged Docs": {
+      "main": [
+        [
+          { "node": "Extract Documents", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Extract Documents": {
+      "main": [
+        [
+          { "node": "Loop Over Docs", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Loop Over Docs": {
+      "main": [
+        [
+          { "node": "Get Doc Details", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Get Doc Details": {
+      "main": [
+        [
+          { "node": "Get Existing Tags", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Get Existing Tags": {
+      "main": [
+        [
+          { "node": "Build LLM Prompt", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Build LLM Prompt": {
+      "main": [
+        [
+          { "node": "LLM: Classify Document", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "LLM: Classify Document": {
+      "main": [
+        [
+          { "node": "Parse & Match Tags", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Parse & Match Tags": {
+      "main": [
+        [
+          { "node": "Has New Tags?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Has New Tags?": {
+      "main": [
+        [
+          { "node": "Split New Tags", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Use Existing Tags Only", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Split New Tags": {
+      "main": [
+        [
+          { "node": "Create New Tag", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Create New Tag": {
+      "main": [
+        [
+          { "node": "Collect New Tag IDs", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Collect New Tag IDs": {
+      "main": [
+        [
+          { "node": "Apply Tags to Document", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Use Existing Tags Only": {
+      "main": [
+        [
+          { "node": "Apply Tags to Document", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Apply Tags to Document": {
+      "main": [
+        [
+          { "node": "Loop Over Docs", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "paperless"
+    },
+    {
+      "name": "automation"
+    }
+  ],
+  "pinData": {}
+}

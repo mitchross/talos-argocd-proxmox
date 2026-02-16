@@ -35,6 +35,23 @@ spec:
         volumeMounts:
         - name: comfyui-storage
           mountPath: /root
+      - name: install-prompt-manager
+        image: alpine/git
+        command:
+        - sh
+        - -c
+        - |
+          DEST="/root/ComfyUI/custom_nodes/ComfyUI-Prompt-Manager"
+          if [ -d "$DEST/.git" ]; then
+            cd "$DEST" && git pull --ff-only || true
+          elif [ -d "/root/ComfyUI/custom_nodes" ]; then
+            git clone https://github.com/FranckyB/ComfyUI-Prompt-Manager.git "$DEST"
+          else
+            echo "ComfyUI not yet initialized, skipping (will be cloned on next restart)"
+          fi
+        volumeMounts:
+        - name: comfyui-storage
+          mountPath: /root
       containers:
       - name: comfyui
         # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu128-megapak-pt29

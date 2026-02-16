@@ -42,7 +42,7 @@ spec:
             - "--models-preset"
             - "/config/presets.ini"
             - "-c"
-            - "65536"
+            - "262144"
             - "-ngl"
             - "99"
             - "-fa"

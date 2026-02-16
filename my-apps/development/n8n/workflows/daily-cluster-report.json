@@ -1,0 +1,336 @@
+{
+  "name": "Daily Cluster Report",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * *"
+            }
+          ]
+        }
+      },
+      "id": "d0a1b2c3-0000-4000-8000-000000000001",
+      "name": "Daily 7am Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://kube-prometheus-stack-prometheus.prometheus-stack.svc.cluster.local:9090/api/v1/query",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "kube_node_status_condition{condition=\"Ready\",status=\"true\"}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d0a1b2c3-0000-4000-8000-000000000002",
+      "name": "Prom: Node Ready",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://kube-prometheus-stack-prometheus.prometheus-stack.svc.cluster.local:9090/api/v1/query",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "100 - (avg by(instance)(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d0a1b2c3-0000-4000-8000-000000000003",
+      "name": "Prom: CPU Usage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://kube-prometheus-stack-prometheus.prometheus-stack.svc.cluster.local:9090/api/v1/query",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d0a1b2c3-0000-4000-8000-000000000004",
+      "name": "Prom: Memory Usage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [750, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://kube-prometheus-stack-prometheus.prometheus-stack.svc.cluster.local:9090/api/v1/query",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "(1 - (node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"})) * 100"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d0a1b2c3-0000-4000-8000-000000000005",
+      "name": "Prom: Disk Usage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://kube-prometheus-stack-prometheus.prometheus-stack.svc.cluster.local:9090/api/v1/query",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "increase(kube_pod_container_status_restarts_total[24h]) > 0"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d0a1b2c3-0000-4000-8000-000000000006",
+      "name": "Prom: Pod Restarts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1250, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://kube-prometheus-stack-prometheus.prometheus-stack.svc.cluster.local:9090/api/v1/query",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "kube_pod_status_phase{phase=~\"Failed|Pending|Unknown\"}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d0a1b2c3-0000-4000-8000-000000000007",
+      "name": "Prom: Failed Pods",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1500, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://kube-prometheus-stack-prometheus.prometheus-stack.svc.cluster.local:9090/api/v1/query",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "(longhorn_node_storage_usage_bytes / longhorn_node_storage_capacity_bytes) * 100"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d0a1b2c3-0000-4000-8000-000000000008",
+      "name": "Prom: Longhorn Storage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1750, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://argocd-server.argocd.svc.cluster.local/api/v1/applications",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "d0a1b2c3-0000-4000-8000-000000000009",
+      "name": "ArgoCD: App Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://pvc-plumber.volsync-system.svc.cluster.local/readyz",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "d0a1b2c3-0000-4000-8000-000000000010",
+      "name": "PVC Plumber: Health",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate all metrics from previous nodes\nconst nodeReady = $('Prom: Node Ready').first().json;\nconst cpuUsage = $('Prom: CPU Usage').first().json;\nconst memUsage = $('Prom: Memory Usage').first().json;\nconst diskUsage = $('Prom: Disk Usage').first().json;\nconst podRestarts = $('Prom: Pod Restarts').first().json;\nconst failedPods = $('Prom: Failed Pods').first().json;\nconst longhornStorage = $('Prom: Longhorn Storage').first().json;\nconst argoApps = $('ArgoCD: App Status').first().json;\nconst plumberHealth = $('PVC Plumber: Health').first().json;\n\n// Format node readiness\nconst nodes = (nodeReady?.data?.result || []).map(r => ({\n  node: r.metric.node,\n  ready: r.value?.[1] === '1'\n}));\n\n// Format CPU usage\nconst cpu = (cpuUsage?.data?.result || []).map(r => ({\n  instance: r.metric.instance,\n  usage_pct: parseFloat(r.value?.[1] || 0).toFixed(1)\n}));\n\n// Format memory usage\nconst memory = (memUsage?.data?.result || []).map(r => ({\n  instance: r.metric.instance,\n  usage_pct: parseFloat(r.value?.[1] || 0).toFixed(1)\n}));\n\n// Format disk usage\nconst disk = (diskUsage?.data?.result || []).map(r => ({\n  instance: r.metric.instance,\n  usage_pct: parseFloat(r.value?.[1] || 0).toFixed(1)\n}));\n\n// Format pod restarts\nconst restarts = (podRestarts?.data?.result || []).map(r => ({\n  pod: r.metric.pod,\n  namespace: r.metric.namespace,\n  container: r.metric.container,\n  restarts: parseFloat(r.value?.[1] || 0).toFixed(0)\n}));\n\n// Format failed pods\nconst failed = (failedPods?.data?.result || []).map(r => ({\n  pod: r.metric.pod,\n  namespace: r.metric.namespace,\n  phase: r.metric.phase\n}));\n\n// Format Longhorn storage\nconst storage = (longhornStorage?.data?.result || []).map(r => ({\n  node: r.metric.node,\n  usage_pct: parseFloat(r.value?.[1] || 0).toFixed(1)\n}));\n\n// Format ArgoCD apps - find unhealthy/out-of-sync\nconst allApps = argoApps?.items || [];\nconst problemApps = allApps.filter(app => {\n  const sync = app.status?.sync?.status;\n  const health = app.status?.health?.status;\n  return sync !== 'Synced' || health !== 'Healthy';\n}).map(app => ({\n  name: app.metadata?.name,\n  sync: app.status?.sync?.status || 'Unknown',\n  health: app.status?.health?.status || 'Unknown'\n}));\n\nconst appSummary = {\n  total: allApps.length,\n  synced: allApps.filter(a => a.status?.sync?.status === 'Synced').length,\n  healthy: allApps.filter(a => a.status?.health?.status === 'Healthy').length,\n  problems: problemApps\n};\n\n// PVC Plumber health\nconst backupSystemHealthy = plumberHealth?.status === 'ok' || (typeof plumberHealth === 'string' && plumberHealth.includes('ok'));\n\n// Build the data payload for the LLM\nconst metricsPayload = JSON.stringify({\n  timestamp: new Date().toISOString(),\n  nodes: { readiness: nodes, cpu, memory, disk },\n  pods: { restarts_last_24h: restarts, failed_or_pending: failed },\n  storage: { longhorn: storage },\n  argocd: appSummary,\n  backups: { pvc_plumber_healthy: backupSystemHealthy, raw: plumberHealth }\n}, null, 2);\n\nreturn [{ json: { metricsPayload } }];"
+      },
+      "id": "d0a1b2c3-0000-4000-8000-000000000011",
+      "name": "Aggregate Metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2500, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1/chat/completions",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'coder - qwen3-coder-next', messages: [ { role: 'system', content: 'You are a Kubernetes cluster health reporter. Summarize the following metrics into a concise daily report. Highlight any issues, warnings, or anomalies. Use these sections: **Nodes** (readiness, CPU, memory, disk), **Pods** (restarts, failures), **Storage** (Longhorn usage), **ArgoCD Apps** (sync/health status), **Backups** (PVC Plumber health). Keep it brief and actionable. Use markdown formatting.' }, { role: 'user', content: $json.metricsPayload } ], max_tokens: 2048, temperature: 0.3 }) }}",
+        "options": {}
+      },
+      "id": "d0a1b2c3-0000-4000-8000-000000000012",
+      "name": "LLM: Summarize Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2750, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const llmResponse = $input.first().json;\nconst report = llmResponse?.choices?.[0]?.message?.content || 'Error: No response from LLM';\n\nconst now = new Date();\nconst dateStr = now.toISOString().split('T')[0];\n\nreturn [{\n  json: {\n    title: `Cluster Health Report - ${dateStr}`,\n    report: report,\n    generated_at: now.toISOString(),\n    raw_metrics: $('Aggregate Metrics').first().json.metricsPayload\n  }\n}];"
+      },
+      "id": "d0a1b2c3-0000-4000-8000-000000000013",
+      "name": "Format Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3000, 300]
+    }
+  ],
+  "connections": {
+    "Daily 7am Trigger": {
+      "main": [
+        [
+          { "node": "Prom: Node Ready", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Prom: Node Ready": {
+      "main": [
+        [
+          { "node": "Prom: CPU Usage", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Prom: CPU Usage": {
+      "main": [
+        [
+          { "node": "Prom: Memory Usage", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Prom: Memory Usage": {
+      "main": [
+        [
+          { "node": "Prom: Disk Usage", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Prom: Disk Usage": {
+      "main": [
+        [
+          { "node": "Prom: Pod Restarts", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Prom: Pod Restarts": {
+      "main": [
+        [
+          { "node": "Prom: Failed Pods", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Prom: Failed Pods": {
+      "main": [
+        [
+          { "node": "Prom: Longhorn Storage", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Prom: Longhorn Storage": {
+      "main": [
+        [
+          { "node": "ArgoCD: App Status", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "ArgoCD: App Status": {
+      "main": [
+        [
+          { "node": "PVC Plumber: Health", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "PVC Plumber: Health": {
+      "main": [
+        [
+          { "node": "Aggregate Metrics", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Aggregate Metrics": {
+      "main": [
+        [
+          { "node": "LLM: Summarize Report", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "LLM: Summarize Report": {
+      "main": [
+        [
+          { "node": "Format Report", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "cluster-ops"
+    }
+  ],
+  "pinData": {}
+}
