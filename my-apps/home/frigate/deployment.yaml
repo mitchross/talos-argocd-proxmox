@@ -16,7 +16,12 @@ spec:
         app: frigate
     spec:
       runtimeClassName: nvidia
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
       tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
       - key: "gpu"
         operator: "Equal"
         value: "true"
