@@ -1,13 +1,10 @@
 # GPU Worker Talos Configuration
 # Network topology:
 #   ens18 (net0/vmbr0) - Main LAN 192.168.10.x (DHCP) - 10G via switch to TrueNAS
+#   DHCP config moved to inline DHCPv4Config in cluster-template.yaml
 #
 # Storage traffic now goes through 10G switch (192.168.10.133)
 machine:
-  network:
-    interfaces:
-    - interface: ens18
-      dhcp: true
   kubelet:
     nodeIP:
       validSubnets:
