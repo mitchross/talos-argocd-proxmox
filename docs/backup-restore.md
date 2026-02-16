@@ -182,13 +182,41 @@ Kyverno generates a secret per-PVC with:
 /mnt/BigTank/k8s/volsync-kopia-nfs/
 ├── kopia.repository           # Kopia repository config
 ├── kopia.blobcfg              # Blob storage config
-├── p/                         # Pack files (deduplicated data)
+├── p/                         # Pack files (ALL deduplicated data from ALL PVCs)
 ├── q/                         # Index blobs
-├── n/                         # Manifest blobs
+├── n/                         # Manifest blobs (snapshots tagged by namespace/pvc-name)
 └── x/                         # Session blobs
 ```
 
 All PVC backups share the same Kopia repository, with snapshots tagged by namespace/pvc-name.
+
+### Cross-PVC Deduplication
+
+This shared repository design is a deliberate choice. Kopia uses **content-defined chunking** — files are split into variable-size chunks based on content boundaries, and each chunk is stored by its hash. If the same chunk exists anywhere in the repository (from any PVC, any namespace), it's stored only once.
+
+**What this means in practice:**
+- Delete and recreate an app → new PVC backs up → Kopia finds all chunks already exist → near-instant backup, almost zero new storage
+- Multiple apps with similar files (configs, timezone data, shared libraries) → one copy
+- Incremental backups only store changed chunks, not changed files
+- Storage grows by unique data, not by number of PVCs
+
+**Why not S3 + Restic?** VolSync also supports Restic to S3, but each PVC gets its own separate Restic repository — zero cross-PVC deduplication. Delete and recreate an app = full backup from scratch. More storage, more bandwidth, slower.
+
+## Why Two Backup Systems (NFS for PVCs, S3 for Databases)
+
+**PVC backups → NFS + Kopia** because:
+- VolSync's Kopia mover needs filesystem access for content-defined chunking and dedup
+- Direct NFS gives 10Gbps to TrueNAS with no HTTP overhead
+- No per-namespace S3 credentials — Kyverno just injects the NFS mount
+- One shared repository = cross-PVC deduplication (see above)
+
+**Database backups → S3 + Barman** because:
+- CNPG's built-in backup only supports Barman, and Barman speaks S3 (not NFS)
+- Barman does SQL-aware backups (`pg_basebackup` + continuous WAL archiving) for point-in-time recovery
+- Filesystem-level snapshots of running Postgres can be inconsistent without the WAL stream
+- CNPG has no native NFS backup option
+
+Each tool uses its native backup mechanism. Forcing either into the other's model would mean worse backups.
 
 ## Manual Restore
 

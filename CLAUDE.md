@@ -311,7 +311,7 @@ spec:
 
 **When to use backup labels**:
 - User-generated content (photos, documents, uploads)
-- Database volumes (Postgres, Redis, etc.)
+- Non-CNPG database volumes (Redis, SQLite, etc.)
 - Configuration that's hard to recreate
 - AI model caches (large downloads)
 
@@ -324,7 +324,7 @@ spec:
 
 ### Application with Database (CNPG CloudNativePG)
 
-Databases use **CloudNativePG** with Barman backups to RustFS S3 — a separate backup path from the PVC/VolSync system.
+Databases use **CloudNativePG** with Barman backups to RustFS S3 — a **separate backup path** from the PVC/VolSync system. PVC backups use NFS + Kopia (shared repository with cross-PVC deduplication). Database backups use S3 + Barman (SQL-aware `pg_basebackup` + WAL archiving for point-in-time recovery). Each tool uses its native backup mechanism — see [backup-restore.md](docs/backup-restore.md#why-two-backup-systems-nfs-for-pvcs-s3-for-databases) for the full rationale.
 
 ```yaml
 # infrastructure/database/cloudnative-pg/<app>/cluster.yaml
