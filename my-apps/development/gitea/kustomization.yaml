@@ -4,6 +4,7 @@ namespace: gitea
 resources:
 - namespace.yaml
 - httproute.yaml
+- externalsecret.yaml
 helmCharts:
 - name: gitea
   repo: https://dl.gitea.com/charts/

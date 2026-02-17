@@ -11,16 +11,27 @@ service:
   ssh:
     type: ClusterIP
 
-# Reduce HA overhead for homelab
+gitea:
+  config:
+    database:
+      DB_TYPE: postgres
+      HOST: gitea-database-rw.cloudnative-pg.svc.cluster.local:5432
+      NAME: gitea
+      USER: gitea
+      SCHEMA: public
+  additionalConfigFromEnvs:
+    - name: GITEA__database__PASSWD
+      valueFrom:
+        secretKeyRef:
+          name: gitea-db-secret
+          key: password
+
+# Disable bundled databases - using external CNPG
 postgresql-ha:
-  enabled: true
-  postgresql:
-    replicaCount: 1  # Reduced from 3
-    persistence:
-      size: 5Gi
-      storageClass: longhorn
-  pgpool:
-    replicaCount: 1  # Reduced from default
+  enabled: false
+
+postgresql:
+  enabled: false
 
 # Use single valkey instead of cluster
 valkey-cluster:
