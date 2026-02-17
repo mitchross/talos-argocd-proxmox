@@ -28,7 +28,7 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: frigate
-        image: ghcr.io/blakeblackshear/frigate:0.16.4
+        image: ghcr.io/blakeblackshear/frigate:0.17.0-rc1
         imagePullPolicy: IfNotPresent
         env:
         - name: TZ
@@ -108,7 +108,8 @@ spec:
           mountPath: /dev/shm
       volumes:
       - name: config-dir
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: frigate-config
       - name: frigate-config-volume
         configMap:
           name: frigate-configmap
