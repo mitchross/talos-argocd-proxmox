@@ -20,7 +20,7 @@ spec:
       max_wal_size: "1GB"
       wal_compression: "on"
       logging_collector: "on"
-      log_statement: "all"
+      log_statement: "ddl"
     pg_hba:
       - host all all 0.0.0.0/0 md5
   # === NORMAL OPERATION: initdb (comment out for DR recovery) ===

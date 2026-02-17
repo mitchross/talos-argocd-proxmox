@@ -433,7 +433,7 @@ spec:
 ## Secret Management Flow
 
 ```
-1Password Vault (homelabproxmox)
+1Password Vault (homelab-prod)
     ↓
 1Password Connect API (infrastructure/controllers/1passwordconnect/)
     ↓
