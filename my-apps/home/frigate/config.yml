@@ -26,9 +26,10 @@ motion:
   contour_area: 20
 record:
   enabled: true
-  retain:
+  continuous:
     days: 3
-    mode: all
+  motion:
+    days: 3
 # Object detection is now disabled by default in 0.16.0+
 detect:
   enabled: true
