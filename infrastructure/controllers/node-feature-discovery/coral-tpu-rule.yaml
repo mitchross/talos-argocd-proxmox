@@ -1,0 +1,22 @@
+# NodeFeatureRule to detect Google Coral USB TPU and create a clean label.
+# Matches both Coral vendor IDs:
+#   18d1 = Google Inc (normal operating mode)
+#   1a6e = Global Unichip Corp (DFU/bootloader mode)
+# Creates label: feature.node.kubernetes.io/custom-usb.coral-tpu=true
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: coral-tpu-rule
+spec:
+  rules:
+  - name: "google-coral-usb"
+    labels:
+      "custom-usb.coral-tpu": "true"
+    matchFeatures:
+    - feature: usb.device
+      matchExpressions:
+        vendor:
+          op: In
+          value:
+          - "18d1"
+          - "1a6e"

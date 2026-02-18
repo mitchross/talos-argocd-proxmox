@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ns.yaml
+  - coral-tpu-rule.yaml
   # The Intel-specific rules are not needed for NVIDIA GPU discovery
   # and have been removed. NFD's default PCI source handles NVIDIA.
 # https://kubernetes-sigs.github.io/node-feature-discovery/v0.16/deployment/helm.html
@@ -19,7 +20,7 @@ helmCharts:
             # Run NFD periodically to catch any changes
             sleepInterval: 60s
             # Explicitly enable sources for clarity
-            sources: ["pci", "system"]
+            sources: ["pci", "system", "usb"]
           sources:
             pci:
               # By default, NFD discovers devices with class '03' (Display
@@ -32,3 +33,13 @@ helmCharts:
               deviceLabelFields:
                 - "class"
                 - "vendor"
+            usb:
+              # Discover USB accelerators (Coral TPU, etc.)
+              # ff = vendor-specific, fe = application-specific
+              deviceClassWhitelist:
+                - "ff"
+                - "fe"
+              deviceLabelFields:
+                - "class"
+                - "vendor"
+                - "device"

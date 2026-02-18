@@ -15,17 +15,8 @@ spec:
       labels:
         app: frigate
     spec:
-      runtimeClassName: nvidia
       nodeSelector:
-        feature.node.kubernetes.io/pci-0300_10de.present: "true"
-      tolerations:
-      - key: nvidia.com/gpu
-        operator: Exists
-        effect: NoSchedule
-      - key: "gpu"
-        operator: "Equal"
-        value: "true"
-        effect: "NoSchedule"
+        feature.node.kubernetes.io/custom-usb.coral-tpu: "true"
       containers:
       - name: frigate
         image: ghcr.io/blakeblackshear/frigate:0.17.0-rc2
@@ -33,11 +24,6 @@ spec:
         env:
         - name: TZ
           value: "America/New_York"
-        # NVIDIA GPU environment variables
-        - name: NVIDIA_VISIBLE_DEVICES
-          value: "all"
-        - name: NVIDIA_DRIVER_CAPABILITIES
-          value: "compute,utility,video"
         - name: FRIGATE_MQTT_USER
           valueFrom:
             secretKeyRef:
@@ -72,11 +58,9 @@ spec:
           requests:
             cpu: 1000m
             memory: 2Gi
-            nvidia.com/gpu: "1" # Minimum for AI object detection
           limits:
             memory: 12Gi
             cpu: 12000m
-            nvidia.com/gpu: "1" # Minimum for AI object detection
         securityContext:
           privileged: true
           allowPrivilegeEscalation: true
@@ -106,6 +90,8 @@ spec:
           mountPath: /media
         - name: cache
           mountPath: /dev/shm
+        - name: usb
+          mountPath: /dev/bus/usb
       volumes:
       - name: config-dir
         persistentVolumeClaim:
