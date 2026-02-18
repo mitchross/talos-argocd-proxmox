@@ -60,6 +60,9 @@ spec:
             - name: nvidia-dev
               mountPath: /dev
               readOnly: false
+            - name: pod-resources
+              mountPath: /var/lib/kubelet/pod-resources
+              readOnly: true
           resources:
             requests:
               cpu: 100m
@@ -89,6 +92,9 @@ spec:
         - name: nvidia-dev
           hostPath:
             path: /dev
+        - name: pod-resources
+          hostPath:
+            path: /var/lib/kubelet/pod-resources
 ---
 apiVersion: v1
 kind: Service
