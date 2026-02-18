@@ -68,17 +68,17 @@ spec:
           httpGet:
             path: /api/version
             port: 5000
-          initialDelaySeconds: 0
+          initialDelaySeconds: 60
           periodSeconds: 10
-          timeoutSeconds: 1
-          failureThreshold: 3
+          timeoutSeconds: 5
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /api/version
             port: 5000
-          initialDelaySeconds: 0
+          initialDelaySeconds: 30
           periodSeconds: 10
-          timeoutSeconds: 1
+          timeoutSeconds: 5
           failureThreshold: 3
         volumeMounts:
         - name: config-dir
