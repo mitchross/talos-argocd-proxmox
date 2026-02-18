@@ -300,34 +300,154 @@ data:
         },
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "description": "GPU allocation per pod using nvidia-device-plugin metrics",
+          "description": "GPU compute utilization broken down by pod/workload",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 20,
+                "gradientMode": "scheme",
+                "hideFrom": { "legend": false, "tooltip": false, "vis": false },
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": { "type": "linear" },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": { "group": "A", "mode": "normal" },
+                "thresholdsStyle": { "mode": "line" }
+              },
+              "max": 100,
+              "min": 0,
+              "unit": "percent",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 80 },
+                  { "color": "red", "value": 95 }
+                ]
+              }
+            }
+          },
+          "gridPos": { "h": 10, "w": 12, "x": 0, "y": 26 },
+          "id": 20,
+          "options": { "legend": { "calcs": ["mean", "max", "lastNotNull"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            { "expr": "DCGM_FI_DEV_GPU_UTIL{exported_pod!=\"\"}", "interval": "", "legendFormat": "{{exported_namespace}}/{{exported_pod}}", "refId": "A" }
+          ],
+          "title": "GPU Compute Utilization by Pod",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "description": "GPU framebuffer (VRAM) used per pod",
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": {
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 20,
+                "gradientMode": "scheme",
+                "hideFrom": { "legend": false, "tooltip": false, "vis": false },
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": { "type": "linear" },
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": { "group": "A", "mode": "normal" },
+                "thresholdsStyle": { "mode": "off" }
+              },
+              "unit": "decbytes"
+            }
+          },
+          "gridPos": { "h": 10, "w": 12, "x": 12, "y": 26 },
+          "id": 21,
+          "options": { "legend": { "calcs": ["mean", "max", "lastNotNull"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [
+            { "expr": "DCGM_FI_DEV_FB_USED{exported_pod!=\"\"} * 1024 * 1024", "interval": "", "legendFormat": "{{exported_namespace}}/{{exported_pod}}", "refId": "A" }
+          ],
+          "title": "GPU VRAM Usage by Pod",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "description": "Current GPU resource consumption per pod",
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
-              "custom": { "align": "auto", "displayMode": "auto", "filterable": true },
+              "custom": { "align": "auto", "displayMode": "color-text", "filterable": true, "inspect": false },
               "mappings": [],
-              "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }
-            }
+              "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 80 }, { "color": "red", "value": 95 } ] }
+            },
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "GPU Util %" },
+                "properties": [
+                  { "id": "unit", "value": "percent" },
+                  { "id": "custom.displayMode", "value": "gradient-gauge" },
+                  { "id": "max", "value": 100 },
+                  { "id": "min", "value": 0 }
+                ]
+              },
+              {
+                "matcher": { "id": "byName", "options": "VRAM Used" },
+                "properties": [
+                  { "id": "unit", "value": "decbytes" },
+                  { "id": "custom.displayMode", "value": "gradient-gauge" }
+                ]
+              },
+              {
+                "matcher": { "id": "byName", "options": "Encoder %" },
+                "properties": [
+                  { "id": "unit", "value": "percent" },
+                  { "id": "custom.displayMode", "value": "gradient-gauge" },
+                  { "id": "max", "value": 100 },
+                  { "id": "min", "value": 0 }
+                ]
+              },
+              {
+                "matcher": { "id": "byName", "options": "Decoder %" },
+                "properties": [
+                  { "id": "unit", "value": "percent" },
+                  { "id": "custom.displayMode", "value": "gradient-gauge" },
+                  { "id": "max", "value": 100 },
+                  { "id": "min", "value": 0 }
+                ]
+              }
+            ]
           },
-          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 26 },
-          "id": 7,
-          "options": { "showHeader": true, "sortBy": [{ "desc": true, "displayName": "GPUs Allocated" }] },
-          "targets": [ 
-            { "expr": "kube_pod_container_resource_requests{resource=\"nvidia_com_gpu\"} > 0", "format": "table", "instant": true, "legendFormat": "", "refId": "A" }
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 36 },
+          "id": 22,
+          "options": { "showHeader": true, "sortBy": [{ "desc": true, "displayName": "GPU Util %" }], "footer": { "enablePagination": false } },
+          "targets": [
+            { "expr": "DCGM_FI_DEV_GPU_UTIL{exported_pod!=\"\"}", "format": "table", "instant": true, "refId": "A" },
+            { "expr": "DCGM_FI_DEV_FB_USED{exported_pod!=\"\"} * 1024 * 1024", "format": "table", "instant": true, "refId": "B" },
+            { "expr": "DCGM_FI_DEV_ENC_UTIL{exported_pod!=\"\"}", "format": "table", "instant": true, "refId": "C" },
+            { "expr": "DCGM_FI_DEV_DEC_UTIL{exported_pod!=\"\"}", "format": "table", "instant": true, "refId": "D" }
           ],
-          "title": "Pods with GPU Allocations",
+          "title": "Per-Pod GPU Status",
           "transformations": [
-            { "id": "organize", "options": { 
-              "excludeByName": { "__name__": true, "Time": true, "job": true, "instance": true, "endpoint": true, "service": true, "uid": true, "resource": true, "unit": true, "node": true }, 
-              "indexByName": {}, 
-              "renameByName": { "Value": "GPUs Allocated", "pod": "Pod", "namespace": "Namespace", "container": "Container" } 
+            { "id": "seriesToColumns", "options": { "byField": "exported_pod" } },
+            { "id": "organize", "options": {
+              "excludeByName": { "__name__": true, "__name__ 1": true, "__name__ 2": true, "__name__ 3": true, "__name__ 4": true, "Time": true, "Time 1": true, "Time 2": true, "Time 3": true, "Time 4": true, "job": true, "job 1": true, "job 2": true, "job 3": true, "job 4": true, "instance": true, "instance 1": true, "instance 2": true, "instance 3": true, "instance 4": true, "gpu": true, "gpu 1": true, "gpu 2": true, "gpu 3": true, "gpu 4": true, "UUID": true, "UUID 1": true, "UUID 2": true, "UUID 3": true, "UUID 4": true, "modelName": true, "modelName 1": true, "modelName 2": true, "modelName 3": true, "modelName 4": true, "Hostname": true, "Hostname 1": true, "Hostname 2": true, "Hostname 3": true, "Hostname 4": true, "DCGM_FI_DRIVER_VERSION": true, "DCGM_FI_DRIVER_VERSION 1": true, "DCGM_FI_DRIVER_VERSION 2": true, "DCGM_FI_DRIVER_VERSION 3": true, "DCGM_FI_DRIVER_VERSION 4": true, "container": true, "container 1": true, "container 2": true, "container 3": true, "container 4": true, "device": true, "device 1": true, "device 2": true, "device 3": true, "device 4": true, "exported_container": true, "exported_container 1": true, "exported_container 2": true, "exported_container 3": true, "exported_container 4": true, "exported_namespace 1": true, "exported_namespace 2": true, "exported_namespace 3": true, "exported_namespace 4": true },
+              "indexByName": {},
+              "renameByName": { "exported_pod": "Pod", "exported_namespace": "Namespace", "Value #A": "GPU Util %", "Value #B": "VRAM Used", "Value #C": "Encoder %", "Value #D": "Decoder %" }
             }}
           ],
           "type": "table"
         },
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "description": "Per-process GPU utilization from DCGM",
+          "description": "Encoder/decoder utilization per pod",
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -353,12 +473,12 @@ data:
               "min": 0
             }
           },
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 34 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 46 },
           "id": 8,
-          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
           "targets": [
-            { "expr": "DCGM_FI_DEV_ENC_UTIL", "interval": "", "legendFormat": "Encoder - GPU {{gpu}} on {{Hostname}}", "refId": "A" },
-            { "expr": "DCGM_FI_DEV_DEC_UTIL", "interval": "", "legendFormat": "Decoder - GPU {{gpu}} on {{Hostname}}", "refId": "B" }
+            { "expr": "DCGM_FI_DEV_ENC_UTIL", "interval": "", "legendFormat": "Encoder - {{exported_namespace}}/{{exported_pod}}", "refId": "A" },
+            { "expr": "DCGM_FI_DEV_DEC_UTIL", "interval": "", "legendFormat": "Decoder - {{exported_namespace}}/{{exported_pod}}", "refId": "B" }
           ],
           "title": "GPU Encoder/Decoder Utilization",
           "type": "timeseries"
@@ -391,7 +511,7 @@ data:
               "min": 0
             }
           },
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 34 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 46 },
           "id": 9,
           "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
           "targets": [
@@ -402,7 +522,7 @@ data:
         },
         {
           "collapsed": false,
-          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 42 },
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 54 },
           "id": 102,
           "panels": [],
           "title": "GPU Health & Errors",
@@ -427,7 +547,7 @@ data:
               "unit": "short"
             }
           },
-          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 43 },
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 55 },
           "id": 10,
           "options": {
             "colorMode": "background",
@@ -461,7 +581,7 @@ data:
               "unit": "short"
             }
           },
-          "gridPos": { "h": 4, "w": 6, "x": 6, "y": 43 },
+          "gridPos": { "h": 4, "w": 6, "x": 6, "y": 55 },
           "id": 11,
           "options": {
             "colorMode": "background",
@@ -497,7 +617,7 @@ data:
               "unit": "short"
             }
           },
-          "gridPos": { "h": 4, "w": 6, "x": 12, "y": 43 },
+          "gridPos": { "h": 4, "w": 6, "x": 12, "y": 55 },
           "id": 12,
           "options": {
             "colorMode": "background",
@@ -533,7 +653,7 @@ data:
               "unit": "short"
             }
           },
-          "gridPos": { "h": 4, "w": 6, "x": 18, "y": 43 },
+          "gridPos": { "h": 4, "w": 6, "x": 18, "y": 55 },
           "id": 13,
           "options": {
             "colorMode": "background",
@@ -575,7 +695,7 @@ data:
               "unit": "short"
             }
           },
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 47 },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 59 },
           "id": 14,
           "options": { "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
           "targets": [
@@ -611,7 +731,7 @@ data:
               "unit": "KBs"
             }
           },
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 47 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 59 },
           "id": 15,
           "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
           "targets": [
