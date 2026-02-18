@@ -34,8 +34,9 @@ record:
 detect:
   enabled: true
 detectors:
-  cpu:
-    type: cpu
+  coral:
+    type: edgetpu
+    device: usb
 ffmpeg:
   input_args: preset-rtsp-generic
 # go2rtc with Nest cameras via direct SDM API
