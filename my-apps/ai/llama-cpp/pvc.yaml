@@ -1,4 +1,5 @@
-# Static PV - mounts NFS share root directly (not a CSI-created subdirectory)
+# Static PV - mounts NFS share root directly via CSI (not a CSI-created subdirectory)
+# Must use CSI driver (not legacy nfs:) for mountOptions like nconnect to work
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -10,14 +11,17 @@ spec:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   storageClassName: nfs-llama-cpp-10g
-  nfs:
-    server: 192.168.10.133
-    path: /mnt/BigTank/k8s/llama-cpp
   mountOptions:
     - nfsvers=4.1
     - nolock
     - tcp
     - nconnect=16
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: llama-cpp-nfs-pv
+    volumeAttributes:
+      server: "192.168.10.133"
+      share: "/mnt/BigTank/k8s/llama-cpp"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
