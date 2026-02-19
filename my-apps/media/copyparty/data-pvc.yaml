@@ -1,8 +1,11 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
-metadata: 
+metadata:
   name: copyparty-data
   namespace: copyparty
+  labels:
+    app: copyparty
+    backup: "daily"
 spec:
   accessModes: 
     - ReadWriteOnce

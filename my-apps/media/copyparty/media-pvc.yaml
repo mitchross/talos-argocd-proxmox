@@ -3,6 +3,9 @@ kind: PersistentVolumeClaim
 metadata:
   name: copyparty-media
   namespace: copyparty
+  labels:
+    app: copyparty
+    backup: "daily"
 spec:
   accessModes:
     - ReadWriteOnce
