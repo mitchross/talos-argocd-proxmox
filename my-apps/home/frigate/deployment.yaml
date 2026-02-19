@@ -15,8 +15,8 @@ spec:
       labels:
         app: frigate
     spec:
-      nodeSelector:
-        feature.node.kubernetes.io/custom-usb.coral-tpu: "true"
+      # nodeSelector:
+      #   feature.node.kubernetes.io/custom-usb.coral-tpu: "true"
       containers:
       - name: frigate
         image: ghcr.io/blakeblackshear/frigate:0.17.0-rc2
@@ -90,8 +90,8 @@ spec:
           mountPath: /media
         - name: cache
           mountPath: /dev/shm
-        - name: usb
-          mountPath: /dev/bus/usb
+        # - name: usb
+        #   mountPath: /dev/bus/usb
       volumes:
       - name: config-dir
         persistentVolumeClaim:
@@ -107,7 +107,7 @@ spec:
         emptyDir:
           medium: Memory
           sizeLimit: 4Gi
-      - name: usb
-        hostPath:
-          path: /dev/bus/usb
-          type: Directory
+      # - name: usb
+      #   hostPath:
+      #     path: /dev/bus/usb
+      #     type: Directory
