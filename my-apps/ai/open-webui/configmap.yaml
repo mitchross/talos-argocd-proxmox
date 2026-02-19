@@ -13,18 +13,17 @@ data:
   ENABLE_OLLAMA_API: "false"
 
   # Semantic Routing - Model Selection
-  # Use reasoning (Nemotron) as default, vision (Qwen3-VL) for images, coder for code
-  DEFAULT_MODELS: "reasoning - nemotron3-nano"
+  # 4 models: general (Qwen3.5-397B), reasoning (Nemotron), coder (Qwen3-Coder-Next), vision (Qwen3-VL)
+  DEFAULT_MODELS: "general - qwen3.5"
   WHITELISTED_MODELS: ""
 
   # Vision Models - tell Open WebUI which models support images
-  VISION_MODELS: "vision - qwen3-vl-thinking"
+  VISION_MODELS: "vision - qwen3-vl-thinking,general - qwen3.5"
 
-  # Hardware-Optimized Parameters (Nemotron-3 recommended: temp=1.0, top_p=1.0)
-  # For tool calling use: temp=0.6, top_p=0.95
+  # Default parameters (Qwen3.5 thinking mode: temp=0.6, top_p=0.95, top_k=20)
   CONTEXT_WINDOW: "131072"
-  TEMPERATURE: "1.0"
-  TOP_P: "1.0"
+  TEMPERATURE: "0.6"
+  TOP_P: "0.95"
   MIN_P: "0.0"
 
   # UI & Reasoning Logic
@@ -64,9 +63,9 @@ data:
   ENABLE_TOOLS: "True"
   # MCP proxies for tools, multi-tools, and Kiwix knowledge base
   OPENAPI_API_ENDPOINTS: "mcpo-time:http://mcpo.open-webui.svc.cluster.local:8000:mcp-demo-key;mcpo-multi:http://mcpo-multi.open-webui.svc.cluster.local:8001:mcp-multi-key;mcpo-kiwix:http://mcpo-kiwix.open-webui.svc.cluster.local:8002:mcp-kiwix-key"
-  # Use main model for tool/function calling
-  TASK_MODEL: "reasoning - nemotron3-nano"
-  TASK_MODEL_EXTERNAL: "reasoning - nemotron3-nano"
+  # Use coder model for tool/function calling
+  TASK_MODEL: "coder - qwen3-coder-next"
+  TASK_MODEL_EXTERNAL: "coder - qwen3-coder-next"
 
   # ---------------------------------------------------------------------------
   # Default System Prompt (Kiwix RAG)

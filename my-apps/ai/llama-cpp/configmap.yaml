@@ -57,3 +57,22 @@ data:
     min-p = 0.0
     presence-penalty = 1.5
     jinja = 1
+
+    # ==========================================================
+    # GENERAL (219GB) - Qwen3.5-397B-A17B
+    # ==========================================================
+    [general - qwen3.5]
+    # 397B total / 17B active (MoE) - Unsloth Dynamic Q4_K_XL
+    # Multimodal (vision + language), 256K context native
+    # Thinking: temp=0.6, top_p=0.95, top_k=20, min_p=0
+    # Non-thinking: temp=0.7, top_p=0.8, top_k=20, min_p=0
+    model = /models/UD-Q4_K_XL/Qwen3.5-397B-A17B-UD-Q4_K_XL-00001-of-00006.gguf
+    alias = qwen3.5, qwen 3.5, general
+    ctx-size = 131072
+    n-gpu-layers = 99
+    tensor-split = 1,1
+    temp = 0.6
+    top-p = 0.95
+    top-k = 20
+    min-p = 0.0
+    jinja = 1
