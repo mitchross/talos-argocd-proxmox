@@ -25,7 +25,8 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:api.github.com)",
       "Bash(find:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(test:*)"
     ],
     "deny": [
       "Bash(git push:*)",
