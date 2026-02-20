@@ -27,7 +27,16 @@
       "Bash(find:*)",
       "Bash(grep:*)",
       "WebFetch(domain:9eaa7bfe.frigate.pages.dev)",
-      "WebFetch(domain:unsloth.ai)"
+      "WebFetch(domain:unsloth.ai)",
+      "WebFetch(domain:docs.ollama.com)",
+      "WebFetch(domain:www.hardware-corner.net)",
+      "WebFetch(domain:docs.openwebui.com)",
+      "WebFetch(domain:www.bentoml.com)",
+      "WebFetch(domain:www.datacamp.com)",
+      "WebFetch(domain:blog.comfy.org)",
+      "WebFetch(domain:deepwiki.com)",
+      "WebFetch(domain:blog.ayjc.net)",
+      "WebFetch(domain:hub.docker.com)"
     ],
     "deny": [
       "Bash(git push:*)",

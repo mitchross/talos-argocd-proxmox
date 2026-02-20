@@ -15,6 +15,8 @@ data:
     alias = reasoning, chat, nemotron, nemotron3 nano
     ctx-size = 32768
     n-gpu-layers = 99
+    cache-type-k = q8_0
+    cache-type-v = q4_0
     temp = 1.0
     top-p = 1.0
     jinja = 1
@@ -27,11 +29,14 @@ data:
     # Unsloth docs: temp=1.0, top_p=0.95, top_k=40, min_p=0.01
     # Non-thinking mode for rapid code generation, 256K context native
     # 80B total / 3B active (MoE) - Hybrid DeltaNet + Gated Attention
+    # KV cache quant is CRITICAL here - 262K ctx at f16 would blow VRAM
     model = /models/Qwen3-Coder-Next-UD-Q3_K_XL.gguf
     alias = coder, code, qwen3-coder, qwen3 coder next
     ctx-size = 262144
     n-gpu-layers = 99
     tensor-split = 1,1
+    cache-type-k = q8_0
+    cache-type-v = q4_0
     temp = 1.0
     top-p = 0.95
     top-k = 40
@@ -51,6 +56,8 @@ data:
     ctx-size = 32768
     n-gpu-layers = 99
     tensor-split = 1,1
+    cache-type-k = q8_0
+    cache-type-v = q4_0
     temp = 1.0
     top-p = 0.95
     top-k = 20
@@ -65,12 +72,16 @@ data:
     # 397B total / 17B active (MoE) - Unsloth Dynamic Q4_K_XL
     # Multimodal (vision + language), 256K context native
     # Thinking: temp=0.6, top_p=0.95, top_k=20, min_p=0
-    # Non-thinking: temp=0.7, top_p=0.8, top_k=20, min_p=0
+    # cpu-moe keeps attention on GPU, experts on CPU - MUCH faster than
+    # unified memory swapping (targeted offload vs indiscriminate CUDA paging)
     model = /models/UD-Q4_K_XL/Qwen3.5-397B-A17B-UD-Q4_K_XL-00001-of-00006.gguf
     alias = qwen3.5, qwen 3.5, general
     ctx-size = 131072
     n-gpu-layers = 99
     tensor-split = 1,1
+    cache-type-k = q8_0
+    cache-type-v = q4_0
+    cpu-moe = 1
     temp = 0.6
     top-p = 0.95
     top-k = 20

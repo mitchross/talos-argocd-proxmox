@@ -32,6 +32,19 @@ data:
   WEBUI_SECRET_KEY: "open-webui"
 
   # ---------------------------------------------------------------------------
+  # Kubernetes & Performance Tuning
+  # ---------------------------------------------------------------------------
+  K8S_FLAG: "True"
+  THREAD_POOL_SIZE: "500"                          # FastAPI blocking call threads (default 40 is too low)
+  CHAT_RESPONSE_STREAM_DELTA_CHUNK_SIZE: "5"       # Batch 5 tokens per SSE push - less CPU/network overhead
+  MODELS_CACHE_TTL: "300"                          # Cache model list for 5 minutes
+  ENABLE_BASE_MODELS_CACHE: "True"                 # Reduce startup API calls to llama-server
+  AIOHTTP_CLIENT_TIMEOUT: "1800"                   # 30 min for long completions (matches HTTPRoute timeout)
+  AIOHTTP_CLIENT_TIMEOUT_MODEL_LIST: "30"          # Model list can be slow with multi-model router
+  ENABLE_COMPRESSION_MIDDLEWARE: "True"             # Gzip compression for HTTP responses
+  ENABLE_QUERIES_CACHE: "True"                     # Reuse LLM-generated search queries for RAG
+
+  # ---------------------------------------------------------------------------
   # Web Search
   # ---------------------------------------------------------------------------
   ENABLE_WEB_SEARCH: "True"
@@ -50,12 +63,13 @@ data:
   RAG_EMBEDDING_BATCH_SIZE: "8"
   RAG_TOP_K: "10"
   RAG_RELEVANCE_THRESHOLD: "0.0"
-  CHUNK_SIZE: "1500"
-  CHUNK_OVERLAP: "100"
+  CHUNK_SIZE: "800"                                # Smaller chunks improve precise retrieval with hybrid search
+  CHUNK_OVERLAP: "150"                             # 18% overlap preserves cross-chunk context
   PDF_EXTRACT_IMAGES: "True"
   ENABLE_RAG_HYBRID_SEARCH: "True"
   RAG_FILE_MAX_SIZE: "100"
   RAG_FILE_MAX_COUNT: "10"
+  RAG_SYSTEM_CONTEXT: "True"                       # Inject RAG into system msg - better for KV cache reuse
 
   # ---------------------------------------------------------------------------
   # Tools / Function Calling
@@ -63,9 +77,9 @@ data:
   ENABLE_TOOLS: "True"
   # MCP proxies for tools, multi-tools, and Kiwix knowledge base
   OPENAPI_API_ENDPOINTS: "mcpo-time:http://mcpo.open-webui.svc.cluster.local:8000:mcp-demo-key;mcpo-multi:http://mcpo-multi.open-webui.svc.cluster.local:8001:mcp-multi-key;mcpo-kiwix:http://mcpo-kiwix.open-webui.svc.cluster.local:8002:mcp-kiwix-key"
-  # Use coder model for tool/function calling
-  TASK_MODEL: "coder - qwen3-coder-next"
-  TASK_MODEL_EXTERNAL: "coder - qwen3-coder-next"
+  # Use fast nemotron for background tasks (title gen, tagging) - NOT the big coder model
+  TASK_MODEL: "reasoning - nemotron3-nano"
+  TASK_MODEL_EXTERNAL: "reasoning - nemotron3-nano"
 
   # ---------------------------------------------------------------------------
   # Default System Prompt (Kiwix RAG)
@@ -83,13 +97,21 @@ data:
     CITE your sources by referencing the article title.
 
   # ---------------------------------------------------------------------------
-  # Media Features
+  # Image Generation (ComfyUI backend)
   # ---------------------------------------------------------------------------
   ENABLE_IMAGE_GENERATION: "True"
+  IMAGE_GENERATION_ENGINE: "comfyui"
+  COMFYUI_BASE_URL: "http://comfyui-service.comfyui.svc.cluster.local:8188"
+  IMAGE_SIZE: "1024x1024"
+  IMAGE_STEPS: "4"                                 # FLUX.2 klein is step-distilled to 4 steps
+  ENABLE_IMAGE_PROMPT_GENERATION: "True"           # Use LLM to enhance prompts before generation
+
+  # ---------------------------------------------------------------------------
+  # Voice / Audio
+  # ---------------------------------------------------------------------------
   ENABLE_VOICE: "True"
   AUDIO_STT_ENGINE: "whisper"
   WHISPER_MODEL: "medium"
-  # Text-to-speech for voice responses
   AUDIO_TTS_ENGINE: "openai"
   AUDIO_TTS_VOICE: "alloy"
 
@@ -98,5 +120,5 @@ data:
   # ---------------------------------------------------------------------------
   ENABLE_MESSAGE_RATING: "True"
   ENABLE_COMMUNITY_SHARING: "False"
-  ENABLE_AUTOCOMPLETE_GENERATION: "True"
+  ENABLE_AUTOCOMPLETE_GENERATION: "False"          # Fires on every keystroke - high API load for minimal benefit
   AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH: "2048"

@@ -46,8 +46,15 @@ spec:
             - "-ngl"
             - "99"
             - "-fa"
-            - "on"        # FIXED: Explicitly set to 'on' so --jinja is read correctly
+            - "on"        # Explicitly set to 'on' so --jinja is read correctly
             - "--jinja"
+            - "--no-mmap"       # Prevent page fault stalls - we have 400GB RAM to spare
+            - "-b"
+            - "4096"            # Larger logical batch for faster prompt processing
+            - "-ub"
+            - "1024"            # Larger physical batch for better GPU saturation
+            - "--parallel"
+            - "1"               # Single-user coding assistant - maximize context per request
             - "--host"
             - "0.0.0.0"
             - "--port"
@@ -63,6 +70,8 @@ spec:
               value: "1" # Vital for Kimi-K2 1T model to bridge VRAM and 400GB RAM
             - name: GGML_CUDA_PEER_MAX_BATCH_SIZE
               value: "128"
+            - name: CUDA_SCALE_LAUNCH_QUEUES
+              value: "4x"   # Larger command buffer reduces kernel launch bottleneck on multi-GPU
           ports:
             - name: http
               containerPort: 8080
