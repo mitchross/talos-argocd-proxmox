@@ -20,7 +20,7 @@ mountOptions:
   - rsize=1048576
   - wsize=1048576
   - noatime
-  - nconnect=4
+  - nconnect=16
 ---
 # llama-cpp NFS storage class (10G)
 apiVersion: storage.k8s.io/v1
@@ -40,7 +40,7 @@ mountOptions:
   - rsize=1048576
   - wsize=1048576
   - noatime
-  - nconnect=4
+  - nconnect=16
 ---
 # =============================================================================
 # Static PVs for existing NFS directories (read-only)
@@ -67,7 +67,7 @@ spec:
     - rsize=1048576
     - wsize=1048576
     - noatime
-    - nconnect=4
+    - nconnect=16
     - ro
   csi:
     driver: nfs.csi.k8s.io

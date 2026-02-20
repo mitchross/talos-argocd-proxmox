@@ -19,8 +19,10 @@ configs:
     url: "https://argocd.vanillax.me"
     kustomize.buildOptions: "--enable-helm"
     # Performance: add jitter to prevent all 60+ apps reconciling simultaneously
-    timeout.reconciliation: "180s"
-    timeout.reconciliation.jitter: "60s"
+    timeout.reconciliation: "60s"
+    timeout.reconciliation.jitter: "30s"
+    # Force cache invalidation periodically so manual Sync actually re-fetches from git
+    timeout.hard.reconciliation: "60s"
     # Ignore Gateway API HTTPRoute parentRefs normalization
     resource.customizations.ignoreDifferences.gateway.networking.k8s.io_HTTPRoute: |
       jqPathExpressions:
