@@ -79,7 +79,7 @@ and more natural "filmic" look than FLUX. Excellent bilingual text rendering (EN
 
 | Property | Value |
 |----------|-------|
-| Model | `z-image-turbo_fp8_scaled_e4m3fn_KJ.safetensors` (~6.2GB FP8) |
+| Model | `z_image_turbo_bf16.safetensors` (~12GB BF16, auto-cast to FP8 at inference) |
 | Text encoders | `clip_l.safetensors` + `t5xxl_fp8_e4m3fn.safetensors` (separate) |
 | VAE | `ae.safetensors` (FLUX VAE) |
 | VRAM | ~12-16GB (model + encoders + VAE swap in/out) |
@@ -98,9 +98,8 @@ pose manipulation, portrait consistency, and multi-person group photo fusion. Ap
 
 | Property | Value |
 |----------|-------|
-| Model | `Qwen-Image-Edit-2511-UD-Q4_K_XL.gguf` (~10GB) |
-| Lightning LoRA | Reduces 50 steps to 4 steps (12x speedup) |
-| VRAM | ~10GB with GGUF Q4 |
+| Model | `qwen_image_edit_2511_bf16.safetensors` (~39GB BF16) or `qwen_image_2512_fp8_e4m3fn.safetensors` (~20GB FP8) |
+| VRAM | ~20-39GB depending on variant |
 
 ### Image-to-Text (Reverse Prompt)
 
@@ -125,14 +124,14 @@ Each generation uses TWO expert models that run at different noise levels:
 - **High noise expert** -- Handles early denoising (layout, structure, composition)
 - **Low noise expert** -- Handles late denoising (fine detail, textures, sharpness)
 
-Both GGUF files are required for proper generation.
+Both expert files are required for proper generation.
 
 ### Text-to-Video (T2V)
 
 | Property | Value |
 |----------|-------|
-| High noise model | `wan2.2_t2v_high_noise_14B_Q4_K_M.gguf` (~9.65GB) |
-| Low noise model | `wan2.2_t2v_low_noise_14B_Q4_K_M.gguf` (~9.65GB) |
+| High noise model | `wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors` (~14GB) |
+| Low noise model | `wan2.2_t2v_low_noise_14B_fp8_scaled.safetensors` (~14GB) |
 | Text encoder | `umt5_xxl_fp8_e4m3fn_scaled.safetensors` (~6.7GB) |
 | VAE | `wan_2.1_vae.safetensors` (~254MB) |
 | Resolution | 832x480 (recommended for 24GB VRAM) |
@@ -148,8 +147,8 @@ Same as T2V but takes a reference image as the first frame and animates it.
 
 | Property | Value |
 |----------|-------|
-| High noise model | `wan2.2_i2v_high_noise_14B_Q4_K_M.gguf` (~9.65GB) |
-| Low noise model | `wan2.2_i2v_low_noise_14B_Q4_K_M.gguf` (~9.65GB) |
+| High noise model | `wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors` (~14GB) |
+| Low noise model | `wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors` (~14GB) |
 | CLIP Vision | `clip_vision_h.safetensors` (~1.3GB, I2V only) |
 | + same text encoder & VAE as T2V | |
 
@@ -171,7 +170,7 @@ Same as T2V but takes a reference image as the first frame and animates it.
 
 | Extension | Purpose | Source |
 |-----------|---------|--------|
-| **ComfyUI-Gallery** | Real-time output gallery with filtering and search | [JEONG-JIWOO/ComfyUI-Gallery](https://github.com/JEONG-JIWOO/ComfyUI-Gallery) |
+| **ComfyUI-Gallery** | Real-time output gallery with filtering and search | [PanicTitan/ComfyUI-Gallery](https://github.com/PanicTitan/ComfyUI-Gallery) |
 | **ComfyUI-Prompt-Manager** | Prompt templates, ratings, reuse, analytics | [FranckyB/ComfyUI-Prompt-Manager](https://github.com/FranckyB/ComfyUI-Prompt-Manager) |
 | **ComfyUI-WanVideoWrapper** | Wan 2.2 MoE video workflows with GGUF support | [kijai/ComfyUI-WanVideoWrapper](https://github.com/kijai/ComfyUI-WanVideoWrapper) |
 
@@ -180,7 +179,8 @@ All installed automatically via init containers on pod startup. The megapak imag
 
 ### Downloading Models
 
-A one-time Kubernetes Job downloads all required models (~70GB total) from HuggingFace:
+Main diffusion models (Z-Image-Turbo, Wan 2.2, Qwen-Image-Edit) are pre-loaded on the NFS share.
+A one-time Kubernetes Job downloads auxiliary files (text encoders, VAEs, CLIP vision) if missing (~15GB):
 
 ```bash
 kubectl apply -f my-apps/ai/comfyui/download-models-job.yaml
@@ -192,25 +192,13 @@ kubectl logs -f -n comfyui job/comfyui-download-models
 kubectl exec -n comfyui deploy/comfyui -- ls -lh /root/ComfyUI/models/diffusion_models/
 ```
 
-The job downloads:
+The job downloads (skips existing):
 
-**Image models:**
-- `z-image-turbo_fp8_scaled_e4m3fn_KJ.safetensors` -- Z-Image-Turbo FP8 scaled (~6.2GB)
-- `Qwen-Image-Edit-2511-UD-Q4_K_XL.gguf` -- Qwen-Image-Edit GGUF (~10GB)
-- `Qwen-Image-Edit-2511-Lightning.safetensors` -- Lightning LoRA (4-step)
-
-**Video models:**
-- `wan2.2_t2v_high_noise_14B_Q4_K_M.gguf` -- Wan 2.2 T2V high noise (~9.65GB)
-- `wan2.2_t2v_low_noise_14B_Q4_K_M.gguf` -- Wan 2.2 T2V low noise (~9.65GB)
-- `wan2.2_i2v_high_noise_14B_Q4_K_M.gguf` -- Wan 2.2 I2V high noise (~9.65GB)
-- `wan2.2_i2v_low_noise_14B_Q4_K_M.gguf` -- Wan 2.2 I2V low noise (~9.65GB)
-
-**Shared encoders (used by image editing, video, and non-AIO workflows):**
-- `clip_l.safetensors` -- CLIP-L text encoder (~400MB)
-- `t5xxl_fp8_e4m3fn.safetensors` -- T5-XXL FP8 text encoder (~5GB)
-- `umt5_xxl_fp8_e4m3fn_scaled.safetensors` -- UMT5-XXL FP8 for Wan video (~6.7GB)
-- `ae.safetensors` -- FLUX VAE for Z-Image-Turbo split workflows (~300MB)
-- `wan_2.1_vae.safetensors` -- Wan video VAE (~254MB)
+- `clip_l.safetensors` -- CLIP-L text encoder for Z-Image-Turbo (~400MB)
+- `t5xxl_fp8_e4m3fn.safetensors` -- T5-XXL FP8 text encoder for Z-Image-Turbo (~5GB)
+- `ae.safetensors` -- FLUX VAE for Z-Image-Turbo (~300MB)
+- `umt5_xxl_fp8_e4m3fn_scaled.safetensors` -- UMT5-XXL FP8 for Wan 2.2 video (~6.7GB)
+- `wan_2.1_vae.safetensors` -- Wan 2.2 video VAE (~254MB)
 - `clip_vision_h.safetensors` -- CLIP Vision H for I2V (~1.3GB)
 
 ### Using Pre-made Workflows
@@ -317,5 +305,5 @@ interactive use but won't work for concurrent generation.
 
 - **Open WebUI cannot display video** -- video workflows must be run directly in ComfyUI
 - Wan 2.2 video clips are ~5 seconds per generation at 832x480 on 24GB VRAM
-- Higher resolutions need more VRAM or GGUF quantization tradeoffs
-- Two expert GGUF files (~19.3GB pair) leave limited headroom for text encoder in VRAM -- `force_offload: true` helps
+- Higher resolutions need more VRAM -- fp8_scaled models are ~14GB each
+- Two expert files (~28GB pair) exceed single GPU VRAM -- `force_offload: true` swaps between experts

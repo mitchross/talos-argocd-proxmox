@@ -5,7 +5,7 @@ metadata:
   namespace: comfyui
 spec:
   ttlSecondsAfterFinished: 86400  # Auto-cleanup after 24h
-  activeDeadlineSeconds: 7200     # 2 hour timeout for ~70GB of downloads
+  activeDeadlineSeconds: 3600     # 1 hour timeout for auxiliary files (~15GB)
   backoffLimit: 3
   template:
     metadata:
@@ -54,39 +54,13 @@ spec:
               print(f'  DONE ({size_gb:.1f}GB): {dest_name}')
 
           # ==========================================================
-          # IMAGE: Z-Image-Turbo (text-to-image)
-          # S3-DiT architecture, #1 open-source image model
-          # FP8 scaled by Kijai for ComfyUI (~6.16GB transformer)
-          # Needs separate text encoders (CLIP-L + T5-XXL) and VAE (ae.safetensors)
+          # NOTE: Main diffusion models (Z-Image-Turbo, Wan 2.2 T2V/I2V,
+          # Qwen-Image-Edit) are already on NFS. This job only downloads
+          # auxiliary files (text encoders, VAEs, CLIP vision) if missing.
           # ==========================================================
-          print('\n=== Z-Image-Turbo (text-to-image, ~6.2GB) ===')
-          download('Kijai/Z-Image_comfy_fp8_scaled',
-                   'z-image-turbo_fp8_scaled_e4m3fn_KJ.safetensors',
-                   f'{BASE}/diffusion_models')
 
-          # FLUX VAE (shared with Z-Image-Turbo)
-          download('black-forest-labs/FLUX.1-dev',
-                   'ae.safetensors',
-                   f'{BASE}/vae')
-
-          # ==========================================================
-          # IMAGE: Qwen-Image-Edit-2511 (instruction-based editing)
-          # Style transfer, object removal, text editing in images
-          # ==========================================================
-          print('\n=== Qwen-Image-Edit-2511 (image editing, ~10GB) ===')
-          download('unsloth/Qwen-Image-Edit-2511-GGUF',
-                   'Qwen-Image-Edit-2511-UD-Q4_K_XL.gguf',
-                   f'{BASE}/diffusion_models')
-
-          # Lightning LoRA: 50 steps → 4 steps (12x speedup)
-          download('lightx2v/Qwen-Image-Edit-2511-Lightning',
-                   'Qwen-Image-Edit-2511-Lightning.safetensors',
-                   f'{BASE}/loras')
-
-          # ==========================================================
-          # SHARED: Text encoders for image models
-          # ==========================================================
-          print('\n=== Shared text encoders (image) ===')
+          # FLUX text encoders (for Z-Image-Turbo)
+          print('\n=== FLUX text encoders (for Z-Image-Turbo) ===')
           download('comfyanonymous/flux_text_encoders',
                    'clip_l.safetensors',
                    f'{BASE}/text_encoders')
@@ -95,38 +69,13 @@ spec:
                    't5xxl_fp8_e4m3fn.safetensors',
                    f'{BASE}/text_encoders')
 
-          # ==========================================================
-          # VIDEO: Wan 2.2 T2V (text-to-video)
-          # MoE architecture: 27B total / 14B active per step
-          # Two experts: high noise (structure) + low noise (detail)
-          # Q4_K_M GGUF = ~9.65GB per expert, ~19.3GB pair
-          # ==========================================================
-          print('\n=== Wan 2.2 T2V 14B (text-to-video, ~19.3GB) ===')
-          download('bullerwins/Wan2.2-T2V-A14B-GGUF',
-                   'wan2.2_t2v_high_noise_14B_Q4_K_M.gguf',
-                   f'{BASE}/diffusion_models')
+          # FLUX VAE (for Z-Image-Turbo)
+          download('black-forest-labs/FLUX.1-dev',
+                   'ae.safetensors',
+                   f'{BASE}/vae')
 
-          download('bullerwins/Wan2.2-T2V-A14B-GGUF',
-                   'wan2.2_t2v_low_noise_14B_Q4_K_M.gguf',
-                   f'{BASE}/diffusion_models')
-
-          # ==========================================================
-          # VIDEO: Wan 2.2 I2V (image-to-video)
-          # Same MoE architecture, takes reference image as input
-          # ==========================================================
-          print('\n=== Wan 2.2 I2V 14B (image-to-video, ~19.3GB) ===')
-          download('bullerwins/Wan2.2-I2V-A14B-GGUF',
-                   'wan2.2_i2v_high_noise_14B_Q4_K_M.gguf',
-                   f'{BASE}/diffusion_models')
-
-          download('bullerwins/Wan2.2-I2V-A14B-GGUF',
-                   'wan2.2_i2v_low_noise_14B_Q4_K_M.gguf',
-                   f'{BASE}/diffusion_models')
-
-          # ==========================================================
-          # VIDEO: Shared auxiliary files for Wan 2.2
-          # ==========================================================
-          print('\n=== Wan 2.2 shared files ===')
+          # Wan 2.2 auxiliary files
+          print('\n=== Wan 2.2 auxiliary files ===')
 
           # UMT5-XXL text encoder (FP8, ~6.7GB)
           download('Comfy-Org/Wan_2.1_ComfyUI_repackaged',
@@ -153,7 +102,7 @@ spec:
 
           print('\n=== All downloads complete ===')
           total_gb = 0
-          for subdir in ['diffusion_models', 'vae', 'text_encoders', 'loras', 'clip_vision']:
+          for subdir in ['diffusion_models', 'vae', 'text_encoders', 'clip_vision']:
               path = os.path.join(BASE, subdir)
               if os.path.exists(path):
                   print(f'\n{subdir}/')

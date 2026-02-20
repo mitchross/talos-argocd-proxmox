@@ -2,7 +2,7 @@
   "1": {
     "class_type": "WanVideoModelLoader",
     "inputs": {
-      "model": "wan2.2_t2v_high_noise_14B_Q4_K_M.gguf",
+      "model": "wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors",
       "base_precision": "bf16",
       "quantization": "disabled",
       "load_device": "main_device"
