@@ -1,0 +1,67 @@
+{
+  "1": {
+    "class_type": "WanVideoModelLoader",
+    "inputs": {
+      "model": "wan2.2_t2v_high_noise_14B_Q4_K_M.gguf",
+      "base_precision": "bf16",
+      "quantization": "disabled",
+      "load_device": "main_device"
+    }
+  },
+  "2": {
+    "class_type": "LoadWanVideoT5TextEncoder",
+    "inputs": {
+      "t5_model": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "precision": "fp8_e4m3fn"
+    }
+  },
+  "3": {
+    "class_type": "WanVideoVAELoader",
+    "inputs": {
+      "vae_name": "wan_2.1_vae.safetensors"
+    }
+  },
+  "4": {
+    "class_type": "WanVideoTextEncode",
+    "inputs": {
+      "positive_prompt": "a cat walking across a sunny meadow, cinematic, natural lighting, 4k",
+      "negative_prompt": "blurry, distorted, low quality",
+      "t5_encoder": ["2", 0]
+    }
+  },
+  "5": {
+    "class_type": "WanVideoSampler",
+    "inputs": {
+      "model": ["1", 0],
+      "image_embeds": ["4", 0],
+      "steps": 30,
+      "cfg": 6.0,
+      "shift": 5.0,
+      "seed": 0,
+      "force_offload": true,
+      "scheduler": "unipc",
+      "riflex_freq_index": 0,
+      "width": 832,
+      "height": 480,
+      "num_frames": 81
+    }
+  },
+  "6": {
+    "class_type": "WanVideoDecode",
+    "inputs": {
+      "vae": ["3", 0],
+      "samples": ["5", 0]
+    }
+  },
+  "7": {
+    "class_type": "SaveAnimatedWEBP",
+    "inputs": {
+      "filename_prefix": "wan22-t2v",
+      "fps": 16,
+      "lossless": false,
+      "quality": 85,
+      "method": "default",
+      "images": ["6", 0]
+    }
+  }
+}

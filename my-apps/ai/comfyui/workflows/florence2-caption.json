@@ -1,0 +1,35 @@
+{
+  "1": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "input.png"
+    }
+  },
+  "2": {
+    "class_type": "DownloadAndLoadFlorence2Model",
+    "inputs": {
+      "model": "microsoft/Florence-2-large",
+      "precision": "fp16",
+      "attention": "sdpa"
+    }
+  },
+  "3": {
+    "class_type": "Florence2Run",
+    "inputs": {
+      "image": ["1", 0],
+      "florence2_model": ["2", 0],
+      "text_input": "",
+      "task": "more_detailed_caption",
+      "fill_mask": true,
+      "keep_model_loaded": true,
+      "max_new_tokens": 1024,
+      "num_beams": 3
+    }
+  },
+  "4": {
+    "class_type": "ShowText|pysssss",
+    "inputs": {
+      "text": ["3", 0]
+    }
+  }
+}

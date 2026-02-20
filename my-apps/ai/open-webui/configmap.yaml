@@ -13,12 +13,12 @@ data:
   ENABLE_OLLAMA_API: "false"
 
   # Semantic Routing - Model Selection
-  # 4 models: general (Qwen3.5-397B), reasoning (Nemotron), coder (Qwen3-Coder-Next), vision (Qwen3-VL)
-  DEFAULT_MODELS: "general - qwen3.5"
+  # 4 models: experimental slow (Qwen3.5-397B), reasoning (Nemotron), coder (Qwen3-Coder-Next), vision (Qwen3-VL)
+  DEFAULT_MODELS: "experimental slow - qwen3.5"
   WHITELISTED_MODELS: ""
 
   # Vision Models - tell Open WebUI which models support images
-  VISION_MODELS: "vision - qwen3-vl-thinking,general - qwen3.5"
+  VISION_MODELS: "vision - qwen3-vl-thinking,experimental slow - qwen3.5"
 
   # Default parameters (Qwen3.5 thinking mode: temp=0.6, top_p=0.95, top_k=20)
   CONTEXT_WINDOW: "131072"

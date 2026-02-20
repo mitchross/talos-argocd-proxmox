@@ -66,16 +66,17 @@ data:
     jinja = 1
 
     # ==========================================================
-    # GENERAL (219GB) - Qwen3.5-397B-A17B
+    # EXPERIMENTAL SLOW (219GB) - Qwen3.5-397B-A17B
     # ==========================================================
-    [general - qwen3.5]
+    [experimental slow - qwen3.5]
     # 397B total / 17B active (MoE) - Unsloth Dynamic Q4_K_XL
+    # WARNING: ~5-15 tok/s due to cpu-moe offloading. Quality over speed.
     # Multimodal (vision + language), 256K context native
     # Thinking: temp=0.6, top_p=0.95, top_k=20, min_p=0
     # cpu-moe keeps attention on GPU, experts on CPU - MUCH faster than
     # unified memory swapping (targeted offload vs indiscriminate CUDA paging)
     model = /models/UD-Q4_K_XL/Qwen3.5-397B-A17B-UD-Q4_K_XL-00001-of-00006.gguf
-    alias = qwen3.5, qwen 3.5, general
+    alias = qwen3.5, qwen 3.5, general, experimental slow
     ctx-size = 131072
     n-gpu-layers = 99
     tensor-split = 1,1
