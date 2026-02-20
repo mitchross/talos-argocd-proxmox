@@ -44,6 +44,8 @@ spec:
           DEST="/root/ComfyUI/custom_nodes/ComfyUI-Prompt-Manager"
           if [ -d "$DEST/.git" ]; then
             cd "$DEST" && git pull --ff-only || true
+          elif [ -d "$DEST" ]; then
+            echo "Already installed (non-git), skipping"
           elif [ -d "/root/ComfyUI/custom_nodes" ]; then
             git clone https://github.com/FranckyB/ComfyUI-Prompt-Manager.git "$DEST"
           else
@@ -61,6 +63,8 @@ spec:
           DEST="/root/ComfyUI/custom_nodes/ComfyUI-WanVideoWrapper"
           if [ -d "$DEST/.git" ]; then
             cd "$DEST" && git pull --ff-only || true
+          elif [ -d "$DEST" ]; then
+            echo "Already installed (non-git), skipping"
           elif [ -d "/root/ComfyUI/custom_nodes" ]; then
             git clone https://github.com/kijai/ComfyUI-WanVideoWrapper.git "$DEST"
           else
@@ -78,8 +82,10 @@ spec:
           DEST="/root/ComfyUI/custom_nodes/ComfyUI-Gallery"
           if [ -d "$DEST/.git" ]; then
             cd "$DEST" && git pull --ff-only || true
+          elif [ -d "$DEST" ]; then
+            echo "Already installed (non-git), skipping"
           elif [ -d "/root/ComfyUI/custom_nodes" ]; then
-            git clone https://github.com/JEONG-JIWOO/ComfyUI-Gallery.git "$DEST"
+            git clone https://github.com/PanicTitan/ComfyUI-Gallery.git "$DEST"
           else
             echo "ComfyUI not yet initialized, skipping"
           fi
