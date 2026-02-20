@@ -1,25 +1,40 @@
 {
   "1": {
-    "class_type": "CheckpointLoaderSimple",
+    "class_type": "UNETLoader",
     "inputs": {
-      "ckpt_name": "z_image_turbo_aio_fp8.safetensors"
+      "unet_name": "z-image-turbo_fp8_scaled_e4m3fn_KJ.safetensors",
+      "weight_dtype": "fp8_e4m3fn"
     }
   },
   "2": {
-    "class_type": "CLIPTextEncode",
+    "class_type": "DualCLIPLoader",
     "inputs": {
-      "text": "a beautiful mountain landscape at golden hour, dramatic lighting, 4k photography",
-      "clip": ["1", 1]
+      "clip_name1": "clip_l.safetensors",
+      "clip_name2": "t5xxl_fp8_e4m3fn.safetensors",
+      "type": "flux"
     }
   },
   "3": {
-    "class_type": "CLIPTextEncode",
+    "class_type": "VAELoader",
     "inputs": {
-      "text": "blurry, low quality, distorted, watermark, text",
-      "clip": ["1", 1]
+      "vae_name": "ae.safetensors"
     }
   },
   "4": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "a beautiful mountain landscape at golden hour, dramatic lighting, 4k photography",
+      "clip": ["2", 0]
+    }
+  },
+  "5": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "blurry, low quality, distorted, watermark, text",
+      "clip": ["2", 0]
+    }
+  },
+  "6": {
     "class_type": "EmptyLatentImage",
     "inputs": {
       "width": 1024,
@@ -27,7 +42,7 @@
       "batch_size": 1
     }
   },
-  "5": {
+  "7": {
     "class_type": "KSampler",
     "inputs": {
       "seed": 0,
@@ -37,23 +52,23 @@
       "scheduler": "normal",
       "denoise": 1.0,
       "model": ["1", 0],
-      "positive": ["2", 0],
-      "negative": ["3", 0],
-      "latent_image": ["4", 0]
+      "positive": ["4", 0],
+      "negative": ["5", 0],
+      "latent_image": ["6", 0]
     }
   },
-  "6": {
+  "8": {
     "class_type": "VAEDecode",
     "inputs": {
-      "samples": ["5", 0],
-      "vae": ["1", 2]
+      "samples": ["7", 0],
+      "vae": ["3", 0]
     }
   },
-  "7": {
+  "9": {
     "class_type": "SaveImage",
     "inputs": {
       "filename_prefix": "z-turbo",
-      "images": ["6", 0]
+      "images": ["8", 0]
     }
   }
 }
