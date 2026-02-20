@@ -36,7 +36,13 @@
       "WebFetch(domain:blog.comfy.org)",
       "WebFetch(domain:deepwiki.com)",
       "WebFetch(domain:blog.ayjc.net)",
-      "WebFetch(domain:hub.docker.com)"
+      "WebFetch(domain:hub.docker.com)",
+      "WebFetch(domain:apatero.com)",
+      "WebFetch(domain:miroleon.github.io)",
+      "WebFetch(domain:noted.lol)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:openwebui.com)",
+      "WebFetch(domain:neuralnet.solutions)"
     ],
     "deny": [
       "Bash(git push:*)",

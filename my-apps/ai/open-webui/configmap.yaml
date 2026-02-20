@@ -99,11 +99,13 @@ data:
   # ---------------------------------------------------------------------------
   # Image Generation (ComfyUI backend)
   # ---------------------------------------------------------------------------
+  # Models: Z-Image-Turbo (text-to-image), Qwen-Image-Edit-2511 (image editing)
+  # Both run on ComfyUI, swapped in/out of VRAM as needed
   ENABLE_IMAGE_GENERATION: "True"
   IMAGE_GENERATION_ENGINE: "comfyui"
   COMFYUI_BASE_URL: "http://comfyui-service.comfyui.svc.cluster.local:8188"
   IMAGE_SIZE: "1024x1024"
-  IMAGE_STEPS: "4"                                 # FLUX.2 klein is step-distilled to 4 steps
+  IMAGE_STEPS: "9"                                 # Z-Image-Turbo optimal: 9 steps (8 DiT forwards)
   ENABLE_IMAGE_PROMPT_GENERATION: "True"           # Use LLM to enhance prompts before generation
 
   # ---------------------------------------------------------------------------
