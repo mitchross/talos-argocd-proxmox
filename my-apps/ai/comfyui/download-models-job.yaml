@@ -47,7 +47,6 @@ spec:
                   repo_id=repo_id,
                   filename=filename,
                   local_dir=TMP,
-                  local_dir_use_symlinks=False,
                   token=token
               )
               shutil.move(path, dest)
@@ -57,11 +56,12 @@ spec:
           # ==========================================================
           # IMAGE: Z-Image-Turbo (text-to-image)
           # S3-DiT architecture, #1 open-source image model
-          # AIO FP8 = all-in-one (model + text encoders + VAE)
+          # FP8 scaled by Kijai for ComfyUI (~6.16GB transformer)
+          # Needs separate text encoders (CLIP-L + T5-XXL) and VAE (ae.safetensors)
           # ==========================================================
-          print('\n=== Z-Image-Turbo (text-to-image, ~10GB) ===')
-          download('Comfy-Org/z_image_turbo',
-                   'z_image_turbo_aio_fp8.safetensors',
+          print('\n=== Z-Image-Turbo (text-to-image, ~6.2GB) ===')
+          download('Kijai/Z-Image_comfy_fp8_scaled',
+                   'z-image-turbo_fp8_scaled_e4m3fn_KJ.safetensors',
                    f'{BASE}/diffusion_models')
 
           # FLUX VAE (shared with Z-Image-Turbo)

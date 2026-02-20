@@ -79,8 +79,10 @@ and more natural "filmic" look than FLUX. Excellent bilingual text rendering (EN
 
 | Property | Value |
 |----------|-------|
-| Model | `z_image_turbo_aio_fp8.safetensors` (~10GB AIO FP8) |
-| VRAM | 12-16GB |
+| Model | `z-image-turbo_fp8_scaled_e4m3fn_KJ.safetensors` (~6.2GB FP8) |
+| Text encoders | `clip_l.safetensors` + `t5xxl_fp8_e4m3fn.safetensors` (separate) |
+| VAE | `ae.safetensors` (FLUX VAE) |
+| VRAM | ~12-16GB (model + encoders + VAE swap in/out) |
 | Speed | ~8-9 sec on RTX 3090 |
 | Steps | 9 (8 DiT forwards), `cfg = 1.0` |
 | Resolution | 512x512 to 2048x2048 |
@@ -193,7 +195,7 @@ kubectl exec -n comfyui deploy/comfyui -- ls -lh /root/ComfyUI/models/diffusion_
 The job downloads:
 
 **Image models:**
-- `z_image_turbo_aio_fp8.safetensors` -- Z-Image-Turbo AIO FP8 (~10GB)
+- `z-image-turbo_fp8_scaled_e4m3fn_KJ.safetensors` -- Z-Image-Turbo FP8 scaled (~6.2GB)
 - `Qwen-Image-Edit-2511-UD-Q4_K_XL.gguf` -- Qwen-Image-Edit GGUF (~10GB)
 - `Qwen-Image-Edit-2511-Lightning.safetensors` -- Lightning LoRA (4-step)
 
