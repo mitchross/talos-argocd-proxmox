@@ -1,0 +1,26 @@
+{
+  "1": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "input.png"
+    }
+  },
+  "2": {
+    "class_type": "WD14Tagger|pysssss",
+    "inputs": {
+      "image": ["1", 0],
+      "model": "wd-swinv2-tagger-v3",
+      "threshold": 0.35,
+      "character_threshold": 0.85,
+      "replace_underscore": true,
+      "trailing_comma": true,
+      "exclude_tags": ""
+    }
+  },
+  "3": {
+    "class_type": "ShowText|pysssss",
+    "inputs": {
+      "text": ["2", 0]
+    }
+  }
+}

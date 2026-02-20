@@ -52,6 +52,57 @@ spec:
         volumeMounts:
         - name: comfyui-storage
           mountPath: /root
+      - name: install-wan-video-wrapper
+        image: alpine/git
+        command:
+        - sh
+        - -c
+        - |
+          DEST="/root/ComfyUI/custom_nodes/ComfyUI-WanVideoWrapper"
+          if [ -d "$DEST/.git" ]; then
+            cd "$DEST" && git pull --ff-only || true
+          elif [ -d "/root/ComfyUI/custom_nodes" ]; then
+            git clone https://github.com/kijai/ComfyUI-WanVideoWrapper.git "$DEST"
+          else
+            echo "ComfyUI not yet initialized, skipping"
+          fi
+        volumeMounts:
+        - name: comfyui-storage
+          mountPath: /root
+      - name: install-comfyui-gallery
+        image: alpine/git
+        command:
+        - sh
+        - -c
+        - |
+          DEST="/root/ComfyUI/custom_nodes/ComfyUI-Gallery"
+          if [ -d "$DEST/.git" ]; then
+            cd "$DEST" && git pull --ff-only || true
+          elif [ -d "/root/ComfyUI/custom_nodes" ]; then
+            git clone https://github.com/JEONG-JIWOO/ComfyUI-Gallery.git "$DEST"
+          else
+            echo "ComfyUI not yet initialized, skipping"
+          fi
+        volumeMounts:
+        - name: comfyui-storage
+          mountPath: /root
+      - name: copy-example-workflows
+        image: alpine
+        command:
+        - sh
+        - -c
+        - |
+          DEST="/root/ComfyUI/user/default/workflows"
+          mkdir -p "$DEST"
+          # Copy Wan 2.2 example workflows from wrapper
+          SRC="/root/ComfyUI/custom_nodes/ComfyUI-WanVideoWrapper/example_workflows"
+          if [ -d "$SRC" ]; then
+            cp -f "$SRC"/*.json "$DEST/" 2>/dev/null && \
+              echo "Copied Wan 2.2 example workflows" || true
+          fi
+        volumeMounts:
+        - name: comfyui-storage
+          mountPath: /root
       containers:
       - name: comfyui
         # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu128-megapak-pt29

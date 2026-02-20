@@ -8,5 +8,8 @@ resources:
 - service.yaml
 - httproute.yaml
 - externalsecret.yaml
+# NOTE: download-models-job.yaml is intentionally excluded.
+# It's a one-time job applied manually: kubectl apply -f download-models-job.yaml
+# Including it would re-run on every ArgoCD sync.
 commonLabels:
   app: comfyui

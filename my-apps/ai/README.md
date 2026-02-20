@@ -9,15 +9,17 @@ Local AI infrastructure running on dual RTX 3090s (48GB VRAM) + 400GB system RAM
                        /        |         \
                       /         |          \
            llama-server    ComfyUI      SearXNG
-           (LLM inference) (image gen)  (web search)
+           (LLM inference) (image+video) (web search)
            port 8080       port 8188
            ┌──────────┐   ┌──────────────────────┐
            │ 4 models │   │ Z-Image-Turbo (t2i)  │
            │ via       │   │ Qwen-Image-Edit (i2i)│
-           │ presets   │   │ Florence-2 (i2t)     │
-           └──────────┘   │ WD14 Tagger (tags)   │
-           2x RTX 3090    └──────────────────────┘
-           (48GB VRAM)    1x RTX 3090 (24GB VRAM)
+           │ presets   │   │ Wan 2.2 T2V (video)  │
+           └──────────┘   │ Wan 2.2 I2V (video)  │
+           2x RTX 3090    │ Florence-2 (caption)  │
+           (48GB VRAM)    │ WD14 Tagger (tags)   │
+                          └──────────────────────┘
+                          1x RTX 3090 (24GB VRAM)
 ```
 
 ## LLM Models (llama-cpp)
@@ -30,7 +32,7 @@ Models load on-demand and swap in/out of VRAM.
 | `reasoning - nemotron3-nano` | Nemotron-3-Nano-30B-A3B Q4_K_XL | 3B (MoE) | ~15GB | 32K | Chat, background tasks (title gen, tagging) |
 | `coder - qwen3-coder-next` | Qwen3-Coder-Next-80B-A3B Q3_K_XL | 3B (MoE) | ~37GB | 256K | Coding, tool calling, Claude Code CLI |
 | `vision - qwen3-vl-thinking` | Qwen3-VL-30B-A3B-Thinking Q8_0 | 3B (MoE) | ~48GB | 32K | Image understanding, OCR |
-| `general - qwen3.5` | Qwen3.5-397B-A17B Q4_K_XL | 17B (MoE) | 48GB+RAM | 128K | General reasoning (slow, uses cpu-moe) |
+| `experimental slow - qwen3.5` | Qwen3.5-397B-A17B Q4_K_XL | 17B (MoE) | 48GB+RAM | 128K | General reasoning (~5-15 tok/s, uses cpu-moe) |
 
 ### Key llama-server Optimizations
 
@@ -41,7 +43,7 @@ Models load on-demand and swap in/out of VRAM.
 | `cpu-moe = 1` | Qwen3.5 only | Keeps attention on GPU, offloads MoE experts to CPU. Much faster than unified memory swapping |
 | `--no-mmap` | Global | Prevents page fault stalls during inference (we have 400GB RAM) |
 | `-b 4096 -ub 1024` | Global | Larger batch sizes for faster prompt processing |
-| `--parallel 1` | Global | Single-user — maximize VRAM for context, not concurrent slots |
+| `--parallel 1` | Global | Single-user -- maximize VRAM for context, not concurrent slots |
 | `CUDA_SCALE_LAUNCH_QUEUES=4x` | Env var | Larger CUDA command buffer for dual-GPU kernel launches |
 
 ### Using with Claude Code CLI
@@ -66,47 +68,117 @@ export OPENAI_API_KEY="any-value"
 
 Works with: OpenClaw, Aider, Continue.dev, OpenCode, or any OpenAI-compatible client.
 
-## Image Models (ComfyUI)
+## Image Generation (ComfyUI)
 
 ComfyUI runs on a dedicated RTX 3090. Models swap in/out of VRAM as workflows require.
 
-| Model | Type | VRAM | Speed (3090) | Use Case |
-|-------|------|------|-------------|----------|
-| **Z-Image-Turbo** (6B) | Text-to-image | 12-16GB BF16, 6GB GGUF | ~8-9 sec | Primary image generation |
-| **Qwen-Image-Edit-2511** (20B) | Image editing | ~10GB GGUF Q4 | ~30-60 sec w/ Lightning | Style transfer, object removal, text editing |
-| **Florence-2** (0.77B) | Image-to-text | ~6GB | ~2 sec | Captioning, OCR, object detection |
-| **WD14 Tagger** | Image-to-tags | ~2GB | ~1 sec | Tag extraction for prompt recreation |
-
-### Z-Image-Turbo
+### Text-to-Image: Z-Image-Turbo
 
 Alibaba's S3-DiT architecture. #1 ranked open-source image model (Artificial Analysis). Better fine detail
 and more natural "filmic" look than FLUX. Excellent bilingual text rendering (EN/CN). Apache 2.0.
 
-- **Inference**: 9 steps (8 DiT forwards), `guidance_scale = 0.0`
-- **Resolution**: 512x512 to 2048x2048
-- **ComfyUI**: Native official workflow support
+| Property | Value |
+|----------|-------|
+| Model | `z_image_turbo_aio_fp8.safetensors` (~10GB AIO FP8) |
+| VRAM | 12-16GB |
+| Speed | ~8-9 sec on RTX 3090 |
+| Steps | 9 (8 DiT forwards), `cfg = 1.0` |
+| Resolution | 512x512 to 2048x2048 |
 
-### Qwen-Image-Edit-2511
+**Workflow**: `workflows/z-image-turbo-t2i.json`
+
+Upload this workflow in **Open WebUI Admin > Settings > Images** for chat-based image generation.
+
+### Image Editing: Qwen-Image-Edit-2511
 
 Instruction-based image editing. Handles style transfer, object insertion/removal, text editing in images,
 pose manipulation, portrait consistency, and multi-person group photo fusion. Apache 2.0.
 
-- **Lightning LoRA**: Reduces 50 steps to 4 steps (12-25x speedup)
-- **ComfyUI**: Native workflow support
+| Property | Value |
+|----------|-------|
+| Model | `Qwen-Image-Edit-2511-UD-Q4_K_XL.gguf` (~10GB) |
+| Lightning LoRA | Reduces 50 steps to 4 steps (12x speedup) |
+| VRAM | ~10GB with GGUF Q4 |
 
 ### Image-to-Text (Reverse Prompt)
 
 Two options, both pre-installed in the megapak Docker image:
 
-1. **Florence-2** (`ComfyUI-Florence2` node) — Structured captions at 3 detail levels + object detection + OCR
-2. **WD14 Tagger** (`ComfyUI-WD14-Tagger` node) — Booru-style tags optimized for recreating images in diffusion models
+1. **Florence-2** (`ComfyUI-Florence2` node) -- Structured captions at 3 detail levels + object detection + OCR
+2. **WD14 Tagger** (`ComfyUI-WD14-Tagger` node) -- Booru-style tags optimized for recreating images in diffusion models
+
+**Workflows**: `workflows/florence2-caption.json`, `workflows/wd14-tagger.json`
 
 For deeper image analysis (visual Q&A, reasoning), use **Qwen3-VL** via Open WebUI chat
-(upload image → ask questions). This goes through llama-server, not ComfyUI.
+(upload image -> ask questions). This goes through llama-server, not ComfyUI.
+
+## Video Generation (ComfyUI)
+
+Video generation uses **Wan 2.2** -- #1 open-source video model (86.22% VBench, beats Sora).
+Apache 2.0, MoE architecture (27B total / 14B active per step).
+
+### How Wan 2.2 MoE Works
+
+Each generation uses TWO expert models that run at different noise levels:
+- **High noise expert** -- Handles early denoising (layout, structure, composition)
+- **Low noise expert** -- Handles late denoising (fine detail, textures, sharpness)
+
+Both GGUF files are required for proper generation.
+
+### Text-to-Video (T2V)
+
+| Property | Value |
+|----------|-------|
+| High noise model | `wan2.2_t2v_high_noise_14B_Q4_K_M.gguf` (~9.65GB) |
+| Low noise model | `wan2.2_t2v_low_noise_14B_Q4_K_M.gguf` (~9.65GB) |
+| Text encoder | `umt5_xxl_fp8_e4m3fn_scaled.safetensors` (~6.7GB) |
+| VAE | `wan_2.1_vae.safetensors` (~254MB) |
+| Resolution | 832x480 (recommended for 24GB VRAM) |
+| Frames | 81 (~5 seconds at 16fps) |
+| Steps | 30 |
+| Speed | ~3-6 min per clip on RTX 3090 |
+
+**Starter workflow**: `workflows/wan22-t2v.json` (loads high-noise expert only)
+
+### Image-to-Video (I2V)
+
+Same as T2V but takes a reference image as the first frame and animates it.
+
+| Property | Value |
+|----------|-------|
+| High noise model | `wan2.2_i2v_high_noise_14B_Q4_K_M.gguf` (~9.65GB) |
+| Low noise model | `wan2.2_i2v_low_noise_14B_Q4_K_M.gguf` (~9.65GB) |
+| CLIP Vision | `clip_vision_h.safetensors` (~1.3GB, I2V only) |
+| + same text encoder & VAE as T2V | |
+
+**Starter workflow**: `workflows/wan22-i2v.json` (loads high-noise expert only)
+
+### Video Workflow Notes
+
+- **Open WebUI cannot display video** -- use ComfyUI directly at `comfyui.vanillax.me`
+- Video workflows are powered by [kijai/ComfyUI-WanVideoWrapper](https://github.com/kijai/ComfyUI-WanVideoWrapper)
+- The wrapper handles MoE expert switching automatically during sampling
+- **Use the wrapper's example workflows** -- they are auto-copied to ComfyUI's workflow browser
+  on startup and correctly load BOTH expert models (high noise + low noise). The included
+  `workflows/wan22-*.json` files are starter templates that may need adjusting for full MoE support.
+- The wrapper's `example_workflows/` directory is the authoritative source for correct node wiring
+
+## ComfyUI Extensions
+
+### Gallery & Prompt Management
+
+| Extension | Purpose | Source |
+|-----------|---------|--------|
+| **ComfyUI-Gallery** | Real-time output gallery with filtering and search | [JEONG-JIWOO/ComfyUI-Gallery](https://github.com/JEONG-JIWOO/ComfyUI-Gallery) |
+| **ComfyUI-Prompt-Manager** | Prompt templates, ratings, reuse, analytics | [FranckyB/ComfyUI-Prompt-Manager](https://github.com/FranckyB/ComfyUI-Prompt-Manager) |
+| **ComfyUI-WanVideoWrapper** | Wan 2.2 MoE video workflows with GGUF support | [kijai/ComfyUI-WanVideoWrapper](https://github.com/kijai/ComfyUI-WanVideoWrapper) |
+
+All installed automatically via init containers on pod startup. The megapak image also includes
+40+ pre-installed nodes (ComfyUI-GGUF, Florence-2, WD14 Tagger, ComfyUI Manager, etc.).
 
 ### Downloading Models
 
-A one-time Kubernetes Job downloads all required models from HuggingFace into the ComfyUI NFS share:
+A one-time Kubernetes Job downloads all required models (~70GB total) from HuggingFace:
 
 ```bash
 kubectl apply -f my-apps/ai/comfyui/download-models-job.yaml
@@ -119,15 +191,44 @@ kubectl exec -n comfyui deploy/comfyui -- ls -lh /root/ComfyUI/models/diffusion_
 ```
 
 The job downloads:
-- `z_image_turbo_aio_fp8.safetensors` — Z-Image-Turbo (AIO FP8, ~10GB)
-- `ae.safetensors` — FLUX VAE (shared, ~300MB)
-- `Qwen-Image-Edit-2511-UD-Q4_K_XL.gguf` — Qwen-Image-Edit GGUF
-- `Qwen-Image-Edit-2511-Lightning.safetensors` — Lightning LoRA
-- `clip_l.safetensors` — CLIP-L text encoder
-- `t5xxl_fp8_e4m3fn.safetensors` — T5-XXL FP8 text encoder (~5GB)
 
-After downloading, export a ComfyUI workflow in API format and upload it in
-Open WebUI Admin > Settings > Images.
+**Image models:**
+- `z_image_turbo_aio_fp8.safetensors` -- Z-Image-Turbo AIO FP8 (~10GB)
+- `Qwen-Image-Edit-2511-UD-Q4_K_XL.gguf` -- Qwen-Image-Edit GGUF (~10GB)
+- `Qwen-Image-Edit-2511-Lightning.safetensors` -- Lightning LoRA (4-step)
+
+**Video models:**
+- `wan2.2_t2v_high_noise_14B_Q4_K_M.gguf` -- Wan 2.2 T2V high noise (~9.65GB)
+- `wan2.2_t2v_low_noise_14B_Q4_K_M.gguf` -- Wan 2.2 T2V low noise (~9.65GB)
+- `wan2.2_i2v_high_noise_14B_Q4_K_M.gguf` -- Wan 2.2 I2V high noise (~9.65GB)
+- `wan2.2_i2v_low_noise_14B_Q4_K_M.gguf` -- Wan 2.2 I2V low noise (~9.65GB)
+
+**Shared encoders (used by image editing, video, and non-AIO workflows):**
+- `clip_l.safetensors` -- CLIP-L text encoder (~400MB)
+- `t5xxl_fp8_e4m3fn.safetensors` -- T5-XXL FP8 text encoder (~5GB)
+- `umt5_xxl_fp8_e4m3fn_scaled.safetensors` -- UMT5-XXL FP8 for Wan video (~6.7GB)
+- `ae.safetensors` -- FLUX VAE for Z-Image-Turbo split workflows (~300MB)
+- `wan_2.1_vae.safetensors` -- Wan video VAE (~254MB)
+- `clip_vision_h.safetensors` -- CLIP Vision H for I2V (~1.3GB)
+
+### Using Pre-made Workflows
+
+**Text-to-Image (Open WebUI):**
+1. Go to Open WebUI Admin > Settings > Images
+2. Set engine to ComfyUI, URL to `http://comfyui-service.comfyui.svc.cluster.local:8188`
+3. Upload `workflows/z-image-turbo-t2i.json` as the workflow
+4. Users can now generate images in chat
+
+**Text-to-Video / Image-to-Video (ComfyUI direct):**
+1. Open `comfyui.vanillax.me`
+2. Load workflow from file: `workflows/wan22-t2v.json` or `workflows/wan22-i2v.json`
+3. Or browse the workflow menu -- example workflows from WanVideoWrapper are auto-copied on startup
+4. Edit the prompt and click Queue
+
+**Image-to-Text / Reverse Prompt (ComfyUI direct):**
+1. Load `workflows/florence2-caption.json` for detailed captions
+2. Load `workflows/wd14-tagger.json` for diffusion-optimized tags
+3. Drag-and-drop your image onto the LoadImage node
 
 ## Open WebUI Configuration
 
@@ -137,16 +238,16 @@ Open WebUI Admin > Settings > Images.
 |---------|-------|-----|
 | `K8S_FLAG` | `True` | Kubernetes-specific optimizations |
 | `THREAD_POOL_SIZE` | `500` | Default 40 causes freezes under load |
-| `CHAT_RESPONSE_STREAM_DELTA_CHUNK_SIZE` | `5` | Batch 5 tokens per SSE push — less overhead |
-| `MODELS_CACHE_TTL` | `300` | Cache model list 5 min — stops hammering llama-server |
+| `CHAT_RESPONSE_STREAM_DELTA_CHUNK_SIZE` | `5` | Batch 5 tokens per SSE push -- less overhead |
+| `MODELS_CACHE_TTL` | `300` | Cache model list 5 min -- stops hammering llama-server |
 | `ENABLE_BASE_MODELS_CACHE` | `True` | Faster startup, fewer API calls |
 | `AIOHTTP_CLIENT_TIMEOUT` | `1800` | 30 min to match HTTPRoute timeout |
-| `ENABLE_AUTOCOMPLETE_GENERATION` | `False` | Was firing on every keystroke — high load, low value |
+| `ENABLE_AUTOCOMPLETE_GENERATION` | `False` | Was firing on every keystroke -- high load, low value |
 
 ### Task Model
 
 Background tasks (title generation, chat tagging, follow-up suggestions) use
-`reasoning - nemotron3-nano` — fast 3B active MoE model. Previously this was set to
+`reasoning - nemotron3-nano` -- fast 3B active MoE model. Previously this was set to
 `coder - qwen3-coder-next` which was overkill for generating chat titles.
 
 ### RAG Tuning
@@ -174,7 +275,7 @@ IMAGE_STEPS: 9  (Z-Image-Turbo optimal)
 | llama-server | `llama-cpp-service.llama-cpp.svc:8080` | `llama.vanillax.me` |
 | Open WebUI | `open-webui-service.open-webui.svc:8080` | `open-webui.vanillax.me` |
 | ComfyUI | `comfyui-service.comfyui.svc:8188` | `comfyui.vanillax.me` |
-| SearXNG | `searxng.searxng.svc:8080` | — |
+| SearXNG | `searxng.searxng.svc:8080` | -- |
 
 All routes use `gateway-internal` (Cilium Gateway API). LLM and Open WebUI routes have 30-minute timeouts.
 
@@ -194,24 +295,25 @@ NFS mounts use `nconnect=16` over 10G for fast model loading.
 
 The `cache-type-k = q8_0` / `cache-type-v = q4_0` settings require the llama.cpp Docker image
 to be compiled with `-DGGML_CUDA_FA_ALL_QUANTS=ON`. If the pre-built `b8006` image doesn't
-have this, flash attention silently falls back to f16 KV cache. Test by checking VRAM usage —
+have this, flash attention silently falls back to f16 KV cache. Test by checking VRAM usage --
 if 262K context still uses ~40GB of KV cache, the flag is missing and you need a newer build.
 
-### Qwen3.5-397B is Slow
+### Experimental Slow Model (Qwen3.5-397B)
 
 Even with `cpu-moe = 1`, the 397B model will be significantly slower than the 3B-active models
 because the 17B active parameters still require substantial compute, and expert weights shuttle
 between CPU and GPU. Expect ~5-15 tok/s vs ~70 tok/s for the coder. It's the "quality over speed"
-option for complex reasoning.
+option for complex reasoning. Named "experimental slow" in the model list to set expectations.
 
 ### ComfyUI Model Swapping
 
-ComfyUI loads one model at a time into VRAM. Switching between Z-Image-Turbo and
-Qwen-Image-Edit requires unloading one and loading the other (~10-15 sec). This is fine
-for single-user interactive use but won't work for concurrent generation + editing.
+ComfyUI loads one model at a time into VRAM. Switching between image and video models
+requires unloading one and loading the other (~10-15 sec). This is fine for single-user
+interactive use but won't work for concurrent generation.
 
-### Qwen-Image-2.0 (Coming Soon)
+### Video Generation Limitations
 
-Alibaba announced Qwen-Image-2.0 (Feb 10, 2026) — a unified 7B model that does both
-generation AND editing. Currently API-only, weights expected Q1 2026. When released,
-it could replace both Z-Image-Turbo and Qwen-Image-Edit with a single smaller model.
+- **Open WebUI cannot display video** -- video workflows must be run directly in ComfyUI
+- Wan 2.2 video clips are ~5 seconds per generation at 832x480 on 24GB VRAM
+- Higher resolutions need more VRAM or GGUF quantization tradeoffs
+- Two expert GGUF files (~19.3GB pair) leave limited headroom for text encoder in VRAM -- `force_offload: true` helps

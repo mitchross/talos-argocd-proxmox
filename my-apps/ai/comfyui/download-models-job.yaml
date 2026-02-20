@@ -5,6 +5,7 @@ metadata:
   namespace: comfyui
 spec:
   ttlSecondsAfterFinished: 86400  # Auto-cleanup after 24h
+  activeDeadlineSeconds: 7200     # 2 hour timeout for ~70GB of downloads
   backoffLimit: 3
   template:
     metadata:
@@ -23,110 +24,147 @@ spec:
 
           pip install -q huggingface_hub
 
-          echo "=== Downloading Z-Image-Turbo (text-to-image) ==="
-          echo "Source: Comfy-Org/z_image_turbo (ComfyUI-optimized checkpoint)"
-
-          # Z-Image-Turbo diffusion model (~10GB AIO FP8 or ~20GB BF16)
-          python -c "
+          python3 << 'PYEOF'
+          import os, shutil
           from huggingface_hub import hf_hub_download
-          import os
 
           token = os.environ.get('HF_TOKEN', None)
+          BASE = '/models/ComfyUI/models'
+          TMP = '/models/.tmp_download'
 
-          # Z-Image-Turbo AIO FP8 (self-contained, ~10.3GB, fits easily on 3090)
-          print('Downloading Z-Image-Turbo AIO FP8...')
-          hf_hub_download(
-              repo_id='Comfy-Org/z_image_turbo',
-              filename='z_image_turbo_aio_fp8.safetensors',
-              local_dir='/models/ComfyUI/models/diffusion_models',
-              local_dir_use_symlinks=False,
-              token=token
-          )
-          print('Done: z_image_turbo_aio_fp8.safetensors')
+          def download(repo_id, filename, dest_dir, dest_name=None):
+              """Download a file from HuggingFace. Skips if already exists."""
+              if dest_name is None:
+                  dest_name = os.path.basename(filename)
+              dest = os.path.join(dest_dir, dest_name)
+              if os.path.exists(dest):
+                  size_mb = os.path.getsize(dest) / (1024*1024)
+                  print(f'  SKIP (exists, {size_mb:.0f}MB): {dest_name}')
+                  return
+              os.makedirs(dest_dir, exist_ok=True)
+              print(f'  Downloading {repo_id} / {filename} ...')
+              path = hf_hub_download(
+                  repo_id=repo_id,
+                  filename=filename,
+                  local_dir=TMP,
+                  local_dir_use_symlinks=False,
+                  token=token
+              )
+              shutil.move(path, dest)
+              size_gb = os.path.getsize(dest) / (1024**3)
+              print(f'  DONE ({size_gb:.1f}GB): {dest_name}')
 
-          # FLUX VAE (shared, needed by Z-Image-Turbo)
-          print('Downloading FLUX VAE (ae.safetensors)...')
-          hf_hub_download(
-              repo_id='black-forest-labs/FLUX.1-dev',
-              filename='ae.safetensors',
-              local_dir='/models/ComfyUI/models/vae',
-              local_dir_use_symlinks=False,
-              token=token
-          )
-          print('Done: ae.safetensors')
-          "
+          # ==========================================================
+          # IMAGE: Z-Image-Turbo (text-to-image)
+          # S3-DiT architecture, #1 open-source image model
+          # AIO FP8 = all-in-one (model + text encoders + VAE)
+          # ==========================================================
+          print('\n=== Z-Image-Turbo (text-to-image, ~10GB) ===')
+          download('Comfy-Org/z_image_turbo',
+                   'z_image_turbo_aio_fp8.safetensors',
+                   f'{BASE}/diffusion_models')
 
-          echo ""
-          echo "=== Downloading Qwen-Image-Edit-2511 GGUF (image editing) ==="
-          echo "Source: unsloth/Qwen-Image-Edit-2511-GGUF"
+          # FLUX VAE (shared with Z-Image-Turbo)
+          download('black-forest-labs/FLUX.1-dev',
+                   'ae.safetensors',
+                   f'{BASE}/vae')
 
-          python -c "
-          from huggingface_hub import hf_hub_download
-          import os
+          # ==========================================================
+          # IMAGE: Qwen-Image-Edit-2511 (instruction-based editing)
+          # Style transfer, object removal, text editing in images
+          # ==========================================================
+          print('\n=== Qwen-Image-Edit-2511 (image editing, ~10GB) ===')
+          download('unsloth/Qwen-Image-Edit-2511-GGUF',
+                   'Qwen-Image-Edit-2511-UD-Q4_K_XL.gguf',
+                   f'{BASE}/diffusion_models')
 
-          token = os.environ.get('HF_TOKEN', None)
+          # Lightning LoRA: 50 steps → 4 steps (12x speedup)
+          download('lightx2v/Qwen-Image-Edit-2511-Lightning',
+                   'Qwen-Image-Edit-2511-Lightning.safetensors',
+                   f'{BASE}/loras')
 
-          # Qwen-Image-Edit-2511 GGUF FP8 (~10GB, best quality for 3090)
-          print('Downloading Qwen-Image-Edit-2511 GGUF...')
-          hf_hub_download(
-              repo_id='unsloth/Qwen-Image-Edit-2511-GGUF',
-              filename='Qwen-Image-Edit-2511-UD-Q4_K_XL.gguf',
-              local_dir='/models/ComfyUI/models/diffusion_models',
-              local_dir_use_symlinks=False,
-              token=token
-          )
-          print('Done: Qwen-Image-Edit-2511 GGUF')
+          # ==========================================================
+          # SHARED: Text encoders for image models
+          # ==========================================================
+          print('\n=== Shared text encoders (image) ===')
+          download('comfyanonymous/flux_text_encoders',
+                   'clip_l.safetensors',
+                   f'{BASE}/text_encoders')
 
-          # Qwen-Image-Edit Lightning LoRA (4-step distillation)
-          print('Downloading Qwen-Image-Edit Lightning LoRA...')
-          hf_hub_download(
-              repo_id='lightx2v/Qwen-Image-Edit-2511-Lightning',
-              filename='Qwen-Image-Edit-2511-Lightning.safetensors',
-              local_dir='/models/ComfyUI/models/loras',
-              local_dir_use_symlinks=False,
-              token=token
-          )
-          print('Done: Lightning LoRA')
-          "
+          download('comfyanonymous/flux_text_encoders',
+                   't5xxl_fp8_e4m3fn.safetensors',
+                   f'{BASE}/text_encoders')
 
-          echo ""
-          echo "=== Downloading CLIP text encoders ==="
+          # ==========================================================
+          # VIDEO: Wan 2.2 T2V (text-to-video)
+          # MoE architecture: 27B total / 14B active per step
+          # Two experts: high noise (structure) + low noise (detail)
+          # Q4_K_M GGUF = ~9.65GB per expert, ~19.3GB pair
+          # ==========================================================
+          print('\n=== Wan 2.2 T2V 14B (text-to-video, ~19.3GB) ===')
+          download('bullerwins/Wan2.2-T2V-A14B-GGUF',
+                   'wan2.2_t2v_high_noise_14B_Q4_K_M.gguf',
+                   f'{BASE}/diffusion_models')
 
-          python -c "
-          from huggingface_hub import hf_hub_download
-          import os
+          download('bullerwins/Wan2.2-T2V-A14B-GGUF',
+                   'wan2.2_t2v_low_noise_14B_Q4_K_M.gguf',
+                   f'{BASE}/diffusion_models')
 
-          token = os.environ.get('HF_TOKEN', None)
+          # ==========================================================
+          # VIDEO: Wan 2.2 I2V (image-to-video)
+          # Same MoE architecture, takes reference image as input
+          # ==========================================================
+          print('\n=== Wan 2.2 I2V 14B (image-to-video, ~19.3GB) ===')
+          download('bullerwins/Wan2.2-I2V-A14B-GGUF',
+                   'wan2.2_i2v_high_noise_14B_Q4_K_M.gguf',
+                   f'{BASE}/diffusion_models')
 
-          # CLIP-L (used by Z-Image-Turbo and FLUX workflows)
-          print('Downloading clip_l.safetensors...')
-          hf_hub_download(
-              repo_id='comfyanonymous/flux_text_encoders',
-              filename='clip_l.safetensors',
-              local_dir='/models/ComfyUI/models/text_encoders',
-              local_dir_use_symlinks=False,
-              token=token
-          )
-          print('Done: clip_l.safetensors')
+          download('bullerwins/Wan2.2-I2V-A14B-GGUF',
+                   'wan2.2_i2v_low_noise_14B_Q4_K_M.gguf',
+                   f'{BASE}/diffusion_models')
 
-          # T5-XXL FP8 (used by Z-Image and FLUX, ~5GB)
-          print('Downloading t5xxl_fp8_e4m3fn.safetensors...')
-          hf_hub_download(
-              repo_id='comfyanonymous/flux_text_encoders',
-              filename='t5xxl_fp8_e4m3fn.safetensors',
-              local_dir='/models/ComfyUI/models/text_encoders',
-              local_dir_use_symlinks=False,
-              token=token
-          )
-          print('Done: t5xxl_fp8_e4m3fn.safetensors')
-          "
+          # ==========================================================
+          # VIDEO: Shared auxiliary files for Wan 2.2
+          # ==========================================================
+          print('\n=== Wan 2.2 shared files ===')
 
-          echo ""
-          echo "=== All downloads complete ==="
-          ls -lhR /models/ComfyUI/models/diffusion_models/
-          ls -lhR /models/ComfyUI/models/vae/
-          ls -lhR /models/ComfyUI/models/text_encoders/
-          ls -lhR /models/ComfyUI/models/loras/
+          # UMT5-XXL text encoder (FP8, ~6.7GB)
+          download('Comfy-Org/Wan_2.1_ComfyUI_repackaged',
+                   'split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors',
+                   f'{BASE}/text_encoders',
+                   'umt5_xxl_fp8_e4m3fn_scaled.safetensors')
+
+          # Wan VAE (14B models use the 2.1 VAE, ~254MB)
+          download('Comfy-Org/Wan_2.2_ComfyUI_Repackaged',
+                   'split_files/vae/wan_2.1_vae.safetensors',
+                   f'{BASE}/vae',
+                   'wan_2.1_vae.safetensors')
+
+          # CLIP Vision H (required for I2V only, ~1.3GB)
+          download('Comfy-Org/Wan_2.1_ComfyUI_repackaged',
+                   'split_files/clip_vision/clip_vision_h.safetensors',
+                   f'{BASE}/clip_vision',
+                   'clip_vision_h.safetensors')
+
+          # ==========================================================
+          # Cleanup and summary
+          # ==========================================================
+          shutil.rmtree(TMP, ignore_errors=True)
+
+          print('\n=== All downloads complete ===')
+          total_gb = 0
+          for subdir in ['diffusion_models', 'vae', 'text_encoders', 'loras', 'clip_vision']:
+              path = os.path.join(BASE, subdir)
+              if os.path.exists(path):
+                  print(f'\n{subdir}/')
+                  for f in sorted(os.listdir(path)):
+                      fpath = os.path.join(path, f)
+                      if os.path.isfile(fpath):
+                          size_gb = os.path.getsize(fpath) / (1024**3)
+                          total_gb += size_gb
+                          print(f'  {f} ({size_gb:.1f}GB)')
+          print(f'\nTotal: {total_gb:.1f}GB')
+          PYEOF
 
         env:
         - name: HF_TOKEN
