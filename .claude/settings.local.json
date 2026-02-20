@@ -26,7 +26,8 @@
       "WebFetch(domain:api.github.com)",
       "Bash(find:*)",
       "Bash(grep:*)",
-      "Bash(test:*)"
+      "WebFetch(domain:9eaa7bfe.frigate.pages.dev)",
+      "WebFetch(domain:unsloth.ai)"
     ],
     "deny": [
       "Bash(git push:*)",

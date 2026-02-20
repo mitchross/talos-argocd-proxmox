@@ -471,10 +471,49 @@ spec:
 ### Alternative Storage Classes
 
 - `longhorn` - Distributed block storage (default)
-- `nfs-csi` - NFS mounts
+- `nfs-comfyui-10g` - NFS 10G for ComfyUI models
+- `nfs-llama-cpp-10g` - NFS 10G for LLM models
 - `smb-csi` - Windows shares
 - `local-path` - Node-local fast storage
 - `openebs-hostpath` - OpenEBS local storage
+
+### NFS Static PVs (CRITICAL: Use CSI, NOT legacy nfs:)
+
+When creating static PVs for existing NFS data, **always use CSI driver**, never legacy `nfs:` block. The legacy `nfs:` driver **ignores `mountOptions`** — so `nconnect`, `noatime`, etc. silently don't apply.
+
+```yaml
+# CORRECT - CSI driver (mountOptions work)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: app-nfs-pv
+spec:
+  capacity:
+    storage: 150Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=4.1
+    - nolock
+    - tcp
+    - nconnect=16
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: app-nfs-pv
+    volumeAttributes:
+      server: "192.168.10.133"
+      share: "/mnt/BigTank/k8s/app-name"
+
+# WRONG - legacy nfs: (mountOptions silently ignored!)
+# spec:
+#   nfs:
+#     server: 192.168.10.133
+#     path: /mnt/BigTank/k8s/app-name
+```
+
+**Reference**: `infrastructure/storage/csi-driver-nfs/storage-class.yaml` (immich static PV)
 
 ## Automated Backup & Restore with Kyverno
 
