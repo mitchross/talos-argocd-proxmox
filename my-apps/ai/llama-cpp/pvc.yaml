@@ -15,6 +15,9 @@ spec:
     - nfsvers=4.1
     - nolock
     - tcp
+    - noatime
+    - rsize=1048576
+    - wsize=1048576
     - nconnect=16
   csi:
     driver: nfs.csi.k8s.io
