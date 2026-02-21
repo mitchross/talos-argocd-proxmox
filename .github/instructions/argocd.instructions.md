@@ -76,7 +76,8 @@ Standard sync options for all applications:
 - `CreateNamespace=true`: Auto-create target namespaces
 - `ServerSideApply=true`: Use server-side apply for better conflict resolution
 - `RespectIgnoreDifferences=true`: Honor ignoreDifferences configurations
-- `ApplyOutOfSyncOnly=true`: Only apply resources that are out of sync
+- `Replace=false`: Use patch instead of full replace
+- **DO NOT use `ApplyOutOfSyncOnly=true`** — causes silent sync failures with SSA (configmaps not applied)
 
 ### Retry Strategy
 ```yaml
@@ -211,8 +212,12 @@ kubectl describe application <app-name> -n argocd
 ### Sync Policies
 - ✅ Use automated sync with prune and selfHeal
 - ✅ Set appropriate sync waves for dependencies
-- ✅ Use server-side apply for complex resources
+- ✅ Use server-side apply AND server-side diff together (both enabled globally)
+- ✅ Keep `RespectIgnoreDifferences=true` for PVC/HTTPRoute/ExternalSecret diffs
+- ❌ Don't use `ApplyOutOfSyncOnly=true` — causes silent sync failures with SSA
+- ❌ Don't use `IgnoreMissingTemplate=true` — masks real template errors
 - ❌ Don't disable automated sync without good reason
+- ❌ Don't use client-side diff with server-side apply (diff/apply mismatch)
 
 ### Resource Management
 - ✅ Use ignoreDifferences for known noisy fields

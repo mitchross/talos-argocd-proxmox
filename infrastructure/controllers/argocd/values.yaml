@@ -18,6 +18,10 @@ configs:
   cm:
     url: "https://argocd.vanillax.me"
     kustomize.buildOptions: "--enable-helm"
+    # Use server-side diff to match ServerSideApply - prevents false "in-sync" detection
+    # Without this, client-side diff + server-side apply disagree on changes, causing
+    # configmaps and other resources to silently not get applied
+    resource.server-side-diff: "true"
     # Performance: add jitter to prevent all 60+ apps reconciling simultaneously
     timeout.reconciliation: "60s"
     timeout.reconciliation.jitter: "30s"

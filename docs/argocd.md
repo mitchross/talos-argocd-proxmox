@@ -94,3 +94,76 @@ resource.customizations.health.argoproj.io_Application: |
 6.  **Completion**: The process continues until all waves are healthy.
 
 This ensures a deterministic, reliable boot sequence every time.
+
+## Server-Side Diff vs Client-Side Diff
+
+This cluster uses **Server-Side Diff** (`resource.server-side-diff: "true"` in `argocd-cm`) paired with **Server-Side Apply** (`ServerSideApply=true` in syncOptions). These must be aligned — using one without the other causes silent sync failures.
+
+### Client-Side Diff (legacy, DO NOT USE with SSA)
+
+ArgoCD downloads the live resource from the cluster, then compares it against the Git manifest **locally in the ArgoCD controller**. It's essentially doing `diff manifest.yaml live-resource.yaml` on its own.
+
+**Problem**: ArgoCD doesn't know what Kubernetes would actually do with the manifest. Kubernetes adds defaults, mutating webhooks modify fields, and SSA has field ownership rules. ArgoCD is guessing — and sometimes guesses wrong (thinks it's "in-sync" when it's not).
+
+### Server-Side Diff (modern, REQUIRED with SSA)
+
+ArgoCD sends the Git manifest to the Kubernetes API as a **dry-run server-side apply** and gets back what the result *would* look like. Then it compares *that* against the live resource.
+
+**Why it's better**: Kubernetes itself tells ArgoCD "here's what would change if you applied this" — accounting for defaults, field ownership, webhooks, everything. No guessing.
+
+### Why the Mismatch Breaks ConfigMaps
+
+Without Server-Side Diff, using Server-Side Apply + `ApplyOutOfSyncOnly`:
+
+```
+Git: configmap data = NEW content
+                ↓
+Client-side diff: "managed fields metadata looks the same..." → IN SYNC (wrong!)
+                ↓
+ApplyOutOfSyncOnly: "it's in-sync, skip it"
+                ↓
+Result: configmap never applied, ArgoCD says "Synced" ✓ (LIE)
+```
+
+With Server-Side Diff:
+
+```
+Git: configmap data = NEW content
+                ↓
+K8s API dry-run: "this would change .data.presets.ini" → OUT OF SYNC
+                ↓
+Sync: applies the configmap
+                ↓
+Result: configmap actually updated ✓
+```
+
+### Configuration
+
+Enabled globally in `infrastructure/controllers/argocd/values.yaml`:
+
+```yaml
+configs:
+  cm:
+    resource.server-side-diff: "true"
+```
+
+### Sync Options (CRITICAL — do not add ApplyOutOfSyncOnly)
+
+Standard sync options for all ApplicationSets:
+
+```yaml
+syncOptions:
+- CreateNamespace=true
+- ServerSideApply=true          # Server-side apply for better conflict resolution
+- RespectIgnoreDifferences=true # Honor ignoreDifferences for PVC, HTTPRoute, etc.
+- Replace=false                 # Use patch, not full replace
+```
+
+**DO NOT add these options:**
+- `ApplyOutOfSyncOnly=true` — Even with ServerSideDiff, has [known edge cases with key removal](https://github.com/argoproj/argo-cd/issues/24882). Not worth the risk for a homelab-scale cluster.
+- `IgnoreMissingTemplate=true` — Can mask real template errors in ApplicationSets.
+
+### References
+- [ArgoCD Diff Strategies](https://argo-cd.readthedocs.io/en/stable/user-guide/diff-strategies/)
+- [ArgoCD SSA ConfigMap sync failure (#22687)](https://github.com/argoproj/argo-cd/issues/22687)
+- [ArgoCD key removal not detected (#24882)](https://github.com/argoproj/argo-cd/issues/24882)

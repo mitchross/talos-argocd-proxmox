@@ -36,9 +36,7 @@ spec:
         - CreateNamespace=true
         - ServerSideApply=true
         - RespectIgnoreDifferences=true
-        - ApplyOutOfSyncOnly=true
         - Replace=false
-        - IgnoreMissingTemplate=true
         retry:
           limit: 5
           backoff:
