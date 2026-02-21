@@ -18,7 +18,7 @@ data:
   WHITELISTED_MODELS: ""
 
   # Vision Models - tell Open WebUI which models support images
-  VISION_MODELS: "vision - qwen3-vl-thinking,experimental slow - qwen3.5"
+  VISION_MODELS: "vision - qwen3-vl-32b,experimental slow - qwen3.5"
 
   # Default parameters (Qwen3-Coder-Next: temp=1.0, top_p=0.95, top_k=40)
   CONTEXT_WINDOW: "65536"
