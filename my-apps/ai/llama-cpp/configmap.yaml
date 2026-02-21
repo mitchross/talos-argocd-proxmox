@@ -6,6 +6,27 @@ metadata:
 data:
   presets.ini: |
     # ==========================================================
+    # CODING (48GB VRAM) - Qwen3-Coder-Next [DEFAULT]
+    # ==========================================================
+    [coder - qwen3-coder-next]
+    # Unsloth docs: temp=1.0, top_p=0.95, top_k=40, min_p=0.01
+    # Non-thinking mode for rapid code generation
+    # 80B total / 3B active (MoE) - Hybrid DeltaNet + Gated Attention
+    # KV cache quant is CRITICAL here - large ctx at f16 would blow VRAM
+    model = /models/Qwen3-Coder-Next-UD-Q3_K_XL.gguf
+    alias = coder, code, qwen3-coder, qwen3 coder next
+    ctx-size = 65536
+    n-gpu-layers = 99
+    tensor-split = 1,1
+    cache-type-k = q8_0
+    cache-type-v = q4_0
+    temp = 1.0
+    top-p = 0.95
+    top-k = 40
+    min-p = 0.01
+    jinja = 1
+
+    # ==========================================================
     # REASONING (24GB VRAM) - Nemotron-3-Nano
     # ==========================================================
     [reasoning - nemotron3-nano]
@@ -21,27 +42,6 @@ data:
     top-p = 1.0
     jinja = 1
     special = 1
-
-    # ==========================================================
-    # CODING (48GB VRAM) - Qwen3-Coder-Next
-    # ==========================================================
-    [coder - qwen3-coder-next]
-    # Unsloth docs: temp=1.0, top_p=0.95, top_k=40, min_p=0.01
-    # Non-thinking mode for rapid code generation, 256K context native
-    # 80B total / 3B active (MoE) - Hybrid DeltaNet + Gated Attention
-    # KV cache quant is CRITICAL here - 262K ctx at f16 would blow VRAM
-    model = /models/Qwen3-Coder-Next-UD-Q3_K_XL.gguf
-    alias = coder, code, qwen3-coder, qwen3 coder next
-    ctx-size = 262144
-    n-gpu-layers = 99
-    tensor-split = 1,1
-    cache-type-k = q8_0
-    cache-type-v = q4_0
-    temp = 1.0
-    top-p = 0.95
-    top-k = 40
-    min-p = 0.01
-    jinja = 1
 
     # ==========================================================
     # VISION (48GB VRAM) - Qwen3-VL-30B-A3B-Thinking
@@ -77,7 +77,7 @@ data:
     # unified memory swapping (targeted offload vs indiscriminate CUDA paging)
     model = /models/UD-Q4_K_XL/Qwen3.5-397B-A17B-UD-Q4_K_XL-00001-of-00006.gguf
     alias = qwen3.5, qwen 3.5, general, experimental slow
-    ctx-size = 131072
+    ctx-size = 32768
     n-gpu-layers = 99
     tensor-split = 1,1
     cache-type-k = q8_0
