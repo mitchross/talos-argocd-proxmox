@@ -12,7 +12,7 @@ data:
     # Unsloth docs: temp=1.0, top_p=0.95, top_k=40, min_p=0.01
     # Non-thinking mode for rapid code generation
     # 80B total / 3B active (MoE) - Hybrid DeltaNet + Gated Attention
-    # KV cache quant is CRITICAL here - large ctx at f16 would blow VRAM
+    # Primary use: Claude Code backend, OpenClaw coding agent
     model = /models/Qwen3-Coder-Next-UD-Q3_K_XL.gguf
     alias = coder, code, qwen3-coder, qwen3 coder next
     ctx-size = 65536
@@ -27,42 +27,24 @@ data:
     jinja = 1
 
     # ==========================================================
-    # REASONING (24GB VRAM) - Nemotron-3-Nano
+    # VISION (48GB VRAM) - Qwen3-VL-32B-Instruct [MULTIMODAL]
     # ==========================================================
-    [reasoning - nemotron3-nano]
-    # Unsloth docs: temp=1.0, top-p=1.0 for chat; temp=0.6, top-p=0.95 for tools
-    # NoPE architecture - no YaRN needed, supports up to 1M context
-    model = /models/Nemotron-3-Nano-30B-A3B-UD-Q4_K_XL.gguf
-    alias = reasoning, chat, nemotron, nemotron3 nano
-    ctx-size = 32768
-    n-gpu-layers = 99
-    cache-type-k = q8_0
-    cache-type-v = q4_0
-    temp = 1.0
-    top-p = 1.0
-    jinja = 1
-    special = 1
-
-    # ==========================================================
-    # VISION (48GB VRAM) - Qwen3-VL-30B-A3B-Thinking
-    # ==========================================================
-    [vision - qwen3-vl-thinking]
-    # HF discussion: temp=1.0, top_p=0.95, top_k=20, min_p=0.0, presence_penalty=1.5
-    # Thinking mode for detailed image analysis
-    # 30B total / 3B active (MoE), 256K context native
-    model = /models/Qwen3-VL-30B-A3B-Thinking-Q8_0.gguf
-    mmproj = /models/mmproj-F16.gguf
-    alias = vision, image, ocr, qwen3 vl
+    [vision - qwen3-vl-32b]
+    # Dense 32B - much stronger than old 30B-A3B MoE (3B active)
+    # Handles: screenshots, CLI output, setup diagnosis, image analysis
+    # Primary use: Open WebUI image chat, OpenClaw visual tasks
+    model = /models/Qwen3-VL-32B-Instruct-Q4_K_M.gguf
+    mmproj = /models/Qwen3-VL-32B-mmproj-BF16.gguf
+    alias = vision, image, ocr, qwen3 vl, multimodal
     ctx-size = 32768
     n-gpu-layers = 99
     tensor-split = 1,1
     cache-type-k = q8_0
     cache-type-v = q4_0
-    temp = 1.0
+    temp = 0.7
     top-p = 0.95
     top-k = 20
     min-p = 0.0
-    presence-penalty = 1.5
     jinja = 1
 
     # ==========================================================
@@ -71,8 +53,7 @@ data:
     [experimental slow - qwen3.5]
     # 397B total / 17B active (MoE) - Unsloth Dynamic Q4_K_XL
     # WARNING: ~5-15 tok/s due to cpu-moe offloading. Quality over speed.
-    # Multimodal (vision + language), 256K context native
-    # Thinking: temp=0.6, top_p=0.95, top_k=20, min_p=0
+    # Natively multimodal (vision + language), 256K context native
     # cpu-moe keeps attention on GPU, experts on CPU - MUCH faster than
     # unified memory swapping (targeted offload vs indiscriminate CUDA paging)
     model = /models/UD-Q4_K_XL/Qwen3.5-397B-A17B-UD-Q4_K_XL-00001-of-00006.gguf
