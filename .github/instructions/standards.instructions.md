@@ -33,7 +33,7 @@ Applications are categorized into `infrastructure`, `monitoring`, and `my-apps`,
   - `CreateNamespace=true`
   - `ServerSideApply=true`
   - `RespectIgnoreDifferences=true`
-  - `ApplyOutOfSyncOnly=true`
+  - `Replace=false`
 - Retry: exponential backoff, max 5 attempts, 3m cap
 
 ## ApplicationSet: `monitoring`
@@ -73,6 +73,18 @@ Applications are categorized into `infrastructure`, `monitoring`, and `my-apps`,
 - Helm values go into `values.yaml` in app folders
 - All apps must support `kustomize build` locally
 - Use `ignoreDifferences` for Helm-managed labels, CRDs, and known noisy fields
+
+# Server-Side Diff & Apply (CRITICAL)
+
+This cluster uses **Server-Side Diff** globally (`resource.server-side-diff: "true"` in `argocd-cm`) paired with **Server-Side Apply** (`ServerSideApply=true` in syncOptions). These MUST be aligned:
+
+- **Server-Side Apply** sends manifests to K8s API for patching with field ownership tracking
+- **Server-Side Diff** asks K8s API "what would change?" via dry-run SSA, then compares the result
+- Without Server-Side Diff, ArgoCD uses client-side diff which guesses — and can miss changes that SSA would detect (especially ConfigMap data), causing resources to silently not get applied
+
+**Forbidden sync options:**
+- `ApplyOutOfSyncOnly=true` — relies on diff accuracy; with SSA edge cases, resources can be skipped silently
+- `IgnoreMissingTemplate=true` — masks template rendering errors in ApplicationSets
 
 # Helm + Kustomize Integration
 
