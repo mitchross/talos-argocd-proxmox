@@ -15,12 +15,5 @@ machine:
     - name: nvidia_uvm
     - name: nvidia_drm
     - name: nvidia_modeset
-    - name: nfs
-      parameters:
-      - max_session_slots=180
-    - name: sunrpc
-      parameters:
-      - tcp_slot_table_entries=128
-      - tcp_max_slot_table_entries=65536
   sysctls:
     net.core.bpf_jit_harden: 1
