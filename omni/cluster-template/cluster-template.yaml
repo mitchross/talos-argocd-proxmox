@@ -43,6 +43,9 @@ patches:
         net.ipv4.tcp_mtu_probing: "1"
         sunrpc.tcp_slot_table_entries: "128"
         sunrpc.tcp_max_slot_table_entries: "65536"
+      udev:
+        rules:
+        - SUBSYSTEM=="bdi", ACTION=="add", ATTR{read_ahead_kb}="16384"
 ---
 kind: ControlPlane
 machineClass:
@@ -51,6 +54,7 @@ machineClass:
 systemExtensions:
 - siderolabs/iscsi-tools
 - siderolabs/nfs-utils
+- siderolabs/nfsrahead
 - siderolabs/qemu-guest-agent
 - siderolabs/util-linux-tools
 patches:
@@ -85,6 +89,7 @@ machineClass:
 systemExtensions:
 - siderolabs/iscsi-tools
 - siderolabs/nfs-utils
+- siderolabs/nfsrahead
 - siderolabs/qemu-guest-agent
 - siderolabs/util-linux-tools
 patches:
@@ -114,6 +119,7 @@ machineClass:
 systemExtensions:
 - siderolabs/iscsi-tools
 - siderolabs/nfs-utils
+- siderolabs/nfsrahead
 - siderolabs/qemu-guest-agent
 - siderolabs/util-linux-tools
 - siderolabs/nonfree-kmod-nvidia-production
