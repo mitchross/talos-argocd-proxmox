@@ -119,7 +119,6 @@ machineClass:
 systemExtensions:
 - siderolabs/iscsi-tools
 - siderolabs/nfs-utils
-- siderolabs/nfsrahead
 - siderolabs/qemu-guest-agent
 - siderolabs/util-linux-tools
 - siderolabs/nonfree-kmod-nvidia-production

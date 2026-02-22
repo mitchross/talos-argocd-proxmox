@@ -115,7 +115,49 @@ showmount -e 192.168.10.133
 ### Storage Performance Testing
 
 ```bash
-# Test 10G link to TrueNAS
-kubectl exec -n <ns> <pod> -- dd if=/dev/zero of=/mnt/nfs/test bs=1G count=1
-# Should see ~1GB/s+ throughput on 10G link
+# Test raw wire speed (should be ~9.4 Gbps)
+iperf3 -c 192.168.10.133
+
+# Test NFS throughput from inside a pod
+kubectl exec -n <ns> <pod> -- dd if=/mnt/nfs/testfile of=/dev/null bs=1M status=progress
+
+# Test NFS throughput from Proxmox host (bypasses VM layer)
+mount -t nfs -o nfsvers=4.1,nconnect=16,rsize=1048576,wsize=1048576 192.168.10.133:/mnt/BigTank/k8s/llama-cpp /mnt/nfstest
+dd if=/mnt/nfstest/testfile of=/dev/null bs=1M status=progress
 ```
+
+### NFS 10G Tuning
+
+The default Linux kernel `read_ahead_kb` of 128 KB limits NFS sequential reads to ~140 MB/s on any link speed. The cluster applies these fixes via Talos machine config:
+
+| Layer | Setting | Value |
+|-------|---------|-------|
+| **VFS readahead** | udev rule `ATTR{read_ahead_kb}` | 16384 (16MB) |
+| **NFS readahead** | `siderolabs/nfsrahead` extension | Installed on all nodes |
+| **RPC concurrency** | `sunrpc.tcp_slot_table_entries` | 128 (default was 2) |
+| **TCP congestion** | `net.ipv4.tcp_congestion_control` | bbr |
+| **TCP buffers** | `net.core.rmem_max` / `wmem_max` | 64MB |
+| **NIC ring buffers** | Proxmox + TrueNAS | 8192 (max) |
+| **NFS mount options** | Per-PV CSI mountOptions | `nconnect=16,rsize=1M,wsize=1M` |
+
+**Verified performance** (from TrueNAS ARC-cached 4GB file):
+
+| Layer | Speed |
+|-------|-------|
+| iperf3 (wire) | 9.4 Gb/s |
+| Proxmox host → NFS | 2.7 GB/s |
+| Talos VM → NFS (before tuning) | ~128 MB/s |
+
+**Debug commands**:
+```bash
+# Verify readahead is 16384 (not 128)
+kubectl exec -n <ns> <pod> -- cat /sys/class/bdi/0:*/read_ahead_kb
+
+# Verify sunrpc slots are 128 (not 2)
+kubectl exec -n <ns> <pod> -- cat /proc/sys/sunrpc/tcp_slot_table_entries
+
+# Full NFS mount stats (connections, slots, RTT)
+kubectl exec -n <ns> <pod> -- cat /proc/self/mountstats
+```
+
+See `scripts/debug-nfs-server.sh` (TrueNAS) and `scripts/debug-nfs-client.sh` (Proxmox) for comprehensive debugging.

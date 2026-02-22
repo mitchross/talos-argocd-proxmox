@@ -277,7 +277,7 @@ All routes use `gateway-internal` (Cilium Gateway API). LLM and Open WebUI route
 | ComfyUI | NFS (static PV, CSI) | 250Gi | `192.168.10.133:/mnt/BigTank/k8s/comfyui` |
 | Open WebUI | Longhorn | 5Gi | Dynamic PVC |
 
-NFS mounts use `nconnect=16` over 10G for fast model loading.
+NFS mounts use `nconnect=16` over 10G for fast model loading. Performance depends on Talos kernel tuning — `read_ahead_kb` must be 16384+ (set via udev rule in cluster template) and `sunrpc.tcp_slot_table_entries` must be 128+ (set via sysctl). Without these, NFS caps at ~140 MB/s regardless of link speed.
 
 ## Caveats
 
