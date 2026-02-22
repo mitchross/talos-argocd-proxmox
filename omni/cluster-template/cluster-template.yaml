@@ -58,15 +58,6 @@ patches:
         net.ipv4.tcp_mtu_probing: "1"
         sunrpc.tcp_slot_table_entries: "128"
         sunrpc.tcp_max_slot_table_entries: "65536"
-      kernel:
-        modules:
-        - name: nfs
-          parameters:
-          - max_session_slots=180
-        - name: sunrpc
-          parameters:
-          - tcp_slot_table_entries=128
-          - tcp_max_slot_table_entries=65536
 ---
 kind: ControlPlane
 machineClass:
