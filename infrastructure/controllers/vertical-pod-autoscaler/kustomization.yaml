@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: vertical-pod-autoscaler
+
+resources:
+  - namespace.yaml
+
+helmCharts:
+  - name: vpa
+    repo: https://charts.fairwinds.com/stable
+    version: 4.10.1
+    releaseName: vpa
+    valuesFile: values.yaml
+    includeCRDs: true

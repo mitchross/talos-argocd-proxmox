@@ -8,6 +8,7 @@ resources:
   # By including it here, the ArgoCD installation will immediately start managing
   # the rest of the applications in the repository.
   - root.yaml
+  - vpa.yaml
 helmCharts:
   - name: argo-cd
     repo: https://argoproj.github.io/argo-helm
