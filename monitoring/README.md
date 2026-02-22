@@ -34,7 +34,32 @@ graph TB
     end
 ```
 
-## 📦 Components
+## Kubernetes Metrics: Two Pipelines, One Source
+
+The cluster has **two independent metrics pipelines** that both read from the same source (kubelet `/metrics` endpoints on each node) but serve different consumers:
+
+```
+                        kubelet :10250/metrics
+                       /                       \
+            Prometheus scrapes              metrics-server polls
+                   ↓                               ↓
+          stores in time-series DB         holds latest snapshot in memory
+                   ↓                               ↓
+          Grafana, Freelens,               metrics.k8s.io API
+          Alertmanager, LogQL                      ↓
+                                           VPA, HPA, kubectl top
+```
+
+| | **Prometheus** | **metrics-server** |
+|---|---|---|
+| **What it stores** | Historical time-series (15 day retention) | Last ~30 seconds only, in-memory |
+| **API** | PromQL query API | `metrics.k8s.io` (Resource Metrics API) |
+| **Consumers** | Grafana, Freelens, Alertmanager | VPA, HPA, `kubectl top` |
+| **Installed via** | `monitoring/prometheus-stack/` (Wave 5) | `infrastructure/controllers/metrics-server/` (Wave 4) |
+
+**Why both?** Prometheus gives you rich historical data, dashboards, and alerting. But Kubernetes autoscalers (VPA, HPA) only speak the Resource Metrics API — they can't query Prometheus. Tools like Freelens are smart enough to fall back to Prometheus when metrics-server is absent, which is why you see CPU/memory numbers even without metrics-server installed.
+
+## Components
 
 ### 🎯 Core Monitoring (prometheus-stack/)
 - **Prometheus**: Metrics collection and storage

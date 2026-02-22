@@ -1,6 +1,0 @@
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
-  name: secret-name-test-name
-spec:
-  itemPath: "vaults/homelab-prod/items/SECRET_NAME_TEST"
