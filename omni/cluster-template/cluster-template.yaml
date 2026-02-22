@@ -5,7 +5,7 @@ name: talos-prod-cluster
 labels:
   cluster-id: "1"
 kubernetes:
-  version: v1.35.0
+  version: v1.35.1
 talos:
   version: v1.12.4
 patches:
