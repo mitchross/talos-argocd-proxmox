@@ -515,6 +515,45 @@ spec:
 
 **Reference**: `infrastructure/storage/csi-driver-nfs/storage-class.yaml` (immich static PV)
 
+### NFS 10G Performance Tuning (CRITICAL)
+
+The Linux kernel (5.4+) defaults NFS `read_ahead_kb` to **128 KB**, which limits sequential NFS reads to ~140 MB/s regardless of link speed. This is because the VFS readahead window only allows ~1 NFS READ (1MB rsize) in flight at a time.
+
+**Fix applied in Talos machine config** (`omni/cluster-template/cluster-template.yaml`):
+
+| Setting | Purpose | Where |
+|---------|---------|-------|
+| `udev rule: ATTR{read_ahead_kb}="16384"` | Sets NFS readahead to 16MB on mount | `machine.udev.rules` (cluster patch) |
+| `siderolabs/nfsrahead` extension | Kernel nfsrahead tool + udev rule | `systemExtensions` (all node types) |
+| `sunrpc.tcp_slot_table_entries: "128"` | Max outstanding RPCs per connection | `machine.sysctls` (cluster patch) |
+| `net.ipv4.tcp_congestion_control: bbr` | Better congestion algorithm for 10G | `machine.sysctls` (cluster patch) |
+| NIC ring buffers = 8192 | Max ring buffer on Proxmox + TrueNAS | Applied on both hosts (persisted) |
+
+**NFS mount options** (set per-PV via CSI `mountOptions`):
+- `nconnect=16` — 16 TCP connections per mount
+- `rsize=1048576` / `wsize=1048576` — 1MB per NFS READ/WRITE op
+- `nfsvers=4.1` — NFSv4.1 with session slots
+- `noatime` — skip access time updates
+
+**Debugging NFS performance**:
+```bash
+# Check readahead (should be 16384, NOT 128)
+kubectl exec -n <ns> <pod> -- cat /sys/class/bdi/0:*/read_ahead_kb
+
+# Check sunrpc slot table (should be 128, NOT 2)
+kubectl exec -n <ns> <pod> -- cat /proc/sys/sunrpc/tcp_slot_table_entries
+
+# Check mount options (verify nconnect=16, rsize=1048576)
+kubectl exec -n <ns> <pod> -- cat /proc/self/mountstats | grep -A3 "192.168.10.133"
+
+# Full NFS stats (connection distribution, slot usage, RTT)
+kubectl exec -n <ns> <pod> -- cat /proc/self/mountstats
+
+# Server-side debugging
+scripts/debug-nfs-server.sh   # Run on TrueNAS SSH
+scripts/debug-nfs-client.sh   # Run on Proxmox SSH
+```
+
 ## Automated Backup & Restore with Kyverno
 
 ### The Magic Label Pattern
