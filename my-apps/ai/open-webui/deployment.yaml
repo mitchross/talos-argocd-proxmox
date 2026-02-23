@@ -28,7 +28,7 @@ spec:
       containers:
       - name: open-webui
         # renovate: datasource=docker depName=ghcr.io/open-webui/open-webui
-        image: ghcr.io/open-webui/open-webui:cuda@sha256:268d2b1b1f66f2d3f9a4ac3e0f06e0f545e9d6aaf71027115861874120e7edde
+        image: ghcr.io/open-webui/open-webui:cuda@sha256:b5e6c753c8c43cdcb987910fbe257c31abef134d44bc84683775e6a1e4f3fafe
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
