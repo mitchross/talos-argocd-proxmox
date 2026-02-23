@@ -1,0 +1,75 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: vpa-auto-create
+  annotations:
+    policies.kyverno.io/title: Auto-create VPA for Deployments and StatefulSets
+    policies.kyverno.io/description: >-
+      Automatically generates a VerticalPodAutoscaler in Off mode for every
+      Deployment and StatefulSet. VPA recommendations can be read via
+      kubectl get vpa -A to right-size resource requests.
+spec:
+  mutateExistingOnPolicyUpdate: false
+  background: true
+  rules:
+    - name: generate-vpa-for-deployment
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+              operations:
+                - CREATE
+                - UPDATE
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kyverno
+                - vertical-pod-autoscaler
+      generate:
+        synchronize: true
+        apiVersion: autoscaling.k8s.io/v1
+        kind: VerticalPodAutoscaler
+        name: "{{request.object.metadata.name}}"
+        namespace: "{{request.object.metadata.namespace}}"
+        data:
+          spec:
+            targetRef:
+              apiVersion: apps/v1
+              kind: Deployment
+              name: "{{request.object.metadata.name}}"
+            updatePolicy:
+              updateMode: "Off"
+    - name: generate-vpa-for-statefulset
+      match:
+        any:
+          - resources:
+              kinds:
+                - StatefulSet
+              operations:
+                - CREATE
+                - UPDATE
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kyverno
+                - vertical-pod-autoscaler
+      generate:
+        synchronize: true
+        apiVersion: autoscaling.k8s.io/v1
+        kind: VerticalPodAutoscaler
+        name: "{{request.object.metadata.name}}"
+        namespace: "{{request.object.metadata.namespace}}"
+        data:
+          spec:
+            targetRef:
+              apiVersion: apps/v1
+              kind: StatefulSet
+              name: "{{request.object.metadata.name}}"
+            updatePolicy:
+              updateMode: "Off"
