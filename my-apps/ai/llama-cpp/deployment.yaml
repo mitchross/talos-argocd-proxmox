@@ -48,6 +48,8 @@ spec:
             - "-fa"
             - "on"        # Explicitly set to 'on' so --jinja is read correctly
             - "--jinja"
+            - "--fit"           # Auto-fit dense layers to available VRAM
+            - "on"
             - "--no-mmap"       # Prevent page fault stalls - we have 400GB RAM to spare
             - "-b"
             - "4096"            # Larger logical batch for faster prompt processing
@@ -67,7 +69,7 @@ spec:
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: "compute,utility"
             - name: GGML_CUDA_ENABLE_UNIFIED_MEMORY
-              value: "1" # Vital for Kimi-K2 1T model to bridge VRAM and 400GB RAM
+              value: "1" # Bridges VRAM and 400GB RAM for Qwen3.5-397B MoE expert offloading
             - name: GGML_CUDA_PEER_MAX_BATCH_SIZE
               value: "128"
             - name: CUDA_SCALE_LAUNCH_QUEUES
