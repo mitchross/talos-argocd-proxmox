@@ -10,5 +10,6 @@ helmCharts:
     repo: https://charts.fairwinds.com/stable
     version: 4.10.1
     releaseName: vpa
+    namespace: vertical-pod-autoscaler
     valuesFile: values.yaml
     includeCRDs: true
