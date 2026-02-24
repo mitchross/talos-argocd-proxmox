@@ -85,13 +85,17 @@ server:
       enabled: true
       additionalLabels:
         release: kube-prometheus-stack
+  # VPA-optimized resources (2026-02-24)
+  # VPA target: cpu 23m, memory 175Mi
+  # Previous: cpu 500m (20x over-provisioned), memory 512Mi
+  # Server is mostly idle (UI/API only), no heavy compute
   resources:
     requests:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 50m      # 2x VPA target for safety margin
+      memory: 256Mi # 1.5x VPA target
     limits:
-      cpu: 2000m
-      memory: 2Gi
+      cpu: 500m     # Reduced from 2000m (VPA upperBound: 270m)
+      memory: 1Gi   # Reduced from 2Gi (VPA upperBound: 1.35Gi)
 # ApplicationSet controller settings
 applicationSet:
   enabled: true
@@ -101,24 +105,32 @@ applicationSet:
       enabled: true
       additionalLabels:
         release: kube-prometheus-stack
+  # VPA-optimized resources (2026-02-24)
+  # VPA target: cpu 49m, memory 100Mi
+  # Previous: cpu 250m (5x over-provisioned), memory 256Mi
+  # ApplicationSet is lightweight (watches directories, creates apps)
   resources:
     requests:
-      cpu: 250m
-      memory: 256Mi
+      cpu: 100m  # 2x VPA target for safety margin
+      memory: 128Mi
     limits:
-      cpu: 1000m
-      memory: 1Gi
+      cpu: 500m  # Reduced from 1000m (VPA upperBound: 755m)
+      memory: 512Mi  # Reduced from 1Gi
 # High Availability setup
 ha:
   enabled: true
   redis:
+    # VPA-optimized resources (2026-02-24)
+    # VPA target: cpu 23m, memory 100Mi
+    # Previous: cpu 100m (4x over-provisioned), memory 128Mi
+    # Redis is used for HA state/caching, low utilization in this setup
     resources:
       requests:
-        cpu: 100m
-        memory: 128Mi
+        cpu: 50m   # 2x VPA target for safety margin
+        memory: 128Mi  # Keep at 128Mi (close to VPA target)
       limits:
-        cpu: 500m
-        memory: 512Mi
+        cpu: 500m  # Keep for burst capacity
+        memory: 512Mi  # Keep for cache growth
 # Argo CD controller settings
 controller:
   env:
@@ -138,13 +150,18 @@ controller:
       enabled: true
       additionalLabels:
         release: kube-prometheus-stack
+  # VPA-optimized resources (2026-02-24)
+  # VPA target: cpu 2048m, memory 1.25Gi
+  # Previous: cpu 1000m (UNDER-PROVISIONED), memory 1Gi
+  # Controller was below VPA lowerBound (1021m) = CPU throttling during reconciliation
+  # This is the main reconciliation loop for 60+ applications
   resources:
     requests:
-      cpu: 1000m
-      memory: 1Gi
+      cpu: 2000m    # Match VPA target (was 1000m, doubled)
+      memory: 1536Mi  # 1.5Gi (VPA target 1.25Gi + buffer)
     limits:
-      cpu: 4000m
-      memory: 4Gi
+      cpu: 4000m    # Keep at 4000m (allows burst during mass sync)
+      memory: 4Gi   # Keep at 4Gi (VPA upperBound: 11.2Gi during spikes)
 # Argo CD repo-server settings
 repoServer:
   replicas: 2
@@ -157,13 +174,18 @@ repoServer:
       enabled: true
       additionalLabels:
         release: kube-prometheus-stack
+  # VPA-optimized resources (2026-02-24)
+  # VPA target: cpu 2975m, memory 523Mi
+  # Previous: cpu 1000m (UNDER-PROVISIONED 3x), memory 1Gi (OVER-PROVISIONED 2x)
+  # Repo-server does heavy lifting: Helm template rendering, Kustomize builds
+  # CPU-bound (manifest generation) but low memory (template processing)
   resources:
     requests:
-      cpu: 1000m
-      memory: 1Gi
+      cpu: 3000m   # Match VPA target (was 1000m, tripled)
+      memory: 768Mi  # Reduced from 1Gi (VPA target only 523Mi)
     limits:
-      cpu: 4000m
-      memory: 4Gi
+      cpu: 4000m   # Keep at 4000m (VPA upperBound: 28+ cores during Prometheus chart)
+      memory: 4Gi  # Keep at 4Gi (VPA upperBound: 3.95Gi for large Helm charts)
 # Dex is disabled; external authentication (e.g. SSO) is used
 dex:
   enabled: false
