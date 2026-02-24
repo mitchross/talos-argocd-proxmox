@@ -31,6 +31,7 @@ nav:
   - Home: index.md
   - Architecture:
       - ArgoCD & GitOps: argocd.md
+      - VPA Resource Optimization: vpa-resource-optimization.md
       - Network Topology: network-topology.md
       - Network Security: network-policy.md
   - Backup & Restore:
