@@ -93,11 +93,6 @@ systemExtensions:
 - siderolabs/qemu-guest-agent
 - siderolabs/util-linux-tools
 patches:
-- name: worker-labels
-  inline:
-    machine:
-      nodeLabels:
-        node-role.kubernetes.io/worker: ""
 - name: longhorn-storage
   inline:
     machine:
