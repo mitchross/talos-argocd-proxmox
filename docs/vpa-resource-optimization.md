@@ -2,6 +2,60 @@
 
 How to use VPA, Goldilocks, and Kyverno to right-size Kubernetes resource requests based on actual workload behavior.
 
+## TL;DR — Just Tell Me What To Do
+
+**Everything is automatic.** VPA is already watching every workload in the cluster. You don't need to set anything up.
+
+### Step 1: Open the dashboard
+
+Go to **https://goldilocks.vanillax.me** in your browser (must be on LAN/VPN).
+
+### Step 2: Pick a namespace
+
+Click any namespace (e.g., `argocd`, `immich`, `home-assistant`). You'll see every workload with its current resource settings and what VPA recommends.
+
+### Step 3: Look for problems
+
+The dashboard shows color-coded recommendations. Look for:
+- **Current request way below "Target"** = pod is starved, increase it
+- **Current request way above "Target"** = wasting resources, decrease it
+- **Current request below "Lower Bound"** = pod is actively throttled, fix ASAP
+
+### Step 4: Apply changes
+
+Edit the app's `values.yaml` in Git, update the `resources:` block, push, ArgoCD applies it. Add a comment explaining why:
+
+```yaml
+# VPA-optimized (2026-02-24) — target was 2000m, previous 500m
+resources:
+  requests:
+    cpu: 2000m
+    memory: 1Gi
+```
+
+### Step 5: Wait and re-check
+
+VPA recommendations update continuously. Check back in a week to see if the new values are good. Don't change things daily.
+
+### Quick script to see all recommendations
+
+```bash
+# Full report with human-readable values and action guidance
+./scripts/vpa-report.sh
+
+# Filter to one namespace
+./scripts/vpa-report.sh argocd
+
+# Or raw kubectl one-liner
+kubectl get vpa -A -o custom-columns=\
+NS:.metadata.namespace,\
+NAME:.metadata.name,\
+CPU:.status.recommendation.containerRecommendations[0].target.cpu,\
+MEM:.status.recommendation.containerRecommendations[0].target.memory
+```
+
+---
+
 ## The Toolchain
 
 | Tool | What It Does | Location |
