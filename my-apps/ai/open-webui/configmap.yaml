@@ -77,9 +77,9 @@ data:
   ENABLE_TOOLS: "True"
   # MCP proxies for tools, multi-tools, and Kiwix knowledge base
   OPENAPI_API_ENDPOINTS: "mcpo-time:http://mcpo.open-webui.svc.cluster.local:8000:mcp-demo-key;mcpo-multi:http://mcpo-multi.open-webui.svc.cluster.local:8001:mcp-multi-key;mcpo-kiwix:http://mcpo-kiwix.open-webui.svc.cluster.local:8002:mcp-kiwix-key"
-  # Use fast nemotron for background tasks (title gen, tagging) - NOT the big coder model
-  TASK_MODEL: "reasoning - nemotron3-nano"
-  TASK_MODEL_EXTERNAL: "reasoning - nemotron3-nano"
+  # Use lightweight MoE for background tasks (title gen, tagging) - 3B active params
+  TASK_MODEL: "general - qwen3.5"
+  TASK_MODEL_EXTERNAL: "general - qwen3.5"
 
   # ---------------------------------------------------------------------------
   # Default System Prompt (Kiwix RAG)
