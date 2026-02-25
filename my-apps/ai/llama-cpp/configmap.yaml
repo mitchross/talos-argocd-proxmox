@@ -44,22 +44,22 @@ data:
     jinja = 1
 
     # ==========================================================
-    # EXPERIMENTAL SLOW (219GB) - Qwen3.5-397B-A17B
+    # GENERAL (30GB + CPU experts) - Qwen3.5-35B-A3B
     # ==========================================================
-    [experimental slow - qwen3.5]
-    # 397B total / 17B active (MoE) - Unsloth Dynamic Q4_K_XL
-    # WARNING: ~5-15 tok/s due to cpu-moe offloading. Quality over speed.
+    [general - qwen3.5]
+    # 35B total / 3B active (MoE) - Gated DeltaNet + Gated Attention
     # Natively multimodal (vision + language), 256K context native
-    # override-tensor keeps attention on GPU, experts on CPU - MUCH faster than
-    # unified memory swapping (targeted offload vs indiscriminate CUDA paging)
-    model = /models/UD-Q4_K_XL/Qwen3.5-397B-A17B-UD-Q4_K_XL-00001-of-00006.gguf
-    alias = qwen3.5, qwen 3.5, general, experimental slow
-    ctx-size = 32768
+    # Q6_K_XL for high quality; experts offloaded to CPU RAM, attention on GPU
+    # Recommended thinking params: temp=1.0, top_p=0.95, top_k=20, presence_penalty=1.5
+    model = /models/Qwen3.5-35B-A3B-UD-Q6_K_XL.gguf
+    alias = qwen3.5, qwen 3.5, general
+    ctx-size = 131072
     n-gpu-layers = 99
     tensor-split = 1,1
     override-tensor = exps=CPU
-    temp = 0.7
+    temp = 1.0
     top-p = 0.95
-    top-k = 40
+    top-k = 20
     min-p = 0.0
+    presence-penalty = 1.5
     jinja = 1
