@@ -52,11 +52,11 @@ machineClass:
   name: proxmox-control-plane
   size: 3
 systemExtensions:
-- siderolabs/iscsi-tools:v1.12.4 # renovate: datasource=docker depName=siderolabs/iscsi-tools
-- siderolabs/nfs-utils:v1.12.4 # renovate: datasource=docker depName=siderolabs/nfs-utils
-- siderolabs/nfsrahead:v1.12.4 # renovate: datasource=docker depName=siderolabs/nfsrahead
-- siderolabs/qemu-guest-agent:v1.12.4 # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
-- siderolabs/util-linux-tools:v1.12.4 # renovate: datasource=docker depName=siderolabs/util-linux-tools
+- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
+- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
+- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
+- siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
+- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 patches:
 - name: control-plane-performance
   inline:
@@ -87,11 +87,11 @@ machineClass:
   name: proxmox-worker
   size: 3
 systemExtensions:
-- siderolabs/iscsi-tools:v1.12.4 # renovate: datasource=docker depName=siderolabs/iscsi-tools
-- siderolabs/nfs-utils:v1.12.4 # renovate: datasource=docker depName=siderolabs/nfs-utils
-- siderolabs/nfsrahead:v1.12.4 # renovate: datasource=docker depName=siderolabs/nfsrahead
-- siderolabs/qemu-guest-agent:v1.12.4 # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
-- siderolabs/util-linux-tools:v1.12.4 # renovate: datasource=docker depName=siderolabs/util-linux-tools
+- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
+- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
+- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
+- siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
+- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 patches:
 - name: longhorn-storage
   inline:
@@ -112,13 +112,13 @@ machineClass:
   name: proxmox-gpu-worker
   size: 1
 systemExtensions:
-- siderolabs/iscsi-tools:v1.12.4 # renovate: datasource=docker depName=siderolabs/iscsi-tools
-- siderolabs/nfs-utils:v1.12.4 # renovate: datasource=docker depName=siderolabs/nfs-utils
-- siderolabs/nfsrahead:v1.12.4 # renovate: datasource=docker depName=siderolabs/nfsrahead
-- siderolabs/qemu-guest-agent:v1.12.4 # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
-- siderolabs/util-linux-tools:v1.12.4 # renovate: datasource=docker depName=siderolabs/util-linux-tools
-- siderolabs/nonfree-kmod-nvidia-production:570.211.01-v1.12.4 # renovate: datasource=docker depName=siderolabs/nonfree-kmod-nvidia-production
-- siderolabs/nvidia-container-toolkit-production:570.211.01-v1.18.2 # renovate: datasource=docker depName=siderolabs/nvidia-container-toolkit-production
+- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
+- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
+- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
+- siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
+- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
+- siderolabs/nonfree-kmod-nvidia-production # renovate: datasource=docker depName=siderolabs/nonfree-kmod-nvidia-production
+- siderolabs/nvidia-container-toolkit-production # renovate: datasource=docker depName=siderolabs/nvidia-container-toolkit-production
 patches:
 - name: gpu-worker-labels
   inline:
