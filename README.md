@@ -80,7 +80,7 @@ Omni provisions Talos clusters without a CNI. Install Cilium to get networking f
 
 ```bash
 cilium install \
-    --version 1.19.0 \
+    --version 1.19.1 \
     --set cluster.name=talos-prod-cluster \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
