@@ -117,8 +117,8 @@ systemExtensions:
 - siderolabs/nfsrahead:v1.12.4 # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/qemu-guest-agent:v1.12.4 # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
 - siderolabs/util-linux-tools:v1.12.4 # renovate: datasource=docker depName=siderolabs/util-linux-tools
-- siderolabs/nonfree-kmod-nvidia-production
-- siderolabs/nvidia-container-toolkit-production
+- siderolabs/nonfree-kmod-nvidia-production:570.211.01-v1.12.4 # renovate: datasource=docker depName=siderolabs/nonfree-kmod-nvidia-production
+- siderolabs/nvidia-container-toolkit-production:570.211.01-v1.18.2 # renovate: datasource=docker depName=siderolabs/nvidia-container-toolkit-production
 patches:
 - name: gpu-worker-labels
   inline:
