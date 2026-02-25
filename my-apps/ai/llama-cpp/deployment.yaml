@@ -51,6 +51,10 @@ spec:
             - "--fit"           # Auto-fit dense layers to available VRAM
             - "on"
             - "--no-mmap"       # Prevent page fault stalls - we have 400GB RAM to spare
+            - "--cache-type-k"
+            - "q8_0"            # Quantize KV cache ~50% savings vs f16, negligible quality loss
+            - "--cache-type-v"
+            - "q8_0"
             - "-b"
             - "4096"            # Larger logical batch for faster prompt processing
             - "-ub"
