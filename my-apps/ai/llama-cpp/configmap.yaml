@@ -49,14 +49,13 @@ data:
     [general - qwen3.5]
     # 35B total / 3B active (MoE) - Gated DeltaNet + Gated Attention
     # Natively multimodal (vision + language), 256K context native
-    # Q6_K_XL for high quality; experts offloaded to CPU RAM, attention on GPU
+    # Q6_K_XL (30GB) fits entirely in 48GB VRAM - no CPU offloading needed
     # Recommended thinking params: temp=1.0, top_p=0.95, top_k=20, presence_penalty=1.5
     model = /models/Qwen3.5-35B-A3B-UD-Q6_K_XL.gguf
     alias = qwen3.5, qwen 3.5, general
     ctx-size = 131072
     n-gpu-layers = 99
     tensor-split = 1,1
-    override-tensor = exps=CPU
     temp = 1.0
     top-p = 0.95
     top-k = 20
