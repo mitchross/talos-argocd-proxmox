@@ -17,6 +17,7 @@ spec:
       name: 'monitoring-{{path.basename}}'
       annotations:
         argocd.argoproj.io/manifest-generate-paths: '{{path}}'
+        argocd.argoproj.io/sync-wave: "5"
     spec:
       project: monitoring
       revisionHistoryLimit: 3
