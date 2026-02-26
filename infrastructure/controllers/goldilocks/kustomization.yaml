@@ -9,7 +9,7 @@ resources:
 helmCharts:
   - name: goldilocks
     repo: https://charts.fairwinds.com/stable
-    version: 10.2.0
+    version: 10.3.0
     releaseName: goldilocks
     namespace: goldilocks
     valuesFile: values.yaml
