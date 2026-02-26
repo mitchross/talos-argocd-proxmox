@@ -54,5 +54,5 @@ spec:
   conditions:
     all:
       - key: "{{ pvcBackupLabel }}"
-        operator: NotIn
+        operator: AnyNotIn
         value: ["hourly", "daily"]
