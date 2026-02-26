@@ -55,4 +55,4 @@ spec:
     all:
       - key: "{{ pvcBackupLabel }}"
         operator: NotIn
-        values: ["hourly", "daily"]
+        value: ["hourly", "daily"]
