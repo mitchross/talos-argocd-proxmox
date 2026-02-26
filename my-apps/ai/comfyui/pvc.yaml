@@ -24,7 +24,7 @@ spec:
     volumeHandle: comfyui-nfs-pv
     volumeAttributes:
       server: "192.168.10.133"
-      share: "/mnt/BigTank/k8s/comfyui"
+      share: "/mnt/ai-pool/comfyui"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

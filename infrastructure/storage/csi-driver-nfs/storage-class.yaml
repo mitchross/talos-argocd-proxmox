@@ -10,7 +10,7 @@ metadata:
 provisioner: nfs.csi.k8s.io
 parameters:
   server: 192.168.10.133
-  share: /mnt/BigTank/k8s/comfyui
+  share: /mnt/ai-pool/comfyui
 reclaimPolicy: Retain
 volumeBindingMode: Immediate
 mountOptions:
@@ -30,7 +30,7 @@ metadata:
 provisioner: nfs.csi.k8s.io
 parameters:
   server: 192.168.10.133
-  share: /mnt/BigTank/k8s/llama-cpp
+  share: /mnt/ai-pool/llama-cpp
 reclaimPolicy: Retain
 volumeBindingMode: Immediate
 mountOptions:
