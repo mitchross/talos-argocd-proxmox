@@ -17,6 +17,7 @@ spec:
       name: 'my-apps-{{path.basename}}'
       annotations:
         argocd.argoproj.io/manifest-generate-paths: '{{path}}'
+        argocd.argoproj.io/sync-wave: "6"
     spec:
       project: my-apps
       revisionHistoryLimit: 3
