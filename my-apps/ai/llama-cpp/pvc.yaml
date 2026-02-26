@@ -24,7 +24,7 @@ spec:
     volumeHandle: llama-cpp-nfs-pv
     volumeAttributes:
       server: "192.168.10.133"
-      share: "/mnt/BigTank/k8s/llama-cpp"
+      share: "/mnt/ai-pool/llama-cpp"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
