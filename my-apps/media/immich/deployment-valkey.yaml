@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: valkey
-        image: ghcr.io/valkey-io/valkey:9.0.2
+        image: ghcr.io/valkey-io/valkey:9.0.3
         resources:
           requests:
             cpu: 50m
