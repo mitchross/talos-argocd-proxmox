@@ -19,6 +19,10 @@ rules:
 - apiGroups: [ "volsync.backube" ]
   resources: [ "replicationsources", "replicationdestinations" ]
   verbs: [ "get", "list", "watch", "create", "update", "delete" ]
+# Required to generate VerticalPodAutoscaler
+- apiGroups: [ "autoscaling.k8s.io" ]
+  resources: [ "verticalpodautoscalers" ]
+  verbs: [ "get", "list", "watch", "create", "update", "delete" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -50,6 +54,10 @@ rules:
 - apiGroups: [ "" ]
   resources: [ "secrets" ]
   verbs: [ "get", "list" ]
+# Required for admission webhook to validate VPA generate policies
+- apiGroups: [ "autoscaling.k8s.io" ]
+  resources: [ "verticalpodautoscalers" ]
+  verbs: [ "get", "list", "watch", "create", "update", "delete" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
