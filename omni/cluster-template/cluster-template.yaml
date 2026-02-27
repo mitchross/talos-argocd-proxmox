@@ -45,7 +45,7 @@ patches:
         sunrpc.tcp_max_slot_table_entries: "65536"
       udev:
         rules:
-        - SUBSYSTEM=="bdi", ACTION=="add", ATTR{read_ahead_kb}="16384"
+        - SUBSYSTEM=="bdi", ACTION=="add", ATTR{read_ahead_kb}="131072"
 ---
 kind: ControlPlane
 machineClass:
