@@ -1,3 +1,13 @@
+# Hotfix images for v1.11.0 regression issues:
+# - instance-manager: proxy connection leak causing memory growth
+# - manager: deadlock between webhook server and CNI network readiness
+# See: https://github.com/longhorn/longhorn/releases/tag/v1.11.0
+image:
+  longhorn:
+    instanceManager:
+      tag: v1.11.0-hotfix-1
+    manager:
+      tag: v1.11.0-hotfix-1
 # It's recommended to manage all Longhorn settings via this file
 # to maintain a declarative GitOps workflow.
 # Settings applied manually via the UI will not be reflected here and can be
@@ -26,6 +36,8 @@ defaultSettings:
 # like ArgoCD to prevent sync failures.
 preUpgradeChecker:
   jobEnabled: false
+  # Disable upgrade version check (required for manager hotfix image)
+  upgradeVersionCheck: false
 persistence:
   # -- Specifies the default Longhorn StorageClass.
   defaultClass: true
