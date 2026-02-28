@@ -96,6 +96,7 @@ kubeconfig*
 
 # Misc
 config.xml
+!my-apps/development/posthog/config/clickhouse/config.xml
 *.pid
 /infrastructure/controllers/argocd/charts
 /node_modules
