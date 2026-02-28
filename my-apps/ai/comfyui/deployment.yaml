@@ -149,6 +149,11 @@ spec:
         - name: manager-config
           mountPath: /root/ComfyUI/user/__manager/config.ini
           subPath: config.ini
+        # Pre-start script for installing missing custom node dependencies
+        # Image entrypoint sources /root/user-scripts/pre-start.sh (NOT /root/pre-start.sh)
+        - name: pre-start-script
+          mountPath: /root/user-scripts/pre-start.sh
+          subPath: pre-start.sh
         readinessProbe:
           httpGet:
             path: /
@@ -172,3 +177,7 @@ spec:
       - name: manager-config
         configMap:
           name: comfyui-manager-config
+      - name: pre-start-script
+        configMap:
+          name: comfyui-pre-start
+          defaultMode: 0755

@@ -22,3 +22,33 @@ data:
     always_lazy_install = False
     network_mode = public
     db_mode = cache
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: comfyui-pre-start
+  namespace: comfyui
+data:
+  pre-start.sh: |
+    #!/bin/bash
+    set -eu
+
+    echo "[INFO] Installing required packages for custom nodes..."
+    uv pip install --system qwen-vl-utils
+    uv pip install --system --upgrade transformers
+    uv pip install --system "bitsandbytes>=0.46.1"
+
+    echo "[INFO] Installing missing custom node dependencies..."
+    # ComfyUI-Prompt-Manager
+    uv pip install --system colorama huggingface_hub
+    # ComfyUI-Gallery
+    uv pip install --system watchdog piexif aiohttp
+    # RES4LYF (pywavelets imports as pywt)
+    uv pip install --system pywavelets
+    # comfyui-tensorops
+    uv pip install --system surrealist
+
+    echo "[INFO] Setting up fonts directory..."
+    mkdir -p /usr/share/fonts/truetype
+
+    echo "[INFO] Pre-start setup complete."
