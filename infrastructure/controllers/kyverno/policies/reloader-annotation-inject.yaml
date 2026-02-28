@@ -9,20 +9,22 @@ spec:
   rules:
   - name: inject-reloader-annotation
     match:
-      resources:
-        kinds:
-        - Deployment
-        - StatefulSet
-        - DaemonSet
-      excludeResources:
-        namespaceSelector:
-          matchLabels:
-            # Exclude system namespaces
-            exclude-reloader-annotation: "true"
-        selector:
-          matchLabels:
-            # Allow opt-out via label
-            reloader-annotation: "disabled"
+      any:
+      - resources:
+          kinds:
+          - Deployment
+          - StatefulSet
+          - DaemonSet
+    exclude:
+      any:
+      - resources:
+          namespaceSelector:
+            matchLabels:
+              exclude-reloader-annotation: "true"
+      - resources:
+          selector:
+            matchLabels:
+              reloader-annotation: "disabled"
     mutate:
       patchStrategicMerge:
         metadata:
