@@ -68,7 +68,6 @@ data:
     uv pip install --system colorama huggingface_hub   # Prompt-Manager
     uv pip install --system watchdog piexif aiohttp     # Gallery
     uv pip install --system pywavelets                  # RES4LYF
-    uv pip install --system surrealist                  # tensorops
 
     # ── System Setup ───────────────────────────────────────────
     mkdir -p /usr/share/fonts/truetype
