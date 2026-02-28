@@ -21,6 +21,7 @@ spec:
       containers:
         - name: kafka-init
           image: docker.redpanda.com/redpandadata/redpanda:v25.1.9
+          imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
             - -c
@@ -78,6 +79,7 @@ spec:
       containers:
         - name: migrate
           image: posthog/posthog:latest@sha256:97b289703159d9da3ae51e633c70b233358a84491efaa8f083b493ed711c05f4
+          imagePullPolicy: IfNotPresent
           command:
             - sh
             - -c
