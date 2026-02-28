@@ -29,9 +29,9 @@ ArgoCD uses **Server-Side Apply (SSA)**. CNPG has a **mutating admission webhook
 3. SSA merges both field managers — `initdb` wins
 4. Result: fresh empty database, every time
 
-Additionally, ArgoCD ApplicationSets enforce `selfHeal: true`, recreating deleted clusters in sub-second — too fast to manually intervene.
+Additionally, the infrastructure ApplicationSet uses `selfHeal: true`, which would recreate deleted clusters sub-second. Database Applications are now managed by a **separate ApplicationSet** with `selfHeal: false` to avoid this (see [Database ApplicationSet Architecture](#database-applicationset-architecture) above).
 
-**Solution**: Apply recovery manifests directly with `kubectl create`, bypassing ArgoCD entirely.
+**Solution**: Pause ArgoCD with `skip-reconcile` annotations, then apply recovery manifests directly with `kubectl create`.
 
 ## GitOps During Recovery: Source of Truth & skip-reconcile
 
@@ -126,7 +126,7 @@ STEP 3: Recovery completes, unpause (Remove skip-reconcile)
 ### Why skip-reconcile Doesn't Break GitOps
 
 **Git remains source of truth the whole time:**
-- You commit recovered state back to Git (cluster.yaml reverted to initdb, backup lineage bumped to v3)
+- You commit recovered state back to Git (cluster.yaml reverted to initdb, backup lineage bumped to next version)
 - skip-reconcile only blocks **automatic reconciliation** (ArgoCD watching)
 - Manual sync (UI click) still reads Git and applies to cluster
 - Once skip-reconcile is removed, auto-sync resumes from Git state
@@ -151,7 +151,7 @@ STEP 3: Recovery completes, unpause (Remove skip-reconcile)
     - bootstrap.recovery section removed
     - externalClusters section removed
     - REASON: CNPG webhook blocks sync if both bootstrap methods present
-[ ] cluster.yaml backup lineage bumped to v3 (not v2)
+[ ] cluster.yaml backup lineage bumped to NEXT version (e.g. v4→v5)
 [ ] Commit cluster.yaml to Git
 [ ] Push to main branch
 [ ] Verify Git shows only initdb block (no recovery code)
@@ -192,7 +192,10 @@ s3://postgres-backups/cnpg/immich/
 ├── immich-database/        ← original (pre-recovery backups)
 │   ├── base/
 │   └── wals/
-└── immich-database-v2/     ← current (post-recovery backups)
+├── immich-database-v2/     ← first recovery lineage
+│   ├── base/
+│   └── wals/
+└── immich-database-v4/     ← current (post-recovery backups)
     ├── base/
     └── wals/
 ```
@@ -203,8 +206,8 @@ s3://postgres-backups/cnpg/immich/
 
 During recovery, treat these as two different values:
 
-- `externalClusters[].barmanObjectStore.serverName` = **restore source** (existing lineage, e.g. `immich-database-v2`)
-- `backup.barmanObjectStore.serverName` = **new backup target** (next lineage, e.g. `immich-database-v3`)
+- `externalClusters[].barmanObjectStore.serverName` = **restore source** (existing lineage, e.g. `immich-database-v4`)
+- `backup.barmanObjectStore.serverName` = **new backup target** (next lineage, e.g. `immich-database-v5`)
 
 After recovery succeeds, keep backups on the new lineage (`v3`). Do **not** switch backup target back to `v2`.
 
@@ -242,7 +245,7 @@ This is what happens every day to keep backups current:
 │  │  RustFS S3 Storage                       │         │  │
 │  │                                          │         │  │
 │  │  s3://postgres-backups/cnpg/immich/     │         │  │
-│  │  ├── immich-database-v2/                │         │  │
+│  │  ├── immich-database-v4/                │         │  │
 │  │  │   ├── base/     (full backups)       │         │  │
 │  │  │   └── wals/     (transaction logs)   │         │  │
 │  │  └── (encrypted, compressed)            │         │  │
@@ -385,20 +388,19 @@ CNPG's bootstrap section determines what happens when a Cluster is created:
 kubectl run -it --rm barman-check --image=amazon/aws-cli:latest \
   --restart=Never --namespace=cloudnative-pg --overrides='{
   "spec":{"containers":[{"name":"check","image":"amazon/aws-cli:latest",
-  "command":["sh","-c","aws --endpoint-url http://192.168.10.133:30293 s3 ls s3://postgres-backups/cnpg/immich/immich-database-v2/base/ 2>&1 | tail -5"],
+  "command":["sh","-c","aws --endpoint-url http://192.168.10.133:30293 s3 ls s3://postgres-backups/cnpg/immich/immich-database-v4/base/ 2>&1 | tail -5"],
   "env":[
     {"name":"AWS_ACCESS_KEY_ID","valueFrom":{"secretKeyRef":{"name":"cnpg-s3-credentials","key":"AWS_ACCESS_KEY_ID"}}},
     {"name":"AWS_SECRET_ACCESS_KEY","valueFrom":{"secretKeyRef":{"name":"cnpg-s3-credentials","key":"AWS_SECRET_ACCESS_KEY"}}}
   ]}]}}'
 ```
 
-**2. Edit the cluster.yaml:**
+**2. Edit the cluster.yaml locally:**
 
 In `infrastructure/database/cloudnative-pg/immich/cluster.yaml`:
-- Comment out the `initdb` bootstrap section
-- Uncomment the `recovery` bootstrap + `externalClusters` section
-- Set `externalClusters[].barmanObjectStore.serverName` to the **current** backup serverName (e.g. `immich-database-v2`)
-- Bump `backup.barmanObjectStore.serverName` to the **next** version (e.g. `immich-database-v3`)
+- Replace the `bootstrap.initdb` section with `bootstrap.recovery` + `externalClusters`
+- Set `externalClusters[].barmanObjectStore.serverName` to the **current** backup serverName (check inventory table above, e.g. `immich-database-v4`)
+- Bump `backup.barmanObjectStore.serverName` to the **next** version (e.g. `immich-database-v5`)
 
 ⚠️ **CRITICAL: Webhook Validation (Do Not Commit Both Methods)**
 
@@ -521,7 +523,7 @@ ArgoCD syncs. CNPG ignores `initdb` bootstrap on existing clusters — your data
 **Fix**: Set it to the serverName that the old backups were written under. Check S3:
 ```bash
 aws --endpoint-url http://192.168.10.133:30293 s3 ls s3://postgres-backups/cnpg/immich/
-# Lists subdirectories like: immich-database/, immich-database-v2/
+# Lists subdirectories like: immich-database/, immich-database-v2/, immich-database-v4/
 ```
 
 ### ArgoCD recreates cluster before manual apply
@@ -667,8 +669,8 @@ Help me perform CloudNativePG disaster recovery for Immich in this repo.
 Context:
 - This cluster uses ArgoCD with self-heal and server-side apply.
 - CNPG recovery must be created with kubectl create (not apply).
-- Current backup lineage is [FILL ME, e.g. immich-database-v2].
-- New backup lineage target is [FILL ME, e.g. immich-database-v3].
+- Current backup lineage is [FILL ME, e.g. immich-database-v4].
+- New backup lineage target is [FILL ME, e.g. immich-database-v5].
 
 What I need from you:
 1) Give exact commands to render /tmp/immich-recovery.yaml from kustomize.
