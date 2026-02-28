@@ -131,13 +131,21 @@ STEP 3: Recovery completes, unpause (Remove skip-reconcile)
 ```
 [ ] Recovery cluster is healthy (pod Ready 1/1, data validated)
 [ ] cluster.yaml reverted to initdb mode (not recovery)
+[ ] ⚠️  ALL recovery code DELETED from cluster.yaml (not just commented!)
+    - bootstrap.recovery section removed
+    - externalClusters section removed
+    - REASON: CNPG webhook blocks sync if both bootstrap methods present
 [ ] cluster.yaml backup lineage bumped to v3 (not v2)
 [ ] Commit cluster.yaml to Git
 [ ] Push to main branch
-[ ] Manual sync via Argo UI (still has skip-reconcile on, that's ok)
+[ ] Verify Git shows only initdb block (no recovery code)
+[ ] Wait for ArgoCD to auto-detect sync → should show Synced
+[ ] Manual sync via Argo UI (if needed)
 [ ] Remove skip-reconcile annotations
 [ ] Verify auto-sync working again
 ```
+
+**Key reminder: CNPG webhook validates mutual exclusivity of bootstrap methods. Recovery code must be completely removed before committing to Git, or ArgoCD will remain OutOfSync forever.**
 
 After unpause, Git and cluster sync normally, and you're back to true GitOps.
 
@@ -155,7 +163,7 @@ Barman → RustFS S3
 
 | Database | S3 Path | Current serverName | Schedule |
 |----------|---------|-------------------|----------|
-| immich | `s3://postgres-backups/cnpg/immich` | `immich-database-v2` | Hourly + WAL |
+| immich | `s3://postgres-backups/cnpg/immich` | `immich-database-v3` | Hourly + WAL |
 | khoj | `s3://postgres-backups/cnpg/khoj` | `khoj-database` | Daily 2am + WAL |
 | paperless | `s3://postgres-backups/cnpg/paperless` | `paperless-database` | Daily 2am + WAL |
 
@@ -376,6 +384,24 @@ In `infrastructure/database/cloudnative-pg/immich/cluster.yaml`:
 - Set `externalClusters[].barmanObjectStore.serverName` to the **current** backup serverName (e.g. `immich-database-v2`)
 - Bump `backup.barmanObjectStore.serverName` to the **next** version (e.g. `immich-database-v3`)
 
+⚠️ **CRITICAL: Webhook Validation (Do Not Commit Both Methods)**
+
+The CNPG webhook validates that **only ONE bootstrap method is present**. Even commented-out recovery code will cause ArgoCD sync to fail with:
+```
+admission webhook "vcluster.cnpg.io" denied the request: 
+spec.bootstrap: Forbidden: Only one bootstrap method can be specified at a time
+```
+
+**Why**: After recovery completes, you must **DELETE all recovery code** from the manifest before committing to Git. Do not leave `bootstrap.recovery` or `externalClusters` commented in Git — remove them entirely.
+
+**Procedure**:
+1. During recovery: edit cluster.yaml locally, toggle bootstrap methods
+2. Test recovery with `kubectl create`
+3. **Before committing**: Delete ALL recovery code blocks
+4. Revert to `bootstrap.initdb` (normal mode)
+5. Keep `backup.barmanObjectStore.serverName` at the bumped version (e.g. `v3`)
+6. Commit and push — ArgoCD will accept the manifest
+
 **3. Extract just the Cluster resource:**
 
 ```bash
@@ -520,6 +546,25 @@ Wait for Longhorn volume `state=attached` and `robustness=healthy`; CNPG will pr
 **Cause**: Both `initdb` and `recovery` present in manifest (ArgoCD SSA merged them).
 
 **Fix**: Don't use `kubectl apply`. Use `kubectl create` to bypass SSA.
+
+### ArgoCD shows "OutOfSync + SyncFailed" with webhook error after recovery
+
+**Cause**: Recovery code (commented `bootstrap.recovery` + `externalClusters`) left in Git.
+
+**Error message**:
+```
+admission webhook "vcluster.cnpg.io" denied the request: 
+spec.bootstrap: Forbidden: Only one bootstrap method can be specified
+```
+
+**Fix**: Delete all recovery code from `cluster.yaml` before committing to Git.
+1. Remove the `bootstrap.recovery` section entirely (not just comment it).
+2. Remove the `externalClusters` section entirely (not just comment it).
+3. Keep `bootstrap.initdb` as the only bootstrap method.
+4. Commit and push.
+5. ArgoCD will sync successfully.
+
+**Why**: The CNPG webhook validates at the manifest yaml level, not at the applied level. Even commented-out code blocks parse as valid YAML and trigger validation errors.
 
 ## Verifying Backups Are Running
 
