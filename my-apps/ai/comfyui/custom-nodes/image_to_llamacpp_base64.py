@@ -9,6 +9,9 @@ import urllib.error
 import numpy as np
 from PIL import Image
 
+_DEFAULT_SERVER = "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080"
+_DEFAULT_MODEL = "general - qwen3.5"
+
 
 def _image_to_base64(image_tensor):
     """Convert ComfyUI IMAGE tensor [B,H,W,C] to base64 PNG string."""
@@ -17,6 +20,43 @@ def _image_to_base64(image_tensor):
     buffer = io.BytesIO()
     pil_image.save(buffer, format="PNG")
     return base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+
+def _chat_completion(server_url, model, messages, temperature, max_tokens):
+    """Call llama.cpp /v1/chat/completions and return the text response."""
+    payload = {
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "stream": False,
+    }
+
+    url = f"{server_url.rstrip('/')}/v1/chat/completions"
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")
+        return f"[ERROR {e.code}] {body[:500]}"
+    except Exception as e:
+        return f"[ERROR] {e}"
+
+    choice = result.get("choices", [{}])[0]
+    message = choice.get("message", {})
+    text = message.get("content", "").strip()
+    if not text:
+        text = message.get("reasoning_content", "").strip()
+    if not text:
+        text = json.dumps(result)
+    return text
 
 
 class ImageToLlamaCppBase64:
@@ -60,11 +100,7 @@ class ImageToLlamaCppBase64:
 
 
 class LlamaCppVisionCaption:
-    """Sends an image to a llama.cpp vision model and returns the caption text.
-
-    Bypasses the LlamaCppClient node to avoid dict/string response bugs.
-    Calls /v1/chat/completions directly with proper image content blocks.
-    """
+    """Sends an image to a llama.cpp vision model and returns the caption text."""
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -91,11 +127,8 @@ class LlamaCppVisionCaption:
                         "multiline": True,
                     },
                 ),
-                "server_url": (
-                    "STRING",
-                    {"default": "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080"},
-                ),
-                "model": ("STRING", {"default": "general - qwen3.5"}),
+                "server_url": ("STRING", {"default": _DEFAULT_SERVER}),
+                "model": ("STRING", {"default": _DEFAULT_MODEL}),
                 "temperature": ("FLOAT", {"default": 0.6, "min": 0.0, "max": 2.0, "step": 0.1}),
                 "max_tokens": ("INT", {"default": 1024, "min": 64, "max": 4096, "step": 64}),
             },
@@ -115,65 +148,90 @@ class LlamaCppVisionCaption:
         system_message="You are an expert image description assistant. Produce a detailed, vivid "
         "text-to-image prompt that would recreate the given image. Include subject, setting, "
         "lighting, colors, composition, artistic style, and mood. Output ONLY the prompt text.",
-        server_url="http://llama-cpp-service.llama-cpp.svc.cluster.local:8080",
-        model="general - qwen3.5",
+        server_url=_DEFAULT_SERVER,
+        model=_DEFAULT_MODEL,
         temperature=0.6,
         max_tokens=1024,
     ):
         b64_str = _image_to_base64(image)
-
-        # Prepend /no_think to skip Qwen3.5 reasoning and go straight to content
         user_content = [
             {"type": "text", "text": f"/no_think {prompt}"},
             {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64_str}"}},
         ]
+        messages = [
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": user_content},
+        ]
+        return (_chat_completion(server_url, model, messages, temperature, max_tokens),)
 
-        payload = {
-            "model": model,
-            "messages": [
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": user_content},
-            ],
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-            "stream": False,
+
+class LlamaCppTextModify:
+    """Takes a text prompt and modification instructions, returns the modified prompt.
+
+    Use this to edit AI-generated captions before image generation:
+    VisionCaption -> TextModify -> CLIPTextEncode
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "original_text": ("STRING", {"forceInput": True}),
+                "instructions": (
+                    "STRING",
+                    {
+                        "default": "Make it cyberpunk style with neon lighting",
+                        "multiline": True,
+                    },
+                ),
+            },
+            "optional": {
+                "server_url": ("STRING", {"default": _DEFAULT_SERVER}),
+                "model": ("STRING", {"default": _DEFAULT_MODEL}),
+                "temperature": ("FLOAT", {"default": 0.6, "min": 0.0, "max": 2.0, "step": 0.1}),
+                "max_tokens": ("INT", {"default": 1024, "min": 64, "max": 4096, "step": 64}),
+            },
         }
 
-        url = f"{server_url.rstrip('/')}/v1/chat/completions"
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("modified_text",)
+    FUNCTION = "modify"
+    CATEGORY = "AI/LlamaCpp"
 
-        try:
-            with urllib.request.urlopen(req, timeout=120) as resp:
-                result = json.loads(resp.read().decode("utf-8"))
-        except urllib.error.HTTPError as e:
-            body = e.read().decode("utf-8", errors="replace")
-            return (f"[ERROR {e.code}] {body[:500]}",)
-        except Exception as e:
-            return (f"[ERROR] {e}",)
-
-        # Extract content, falling back to reasoning_content if content is empty
-        choice = result.get("choices", [{}])[0]
-        message = choice.get("message", {})
-        text = message.get("content", "").strip()
-        if not text:
-            text = message.get("reasoning_content", "").strip()
-        if not text:
-            text = json.dumps(result)
-
-        return (text,)
+    def modify(
+        self,
+        original_text,
+        instructions="Make it cyberpunk style with neon lighting",
+        server_url=_DEFAULT_SERVER,
+        model=_DEFAULT_MODEL,
+        temperature=0.6,
+        max_tokens=1024,
+    ):
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a text-to-image prompt editor. You will receive an original image "
+                "description prompt and modification instructions. Apply the requested changes to "
+                "produce a new prompt. Keep all unmentioned details from the original. "
+                "Output ONLY the modified prompt text, no preamble or explanation.",
+            },
+            {
+                "role": "user",
+                "content": f"/no_think Original prompt:\n{original_text}\n\n"
+                f"Modifications requested:\n{instructions}",
+            },
+        ]
+        return (_chat_completion(server_url, model, messages, temperature, max_tokens),)
 
 
 NODE_CLASS_MAPPINGS = {
     "ImageToLlamaCppBase64": ImageToLlamaCppBase64,
     "LlamaCppVisionCaption": LlamaCppVisionCaption,
+    "LlamaCppTextModify": LlamaCppTextModify,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "ImageToLlamaCppBase64": "Image to LlamaCpp Base64",
     "LlamaCppVisionCaption": "LlamaCpp Vision Caption",
+    "LlamaCppTextModify": "LlamaCpp Text Modify",
 }
