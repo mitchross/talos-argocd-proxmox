@@ -20,9 +20,9 @@ data:
   # Vision Models - tell Open WebUI which models support images
   VISION_MODELS: "general - qwen3.5"
 
-  # Default parameters (Qwen3.5: temp=1.0, top_p=0.95, top_k=20)
+  # Default parameters (Qwen3.5 precise thinking: temp=0.6, top_p=0.95, top_k=20)
   CONTEXT_WINDOW: "131072"
-  TEMPERATURE: "1.0"
+  TEMPERATURE: "0.6"
   TOP_P: "0.95"
   MIN_P: "0.0"
 
