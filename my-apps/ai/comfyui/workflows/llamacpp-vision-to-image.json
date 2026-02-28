@@ -1,91 +1,170 @@
 {
-  "1": {
-    "class_type": "LoadImage",
-    "inputs": {
-      "image": "example.png"
+  "last_node_id": 11,
+  "last_link_id": 10,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "LoadImage",
+      "pos": [0, 0],
+      "size": [320, 314],
+      "properties": {"Node name for S&R": "LoadImage"},
+      "widgets_values": ["example.png", "image"]
+    },
+    {
+      "id": 2,
+      "type": "LlamaCppVisionCaption",
+      "pos": [380, 0],
+      "size": [400, 300],
+      "properties": {"Node name for S&R": "LlamaCppVisionCaption"},
+      "inputs": [
+        {"name": "image", "type": "IMAGE", "link": 1}
+      ],
+      "outputs": [
+        {"name": "caption", "type": "STRING", "links": [2], "slot_index": 0}
+      ],
+      "widgets_values": [
+        "Describe this image in rich detail for use as an image generation prompt. Focus on subject, composition, lighting, colors, style, and mood. Output only the prompt text, no preamble.",
+        "You are an expert image description assistant. Produce a detailed, vivid text-to-image prompt that would recreate the given image. Include subject, setting, lighting, colors, composition, artistic style, and mood. Output ONLY the prompt text with no preamble, labels, or explanation.",
+        "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080",
+        "general - qwen3.5",
+        0.6,
+        1024
+      ]
+    },
+    {
+      "id": 3,
+      "type": "CLIPTextEncode",
+      "pos": [840, 0],
+      "size": [400, 200],
+      "properties": {"Node name for S&R": "CLIPTextEncode"},
+      "inputs": [
+        {"name": "clip", "type": "CLIP", "link": 5},
+        {"name": "text", "type": "STRING", "link": 2, "widget": {"name": "text"}}
+      ],
+      "outputs": [
+        {"name": "CONDITIONING", "type": "CONDITIONING", "links": [7], "slot_index": 0}
+      ],
+      "widgets_values": [""]
+    },
+    {
+      "id": 4,
+      "type": "CLIPTextEncode",
+      "pos": [840, 260],
+      "size": [400, 200],
+      "properties": {"Node name for S&R": "CLIPTextEncode"},
+      "inputs": [
+        {"name": "clip", "type": "CLIP", "link": 6}
+      ],
+      "outputs": [
+        {"name": "CONDITIONING", "type": "CONDITIONING", "links": [8], "slot_index": 0}
+      ],
+      "widgets_values": [""],
+      "title": "Negative (empty)"
+    },
+    {
+      "id": 5,
+      "type": "CLIPLoader",
+      "pos": [840, 520],
+      "size": [320, 100],
+      "properties": {"Node name for S&R": "CLIPLoader"},
+      "outputs": [
+        {"name": "CLIP", "type": "CLIP", "links": [5, 6], "slot_index": 0}
+      ],
+      "widgets_values": ["qwen_3_4b.safetensors", "qwen_image"]
+    },
+    {
+      "id": 6,
+      "type": "UNETLoader",
+      "pos": [1300, 0],
+      "size": [320, 100],
+      "properties": {"Node name for S&R": "UNETLoader"},
+      "outputs": [
+        {"name": "MODEL", "type": "MODEL", "links": [9], "slot_index": 0}
+      ],
+      "widgets_values": ["z_image_turbo_bf16.safetensors", "fp8_e4m3fn"]
+    },
+    {
+      "id": 7,
+      "type": "VAELoader",
+      "pos": [1300, 520],
+      "size": [320, 60],
+      "properties": {"Node name for S&R": "VAELoader"},
+      "outputs": [
+        {"name": "VAE", "type": "VAE", "links": [4], "slot_index": 0}
+      ],
+      "widgets_values": ["ae.safetensors"]
+    },
+    {
+      "id": 8,
+      "type": "EmptyLatentImage",
+      "pos": [1300, 380],
+      "size": [320, 106],
+      "properties": {"Node name for S&R": "EmptyLatentImage"},
+      "outputs": [
+        {"name": "LATENT", "type": "LATENT", "links": [10], "slot_index": 0}
+      ],
+      "widgets_values": [1024, 1024, 1]
+    },
+    {
+      "id": 9,
+      "type": "KSampler",
+      "pos": [1700, 0],
+      "size": [320, 474],
+      "properties": {"Node name for S&R": "KSampler"},
+      "inputs": [
+        {"name": "model", "type": "MODEL", "link": 9},
+        {"name": "positive", "type": "CONDITIONING", "link": 7},
+        {"name": "negative", "type": "CONDITIONING", "link": 8},
+        {"name": "latent_image", "type": "LATENT", "link": 10}
+      ],
+      "outputs": [
+        {"name": "LATENT", "type": "LATENT", "links": [3], "slot_index": 0}
+      ],
+      "widgets_values": [0, "randomize", 8, 1.0, "euler_ancestral", "sgm_uniform", 1.0]
+    },
+    {
+      "id": 10,
+      "type": "VAEDecode",
+      "pos": [2080, 0],
+      "size": [210, 46],
+      "properties": {"Node name for S&R": "VAEDecode"},
+      "inputs": [
+        {"name": "samples", "type": "LATENT", "link": 3},
+        {"name": "vae", "type": "VAE", "link": 4}
+      ],
+      "outputs": [
+        {"name": "IMAGE", "type": "IMAGE", "links": [11], "slot_index": 0}
+      ]
+    },
+    {
+      "id": 11,
+      "type": "SaveImage",
+      "pos": [2080, 100],
+      "size": [320, 270],
+      "properties": {"Node name for S&R": "SaveImage"},
+      "inputs": [
+        {"name": "images", "type": "IMAGE", "link": 11}
+      ],
+      "widgets_values": ["vision-to-image"]
     }
+  ],
+  "links": [
+    [1, 1, 0, 2, 0, "IMAGE"],
+    [2, 2, 0, 3, 1, "STRING"],
+    [3, 9, 0, 10, 0, "LATENT"],
+    [4, 7, 0, 10, 1, "VAE"],
+    [5, 5, 0, 3, 0, "CLIP"],
+    [6, 5, 0, 4, 0, "CLIP"],
+    [7, 3, 0, 9, 1, "CONDITIONING"],
+    [8, 4, 0, 9, 2, "CONDITIONING"],
+    [9, 6, 0, 9, 0, "MODEL"],
+    [10, 8, 0, 9, 3, "LATENT"],
+    [11, 10, 0, 11, 0, "IMAGE"]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {"scale": 0.7, "offset": [50, 50]}
   },
-  "2": {
-    "class_type": "LlamaCppVisionCaption",
-    "inputs": {
-      "image": ["1", 0],
-      "prompt": "Describe this image in rich detail for use as an image generation prompt. Focus on subject, composition, lighting, colors, style, and mood. Output only the prompt text, no preamble.",
-      "system_message": "You are an expert image description assistant. Produce a detailed, vivid text-to-image prompt that would recreate the given image. Include subject, setting, lighting, colors, composition, artistic style, and mood. Output ONLY the prompt text with no preamble, labels, or explanation.",
-      "server_url": "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080",
-      "model": "general - qwen3.5",
-      "temperature": 0.6,
-      "max_tokens": 1024
-    }
-  },
-  "3": {
-    "class_type": "CLIPTextEncode",
-    "inputs": {
-      "text": ["2", 0],
-      "clip": ["5", 0]
-    }
-  },
-  "4": {
-    "class_type": "CLIPTextEncode",
-    "inputs": {
-      "text": "",
-      "clip": ["5", 0]
-    }
-  },
-  "5": {
-    "class_type": "CLIPLoader",
-    "inputs": {
-      "clip_name": "qwen_3_4b.safetensors",
-      "type": "qwen_image"
-    }
-  },
-  "6": {
-    "class_type": "UNETLoader",
-    "inputs": {
-      "unet_name": "z_image_turbo_bf16.safetensors",
-      "weight_dtype": "fp8_e4m3fn"
-    }
-  },
-  "7": {
-    "class_type": "VAELoader",
-    "inputs": {
-      "vae_name": "ae.safetensors"
-    }
-  },
-  "8": {
-    "class_type": "EmptyLatentImage",
-    "inputs": {
-      "width": 1024,
-      "height": 1024,
-      "batch_size": 1
-    }
-  },
-  "9": {
-    "class_type": "KSampler",
-    "inputs": {
-      "seed": 0,
-      "steps": 8,
-      "cfg": 1.0,
-      "sampler_name": "euler_ancestral",
-      "scheduler": "sgm_uniform",
-      "denoise": 1.0,
-      "model": ["6", 0],
-      "positive": ["3", 0],
-      "negative": ["4", 0],
-      "latent_image": ["8", 0]
-    }
-  },
-  "10": {
-    "class_type": "VAEDecode",
-    "inputs": {
-      "samples": ["9", 0],
-      "vae": ["7", 0]
-    }
-  },
-  "11": {
-    "class_type": "SaveImage",
-    "inputs": {
-      "filename_prefix": "vision-to-image",
-      "images": ["10", 0]
-    }
-  }
+  "version": 0.4
 }
