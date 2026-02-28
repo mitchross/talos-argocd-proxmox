@@ -176,8 +176,38 @@ spec:
                   key: posthog-db-password
             - name: DATABASE_URL
               value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+            - name: PERSONS_URL
+              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+            - name: REDIS_URL
+              value: "redis://redis7:6379/"
+            - name: ISSUE_BUCKETS_REDIS_URL
+              value: "redis://redis7:6379/"
             - name: KAFKA_HOSTS
               value: "kafka:9092"
+            - name: KAFKA_CONSUMER_GROUP
+              value: "cymbal"
+            - name: KAFKA_CONSUMER_TOPIC
+              value: "exceptions_ingestion"
+            - name: OBJECT_STORAGE_BUCKET
+              value: "posthog"
+            - name: OBJECT_STORAGE_ENDPOINT
+              value: "http://192.168.10.133:30293"
+            - name: OBJECT_STORAGE_FORCE_PATH_STYLE
+              value: "true"
+            - name: OBJECT_STORAGE_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-access-key
+            - name: OBJECT_STORAGE_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-secret-key
+            - name: BIND_HOST
+              value: "0.0.0.0"
+            - name: BIND_PORT
+              value: "3302"
             - name: RUST_LOG
               value: "info"
           resources:
