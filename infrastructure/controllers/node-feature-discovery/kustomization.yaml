@@ -20,7 +20,7 @@ helmCharts:
             # Run NFD periodically to catch any changes
             sleepInterval: 60s
             # Explicitly enable sources for clarity
-            sources: ["pci", "system", "usb"]
+            sources: ["pci", "system", "usb", "cpu"]
           sources:
             pci:
               # By default, NFD discovers devices with class '03' (Display
