@@ -8,10 +8,10 @@ admissionController:
       reportsServiceAccountName: "system:serviceaccount:kyverno:kyverno-reports-controller"
   resources:
     limits:
-      memory: 384Mi
+      memory: 1Gi
     requests:
       cpu: 100m
-      memory: 128Mi
+      memory: 512Mi
   rbac:
     clusterRole:
       extraResources:
@@ -20,6 +20,18 @@ admissionController:
         resources:
         - replicationsources
         - replicationdestinations
+        verbs:
+        - create
+        - delete
+        - get
+        - list
+        - patch
+        - update
+        - watch
+      - apiGroups:
+        - autoscaling.k8s.io
+        resources:
+        - verticalpodautoscalers
         verbs:
         - create
         - delete
@@ -33,10 +45,10 @@ backgroundController:
   replicas: 1
   resources:
     limits:
-      memory: 128Mi
+      memory: 512Mi
     requests:
-      cpu: 100m
-      memory: 64Mi
+      cpu: 2500m
+      memory: 192Mi
   rbac:
     clusterRole:
       extraResources:
@@ -53,15 +65,27 @@ backgroundController:
         - patch
         - update
         - watch
+      - apiGroups:
+        - autoscaling.k8s.io
+        resources:
+        - verticalpodautoscalers
+        verbs:
+        - create
+        - delete
+        - get
+        - list
+        - patch
+        - update
+        - watch
 
 cleanupController:
   replicas: 1
   resources:
     limits:
-      memory: 128Mi
+      memory: 384Mi
     requests:
       cpu: 100m
-      memory: 64Mi
+      memory: 192Mi
   rbac:
     clusterRole:
       extraResources:
@@ -97,10 +121,10 @@ reportsController:
   replicas: 1
   resources:
     limits:
-      memory: 128Mi
+      memory: 384Mi
     requests:
       cpu: 100m
-      memory: 64Mi
+      memory: 192Mi
 
 # Fix kubectl image for cleanup hooks (bitnami/kubectl:1.30.2 doesn't exist)
 policyReportsCleanup:

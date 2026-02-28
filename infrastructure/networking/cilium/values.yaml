@@ -104,11 +104,11 @@ gatewayAPI:
   sessionAffinity: true
   sessionAffinityTimeoutSeconds: 10800 # 3 hours
 
-# Cilium agent resources
+# Cilium agent resources (VPA-optimized 2026-02-28)
 resources:
   requests:
-    cpu: 300m
-    memory: 300Mi
+    cpu: 500m
+    memory: 1Gi
   limits:
     cpu: 2000m
     memory: 2Gi

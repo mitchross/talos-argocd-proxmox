@@ -1,0 +1,67 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: database
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  # Preserve skip-reconcile annotation during DR recovery
+  # Without this, the ApplicationSet controller strips manual annotations
+  ignoreApplicationDifferences:
+  - jsonPointers:
+    - /metadata/annotations/argocd.argoproj.io~1skip-reconcile
+  generators:
+  - git:
+      repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+      revision: main
+      directories:
+      - path: infrastructure/database/*/*
+  template:
+    metadata:
+      name: '{{path.basename}}'
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: '{{path}}'
+        argocd.argoproj.io/sync-wave: "4"
+      labels:
+        app.kubernetes.io/part-of: database
+    spec:
+      project: infrastructure
+      revisionHistoryLimit: 3
+      source:
+        repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+        targetRevision: main
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: false
+          allowEmpty: false
+        syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true
+        - RespectIgnoreDifferences=true
+        - Replace=false
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+      ignoreDifferences:
+      - group: postgresql.cnpg.io
+        kind: Cluster
+        jsonPointers:
+        - /status
+        - /metadata/generation
+      - group: external-secrets.io
+        kind: ExternalSecret
+        jqPathExpressions:
+        - .status
+        - .metadata.finalizers
+        - .spec.data[].remoteRef.conversionStrategy
+        - .spec.data[].remoteRef.decodingStrategy
+        - .spec.data[].remoteRef.metadataPolicy

@@ -330,4 +330,6 @@ The PVC backup system above covers **application data**. Database backups use a 
 
 After a cluster nuke, CNPG creates **fresh empty databases** — it does NOT auto-restore from Barman backups. Recovery requires manually bypassing ArgoCD (SSA + CNPG webhook conflict prevents recovery mode through GitOps).
 
+Database Applications are managed by a **separate ApplicationSet** (`database-appset.yaml`) with `selfHeal: false`, so `skip-reconcile` annotations persist during recovery. This avoids the need to scale down ArgoCD controllers.
+
 See **[docs/cnpg-disaster-recovery.md](cnpg-disaster-recovery.md)** for full recovery procedures.

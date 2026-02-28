@@ -249,7 +249,7 @@ grafana:
     feature_toggles:
       enable: correlations
 # Node Exporter Configuration
-# Enable for comprehensive node-level metrics
+# Enable for comprehensive node-level metrics (VPA-optimized 2026-02-28)
 nodeExporter:
   enabled: true
   hostRootFsMount:
@@ -259,21 +259,21 @@ nodeExporter:
   resources:
     requests:
       cpu: 50m
-      memory: 64Mi
+      memory: 128Mi
     limits:
       cpu: 200m
-      memory: 180Mi
-# kube-state-metrics Configuration
+      memory: 256Mi
+# kube-state-metrics Configuration (VPA-optimized 2026-02-28)
 kubeStateMetrics:
   enabled: true
   # Resource allocation
   resources:
     requests:
       cpu: 50m
-      memory: 64Mi
+      memory: 256Mi
     limits:
       cpu: 200m
-      memory: 256Mi
+      memory: 512Mi
 # kube-state-metrics subchart values (VPA custom resource metrics)
 kube-state-metrics:
   rbac:

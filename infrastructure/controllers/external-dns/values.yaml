@@ -37,14 +37,14 @@ extraArgs:
 logLevel: info
 logFormat: text
 
-# Resource Management
+# Resource Management (VPA-optimized 2026-02-28)
 resources:
   requests:
-    cpu: 25m
-    memory: 64Mi
+    cpu: 128m
+    memory: 192Mi
   limits:
-    cpu: 100m
-    memory: 128Mi
+    cpu: 256m
+    memory: 384Mi
 
 # Security Context
 securityContext:

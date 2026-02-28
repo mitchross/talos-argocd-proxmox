@@ -13,7 +13,6 @@ spec:
       directories:
       - path: infrastructure/controllers/cert-manager
       - path: infrastructure/controllers/external-dns
-      - path: infrastructure/controllers/goldilocks
       - path: infrastructure/controllers/gpu-priority-classes
       - path: infrastructure/controllers/intel-device-plugins
       - path: infrastructure/controllers/node-feature-discovery
@@ -35,7 +34,6 @@ spec:
       - path: infrastructure/storage/snapshot-controller
       - path: infrastructure/storage/volsync
       - path: infrastructure/storage/kopia-ui
-      - path: infrastructure/database/*/*
       - path: infrastructure/crds
   template:
     metadata:
@@ -82,11 +80,6 @@ spec:
         kind: Gateway
         jsonPointers:
         - /status
-      - group: postgresql.cnpg.io
-        kind: Cluster
-        jsonPointers:
-        - /status
-        - /metadata/generation
       - group: external-secrets.io
         kind: ExternalSecret
         jqPathExpressions:
