@@ -18,6 +18,8 @@ spec:
         app.kubernetes.io/name: posthog
         app.kubernetes.io/component: worker
     spec:
+      nodeSelector:
+        feature.node.kubernetes.io/cpu-cpuid.AVX2: "true"
       containers:
         - name: worker
           image: posthog/posthog:latest
