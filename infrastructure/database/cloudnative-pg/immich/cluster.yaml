@@ -64,24 +64,15 @@ spec:
         - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "immich";
         - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "immich";
         - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "immich";
-  # bootstrap:
-  #   recovery:
-  #     source: immich-backup
-  # externalClusters:
-  #   - name: immich-backup
-  #     barmanObjectStore:
-  #       serverName: immich-database-v3
-  #       destinationPath: s3://postgres-backups/cnpg/immich
-  #       endpointURL: http://192.168.10.133:30293
-  #       s3Credentials:
-  #         accessKeyId:
-  #           name: cnpg-s3-credentials
-  #           key: AWS_ACCESS_KEY_ID
-  #         secretAccessKey:
-  #           name: cnpg-s3-credentials
-  #           key: AWS_SECRET_ACCESS_KEY
-  #       wal:
-  #         compression: gzip
+  # === DISASTER RECOVERY REFERENCE (DO NOT UNCOMMENT BOTH BOOTSTRAP METHODS) ===
+  # For next recovery, see docs/cnpg-disaster-recovery.md#recovery-procedure
+  # Step 1: Comment out initdb block above
+  # Step 2: Uncomment recovery block and externalClusters below
+  # Step 3: Update serverName to CURRENT backup target (currently: immich-database-v3)
+  # Step 4: Bump backup.serverName below to next version (e.g. v4)
+  # Step 5: Manual kubectl create bypass required (webhook blocks > 1 bootstrap method)
+  # Step 6: After recovery succeeds, revert to initdb and keep bumped serverName
+  # IMPORTANT: Keep bootstrap methods mutually exclusive! CNPG webhook enforces this.
   storage:
     size: 20Gi
     storageClass: longhorn
