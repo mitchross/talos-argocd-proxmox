@@ -9,15 +9,12 @@ metadata:
     policies.kyverno.io/description: >-
       Automatically creates a VerticalPodAutoscaler for every Deployment,
       StatefulSet, and DaemonSet. Replaces Goldilocks controller.
-      Infrastructure/monitoring namespaces get updateMode: "Off" (manual tuning).
-      User app namespaces get updateMode: "InPlaceOrRecreate" (auto-tuning).
-      GPU workloads always get updateMode: "Off".
+      Uses updateMode "Off" (recommend only, manual GitOps tuning).
 spec:
   mutateExistingOnPolicyUpdate: false
   background: true
   rules:
-    # Rule 1: Generate VPA with updateMode "Off" for infrastructure/monitoring namespaces
-    - name: generate-vpa-infra-off
+    - name: generate-vpa
       match:
         any:
           - resources:
@@ -25,27 +22,11 @@ spec:
                 - Deployment
                 - StatefulSet
                 - DaemonSet
-              namespaces:
-                - argocd
-                - kube-system
-                - cilium
-                - cert-manager
-                - external-dns
-                - cloudflared
-                - gateway
-                - longhorn-system
-                - volsync-system
-                - vertical-pod-autoscaler
-                - gpu-operator
-                - node-feature-discovery
-                - prometheus-stack
-                - loki-stack
-                - monitoring
-                - tempo
       exclude:
         any:
           - resources:
               namespaces:
+                - kube-system
                 - kyverno
       skipBackgroundRequests: false
       generate:
@@ -70,124 +51,3 @@ spec:
               name: "{{request.object.metadata.name}}"
             updatePolicy:
               updateMode: "Off"
-
-    # Rule 2: Generate VPA with updateMode "Off" for GPU workloads (any namespace)
-    - name: generate-vpa-gpu-off
-      match:
-        any:
-          - resources:
-              kinds:
-                - Deployment
-                - StatefulSet
-                - DaemonSet
-      exclude:
-        any:
-          - resources:
-              namespaces:
-                - kube-system
-                - kyverno
-                - volsync-system
-                # Exclude infra/monitoring namespaces (handled by rule 1)
-                - argocd
-                - cilium
-                - cert-manager
-                - external-dns
-                - cloudflared
-                - gateway
-                - longhorn-system
-                - vertical-pod-autoscaler
-                - gpu-operator
-                - node-feature-discovery
-                - prometheus-stack
-                - loki-stack
-                - monitoring
-                - tempo
-      preconditions:
-        any:
-          - key: "{{request.object.spec.template.spec.runtimeClassName || ''}}"
-            operator: Equals
-            value: "nvidia"
-      skipBackgroundRequests: false
-      generate:
-        synchronize: true
-        apiVersion: autoscaling.k8s.io/v1
-        kind: VerticalPodAutoscaler
-        name: "{{request.object.metadata.name}}"
-        namespace: "{{request.namespace}}"
-        data:
-          metadata:
-            labels:
-              app.kubernetes.io/managed-by: kyverno
-            ownerReferences:
-              - apiVersion: "{{request.object.apiVersion}}"
-                kind: "{{request.object.kind}}"
-                name: "{{request.object.metadata.name}}"
-                uid: "{{request.object.metadata.uid}}"
-          spec:
-            targetRef:
-              apiVersion: apps/v1
-              kind: "{{request.object.kind}}"
-              name: "{{request.object.metadata.name}}"
-            updatePolicy:
-              updateMode: "Off"
-
-    # Rule 3: Generate VPA with updateMode "InPlaceOrRecreate" for user app namespaces
-    - name: generate-vpa-apps-auto
-      match:
-        any:
-          - resources:
-              kinds:
-                - Deployment
-                - StatefulSet
-                - DaemonSet
-      exclude:
-        any:
-          - resources:
-              namespaces:
-                - kube-system
-                - kyverno
-                - volsync-system
-                # Exclude infra/monitoring namespaces (handled by rule 1)
-                - argocd
-                - cilium
-                - cert-manager
-                - external-dns
-                - cloudflared
-                - gateway
-                - longhorn-system
-                - vertical-pod-autoscaler
-                - gpu-operator
-                - node-feature-discovery
-                - prometheus-stack
-                - loki-stack
-                - monitoring
-                - tempo
-      preconditions:
-        all:
-          # Not a GPU workload (those are handled by rule 2)
-          - key: "{{request.object.spec.template.spec.runtimeClassName || ''}}"
-            operator: NotEquals
-            value: "nvidia"
-      skipBackgroundRequests: false
-      generate:
-        synchronize: true
-        apiVersion: autoscaling.k8s.io/v1
-        kind: VerticalPodAutoscaler
-        name: "{{request.object.metadata.name}}"
-        namespace: "{{request.namespace}}"
-        data:
-          metadata:
-            labels:
-              app.kubernetes.io/managed-by: kyverno
-            ownerReferences:
-              - apiVersion: "{{request.object.apiVersion}}"
-                kind: "{{request.object.kind}}"
-                name: "{{request.object.metadata.name}}"
-                uid: "{{request.object.metadata.uid}}"
-          spec:
-            targetRef:
-              apiVersion: apps/v1
-              kind: "{{request.object.kind}}"
-              name: "{{request.object.metadata.name}}"
-            updatePolicy:
-              updateMode: "InPlaceOrRecreate"
