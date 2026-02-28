@@ -42,10 +42,10 @@ webhook:
   resources:
     limits:
       cpu: 100m
-      memory: 128Mi
+      memory: 256Mi
     requests:
-      cpu: 10m
-      memory: 64Mi
+      cpu: 15m
+      memory: 128Mi
 cainjector:
   securityContext:
     runAsNonRoot: true
@@ -55,10 +55,10 @@ cainjector:
   resources:
     limits:
       cpu: 200m
-      memory: 256Mi
+      memory: 384Mi
     requests:
       cpu: 20m
-      memory: 128Mi
+      memory: 192Mi
 # Prometheus monitoring - This section is well-configured
 # prometheus:
 #   enabled: true

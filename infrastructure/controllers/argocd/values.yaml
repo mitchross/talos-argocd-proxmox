@@ -102,17 +102,16 @@ server:
       enabled: true
       additionalLabels:
         release: kube-prometheus-stack
-  # VPA-optimized resources (2026-02-24)
-  # VPA target: cpu 23m, memory 175Mi
-  # Previous: cpu 500m (20x over-provisioned), memory 512Mi
-  # Server is mostly idle (UI/API only), no heavy compute
+  # VPA-optimized resources (2026-02-28)
+  # VPA target: cpu 23m, memory 175Mi — server below lowerBound for memory
+  # Previous: memory 256Mi → 512Mi (VPA lowerBound exceeded)
   resources:
     requests:
-      cpu: 50m      # 2x VPA target for safety margin
-      memory: 256Mi # 1.5x VPA target
+      cpu: 50m
+      memory: 512Mi  # Increased from 256Mi (was below VPA lowerBound)
     limits:
-      cpu: 500m     # Reduced from 2000m (VPA upperBound: 270m)
-      memory: 1Gi   # Reduced from 2Gi (VPA upperBound: 1.35Gi)
+      cpu: 500m
+      memory: 1Gi
 # ApplicationSet controller settings
 applicationSet:
   enabled: true
@@ -167,18 +166,16 @@ controller:
       enabled: true
       additionalLabels:
         release: kube-prometheus-stack
-  # VPA-optimized resources (2026-02-24)
-  # VPA target: cpu 2048m, memory 1.25Gi
-  # Previous: cpu 1000m (UNDER-PROVISIONED), memory 1Gi
-  # Controller was below VPA lowerBound (1021m) = CPU throttling during reconciliation
-  # This is the main reconciliation loop for 60+ applications
+  # VPA-optimized resources (2026-02-28)
+  # VPA target: cpu 2048m, memory 3.5Gi — memory below lowerBound
+  # Previous: memory 1536Mi → 4Gi (VPA lowerBound exceeded)
   resources:
     requests:
-      cpu: 2000m    # Match VPA target (was 1000m, doubled)
-      memory: 1536Mi  # 1.5Gi (VPA target 1.25Gi + buffer)
+      cpu: 2000m
+      memory: 4Gi   # Increased from 1536Mi (was below VPA lowerBound)
     limits:
-      cpu: 4000m    # Keep at 4000m (allows burst during mass sync)
-      memory: 4Gi   # Keep at 4Gi (VPA upperBound: 11.2Gi during spikes)
+      cpu: 4000m
+      memory: 6Gi   # Increased from 4Gi to accommodate memory growth
 # Argo CD repo-server settings
 repoServer:
   replicas: 2

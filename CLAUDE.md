@@ -118,7 +118,8 @@ Applications deploy in strict order to prevent race conditions:
 | **1** | Storage | Longhorn, VolumeSnapshot Controller, VolSync |
 | **2** | PVC Plumber | Backup existence checker (FAIL-CLOSED gate: PVC creation denied if Plumber is down) |
 | **3** | Kyverno | Policy engine (standalone App, must register webhooks before app PVCs are created) |
-| **4** | Infrastructure AppSet | Deploys from explicit path list: cert-manager, external-dns, GPU operators, gateway, databases, etc. |
+| **4** | Infrastructure AppSet | Deploys from explicit path list: cert-manager, external-dns, GPU operators, gateway, etc. |
+| **4** | Database AppSet | Discovers `infrastructure/database/*/*` — uses `selfHeal: false` for DR compatibility |
 | **5** | Monitoring AppSet | Discovers `monitoring/*` applications |
 | **6** | My-Apps AppSet | Discovers `my-apps/*/*` applications |
 
@@ -128,9 +129,10 @@ Applications deploy in strict order to prevent race conditions:
 - Kyverno (Wave 3) is a **standalone Application** (not in the Infrastructure AppSet) to guarantee its webhooks are registered before any app PVCs are created. ApplicationSets are considered "healthy" immediately upon creation, so putting Kyverno in an AppSet would race with app deployment.
 - **FAIL-CLOSED**: If PVC Plumber is down, Kyverno denies creation of backup-labeled PVCs. Apps retry via ArgoCD backoff until Plumber is healthy. This prevents data loss during disaster recovery.
 - cert-manager, GPU operators etc. deploy via Infrastructure AppSet (Wave 4) before user apps (Wave 6)
+- **Databases use a separate AppSet** with `selfHeal: false` so `skip-reconcile` annotations stick during DR recovery. The infrastructure AppSet uses `selfHeal: true` which would strip manual annotations.
 - This prevents "chicken-and-egg" dependency issues and SSD thrashing
 
-**Important**: The Infrastructure AppSet uses an explicit list of paths (not glob discovery). To add a new infrastructure component, you must add its path to `infrastructure/controllers/argocd/apps/infrastructure-appset.yaml`.
+**Important**: The Infrastructure AppSet uses an explicit list of paths (not glob discovery). To add a new infrastructure component, you must add its path to `infrastructure/controllers/argocd/apps/infrastructure-appset.yaml`. Databases are auto-discovered separately by `database-appset.yaml` via `infrastructure/database/*/*` glob.
 
 ## Directory Structure
 
@@ -764,27 +766,34 @@ CNPG databases use Barman backups to S3 but **do NOT auto-restore**. After a clu
 **Recovery procedure** (must bypass ArgoCD — SSA + CNPG webhook makes `initdb` always win):
 
 ```bash
-# 1. Edit cluster.yaml: comment out initdb, uncomment recovery section
-# 2. Update externalClusters.serverName to match CURRENT backup.serverName
-# 3. Bump backup.serverName to next version (e.g. -v2 → -v3)
-# 4. Render and apply directly (bypass ArgoCD):
+# 1. Pause ArgoCD (database AppSet preserves skip-reconcile annotations)
+kubectl annotate application immich -n argocd argocd.argoproj.io/skip-reconcile=true --overwrite
+kubectl annotate application my-apps-immich -n argocd argocd.argoproj.io/skip-reconcile=true --overwrite
+
+# 2. Edit cluster.yaml locally: replace initdb with recovery + externalClusters
+#    Set externalClusters.serverName = current backup version
+#    Bump backup.serverName to next version
+
+# 3. Render recovery manifest (bypass ArgoCD):
 kubectl kustomize infrastructure/database/cloudnative-pg/immich/ \
   | awk '/^apiVersion: postgresql.cnpg.io\/v1/{p=1} p{print} /^---/{if(p) exit}' \
   > /tmp/recovery.yaml
 
-# 5. Delete existing empty cluster and immediately create recovery version:
-kubectl delete cluster immich-database -n cloudnative-pg --wait=false; \
-  kubectl create -f /tmp/recovery.yaml
+# 4. Delete and recreate:
+kubectl delete cluster immich-database -n cloudnative-pg --wait=false
+kubectl wait --for=delete cluster/immich-database -n cloudnative-pg --timeout=180s
+kubectl create -f /tmp/recovery.yaml
 
-# 6. Wait for recovery:
+# 5. Wait for recovery:
 kubectl get clusters -n cloudnative-pg -w
 
-# 7. Verify data:
+# 6. Verify data:
 kubectl exec -n cloudnative-pg immich-database-1 -- \
   psql -U postgres -d immich -c "SELECT count(*) FROM \"user\";"
 
-# 8. Revert cluster.yaml to initdb (keep new serverName in backup section)
-# 9. Commit and push — ArgoCD syncs, CNPG ignores bootstrap on existing clusters
+# 7. Revert cluster.yaml to initdb (DELETE recovery code, keep bumped serverName)
+# 8. Commit and push
+# 9. Remove skip-reconcile annotations
 ```
 
 **Current serverName versions** (track these — must match for recovery):
@@ -974,6 +983,7 @@ kubectl exec -it gpu-pod -n app-name -- nvidia-smi
 | **VolSync configuration** | `infrastructure/storage/volsync/` |
 | **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
 | **Database with CNPG** | `infrastructure/database/cloudnative-pg/immich/` |
+| **Database AppSet (selfHeal: false)** | `infrastructure/controllers/argocd/apps/database-appset.yaml` |
 | **CNPG disaster recovery** | `docs/cnpg-disaster-recovery.md` |
 | **Gateway API routing** | `infrastructure/networking/gateway/` |
 | **Custom monitoring** | `monitoring/prometheus-stack/custom-alerts.yaml` |

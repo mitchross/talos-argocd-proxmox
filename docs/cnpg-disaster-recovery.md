@@ -4,6 +4,22 @@
 
 CloudNativePG (CNPG) databases are backed up via **Barman** to RustFS S3 (`s3://postgres-backups/cnpg/`). Unlike PVC backups (which auto-restore via Kyverno + PVC Plumber), database recovery is **manual** and must bypass ArgoCD.
 
+## Database ApplicationSet Architecture
+
+Database Applications are managed by a **separate ApplicationSet** (`database-appset.yaml`) with key differences from the infrastructure AppSet:
+
+| Setting | Infrastructure AppSet | Database AppSet |
+|---------|----------------------|-----------------|
+| `selfHeal` | `true` | **`false`** |
+| `ignoreApplicationDifferences` | none | preserves `skip-reconcile` |
+
+**Why**: Databases have a fundamentally different lifecycle from infrastructure. During disaster recovery, you need to manually create recovery clusters with `kubectl create`, which conflicts with ArgoCD's auto-sync. With `selfHeal: false`:
+- ArgoCD still auto-syncs **from Git** (push = deploy)
+- ArgoCD does **not** revert manual kubectl changes (needed for DR)
+- `skip-reconcile` annotations **stick** (ApplicationSet doesn't strip them)
+
+This means recovery no longer requires scaling down ArgoCD controllers.
+
 ## Why Recovery Can't Go Through ArgoCD
 
 ArgoCD uses **Server-Side Apply (SSA)**. CNPG has a **mutating admission webhook** that adds `initdb` defaults to every Cluster creation. When combined:
@@ -414,28 +430,24 @@ grep -c "recovery" /tmp/immich-recovery.yaml  # should be >= 1
 grep -c "initdb" /tmp/immich-recovery.yaml    # should be 0
 ```
 
-**4. Delete and immediately recreate (one command — ArgoCD is fast):**
+**4. Pause ArgoCD and delete/recreate:**
+
+Database Applications use `selfHeal: false` (via `database-appset.yaml`), so `skip-reconcile` annotations are preserved by the ApplicationSet controller.
 
 ```bash
-kubectl delete cluster immich-database -n cloudnative-pg --wait=false; \
-  sleep 15; \
-  kubectl create -f /tmp/immich-recovery.yaml
-```
-
-The 15-second sleep ensures old PVCs are cleaned up by Longhorn.
-
-If you get `AlreadyExists`, ArgoCD recreated the Cluster first. Use this fallback, then retry step 4:
-
-```bash
-# Temporarily pause reconcile for both immich apps
+# Pause ArgoCD reconciliation for the database app and its consumer
 kubectl annotate application immich -n argocd argocd.argoproj.io/skip-reconcile=true --overwrite
 kubectl annotate application my-apps-immich -n argocd argocd.argoproj.io/skip-reconcile=true --overwrite
 
-# Retry delete/create with explicit delete wait
+# Delete existing cluster and wait for PVC cleanup
 kubectl delete cluster immich-database -n cloudnative-pg --wait=false
 kubectl wait --for=delete cluster/immich-database -n cloudnative-pg --timeout=180s
+
+# Create recovery cluster (bypasses SSA — must use create, not apply)
 kubectl create -f /tmp/immich-recovery.yaml
 ```
+
+> **Note**: If `kubectl wait` times out, PVCs may still be terminating (Longhorn cleanup). Wait 15-30 seconds and retry the create.
 
 **4b. Confirm live cluster is actually in recovery mode:**
 
@@ -467,10 +479,10 @@ kubectl exec -n cloudnative-pg immich-database-1 -- \
 **7. Revert to normal operation:**
 
 In `cluster.yaml`:
-- Uncomment `initdb` bootstrap
-- Comment out `recovery` bootstrap + `externalClusters`
-- Keep the new `serverName` in the backup section (e.g. `immich-database-v3`)
-- Update the commented recovery `externalClusters.serverName` for next time (e.g. `immich-database-v3`)
+- Replace `bootstrap.recovery` + `externalClusters` with `bootstrap.initdb` (normal mode)
+- **DELETE all recovery code** — do not leave it commented in Git (CNPG webhook rejects dual bootstrap)
+- Keep `backup.barmanObjectStore.serverName` at the bumped version (e.g. `immich-database-v4`)
+- Update the DR comment with the new recovery source for next time
 
 ```bash
 git add infrastructure/database/cloudnative-pg/immich/cluster.yaml
@@ -478,14 +490,21 @@ git commit -m "CNPG: revert immich to initdb after successful recovery"
 git push
 ```
 
+**8. Remove skip-reconcile and resume ArgoCD:**
+
+```bash
+kubectl annotate application immich -n argocd argocd.argoproj.io/skip-reconcile- --overwrite
+kubectl annotate application my-apps-immich -n argocd argocd.argoproj.io/skip-reconcile- --overwrite
+```
+
 ArgoCD syncs. CNPG ignores `initdb` bootstrap on existing clusters — your data is safe.
 
 ### Quick Example Timeline (Immich)
 
-- Before nuke: backups writing to `immich-database-v2`
-- Recovery manifest: restore from `v2`, write new backups to `v3`
-- After recovery: normal manifest with `initdb` active, backup still on `v3`
-- Next DR event: restore from `v3`, then bump backup target to `v4`
+- Before nuke: backups writing to `immich-database-v4`
+- Recovery manifest: restore from `v4`, write new backups to `v5`
+- After recovery: normal manifest with `initdb` active, backup still on `v5`
+- Next DR event: restore from `v5`, then bump backup target to `v6`
 
 ## Troubleshooting
 
@@ -507,19 +526,21 @@ aws --endpoint-url http://192.168.10.133:30293 s3 ls s3://postgres-backups/cnpg/
 
 ### ArgoCD recreates cluster before manual apply
 
-**Cause**: `selfHeal: true` in ApplicationSet template.
+**Cause**: `skip-reconcile` annotation wasn't set before deleting the cluster.
 
-**Fix**: Use `delete --wait=false; sleep 15; kubectl create` in rapid succession. The sleep gives PVCs time to terminate.
+**Fix**: Database Applications use `selfHeal: false` (via `database-appset.yaml`), so the recovery procedure is:
+1. Set `skip-reconcile` annotation on both Applications **first**
+2. Then delete and recreate the cluster
 
-If Argo still wins and `kubectl create` returns `AlreadyExists`, temporarily annotate both Applications with `argocd.argoproj.io/skip-reconcile=true`, then retry delete/wait/create.
+The `database-appset.yaml` has `ignoreApplicationDifferences` configured to preserve the `skip-reconcile` annotation, so the ApplicationSet controller won't strip it.
 
 ### `Error from server (AlreadyExists)` during `kubectl create`
 
-**Cause**: ArgoCD recreated `immich-database` before your manual create landed.
+**Cause**: ArgoCD recreated the cluster before your manual create landed (annotation wasn't set).
 
 **Fix**:
-1. Pause reconcile for `immich` and `my-apps-immich` Applications.
-2. `kubectl delete ... --wait=false` + `kubectl wait --for=delete ...`.
+1. Verify `skip-reconcile` is set: `kubectl get application immich -n argocd -o jsonpath='{.metadata.annotations}'`
+2. If missing, re-annotate and retry delete/wait/create.
 3. `kubectl create -f /tmp/immich-recovery.yaml`.
 4. Verify live spec shows `bootstrap.recovery`.
 
