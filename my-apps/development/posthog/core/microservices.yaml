@@ -99,7 +99,7 @@ spec:
             limits:
               memory: 256Mi
 ---
-# Cyclotron Janitor - background job cleanup
+# Cyclotron Janitor - background job cleanup (disabled: cyclotron_jobs table doesn't exist)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -109,7 +109,7 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: cyclotron-janitor
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app.kubernetes.io/name: posthog
