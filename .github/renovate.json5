@@ -114,6 +114,13 @@
         '/^getmeili/meilisearch/',
       ],
     },
+    {
+      description: 'Ignore PostHog managed images (pinned to docker-compose hobby versions)',
+      enabled: false,
+      matchFileNames: [
+        'my-apps/development/posthog/**',
+      ],
+    },
   ],
   ignorePaths: [
     '**/charts/**',
