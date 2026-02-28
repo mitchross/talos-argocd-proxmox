@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: db
-          image: postgres:15.12-alpine
+          image: postgres:18.3-alpine
           env:
             - name: POSTGRES_USER
               value: posthog
