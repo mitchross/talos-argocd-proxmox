@@ -204,6 +204,8 @@ This shared repository design is a deliberate choice. Kopia uses **content-defin
 
 ## Why Two Backup Systems (NFS for PVCs, S3 for Databases)
 
+For CloudNativePG database recovery runbooks (including ArgoCD race-condition handling) see [docs/cnpg-disaster-recovery.md](cnpg-disaster-recovery.md). For AI-assisted incident guidance, use [LLM Recovery Prompt Templates](cnpg-disaster-recovery.md#llm-recovery-prompt-templates).
+
 **PVC backups → NFS + Kopia** because:
 - VolSync's Kopia mover needs filesystem access for content-defined chunking and dedup
 - Direct NFS gives 10Gbps to TrueNAS with no HTTP overhead
