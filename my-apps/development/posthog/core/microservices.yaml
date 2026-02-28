@@ -30,6 +30,8 @@ spec:
               value: "redis://redis7:6379/"
             - name: ADDRESS
               value: "0.0.0.0:8080"
+            - name: CONFIG_FILE_PATH
+              value: ""
           ports:
             - containerPort: 8080
               name: http
