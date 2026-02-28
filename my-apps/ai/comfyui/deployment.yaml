@@ -28,6 +28,17 @@ spec:
         operator: "Equal"
         value: "true"
         effect: "NoSchedule"
+      # Copy Git-managed pre-start script from ConfigMap to PVC
+      # (entrypoint does chmod +x, so ConfigMap subPath mount won't work — read-only)
+      initContainers:
+      - name: copy-pre-start
+        image: alpine
+        command: ["cp", "/opt/pre-start/pre-start.sh", "/root/user-scripts/pre-start.sh"]
+        volumeMounts:
+        - name: comfyui-storage
+          mountPath: /root
+        - name: pre-start-script
+          mountPath: /opt/pre-start
       containers:
       - name: comfyui
         # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu128-megapak-pt29
@@ -66,10 +77,6 @@ spec:
         - name: manager-config
           mountPath: /root/ComfyUI/user/__manager/config.ini
           subPath: config.ini
-        # Image entrypoint sources /root/user-scripts/pre-start.sh before starting ComfyUI
-        - name: pre-start-script
-          mountPath: /root/user-scripts/pre-start.sh
-          subPath: pre-start.sh
         readinessProbe:
           httpGet:
             path: /
