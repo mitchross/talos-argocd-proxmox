@@ -33,22 +33,53 @@ data:
     #!/bin/bash
     set -eu
 
-    echo "[INFO] Installing required packages for custom nodes..."
-    uv pip install --system qwen-vl-utils
+    # ── Git Config ─────────────────────────────────────────────
+    git config --global core.fileMode false || true
+
+    # ── Custom Node Management ─────────────────────────────────
+    # Clone or update a custom node from a git repo
+    install_node() {
+      local repo="$1"
+      local name
+      name="$(basename "$repo" .git)"
+      local dest="/root/ComfyUI/custom_nodes/$name"
+
+      if [ -d "$dest/.git" ]; then
+        echo "[INFO] Updating $name..."
+        cd "$dest" && git pull --ff-only || true
+      elif [ -d "$dest" ]; then
+        echo "[INFO] $name already installed (non-git), skipping"
+      elif [ -d "/root/ComfyUI/custom_nodes" ]; then
+        echo "[INFO] Installing $name..."
+        git clone "$repo" "$dest"
+      fi
+    }
+
+    echo "[INFO] Managing custom nodes..."
+    install_node "https://github.com/FranckyB/ComfyUI-Prompt-Manager.git"
+    install_node "https://github.com/kijai/ComfyUI-WanVideoWrapper.git"
+    install_node "https://github.com/PanicTitan/ComfyUI-Gallery.git"
+    install_node "https://github.com/fidecastro/comfyui-llamacpp-client.git"
+
+    # ── Python Dependencies ────────────────────────────────────
+    echo "[INFO] Installing Python dependencies..."
     uv pip install --system --upgrade transformers
     uv pip install --system "bitsandbytes>=0.46.1"
+    uv pip install --system colorama huggingface_hub   # Prompt-Manager
+    uv pip install --system watchdog piexif aiohttp     # Gallery
+    uv pip install --system pywavelets                  # RES4LYF
+    uv pip install --system surrealist                  # tensorops
 
-    echo "[INFO] Installing missing custom node dependencies..."
-    # ComfyUI-Prompt-Manager
-    uv pip install --system colorama huggingface_hub
-    # ComfyUI-Gallery
-    uv pip install --system watchdog piexif aiohttp
-    # RES4LYF (pywavelets imports as pywt)
-    uv pip install --system pywavelets
-    # comfyui-tensorops
-    uv pip install --system surrealist
-
-    echo "[INFO] Setting up fonts directory..."
+    # ── System Setup ───────────────────────────────────────────
     mkdir -p /usr/share/fonts/truetype
+
+    # ── Example Workflows ──────────────────────────────────────
+    DEST="/root/ComfyUI/user/default/workflows"
+    mkdir -p "$DEST"
+    SRC="/root/ComfyUI/custom_nodes/ComfyUI-WanVideoWrapper/example_workflows"
+    if [ -d "$SRC" ]; then
+      cp -f "$SRC"/*.json "$DEST/" 2>/dev/null && \
+        echo "[INFO] Copied Wan 2.2 example workflows" || true
+    fi
 
     echo "[INFO] Pre-start setup complete."
