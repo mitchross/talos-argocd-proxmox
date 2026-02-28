@@ -22,9 +22,7 @@ spec:
         - name: web
           image: posthog/posthog:latest
           command:
-            - /bin/sh
-            - -c
-            - ./bin/start-backend & ./bin/start-frontend
+            - ./bin/docker-server-unit
           envFrom:
             - configMapRef:
                 name: posthog-env

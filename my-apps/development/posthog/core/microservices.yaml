@@ -1,5 +1,5 @@
 ---
-# Livestream - real-time event streaming
+# Livestream - real-time event streaming (disabled: requires GeoIP MMDB file)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: livestream
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app.kubernetes.io/name: posthog
@@ -169,6 +169,13 @@ spec:
         - name: cymbal
           image: ghcr.io/posthog/posthog/cymbal:master
           env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-password
+            - name: DATABASE_URL
+              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
             - name: KAFKA_HOSTS
               value: "kafka:9092"
             - name: RUST_LOG
