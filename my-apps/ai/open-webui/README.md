@@ -51,10 +51,4 @@ Open WebUI: https://open-webui.vanillax.me
 - `kustomization.yaml` - Kustomize configuration 
 
 
-📊 Model Hierarchy:
-
-🥇 qwen3-coder-q4-160k - Your daily driver (START HERE)
-🚀 qwen3-coder-q4-200k - If you need even more context
-⚖️ qwen3-coder-q4-128k - Fallback if 160K causes issues
-💎 qwen3-coder-q5-120k - When you need higher quality
-🛡️ qwen3-coder-q4-96k - Guaranteed stable option 
+Model: `general - qwen3.5` (Qwen3.5-35B-A3B Q4_K_XL) — single consolidated model for all tasks (general, vision, coding). 16K context.
