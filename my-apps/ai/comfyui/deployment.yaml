@@ -77,6 +77,9 @@ spec:
         - name: manager-config
           mountPath: /root/ComfyUI/user/__manager/config.ini
           subPath: config.ini
+        - name: custom-nodes
+          mountPath: /opt/custom-nodes
+          readOnly: true
         readinessProbe:
           httpGet:
             path: /
@@ -104,3 +107,6 @@ spec:
         configMap:
           name: comfyui-pre-start
           defaultMode: 0755
+      - name: custom-nodes
+        configMap:
+          name: comfyui-custom-nodes
