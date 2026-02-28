@@ -28,87 +28,6 @@ spec:
         operator: "Equal"
         value: "true"
         effect: "NoSchedule"
-      initContainers:
-      - name: git-config
-        image: alpine/git
-        command: [ "sh", "-c", "git config --global core.fileMode false || true" ]
-        volumeMounts:
-        - name: comfyui-storage
-          mountPath: /root
-      - name: install-prompt-manager
-        image: alpine/git
-        command:
-        - sh
-        - -c
-        - |
-          DEST="/root/ComfyUI/custom_nodes/ComfyUI-Prompt-Manager"
-          if [ -d "$DEST/.git" ]; then
-            cd "$DEST" && git pull --ff-only || true
-          elif [ -d "$DEST" ]; then
-            echo "Already installed (non-git), skipping"
-          elif [ -d "/root/ComfyUI/custom_nodes" ]; then
-            git clone https://github.com/FranckyB/ComfyUI-Prompt-Manager.git "$DEST"
-          else
-            echo "ComfyUI not yet initialized, skipping (will be cloned on next restart)"
-          fi
-        volumeMounts:
-        - name: comfyui-storage
-          mountPath: /root
-      - name: install-wan-video-wrapper
-        image: alpine/git
-        command:
-        - sh
-        - -c
-        - |
-          DEST="/root/ComfyUI/custom_nodes/ComfyUI-WanVideoWrapper"
-          if [ -d "$DEST/.git" ]; then
-            cd "$DEST" && git pull --ff-only || true
-          elif [ -d "$DEST" ]; then
-            echo "Already installed (non-git), skipping"
-          elif [ -d "/root/ComfyUI/custom_nodes" ]; then
-            git clone https://github.com/kijai/ComfyUI-WanVideoWrapper.git "$DEST"
-          else
-            echo "ComfyUI not yet initialized, skipping"
-          fi
-        volumeMounts:
-        - name: comfyui-storage
-          mountPath: /root
-      - name: install-comfyui-gallery
-        image: alpine/git
-        command:
-        - sh
-        - -c
-        - |
-          DEST="/root/ComfyUI/custom_nodes/ComfyUI-Gallery"
-          if [ -d "$DEST/.git" ]; then
-            cd "$DEST" && git pull --ff-only || true
-          elif [ -d "$DEST" ]; then
-            echo "Already installed (non-git), skipping"
-          elif [ -d "/root/ComfyUI/custom_nodes" ]; then
-            git clone https://github.com/PanicTitan/ComfyUI-Gallery.git "$DEST"
-          else
-            echo "ComfyUI not yet initialized, skipping"
-          fi
-        volumeMounts:
-        - name: comfyui-storage
-          mountPath: /root
-      - name: copy-example-workflows
-        image: alpine
-        command:
-        - sh
-        - -c
-        - |
-          DEST="/root/ComfyUI/user/default/workflows"
-          mkdir -p "$DEST"
-          # Copy Wan 2.2 example workflows from wrapper
-          SRC="/root/ComfyUI/custom_nodes/ComfyUI-WanVideoWrapper/example_workflows"
-          if [ -d "$SRC" ]; then
-            cp -f "$SRC"/*.json "$DEST/" 2>/dev/null && \
-              echo "Copied Wan 2.2 example workflows" || true
-          fi
-        volumeMounts:
-        - name: comfyui-storage
-          mountPath: /root
       containers:
       - name: comfyui
         # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu128-megapak-pt29
@@ -142,15 +61,12 @@ spec:
             cpu: "16"
             nvidia.com/gpu: "1"
         volumeMounts:
-        # Single storage volume at /root - container handles internal structure
         - name: comfyui-storage
           mountPath: /root
-        # ComfyUI Manager config with security_level = normal
         - name: manager-config
           mountPath: /root/ComfyUI/user/__manager/config.ini
           subPath: config.ini
-        # Pre-start script for installing missing custom node dependencies
-        # Image entrypoint sources /root/user-scripts/pre-start.sh (NOT /root/pre-start.sh)
+        # Image entrypoint sources /root/user-scripts/pre-start.sh before starting ComfyUI
         - name: pre-start-script
           mountPath: /root/user-scripts/pre-start.sh
           subPath: pre-start.sh
@@ -158,7 +74,7 @@ spec:
           httpGet:
             path: /
             port: 8188
-          initialDelaySeconds: 300 # Increased for large downloads on first start
+          initialDelaySeconds: 300
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 6
@@ -166,7 +82,7 @@ spec:
           httpGet:
             path: /
             port: 8188
-          initialDelaySeconds: 1500 # Increased for large downloads on first start
+          initialDelaySeconds: 1500
           periodSeconds: 30
           timeoutSeconds: 10
           failureThreshold: 3
