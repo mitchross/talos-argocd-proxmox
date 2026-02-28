@@ -5,7 +5,6 @@ metadata:
   namespace: dvwa
   labels:
     app: dvwa
-  annotations:
     description: "DVWA - Damn Vulnerable Web Application for penetration testing"
 spec:
   replicas: 1
