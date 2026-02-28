@@ -1,6 +1,7 @@
 # AI Stack Guide
 
-Local AI infrastructure running on dual RTX 3090s (48GB VRAM) + 400GB system RAM.
+Local AI infrastructure running on dual RTX 3090s (24GB each) + 400GB system RAM.
+Each GPU runs one workload — llama-server on GPU 0, ComfyUI on GPU 1.
 
 ## Architecture
 
@@ -12,39 +13,37 @@ Local AI infrastructure running on dual RTX 3090s (48GB VRAM) + 400GB system RAM
            (LLM inference) (image+video) (web search)
            port 8080       port 8188
            ┌──────────┐   ┌──────────────────────┐
-           │ 4 models │   │ Z-Image-Turbo (t2i)  │
-           │ via       │   │ Qwen-Image-Edit (i2i)│
-           │ presets   │   │ Wan 2.2 T2V (video)  │
-           └──────────┘   │ Wan 2.2 I2V (video)  │
-           2x RTX 3090    │ Florence-2 (caption)  │
-           (48GB VRAM)    │ WD14 Tagger (tags)   │
+           │ Qwen3.5  │   │ Z-Image-Turbo (t2i)  │
+           │ 35B-A3B  │   │ Qwen-Image-Edit (i2i)│
+           │ Q4_K_XL  │   │ Wan 2.2 T2V (video)  │
+           │ +mmproj  │   │ Wan 2.2 I2V (video)  │
+           └──────────┘   │ Florence-2 (caption)  │
+           GPU 0 (24GB)   │ WD14 Tagger (tags)   │
                           └──────────────────────┘
-                          1x RTX 3090 (24GB VRAM)
+                          GPU 1 (24GB)
 ```
 
-## LLM Models (llama-cpp)
+## LLM Model (llama-cpp)
 
-All models served via a single `llama-server` with multi-model routing (`--models-max 8`).
-Models load on-demand and swap in/out of VRAM.
+Single model served via `llama-server` on GPU 0. Qwen3.5-35B-A3B is a MoE model (3B active params)
+with native multimodal support (vision + language). Q4_K_XL (20.6GB) + mmproj (858MB) fits in 1x 24GB RTX 3090.
 
 | Preset | Model | Active Params | VRAM | Context | Use Case |
 |--------|-------|--------------|------|---------|----------|
-| `reasoning - nemotron3-nano` | Nemotron-3-Nano-30B-A3B Q4_K_XL | 3B (MoE) | ~15GB | 32K | Chat, background tasks (title gen, tagging) |
-| `coder - qwen3-coder-next` | Qwen3-Coder-Next-80B-A3B Q3_K_XL | 3B (MoE) | ~37GB | 256K | Coding, tool calling, Claude Code CLI |
-| `vision - qwen3-vl-thinking` | Qwen3-VL-30B-A3B-Thinking Q8_0 | 3B (MoE) | ~48GB | 32K | Image understanding, OCR |
-| `experimental slow - qwen3.5` | Qwen3.5-397B-A17B Q4_K_XL | 17B (MoE) | 48GB+RAM | 128K | General reasoning (~5-15 tok/s, uses cpu-moe) |
+| `general - qwen3.5` | Qwen3.5-35B-A3B Q4_K_XL | 3B (MoE) | ~21GB | 16K | General, vision, coding, captioning |
+
+Aliases: `qwen3.5`, `general`, `vision`, `image`, `multimodal`, `coder`, `code`
 
 ### Key llama-server Optimizations
 
 | Setting | Value | Why |
 |---------|-------|-----|
-| `cache-type-k = q8_0` | All models | Halves KV key cache VRAM (~0.002 perplexity cost) |
-| `cache-type-v = q4_0` | All models | Thirds KV value cache VRAM (values tolerate aggressive quant) |
-| `cpu-moe = 1` | Qwen3.5 only | Keeps attention on GPU, offloads MoE experts to CPU. Much faster than unified memory swapping |
+| `cache-type-k = q8_0` | KV cache | Halves KV key cache VRAM (~0.002 perplexity cost) |
+| `cache-type-v = q8_0` | KV cache | Quantized KV value cache for VRAM savings |
 | `--no-mmap` | Global | Prevents page fault stalls during inference (we have 400GB RAM) |
-| `-b 4096 -ub 1024` | Global | Larger batch sizes for faster prompt processing |
+| `-b 2048 -ub 512` | Global | Batch sizes for prompt processing |
 | `--parallel 1` | Global | Single-user -- maximize VRAM for context, not concurrent slots |
-| `CUDA_SCALE_LAUNCH_QUEUES=4x` | Env var | Larger CUDA command buffer for dual-GPU kernel launches |
+| `--fit on` | Global | Auto-fit dense layers to available VRAM |
 
 ### Using with Claude Code CLI
 
@@ -54,7 +53,7 @@ llama-server natively supports the Anthropic Messages API at `/v1/messages`. No 
 export ANTHROPIC_BASE_URL="http://llama.vanillax.me"
 export ANTHROPIC_AUTH_TOKEN="no-key-required"
 export ANTHROPIC_API_KEY=""
-claude --model "coder - qwen3-coder-next"
+claude --model "general - qwen3.5"
 ```
 
 ### Using with OpenClaw / Other Tools
@@ -110,8 +109,10 @@ Two options, both pre-installed in the megapak Docker image:
 
 **Workflows**: `workflows/florence2-caption.json`, `workflows/wd14-tagger.json`
 
-For deeper image analysis (visual Q&A, reasoning), use **Qwen3-VL** via Open WebUI chat
+For deeper image analysis (visual Q&A, reasoning), use **Qwen3.5** via Open WebUI chat
 (upload image -> ask questions). This goes through llama-server, not ComfyUI.
+ComfyUI can also call llama-server's vision API directly via the `comfyui-llamacpp-client` node
+(URL: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080`).
 
 ## Video Generation (ComfyUI)
 
@@ -237,8 +238,7 @@ The job downloads (skips existing):
 ### Task Model
 
 Background tasks (title generation, chat tagging, follow-up suggestions) use
-`reasoning - nemotron3-nano` -- fast 3B active MoE model. Previously this was set to
-`coder - qwen3-coder-next` which was overkill for generating chat titles.
+`general - qwen3.5` -- the single consolidated model handles all tasks.
 
 ### RAG Tuning
 
@@ -287,13 +287,6 @@ The `cache-type-k = q8_0` / `cache-type-v = q4_0` settings require the llama.cpp
 to be compiled with `-DGGML_CUDA_FA_ALL_QUANTS=ON`. If the pre-built `b8006` image doesn't
 have this, flash attention silently falls back to f16 KV cache. Test by checking VRAM usage --
 if 262K context still uses ~40GB of KV cache, the flag is missing and you need a newer build.
-
-### Experimental Slow Model (Qwen3.5-397B)
-
-Even with `cpu-moe = 1`, the 397B model will be significantly slower than the 3B-active models
-because the 17B active parameters still require substantial compute, and expert weights shuttle
-between CPU and GPU. Expect ~5-15 tok/s vs ~70 tok/s for the coder. It's the "quality over speed"
-option for complex reasoning. Named "experimental slow" in the model list to set expectations.
 
 ### ComfyUI Model Swapping
 
