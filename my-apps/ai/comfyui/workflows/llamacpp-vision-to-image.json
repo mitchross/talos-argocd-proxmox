@@ -1,6 +1,6 @@
 {
-  "last_node_id": 12,
-  "last_link_id": 12,
+  "last_node_id": 14,
+  "last_link_id": 15,
   "nodes": [
     {
       "id": 1,
@@ -20,7 +20,7 @@
         {"name": "image", "type": "IMAGE", "link": 1}
       ],
       "outputs": [
-        {"name": "caption", "type": "STRING", "links": [12], "slot_index": 0}
+        {"name": "caption", "type": "STRING", "links": [12, 13], "slot_index": 0}
       ],
       "widgets_values": [
         "Describe this image in rich detail for use as an image generation prompt. Focus on subject, composition, lighting, colors, style, and mood. Output only the prompt text, no preamble.",
@@ -36,7 +36,7 @@
       "type": "ShowText|pysssss",
       "pos": [380, 360],
       "size": [400, 200],
-      "title": "Caption Preview (copy to Prompt below)",
+      "title": "Original Caption",
       "properties": {"Node name for S&R": "ShowText|pysssss"},
       "inputs": [
         {"name": "text", "type": "STRING", "link": 12, "widget": {"name": "text"}}
@@ -44,24 +44,58 @@
       "widgets_values": [""]
     },
     {
+      "id": 13,
+      "type": "LlamaCppTextModify",
+      "pos": [840, 0],
+      "size": [400, 300],
+      "title": "Modify Caption (type your changes)",
+      "properties": {"Node name for S&R": "LlamaCppTextModify"},
+      "inputs": [
+        {"name": "original_text", "type": "STRING", "link": 13}
+      ],
+      "outputs": [
+        {"name": "modified_text", "type": "STRING", "links": [14, 15], "slot_index": 0}
+      ],
+      "widgets_values": [
+        "Describe what changes you want (e.g. make it cyberpunk, change time of day, add rain)",
+        "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080",
+        "general - qwen3.5",
+        0.6,
+        1024
+      ]
+    },
+    {
+      "id": 14,
+      "type": "ShowText|pysssss",
+      "pos": [840, 360],
+      "size": [400, 200],
+      "title": "Modified Caption Preview",
+      "properties": {"Node name for S&R": "ShowText|pysssss"},
+      "inputs": [
+        {"name": "text", "type": "STRING", "link": 14, "widget": {"name": "text"}}
+      ],
+      "widgets_values": [""]
+    },
+    {
       "id": 3,
       "type": "CLIPTextEncode",
-      "pos": [840, 0],
+      "pos": [1300, 0],
       "size": [400, 200],
-      "title": "Positive Prompt (paste & edit caption here)",
+      "title": "Positive Prompt (from TextModify)",
       "properties": {"Node name for S&R": "CLIPTextEncode"},
       "inputs": [
-        {"name": "clip", "type": "CLIP", "link": 5}
+        {"name": "clip", "type": "CLIP", "link": 5},
+        {"name": "text", "type": "STRING", "link": 15, "widget": {"name": "text"}}
       ],
       "outputs": [
         {"name": "CONDITIONING", "type": "CONDITIONING", "links": [7], "slot_index": 0}
       ],
-      "widgets_values": ["paste caption here, edit as desired, then Queue again"]
+      "widgets_values": [""]
     },
     {
       "id": 4,
       "type": "CLIPTextEncode",
-      "pos": [840, 260],
+      "pos": [1300, 260],
       "size": [400, 200],
       "properties": {"Node name for S&R": "CLIPTextEncode"},
       "inputs": [
@@ -76,7 +110,7 @@
     {
       "id": 5,
       "type": "CLIPLoader",
-      "pos": [840, 520],
+      "pos": [1300, 520],
       "size": [320, 100],
       "properties": {"Node name for S&R": "CLIPLoader"},
       "outputs": [
@@ -87,7 +121,7 @@
     {
       "id": 6,
       "type": "UNETLoader",
-      "pos": [1300, 0],
+      "pos": [1760, 0],
       "size": [320, 100],
       "properties": {"Node name for S&R": "UNETLoader"},
       "outputs": [
@@ -98,7 +132,7 @@
     {
       "id": 7,
       "type": "VAELoader",
-      "pos": [1300, 520],
+      "pos": [1760, 520],
       "size": [320, 60],
       "properties": {"Node name for S&R": "VAELoader"},
       "outputs": [
@@ -109,7 +143,7 @@
     {
       "id": 8,
       "type": "EmptyLatentImage",
-      "pos": [1300, 380],
+      "pos": [1760, 380],
       "size": [320, 106],
       "properties": {"Node name for S&R": "EmptyLatentImage"},
       "outputs": [
@@ -120,7 +154,7 @@
     {
       "id": 9,
       "type": "KSampler",
-      "pos": [1700, 0],
+      "pos": [2140, 0],
       "size": [320, 474],
       "properties": {"Node name for S&R": "KSampler"},
       "inputs": [
@@ -137,7 +171,7 @@
     {
       "id": 10,
       "type": "VAEDecode",
-      "pos": [2080, 0],
+      "pos": [2520, 0],
       "size": [210, 46],
       "properties": {"Node name for S&R": "VAEDecode"},
       "inputs": [
@@ -151,7 +185,7 @@
     {
       "id": 11,
       "type": "SaveImage",
-      "pos": [2080, 100],
+      "pos": [2520, 100],
       "size": [320, 270],
       "properties": {"Node name for S&R": "SaveImage"},
       "inputs": [
@@ -171,12 +205,15 @@
     [9, 6, 0, 9, 0, "MODEL"],
     [10, 8, 0, 9, 3, "LATENT"],
     [11, 10, 0, 11, 0, "IMAGE"],
-    [12, 2, 0, 12, 0, "STRING"]
+    [12, 2, 0, 12, 0, "STRING"],
+    [13, 2, 0, 13, 0, "STRING"],
+    [14, 13, 0, 14, 0, "STRING"],
+    [15, 13, 0, 3, 1, "STRING"]
   ],
   "groups": [],
   "config": {},
   "extra": {
-    "ds": {"scale": 0.7, "offset": [50, 50]}
+    "ds": {"scale": 0.6, "offset": [50, 50]}
   },
   "version": 0.4
 }
