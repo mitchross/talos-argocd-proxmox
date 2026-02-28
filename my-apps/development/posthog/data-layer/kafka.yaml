@@ -38,9 +38,6 @@ spec:
             - --memory=2G
             - --reserve-memory=200M
             - --overprovisioned
-            - --set=redpanda.empty_seed_starts_cluster=false
-            - --seeds=kafka:33145
-            - --set=redpanda.auto_create_topics_enabled=true
           env:
             - name: ALLOW_PLAINTEXT_LISTENER
               value: "true"
