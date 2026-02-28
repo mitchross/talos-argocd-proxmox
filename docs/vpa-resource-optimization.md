@@ -438,6 +438,25 @@ kubectl logs -n goldilocks -l app.kubernetes.io/name=goldilocks,app.kubernetes.i
 kubectl logs -n vertical-pod-autoscaler -l app.kubernetes.io/component=recommender
 ```
 
+## Grafana Dashboards
+
+Two community dashboards are auto-provisioned in Grafana under the **Infrastructure** folder:
+
+| Dashboard | Grafana.com ID | What It Shows |
+|-----------|---------------|---------------|
+| **VPA Recommendations** | [14588](https://grafana.com/grafana/dashboards/14588) | Table of target/lower/upper bounds per container, namespace summary |
+| **K8s Autoscaling VPA** | [22168](https://grafana.com/grafana/dashboards/22168) | Cluster overview with drill-down to pod-level VPA details |
+
+**URL**: https://grafana.vanillax.me → search for "VPA"
+
+These dashboards read VPA metrics exposed by kube-state-metrics (`kube_verticalpodautoscaler_*`). Combined with Goldilocks and `vpa-report.sh`, you have three ways to view VPA data:
+
+1. **Goldilocks dashboard** — per-namespace cards with copy-paste YAML
+2. **Grafana VPA dashboards** — time-series graphs and historical trends
+3. **CLI** — `./scripts/vpa-report.sh` for quick terminal output
+
+---
+
 ## Related Docs
 
 - [Monitoring README](../monitoring/README.md) — metrics-server vs Prometheus pipelines

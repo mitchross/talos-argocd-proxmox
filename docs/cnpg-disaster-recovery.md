@@ -51,6 +51,15 @@ s3://postgres-backups/cnpg/immich/
 
 **Each recovery bumps the version**: `-v2` → `-v3` → `-v4`, etc.
 
+### Restore Source vs Backup Target (Critical)
+
+During recovery, treat these as two different values:
+
+- `externalClusters[].barmanObjectStore.serverName` = **restore source** (existing lineage, e.g. `immich-database-v2`)
+- `backup.barmanObjectStore.serverName` = **new backup target** (next lineage, e.g. `immich-database-v3`)
+
+After recovery succeeds, keep backups on the new lineage (`v3`). Do **not** switch backup target back to `v2`.
+
 ## Recovery Procedure
 
 ### Prerequisites
@@ -130,7 +139,7 @@ In `cluster.yaml`:
 - Uncomment `initdb` bootstrap
 - Comment out `recovery` bootstrap + `externalClusters`
 - Keep the new `serverName` in the backup section (e.g. `immich-database-v3`)
-- Update the commented recovery `externalClusters.serverName` to match the new backup serverName
+- Update the commented recovery `externalClusters.serverName` for next time (e.g. `immich-database-v3`)
 
 ```bash
 git add infrastructure/database/cloudnative-pg/immich/cluster.yaml
@@ -139,6 +148,13 @@ git push
 ```
 
 ArgoCD syncs. CNPG ignores `initdb` bootstrap on existing clusters — your data is safe.
+
+### Quick Example Timeline (Immich)
+
+- Before nuke: backups writing to `immich-database-v2`
+- Recovery manifest: restore from `v2`, write new backups to `v3`
+- After recovery: normal manifest with `initdb` active, backup still on `v3`
+- Next DR event: restore from `v3`, then bump backup target to `v4`
 
 ## Troubleshooting
 

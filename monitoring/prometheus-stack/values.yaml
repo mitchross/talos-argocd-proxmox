@@ -209,6 +209,14 @@ grafana:
         gnetId: 20417
         revision: 3
         datasource: Prometheus
+      vpa-recommendations:
+        gnetId: 14588
+        revision: 5
+        datasource: Prometheus
+      vpa-autoscaling:
+        gnetId: 22168
+        revision: 1
+        datasource: Prometheus
   # Additional data sources configuration
   additionalDataSources:
     - name: Loki
