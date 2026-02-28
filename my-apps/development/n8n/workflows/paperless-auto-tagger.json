@@ -139,7 +139,7 @@
         "url": "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1/chat/completions",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: 'coder - qwen3-coder-next', messages: [ { role: 'system', content: 'You are a document classifier for a personal document management system. You analyze document content and suggest relevant tags. Always respond with valid JSON only, no markdown fences, no explanation.' }, { role: 'user', content: $json.prompt } ], max_tokens: 256, temperature: 0.2 }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: 'general - qwen3.5', messages: [ { role: 'system', content: 'You are a document classifier for a personal document management system. You analyze document content and suggest relevant tags. Always respond with valid JSON only, no markdown fences, no explanation.' }, { role: 'user', content: $json.prompt } ], max_tokens: 256, temperature: 0.2 }) }}",
         "options": {}
       },
       "id": "e1f2a3b4-0000-4000-8000-000000000008",
