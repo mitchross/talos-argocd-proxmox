@@ -114,6 +114,27 @@ kubectl delete cluster immich-database -n cloudnative-pg --wait=false; \
 
 The 15-second sleep ensures old PVCs are cleaned up by Longhorn.
 
+If you get `AlreadyExists`, ArgoCD recreated the Cluster first. Use this fallback, then retry step 4:
+
+```bash
+# Temporarily pause reconcile for both immich apps
+kubectl annotate application immich -n argocd argocd.argoproj.io/skip-reconcile=true --overwrite
+kubectl annotate application my-apps-immich -n argocd argocd.argoproj.io/skip-reconcile=true --overwrite
+
+# Retry delete/create with explicit delete wait
+kubectl delete cluster immich-database -n cloudnative-pg --wait=false
+kubectl wait --for=delete cluster/immich-database -n cloudnative-pg --timeout=180s
+kubectl create -f /tmp/immich-recovery.yaml
+```
+
+**4b. Confirm live cluster is actually in recovery mode:**
+
+```bash
+kubectl get cluster immich-database -n cloudnative-pg -o yaml | sed -n '/bootstrap:/,/storage:/p'
+# Must show: bootstrap.recovery
+# Must NOT show: bootstrap.initdb
+```
+
 **5. Monitor recovery:**
 
 ```bash
@@ -180,11 +201,35 @@ aws --endpoint-url http://192.168.10.133:30293 s3 ls s3://postgres-backups/cnpg/
 
 **Fix**: Use `delete --wait=false; sleep 15; kubectl create` in rapid succession. The sleep gives PVCs time to terminate.
 
+If Argo still wins and `kubectl create` returns `AlreadyExists`, temporarily annotate both Applications with `argocd.argoproj.io/skip-reconcile=true`, then retry delete/wait/create.
+
+### `Error from server (AlreadyExists)` during `kubectl create`
+
+**Cause**: ArgoCD recreated `immich-database` before your manual create landed.
+
+**Fix**:
+1. Pause reconcile for `immich` and `my-apps-immich` Applications.
+2. `kubectl delete ... --wait=false` + `kubectl wait --for=delete ...`.
+3. `kubectl create -f /tmp/immich-recovery.yaml`.
+4. Verify live spec shows `bootstrap.recovery`.
+
 ### Recovery pod stuck in Pending
 
 **Cause**: Old PVCs from previous cluster still terminating (Longhorn cleanup).
 
 **Fix**: Wait 15-30 seconds for PVCs to fully delete, then recreate the cluster.
+
+### Recovery pod stuck at `Init:0/1` with `volume is not ready for workloads`
+
+**Cause**: Longhorn data/WAL volume is still attaching/remounting after restore.
+
+**Fix**:
+```bash
+kubectl get pods -n cloudnative-pg -l cnpg.io/cluster=immich-database -o wide
+kubectl -n longhorn-system get volumes.longhorn.io | grep immich-database-1
+kubectl -n longhorn-system describe volumes.longhorn.io <wal-volume-name>
+```
+Wait for Longhorn volume `state=attached` and `robustness=healthy`; CNPG will proceed automatically.
 
 ### "Only one bootstrap method can be specified"
 
@@ -229,4 +274,60 @@ kubectl run -it --rm barman-ls --image=amazon/aws-cli:latest \
 │  - Home automation data          │    │  - App state                     │
 │                                  │    │                                  │
 └──────────────────────────────────┘    └──────────────────────────────────┘
+```
+
+## LLM Recovery Prompt Templates
+
+Use these prompts when you want an AI assistant to guide or execute CNPG disaster recovery safely.
+
+### Option A: System Prompt (for agent/custom mode)
+
+```text
+You are assisting with CloudNativePG disaster recovery in this repository.
+
+Hard rules:
+1) Recovery must bypass ArgoCD apply/SSA path for Cluster creation.
+2) Never use kubectl apply for recovery cluster creation; use kubectl create.
+3) Verify rendered recovery manifest contains bootstrap.recovery and does not contain bootstrap.initdb.
+4) If create fails with AlreadyExists, treat as ArgoCD race; pause reconcile on both immich applications, then retry delete/wait/create.
+5) After recovery, revert manifest to initdb mode but keep bumped backup serverName lineage (do not roll back lineage).
+6) Always validate restored data with SQL query before declaring success.
+
+Required sequence:
+- Confirm backup source lineage (e.g., externalClusters serverName=v2) and backup target lineage (backup serverName=v3).
+- Render /tmp/immich-recovery.yaml from kustomize output and verify recovery-only bootstrap.
+- Delete cluster and create recovery cluster from /tmp/immich-recovery.yaml.
+- Monitor cluster/pods until ready.
+- If pod is stuck with volume not ready, check Longhorn volume state and wait for attached/healthy.
+- Validate SQL (e.g., SELECT count(*) FROM "user";).
+- Revert cluster.yaml to normal initdb mode; keep backup lineage bumped.
+- Summarize exactly what changed and next operator actions.
+
+Output requirements:
+- Be explicit, command-by-command.
+- Explain failures and fallback commands.
+- Do not skip verification steps.
+```
+
+### Option B: Copy/Paste User Prompt (for ChatGPT/Copilot/Claude)
+
+```text
+Help me perform CloudNativePG disaster recovery for Immich in this repo.
+
+Context:
+- This cluster uses ArgoCD with self-heal and server-side apply.
+- CNPG recovery must be created with kubectl create (not apply).
+- Current backup lineage is [FILL ME, e.g. immich-database-v2].
+- New backup lineage target is [FILL ME, e.g. immich-database-v3].
+
+What I need from you:
+1) Give exact commands to render /tmp/immich-recovery.yaml from kustomize.
+2) Include checks to confirm manifest has recovery and no initdb.
+3) Give safe delete/create commands for immich-database.
+4) Include fallback if kubectl create returns AlreadyExists (Argo race).
+5) Include readiness checks and Longhorn attach troubleshooting.
+6) Include SQL validation commands to confirm data restored.
+7) Include exact post-recovery steps to revert manifest to initdb mode while keeping bumped backup serverName.
+
+Do not skip any verification commands. Explain what success/failure looks like at each step.
 ```
