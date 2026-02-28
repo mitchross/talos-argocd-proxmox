@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: redis7
-          image: redis:7.2-alpine
+          image: redis:8.6-alpine
           command: ["redis-server", "--maxmemory-policy", "allkeys-lru", "--maxmemory", "200mb"]
           ports:
             - containerPort: 6379
