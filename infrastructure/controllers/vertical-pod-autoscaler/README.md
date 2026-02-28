@@ -4,7 +4,7 @@ VPA monitors actual CPU/memory usage and recommends optimal resource requests fo
 
 ## How It Works
 
-VPA is deployed in **Off mode** — it generates recommendations but does not apply them. A Kyverno ClusterPolicy (`vpa-auto-create`) automatically creates a VPA resource for every Deployment and StatefulSet in the cluster (excluding system namespaces).
+VPA is deployed in **Off mode** — it generates recommendations but does not apply them. Goldilocks (`infrastructure/controllers/goldilocks/`) with `on-by-default: "true"` automatically creates a VPA resource for every Deployment, StatefulSet, and DaemonSet in the cluster.
 
 When you're ready to let VPA auto-tune, change the `updateMode` to `InPlaceOrRecreate` (K8s 1.35 GA feature — resizes pods without restarting them).
 

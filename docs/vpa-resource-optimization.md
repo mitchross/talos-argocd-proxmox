@@ -1,10 +1,10 @@
 # VPA Resource Optimization Guide
 
-How to use VPA, Goldilocks, and Kyverno to right-size Kubernetes resource requests based on actual workload behavior.
+How to use VPA and Goldilocks to right-size Kubernetes resource requests based on actual workload behavior.
 
 ## TL;DR — Just Tell Me What To Do
 
-**Everything is automatic.** VPA is already watching every workload in the cluster. You don't need to set anything up.
+**Everything is automatic.** Goldilocks auto-creates VPA resources for every workload in the cluster. You don't need to set anything up.
 
 ### Step 1: Open the dashboard
 
@@ -56,60 +56,124 @@ MEM:.status.recommendation.containerRecommendations[0].target.memory
 
 ---
 
-## The Toolchain
-
-| Tool | What It Does | Location |
-|------|-------------|----------|
-| **metrics-server** | Provides `metrics.k8s.io` API (CPU/memory data from kubelet) | `infrastructure/controllers/metrics-server/` |
-| **VPA** (Vertical Pod Autoscaler) | Analyzes metrics, generates resource recommendations | `infrastructure/controllers/vertical-pod-autoscaler/` |
-| **Goldilocks** | Auto-creates VPA resources for all workloads AND provides web dashboard to visualize recommendations | `infrastructure/controllers/goldilocks/` |
-
-### How They Fit Together
+## Architecture
 
 ```
 kubelet /metrics/resource
-    |
-    v
+    │
+    ▼
 metrics-server (provides metrics.k8s.io API)
-    |
-    v
-VPA Recommender (reads metrics, writes recommendations to VPA status)
-    ^
-    |
-Goldilocks Controller (on-by-default: true, auto-creates VPA for all workloads)
-    |
-    v
-VPA resources (one per workload, updateMode: "Off")
-    |
-    v
-Goldilocks Dashboard (reads VPA recommendations, shows per-namespace view)
-    |
-    v
+    │
+    ▼
+VPA Recommender (reads metrics, writes recommendations to VPA .status)
+    ▲
+    │
+Goldilocks Controller (on-by-default: "true")
+    │  • watches all namespaces
+    │  • auto-creates a VPA (updateMode: "Off") for every Deployment, StatefulSet, DaemonSet
+    ▼
+VPA resources (one per workload, recommend-only)
+    │
+    ▼
+Goldilocks Dashboard (reads VPA .status, renders per-namespace view)
+    │
+    ▼
 Human reviews → updates values.yaml → Git push → ArgoCD applies
 ```
 
-**Key point**: Goldilocks with `on-by-default: "true"` auto-creates VPA resources for all Deployments, StatefulSets, and DaemonSets cluster-wide. No Kyverno policy or manual VPA resources needed.
+**Goldilocks is the sole VPA creator.** With `on-by-default: "true"`, it auto-creates VPA resources for all workloads cluster-wide. No manual VPA manifests needed.
 
-## Accessing the Dashboard
+---
 
-**Goldilocks Dashboard**: https://goldilocks.vanillax.me
+## Components
 
-This is routed via the internal gateway (`gateway-internal`). No port-forward needed if you're on the LAN.
+| Component | Chart | Version | Namespace | Location |
+|-----------|-------|---------|-----------|----------|
+| **metrics-server** | `metrics-server/metrics-server` | — | `kube-system` | `infrastructure/controllers/metrics-server/` |
+| **VPA** | `fairwinds-stable/vpa` | 4.10.1 | `vertical-pod-autoscaler` | `infrastructure/controllers/vertical-pod-autoscaler/` |
+| **Goldilocks** | `fairwinds-stable/goldilocks` | 10.3.0 | `goldilocks` | `infrastructure/controllers/goldilocks/` |
 
-Fallback (if gateway is down):
+All three are deployed via the **Infrastructure ApplicationSet** (Wave 4).
+
+### VPA Sub-Components
+
+| Component | Purpose |
+|-----------|---------|
+| **Recommender** | Analyzes metrics, generates recommendations |
+| **Updater** | Applies changes when mode is not Off (evicts or in-place resizes) |
+| **Admission Controller** | Sets resources on new pods when mode is not Off |
+
+Currently the cluster runs VPA in **Off mode** — recommendations only, no automatic changes.
+
+---
+
+## Goldilocks Dashboard
+
+### Accessing the Dashboard
+
+**URL**: https://goldilocks.vanillax.me (routed via `gateway-internal`, LAN/VPN only)
+
+Fallback if gateway is down:
 ```bash
 kubectl port-forward -n goldilocks svc/goldilocks-dashboard 8080:80
 # Open http://localhost:8080
 ```
 
-The dashboard shows every namespace with VPA-enabled workloads. For each container it displays:
-- Current resource requests/limits
-- VPA lower bound, target, and upper bound
-- Suggested `requests` and `limits` YAML you can copy-paste
+### What the Dashboard Shows
 
-## Reading VPA Recommendations
+For each namespace, every workload with a VPA gets a card showing:
+- **Current requests/limits** — what's set in the deployment spec
+- **Guaranteed QoS** — suggested `requests` YAML block (requests = limits)
+- **Burstable QoS** — suggested `requests` YAML block (requests only, no limits)
+- **Lower bound, Target, Upper bound** per container
 
-### Via kubectl
+### Excluding Namespaces
+
+With `on-by-default: "true"`, all namespaces are included. To exclude one:
+
+```bash
+kubectl label namespace <ns> goldilocks.fairwinds.com/enabled=false
+```
+
+---
+
+## CLI Tools & Scripts
+
+### vpa-report.sh
+
+The `scripts/vpa-report.sh` script provides a formatted table of all VPA recommendations with human-readable values.
+
+```bash
+# All namespaces
+./scripts/vpa-report.sh
+
+# Single namespace
+./scripts/vpa-report.sh argocd
+```
+
+Example output:
+```
+==========================================
+  VPA Resource Recommendations Report
+==========================================
+
+NAMESPACE            WORKLOAD                            CONTAINER                    CPU TGT  CPU RANGE    MEM TGT  MEM RANGE
+-------------------------------------------------------------------------------------------------------------------------------------------------
+argocd               Deployment/argocd-server            server                          23m    12m-100m     175Mi   88Mi-700Mi
+argocd               Deployment/argocd-repo-server       repo-server                   2975m  1488m-11900m  523Mi  262Mi-2.0Gi
+goldilocks           Deployment/goldilocks-controller     goldilocks                      12m     6m-48m      64Mi    32Mi-256Mi
+...
+
+Total: 42 containers with VPA recommendations
+
+Action needed if your current request is:
+  < lowerBound  →  INCREASE NOW (pod is being throttled)
+  < target      →  INCREASE (under-provisioned)
+  ≈ target      →  KEEP (well-tuned)
+  > 2x target   →  DECREASE (over-provisioned)
+```
+
+### kubectl One-Liners
 
 ```bash
 # Quick overview: all VPA targets across the cluster
@@ -124,9 +188,18 @@ kubectl get vpa -n argocd -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{r
 
 # Full detail for a specific VPA
 kubectl describe vpa <name> -n <namespace>
+
+# Current resource usage vs requests (side-by-side comparison)
+kubectl top pods -n <namespace>
+kubectl get deploy <name> -n <ns> -o jsonpath='{.spec.template.spec.containers[0].resources}'
+kubectl get vpa <name> -n <ns> -o jsonpath='{.status.recommendation.containerRecommendations[0].target}'
 ```
 
-### Understanding the Four Values
+---
+
+## Reading Recommendations
+
+### The Four VPA Values
 
 VPA recommendations include four values per container:
 
@@ -143,8 +216,6 @@ VPA recommendations include four values per container:
 - `536870912` = 512Mi
 - `1073741824` = 1Gi
 - `1610612736` = 1.5Gi
-
-## When to Change Resources
 
 ### Decision Matrix
 
@@ -163,9 +234,13 @@ VPA recommendations include four values per container:
 - **Re-check after major changes** (new features, traffic spikes, version upgrades). VPA is backward-looking.
 - **Upper bounds stabilize over ~14 days**. They'll be very wide initially.
 
-### How to Apply Changes
+---
 
-1. Read the VPA recommendation (Goldilocks dashboard or kubectl)
+## Applying Changes (GitOps Workflow)
+
+### Step-by-Step
+
+1. Read the VPA recommendation (Goldilocks dashboard or `./scripts/vpa-report.sh`)
 2. Update the app's `values.yaml` with new resource requests
 3. Add a comment documenting the VPA data and reasoning:
 
@@ -192,6 +267,8 @@ resources:
 | `requests.memory` | VPA `target` (or 1.2-1.5x — memory OOM is fatal, CPU throttling is not) |
 | `limits.cpu` | 2-4x request (allows burst). Or omit entirely to let pods burst freely. |
 | `limits.memory` | 2-4x request (or match VPA `upperBound` if spikes are expected) |
+
+---
 
 ## Common Workload Patterns
 
@@ -221,6 +298,8 @@ Example: argocd-server
 
 ### GPU Workloads
 VPA only tracks CPU/memory, not GPU. Recommendations will show low CPU/memory because compute happens on GPU VRAM. Set CPU/memory based on data loading needs, not inference.
+
+---
 
 ## Real-World Example: ArgoCD Optimization
 
@@ -257,25 +336,45 @@ Total: 5.2 CPU, 2.8Gi memory
 
 See `infrastructure/controllers/argocd/values.yaml` for the actual implementation with inline VPA documentation.
 
-## Excluded Namespaces
+---
 
-Goldilocks can be configured to exclude namespaces via the `goldilocks.fairwinds.com/enabled=false` label. By default with `on-by-default: "true"`, all namespaces are included.
-
-## K8s 1.35: In-Place Pod Resize (Future)
+## In-Place Pod Resize (K8s 1.35)
 
 This cluster runs K8s v1.35.1 where In-Place Pod Resize is GA. VPA supports `updateMode: "InPlaceOrRecreate"` which resizes pods **without restarting them** when possible.
 
-Currently we use `updateMode: "Off"` (manual review). When confident in VPA accuracy after 2-4 weeks of observation, you can switch individual workloads to `InPlaceOrRecreate`:
+Currently we use `updateMode: "Off"` (manual review via Goldilocks). When confident in VPA accuracy after 2-4 weeks of observation, you can enable auto-tuning per workload.
+
+### How to Enable
+
+Goldilocks creates VPAs with `updateMode: "Off"`. To enable in-place resize for a specific workload, create a manual VPA that overrides the Goldilocks-managed one:
 
 ```yaml
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
+metadata:
+  name: my-app              # Must match Goldilocks VPA name
+  namespace: my-app
+  labels:
+    goldilocks.fairwinds.com/enabled: "false"  # Prevent Goldilocks from overwriting
 spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-app
   updatePolicy:
     updateMode: "InPlaceOrRecreate"  # Live resize when possible
 ```
 
 **Start with non-critical workloads** (dev tools, media apps) before enabling on infrastructure.
+
+### How It Works
+
+1. VPA Updater watches pods with `InPlaceOrRecreate` mode
+2. If recommendation differs significantly from current resources, it patches the pod spec
+3. Kernel applies new CPU/memory limits **without restarting** the container (when supported)
+4. If in-place resize fails, pod is evicted and recreated with new resources
+
+---
 
 ## Troubleshooting
 
@@ -287,7 +386,8 @@ spec:
 ### Goldilocks dashboard is empty
 - Check if Goldilocks controller is running: `kubectl get pods -n goldilocks`
 - Goldilocks is set to `on-by-default: "true"` — all namespaces should appear
-- VPA resources are created by Goldilocks automatically for all workloads
+- Check Goldilocks controller logs: `kubectl logs -n goldilocks -l app.kubernetes.io/name=goldilocks,app.kubernetes.io/component=controller`
+- Verify VPA CRDs are installed: `kubectl get crd verticalpodautoscalers.autoscaling.k8s.io`
 
 ### VPA recommendations seem too high/low
 - Not enough data — wait 7-14 days
@@ -300,11 +400,21 @@ spec:
 - Set `limits.memory` well above `requests.memory` (2-4x)
 - Check startup memory with `kubectl top pod` during pod init
 
+### Duplicate VPA resources
+- Goldilocks is the sole VPA creator — if you see duplicates, check for manually created VPAs
+- Remove any hand-crafted VPA manifests from Git and let Goldilocks manage them
+
+---
+
 ## Quick Reference
 
 ```bash
 # Goldilocks dashboard (LAN)
 https://goldilocks.vanillax.me
+
+# Human-readable VPA report
+./scripts/vpa-report.sh
+./scripts/vpa-report.sh <namespace>
 
 # All VPA recommendations (cluster-wide)
 kubectl get vpa -A -o custom-columns=\
@@ -319,6 +429,13 @@ kubectl top pods -n <namespace>
 # Compare current requests vs VPA target
 kubectl get deploy <name> -n <ns> -o jsonpath='{.spec.template.spec.containers[0].resources}'
 kubectl get vpa <name> -n <ns> -o jsonpath='{.status.recommendation.containerRecommendations[0].target}'
+
+# Check Goldilocks controller
+kubectl get pods -n goldilocks
+kubectl logs -n goldilocks -l app.kubernetes.io/name=goldilocks,app.kubernetes.io/component=controller
+
+# Check VPA recommender
+kubectl logs -n vertical-pod-autoscaler -l app.kubernetes.io/component=recommender
 ```
 
 ## Related Docs
@@ -329,5 +446,5 @@ kubectl get vpa <name> -n <ns> -o jsonpath='{.status.recommendation.containerRec
 
 ---
 
-**Last Updated**: 2026-02-24
+**Last Updated**: 2026-02-28
 **Cluster**: talos-prod-cluster (K8s v1.35.1, Talos v1.12.4)

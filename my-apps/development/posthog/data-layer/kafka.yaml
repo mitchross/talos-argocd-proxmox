@@ -19,6 +19,10 @@ spec:
         app.kubernetes.io/name: posthog
         app.kubernetes.io/component: kafka
     spec:
+      securityContext:
+        fsGroup: 101
+        runAsUser: 101
+        runAsGroup: 101
       containers:
         - name: redpanda
           image: docker.redpanda.com/redpandadata/redpanda:v25.1.9
