@@ -8,6 +8,7 @@ resources:
 - policies/volsync-nfs-inject.yaml
 - policies/volsync-orphan-cleanup.yaml
 - policies/image-pull-policy.yaml
+- policies/reloader-annotation-inject.yaml
 helmCharts:
 - name: kyverno
   repo: https://kyverno.github.io/kyverno
