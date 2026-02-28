@@ -38,11 +38,11 @@ spec:
           command: ["/app/llama-server"]
           args:
             - "--models-max"
-            - "8"
+            - "1"
             - "--models-preset"
             - "/config/presets.ini"
             - "-c"
-            - "131072"
+            - "16384"
             - "-ngl"
             - "99"
             - "-fa"
@@ -56,9 +56,9 @@ spec:
             - "--cache-type-v"
             - "q8_0"
             - "-b"
-            - "4096"            # Larger logical batch for faster prompt processing
+            - "2048"            # Logical batch for prompt processing
             - "-ub"
-            - "1024"            # Larger physical batch for better GPU saturation
+            - "512"             # Physical batch for GPU saturation
             - "--parallel"
             - "1"               # Single-user coding assistant - maximize context per request
             - "--host"
@@ -69,15 +69,11 @@ spec:
             - name: NVIDIA_VISIBLE_DEVICES
               value: "all"
             - name: CUDA_VISIBLE_DEVICES
-              value: "0,1"
+              value: "0"
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: "compute,utility"
             - name: GGML_CUDA_ENABLE_UNIFIED_MEMORY
-              value: "1" # Bridges VRAM and 400GB RAM for Qwen3.5-397B MoE expert offloading
-            - name: GGML_CUDA_PEER_MAX_BATCH_SIZE
-              value: "128"
-            - name: CUDA_SCALE_LAUNCH_QUEUES
-              value: "4x"   # Larger command buffer reduces kernel launch bottleneck on multi-GPU
+              value: "1" # Spill to system RAM if VRAM is tight with Q4_K_XL + KV cache
           ports:
             - name: http
               containerPort: 8080
@@ -108,15 +104,15 @@ spec:
             failureThreshold: 3
           resources:
             limits:
-              cpu: "52"
-              memory: 440Gi   # Matches your physical 400GB + overhead
-              nvidia.com/gpu: "2"
-              ephemeral-storage: "150Gi"
+              cpu: "32"
+              memory: 64Gi
+              nvidia.com/gpu: "1"
+              ephemeral-storage: "50Gi"
             requests:
-              cpu: "24"       # Optimized for MoE expert fetching on CPU
-              memory: 390Gi
-              nvidia.com/gpu: "2"
-              ephemeral-storage: "25Gi"
+              cpu: "8"
+              memory: 32Gi
+              nvidia.com/gpu: "1"
+              ephemeral-storage: "10Gi"
           volumeMounts:
             - name: models-storage
               mountPath: /models
@@ -138,6 +134,6 @@ spec:
         - name: dshm
           emptyDir:
             medium: Memory
-            sizeLimit: 32Gi
+            sizeLimit: 8Gi
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"

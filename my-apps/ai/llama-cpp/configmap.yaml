@@ -6,39 +6,20 @@ metadata:
 data:
   presets.ini: |
     # ==========================================================
-    # CODING (48GB VRAM) - Qwen3-Coder-Next [DEFAULT]
-    # ==========================================================
-    [coder - qwen3-coder-next]
-    # Unsloth docs: temp=1.0, top_p=0.95, top_k=40, min_p=0.01
-    # 80B total / 3B active (MoE) - Hybrid DeltaNet + Gated Attention
-    # Primary use: Claude Code backend, OpenClaw coding agent
-    model = /models/Qwen3-Coder-Next-UD-Q3_K_XL.gguf
-    alias = coder, code, qwen3-coder, qwen3 coder next
-    ctx-size = 65536
-    n-gpu-layers = 99
-    tensor-split = 1,1
-    temp = 1.0
-    top-p = 0.95
-    top-k = 40
-    min-p = 0.01
-    chat-template-kwargs = {"enable_thinking": true}
-    jinja = 1
-
-    # ==========================================================
-    # GENERAL + VISION - Qwen3.5-35B-A3B [MULTIMODAL]
+    # GENERAL + VISION + CODE - Qwen3.5-35B-A3B [MULTIMODAL]
+    # Single GPU (1x RTX 3090) — second GPU freed for ComfyUI
     # ==========================================================
     [general - qwen3.5]
     # 35B total / 3B active (MoE) - Gated DeltaNet + Gated Attention
     # Natively multimodal (vision + language), 256K context native
-    # Q6_K_XL (28GB) + mmproj (858MB) fits in 48GB VRAM
+    # Q4_K_XL (20.6GB) + mmproj (858MB) fits in 1x 24GB RTX 3090
     # Qwen official "precise" thinking params: temp=0.6, top_p=0.95, top_k=20, presence_penalty=0.0
     # General thinking params use presence_penalty=1.5 but causes thinking loops on simple questions
-    model = /models/Qwen3.5-35B-A3B-UD-Q6_K_XL.gguf
+    model = /models/Qwen3.5-35B-A3B-UD-Q4_K_XL.gguf
     mmproj = /models/mmproj-F16.gguf
-    alias = qwen3.5, qwen 3.5, general, vision, image, multimodal
-    ctx-size = 131072
+    alias = qwen3.5, qwen 3.5, general, vision, image, multimodal, coder, code
+    ctx-size = 16384
     n-gpu-layers = 99
-    tensor-split = 1,1
     temp = 0.6
     top-p = 0.95
     top-k = 20
