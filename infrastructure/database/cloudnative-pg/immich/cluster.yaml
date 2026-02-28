@@ -24,32 +24,6 @@ spec:
       wal_compression: "on"
     pg_hba:
       - host all all 0.0.0.0/0 md5
-  # === NORMAL OPERATION ===
-  # bootstrap:
-  #   initdb:
-  #     database: immich
-  #     owner: immich
-  #     secret:
-  #       name: immich-app-secret
-  #     postInitApplicationSQL:
-  #       - CREATE EXTENSION IF NOT EXISTS vchord CASCADE;
-  #       - CREATE EXTENSION IF NOT EXISTS vector;
-  #       - CREATE EXTENSION IF NOT EXISTS earthdistance CASCADE;
-  #       - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "immich";
-  #       - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "immich";
-  #       - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "immich";
-  #       - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "immich";
-  # === DISASTER RECOVERY ===
-  # 1. Comment out the initdb bootstrap above
-  # 2. Uncomment the recovery bootstrap + externalClusters below
-  # 3. Update serverName in externalClusters to match CURRENT backup.serverName (immich-database-v3)
-  # 4. Bump backup.serverName to next version (e.g. immich-database-v3)
-  # 5. Apply directly with: kubectl kustomize ... | kubectl create -f -
-  #    (ArgoCD SSA + CNPG webhook = initdb always wins, must bypass ArgoCD)
-  # 6. After recovery completes, revert to initdb and push
-  #    IMPORTANT: keep backup.serverName at the bumped value (e.g. v3), do NOT revert to v2.
-  #    For the next DR event, recovery source becomes v3 and backup target becomes v4.
-  #
   bootstrap:
     initdb:
       database: immich
@@ -64,15 +38,11 @@ spec:
         - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "immich";
         - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "immich";
         - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "immich";
-  # === DISASTER RECOVERY REFERENCE (DO NOT UNCOMMENT BOTH BOOTSTRAP METHODS) ===
-  # For next recovery, see docs/cnpg-disaster-recovery.md#recovery-procedure
-  # Step 1: Comment out initdb block above
-  # Step 2: Uncomment recovery block and externalClusters below
-  # Step 3: Update serverName to CURRENT backup target (currently: immich-database-v3)
-  # Step 4: Bump backup.serverName below to next version (e.g. v4)
-  # Step 5: Manual kubectl create bypass required (webhook blocks > 1 bootstrap method)
-  # Step 6: After recovery succeeds, revert to initdb and keep bumped serverName
-  # IMPORTANT: Keep bootstrap methods mutually exclusive! CNPG webhook enforces this.
+  # === DISASTER RECOVERY ===
+  # See docs/cnpg-disaster-recovery.md for full procedure
+  # Recovery source: immich-database-v4 (current backup lineage)
+  # Next recovery target: immich-database-v5
+  # IMPORTANT: Recovery code must NOT be committed to Git (CNPG webhook rejects dual bootstrap)
   storage:
     size: 20Gi
     storageClass: longhorn
@@ -84,7 +54,7 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
-      serverName: immich-database-v3
+      serverName: immich-database-v4
       destinationPath: s3://postgres-backups/cnpg/immich
       endpointURL: http://192.168.10.133:30293
       s3Credentials:
