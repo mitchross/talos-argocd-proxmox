@@ -7,11 +7,10 @@
     }
   },
   "2": {
-    "class_type": "DualCLIPLoader",
+    "class_type": "CLIPLoader",
     "inputs": {
-      "clip_name1": "clip_l.safetensors",
-      "clip_name2": "t5xxl_fp8_e4m3fn.safetensors",
-      "type": "flux"
+      "clip_name": "qwen_3_4b.safetensors",
+      "type": "qwen_image"
     }
   },
   "3": {
@@ -30,7 +29,7 @@
   "5": {
     "class_type": "CLIPTextEncode",
     "inputs": {
-      "text": "blurry, low quality, distorted, watermark, text",
+      "text": "",
       "clip": ["2", 0]
     }
   },
@@ -46,10 +45,10 @@
     "class_type": "KSampler",
     "inputs": {
       "seed": 0,
-      "steps": 9,
+      "steps": 8,
       "cfg": 1.0,
-      "sampler_name": "euler",
-      "scheduler": "normal",
+      "sampler_name": "euler_ancestral",
+      "scheduler": "sgm_uniform",
       "denoise": 1.0,
       "model": ["1", 0],
       "positive": ["4", 0],
