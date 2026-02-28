@@ -3,8 +3,6 @@ kind: Deployment
 metadata:
   name: open-webui
   namespace: open-webui
-  annotations:
-    reloader.stakater.com/auto: "true"
 spec:
   strategy:
     type: Recreate
