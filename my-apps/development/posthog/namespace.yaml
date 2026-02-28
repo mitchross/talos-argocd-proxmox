@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    volsync.backube/privileged-movers: "true"

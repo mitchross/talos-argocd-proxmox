@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plugins
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: plugins
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: plugins
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: plugins
+    spec:
+      containers:
+        - name: plugins
+          image: posthog/posthog-node:latest
+          command:
+            - node
+            - nodejs/dist/index.js
+          envFrom:
+            - configMapRef:
+                name: posthog-env
+          env:
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-secret
+            - name: ENCRYPTION_SALT_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: encryption-salt-keys
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-password
+            - name: DATABASE_URL
+              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+            - name: PERSONS_DATABASE_URL
+              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+            - name: BEHAVIORAL_COHORTS_DATABASE_URL
+              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+            - name: CYCLOTRON_DATABASE_URL
+              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+            - name: OBJECT_STORAGE_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-access-key
+            - name: OBJECT_STORAGE_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-secret-key
+            - name: SESSION_RECORDING_V2_S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-access-key
+            - name: SESSION_RECORDING_V2_S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-secret-key
+            - name: SESSION_RECORDING_V2_S3_TIMEOUT_MS
+              value: "120000"
+            - name: COOKIELESS_REDIS_HOST
+              value: "redis7"
+            - name: COOKIELESS_REDIS_PORT
+              value: "6379"
+            - name: SESSION_RECORDING_API_REDIS_HOST
+              value: "redis7"
+            - name: SESSION_RECORDING_API_REDIS_PORT
+              value: "6379"
+            - name: CDP_REDIS_HOST
+              value: "redis7"
+            - name: CDP_REDIS_PORT
+              value: "6379"
+            - name: LOGS_REDIS_HOST
+              value: "redis7"
+            - name: LOGS_REDIS_PORT
+              value: "6379"
+            - name: LOGS_REDIS_TLS
+              value: "false"
+          ports:
+            - containerPort: 6738
+              name: http
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: plugins
+  namespace: posthog
+spec:
+  ports:
+    - name: http
+      port: 6738
+      targetPort: 6738
+  selector:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: plugins

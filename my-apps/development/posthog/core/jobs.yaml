@@ -1,0 +1,103 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-init
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: kafka-init
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 5
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: kafka-init
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: kafka-init
+          image: docker.redpanda.com/redpandadata/redpanda:v25.1.9
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -x
+              echo "Waiting for Kafka broker to accept connections..."
+              TIMEOUT=120
+              ELAPSED=0
+              until rpk topic list --brokers kafka:9092 2>/dev/null; do
+                  echo "Kafka broker not ready yet (elapsed: ${ELAPSED}s)..."
+                  sleep 2
+                  ELAPSED=$((ELAPSED + 2))
+                  if [ $ELAPSED -ge $TIMEOUT ]; then
+                      echo "Timeout waiting for Kafka broker after ${TIMEOUT}s"
+                      exit 1
+                  fi
+              done
+              echo "Kafka broker is accepting requests, creating topics..."
+              for topic in exceptions_ingestion clickhouse_events_json session_recording_events session_recording_events2 session_recording_snapshot_item_events clickhouse_app_metrics2 logs_ingestion; do
+                  if rpk topic create "$topic" --brokers kafka:9092 -p 1 -r 1 2>&1; then
+                      echo "Topic $topic created successfully"
+                  else
+                      if rpk topic list --brokers kafka:9092 | grep -q "$topic"; then
+                          echo "Topic $topic already exists, continuing"
+                      else
+                          echo "Failed to create topic $topic"
+                          exit 1
+                      fi
+                  fi
+              done
+              echo "Topics ready"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: posthog-migrate
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: migrate
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: migrate
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: posthog/posthog:latest
+          command:
+            - sh
+            - -c
+            - "python manage.py migrate && python manage.py migrate_clickhouse && python manage.py run_async_migrations"
+          envFrom:
+            - configMapRef:
+                name: posthog-env
+          env:
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-secret
+            - name: ENCRYPTION_SALT_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: encryption-salt-keys
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-password
+            - name: DATABASE_URL
+              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
