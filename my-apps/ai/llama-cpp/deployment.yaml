@@ -5,8 +5,6 @@ metadata:
   namespace: llama-cpp
   labels:
     app: llama-cpp-server
-  annotations:
-    reloader.stakater.com/auto: "true"
 spec:
   strategy:
     type: Recreate
