@@ -62,8 +62,7 @@ MEM:.status.recommendation.containerRecommendations[0].target.memory
 |------|-------------|----------|
 | **metrics-server** | Provides `metrics.k8s.io` API (CPU/memory data from kubelet) | `infrastructure/controllers/metrics-server/` |
 | **VPA** (Vertical Pod Autoscaler) | Analyzes metrics, generates resource recommendations | `infrastructure/controllers/vertical-pod-autoscaler/` |
-| **Kyverno Policy** (`vpa-auto-create`) | Auto-generates a VPA resource for every Deployment and StatefulSet | `infrastructure/controllers/kyverno/policies/vpa-auto-create.yaml` |
-| **Goldilocks** | Web dashboard to visualize VPA recommendations per namespace | `infrastructure/controllers/goldilocks/` |
+| **Goldilocks** | Auto-creates VPA resources for all workloads AND provides web dashboard to visualize recommendations | `infrastructure/controllers/goldilocks/` |
 
 ### How They Fit Together
 
@@ -77,7 +76,7 @@ metrics-server (provides metrics.k8s.io API)
 VPA Recommender (reads metrics, writes recommendations to VPA status)
     ^
     |
-Kyverno generate policy (auto-creates VPA for every Deployment/StatefulSet)
+Goldilocks Controller (on-by-default: true, auto-creates VPA for all workloads)
     |
     v
 VPA resources (one per workload, updateMode: "Off")
@@ -89,7 +88,7 @@ Goldilocks Dashboard (reads VPA recommendations, shows per-namespace view)
 Human reviews → updates values.yaml → Git push → ArgoCD applies
 ```
 
-**Key point**: Kyverno creates VPAs for ALL workloads automatically. Goldilocks also creates VPAs for namespaces it scans, but since `on-by-default: "true"` is set, both cover all namespaces. Duplicate VPAs are harmless — they share the same name and Kyverno's `synchronize: true` keeps them in sync.
+**Key point**: Goldilocks with `on-by-default: "true"` auto-creates VPA resources for all Deployments, StatefulSets, and DaemonSets cluster-wide. No Kyverno policy or manual VPA resources needed.
 
 ## Accessing the Dashboard
 
@@ -260,10 +259,7 @@ See `infrastructure/controllers/argocd/values.yaml` for the actual implementatio
 
 ## Excluded Namespaces
 
-The Kyverno `vpa-auto-create` policy excludes:
-- `kube-system` — critical system components, don't touch
-- `kyverno` — policy engine, restart = cluster-wide impact
-- `vertical-pod-autoscaler` — VPA managing itself creates feedback loops
+Goldilocks can be configured to exclude namespaces via the `goldilocks.fairwinds.com/enabled=false` label. By default with `on-by-default: "true"`, all namespaces are included.
 
 ## K8s 1.35: In-Place Pod Resize (Future)
 
@@ -291,7 +287,7 @@ spec:
 ### Goldilocks dashboard is empty
 - Check if Goldilocks controller is running: `kubectl get pods -n goldilocks`
 - Goldilocks is set to `on-by-default: "true"` — all namespaces should appear
-- VPA resources must exist (Kyverno creates them on Deployment/StatefulSet CREATE/UPDATE)
+- VPA resources are created by Goldilocks automatically for all workloads
 
 ### VPA recommendations seem too high/low
 - Not enough data — wait 7-14 days
@@ -329,7 +325,6 @@ kubectl get vpa <name> -n <ns> -o jsonpath='{.status.recommendation.containerRec
 
 - [Monitoring README](../monitoring/README.md) — metrics-server vs Prometheus pipelines
 - [VPA component README](../infrastructure/controllers/vertical-pod-autoscaler/README.md)
-- [Kyverno VPA policy](../infrastructure/controllers/kyverno/policies/vpa-auto-create.yaml)
 - [Goldilocks config](../infrastructure/controllers/goldilocks/)
 
 ---
