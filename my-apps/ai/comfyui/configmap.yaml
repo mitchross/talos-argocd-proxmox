@@ -37,21 +37,18 @@ data:
     git config --global core.fileMode false || true
 
     # ── Custom Node Management ─────────────────────────────────
-    # Clone or update a custom node from a git repo
+    # Clone only if missing. Updates are done via ComfyUI Manager UI.
     install_node() {
       local repo="$1"
       local name
       name="$(basename "$repo" .git)"
       local dest="/root/ComfyUI/custom_nodes/$name"
 
-      if [ -d "$dest/.git" ]; then
-        echo "[INFO] Updating $name..."
-        cd "$dest" && git pull --ff-only || true
-      elif [ -d "$dest" ]; then
-        echo "[INFO] $name already installed (non-git), skipping"
+      if [ -d "$dest" ]; then
+        echo "[SKIP] $name already installed"
       elif [ -d "/root/ComfyUI/custom_nodes" ]; then
         echo "[INFO] Installing $name..."
-        git clone "$repo" "$dest"
+        git clone --depth 1 "$repo" "$dest"
       fi
     }
 
@@ -62,12 +59,13 @@ data:
     install_node "https://github.com/fidecastro/comfyui-llamacpp-client.git"
 
     # ── Python Dependencies ────────────────────────────────────
+    # Single uv call — skips already-installed packages, no --upgrade
     echo "[INFO] Installing Python dependencies..."
-    uv pip install --system --upgrade transformers
-    uv pip install --system "bitsandbytes>=0.46.1"
-    uv pip install --system colorama huggingface_hub   # Prompt-Manager
-    uv pip install --system watchdog piexif aiohttp     # Gallery
-    uv pip install --system pywavelets                  # RES4LYF
+    uv pip install --system \
+      transformers "bitsandbytes>=0.46.1" \
+      colorama huggingface_hub \
+      watchdog piexif aiohttp \
+      pywavelets
 
     # ── System Setup ───────────────────────────────────────────
     mkdir -p /usr/share/fonts/truetype

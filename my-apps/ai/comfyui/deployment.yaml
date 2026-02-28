@@ -84,18 +84,18 @@ spec:
           httpGet:
             path: /
             port: 8188
-          initialDelaySeconds: 300
+          initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
-          failureThreshold: 6
+          failureThreshold: 30
         livenessProbe:
           httpGet:
             path: /
             port: 8188
-          initialDelaySeconds: 1500
+          initialDelaySeconds: 120
           periodSeconds: 30
           timeoutSeconds: 10
-          failureThreshold: 3
+          failureThreshold: 10
       volumes:
       - name: comfyui-storage
         persistentVolumeClaim:
