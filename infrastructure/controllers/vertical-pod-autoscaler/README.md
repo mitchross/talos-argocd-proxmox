@@ -39,7 +39,7 @@ Recommendations include four values per container:
 ## Dependencies
 
 - **metrics-server** (`infrastructure/controllers/metrics-server/`) — provides the `metrics.k8s.io` API that VPA reads from
-- **Kyverno** — auto-generates VPA resources via `vpa-auto-create` ClusterPolicy
+- **Goldilocks** (`infrastructure/controllers/goldilocks/`) — auto-creates VPA resources for all workloads and provides dashboard UI
 
 ## Notes
 
