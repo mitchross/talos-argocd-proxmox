@@ -790,7 +790,7 @@ kubectl exec -n cloudnative-pg immich-database-1 -- \
 **Current serverName versions** (track these — must match for recovery):
 | Database | Current backup serverName |
 |----------|--------------------------|
-| immich | `immich-database-v2` |
+| immich | `immich-database-v4` |
 | khoj | `khoj-database` (original) |
 | paperless | `paperless-database` (original) |
 

@@ -163,7 +163,7 @@ Barman → RustFS S3
 
 | Database | S3 Path | Current serverName | Schedule |
 |----------|---------|-------------------|----------|
-| immich | `s3://postgres-backups/cnpg/immich` | `immich-database-v3` | Hourly + WAL |
+| immich | `s3://postgres-backups/cnpg/immich` | `immich-database-v4` | Hourly + WAL |
 | khoj | `s3://postgres-backups/cnpg/khoj` | `khoj-database` | Daily 2am + WAL |
 | paperless | `s3://postgres-backups/cnpg/paperless` | `paperless-database` | Daily 2am + WAL |
 
