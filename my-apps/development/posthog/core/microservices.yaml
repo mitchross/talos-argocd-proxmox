@@ -144,7 +144,7 @@ spec:
             limits:
               memory: 128Mi
 ---
-# Cymbal - exception symbolication processor
+# Cymbal - exception symbolication processor (disabled: requires GeoIP MMDB file)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -154,7 +154,7 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: cymbal
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app.kubernetes.io/name: posthog
