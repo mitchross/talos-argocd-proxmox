@@ -26,7 +26,7 @@ spec:
       #   feature.node.kubernetes.io/pci-0300_10de.present: "true"
       containers:
         - name: nestmtx
-          image: nestmtx/amd64:latest
+          image: nestmtx/amd64:latest@sha256:b3604349b5c88fe53c643249f025b4c0c80c44137d40c18651572187c671b1cd
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 2000

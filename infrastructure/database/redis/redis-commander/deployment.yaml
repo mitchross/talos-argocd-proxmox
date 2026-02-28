@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: redis-commander
-          image: rediscommander/redis-commander:latest
+          image: rediscommander/redis-commander:latest@sha256:19cd0c49f418779fa2822a0496c5e6516d0c792effc39ed20089e6268477e40a
           imagePullPolicy: IfNotPresent
           env:
             - name: REDIS_HOSTS
