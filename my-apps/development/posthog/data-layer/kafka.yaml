@@ -40,7 +40,7 @@ spec:
                 --memory 2G \
                 --reserve-memory 200M \
                 --overprovisioned \
-                --unsafe-bypass-fsync true
+                --unsafe-bypass-fsync
           env:
             - name: ALLOW_PLAINTEXT_LISTENER
               value: "true"

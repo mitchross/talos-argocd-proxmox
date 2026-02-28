@@ -22,7 +22,9 @@ spec:
         - name: web
           image: posthog/posthog:latest
           command:
-            - ./bin/docker-server-unit
+            - /bin/sh
+            - -c
+            - ./bin/docker-server
           envFrom:
             - configMapRef:
                 name: posthog-env
