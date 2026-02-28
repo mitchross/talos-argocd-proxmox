@@ -1,0 +1,199 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: capture
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: capture
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: capture
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: capture
+    spec:
+      containers:
+        - name: capture
+          image: ghcr.io/posthog/posthog/capture:master
+          env:
+            - name: ADDRESS
+              value: "0.0.0.0:3000"
+            - name: KAFKA_TOPIC
+              value: "events_plugin_ingestion"
+            - name: KAFKA_HOSTS
+              value: "kafka:9092"
+            - name: REDIS_URL
+              value: "redis://redis7:6379/"
+            - name: CAPTURE_MODE
+              value: "events"
+            - name: RUST_LOG
+              value: "info,rdkafka=warn"
+          ports:
+            - containerPort: 3000
+              name: http
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: capture
+  namespace: posthog
+spec:
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+  selector:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: capture
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: replay-capture
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: replay-capture
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: replay-capture
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: replay-capture
+    spec:
+      containers:
+        - name: replay-capture
+          image: ghcr.io/posthog/posthog/capture:master
+          env:
+            - name: ADDRESS
+              value: "0.0.0.0:3000"
+            - name: KAFKA_TOPIC
+              value: "session_recording_snapshot_item_events"
+            - name: KAFKA_HOSTS
+              value: "kafka:9092"
+            - name: REDIS_URL
+              value: "redis://redis7:6379/"
+            - name: CAPTURE_MODE
+              value: "recordings"
+            - name: RUST_LOG
+              value: "info,rdkafka=warn"
+          ports:
+            - containerPort: 3000
+              name: http
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: replay-capture
+  namespace: posthog
+spec:
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+  selector:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: replay-capture
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: feature-flags
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: feature-flags
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: feature-flags
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: feature-flags
+    spec:
+      containers:
+        - name: feature-flags
+          image: ghcr.io/posthog/posthog/feature-flags:master
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-password
+            - name: WRITE_DATABASE_URL
+              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+            - name: READ_DATABASE_URL
+              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+            - name: PERSONS_WRITE_DATABASE_URL
+              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+            - name: PERSONS_READ_DATABASE_URL
+              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+            - name: MAXMIND_DB_PATH
+              value: "/share/GeoLite2-City.mmdb"
+            - name: REDIS_URL
+              value: "redis://redis7:6379/"
+            - name: ADDRESS
+              value: "0.0.0.0:3001"
+            - name: RUST_LOG
+              value: "info"
+            - name: COOKIELESS_REDIS_HOST
+              value: "redis7"
+            - name: COOKIELESS_REDIS_PORT
+              value: "6379"
+          ports:
+            - containerPort: 3001
+              name: http
+          livenessProbe:
+            httpGet:
+              path: /_readiness
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: feature-flags
+  namespace: posthog
+spec:
+  ports:
+    - name: http
+      port: 3001
+      targetPort: 3001
+  selector:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: feature-flags

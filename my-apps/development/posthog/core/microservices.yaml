@@ -1,0 +1,179 @@
+---
+# Livestream - real-time event streaming
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: livestream
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: livestream
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: livestream
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: livestream
+    spec:
+      containers:
+        - name: livestream
+          image: ghcr.io/posthog/posthog/livestream:master
+          env:
+            - name: KAFKA_HOSTS
+              value: "kafka:9092"
+            - name: REDIS_URL
+              value: "redis://redis7:6379/"
+            - name: ADDRESS
+              value: "0.0.0.0:8080"
+          ports:
+            - containerPort: 8080
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: livestream
+  namespace: posthog
+spec:
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  selector:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: livestream
+---
+# Property Defs - Rust property definitions service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: property-defs-rs
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: property-defs-rs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: property-defs-rs
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: property-defs-rs
+    spec:
+      containers:
+        - name: property-defs-rs
+          image: ghcr.io/posthog/posthog/property-defs-rs:master
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-password
+            - name: DATABASE_URL
+              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+            - name: KAFKA_HOSTS
+              value: "kafka:9092"
+            - name: RUST_LOG
+              value: "info"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+---
+# Cyclotron Janitor - background job cleanup
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cyclotron-janitor
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: cyclotron-janitor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: cyclotron-janitor
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: cyclotron-janitor
+    spec:
+      containers:
+        - name: cyclotron-janitor
+          image: ghcr.io/posthog/posthog/cyclotron-janitor:master
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-password
+            - name: DATABASE_URL
+              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+            - name: KAFKA_HOSTS
+              value: "kafka:9092"
+            - name: KAFKA_TOPIC
+              value: "clickhouse_app_metrics2"
+            - name: RUST_LOG
+              value: "info"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+---
+# Cymbal - exception symbolication processor
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cymbal
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: cymbal
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: cymbal
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: cymbal
+    spec:
+      containers:
+        - name: cymbal
+          image: ghcr.io/posthog/posthog/cymbal:master
+          env:
+            - name: KAFKA_HOSTS
+              value: "kafka:9092"
+            - name: RUST_LOG
+              value: "info"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi

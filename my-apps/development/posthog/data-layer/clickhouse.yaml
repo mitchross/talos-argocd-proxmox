@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: clickhouse
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: clickhouse
+spec:
+  serviceName: clickhouse
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: clickhouse
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: clickhouse
+    spec:
+      containers:
+        - name: clickhouse
+          image: clickhouse/clickhouse-server:25.12.5.44
+          env:
+            - name: CLICKHOUSE_SKIP_USER_SETUP
+              value: "1"
+            - name: KAFKA_HOSTS
+              value: "kafka:9092"
+          ports:
+            - containerPort: 8123
+              name: http
+            - containerPort: 9000
+              name: tcp
+            - containerPort: 9181
+              name: keeper
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1"
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1"
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 500m
+              memory: 4Gi
+            limits:
+              memory: 8Gi
+          volumeMounts:
+            - name: clickhouse-data
+              mountPath: /var/lib/clickhouse
+            - name: config
+              mountPath: /etc/clickhouse-server/config.xml
+              subPath: config.xml
+            - name: config
+              mountPath: /etc/clickhouse-server/users.xml
+              subPath: users.xml
+            - name: config
+              mountPath: /etc/clickhouse-server/user_defined_function.xml
+              subPath: user_defined_function.xml
+            - name: config-d-default
+              mountPath: /etc/clickhouse-server/config.d/default.xml
+              subPath: default.xml
+            - name: config-d-keeper
+              mountPath: /etc/clickhouse-server/config.d/keeper.xml
+              subPath: keeper.xml
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d/init-posthog.sh
+              subPath: init-posthog.sh
+      volumes:
+        - name: config
+          configMap:
+            name: clickhouse-config
+        - name: config-d-default
+          configMap:
+            name: clickhouse-config-d
+            items:
+              - key: default.xml
+                path: default.xml
+        - name: config-d-keeper
+          configMap:
+            name: clickhouse-config-d
+            items:
+              - key: keeper.xml
+                path: keeper.xml
+        - name: init
+          configMap:
+            name: clickhouse-init
+            defaultMode: 0755
+  volumeClaimTemplates:
+    - metadata:
+        name: clickhouse-data
+        labels:
+          app: posthog-clickhouse
+          backup: "daily"
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 20Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickhouse
+  namespace: posthog
+spec:
+  ports:
+    - port: 8123
+      targetPort: 8123
+      name: http
+    - port: 9000
+      targetPort: 9000
+      name: tcp
+  selector:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: clickhouse
