@@ -17,6 +17,130 @@ Additionally, ArgoCD ApplicationSets enforce `selfHeal: true`, recreating delete
 
 **Solution**: Apply recovery manifests directly with `kubectl create`, bypassing ArgoCD entirely.
 
+## GitOps During Recovery: Source of Truth & skip-reconcile
+
+**Key principle: Git is ALWAYS source of truth.** But during recovery, we temporarily pause ArgoCD's auto-sync to avoid conflicts.
+
+### Normal GitOps Flow (Always)
+
+```
+┌──────────────┐
+│     Git      │  ← Source of truth (cluster.yaml, values, etc.)
+└──────┬───────┘
+       │
+       │ (ArgoCD watches continuously)
+       │ "Any change in Git = auto-sync to cluster"
+       ↓
+┌──────────────┐
+│   ArgoCD     │
+│ (auto-sync)  │
+└──────┬───────┘
+       │
+       │ (SSA, Helm rendering, kustomize apply)
+       ↓
+┌──────────────┐
+│   Cluster    │
+│ (synced to   │
+│  Git state)  │
+└──────────────┘
+```
+
+Git change → ArgoCD auto-discovers → Cluster updates. Simple, automated, always consistent.
+
+### Recovery Flow: Temporary skip-reconcile
+
+During CNPG recovery, we PAUSE auto-sync to prevent conflicts:
+
+```
+STEP 1: Pause auto-sync (Set skip-reconcile=true)
+┌──────────────┐
+│     Git      │
+└──────┬───────┘
+       │
+       X (ArgoCD paused)
+       │ "Don't auto-sync yet"
+       ↓
+┌──────────────────────────────┐
+│   ArgoCD (PAUSED)            │
+│ skip-reconcile=true          │
+│ (manual sync only)           │
+└──────────────────────────────┘
+       │
+       │ (Manual sync via UI still works)
+       ↓
+┌──────────────────────────────┐
+│   Cluster (unchanged so far) │
+└──────────────────────────────┘
+
+STEP 2: Manual kubectl recovery (bypass ArgoCD)
+┌──────────────────────────────┐
+│   You (kubectl create)       │
+│   recovery-cluster.yaml      │
+└──────┬───────────────────────┘
+       │
+       │ (Direct API call, no SSA conflict)
+       ↓
+┌──────────────────────────────┐
+│   Cluster                    │
+│ (recovery pod running)       │
+└──────────────────────────────┘
+
+STEP 3: Recovery completes, unpause (Remove skip-reconcile)
+┌──────────────┐
+│     Git      │
+└──────┬───────┘
+       │
+       │ (ArgoCD unpaused)
+       │ "Resume auto-sync"
+       ↓
+┌──────────────────────────────┐
+│   ArgoCD (RESUMING)          │
+│ skip-reconcile removed       │
+│ (auto-sync enabled)          │
+└──────────────────────────────┘
+       │
+       │ (normal GitOps resumes)
+       ↓
+┌──────────────────────────────┐
+│   Cluster (final state)      │
+│  (recovered data + Git sync) │
+└──────────────────────────────┘
+```
+
+### Why skip-reconcile Doesn't Break GitOps
+
+**Git remains source of truth the whole time:**
+- You commit recovered state back to Git (cluster.yaml reverted to initdb, backup lineage bumped to v3)
+- skip-reconcile only blocks **automatic reconciliation** (ArgoCD watching)
+- Manual sync (UI click) still reads Git and applies to cluster
+- Once skip-reconcile is removed, auto-sync resumes from Git state
+
+**Think of it like:**
+- Normal: ArgoCD is always watching Git, automatically syncing any changes
+- skip-reconcile pause: You tell ArgoCD "ignore Git for now, let me work"
+- Manual recovery: You directly fix the cluster
+- Unpause: ArgoCD starts watching Git again, makes sure cluster matches Git
+
+**After unpause, if someone changed Git while paused:**
+- ArgoCD syncs the newest Git state
+- Old recover state is overwritten by Git
+- Git wins (as it should)
+
+### Cleanup Checklist
+
+```
+[ ] Recovery cluster is healthy (pod Ready 1/1, data validated)
+[ ] cluster.yaml reverted to initdb mode (not recovery)
+[ ] cluster.yaml backup lineage bumped to v3 (not v2)
+[ ] Commit cluster.yaml to Git
+[ ] Push to main branch
+[ ] Manual sync via Argo UI (still has skip-reconcile on, that's ok)
+[ ] Remove skip-reconcile annotations
+[ ] Verify auto-sync working again
+```
+
+After unpause, Git and cluster sync normally, and you're back to true GitOps.
+
 ## Backup Architecture
 
 ```
@@ -59,6 +183,166 @@ During recovery, treat these as two different values:
 - `backup.barmanObjectStore.serverName` = **new backup target** (next lineage, e.g. `immich-database-v3`)
 
 After recovery succeeds, keep backups on the new lineage (`v3`). Do **not** switch backup target back to `v2`.
+
+## CNPG Normal Operation (Continuous Backups)
+
+This is what happens every day to keep backups current:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│   CNPG Cluster (Normal Operation)                          │
+│                                                             │
+│   ┌──────────────┐                                          │
+│   │  Postgres    │  ← Running, accepting transactions      │
+│   │  (immich)    │                                          │
+│   └──────┬───────┘                                          │
+│          │                                                   │
+│  ┌───────┴──────────────────────┬────────────────────────┐  │
+│  │ split into two paths:        │                        │  │
+│  ↓                              ↓                        │  │
+│  ┌──────────────┐       ┌──────────────────┐           │  │
+│  │  WAL Stream  │       │ Scheduled Base   │           │  │
+│  │  (every txn) │       │ Backups (daily)  │           │  │
+│  └──────┬───────┘       └────────┬─────────┘           │  │
+│         │                        │                     │  │
+│         │ (continuous)           │ (full dump)         │  │
+│         ↓                        ↓                     │  │
+│  ┌──────────────────────────────────────────┐         │  │
+│  │  Barman (CloudNativePG operator)         │         │  │
+│  │  "Archive everything to S3"              │         │  │
+│  └──────┬───────────────────────────────────┘         │  │
+│         │                                             │  │
+│         │ (upload to S3)                              │  │
+│         ↓                                             │  │
+│  ┌──────────────────────────────────────────┐         │  │
+│  │  RustFS S3 Storage                       │         │  │
+│  │                                          │         │  │
+│  │  s3://postgres-backups/cnpg/immich/     │         │  │
+│  │  ├── immich-database-v2/                │         │  │
+│  │  │   ├── base/     (full backups)       │         │  │
+│  │  │   └── wals/     (transaction logs)   │         │  │
+│  │  └── (encrypted, compressed)            │         │  │
+│  └──────────────────────────────────────────┘         │  │
+│                                                       │  │
+└───────────────────────────────────────────────────────┘  │
+```
+
+**Result**: If something breaks tomorrow, backups with all transactions up to the failure moment are sitting on S3.
+
+## CNPG Disaster Recovery (Reading from Backups)
+
+When you nuke the cluster and rebuild, CNPG needs to restore from S3:
+
+```
+SCENARIO: Cluster crashed, PVCs deleted, you're rebuilding
+
+STEP 1: You tell CNPG "Use recovery mode" (in cluster.yaml)
+┌─────────────────────────────────────┐
+│  cluster.yaml bootstrap section:    │
+│  recovery:                          │
+│    source: immich-backup       ← points to S3│
+├─────────────────────────────────────┤
+│  externalClusters:                 │
+│    serverName: v2              ← restore FROM this version
+└─────────────────────────────────────┘
+         │
+         │ (kubectl create - bypass ArgoCD)
+         ↓
+┌─────────────────────────────────────────────────────────┐
+│   CNPG Operator sees "recovery" mode                   │
+│   Looks for source in externalClusters                 │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ↓
+         ┌───────────────────────┐
+         │  RustFS S3            │
+         │  (look for v2)        │
+         └─────────┬─────────────┘
+                   │
+              ┌────┴────┐
+              ↓         ↓
+         ┌────────┐  ┌───────┐
+         │ base/  │  │ wals/ │  ← Latest transaction logs
+         └────┬───┘  └───┬───┘
+              │          │
+              └────┬─────┘
+                   │ (download + restore)
+                   ↓
+         ┌─────────────────────┐
+         │  New Postgres Pod   │
+         │  (recovering...)    │
+         │  + Longhorn PVCs    │
+         │  (data being written)
+         └────────┬────────────┘
+                  │ (after restore completes)
+                  ↓
+         ┌─────────────────────┐
+         │  Postgres Ready     │
+         │  All data restored! │
+         │  (v2 lineage)       │
+         └─────────────────────┘
+
+STEP 2: You change cluster.yaml back to initdb (normal mode)
+         BUT change backup.serverName to v3 (new lineage)
+         
+         This prevents WAL conflicts:
+         - Old backups stay at v2 (untouched, point-in-time recovery available)
+         - New writes go to v3 (fresh archive)
+         - Next recovery will restore from v3, then bump to v4
+```
+
+## Bootstrap Decision Tree
+
+CNPG's bootstrap section determines what happens when a Cluster is created:
+
+```
+        ┌──────────────────────────────────┐
+        │  CNPG Cluster Created            │
+        │  (kubectl create or apply)       │
+        └──────────────┬───────────────────┘
+                       │
+                       │ Check spec.bootstrap:
+                       │
+            ┌──────────┴──────────┐
+            │                     │
+            ↓                     ↓
+    ┌───────────────┐    ┌──────────────┐
+    │   initdb      │    │   recovery   │
+    │   (default)   │    │   (restore)  │
+    └───────┬───────┘    └──────┬───────┘
+            │                   │
+            ↓                   │ Look for externalClusters:
+    ┌──────────────────────┐    │
+    │ Create fresh db      │    ↓
+    │ (empty, new owner)   │ ┌──────────────────────────┐
+    │                      │ │ Find serverName=v2 in S3 │
+    │ Starting postgres,   │ │ Download base backup     │
+    │ then run            │ │ + replay WALs            │
+    │ postInitSQL:        │ │                          │
+    │  - CREATE EXT       │ │ → Postgres starts with   │
+    │  - GRANT PRIVS      │ │   restored data!         │
+    │                      │ └──────────────────────────┘
+    │ RESULT: Empty DB    │
+    │ User must sign up   │    RESULT: Full data restored
+    │ or restore from     │    Users see their data
+    │ PVCs               │    All tables/users back
+    └──────────────────────┘
+            OR
+    ┌──────────────────────┐
+    │ BUG: Both present    │
+    │ (initdb + recovery)  │
+    │                      │
+    │ CNPG webhook adds    │
+    │ defaults → merger    │
+    │ conflict → initdb    │
+    │ wins                 │
+    │                      │
+    │ RESULT: Empty DB    │
+    │ (lost data!)        │
+    └──────────────────────┘
+```
+
+**Key takeaway:** Only ONE bootstrap section should be present. If both exist, `initdb` wins and you lose data. Always remove recovery section before pushing to Git.
 
 ## Recovery Procedure
 
