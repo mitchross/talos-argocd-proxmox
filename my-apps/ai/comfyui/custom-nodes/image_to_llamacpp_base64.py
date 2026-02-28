@@ -3,6 +3,7 @@
 import base64
 import io
 import json
+import re
 import urllib.request
 import urllib.error
 
@@ -56,6 +57,27 @@ def _chat_completion(server_url, model, messages, temperature, max_tokens):
         text = message.get("reasoning_content", "").strip()
     if not text:
         text = json.dumps(result)
+    return _strip_thinking(text)
+
+
+def _strip_thinking(text):
+    """Remove any thinking/reasoning blocks that leak into model output."""
+    # Strip <think>...</think> blocks
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+    # Strip **Thinking Process:** or similar markdown reasoning headers and everything before the actual output
+    # Look for the last paragraph that doesn't start with bullets, numbers, or markdown headers
+    lines = text.split("\n")
+    # If it starts with thinking indicators, find where the actual prompt begins
+    thinking_starts = ("thinking process", "**thinking", "1.", "## ", "### ", "analysis", "**analyze")
+    if lines and lines[0].strip().lower().startswith(thinking_starts):
+        # Find last substantial paragraph (the actual modified prompt)
+        # Usually after all the numbered analysis, the final output is a clean paragraph
+        paragraphs = re.split(r"\n\n+", text)
+        # Take the last paragraph that looks like a prompt (no bullets/numbers/headers)
+        for p in reversed(paragraphs):
+            p = p.strip()
+            if p and not p.startswith(("*", "-", "#", "1.", "2.", "3.", "4.", "5.")):
+                return p
     return text
 
 
@@ -210,15 +232,14 @@ class LlamaCppTextModify:
         messages = [
             {
                 "role": "system",
-                "content": "You are a text-to-image prompt editor. You will receive an original image "
-                "description prompt and modification instructions. Apply the requested changes to "
-                "produce a new prompt. Keep all unmentioned details from the original. "
-                "Output ONLY the modified prompt text, no preamble or explanation.",
+                "content": "You modify image generation prompts. You receive an original prompt and "
+                "change instructions. Output ONLY the modified prompt. No thinking, no analysis, "
+                "no bullet points, no markdown, no explanation. Just the modified prompt text.",
             },
             {
                 "role": "user",
-                "content": f"/no_think Original prompt:\n{original_text}\n\n"
-                f"Modifications requested:\n{instructions}",
+                "content": f"/no_think Modify this prompt: {original_text}\n\nChanges: {instructions}\n\n"
+                "Reply with ONLY the modified prompt, nothing else:",
             },
         ]
         return (_chat_completion(server_url, model, messages, temperature, max_tokens),)
