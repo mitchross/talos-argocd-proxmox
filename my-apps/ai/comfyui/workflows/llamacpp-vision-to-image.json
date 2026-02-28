@@ -6,41 +6,32 @@
     }
   },
   "2": {
-    "class_type": "ImageToLlamaCppBase64",
+    "class_type": "LlamaCppVisionCaption",
     "inputs": {
       "image": ["1", 0],
-      "prompt": "Describe this image in rich detail for use as an image generation prompt. Focus on subject, composition, lighting, colors, style, and mood. Output only the prompt text, no preamble."
+      "prompt": "Describe this image in rich detail for use as an image generation prompt. Focus on subject, composition, lighting, colors, style, and mood. Output only the prompt text, no preamble.",
+      "system_message": "You are an expert image description assistant. Produce a detailed, vivid text-to-image prompt that would recreate the given image. Include subject, setting, lighting, colors, composition, artistic style, and mood. Output ONLY the prompt text with no preamble, labels, or explanation.",
+      "server_url": "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080",
+      "model": "general - qwen3.5",
+      "temperature": 0.6,
+      "max_tokens": 1024
     }
   },
   "3": {
-    "class_type": "LlamaCppClient",
+    "class_type": "CLIPTextEncode",
     "inputs": {
-      "server_url": "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080",
-      "endpoint": "chat_completions",
-      "prompt": "",
-      "system_message": "You are an expert image description assistant. When given an image, produce a detailed, vivid text-to-image prompt that would recreate a similar image. Include subject, setting, lighting, colors, composition, artistic style, and mood. Output ONLY the prompt text with no preamble, labels, or explanation.",
-      "user_message": ["2", 1],
-      "image_data": ["2", 0],
-      "temperature": 0.6,
-      "n_predict": 256,
-      "max_tokens": 256
+      "text": ["2", 0],
+      "clip": ["5", 0]
     }
   },
   "4": {
     "class_type": "CLIPTextEncode",
     "inputs": {
-      "text": ["3", 0],
-      "clip": ["6", 0]
+      "text": "blurry, low quality, distorted, watermark, text, deformed",
+      "clip": ["5", 0]
     }
   },
   "5": {
-    "class_type": "CLIPTextEncode",
-    "inputs": {
-      "text": "blurry, low quality, distorted, watermark, text, deformed",
-      "clip": ["6", 0]
-    }
-  },
-  "6": {
     "class_type": "DualCLIPLoader",
     "inputs": {
       "clip_name1": "clip_l.safetensors",
@@ -48,20 +39,20 @@
       "type": "flux"
     }
   },
-  "7": {
+  "6": {
     "class_type": "UNETLoader",
     "inputs": {
       "unet_name": "z_image_turbo_bf16.safetensors",
       "weight_dtype": "fp8_e4m3fn"
     }
   },
-  "8": {
+  "7": {
     "class_type": "VAELoader",
     "inputs": {
       "vae_name": "ae.safetensors"
     }
   },
-  "9": {
+  "8": {
     "class_type": "EmptyLatentImage",
     "inputs": {
       "width": 1024,
@@ -69,7 +60,7 @@
       "batch_size": 1
     }
   },
-  "10": {
+  "9": {
     "class_type": "KSampler",
     "inputs": {
       "seed": 0,
@@ -78,24 +69,24 @@
       "sampler_name": "euler",
       "scheduler": "normal",
       "denoise": 1.0,
-      "model": ["7", 0],
-      "positive": ["4", 0],
-      "negative": ["5", 0],
-      "latent_image": ["9", 0]
+      "model": ["6", 0],
+      "positive": ["3", 0],
+      "negative": ["4", 0],
+      "latent_image": ["8", 0]
+    }
+  },
+  "10": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": ["9", 0],
+      "vae": ["7", 0]
     }
   },
   "11": {
-    "class_type": "VAEDecode",
-    "inputs": {
-      "samples": ["10", 0],
-      "vae": ["8", 0]
-    }
-  },
-  "12": {
     "class_type": "SaveImage",
     "inputs": {
       "filename_prefix": "vision-to-image",
-      "images": ["11", 0]
+      "images": ["10", 0]
     }
   }
 }
