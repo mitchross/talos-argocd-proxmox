@@ -33,6 +33,8 @@ spec:
                 secretKeyRef:
                   name: posthog-secrets
                   key: posthog-db-password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           ports:
             - containerPort: 5432
               name: postgres
