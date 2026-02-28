@@ -21,7 +21,7 @@ data:
   VISION_MODELS: "general - qwen3.5"
 
   # Default parameters (Qwen3.5 precise thinking: temp=0.6, top_p=0.95, top_k=20)
-  CONTEXT_WINDOW: "131072"
+  CONTEXT_WINDOW: "16384"
   TEMPERATURE: "0.6"
   TOP_P: "0.95"
   MIN_P: "0.0"
