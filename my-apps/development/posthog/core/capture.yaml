@@ -127,7 +127,7 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: feature-flags
 spec:
-  replicas: 1
+  replicas: 0  # Disabled: requires GeoIP MMDB file; Python web server handles flags for hobby
   selector:
     matchLabels:
       app.kubernetes.io/name: posthog
