@@ -1,6 +1,6 @@
 {
-  "last_node_id": 11,
-  "last_link_id": 10,
+  "last_node_id": 12,
+  "last_link_id": 12,
   "nodes": [
     {
       "id": 1,
@@ -20,7 +20,7 @@
         {"name": "image", "type": "IMAGE", "link": 1}
       ],
       "outputs": [
-        {"name": "caption", "type": "STRING", "links": [2], "slot_index": 0}
+        {"name": "caption", "type": "STRING", "links": [12], "slot_index": 0}
       ],
       "widgets_values": [
         "Describe this image in rich detail for use as an image generation prompt. Focus on subject, composition, lighting, colors, style, and mood. Output only the prompt text, no preamble.",
@@ -32,19 +32,31 @@
       ]
     },
     {
+      "id": 12,
+      "type": "ShowText|pysssss",
+      "pos": [380, 360],
+      "size": [400, 200],
+      "title": "Caption Preview (copy to Prompt below)",
+      "properties": {"Node name for S&R": "ShowText|pysssss"},
+      "inputs": [
+        {"name": "text", "type": "STRING", "link": 12, "widget": {"name": "text"}}
+      ],
+      "widgets_values": [""]
+    },
+    {
       "id": 3,
       "type": "CLIPTextEncode",
       "pos": [840, 0],
       "size": [400, 200],
+      "title": "Positive Prompt (paste & edit caption here)",
       "properties": {"Node name for S&R": "CLIPTextEncode"},
       "inputs": [
-        {"name": "clip", "type": "CLIP", "link": 5},
-        {"name": "text", "type": "STRING", "link": 2, "widget": {"name": "text"}}
+        {"name": "clip", "type": "CLIP", "link": 5}
       ],
       "outputs": [
         {"name": "CONDITIONING", "type": "CONDITIONING", "links": [7], "slot_index": 0}
       ],
-      "widgets_values": [""]
+      "widgets_values": ["paste caption here, edit as desired, then Queue again"]
     },
     {
       "id": 4,
@@ -150,7 +162,6 @@
   ],
   "links": [
     [1, 1, 0, 2, 0, "IMAGE"],
-    [2, 2, 0, 3, 1, "STRING"],
     [3, 9, 0, 10, 0, "LATENT"],
     [4, 7, 0, 10, 1, "VAE"],
     [5, 5, 0, 3, 0, "CLIP"],
@@ -159,7 +170,8 @@
     [8, 4, 0, 9, 2, "CONDITIONING"],
     [9, 6, 0, 9, 0, "MODEL"],
     [10, 8, 0, 9, 3, "LATENT"],
-    [11, 10, 0, 11, 0, "IMAGE"]
+    [11, 10, 0, 11, 0, "IMAGE"],
+    [12, 2, 0, 12, 0, "STRING"]
   ],
   "groups": [],
   "config": {},
