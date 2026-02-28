@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: clickhouse
-          image: clickhouse/clickhouse-server:25.12.5.44
+          image: clickhouse/clickhouse-server:26.2.1.1139
           env:
             - name: CLICKHOUSE_SKIP_USER_SETUP
               value: "1"
