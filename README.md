@@ -216,7 +216,8 @@ All PVC backups use **Kopia on NFS** via VolSync, automated by Kyverno policies.
 - **Backend**: Kopia filesystem repository on TrueNAS NFS (`192.168.10.133:/mnt/BigTank/k8s/volsync-kopia-nfs`)
 - **Encryption**: Kopia password from 1Password (`rustfs` item)
 - **Restore**: Automatic on PVC recreation - PVC Plumber checks for existing backups, Kyverno injects `dataSourceRef`
-- **Details**: See [docs/pvc-plumber-full-flow.md](docs/pvc-plumber-full-flow.md) and [docs/backup-restore.md](docs/backup-restore.md)
+- **Details**: See [docs/pvc-plumber-full-flow.md](docs/pvc-plumber-full-flow.md), [docs/backup-restore.md](docs/backup-restore.md), and [docs/cnpg-disaster-recovery.md](docs/cnpg-disaster-recovery.md)
+- **AI-guided database recovery**: Copy/paste prompts are in [LLM Recovery Prompt Templates](docs/cnpg-disaster-recovery.md#llm-recovery-prompt-templates)
 
 ## Hardware
 
