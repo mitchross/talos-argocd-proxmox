@@ -75,14 +75,21 @@ spec:
           ports:
             - containerPort: 8000
               name: http
+          startupProbe:
+            httpGet:
+              path: /_health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 60
           readinessProbe:
             httpGet:
               path: /_health
               port: 8000
-            initialDelaySeconds: 120
             periodSeconds: 10
             timeoutSeconds: 10
-            failureThreshold: 12
+            failureThreshold: 3
           resources:
             requests:
               cpu: 500m
