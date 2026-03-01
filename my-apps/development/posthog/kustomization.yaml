@@ -19,4 +19,3 @@ resources:
   - core/plugins.yaml
   - core/capture.yaml
   - core/microservices.yaml
-  - core/jobs.yaml

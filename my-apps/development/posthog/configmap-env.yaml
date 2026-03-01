@@ -10,7 +10,6 @@ data:
   DISABLE_SECURE_SSL_REDIRECT: "true"
   IS_BEHIND_PROXY: "true"
   SITE_URL: "https://posthog.vanillax.me"
-  POSTHOG_SKIP_MIGRATION_CHECKS: "1"
 
   # PostgreSQL (in posthog namespace)
   PGHOST: "db"
