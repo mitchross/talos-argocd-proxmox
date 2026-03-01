@@ -20,40 +20,40 @@ spec:
     spec:
       restartPolicy: OnFailure
       containers:
-        - name: kafka-init
-          image: docker.redpanda.com/redpandadata/redpanda:v25.1.9
-          imagePullPolicy: IfNotPresent
-          command:
-            - /bin/sh
-            - -c
-            - |
-              set -x
-              echo "Waiting for Kafka broker to accept connections..."
-              TIMEOUT=120
-              ELAPSED=0
-              until rpk topic list --brokers kafka:9092 2>/dev/null; do
-                  echo "Kafka broker not ready yet (elapsed: ${ELAPSED}s)..."
-                  sleep 2
-                  ELAPSED=$((ELAPSED + 2))
-                  if [ $ELAPSED -ge $TIMEOUT ]; then
-                      echo "Timeout waiting for Kafka broker after ${TIMEOUT}s"
+      - name: kafka-init
+        image: docker.redpanda.com/redpandadata/redpanda:v25.1.9
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -x
+          echo "Waiting for Kafka broker to accept connections..."
+          TIMEOUT=120
+          ELAPSED=0
+          until rpk topic list --brokers kafka:9092 2>/dev/null; do
+              echo "Kafka broker not ready yet (elapsed: ${ELAPSED}s)..."
+              sleep 2
+              ELAPSED=$((ELAPSED + 2))
+              if [ $ELAPSED -ge $TIMEOUT ]; then
+                  echo "Timeout waiting for Kafka broker after ${TIMEOUT}s"
+                  exit 1
+              fi
+          done
+          echo "Kafka broker is accepting requests, creating topics..."
+          for topic in exceptions_ingestion clickhouse_events_json session_recording_events session_recording_events2 session_recording_snapshot_item_events clickhouse_app_metrics2 logs_ingestion; do
+              if rpk topic create "$topic" --brokers kafka:9092 -p 1 -r 1 2>&1; then
+                  echo "Topic $topic created successfully"
+              else
+                  if rpk topic list --brokers kafka:9092 | grep -q "$topic"; then
+                      echo "Topic $topic already exists, continuing"
+                  else
+                      echo "Failed to create topic $topic"
                       exit 1
                   fi
-              done
-              echo "Kafka broker is accepting requests, creating topics..."
-              for topic in exceptions_ingestion clickhouse_events_json session_recording_events session_recording_events2 session_recording_snapshot_item_events clickhouse_app_metrics2 logs_ingestion; do
-                  if rpk topic create "$topic" --brokers kafka:9092 -p 1 -r 1 2>&1; then
-                      echo "Topic $topic created successfully"
-                  else
-                      if rpk topic list --brokers kafka:9092 | grep -q "$topic"; then
-                          echo "Topic $topic already exists, continuing"
-                      else
-                          echo "Failed to create topic $topic"
-                          exit 1
-                      fi
-                  fi
-              done
-              echo "Topics ready"
+              fi
+          done
+          echo "Topics ready"
 ---
 apiVersion: batch/v1
 kind: Job
@@ -79,61 +79,61 @@ spec:
       nodeSelector:
         feature.node.kubernetes.io/cpu-cpuid.AVX2: "true"
       containers:
-        - name: migrate
-          image: posthog/posthog:latest@sha256:97b289703159d9da3ae51e633c70b233358a84491efaa8f083b493ed711c05f4
-          command:
-            - /bin/sh
-            - -c
-            - |
-              set -e
-              echo "Waiting for Postgres..."
-              TIMEOUT=120; ELAPSED=0
-              until python -c "import socket; s=socket.socket(); s.settimeout(2); s.connect(('db', 5432))" 2>/dev/null; do
-                sleep 2; ELAPSED=$((ELAPSED + 2))
-                [ $ELAPSED -ge $TIMEOUT ] && echo "Postgres timeout" && exit 1
-              done
-              echo "Postgres ready"
-              echo "Waiting for ClickHouse..."
-              ELAPSED=0
-              until wget -q --spider --timeout=2 http://clickhouse:8123/ping 2>/dev/null; do
-                sleep 2; ELAPSED=$((ELAPSED + 2))
-                [ $ELAPSED -ge $TIMEOUT ] && echo "ClickHouse timeout" && exit 1
-              done
-              echo "ClickHouse ready"
-              echo "Flushing ClickHouse system logs..."
-              wget -q -O- "http://clickhouse:8123/?query=SYSTEM+FLUSH+LOGS" 2>/dev/null || true
-              echo "Running Django migrations..."
-              python manage.py migrate --noinput
-              echo "Running ClickHouse migrations..."
-              python manage.py migrate_clickhouse
-              echo "All migrations complete"
-          envFrom:
-            - configMapRef:
-                name: posthog-env
-          env:
-            - name: SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: posthog-secrets
-                  key: posthog-secret
-            - name: ENCRYPTION_SALT_KEYS
-              valueFrom:
-                secretKeyRef:
-                  name: posthog-secrets
-                  key: encryption-salt-keys
-            - name: PGPASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: posthog-secrets
-                  key: posthog-db-password
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: posthog-secrets
-                  key: posthog-db-url
-          resources:
-            requests:
-              cpu: 500m
-              memory: 2Gi
-            limits:
-              memory: 4Gi
+      - name: migrate
+        image: posthog/posthog:latest@sha256:97b289703159d9da3ae51e633c70b233358a84491efaa8f083b493ed711c05f4
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          echo "Waiting for Postgres..."
+          TIMEOUT=120; ELAPSED=0
+          until python -c "import socket; s=socket.socket(); s.settimeout(2); s.connect(('db', 5432))" 2>/dev/null; do
+            sleep 2; ELAPSED=$((ELAPSED + 2))
+            [ $ELAPSED -ge $TIMEOUT ] && echo "Postgres timeout" && exit 1
+          done
+          echo "Postgres ready"
+          echo "Waiting for ClickHouse..."
+          ELAPSED=0
+          until wget -q --spider --timeout=2 http://clickhouse:8123/ping 2>/dev/null; do
+            sleep 2; ELAPSED=$((ELAPSED + 2))
+            [ $ELAPSED -ge $TIMEOUT ] && echo "ClickHouse timeout" && exit 1
+          done
+          echo "ClickHouse ready"
+          echo "Flushing ClickHouse system logs..."
+          wget -q -O- "http://clickhouse:8123/?query=SYSTEM+FLUSH+LOGS" 2>/dev/null || true
+          echo "Running Django migrations..."
+          python manage.py migrate --noinput
+          echo "Running ClickHouse migrations..."
+          python manage.py migrate_clickhouse
+          echo "All migrations complete"
+        envFrom:
+        - configMapRef:
+            name: posthog-env
+        env:
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: posthog-secrets
+              key: posthog-secret
+        - name: ENCRYPTION_SALT_KEYS
+          valueFrom:
+            secretKeyRef:
+              name: posthog-secrets
+              key: encryption-salt-keys
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: posthog-secrets
+              key: posthog-db-password
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: posthog-secrets
+              key: posthog-db-url
+        resources:
+          requests:
+            cpu: 500m
+            memory: 2Gi
+          limits:
+            memory: 4Gi
