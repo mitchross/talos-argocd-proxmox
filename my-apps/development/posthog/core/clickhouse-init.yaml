@@ -34,7 +34,8 @@ spec:
               clickhouse-client --host=clickhouse --port=9000 --query "
               CREATE TABLE IF NOT EXISTS posthog.infi_clickhouse_orm_migrations (
                 module_name String,
-                package_name String
+                package_name String,
+                applied Date
               ) ENGINE = ReplicatedMergeTree(
                 '/posthog/tables/infi_clickhouse_orm_migrations',
                 'replica_{replica}'
