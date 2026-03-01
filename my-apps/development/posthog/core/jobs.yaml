@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: kafka-init
   annotations:
-    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook: Sync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
     argocd.argoproj.io/sync-wave: "1"
 spec:
@@ -64,9 +64,9 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: migrate
   annotations:
-    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook: Sync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   backoffLimit: 3
   template:
@@ -127,7 +127,10 @@ spec:
                   name: posthog-secrets
                   key: posthog-db-password
             - name: DATABASE_URL
-              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
           resources:
             requests:
               cpu: 500m

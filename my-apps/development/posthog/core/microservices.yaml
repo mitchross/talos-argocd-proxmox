@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: livestream
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   replicas: 0
   selector:
@@ -68,7 +68,7 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: property-defs-rs
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   replicas: 1
   selector:
@@ -91,7 +91,10 @@ spec:
                   name: posthog-secrets
                   key: posthog-db-password
             - name: DATABASE_URL
-              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
             - name: KAFKA_HOSTS
               value: "kafka:9092"
             - name: RUST_LOG
@@ -113,7 +116,7 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: cyclotron-janitor
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   replicas: 0
   selector:
@@ -136,7 +139,10 @@ spec:
                   name: posthog-secrets
                   key: posthog-db-password
             - name: DATABASE_URL
-              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
             - name: KAFKA_HOSTS
               value: "kafka:9092"
             - name: KAFKA_TOPIC
@@ -160,7 +166,7 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: cymbal
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   replicas: 0
   selector:
@@ -183,9 +189,15 @@ spec:
                   name: posthog-secrets
                   key: posthog-db-password
             - name: DATABASE_URL
-              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
             - name: PERSONS_URL
-              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
             - name: REDIS_URL
               value: "redis://redis7:6379/"
             - name: ISSUE_BUCKETS_REDIS_URL

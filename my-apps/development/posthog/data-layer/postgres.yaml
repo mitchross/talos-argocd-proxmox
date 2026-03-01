@@ -6,6 +6,8 @@ metadata:
   labels:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: db
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   replicas: 1
   strategy:

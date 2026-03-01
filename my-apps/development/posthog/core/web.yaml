@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: web
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   replicas: 1
   selector:
@@ -23,79 +23,82 @@ spec:
       nodeSelector:
         feature.node.kubernetes.io/cpu-cpuid.AVX2: "true"
       containers:
-        - name: web
-          image: posthog/posthog:latest@sha256:97b289703159d9da3ae51e633c70b233358a84491efaa8f083b493ed711c05f4
-          command:
-            - /bin/sh
-            - -c
-            - ./bin/docker-server
-          envFrom:
-            - configMapRef:
-                name: posthog-env
-          env:
-            - name: SECRET_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: posthog-secrets
-                  key: posthog-secret
-            - name: ENCRYPTION_SALT_KEYS
-              valueFrom:
-                secretKeyRef:
-                  name: posthog-secrets
-                  key: encryption-salt-keys
-            - name: PGPASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: posthog-secrets
-                  key: posthog-db-password
-            - name: DATABASE_URL
-              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
-            - name: OBJECT_STORAGE_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: posthog-secrets
-                  key: rustfs-access-key
-            - name: OBJECT_STORAGE_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: posthog-secrets
-                  key: rustfs-secret-key
-            - name: SESSION_RECORDING_V2_S3_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: posthog-secrets
-                  key: rustfs-access-key
-            - name: SESSION_RECORDING_V2_S3_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: posthog-secrets
-                  key: rustfs-secret-key
-            - name: LIVESTREAM_HOST
-              value: "https://posthog.vanillax.me/livestream"
-          ports:
-            - containerPort: 8000
-              name: http
-          startupProbe:
-            httpGet:
-              path: /_health
-              port: 8000
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 10
-            failureThreshold: 60
-          readinessProbe:
-            httpGet:
-              path: /_health
-              port: 8000
-            periodSeconds: 10
-            timeoutSeconds: 10
-            failureThreshold: 3
-          resources:
-            requests:
-              cpu: 500m
-              memory: 4Gi
-            limits:
-              memory: 8Gi
+      - name: web
+        image: posthog/posthog:latest@sha256:97b289703159d9da3ae51e633c70b233358a84491efaa8f083b493ed711c05f4
+        command:
+        - /bin/sh
+        - -c
+        - ./bin/docker-server
+        envFrom:
+        - configMapRef:
+            name: posthog-env
+        env:
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: posthog-secrets
+              key: posthog-secret
+        - name: ENCRYPTION_SALT_KEYS
+          valueFrom:
+            secretKeyRef:
+              name: posthog-secrets
+              key: encryption-salt-keys
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: posthog-secrets
+              key: posthog-db-password
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: posthog-secrets
+              key: posthog-db-url
+        - name: OBJECT_STORAGE_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: posthog-secrets
+              key: rustfs-access-key
+        - name: OBJECT_STORAGE_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: posthog-secrets
+              key: rustfs-secret-key
+        - name: SESSION_RECORDING_V2_S3_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: posthog-secrets
+              key: rustfs-access-key
+        - name: SESSION_RECORDING_V2_S3_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: posthog-secrets
+              key: rustfs-secret-key
+        - name: LIVESTREAM_HOST
+          value: "https://posthog.vanillax.me/livestream"
+        ports:
+        - containerPort: 8000
+          name: http
+        startupProbe:
+          httpGet:
+            path: /_health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 10
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /_health
+            port: 8000
+          periodSeconds: 10
+          timeoutSeconds: 10
+          failureThreshold: 3
+        resources:
+          requests:
+            cpu: 500m
+            memory: 4Gi
+          limits:
+            memory: 8Gi
 ---
 apiVersion: v1
 kind: Service
@@ -104,9 +107,9 @@ metadata:
   namespace: posthog
 spec:
   ports:
-    - name: http
-      port: 8000
-      targetPort: 8000
+  - name: http
+    port: 8000
+    targetPort: 8000
   selector:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: web
