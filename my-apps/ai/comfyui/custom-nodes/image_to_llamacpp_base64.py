@@ -64,12 +64,12 @@ def _strip_thinking(text):
     """Remove any thinking/reasoning blocks that leak into model output."""
     # Strip <think>...</think> blocks
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
-    # Extract content between <PROMPT>...</PROMPT> tags if present
-    match = re.search(r"<PROMPT>(.*?)</PROMPT>", text, flags=re.DOTALL)
+    # Extract content between ===RESULT=== delimiters if present
+    match = re.search(r"===RESULT===(.*?)===END===", text, flags=re.DOTALL)
     if match:
         return match.group(1).strip()
-    # Handle unclosed <PROMPT> tag (model ran out of tokens before closing)
-    match = re.search(r"<PROMPT>(.*)", text, flags=re.DOTALL)
+    # Handle unclosed delimiter (model ran out of tokens)
+    match = re.search(r"===RESULT===(.*)", text, flags=re.DOTALL)
     if match:
         return match.group(1).strip()
     return text
@@ -226,8 +226,8 @@ class LlamaCppTextModify:
         messages = [
             {
                 "role": "system",
-                "content": "You modify image prompts. Wrap your output in <PROMPT> tags. "
-                "Example: <PROMPT>a cat sitting on a roof at sunset</PROMPT>",
+                "content": "You modify image prompts. Wrap your output between ===RESULT=== and ===END=== markers. "
+                "Example: ===RESULT=== a cat sitting on a roof at sunset ===END===",
             },
             {
                 "role": "user",
