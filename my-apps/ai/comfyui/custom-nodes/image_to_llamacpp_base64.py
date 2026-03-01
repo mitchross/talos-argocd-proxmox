@@ -68,6 +68,10 @@ def _strip_thinking(text):
     match = re.search(r"<PROMPT>(.*?)</PROMPT>", text, flags=re.DOTALL)
     if match:
         return match.group(1).strip()
+    # Handle unclosed <PROMPT> tag (model ran out of tokens before closing)
+    match = re.search(r"<PROMPT>(.*)", text, flags=re.DOTALL)
+    if match:
+        return match.group(1).strip()
     return text
 
 
