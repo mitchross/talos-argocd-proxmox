@@ -64,20 +64,10 @@ def _strip_thinking(text):
     """Remove any thinking/reasoning blocks that leak into model output."""
     # Strip <think>...</think> blocks
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
-    # Strip **Thinking Process:** or similar markdown reasoning headers and everything before the actual output
-    # Look for the last paragraph that doesn't start with bullets, numbers, or markdown headers
-    lines = text.split("\n")
-    # If it starts with thinking indicators, find where the actual prompt begins
-    thinking_starts = ("thinking process", "**thinking", "1.", "## ", "### ", "analysis", "**analyze")
-    if lines and lines[0].strip().lower().startswith(thinking_starts):
-        # Find last substantial paragraph (the actual modified prompt)
-        # Usually after all the numbered analysis, the final output is a clean paragraph
-        paragraphs = re.split(r"\n\n+", text)
-        # Take the last paragraph that looks like a prompt (no bullets/numbers/headers)
-        for p in reversed(paragraphs):
-            p = p.strip()
-            if p and not p.startswith(("*", "-", "#", "1.", "2.", "3.", "4.", "5.")):
-                return p
+    # Extract content between <PROMPT>...</PROMPT> tags if present
+    match = re.search(r"<PROMPT>(.*?)</PROMPT>", text, flags=re.DOTALL)
+    if match:
+        return match.group(1).strip()
     return text
 
 
@@ -232,14 +222,12 @@ class LlamaCppTextModify:
         messages = [
             {
                 "role": "system",
-                "content": "You modify image generation prompts. You receive an original prompt and "
-                "change instructions. Output ONLY the modified prompt. No thinking, no analysis, "
-                "no bullet points, no markdown, no explanation. Just the modified prompt text.",
+                "content": "You modify image prompts. Wrap your output in <PROMPT> tags. "
+                "Example: <PROMPT>a cat sitting on a roof at sunset</PROMPT>",
             },
             {
                 "role": "user",
-                "content": f"/no_think Modify this prompt: {original_text}\n\nChanges: {instructions}\n\n"
-                "Reply with ONLY the modified prompt, nothing else:",
+                "content": f"/no_think Original: {original_text}\n\nChanges: {instructions}",
             },
         ]
         return (_chat_completion(server_url, model, messages, temperature, max_tokens),)
