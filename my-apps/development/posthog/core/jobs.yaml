@@ -92,8 +92,6 @@ spec:
               python manage.py migrate
               echo "Running ClickHouse migrations..."
               python manage.py migrate_clickhouse
-              echo "Running async migrations..."
-              python manage.py run_async_migrations
           envFrom:
             - configMapRef:
                 name: posthog-env
