@@ -161,6 +161,9 @@ data:
         match = re.search(r"<PROMPT>(.*?)</PROMPT>", text, flags=re.DOTALL)
         if match:
             return match.group(1).strip()
+        match = re.search(r"<PROMPT>(.*)", text, flags=re.DOTALL)
+        if match:
+            return match.group(1).strip()
         return text
 
 
