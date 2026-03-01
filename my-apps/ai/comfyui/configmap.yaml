@@ -20,7 +20,7 @@ data:
     downgrade_blacklist =
     security_level = normal
     always_lazy_install = False
-    network_mode = public
+    network_mode = cache
     db_mode = cache
 ---
 apiVersion: v1
@@ -59,9 +59,9 @@ data:
     install_node "https://github.com/fidecastro/comfyui-llamacpp-client.git"
 
     # ── Python Dependencies ────────────────────────────────────
-    # Single uv call — skips already-installed packages, no --upgrade
+    # uv resolves quickly and skips already-installed; --link-mode copy avoids NFS hardlink warnings
     echo "[INFO] Installing Python dependencies..."
-    uv pip install --system \
+    UV_LINK_MODE=copy uv pip install --system \
       transformers "bitsandbytes>=0.46.1" \
       colorama huggingface_hub \
       watchdog piexif aiohttp \
