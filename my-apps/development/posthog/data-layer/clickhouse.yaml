@@ -99,7 +99,7 @@ spec:
       - name: init
         configMap:
           name: clickhouse-init
-          defaultMode: 755
+          defaultMode: 0755
   volumeClaimTemplates:
   - metadata:
       name: clickhouse-data
