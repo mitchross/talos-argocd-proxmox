@@ -79,6 +79,7 @@ spec:
               port: 8000
             initialDelaySeconds: 120
             periodSeconds: 10
+            timeoutSeconds: 10
             failureThreshold: 12
           resources:
             requests:
