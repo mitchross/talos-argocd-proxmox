@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: kafka-init
   annotations:
-    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   backoffLimit: 5
@@ -63,7 +63,7 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: migrate
   annotations:
-    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   backoffLimit: 3
