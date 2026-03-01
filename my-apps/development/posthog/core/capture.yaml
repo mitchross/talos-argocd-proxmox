@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: capture
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   replicas: 1
   selector:
@@ -69,7 +69,7 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: replay-capture
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   replicas: 1
   selector:
@@ -131,7 +131,7 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: feature-flags
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   replicas: 0  # Disabled: requires GeoIP MMDB file; Python web server handles flags for hobby
   selector:
@@ -154,13 +154,25 @@ spec:
                   name: posthog-secrets
                   key: posthog-db-password
             - name: WRITE_DATABASE_URL
-              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
             - name: READ_DATABASE_URL
-              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
             - name: PERSONS_WRITE_DATABASE_URL
-              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
             - name: PERSONS_READ_DATABASE_URL
-              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
             - name: MAXMIND_DB_PATH
               value: "/share/GeoLite2-City.mmdb"
             - name: REDIS_URL

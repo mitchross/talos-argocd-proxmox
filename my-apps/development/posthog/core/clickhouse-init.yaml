@@ -7,9 +7,9 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: clickhouse-init
   annotations:
-    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook: Sync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   backoffLimit: 3
   template:
@@ -28,6 +28,20 @@ spec:
             - -c
             - |
               set -e
+              echo "Waiting for ClickHouse..."
+              TIMEOUT=120
+              ELAPSED=0
+              until clickhouse-client --host=clickhouse --port=9000 --query="SELECT 1" &> /dev/null; do
+                echo "ClickHouse not ready yet (elapsed: ${ELAPSED}s)..."
+                sleep 2
+                ELAPSED=$((ELAPSED + 2))
+                if [ $ELAPSED -ge $TIMEOUT ]; then
+                    echo "Timeout waiting for ClickHouse after ${TIMEOUT}s"
+                    exit 1
+                fi
+              done
+              echo "ClickHouse is ready."
+
               echo "Initializing ClickHouse migration tables..."
               
               # Create the base migration tracking table (Replicated)

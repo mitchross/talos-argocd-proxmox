@@ -6,6 +6,8 @@ metadata:
   labels:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: clickhouse
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   serviceName: clickhouse
   replicas: 1

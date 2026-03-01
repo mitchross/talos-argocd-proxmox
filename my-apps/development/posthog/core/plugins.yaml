@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: plugins
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   replicas: 1
   selector:
@@ -46,13 +46,25 @@ spec:
                   name: posthog-secrets
                   key: posthog-db-password
             - name: DATABASE_URL
-              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
             - name: PERSONS_DATABASE_URL
-              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
             - name: BEHAVIORAL_COHORTS_DATABASE_URL
-              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
             - name: CYCLOTRON_DATABASE_URL
-              value: "postgres://posthog:$(PGPASSWORD)@db:5432/posthog"
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
             - name: OBJECT_STORAGE_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
