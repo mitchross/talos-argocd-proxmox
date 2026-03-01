@@ -77,16 +77,9 @@ spec:
             httpGet:
               path: /_health
               port: 8000
-            initialDelaySeconds: 30
-            periodSeconds: 5
-            failureThreshold: 30
-          startupProbe:
-            httpGet:
-              path: /_health
-              port: 8000
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 10
-            failureThreshold: 60
+            failureThreshold: 12
           resources:
             requests:
               cpu: 500m

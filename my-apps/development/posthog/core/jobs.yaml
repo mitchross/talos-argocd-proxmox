@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: kafka-init
   annotations:
-    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook: PreSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   backoffLimit: 5
@@ -63,7 +63,7 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: migrate
   annotations:
-    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook: PreSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   backoffLimit: 3
@@ -83,7 +83,15 @@ spec:
           command:
             - sh
             - -c
-            - "python manage.py migrate && python manage.py migrate_clickhouse && python manage.py run_async_migrations"
+            - |
+              echo "Flushing ClickHouse system logs..."
+              curl -sf 'http://clickhouse:8123/' --data 'SYSTEM FLUSH LOGS' || echo "Warning: SYSTEM FLUSH LOGS failed (may not be needed)"
+              echo "Running Django migrations..."
+              python manage.py migrate
+              echo "Running ClickHouse migrations..."
+              python manage.py migrate_clickhouse
+              echo "Running async migrations..."
+              python manage.py run_async_migrations
           envFrom:
             - configMapRef:
                 name: posthog-env
