@@ -14,8 +14,10 @@ resources:
   - config
   - data-layer/clickhouse.yaml
   # Core application
+  - core/clickhouse-init.yaml
   - core/web.yaml
   - core/workers.yaml
   - core/plugins.yaml
   - core/capture.yaml
   - core/microservices.yaml
+  - core/jobs.yaml
