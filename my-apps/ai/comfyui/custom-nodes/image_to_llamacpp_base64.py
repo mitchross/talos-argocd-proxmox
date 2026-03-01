@@ -136,7 +136,7 @@ class LlamaCppVisionCaption:
                 "server_url": ("STRING", {"default": _DEFAULT_SERVER}),
                 "model": ("STRING", {"default": _DEFAULT_MODEL}),
                 "temperature": ("FLOAT", {"default": 0.6, "min": 0.0, "max": 2.0, "step": 0.1}),
-                "max_tokens": ("INT", {"default": 1024, "min": 64, "max": 4096, "step": 64}),
+                "max_tokens": ("INT", {"default": 4096, "min": 64, "max": 8192, "step": 64}),
             },
         }
 
@@ -157,7 +157,7 @@ class LlamaCppVisionCaption:
         server_url=_DEFAULT_SERVER,
         model=_DEFAULT_MODEL,
         temperature=0.6,
-        max_tokens=1024,
+        max_tokens=4096,
     ):
         b64_str = _image_to_base64(image)
         user_content = [
@@ -195,7 +195,7 @@ class LlamaCppTextModify:
                 "server_url": ("STRING", {"default": _DEFAULT_SERVER}),
                 "model": ("STRING", {"default": _DEFAULT_MODEL}),
                 "temperature": ("FLOAT", {"default": 0.6, "min": 0.0, "max": 2.0, "step": 0.1}),
-                "max_tokens": ("INT", {"default": 1024, "min": 64, "max": 4096, "step": 64}),
+                "max_tokens": ("INT", {"default": 4096, "min": 64, "max": 8192, "step": 64}),
             },
         }
 
@@ -211,7 +211,7 @@ class LlamaCppTextModify:
         server_url=_DEFAULT_SERVER,
         model=_DEFAULT_MODEL,
         temperature=0.6,
-        max_tokens=1024,
+        max_tokens=4096,
     ):
         messages = [
             {
