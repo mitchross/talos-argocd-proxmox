@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: clickhouse-migrations-init
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: clickhouse-init
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: clickhouse-init
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: clickhouse-init
+          image: clickhouse/clickhouse-client:25.12.5.44
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              echo "Initializing ClickHouse migration tables..."
+              
+              # Create the base migration tracking table (Replicated)
+              clickhouse-client --host=clickhouse --port=9000 --query "
+              CREATE TABLE IF NOT EXISTS posthog.infi_clickhouse_orm_migrations (
+                module_name String,
+                package_name String
+              ) ENGINE = ReplicatedMergeTree(
+                '/posthog/tables/infi_clickhouse_orm_migrations',
+                'replica_{replica}'
+              )
+              ORDER BY (module_name, package_name)
+              SETTINGS index_granularity = 8192;
+              "
+              
+              # Create the distributed view for cross-shard queries
+              clickhouse-client --host=clickhouse --port=9000 --query "
+              CREATE TABLE IF NOT EXISTS posthog.infi_clickhouse_orm_migrations_distributed AS posthog.infi_clickhouse_orm_migrations
+              ENGINE = Distributed(
+                'posthog_migrations',
+                'posthog',
+                'infi_clickhouse_orm_migrations'
+              );
+              "
+              
+              echo "ClickHouse migration tables initialized successfully"
+              
+              # Verify tables exist
+              clickhouse-client --host=clickhouse --port=9000 --query "
+              SHOW TABLES IN posthog WHERE name LIKE '%infi_clickhouse_orm_migrations%'
+              "
