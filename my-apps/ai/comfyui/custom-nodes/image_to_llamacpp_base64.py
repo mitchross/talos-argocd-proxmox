@@ -50,28 +50,18 @@ def _chat_completion(server_url, model, messages, temperature, max_tokens):
     except Exception as e:
         return f"[ERROR] {e}"
 
+    # With enable_thinking=true, llama.cpp separates thinking into reasoning_content
+    # and the actual answer into content. Only use content.
     choice = result.get("choices", [{}])[0]
     message = choice.get("message", {})
     text = message.get("content", "").strip()
     if not text:
+        # Fallback: if content is empty, try reasoning_content
         text = message.get("reasoning_content", "").strip()
     if not text:
         text = json.dumps(result)
-    return _strip_thinking(text)
-
-
-def _strip_thinking(text):
-    """Remove any thinking/reasoning blocks that leak into model output."""
-    # Strip <think>...</think> blocks
+    # Safety net: strip any <think> blocks that leak through
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
-    # Extract content between ===RESULT=== delimiters if present
-    match = re.search(r"===RESULT===(.*?)===END===", text, flags=re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    # Handle unclosed delimiter (model ran out of tokens)
-    match = re.search(r"===RESULT===(.*)", text, flags=re.DOTALL)
-    if match:
-        return match.group(1).strip()
     return text
 
 
@@ -146,7 +136,7 @@ class LlamaCppVisionCaption:
                 "server_url": ("STRING", {"default": _DEFAULT_SERVER}),
                 "model": ("STRING", {"default": _DEFAULT_MODEL}),
                 "temperature": ("FLOAT", {"default": 0.6, "min": 0.0, "max": 2.0, "step": 0.1}),
-                "max_tokens": ("INT", {"default": 1024, "min": 64, "max": 4096, "step": 64}),
+                "max_tokens": ("INT", {"default": 4096, "min": 64, "max": 8192, "step": 64}),
             },
         }
 
@@ -167,11 +157,11 @@ class LlamaCppVisionCaption:
         server_url=_DEFAULT_SERVER,
         model=_DEFAULT_MODEL,
         temperature=0.6,
-        max_tokens=1024,
+        max_tokens=4096,
     ):
         b64_str = _image_to_base64(image)
         user_content = [
-            {"type": "text", "text": f"/no_think {prompt}"},
+            {"type": "text", "text": prompt},
             {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64_str}"}},
         ]
         messages = [
@@ -205,7 +195,7 @@ class LlamaCppTextModify:
                 "server_url": ("STRING", {"default": _DEFAULT_SERVER}),
                 "model": ("STRING", {"default": _DEFAULT_MODEL}),
                 "temperature": ("FLOAT", {"default": 0.6, "min": 0.0, "max": 2.0, "step": 0.1}),
-                "max_tokens": ("INT", {"default": 1024, "min": 64, "max": 4096, "step": 64}),
+                "max_tokens": ("INT", {"default": 4096, "min": 64, "max": 8192, "step": 64}),
             },
         }
 
@@ -221,17 +211,18 @@ class LlamaCppTextModify:
         server_url=_DEFAULT_SERVER,
         model=_DEFAULT_MODEL,
         temperature=0.6,
-        max_tokens=1024,
+        max_tokens=4096,
     ):
         messages = [
             {
                 "role": "system",
-                "content": "You modify image prompts. Wrap your output between ===RESULT=== and ===END=== markers. "
-                "Example: ===RESULT=== a cat sitting on a roof at sunset ===END===",
+                "content": "You modify image generation prompts. Apply the requested changes "
+                "to the original prompt. Keep all unmentioned details. "
+                "Output ONLY the modified prompt text.",
             },
             {
                 "role": "user",
-                "content": f"/no_think Original: {original_text}\n\nChanges: {instructions}",
+                "content": f"Original prompt: {original_text}\n\nChanges: {instructions}",
             },
         ]
         return (_chat_completion(server_url, model, messages, temperature, max_tokens),)
