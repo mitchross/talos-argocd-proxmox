@@ -23,33 +23,33 @@ spec:
         app.kubernetes.io/component: redis7
     spec:
       containers:
-        - name: redis7
-          image: redis:7.2-alpine
-          command: ["redis-server", "--maxmemory-policy", "allkeys-lru", "--maxmemory", "200mb"]
-          ports:
-            - containerPort: 6379
-              name: redis
-          livenessProbe:
-            exec:
-              command:
-                - redis-cli
-                - ping
-            initialDelaySeconds: 5
-            periodSeconds: 3
-            timeoutSeconds: 10
-          resources:
-            requests:
-              cpu: 50m
-              memory: 64Mi
-            limits:
-              memory: 256Mi
-          volumeMounts:
-            - name: redis7-data
-              mountPath: /data
-      volumes:
+      - name: redis7
+        image: redis:7.2-alpine
+        command: [ "redis-server", "--maxmemory-policy", "allkeys-lru", "--maxmemory", "200mb" ]
+        ports:
+        - containerPort: 6379
+          name: redis
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 3
+          timeoutSeconds: 10
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            memory: 256Mi
+        volumeMounts:
         - name: redis7-data
-          persistentVolumeClaim:
-            claimName: redis7-data
+          mountPath: /data
+      volumes:
+      - name: redis7-data
+        persistentVolumeClaim:
+          claimName: redis7-data
 ---
 apiVersion: v1
 kind: Service
@@ -58,9 +58,9 @@ metadata:
   namespace: posthog
 spec:
   ports:
-    - name: redis
-      port: 6379
-      targetPort: 6379
+  - name: redis
+    port: 6379
+    targetPort: 6379
   selector:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: redis7
@@ -72,10 +72,9 @@ metadata:
   namespace: posthog
   labels:
     app: posthog-redis
-    backup: "daily"
 spec:
   accessModes:
-    - ReadWriteOnce
+  - ReadWriteOnce
   storageClassName: longhorn
   resources:
     requests:

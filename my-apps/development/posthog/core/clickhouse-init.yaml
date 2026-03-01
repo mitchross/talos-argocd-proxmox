@@ -20,57 +20,57 @@ spec:
     spec:
       restartPolicy: OnFailure
       containers:
-        - name: clickhouse-init
-          image: clickhouse/clickhouse-server:25.12.5.44
-          imagePullPolicy: IfNotPresent
-          command:
-            - sh
-            - -c
-            - |
-              set -e
-              echo "Waiting for ClickHouse..."
-              TIMEOUT=120
-              ELAPSED=0
-              until clickhouse-client --host=clickhouse --port=9000 --query="SELECT 1" &> /dev/null; do
-                echo "ClickHouse not ready yet (elapsed: ${ELAPSED}s)..."
-                sleep 2
-                ELAPSED=$((ELAPSED + 2))
-                if [ $ELAPSED -ge $TIMEOUT ]; then
-                    echo "Timeout waiting for ClickHouse after ${TIMEOUT}s"
-                    exit 1
-                fi
-              done
-              echo "ClickHouse is ready."
+      - name: clickhouse-init
+        image: clickhouse/clickhouse-server:25.12.5.44
+        imagePullPolicy: IfNotPresent
+        command:
+        - sh
+        - -c
+        - |
+          set -e
+          echo "Waiting for ClickHouse..."
+          TIMEOUT=120
+          ELAPSED=0
+          until clickhouse-client --host=clickhouse --port=9000 --query="SELECT 1" &> /dev/null; do
+            echo "ClickHouse not ready yet (elapsed: ${ELAPSED}s)..."
+            sleep 2
+            ELAPSED=$((ELAPSED + 2))
+            if [ $ELAPSED -ge $TIMEOUT ]; then
+                echo "Timeout waiting for ClickHouse after ${TIMEOUT}s"
+                exit 1
+            fi
+          done
+          echo "ClickHouse is ready."
 
-              echo "Initializing ClickHouse migration tables..."
-              
-              # Create the base migration tracking table (Replicated)
-              clickhouse-client --host=clickhouse --port=9000 --query "
-              CREATE TABLE IF NOT EXISTS posthog.infi_clickhouse_orm_migrations (
-                module_name String,
-                package_name String,
-                applied Date
-              ) ENGINE = ReplicatedMergeTree(
-                '/posthog/tables/infi_clickhouse_orm_migrations',
-                'replica_{replica}'
-              )
-              ORDER BY (module_name, package_name)
-              SETTINGS index_granularity = 8192;
-              "
-              
-              # Create the distributed view for cross-shard queries
-              clickhouse-client --host=clickhouse --port=9000 --query "
-              CREATE TABLE IF NOT EXISTS posthog.infi_clickhouse_orm_migrations_distributed AS posthog.infi_clickhouse_orm_migrations
-              ENGINE = Distributed(
-                'posthog_migrations',
-                'posthog',
-                'infi_clickhouse_orm_migrations'
-              );
-              "
-              
-              echo "ClickHouse migration tables initialized successfully"
-              
-              # Verify tables exist
-              clickhouse-client --host=clickhouse --port=9000 --query "
-              SHOW TABLES IN posthog WHERE name LIKE '%infi_clickhouse_orm_migrations%'
-              "
+          echo "Initializing ClickHouse migration tables..."
+
+          # Create the base migration tracking table (Replicated)
+          clickhouse-client --host=clickhouse --port=9000 --query "
+          CREATE TABLE IF NOT EXISTS posthog.infi_clickhouse_orm_migrations (
+            module_name String,
+            package_name String,
+            applied Date
+          ) ENGINE = ReplicatedMergeTree(
+            '/posthog/tables/infi_clickhouse_orm_migrations',
+            'replica_{replica}'
+          )
+          ORDER BY (module_name, package_name)
+          SETTINGS index_granularity = 8192;
+          "
+
+          # Create the distributed view for cross-shard queries
+          clickhouse-client --host=clickhouse --port=9000 --query "
+          CREATE TABLE IF NOT EXISTS posthog.infi_clickhouse_orm_migrations_distributed AS posthog.infi_clickhouse_orm_migrations
+          ENGINE = Distributed(
+            'posthog_migrations',
+            'posthog',
+            'infi_clickhouse_orm_migrations'
+          );
+          "
+
+          echo "ClickHouse migration tables initialized successfully"
+
+          # Verify tables exist
+          clickhouse-client --host=clickhouse --port=9000 --query "
+          SHOW TABLES IN posthog WHERE name LIKE '%infi_clickhouse_orm_migrations%'
+          "
