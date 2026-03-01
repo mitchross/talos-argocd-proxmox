@@ -8,6 +8,8 @@ metadata:
   labels:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: livestream
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   replicas: 0
   selector:
@@ -65,6 +67,8 @@ metadata:
   labels:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: property-defs-rs
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   replicas: 1
   selector:
@@ -108,6 +112,8 @@ metadata:
   labels:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: cyclotron-janitor
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   replicas: 0
   selector:
@@ -153,6 +159,8 @@ metadata:
   labels:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: cymbal
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   replicas: 0
   selector:

@@ -6,6 +6,8 @@ metadata:
   labels:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: plugins
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   replicas: 1
   selector:
