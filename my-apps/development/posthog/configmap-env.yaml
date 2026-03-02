@@ -6,6 +6,7 @@ metadata:
 data:
   # General
   DEPLOYMENT: "hobby"
+  SKIP_ASYNC_MIGRATIONS_SETUP: "1"
   OTEL_SDK_DISABLED: "true"
   DISABLE_SECURE_SSL_REDIRECT: "true"
   IS_BEHIND_PROXY: "true"
