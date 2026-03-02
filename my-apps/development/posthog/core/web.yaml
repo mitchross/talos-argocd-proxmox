@@ -75,6 +75,8 @@ spec:
               key: rustfs-secret-key
         - name: LIVESTREAM_HOST
           value: "https://posthog.vanillax.me/livestream"
+        - name: NGINX_UNIT_APP_PROCESSES
+          value: "2"
         ports:
         - containerPort: 8000
           name: http
@@ -95,7 +97,7 @@ spec:
           failureThreshold: 3
         resources:
           requests:
-            cpu: 500m
+            cpu: 1200m
             memory: 4Gi
           limits:
             memory: 8Gi
