@@ -15,6 +15,7 @@ helmCharts:
   repo: https://kyverno.github.io/kyverno
   version: 3.7.1
   releaseName: kyverno
+  namespace: kyverno
   valuesFile: values.yaml
 
 patchesJson6902:
