@@ -70,6 +70,15 @@ spec:
 
           echo "ClickHouse migration tables initialized successfully"
 
+          # Force-create lazy system log tables that PostHog migrations depend on
+          echo "Ensuring system log tables exist..."
+          clickhouse-client --host=clickhouse --port=9000 --query "SYSTEM FLUSH LOGS" || true
+          for table in crash_log part_log trace_log; do
+            clickhouse-client --host=clickhouse --port=9000 --query "SELECT 1 FROM system.${table} LIMIT 0" 2>/dev/null && \
+              echo "  system.${table} exists" || \
+              echo "  system.${table} not yet created (ok - not needed until first event)"
+          done
+
           # Verify tables exist
           clickhouse-client --host=clickhouse --port=9000 --query "
           SHOW TABLES IN posthog WHERE name LIKE '%infi_clickhouse_orm_migrations%'
