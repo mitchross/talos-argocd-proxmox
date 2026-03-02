@@ -86,14 +86,14 @@ spec:
             port: 8000
           initialDelaySeconds: 30
           periodSeconds: 10
-          timeoutSeconds: 10
+          timeoutSeconds: 45
           failureThreshold: 60
         readinessProbe:
           httpGet:
             path: /_health
             port: 8000
           periodSeconds: 10
-          timeoutSeconds: 10
+          timeoutSeconds: 30
           failureThreshold: 3
         resources:
           requests:
