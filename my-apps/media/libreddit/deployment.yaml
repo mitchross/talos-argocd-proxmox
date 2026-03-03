@@ -23,36 +23,36 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
       containers:
-        - name: libreddit
-          image: ghcr.io/mitchross/redlib:experimental-amd64
-          imagePullPolicy: IfNotPresent
-          envFrom:
-            - configMapRef:
-                name: libreddit-env
-          ports:
-            - name: http
-              containerPort: 8080
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop: ["ALL"]
-          resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-            limits:
-              cpu: 2000m
-              memory: 1Gi
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
-            initialDelaySeconds: 5
-            periodSeconds: 10
+      - name: libreddit
+        image: ghcr.io/mitchross/redlib:experimental-amd64-p1
+        imagePullPolicy: IfNotPresent
+        envFrom:
+        - configMapRef:
+            name: libreddit-env
+        ports:
+        - name: http
+          containerPort: 8080
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: [ "ALL" ]
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 2000m
+            memory: 1Gi
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
