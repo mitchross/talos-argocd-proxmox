@@ -23,7 +23,7 @@ spec:
         fsGroup: 0
       containers:
         - name: kiwix
-          image: ghcr.io/kiwix/kiwix-serve:latest@sha256:3d7d791be3543f0e9e26822082cd4466fe5282834d0c1a57f04845bfc552a5f8
+          image: ghcr.io/kiwix/kiwix-serve:latest@sha256:3ce07ccec2da5c84b701fa8c9868d0ce3368b12d4192615639ee2fda6d47e447
           imagePullPolicy: IfNotPresent
           args:
             - "*.zim"
