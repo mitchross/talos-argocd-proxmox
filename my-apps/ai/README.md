@@ -39,11 +39,13 @@ Aliases: `qwen3.5`, `general`, `vision`, `image`, `multimodal`, `coder`, `code`
 | Setting | Value | Why |
 |---------|-------|-----|
 | `cache-type-k = q8_0` | KV cache | Halves KV key cache VRAM (~0.002 perplexity cost) |
-| `cache-type-v = q8_0` | KV cache | Quantized KV value cache for VRAM savings |
+| `cache-type-v = q8_0` | KV cache | Quantized KV value cache (q8_0 not q4_0 — Qwen GQA sensitive to V cache quant) |
 | `--no-mmap` | Global | Prevents page fault stalls during inference (we have 400GB RAM) |
-| `-b 2048 -ub 512` | Global | Batch sizes for prompt processing |
+| `-t 4` | Global | Low CPU thread count — fully GPU-offloaded model, auto-detect over-allocates in K8s |
+| `-b 4096 -ub 512` | Global | Batch sizes for prompt processing (4096 logical, 512 physical) |
 | `--parallel 1` | Global | Single-user -- maximize VRAM for context, not concurrent slots |
 | `--fit on` | Global | Auto-fit dense layers to available VRAM |
+| `LLAMA_SET_ROWS=1` | Env var | Split KV cache mode — eliminates cross-sequence attention waste |
 
 ### Using with Claude Code CLI
 
@@ -283,10 +285,10 @@ NFS mounts use `nconnect=16` over 10G for fast model loading. Performance depend
 
 ### KV Cache Quantization Requires Build Flag
 
-The `cache-type-k = q8_0` / `cache-type-v = q4_0` settings require the llama.cpp Docker image
-to be compiled with `-DGGML_CUDA_FA_ALL_QUANTS=ON`. If the pre-built `b8006` image doesn't
-have this, flash attention silently falls back to f16 KV cache. Test by checking VRAM usage --
-if 262K context still uses ~40GB of KV cache, the flag is missing and you need a newer build.
+The `cache-type-k = q8_0` / `cache-type-v = q8_0` settings require flash attention enabled.
+Non-standard KV quant types (q4_0, q4_1, etc.) additionally require the image to be compiled
+with `-DGGML_CUDA_FA_ALL_QUANTS=ON`. We use q8_0 for both K and V (not q4_0) because
+Qwen GQA models are sensitive to aggressive V cache quantization (~0.2 perplexity hit with q4_0).
 
 ### ComfyUI Model Swapping
 
