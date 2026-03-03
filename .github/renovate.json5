@@ -148,5 +148,16 @@
       depNameTemplate: 'ghcr.io/siderolabs/kubelet',
       datasourceTemplate: 'docker',
     },
+    {
+      description: 'K8sGPT operator CR image reference',
+      customType: 'regex',
+      managerFilePatterns: [
+        '/^monitoring/k8sgpt/.+\\.yaml$/',
+      ],
+      matchStrings: [
+        'repository:\\s*(?<depName>[^\\s]+)\\n\\s+version:\\s*"?(?<currentValue>[\\w.]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?',
+      ],
+      datasourceTemplate: 'docker',
+    },
   ],
 }
