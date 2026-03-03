@@ -1,0 +1,21 @@
+# K8sGPT Operator Helm values
+# Enables ServiceMonitor + Grafana dashboard for visibility
+
+serviceMonitor:
+  enabled: true
+
+grafanaDashboard:
+  enabled: true
+
+controllerManager:
+  manager:
+    image:
+      repository: ghcr.io/k8sgpt-ai/k8sgpt-operator
+      tag: v0.2.25
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 10m
+        memory: 64Mi
