@@ -40,7 +40,7 @@ spec:
             - "--models-preset"
             - "/config/presets.ini"
             - "-c"
-            - "16384"
+            - "32768"
             - "-ngl"
             - "99"
             - "-fa"
@@ -49,6 +49,7 @@ spec:
             - "--fit"           # Auto-fit dense layers to available VRAM
             - "on"
             - "--no-mmap"       # Prevent page fault stalls - we have 400GB RAM to spare
+            - "--no-context-shift" # Don't silently drop old context - let agentic framework manage it
             - "--cache-type-k"
             - "q8_0"            # Quantize KV cache ~50% savings vs f16, negligible quality loss
             - "--cache-type-v"

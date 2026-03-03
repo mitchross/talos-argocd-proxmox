@@ -18,7 +18,7 @@ data:
     model = /models/Qwen3.5-35B-A3B-UD-Q4_K_XL.gguf
     mmproj = /models/mmproj-F16.gguf
     alias = qwen3.5, qwen 3.5, general, vision, image, multimodal, coder, code
-    ctx-size = 16384
+    ctx-size = 32768
     n-gpu-layers = 99
     temp = 0.6
     top-p = 0.95
