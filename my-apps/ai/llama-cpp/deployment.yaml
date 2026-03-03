@@ -40,7 +40,7 @@ spec:
             - "--models-preset"
             - "/config/presets.ini"
             - "-c"
-            - "16384"
+            - "32768"
             - "-ngl"
             - "99"
             - "-fa"
@@ -49,12 +49,15 @@ spec:
             - "--fit"           # Auto-fit dense layers to available VRAM
             - "on"
             - "--no-mmap"       # Prevent page fault stalls - we have 400GB RAM to spare
+            - "--no-context-shift" # Don't silently drop old context - let agentic framework manage it
             - "--cache-type-k"
             - "q8_0"            # Quantize KV cache ~50% savings vs f16, negligible quality loss
             - "--cache-type-v"
-            - "q8_0"
+            - "q8_0"            # q8_0 not q4_0: Qwen GQA models sensitive to V cache quantization, q4_0 adds ~0.2 perplexity
+            - "-t"
+            - "4"               # Low thread count for fully GPU-offloaded model (auto-detect picks too many in K8s)
             - "-b"
-            - "2048"            # Logical batch for prompt processing
+            - "4096"            # Logical batch for prompt processing (larger = faster prefill)
             - "-ub"
             - "512"             # Physical batch for GPU saturation
             - "--parallel"
@@ -70,6 +73,8 @@ spec:
               value: "0"
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: "compute,utility"
+            - name: LLAMA_SET_ROWS
+              value: "1"          # Split KV cache mode - eliminates cross-sequence attention waste
             - name: GGML_CUDA_ENABLE_UNIFIED_MEMORY
               value: "1" # Spill to system RAM if VRAM is tight with Q4_K_XL + KV cache
           ports:
