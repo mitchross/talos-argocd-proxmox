@@ -1,0 +1,37 @@
+apiVersion: core.k8sgpt.ai/v1alpha1
+kind: K8sGPT
+metadata:
+  name: k8sgpt
+  namespace: k8sgpt
+spec:
+  ai:
+    enabled: true
+    model: qwen3.5
+    backend: localai
+    baseUrl: http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1
+    noCache: false
+    anonymized: false
+    language: english
+  noCache: false
+  repository: ghcr.io/k8sgpt-ai/k8sgpt
+  version: v0.4.30
+  integrations:
+    - name: kyverno
+  filters:
+    - Pod
+    - Service
+    - Deployment
+    - StatefulSet
+    - ReplicaSet
+    - PersistentVolumeClaim
+    - CronJob
+    - Node
+    - NetworkPolicy
+    - HorizontalPodAutoScaler
+    - PodDisruptionBudget
+    - Gateway
+    - GatewayClass
+    - HTTPRoute
+    - ValidatingWebhookConfiguration
+    - MutatingWebhookConfiguration
+    - Log
