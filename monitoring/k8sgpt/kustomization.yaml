@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: k8sgpt
+resources:
+  - ns.yaml
+  - k8sgpt.yaml
+  - grafana-dashboard.yaml
+helmCharts:
+  - name: k8sgpt-operator
+    repo: https://charts.k8sgpt.ai/
+    version: 0.2.25
+    releaseName: k8sgpt-operator
+    namespace: k8sgpt
+    valuesFile: values.yaml
+    includeCRDs: true

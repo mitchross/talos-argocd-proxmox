@@ -150,6 +150,13 @@ grafana:
     fsGroup: 472
   # Enable plugins
   plugins: []
+  # Sidecar configuration - discover dashboards from all namespaces
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL
+      label: grafana_dashboard
+      labelValue: "1"
   # Default dashboards
   defaultDashboardsEnabled: true
   defaultDashboardsTimezone: UTC

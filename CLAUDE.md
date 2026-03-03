@@ -8,6 +8,8 @@ This is a production-grade GitOps Kubernetes cluster running on **Talos OS** wit
 
 **Tech Stack**: Talos OS + ArgoCD + Cilium (Gateway API) + Longhorn + 1Password + GPU support
 
+**AI/LLM Backend**: This cluster uses **llama-cpp** (NOT ollama) for all local AI inference. The llama-cpp server runs at `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080` with an OpenAI-compatible API at `/v1`. Current model: **Qwen3.5-35B-A3B** (Q4_K_XL). Always use llama-cpp when configuring AI backends for in-cluster tools.
+
 ## Core Architecture Pattern: GitOps Self-Management
 
 ```
