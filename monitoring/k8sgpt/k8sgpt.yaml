@@ -6,7 +6,7 @@ metadata:
 spec:
   ai:
     enabled: true
-    model: qwen3.5
+    model: "general - qwen3.5"
     backend: localai
     baseUrl: http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1
     noCache: false
