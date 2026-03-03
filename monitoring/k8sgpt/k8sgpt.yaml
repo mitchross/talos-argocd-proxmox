@@ -13,4 +13,22 @@ spec:
     language: english
   noCache: false
   repository: ghcr.io/k8sgpt-ai/k8sgpt
-  version: "latest@sha256:c1639f09c500f7ef8f5e647d61e82133f49a6c68c47a00d1c726847b063af6e1"
+  version: "v0.4.27@sha256:43416c446647d66599add2d40acce7c72b18a6992b6c952efef11f9e23fdd5b2"
+  filters:
+    - Pod
+    - Service
+    - Deployment
+    - StatefulSet
+    - ReplicaSet
+    - PersistentVolumeClaim
+    - CronJob
+    - Node
+    - NetworkPolicy
+    - HorizontalPodAutoScaler
+    - PodDisruptionBudget
+    - Gateway
+    - GatewayClass
+    - HTTPRoute
+    - ValidatingWebhookConfiguration
+    - MutatingWebhookConfiguration
+    - Log
