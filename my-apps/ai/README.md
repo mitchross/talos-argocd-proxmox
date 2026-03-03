@@ -30,7 +30,7 @@ with native multimodal support (vision + language). Q4_K_XL (20.6GB) + mmproj (8
 
 | Preset | Model | Active Params | VRAM | Context | Use Case |
 |--------|-------|--------------|------|---------|----------|
-| `general - qwen3.5` | Qwen3.5-35B-A3B Q4_K_XL | 3B (MoE) | ~21GB | 16K | General, vision, coding, captioning |
+| `general - qwen3.5` | Qwen3.5-35B-A3B Q4_K_XL | 3B (MoE) | ~21GB | 32K | General, vision, coding, agentic tool-calling |
 
 Aliases: `qwen3.5`, `general`, `vision`, `image`, `multimodal`, `coder`, `code`
 
