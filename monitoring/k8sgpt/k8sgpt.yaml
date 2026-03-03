@@ -9,14 +9,11 @@ spec:
     model: "general - qwen3.5"
     backend: localai
     baseUrl: http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1
-    noCache: false
     anonymized: false
     language: english
   noCache: false
   repository: ghcr.io/k8sgpt-ai/k8sgpt
   version: v0.4.30
-  integrations:
-    - name: kyverno
   filters:
     - Pod
     - Service
