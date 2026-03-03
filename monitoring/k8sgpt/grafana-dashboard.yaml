@@ -23,13 +23,13 @@ data:
         ]
       },
       "editable": true,
-      "fiscalYearStartMonth": 0,
+      "gnetId": null,
       "graphTooltip": 0,
       "id": null,
       "links": [],
       "panels": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -64,7 +64,7 @@ data:
           "type": "stat",
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
               "expr": "k8sgpt_result_count",
               "legendFormat": "Issues",
               "refId": "A"
@@ -72,7 +72,7 @@ data:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "thresholds" },
@@ -107,7 +107,7 @@ data:
           "type": "stat",
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
               "expr": "k8sgpt_result_count{severity=\"critical\"}",
               "legendFormat": "Critical",
               "refId": "A"
@@ -115,7 +115,7 @@ data:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -161,7 +161,7 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
               "expr": "k8sgpt_result_count",
               "legendFormat": "Total Issues",
               "refId": "A"
@@ -169,7 +169,7 @@ data:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -202,7 +202,7 @@ data:
           "type": "table",
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
               "expr": "k8sgpt_result_by_kind",
               "format": "table",
               "instant": true,
@@ -212,7 +212,7 @@ data:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -239,7 +239,7 @@ data:
           "type": "piechart",
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
               "expr": "k8sgpt_result_by_kind",
               "legendFormat": "{{kind}}",
               "refId": "A"
@@ -247,7 +247,7 @@ data:
           ]
         },
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "fieldConfig": {
             "defaults": {
               "color": { "mode": "palette-classic" },
@@ -274,7 +274,7 @@ data:
           "type": "piechart",
           "targets": [
             {
-              "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
               "expr": "k8sgpt_result_by_namespace",
               "legendFormat": "{{namespace}}",
               "refId": "A"
@@ -284,24 +284,7 @@ data:
       ],
       "schemaVersion": 38,
       "tags": ["k8sgpt", "kubernetes", "ai"],
-      "templating": {
-        "list": [
-          {
-            "current": {},
-            "hide": 0,
-            "includeAll": false,
-            "label": "Prometheus",
-            "multi": false,
-            "name": "DS_PROMETHEUS",
-            "options": [],
-            "query": "prometheus",
-            "refresh": 1,
-            "regex": "",
-            "skipUrlSync": false,
-            "type": "datasource"
-          }
-        ]
-      },
+      "templating": { "list": [] },
       "time": { "from": "now-6h", "to": "now" },
       "title": "K8sGPT Overview",
       "uid": "k8sgpt-overview",
