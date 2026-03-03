@@ -52,9 +52,11 @@ spec:
             - "--cache-type-k"
             - "q8_0"            # Quantize KV cache ~50% savings vs f16, negligible quality loss
             - "--cache-type-v"
-            - "q8_0"
+            - "q4_0"            # V cache less sensitive to quantization than K - saves VRAM for more context headroom
+            - "-t"
+            - "4"               # Low thread count for fully GPU-offloaded model (auto-detect picks too many in K8s)
             - "-b"
-            - "2048"            # Logical batch for prompt processing
+            - "4096"            # Logical batch for prompt processing (larger = faster prefill)
             - "-ub"
             - "512"             # Physical batch for GPU saturation
             - "--parallel"
@@ -70,6 +72,8 @@ spec:
               value: "0"
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: "compute,utility"
+            - name: LLAMA_SET_ROWS
+              value: "1"          # Split KV cache mode - eliminates cross-sequence attention waste
             - name: GGML_CUDA_ENABLE_UNIFIED_MEMORY
               value: "1" # Spill to system RAM if VRAM is tight with Q4_K_XL + KV cache
           ports:
