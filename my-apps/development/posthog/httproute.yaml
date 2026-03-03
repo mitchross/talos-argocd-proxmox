@@ -1,7 +1,7 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: posthog
+  name: posthog-ui-internal
   namespace: posthog
 spec:
   parentRefs:
@@ -10,6 +10,31 @@ spec:
       sectionName: https
   hostnames:
     - "posthog.vanillax.me"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: web
+          port: 8000
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: posthog-ingest-external
+  namespace: posthog
+  labels:
+    external-dns: "true"
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "vanillax.me"
+spec:
+  parentRefs:
+    - name: gateway-external
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - "ingest-posthog.vanillax.me"
   rules:
     - matches:
         - path:
