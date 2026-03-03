@@ -31,3 +31,7 @@ data:
   
   # System settings
   TZ: "America/Detroit"
+
+  # Server-side PostHog analytics (ingest-only host)
+  POSTHOG_ENABLED: "true"
+  POSTHOG_HOST: "https://ingest-posthog.vanillax.me"

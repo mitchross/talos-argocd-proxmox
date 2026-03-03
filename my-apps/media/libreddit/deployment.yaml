@@ -24,11 +24,13 @@ spec:
         fsGroup: 1000
       containers:
       - name: libreddit
-        image: ghcr.io/mitchross/redlib:experimental-amd64-p1
+        image: ghcr.io/mitchross/redlib:experimental-amd64-p2
         imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:
             name: libreddit-env
+        - secretRef:
+            name: libreddit-secrets
         ports:
         - name: http
           containerPort: 8080
