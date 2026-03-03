@@ -9,8 +9,10 @@ data:
   SKIP_ASYNC_MIGRATIONS_SETUP: "1"
   POSTHOG_SKIP_MIGRATION_CHECKS: "1"
   OTEL_SDK_DISABLED: "true"
-  DISABLE_SECURE_SSL_REDIRECT: "true"
+  DISABLE_SECURE_SSL_REDIRECT: "false"
   IS_BEHIND_PROXY: "true"
+  TRUSTED_PROXIES: "192.168.10.50,192.168.10.51"
+  ALLOWED_HOSTS: "posthog.vanillax.me,ingest-posthog.vanillax.me"
   SITE_URL: "https://posthog.vanillax.me"
 
   # PostgreSQL (in posthog namespace)
