@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: plugins
-          image: posthog/posthog-node:latest@sha256:95e5daad02c641723488822aaa58c22927a5ae7190f90bd50440b9d8f129e801
+          image: posthog/posthog-node:35c95290a3e4da0dd38c7d4c756d4f9fc96f821c
           command:
             - node
             - nodejs/dist/index.js

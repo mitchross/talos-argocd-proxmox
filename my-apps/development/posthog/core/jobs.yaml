@@ -41,7 +41,7 @@ spec:
               fi
           done
           echo "Kafka broker is accepting requests, creating topics..."
-          for topic in exceptions_ingestion clickhouse_events_json session_recording_events session_recording_events2 session_recording_snapshot_item_events clickhouse_app_metrics2 logs_ingestion; do
+          for topic in events_plugin_ingestion exceptions_ingestion clickhouse_events_json session_recording_events session_recording_events2 session_recording_snapshot_item_events clickhouse_app_metrics2 logs_ingestion; do
               if rpk topic create "$topic" --brokers kafka:9092 -p 1 -r 1 2>&1; then
                   echo "Topic $topic created successfully"
               else
@@ -80,7 +80,7 @@ spec:
         feature.node.kubernetes.io/cpu-cpuid.AVX2: "true"
       containers:
       - name: migrate
-        image: posthog/posthog:latest@sha256:97b289703159d9da3ae51e633c70b233358a84491efaa8f083b493ed711c05f4
+        image: posthog/posthog:35c95290a3e4da0dd38c7d4c756d4f9fc96f821c
         command:
         - /bin/sh
         - -c
