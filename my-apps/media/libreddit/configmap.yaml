@@ -32,6 +32,6 @@ data:
   # System settings
   TZ: "America/Detroit"
 
-  # Server-side PostHog analytics (in-cluster service)
+  # Server-side PostHog analytics (in-cluster capture service)
   POSTHOG_ENABLED: "true"
-  POSTHOG_HOST: "http://web.posthog.svc.cluster.local:8000"
+  POSTHOG_HOST: "http://capture.posthog.svc.cluster.local:3000"
