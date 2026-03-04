@@ -9,7 +9,7 @@ data:
   REDLIB_ROBOTS_DISABLE_INDEXING: "off"
   REDLIB_PORT: "8080"
   REDLIB_ENABLE_RSS: "off"
-  
+
   # Default user settings
   REDLIB_DEFAULT_THEME: "dark"
   REDLIB_DEFAULT_FRONT_PAGE: "popular"
@@ -28,10 +28,10 @@ data:
   REDLIB_DEFAULT_HIDE_SCORE: "off"
   REDLIB_DEFAULT_HIDE_SIDEBAR_AND_SUMMARY: "off"
   REDLIB_DEFAULT_FIXED_NAVBAR: "on"
-  
+
   # System settings
   TZ: "America/Detroit"
 
-  # Server-side PostHog analytics (ingest-only host)
+  # Server-side PostHog analytics (in-cluster service)
   POSTHOG_ENABLED: "true"
-  POSTHOG_HOST: "https://ingest-posthog.vanillax.me"
+  POSTHOG_HOST: "http://web.posthog.svc.cluster.local:8000"
