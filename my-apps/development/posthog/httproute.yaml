@@ -39,6 +39,29 @@ spec:
     - matches:
         - path:
             type: PathPrefix
+            value: /e
+        - path:
+            type: PathPrefix
+            value: /i/v0
+        - path:
+            type: PathPrefix
+            value: /capture
+        - path:
+            type: PathPrefix
+            value: /batch
+      backendRefs:
+        - name: capture
+          port: 3000
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /s
+      backendRefs:
+        - name: replay-capture
+          port: 3000
+    - matches:
+        - path:
+            type: PathPrefix
             value: /
       backendRefs:
         - name: web
