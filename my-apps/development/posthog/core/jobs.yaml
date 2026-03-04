@@ -106,6 +106,8 @@ spec:
           python manage.py migrate --noinput
           echo "Running ClickHouse migrations..."
           python manage.py migrate_clickhouse
+          echo "Running async migrations (required by worker)..."
+          python manage.py run_async_migrations
           echo "All migrations complete"
         envFrom:
         - configMapRef:
