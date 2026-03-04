@@ -27,3 +27,21 @@ data:
     presence-penalty = 0.0
     chat-template-kwargs = {"enable_thinking": true}
     jinja = 1
+
+    # ==========================================================
+    # NO-THINK PRESET - Same model with thinking disabled
+    # For tools like K8sGPT that have short timeouts
+    # ==========================================================
+    [nothink - qwen3.5]
+    model = /models/Qwen3.5-35B-A3B-UD-Q4_K_XL.gguf
+    mmproj = /models/mmproj-F16.gguf
+    alias = nothink
+    ctx-size = 32768
+    n-gpu-layers = 99
+    temp = 0.6
+    top-p = 0.95
+    top-k = 20
+    min-p = 0.0
+    presence-penalty = 0.0
+    chat-template-kwargs = {"enable_thinking": false}
+    jinja = 1
