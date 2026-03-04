@@ -84,6 +84,9 @@ spec:
           httpGet:
             path: /_health
             port: 8000
+            httpHeaders:
+            - name: Host
+              value: posthog.vanillax.me
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 45
@@ -92,6 +95,9 @@ spec:
           httpGet:
             path: /_health
             port: 8000
+            httpHeaders:
+            - name: Host
+              value: posthog.vanillax.me
           periodSeconds: 10
           timeoutSeconds: 30
           failureThreshold: 3
