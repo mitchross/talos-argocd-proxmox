@@ -48,13 +48,13 @@ spec:
             memory: 1Gi
         livenessProbe:
           httpGet:
-            path: /
+            path: /settings
             port: http
           initialDelaySeconds: 10
           periodSeconds: 10
         readinessProbe:
           httpGet:
-            path: /
+            path: /settings
             port: http
           initialDelaySeconds: 5
           periodSeconds: 10
