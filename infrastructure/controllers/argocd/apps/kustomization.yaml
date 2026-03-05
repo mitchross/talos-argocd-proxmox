@@ -14,5 +14,6 @@ resources:
   - kyverno-app.yaml       # Wave 3 - Policy engine (must be healthy before apps create PVCs)
   # ApplicationSets for automatic discovery
   - infrastructure-appset.yaml  # Wave 4
+  - database-appset.yaml        # Wave 4 - Database operators/instances (selfHeal: false for DR)
   - monitoring-appset.yaml      # Wave 5
   - my-apps-appset.yaml         # Wave 6
