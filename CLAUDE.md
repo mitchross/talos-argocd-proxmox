@@ -18,7 +18,7 @@ Manual Bootstrap → ArgoCD → Root App → ApplicationSets → Auto-discovered
 
 1. **Bootstrap once**: Apply ArgoCD manifests manually via `scripts/bootstrap-argocd.sh`
 2. **Root app triggers**: Points ArgoCD to scan `infrastructure/controllers/argocd/apps/`
-3. **ApplicationSets discover**: Three ApplicationSets scan for directories and auto-create Applications
+3. **ApplicationSets discover**: Four ApplicationSets scan for directories and auto-create Applications
 4. **Everything else is automatic**: Add directory + `kustomization.yaml` = deployed app
 
 **Critical Understanding**: Directory = Application
