@@ -40,8 +40,8 @@ spec:
         - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "immich";
   # === DISASTER RECOVERY ===
   # See docs/cnpg-disaster-recovery.md for full procedure
-  # Recovery source: immich-database-v4 (current backup lineage)
-  # Next recovery target: immich-database-v5
+  # Recovery source: immich-database-v5 (current backup lineage)
+  # Next recovery target: immich-database-v6
   # IMPORTANT: Recovery code must NOT be committed to Git (CNPG webhook rejects dual bootstrap)
   storage:
     size: 20Gi
@@ -54,7 +54,7 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
-      serverName: immich-database-v4
+      serverName: immich-database-v5
       destinationPath: s3://postgres-backups/cnpg/immich
       endpointURL: http://192.168.10.133:30293
       s3Credentials:
