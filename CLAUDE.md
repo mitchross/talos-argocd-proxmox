@@ -136,6 +136,14 @@ Applications deploy in strict order to prevent race conditions:
 
 **Important**: The Infrastructure AppSet uses an explicit list of paths (not glob discovery). To add a new infrastructure component, you must add its path to `infrastructure/controllers/argocd/apps/infrastructure-appset.yaml`. Databases are auto-discovered separately by `database-appset.yaml` via `infrastructure/database/*/*` glob.
 
+**CRITICAL**: Every ApplicationSet or Application YAML in `infrastructure/controllers/argocd/apps/` **must** be listed in that directory's `kustomization.yaml` under `resources:`. A file that exists but isn't listed in kustomization.yaml will **never be deployed** — ArgoCD only sees what Kustomize renders. Always verify new files are wired up:
+```bash
+# After adding a new file, confirm it's in kustomization.yaml
+grep "my-new-appset.yaml" infrastructure/controllers/argocd/apps/kustomization.yaml
+# Verify ArgoCD sees it after sync
+kubectl get applicationset -n argocd
+```
+
 ## Directory Structure
 
 ```
