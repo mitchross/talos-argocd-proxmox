@@ -44,6 +44,8 @@ data:
   OBJECT_STORAGE_BUCKET: "posthog"
   OBJECT_STORAGE_PUBLIC_ENDPOINT: "https://posthog.vanillax.me"
   SESSION_RECORDING_V2_S3_ENDPOINT: "http://192.168.10.133:30293"
+  SESSION_RECORDING_V2_S3_BUCKET: "posthog"
+  SESSION_RECORDING_V2_S3_REGION: "us-east-1"
 
   # CDP
   CDP_API_URL: "http://plugins:6738"

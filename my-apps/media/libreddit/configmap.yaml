@@ -35,3 +35,4 @@ data:
   # Server-side PostHog analytics (in-cluster capture service)
   POSTHOG_ENABLED: "true"
   POSTHOG_HOST: "http://capture.posthog.svc.cluster.local:3000"
+  POSTHOG_CLIENT_HOST: "https://ingest-posthog.vanillax.me"
