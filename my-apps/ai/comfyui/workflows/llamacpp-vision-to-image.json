@@ -28,7 +28,7 @@
         "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080",
         "general - qwen3.5",
         0.6,
-        1024
+        4096
       ]
     },
     {
@@ -61,7 +61,7 @@
         "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080",
         "general - qwen3.5",
         0.6,
-        1024
+        4096
       ]
     },
     {
