@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pod-cleanup
+  namespace: pod-cleanup
+spec:
+  schedule: "0 */6 * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          serviceAccountName: pod-cleanup
+          restartPolicy: Never
+          containers:
+          - name: cleanup
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Cleaning up Failed pods..."
+              kubectl delete pods --field-selector=status.phase=Failed -A --ignore-not-found
+              echo "Cleaning up Succeeded pods older than 1h..."
+              kubectl delete pods --field-selector=status.phase=Succeeded -A --ignore-not-found
+              echo "Done."
