@@ -326,7 +326,7 @@ See `infrastructure/controllers/argocd/values.yaml` for the actual implementatio
 
 ## In-Place Pod Resize (K8s 1.35)
 
-This cluster runs K8s v1.35.1 where In-Place Pod Resize is GA. VPA supports `updateMode: "InPlaceOrRecreate"` which resizes pods **without restarting them** when possible.
+This cluster runs K8s v1.35.2 where In-Place Pod Resize is GA. VPA supports `updateMode: "InPlaceOrRecreate"` which resizes pods **without restarting them** when possible.
 
 ### How It Works
 
@@ -471,5 +471,5 @@ kubectl get events -A --field-selector reason=VpaUpdated
 
 ---
 
-**Last Updated**: 2026-02-28
-**Cluster**: talos-prod-cluster (K8s v1.35.1, Talos v1.12.4)
+**Last Updated**: 2026-03-09
+**Cluster**: talos-prod-cluster (K8s v1.35.2, Talos v1.12.5)
