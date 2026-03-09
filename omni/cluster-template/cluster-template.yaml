@@ -5,9 +5,9 @@ name: talos-prod-cluster
 labels:
   cluster-id: "1"
 kubernetes:
-  version: v1.35.1
+  version: v1.35.2
 talos:
-  version: v1.12.4
+  version: v1.12.5
 patches:
 - name: disable-default-cni
   inline:
