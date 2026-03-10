@@ -14,7 +14,6 @@ spec:
       - path: infrastructure/controllers/cert-manager
       - path: infrastructure/controllers/external-dns
       - path: infrastructure/controllers/gpu-priority-classes
-      - path: infrastructure/controllers/intel-device-plugins
       - path: infrastructure/controllers/node-feature-discovery
       - path: infrastructure/controllers/nvidia-device-plugin
       - path: infrastructure/controllers/nvidia-gpu-operator
