@@ -24,7 +24,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: libreddit
-        image: ghcr.io/mitchross/redlib:experimental-amd64-p3
+        image: ghcr.io/mitchross/redlib:experimental-amd64-p4
         imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:
