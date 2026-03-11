@@ -66,7 +66,7 @@ spec:
     size: 20Gi
     storageClass: longhorn
   walStorage:
-    size: 8Gi
+    size: 16Gi
     storageClass: longhorn
   managed:
     services:
