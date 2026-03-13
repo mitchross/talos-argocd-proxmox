@@ -12,6 +12,16 @@ spec:
     anonymized: false
     language: english
     maxTokens: "16384"
+  filters:
+    - Pod
+    - Service
+    - Deployment
+    - StatefulSet
+    - ReplicaSet
+    - Job
+    - PersistentVolumeClaim
+    - Node
+    - CronJob
   noCache: false
   repository: ghcr.io/k8sgpt-ai/k8sgpt
-  version: "latest@sha256:c1639f09c500f7ef8f5e647d61e82133f49a6c68c47a00d1c726847b063af6e1"
+  version: "202602281832@sha256:c9aa60521c0389c94d27019bd9dde5fd2e96eb5e2a31d36eee398ce8e424c084"
