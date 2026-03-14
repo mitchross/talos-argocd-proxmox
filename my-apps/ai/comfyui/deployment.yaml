@@ -41,9 +41,9 @@ spec:
           mountPath: /opt/pre-start
       containers:
       - name: comfyui
-        # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu128-megapak-pt29
+        # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu128-megapak
         # renovate: datasource=docker depName=yanwk/comfyui-boot
-        image: yanwk/comfyui-boot:cu128-megapak-pt29@sha256:778d8bd9d8e5ccf7ae4b8a6841f2ec484616d51c0c55ff473dffcbe817da3aee
+        image: yanwk/comfyui-boot:cu128-megapak-20260313@sha256:8b24fe8d6105ca235d0a8c3c5334c161f1e1fd453a2c9812c5e71fe891bb3fd7
         imagePullPolicy: IfNotPresent
         workingDir: /root
         ports:
