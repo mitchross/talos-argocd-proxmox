@@ -18,3 +18,5 @@ helmCharts:
     namespace: kube-system
     includeCRDs: true
     valuesFile: values.yaml
+patches:
+  - path: patch-remove-session-ttl.yaml
