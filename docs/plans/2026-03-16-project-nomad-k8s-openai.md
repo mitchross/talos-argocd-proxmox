@@ -213,12 +213,12 @@ EMBEDDING_DIMENSIONS=768               # Vector dimensions (must match Qdrant co
 # Legacy (still works, maps to LLM_HOST if LLM_PROVIDER not set)
 OLLAMA_HOST=http://ollama:11434   # Backwards compatible
 
-# Optional Service URLs (BYO pattern — set URL to use external, leave empty to use in-cluster)
-KIWIX_URL=                       # e.g., http://my-kiwix:8080 or leave empty for in-cluster
-KOLIBRI_URL=                     # e.g., http://my-kolibri:8080 or leave empty for in-cluster
-PROTOMAPS_URL=                   # e.g., http://my-protomaps:8080 or leave empty for in-cluster
-CYBERCHEF_URL=                   # e.g., http://my-cyberchef:8080 or leave empty for in-cluster
-FLATNOTES_URL=                   # e.g., http://my-flatnotes:8080 or leave empty for in-cluster
+# Companion Service URLs (default = in-cluster, override for BYO)
+KIWIX_URL=http://kiwix:8080      # Override with external URL for BYO
+KOLIBRI_URL=http://kolibri:8080  # Override with external URL for BYO
+PROTOMAPS_URL=http://protomaps:8080
+CYBERCHEF_URL=http://cyberchef:8080
+FLATNOTES_URL=http://flatnotes:8080
 ```
 
 **BYO pattern**: If the URL env var is set, Nomad's UI links/iframes point to that external URL. If empty and the service is deployed in-cluster, it auto-resolves to `<service>.project-nomad.svc.cluster.local`.
@@ -231,17 +231,19 @@ FLATNOTES_URL=                   # e.g., http://my-flatnotes:8080 or leave empty
 
 #### Full Service Matrix
 
-| Service | Image | Required? | BYO Config | Ports | Storage |
-|---------|-------|-----------|------------|-------|---------|
-| **Nomad** (admin) | `ghcr.io/mitchross/project-nomad:main` | Yes | — | 8080 | PVC 10Gi (uploads/ZIM) |
-| **MySQL** | `mysql:8.0` | Yes | `DB_HOST`, `DB_PORT`, `DB_USER` | 3306 | PVC 10Gi |
-| **Redis** | `redis:7-alpine` | Yes | `REDIS_HOST`, `REDIS_PORT` | 6379 | — |
-| **Qdrant** | `qdrant/qdrant:latest` | Yes (RAG) | `QDRANT_HOST` | 6333, 6334 | PVC 5Gi |
-| **Kiwix** | `ghcr.io/kiwix/kiwix-serve:3.8.1` | Optional | `KIWIX_URL` | 8080 | PVC (shares Nomad's ZIM dir) |
-| **Kolibri** | `learningequality/kolibri:latest` | Optional | `KOLIBRI_URL` | 8080 | PVC 10Gi |
-| **ProtoMaps** | `protomaps/go-pmtiles:latest` | Optional | `PROTOMAPS_URL` | 8080 | PVC (map tiles) |
-| **CyberChef** | `ghcr.io/gchq/cyberchef:latest` | Optional | `CYBERCHEF_URL` | 8080 | — |
-| **FlatNotes** | `dullage/flatnotes:latest` | Optional | `FLATNOTES_URL` | 8080 | PVC 1Gi |
+All 9 services are **in scope** and will be deployed. Each supports BYO (set URL env var to use an external instance instead of deploying).
+
+| Service | Image | BYO Config | Ports | Storage |
+|---------|-------|------------|-------|---------|
+| **Nomad** (admin) | `ghcr.io/mitchross/project-nomad:main` | — | 8080 | PVC 10Gi (uploads/ZIM) |
+| **MySQL** | `mysql:8.0` | `DB_HOST`, `DB_PORT`, `DB_USER` | 3306 | PVC 10Gi |
+| **Redis** | `redis:7-alpine` | `REDIS_HOST`, `REDIS_PORT` | 6379 | — |
+| **Qdrant** | `qdrant/qdrant:latest` | `QDRANT_HOST` | 6333, 6334 | PVC 5Gi |
+| **Kiwix** | `ghcr.io/kiwix/kiwix-serve:3.8.1` | `KIWIX_URL` | 8080 | PVC (shares Nomad's ZIM dir) |
+| **Kolibri** | `learningequality/kolibri:latest` | `KOLIBRI_URL` | 8080 | PVC 10Gi |
+| **ProtoMaps** | `protomaps/go-pmtiles:latest` | `PROTOMAPS_URL` | 8080 | PVC (map tiles) |
+| **CyberChef** | `ghcr.io/gchq/cyberchef:latest` | `CYBERCHEF_URL` | 8080 | — |
+| **FlatNotes** | `dullage/flatnotes:latest` | `FLATNOTES_URL` | 8080 | PVC 1Gi |
 
 #### BYO vs Deploy Pattern
 
@@ -253,19 +255,19 @@ For **every** service, the user has two choices:
 The ConfigMap always has the URL vars. The Nomad app always reads them. The only question is: does the URL point to an external service or an in-cluster one?
 
 ```yaml
-# configmap.yaml — service URLs section
+# configmap.yaml — service URLs section (all default to in-cluster services)
 data:
-  # Required services (in-cluster defaults shown)
-  DB_HOST: "mysql"                    # Override for BYO MySQL
-  REDIS_HOST: "redis"                 # Override for BYO Redis
-  QDRANT_HOST: "http://qdrant:6333"   # Override for BYO Qdrant
+  # Core services
+  DB_HOST: "mysql"                              # Override for BYO MySQL
+  REDIS_HOST: "redis"                           # Override for BYO Redis
+  QDRANT_HOST: "http://qdrant:6333"             # Override for BYO Qdrant
 
-  # Optional services — empty = disabled, URL = BYO, in-cluster service name = deployed
-  KIWIX_URL: ""                       # "http://kiwix:8080" if deployed, or external URL
-  KOLIBRI_URL: ""                     # "http://kolibri:8080" if deployed, or external URL
-  PROTOMAPS_URL: ""                   # "http://protomaps:8080" if deployed, or external URL
-  CYBERCHEF_URL: ""                   # "http://cyberchef:8080" if deployed, or external URL
-  FLATNOTES_URL: ""                   # "http://flatnotes:8080" if deployed, or external URL
+  # Companion services (all deployed by default, override URL for BYO)
+  KIWIX_URL: "http://kiwix:8080"                # Override for BYO Kiwix
+  KOLIBRI_URL: "http://kolibri:8080"            # Override for BYO Kolibri
+  PROTOMAPS_URL: "http://protomaps:8080"        # Override for BYO ProtoMaps
+  CYBERCHEF_URL: "http://cyberchef:8080"        # Override for BYO CyberChef
+  FLATNOTES_URL: "http://flatnotes:8080"        # Override for BYO FlatNotes
 ```
 
 #### Directory Structure
@@ -326,14 +328,14 @@ k8s/
 
 **Design principles**:
 - Each service is a separate Kustomize component in `base/`
-- Required services are always included; optional services are commented out by default
+- **All 9 services included by default** — comment out + set BYO URL to use external
 - ConfigMap always has URL vars — deploying a service just means the URL points to the in-cluster name
-- BYO = set URL in overlay patch, don't include the service directory
+- BYO = set URL in overlay patch, comment out the service directory
 - `base/` uses generic defaults (no cluster-specific values)
 - `overlays/production/` shows how to customize for a specific cluster
 - No Helm — pure Kustomize as requested
 
-**Base kustomization.yaml**:
+**Base kustomization.yaml** (full stack — all services deployed):
 ```yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -341,17 +343,17 @@ namespace: project-nomad
 
 resources:
   - namespace.yaml
-  # Core (required)
+  # Core
   - nomad/
-  - mysql/                # Or set DB_HOST for BYO MySQL
-  - redis/                # Or set REDIS_HOST for BYO Redis
-  - qdrant/               # Or set QDRANT_HOST for BYO Qdrant
-  # Optional — uncomment to deploy, or set URL in configmap for BYO
-  # - kiwix/              # Offline Wikipedia — set KIWIX_URL
-  # - kolibri/            # Khan Academy — set KOLIBRI_URL
-  # - protomaps/          # Offline maps — set PROTOMAPS_URL
-  # - cyberchef/          # Data tools — set CYBERCHEF_URL
-  # - flatnotes/          # Note-taking — set FLATNOTES_URL
+  - mysql/                # Comment out + set DB_HOST for BYO
+  - redis/                # Comment out + set REDIS_HOST for BYO
+  - qdrant/               # Comment out + set QDRANT_HOST for BYO
+  # Companion services
+  - kiwix/                # Comment out + set KIWIX_URL for BYO
+  - kolibri/              # Comment out + set KOLIBRI_URL for BYO
+  - protomaps/            # Comment out + set PROTOMAPS_URL for BYO
+  - cyberchef/            # Comment out + set CYBERCHEF_URL for BYO
+  - flatnotes/            # Comment out + set FLATNOTES_URL for BYO
 ```
 
 **Example BYO overlay** (user has external Kiwix + Redis, deploys everything else):
@@ -511,12 +513,12 @@ data:
   EMBEDDING_DIMENSIONS: "768"
   # Qdrant
   QDRANT_HOST: "http://qdrant.project-nomad.svc.cluster.local:6333"
-  # Optional services — set URL for BYO, or point to in-cluster service if deployed
-  KIWIX_URL: ""                  # Set if you have external Kiwix, e.g., "http://my-kiwix:8080"
-  KOLIBRI_URL: ""                # Set if you have external Kolibri
-  PROTOMAPS_URL: ""              # Set if you have external ProtoMaps
-  CYBERCHEF_URL: ""              # Set if you have external CyberChef
-  FLATNOTES_URL: ""              # Set if you have external FlatNotes
+  # Companion services (all deployed in-cluster, override for BYO)
+  KIWIX_URL: "http://kiwix.project-nomad.svc.cluster.local:8080"
+  KOLIBRI_URL: "http://kolibri.project-nomad.svc.cluster.local:8080"
+  PROTOMAPS_URL: "http://protomaps.project-nomad.svc.cluster.local:8080"
+  CYBERCHEF_URL: "http://cyberchef.project-nomad.svc.cluster.local:8080"
+  FLATNOTES_URL: "http://flatnotes.project-nomad.svc.cluster.local:8080"
 ```
 
 ### 2C. Updated Deployment
@@ -537,12 +539,40 @@ resources:
   - namespace.yaml
   - externalsecret.yaml    # Was: secret.yaml
   - configmap.yaml
+  # Core
   - pvc.yaml
-  - mysql-deployment.yaml
-  - mysql-service.yaml
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+  # MySQL
+  - mysql-deployment.yaml
+  - mysql-service.yaml
+  - mysql-pvc.yaml
+  # Qdrant
+  - qdrant-deployment.yaml
+  - qdrant-service.yaml
+  - qdrant-pvc.yaml
+  # Redis
+  - redis-deployment.yaml
+  - redis-service.yaml
+  # Kiwix
+  - kiwix-deployment.yaml
+  - kiwix-service.yaml
+  # Kolibri
+  - kolibri-deployment.yaml
+  - kolibri-service.yaml
+  - kolibri-pvc.yaml
+  # ProtoMaps
+  - protomaps-deployment.yaml
+  - protomaps-service.yaml
+  - protomaps-pvc.yaml
+  # CyberChef
+  - cyberchef-deployment.yaml
+  - cyberchef-service.yaml
+  # FlatNotes
+  - flatnotes-deployment.yaml
+  - flatnotes-service.yaml
+  - flatnotes-pvc.yaml
 ```
 
 ---
