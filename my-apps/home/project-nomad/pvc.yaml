@@ -7,6 +7,9 @@ metadata:
     app.kubernetes.io/name: project-nomad
     app.kubernetes.io/part-of: project-nomad
     backup: "daily"
+  annotations:
+    # This volume stores: uploaded documents (RAG source files), processed ZIM content metadata,
+    # Kopia/VolSync backup cache, map tiles, and general Nomad content library data.
 spec:
   accessModes:
     - ReadWriteOnce

@@ -16,14 +16,14 @@ data:
     echo "Resolving nomad_ollama proxy..."
     OLLAMA_PROXY_FQDN="nomad-ollama-proxy.project-nomad.svc.cluster.local"
     OLLAMA_IP=""
-    for i in $(seq 1 30); do
+    for i in $(seq 1 12); do
       OLLAMA_IP=$(getent hosts "$OLLAMA_PROXY_FQDN" 2>/dev/null | awk '{print $1}' | head -1)
       if [ -n "$OLLAMA_IP" ]; then
         echo "$OLLAMA_IP nomad_ollama" >> /etc/hosts
         echo "Mapped nomad_ollama -> $OLLAMA_IP (via $OLLAMA_PROXY_FQDN)"
         break
       fi
-      echo "Waiting for Ollama proxy DNS ($i/30)..."
+      echo "Waiting for Ollama proxy DNS ($i/12)..."
       sleep 5
     done
     if [ -z "$OLLAMA_IP" ]; then

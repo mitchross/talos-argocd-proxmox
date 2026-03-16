@@ -95,7 +95,8 @@ spec:
       targetPort: 11434
       protocol: TCP
 ---
-# PVC for Ollama model cache (minimal, for proxy config only)
+# PVC for Ollama model cache (minimal - proxy config only, no local models)
+# Not backed up as this contains only ephemeral proxy state; llama-cpp holds the actual models.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -109,5 +110,5 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 5Gi
+      storage: 1Gi
   storageClassName: longhorn

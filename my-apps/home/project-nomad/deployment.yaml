@@ -21,13 +21,13 @@ spec:
         app.kubernetes.io/component: admin
         app.kubernetes.io/part-of: project-nomad
     spec:
-      # Allow writing to /etc/hosts (the entrypoint maps nomad_ollama hostname)
-      securityContext:
-        fsGroup: 1000
+      # Project Nomad runs as root (node:22-slim base). The custom entrypoint writes to
+      # /etc/hosts to map "nomad_ollama" → Ollama proxy ClusterIP, which is valid since
+      # all containers in a pod share the same writable /etc/hosts managed by kubelet.
       containers:
         - name: nomad
           image: ghcr.io/crosstalk-solutions/project-nomad:latest
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           command: ["/usr/local/bin/entrypoint.sh"]
           env:
             - name: NODE_ENV
