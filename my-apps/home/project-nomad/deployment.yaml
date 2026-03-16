@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: project-nomad
+  namespace: project-nomad
+  labels:
+    app.kubernetes.io/name: project-nomad
+    app.kubernetes.io/component: admin
+    app.kubernetes.io/part-of: project-nomad
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: project-nomad
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: project-nomad
+        app.kubernetes.io/component: admin
+        app.kubernetes.io/part-of: project-nomad
+    spec:
+      # Allow writing to /etc/hosts (the entrypoint maps nomad_ollama hostname)
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: nomad
+          image: ghcr.io/crosstalk-solutions/project-nomad:latest
+          imagePullPolicy: Always
+          command: ["/usr/local/bin/entrypoint.sh"]
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "8080"
+            - name: HOST
+              value: "0.0.0.0"
+            - name: LOG_LEVEL
+              value: "info"
+            - name: URL
+              value: "https://nomad.vanillax.me"
+            - name: APP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: project-nomad-secrets
+                  key: APP_KEY
+            - name: DB_HOST
+              value: "nomad-mysql"
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_DATABASE
+              value: "nomad"
+            - name: DB_NAME
+              value: "nomad"
+            - name: DB_USER
+              value: "nomad_user"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: project-nomad-secrets
+                  key: DB_PASSWORD
+            - name: DB_SSL
+              value: "false"
+            - name: REDIS_HOST
+              value: "nomad-redis"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: NOMAD_STORAGE_PATH
+              value: "/app/storage"
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+          volumeMounts:
+            - name: nomad-storage
+              mountPath: /app/storage
+            - name: entrypoint
+              mountPath: /usr/local/bin/entrypoint.sh
+              subPath: entrypoint.sh
+              readOnly: true
+      volumes:
+        - name: nomad-storage
+          persistentVolumeClaim:
+            claimName: nomad-storage
+        - name: entrypoint
+          configMap:
+            name: nomad-entrypoint
+            defaultMode: 0755

@@ -1,0 +1,113 @@
+---
+# Ollama proxy - bridges Nomad's Ollama API calls to the existing llama-cpp OpenAI-compatible endpoint.
+# This runs a lightweight Ollama instance (CPU only, no local models) that forwards
+# inference requests to the cluster's llama-cpp service via OLLAMA_OPENAI_BASE_URL.
+# The container name "nomad_ollama" (resolved via /etc/hosts in the admin pod) maps here.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nomad-ollama-proxy
+  namespace: project-nomad
+  labels:
+    app.kubernetes.io/name: nomad-ollama-proxy
+    app.kubernetes.io/component: llm-proxy
+    app.kubernetes.io/part-of: project-nomad
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nomad-ollama-proxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nomad-ollama-proxy
+        app.kubernetes.io/component: llm-proxy
+        app.kubernetes.io/part-of: project-nomad
+    spec:
+      containers:
+        - name: ollama
+          image: ollama/ollama:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            # Forward all model inference requests to the existing llama-cpp OpenAI-compatible API
+            - name: OLLAMA_OPENAI_BASE_URL
+              value: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
+            - name: OLLAMA_HOST
+              value: "0.0.0.0:11434"
+            # Disable GPU usage - this is just a proxy
+            - name: OLLAMA_NUM_GPU
+              value: "0"
+          ports:
+            - name: ollama
+              containerPort: 11434
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          volumeMounts:
+            - name: ollama-data
+              mountPath: /root/.ollama
+      volumes:
+        - name: ollama-data
+          persistentVolumeClaim:
+            claimName: nomad-ollama-data
+---
+# Service for Ollama proxy - accessible within the cluster
+# The Nomad admin pod resolves "nomad_ollama" to this service's ClusterIP via /etc/hosts
+apiVersion: v1
+kind: Service
+metadata:
+  name: nomad-ollama-proxy
+  namespace: project-nomad
+  labels:
+    app.kubernetes.io/name: nomad-ollama-proxy
+    app.kubernetes.io/component: llm-proxy
+    app.kubernetes.io/part-of: project-nomad
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: nomad-ollama-proxy
+  ports:
+    - name: ollama
+      port: 11434
+      targetPort: 11434
+      protocol: TCP
+---
+# PVC for Ollama model cache (minimal, for proxy config only)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nomad-ollama-data
+  namespace: project-nomad
+  labels:
+    app.kubernetes.io/name: nomad-ollama-proxy
+    app.kubernetes.io/part-of: project-nomad
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: longhorn
