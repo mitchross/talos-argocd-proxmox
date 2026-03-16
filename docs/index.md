@@ -14,3 +14,4 @@ See the [README](https://github.com/mitchross/talos-argocd-proxmox) for setup in
 - [VPA Resource Optimization](vpa-resource-optimization.md) - Using VPA and Kyverno auto-generate policy to right-size pod resources
 - [Network Topology](network-topology.md) - Cluster networking and 10G infrastructure
 - [Network Security](network-policy.md) - Cilium network policies and LAN isolation
+- [Homelab Software Comparison](homelab-software-comparison.md) - Gap analysis vs Techno Tim's 2026 stack
