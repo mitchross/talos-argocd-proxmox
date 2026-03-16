@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: project-nomad
-          image: ghcr.io/crosstalk-solutions/project-nomad:latest
+          image: ghcr.io/mitchross/project-nomad:main
           ports:
             - containerPort: 8080
               name: http

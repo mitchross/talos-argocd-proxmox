@@ -15,13 +15,22 @@ data:
   DB_DATABASE: "nomad"
   DB_NAME: "nomad"
   DB_SSL: "false"
-  REDIS_HOST: "redis-master.redis-instance.svc.cluster.local"
+  REDIS_HOST: "redis"
   REDIS_PORT: "6379"
   NOMAD_STORAGE_PATH: "/opt/project-nomad/storage"
-  # Point Ollama to llama-cpp service (OpenAI-compatible API)
-  # Note: Project Nomad uses Ollama SDK natively. The llama-cpp server
-  # exposes /v1 (OpenAI-compatible) but NOT Ollama-compatible endpoints.
-  # Model management features won't work, but chat may work if Nomad
-  # falls back to OpenAI-compatible mode.
-  OLLAMA_HOST: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080"
   URL: "https://nomad.vanillax.me"
+  # LLM Provider — use OpenAI-compatible API (llama-cpp)
+  LLM_PROVIDER: "openai"
+  LLM_HOST: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
+  LLM_API_KEY: "unused"
+  # Embedding config
+  EMBEDDING_MODEL: ""
+  EMBEDDING_DIMENSIONS: "768"
+  # Qdrant vector DB
+  QDRANT_HOST: "http://qdrant.project-nomad.svc.cluster.local:6333"
+  # Companion services (all deployed in-cluster)
+  KIWIX_URL: "http://kiwix.project-nomad.svc.cluster.local:8080"
+  KOLIBRI_URL: "http://kolibri.project-nomad.svc.cluster.local:8080"
+  PROTOMAPS_URL: "http://protomaps.project-nomad.svc.cluster.local:8080"
+  CYBERCHEF_URL: "http://cyberchef.project-nomad.svc.cluster.local:8080"
+  FLATNOTES_URL: "http://flatnotes.project-nomad.svc.cluster.local:8080"

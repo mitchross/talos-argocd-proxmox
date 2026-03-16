@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flatnotes
+  namespace: project-nomad
+  labels:
+    app: project-nomad-flatnotes
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: project-nomad-flatnotes
+  template:
+    metadata:
+      labels:
+        app: project-nomad-flatnotes
+    spec:
+      containers:
+        - name: flatnotes
+          image: dullage/flatnotes:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          volumeMounts:
+            - name: flatnotes-data
+              mountPath: /data
+      volumes:
+        - name: flatnotes-data
+          persistentVolumeClaim:
+            claimName: flatnotes-data
