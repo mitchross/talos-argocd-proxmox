@@ -10,16 +10,42 @@ data:
     color: slate
     headerStyle: clean
     layout:
-      Network:
+      AI:
+        style: row
+        columns: 4
+      Development:
+        style: row
+        columns: 4
+      Home:
         style: row
         columns: 3
       Media:
         style: row
-        columns: 3
-      Development:
+        columns: 4
+      Privacy:
         style: row
-        columns: 3
+        columns: 2
+      Infrastructure & Monitoring:
+        style: row
+        columns: 4
   services.yaml: |
+    - AI:
+        - ComfyUI:
+            icon: comfyui.png
+            href: https://comfyui.vanillax.me
+            description: AI Image & Video Generation
+        - llama-cpp:
+            icon: meta.png
+            href: https://llama.vanillax.me
+            description: Local LLM Inference Server
+        - Open WebUI:
+            icon: open-webui.png
+            href: https://open-webui.vanillax.me
+            description: AI Chat Interface
+        - Perplexica:
+            icon: perplexity-ai.png
+            href: https://perplexica.vanillax.me
+            description: AI-Powered Search Engine
     - Development:
         - Argo CD:
             icon: argocd.png
@@ -29,3 +55,167 @@ data:
               type: argocd
               url: https://argocd.vanillax.me
               key: argocd
+        - Gitea:
+            icon: gitea.png
+            href: https://gitea.vanillax.me
+            description: Git Repository Manager
+        - Headlamp:
+            icon: headlamp.png
+            href: https://headlamp.vanillax.me
+            description: Kubernetes Dashboard
+        - IT-Tools:
+            icon: it-tools.png
+            href: https://it-tools.vanillax.me
+            description: IT Utility Tools Collection
+        - Mailpit:
+            icon: mailpit.png
+            href: https://mailpit.vanillax.me
+            description: Email Testing Server
+        - n8n:
+            icon: n8n.png
+            href: https://n8n.vanillax.me
+            description: Workflow Automation
+        - Pairdrop:
+            icon: pairdrop.png
+            href: https://pairdrop.vanillax.me
+            description: Peer-to-Peer File Transfer
+        - Temporal:
+            icon: temporal.png
+            href: https://temporal.vanillax.me
+            description: Workflow Orchestration
+        - ConvertX:
+            icon: convertx.png
+            href: https://convertx.vanillax.me
+            description: File Format Conversion
+        - PostHog:
+            icon: posthog.png
+            href: https://posthog.vanillax.me
+            description: Product Analytics
+        - DVWA:
+            icon: mdi-shield-bug-outline
+            href: https://dvwa.vanillax.me
+            description: Security Testing App
+        - Fizzy:
+            icon: mdi-flask-outline
+            href: https://fizzy.vanillax.me
+            description: Fizzy
+        - Vert:
+            icon: mdi-application-outline
+            href: https://vert.vanillax.me
+            description: Vert
+        - Echo Server:
+            icon: mdi-server-outline
+            href: https://echo.vanillax.me
+            description: HTTP Echo & Debug Server
+        - Nginx:
+            icon: nginx.png
+            href: https://nginx.vanillax.me
+            description: Web Server Example
+    - Home:
+        - Home Assistant:
+            icon: home-assistant.png
+            href: https://homeassistant.vanillax.me
+            description: Smart Home Automation
+        - Frigate:
+            icon: frigate.png
+            href: https://frigate.vanillax.me
+            description: NVR & Object Detection
+        - Paperless-NGX:
+            icon: paperless-ngx.png
+            href: https://paperless.vanillax.me
+            description: Document Management
+        - Netbox:
+            icon: netbox.png
+            href: https://netbox.vanillax.me
+            description: Network Management Database
+        - Wyze Bridge:
+            icon: wyze.png
+            href: https://wyze-bridge.vanillax.me
+            description: Camera Streaming Bridge
+    - Media:
+        - Immich:
+            icon: immich.png
+            href: https://photos.vanillax.me
+            description: Photo & Video Management
+        - Jellyfin:
+            icon: jellyfin.png
+            href: https://jellyfin.vanillax.me
+            description: Media Streaming Server
+        - Kiwix:
+            icon: kiwix.png
+            href: https://kiwix.vanillax.me
+            description: Offline Encyclopedia
+        - Libreddit:
+            icon: libreddit.png
+            href: https://libreddit.vanillax.me
+            description: Private Reddit Frontend
+        - CopyParty:
+            icon: mdi-folder-upload-outline
+            href: https://copyparty.vanillax.me
+            description: File Sharing Server
+        - Nestmtx:
+            icon: mdi-television-play
+            href: https://nestmtx.vanillax.me
+            description: IPTV Playlist Server
+        - Karakeep:
+            icon: mdi-microphone-variant
+            href: https://karakeep.vanillax.me
+            description: Karaoke Management
+    - Privacy:
+        - SearXNG:
+            icon: searxng.png
+            href: https://search.vanillax.me
+            description: Private Metasearch Engine
+        - ProxiTok:
+            icon: proxitok.png
+            href: https://proxitok.vanillax.me
+            description: Private TikTok Frontend
+    - Infrastructure & Monitoring:
+        - Grafana:
+            icon: grafana.png
+            href: https://grafana.vanillax.me
+            description: Dashboards & Visualization
+        - Prometheus:
+            icon: prometheus.png
+            href: https://prometheus.vanillax.me
+            description: Metrics & Monitoring
+        - Alertmanager:
+            icon: alertmanager.png
+            href: https://alertmanager.vanillax.me
+            description: Alert Management
+        - Longhorn:
+            icon: longhorn.png
+            href: https://longhorn.vanillax.me
+            description: Storage Management
+        - Kopia:
+            icon: kopia.png
+            href: https://kopia.vanillax.me
+            description: Backup Management
+        - Container Registry:
+            icon: docker.png
+            href: https://registry.vanillax.me
+            description: Container Image Registry
+        - Redis Commander:
+            icon: redis.png
+            href: https://redis.vanillax.me
+            description: Redis Management UI
+        - TrueNAS:
+            icon: truenas.png
+            href: http://192.168.10.133
+            description: Network Attached Storage
+        - Proxmox:
+            icon: proxmox.png
+            href: https://192.168.10.13:8006
+            description: Virtualization Platform
+        - iLO TrueNAS:
+            icon: hp-ilo.png
+            href: https://192.168.10.197
+            description: TrueNAS IPMI Management
+        - iLO Proxmox:
+            icon: hp-ilo.png
+            href: https://192.168.10.160
+            description: Proxmox IPMI Management
+        - Loki:
+            icon: loki.png
+            href: https://loki.vanillax.me
+            description: Log Aggregation
