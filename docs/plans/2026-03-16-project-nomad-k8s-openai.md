@@ -8,7 +8,7 @@
 
 ## Overview
 
-Add OpenAI-compatible LLM backend support to [mitchross/project-nomad](https://github.com/mitchross/project-nomad) so it works with llama-cpp (and any OpenAI-compatible server). Add Kubernetes manifests with Kustomize for modular deployment. Update the existing deployment in this repo to use ExternalSecrets and the new configuration.
+Add OpenAI-compatible LLM backend support to [mitchross/project-nomad](https://github.com/mitchross/project-nomad) so it works with llama-cpp (and any OpenAI-compatible server). Add Kubernetes manifests with Kustomize for modular deployment of the **full Nomad stack** (all 9 services). Every optional service supports **BYO** (bring-your-own via URL) or **deploy** (uncomment in kustomization.yaml). Update the existing deployment in this repo to use ExternalSecrets and the new configuration.
 
 ## Two Repositories, Two Workstreams
 
@@ -212,7 +212,16 @@ EMBEDDING_DIMENSIONS=768               # Vector dimensions (must match Qdrant co
 
 # Legacy (still works, maps to LLM_HOST if LLM_PROVIDER not set)
 OLLAMA_HOST=http://ollama:11434   # Backwards compatible
+
+# Optional Service URLs (BYO pattern — set URL to use external, leave empty to use in-cluster)
+KIWIX_URL=                       # e.g., http://my-kiwix:8080 or leave empty for in-cluster
+KOLIBRI_URL=                     # e.g., http://my-kolibri:8080 or leave empty for in-cluster
+PROTOMAPS_URL=                   # e.g., http://my-protomaps:8080 or leave empty for in-cluster
+CYBERCHEF_URL=                   # e.g., http://my-cyberchef:8080 or leave empty for in-cluster
+FLATNOTES_URL=                   # e.g., http://my-flatnotes:8080 or leave empty for in-cluster
 ```
+
+**BYO pattern**: If the URL env var is set, Nomad's UI links/iframes point to that external URL. If empty and the service is deployed in-cluster, it auto-resolves to `<service>.project-nomad.svc.cluster.local`.
 
 **Backwards compatibility**: If `LLM_PROVIDER` is not set but `OLLAMA_HOST` is, default to Ollama provider with that host.
 
@@ -220,13 +229,54 @@ OLLAMA_HOST=http://ollama:11434   # Backwards compatible
 
 **Location**: `k8s/` directory in the fork
 
+#### Full Service Matrix
+
+| Service | Image | Required? | BYO Config | Ports | Storage |
+|---------|-------|-----------|------------|-------|---------|
+| **Nomad** (admin) | `ghcr.io/mitchross/project-nomad:main` | Yes | — | 8080 | PVC 10Gi (uploads/ZIM) |
+| **MySQL** | `mysql:8.0` | Yes | `DB_HOST`, `DB_PORT`, `DB_USER` | 3306 | PVC 10Gi |
+| **Redis** | `redis:7-alpine` | Yes | `REDIS_HOST`, `REDIS_PORT` | 6379 | — |
+| **Qdrant** | `qdrant/qdrant:latest` | Yes (RAG) | `QDRANT_HOST` | 6333, 6334 | PVC 5Gi |
+| **Kiwix** | `ghcr.io/kiwix/kiwix-serve:3.8.1` | Optional | `KIWIX_URL` | 8080 | PVC (shares Nomad's ZIM dir) |
+| **Kolibri** | `learningequality/kolibri:latest` | Optional | `KOLIBRI_URL` | 8080 | PVC 10Gi |
+| **ProtoMaps** | `protomaps/go-pmtiles:latest` | Optional | `PROTOMAPS_URL` | 8080 | PVC (map tiles) |
+| **CyberChef** | `ghcr.io/gchq/cyberchef:latest` | Optional | `CYBERCHEF_URL` | 8080 | — |
+| **FlatNotes** | `dullage/flatnotes:latest` | Optional | `FLATNOTES_URL` | 8080 | PVC 1Gi |
+
+#### BYO vs Deploy Pattern
+
+For **every** service, the user has two choices:
+
+1. **BYO** — Already have it running? Set the URL env var in the ConfigMap. Don't include the service in kustomization.yaml.
+2. **Deploy** — Don't have it? Include the service directory in kustomization.yaml. The ConfigMap defaults point to the in-cluster service.
+
+The ConfigMap always has the URL vars. The Nomad app always reads them. The only question is: does the URL point to an external service or an in-cluster one?
+
+```yaml
+# configmap.yaml — service URLs section
+data:
+  # Required services (in-cluster defaults shown)
+  DB_HOST: "mysql"                    # Override for BYO MySQL
+  REDIS_HOST: "redis"                 # Override for BYO Redis
+  QDRANT_HOST: "http://qdrant:6333"   # Override for BYO Qdrant
+
+  # Optional services — empty = disabled, URL = BYO, in-cluster service name = deployed
+  KIWIX_URL: ""                       # "http://kiwix:8080" if deployed, or external URL
+  KOLIBRI_URL: ""                     # "http://kolibri:8080" if deployed, or external URL
+  PROTOMAPS_URL: ""                   # "http://protomaps:8080" if deployed, or external URL
+  CYBERCHEF_URL: ""                   # "http://cyberchef:8080" if deployed, or external URL
+  FLATNOTES_URL: ""                   # "http://flatnotes:8080" if deployed, or external URL
+```
+
+#### Directory Structure
+
 ```
 k8s/
 ├── base/
 │   ├── nomad/
 │   │   ├── deployment.yaml
 │   │   ├── service.yaml
-│   │   ├── configmap.yaml          # Default config (LLM_PROVIDER=ollama)
+│   │   ├── configmap.yaml          # All env vars including service URLs
 │   │   └── kustomization.yaml
 │   ├── mysql/
 │   │   ├── deployment.yaml
@@ -238,31 +288,47 @@ k8s/
 │   │   ├── service.yaml
 │   │   └── kustomization.yaml
 │   ├── qdrant/
-│   │   ├── deployment.yaml         # Qdrant vector DB for RAG
+│   │   ├── deployment.yaml
 │   │   ├── service.yaml
 │   │   ├── pvc.yaml
 │   │   └── kustomization.yaml
 │   ├── kiwix/                      # Optional — offline Wikipedia
+│   │   ├── deployment.yaml         # Serves ZIM files on port 8080
+│   │   ├── service.yaml
+│   │   └── kustomization.yaml      # NOTE: shares Nomad's storage PVC for ZIM files
+│   ├── kolibri/                    # Optional — Khan Academy
 │   │   ├── deployment.yaml
 │   │   ├── service.yaml
 │   │   ├── pvc.yaml
 │   │   └── kustomization.yaml
-│   ├── kolibri/                    # Optional — Khan Academy
+│   ├── protomaps/                  # Optional — offline maps
+│   │   ├── deployment.yaml
+│   │   ├── service.yaml
+│   │   ├── pvc.yaml
+│   │   └── kustomization.yaml
+│   ├── cyberchef/                  # Optional — data tools (stateless)
 │   │   ├── deployment.yaml
 │   │   ├── service.yaml
 │   │   └── kustomization.yaml
+│   ├── flatnotes/                  # Optional — note-taking
+│   │   ├── deployment.yaml
+│   │   ├── service.yaml
+│   │   ├── pvc.yaml
+│   │   └── kustomization.yaml
 │   ├── namespace.yaml
-│   └── kustomization.yaml          # Includes all components
+│   └── kustomization.yaml          # Toggle services here
 └── overlays/
     └── production/                 # Example production overlay
         ├── kustomization.yaml      # Patches for production
         └── patches/
-            └── nomad-config.yaml   # Override LLM_HOST, etc.
+            └── nomad-config.yaml   # Override service URLs for BYO
 ```
 
 **Design principles**:
 - Each service is a separate Kustomize component in `base/`
-- Users comment out services they don't need in `base/kustomization.yaml`
+- Required services are always included; optional services are commented out by default
+- ConfigMap always has URL vars — deploying a service just means the URL points to the in-cluster name
+- BYO = set URL in overlay patch, don't include the service directory
 - `base/` uses generic defaults (no cluster-specific values)
 - `overlays/production/` shows how to customize for a specific cluster
 - No Helm — pure Kustomize as requested
@@ -275,12 +341,29 @@ namespace: project-nomad
 
 resources:
   - namespace.yaml
+  # Core (required)
   - nomad/
-  - mysql/
-  - redis/              # Comment out if using external Redis
-  - qdrant/
-  # - kiwix/            # Uncomment for offline Wikipedia
-  # - kolibri/          # Uncomment for Khan Academy courses
+  - mysql/                # Or set DB_HOST for BYO MySQL
+  - redis/                # Or set REDIS_HOST for BYO Redis
+  - qdrant/               # Or set QDRANT_HOST for BYO Qdrant
+  # Optional — uncomment to deploy, or set URL in configmap for BYO
+  # - kiwix/              # Offline Wikipedia — set KIWIX_URL
+  # - kolibri/            # Khan Academy — set KOLIBRI_URL
+  # - protomaps/          # Offline maps — set PROTOMAPS_URL
+  # - cyberchef/          # Data tools — set CYBERCHEF_URL
+  # - flatnotes/          # Note-taking — set FLATNOTES_URL
+```
+
+**Example BYO overlay** (user has external Kiwix + Redis, deploys everything else):
+```yaml
+# overlays/production/patches/nomad-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: project-nomad-config
+data:
+  KIWIX_URL: "http://192.168.10.50:8080"   # BYO Kiwix on LAN
+  REDIS_HOST: "redis.my-other-namespace.svc.cluster.local"  # BYO Redis
 ```
 
 **Qdrant deployment** (new — currently not in Docker compose for management, but Nomad uses it for RAG):
@@ -428,6 +511,12 @@ data:
   EMBEDDING_DIMENSIONS: "768"
   # Qdrant
   QDRANT_HOST: "http://qdrant.project-nomad.svc.cluster.local:6333"
+  # Optional services — set URL for BYO, or point to in-cluster service if deployed
+  KIWIX_URL: ""                  # Set if you have external Kiwix, e.g., "http://my-kiwix:8080"
+  KOLIBRI_URL: ""                # Set if you have external Kolibri
+  PROTOMAPS_URL: ""              # Set if you have external ProtoMaps
+  CYBERCHEF_URL: ""              # Set if you have external CyberChef
+  FLATNOTES_URL: ""              # Set if you have external FlatNotes
 ```
 
 ### 2C. Updated Deployment
@@ -472,19 +561,20 @@ resources:
 9. Update Docker service discovery to be optional (env-based fallback)
 
 ### Phase 2: Fork — K8s Manifests + CI
-10. Create `k8s/base/` directory structure with all services
-11. Create `k8s/overlays/production/` example
-12. Add Dockerfile improvements if needed (multi-stage, etc.)
-13. Add `.github/workflows/build.yaml` for GHCR publishing
-14. Test image build
+10. Create `k8s/base/` core services: nomad, mysql, redis, qdrant (+ configmap with all service URLs)
+11. Create `k8s/base/` optional services: kiwix, kolibri, protomaps, cyberchef, flatnotes
+12. Create `k8s/overlays/production/` example with BYO patch
+13. Add Dockerfile improvements if needed (multi-stage, etc.)
+14. Add `.github/workflows/build.yaml` for GHCR publishing
+15. Test image build
 
 ### Phase 3: This Repo — Deployment Updates
-15. Create 1Password item `project-nomad`
-16. Replace `secret.yaml` with `externalsecret.yaml`
-17. Update `configmap.yaml` with new LLM env vars
-18. Update `deployment.yaml` image to `ghcr.io/mitchross/project-nomad:main`
-19. Update `kustomization.yaml`
-20. Commit and push
+16. Create 1Password item `project-nomad`
+17. Replace `secret.yaml` with `externalsecret.yaml`
+18. Update `configmap.yaml` with LLM env vars + all service URLs (pointing to in-cluster defaults)
+19. Update `deployment.yaml` image to `ghcr.io/mitchross/project-nomad:main`
+20. Update `kustomization.yaml`
+21. Commit and push
 
 ---
 
@@ -502,8 +592,8 @@ resources:
 
 ## Not In Scope
 
-- Deploying Kiwix/Kolibri in this cluster (manifests provided but commented out)
 - Changing the upstream project-nomad (only fork changes)
 - CNPG migration for MySQL (stays as simple deployment for now)
 - GPU support for Nomad itself (it calls external LLM services)
 - Automated vector migration tooling (manual re-embed if model changes)
+- Modifying Nomad's Docker-based service management code to use K8s APIs (we bypass it entirely via env vars)
