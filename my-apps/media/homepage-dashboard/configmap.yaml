@@ -215,7 +215,3 @@ data:
             icon: hp-ilo.png
             href: https://192.168.10.160
             description: Proxmox IPMI Management
-        - Loki:
-            icon: loki.png
-            href: https://loki.vanillax.me
-            description: Log Aggregation
