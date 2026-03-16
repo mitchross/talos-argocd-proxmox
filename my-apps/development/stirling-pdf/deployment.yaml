@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stirling-pdf
+  namespace: stirling-pdf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stirling-pdf
+  template:
+    metadata:
+      labels:
+        app: stirling-pdf
+    spec:
+      containers:
+        - name: stirling-pdf
+          image: stirlingtools/stirling-pdf:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: DOCKER_ENABLE_SECURITY
+              value: "false"
+            - name: SYSTEM_DEFAULTLOCALE
+              value: "en_US"
+            - name: SYSTEM_TOITHEME
+              value: "dark"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi

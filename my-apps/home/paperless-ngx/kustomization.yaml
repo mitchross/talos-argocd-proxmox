@@ -12,3 +12,5 @@ resources:
   - service.yaml
   - httproute.yaml
   - externalsecret.yaml
+  - tika.yaml
+  - gotenberg.yaml

@@ -1,0 +1,16 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: uptime-kuma
+  namespace: uptime-kuma
+spec:
+  parentRefs:
+    - kind: Gateway
+      name: gateway-internal
+      namespace: gateway
+  hostnames:
+    - uptime.vanillax.me
+  rules:
+    - backendRefs:
+        - name: uptime-kuma
+          port: 3001
