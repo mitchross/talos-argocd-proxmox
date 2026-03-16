@@ -4,11 +4,38 @@ namespace: project-nomad
 
 resources:
   - namespace.yaml
-  - secret.yaml
+  - externalsecret.yaml
   - configmap.yaml
   - pvc.yaml
-  - mysql-deployment.yaml
-  - mysql-service.yaml
+  # Core — Nomad app
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+  # MySQL
+  - mysql-deployment.yaml
+  - mysql-service.yaml
+  # Redis
+  - redis-deployment.yaml
+  - redis-service.yaml
+  # Qdrant (vector DB for RAG)
+  - qdrant-deployment.yaml
+  - qdrant-service.yaml
+  - qdrant-pvc.yaml
+  # Kiwix (offline Wikipedia)
+  - kiwix-deployment.yaml
+  - kiwix-service.yaml
+  # Kolibri (Khan Academy)
+  - kolibri-deployment.yaml
+  - kolibri-service.yaml
+  - kolibri-pvc.yaml
+  # ProtoMaps (offline maps)
+  - protomaps-deployment.yaml
+  - protomaps-service.yaml
+  - protomaps-pvc.yaml
+  # CyberChef (data tools — stateless)
+  - cyberchef-deployment.yaml
+  - cyberchef-service.yaml
+  # FlatNotes (note-taking)
+  - flatnotes-deployment.yaml
+  - flatnotes-service.yaml
+  - flatnotes-pvc.yaml

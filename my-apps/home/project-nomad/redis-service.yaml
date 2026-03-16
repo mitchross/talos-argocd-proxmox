@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: project-nomad
+  labels:
+    app: project-nomad-redis
+spec:
+  selector:
+    app: project-nomad-redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+  type: ClusterIP

@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kolibri
+  namespace: project-nomad
+  labels:
+    app: project-nomad-kolibri
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: project-nomad-kolibri
+  template:
+    metadata:
+      labels:
+        app: project-nomad-kolibri
+    spec:
+      containers:
+        - name: kolibri
+          image: learningequality/kolibri:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          volumeMounts:
+            - name: kolibri-data
+              mountPath: /root/.kolibri
+      volumes:
+        - name: kolibri-data
+          persistentVolumeClaim:
+            claimName: kolibri-data

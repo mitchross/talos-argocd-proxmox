@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: protomaps
+  namespace: project-nomad
+  labels:
+    app: project-nomad-protomaps
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: project-nomad-protomaps
+  template:
+    metadata:
+      labels:
+        app: project-nomad-protomaps
+    spec:
+      containers:
+        - name: protomaps
+          image: protomaps/go-pmtiles:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: protomaps-data
+              mountPath: /data
+      volumes:
+        - name: protomaps-data
+          persistentVolumeClaim:
+            claimName: protomaps-data
