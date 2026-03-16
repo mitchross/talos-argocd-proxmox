@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: project-nomad-config
+  namespace: project-nomad
+data:
+  PORT: "8080"
+  HOST: "0.0.0.0"
+  LOG_LEVEL: "info"
+  NODE_ENV: "production"
+  SESSION_DRIVER: "cookie"
+  DB_HOST: "mysql"
+  DB_PORT: "3306"
+  DB_USER: "root"
+  DB_DATABASE: "nomad"
+  DB_NAME: "nomad"
+  DB_SSL: "false"
+  REDIS_HOST: "redis-master.redis-instance.svc.cluster.local"
+  REDIS_PORT: "6379"
+  NOMAD_STORAGE_PATH: "/opt/project-nomad/storage"
+  # Point Ollama to llama-cpp service (OpenAI-compatible API)
+  # Note: Project Nomad uses Ollama SDK natively. The llama-cpp server
+  # exposes /v1 (OpenAI-compatible) but NOT Ollama-compatible endpoints.
+  # Model management features won't work, but chat may work if Nomad
+  # falls back to OpenAI-compatible mode.
+  OLLAMA_HOST: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080"
+  URL: "https://nomad.vanillax.me"
