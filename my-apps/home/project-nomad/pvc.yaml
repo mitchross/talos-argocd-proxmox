@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nomad-storage
+  namespace: project-nomad
+  labels:
+    app.kubernetes.io/name: project-nomad
+    app.kubernetes.io/part-of: project-nomad
+    backup: "daily"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: longhorn

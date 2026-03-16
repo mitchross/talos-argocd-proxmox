@@ -1,0 +1,108 @@
+---
+# Qdrant Vector Database Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nomad-qdrant
+  namespace: project-nomad
+  labels:
+    app.kubernetes.io/name: nomad-qdrant
+    app.kubernetes.io/component: vector-db
+    app.kubernetes.io/part-of: project-nomad
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nomad-qdrant
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nomad-qdrant
+        app.kubernetes.io/component: vector-db
+        app.kubernetes.io/part-of: project-nomad
+    spec:
+      containers:
+        - name: qdrant
+          image: qdrant/qdrant:v1.16.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 6333
+              protocol: TCP
+            - name: grpc
+              containerPort: 6334
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 6333
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 6333
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+          volumeMounts:
+            - name: qdrant-storage
+              mountPath: /qdrant/storage
+      volumes:
+        - name: qdrant-storage
+          persistentVolumeClaim:
+            claimName: nomad-qdrant-storage
+---
+# Qdrant Service (internal - used by Nomad as nomad_qdrant container)
+apiVersion: v1
+kind: Service
+metadata:
+  name: nomad-qdrant
+  namespace: project-nomad
+  labels:
+    app.kubernetes.io/name: nomad-qdrant
+    app.kubernetes.io/component: vector-db
+    app.kubernetes.io/part-of: project-nomad
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: nomad-qdrant
+  ports:
+    - name: http
+      port: 6333
+      targetPort: 6333
+      protocol: TCP
+    - name: grpc
+      port: 6334
+      targetPort: 6334
+      protocol: TCP
+---
+# Qdrant PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nomad-qdrant-storage
+  namespace: project-nomad
+  labels:
+    app.kubernetes.io/name: nomad-qdrant
+    app.kubernetes.io/part-of: project-nomad
+    backup: "daily"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: longhorn

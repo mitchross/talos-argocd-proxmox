@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nomad-entrypoint
+  namespace: project-nomad
+data:
+  entrypoint.sh: |
+    #!/bin/bash
+    set -e
+
+    echo "=== Project N.O.M.A.D Kubernetes Entrypoint ==="
+
+    # Resolve the Ollama proxy service and add to /etc/hosts so that
+    # Nomad's internal "nomad_ollama" Docker-style hostname resolves correctly.
+    # The proxy bridges Ollama API calls to the cluster's llama-cpp service.
+    echo "Resolving nomad_ollama proxy..."
+    OLLAMA_PROXY_FQDN="nomad-ollama-proxy.project-nomad.svc.cluster.local"
+    OLLAMA_IP=""
+    for i in $(seq 1 30); do
+      OLLAMA_IP=$(getent hosts "$OLLAMA_PROXY_FQDN" 2>/dev/null | awk '{print $1}' | head -1)
+      if [ -n "$OLLAMA_IP" ]; then
+        echo "$OLLAMA_IP nomad_ollama" >> /etc/hosts
+        echo "Mapped nomad_ollama -> $OLLAMA_IP (via $OLLAMA_PROXY_FQDN)"
+        break
+      fi
+      echo "Waiting for Ollama proxy DNS ($i/30)..."
+      sleep 5
+    done
+    if [ -z "$OLLAMA_IP" ]; then
+      echo "Warning: Could not resolve Ollama proxy. AI features may be unavailable."
+    fi
+
+    # Also resolve Qdrant for RAG features
+    QDRANT_PROXY_FQDN="nomad-qdrant.project-nomad.svc.cluster.local"
+    QDRANT_IP=$(getent hosts "$QDRANT_PROXY_FQDN" 2>/dev/null | awk '{print $1}' | head -1)
+    if [ -n "$QDRANT_IP" ]; then
+      echo "$QDRANT_IP nomad_qdrant" >> /etc/hosts
+      echo "Mapped nomad_qdrant -> $QDRANT_IP"
+    fi
+
+    echo "Waiting for MySQL at ${DB_HOST}:${DB_PORT}..."
+    until node -e "
+      const net = require('net');
+      const s = new net.Socket();
+      s.setTimeout(2000);
+      s.connect(parseInt('${DB_PORT}' || '3306'), '${DB_HOST}', () => { s.destroy(); process.exit(0); });
+      s.on('error', () => { s.destroy(); process.exit(1); });
+      s.on('timeout', () => { s.destroy(); process.exit(1); });
+    " 2>/dev/null; do
+      echo "MySQL not ready, retrying..."
+      sleep 3
+    done
+    echo "MySQL is up!"
+
+    echo "Running database migrations..."
+    node ace migration:run --force
+
+    echo "Seeding database..."
+    node ace db:seed
+
+    echo "Marking Ollama and Qdrant services as installed (K8s native mode)..."
+    node -e "
+      const mysql2 = require('mysql2/promise');
+      (async () => {
+        const conn = await mysql2.createConnection({
+          host: process.env.DB_HOST,
+          port: parseInt(process.env.DB_PORT || '3306'),
+          user: process.env.DB_USER,
+          password: process.env.DB_PASSWORD,
+          database: process.env.DB_DATABASE || process.env.DB_NAME,
+        });
+        // Mark Ollama as installed and set port 11434 (Ollama default, proxied to llama-cpp)
+        const [ollamaResult] = await conn.execute(
+          \"UPDATE services SET installed = 1, ui_location = '11434', installation_status = 'idle' WHERE service_name = 'nomad_ollama'\"
+        );
+        console.log('Ollama service configured:', JSON.stringify(ollamaResult));
+        // Mark Qdrant as installed and set port 6333
+        const [qdrantResult] = await conn.execute(
+          \"UPDATE services SET installed = 1, ui_location = '6333', installation_status = 'idle' WHERE service_name = 'nomad_qdrant'\"
+        );
+        console.log('Qdrant service configured:', JSON.stringify(qdrantResult));
+        await conn.end();
+      })().catch(err => {
+        console.error('Warning: Could not configure services in DB:', err.message);
+        process.exit(0); // Non-fatal - app still works
+      });
+    "
+
+    echo "Starting background queue workers..."
+    node ace queue:work --all &
+
+    echo "Starting Project N.O.M.A.D server..."
+    exec node bin/server.js
