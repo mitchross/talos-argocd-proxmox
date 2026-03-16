@@ -45,8 +45,6 @@
       "WebFetch(domain:neuralnet.solutions)"
     ],
     "deny": [
-      "Bash(git push:*)",
-      "Bash(git commit:*)",
       "Bash(git reset --hard:*)",
       "Bash(git clean:*)",
       "Bash(git branch -D:*)",
@@ -57,7 +55,9 @@
       "Bash(git rebase:*)",
       "Bash(git reset:*)",
       "Bash(git revert:*)",
-      "Bash(git cherry-pick:*)"
+      "Bash(git cherry-pick:*)",
+      "Bash(git push:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
