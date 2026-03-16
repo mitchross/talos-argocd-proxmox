@@ -181,6 +181,14 @@ grafana:
         editable: false
         options:
           path: /var/lib/grafana/dashboards/infrastructure
+      - name: 'grafana-dashboards-logging'
+        orgId: 1
+        folder: 'Logging'
+        type: file
+        disableDeletion: true
+        editable: false
+        options:
+          path: /var/lib/grafana/dashboards/logging
   dashboards:
     kubernetes:
       k8s-views-global:
@@ -203,6 +211,15 @@ grafana:
         gnetId: 1860
         revision: 36
         datasource: Prometheus
+    logging:
+      loki-kubernetes-logs:
+        gnetId: 15141
+        revision: 1
+        datasource: Loki
+      loki-container-log-dashboard:
+        gnetId: 16966
+        revision: 1
+        datasource: Loki
     infrastructure:
       argocd:
         gnetId: 14584
