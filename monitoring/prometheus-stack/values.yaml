@@ -215,11 +215,15 @@ grafana:
       loki-kubernetes-logs:
         gnetId: 15141
         revision: 1
-        datasource: Loki
+        datasource:
+          - name: DS_LOKI
+            value: Loki
       loki-container-log-dashboard:
         gnetId: 16966
         revision: 1
-        datasource: Loki
+        datasource:
+          - name: DS_LOKI
+            value: Loki
     infrastructure:
       argocd:
         gnetId: 14584
