@@ -1,0 +1,1193 @@
+diff --git a/.github/workflows/build.yaml b/.github/workflows/build.yaml
+new file mode 100644
+index 0000000..2a80ec2
+--- /dev/null
++++ b/.github/workflows/build.yaml
+@@ -0,0 +1,58 @@
++name: Build and Push Docker Image
++
++on:
++  push:
++    branches:
++      - main
++      - develop
++      - "feature/**"
++    tags:
++      - "v*"
++
++env:
++  REGISTRY: ghcr.io
++  IMAGE_NAME: mitchross/project-nomad
++
++jobs:
++  build-and-push:
++    runs-on: ubuntu-latest
++    permissions:
++      contents: read
++      packages: write
++
++    steps:
++    - name: Checkout repository
++      uses: actions/checkout@v4
++
++    - name: Set up Docker Buildx
++      uses: docker/setup-buildx-action@v3
++
++    - name: Log in to GitHub Container Registry
++      uses: docker/login-action@v3
++      with:
++        registry: ${{ env.REGISTRY }}
++        username: ${{ github.actor }}
++        password: ${{ secrets.GITHUB_TOKEN }}
++
++    - name: Extract metadata
++      id: meta
++      uses: docker/metadata-action@v5
++      with:
++        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
++        tags: |
++          type=ref,event=branch
++          type=ref,event=pr
++          type=semver,pattern={{version}}
++          type=semver,pattern={{major}}.{{minor}}
++          type=sha,prefix=sha-
++          type=raw,value=main,enable={{is_default_branch}}
++
++    - name: Build and push Docker image
++      uses: docker/build-push-action@v5
++      with:
++        context: .
++        push: true
++        tags: ${{ steps.meta.outputs.tags }}
++        labels: ${{ steps.meta.outputs.labels }}
++        cache-from: type=gha
++        cache-to: type=gha,mode=max
+diff --git a/admin/.env.example b/admin/.env.example
+index 05a03fd..3d9c657 100644
+--- a/admin/.env.example
++++ b/admin/.env.example
+@@ -15,4 +15,40 @@ REDIS_PORT=6379
+ # Storage path for NOMAD content (ZIM files, maps, etc.)
+ # On Windows dev, use an absolute path like: C:/nomad-storage
+ # On Linux production, use: /opt/project-nomad/storage
+-NOMAD_STORAGE_PATH=/opt/project-nomad/storage
+\ No newline at end of file
++NOMAD_STORAGE_PATH=/opt/project-nomad/storage
++
++# --- LLM Provider Configuration ---
++# Provider type: 'ollama' (default) or 'openai' (for llama-cpp, vLLM, or any OpenAI-compatible API)
++LLM_PROVIDER=ollama
++# Base URL for the LLM API. Required for openai provider. For ollama, falls back to Docker discovery.
++# Examples:
++#   Ollama: http://localhost:11434
++#   llama-cpp: http://localhost:8080/v1
++#   vLLM: http://localhost:8000/v1
++LLM_HOST=
++# API key (most local servers accept any value)
++LLM_API_KEY=unused
++# Legacy Ollama host (used if LLM_PROVIDER is not set)
++OLLAMA_HOST=
++
++# --- Embedding Configuration ---
++# Model used for RAG embeddings (must be available on your LLM server)
++EMBEDDING_MODEL=nomic-embed-text:v1.5
++# Vector dimensions (must match the model and Qdrant collection)
++EMBEDDING_DIMENSIONS=768
++# Task-specific prefixes for Nomic-style models (leave empty for models that don't use prefixes)
++EMBEDDING_SEARCH_DOC_PREFIX=search_document:
++EMBEDDING_SEARCH_QUERY_PREFIX=search_query:
++
++# --- Qdrant Vector Database ---
++# URL for Qdrant. If not set, falls back to Docker discovery.
++QDRANT_HOST=
++
++# --- Companion Service URLs ---
++# Set a URL to use a BYO (bring-your-own) external instance.
++# Leave empty to use the default Docker-managed service.
++KIWIX_URL=
++KOLIBRI_URL=
++PROTOMAPS_URL=
++CYBERCHEF_URL=
++FLATNOTES_URL=
+diff --git a/admin/app/controllers/ollama_controller.ts b/admin/app/controllers/ollama_controller.ts
+index d4af8aa..0715288 100644
+--- a/admin/app/controllers/ollama_controller.ts
++++ b/admin/app/controllers/ollama_controller.ts
+@@ -7,7 +7,7 @@ import { inject } from '@adonisjs/core'
+ import type { HttpContext } from '@adonisjs/core/http'
+ import { DEFAULT_QUERY_REWRITE_MODEL, RAG_CONTEXT_LIMITS, SYSTEM_PROMPTS } from '../../constants/ollama.js'
+ import logger from '@adonisjs/core/services/logger'
+-import type { Message } from 'ollama'
++import type { ChatMessage } from '../services/llm/llm_provider.js'
+ 
+ @inject()
+ export default class OllamaController {
+@@ -213,7 +213,7 @@ export default class OllamaController {
+   }
+ 
+   private async rewriteQueryWithContext(
+-    messages: Message[]
++    messages: ChatMessage[]
+   ): Promise<string | null> {
+     try {
+       // Get recent conversation history (last 6 messages for 3 turns)
+@@ -250,11 +250,11 @@ export default class OllamaController {
+         model: DEFAULT_QUERY_REWRITE_MODEL,
+         messages: [
+           {
+-            role: 'system',
++            role: 'system' as const,
+             content: SYSTEM_PROMPTS.query_rewrite,
+           },
+           {
+-            role: 'user',
++            role: 'user' as const,
+             content: `Conversation:\n${conversationContext}\n\nRewritten Query:`,
+           },
+         ],
+diff --git a/admin/app/services/benchmark_service.ts b/admin/app/services/benchmark_service.ts
+index 715d729..bbb3549 100644
+--- a/admin/app/services/benchmark_service.ts
++++ b/admin/app/services/benchmark_service.ts
+@@ -443,78 +443,123 @@ export class BenchmarkService {
+   }
+ 
+   /**
+-   * Run AI benchmark using Ollama
++   * Run AI benchmark using the configured LLM provider.
++   *
++   * For Ollama: uses the native /api/generate endpoint for precise token metrics.
++   * For OpenAI-compatible: uses /v1/chat/completions with wall-clock timing.
+    */
+   private async _runAIBenchmark(): Promise<AIScores> {
+     try {
++      this._updateStatus('running_ai', 'Running AI benchmark...')
+ 
+-    this._updateStatus('running_ai', 'Running AI benchmark...')
++      const { OllamaService } = await import('./ollama_service.js')
++      const ollamaService = new OllamaService()
++      const provider = ollamaService.provider
+ 
+-    const ollamaAPIURL = await this.dockerService.getServiceURL(SERVICE_NAMES.OLLAMA)
+-    if (!ollamaAPIURL) {
+-      throw new Error('AI Assistant service location could not be determined. Ensure AI Assistant is installed and running.')
+-    }
++      // Try to download the benchmark model (only works for Ollama)
++      if (provider.supportsModelManagement()) {
++        const modelResponse = await ollamaService.downloadModel(AI_BENCHMARK_MODEL)
++        if (!modelResponse.success) {
++          throw new Error(`Model does not exist and failed to download: ${modelResponse.message}`)
++        }
++      }
+ 
+-    // Check if Ollama is available
+-    try {
+-      await axios.get(`${ollamaAPIURL}/api/tags`, { timeout: 5000 })
++      if (provider.providerName === 'ollama') {
++        // Ollama path: use native API for precise token metrics
++        return await this._runOllamaAIBenchmark()
++      }
++
++      // OpenAI-compatible path: use chat completions with wall-clock timing
++      return await this._runOpenAIAIBenchmark(ollamaService)
+     } catch (error) {
+-      const errorCode = error.code || error.response?.status || 'unknown'
+-      throw new Error(`Ollama is not running or not accessible (${errorCode}). Ensure AI Assistant is installed and running.`)
++      throw new Error(`AI benchmark failed: ${(error as Error).message}`)
+     }
++  }
+ 
+-    // Check if the benchmark model is available, pull if not
+-    const ollamaService = new (await import('./ollama_service.js')).OllamaService()
+-    const modelResponse = await ollamaService.downloadModel(AI_BENCHMARK_MODEL)
+-    if (!modelResponse.success) {
+-      throw new Error(`Model does not exist and failed to download: ${modelResponse.message}`)
++  /** Ollama-specific benchmark using /api/generate for precise metrics */
++  private async _runOllamaAIBenchmark(): Promise<AIScores> {
++    const ollamaAPIURL = await this.dockerService.getServiceURL(SERVICE_NAMES.OLLAMA)
++    if (!ollamaAPIURL) {
++      // Try LLM_HOST env var
++      const { default: env } = await import('#start/env')
++      const host = env.get('LLM_HOST') || env.get('OLLAMA_HOST')
++      if (!host) {
++        throw new Error('AI Assistant service location could not be determined.')
++      }
++      return this._runOllamaAIBenchmarkWithURL(host)
+     }
++    return this._runOllamaAIBenchmarkWithURL(ollamaAPIURL)
++  }
+ 
+-    // Run inference benchmark
++  private async _runOllamaAIBenchmarkWithURL(ollamaAPIURL: string): Promise<AIScores> {
+     const startTime = Date.now()
+ 
+-      const response = await axios.post(
+-        `${ollamaAPIURL}/api/generate`,
+-        {
+-          model: AI_BENCHMARK_MODEL,
+-          prompt: AI_BENCHMARK_PROMPT,
+-          stream: false,
+-        },
+-        { timeout: 120000 }
+-      )
+-
+-      const endTime = Date.now()
+-      const totalTime = (endTime - startTime) / 1000 // seconds
+-
+-      // Ollama returns eval_count (tokens generated) and eval_duration (nanoseconds)
+-      if (response.data.eval_count && response.data.eval_duration) {
+-        const tokenCount = response.data.eval_count
+-        const evalDurationSeconds = response.data.eval_duration / 1e9
+-        const tokensPerSecond = tokenCount / evalDurationSeconds
++    const response = await axios.post(
++      `${ollamaAPIURL}/api/generate`,
++      {
++        model: AI_BENCHMARK_MODEL,
++        prompt: AI_BENCHMARK_PROMPT,
++        stream: false,
++      },
++      { timeout: 120000 }
++    )
+ 
+-        // Time to first token from prompt_eval_duration
+-        const ttft = response.data.prompt_eval_duration
+-          ? response.data.prompt_eval_duration / 1e6 // Convert to ms
+-          : (totalTime * 1000) / 2 // Estimate if not available
++    const endTime = Date.now()
++    const totalTime = (endTime - startTime) / 1000
+ 
+-        return {
+-          ai_tokens_per_second: Math.round(tokensPerSecond * 100) / 100,
+-          ai_model_used: AI_BENCHMARK_MODEL,
+-          ai_time_to_first_token: Math.round(ttft * 100) / 100,
+-        }
+-      }
++    if (response.data.eval_count && response.data.eval_duration) {
++      const tokenCount = response.data.eval_count
++      const evalDurationSeconds = response.data.eval_duration / 1e9
++      const tokensPerSecond = tokenCount / evalDurationSeconds
+ 
+-      // Fallback calculation
+-      const estimatedTokens = response.data.response?.split(' ').length * 1.3 || 100
+-      const tokensPerSecond = estimatedTokens / totalTime
++      const ttft = response.data.prompt_eval_duration
++        ? response.data.prompt_eval_duration / 1e6
++        : (totalTime * 1000) / 2
+ 
+       return {
+         ai_tokens_per_second: Math.round(tokensPerSecond * 100) / 100,
+         ai_model_used: AI_BENCHMARK_MODEL,
+-        ai_time_to_first_token: Math.round((totalTime * 1000) / 2),
++        ai_time_to_first_token: Math.round(ttft * 100) / 100,
+       }
+-    } catch (error) {
+-      throw new Error(`AI benchmark failed: ${error.message}`)
++    }
++
++    const estimatedTokens = response.data.response?.split(' ').length * 1.3 || 100
++    const tokensPerSecond = estimatedTokens / totalTime
++
++    return {
++      ai_tokens_per_second: Math.round(tokensPerSecond * 100) / 100,
++      ai_model_used: AI_BENCHMARK_MODEL,
++      ai_time_to_first_token: Math.round((totalTime * 1000) / 2),
++    }
++  }
++
++  /** OpenAI-compatible benchmark using chat completions with wall-clock timing */
++  private async _runOpenAIAIBenchmark(ollamaService: InstanceType<typeof import('./ollama_service.js').OllamaService>): Promise<AIScores> {
++    // Use the first available model for benchmarking
++    const models = await ollamaService.getModels()
++    const benchModel = models.find(m => m.name === AI_BENCHMARK_MODEL)?.name || models[0]?.name
++    if (!benchModel) {
++      throw new Error('No models available for AI benchmark.')
++    }
++
++    const startTime = Date.now()
++
++    const result = await ollamaService.chat({
++      model: benchModel,
++      messages: [{ role: 'user' as const, content: AI_BENCHMARK_PROMPT }],
++    })
++
++    const endTime = Date.now()
++    const totalTime = (endTime - startTime) / 1000
++
++    // Estimate tokens from response content (rough: ~1.3 tokens per word)
++    const estimatedTokens = result.message.content.split(' ').length * 1.3
++    const tokensPerSecond = estimatedTokens / totalTime
++
++    return {
++      ai_tokens_per_second: Math.round(tokensPerSecond * 100) / 100,
++      ai_model_used: benchModel,
++      ai_time_to_first_token: Math.round((totalTime * 1000) / 2), // Estimated
+     }
+   }
+ 
+diff --git a/admin/app/services/llm/llm_provider.ts b/admin/app/services/llm/llm_provider.ts
+new file mode 100644
+index 0000000..3cdd4ca
+--- /dev/null
++++ b/admin/app/services/llm/llm_provider.ts
+@@ -0,0 +1,79 @@
++/**
++ * LLM Provider abstraction layer.
++ *
++ * Defines a common interface for interacting with LLM backends (Ollama, OpenAI-compatible, etc.).
++ * Implementations handle the transport details; consumers only depend on this interface.
++ */
++
++export interface ChatMessage {
++  role: 'system' | 'user' | 'assistant'
++  content: string
++}
++
++export interface ChatRequest {
++  model: string
++  messages: ChatMessage[]
++  stream?: boolean
++  think?: boolean | string
++  options?: {
++    temperature?: number
++    num_ctx?: number
++    num_predict?: number
++  }
++}
++
++export interface ChatResponse {
++  message: {
++    role: string
++    content: string
++  }
++  done: boolean
++}
++
++export interface ChatStreamChunk {
++  message?: {
++    role?: string
++    content?: string
++  }
++  done?: boolean
++}
++
++export interface EmbeddingResult {
++  embeddings: number[][]
++}
++
++export interface ModelInfo {
++  name: string
++  size: number
++  modified_at?: string
++  details?: Record<string, unknown>
++}
++
++export interface LLMProvider {
++  /** Non-streaming chat completion */
++  chat(request: ChatRequest): Promise<ChatResponse>
++
++  /** Streaming chat completion — returns an async iterable of chunks */
++  chatStream(request: ChatRequest): Promise<AsyncIterable<ChatStreamChunk>>
++
++  /** Generate embeddings for one or more inputs */
++  embed(model: string, input: string[]): Promise<EmbeddingResult>
++
++  /** List models available on the backend */
++  listModels(includeEmbeddings?: boolean): Promise<ModelInfo[]>
++
++  /** Whether this provider supports model pull/delete operations */
++  supportsModelManagement(): boolean
++
++  /** Pull/download a model (Ollama only) */
++  pullModel?(model: string, progressCallback?: (percent: number) => void): Promise<{ success: boolean; message: string }>
++
++  /** Delete a model (Ollama only) */
++  deleteModel?(model: string): Promise<void>
++
++  /** Check if a model supports "thinking" capability */
++  checkModelHasThinking?(modelName: string): Promise<boolean>
++
++  /** Provider identifier */
++  readonly providerName: string
++}
+diff --git a/admin/app/services/llm/ollama_provider.ts b/admin/app/services/llm/ollama_provider.ts
+new file mode 100644
+index 0000000..d355a84
+--- /dev/null
++++ b/admin/app/services/llm/ollama_provider.ts
+@@ -0,0 +1,161 @@
++/**
++ * Ollama LLM provider.
++ *
++ * Wraps the existing Ollama SDK usage. Docker-based service discovery is
++ * contained here — if LLM_HOST is set, it's used directly; otherwise
++ * falls back to Docker discovery.
++ */
++
++import { Ollama } from 'ollama'
++import logger from '@adonisjs/core/services/logger'
++import env from '#start/env'
++import { SERVICE_NAMES } from '../../../constants/service_names.js'
++import type {
++  LLMProvider,
++  ChatRequest,
++  ChatResponse,
++  ChatStreamChunk,
++  EmbeddingResult,
++  ModelInfo,
++} from './llm_provider.js'
++
++export class OllamaProvider implements LLMProvider {
++  readonly providerName = 'ollama'
++  private ollama: Ollama | null = null
++  private initPromise: Promise<void> | null = null
++
++  private async _initialize() {
++    if (!this.initPromise) {
++      this.initPromise = (async () => {
++        const host = env.get('LLM_HOST') || env.get('OLLAMA_HOST')
++        if (host) {
++          this.ollama = new Ollama({ host })
++          return
++        }
++
++        // Fall back to Docker discovery
++        const dockerService = new (await import('../docker_service.js')).DockerService()
++        const url = await dockerService.getServiceURL(SERVICE_NAMES.OLLAMA)
++        if (!url) {
++          throw new Error('Ollama service is not installed or running.')
++        }
++        this.ollama = new Ollama({ host: url })
++      })()
++    }
++    return this.initPromise
++  }
++
++  private async _ensureClient(): Promise<Ollama> {
++    if (!this.ollama) {
++      await this._initialize()
++    }
++    if (!this.ollama) {
++      throw new Error('Ollama client is not initialized.')
++    }
++    return this.ollama
++  }
++
++  async chat(request: ChatRequest): Promise<ChatResponse> {
++    const client = await this._ensureClient()
++    const result = await client.chat({
++      model: request.model,
++      messages: request.messages,
++      stream: false,
++      think: request.think as any,
++      options: request.options,
++    })
++    return {
++      message: {
++        role: result.message.role,
++        content: result.message.content,
++      },
++      done: true,
++    }
++  }
++
++  async chatStream(request: ChatRequest): Promise<AsyncIterable<ChatStreamChunk>> {
++    const client = await this._ensureClient()
++    const stream = await client.chat({
++      model: request.model,
++      messages: request.messages,
++      stream: true,
++      think: request.think as any,
++      options: request.options,
++    })
++    // The Ollama SDK returns an AbortableAsyncIterator which is already AsyncIterable
++    return stream as any
++  }
++
++  async embed(model: string, input: string[]): Promise<EmbeddingResult> {
++    const client = await this._ensureClient()
++    const result = await client.embed({
++      model,
++      input,
++    })
++    return {
++      embeddings: result.embeddings,
++    }
++  }
++
++  async listModels(includeEmbeddings = false): Promise<ModelInfo[]> {
++    const client = await this._ensureClient()
++    const response = await client.list()
++    const models = response.models.map((m) => ({
++      name: m.name,
++      size: m.size,
++      modified_at: m.modified_at?.toString(),
++    }))
++    if (includeEmbeddings) {
++      return models
++    }
++    return models.filter((m) => !m.name.includes('embed'))
++  }
++
++  supportsModelManagement(): boolean {
++    return true
++  }
++
++  async pullModel(model: string, progressCallback?: (percent: number) => void): Promise<{ success: boolean; message: string }> {
++    try {
++      const client = await this._ensureClient()
++
++      // Check if already installed
++      const models = await this.listModels(true)
++      if (models.some((m) => m.name === model)) {
++        logger.info(`[OllamaProvider] Model "${model}" is already installed.`)
++        return { success: true, message: 'Model is already installed.' }
++      }
++
++      const downloadStream = await client.pull({ model, stream: true })
++      for await (const chunk of downloadStream) {
++        if (chunk.completed && chunk.total) {
++          const percent = parseFloat(((chunk.completed / chunk.total) * 100).toFixed(2))
++          if (progressCallback) {
++            progressCallback(percent)
++          }
++        }
++      }
++
++      logger.info(`[OllamaProvider] Model "${model}" downloaded successfully.`)
++      return { success: true, message: 'Model downloaded successfully.' }
++    } catch (error) {
++      logger.error(`[OllamaProvider] Failed to download model "${model}": ${error instanceof Error ? error.message : error}`)
++      return { success: false, message: 'Failed to download model.' }
++    }
++  }
++
++  async deleteModel(model: string): Promise<void> {
++    const client = await this._ensureClient()
++    await client.delete({ model })
++  }
++
++  async checkModelHasThinking(modelName: string): Promise<boolean> {
++    try {
++      const client = await this._ensureClient()
++      const modelInfo = await client.show({ model: modelName })
++      return modelInfo.capabilities.includes('thinking')
++    } catch {
++      return false
++    }
++  }
++}
+diff --git a/admin/app/services/llm/openai_provider.ts b/admin/app/services/llm/openai_provider.ts
+new file mode 100644
+index 0000000..16c3da3
+--- /dev/null
++++ b/admin/app/services/llm/openai_provider.ts
+@@ -0,0 +1,202 @@
++/**
++ * OpenAI-compatible LLM provider.
++ *
++ * Works with any server implementing the OpenAI API (llama-cpp, vLLM, LiteLLM, etc.).
++ * Uses fetch() — no extra npm dependency needed.
++ */
++
++import logger from '@adonisjs/core/services/logger'
++import type {
++  LLMProvider,
++  ChatRequest,
++  ChatResponse,
++  ChatStreamChunk,
++  EmbeddingResult,
++  ModelInfo,
++} from './llm_provider.js'
++
++export interface OpenAIProviderConfig {
++  baseURL: string // e.g., http://llama-cpp:8080/v1
++  apiKey?: string
++}
++
++export class OpenAIProvider implements LLMProvider {
++  readonly providerName = 'openai'
++  private baseURL: string
++  private apiKey: string
++
++  constructor(config: OpenAIProviderConfig) {
++    // Strip trailing slash
++    this.baseURL = config.baseURL.replace(/\/+$/, '')
++    this.apiKey = config.apiKey || 'unused'
++  }
++
++  private headers(): Record<string, string> {
++    return {
++      'Content-Type': 'application/json',
++      'Authorization': `Bearer ${this.apiKey}`,
++    }
++  }
++
++  async chat(request: ChatRequest): Promise<ChatResponse> {
++    const response = await fetch(`${this.baseURL}/chat/completions`, {
++      method: 'POST',
++      headers: this.headers(),
++      body: JSON.stringify({
++        model: request.model,
++        messages: request.messages,
++        temperature: request.options?.temperature,
++        max_tokens: request.options?.num_predict,
++        stream: false,
++      }),
++    })
++
++    if (!response.ok) {
++      const text = await response.text()
++      throw new Error(`OpenAI API error ${response.status}: ${text}`)
++    }
++
++    const data = await response.json()
++    return {
++      message: {
++        role: data.choices[0].message.role,
++        content: data.choices[0].message.content,
++      },
++      done: true,
++    }
++  }
++
++  async chatStream(request: ChatRequest): Promise<AsyncIterable<ChatStreamChunk>> {
++    const response = await fetch(`${this.baseURL}/chat/completions`, {
++      method: 'POST',
++      headers: this.headers(),
++      body: JSON.stringify({
++        model: request.model,
++        messages: request.messages,
++        temperature: request.options?.temperature,
++        max_tokens: request.options?.num_predict,
++        stream: true,
++      }),
++    })
++
++    if (!response.ok) {
++      const text = await response.text()
++      throw new Error(`OpenAI API error ${response.status}: ${text}`)
++    }
++
++    const reader = response.body!.getReader()
++    const decoder = new TextDecoder()
++
++    return {
++      [Symbol.asyncIterator]() {
++        let buffer = ''
++        return {
++          async next(): Promise<IteratorResult<ChatStreamChunk>> {
++            while (true) {
++              // Process any complete lines in buffer
++              const lineEnd = buffer.indexOf('\n')
++              if (lineEnd !== -1) {
++                const line = buffer.slice(0, lineEnd).trim()
++                buffer = buffer.slice(lineEnd + 1)
++
++                if (line === 'data: [DONE]') {
++                  return { done: true, value: undefined as any }
++                }
++
++                if (line.startsWith('data: ')) {
++                  try {
++                    const json = JSON.parse(line.slice(6))
++                    const delta = json.choices?.[0]?.delta
++                    const finishReason = json.choices?.[0]?.finish_reason
++
++                    if (delta?.content || finishReason === 'stop') {
++                      return {
++                        done: false,
++                        value: {
++                          message: {
++                            role: delta?.role || 'assistant',
++                            content: delta?.content || '',
++                          },
++                          done: finishReason === 'stop',
++                        },
++                      }
++                    }
++                  } catch {
++                    // Skip malformed JSON lines
++                  }
++                }
++                continue
++              }
++
++              // Read more data
++              const { done, value } = await reader.read()
++              if (done) {
++                return { done: true, value: undefined as any }
++              }
++              buffer += decoder.decode(value, { stream: true })
++            }
++          },
++        }
++      },
++    }
++  }
++
++  async embed(model: string, input: string[]): Promise<EmbeddingResult> {
++    const response = await fetch(`${this.baseURL}/embeddings`, {
++      method: 'POST',
++      headers: this.headers(),
++      body: JSON.stringify({
++        model,
++        input,
++      }),
++    })
++
++    if (!response.ok) {
++      const text = await response.text()
++      throw new Error(`OpenAI embeddings API error ${response.status}: ${text}`)
++    }
++
++    const data = await response.json()
++    return {
++      embeddings: data.data.map((d: any) => d.embedding),
++    }
++  }
++
++  async listModels(includeEmbeddings = false): Promise<ModelInfo[]> {
++    try {
++      const response = await fetch(`${this.baseURL}/models`, {
++        headers: this.headers(),
++      })
++
++      if (!response.ok) {
++        logger.warn(`[OpenAIProvider] Failed to list models: ${response.status}`)
++        return []
++      }
++
++      const data = await response.json()
++      const models = data.data.map((m: any) => ({
++        name: m.id,
++        size: 0,
++        modified_at: m.created ? new Date(m.created * 1000).toISOString() : undefined,
++      }))
++
++      if (includeEmbeddings) {
++        return models
++      }
++      return models.filter((m: ModelInfo) => !m.name.includes('embed'))
++    } catch (error) {
++      logger.error(`[OpenAIProvider] Failed to list models: ${error instanceof Error ? error.message : error}`)
++      return []
++    }
++  }
++
++  supportsModelManagement(): boolean {
++    return false
++  }
++
++  async checkModelHasThinking(_modelName: string): Promise<boolean> {
++    // OpenAI-compatible servers don't expose capability metadata
++    // Default to false — can be overridden via env config in the future
++    return false
++  }
++}
+diff --git a/admin/app/services/llm/provider_factory.ts b/admin/app/services/llm/provider_factory.ts
+new file mode 100644
+index 0000000..ff38980
+--- /dev/null
++++ b/admin/app/services/llm/provider_factory.ts
+@@ -0,0 +1,53 @@
++/**
++ * LLM Provider factory.
++ *
++ * Creates the appropriate LLM provider based on environment configuration.
++ *
++ * Environment variables:
++ *   LLM_PROVIDER  — 'ollama' | 'openai'  (default: 'ollama')
++ *   LLM_HOST      — Base URL for LLM API (required for openai, optional for ollama)
++ *   LLM_API_KEY   — API key (default: 'unused', for local servers)
++ *   OLLAMA_HOST   — Legacy fallback for Ollama host
++ */
++
++import env from '#start/env'
++import logger from '@adonisjs/core/services/logger'
++import type { LLMProvider } from './llm_provider.js'
++import { OllamaProvider } from './ollama_provider.js'
++import { OpenAIProvider } from './openai_provider.js'
++
++let _instance: LLMProvider | null = null
++
++export function createLLMProvider(): LLMProvider {
++  if (_instance) {
++    return _instance
++  }
++
++  const providerType = env.get('LLM_PROVIDER', 'ollama')
++  const host = env.get('LLM_HOST') || env.get('OLLAMA_HOST', '')
++
++  switch (providerType) {
++    case 'openai': {
++      if (!host) {
++        throw new Error('LLM_HOST is required when LLM_PROVIDER=openai')
++      }
++      const apiKey = env.get('LLM_API_KEY', 'unused')
++      logger.info(`[LLMFactory] Creating OpenAI provider → ${host}`)
++      _instance = new OpenAIProvider({ baseURL: host, apiKey })
++      break
++    }
++    case 'ollama':
++    default: {
++      logger.info(`[LLMFactory] Creating Ollama provider${host ? ` → ${host}` : ' (Docker discovery)'}`)
++      _instance = new OllamaProvider()
++      break
++    }
++  }
++
++  return _instance
++}
++
++/** Reset the singleton (for testing) */
++export function resetLLMProvider() {
++  _instance = null
++}
+diff --git a/admin/app/services/ollama_service.ts b/admin/app/services/ollama_service.ts
+index 24367a1..63b7561 100644
+--- a/admin/app/services/ollama_service.ts
++++ b/admin/app/services/ollama_service.ts
+@@ -1,5 +1,4 @@
+ import { inject } from '@adonisjs/core'
+-import { ChatRequest, Ollama } from 'ollama'
+ import { NomadOllamaModel } from '../../types/ollama.js'
+ import { FALLBACK_RECOMMENDED_OLLAMA_MODELS } from '../../constants/ollama.js'
+ import fs from 'node:fs/promises'
+@@ -7,12 +6,13 @@ import path from 'node:path'
+ import logger from '@adonisjs/core/services/logger'
+ import axios from 'axios'
+ import { DownloadModelJob } from '#jobs/download_model_job'
+-import { SERVICE_NAMES } from '../../constants/service_names.js'
+ import transmit from '@adonisjs/transmit/services/main'
+ import Fuse, { IFuseOptions } from 'fuse.js'
+ import { BROADCAST_CHANNELS } from '../../constants/broadcast.js'
+ import env from '#start/env'
+ import { NOMAD_API_DEFAULT_BASE_URL } from '../../constants/misc.js'
++import { createLLMProvider } from './llm/provider_factory.js'
++import type { LLMProvider, ChatRequest as LLMChatRequest } from './llm/llm_provider.js'
+ 
+ const NOMAD_MODELS_API_PATH = '/api/v1/ollama/models'
+ const MODELS_CACHE_FILE = path.join(process.cwd(), 'storage', 'ollama-models-cache.json')
+@@ -20,81 +20,45 @@ const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000 // 24 hours
+ 
+ @inject()
+ export class OllamaService {
+-  private ollama: Ollama | null = null
+-  private ollamaInitPromise: Promise<void> | null = null
++  private _provider: LLMProvider | null = null
+ 
+   constructor() { }
+ 
+-  private async _initializeOllamaClient() {
+-    if (!this.ollamaInitPromise) {
+-      this.ollamaInitPromise = (async () => {
+-        const dockerService = new (await import('./docker_service.js')).DockerService()
+-        const qdrantUrl = await dockerService.getServiceURL(SERVICE_NAMES.OLLAMA)
+-        if (!qdrantUrl) {
+-          throw new Error('Ollama service is not installed or running.')
+-        }
+-        this.ollama = new Ollama({ host: qdrantUrl })
+-      })()
+-    }
+-    return this.ollamaInitPromise
+-  }
+-
+-  private async _ensureDependencies() {
+-    if (!this.ollama) {
+-      await this._initializeOllamaClient()
++  /** Lazily creates the LLM provider singleton */
++  public get provider(): LLMProvider {
++    if (!this._provider) {
++      this._provider = createLLMProvider()
+     }
++    return this._provider
+   }
+ 
+   /**
+-   * Downloads a model from the Ollama service with progress tracking. Where possible,
+-   * one should dispatch a background job instead of calling this method directly to avoid long blocking.
+-   * @param model Model name to download
+-   * @returns Success status and message
++   * Downloads a model with progress tracking. Only works with providers that
++   * support model management (Ollama). For OpenAI-compatible providers, returns
++   * a message indicating that model management is not supported.
+    */
+   async downloadModel(model: string, progressCallback?: (percent: number) => void): Promise<{ success: boolean; message: string }> {
+-    try {
+-      await this._ensureDependencies()
+-      if (!this.ollama) {
+-        throw new Error('Ollama client is not initialized.')
+-      }
++    if (!this.provider.supportsModelManagement() || !this.provider.pullModel) {
++      return { success: false, message: 'Model management is not supported by the current LLM provider.' }
++    }
+ 
+-      // See if model is already installed
+-      const installedModels = await this.getModels()
+-      if (installedModels && installedModels.some((m) => m.name === model)) {
+-        logger.info(`[OllamaService] Model "${model}" is already installed.`)
+-        return { success: true, message: 'Model is already installed.' }
++    const wrappedCallback = progressCallback
++      ? (percent: number) => {
++        this.broadcastDownloadProgress(model, percent)
++        progressCallback(percent)
+       }
+-
+-      // Returns AbortableAsyncIterator<ProgressResponse>
+-      const downloadStream = await this.ollama.pull({
+-        model,
+-        stream: true,
+-      })
+-
+-      for await (const chunk of downloadStream) {
+-        if (chunk.completed && chunk.total) {
+-          const percent = ((chunk.completed / chunk.total) * 100).toFixed(2)
+-          const percentNum = parseFloat(percent)
+-
+-          this.broadcastDownloadProgress(model, percentNum)
+-          if (progressCallback) {
+-            progressCallback(percentNum)
+-          }
+-        }
++      : (percent: number) => {
++        this.broadcastDownloadProgress(model, percent)
+       }
+ 
+-      logger.info(`[OllamaService] Model "${model}" downloaded successfully.`)
+-      return { success: true, message: 'Model downloaded successfully.' }
+-    } catch (error) {
+-      logger.error(
+-        `[OllamaService] Failed to download model "${model}": ${error instanceof Error ? error.message : error
+-        }`
+-      )
+-      return { success: false, message: 'Failed to download model.' }
+-    }
++    return this.provider.pullModel(model, wrappedCallback)
+   }
+ 
+   async dispatchModelDownload(modelName: string): Promise<{ success: boolean; message: string }> {
++    if (!this.provider.supportsModelManagement()) {
++      return { success: false, message: 'Model management is not supported by the current LLM provider.' }
++    }
++
+     try {
+       logger.info(`[OllamaService] Dispatching model download for ${modelName} via job queue`)
+ 
+@@ -118,68 +82,38 @@ export class OllamaService {
+     }
+   }
+ 
+-  public async getClient() {
+-    await this._ensureDependencies()
+-    return this.ollama!
++  public async chat(chatRequest: LLMChatRequest) {
++    return await this.provider.chat(chatRequest)
+   }
+ 
+-  public async chat(chatRequest: ChatRequest & { stream?: boolean }) {
+-    await this._ensureDependencies()
+-    if (!this.ollama) {
+-      throw new Error('Ollama client is not initialized.')
+-    }
+-    return await this.ollama.chat({
+-      ...chatRequest,
+-      stream: false,
+-    })
+-  }
+-
+-  public async chatStream(chatRequest: ChatRequest) {
+-    await this._ensureDependencies()
+-    if (!this.ollama) {
+-      throw new Error('Ollama client is not initialized.')
+-    }
+-    return await this.ollama.chat({
+-      ...chatRequest,
+-      stream: true,
+-    })
++  public async chatStream(chatRequest: LLMChatRequest) {
++    return await this.provider.chatStream(chatRequest)
+   }
+ 
+   public async checkModelHasThinking(modelName: string): Promise<boolean> {
+-    await this._ensureDependencies()
+-    if (!this.ollama) {
+-      throw new Error('Ollama client is not initialized.')
++    if (this.provider.checkModelHasThinking) {
++      return this.provider.checkModelHasThinking(modelName)
+     }
+-
+-    const modelInfo = await this.ollama.show({
+-      model: modelName,
+-    })
+-
+-    return modelInfo.capabilities.includes('thinking')
++    return false
+   }
+ 
+   public async deleteModel(modelName: string) {
+-    await this._ensureDependencies()
+-    if (!this.ollama) {
+-      throw new Error('Ollama client is not initialized.')
++    if (!this.provider.supportsModelManagement() || !this.provider.deleteModel) {
++      throw new Error('Model management is not supported by the current LLM provider.')
+     }
+-
+-    return await this.ollama.delete({
+-      model: modelName,
+-    })
++    return await this.provider.deleteModel(modelName)
+   }
+ 
+   public async getModels(includeEmbeddings = false) {
+-    await this._ensureDependencies()
+-    if (!this.ollama) {
+-      throw new Error('Ollama client is not initialized.')
+-    }
+-    const response = await this.ollama.list()
+-    if (includeEmbeddings) {
+-      return response.models
+-    }
+-    // Filter out embedding models
+-    return response.models.filter((model) => !model.name.includes('embed'))
++    return await this.provider.listModels(includeEmbeddings)
++  }
++
++  /**
++   * Embed text using the LLM provider. Convenience wrapper for the provider's
++   * embed method, used by RagService.
++   */
++  public async embed(model: string, input: string[]) {
++    return await this.provider.embed(model, input)
+   }
+ 
+   async getAvailableModels(
+diff --git a/admin/app/services/rag_service.ts b/admin/app/services/rag_service.ts
+index e6ac043..c27509e 100644
+--- a/admin/app/services/rag_service.ts
++++ b/admin/app/services/rag_service.ts
+@@ -17,6 +17,7 @@ import KVStore from '#models/kv_store'
+ import { ZIMExtractionService } from './zim_extraction_service.js'
+ import { ZIM_BATCH_SIZE } from '../../constants/zim_extraction.js'
+ import { ProcessAndEmbedFileResponse, ProcessZIMFileResponse, RAGResult, RerankedRAGResult } from '../../types/rag.js'
++import env from '#start/env'
+ 
+ @inject()
+ export class RagService {
+@@ -25,16 +26,16 @@ export class RagService {
+   private embeddingModelVerified = false
+   public static UPLOADS_STORAGE_PATH = 'storage/kb_uploads'
+   public static CONTENT_COLLECTION_NAME = 'nomad_knowledge_base'
+-  public static EMBEDDING_MODEL = 'nomic-embed-text:v1.5'
+-  public static EMBEDDING_DIMENSION = 768 // Nomic Embed Text v1.5 dimension is 768
++  public static EMBEDDING_MODEL = env.get('EMBEDDING_MODEL', 'nomic-embed-text:v1.5')
++  public static EMBEDDING_DIMENSION = parseInt(env.get('EMBEDDING_DIMENSIONS', '768')) // Nomic Embed Text v1.5 dimension is 768
+   public static MODEL_CONTEXT_LENGTH = 2048 // nomic-embed-text has 2K token context
+   public static MAX_SAFE_TOKENS = 1800 // Leave buffer for prefix and tokenization variance
+   public static TARGET_TOKENS_PER_CHUNK = 1700 // Target 1700 tokens per chunk for embedding
+   public static PREFIX_TOKEN_BUDGET = 10 // Reserve ~10 tokens for prefixes
+   public static CHAR_TO_TOKEN_RATIO = 3 // Approximate chars per token
+   // Nomic Embed Text v1.5 uses task-specific prefixes for optimal performance
+-  public static SEARCH_DOCUMENT_PREFIX = 'search_document: '
+-  public static SEARCH_QUERY_PREFIX = 'search_query: '
++  public static SEARCH_DOCUMENT_PREFIX = env.get('EMBEDDING_SEARCH_DOC_PREFIX', 'search_document: ')
++  public static SEARCH_QUERY_PREFIX = env.get('EMBEDDING_SEARCH_QUERY_PREFIX', 'search_query: ')
+   public static EMBEDDING_BATCH_SIZE = 8 // Conservative batch size for low-end hardware
+ 
+   constructor(
+@@ -45,6 +46,12 @@ export class RagService {
+   private async _initializeQdrantClient() {
+     if (!this.qdrantInitPromise) {
+       this.qdrantInitPromise = (async () => {
++        // Prefer QDRANT_HOST env var (K8s/BYO), fall back to Docker discovery
++        const qdrantHost = env.get('QDRANT_HOST', '')
++        if (qdrantHost) {
++          this.qdrant = new QdrantClient({ url: qdrantHost })
++          return
++        }
+         const qdrantUrl = await this.dockerService.getServiceURL(SERVICE_NAMES.QDRANT)
+         if (!qdrantUrl) {
+           throw new Error('Qdrant service is not installed or running.')
+@@ -285,8 +292,6 @@ export class RagService {
+       // Extract text from chunk results
+       const chunks = chunkResults.map((chunk) => chunk.text)
+ 
+-      const ollamaClient = await this.ollamaService.getClient()
+-
+       // Prepare all chunk texts with prefix and truncation
+       const prefixedChunks: string[] = []
+       for (let i = 0; i < chunks.length; i++) {
+@@ -320,10 +325,7 @@ export class RagService {
+ 
+         logger.debug(`[RAG] Embedding batch ${batchIdx + 1}/${totalBatches} (${batch.length} chunks)`)
+ 
+-        const response = await ollamaClient.embed({
+-          model: RagService.EMBEDDING_MODEL,
+-          input: batch,
+-        })
++        const response = await this.ollamaService.embed(RagService.EMBEDDING_MODEL, batch)
+ 
+         embeddings.push(...response.embeddings)
+ 
+@@ -709,9 +711,6 @@ export class RagService {
+       const keywords = this.extractKeywords(processedQuery)
+       logger.debug(`[RAG] Extracted keywords: [${keywords.join(', ')}]`)
+ 
+-      // Generate embedding for the query with search_query prefix
+-      const ollamaClient = await this.ollamaService.getClient()
+-
+       // Ensure query doesn't exceed token limit
+       const prefixTokens = this.estimateTokenCount(RagService.SEARCH_QUERY_PREFIX)
+       const maxQueryTokens = RagService.MAX_SAFE_TOKENS - prefixTokens
+@@ -729,10 +728,7 @@ export class RagService {
+         return []
+       }
+ 
+-      const response = await ollamaClient.embed({
+-        model: RagService.EMBEDDING_MODEL,
+-        input: [prefixedQuery],
+-      })
++      const response = await this.ollamaService.embed(RagService.EMBEDDING_MODEL, [prefixedQuery])
+ 
+       // Perform semantic search with a higher limit to enable reranking
+       const searchLimit = limit * 3 // Get more results for reranking
+diff --git a/admin/start/env.ts b/admin/start/env.ts
+index ddf9b5f..84c5614 100644
+--- a/admin/start/env.ts
++++ b/admin/start/env.ts
+@@ -60,4 +60,36 @@ export default await Env.create(new URL('../', import.meta.url), {
+   |----------------------------------------------------------
+   */
+   NOMAD_API_URL: Env.schema.string.optional(),
++
++  /*
++  |----------------------------------------------------------
++  | Variables for configuring the LLM provider
++  |----------------------------------------------------------
++  */
++  LLM_PROVIDER: Env.schema.enum.optional(['ollama', 'openai'] as const),
++  LLM_HOST: Env.schema.string.optional(),
++  LLM_API_KEY: Env.schema.string.optional(),
++  OLLAMA_HOST: Env.schema.string.optional(),
++
++  /*
++  |----------------------------------------------------------
++  | Variables for configuring embeddings (RAG)
++  |----------------------------------------------------------
++  */
++  EMBEDDING_MODEL: Env.schema.string.optional(),
++  EMBEDDING_DIMENSIONS: Env.schema.string.optional(),
++  EMBEDDING_SEARCH_DOC_PREFIX: Env.schema.string.optional(),
++  EMBEDDING_SEARCH_QUERY_PREFIX: Env.schema.string.optional(),
++  QDRANT_HOST: Env.schema.string.optional(),
++
++  /*
++  |----------------------------------------------------------
++  | Variables for companion service URLs (BYO pattern)
++  |----------------------------------------------------------
++  */
++  KIWIX_URL: Env.schema.string.optional(),
++  KOLIBRI_URL: Env.schema.string.optional(),
++  PROTOMAPS_URL: Env.schema.string.optional(),
++  CYBERCHEF_URL: Env.schema.string.optional(),
++  FLATNOTES_URL: Env.schema.string.optional(),
+ })
