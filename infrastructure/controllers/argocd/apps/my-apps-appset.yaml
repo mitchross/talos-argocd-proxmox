@@ -12,6 +12,8 @@ spec:
       revision: main
       directories:
       - path: my-apps/*/*
+      - path: my-apps/home/project-nomad/*
+        exclude: true
   template:
     metadata:
       name: 'my-apps-{{path.basename}}'

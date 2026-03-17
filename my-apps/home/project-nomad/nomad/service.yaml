@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: project-nomad
+  namespace: project-nomad
+  labels:
+    app: project-nomad
+spec:
+  selector:
+    app: project-nomad
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP

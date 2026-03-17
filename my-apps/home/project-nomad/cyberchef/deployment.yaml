@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cyberchef
+  namespace: project-nomad
+  labels:
+    app: project-nomad-cyberchef
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: project-nomad-cyberchef
+  template:
+    metadata:
+      labels:
+        app: project-nomad-cyberchef
+    spec:
+      containers:
+        - name: cyberchef
+          image: ghcr.io/gchq/cyberchef:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
