@@ -24,9 +24,30 @@ spec:
           volumeMounts:
             - name: nomad-storage
               mountPath: /app/storage
+        - name: migrate
+          image: ghcr.io/mitchross/project-nomad:sha-a14f44f
+          command: ["sh", "-c", "node ace migration:run --force && node ace db:seed"]
+          envFrom:
+            - configMapRef:
+                name: project-nomad-config
+          env:
+            - name: APP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: project-nomad-secrets
+                  key: APP_KEY
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: project-nomad-secrets
+                  key: DB_PASSWORD
+          volumeMounts:
+            - name: nomad-storage
+              mountPath: /app/storage
       containers:
         - name: project-nomad
           image: ghcr.io/mitchross/project-nomad:sha-a14f44f
+          command: ["sh", "-c", "node ace queue:work --all & exec node bin/server.js"]
           ports:
             - containerPort: 8080
               name: http
