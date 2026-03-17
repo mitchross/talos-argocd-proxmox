@@ -212,15 +212,15 @@ grafana:
         revision: 36
         datasource: Prometheus
     logging:
-      loki-kubernetes-logs:
-        gnetId: 15141
-        revision: 1
+      loki-logs-app:
+        gnetId: 13639
+        revision: 2
         datasource:
           - name: DS_LOKI
             value: Loki
-      loki-container-log-dashboard:
-        gnetId: 16966
-        revision: 1
+      loki-quick-search:
+        gnetId: 12019
+        revision: 2
         datasource:
           - name: DS_LOKI
             value: Loki
