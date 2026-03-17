@@ -45,14 +45,14 @@
       "WebFetch(domain:neuralnet.solutions)"
     ],
     "deny": [
-      "Bash(git push:*)",
-      "Bash(git commit:*)",
       "Bash(git reset --hard:*)",
       "Bash(git clean:*)",
       "Bash(git branch -D:*)",
       "Bash(git branch -d:*)"
     ],
     "ask": [
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
       "Bash(git merge:*)",
       "Bash(git rebase:*)",
       "Bash(git reset:*)",
