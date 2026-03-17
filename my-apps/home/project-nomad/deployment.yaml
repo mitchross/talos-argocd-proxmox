@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: project-nomad
-          image: ghcr.io/mitchross/project-nomad:main
+          image: ghcr.io/mitchross/project-nomad:sha-a14f44f
           ports:
             - containerPort: 8080
               name: http
