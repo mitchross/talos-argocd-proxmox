@@ -17,7 +17,7 @@ data:
   DB_SSL: "false"
   REDIS_HOST: "redis"
   REDIS_PORT: "6379"
-  NOMAD_STORAGE_PATH: "/opt/project-nomad/storage"
+  NOMAD_STORAGE_PATH: "/app/storage"
   URL: "https://nomad.vanillax.me"
   # LLM Provider — use OpenAI-compatible API (llama-cpp)
   LLM_PROVIDER: "openai"

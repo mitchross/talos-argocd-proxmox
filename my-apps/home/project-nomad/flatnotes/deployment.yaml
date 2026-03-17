@@ -17,6 +17,7 @@ spec:
       labels:
         app: project-nomad-flatnotes
     spec:
+      enableServiceLinks: false
       containers:
         - name: flatnotes
           image: dullage/flatnotes:latest

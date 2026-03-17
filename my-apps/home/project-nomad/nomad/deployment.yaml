@@ -46,7 +46,7 @@ spec:
               memory: 2Gi
           volumeMounts:
             - name: nomad-storage
-              mountPath: /opt/project-nomad/storage
+              mountPath: /app/storage
           livenessProbe:
             httpGet:
               path: /api/health
