@@ -17,6 +17,13 @@ spec:
       labels:
         app: project-nomad-kiwix
     spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: project-nomad
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: kiwix
           image: ghcr.io/kiwix/kiwix-serve:3.8.1

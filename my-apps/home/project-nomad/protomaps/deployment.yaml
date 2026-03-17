@@ -20,6 +20,7 @@ spec:
       containers:
         - name: protomaps
           image: protomaps/go-pmtiles:latest
+          args: ["serve", "/data"]
           ports:
             - containerPort: 8080
               name: http

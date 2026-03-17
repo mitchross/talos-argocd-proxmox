@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: kolibri
-          image: learningequality/kolibri:latest
+          image: treehouses/kolibri:latest
           ports:
             - containerPort: 8080
               name: http
