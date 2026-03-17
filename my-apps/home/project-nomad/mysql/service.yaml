@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: project-nomad
+  labels:
+    app: project-nomad-mysql
+spec:
+  selector:
+    app: project-nomad-mysql
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: 3306
+  type: ClusterIP

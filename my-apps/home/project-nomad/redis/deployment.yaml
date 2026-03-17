@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: project-nomad
+  labels:
+    app: project-nomad-redis
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: project-nomad-redis
+  template:
+    metadata:
+      labels:
+        app: project-nomad-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+              name: redis
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi

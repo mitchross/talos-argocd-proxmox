@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: project-nomad
+  namespace: project-nomad
+  labels:
+    app: project-nomad
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: project-nomad
+  template:
+    metadata:
+      labels:
+        app: project-nomad
+    spec:
+      containers:
+        - name: project-nomad
+          image: ghcr.io/mitchross/project-nomad:sha-a14f44f
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: project-nomad-config
+          env:
+            - name: APP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: project-nomad-secrets
+                  key: APP_KEY
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: project-nomad-secrets
+                  key: DB_PASSWORD
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+          volumeMounts:
+            - name: nomad-storage
+              mountPath: /opt/project-nomad/storage
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+      volumes:
+        - name: nomad-storage
+          persistentVolumeClaim:
+            claimName: nomad-storage
