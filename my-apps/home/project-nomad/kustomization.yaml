@@ -25,10 +25,10 @@ resources:
   # Kiwix (offline Wikipedia)
   - kiwix/deployment.yaml
   - kiwix/service.yaml
-  # Kolibri (Khan Academy)
-  - kolibri/deployment.yaml
-  - kolibri/service.yaml
-  - kolibri/pvc.yaml
+  # Kolibri (Khan Academy) — disabled, upstream image (treehouses/kolibri:0.12.8) is broken (Python 2.7)
+  # - kolibri/deployment.yaml
+  # - kolibri/service.yaml
+  # - kolibri/pvc.yaml
   # ProtoMaps (offline maps)
   - protomaps/deployment.yaml
   - protomaps/service.yaml

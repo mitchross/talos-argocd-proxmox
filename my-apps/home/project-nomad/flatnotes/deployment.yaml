@@ -20,7 +20,10 @@ spec:
       enableServiceLinks: false
       containers:
         - name: flatnotes
-          image: dullage/flatnotes:latest
+          image: dullage/flatnotes:v5.5.4
+          env:
+            - name: FLATNOTES_AUTH_TYPE
+              value: "none"
           ports:
             - containerPort: 8080
               name: http
