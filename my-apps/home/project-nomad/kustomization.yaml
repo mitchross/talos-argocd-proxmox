@@ -4,38 +4,39 @@ namespace: project-nomad
 
 resources:
   - namespace.yaml
-  - externalsecret.yaml
   - configmap.yaml
-  - pvc.yaml
+  - externalsecret.yaml
   # Core — Nomad app
-  - deployment.yaml
-  - service.yaml
-  - httproute.yaml
+  - nomad/deployment.yaml
+  - nomad/service.yaml
+  - nomad/httproute.yaml
+  - nomad/pvc.yaml
   # MySQL
-  - mysql-deployment.yaml
-  - mysql-service.yaml
+  - mysql/deployment.yaml
+  - mysql/service.yaml
+  - mysql/pvc.yaml
   # Redis
-  - redis-deployment.yaml
-  - redis-service.yaml
+  - redis/deployment.yaml
+  - redis/service.yaml
   # Qdrant (vector DB for RAG)
-  - qdrant-deployment.yaml
-  - qdrant-service.yaml
-  - qdrant-pvc.yaml
+  - qdrant/deployment.yaml
+  - qdrant/service.yaml
+  - qdrant/pvc.yaml
   # Kiwix (offline Wikipedia)
-  - kiwix-deployment.yaml
-  - kiwix-service.yaml
+  - kiwix/deployment.yaml
+  - kiwix/service.yaml
   # Kolibri (Khan Academy)
-  - kolibri-deployment.yaml
-  - kolibri-service.yaml
-  - kolibri-pvc.yaml
+  - kolibri/deployment.yaml
+  - kolibri/service.yaml
+  - kolibri/pvc.yaml
   # ProtoMaps (offline maps)
-  - protomaps-deployment.yaml
-  - protomaps-service.yaml
-  - protomaps-pvc.yaml
+  - protomaps/deployment.yaml
+  - protomaps/service.yaml
+  - protomaps/pvc.yaml
   # CyberChef (data tools — stateless)
-  - cyberchef-deployment.yaml
-  - cyberchef-service.yaml
+  - cyberchef/deployment.yaml
+  - cyberchef/service.yaml
   # FlatNotes (note-taking)
-  - flatnotes-deployment.yaml
-  - flatnotes-service.yaml
-  - flatnotes-pvc.yaml
+  - flatnotes/deployment.yaml
+  - flatnotes/service.yaml
+  - flatnotes/pvc.yaml
