@@ -17,6 +17,13 @@ spec:
       labels:
         app: project-nomad
     spec:
+      initContainers:
+        - name: init-storage
+          image: busybox:1.36
+          command: ["sh", "-c", "mkdir -p /app/storage/logs"]
+          volumeMounts:
+            - name: nomad-storage
+              mountPath: /app/storage
       containers:
         - name: project-nomad
           image: ghcr.io/mitchross/project-nomad:sha-a14f44f
