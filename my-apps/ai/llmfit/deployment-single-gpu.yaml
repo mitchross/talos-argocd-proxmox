@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llmfit-single-gpu
+  namespace: llmfit
+  labels:
+    app: llmfit-single
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llmfit-single
+  template:
+    metadata:
+      labels:
+        app: llmfit-single
+    spec:
+      runtimeClassName: nvidia
+      priorityClassName: gpu-workload-high
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      - key: "gpu"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      containers:
+      - name: llmfit
+        image: ghcr.io/alexsjones/llmfit:latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: "4000m"
+            memory: 16Gi
+            nvidia.com/gpu: "1"
+          requests:
+            cpu: "1000m"
+            memory: 8Gi
+            nvidia.com/gpu: "1"
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
