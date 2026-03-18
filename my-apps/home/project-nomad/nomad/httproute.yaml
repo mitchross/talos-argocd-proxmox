@@ -13,6 +13,7 @@ spec:
       kind: Gateway
       name: gateway-external
       namespace: gateway
+      sectionName: https
   hostnames:
     - "nomad.vanillax.me"
   rules:
