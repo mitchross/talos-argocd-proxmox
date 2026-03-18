@@ -248,8 +248,11 @@ grafana:
       access: proxy
       url: http://loki-gateway.loki-stack.svc.cluster.local
       jsonData:
+        httpHeaderName1: X-Scope-OrgID
         timeout: 60
         maxLines: 1000
+      secureJsonData:
+        httpHeaderValue1: "1"
         derivedFields:
           - datasourceUid: prometheus-uid
             matcherRegex: "(?:logger=rpc\\.server|report).*?(?:traceID|trace_id)=([a-f\\d]+)"
