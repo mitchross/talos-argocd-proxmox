@@ -8,10 +8,10 @@ metadata:
     policies.kyverno.io/title: Auto-Generate VPA for All Workloads
     policies.kyverno.io/description: >-
       Automatically creates a VerticalPodAutoscaler for every Deployment,
-      StatefulSet, and DaemonSet. Replaces Goldilocks controller.
-      Uses updateMode "Off" (recommend only, manual GitOps tuning).
+      StatefulSet, and DaemonSet. Uses InPlaceOrRecreate mode for automatic
+      resource tuning with in-place resizing (K8s 1.32+).
 spec:
-  mutateExistingOnPolicyUpdate: false
+  mutateExistingOnPolicyUpdate: true
   background: true
   rules:
     - name: generate-vpa
@@ -50,4 +50,4 @@ spec:
               kind: "{{request.object.kind}}"
               name: "{{request.object.metadata.name}}"
             updatePolicy:
-              updateMode: "Off"
+              updateMode: "InPlaceOrRecreate"
