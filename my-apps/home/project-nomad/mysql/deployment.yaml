@@ -33,10 +33,10 @@ spec:
               value: "nomad"
           resources:
             requests:
-              cpu: 250m
+              cpu: 25m
               memory: 512Mi
             limits:
-              cpu: 1000m
+              cpu: 500m
               memory: 1Gi
           volumeMounts:
             - name: mysql-data

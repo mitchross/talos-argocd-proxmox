@@ -25,8 +25,8 @@ spec:
               name: redis
           resources:
             requests:
-              cpu: 100m
+              cpu: 15m
               memory: 128Mi
             limits:
-              cpu: 500m
+              cpu: 250m
               memory: 256Mi

@@ -67,11 +67,11 @@ spec:
                   key: DB_PASSWORD
           resources:
             requests:
-              cpu: 500m
-              memory: 1Gi
+              cpu: 25m
+              memory: 384Mi
             limits:
-              cpu: 2000m
-              memory: 2Gi
+              cpu: 1000m
+              memory: 1Gi
           volumeMounts:
             - name: nomad-storage
               mountPath: /app/storage
