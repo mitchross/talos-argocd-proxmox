@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llmfit-dual-gpu
+  namespace: llmfit
+  labels:
+    app: llmfit-dual
+spec:
+  replicas: 0 # Scaled to 0 by default, scale up when you want to use dual GPU
+  selector:
+    matchLabels:
+      app: llmfit-dual
+  template:
+    metadata:
+      labels:
+        app: llmfit-dual
+    spec:
+      runtimeClassName: nvidia
+      priorityClassName: gpu-workload-high
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      - key: "gpu"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      containers:
+      - name: llmfit
+        image: ghcr.io/alexsjones/llmfit:latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: "8000m"
+            memory: 32Gi
+            nvidia.com/gpu: "2"
+          requests:
+            cpu: "2000m"
+            memory: 16Gi
+            nvidia.com/gpu: "2"
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
