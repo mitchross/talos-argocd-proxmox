@@ -8,17 +8,14 @@ data:
     # ==========================================================
     # GENERAL + VISION + CODE - Qwen3.5-35B-A3B [MULTIMODAL]
     # Single GPU (1x RTX 3090) — second GPU freed for ComfyUI
+    # ctx-size 32768: keeps model 100% on GPU (131K overflows VRAM,
+    # --fit spills layers to CPU and kills decode speed)
     # ==========================================================
     [general - qwen3.5]
-    # 35B total / 3B active (MoE) - Gated DeltaNet + Gated Attention
-    # Natively multimodal (vision + language), 256K context native
-    # Q4_K_XL (20.6GB) + mmproj (858MB) fits in 1x 24GB RTX 3090
-    # Qwen official "precise" thinking params: temp=0.6, top_p=0.95, top_k=20, presence_penalty=0.0
-    # General thinking params use presence_penalty=1.5 but causes thinking loops on simple questions
     model = /models/Qwen3.5-35B-A3B-UD-Q4_K_XL.gguf
     mmproj = /models/mmproj-F16.gguf
-    alias = qwen3.5, qwen 3.5, general, vision, image, multimodal, coder, code
-    ctx-size = 131072
+    alias = qwen3.5, qwen 3.5, general, vision, image, multimodal, coder, code, think
+    ctx-size = 32768
     n-gpu-layers = 99
     temp = 0.6
     top-p = 0.95
@@ -35,8 +32,8 @@ data:
     [nothink - qwen3.5]
     model = /models/Qwen3.5-35B-A3B-UD-Q4_K_XL.gguf
     mmproj = /models/mmproj-F16.gguf
-    alias = nothink
-    ctx-size = 131072
+    alias = nothink, fast
+    ctx-size = 32768
     n-gpu-layers = 99
     temp = 0.6
     top-p = 0.95
@@ -47,15 +44,15 @@ data:
     jinja = 1
 
     # ==========================================================
-    # UNCENSORED - HauhauCS Aggressive variant [MULTIMODAL]
+    # UNCENSORED (THINK) - HauhauCS Aggressive variant
     # Same Qwen3.5-35B-A3B base, uncensored fine-tune
-    # Q4_K_M (21.2GB) + mmproj fits in 1x 24GB RTX 3090
+    # Uses base mmproj — uncensored fine-tune shares vision encoder
     # ==========================================================
     [uncensored - qwen3.5-uncensored]
     model = /models/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive-Q4_K_M.gguf
-    mmproj = /models/mmproj-Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive-f16.gguf
-    alias = uncensored, nsfw, hauhau, aggressive
-    ctx-size = 131072
+    mmproj = /models/mmproj-F16.gguf
+    alias = uncensored, nsfw, hauhau, aggressive, obliterated, think-uncensored
+    ctx-size = 32768
     n-gpu-layers = 99
     temp = 0.6
     top-p = 0.95
@@ -63,4 +60,22 @@ data:
     min-p = 0.0
     presence-penalty = 0.0
     chat-template-kwargs = {"enable_thinking": true}
+    jinja = 1
+
+    # ==========================================================
+    # UNCENSORED (NO-THINK) - Fast uncensored responses
+    # Same GGUF as think variant — switching is instant (no reload)
+    # ==========================================================
+    [nothink-uncensored - qwen3.5-uncensored-nothink]
+    model = /models/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive-Q4_K_M.gguf
+    mmproj = /models/mmproj-F16.gguf
+    alias = nothink-uncensored, nothink-nsfw, fast-uncensored, nothink-obliterated
+    ctx-size = 32768
+    n-gpu-layers = 99
+    temp = 0.6
+    top-p = 0.95
+    top-k = 20
+    min-p = 0.0
+    presence-penalty = 0.0
+    chat-template-kwargs = {"enable_thinking": false}
     jinja = 1
