@@ -76,7 +76,7 @@ spec:
             - name: LLAMA_SET_ROWS
               value: "1"          # Split KV cache mode - eliminates cross-sequence attention waste
             - name: GGML_CUDA_ENABLE_UNIFIED_MEMORY
-              value: "1" # Spill to system RAM if VRAM is tight with Q4_K_XL + KV cache
+              value: "0" # Disabled: unified memory silently spills to system RAM over PCIe, 200x slower
           ports:
             - name: http
               containerPort: 8080
