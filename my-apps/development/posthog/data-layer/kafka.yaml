@@ -42,8 +42,8 @@ spec:
             --schema-registry-addr internal://0.0.0.0:8081,external://0.0.0.0:18081 \
             --rpc-addr 0.0.0.0:33145 \
             --advertise-rpc-addr kafka:33145 \
-            --smp 2 \
-            --memory 2G \
+            --smp 1 \
+            --memory 1G \
             --reserve-memory 200M \
             --overprovisioned \
             --unsafe-bypass-fsync
