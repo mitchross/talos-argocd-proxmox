@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: excalidraw
+  namespace: excalidraw
+spec:
+  selector:
+    app: excalidraw
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+  type: ClusterIP

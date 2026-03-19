@@ -22,3 +22,6 @@ data:
   PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS: "true"
   PAPERLESS_REDIS: "redis://redis-master.redis-instance.svc.cluster.local:6379"
   PAPERLESS_URL: "https://paperless.vanillax.me"
+  PAPERLESS_TIKA_ENABLED: "1"
+  PAPERLESS_TIKA_ENDPOINT: "http://tika.paperless-ngx.svc.cluster.local:9998"
+  PAPERLESS_TIKA_GOTENBERG_ENDPOINT: "http://gotenberg.paperless-ngx.svc.cluster.local:3000"

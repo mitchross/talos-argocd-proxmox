@@ -12,3 +12,4 @@ resources:
   - service.yaml
   - httproute.yaml
   - externalsecret.yaml
+  - tika-gotenberg.yaml
