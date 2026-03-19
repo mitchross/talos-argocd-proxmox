@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: tika
-          image: ghcr.io/paperless-ngx/tika:latest
+          image: apache/tika:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
