@@ -46,11 +46,10 @@ data:
     # ==========================================================
     # UNCENSORED (THINK) - HauhauCS Aggressive variant
     # Same Qwen3.5-35B-A3B base, uncensored fine-tune
-    # Uses base mmproj — uncensored fine-tune shares vision encoder
     # ==========================================================
     [uncensored - qwen3.5-uncensored]
     model = /models/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive-Q4_K_M.gguf
-    mmproj = /models/mmproj-F16.gguf
+    mmproj = /models/mmproj-Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive-f16.gguf
     alias = uncensored, nsfw, hauhau, aggressive, obliterated, think-uncensored
     ctx-size = 32768
     n-gpu-layers = 99
@@ -68,7 +67,7 @@ data:
     # ==========================================================
     [nothink-uncensored - qwen3.5-uncensored-nothink]
     model = /models/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive-Q4_K_M.gguf
-    mmproj = /models/mmproj-F16.gguf
+    mmproj = /models/mmproj-Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive-f16.gguf
     alias = nothink-uncensored, nothink-nsfw, fast-uncensored, nothink-obliterated
     ctx-size = 32768
     n-gpu-layers = 99
