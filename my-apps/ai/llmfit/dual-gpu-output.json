@@ -1,0 +1,201 @@
+{
+  "models": [
+    {
+      "best_quant": "AWQ-4bit",
+      "category": "Coding",
+      "context_length": 262144,
+      "estimated_tps": 308.3,
+      "fit_level": "Good",
+      "gguf_sources": [],
+      "is_moe": true,
+      "memory_available_gb": 24.0,
+      "memory_required_gb": 15.6,
+      "moe_offloaded_gb": null,
+      "name": "QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ",
+      "notes": [
+        "GPU: model loaded into VRAM",
+        "MoE: all 128 experts loaded in VRAM (optimal)",
+        "Baseline estimated speed: 308.3 tok/s"
+      ],
+      "parameter_count": "30.5B",
+      "params_b": 30.53,
+      "provider": "quanttrio",
+      "release_date": "2025-08-01",
+      "run_mode": "GPU",
+      "runtime": "vLLM",
+      "runtime_label": "vLLM",
+      "score": 97.0,
+      "score_components": {
+        "context": 100.0,
+        "fit": 100.0,
+        "quality": 94.0,
+        "speed": 100.0
+      },
+      "total_memory_gb": 15.6,
+      "use_case": "Code generation and completion",
+      "utilization_pct": 65.0
+    },
+    {
+      "best_quant": "Q4_K_M",
+      "category": "Chat",
+      "context_length": 4096,
+      "estimated_tps": 48.5,
+      "fit_level": "Good",
+      "gguf_sources": [],
+      "is_moe": true,
+      "memory_available_gb": 24.0,
+      "memory_required_gb": 18.29,
+      "moe_offloaded_gb": 207.74,
+      "name": "meta-llama/Llama-4-Maverick-17B-128E-Instruct",
+      "notes": [
+        "MoE: 1/16 experts active in VRAM (18.3 GB) at Q8_0",
+        "Inactive experts offloaded to system RAM (376.1 GB)",
+        "Baseline estimated speed: 48.5 tok/s"
+      ],
+      "parameter_count": "401.6B",
+      "params_b": 401.58,
+      "provider": "Meta",
+      "release_date": "2025-04-01",
+      "run_mode": "MoE",
+      "runtime": "llama.cpp",
+      "runtime_label": "llama.cpp",
+      "score": 96.8,
+      "score_components": {
+        "context": 100.0,
+        "fit": 100.0,
+        "quality": 92.0,
+        "speed": 100.0
+      },
+      "total_memory_gb": 226.03,
+      "use_case": "Instruction following, chat",
+      "utilization_pct": 76.2
+    },
+    {
+      "best_quant": "Q4_K_M",
+      "category": "Reasoning",
+      "context_length": 196608,
+      "estimated_tps": 82.4,
+      "fit_level": "Good",
+      "gguf_sources": [],
+      "is_moe": true,
+      "memory_available_gb": 24.0,
+      "memory_required_gb": 10.76,
+      "moe_offloaded_gb": 118.14,
+      "name": "MiniMaxAI/MiniMax-M2.7",
+      "notes": [
+        "MoE: 8/256 experts active in VRAM (10.8 GB) at Q8_0",
+        "Inactive experts offloaded to system RAM (213.9 GB)",
+        "Baseline estimated speed: 82.4 tok/s"
+      ],
+      "parameter_count": "228.7B",
+      "params_b": 228.7,
+      "provider": "minimaxai",
+      "release_date": "2026-03-18",
+      "run_mode": "MoE",
+      "runtime": "llama.cpp",
+      "runtime_label": "llama.cpp",
+      "score": 96.6,
+      "score_components": {
+        "context": 100.0,
+        "fit": 95.9,
+        "quality": 95.0,
+        "speed": 100.0
+      },
+      "total_memory_gb": 128.89,
+      "use_case": "Latest flagship with enhanced reasoning and coding",
+      "utilization_pct": 44.8
+    },
+    {
+      "best_quant": "Q4_K_M",
+      "category": "General",
+      "context_length": 262144,
+      "estimated_tps": 48.5,
+      "fit_level": "Good",
+      "gguf_sources": [],
+      "is_moe": true,
+      "memory_available_gb": 24.0,
+      "memory_required_gb": 18.29,
+      "moe_offloaded_gb": 208.72,
+      "name": "Qwen/Qwen3.5-397B-A17B",
+      "notes": [
+        "MoE: 8/256 experts active in VRAM (18.3 GB) at Q8_0",
+        "Inactive experts offloaded to system RAM (377.9 GB)",
+        "Baseline estimated speed: 48.5 tok/s"
+      ],
+      "parameter_count": "403.4B",
+      "params_b": 403.4,
+      "provider": "Alibaba",
+      "release_date": "2026-02-16",
+      "run_mode": "MoE",
+      "runtime": "llama.cpp",
+      "runtime_label": "llama.cpp",
+      "score": 96.4,
+      "score_components": {
+        "context": 100.0,
+        "fit": 100.0,
+        "quality": 92.0,
+        "speed": 100.0
+      },
+      "total_memory_gb": 227.01,
+      "use_case": "General purpose",
+      "utilization_pct": 76.2
+    },
+    {
+      "best_quant": "AWQ-4bit",
+      "category": "Coding",
+      "context_length": 32768,
+      "estimated_tps": 46.3,
+      "fit_level": "Perfect",
+      "gguf_sources": [],
+      "is_moe": false,
+      "memory_available_gb": 24.0,
+      "memory_required_gb": 17.46,
+      "moe_offloaded_gb": null,
+      "name": "solidrust/Codestral-22B-v0.1-hf-AWQ",
+      "notes": [
+        "Insufficient VRAM and system RAM",
+        "Need 11.4 GB VRAM or 12.4 GB system RAM",
+        "Baseline estimated speed: 46.3 tok/s"
+      ],
+      "parameter_count": "22.2B",
+      "params_b": 22.25,
+      "provider": "solidrust",
+      "release_date": "2024-05-30",
+      "run_mode": "GPU",
+      "runtime": "vLLM",
+      "runtime_label": "vLLM",
+      "score": 96.0,
+      "score_components": {
+        "context": 100.0,
+        "fit": 100.0,
+        "quality": 92.0,
+        "speed": 100.0
+      },
+      "total_memory_gb": 17.46,
+      "use_case": "Code generation and completion",
+      "utilization_pct": 72.7
+    }
+  ],
+  "system": {
+    "available_ram_gb": 425.52,
+    "backend": "CUDA",
+    "cpu_cores": 36,
+    "cpu_name": "Intel(R) Xeon(R) CPU E5-2680 v4 @ 2.40GHz",
+    "gpu_count": 1,
+    "gpu_name": "NVIDIA GeForce RTX 3090",
+    "gpu_vram_gb": 24.0,
+    "gpus": [
+      {
+        "backend": "CUDA",
+        "count": 1,
+        "name": "NVIDIA GeForce RTX 3090",
+        "unified_memory": false,
+        "vram_gb": 24.0
+      }
+    ],
+    "has_gpu": true,
+    "total_ram_gb": 492.05,
+    "unified_memory": false
+  }
+}
+ERROR: init 250 result=11
