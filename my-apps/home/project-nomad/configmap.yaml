@@ -28,9 +28,9 @@ data:
   EMBEDDING_DIMENSIONS: "768"
   # Qdrant vector DB
   QDRANT_HOST: "http://qdrant.project-nomad.svc.cluster.local:6333"
-  # Companion services (all deployed in-cluster)
-  KIWIX_URL: "http://kiwix.project-nomad.svc.cluster.local:8080"
-  KOLIBRI_URL: "http://kolibri.project-nomad.svc.cluster.local:8080"
+  # Companion services — external URLs for browser access via HTTPRoutes
+  KIWIX_URL: "https://kiwix.vanillax.me"
+  KOLIBRI_URL: "https://kolibri.vanillax.me"
   PROTOMAPS_URL: "http://protomaps.project-nomad.svc.cluster.local:8080"
-  CYBERCHEF_URL: "http://cyberchef.project-nomad.svc.cluster.local:8080"
-  FLATNOTES_URL: "http://flatnotes.project-nomad.svc.cluster.local:8080"
+  CYBERCHEF_URL: "https://cyberchef.vanillax.me"
+  FLATNOTES_URL: "https://flatnotes.vanillax.me"
