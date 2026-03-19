@@ -1,20 +1,19 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: batch/v1
+kind: Job
 metadata:
-  name: llmfit-dual-gpu
+  name: llmfit-single-gpu
   namespace: llmfit
   labels:
-    app: llmfit-dual
+    app: llmfit-single
 spec:
-  replicas: 0 # Scaled to 0 by default, scale up when you want to use dual GPU
-  selector:
-    matchLabels:
-      app: llmfit-dual
+  # Set suspend: true if you want to pause this job next time so it doesn't run automatically
+  suspend: false
   template:
     metadata:
       labels:
-        app: llmfit-dual
+        app: llmfit-single
     spec:
+      restartPolicy: Never
       runtimeClassName: nvidia
       priorityClassName: gpu-workload-high
       tolerations:
@@ -31,12 +30,12 @@ spec:
         imagePullPolicy: Always
         resources:
           limits:
-            cpu: "8000m"
-            memory: 32Gi
-            nvidia.com/gpu: "2"
-          requests:
-            cpu: "2000m"
+            cpu: "4000m"
             memory: 16Gi
-            nvidia.com/gpu: "2"
+            nvidia.com/gpu: "1"
+          requests:
+            cpu: "1000m"
+            memory: 8Gi
+            nvidia.com/gpu: "1"
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"

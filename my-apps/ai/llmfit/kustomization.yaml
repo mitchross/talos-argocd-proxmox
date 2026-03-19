@@ -4,5 +4,5 @@ namespace: llmfit
 
 resources:
   - namespace.yaml
-  - deployment-single-gpu.yaml
-  - deployment-dual-gpu.yaml
+  - job-single-gpu.yaml
+  - job-dual-gpu.yaml
