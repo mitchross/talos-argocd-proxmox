@@ -66,6 +66,15 @@ spec:
         - .spec.data[].remoteRef.conversionStrategy
         - .spec.data[].remoteRef.decodingStrategy
         - .spec.data[].remoteRef.metadataPolicy
+      # Kyverno injects reloader annotation at admission — not in Git source
+      - group: apps
+        kind: Deployment
+        jqPathExpressions:
+        - .spec.template.metadata.annotations."reloader.stakater.com/match"
+      - group: apps
+        kind: StatefulSet
+        jqPathExpressions:
+        - .spec.template.metadata.annotations."reloader.stakater.com/match"
       # PVC fields that are immutable after creation
       - group: ""
         kind: PersistentVolumeClaim
