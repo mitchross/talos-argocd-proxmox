@@ -66,16 +66,16 @@ spec:
       # Kyverno injects reloader annotation at admission — not in Git source
       - group: apps
         kind: Deployment
-        jqPathExpressions:
-        - .metadata.annotations."reloader.stakater.com/match"
+        jsonPointers:
+        - /metadata/annotations/reloader.stakater.com~1match
       - group: apps
         kind: StatefulSet
-        jqPathExpressions:
-        - .metadata.annotations."reloader.stakater.com/match"
+        jsonPointers:
+        - /metadata/annotations/reloader.stakater.com~1match
       - group: apps
         kind: DaemonSet
-        jqPathExpressions:
-        - .metadata.annotations."reloader.stakater.com/match"
+        jsonPointers:
+        - /metadata/annotations/reloader.stakater.com~1match
       # PVC fields that are immutable after creation - needed for Volume Populator
       - group: ""
         kind: PersistentVolumeClaim
