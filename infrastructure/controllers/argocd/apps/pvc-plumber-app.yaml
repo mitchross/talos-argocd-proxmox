@@ -32,3 +32,13 @@ spec:
         duration: 10s
         factor: 2
         maxDuration: 5m
+  ignoreDifferences:
+  - group: external-secrets.io
+    kind: ExternalSecret
+    jqPathExpressions:
+    - .status
+    - .metadata.generation
+    - .metadata.finalizers
+    - .spec.data[].remoteRef.conversionStrategy
+    - .spec.data[].remoteRef.decodingStrategy
+    - .spec.data[].remoteRef.metadataPolicy
