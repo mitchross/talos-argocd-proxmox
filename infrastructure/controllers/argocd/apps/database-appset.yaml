@@ -70,11 +70,11 @@ spec:
       - group: apps
         kind: Deployment
         jqPathExpressions:
-        - .spec.template.metadata.annotations."reloader.stakater.com/match"
+        - .metadata.annotations."reloader.stakater.com/match"
       - group: apps
         kind: StatefulSet
         jqPathExpressions:
-        - .spec.template.metadata.annotations."reloader.stakater.com/match"
+        - .metadata.annotations."reloader.stakater.com/match"
       # PVC fields that are immutable after creation
       - group: ""
         kind: PersistentVolumeClaim

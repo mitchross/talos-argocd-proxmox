@@ -65,15 +65,15 @@ spec:
       - group: apps
         kind: Deployment
         jqPathExpressions:
-        - .spec.template.metadata.annotations."reloader.stakater.com/match"
+        - .metadata.annotations."reloader.stakater.com/match"
       - group: apps
         kind: StatefulSet
         jqPathExpressions:
-        - .spec.template.metadata.annotations."reloader.stakater.com/match"
+        - .metadata.annotations."reloader.stakater.com/match"
       - group: apps
         kind: DaemonSet
         jqPathExpressions:
-        - .spec.template.metadata.annotations."reloader.stakater.com/match"
+        - .metadata.annotations."reloader.stakater.com/match"
       - group: ""
         kind: PersistentVolumeClaim
         jqPathExpressions:
