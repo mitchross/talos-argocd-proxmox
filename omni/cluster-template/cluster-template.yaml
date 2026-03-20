@@ -23,6 +23,7 @@ patches:
     kind: ResolverConfig
     nameservers:
     - address: 192.168.10.1
+- file: patches/docker-hub-auth.yaml
 - name: node-performance
   inline:
     machine:
