@@ -53,7 +53,7 @@ spec:
             - "--cache-type-k"
             - "q8_0"            # Quantize KV cache ~50% savings vs f16, negligible quality loss
             - "--cache-type-v"
-            - "q4_0"            # q4_0 saves ~1.3GB VRAM vs q8_0, fits uncensored Q4_K_M (21.2GB) + KV in 24GB
+            - "q8_0"            # q8_0 not q4_0: Qwen GQA models sensitive to V cache quantization, q4_0 adds ~0.2 perplexity
             - "-t"
             - "4"               # Low thread count for fully GPU-offloaded model (auto-detect picks too many in K8s)
             - "-b"
@@ -76,7 +76,7 @@ spec:
             - name: LLAMA_SET_ROWS
               value: "1"          # Split KV cache mode - eliminates cross-sequence attention waste
             - name: GGML_CUDA_ENABLE_UNIFIED_MEMORY
-              value: "0" # Disabled: unified memory silently spills to system RAM over PCIe, 200x slower
+              value: "1" # Spill to system RAM if VRAM is tight with Q4_K_XL + KV cache
           ports:
             - name: http
               containerPort: 8080
