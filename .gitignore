@@ -73,6 +73,9 @@ infra/controllers/external-secrets/external-secrets-token.env
 # GPG keys
 *.asc
 
+# Talos registry credentials
+omni/cluster-template/patches/docker-hub-auth.yaml
+
 # Sidero Omni / Proxmox provider (generated secrets & runtime configs)
 omni/omni/.env
 omni/proxmox-provider/.env

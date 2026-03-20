@@ -1,0 +1,7 @@
+machine:
+  registries:
+    config:
+      docker.io:
+        auth:
+          username: "your-dockerhub-username"
+          password: "dckr_pat_your-access-token-here"
