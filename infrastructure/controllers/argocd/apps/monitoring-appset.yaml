@@ -51,10 +51,12 @@ spec:
         - /spec/rules/0/backendRefs/0/group
         - /spec/rules/0/backendRefs/0/kind
         - /spec/rules/0/backendRefs/0/weight
+        - /status
       - group: external-secrets.io
         kind: ExternalSecret
         jqPathExpressions:
         - .status
+        - .metadata.generation
         - .metadata.finalizers
         - .spec.data[].remoteRef.conversionStrategy
         - .spec.data[].remoteRef.decodingStrategy

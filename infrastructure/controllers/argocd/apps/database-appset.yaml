@@ -61,7 +61,16 @@ spec:
         kind: ExternalSecret
         jqPathExpressions:
         - .status
+        - .metadata.generation
         - .metadata.finalizers
         - .spec.data[].remoteRef.conversionStrategy
         - .spec.data[].remoteRef.decodingStrategy
         - .spec.data[].remoteRef.metadataPolicy
+      # PVC fields that are immutable after creation
+      - group: ""
+        kind: PersistentVolumeClaim
+        jqPathExpressions:
+        - .spec.dataSourceRef
+        - .spec.dataSource
+        - .spec.volumeName
+        - .spec.resources.requests.storage

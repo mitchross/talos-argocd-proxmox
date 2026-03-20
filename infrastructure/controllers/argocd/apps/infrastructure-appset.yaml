@@ -71,6 +71,7 @@ spec:
         - /spec/rules/0/backendRefs/0/group
         - /spec/rules/0/backendRefs/0/kind
         - /spec/rules/0/backendRefs/0/weight
+        - /status
       - group: gateway.networking.k8s.io
         kind: Gateway
         jsonPointers:
@@ -79,6 +80,7 @@ spec:
         kind: ExternalSecret
         jqPathExpressions:
         - .status
+        - .metadata.generation
         - .metadata.finalizers
         - .spec.data[].remoteRef.conversionStrategy
         - .spec.data[].remoteRef.decodingStrategy

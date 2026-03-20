@@ -12,7 +12,6 @@
 | `nfs-llama-cpp-10g` | NFS 10G for LLM models |
 | `smb-csi` | Windows shares |
 | `local-path` | Node-local fast storage |
-| `openebs-hostpath` | OpenEBS local storage |
 
 ## Longhorn PVC Template
 
