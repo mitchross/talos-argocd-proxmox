@@ -8,8 +8,6 @@ metadata:
     app: nestmtx
     type: storage
     backup: "daily"
-  annotations:
-    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
     - ReadWriteOnce

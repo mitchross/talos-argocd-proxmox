@@ -7,8 +7,6 @@ metadata:
     app: jellyfin
     type: config
     # backup: "daily"  # Disabled - deployment not running (node affinity)
-  annotations:
-    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   storageClassName: longhorn
   accessModes:

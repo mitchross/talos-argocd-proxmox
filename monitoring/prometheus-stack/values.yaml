@@ -24,7 +24,6 @@ prometheus:
             # Longhorn backup settings - Important tier for monitoring data
             longhorn.io/recurring-job-source: enabled
             longhorn.io/recurring-job-group: important
-            volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
         spec:
           storageClassName: longhorn
           accessModes:
@@ -91,7 +90,6 @@ alertmanager:
             # Longhorn backup settings - Important tier for alerting data
             longhorn.io/recurring-job-source: enabled
             longhorn.io/recurring-job-group: important
-            volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
         spec:
           storageClassName: longhorn
           accessModes:
@@ -134,7 +132,6 @@ grafana:
       # Longhorn backup settings - Important tier for dashboard data
       longhorn.io/recurring-job-source: enabled
       longhorn.io/recurring-job-group: important
-      volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
   # Resource allocation
   resources:
     requests:

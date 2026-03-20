@@ -6,8 +6,6 @@ metadata:
   labels:
     app: proxitok
     type: cache
-  annotations:
-    volume.beta.kubernetes.io/storage-provisioner: driver.longhorn.io
 spec:
   accessModes:
     - ReadWriteOnce

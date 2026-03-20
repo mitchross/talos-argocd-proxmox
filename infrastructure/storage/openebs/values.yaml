@@ -5,6 +5,13 @@ engines:
   replicated:
     mayastor:
       enabled: true # Explicitly enable Mayastor replicated engine
+  local:
+    hostpath:
+      enabled: false # Explicitly disable hostpath engine
+    lvm:
+      enabled: false # Disable LVM engine
+    zfs:
+      enabled: false # Disable ZFS engine
 mayastor:
   csi:
     node:
@@ -19,14 +26,7 @@ mayastor:
   singleReplicaSc:
     enabled: false # Disable openebs-single-replica SC (if this flag exists)
 # --- Disable Local Engines ---
-engines:
-  local:
-    hostpath:
-      enabled: false # Explicitly disable hostpath engine
-    lvm:
-      enabled: false # Disable LVM engine
-    zfs:
-      enabled: false # Disable ZFS engine
+# (Moved to the main engines block above)
 # Disable the Local PV provisioner (handles openebs-hostpath SC)
 localprovisioner:
   enabled: false
