@@ -8,7 +8,7 @@ metadata:
 spec:
   # Suspended by default so it doesn't consume both GPUs until you explicitly allow it
   # Change to suspend: false when you want to run a dual-gpu benchmark
-  suspend: true
+  suspend: false
   template:
     metadata:
       labels:
@@ -28,7 +28,7 @@ spec:
       containers:
       - name: llmfit
         image: ghcr.io/alexsjones/llmfit:latest
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         resources:
           limits:
             cpu: "8000m"

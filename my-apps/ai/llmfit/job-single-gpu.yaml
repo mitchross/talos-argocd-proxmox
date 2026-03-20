@@ -27,7 +27,7 @@ spec:
       containers:
       - name: llmfit
         image: ghcr.io/alexsjones/llmfit:latest
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         resources:
           limits:
             cpu: "4000m"

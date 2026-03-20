@@ -22,7 +22,7 @@ spec:
       containers:
         - name: fizzy
           image: ghcr.io/basecamp/fizzy:sha-d729cf5
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           env:
             - name: TZ
               value: America/Detroit
