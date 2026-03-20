@@ -50,7 +50,7 @@ spec:
         - containerPort: 8188
         env:
         - name: CLI_ARGS
-          value: "--use-sage-attention --listen 0.0.0.0 --port 8188"
+          value: "--listen 0.0.0.0 --port 8188"
         # RTX 3090 = Ampere architecture = compute capability 8.6
         - name: TORCH_CUDA_ARCH_LIST
           value: "8.6"
