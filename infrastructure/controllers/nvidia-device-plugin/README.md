@@ -6,7 +6,7 @@ This repository uses a **standalone NVIDIA Device Plugin** deployment (without G
 
 - **GPU**: RTX 3090 (Consumer/Gaming GPU)
 - **Time Slicing**: ✅ Enabled via standalone device plugin (4 slices/GPU)
-- **Power Limiting**: ✅ Enabled (300W for stability with time-slicing)
+- **Power Limiting**: ✅ Enabled (275W for stability with time-slicing)
 - **Talos Version**: 1.10
 - **Device Plugin**: Standalone deployment (no GPU Operator)
 
@@ -181,10 +181,10 @@ kubectl delete pods gpu-test-1 gpu-test-2 gpu-test-3 gpu-test-4 -n gpu-device-pl
 
 ## ⚡ Power Management for RTX 3090
 
-The RTX 3090 has a default power limit of 350W, which can cause thermal issues in containerized environments. This setup automatically limits power to 300W for optimal stability with time-slicing workloads.
+The RTX 3090 has a default power limit of 350W, which can cause thermal issues in containerized environments. This setup automatically limits power to 275W for optimal stability with time-slicing workloads.
 
 ### Power Limit Features
-- **Initial Setup**: Sets 300W limit on startup
+- **Initial Setup**: Sets 275W limit on startup
 - **Persistence Mode**: Enables GPU persistence for better performance
 - **Monitoring**: Checks every 30 minutes and resets if needed
 - **Utilization Tracking**: Shows GPU usage for time-slicing monitoring
@@ -266,7 +266,7 @@ kubectl exec -it <device-plugin-pod> -n gpu-device-plugin -- ls -la /var/lib/kub
 After successful deployment:
 - **GPU Capacity**: Each RTX 3090 shows as `nvidia.com/gpu: 4` (4 time slices)
 - **Total Available**: `nvidia.com/gpu: 8` (4 slices × 2 RTX 3090s)
-- **Power Limit**: GPUs limited to 300W for stability
+- **Power Limit**: GPUs limited to 275W for stability
 - **Resource Sharing**: Multiple pods can request `nvidia.com/gpu: "1"` and run on same physical GPU
 - **Thermal Management**: Better stability in containerized environments
 
@@ -290,7 +290,7 @@ After successful deployment:
             │
 ┌───────────▼────────────────┐
 │       RTX 3090             │
-│     (300W power cap)       │
+│     (275W power cap)       │
 └────────────────────────────┘
 ```
 

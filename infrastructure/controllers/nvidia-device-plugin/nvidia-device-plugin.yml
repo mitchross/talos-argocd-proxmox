@@ -19,8 +19,6 @@ spec:
     type: RollingUpdate
   template:
     metadata:
-      annotations:
-        scheduler.alpha.kubernetes.io/critical-pod: ""
       labels:
         app.kubernetes.io/component: device-plugin
         app.kubernetes.io/name: nvidia-device-plugin
