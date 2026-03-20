@@ -1,0 +1,87 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: vpa-alerts
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack
+    app.kubernetes.io/instance: kube-prometheus-stack
+    app.kubernetes.io/managed-by: Helm
+    prometheus: kube-prometheus-stack-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: vpa.recommendations
+      interval: 5m
+      rules:
+        # VPA exists but has no recommendation — metrics-server or VPA recommender issue
+        - alert: VPANoRecommendation
+          expr: |
+            (
+              count by (namespace, verticalpodautoscaler) (
+                verticalpodautoscaler_labels
+              )
+              unless on (namespace, verticalpodautoscaler)
+              count by (namespace, verticalpodautoscaler) (
+                verticalpodautoscaler_status_recommendation_containerrecommendations_target{resource="memory"}
+              )
+            ) > 0
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "VPA {{ $labels.verticalpodautoscaler }} in {{ $labels.namespace }} has no recommendation"
+            description: >-
+              VPA object exists but the recommender has not produced a recommendation
+              for over 1 hour. Check that metrics-server is running and the VPA
+              recommender pod is healthy.
+
+        # VPA recommends very high memory — potential memory leak
+        - alert: VPAHighMemoryTarget
+          expr: |
+            verticalpodautoscaler_status_recommendation_containerrecommendations_target{resource="memory", unit="byte"}
+            > 6442450944
+          for: 6h
+          labels:
+            severity: warning
+          annotations:
+            summary: "VPA recommends >6Gi memory for {{ $labels.verticalpodautoscaler }}/{{ $labels.container }} in {{ $labels.namespace }}"
+            description: >-
+              VPA target memory is {{ $value | humanize1024 }}B for container
+              {{ $labels.container }}. This may indicate a memory leak or a
+              workload that needs architectural review. Check via:
+              ./scripts/vpa-report.sh {{ $labels.namespace }}
+
+        # VPA memory lowerBound is climbing fast — workload is consistently under-resourced
+        - alert: VPAMemoryLowerBoundRising
+          expr: |
+            (
+              verticalpodautoscaler_status_recommendation_containerrecommendations_lowerbound{resource="memory", unit="byte"}
+              - verticalpodautoscaler_status_recommendation_containerrecommendations_lowerbound{resource="memory", unit="byte"} offset 24h
+            )
+            / verticalpodautoscaler_status_recommendation_containerrecommendations_lowerbound{resource="memory", unit="byte"} offset 24h
+            > 0.5
+          for: 6h
+          labels:
+            severity: info
+          annotations:
+            summary: "VPA memory lowerBound for {{ $labels.verticalpodautoscaler }}/{{ $labels.container }} rose >50% in 24h"
+            description: >-
+              The VPA memory lower bound in {{ $labels.namespace }} has increased
+              significantly. For infrastructure namespaces (Off mode), run
+              ./scripts/vpa-report.sh {{ $labels.namespace }} to review and
+              update resource requests in Git.
+
+        # VPA recommends high CPU — possible tight loop or inefficiency
+        - alert: VPAHighCPUTarget
+          expr: |
+            verticalpodautoscaler_status_recommendation_containerrecommendations_target{resource="cpu", unit="core"}
+            > 4
+          for: 6h
+          labels:
+            severity: info
+          annotations:
+            summary: "VPA recommends >4 CPU cores for {{ $labels.verticalpodautoscaler }}/{{ $labels.container }} in {{ $labels.namespace }}"
+            description: >-
+              VPA target CPU is {{ $value }} cores. Review workload efficiency
+              or consider if this is expected for the workload type.
