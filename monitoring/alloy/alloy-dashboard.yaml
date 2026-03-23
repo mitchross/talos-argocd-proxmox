@@ -1,0 +1,336 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alloy-otel-dashboard
+  namespace: alloy
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/name: grafana-dashboards
+data:
+  alloy-otel-pipeline.json: |
+    {
+      "annotations": {
+        "list": []
+      },
+      "editable": true,
+      "graphTooltip": 1,
+      "panels": [
+        {
+          "title": "Pipeline Overview",
+          "type": "row",
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+          "collapsed": false
+        },
+        {
+          "title": "Logs Sent (per second)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "fillOpacity": 15, "lineWidth": 2 },
+              "unit": "ops"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(otelcol_exporter_sent_log_records_total{job=~\".*alloy.*\"}[5m])) by (exporter)",
+              "legendFormat": "{{ exporter }}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Traces Sent (per second)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 1 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "fillOpacity": 15, "lineWidth": 2 },
+              "unit": "ops"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(otelcol_exporter_sent_spans_total{job=~\".*alloy.*\"}[5m])) by (exporter)",
+              "legendFormat": "{{ exporter }}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Metrics Sent (per second)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "fillOpacity": 15, "lineWidth": 2 },
+              "unit": "ops"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(otelcol_exporter_sent_metric_points_total{job=~\".*alloy.*\"}[5m])) by (exporter)",
+              "legendFormat": "{{ exporter }}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Export Failures",
+          "type": "row",
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+          "collapsed": false
+        },
+        {
+          "title": "Failed Log Exports",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 10 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "fixed", "fixedColor": "red" },
+              "custom": { "fillOpacity": 15, "lineWidth": 2 },
+              "unit": "ops"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(otelcol_exporter_send_failed_log_records_total{job=~\".*alloy.*\"}[5m])) by (exporter)",
+              "legendFormat": "{{ exporter }}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Failed Trace Exports",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 10 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "fixed", "fixedColor": "red" },
+              "custom": { "fillOpacity": 15, "lineWidth": 2 },
+              "unit": "ops"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(otelcol_exporter_send_failed_spans_total{job=~\".*alloy.*\"}[5m])) by (exporter)",
+              "legendFormat": "{{ exporter }}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Failed Metric Exports",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 10 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "fixed", "fixedColor": "red" },
+              "custom": { "fillOpacity": 15, "lineWidth": 2 },
+              "unit": "ops"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(otelcol_exporter_send_failed_metric_points_total{job=~\".*alloy.*\"}[5m])) by (exporter)",
+              "legendFormat": "{{ exporter }}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Resources & Health",
+          "type": "row",
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+          "collapsed": false
+        },
+        {
+          "title": "Alloy CPU Usage",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 19 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "fillOpacity": 15, "lineWidth": 2 },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"alloy\", container=\"alloy\"}[5m])) by (pod)",
+              "legendFormat": "{{ pod }}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Alloy Memory Usage",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 19 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "fillOpacity": 15, "lineWidth": 2 },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"alloy\", container=\"alloy\"}) by (pod)",
+              "legendFormat": "{{ pod }}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Queue Size (pending batches)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 19 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "fillOpacity": 15, "lineWidth": 2 },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(otelcol_exporter_queue_size{job=~\".*alloy.*\"}) by (exporter)",
+              "legendFormat": "{{ exporter }}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Honeycomb Status",
+          "type": "row",
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
+          "collapsed": false
+        },
+        {
+          "title": "Honeycomb Export Success Rate",
+          "type": "gauge",
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 28 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "thresholds": {
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "yellow", "value": 90 },
+                  { "color": "green", "value": 99 }
+                ]
+              },
+              "unit": "percent",
+              "min": 0,
+              "max": 100
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "100 * (1 - (sum(rate(otelcol_exporter_send_failed_log_records_total{job=~\".*alloy.*\", exporter=~\".*honeycomb.*\"}[5m])) / clamp_min(sum(rate(otelcol_exporter_sent_log_records_total{job=~\".*alloy.*\", exporter=~\".*honeycomb.*\"}[5m])), 1)))",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "HTTP Response Codes (Honeycomb)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 16, "x": 8, "y": 28 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "fillOpacity": 15, "lineWidth": 2 },
+              "unit": "ops"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(otelcol_exporter_requests_total{job=~\".*alloy.*\", exporter=~\".*honeycomb.*\"}[5m])) by (status_code)",
+              "legendFormat": "HTTP {{ status_code }}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Log Verification",
+          "type": "row",
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
+          "collapsed": false
+        },
+        {
+          "title": "Log Volume by Namespace (confirms logs flowing to Loki)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 37 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "fillOpacity": 15, "lineWidth": 2, "stacking": { "mode": "normal" } },
+              "unit": "ops"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(count_over_time({namespace=~\".+\"}[1m])) by (namespace)",
+              "legendFormat": "{{ namespace }}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "title": "Recent Pod Logs (sample)",
+          "type": "logs",
+          "gridPos": { "h": 12, "w": 12, "x": 12, "y": 37 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "options": {
+            "showTime": true,
+            "showLabels": true,
+            "showCommonLabels": false,
+            "wrapLogMessage": true,
+            "enableLogDetails": true,
+            "sortOrder": "Descending"
+          },
+          "targets": [
+            {
+              "expr": "{namespace=~\".+\"} | line_format \"{{.namespace}}/{{.pod}}: {{.__line__}}\"",
+              "maxLines": 100,
+              "refId": "A"
+            }
+          ]
+        }
+      ],
+      "schemaVersion": 39,
+      "tags": ["alloy", "otel", "honeycomb", "observability"],
+      "templating": { "list": [] },
+      "time": { "from": "now-1h", "to": "now" },
+      "title": "Alloy OTEL Pipeline",
+      "uid": "alloy-otel-pipeline",
+      "version": 1
+    }
