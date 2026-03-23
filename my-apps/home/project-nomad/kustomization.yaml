@@ -22,6 +22,10 @@ resources:
   - qdrant/deployment.yaml
   - qdrant/service.yaml
   - qdrant/pvc.yaml
+  # Embeddings (HuggingFace TEI — nomic-embed-text for RAG)
+  - embeddings/deployment.yaml
+  - embeddings/service.yaml
+  - embeddings/pvc.yaml
   # Kiwix (offline Wikipedia)
   - kiwix/deployment.yaml
   - kiwix/service.yaml
