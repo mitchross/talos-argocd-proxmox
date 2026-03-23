@@ -4,33 +4,51 @@ metadata:
   name: project-nomad-config
   namespace: project-nomad
 data:
+  # --- Core Application ---
   PORT: "8080"
   HOST: "0.0.0.0"
   LOG_LEVEL: "info"
   NODE_ENV: "production"
   SESSION_DRIVER: "cookie"
+  URL: "https://nomad.vanillax.me"
+
+  # --- Database (MySQL) ---
   DB_HOST: "mysql"
   DB_PORT: "3306"
   DB_USER: "root"
   DB_DATABASE: "nomad"
-  DB_NAME: "nomad"
   DB_SSL: "false"
+
+  # --- Cache & Queue (Redis) ---
   REDIS_HOST: "redis"
   REDIS_PORT: "6379"
+
+  # --- Storage ---
   NOMAD_STORAGE_PATH: "/app/storage"
-  URL: "https://nomad.vanillax.me"
-  # LLM Provider — use OpenAI-compatible API (llama-cpp)
+
+  # --- LLM Provider (llama-cpp / OpenAI-compatible) ---
   LLM_PROVIDER: "openai"
   LLM_HOST: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
   LLM_API_KEY: "unused"
-  # Embedding config
+  # Benchmark model — must match a model ID from /v1/models
+  AI_BENCHMARK_MODEL: "general - qwen3.5"
+
+  # --- Embeddings / RAG ---
+  # NOTE: llama-cpp requires --embeddings flag for RAG to work.
+  # Leave EMBEDDING_MODEL empty to disable RAG until an embedding model is available.
   EMBEDDING_MODEL: ""
   EMBEDDING_DIMENSIONS: "768"
-  # Qdrant vector DB
+  EMBEDDING_SEARCH_DOC_PREFIX: "search_document: "
+  EMBEDDING_SEARCH_QUERY_PREFIX: "search_query: "
+
+  # --- Qdrant (Vector DB for RAG) ---
   QDRANT_HOST: "http://qdrant.project-nomad.svc.cluster.local:6333"
-  # Companion services — external URLs for browser access via HTTPRoutes
+
+  # --- Companion Services (browser-facing URLs via HTTPRoutes) ---
   KIWIX_URL: "https://kiwix.vanillax.me"
-  KOLIBRI_URL: "https://kolibri.vanillax.me"
-  PROTOMAPS_URL: "http://protomaps.project-nomad.svc.cluster.local:8080"
   CYBERCHEF_URL: "https://cyberchef.vanillax.me"
   FLATNOTES_URL: "https://flatnotes.vanillax.me"
+  # Kolibri disabled — upstream image broken (Python 2.7)
+  # KOLIBRI_URL: "https://kolibri.vanillax.me"
+  # ProtoMaps — internal only (maps served by nomad app, no HTTPRoute needed)
+  PROTOMAPS_URL: "http://protomaps.project-nomad.svc.cluster.local:8080"
