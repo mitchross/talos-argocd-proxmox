@@ -115,6 +115,13 @@
       ],
     },
     {
+      description: 'SearXNG uses date-based tags (YYYY.M.DD-hash)',
+      matchPackageNames: [
+        'ghcr.io/searxng/searxng',
+      ],
+      versioning: 'regex:^(?<major>\\d{4})\\.(?<minor>\\d{1,2})\\.(?<patch>\\d{1,2})-[a-f0-9]+$',
+    },
+    {
       description: 'Ignore PostHog managed images (pinned to docker-compose hobby versions)',
       enabled: false,
       matchFileNames: [
