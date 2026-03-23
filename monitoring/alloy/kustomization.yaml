@@ -4,6 +4,7 @@ namespace: alloy
 resources:
   - ns.yaml
   - externalsecret.yaml
+  - alloy-dashboard.yaml
 helmCharts:
   - name: alloy
     repo: https://grafana.github.io/helm-charts
