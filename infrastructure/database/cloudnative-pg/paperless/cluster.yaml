@@ -38,8 +38,8 @@ spec:
   # === DISASTER RECOVERY ===
   # 1. Comment out the initdb bootstrap above
   # 2. Uncomment the recovery bootstrap + externalClusters below
-  # 3. Update serverName in externalClusters to match CURRENT backup.serverName (paperless-database)
-  # 4. Bump backup.serverName to next version (e.g. paperless-database-v2)
+  # 3. Update serverName in externalClusters to match CURRENT backup.serverName (paperless-database-v2)
+  # 4. Bump backup.serverName to next version (e.g. paperless-database-v3)
   # 5. Apply directly with: kubectl kustomize ... | kubectl create -f -
   #    (ArgoCD SSA + CNPG webhook = initdb always wins, must bypass ArgoCD)
   # 6. After recovery completes, revert to initdb and push
@@ -50,7 +50,7 @@ spec:
   # externalClusters:
   #   - name: paperless-backup
   #     barmanObjectStore:
-  #       serverName: paperless-database
+  #       serverName: paperless-database-v2
   #       destinationPath: s3://postgres-backups/cnpg/paperless
   #       endpointURL: http://192.168.10.133:30293
   #       s3Credentials:
@@ -90,6 +90,7 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
+      serverName: paperless-database-v2
       destinationPath: s3://postgres-backups/cnpg/paperless
       endpointURL: http://192.168.10.133:30293
       s3Credentials:
