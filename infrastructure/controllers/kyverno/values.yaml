@@ -1,5 +1,23 @@
 admissionController:
-  replicas: 1
+  replicas: 3
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 2
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: DoNotSchedule
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/component: admission-controller
+          app.kubernetes.io/instance: kyverno
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+            - key: gpu-worker
+              operator: DoesNotExist
   container:
     extraArgs:
       #  Override the default service account names - Helm uses Release.Namespace
