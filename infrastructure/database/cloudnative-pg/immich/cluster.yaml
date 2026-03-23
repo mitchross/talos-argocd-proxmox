@@ -44,10 +44,10 @@ spec:
   # Next recovery target: immich-database-v6
   # IMPORTANT: Recovery code must NOT be committed to Git (CNPG webhook rejects dual bootstrap)
   storage:
-    size: 20Gi
+    size: 50Gi
     storageClass: longhorn
   walStorage:
-    size: 4Gi
+    size: 10Gi
     storageClass: longhorn
   enableSuperuserAccess: true
   monitoring:

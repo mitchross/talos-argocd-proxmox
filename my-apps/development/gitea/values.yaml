@@ -1,6 +1,6 @@
 persistence:
   enabled: true
-  size: 2Gi
+  size: 10Gi
   storageClass: longhorn
   labels:
     backup: "daily"
@@ -42,5 +42,5 @@ valkey:
   architecture: standalone
   primary:
     persistence:
-      size: 1Gi
+      size: 5Gi
       storageClass: longhorn
