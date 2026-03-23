@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: embeddings
+  namespace: project-nomad
+  labels:
+    app: embeddings
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: embeddings
+  template:
+    metadata:
+      labels:
+        app: embeddings
+    spec:
+      containers:
+        - name: tei
+          image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.6
+          args:
+            - --model-id
+            - nomic-ai/nomic-embed-text-v1.5
+            - --port
+            - "8080"
+          ports:
+            - containerPort: 8080
+              name: http
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 1Gi
+          volumeMounts:
+            - name: model-cache
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+      volumes:
+        - name: model-cache
+          persistentVolumeClaim:
+            claimName: embeddings-model-cache
