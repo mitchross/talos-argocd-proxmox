@@ -5,6 +5,8 @@ metadata:
   namespace: frigate
 spec:
   replicas: 0
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: frigate
