@@ -6,6 +6,8 @@ metadata:
     app: karakeep-meilisearch
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: karakeep-meilisearch
