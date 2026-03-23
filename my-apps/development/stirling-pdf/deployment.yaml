@@ -12,6 +12,8 @@ spec:
     metadata:
       labels:
         app: stirling-pdf
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "opentelemetry/default"
     spec:
       containers:
         - name: stirling-pdf

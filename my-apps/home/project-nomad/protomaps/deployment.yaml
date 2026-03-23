@@ -16,6 +16,8 @@ spec:
     metadata:
       labels:
         app: project-nomad-protomaps
+      annotations:
+        instrumentation.opentelemetry.io/inject-go: "opentelemetry/default"
     spec:
       containers:
         - name: protomaps

@@ -19,6 +19,8 @@ spec:
       labels:
         app.kubernetes.io/name: posthog
         app.kubernetes.io/component: web
+      annotations:
+        instrumentation.opentelemetry.io/inject-python: "opentelemetry/default"
     spec:
       nodeSelector:
         feature.node.kubernetes.io/cpu-cpuid.AVX2: "true"

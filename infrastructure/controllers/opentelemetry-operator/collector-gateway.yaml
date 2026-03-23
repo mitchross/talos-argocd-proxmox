@@ -29,6 +29,19 @@ spec:
           http:
             endpoint: 0.0.0.0:4318
 
+      # Cluster-wide metrics from K8s API (pod phases, deployments, restarts, node conditions)
+      k8s_cluster:
+        auth_type: serviceAccount
+        collection_interval: 30s
+        node_conditions_to_report:
+        - Ready
+        - MemoryPressure
+        - DiskPressure
+        allocatable_types_to_report:
+        - cpu
+        - memory
+        - nvidia.com/gpu
+
     processors:
       # Enrich with Kubernetes metadata from API server
       k8sattributes:
@@ -118,6 +131,6 @@ spec:
           processors: [k8sattributes, resource, batch]
           exporters: [otlphttp/honeycomb, otlp/tempo]
         metrics:
-          receivers: [otlp]
+          receivers: [otlp, k8s_cluster]
           processors: [k8sattributes, resource, batch]
           exporters: [otlphttp/honeycomb, prometheusremotewrite]

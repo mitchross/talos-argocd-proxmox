@@ -14,6 +14,8 @@ spec:
     metadata:
       labels:
         app: paperless-ngx
+      annotations:
+        instrumentation.opentelemetry.io/inject-python: "opentelemetry/default"
     spec:
       # Pod affinity to ensure all paperless pods stay on same node (RWO volumes requirement)
       # This prevents Multi-Attach errors if replicas are increased

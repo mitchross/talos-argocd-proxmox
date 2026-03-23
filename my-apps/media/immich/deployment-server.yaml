@@ -19,6 +19,8 @@ spec:
       labels:
         app.kubernetes.io/name: immich
         app.kubernetes.io/component: server
+      annotations:
+        instrumentation.opentelemetry.io/inject-nodejs: "opentelemetry/default"
     spec:
       affinity:
         podAffinity:

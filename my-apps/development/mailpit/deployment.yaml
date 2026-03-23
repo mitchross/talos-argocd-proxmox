@@ -14,6 +14,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: mailpit
+      annotations:
+        instrumentation.opentelemetry.io/inject-go: "opentelemetry/default"
     spec:
       containers:
         - name: mailpit

@@ -16,6 +16,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: echo-server
+      annotations:
+        instrumentation.opentelemetry.io/inject-nodejs: "opentelemetry/default"
     spec:
       securityContext:
         runAsNonRoot: true
