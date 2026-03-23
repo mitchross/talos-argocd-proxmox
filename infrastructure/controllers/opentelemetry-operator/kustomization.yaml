@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: opentelemetry
+resources:
+  - ns.yaml
+  - externalsecret.yaml
+  - collector-agent.yaml
+  - collector-gateway.yaml
+  - instrumentation.yaml
+helmCharts:
+  - name: opentelemetry-operator
+    repo: https://open-telemetry.github.io/opentelemetry-helm-charts
+    version: 0.105.1
+    releaseName: opentelemetry-operator
+    namespace: opentelemetry
+    valuesFile: values.yaml
+    includeCRDs: true
