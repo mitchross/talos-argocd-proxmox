@@ -84,14 +84,8 @@ engines:
       disable: false
     - name: github
       disable: false
-    # Kiwix offline Wikipedia - local knowledge base for RAG
-    - name: kiwix
-      engine: kiwix
-      base_url: http://kiwix.kiwix.svc.cluster.local:8080
-      shortcut: kw
-      categories: general
-      disabled: false
-      timeout: 5.0
+    # Kiwix engine removed - not available in SearXNG 2025.10.17
+    # Re-add when upgrading SearXNG to a version with kiwix engine support
 
 outgoing:
     request_timeout: 3.0

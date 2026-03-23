@@ -20,6 +20,25 @@ spec:
         app.kubernetes.io/name: searxng
     spec:
       restartPolicy: Always
+      initContainers:
+        - name: wait-for-redis
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for redis to be ready..."
+              until nc -z redis 6379; do
+                echo "Redis not ready, retrying in 2s..."
+                sleep 2
+              done
+              echo "Redis is ready!"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 32Mi
       containers:
         - name: searxng
           image: ghcr.io/searxng/searxng:2025.10.17-a6bb1ecf8

@@ -1,64 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(kubectl:*)",
-      "Bash(git add:*)",
-      "Bash(git status:*)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)",
-      "Bash(git branch:*)",
-      "Bash(git checkout:*)",
-      "Bash(git stash:*)",
-      "Bash(git fetch:*)",
-      "Bash(git pull:*)",
-      "Bash(git clone:*)",
-      "Bash(curl:*)",
-      "Bash(python3:*)",
-      "Bash(helm:*)",
-      "Bash(gh:*)",
-      "WebFetch(domain:*)",
+      "Bash(*)",
       "WebSearch",
-      "WebFetch(domain:github.com)",
-      "WebFetch(domain:docs.frigate.video)",
-      "WebFetch(domain:developers.google.com)",
-      "WebFetch(domain:go2rtc.org)",
-      "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:api.github.com)",
-      "Bash(find:*)",
-      "Bash(grep:*)",
-      "WebFetch(domain:9eaa7bfe.frigate.pages.dev)",
-      "WebFetch(domain:unsloth.ai)",
-      "WebFetch(domain:docs.ollama.com)",
-      "WebFetch(domain:www.hardware-corner.net)",
-      "WebFetch(domain:docs.openwebui.com)",
-      "WebFetch(domain:www.bentoml.com)",
-      "WebFetch(domain:www.datacamp.com)",
-      "WebFetch(domain:blog.comfy.org)",
-      "WebFetch(domain:deepwiki.com)",
-      "WebFetch(domain:blog.ayjc.net)",
-      "WebFetch(domain:hub.docker.com)",
-      "WebFetch(domain:apatero.com)",
-      "WebFetch(domain:miroleon.github.io)",
-      "WebFetch(domain:noted.lol)",
-      "WebFetch(domain:gist.github.com)",
-      "WebFetch(domain:openwebui.com)",
-      "WebFetch(domain:neuralnet.solutions)",
-      "Bash(wc -l /home/vanillax/programming/talos-argocd-proxmox/docs/*.md /home/vanillax/programming/talos-argocd-proxmox/README.md)"
+      "WebFetch(domain:*)"
     ],
     "deny": [
       "Bash(git reset --hard:*)",
-      "Bash(git clean:*)",
-      "Bash(git branch -D:*)",
-      "Bash(git branch -d:*)"
+      "Bash(git clean:*)"
     ],
     "ask": [
-      "Bash(git merge:*)",
-      "Bash(git rebase:*)",
-      "Bash(git reset:*)",
-      "Bash(git revert:*)",
-      "Bash(git cherry-pick:*)",
       "Bash(git push:*)",
-      "Bash(git commit:*)"
+      "Bash(git push --force:*)",
+      "Bash(git push --force-with-lease:*)"
     ]
   }
 }
