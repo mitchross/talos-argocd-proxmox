@@ -30,7 +30,7 @@ prometheus:
             - ReadWriteOnce
           resources:
             requests:
-              storage: 20Gi
+              storage: 50Gi
     # Resource allocation
     resources:
       requests:
@@ -96,7 +96,7 @@ alertmanager:
             - ReadWriteOnce
           resources:
             requests:
-              storage: 2Gi
+              storage: 5Gi
     # Resource allocation
     resources:
       requests:
@@ -125,7 +125,7 @@ grafana:
   persistence:
     enabled: true
     storageClassName: longhorn
-    size: 5Gi
+    size: 10Gi
     accessModes:
       - ReadWriteOnce
     annotations:

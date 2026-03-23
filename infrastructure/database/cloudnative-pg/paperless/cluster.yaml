@@ -63,10 +63,10 @@ spec:
   #       wal:
   #         compression: gzip
   storage:
-    size: 20Gi
+    size: 50Gi
     storageClass: longhorn
   walStorage:
-    size: 32Gi
+    size: 50Gi
     storageClass: longhorn
   managed:
     services:
