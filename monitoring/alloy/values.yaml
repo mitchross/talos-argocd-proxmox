@@ -41,10 +41,10 @@ alloy:
             "x-honeycomb-team" = sys.env("HONEYCOMB_API_KEY"),
           }
         }
-        queue {
-          enabled    = true
+        sending_queue {
+          enabled       = true
           num_consumers = 10
-          queue_size = 10000
+          queue_size    = 10000
         }
       }
 
