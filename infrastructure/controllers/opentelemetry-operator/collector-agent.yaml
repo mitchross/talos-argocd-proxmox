@@ -1,0 +1,104 @@
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel-agent
+  namespace: opentelemetry
+spec:
+  mode: daemonset
+  serviceAccount: otel-agent
+  tolerations:
+  - operator: Exists
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  volumeMounts:
+  - name: varlogpods
+    mountPath: /var/log/pods
+    readOnly: true
+  volumes:
+  - name: varlogpods
+    hostPath:
+      path: /var/log/pods
+  env:
+  - name: K8S_NODE_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: spec.nodeName
+  config:
+    receivers:
+      # Scrape pod logs from filesystem (more reliable than K8s API)
+      filelog:
+        include:
+        - /var/log/pods/*/*/*.log
+        exclude:
+        - /var/log/pods/opentelemetry_otel-agent*/**
+        start_at: end
+        include_file_path: true
+        include_file_name: false
+        operators:
+        # Parse CRI container log format
+        - type: container
+          id: container-parser
+          max_log_size: 102400
+        # Extract k8s metadata from file path
+        - type: regex_parser
+          id: extract_metadata_from_filepath
+          regex: '^.*\/(?P<namespace>[^_]+)_(?P<pod_name>[^_]+)_(?P<uid>[a-f0-9\-]+)\/(?P<container_name>[^\._]+)\/(?P<restart_count>\d+)\.log$'
+          parse_from: attributes["log.file.path"]
+        - type: move
+          from: attributes.namespace
+          to: resource["k8s.namespace.name"]
+        - type: move
+          from: attributes.pod_name
+          to: resource["k8s.pod.name"]
+        - type: move
+          from: attributes.container_name
+          to: resource["k8s.container.name"]
+        - type: move
+          from: attributes.uid
+          to: resource["k8s.pod.uid"]
+        - type: move
+          from: attributes.restart_count
+          to: resource["k8s.container.restart_count"]
+        - type: add
+          field: resource["k8s.node.name"]
+          value: EXPR(env("K8S_NODE_NAME"))
+
+      # Accept OTLP from auto-instrumented apps
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      batch:
+        timeout: 5s
+        send_batch_size: 1024
+
+    exporters:
+      # Forward everything to the gateway
+      otlp/gateway:
+        endpoint: otel-gateway-collector.opentelemetry.svc.cluster.local:4317
+        tls:
+          insecure: true
+
+    service:
+      pipelines:
+        logs:
+          receivers: [filelog]
+          processors: [batch]
+          exporters: [otlp/gateway]
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp/gateway]
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp/gateway]

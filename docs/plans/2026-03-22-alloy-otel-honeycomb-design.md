@@ -1,82 +1,99 @@
-# Alloy + OpenTelemetry + Honeycomb Design
+# OpenTelemetry Operator + Honeycomb Design
 
-**Date**: 2026-03-22
+**Date**: 2026-03-22 (updated 2026-03-23)
 **Status**: Implementing
 
 ## Goal
 
-Deploy Grafana Alloy as a unified OpenTelemetry collector that dual-ships all telemetry to both local Grafana stack and Honeycomb SaaS. This enables learning OTEL while comparing self-hosted vs SaaS observability.
+Deploy the CNCF OpenTelemetry Operator with Collector (agent + gateway) to replace Grafana Alloy. Dual-ships all telemetry to both local Grafana stack and Honeycomb SaaS. Auto-instrumentation enabled for zero-code trace generation.
 
 ## Architecture
 
 ```
-                         ┌──────────────┐
-                         │  Honeycomb   │
-                         │  (OTLP HTTP) │
-                         └──────▲───────┘
-                                │
-┌───────────────────────────────┼────────────────────────┐
-│  Alloy DaemonSet (ns: alloy)  │                        │
-│                               │                        │
-│  ┌──────────────┐    ┌────────┴─────────┐              │
-│  │ Pod log       │───▶│ Batch processor  │──────┐      │
-│  │ scraping      │    │ (5s / 1024 batch)│      │      │
-│  └──────────────┘    └────────┬─────────┘      │      │
-│                               │                 │      │
-│  ┌──────────────┐             │                 │      │
-│  │ OTLP receiver │─────traces─┘                 │      │
-│  │ :4317 / :4318 │─────metrics──────────────────┘      │
-│  └──────────────┘                                      │
-└───────────────────────────────┼────────────────────────┘
-                                │
-           ┌────────────────────┼────────────────────┐
-           │                    │                    │
-    ┌──────▼──────┐   ┌────────▼───────┐   ┌────────▼────────┐
-    │ Loki Gateway │   │  Tempo :4317   │   │  Prometheus     │
-    │ (loki-stack) │   │  (monitoring)  │   │  remote-write   │
-    └─────────────┘   └────────────────┘   └─────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│  OTEL Operator (Deployment)                                  │
+│  - Manages Collector instances via OpenTelemetryCollector CRD│
+│  - Injects auto-instrumentation via Instrumentation CRD      │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│  OTEL Collector Agent (DaemonSet) — per node                 │
+│  - filelog receiver: scrapes /var/log/pods                    │
+│  - otlp receiver: accepts traces/metrics from instrumented   │
+│    apps on :4317/:4318                                       │
+│  - Forwards all signals to Gateway via OTLP gRPC             │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ OTLP gRPC
+┌──────────────────────────▼──────────────────────────────────┐
+│  OTEL Collector Gateway (Deployment, 2 replicas)             │
+│  - k8sattributes: enriches with k8s metadata from API        │
+│  - resource: sets service.name, cluster name                 │
+│  - batch: 10s / 8192 items                                   │
+│  - Fan-out to all backends:                                  │
+│    → Loki via OTLP HTTP (logs)                               │
+│    → Tempo via OTLP gRPC (traces)                            │
+│    → Prometheus remote-write (metrics)                       │
+│    → Honeycomb via OTLP HTTP (everything)                    │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ## Data Flow
 
-| Signal  | Source              | Local Destination                          | Honeycomb |
-|---------|---------------------|--------------------------------------------|-----------|
-| Logs    | Pod stdout/stderr   | Loki via loki.write                        | OTLP HTTP |
-| Logs    | K8s events          | Loki via loki.write                        | OTLP HTTP |
-| Traces  | Apps → OTLP :4317/8 | Tempo via OTLP gRPC                        | OTLP HTTP |
-| Metrics | Apps → OTLP :4317/8 | Prometheus via remote-write                | OTLP HTTP |
+| Signal  | Source                          | Local Destination         | Honeycomb  |
+|---------|---------------------------------|---------------------------|------------|
+| Logs    | Pod stdout/stderr (filelog)     | Loki via OTLP HTTP        | OTLP HTTP  |
+| Traces  | Auto-instrumented apps → OTLP  | Tempo via OTLP gRPC       | OTLP HTTP  |
+| Metrics | Auto-instrumented apps → OTLP  | Prometheus remote-write   | OTLP HTTP  |
 
 ## Components
 
-### New: `monitoring/alloy/`
+### New: `infrastructure/controllers/opentelemetry-operator/`
 
-| File                | Purpose                                    |
-|---------------------|--------------------------------------------|
-| `ns.yaml`           | Namespace `alloy`                          |
-| `kustomization.yaml`| Helm chart reference (alloy 1.6.2)         |
-| `values.yaml`       | DaemonSet config + Alloy pipeline          |
-| `externalsecret.yaml`| Honeycomb API key from 1Password          |
+| File                   | Purpose                                              |
+|------------------------|------------------------------------------------------|
+| `ns.yaml`              | Namespace `opentelemetry`                            |
+| `kustomization.yaml`   | Helm chart (opentelemetry-operator 0.105.1)          |
+| `values.yaml`          | Operator config, cert-manager webhooks               |
+| `externalsecret.yaml`  | Honeycomb API key from 1Password                     |
+| `collector-agent.yaml` | OpenTelemetryCollector CRD (DaemonSet mode)          |
+| `collector-gateway.yaml`| OpenTelemetryCollector CRD (Deployment mode)        |
+| `instrumentation.yaml` | Instrumentation CRD (auto-inject config)             |
 
-### Modified: `monitoring/tempo/values.yaml`
+### Modified: `infrastructure/controllers/argocd/apps/infrastructure-appset.yaml`
 
-Added OTLP gRPC (:4317) and HTTP (:4318) receivers so Tempo accepts traces from Alloy.
+Added `infrastructure/controllers/opentelemetry-operator` to the explicit path list.
+
+### Modified (earlier): `monitoring/tempo/values.yaml`
+
+Added OTLP gRPC (:4317) and HTTP (:4318) receivers.
+
+### Deleted: `monitoring/alloy/`
+
+Entire directory removed — replaced by OTEL Operator + Collector.
 
 ## Secrets
 
-| Secret              | Namespace | 1Password Key | Property   |
-|---------------------|-----------|---------------|------------|
-| `honeycomb-api-key` | `alloy`   | `honeycomb`   | `api-key`  |
+| Secret              | Namespace      | 1Password Key | Property   |
+|---------------------|----------------|---------------|------------|
+| `honeycomb-api-key` | `opentelemetry`| `honeycomb`   | `api-key`  |
 
-## How Apps Send Telemetry
+## Auto-Instrumentation
 
-Apps instrumented with OTEL SDKs should set their exporter endpoint to:
+Apps opt-in by adding an annotation to their Deployment:
 
+```yaml
+metadata:
+  annotations:
+    instrumentation.opentelemetry.io/inject-python: "true"
+    # or: inject-nodejs, inject-java, inject-go, inject-dotnet
 ```
-OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy.alloy.svc.cluster.local:4317
-```
 
-Alloy handles the fan-out to all backends.
+The Operator's webhook injects an init container with the OTEL SDK. The app automatically generates traces sent to the Agent's OTLP endpoint.
 
 ## Deployment
 
-Auto-discovered by the monitoring AppSet (`monitoring/*` glob) at sync wave 5. No manual Application resource needed.
+Deployed via the infrastructure AppSet at sync wave 4. The Operator needs cert-manager for webhook TLS (cert-manager is already in the infrastructure AppSet).
+
+## RBAC
+
+The Operator creates ServiceAccounts for the Collectors. The gateway's `otel-gateway` SA needs RBAC to list/watch pods for the `k8sattributes` processor. The Operator handles this automatically.

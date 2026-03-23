@@ -1,0 +1,32 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: default
+  namespace: opentelemetry
+spec:
+  # Agent DaemonSet OTLP endpoint - apps on same node
+  exporter:
+    endpoint: http://otel-agent-collector.opentelemetry.svc.cluster.local:4317
+  propagators:
+  - tracecontext
+  - baggage
+  - b3
+  sampler:
+    type: parentbased_traceidratio
+    argument: "1"
+  env:
+  - name: OTEL_RESOURCE_ATTRIBUTES
+    value: k8s.cluster.name=talos-prod
+  python:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:latest
+    env:
+    - name: OTEL_PYTHON_LOG_CORRELATION
+      value: "true"
+  nodejs:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest
+  java:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest
+  go:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-go:latest
+  dotnet:
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:latest

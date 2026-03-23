@@ -20,6 +20,7 @@ spec:
       - path: infrastructure/controllers/metrics-server
       - path: infrastructure/controllers/reloader
       - path: infrastructure/controllers/vertical-pod-autoscaler
+      - path: infrastructure/controllers/opentelemetry-operator
       - path: infrastructure/networking/cloudflared
       - path: infrastructure/networking/gateway
       - path: infrastructure/storage/container-registry
