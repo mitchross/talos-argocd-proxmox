@@ -33,9 +33,9 @@ search:
     ban_time_on_fail: 5
     max_ban_time_on_fail: 120
     suspended_times:
-        SearxEngineAccessDenied: 86400
-        SearxEngineCaptcha: 86400
-        SearxEngineTooManyRequests: 3600
+        SearxEngineAccessDenied: 180
+        SearxEngineCaptcha: 3600
+        SearxEngineTooManyRequests: 180
         cf_SearxEngineCaptcha: 1296000
         cf_SearxEngineAccessDenied: 86400
         recaptcha_SearxEngineCaptcha: 604800
