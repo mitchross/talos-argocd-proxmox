@@ -76,6 +76,19 @@ spec:
           http:
             endpoint: 0.0.0.0:4318
 
+      # Per-node container, pod, and node metrics from kubelet
+      kubeletstats:
+        collection_interval: 30s
+        auth_type: serviceAccount
+        endpoint: "https://${env:K8S_NODE_NAME}:10250"
+        insecure_skip_verify: true
+        metric_groups:
+        - node
+        - pod
+        - container
+        extra_metadata_labels:
+        - container.id
+
     processors:
       batch:
         timeout: 5s
@@ -99,6 +112,6 @@ spec:
           processors: [batch]
           exporters: [otlp/gateway]
         metrics:
-          receivers: [otlp]
+          receivers: [otlp, kubeletstats]
           processors: [batch]
           exporters: [otlp/gateway]

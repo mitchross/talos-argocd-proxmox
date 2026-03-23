@@ -16,6 +16,8 @@ spec:
     metadata:
       labels:
         app: nestmtx
+      annotations:
+        instrumentation.opentelemetry.io/inject-nodejs: "opentelemetry/default"
     spec:
       securityContext:
         fsGroup: 1000

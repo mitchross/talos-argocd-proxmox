@@ -12,6 +12,8 @@ spec:
     metadata:
       labels:
         app: frigate
+      annotations:
+        instrumentation.opentelemetry.io/inject-python: "opentelemetry/default"
     spec:
       # nodeSelector:
       #   feature.node.kubernetes.io/custom-usb.coral-tpu: "true"

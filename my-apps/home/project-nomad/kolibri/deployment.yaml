@@ -16,6 +16,8 @@ spec:
     metadata:
       labels:
         app: project-nomad-kolibri
+      annotations:
+        instrumentation.opentelemetry.io/inject-python: "opentelemetry/default"
     spec:
       containers:
         - name: kolibri

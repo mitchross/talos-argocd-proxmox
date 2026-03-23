@@ -11,6 +11,11 @@ spec:
     matchLabels:
       app: jellyfin
   template:
+    metadata:
+      labels:
+        app: jellyfin
+      annotations:
+        instrumentation.opentelemetry.io/inject-dotnet: "opentelemetry/default"
     spec:
       # Pod affinity to ensure all jellyfin pods stay on same node (RWO volumes requirement)
       affinity:

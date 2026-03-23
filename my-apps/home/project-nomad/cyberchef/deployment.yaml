@@ -14,6 +14,8 @@ spec:
     metadata:
       labels:
         app: project-nomad-cyberchef
+      annotations:
+        instrumentation.opentelemetry.io/inject-nodejs: "opentelemetry/default"
     spec:
       containers:
         - name: cyberchef

@@ -18,6 +18,8 @@ spec:
       namespace: searxng
       labels:
         app.kubernetes.io/name: searxng
+      annotations:
+        instrumentation.opentelemetry.io/inject-python: "opentelemetry/default"
     spec:
       restartPolicy: Always
       initContainers:
