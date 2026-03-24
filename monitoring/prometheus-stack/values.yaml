@@ -248,13 +248,13 @@ grafana:
         httpHeaderName1: X-Scope-OrgID
         timeout: 60
         maxLines: 1000
-      secureJsonData:
-        httpHeaderValue1: "1"
         derivedFields:
           - datasourceUid: prometheus-uid
             matcherRegex: "(?:logger=rpc\\.server|report).*?(?:traceID|trace_id)=([a-f\\d]+)"
             name: TraceID
             url: "$${__value.raw}"
+      secureJsonData:
+        httpHeaderValue1: "1"
     - name: Tempo
       type: tempo
       access: proxy
