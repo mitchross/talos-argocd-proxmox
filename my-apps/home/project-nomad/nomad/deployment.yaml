@@ -16,6 +16,8 @@ spec:
     metadata:
       labels:
         app: project-nomad
+      annotations:
+        instrumentation.opentelemetry.io/inject-nodejs: "opentelemetry/default"
     spec:
       initContainers:
         - name: init-storage

@@ -203,11 +203,40 @@ ArgoCD takes over and manages everything from Git:
 
 New applications are discovered automatically by directory structure - add a directory with a `kustomization.yaml` and push to Git.
 
-## Cluster Access (Omni)
+## Cluster Access (Omni Service Account)
 
-- **Kubeconfig**: Download from Omni UI > your cluster > "Download Kubeconfig"
-- **Node management**: All done through Omni web UI (upgrades, configuration, patches)
-- **No `talosctl` needed**: Omni handles Talos upgrades and system extensions
+The default `omnictl kubeconfig` uses OIDC exec auth which expires and requires a browser login. For long-lived access, create a **service account** with a bearer token instead.
+
+**IMPORTANT: Use the CLI, not the Omni UI.** UI-generated PGP keys are incompatible with the CLI's gopenpgp library (`EdDSA verification failure`).
+
+```bash
+# 1. Create the service account (1 year max TTL)
+omnictl serviceaccount create talos-prod-sa --use-user-role
+
+# 2. Save the output — OMNI_ENDPOINT and OMNI_SERVICE_ACCOUNT_KEY
+#    Store both values in 1Password immediately. The key is shown ONCE.
+
+# 3. Generate a bearer-token kubeconfig (NOT OIDC)
+OMNI_ENDPOINT=https://omni.vanillax.me:443 \
+OMNI_SERVICE_ACCOUNT_KEY="<key-from-step-2>" \
+omnictl kubeconfig --cluster talos-prod-cluster --service-account --user talos-prod-sa --force
+
+# 4. Verify
+kubectl get nodes
+```
+
+**Renewal** (expires after 1 year):
+```bash
+omnictl serviceaccount destroy talos-prod-sa
+omnictl serviceaccount create talos-prod-sa --use-user-role
+# Regenerate kubeconfig with step 3 above, update key in 1Password
+```
+
+**Gotchas**:
+- Always create via **CLI** — UI-generated keys fail with `gopenpgp: EdDSA verification failure`
+- The `--service-account` flag is what gives you a bearer token. Without it you get OIDC exec (the thing that expires)
+- If the key fails with signature errors, write it to a file and use `$(cat /tmp/key.txt)` instead of inline quoting
+- Node management is done through Omni web UI (upgrades, configuration, patches)
 
 ## Backup System
 
