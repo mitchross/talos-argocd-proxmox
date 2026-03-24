@@ -17,11 +17,6 @@ spec:
   env:
   - name: OTEL_RESOURCE_ATTRIBUTES
     value: k8s.cluster.name=talos-prod
-  python:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python:latest
-    env:
-    - name: OTEL_PYTHON_LOG_CORRELATION
-      value: "true"
   nodejs:
     image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest
   java:
