@@ -43,7 +43,7 @@ spec:
             --rpc-addr 0.0.0.0:33145 \
             --advertise-rpc-addr kafka:33145 \
             --smp 1 \
-            --memory 1G \
+            --memory 512M \
             --reserve-memory 200M \
             --overprovisioned \
             --unsafe-bypass-fsync
