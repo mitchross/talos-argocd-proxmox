@@ -74,8 +74,6 @@ spec:
       labels:
         app.kubernetes.io/name: posthog
         app.kubernetes.io/component: migrate
-      annotations:
-        instrumentation.opentelemetry.io/inject-python: "false"
     spec:
       restartPolicy: OnFailure
       nodeSelector:
