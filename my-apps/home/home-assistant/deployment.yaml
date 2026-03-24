@@ -22,8 +22,6 @@ spec:
         app.kubernetes.io/component: home-automation
         app.kubernetes.io/part-of: smart-home
         app.kubernetes.io/version: stable
-      annotations:
-        instrumentation.opentelemetry.io/inject-python: "opentelemetry/default"
     spec:
       # Pod-level security context
       securityContext:

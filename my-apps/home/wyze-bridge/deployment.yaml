@@ -14,8 +14,6 @@ spec:
     metadata:
       labels:
         app: wyze-bridge
-      annotations:
-        instrumentation.opentelemetry.io/inject-python: "opentelemetry/default"
     spec:
       containers:
       - name: wyze-bridge
