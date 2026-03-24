@@ -42,11 +42,12 @@ persistence:
   # -- Specifies the default Longhorn StorageClass.
   defaultClass: true
   # -- Default number of replicas for volumes.
-  # OPTIMIZED: Set to 1 since VolSync + Kopia backs up all critical PVCs to NFS
-  # - No need for on-cluster redundancy when off-cluster backups exist
-  # - Halves storage allocation across all nodes
-  # - Eliminates cross-node replication IO and network traffic
-  defaultClassReplicaCount: 1
+  # Set to 2 for node-failure resilience. With replica 1, a single node going
+  # down makes all its volumes unavailable and causes stale attachment cascades.
+  # With replica 2, Longhorn serves from the surviving replica on another node.
+  # Trade-off: doubles storage usage (~932GB -> ~1.86TB of ~2TB capacity).
+  # VolSync + Kopia still handles off-cluster backup to NFS.
+  defaultClassReplicaCount: 2
   # -- Default filesystem type.
   defaultFsType: ext4
   defaultDataLocality: best-effort
