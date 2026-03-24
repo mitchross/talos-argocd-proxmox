@@ -93,6 +93,18 @@ envFrom:
     name: app-secrets
 ```
 
+### Deployment Strategy for Apps with PVCs
+
+**CRITICAL**: Any Deployment that mounts a `ReadWriteOnce` PVC **must** use `strategy: type: Recreate`. The default `RollingUpdate` creates a deadlock — the new pod can't attach the RWO volume while the old pod still holds it, so the rollout hangs forever in `ContainerCreating`.
+
+```yaml
+# deployment.yaml
+spec:
+  strategy:
+    type: Recreate    # REQUIRED for RWO PVCs - RollingUpdate causes Multi-Attach deadlock
+  replicas: 1
+```
+
 ### Application with Persistent Storage + Backups
 
 ```yaml

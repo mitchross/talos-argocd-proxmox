@@ -97,6 +97,7 @@ docs/                   # Documentation
 - Use llama-cpp (not ollama) for in-cluster AI backends
 - Use sync waves when adding infrastructure components
 - Verify Kyverno generated backup resources after creating PVCs with backup labels
+- Use `strategy: type: Recreate` on Deployments with RWO PVCs — **RollingUpdate causes Multi-Attach deadlock**
 
 ### DON'T:
 - Create manual ArgoCD `Application` resources (use directory discovery)
@@ -110,6 +111,7 @@ docs/                   # Documentation
 - Add backup labels to system namespace PVCs (kube-system, volsync-system, kyverno)
 - Manually create or delete ReplicationSource/ReplicationDestination (Kyverno manages these)
 - Use legacy `nfs:` block for NFS PVs (mountOptions silently ignored — use CSI)
+- Use `RollingUpdate` strategy on Deployments with RWO PVCs (causes Multi-Attach deadlock)
 
 ## Nested CLAUDE.md Files
 
