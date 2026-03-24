@@ -87,9 +87,10 @@ spec:
               name: "{{request.object.metadata.name}}"
             updatePolicy:
               updateMode: "Off"
-    # Rule 2: User applications — auto-tune
-    # VPA automatically adjusts resources via in-place pod resize.
-    # No manual intervention needed for my-apps/* workloads.
+    # Rule 2: User applications — auto-tune at creation
+    # VPA sets optimal resources when pods are created but does NOT shrink
+    # running pods. This prevents OOM kills on bursty workloads (e.g. Kafka,
+    # TubeSync) where steady-state usage is low but peak usage needs headroom.
     - name: generate-vpa-auto-tune
       match:
         any:
@@ -159,4 +160,4 @@ spec:
               kind: "{{request.object.kind}}"
               name: "{{request.object.metadata.name}}"
             updatePolicy:
-              updateMode: "InPlaceOrRecreate"
+              updateMode: "Initial"
