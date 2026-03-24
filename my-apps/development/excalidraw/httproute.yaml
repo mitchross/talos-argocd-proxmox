@@ -9,6 +9,7 @@ spec:
       kind: Gateway
       name: gateway-internal
       namespace: gateway
+      sectionName: https
   hostnames:
     - "excalidraw.vanillax.me"
   rules:
