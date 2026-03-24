@@ -19,6 +19,8 @@ spec:
       labels:
         app.kubernetes.io/name: posthog
         app.kubernetes.io/component: worker
+      annotations:
+        instrumentation.opentelemetry.io/inject-python: "false"
     spec:
       nodeSelector:
         feature.node.kubernetes.io/cpu-cpuid.AVX2: "true"
