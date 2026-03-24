@@ -26,7 +26,7 @@ defaultSettings:
   concurrentAutomaticEngineUpgradePerNodeLimit: "3"
   # Allow detached volumes to rebuild replicas (fixes VolSync clone volumes
   # stuck in VolumeCloneCopyCompleteAwaitingHealthy with replica count > 1)
-  offlineReplicaRebuilding: "enabled"
+  offlineReplicaRebuilding: "true"
 # -- Disables the pre-upgrade check job. This is recommended for GitOps tools
 # like ArgoCD to prevent sync failures.
 preUpgradeChecker:
