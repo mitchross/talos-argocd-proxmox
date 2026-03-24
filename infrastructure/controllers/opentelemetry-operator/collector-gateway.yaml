@@ -124,9 +124,9 @@ spec:
         tls:
           insecure: true
 
-      # Prometheus - metrics via remote write
-      prometheusremotewrite:
-        endpoint: http://kube-prometheus-stack-prometheus.prometheus-stack.svc.cluster.local:9090/api/v1/write
+      # Prometheus - metrics via OTLP HTTP
+      otlphttp/prometheus:
+        endpoint: http://kube-prometheus-stack-prometheus.prometheus-stack.svc.cluster.local:9090/api/v1/otlp
         tls:
           insecure: true
 
@@ -143,4 +143,4 @@ spec:
         metrics:
           receivers: [otlp, k8s_cluster]
           processors: [k8sattributes, resource, batch]
-          exporters: [otlphttp/honeycomb, prometheusremotewrite]
+          exporters: [otlphttp/honeycomb, otlphttp/prometheus]
