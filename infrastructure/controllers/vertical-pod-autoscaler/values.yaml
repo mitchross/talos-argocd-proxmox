@@ -20,6 +20,8 @@ updater:
 
 admissionController:
   enabled: true
+  extraArgs:
+    feature-gates: InPlaceOrRecreate=true
   resources:
     requests:
       cpu: 50m
