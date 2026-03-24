@@ -16,8 +16,6 @@ spec:
     metadata:
       labels:
         app: tubesync
-      annotations:
-        instrumentation.opentelemetry.io/inject-python: "opentelemetry/default"
     spec:
       containers:
       - name: tubesync

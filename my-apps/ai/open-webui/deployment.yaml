@@ -14,8 +14,6 @@ spec:
     metadata:
       labels:
         app: open-webui
-      annotations:
-        instrumentation.opentelemetry.io/inject-python: "opentelemetry/default"
     spec:
       runtimeClassName: nvidia
       nodeSelector:

@@ -14,8 +14,6 @@ spec:
     metadata:
       labels:
         app: comfyui
-      annotations:
-        instrumentation.opentelemetry.io/inject-python: "opentelemetry/default"
     spec:
       # Node selector for GPU nodes
       nodeSelector:
