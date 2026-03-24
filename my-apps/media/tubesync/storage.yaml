@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: config-pvc
   namespace: tubesync
+  labels:
+    backup: "daily"
 spec:
   accessModes: [ "ReadWriteOnce" ]
   storageClassName: longhorn
