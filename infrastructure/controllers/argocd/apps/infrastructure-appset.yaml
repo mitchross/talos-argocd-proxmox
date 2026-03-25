@@ -18,7 +18,6 @@ spec:
       - path: infrastructure/controllers/nvidia-device-plugin
       - path: infrastructure/controllers/nvidia-gpu-operator
       - path: infrastructure/controllers/metrics-server
-      - path: infrastructure/controllers/reloader
       - path: infrastructure/controllers/vertical-pod-autoscaler
       - path: infrastructure/controllers/opentelemetry-operator
       - path: infrastructure/networking/cloudflared
@@ -92,19 +91,6 @@ spec:
         jsonPointers:
         - /status
         - /metadata/generation
-      # Kyverno injects reloader annotation at admission — not in Git source
-      - group: apps
-        kind: Deployment
-        jsonPointers:
-        - /metadata/annotations/reloader.stakater.com~1match
-      - group: apps
-        kind: StatefulSet
-        jsonPointers:
-        - /metadata/annotations/reloader.stakater.com~1match
-      - group: apps
-        kind: DaemonSet
-        jsonPointers:
-        - /metadata/annotations/reloader.stakater.com~1match
       # PVC fields that are immutable after creation - needed for Volume Populator
       - group: ""
         kind: PersistentVolumeClaim

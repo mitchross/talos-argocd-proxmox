@@ -61,19 +61,6 @@ spec:
         - .spec.data[].remoteRef.conversionStrategy
         - .spec.data[].remoteRef.decodingStrategy
         - .spec.data[].remoteRef.metadataPolicy
-      # Kyverno injects reloader annotation at admission — not in Git source
-      - group: apps
-        kind: Deployment
-        jsonPointers:
-        - /metadata/annotations/reloader.stakater.com~1match
-      - group: apps
-        kind: StatefulSet
-        jsonPointers:
-        - /metadata/annotations/reloader.stakater.com~1match
-      - group: apps
-        kind: DaemonSet
-        jsonPointers:
-        - /metadata/annotations/reloader.stakater.com~1match
       - group: ""
         kind: PersistentVolumeClaim
         jqPathExpressions:
