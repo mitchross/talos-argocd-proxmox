@@ -26,6 +26,7 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
       - RespectIgnoreDifferences=true
+      - Replace=true
     retry:
       limit: 10
       backoff:
