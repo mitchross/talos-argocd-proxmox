@@ -8,6 +8,7 @@ metadata:
     app.kubernetes.io/component: clickhouse
   annotations:
     argocd.argoproj.io/sync-wave: "0"
+    vpa.kubernetes.io/min-memory: "2Gi"
 spec:
   serviceName: clickhouse
   replicas: 1
