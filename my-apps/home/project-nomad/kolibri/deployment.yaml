@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: kolibri
-          image: treehouses/kolibri:latest
+          image: treehouses/kolibri:latest@sha256:89dc5b39f9166d03ff11bfcb8999fc9598be3e62a25911adabd305f980b68672
           ports:
             - containerPort: 8080
               name: http
