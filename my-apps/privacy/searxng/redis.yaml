@@ -21,7 +21,7 @@ spec:
         fsGroup: 999  # redis group - ensures PVC is writable
       containers:
         - name: redis
-          image: valkey/valkey:8.0-alpine
+          image: valkey/valkey:9.1-alpine
           command: ["valkey-server", "--save", "60", "1", "--loglevel", "warning"]
           ports:
             - containerPort: 6379
