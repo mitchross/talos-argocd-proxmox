@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: tika
   namespace: paperless-ngx
+  annotations:
+    vpa.kubernetes.io/min-memory: "256Mi"
 spec:
   replicas: 1
   selector:
@@ -49,6 +51,8 @@ kind: Deployment
 metadata:
   name: gotenberg
   namespace: paperless-ngx
+  annotations:
+    vpa.kubernetes.io/min-memory: "256Mi"
 spec:
   replicas: 1
   selector:
