@@ -33,6 +33,23 @@ configs:
       - '.spec.parentRefs[]? | select(.group == null or .kind == null)'
       jsonPointers:
       - /spec/parentRefs
+    # CRDs — K8s API server adds conversion, status, and generation fields
+    resource.customizations.ignoreDifferences.apiextensions.k8s.io_CustomResourceDefinition: |
+      jqPathExpressions:
+      - .status
+      - .metadata.generation
+      - .spec.conversion
+    # OpenTelemetry operator mutates collector after creation
+    resource.customizations.ignoreDifferences.opentelemetry.io_OpenTelemetryCollector: |
+      jqPathExpressions:
+      - .status
+      - .metadata.generation
+      - .metadata.annotations
+    # Secrets managed by cert-manager/webhooks — caBundle and cert data change
+    resource.customizations.ignoreDifferences.all: |
+      managedFieldsManagers:
+      - kube-controller-manager
+      - kube-scheduler
     # Enable Application health check for app-of-apps sync waves
     # This was removed in ArgoCD 1.8 but is needed for sync waves to work properly
     resource.customizations.health.argoproj.io_Application: |
