@@ -114,8 +114,8 @@ machineClass:
   size: 1
 systemExtensions:
 - siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
-- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
-- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
+# nfs-utils removed — incompatible with NVIDIA drivers on Talos 1.12.x (siderolabs/extensions#1021)
+# rpc-statd crash loop corrupts containerd boltdb, taking the entire node down
 - siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 - siderolabs/nonfree-kmod-nvidia-production # renovate: datasource=docker depName=siderolabs/nonfree-kmod-nvidia-production
