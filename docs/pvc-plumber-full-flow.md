@@ -112,7 +112,6 @@
 ┃  │    - volsync-nfs-inject (NFS mount into VolSync mover jobs)        │             ┃
 ┃  │    - volsync-orphan-cleanup (cleanup every 15 min)                 │             ┃
 ┃  │    - vpa-auto-generate (VPA for all workloads)                     │             ┃
-┃  │    - reloader-annotation-inject (auto-restart on config change)    │             ┃
 ┃  │    - image-pull-policy (IfNotPresent cluster-wide)                 │             ┃
 ┃  └─────────────────────────────────────────────────────────────────────┘             ┃
 ┃                                                                                     ┃

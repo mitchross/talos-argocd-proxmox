@@ -8,7 +8,6 @@ resources:
 - policies/volsync-nfs-inject.yaml
 - policies/volsync-orphan-cleanup.yaml
 - policies/image-pull-policy.yaml
-- policies/reloader-annotation-inject.yaml
 - policies/vpa-auto-generate.yaml
 - policies/vpa-min-allowed.yaml
 helmCharts:
