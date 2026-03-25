@@ -91,6 +91,13 @@ spec:
         jsonPointers:
         - /status
         - /metadata/generation
+      # OTEL operator mutates collector spec after creation
+      - group: opentelemetry.io
+        kind: OpenTelemetryCollector
+        jsonPointers:
+        - /status
+        - /metadata/generation
+        - /metadata/annotations
       # PVC fields that are immutable after creation - needed for Volume Populator
       - group: ""
         kind: PersistentVolumeClaim
