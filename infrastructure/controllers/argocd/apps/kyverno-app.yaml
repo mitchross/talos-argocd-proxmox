@@ -39,7 +39,19 @@ spec:
     - /status
     - /metadata/generation
   - group: kyverno.io
+    kind: ClusterCleanupPolicy
+    jsonPointers:
+    - /status
+    - /metadata/generation
+  - group: kyverno.io
     kind: Policy
     jsonPointers:
     - /status
     - /metadata/generation
+  # Kyverno Helm chart CRDs — controller adds conversion/validation fields
+  - group: apiextensions.k8s.io
+    kind: CustomResourceDefinition
+    jqPathExpressions:
+    - .status
+    - .metadata.generation
+    - .spec.conversion
