@@ -4,6 +4,7 @@ resources:
   - projects.yaml
   # Critical applications with specific sync waves to prevent race conditions
   # Wave 0: Foundation components (networking + secrets infrastructure)
+  - argocd.yaml            # Wave 0 - ArgoCD self-management (Helm chart + config)
   - cilium-app.yaml        # Wave 0 - Networking foundation
   - 1passwordconnect.yaml  # Wave 0 - Secret backend (required by External Secrets)
   - external-secrets.yaml  # Wave 0 - External Secrets CRDs (required by Longhorn)

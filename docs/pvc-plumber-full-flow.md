@@ -91,7 +91,29 @@
 ┃  │    Mounts TrueNAS NFS share at /repository                         │             ┃
 ┃  │    Uses Kopia CLI to check for existing backups                     │             ┃
 ┃  │    Provides JSON API for Kyverno to query                           │             ┃
-┃  │    Must be running BEFORE Wave 4 (Kyverno policies call it)         │             ┃
+┃  │    Must be running BEFORE Wave 3 (Kyverno policies call it)         │             ┃
+┃  └─────────────────────────────────────────────────────────────────────┘             ┃
+┃                                                                                     ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+                                          │
+                                          ▼
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃                                                                                     ┃
+┃                        WAVE 3: KYVERNO (Standalone Application)                     ┃
+┃                                                                                     ┃
+┃  ┌─────────────────────────────────────────────────────────────────────┐             ┃
+┃  │    Kyverno Policy Engine                                           │             ┃
+┃  │                                                                     │             ┃
+┃  │    Standalone App (NOT in Infrastructure AppSet) so webhooks        │             ┃
+┃  │    register before any app PVCs are created at Wave 4+             │             ┃
+┃  │                                                                     │             ┃
+┃  │    Policies:                                                        │             ┃
+┃  │    - volsync-pvc-backup-restore (FAIL-CLOSED + auto-restore)       │             ┃
+┃  │    - volsync-nfs-inject (NFS mount into VolSync mover jobs)        │             ┃
+┃  │    - volsync-orphan-cleanup (cleanup every 15 min)                 │             ┃
+┃  │    - vpa-auto-generate (VPA for all workloads)                     │             ┃
+┃  │    - reloader-annotation-inject (auto-restart on config change)    │             ┃
+┃  │    - image-pull-policy (IfNotPresent cluster-wide)                 │             ┃
 ┃  └─────────────────────────────────────────────────────────────────────┘             ┃
 ┃                                                                                     ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
@@ -102,18 +124,17 @@
 ┃                        WAVE 4: INFRASTRUCTURE (ApplicationSet)                      ┃
 ┃                                                                                     ┃
 ┃  ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐         ┃
-┃  │     Cert-Manager    │  │      Kyverno        │  │    External-DNS     │         ┃
+┃  │     Cert-Manager    │  │    External-DNS     │  │      Gateway        │         ┃
 ┃  │                     │  │                     │  │                     │         ┃
-┃  │  TLS certificates   │  │  Policy engine      │  │  DNS automation     │         ┃
-┃  │  Let's Encrypt      │  │  Mutates PVCs       │  │  via Cloudflare     │         ┃
-┃  │                     │  │  Generates VolSync  │  │                     │         ┃
+┃  │  TLS certificates   │  │  DNS automation     │  │  Gateway API        │         ┃
+┃  │  Let's Encrypt      │  │  via Cloudflare     │  │  + HTTPRoutes       │         ┃
 ┃  └─────────────────────┘  └─────────────────────┘  └─────────────────────┘         ┃
 ┃                                                                                     ┃
 ┃  ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐         ┃
-┃  │   CloudNativePG     │  │    GPU Operator     │  │      Gateway        │         ┃
-┃  │                     │  │    (if needed)      │  │                     │         ┃
-┃  │  PostgreSQL         │  │                     │  │  Gateway API        │         ┃
-┃  │  clusters           │  │  NVIDIA drivers     │  │  + HTTPRoutes       │         ┃
+┃  │   CloudNativePG     │  │    GPU Operator     │  │      VPA            │         ┃
+┃  │   (Database AppSet) │  │    (if needed)      │  │                     │         ┃
+┃  │  PostgreSQL         │  │                     │  │  Vertical Pod       │         ┃
+┃  │  clusters           │  │  NVIDIA drivers     │  │  Autoscaler         │         ┃
 ┃  └─────────────────────┘  └─────────────────────┘  └─────────────────────┘         ┃
 ┃                                                                                     ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛

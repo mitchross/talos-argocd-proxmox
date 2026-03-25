@@ -1,3 +1,0 @@
-# infrastructure/controllers/argocd/apps/values.yaml
-deployment:
-  replicaCount: 1

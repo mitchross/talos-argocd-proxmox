@@ -20,10 +20,11 @@ The entry point is `infrastructure/controllers/argocd/root.yaml`. This applicati
 3.  Is the *only* thing applied manually (during bootstrap).
 
 ### ApplicationSets
-We use three primary ApplicationSets to categorize workloads:
-1.  **Infrastructure** (`infrastructure-appset.yaml`): Core system components (Cilium, Longhorn, Cert-Manager).
-2.  **Monitoring** (`monitoring-appset.yaml`): Observability stack (Prometheus, Grafana).
-3.  **My Apps** (`my-apps-appset.yaml`): User workloads.
+We use four ApplicationSets to categorize workloads:
+1.  **Infrastructure** (`infrastructure-appset.yaml`): Core system components (Cert-Manager, GPU operators, Gateway, etc.).
+2.  **Database** (`database-appset.yaml`): Database operators and instances via glob discovery (`infrastructure/database/*/*`). Uses `selfHeal: false` to preserve `skip-reconcile` annotations during DR.
+3.  **Monitoring** (`monitoring-appset.yaml`): Observability stack (Prometheus, Grafana).
+4.  **My Apps** (`my-apps-appset.yaml`): User workloads.
 
 ## 🌊 Sync Waves & Dependency Management
 
@@ -35,10 +36,12 @@ To solve the "chicken-and-egg" problem of bootstrapping a cluster (e.g., needing
 |------|-------|------------|-------------|
 | **0** | **Foundation** | `cilium`, `argocd`, `1password-connect`, `external-secrets`, `projects` | **Networking & Secrets**. The absolute minimum required for other pods to start and pull credentials. |
 | **1** | **Storage** | `longhorn`, `snapshot-controller`, `volsync` | **Persistence**. Depends on Wave 0 for Pod-to-Pod communication and secrets. |
-| **2** | **PVC Plumber** | `pvc-plumber` | **Backup checker**. Must be running before Kyverno policies in Wave 4 call its API. |
-| **4** | **Infrastructure** | `cert-manager`, `kyverno`, `gpu-operator`, `databases`, `gateway`, etc. | **Core Services** via ApplicationSet (explicit path list). |
-| **5** | **Monitoring** | `prometheus-stack`, `loki-stack`, `tempo` | **Observability** via ApplicationSet (discovers `monitoring/*`). |
-| **6** | **User** | `my-apps/*/*` | **Workloads** via ApplicationSet (discovers `my-apps/*/*`). |
+| **2** | **PVC Plumber** | `pvc-plumber` | **Backup checker**. Must be running before Kyverno policies in Wave 3 call its API. |
+| **3** | **Kyverno** | `kyverno` | **Policy engine**. Standalone Application (not in AppSet) so webhooks register before any app PVCs are created. If this were in the Wave 4 AppSet, the AppSet would report "healthy" immediately and apps could create PVCs before Kyverno webhooks are ready. |
+| **4** | **Infrastructure** | `cert-manager`, `gpu-operator`, `gateway`, etc. | **Core Services** via Infrastructure ApplicationSet (explicit path list). |
+| **4** | **Database** | `cloudnative-pg/*/*` | **Databases** via Database ApplicationSet (glob discovery). Uses `selfHeal: false` to preserve `skip-reconcile` annotations during DR recovery. |
+| **5** | **Monitoring** | `prometheus-stack`, `loki-stack`, `tempo` | **Observability** via Monitoring ApplicationSet (discovers `monitoring/*`). |
+| **6** | **User** | `my-apps/*/*` | **Workloads** via My-Apps ApplicationSet (discovers `my-apps/*/*`). |
 
 ### How It Works
 Each `Application` resource in `infrastructure/controllers/argocd/apps/` is annotated with a sync wave:
