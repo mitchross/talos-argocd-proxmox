@@ -44,3 +44,8 @@ spec:
     kind: Secret
     jsonPointers:
     - /data
+  # Longhorn controller mutates Setting values into versioned format
+  - group: longhorn.io
+    kind: Setting
+    jsonPointers:
+    - /value
