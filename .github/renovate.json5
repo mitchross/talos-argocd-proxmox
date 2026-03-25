@@ -128,6 +128,12 @@
         'my-apps/development/posthog/**',
       ],
     },
+    {
+      description: 'Pin project-nomad MySQL to 8.x (AdonisJS/Lucid not tested with MySQL 9)',
+      matchPackageNames: ['mysql'],
+      matchFileNames: ['my-apps/home/project-nomad/**'],
+      allowedVersions: '<9.0.0',
+    },
   ],
   ignorePaths: [
     '**/charts/**',
