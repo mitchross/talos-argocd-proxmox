@@ -63,6 +63,12 @@ spec:
         - .spec.data[].remoteRef.conversionStrategy
         - .spec.data[].remoteRef.decodingStrategy
         - .spec.data[].remoteRef.metadataPolicy
+      # imagePullPolicy may differ from Git due to previous Kyverno admission mutation
+      - group: apps
+        kind: StatefulSet
+        jqPathExpressions:
+        - .spec.template.spec.containers[].imagePullPolicy
+        - .spec.template.spec.initContainers[].imagePullPolicy
       # PVC fields that are immutable after creation - needed for Volume Populator
       - group: ""
         kind: PersistentVolumeClaim
