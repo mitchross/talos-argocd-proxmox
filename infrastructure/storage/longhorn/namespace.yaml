@@ -3,6 +3,6 @@ kind: Namespace
 metadata:
   name: longhorn-system
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "1"
   labels:
     pod-security.kubernetes.io/enforce: privileged

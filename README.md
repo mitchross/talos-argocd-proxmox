@@ -57,8 +57,10 @@ ArgoCD deploys applications in strict order to prevent dependency issues:
 |------|-----------|---------|
 | **0** | Foundation | Cilium (CNI), ArgoCD, 1Password Connect, External Secrets, AppProjects |
 | **1** | Storage | Longhorn, VolumeSnapshot Controller, VolSync |
-| **2** | PVC Plumber | Backup existence checker (must run before Kyverno in Wave 4) |
-| **4** | Infrastructure AppSet | Cert-Manager, External-DNS, GPU Operators, Kyverno, Gateway, databases (explicit path list) |
+| **2** | PVC Plumber | Backup existence checker (must run before Kyverno in Wave 3) |
+| **3** | Kyverno | Policy engine — standalone App so webhooks register before app PVCs are created |
+| **4** | Infrastructure AppSet | Cert-Manager, External-DNS, GPU Operators, Gateway (explicit path list) |
+| **4** | Database AppSet | CloudNativePG operators & instances (`selfHeal: false` for DR) |
 | **5** | Monitoring AppSet | Discovers `monitoring/*` (Prometheus, Grafana, Loki) |
 | **6** | My-Apps AppSet | Discovers `my-apps/*/*` (user applications) |
 
@@ -197,9 +199,11 @@ ArgoCD takes over and manages everything from Git:
 1. **Wave 0**: Cilium, 1Password Connect, External Secrets deploy in parallel
 2. **Wave 1**: Longhorn, Snapshot Controller, VolSync deploy after networking + secrets are ready
 3. **Wave 2**: PVC Plumber deploys (backup checker for Kyverno)
-4. **Wave 4**: Infrastructure AppSet deploys cert-manager, Kyverno, GPU operators, databases, gateway, etc.
-5. **Wave 5**: Monitoring AppSet deploys Prometheus, Grafana, Loki
-6. **Wave 6**: My-Apps AppSet deploys user applications
+4. **Wave 3**: Kyverno deploys (webhooks must register before app PVCs)
+5. **Wave 4**: Infrastructure AppSet deploys cert-manager, GPU operators, gateway, etc.
+6. **Wave 4**: Database AppSet deploys CloudNativePG operators and instances
+7. **Wave 5**: Monitoring AppSet deploys Prometheus, Grafana, Loki
+8. **Wave 6**: My-Apps AppSet deploys user applications
 
 New applications are discovered automatically by directory structure - add a directory with a `kustomization.yaml` and push to Git.
 
