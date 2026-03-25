@@ -10,6 +10,7 @@ resources:
 - policies/image-pull-policy.yaml
 - policies/reloader-annotation-inject.yaml
 - policies/vpa-auto-generate.yaml
+- policies/vpa-min-allowed.yaml
 helmCharts:
 - name: kyverno
   repo: https://kyverno.github.io/kyverno

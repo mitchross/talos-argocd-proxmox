@@ -5,6 +5,8 @@ metadata:
   namespace: project-nomad
   labels:
     app: project-nomad-mysql
+  annotations:
+    vpa.kubernetes.io/min-memory: "256Mi"
 spec:
   strategy:
     type: Recreate
