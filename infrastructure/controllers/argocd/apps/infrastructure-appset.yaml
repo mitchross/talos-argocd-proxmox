@@ -68,11 +68,11 @@ spec:
       ignoreDifferences:
       - group: gateway.networking.k8s.io
         kind: HTTPRoute
-        jsonPointers:
-        - /spec/rules/0/backendRefs/0/group
-        - /spec/rules/0/backendRefs/0/kind
-        - /spec/rules/0/backendRefs/0/weight
-        - /status
+        jqPathExpressions:
+        - .spec.rules[].backendRefs[].group
+        - .spec.rules[].backendRefs[].kind
+        - .spec.rules[].backendRefs[].weight
+        - .status
       - group: gateway.networking.k8s.io
         kind: Gateway
         jsonPointers:
