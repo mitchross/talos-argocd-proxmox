@@ -4,42 +4,50 @@ on:
     branches:
       - main
     paths:
+      - 'src/**'
       - 'docs/**'
-      - 'README.md'
-      - 'mkdocs.yml'
+      - 'astro.config.mjs'
+      - 'package.json'
+  workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Python
-        uses: actions/setup-python@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          python-version: '3.x'
-          
-      - name: Install mkdocs and plugins
-        run: |
-          pip install mkdocs-material
-          pip install mkdocs-mermaid2-plugin
-          
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build site
+        run: npm run build
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
-        
-      - name: Build site
-        run: mkdocs build
-        
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'site'
-          
+          path: dist
+
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4 
+        uses: actions/deploy-pages@v4
