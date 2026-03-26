@@ -1,0 +1,385 @@
+---
+title: Talos ArgoCD Proxmox
+description: Production-grade GitOps Kubernetes cluster on Talos OS
+template: splash
+hero:
+  tagline: A production-grade, self-healing Kubernetes cluster you can rebuild from zero with one git push.
+  actions:
+    - text: Start learning
+      link: /talos-argocd-proxmox/architecture/argocd/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/mitchross/talos-argocd-proxmox
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid, Tabs, TabItem, Steps, Aside } from '@astrojs/starlight/components';
+
+<div class="tech-stack">
+  <span class="pill">Kubernetes</span>
+  <span class="pill">Talos OS</span>
+  <span class="pill">ArgoCD</span>
+  <span class="pill">Cilium</span>
+  <span class="pill">Longhorn</span>
+  <span class="pill">NVIDIA GPU</span>
+  <span class="pill">1Password</span>
+  <span class="pill">OpenTelemetry</span>
+  <span class="pill">VolSync</span>
+  <span class="pill">llama-cpp</span>
+</div>
+
+<div class="stats">
+  <div class="stat">
+    <span class="number">7</span>
+    <span class="label">Sync Waves</span>
+  </div>
+  <div class="stat">
+    <span class="number">60+</span>
+    <span class="label">Applications</span>
+  </div>
+  <div class="stat">
+    <span class="number">0</span>
+    <span class="label">Manual Steps</span>
+  </div>
+  <div class="stat">
+    <span class="number">10G</span>
+    <span class="label">Networking</span>
+  </div>
+</div>
+
+---
+
+## Learn By Doing
+
+Pick a question. Follow the steps. Each one teaches you a piece of the architecture.
+
+---
+
+### How do I deploy an app?
+
+<Aside type="tip" title="No ArgoCD manifests needed">
+Just create a directory. ArgoCD's ApplicationSet scans `my-apps/*/*` and auto-creates an Application for each directory.
+</Aside>
+
+<Steps>
+
+1. **Create a folder**
+
+   ```bash
+   mkdir -p my-apps/development/my-app
+   ```
+
+2. **Add a `kustomization.yaml`** — this is what ArgoCD reads
+
+   ```yaml
+   apiVersion: kustomize.config.k8s.io/v1beta1
+   kind: Kustomization
+   resources:
+     - deployment.yaml
+     - service.yaml
+   ```
+
+   <Aside type="caution">Every YAML file must be listed in `resources:`. Unlisted files are **never deployed** — this is the most common mistake.</Aside>
+
+3. **Add your deployment**
+
+   ```yaml
+   apiVersion: apps/v1
+   kind: Deployment
+   metadata:
+     name: my-app
+   spec:
+     replicas: 1
+     strategy:
+       type: Recreate  # Always use Recreate with RWO PVCs
+     selector:
+       matchLabels:
+         app: my-app
+     template:
+       metadata:
+         labels:
+           app: my-app
+       spec:
+         containers:
+         - name: my-app
+           image: nginx:latest
+           ports:
+           - containerPort: 80
+             name: http  # Named ports required for Gateway API
+   ```
+
+4. **Push to Git** — ArgoCD discovers it within 60 seconds
+
+   ```bash
+   git add my-apps/development/my-app/
+   git commit -m "add my-app"
+   git push
+   ```
+
+</Steps>
+
+---
+
+### How do I store data?
+
+<Tabs>
+  <TabItem label="Longhorn (default)">
+    **Use for:** App data that needs backup, replication, and snapshots.
+
+    ```yaml
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: my-app-data
+      labels:
+        backup: "hourly"  # Triggers entire backup pipeline!
+    spec:
+      accessModes: [ReadWriteOnce]
+      resources:
+        requests:
+          storage: 10Gi
+      storageClassName: longhorn
+    ```
+
+    <Aside type="tip" title="One label = full backup pipeline">
+    Adding `backup: "hourly"` triggers Kyverno to automatically create:
+    - **ExternalSecret** — pulls Kopia password from 1Password
+    - **ReplicationSource** — backup every hour via VolSync
+    - **ReplicationDestination** — restore capability
+    </Aside>
+
+    <Aside type="caution">
+    Always use `strategy: type: Recreate` on Deployments with RWO PVCs — `RollingUpdate` causes Multi-Attach deadlock.
+    </Aside>
+  </TabItem>
+
+  <TabItem label="NFS (large files)">
+    **Use for:** AI models, media libraries — large files shared across pods.
+
+    ```yaml
+    apiVersion: v1
+    kind: PersistentVolume
+    metadata:
+      name: my-models-pv
+    spec:
+      capacity:
+        storage: 500Gi
+      accessModes: [ReadWriteMany]
+      persistentVolumeReclaimPolicy: Retain
+      storageClassName: ""
+      mountOptions:
+      - nfsvers=4.1
+      - nconnect=16       # 16 TCP connections per mount
+      - rsize=1048576      # 1MB read ops
+      - wsize=1048576      # 1MB write ops
+      - noatime
+      csi:
+        driver: nfs.csi.k8s.io
+        volumeHandle: my-models-pv
+        volumeAttributes:
+          server: "192.168.10.133"
+          share: "/mnt/BigTank/k8s/my-models"
+    ```
+
+    <Aside type="danger" title="Never use legacy nfs: block">
+    The legacy `nfs:` driver **silently ignores** `mountOptions`. Your `nconnect=16` and 1MB read/write sizes won't apply — you'll get ~140 MB/s instead of multi-GB/s. Always use CSI (`nfs.csi.k8s.io`).
+    </Aside>
+  </TabItem>
+
+  <TabItem label="Local storage">
+    **Use for:** Caches, temp data — node-local SSD, no replication.
+
+    ```yaml
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: my-cache
+    spec:
+      accessModes: [ReadWriteOnce]
+      resources:
+        requests:
+          storage: 50Gi
+      storageClassName: local-path
+    ```
+
+    <Aside type="caution">Data lives on the node's local disk. Node dies = data gone. Only use for rebuildable data.</Aside>
+  </TabItem>
+</Tabs>
+
+---
+
+### How do I expose an app to the internet?
+
+This cluster uses **Gateway API** (not Ingress).
+
+<Steps>
+
+1. **Ensure your Service has named ports** — Gateway API matches on port name, not number
+
+   ```yaml
+   apiVersion: v1
+   kind: Service
+   metadata:
+     name: my-app
+   spec:
+     selector:
+       app: my-app
+     ports:
+     - port: 80
+       targetPort: 80
+       name: http  # Required! Without this, routing silently fails
+   ```
+
+2. **Create an HTTPRoute**
+
+   ```yaml
+   apiVersion: gateway.networking.k8s.io/v1
+   kind: HTTPRoute
+   metadata:
+     name: my-app
+   spec:
+     parentRefs:
+     - name: internal    # or "external" for internet access
+       namespace: gateway
+     hostnames:
+     - "my-app.vanillax.me"
+     rules:
+     - matches:
+       - path:
+           type: PathPrefix
+           value: /
+       backendRefs:
+       - name: my-app
+         port: 80
+   ```
+
+   <Aside type="tip">Two gateways available: `internal` (LAN only) and `external` (internet via Cloudflare Tunnel). DNS records are created automatically by external-dns.</Aside>
+
+3. **Push to Git** — that's it, traffic flows automatically
+
+</Steps>
+
+---
+
+### How do I add a secret?
+
+**Never commit secrets to Git.** Store them in 1Password, reference via ExternalSecret:
+
+<Steps>
+
+1. **Add the secret to 1Password** — create an item in the `homelab-prod` vault
+
+2. **Create an ExternalSecret resource**
+
+   ```yaml
+   apiVersion: external-secrets.io/v1
+   kind: ExternalSecret
+   metadata:
+     name: my-app-secrets
+   spec:
+     refreshInterval: 1h
+     secretStoreRef:
+       kind: ClusterSecretStore
+       name: 1password
+     target:
+       name: my-app-secrets
+       creationPolicy: Owner
+     data:
+     - secretKey: API_KEY
+       remoteRef:
+         key: my-app        # Item name in 1Password
+         property: api_key  # Field name in that item
+   ```
+
+   <Aside type="tip">Secrets auto-refresh every hour. Update the value in 1Password and the K8s Secret updates automatically — no redeployment needed.</Aside>
+
+3. **Reference in your Deployment** — as env var or volume mount
+
+   ```yaml
+   env:
+   - name: API_KEY
+     valueFrom:
+       secretKeyRef:
+         name: my-app-secrets
+         key: API_KEY
+   ```
+
+</Steps>
+
+---
+
+### What happens when the cluster dies?
+
+<Tabs>
+  <TabItem label="Phase 1: Bootstrap">
+    Everything starts from one script:
+
+    ```bash
+    ./scripts/bootstrap-argocd.sh
+    ```
+
+    This installs ArgoCD and applies the root application. ArgoCD then discovers everything in Git and starts deploying wave by wave.
+  </TabItem>
+
+  <TabItem label="Phase 2: Waves deploy">
+    Sync waves ensure correct ordering — each waits for the previous to be **fully healthy**:
+
+    | Wave | What deploys | Why this order? |
+    |------|-------------|-----------------|
+    | **0** | Cilium, ArgoCD, 1Password, External Secrets | Pods need networking and secrets |
+    | **1** | Longhorn, Snapshots, VolSync | Apps need persistent storage |
+    | **2** | PVC Plumber | Must run before Kyverno calls its API |
+    | **3** | Kyverno | Webhooks must register before app PVCs |
+    | **4** | cert-manager, GPU operators, Gateway, DBs | Core services |
+    | **5** | OTEL, Prometheus, Loki, Grafana | Observability |
+    | **6** | All user apps | Auto-discovered from Git |
+  </TabItem>
+
+  <TabItem label="Phase 3: Data restores">
+    When an app's PVC is recreated during DR:
+
+    1. ArgoCD creates the PVC (with `backup: hourly` label)
+    2. Kyverno intercepts — checks if PVC Plumber is healthy
+    3. If Plumber is **down** → PVC creation is **denied** (fail-closed!)
+    4. If Plumber is **up** → queries for existing backups
+    5. Backup found → Kyverno injects `dataSourceRef` into PVC
+    6. VolSync restores from Kopia backup automatically
+
+    <Aside type="tip" title="Zero data loss">
+    The fail-closed design means you **never** accidentally create an empty PVC when a backup exists. The app just waits until the backup system is ready.
+    </Aside>
+  </TabItem>
+</Tabs>
+
+---
+
+## Deep Dives
+
+<CardGrid>
+  <Card title="ArgoCD & GitOps" icon="setting">
+    App-of-apps, sync waves, server-side diff, health checks, performance tuning.
+    [Read more →](/talos-argocd-proxmox/architecture/argocd/)
+  </Card>
+  <Card title="Backup & Restore" icon="rocket">
+    One label, automatic Kopia backups via Kyverno + VolSync + PVC Plumber.
+    [Read more →](/talos-argocd-proxmox/backup/backup-restore/)
+  </Card>
+  <Card title="CNPG Disaster Recovery" icon="warning">
+    Postgres recovery, ArgoCD race handling, serverName bumps.
+    [Read more →](/talos-argocd-proxmox/backup/cnpg-disaster-recovery/)
+  </Card>
+  <Card title="Network Security" icon="approve-check">
+    Cilium policies, LAN isolation, threat modeling, lateral movement prevention.
+    [Read more →](/talos-argocd-proxmox/architecture/network-policy/)
+  </Card>
+  <Card title="Network Topology" icon="laptop">
+    10G infrastructure, NFS tuning, IP layout.
+    [Read more →](/talos-argocd-proxmox/architecture/network-topology/)
+  </Card>
+  <Card title="VPA Optimization" icon="seti:config">
+    Vertical Pod Autoscaler + Kyverno — right-size everything.
+    [Read more →](/talos-argocd-proxmox/architecture/vpa-resource-optimization/)
+  </Card>
+</CardGrid>

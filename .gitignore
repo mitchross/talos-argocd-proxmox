@@ -103,6 +103,9 @@ config.xml
 *.pid
 /infrastructure/controllers/argocd/charts
 /node_modules
+/dist
+/.astro
+/site
 /infrastructure/networking/cilium/charts
 *.log
 credentials.base64
