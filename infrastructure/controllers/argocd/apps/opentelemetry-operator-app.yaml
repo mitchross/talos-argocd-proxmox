@@ -1,0 +1,44 @@
+# OpenTelemetry Operator
+# Standalone App at Wave 5 to ensure cert-manager (Wave 4) is ready
+# for admission webhook certificates
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: opentelemetry-operator
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+  labels:
+    app.kubernetes.io/part-of: infrastructure
+spec:
+  project: infrastructure
+  source:
+    repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+    targetRevision: main
+    path: infrastructure/controllers/opentelemetry-operator
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: opentelemetry
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
+    - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+  # OTEL operator mutates collector spec after creation
+  - group: opentelemetry.io
+    kind: OpenTelemetryCollector
+    jsonPointers:
+    - /status
+    - /metadata/generation
+    - /metadata/annotations

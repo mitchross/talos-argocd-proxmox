@@ -19,7 +19,9 @@ spec:
       - path: infrastructure/controllers/nvidia-gpu-operator
       - path: infrastructure/controllers/metrics-server
       - path: infrastructure/controllers/vertical-pod-autoscaler
-      - path: infrastructure/controllers/opentelemetry-operator
+      # NOTE: opentelemetry-operator is NOT listed here
+      # It has a dedicated standalone Application at Wave 5 (opentelemetry-operator-app.yaml)
+      # to ensure cert-manager (Wave 4) is ready for webhook certificates
       - path: infrastructure/networking/cloudflared
       - path: infrastructure/networking/gateway
       - path: infrastructure/storage/container-registry
@@ -91,13 +93,6 @@ spec:
         jsonPointers:
         - /status
         - /metadata/generation
-      # OTEL operator mutates collector spec after creation
-      - group: opentelemetry.io
-        kind: OpenTelemetryCollector
-        jsonPointers:
-        - /status
-        - /metadata/generation
-        - /metadata/annotations
       # PVC fields that are immutable after creation - needed for Volume Populator
       - group: ""
         kind: PersistentVolumeClaim

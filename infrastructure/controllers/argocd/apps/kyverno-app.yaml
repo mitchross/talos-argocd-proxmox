@@ -48,6 +48,15 @@ spec:
     jsonPointers:
     - /status
     - /metadata/generation
+  # Kyverno injects caBundle into webhooks after creation
+  - group: admissionregistration.k8s.io
+    kind: MutatingWebhookConfiguration
+    jqPathExpressions:
+    - .webhooks[].clientConfig.caBundle
+  - group: admissionregistration.k8s.io
+    kind: ValidatingWebhookConfiguration
+    jqPathExpressions:
+    - .webhooks[].clientConfig.caBundle
   # Kyverno Helm chart CRDs — controller adds conversion/validation fields
   - group: apiextensions.k8s.io
     kind: CustomResourceDefinition
