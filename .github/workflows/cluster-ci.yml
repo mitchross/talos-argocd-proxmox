@@ -88,6 +88,16 @@ jobs:
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             /tmp/all-manifests.yaml
 
+  kyverno-policy-safety:
+    name: Kyverno Policy Safety Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for dangerous Kyverno generate policy settings
+        run: bash ./scripts/validate-kyverno-policies.sh
+
   shellcheck:
     name: Shell Script Lint (Informational)
     runs-on: ubuntu-latest

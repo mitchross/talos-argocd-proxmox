@@ -201,6 +201,27 @@ spec:
 - Use backup labels on non-Longhorn PVCs (snapshot support required)
 - Add backup labels to CNPG database PVCs (they use Barman to S3, not Kyverno/VolSync)
 
+## Critical: Kyverno Policy Performance Rules
+
+**All generate policies MUST use `background: false`**. Background scanning causes Kyverno to re-evaluate every matching resource on a ~30s loop, generating UpdateRequests that hammer the API server. With 70+ workloads, this creates 800+ API calls per cycle and cascading crash loops across the entire cluster.
+
+**Never use `mutateExistingOnPolicyUpdate: true` on generate policies**. This re-evaluates ALL matching resources cluster-wide whenever the policy YAML changes — even a comment edit triggers it. Combined with background scanning, this caused a 23-hour API server overload incident (2026-03-25).
+
+**The safe pattern for all Kyverno generate policies:**
+```yaml
+spec:
+  mutateExistingOnPolicyUpdate: false  # REQUIRED — prevents cluster-wide re-evaluation on policy change
+  background: false                     # REQUIRED — prevents continuous background scanning
+  rules:
+    - name: my-generate-rule
+      generate:
+        synchronize: true               # OK — sync enforcement happens via admission webhook, not background scan
+```
+
+`synchronize: true` still works with `background: false` because sync is enforced through the admission controller. Generated resources are created/recreated when the trigger resource goes through admission (e.g., PVC creation via ArgoCD sync).
+
+**If you need to re-process existing resources after a policy change**, do a one-time ArgoCD sync or manually trigger resource re-admission — don't enable `mutateExistingOnPolicyUpdate`.
+
 ## Debugging Backup/Restore
 
 ```bash

@@ -4,7 +4,7 @@ How to use VPA to right-size Kubernetes resource requests based on actual worklo
 
 ## TL;DR — Just Tell Me What To Do
 
-**Everything is automatic.** A Kyverno ClusterPolicy auto-creates VPA resources for every workload in the cluster. Infrastructure/monitoring namespaces get `updateMode: "Off"` (recommend only). User app namespaces get `updateMode: "InPlaceOrRecreate"` (auto-tuning with in-place pod resize).
+**Everything is automatic.** A Kyverno ClusterPolicy auto-creates VPA resources for every workload in the cluster. Infrastructure/monitoring namespaces get `updateMode: "Off"` (recommend only). User app namespaces get `updateMode: "Initial"` (sets optimal resources at pod creation).
 
 ### Step 1: Check recommendations
 
@@ -46,7 +46,7 @@ resources:
     memory: 1Gi
 ```
 
-User app namespaces use `updateMode: "InPlaceOrRecreate"` — VPA automatically adjusts resources via in-place pod resize (K8s 1.35 GA). No manual intervention needed.
+User app namespaces use `updateMode: "Initial"` — VPA sets optimal resources when pods are created. No manual intervention needed.
 
 ### Step 5: Wait and re-check
 
@@ -70,17 +70,17 @@ Kyverno ClusterPolicy (vpa-auto-generate)
     │  • watches Deployments, StatefulSets, DaemonSets
     │  • auto-creates VPA per workload
     │  • infra/monitoring namespaces → updateMode: "Off"
-    │  • user app namespaces → updateMode: "InPlaceOrRecreate"
+    │  • user app namespaces → updateMode: "Initial"
     │  • GPU workloads → updateMode: "Off"
     ▼
 VPA resources (one per workload)
     │
     ├─ Infra namespaces: recommend-only (manual review)
-    └─ App namespaces: auto-resize (InPlaceOrRecreate)
+    └─ App namespaces: set at creation (Initial)
     │
     ▼
 Human reviews infra → updates values.yaml → Git push → ArgoCD applies
-VPA Updater auto-resizes app pods → no human intervention needed
+VPA Admission Controller sets resources at pod creation → no human intervention needed
 ```
 
 **Kyverno is the sole VPA creator.** The `vpa-auto-generate` ClusterPolicy watches all workloads and generates VPA resources automatically. No manual VPA manifests needed.
@@ -112,7 +112,7 @@ metrics-server and VPA are deployed via the **Infrastructure ApplicationSet** (W
 | Infrastructure (argocd, cilium, etc.) | `Off` | Recommend only — manual GitOps workflow |
 | Monitoring (prometheus-stack, loki-stack, etc.) | `Off` | Recommend only — manual GitOps workflow |
 | GPU workloads (runtimeClassName: nvidia) | `Off` | Recommend only — VPA can't manage GPU resources |
-| User apps (everything else) | `InPlaceOrRecreate` | Auto-resize pods without restart when possible |
+| User apps (everything else) | `Initial` | Set optimal resources at pod creation |
 
 ---
 
@@ -237,13 +237,12 @@ resources:
 
 4. Git commit and push — ArgoCD applies via GitOps
 
-### For User App Namespaces (updateMode: InPlaceOrRecreate)
+### For User App Namespaces (updateMode: Initial)
 
 No manual action needed. VPA automatically:
-1. Watches pod resource usage
-2. Calculates optimal requests
-3. Patches pods in-place (K8s 1.35 GA feature)
-4. Falls back to evict+recreate if in-place resize fails
+1. Watches pod resource usage and calculates optimal requests
+2. When a pod is recreated (deploy, scale, rollout), the admission controller sets optimal resources
+3. Running pods are not modified — changes take effect on next restart
 
 ### Setting Requests vs Limits
 
@@ -324,22 +323,22 @@ See `infrastructure/controllers/argocd/values.yaml` for the actual implementatio
 
 ---
 
-## In-Place Pod Resize (K8s 1.35)
+## Initial Mode (K8s 1.35)
 
-This cluster runs K8s v1.35.2 where In-Place Pod Resize is GA. VPA supports `updateMode: "InPlaceOrRecreate"` which resizes pods **without restarting them** when possible.
+This cluster runs K8s v1.35.3 where In-Place Pod Resize is GA. VPA uses `updateMode: "Initial"` which sets optimal resources **at pod creation time only** — it does not resize or evict running pods.
 
 ### How It Works
 
-1. VPA Updater watches pods with `InPlaceOrRecreate` mode
-2. If recommendation differs significantly from current resources, it patches the pod spec
-3. Kernel applies new CPU/memory limits **without restarting** the container (when supported)
-4. If in-place resize fails, pod is evicted and recreated with new resources
+1. VPA Admission Controller intercepts new pod creation
+2. Sets resource requests based on current VPA recommendation
+3. Pod starts with right-sized resources from the beginning
+4. Running pods are NOT modified — changes apply on next pod restart/recreation
 
 ### Namespace Strategy
 
 The Kyverno `vpa-auto-generate` policy sets update modes automatically:
 - **Infrastructure/monitoring**: `Off` — changes go through GitOps review
-- **User apps**: `InPlaceOrRecreate` — automatic resource adjustment
+- **User apps**: `Initial` — resources set at pod creation
 - **GPU workloads**: `Off` — VPA can't manage GPU resources
 
 ---
@@ -353,7 +352,7 @@ The `vpa-auto-generate` ClusterPolicy (`infrastructure/controllers/kyverno/polic
 **Three rules**:
 1. **generate-vpa-infra-off**: Infrastructure/monitoring namespaces get `updateMode: "Off"`
 2. **generate-vpa-gpu-off**: GPU workloads (runtimeClassName: nvidia) get `updateMode: "Off"`
-3. **generate-vpa-apps-auto**: Everything else gets `updateMode: "InPlaceOrRecreate"`
+3. **generate-vpa-auto-tune**: Everything else gets `updateMode: "Initial"`
 
 Generated VPAs have `ownerReferences` set to the parent workload, so they're automatically cleaned up when the workload is deleted.
 
@@ -371,7 +370,7 @@ kubectl get vpa -A -l app.kubernetes.io/managed-by=kyverno
 
 # Check a specific VPA's update mode
 kubectl get vpa -n immich -o jsonpath='{.items[0].spec.updatePolicy.updateMode}'
-# Expected: InPlaceOrRecreate
+# Expected: Initial (resources set at pod creation)
 
 kubectl get vpa -n argocd -o jsonpath='{.items[0].spec.updatePolicy.updateMode}'
 # Expected: Off
@@ -471,5 +470,5 @@ kubectl get events -A --field-selector reason=VpaUpdated
 
 ---
 
-**Last Updated**: 2026-03-09
-**Cluster**: talos-prod-cluster (K8s v1.35.2, Talos v1.12.5)
+**Last Updated**: 2026-03-26
+**Cluster**: talos-prod-cluster (K8s v1.35.3, Talos v1.12.6)

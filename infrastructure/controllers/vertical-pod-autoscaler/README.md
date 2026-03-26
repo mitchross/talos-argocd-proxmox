@@ -4,7 +4,7 @@ VPA monitors actual CPU/memory usage and recommends optimal resource requests fo
 
 ## How It Works
 
-A Kyverno ClusterPolicy (`infrastructure/controllers/kyverno/policies/vpa-auto-generate.yaml`) automatically creates a VPA resource for every Deployment, StatefulSet, and DaemonSet in the cluster. Infrastructure/monitoring namespaces get `updateMode: "Off"` (recommend only). User app namespaces get `updateMode: "InPlaceOrRecreate"` (auto-tuning via K8s 1.35 in-place pod resize).
+A Kyverno ClusterPolicy (`infrastructure/controllers/kyverno/policies/vpa-auto-generate.yaml`) automatically creates a VPA resource for every Deployment, StatefulSet, and DaemonSet in the cluster. Infrastructure/monitoring namespaces get `updateMode: "Off"` (recommend only). User app namespaces get `updateMode: "Initial"` (sets optimal resources at pod creation).
 
 ## Reading Recommendations
 

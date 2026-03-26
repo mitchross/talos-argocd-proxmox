@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Pre-commit hook: validates Kyverno policies before allowing commit.
+# Setup (run once per machine):
+#   git config core.hooksPath .githooks
+set -euo pipefail
+
+# Only run if Kyverno policy files are staged
+if git diff --cached --name-only | grep -q 'infrastructure/controllers/kyverno/'; then
+  echo "Running Kyverno policy safety check..."
+  bash ./scripts/validate-kyverno-policies.sh
+fi
