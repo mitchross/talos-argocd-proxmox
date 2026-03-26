@@ -15,11 +15,14 @@ metadata:
 spec:
   mutateExistingOnPolicyUpdate: false
   background: false
+  emitWarning: false
+  validationFailureAction: Audit
   rules:
     # Rule 1: Infrastructure and monitoring — recommend only
     # Resources in these namespaces are manually tuned via GitOps.
     # VPA provides recommendations but does not auto-apply them.
     - name: generate-vpa-recommend-only
+      skipBackgroundRequests: true
       match:
         any:
           - resources:
@@ -64,7 +67,7 @@ spec:
                 - k8sgpt
                 - pod-cleanup
       generate:
-        synchronize: true
+        synchronize: false
         apiVersion: autoscaling.k8s.io/v1
         kind: VerticalPodAutoscaler
         name: "{{request.object.metadata.name}}"
@@ -91,6 +94,7 @@ spec:
     # running pods. This prevents OOM kills on bursty workloads (e.g. Kafka,
     # TubeSync) where steady-state usage is low but peak usage needs headroom.
     - name: generate-vpa-auto-tune
+      skipBackgroundRequests: true
       match:
         any:
           - resources:
@@ -137,7 +141,7 @@ spec:
                 - k8sgpt
                 - pod-cleanup
       generate:
-        synchronize: true
+        synchronize: false
         apiVersion: autoscaling.k8s.io/v1
         kind: VerticalPodAutoscaler
         name: "{{request.object.metadata.name}}"

@@ -207,18 +207,23 @@ spec:
 
 **Never use `mutateExistingOnPolicyUpdate: true` on generate policies**. This re-evaluates ALL matching resources cluster-wide whenever the policy YAML changes — even a comment edit triggers it. Combined with background scanning, this caused a 23-hour API server overload incident (2026-03-25).
 
-**The safe pattern for all Kyverno generate policies:**
+**The safe pattern for all Kyverno generate policies (canonical form):**
 ```yaml
 spec:
   mutateExistingOnPolicyUpdate: false  # REQUIRED — prevents cluster-wide re-evaluation on policy change
   background: false                     # REQUIRED — prevents continuous background scanning
+  emitWarning: false                    # Kyverno default — include to match canonical form for ArgoCD sync
+  validationFailureAction: Audit        # Kyverno default — include to match canonical form for ArgoCD sync
   rules:
     - name: my-generate-rule
+      skipBackgroundRequests: true       # Kyverno default — include to match canonical form for ArgoCD sync
       generate:
-        synchronize: true               # OK — sync enforcement happens via admission webhook, not background scan
+        synchronize: false              # REQUIRED — prevents drift watchers that generate UpdateRequests on every controller status update
 ```
 
-`synchronize: true` still works with `background: false` because sync is enforced through the admission controller. Generated resources are created/recreated when the trigger resource goes through admission (e.g., PVC creation via ArgoCD sync).
+**Why `synchronize: false`**: With `synchronize: true`, Kyverno watches every generated resource (ExternalSecrets, ReplicationSources, etc.) and creates UpdateRequests whenever their controllers update status. With ~114 watched resources, this generates hundreds of thousands of API calls. Resources are still created on admission (PVC creation via ArgoCD sync) — they just aren't re-synced on drift.
+
+**Why canonical form**: Kyverno's admission webhook adds `emitWarning`, `validationFailureAction`, and `skipBackgroundRequests` as defaults. If these aren't in git, ArgoCD detects the diff and shows OutOfSync. Writing the defaults explicitly keeps ArgoCD happy.
 
 **If you need to re-process existing resources after a policy change**, do a one-time ArgoCD sync or manually trigger resource re-admission — don't enable `mutateExistingOnPolicyUpdate`.
 

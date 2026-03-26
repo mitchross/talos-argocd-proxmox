@@ -36,24 +36,16 @@ spec:
   ignoreDifferences:
   - group: kyverno.io
     kind: ClusterPolicy
-    jqPathExpressions:
-    - .metadata.generation
-    # Kyverno webhook adds these defaults on admission
-    - .spec.emitWarning
-    - .spec.validationFailureAction
-    - .spec.rules[].skipBackgroundRequests
+    jsonPointers:
+    - /metadata/generation
   - group: kyverno.io
     kind: ClusterCleanupPolicy
-    jqPathExpressions:
-    - .metadata.generation
-    - .spec.validationFailureAction
+    jsonPointers:
+    - /metadata/generation
   - group: kyverno.io
     kind: Policy
-    jqPathExpressions:
-    - .metadata.generation
-    - .spec.emitWarning
-    - .spec.validationFailureAction
-    - .spec.rules[].skipBackgroundRequests
+    jsonPointers:
+    - /metadata/generation
   # Kyverno injects caBundle into webhooks after creation
   - group: admissionregistration.k8s.io
     kind: MutatingWebhookConfiguration
