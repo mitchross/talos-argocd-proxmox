@@ -10,8 +10,8 @@ metadata:
       Automatically creates a VerticalPodAutoscaler for every Deployment,
       StatefulSet, and DaemonSet. Infrastructure and monitoring namespaces
       get updateMode "Off" (recommend-only, manual review via vpa-report.sh
-      and Grafana). User app namespaces get "InPlaceOrRecreate" for automatic
-      resource tuning with in-place pod resize (K8s 1.32+).
+      and Grafana). User app namespaces get "Initial" for automatic
+      resource tuning at pod creation (K8s 1.32+).
 spec:
   mutateExistingOnPolicyUpdate: false
   background: false
