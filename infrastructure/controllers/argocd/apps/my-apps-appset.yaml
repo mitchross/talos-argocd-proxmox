@@ -69,6 +69,8 @@ spec:
         jqPathExpressions:
         - .spec.template.spec.containers[].imagePullPolicy
         - .spec.template.spec.initContainers[].imagePullPolicy
+        - .spec.volumeClaimTemplates[].apiVersion
+        - .spec.volumeClaimTemplates[].kind
       # PVC fields that are immutable after creation - needed for Volume Populator
       - group: ""
         kind: PersistentVolumeClaim

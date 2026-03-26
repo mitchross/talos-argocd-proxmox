@@ -12,7 +12,7 @@ spec:
       cpu: 100m
       memory: 256Mi
     limits:
-      cpu: 1000m
+      cpu: "1"
       memory: 1Gi
   env:
   - name: HONEYCOMB_API_KEY
