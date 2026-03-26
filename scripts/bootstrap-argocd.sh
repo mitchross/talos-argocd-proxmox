@@ -16,7 +16,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
 
 # Expected Cilium version — must match infrastructure/networking/cilium/kustomization.yaml
-EXPECTED_CILIUM_VERSION="1.19.0"
+EXPECTED_CILIUM_VERSION="1.19.2"
 
 echo "🚀 Bootstrapping ArgoCD with sync waves..."
 
