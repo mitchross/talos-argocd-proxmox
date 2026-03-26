@@ -49,6 +49,7 @@ spec:
         jmesPath: 'target.metadata.labels."volsync.backup/pvc"'
     - name: pvcBackupLabel
       apiCall:
+        method: GET
         urlPath: "/api/v1/namespaces/{{target.metadata.namespace}}/persistentvolumeclaims"
         jmesPath: "items[?metadata.name=='{{pvcName}}'].metadata.labels.backup | [0] || ''"
   conditions:
