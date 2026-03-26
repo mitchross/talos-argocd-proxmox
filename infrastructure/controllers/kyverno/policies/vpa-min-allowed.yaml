@@ -15,8 +15,11 @@ metadata:
       handles the rest. Example: vpa.kubernetes.io/min-memory: "2Gi"
 spec:
   background: false
+  emitWarning: false
+  validationFailureAction: Audit
   rules:
     - name: inject-min-allowed
+      skipBackgroundRequests: true
       match:
         any:
           - resources:

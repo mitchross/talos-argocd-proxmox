@@ -14,11 +14,14 @@ metadata:
 spec:
   mutateExistingOnPolicyUpdate: false
   background: false
+  emitWarning: false
+  validationFailureAction: Audit
   rules:
     # Rule 0: Gate PVC creation on PVC Plumber availability (FAIL-CLOSED)
     # If PVC Plumber is unreachable, DENY PVC creation to prevent data loss
     # during disaster recovery. Apps retry via ArgoCD backoff until Plumber is healthy.
     - name: require-pvc-plumber-available
+      skipBackgroundRequests: true
       match:
         any:
           - resources:
@@ -60,6 +63,7 @@ spec:
     # Rule 1: Conditionally add dataSourceRef if backup exists in Kopia
     # IMPORTANT: Only trigger on CREATE to avoid race conditions during PVC deletion
     - name: add-datasource-if-backup-exists
+      skipBackgroundRequests: true
       match:
         any:
           - resources:
@@ -103,6 +107,7 @@ spec:
 
     # Rule 2: Generate ExternalSecret for Kopia repository credentials
     - name: generate-kopia-secret
+      skipBackgroundRequests: true
       match:
         any:
           - resources:
@@ -121,7 +126,7 @@ spec:
                 - volsync-system
                 - kyverno
       generate:
-        synchronize: true
+        synchronize: false
         apiVersion: external-secrets.io/v1
         kind: ExternalSecret
         name: "volsync-{{request.object.metadata.name}}"
@@ -160,6 +165,7 @@ spec:
     # Rule 3: Generate ReplicationSource (backup schedule)
     # IMPORTANT: Only create backup AFTER PVC is Bound to avoid conflicts with restore
     - name: generate-replication-source
+      skipBackgroundRequests: true
       match:
         any:
           - resources:
@@ -190,7 +196,7 @@ spec:
             operator: GreaterThanOrEquals
             value: "2h"
       generate:
-        synchronize: true
+        synchronize: false
         apiVersion: volsync.backube/v1alpha1
         kind: ReplicationSource
         name: "{{request.object.metadata.name}}-backup"
@@ -225,6 +231,7 @@ spec:
 
     # Rule 4: Generate ReplicationDestination (restore capability)
     - name: generate-replication-destination
+      skipBackgroundRequests: true
       match:
         any:
           - resources:
@@ -243,7 +250,7 @@ spec:
                 - volsync-system
                 - kyverno
       generate:
-        synchronize: true
+        synchronize: false
         apiVersion: volsync.backube/v1alpha1
         kind: ReplicationDestination
         name: "{{request.object.metadata.name}}-backup"

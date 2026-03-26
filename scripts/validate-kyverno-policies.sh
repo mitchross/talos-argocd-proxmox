@@ -2,9 +2,10 @@
 # Validates Kyverno generate policies for dangerous settings that cause API server overload.
 # Used by: CI pipeline, pre-commit hook
 #
-# background: true on generate policies → continuous background scanning (~30s loop)
+# background: true → continuous background scanning (~30s loop)
 # mutateExistingOnPolicyUpdate: true → re-evaluates ALL matching resources on policy change
-# Both caused a 23-hour API server overload incident (2026-03-25).
+# synchronize: true → drift watchers create UpdateRequests on every controller status update
+# All three caused a 23-hour API server overload incident (2026-03-25).
 set -euo pipefail
 
 ERRORS=0
@@ -24,6 +25,14 @@ for file in $(grep -rl 'kind: ClusterPolicy\|kind: Policy' infrastructure/contro
     echo "ERROR: ${file}"
     echo "  mutateExistingOnPolicyUpdate: true re-evaluates ALL matching resources on any policy change."
     echo "  Use: mutateExistingOnPolicyUpdate: false"
+    echo ""
+    ERRORS=$((ERRORS + 1))
+  fi
+
+  if grep -q 'synchronize: true' "$file"; then
+    echo "ERROR: ${file}"
+    echo "  synchronize: true creates drift watchers that generate UpdateRequests on every controller update."
+    echo "  Use: synchronize: false"
     echo ""
     ERRORS=$((ERRORS + 1))
   fi

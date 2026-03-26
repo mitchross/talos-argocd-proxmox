@@ -112,8 +112,10 @@ docs/                   # Documentation
 - Manually create or delete ReplicationSource/ReplicationDestination (Kyverno manages these)
 - Use legacy `nfs:` block for NFS PVs (mountOptions silently ignored — use CSI)
 - Use `RollingUpdate` strategy on Deployments with RWO PVCs (causes Multi-Attach deadlock)
-- Use `background: true` on Kyverno generate policies — **causes API server overload from continuous background scanning of all matching resources; use `background: false` and rely on admission-time generation**
-- Use `mutateExistingOnPolicyUpdate: true` on Kyverno generate policies — **re-evaluates ALL matching resources cluster-wide on any policy change, creating UpdateRequest storms**
+- Use `background: true` on Kyverno generate policies — **causes API server overload from continuous background scanning; use `background: false`**
+- Use `mutateExistingOnPolicyUpdate: true` on Kyverno generate policies — **re-evaluates ALL matching resources cluster-wide on any policy change**
+- Use `synchronize: true` on Kyverno generate policies — **drift watchers create UpdateRequests on every controller status update, hammering the API server; use `synchronize: false`**
+- Omit Kyverno canonical defaults (`emitWarning`, `validationFailureAction`, `skipBackgroundRequests`) from policy YAML — **Kyverno webhook adds them, ArgoCD detects the diff, app shows OutOfSync**
 
 ## Nested CLAUDE.md Files
 
