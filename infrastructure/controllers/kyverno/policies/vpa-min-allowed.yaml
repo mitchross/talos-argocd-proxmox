@@ -14,12 +14,9 @@ metadata:
       Add the annotation to any Deployment/StatefulSet/DaemonSet — Kyverno
       handles the rest. Example: vpa.kubernetes.io/min-memory: "2Gi"
 spec:
-  # Run on both admission and background sync so minAllowed survives
-  # VPA regeneration by the vpa-auto-generate policy.
-  background: true
+  background: false
   rules:
     - name: inject-min-allowed
-      skipBackgroundRequests: true
       match:
         any:
           - resources:

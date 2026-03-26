@@ -13,8 +13,8 @@ metadata:
       and Grafana). User app namespaces get "InPlaceOrRecreate" for automatic
       resource tuning with in-place pod resize (K8s 1.32+).
 spec:
-  mutateExistingOnPolicyUpdate: true
-  background: true
+  mutateExistingOnPolicyUpdate: false
+  background: false
   rules:
     # Rule 1: Infrastructure and monitoring — recommend only
     # Resources in these namespaces are manually tuned via GitOps.
@@ -63,7 +63,6 @@ spec:
                 - monitoring
                 - k8sgpt
                 - pod-cleanup
-      skipBackgroundRequests: false
       generate:
         synchronize: true
         apiVersion: autoscaling.k8s.io/v1
@@ -137,7 +136,6 @@ spec:
                 - monitoring
                 - k8sgpt
                 - pod-cleanup
-      skipBackgroundRequests: false
       generate:
         synchronize: true
         apiVersion: autoscaling.k8s.io/v1
