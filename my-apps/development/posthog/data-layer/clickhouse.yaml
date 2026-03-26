@@ -25,6 +25,7 @@ spec:
       containers:
       - name: clickhouse
         image: clickhouse/clickhouse-server:25.12.5.44
+        imagePullPolicy: IfNotPresent
         env:
         - name: CLICKHOUSE_SKIP_USER_SETUP
           value: "1"
