@@ -1,0 +1,108 @@
+name: Cluster CI
+
+on:
+  pull_request:
+    paths:
+      - infrastructure/**
+      - monitoring/**
+      - my-apps/**
+      - scripts/**
+      - scripts/validate-argocd-apps.sh
+      - .github/workflows/cluster-ci.yml
+  push:
+    branches:
+      - main
+    paths:
+      - infrastructure/**
+      - monitoring/**
+      - my-apps/**
+      - scripts/**
+      - scripts/validate-argocd-apps.sh
+      - .github/workflows/cluster-ci.yml
+
+permissions:
+  contents: read
+
+jobs:
+  argocd-structure:
+    name: ArgoCD Structure Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate ArgoCD app topology
+        run: bash ./scripts/validate-argocd-apps.sh
+
+  render-and-schema:
+    name: Kustomize Render and Schema Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v2
+        with:
+          kustomize-version: v5.4.2
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.2
+
+      - name: Install kubeconform
+        run: |
+          set -euo pipefail
+          KUBECONFORM_VERSION="v0.6.7"
+          curl -sSL -o /tmp/kubeconform.tar.gz "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+          tar -xzf /tmp/kubeconform.tar.gz -C /tmp
+          sudo mv /tmp/kubeconform /usr/local/bin/kubeconform
+          kubeconform -v
+
+      - name: Render all kustomizations
+        run: |
+          set -euo pipefail
+          mapfile -t dirs < <(find infrastructure monitoring my-apps -type f -name kustomization.yaml -exec dirname {} \; | sort -u)
+
+          if [ "${#dirs[@]}" -eq 0 ]; then
+            echo "No kustomization directories found."
+            exit 1
+          fi
+
+          : > /tmp/all-manifests.yaml
+          for dir in "${dirs[@]}"; do
+            echo "Rendering ${dir}"
+            kustomize build "${dir}" --enable-helm >> /tmp/all-manifests.yaml
+            echo "---" >> /tmp/all-manifests.yaml
+          done
+
+      - name: Validate Kubernetes schemas
+        run: |
+          set -euo pipefail
+          kubeconform \
+            -strict \
+            -summary \
+            -ignore-missing-schemas \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            /tmp/all-manifests.yaml
+
+  shellcheck:
+    name: Shell Script Lint (Informational)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Run shellcheck on scripts
+        run: |
+          set -euo pipefail
+          shellcheck -S warning scripts/*.sh

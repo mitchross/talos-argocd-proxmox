@@ -26,23 +26,23 @@ configs:
     timeout.reconciliation: "60s"
     timeout.reconciliation.jitter: "30s"
     # Force cache invalidation periodically so manual Sync actually re-fetches from git
-    timeout.hard.reconciliation: "60s"
+    # Use "Hard Refresh" button in UI for immediate re-fetch; this is the periodic fallback
+    timeout.hard.reconciliation: "0"
     # Ignore Gateway API HTTPRoute parentRefs normalization
     resource.customizations.ignoreDifferences.gateway.networking.k8s.io_HTTPRoute: |
       jqPathExpressions:
       - '.spec.parentRefs[]? | select(.group == null or .kind == null)'
       jsonPointers:
       - /spec/parentRefs
-    # CRDs — K8s API server adds conversion, status, and generation fields
+    # CRDs — K8s API server adds conversion and generation fields
+    # NOTE: .status ignored globally by ArgoCD 3.0+ (PR #22230)
     resource.customizations.ignoreDifferences.apiextensions.k8s.io_CustomResourceDefinition: |
       jqPathExpressions:
-      - .status
       - .metadata.generation
       - .spec.conversion
     # OpenTelemetry operator mutates collector after creation
     resource.customizations.ignoreDifferences.opentelemetry.io_OpenTelemetryCollector: |
       jqPathExpressions:
-      - .status
       - .metadata.generation
       - .metadata.annotations
     # Secrets managed by cert-manager/webhooks — caBundle and cert data change

@@ -19,6 +19,7 @@ spec:
     # If PVC Plumber is unreachable, DENY PVC creation to prevent data loss
     # during disaster recovery. Apps retry via ArgoCD backoff until Plumber is healthy.
     - name: require-pvc-plumber-available
+      skipBackgroundRequests: true
       match:
         any:
           - resources:
@@ -45,6 +46,7 @@ spec:
             service:
               url: "http://pvc-plumber.volsync-system.svc.cluster.local/readyz"
       validate:
+        allowExistingViolations: true
         message: >-
           PVC Plumber is not available. Backup-labeled PVCs cannot be created
           until PVC Plumber is healthy in volsync-system namespace. This ensures
@@ -59,6 +61,7 @@ spec:
     # Rule 1: Conditionally add dataSourceRef if backup exists in Kopia
     # IMPORTANT: Only trigger on CREATE to avoid race conditions during PVC deletion
     - name: add-datasource-if-backup-exists
+      skipBackgroundRequests: true
       match:
         any:
           - resources:
