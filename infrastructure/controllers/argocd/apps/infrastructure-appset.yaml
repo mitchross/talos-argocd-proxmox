@@ -68,21 +68,16 @@ spec:
             factor: 2
             maxDuration: 3m
       ignoreDifferences:
+      # NOTE: .status ignored globally by ArgoCD 3.0+ — only non-status fields listed
       - group: gateway.networking.k8s.io
         kind: HTTPRoute
         jqPathExpressions:
         - .spec.rules[].backendRefs[].group
         - .spec.rules[].backendRefs[].kind
         - .spec.rules[].backendRefs[].weight
-        - .status
-      - group: gateway.networking.k8s.io
-        kind: Gateway
-        jsonPointers:
-        - /status
       - group: external-secrets.io
         kind: ExternalSecret
         jqPathExpressions:
-        - .status
         - .metadata.generation
         - .metadata.finalizers
         - .spec.data[].remoteRef.conversionStrategy
@@ -91,7 +86,6 @@ spec:
       - group: kyverno.io
         kind: ClusterPolicy
         jsonPointers:
-        - /status
         - /metadata/generation
       # PVC fields that are immutable after creation - needed for Volume Populator
       - group: ""

@@ -32,21 +32,19 @@ spec:
         duration: 10s
         factor: 2
         maxDuration: 5m
+  # NOTE: .status ignored globally by ArgoCD 3.0+ — only non-status fields listed
   ignoreDifferences:
   - group: kyverno.io
     kind: ClusterPolicy
     jsonPointers:
-    - /status
     - /metadata/generation
   - group: kyverno.io
     kind: ClusterCleanupPolicy
     jsonPointers:
-    - /status
     - /metadata/generation
   - group: kyverno.io
     kind: Policy
     jsonPointers:
-    - /status
     - /metadata/generation
   # Kyverno injects caBundle into webhooks after creation
   - group: admissionregistration.k8s.io
@@ -57,10 +55,10 @@ spec:
     kind: ValidatingWebhookConfiguration
     jqPathExpressions:
     - .webhooks[].clientConfig.caBundle
-  # Kyverno Helm chart CRDs — controller adds conversion/validation fields
+  # Kyverno Helm chart CRDs — controller adds empty labels
   - group: apiextensions.k8s.io
     kind: CustomResourceDefinition
     jqPathExpressions:
-    - .status
     - .metadata.generation
+    - .metadata.labels
     - .spec.conversion

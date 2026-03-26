@@ -34,11 +34,11 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 3m
+  # NOTE: .status ignored globally by ArgoCD 3.0+ — only non-status fields listed
   ignoreDifferences:
   # OTEL operator mutates collector spec after creation
   - group: opentelemetry.io
     kind: OpenTelemetryCollector
     jsonPointers:
-    - /status
     - /metadata/generation
     - /metadata/annotations

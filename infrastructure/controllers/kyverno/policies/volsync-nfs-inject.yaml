@@ -12,6 +12,7 @@ metadata:
 spec:
   rules:
     - name: inject-nfs-volume-add-volume
+      skipBackgroundRequests: true
       match:
         any:
           - resources:
@@ -31,6 +32,7 @@ spec:
                       server: "192.168.10.133"
                       path: "/mnt/BigTank/k8s/volsync-kopia-nfs"
     - name: inject-nfs-volume-add-mounts
+      skipBackgroundRequests: true
       match:
         any:
           - resources:

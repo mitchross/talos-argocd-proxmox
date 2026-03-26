@@ -19,6 +19,7 @@ spec:
   background: true
   rules:
     - name: inject-min-allowed
+      skipBackgroundRequests: true
       match:
         any:
           - resources:
@@ -38,6 +39,7 @@ spec:
         # Fetch the target workload to read its annotations
         - name: workload
           apiCall:
+            method: GET
             urlPath: "/apis/apps/v1/namespaces/{{request.object.metadata.namespace}}/{{pluralKind}}/{{request.object.spec.targetRef.name}}"
       preconditions:
         all:
