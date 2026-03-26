@@ -25,8 +25,8 @@ spec:
     providerdata: |
       cores: 16
       sockets: 1
-      memory: 64000
-      disk_size: 500
+      memory: 65536
+      disk_size: 600
       network_bridge: vmbr1
       storage_selector: name == "ssdpool"
       # Disk performance (SSD/NVMe optimization)
@@ -35,4 +35,8 @@ spec:
       disk_iothread: true
       disk_cache: none
       disk_aio: io_uring
+      # VM optimizations
+      cpu_type: host
+      machine_type: q35
+      balloon: false
       # Storage via 10G switch (192.168.10.133) - no dedicated NIC needed
