@@ -25,7 +25,7 @@ spec:
     providerdata: |
       cores: 4
       sockets: 1
-      memory: 16000
+      memory: 24576
       disk_size: 60
       network_bridge: vmbr1
       storage_selector: name == "fastpool"
@@ -35,3 +35,7 @@ spec:
       disk_iothread: true
       disk_cache: none
       disk_aio: io_uring
+      # VM optimizations
+      cpu_type: host
+      machine_type: q35
+      balloon: false

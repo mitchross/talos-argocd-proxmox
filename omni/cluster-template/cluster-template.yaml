@@ -42,6 +42,8 @@ patches:
         net.ipv4.tcp_wmem: 4096 65536 33554432
         net.ipv4.tcp_slow_start_after_idle: "0"
         net.ipv4.tcp_mtu_probing: "1"
+        net.ipv4.tcp_tw_reuse: "1"
+        net.core.netdev_max_backlog: "16384"
         sunrpc.tcp_slot_table_entries: "128"
         sunrpc.tcp_max_slot_table_entries: "65536"
       udev:
@@ -70,7 +72,7 @@ patches:
       etcd:
         extraArgs:
           quota-backend-bytes: "8589934592"
-          snapshot-count: "50000"
+          snapshot-count: "5000"
           auto-compaction-mode: "periodic"
           auto-compaction-retention: "5m"
       controllerManager:
@@ -94,6 +96,12 @@ systemExtensions:
 - siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 patches:
+- name: kubelet-performance
+  inline:
+    machine:
+      kubelet:
+        extraConfig:
+          serializeImagePulls: false
 - name: longhorn-storage
   inline:
     machine:
@@ -133,6 +141,12 @@ patches:
     kind: DHCPv4Config
     name: ens18
 - file: patches/gpu-worker.yaml
+- name: kubelet-performance
+  inline:
+    machine:
+      kubelet:
+        extraConfig:
+          serializeImagePulls: false
 - name: longhorn-storage
   inline:
     machine:
