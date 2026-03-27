@@ -1,5 +1,20 @@
+admissionController:
+  registerWebhook: true
+  extraArgs:
+    - --feature-gates=InPlaceOrRecreate=true
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  certGen:
+    enabled: false
+
 recommender:
-  enabled: true
+  replicas: 1
   resources:
     requests:
       cpu: 50m
@@ -9,7 +24,7 @@ recommender:
       memory: 512Mi
 
 updater:
-  enabled: true
+  replicas: 1
   resources:
     requests:
       cpu: 50m
@@ -17,15 +32,3 @@ updater:
     limits:
       cpu: 200m
       memory: 512Mi
-
-admissionController:
-  enabled: true
-  extraArgs:
-    feature-gates: InPlaceOrRecreate=true
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      cpu: 200m
-      memory: 256Mi
