@@ -146,7 +146,7 @@ spec:
     spec:
       containers:
         - name: feature-flags
-          image: ghcr.io/posthog/posthog/feature-flags:master
+          image: ghcr.io/posthog/posthog/feature-flags:master@sha256:8dc775503fbf33389f9c3653bd96d399ea3680f9b07ab6620c4ca10516b0e752
           env:
             - name: PGPASSWORD
               valueFrom:
