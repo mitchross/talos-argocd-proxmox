@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitea
+spec:
+  template:
+    spec:
+      initContainers:
+      - name: fix-permissions
+        image: alpine:3.21
+        command:
+        - sh
+        - -c
+        - chown -R 1000:1000 /data && chmod -R 700 /data/git/.ssh 2>/dev/null; true
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        securityContext:
+          runAsUser: 0
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL

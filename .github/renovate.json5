@@ -122,11 +122,33 @@
       versioning: 'regex:^(?<major>\\d{4})\\.(?<minor>\\d{1,2})\\.(?<patch>\\d{1,2})-[a-f0-9]+$',
     },
     {
-      description: 'Ignore PostHog managed images (pinned to docker-compose hobby versions)',
-      enabled: false,
-      matchFileNames: [
-        'my-apps/development/posthog/**',
+      description: 'PostHog app images: auto-merge digest updates (rolling release)',
+      matchPackageNames: [
+        'posthog/posthog',
+        'posthog/posthog-node',
+        'ghcr.io/posthog/posthog/capture',
+        'ghcr.io/posthog/posthog/property-defs-rs',
+        'ghcr.io/posthog/posthog/feature-flags',
+        'ghcr.io/posthog/posthog/livestream',
+        'ghcr.io/posthog/posthog/cyclotron-janitor',
+        'ghcr.io/posthog/posthog/cymbal',
       ],
+      matchFileNames: ['my-apps/development/posthog/**'],
+      automerge: true,
+      automergeType: 'branch',
+      schedule: ['every weekend'],
+    },
+    {
+      description: 'PostHog data layer: disable auto-updates (versions must match PostHog docker-compose.base.yml)',
+      matchPackageNames: [
+        'postgres',
+        'valkey/valkey',
+        'redis',
+        'clickhouse/clickhouse-server',
+        'docker.redpanda.com/redpandadata/redpanda',
+      ],
+      matchFileNames: ['my-apps/development/posthog/**'],
+      enabled: false,
     },
     {
       description: 'Pin project-nomad MySQL to 8.x (AdonisJS/Lucid not tested with MySQL 9)',
