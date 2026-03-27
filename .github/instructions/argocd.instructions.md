@@ -80,13 +80,14 @@ Standard sync options for all applications:
 - **DO NOT use `ApplyOutOfSyncOnly=true`** — causes silent sync failures with SSA (configmaps not applied)
 
 ### Retry Strategy
+All apps use infinite retries to survive transient failures during bootstrap (e.g. Kyverno webhook warmup):
 ```yaml
 retry:
-  limit: 5
+  limit: -1          # Infinite — apps must never permanently die
   backoff:
-    duration: 5s
+    duration: 10s
     factor: 2
-    maxDuration: 3m
+    maxDuration: 10m  # Cap backoff at 10 minutes
 ```
 
 ## Sync Waves and Dependencies

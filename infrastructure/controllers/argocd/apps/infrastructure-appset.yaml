@@ -63,7 +63,7 @@ spec:
         - RespectIgnoreDifferences=true
         - Replace=false
         retry:
-          limit: 10
+          limit: -1  # Infinite retries — apps must never permanently die during bootstrap
           backoff:
             duration: 10s
             factor: 2

@@ -28,7 +28,7 @@ spec:
     - ServerSideApply=true
     - RespectIgnoreDifferences=true
     retry:
-      limit: 10
+      limit: -1
       backoff:
         duration: 15s
         factor: 2
