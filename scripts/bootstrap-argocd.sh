@@ -113,12 +113,8 @@ echo ""
 echo "⏳ Waiting for ArgoCD server to be available..."
 kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
 
-# Step 5: Apply HTTPRoute (if it exists)
-if [ -f "$ROOT_DIR/infrastructure/controllers/argocd/http-route.yaml" ]; then
-  echo ""
-  echo "🌐 Applying HTTPRoute..."
-  kubectl apply -f "$ROOT_DIR/infrastructure/controllers/argocd/http-route.yaml"
-fi
+# Step 5: HTTPRoute deploys automatically with Gateway at Wave 4
+# (moved to infrastructure/networking/gateway/ to avoid bootstrap deadlock)
 
 # Step 6: Apply root application to start GitOps self-management
 echo ""
