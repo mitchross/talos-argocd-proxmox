@@ -6,7 +6,10 @@
       "WebFetch(domain:*)",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:posthog.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:ghcr.io)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:hub.docker.com)"
     ],
     "deny": [
       "Bash(git reset --hard:*)",

@@ -24,7 +24,7 @@ spec:
         feature.node.kubernetes.io/cpu-cpuid.AVX2: "true"
       containers:
       - name: web
-        image: posthog/posthog:35c95290a3e4da0dd38c7d4c756d4f9fc96f821c
+        image: posthog/posthog:0c1bf64077d318019343b6894674713115f5effa
         command:
         - /bin/sh
         - -c
@@ -106,7 +106,7 @@ spec:
             cpu: 1200m
             memory: 4Gi
           limits:
-            memory: 8Gi
+            memory: 12Gi
 ---
 apiVersion: v1
 kind: Service
