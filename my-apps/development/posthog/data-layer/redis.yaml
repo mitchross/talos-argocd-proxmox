@@ -25,7 +25,7 @@ spec:
       containers:
       - name: redis7
         image: valkey/valkey:8.0-alpine
-        command: [ "redis-server", "--maxmemory-policy", "allkeys-lru", "--maxmemory", "200mb" ]
+        command: [ "redis-server", "--maxmemory-policy", "allkeys-lru", "--maxmemory", "512mb" ]
         ports:
         - containerPort: 6379
           name: redis
@@ -42,7 +42,7 @@ spec:
             cpu: 50m
             memory: 64Mi
           limits:
-            memory: 256Mi
+            memory: 768Mi
         volumeMounts:
         - name: redis7-data
           mountPath: /data
@@ -72,6 +72,7 @@ metadata:
   namespace: posthog
   labels:
     app: posthog-redis
+    backup: "daily"
 spec:
   accessModes:
   - ReadWriteOnce

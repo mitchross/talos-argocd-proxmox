@@ -63,7 +63,7 @@ spec:
             cpu: 250m
             memory: 512Mi
           limits:
-            memory: 2Gi
+            memory: 4Gi
         volumeMounts:
         - name: postgres-data
           mountPath: /var/lib/postgresql/data
@@ -93,6 +93,7 @@ metadata:
   namespace: posthog
   labels:
     app: posthog-db
+    backup: "daily"
 spec:
   accessModes:
   - ReadWriteOnce
