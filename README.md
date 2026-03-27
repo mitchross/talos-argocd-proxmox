@@ -76,13 +76,48 @@ ArgoCD deploys applications in strict order to prevent dependency issues:
 
 Once your cluster is provisioned via Omni, follow these steps to install the GitOps stack.
 
+### Step 0: Get Cluster Access (kubectl)
+
+You need `kubectl` access before anything else. The default OIDC kubeconfig expires and requires a browser — use the **Omni service account** for a stable bearer token instead.
+
+> **Prerequisite**: You must have the `OMNI_SERVICE_ACCOUNT_KEY` stored in 1Password (item: `talos-prod-sa`). See [Cluster Access](#cluster-access-omni-service-account) for how to create a service account if you don't have one yet.
+
+```bash
+# Sign in to 1Password
+eval $(op signin)
+
+# Set Omni endpoint
+export OMNI_ENDPOINT=https://omni.vanillax.me:443
+
+# Pull the service account key from 1Password
+export OMNI_SERVICE_ACCOUNT_KEY="$(op read 'op://homelab-prod/talos-omni-k8s-service-acocunt/OMNI_SERVICE_ACCOUNT_KEY')"
+
+# Generate bearer-token kubeconfig (not OIDC)
+omnictl kubeconfig --cluster talos-prod-cluster --service-account --user talos-prod-sa --force
+
+# Verify access
+kubectl get nodes
+```
+
+<details>
+<summary>Fish shell</summary>
+
+```fish
+set -x OMNI_ENDPOINT https://omni.vanillax.me:443
+set -x OMNI_SERVICE_ACCOUNT_KEY (op read 'op://homelab-prod/talos-prod-sa/OMNI_SERVICE_ACCOUNT_KEY')
+omnictl kubeconfig --cluster talos-prod-cluster --service-account --user talos-prod-sa --force
+kubectl get nodes
+```
+
+</details>
+
 ### Step 1: Install Cilium CNI
 
 Omni provisions Talos clusters without a CNI. Install Cilium to get networking functional:
 
 ```bash
 cilium install \
-    --version 1.19.1 \
+    --version 1.19.2 \
     --set cluster.name=talos-prod-cluster \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
