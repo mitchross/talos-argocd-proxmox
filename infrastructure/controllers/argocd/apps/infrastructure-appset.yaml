@@ -63,11 +63,11 @@ spec:
         - RespectIgnoreDifferences=true
         - Replace=false
         retry:
-          limit: 5
+          limit: 10
           backoff:
-            duration: 5s
+            duration: 10s
             factor: 2
-            maxDuration: 3m
+            maxDuration: 10m
       ignoreDifferences:
       # NOTE: .status ignored globally by ArgoCD 3.0+ — only non-status fields listed
       - group: gateway.networking.k8s.io
