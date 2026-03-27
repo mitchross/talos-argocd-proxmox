@@ -386,6 +386,21 @@ Server-side diff adds ~5-10x overhead per reconciliation (dry-run API calls to t
 - **Caching** — dry-run results are cached; new API calls only trigger on refresh, new git revision, or app spec change
 - **Status processors increased** (50) to handle the higher per-app reconciliation time
 
+## Retry Policy
+
+All Applications and ApplicationSets use **infinite retries** (`limit: -1`) with exponential backoff:
+
+```yaml
+retry:
+  limit: -1           # Never permanently die
+  backoff:
+    duration: 10s     # First retry after 10s
+    factor: 2         # Exponential: 10s, 20s, 40s, 80s, ...
+    maxDuration: 10m  # Cap at 10 minutes between retries
+```
+
+**Why infinite**: During bootstrap, Kyverno's mutating webhook (`mutate.kyverno.svc-fail`, failurePolicy: Fail) takes time to warm up after pods start. ArgoCD marks Kyverno "Healthy" when pods are Running, but the webhook isn't responsive yet. Wave 4+ apps that sync during this window get `context deadline exceeded` rejections. With a fixed retry limit, apps permanently die and require manual re-sync. Infinite retries with backoff cap ensures all apps eventually converge without manual intervention.
+
 ## Sync Options (CRITICAL)
 
 Standard sync options for all ApplicationSets:
