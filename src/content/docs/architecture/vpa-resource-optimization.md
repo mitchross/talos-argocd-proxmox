@@ -94,7 +94,7 @@ VPA Admission Controller sets resources at pod creation → no human interventio
 | Component | Chart | Namespace | Location |
 |-----------|-------|-----------|----------|
 | **metrics-server** | `metrics-server/metrics-server` | `kube-system` | `infrastructure/controllers/metrics-server/` |
-| **VPA** | `fairwinds-stable/vpa` | `vertical-pod-autoscaler` | `infrastructure/controllers/vertical-pod-autoscaler/` |
+| **VPA** | `kubernetes.github.io/autoscaler` | `vertical-pod-autoscaler` | `infrastructure/controllers/vertical-pod-autoscaler/` |
 | **Kyverno VPA policy** | — | `kyverno` | `infrastructure/controllers/kyverno/policies/vpa-auto-generate.yaml` |
 
 metrics-server and VPA are deployed via the **Infrastructure ApplicationSet** (Wave 4). The Kyverno policy is deployed as part of Kyverno (Wave 3).
