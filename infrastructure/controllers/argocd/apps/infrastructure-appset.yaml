@@ -19,6 +19,7 @@ spec:
       - path: infrastructure/controllers/nvidia-gpu-operator
       - path: infrastructure/controllers/metrics-server
       - path: infrastructure/controllers/vertical-pod-autoscaler
+      - path: infrastructure/controllers/kyverno-vpa-policies
       # NOTE: opentelemetry-operator is NOT listed here
       # It has a dedicated standalone Application at Wave 5 (opentelemetry-operator-app.yaml)
       # to ensure cert-manager (Wave 4) is ready for webhook certificates
