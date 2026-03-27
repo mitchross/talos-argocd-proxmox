@@ -26,7 +26,7 @@ spec:
     providerdata: |
       cores: 18
       sockets: 2
-      memory: 524288
+      memory: 196608
       disk_size: 600
       network_bridge: vmbr1
       storage_selector: name == "ssdpool"

@@ -88,6 +88,19 @@ Linux kernel (5.4+) defaults NFS `read_ahead_kb` to **128 KB**, limiting sequent
 - `nfsvers=4.1` — NFSv4.1 with session slots
 - `noatime` — skip access time updates
 
+## Proxmox ZFS Storage Pools
+
+| Pool | Backing | Purpose | Thin Provisioning |
+|------|---------|---------|-------------------|
+| `ssdpool` | 4x PNY CS900 1TB SATA SSD (stripe) | Worker + GPU node disks | `sparse 1` (enabled) |
+| `fastpool` | 3x 480GB MK000480GWCEV SSD (stripe) | Control plane disks | `sparse 1` (enabled) |
+
+**Thin provisioning (`sparse 1`)** is enabled on both pools in `/etc/pve/storage.cfg`. Without it, ZFS zvols reserve their full size via `refreservation`, wasting ~2.5 TB on ssdpool alone (600 GB reserved per worker VM even when only 30 GB is used).
+
+To verify or change: `pvesm set ssdpool --sparse 1` / `pvesm set fastpool --sparse 1`
+
+**PNY CS900 note**: These are DRAM-less SATA SSDs. ZFS performance degrades past ~80% pool capacity due to copy-on-write fragmentation. With thin provisioning enabled this is not a concern at current data volumes (~400 GB actual on 4 TB pool).
+
 ## Debugging Storage
 
 ```bash
