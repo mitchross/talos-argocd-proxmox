@@ -58,9 +58,9 @@ spec:
         resources:
           requests:
             cpu: 500m
-            memory: 4Gi
-          limits:
             memory: 8Gi
+          limits:
+            memory: 16Gi
         volumeMounts:
         - name: clickhouse-data
           mountPath: /var/lib/clickhouse
@@ -107,12 +107,13 @@ spec:
       name: clickhouse-data
       labels:
         app: posthog-clickhouse
+        backup: "daily"
     spec:
       accessModes: [ "ReadWriteOnce" ]
       storageClassName: longhorn
       resources:
         requests:
-          storage: 50Gi
+          storage: 100Gi
 ---
 apiVersion: v1
 kind: Service
