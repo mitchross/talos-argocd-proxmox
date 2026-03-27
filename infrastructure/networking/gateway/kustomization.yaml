@@ -4,6 +4,8 @@ resources:
 - ns.yaml
 - gw-external.yaml
 - gw-internal.yaml
+- httproute-argocd.yaml
+- httproute-longhorn.yaml
 
 #- gw-tcp-postgres.yaml
 generatorOptions:

@@ -70,7 +70,7 @@ ArgoCD deploys applications in strict order to prevent dependency issues:
 2. **Sidero Proxmox Provider configured** - See [proxmox provider config](omni/proxmox-provider/)
 3. **Cluster created in Omni** - Talos cluster provisioned and healthy
 4. **kubectl access** - Download kubeconfig from Omni UI
-5. **Local tools installed**: `kubectl`, `kustomize`, `cilium` CLI, `1password` CLI (`op`)
+5. **Local tools installed**: `kubectl`, `kustomize`, Cilium CLI (`cilium` or `cilium-cli`), `1password` CLI (`op`)
 
 ## Bootstrap Process
 
@@ -90,7 +90,7 @@ eval $(op signin)
 export OMNI_ENDPOINT=https://omni.vanillax.me:443
 
 # Pull the service account key from 1Password
-export OMNI_SERVICE_ACCOUNT_KEY="$(op read 'op://homelab-prod/talos-omni-k8s-service-acocunt/OMNI_SERVICE_ACCOUNT_KEY')"
+export OMNI_SERVICE_ACCOUNT_KEY="$(op read 'op://homelab-prod/talos-prod-sa/OMNI_SERVICE_ACCOUNT_KEY')"
 
 # Generate bearer-token kubeconfig (not OIDC)
 omnictl kubeconfig --cluster talos-prod-cluster --service-account --user talos-prod-sa --force
@@ -116,7 +116,7 @@ kubectl get nodes
 Omni provisions Talos clusters without a CNI. Install Cilium to get networking functional:
 
 ```bash
-cilium install \
+cilium-cli install \
     --version 1.19.2 \
     --set cluster.name=talos-prod-cluster \
     --set ipam.mode=kubernetes \
@@ -153,6 +153,8 @@ Verify Cilium:
 cilium status
 kubectl get pods -n kube-system -l k8s-app=cilium
 ```
+
+On Arch/CachyOS, the package often installs the binary as `cilium-cli` rather than `cilium`. The bootstrap script accepts either name.
 
 ### Step 3: Pre-Seed 1Password Secrets
 
