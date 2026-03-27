@@ -11,6 +11,9 @@ service:
   ssh:
     type: ClusterIP
 
+strategy:
+  type: Recreate
+
 image:
   rootless: true
 
