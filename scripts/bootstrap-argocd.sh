@@ -101,7 +101,8 @@ helm upgrade --install argocd argo-cd \
   --namespace argocd \
   --values "$ROOT_DIR/infrastructure/controllers/argocd/values.yaml" \
   --wait \
-  --timeout 10m
+  --timeout 10m \
+  --set 'configs.secret.argocdServerAdminPassword=$2a$10$KjM2oz7Et5Ai9JLB4mry6.rfFF0IJfCWuaD2XJ/2sr6oQGcszf8cO'
 
 # Step 3: Wait for CRDs to be established
 echo ""
