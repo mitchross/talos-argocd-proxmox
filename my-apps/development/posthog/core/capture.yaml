@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: capture
-          image: ghcr.io/posthog/posthog/capture:master
+          image: ghcr.io/posthog/posthog/capture:master@sha256:9c00f4150de0077af013d7c908fd5dad79d23cc3d6f9553820a433f981f80546
           env:
             - name: ADDRESS
               value: "0.0.0.0:3000"
@@ -84,7 +84,7 @@ spec:
     spec:
       containers:
         - name: replay-capture
-          image: ghcr.io/posthog/posthog/capture:master
+          image: ghcr.io/posthog/posthog/capture:master@sha256:9c00f4150de0077af013d7c908fd5dad79d23cc3d6f9553820a433f981f80546
           env:
             - name: ADDRESS
               value: "0.0.0.0:3000"

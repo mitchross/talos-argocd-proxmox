@@ -83,7 +83,7 @@ spec:
     spec:
       containers:
         - name: property-defs-rs
-          image: ghcr.io/posthog/posthog/property-defs-rs:master
+          image: ghcr.io/posthog/posthog/property-defs-rs:master@sha256:3d98249674799edcd049c9a28a0cd29cf62c157603ef48d6a8cec9fc4248f678
           env:
             - name: PGPASSWORD
               valueFrom:
