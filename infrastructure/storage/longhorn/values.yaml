@@ -7,7 +7,10 @@ defaultSettings:
   # a single scalar or a JSON string with per-engine values like {"v1":"...","v2":"..."} when needed.
   defaultDataPath: "/var/lib/longhorn"
   storageMinimalAvailablePercentage: "10"
-  storageOverProvisioningPercentage: "100"
+  # 200% is required with replicaCount=2 — each PVC counts double against the
+  # scheduling limit. At 100%, bootstrap fails with "insufficient storage" when
+  # all ~58 volumes are created at once, even though physical disk space is available.
+  storageOverProvisioningPercentage: "200"
   allowRecurringJobWhileVolumeDetached: "true"
   replicaAutoBalance: "best-effort"
   # Ensure new consolidated settings that can be per-engine stay simple scalars for V1-only clusters
