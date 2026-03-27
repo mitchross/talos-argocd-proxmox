@@ -20,14 +20,8 @@ image:
 podSecurityContext:
   fsGroup: 1000
 
-# The init container runs chmod on /data/git/.ssh. Restored PVCs from backup
-# may have root-owned files. DAC_OVERRIDE bypasses ownership checks for chmod.
-containerSecurityContext:
-  capabilities:
-    add:
-      - CHOWN
-      - FOWNER
-      - DAC_OVERRIDE
+# Permissions fixed by Kustomize init container patch (fix-permissions-patch.yaml)
+# running as root. The chart's own init container runs as the default user.
 
 gitea:
   config:

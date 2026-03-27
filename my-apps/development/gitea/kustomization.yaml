@@ -12,3 +12,9 @@ helmCharts:
   releaseName: gitea
   namespace: gitea
   valuesFile: values.yaml
+
+patches:
+- path: fix-permissions-patch.yaml
+  target:
+    kind: Deployment
+    name: gitea

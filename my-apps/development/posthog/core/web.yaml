@@ -24,7 +24,7 @@ spec:
         feature.node.kubernetes.io/cpu-cpuid.AVX2: "true"
       containers:
       - name: web
-        image: posthog/posthog:0c1bf64077d318019343b6894674713115f5effa
+        image: posthog/posthog:latest
         command:
         - /bin/sh
         - -c
