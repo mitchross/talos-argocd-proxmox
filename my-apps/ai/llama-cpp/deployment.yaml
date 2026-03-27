@@ -23,7 +23,7 @@ spec:
       restartPolicy: Always
       runtimeClassName: nvidia
       priorityClassName: gpu-workload-high
-      terminationGracePeriodSeconds: 300 # Kept for 400GB memory unmapping time
+      terminationGracePeriodSeconds: 300 # Model unload + KV cache cleanup time
       tolerations:
         - key: "nvidia.com/gpu"
           operator: "Exists"
@@ -50,7 +50,7 @@ spec:
             - "--jinja"
             - "--fit"           # Auto-fit dense layers to available VRAM
             - "on"
-            - "--no-mmap"       # Prevent page fault stalls - we have 400GB RAM to spare
+            - "--no-mmap"       # Prevent page fault stalls - load model fully into memory
             - "--no-context-shift" # Don't silently drop old context - let agentic framework manage it
             - "--cache-type-k"
             - "q8_0"            # Quantize KV cache ~50% savings vs f16, negligible quality loss
