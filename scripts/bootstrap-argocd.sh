@@ -18,21 +18,29 @@ ROOT_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
 # Expected Cilium version — must match infrastructure/networking/cilium/kustomization.yaml
 EXPECTED_CILIUM_VERSION="1.19.2"
 
+if command -v cilium > /dev/null 2>&1; then
+  CILIUM_CMD="cilium"
+elif command -v cilium-cli > /dev/null 2>&1; then
+  CILIUM_CMD="cilium-cli"
+else
+  CILIUM_CMD=""
+fi
+
 echo "🚀 Bootstrapping ArgoCD with sync waves..."
 
 # Pre-flight: Verify Cilium is installed and healthy at the correct version
 echo ""
 echo "🔍 Pre-flight: Checking Cilium..."
 
-if ! command -v cilium &> /dev/null; then
-  echo "❌ cilium CLI not found. Install it first: https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/"
+if [ -z "$CILIUM_CMD" ]; then
+  echo "❌ Cilium CLI not found. Install either 'cilium' or 'cilium-cli' first: https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/"
   exit 1
 fi
 
-if ! cilium status --wait --wait-duration 30s &> /dev/null; then
+if ! "$CILIUM_CMD" status --wait --wait-duration 30s &> /dev/null; then
   echo "❌ Cilium is not healthy. Install Cilium first:"
   echo ""
-  echo "   cilium install \\"
+  echo "   $CILIUM_CMD install \\"
   echo "       --version $EXPECTED_CILIUM_VERSION \\"
   echo "       --set cluster.name=talos-prod-cluster \\"
   echo "       --set ipam.mode=kubernetes \\"
@@ -58,8 +66,8 @@ if [ -n "$RUNNING_VERSION" ] && [ "$RUNNING_VERSION" != "$EXPECTED_CILIUM_VERSIO
   echo "   This in-place upgrade can corrupt BPF state and break new pod networking."
   echo ""
   echo "   Recommended: Reinstall Cilium at the correct version first:"
-  echo "     cilium uninstall"
-  echo "     cilium install --version $EXPECTED_CILIUM_VERSION \\"
+  echo "     $CILIUM_CMD uninstall"
+  echo "     $CILIUM_CMD install --version $EXPECTED_CILIUM_VERSION \\"
   echo "         --set cluster.name=talos-prod-cluster \\"
   echo "         --set ipam.mode=kubernetes \\"
   echo "         --set kubeProxyReplacement=true \\"

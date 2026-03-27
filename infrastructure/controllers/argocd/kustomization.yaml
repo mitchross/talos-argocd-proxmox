@@ -3,7 +3,9 @@ kind: Kustomization
 namespace: argocd
 resources:
   - ns.yaml
-  - http-route.yaml
+  # NOTE: http-route.yaml moved to infrastructure/networking/gateway/ so it deploys
+  # at wave 4 with the Gateway. Including it here (wave 0) causes a bootstrap deadlock:
+  # HTTPRoute stays Progressing with no Gateway, blocking all subsequent sync waves.
   # NOTE: root.yaml is NOT listed here. It is applied once by the bootstrap script
   # (scripts/bootstrap-argocd.sh). Including it here would create a circular
   # dependency: root.yaml creates argocd.yaml (via apps/), argocd.yaml manages
