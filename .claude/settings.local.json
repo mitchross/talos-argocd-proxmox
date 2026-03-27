@@ -4,7 +4,9 @@
       "Bash(*)",
       "WebSearch",
       "WebFetch(domain:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:posthog.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ],
     "deny": [
       "Bash(git reset --hard:*)",
