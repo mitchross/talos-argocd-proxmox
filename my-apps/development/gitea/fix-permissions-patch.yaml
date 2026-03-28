@@ -17,7 +17,10 @@ spec:
           mountPath: /data
         securityContext:
           runAsUser: 0
-          allowPrivilegeEscalation: false
           capabilities:
+            add:
+            - CHOWN
+            - FOWNER
+            - DAC_OVERRIDE
             drop:
-            - ALL
+            - NET_RAW
