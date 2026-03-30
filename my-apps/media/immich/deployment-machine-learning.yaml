@@ -31,7 +31,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       containers:
       - name: machine-learning
-        image: ghcr.io/immich-app/immich-machine-learning:v2.6.2@sha256:2d2d56d12d32b904a86952dd048224d117251d10ed10a4d75279e080e79002b7
+        image: ghcr.io/immich-app/immich-machine-learning:v2.6.3@sha256:33b17015c3d14f2565e9b8cd36b48a70027b14b5cd20da7fbfff21a370b0309c
         ports:
         - name: http
           containerPort: 3003
