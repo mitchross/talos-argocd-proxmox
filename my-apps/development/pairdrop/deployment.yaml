@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: pairdrop
-        image: linuxserver/pairdrop:latest@sha256:e97c1190a2f8d26c82371462f999d30021a49c27a5b99aaeb34d89775c2bfbc2
+        image: linuxserver/pairdrop:latest@sha256:82c059839782c8be616edcff999042a9e0d6bfda1e26b4109480938887ae5334
         imagePullPolicy: IfNotPresent
         env:
         - name: TZ
