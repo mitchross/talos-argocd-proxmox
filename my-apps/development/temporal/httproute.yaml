@@ -19,6 +19,6 @@ spec:
       backendRefs:
         - group: ""
           kind: Service
-          name: temporal-frontend
-          port: 7233
+          name: temporal-web
+          port: 8080
           weight: 1
