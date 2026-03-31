@@ -1,0 +1,93 @@
+# Ingestion General - consumes from events_plugin_ingestion, processes events,
+# writes to clickhouse_events_json for ClickHouse Kafka engine tables to consume.
+# This is the missing bridge between capture and ClickHouse.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingestion-general
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: ingestion-general
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: ingestion-general
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: ingestion-general
+    spec:
+      containers:
+        - name: ingestion-general
+          image: posthog/posthog-node:latest@sha256:026f205cd19a8724823e18e5151986fa88881e3faf7eebe9615a6340d484fba0
+          command:
+            - node
+            - nodejs/dist/index.js
+          envFrom:
+            - configMapRef:
+                name: posthog-env
+          env:
+            - name: PLUGIN_SERVER_MODE
+              value: "ingestion-v2-combined"
+            - name: DISABLE_MMDB
+              value: "true"
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-secret
+            - name: ENCRYPTION_SALT_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: encryption-salt-keys
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-password
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
+            - name: PERSONS_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
+            - name: BEHAVIORAL_COHORTS_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
+            - name: OBJECT_STORAGE_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-access-key
+            - name: OBJECT_STORAGE_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-secret-key
+            - name: COOKIELESS_REDIS_HOST
+              value: "redis7"
+            - name: COOKIELESS_REDIS_PORT
+              value: "6379"
+            - name: CDP_REDIS_HOST
+              value: "redis7"
+            - name: CDP_REDIS_PORT
+              value: "6379"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
