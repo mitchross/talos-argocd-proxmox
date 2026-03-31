@@ -96,6 +96,7 @@ docs/                   # Documentation
 - List ALL YAML files in each directory's `kustomization.yaml` under `resources:` — **unlisted files are never deployed**
 - Use llama-cpp (not ollama) for in-cluster AI backends
 - Use sync waves when adding infrastructure components
+- Check `helm show values <chart> | grep -A20 certManager` when adding any Helm chart with webhooks — if a `certManager.enabled` option exists, **set it to `true`**. Helm hook Jobs for webhook certs break under ArgoCD (SA deleted before Job runs = stuck forever = API server death)
 - Verify Kyverno generated backup resources after creating PVCs with backup labels
 - Use `strategy: type: Recreate` on Deployments with RWO PVCs — **RollingUpdate causes Multi-Attach deadlock**
 
