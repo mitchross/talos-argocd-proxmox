@@ -20,4 +20,5 @@ resources:
   - core/workers.yaml
   - core/plugins.yaml
   - core/capture.yaml
+  - core/ingestion.yaml
   - core/microservices.yaml
