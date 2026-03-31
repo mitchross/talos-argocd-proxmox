@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: ingestion-general
-          image: posthog/posthog-node:latest@sha256:026f205cd19a8724823e18e5151986fa88881e3faf7eebe9615a6340d484fba0
+          image: posthog/posthog-node:latest@sha256:26c5bb0f94c04a1139968aa7d5fb50ec7af3a3e53e310da828ef2327276913a9
           command:
             - node
             - nodejs/dist/index.js

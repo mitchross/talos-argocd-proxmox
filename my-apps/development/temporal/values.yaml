@@ -80,6 +80,8 @@ elasticsearch:
   enabled: true
   replicas: 1
   minimumMasterNodes: 1
+  sysctlInitContainer:
+    enabled: false
   persistence:
     enabled: true
     size: 5Gi
