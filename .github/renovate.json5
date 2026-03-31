@@ -122,7 +122,7 @@
       versioning: 'regex:^(?<major>\\d{4})\\.(?<minor>\\d{1,2})\\.(?<patch>\\d{1,2})-[a-f0-9]+$',
     },
     {
-      description: 'PostHog app images: auto-merge digest updates (rolling release)',
+      description: 'PostHog app images: group all digest updates into one PR (images must stay in sync)',
       matchPackageNames: [
         'posthog/posthog',
         'posthog/posthog-node',
@@ -134,6 +134,7 @@
         'ghcr.io/posthog/posthog/cymbal',
       ],
       matchFileNames: ['my-apps/development/posthog/**'],
+      groupName: 'posthog images',
       automerge: true,
       automergeType: 'branch',
       schedule: ['every weekend'],
