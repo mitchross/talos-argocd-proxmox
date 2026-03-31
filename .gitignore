@@ -86,9 +86,8 @@ omni/proxmox-provider/config.yaml
 !omni/proxmox-provider/.env.example
 !omni/proxmox-provider/config.yaml.example
 
-# K8s / Infra Specific
-/infrastructure/controllers/argocd/charts # Downloaded charts
-/omni/apps/kube-system/cilium/charts # Downloaded charts (if still relevant)
+# K8s / Infra Specific — Kustomize Helm chart cache (rendered on build, never commit)
+**/charts/
 
 # Kubernetes Configs
 kubeconfig*
@@ -101,12 +100,10 @@ kubeconfig*
 config.xml
 !my-apps/development/posthog/config/clickhouse/config.xml
 *.pid
-/infrastructure/controllers/argocd/charts
 /node_modules
 /dist
 /.astro
 /site
-/infrastructure/networking/cilium/charts
 *.log
 credentials.base64
 
@@ -122,7 +119,6 @@ credentials.base64
 
 # Mac OS
 .DS_Store
-/infrastructure/argocd/charts
 /my-apps/privacy/proxitok/source
 /my-apps/privacy/proxitok/docker/misc
 /my-apps/privacy/proxitok/docker
