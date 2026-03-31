@@ -4,6 +4,8 @@ server:
     repository: temporalio/server
     tag: 1.30.2
     pullPolicy: IfNotPresent
+  configMapsToMount: "sprig"
+  setConfigFilePath: true
   replicaCount: 1
   podAnnotations:
     cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
@@ -104,10 +106,13 @@ schema:
   setup:
     enabled: true
     backoffLimit: 20
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
+  update:
+    enabled: true
+    backoffLimit: 20
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
 
 admintools:
   enabled: true
