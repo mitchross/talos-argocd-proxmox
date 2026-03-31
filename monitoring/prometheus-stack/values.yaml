@@ -434,6 +434,14 @@ kube-state-metrics:
 # Prometheus Operator Configuration
 prometheusOperator:
   enabled: true
+  # Use cert-manager for webhook certs instead of Helm hook Jobs.
+  # The default hook Jobs (admission-create/admission-patch) create a
+  # ServiceAccount as a hook resource, then Jobs that depend on it.
+  # ArgoCD can delete the SA before the patch Job runs, causing a
+  # permanent stuck sync that cascades into API server overload.
+  admissionWebhooks:
+    certManager:
+      enabled: true
   # Resource allocation
   resources:
     requests:
