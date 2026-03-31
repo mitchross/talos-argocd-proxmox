@@ -19,9 +19,6 @@ server:
   config:
     logLevel: "info"
     numHistoryShards: 1
-    persistence:
-      defaultStore: cass-default
-      visibilityStore: es-visibility
   frontend:
     podAnnotations:
       cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
