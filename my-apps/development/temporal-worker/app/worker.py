@@ -24,10 +24,17 @@ import httpx
 from temporalio import activity, workflow
 from temporalio.client import Client
 from temporalio.worker import Worker
+from temporalio.worker.workflow_sandbox import SandboxedWorkflowRunner, SandboxRestrictions
 from temporalio.common import RetryPolicy
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def strip_thinking(text: str) -> str:
+    """Strip Qwen3.5 <think>...</think> blocks from LLM output."""
+    result = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+    return result if result else text.strip()
 
 LLAMA_URL = "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1/chat/completions"
 
@@ -166,13 +173,14 @@ async def summarize_article(article_info: dict) -> dict:
 
     async with httpx.AsyncClient(timeout=120.0) as client:
         resp = await client.post(LLAMA_URL, json={
-            "model": "default",
+            "model": "general",
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.3,
-            "max_tokens": 200,
+            "max_tokens": 512,
+            "chat_template_kwargs": {"enable_thinking": False},
         })
         resp.raise_for_status()
-        summary = resp.json()["choices"][0]["message"]["content"].strip()
+        summary = strip_thinking(resp.json()["choices"][0]["message"]["content"])
 
     activity.logger.info(f"Summarized: {title} ({len(summary)} chars)")
     return {
@@ -199,13 +207,14 @@ async def generate_digest_headline(digest_info: dict) -> str:
 
     async with httpx.AsyncClient(timeout=60.0) as client:
         resp = await client.post(LLAMA_URL, json={
-            "model": "default",
+            "model": "general",
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.7,
-            "max_tokens": 50,
+            "max_tokens": 100,
+            "chat_template_kwargs": {"enable_thinking": False},
         })
         resp.raise_for_status()
-        return resp.json()["choices"][0]["message"]["content"].strip().strip('"')
+        return strip_thinking(resp.json()["choices"][0]["message"]["content"]).strip('"')
 
 
 # ──────────────────────────────────────────────
@@ -332,6 +341,9 @@ async def main():
         task_queue="news-digest",
         workflows=[NewsDigestWorkflow],
         activities=[fetch_feed, summarize_article, generate_digest_headline],
+        workflow_runner=SandboxedWorkflowRunner(
+            restrictions=SandboxRestrictions.default.with_passthrough_modules("httpx"),
+        ),
     )
 
     logger.info("Worker ready! Waiting for digest requests...")
