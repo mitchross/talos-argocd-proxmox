@@ -3,6 +3,8 @@ kind: HTTPRoute
 metadata:
   name: news-reader
   namespace: news-reader
+  labels:
+    external-dns: "true"
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
