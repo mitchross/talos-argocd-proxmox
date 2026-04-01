@@ -41,7 +41,7 @@ export async function getDigests(): Promise<DigestInfo[]> {
   const digests: DigestInfo[] = [];
 
   const workflows = client.workflow.list({
-    query: `WorkflowType = "NewsDigestWorkflow" ORDER BY StartTime DESC`,
+    query: `WorkflowType = "NewsDigestWorkflow"`,
   });
 
   for await (const wf of workflows) {
