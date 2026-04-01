@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: news-reader
+  namespace: news-reader
+  labels:
+    app: news-reader
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: news-reader
+  template:
+    metadata:
+      labels:
+        app: news-reader
+    spec:
+      containers:
+        - name: news-reader
+          image: registry.vanillax.me/news-reader:latest
+          ports:
+            - containerPort: 3000
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 384Mi
