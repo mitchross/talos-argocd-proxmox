@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: worker
-          image: ghcr.io/mitchross/temporal-worker:latest
+          image: registry.vanillax.me/temporal-worker:latest
           resources:
             requests:
               cpu: 50m
