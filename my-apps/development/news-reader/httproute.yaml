@@ -5,12 +5,15 @@ metadata:
   namespace: news-reader
   labels:
     external-dns: "true"
+  annotations:
+    external-dns.alpha.kubernetes.io/target: vanillax.me
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
       name: gateway-external
       namespace: gateway
+      sectionName: https
   hostnames:
     - "news.vanillax.me"
   rules:

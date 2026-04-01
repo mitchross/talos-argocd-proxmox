@@ -87,6 +87,7 @@ docs/                   # Documentation
 - Use directory structure for application discovery (no manual Application resources)
 - Name Service ports for HTTPRoute compatibility (`name: http`) — **fails silently without this**
 - Use Gateway API (not Ingress) — this cluster uses Gateway API exclusively
+- On **external** HTTPRoutes: add `labels: external-dns: "true"`, annotation `external-dns.alpha.kubernetes.io/target: vanillax.me`, and `sectionName: https` on the parentRef — **all three are required or DNS/routing silently fails**
 - Follow GitOps workflow for all changes
 - Store secrets in 1Password, reference via ExternalSecret
 - Add `backup: "hourly"` or `backup: "daily"` labels to critical PVCs for automatic Kyverno backup
@@ -117,6 +118,7 @@ docs/                   # Documentation
 - Use `mutateExistingOnPolicyUpdate: true` on Kyverno generate policies — **re-evaluates ALL matching resources cluster-wide on any policy change**
 - Use `synchronize: true` on Kyverno generate policies — **drift watchers create UpdateRequests on every controller status update, hammering the API server; use `synchronize: false`**
 - Omit Kyverno canonical defaults (`emitWarning`, `validationFailureAction`, `skipBackgroundRequests`) from policy YAML — **Kyverno webhook adds them, ArgoCD detects the diff, app shows OutOfSync**
+- Create external HTTPRoutes without the three required pieces: `external-dns: "true"` label, `external-dns.alpha.kubernetes.io/target: vanillax.me` annotation, and `sectionName: https` — **DNS won't be created and Cloudflare tunnel routing fails silently**
 
 ## Nested CLAUDE.md Files
 
