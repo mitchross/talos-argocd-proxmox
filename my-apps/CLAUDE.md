@@ -45,23 +45,46 @@ spec:
       port: 8080
       targetPort: 8080
 
-# httproute.yaml
-apiVersion: gateway.networking.k8s.io/v1beta1
+# httproute.yaml - EXTERNAL (public via Cloudflare tunnel)
+apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: app-route
   namespace: app-name
+  labels:
+    external-dns: "true"                                    # REQUIRED - external-dns won't create DNS without this
+  annotations:
+    external-dns.alpha.kubernetes.io/target: vanillax.me    # REQUIRED - CNAMEs to Cloudflare tunnel
 spec:
   parentRefs:
   - kind: Gateway
     name: gateway-external
     namespace: gateway
+    sectionName: https          # REQUIRED - must bind to HTTPS listener, not just the gateway
   hostnames:
   - app.vanillax.me
   rules:
   - backendRefs:
     - name: app-service
       port: 8080
+
+# httproute.yaml - INTERNAL (local network only, no Cloudflare)
+# apiVersion: gateway.networking.k8s.io/v1
+# kind: HTTPRoute
+# metadata:
+#   name: app-route
+#   namespace: app-name
+# spec:
+#   parentRefs:
+#   - kind: Gateway
+#     name: gateway-internal
+#     namespace: gateway
+#   hostnames:
+#   - app.vanillax.me
+#   rules:
+#   - backendRefs:
+#     - name: app-service
+#       port: 8080
 ```
 
 ### Application with Secrets (1Password)
