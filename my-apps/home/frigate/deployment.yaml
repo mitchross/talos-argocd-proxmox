@@ -19,7 +19,7 @@ spec:
       #   feature.node.kubernetes.io/custom-usb.coral-tpu: "true"
       containers:
       - name: frigate
-        image: ghcr.io/blakeblackshear/frigate:0.17.0-rc2
+        image: ghcr.io/blakeblackshear/frigate:0.17.1
         imagePullPolicy: IfNotPresent
         env:
         - name: TZ
