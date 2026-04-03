@@ -106,7 +106,7 @@ data:
     from PIL import Image
 
     _DEFAULT_SERVER = "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080"
-    _DEFAULT_MODEL = "general - qwen3.5"
+    _DEFAULT_MODEL = "gemma4 - gemma4-26b"
 
 
     def _image_to_base64(image_tensor):

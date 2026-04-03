@@ -55,7 +55,7 @@ spec:
             - "--cache-type-k"
             - "q8_0"            # Quantize KV cache ~50% savings vs f16, negligible quality loss
             - "--cache-type-v"
-            - "q8_0"            # q8_0 not q4_0: Qwen GQA models sensitive to V cache quantization, q4_0 adds ~0.2 perplexity
+            - "q8_0"            # q8_0 not q4_0: MoE models sensitive to V cache quantization, q4_0 adds ~0.2 perplexity
             - "-t"
             - "4"               # Low thread count for fully GPU-offloaded model (auto-detect picks too many in K8s)
             - "-b"

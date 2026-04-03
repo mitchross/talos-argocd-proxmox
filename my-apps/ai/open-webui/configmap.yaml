@@ -13,16 +13,16 @@ data:
   ENABLE_OLLAMA_API: "false"
 
   # Semantic Routing - Model Selection
-  # Primary model: Qwen3.5-35B-A3B (general + vision + thinking)
-  DEFAULT_MODELS: "general - qwen3.5"
+  # Primary model: Gemma 4 26B-A4B (general + vision + thinking)
+  DEFAULT_MODELS: "gemma4 - gemma4-26b"
   WHITELISTED_MODELS: ""
 
   # Vision Models - tell Open WebUI which models support images
-  VISION_MODELS: "general - qwen3.5"
+  VISION_MODELS: "gemma4 - gemma4-26b"
 
-  # Default parameters (Qwen3.5 precise thinking: temp=0.6, top_p=0.95, top_k=20)
+  # Default parameters (Gemma 4 Google recommended: temp=1.0, top_p=0.95, top_k=64)
   CONTEXT_WINDOW: "16384"
-  TEMPERATURE: "0.6"
+  TEMPERATURE: "1.0"
   TOP_P: "0.95"
   MIN_P: "0.0"
 
@@ -78,8 +78,8 @@ data:
   # MCP proxies for tools, multi-tools, and Kiwix knowledge base
   OPENAPI_API_ENDPOINTS: "mcpo-time:http://mcpo.open-webui.svc.cluster.local:8000:mcp-demo-key;mcpo-multi:http://mcpo-multi.open-webui.svc.cluster.local:8001:mcp-multi-key;mcpo-kiwix:http://mcpo-kiwix.open-webui.svc.cluster.local:8002:mcp-kiwix-key"
   # Use lightweight MoE for background tasks (title gen, tagging) - 3B active params
-  TASK_MODEL: "general - qwen3.5"
-  TASK_MODEL_EXTERNAL: "general - qwen3.5"
+  TASK_MODEL: "gemma4 - gemma4-26b"
+  TASK_MODEL_EXTERNAL: "gemma4 - gemma4-26b"
 
   # ---------------------------------------------------------------------------
   # Default System Prompt (Kiwix RAG)
