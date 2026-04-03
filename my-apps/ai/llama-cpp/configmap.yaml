@@ -17,7 +17,7 @@ data:
     # General thinking params use presence_penalty=1.5 but causes thinking loops on simple questions
     model = /models/Qwen3.5-35B-A3B-UD-Q4_K_XL.gguf
     mmproj = /models/mmproj-F16.gguf
-    alias = qwen3.5, qwen 3.5, general, vision, image, multimodal, coder, code
+    alias = qwen3.5, qwen 3.5
     ctx-size = 131072
     n-gpu-layers = 99
     temp = 0.6
@@ -35,12 +35,51 @@ data:
     [nothink - qwen3.5]
     model = /models/Qwen3.5-35B-A3B-UD-Q4_K_XL.gguf
     mmproj = /models/mmproj-F16.gguf
-    alias = nothink
+    alias = nothink-qwen
     ctx-size = 131072
     n-gpu-layers = 99
     temp = 0.6
     top-p = 0.95
     top-k = 20
+    min-p = 0.0
+    presence-penalty = 0.0
+    chat-template-kwargs = {"enable_thinking": false}
+    jinja = 1
+
+    # ==========================================================
+    # GEMMA 4 26B-A4B [MULTIMODAL] - THINK
+    # 26B total / 3.8B active (MoE, 128 experts, 8+1 active)
+    # Q4_K_XL (~17GB) + mmproj (~850MB) — ~6GB VRAM headroom
+    # 256K native context, vision, thinking mode
+    # Google recommended params: temp=1.0, top_p=0.95, top_k=64
+    # ==========================================================
+    [gemma4 - gemma4-26b]
+    model = /models/gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf
+    mmproj = /models/mmproj-gemma4-BF16.gguf
+    alias = gemma4, gemma 4, gemma4-think, general, vision, image, multimodal, coder, code
+    ctx-size = 131072
+    n-gpu-layers = 99
+    temp = 1.0
+    top-p = 0.95
+    top-k = 64
+    min-p = 0.0
+    presence-penalty = 0.0
+    chat-template-kwargs = {"enable_thinking": true}
+    jinja = 1
+
+    # ==========================================================
+    # GEMMA 4 NO-THINK - Same model, thinking disabled
+    # Same GGUF as think variant — switching is instant (no reload)
+    # ==========================================================
+    [gemma4-nothink - gemma4-26b-nothink]
+    model = /models/gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf
+    mmproj = /models/mmproj-gemma4-BF16.gguf
+    alias = gemma4-nothink, gemma4-fast, nothink
+    ctx-size = 131072
+    n-gpu-layers = 99
+    temp = 1.0
+    top-p = 0.95
+    top-k = 64
     min-p = 0.0
     presence-penalty = 0.0
     chat-template-kwargs = {"enable_thinking": false}
