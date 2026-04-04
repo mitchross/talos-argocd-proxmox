@@ -52,6 +52,10 @@ spec:
 
 **Auto-discovery**: The database AppSet discovers `infrastructure/database/*/*` via glob — no need to add paths to `infrastructure-appset.yaml`. The database AppSet uses `selfHeal: false` so `skip-reconcile` annotations stick during DR recovery.
 
+**Post-recovery ArgoCD sync**: The database AppSet has `ignoreDifferences` for `.spec.bootstrap` and `.spec.externalClusters` on CNPG Clusters, so ArgoCD won't show OutOfSync after recovery (bootstrap diffs between live `recovery` and Git `initdb` are ignored).
+
+**Deprecation notice**: CNPG native Barman support (`spec.backup.barmanObjectStore`) will be removed in CNPG 1.29.0. Migration to the Barman Cloud Plugin is required before upgrading.
+
 ## Database Disaster Recovery
 
 **Recovery procedure** (must bypass ArgoCD — SSA + CNPG webhook makes `initdb` always win):
@@ -93,7 +97,7 @@ Track these — must match for recovery:
 
 | Database | Current backup serverName |
 |----------|--------------------------|
-| immich | `immich-database-v5` |
+| immich | `immich-database-v6` |
 | khoj | `khoj-database` (original) |
 | paperless | `paperless-database` (original) |
 

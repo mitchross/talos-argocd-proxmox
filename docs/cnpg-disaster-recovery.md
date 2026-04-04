@@ -179,7 +179,7 @@ Barman → RustFS S3
 
 | Database | S3 Path | Current serverName | Schedule |
 |----------|---------|-------------------|----------|
-| immich | `s3://postgres-backups/cnpg/immich` | `immich-database-v5` | Hourly + WAL |
+| immich | `s3://postgres-backups/cnpg/immich` | `immich-database-v6` | Hourly + WAL |
 | khoj | `s3://postgres-backups/cnpg/khoj` | `khoj-database` | Daily 2am + WAL |
 | paperless | `s3://postgres-backups/cnpg/paperless` | `paperless-database` | Daily 2am + WAL |
 
@@ -195,7 +195,10 @@ s3://postgres-backups/cnpg/immich/
 ├── immich-database-v2/     ← first recovery lineage
 │   ├── base/
 │   └── wals/
-└── immich-database-v4/     ← current (post-recovery backups)
+├── immich-database-v5/     ← previous recovery lineage
+│   ├── base/
+│   └── wals/
+└── immich-database-v6/     ← current (post-recovery backups)
     ├── base/
     └── wals/
 ```
@@ -388,7 +391,7 @@ CNPG's bootstrap section determines what happens when a Cluster is created:
 kubectl run -it --rm barman-check --image=amazon/aws-cli:latest \
   --restart=Never --namespace=cloudnative-pg --overrides='{
   "spec":{"containers":[{"name":"check","image":"amazon/aws-cli:latest",
-  "command":["sh","-c","aws --endpoint-url http://192.168.10.133:30293 s3 ls s3://postgres-backups/cnpg/immich/immich-database-v4/base/ 2>&1 | tail -5"],
+  "command":["sh","-c","aws --endpoint-url http://192.168.10.133:30293 s3 ls s3://postgres-backups/cnpg/immich/immich-database-v6/base/ 2>&1 | tail -5"],
   "env":[
     {"name":"AWS_ACCESS_KEY_ID","valueFrom":{"secretKeyRef":{"name":"cnpg-s3-credentials","key":"AWS_ACCESS_KEY_ID"}}},
     {"name":"AWS_SECRET_ACCESS_KEY","valueFrom":{"secretKeyRef":{"name":"cnpg-s3-credentials","key":"AWS_SECRET_ACCESS_KEY"}}}
@@ -399,8 +402,8 @@ kubectl run -it --rm barman-check --image=amazon/aws-cli:latest \
 
 In `infrastructure/database/cloudnative-pg/immich/cluster.yaml`:
 - Replace the `bootstrap.initdb` section with `bootstrap.recovery` + `externalClusters`
-- Set `externalClusters[].barmanObjectStore.serverName` to the **current** backup serverName (check inventory table above, e.g. `immich-database-v4`)
-- Bump `backup.barmanObjectStore.serverName` to the **next** version (e.g. `immich-database-v5`)
+- Set `externalClusters[].barmanObjectStore.serverName` to the **current** backup serverName (check inventory table above, e.g. `immich-database-v6`)
+- Bump `backup.barmanObjectStore.serverName` to the **next** version (e.g. `immich-database-v7`)
 
 ⚠️ **CRITICAL: Webhook Validation (Do Not Commit Both Methods)**
 
@@ -503,10 +506,10 @@ ArgoCD syncs. CNPG ignores `initdb` bootstrap on existing clusters — your data
 
 ### Quick Example Timeline (Immich)
 
-- Before nuke: backups writing to `immich-database-v4`
-- Recovery manifest: restore from `v4`, write new backups to `v5`
-- After recovery: normal manifest with `initdb` active, backup still on `v5`
-- Next DR event: restore from `v5`, then bump backup target to `v6`
+- Before nuke: backups writing to `immich-database-v5`
+- Recovery manifest: restore from `v5`, write new backups to `v6`
+- After recovery: normal manifest with `initdb` active, backup still on `v6`
+- Next DR event: restore from `v6`, then bump backup target to `v7`
 
 ## Troubleshooting
 
@@ -550,7 +553,7 @@ The `database-appset.yaml` has `ignoreApplicationDifferences` configured to pres
 
 **Cause**: Old PVCs from previous cluster still terminating (Longhorn cleanup).
 
-**Fix**: Wait 15-30 seconds for PVCs to fully delete, then recreate the cluster.
+**Fix**: Wait 30-60 seconds for PVCs to fully delete, then recreate the cluster. Longhorn cleanup can take longer than expected, especially with larger volumes.
 
 ### Recovery pod stuck at `Init:0/1` with `volume is not ready for workloads`
 
@@ -588,6 +591,49 @@ spec.bootstrap: Forbidden: Only one bootstrap method can be specified
 5. ArgoCD will sync successfully.
 
 **Why**: The CNPG webhook validates at the manifest yaml level, not at the applied level. Even commented-out code blocks parse as valid YAML and trigger validation errors.
+
+### ArgoCD shows OutOfSync (Healthy) after recovery — bootstrap diff
+
+**Cause**: After recovery, the live Cluster object has `bootstrap.recovery` (from `kubectl create`) while Git has `bootstrap.initdb`. SSA can't reconcile because the CNPG webhook mutates the object on every apply, adding defaults that don't match Git.
+
+**Fix**: This is now handled permanently by `ignoreDifferences` in `database-appset.yaml`:
+```yaml
+ignoreDifferences:
+- group: postgresql.cnpg.io
+  kind: Cluster
+  jqPathExpressions:
+  - .spec.bootstrap
+  - .spec.externalClusters
+```
+
+**Why safe**: CNPG completely ignores the `bootstrap` section on existing running clusters — it's only evaluated at creation time. The `externalClusters` section is similarly inert after recovery completes.
+
+If you see OutOfSync after recovery, verify `RespectIgnoreDifferences=true` is set in syncOptions and the `ignoreDifferences` entries above are present in the database AppSet.
+
+### Immich stuck in maintenance mode after restore
+
+**Cause**: If Immich was in maintenance mode before the backup was taken, the `maintenance-mode` key in the `system_metadata` table will be restored along with all other data.
+
+**Fix**:
+```bash
+kubectl exec -n cloudnative-pg immich-database-1 -- \
+  psql -U postgres -d immich -c "DELETE FROM system_metadata WHERE key = 'maintenance-mode';"
+kubectl rollout restart deployment/immich-server -n immich
+```
+
+**Note**: If the maintenance flag was set *after* the last backup, it won't be in the restored data (no cleanup needed).
+
+## Deprecation Warnings (Action Required)
+
+### CNPG Native Barman Support (Removal in 1.29.0)
+
+As of CNPG 1.26+, native `spec.backup.barmanObjectStore` and `spec.externalClusters[].barmanObjectStore` are deprecated. They will be **completely removed in CloudNativePG 1.29.0**.
+
+**Migration**: Switch to the [Barman Cloud Plugin](https://cloudnative-pg.io/documentation/current/backup_barmanobjectstore/) before upgrading to CNPG 1.29.0.
+
+### enablePodMonitor Deprecation
+
+`spec.monitoring.enablePodMonitor` is deprecated. Migrate to manually managed PodMonitor resources.
 
 ## Verifying Backups Are Running
 
