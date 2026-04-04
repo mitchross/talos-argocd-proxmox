@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: tubesync
-        image: ghcr.io/meeb/tubesync:v0.16.3
+        image: ghcr.io/meeb/tubesync:v0.17.1
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 4848
