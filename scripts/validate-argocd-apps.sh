@@ -77,7 +77,7 @@ for f in "$APPS_DIR"/*.yaml; do
 done
 
 # Sort and deduplicate
-sorted_waves=($(printf '%s\n' "${waves[@]}" | sort -n | uniq))
+mapfile -t sorted_waves < <(printf '%s\n' "${waves[@]}" | sort -n | uniq)
 echo "  Waves found: ${sorted_waves[*]}"
 
 # Check for gaps > 1 between consecutive waves

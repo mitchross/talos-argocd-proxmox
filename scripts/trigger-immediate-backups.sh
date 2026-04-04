@@ -43,7 +43,8 @@ get_volumes() {
 # Function to trigger backup for a specific volume
 trigger_backup() {
     local volume_name="$1"
-    local backup_name="manual-backup-$(date +%Y%m%d-%H%M%S)-${volume_name}"
+    local backup_name
+    backup_name="manual-backup-$(date +%Y%m%d-%H%M%S)-${volume_name}"
     
     echo -e "${YELLOW}🔄 Creating backup for volume: $volume_name${NC}"
     
@@ -76,7 +77,8 @@ trigger_tier_backups() {
     echo -e "\n${CYAN}🎯 Triggering $tier tier backups...${NC}"
     
     # Get volumes with the specific recurring job label
-    local volumes=$(kubectl get volumes -n longhorn-system -l "recurring-job.longhorn.io/$tier=enabled" --no-headers -o custom-columns="NAME:.metadata.name" 2>/dev/null | grep -v "^$" || echo "")
+    local volumes
+    volumes=$(kubectl get volumes -n longhorn-system -l "recurring-job.longhorn.io/$tier=enabled" --no-headers -o custom-columns="NAME:.metadata.name" 2>/dev/null | grep -v "^$" || echo "")
     
     if [[ -z "$volumes" ]]; then
         echo -e "${YELLOW}⚠️ No volumes found for $tier tier${NC}"
@@ -141,7 +143,8 @@ run_backup_scenario() {
             ;;
         "test")
             echo -e "${CYAN}🧪 Running test backup (first volume only)${NC}"
-            local test_volume=$(kubectl get volumes -n longhorn-system --no-headers -o custom-columns="NAME:.metadata.name" | head -1)
+            local test_volume
+            test_volume=$(kubectl get volumes -n longhorn-system --no-headers -o custom-columns="NAME:.metadata.name" | head -1)
             if [[ -n "$test_volume" ]]; then
                 trigger_backup "$test_volume"
             else
