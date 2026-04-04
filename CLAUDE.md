@@ -97,6 +97,7 @@ docs/                   # Documentation
 - List ALL YAML files in each directory's `kustomization.yaml` under `resources:` — **unlisted files are never deployed**
 - Use llama-cpp (not ollama) for in-cluster AI backends
 - Use sync waves when adding infrastructure components
+- Add ArgoCD hook annotations to all Kubernetes Jobs — `argocd.argoproj.io/hook: Sync` + `argocd.argoproj.io/hook-delete-policy: BeforeHookCreation`. K8s Jobs are immutable after creation; without these, image tag bumps from Renovate cause "field is immutable" sync failures. For standalone Jobs, add annotations directly. For Helm-rendered Jobs, use Kustomize patches targeting `kind: Job`
 - Check `helm show values <chart> | grep -A20 certManager` when adding any Helm chart with webhooks — if a `certManager.enabled` option exists, **set it to `true`**. Helm hook Jobs for webhook certs break under ArgoCD (SA deleted before Job runs = stuck forever = API server death)
 - Verify Kyverno generated backup resources after creating PVCs with backup labels
 - Use `strategy: type: Recreate` on Deployments with RWO PVCs — **RollingUpdate causes Multi-Attach deadlock**
@@ -119,6 +120,7 @@ docs/                   # Documentation
 - Use `synchronize: true` on Kyverno generate policies — **drift watchers create UpdateRequests on every controller status update, hammering the API server; use `synchronize: false`**
 - Omit Kyverno canonical defaults (`emitWarning`, `validationFailureAction`, `skipBackgroundRequests`) from policy YAML — **Kyverno webhook adds them, ArgoCD detects the diff, app shows OutOfSync**
 - Create external HTTPRoutes without the three required pieces: `external-dns: "true"` label, `external-dns.alpha.kubernetes.io/target: vanillax.me` annotation, and `sectionName: https` — **DNS won't be created and Cloudflare tunnel routing fails silently**
+- Use `Replace=true,Force=true` sync-options on Jobs — causes duplicate Job execution bug ([#24005](https://github.com/argoproj/argo-cd/issues/24005)); use ArgoCD hooks instead
 
 ## Nested CLAUDE.md Files
 
@@ -160,6 +162,8 @@ Detailed instructions load automatically when working in these directories:
 | **Gateway API routing** | `infrastructure/networking/gateway/` |
 | **OTEL Operator + Collectors** | `infrastructure/controllers/opentelemetry-operator/` |
 | **OTEL auto-instrumentation** | `infrastructure/controllers/opentelemetry-operator/instrumentation.yaml` |
+| **Jobs with ArgoCD hooks** | `my-apps/development/posthog/core/jobs.yaml` |
+| **Helm Job Kustomize patch** | `my-apps/development/temporal/kustomization.yaml` |
 
 ## Additional Documentation
 

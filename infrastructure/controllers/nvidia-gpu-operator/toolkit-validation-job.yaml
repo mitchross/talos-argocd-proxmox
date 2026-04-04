@@ -3,6 +3,9 @@ kind: Job
 metadata:
   name: nvidia-toolkit-validation
   namespace: gpu-operator
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   template:
     spec:

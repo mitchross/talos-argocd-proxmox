@@ -11,3 +11,14 @@ helmCharts:
     namespace: temporal
     includeCRDs: true
     valuesFile: values.yaml
+
+patches:
+  - target:
+      kind: Job
+    patch: |
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1hook
+        value: Sync
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1hook-delete-policy
+        value: BeforeHookCreation
