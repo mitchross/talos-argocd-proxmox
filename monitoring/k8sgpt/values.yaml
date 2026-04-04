@@ -11,7 +11,7 @@ controllerManager:
   manager:
     image:
       repository: ghcr.io/k8sgpt-ai/k8sgpt-operator
-      tag: v0.2.26
+      tag: v0.2.27
     resources:
       limits:
         cpu: 500m
