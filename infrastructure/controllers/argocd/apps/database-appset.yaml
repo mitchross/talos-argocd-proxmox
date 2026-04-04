@@ -57,6 +57,9 @@ spec:
         kind: Cluster
         jsonPointers:
         - /metadata/generation
+        jqPathExpressions:
+        - .spec.bootstrap
+        - .spec.externalClusters
       - group: external-secrets.io
         kind: ExternalSecret
         jqPathExpressions:
