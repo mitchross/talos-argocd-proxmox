@@ -8,7 +8,7 @@ resources:
 helmCharts:
   - name: k8sgpt-operator
     repo: https://charts.k8sgpt.ai/
-    version: 0.2.26
+    version: 0.2.27
     releaseName: k8sgpt-operator
     namespace: k8sgpt
     valuesFile: values.yaml
