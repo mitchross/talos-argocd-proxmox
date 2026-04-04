@@ -94,9 +94,9 @@
       enabled: true,
     },
     {
-      description: 'Handle llama.cpp custom versioning',
+      description: 'Handle llama.cpp custom versioning (custom build with CUDA 12.8)',
       matchPackageNames: [
-        'ghcr.io/ggml-org/llama.cpp',
+        'ghcr.io/mitchross/llama-cpp-cuda',
       ],
       versioning: 'regex:^server-cuda-b(?<major>\\d+)$',
     },
