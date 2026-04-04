@@ -417,6 +417,58 @@ syncOptions:
 - `ApplyOutOfSyncOnly=true` — Even with ServerSideDiff, has [known edge cases with key removal](https://github.com/argoproj/argo-cd/issues/24882). Not worth the risk for a homelab-scale cluster.
 - `IgnoreMissingTemplate=true` — Can mask real template errors in ApplicationSets.
 
+## ArgoCD Hooks for Jobs (CRITICAL)
+
+Kubernetes Jobs are **immutable** after creation. When Renovate bumps an image tag, ArgoCD's default `kubectl apply` fails with "field is immutable". This breaks any app using Helm migration/setup Jobs (Temporal, PostHog, etc.).
+
+**Solution**: Use ArgoCD sync hooks to delete and recreate Jobs on each sync.
+
+### Standalone Jobs (you own the YAML)
+
+Add annotations directly:
+
+```yaml
+metadata:
+  annotations:
+    argocd.argoproj.io/hook: Sync              # Run during sync phase
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation  # Delete old Job first
+    argocd.argoproj.io/sync-wave: "1"          # Optional ordering
+```
+
+### Helm-rendered Jobs (upstream chart)
+
+Patch via Kustomize since you can't modify the chart:
+
+```yaml
+# kustomization.yaml
+patches:
+- target:
+    kind: Job
+  patch: |
+    - op: add
+      path: /metadata/annotations/argocd.argoproj.io~1hook
+      value: Sync
+    - op: add
+      path: /metadata/annotations/argocd.argoproj.io~1hook-delete-policy
+      value: BeforeHookCreation
+```
+
+### Hook Delete Policies
+
+| Policy | Behavior |
+|--------|----------|
+| `BeforeHookCreation` | Deletes old Job before creating new one (recommended for migrations) |
+| `HookSucceeded` | Deletes immediately after success (clean but can't inspect) |
+| `HookFailed` | Deletes on failure |
+
+**Why NOT `Replace=true,Force=true`**: Causes duplicate Job execution ([argoproj/argo-cd#24005](https://github.com/argoproj/argo-cd/issues/24005)) and runs on every sync even when unchanged.
+
+### Reference Implementations
+
+- **Standalone Jobs**: `my-apps/development/posthog/core/jobs.yaml`
+- **Helm Job patches**: `my-apps/development/temporal/kustomization.yaml`
+- **PostSync Job**: `my-apps/ai/open-webui/function-loader-job.yaml`
+
 ## Known ArgoCD Issues
 
 | Issue | Impact | Our Workaround |

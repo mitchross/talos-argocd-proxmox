@@ -128,6 +128,39 @@ spec:
   replicas: 1
 ```
 
+### Jobs with ArgoCD Hooks (Migration/Setup Jobs)
+
+**CRITICAL**: Kubernetes Jobs are immutable after creation. When Renovate bumps an image tag, ArgoCD can't apply the updated spec and sync fails with "field is immutable". All Jobs must have ArgoCD hook annotations.
+
+**For standalone Job YAML files** (you control the manifest):
+```yaml
+# job.yaml
+metadata:
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "1"   # optional, controls ordering
+```
+
+**For Jobs rendered by Helm charts** (upstream chart, can't edit directly):
+```yaml
+# kustomization.yaml - add patches section
+patches:
+- target:
+    kind: Job
+  patch: |
+    - op: add
+      path: /metadata/annotations/argocd.argoproj.io~1hook
+      value: Sync
+    - op: add
+      path: /metadata/annotations/argocd.argoproj.io~1hook-delete-policy
+      value: BeforeHookCreation
+```
+
+`BeforeHookCreation` deletes the old Job before creating the new one, sidestepping immutability. Failed Jobs stay for debugging until the next sync.
+
+**Do NOT use `Replace=true,Force=true`** — causes duplicate Job execution ([#24005](https://github.com/argoproj/argo-cd/issues/24005)).
+
 ### Application with Persistent Storage + Backups
 
 ```yaml
@@ -207,3 +240,5 @@ components:
 | **PVC with automatic backup** | `my-apps/ai/khoj/pvc.yaml` |
 | **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
 | **Secret management** | Any app with `externalsecret.yaml` |
+| **Job with ArgoCD hooks** | `my-apps/development/posthog/core/jobs.yaml` |
+| **Helm Job patch** | `my-apps/development/temporal/kustomization.yaml` |
