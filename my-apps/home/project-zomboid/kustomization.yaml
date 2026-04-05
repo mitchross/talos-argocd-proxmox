@@ -9,3 +9,9 @@ resources:
   - externalsecret.yaml
   - deployment.yaml
   - service.yaml
+
+configMapGenerator:
+  - name: zomboid-server-config
+    files:
+      - vanillax.ini
+      - vanillax_SandboxVars.lua
