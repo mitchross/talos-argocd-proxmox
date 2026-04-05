@@ -5,6 +5,7 @@ metadata:
   namespace: project-zomboid
 spec:
   type: LoadBalancer
+  loadBalancerIP: 192.168.10.51
   selector:
     app: project-zomboid
   ports:
