@@ -80,7 +80,7 @@ spec:
         feature.node.kubernetes.io/cpu-cpuid.AVX2: "true"
       containers:
       - name: migrate
-        image: posthog/posthog:latest@sha256:56b5e8b4dad3b3997ce2fba8b714a018fee814763eee1cecc6fd1b6d913e1812
+        image: posthog/posthog:latest@sha256:334b0b6a604d0cde5f48af199bac141b26f8867ed2f6fd77435cf859a9537d76
         command:
         - /bin/sh
         - -c
