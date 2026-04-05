@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: project-zomboid
+  namespace: project-zomboid
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: project-zomboid
+  template:
+    metadata:
+      labels:
+        app: project-zomboid
+    spec:
+      containers:
+        - name: project-zomboid
+          image: danixu86/project-zomboid-dedicated-server:latest
+          env:
+            - name: SERVERNAME
+              value: "VanillaX"
+            - name: ADMINUSERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: zomboid-secrets
+                  key: admin-username
+            - name: ADMINPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: zomboid-secrets
+                  key: admin-password
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: zomboid-secrets
+                  key: server-password
+            - name: RCONPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: zomboid-secrets
+                  key: rcon-password
+            - name: STEAMAPPBRANCH
+              value: "unstable"
+            - name: PUBLIC
+              value: "true"
+            - name: DISPLAYNAME
+              value: "VanillaX Zomboid"
+            - name: SERVERPRESET
+              value: "apocalypse"
+            - name: MIN_MEMORY
+              value: "2048m"
+            - name: MAX_MEMORY
+              value: "4096m"
+            - name: PORT
+              value: "16261"
+            - name: MODFOLDERS
+              value: "workshop,steam,mods"
+          ports:
+            - name: game
+              containerPort: 16261
+              protocol: UDP
+            - name: steam1
+              containerPort: 8766
+              protocol: UDP
+            - name: steam2
+              containerPort: 8767
+              protocol: UDP
+          volumeMounts:
+            - name: data
+              mountPath: /home/steam/Zomboid
+          resources:
+            requests:
+              memory: 2Gi
+              cpu: "1"
+            limits:
+              memory: 6Gi
+              cpu: "4"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: zomboid-data
