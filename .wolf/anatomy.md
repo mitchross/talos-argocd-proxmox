@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-05T03:39:06.910Z
-> Files: 509 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-05T06:20:51.280Z
+> Files: 516 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -835,3 +835,13 @@
 - `deployment.yaml` — K8s Deployment: cyberchef (~211 tok)
 - `httproute.yaml` — K8s HTTPRoute: cyberchef (~183 tok)
 - `service.yaml` — K8s Service: cyberchef (~75 tok)
+
+## my-apps/home/project-zomboid/
+
+- `deployment.yaml` — K8s Deployment (~640 tok)
+- `externalsecret.yaml` — K8s ExternalSecret (~209 tok)
+- `kustomization.yaml` — K8s Kustomization (~57 tok)
+- `namespace.yaml` — K8s Namespace (~19 tok)
+- `pvc.yaml` — K8s PersistentVolumeClaim (~79 tok)
+- `README.md` — Project documentation (~377 tok)
+- `service.yaml` — K8s Service (~125 tok)
