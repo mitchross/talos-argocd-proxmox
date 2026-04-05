@@ -48,7 +48,7 @@ spec:
             - name: DISPLAYNAME
               value: "VanillaX Zomboid"
             - name: SERVERPRESET
-              value: "apocalypse"
+              value: ""
             - name: MIN_MEMORY
               value: "2048m"
             - name: MAX_MEMORY
