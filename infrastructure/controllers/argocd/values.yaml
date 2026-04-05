@@ -22,11 +22,9 @@ configs:
     # Without this, client-side diff + server-side apply disagree on changes, causing
     # configmaps and other resources to silently not get applied
     resource.server-side-diff: "true"
-    # Performance: add jitter to prevent all 80+ apps reconciling simultaneously
-    # Git webhook pushes still trigger immediate sync — this is the background poll fallback
-    # 600s + 300s jitter = drift check every 10-15 min per app, ~0.1 reconciliations/sec
-    timeout.reconciliation: "600s"
-    timeout.reconciliation.jitter: "300s"
+    # Default ArgoCD polling interval (180s) with modest jitter
+    timeout.reconciliation: "180s"
+    timeout.reconciliation.jitter: "60s"
     # Force cache invalidation periodically so manual Sync actually re-fetches from git
     # Use "Hard Refresh" button in UI for immediate re-fetch; this is the periodic fallback
     timeout.hard.reconciliation: "0"
