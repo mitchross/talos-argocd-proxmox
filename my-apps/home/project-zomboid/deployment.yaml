@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: project-zomboid
-          image: danixu86/project-zomboid-dedicated-server:latest
+          image: danixu86/project-zomboid-dedicated-server:latest-unstable
           env:
             - name: SERVERNAME
               value: "VanillaX"
@@ -59,12 +59,12 @@ spec:
             - name: game
               containerPort: 16261
               protocol: UDP
-            - name: steam1
-              containerPort: 8766
+            - name: game2
+              containerPort: 16262
               protocol: UDP
-            - name: steam2
-              containerPort: 8767
-              protocol: UDP
+            - name: rcon
+              containerPort: 27015
+              protocol: TCP
           volumeMounts:
             - name: data
               mountPath: /home/steam/Zomboid
