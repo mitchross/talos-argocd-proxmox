@@ -80,17 +80,17 @@ jobs:
       - name: Validate Kubernetes schemas
         run: |
           set -euo pipefail
-          # Filter out Gitea Helm-rendered Service (targetPort triggers oneOf
-          # false positive in kubeconform — valid K8s but ambiguous schema match)
-          python3 -c "
-          import sys
-          docs = sys.stdin.read().split('---')
-          for doc in docs:
-              if 'name: gitea-http' in doc and 'kind: Service' in doc:
-                  continue
-              print('---')
-              print(doc)
-          " < /tmp/all-manifests.yaml > /tmp/filtered-manifests.yaml
+          # Filter out Gitea Helm-rendered Service gitea-http (targetPort triggers
+          # oneOf false positive in kubeconform — valid K8s but ambiguous schema match).
+          # Split multi-doc YAML into per-document files, skip the offending one.
+          csplit -z -f /tmp/doc- /tmp/all-manifests.yaml '/^---$/' '{*}' > /dev/null
+          : > /tmp/filtered-manifests.yaml
+          for f in /tmp/doc-*; do
+            if grep -q 'kind: Service' "$f" && grep -q 'name: gitea-http' "$f"; then
+              continue
+            fi
+            cat "$f" >> /tmp/filtered-manifests.yaml
+          done
 
           kubeconform \
             -summary \
