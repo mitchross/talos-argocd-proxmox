@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-05T06:20:51.280Z
-> Files: 516 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-05T18:09:49.623Z
+> Files: 512 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -838,10 +838,6 @@
 
 ## my-apps/home/project-zomboid/
 
-- `deployment.yaml` — K8s Deployment (~640 tok)
-- `externalsecret.yaml` — K8s ExternalSecret (~209 tok)
-- `kustomization.yaml` — K8s Kustomization (~57 tok)
-- `namespace.yaml` — K8s Namespace (~19 tok)
-- `pvc.yaml` — K8s PersistentVolumeClaim (~79 tok)
-- `README.md` — Project documentation (~377 tok)
-- `service.yaml` — K8s Service (~125 tok)
+- `configmap.yaml` — K8s ConfigMap (~33 tok)
+- `deployment.yaml` — K8s Deployment (~789 tok)
+- `kustomization.yaml` — K8s Kustomization (~90 tok)

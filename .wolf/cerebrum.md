@@ -10,8 +10,7 @@
 
 ## Key Learnings
 
-- **Project:** talos-argocd-proxmox
-- **Description:** [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/mitchross/talos-argocd-proxmox)
+- **Project:** talos-argocd-proxmox — Production GitOps K8s cluster on Talos OS with self-managing ArgoCD
 
 ## Do-Not-Repeat
 

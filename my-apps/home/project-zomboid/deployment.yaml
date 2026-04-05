@@ -15,12 +15,28 @@ spec:
       labels:
         app: project-zomboid
     spec:
+      initContainers:
+        - name: copy-config
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /data/Server
+              cp /config/vanillax.ini /data/Server/vanillax.ini
+              cp /config/vanillax_SandboxVars.lua /data/Server/vanillax_SandboxVars.lua
+              echo "Config files copied"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /config
       containers:
         - name: project-zomboid
           image: danixu86/project-zomboid-dedicated-server:latest-unstable
           env:
             - name: SERVERNAME
-              value: "VanillaX"
+              value: "vanillax"
             - name: ADMINUSERNAME
               valueFrom:
                 secretKeyRef:
@@ -53,8 +69,6 @@ spec:
               value: "10240m"
             - name: PORT
               value: "16261"
-            - name: MODFOLDERS
-              value: "workshop,steam,mods"
           ports:
             - name: game
               containerPort: 16261
@@ -79,3 +93,6 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: zomboid-data
+        - name: config
+          configMap:
+            name: zomboid-server-config

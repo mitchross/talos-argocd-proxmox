@@ -32,6 +32,22 @@
       "related_bugs": [],
       "occurrences": 2,
       "last_seen": "2026-04-05T05:51:51.658Z"
+    },
+    {
+      "id": "bug-003",
+      "timestamp": "2026-04-05T18:09:46.813Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/home/project-zomboid/deployment.yaml",
+      "root_cause": "Had \"VanillaX\"",
+      "fix": "Changed to \"vanillax\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-05T18:09:46.813Z"
     }
   ]
 }
