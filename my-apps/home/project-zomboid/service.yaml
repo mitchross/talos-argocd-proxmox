@@ -13,11 +13,11 @@ spec:
       port: 16261
       targetPort: 16261
       protocol: UDP
-    - name: steam1
-      port: 8766
-      targetPort: 8766
+    - name: game2
+      port: 16262
+      targetPort: 16262
       protocol: UDP
-    - name: steam2
-      port: 8767
-      targetPort: 8767
-      protocol: UDP
+    - name: rcon
+      port: 27015
+      targetPort: 27015
+      protocol: TCP
