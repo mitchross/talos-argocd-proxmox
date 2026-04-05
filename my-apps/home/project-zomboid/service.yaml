@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: project-zomboid
+  namespace: project-zomboid
+spec:
+  type: LoadBalancer
+  selector:
+    app: project-zomboid
+  ports:
+    - name: game
+      port: 16261
+      targetPort: 16261
+      protocol: UDP
+    - name: steam1
+      port: 8766
+      targetPort: 8766
+      protocol: UDP
+    - name: steam2
+      port: 8767
+      targetPort: 8767
+      protocol: UDP
