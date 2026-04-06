@@ -42,7 +42,7 @@ spec:
             - "--models-preset"
             - "/config/presets.ini"
             - "-c"
-            - "32768"
+            - "65536"
             - "-ngl"
             - "99"
             - "-fa"
@@ -51,7 +51,7 @@ spec:
             - "--fit"           # Auto-fit dense layers to available VRAM
             - "on"
             - "--no-mmap"       # Prevent page fault stalls - load model fully into memory
-            - "--no-context-shift" # Don't silently drop old context - let agentic framework manage it
+            # context-shift enabled: allows graceful degradation when Perplexica search payloads exceed context
             - "--cache-type-k"
             - "q8_0"            # Quantize KV cache ~50% savings vs f16, negligible quality loss
             - "--cache-type-v"

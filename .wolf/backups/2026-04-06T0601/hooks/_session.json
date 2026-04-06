@@ -1,0 +1,74 @@
+{
+  "session_id": "session-2026-04-05-0300",
+  "started": "2026-04-05T07:00:00.965Z",
+  "files_read": {
+    "/home/vanillax/Downloads/servertest.ini": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-05T18:06:33.498Z"
+    },
+    "/home/vanillax/Downloads/servertest_SandboxVars.lua": {
+      "count": 2,
+      "tokens": 0,
+      "first_read": "2026-04-05T18:06:33.818Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/kustomization.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-05T18:08:34.774Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-05T18:08:46.484Z"
+    }
+  },
+  "files_written": [
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/configmap.yaml",
+      "action": "create",
+      "tokens": 33,
+      "at": "2026-04-05T18:08:30.452Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/kustomization.yaml",
+      "action": "create",
+      "tokens": 90,
+      "at": "2026-04-05T18:08:42.400Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+      "action": "create",
+      "tokens": 789,
+      "at": "2026-04-05T18:08:56.249Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+      "action": "edit",
+      "tokens": 9,
+      "at": "2026-04-05T18:09:46.812Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+      "action": "edit",
+      "tokens": 44,
+      "at": "2026-04-05T18:09:48.585Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/kustomization.yaml",
+      "action": "edit",
+      "tokens": 16,
+      "at": "2026-04-05T18:09:49.629Z"
+    }
+  ],
+  "edit_counts": {
+    "my-apps/home/project-zomboid/configmap.yaml": 1,
+    "my-apps/home/project-zomboid/kustomization.yaml": 2,
+    "my-apps/home/project-zomboid/deployment.yaml": 3
+  },
+  "anatomy_hits": 0,
+  "anatomy_misses": 4,
+  "repeated_reads_warned": 1,
+  "cerebrum_warnings": 0,
+  "stop_count": 11
+}

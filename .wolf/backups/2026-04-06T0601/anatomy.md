@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-06T20:15:57.250Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-06T04:00:00.311Z
 > Files: 509 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -495,7 +495,7 @@
 ## my-apps/ai/llama-cpp/
 
 - `configmap.yaml` — K8s ConfigMap: llama-cpp-config (~1359 tok)
-- `deployment.yaml` — K8s Deployment (~1367 tok)
+- `deployment.yaml` — K8s Deployment: llama-cpp-server (~1364 tok)
 - `httproute.yaml` — K8s HTTPRoute: llama-cpp-route (~151 tok)
 - `kustomization.yaml` — K8s Kustomization (~59 tok)
 - `namespace.yaml` — K8s Namespace: llama-cpp (~17 tok)

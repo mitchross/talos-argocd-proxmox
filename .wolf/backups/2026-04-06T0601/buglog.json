@@ -48,22 +48,6 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-05T18:09:46.813Z"
-    },
-    {
-      "id": "bug-004",
-      "timestamp": "2026-04-06T20:15:55.859Z",
-      "error_message": "Incorrect value in code",
-      "file": "my-apps/ai/llama-cpp/deployment.yaml",
-      "root_cause": "Had \"32768\"",
-      "fix": "Changed to \"65536\"",
-      "tags": [
-        "auto-detected",
-        "wrong-value",
-        "yaml"
-      ],
-      "related_bugs": [],
-      "occurrences": 1,
-      "last_seen": "2026-04-06T20:15:55.859Z"
     }
   ]
 }
