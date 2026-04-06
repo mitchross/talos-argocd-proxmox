@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-05T03:39:06.883Z",
   "lifetime": {
-    "total_tokens_estimated": 65296,
-    "total_reads": 138,
-    "total_writes": 360,
-    "total_sessions": 5,
-    "anatomy_hits": 79,
+    "total_tokens_estimated": 59696,
+    "total_reads": 132,
+    "total_writes": 358,
+    "total_sessions": 3,
+    "anatomy_hits": 73,
     "anatomy_misses": 59,
-    "repeated_reads_blocked": 10,
-    "estimated_savings_vs_bare_cli": 17164
+    "repeated_reads_blocked": 9,
+    "estimated_savings_vs_bare_cli": 14600
   },
   "sessions": [
     {
@@ -3169,101 +3169,6 @@
         "writes_count": 6,
         "repeated_reads_blocked": 1,
         "anatomy_lookups": 0
-      }
-    },
-    {
-      "id": "session-2026-04-06-1526",
-      "started": "2026-04-06T19:26:35.943Z",
-      "ended": "2026-04-06T19:27:46.055Z",
-      "reads": [
-        {
-          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
-          "tokens_estimated": 488,
-          "was_repeated": false,
-          "anatomy_had_description": false
-        },
-        {
-          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/llama-cpp/deployment.yaml",
-          "tokens_estimated": 1364,
-          "was_repeated": false,
-          "anatomy_had_description": false
-        }
-      ],
-      "writes": [],
-      "totals": {
-        "input_tokens_estimated": 1852,
-        "output_tokens_estimated": 0,
-        "reads_count": 2,
-        "writes_count": 0,
-        "repeated_reads_blocked": 0,
-        "anatomy_lookups": 2
-      }
-    },
-    {
-      "id": "session-2026-04-06-1526",
-      "started": "2026-04-06T19:26:35.943Z",
-      "ended": "2026-04-06T20:07:52.640Z",
-      "reads": [
-        {
-          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
-          "tokens_estimated": 488,
-          "was_repeated": false,
-          "anatomy_had_description": false
-        },
-        {
-          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/llama-cpp/deployment.yaml",
-          "tokens_estimated": 1364,
-          "was_repeated": false,
-          "anatomy_had_description": false
-        }
-      ],
-      "writes": [],
-      "totals": {
-        "input_tokens_estimated": 1852,
-        "output_tokens_estimated": 0,
-        "reads_count": 2,
-        "writes_count": 0,
-        "repeated_reads_blocked": 0,
-        "anatomy_lookups": 2
-      }
-    },
-    {
-      "id": "session-2026-04-06-1526",
-      "started": "2026-04-06T19:26:35.943Z",
-      "ended": "2026-04-06T20:16:06.536Z",
-      "reads": [
-        {
-          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
-          "tokens_estimated": 488,
-          "was_repeated": false,
-          "anatomy_had_description": false
-        },
-        {
-          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/llama-cpp/deployment.yaml",
-          "tokens_estimated": 1364,
-          "was_repeated": true,
-          "anatomy_had_description": false
-        }
-      ],
-      "writes": [
-        {
-          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/llama-cpp/deployment.yaml",
-          "tokens_estimated": 12,
-          "action": "edit"
-        },
-        {
-          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/llama-cpp/deployment.yaml",
-          "tokens_estimated": 32,
-          "action": "edit"
-        }
-      ],
-      "totals": {
-        "input_tokens_estimated": 1852,
-        "output_tokens_estimated": 44,
-        "reads_count": 2,
-        "writes_count": 2,
-        "repeated_reads_blocked": 1,
-        "anatomy_lookups": 2
       }
     }
   ],

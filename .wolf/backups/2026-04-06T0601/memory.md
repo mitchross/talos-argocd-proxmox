@@ -74,16 +74,3 @@
 | 14:12 | Session end: 6 writes across 3 files (configmap.yaml, kustomization.yaml, deployment.yaml) | 4 reads | ~981 tok |
 | 14:29 | Session end: 6 writes across 3 files (configmap.yaml, kustomization.yaml, deployment.yaml) | 4 reads | ~981 tok |
 | 14:37 | Session end: 6 writes across 3 files (configmap.yaml, kustomization.yaml, deployment.yaml) | 4 reads | ~981 tok |
-
-## Session: 2026-04-06 04:00
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-
-## Session: 2026-04-06 15:26
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-| 16:15 | Edited my-apps/ai/llama-cpp/deployment.yaml | 2→2 lines | ~12 |
-| 16:15 | Edited my-apps/ai/llama-cpp/deployment.yaml | inline fix | ~32 |
-| 16:16 | Session end: 2 writes across 1 files (deployment.yaml) | 2 reads | ~1896 tok |
