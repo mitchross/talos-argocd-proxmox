@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T20:29:18.951Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T20:47:49.679Z
 > Files: 511 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -843,6 +843,6 @@
 
 ## my-apps/home/project-zomboid/
 
-- `deployment.yaml` — K8s Deployment (~1067 tok)
+- `deployment.yaml` — K8s Deployment (~1207 tok)
 - `pvc.yaml` — K8s PersistentVolumeClaim (~155 tok)
 - `README.md` — Project documentation (~495 tok)

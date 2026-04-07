@@ -114,3 +114,11 @@
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
+| 20:47 | Edited my-apps/home/project-zomboid/deployment.yaml | 2→3 lines | ~21 |
+| 20:47 | Edited my-apps/home/project-zomboid/deployment.yaml | expanded (+17 lines) | ~186 |
+| 20:48 | Session end: 2 writes across 1 files (deployment.yaml) | 1 reads | ~1274 tok |
+
+## Session: 2026-04-07 20:57
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
