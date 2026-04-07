@@ -15,6 +15,7 @@ spec:
       labels:
         app: project-zomboid
     spec:
+      terminationGracePeriodSeconds: 120
       initContainers:
         - name: copy-config
           image: busybox
@@ -93,6 +94,23 @@ spec:
             - name: rcon
               containerPort: 27015
               protocol: TCP
+          startupProbe:
+            exec:
+              command:
+                - pgrep
+                - -f
+                - ProjectZomboid
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 60
+          livenessProbe:
+            exec:
+              command:
+                - pgrep
+                - -f
+                - ProjectZomboid
+            periodSeconds: 30
+            failureThreshold: 3
           volumeMounts:
             - name: server-files
               mountPath: /project-zomboid
