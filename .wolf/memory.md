@@ -95,3 +95,5 @@
 | 23:44 | Created my-apps/home/project-zomboid/vanillax.ini | — | ~4023 |
 | 23:44 | Session end: 1 writes across 1 files (vanillax.ini) | 1 reads | ~4310 tok |
 | 23:45 | Session end: 1 writes across 1 files (vanillax.ini) | 1 reads | ~4310 tok |
+| 00:10 | Edited my-apps/home/project-zomboid/deployment.yaml | 2→6 lines | ~121 |
+| 00:10 | Session end: 2 writes across 2 files (vanillax.ini, deployment.yaml) | 3 reads | ~4431 tok |

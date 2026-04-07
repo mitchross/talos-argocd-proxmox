@@ -69,6 +69,10 @@ spec:
               value: "10240m"
             - name: PORT
               value: "16261"
+            - name: MOD_IDS
+              value: "SkillRecoveryJournal;ChuckleberryFinnAlertSystem;errorMagnifier;lgd_antibodies;RealisticDash;ArmorMakesSense;B42Horticulture;ArcheryNexus;PHLockpicking"
+            - name: WORKSHOP_IDS
+              value: "2503622437;2896041179;3077900375;2392676812;3635591071;3677430162;3650168851;3653092321;3617854007;3687010721"
           ports:
             - name: game
               containerPort: 16261

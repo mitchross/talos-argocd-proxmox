@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T03:44:14.960Z
-> Files: 510 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T04:10:10.194Z
+> Files: 509 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -55,25 +55,6 @@
 - `cluster-ci.yml` — - monitoring/** (~1110 tok)
 - `docs.yml` — CI: Deploy Documentation (~286 tok)
 - `llama-cpp-build.yml` — CI: Build llama.cpp CUDA Image (~1011 tok)
-
-## archive/ollama/
-
-- `configmap.yaml` — K8s ConfigMap: ollama-configmap (~79 tok)
-- `deployment.yaml` — K8s Deployment: ollama (~734 tok)
-- `httproute.yaml` — K8s HTTPRoute: ollama (~141 tok)
-- `kustomization.yaml` — K8s Kustomization (~61 tok)
-- `namespace.yaml` — K8s Namespace: ollama (~16 tok)
-- `pvc.yaml` — PV definition removed (~83 tok)
-- `service.yaml` — K8s Service: ollama (~63 tok)
-
-## archived/nestmtx/
-
-- `deployment.yaml` — K8s Deployment: nestmtx (~770 tok)
-- `httproute.yaml` — K8s HTTPRoute: nestmtx (~142 tok)
-- `kustomization.yaml` — K8s Kustomization (~53 tok)
-- `namespace.yaml` — K8s Namespace: nestmtx (~32 tok)
-- `pvc.yaml` — PV definition removed (~105 tok)
-- `service.yaml` — K8s Service: nestmtx (~425 tok)
 
 ## docs/
 
@@ -836,6 +817,30 @@
 - `httproute.yaml` — K8s HTTPRoute: cyberchef (~183 tok)
 - `service.yaml` — K8s Service: cyberchef (~75 tok)
 
+## my-apps/home/project-nomad/embeddings/
+
+- `deployment.yaml` — K8s Deployment: embeddings (~393 tok)
+- `pvc.yaml` — K8s PersistentVolumeClaim: embeddings-model-cache (~57 tok)
+- `service.yaml` — K8s Service: embeddings (~69 tok)
+
+## my-apps/home/project-nomad/flatnotes/
+
+- `deployment.yaml` — K8s Deployment: flatnotes (~282 tok)
+- `httproute.yaml` — K8s HTTPRoute: flatnotes (~183 tok)
+- `pvc.yaml` — K8s PersistentVolumeClaim: flatnotes-data (~84 tok)
+- `service.yaml` — K8s Service: flatnotes (~75 tok)
+
+## my-apps/home/project-nomad/kiwix/
+
+- `deployment.yaml` — K8s Deployment: kiwix (~429 tok)
+- `httproute.yaml` — K8s HTTPRoute: kiwix (~180 tok)
+- `service.yaml` — K8s Service: kiwix (~72 tok)
+
+## my-apps/home/project-nomad/kolibri/
+
+- `deployment.yaml` — K8s Deployment: kolibri (~268 tok)
+- `httproute.yaml` — K8s HTTPRoute: kolibri (~182 tok)
+
 ## my-apps/home/project-zomboid/
 
-- `vanillax.ini` — Players can hurt and kill other players (~4023 tok)
+- `deployment.yaml` — K8s Deployment (~894 tok)

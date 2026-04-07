@@ -2,12 +2,12 @@
   "version": 1,
   "created_at": "2026-04-05T03:39:06.883Z",
   "lifetime": {
-    "total_tokens_estimated": 73916,
-    "total_reads": 140,
-    "total_writes": 362,
+    "total_tokens_estimated": 78347,
+    "total_reads": 143,
+    "total_writes": 364,
     "total_sessions": 6,
     "anatomy_hits": 79,
-    "anatomy_misses": 61,
+    "anatomy_misses": 64,
     "repeated_reads_blocked": 10,
     "estimated_savings_vs_bare_cli": 17164
   },
@@ -3318,6 +3318,51 @@
         "output_tokens_estimated": 4310,
         "reads_count": 1,
         "writes_count": 1,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-07-2338",
+      "started": "2026-04-07T03:38:18.624Z",
+      "ended": "2026-04-07T04:10:15.936Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/vanillax.ini",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/Downloads/zomboid2.log",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/vanillax.ini",
+          "tokens_estimated": 4310,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+          "tokens_estimated": 121,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 4431,
+        "reads_count": 3,
+        "writes_count": 2,
         "repeated_reads_blocked": 0,
         "anatomy_lookups": 0
       }

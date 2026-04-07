@@ -6,6 +6,16 @@
       "count": 1,
       "tokens": 0,
       "first_read": "2026-04-07T03:42:16.441Z"
+    },
+    "/home/vanillax/Downloads/zomboid2.log": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-07T04:07:10.999Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-07T04:07:35.106Z"
     }
   },
   "files_written": [
@@ -14,14 +24,21 @@
       "action": "create",
       "tokens": 4310,
       "at": "2026-04-07T03:44:14.966Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+      "action": "edit",
+      "tokens": 121,
+      "at": "2026-04-07T04:10:10.202Z"
     }
   ],
   "edit_counts": {
-    "my-apps/home/project-zomboid/vanillax.ini": 1
+    "my-apps/home/project-zomboid/vanillax.ini": 1,
+    "my-apps/home/project-zomboid/deployment.yaml": 1
   },
   "anatomy_hits": 0,
-  "anatomy_misses": 1,
+  "anatomy_misses": 3,
   "repeated_reads_warned": 0,
   "cerebrum_warnings": 0,
-  "stop_count": 2
+  "stop_count": 3
 }
