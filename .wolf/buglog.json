@@ -64,6 +64,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-06T20:15:55.859Z"
+    },
+    {
+      "id": "bug-005",
+      "timestamp": "2026-04-07T20:47:44.914Z",
+      "error_message": "Wrong reference: initContainers should be terminationGracePeriodSeconds",
+      "file": "my-apps/home/project-zomboid/deployment.yaml",
+      "root_cause": "Used \"initContainers\" instead of \"terminationGracePeriodSeconds\"",
+      "fix": "Changed initContainers → terminationGracePeriodSeconds",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-07T20:47:44.914Z"
     }
   ]
 }
