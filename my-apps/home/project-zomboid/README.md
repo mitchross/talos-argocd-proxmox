@@ -10,11 +10,14 @@ From local network, you can also connect via `192.168.10.51:16261`.
 
 ## Architecture
 
-- **Image:** `danixu86/project-zomboid-dedicated-server:latest-unstable`
+- **Image:** `indifferentbroccoli/projectzomboid-server-docker:latest`
 - **Branch:** Build 42 multiplayer (unstable)
 - **Service:** LoadBalancer on `192.168.10.51` (UDP 16261-16262, TCP 27015)
-- **Storage:** 20Gi Longhorn PVC with daily VolSync backups
+- **Storage:**
+  - `zomboid-data` — 20Gi Longhorn PVC with daily VolSync backups (config + world saves)
+  - `zomboid-server-files` — 15Gi Longhorn PVC (game installation, no backup — re-downloadable)
 - **Memory:** 2-10GB JVM, 12GB container limit
+- **Features:** Built-in RCON (rcon-cli), graceful shutdown via RCON, automatic game updates on start, health checks
 
 ## Networking
 
@@ -34,10 +37,15 @@ Item `project-zomboid` in `homelab-prod` vault:
 | `server-password` | Password players need to join |
 | `rcon-password` | RCON remote admin password |
 
-## First Boot
-
-First boot takes 5-10 minutes as the server loads all B42 assets and generates the world. The `sed` warnings about missing `.ini` are normal on first boot — the file is created after the JVM starts.
-
 ## Server Config
 
-Server config is stored on the PVC at `/home/steam/Zomboid/Server/VanillaX.ini`. Changes to this file persist across restarts.
+Server config is managed via GitOps:
+- `vanillax.ini` — main server settings (injected via ConfigMap)
+- `vanillax_SandboxVars.lua` — sandbox/gameplay settings (injected via ConfigMap)
+- `GENERATE_SETTINGS=false` — prevents the image from overwriting the ini with env var templates
+
+Config files are copied to `/project-zomboid-config/Server/` on each start by an initContainer. The image force-sets `RCONPassword` from the `RCON_PASSWORD` env var.
+
+## First Boot
+
+First boot takes 5-10 minutes as SteamCMD downloads the game and the server generates the world.
