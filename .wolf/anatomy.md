@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-06T20:15:57.250Z
-> Files: 509 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T03:44:14.960Z
+> Files: 510 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -495,7 +495,7 @@
 ## my-apps/ai/llama-cpp/
 
 - `configmap.yaml` — K8s ConfigMap: llama-cpp-config (~1359 tok)
-- `deployment.yaml` — K8s Deployment (~1367 tok)
+- `deployment.yaml` — K8s Deployment: llama-cpp-server (~1367 tok)
 - `httproute.yaml` — K8s HTTPRoute: llama-cpp-route (~151 tok)
 - `kustomization.yaml` — K8s Kustomization (~59 tok)
 - `namespace.yaml` — K8s Namespace: llama-cpp (~17 tok)
@@ -835,3 +835,7 @@
 - `deployment.yaml` — K8s Deployment: cyberchef (~211 tok)
 - `httproute.yaml` — K8s HTTPRoute: cyberchef (~183 tok)
 - `service.yaml` — K8s Service: cyberchef (~75 tok)
+
+## my-apps/home/project-zomboid/
+
+- `vanillax.ini` — Players can hurt and kill other players (~4023 tok)

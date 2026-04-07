@@ -1,38 +1,27 @@
 {
-  "session_id": "session-2026-04-06-1526",
-  "started": "2026-04-06T19:26:35.943Z",
+  "session_id": "session-2026-04-07-2338",
+  "started": "2026-04-07T03:38:18.624Z",
   "files_read": {
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml": {
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/vanillax.ini": {
       "count": 1,
-      "tokens": 488,
-      "first_read": "2026-04-06T19:27:01.394Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/llama-cpp/deployment.yaml": {
-      "count": 2,
-      "tokens": 1364,
-      "first_read": "2026-04-06T19:27:24.898Z"
+      "tokens": 0,
+      "first_read": "2026-04-07T03:42:16.441Z"
     }
   },
   "files_written": [
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/llama-cpp/deployment.yaml",
-      "action": "edit",
-      "tokens": 12,
-      "at": "2026-04-06T20:15:55.858Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/llama-cpp/deployment.yaml",
-      "action": "edit",
-      "tokens": 32,
-      "at": "2026-04-06T20:15:57.257Z"
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/vanillax.ini",
+      "action": "create",
+      "tokens": 4310,
+      "at": "2026-04-07T03:44:14.966Z"
     }
   ],
   "edit_counts": {
-    "my-apps/ai/llama-cpp/deployment.yaml": 2
+    "my-apps/home/project-zomboid/vanillax.ini": 1
   },
-  "anatomy_hits": 2,
-  "anatomy_misses": 0,
-  "repeated_reads_warned": 1,
+  "anatomy_hits": 0,
+  "anatomy_misses": 1,
+  "repeated_reads_warned": 0,
   "cerebrum_warnings": 0,
-  "stop_count": 3
+  "stop_count": 2
 }

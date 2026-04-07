@@ -2,12 +2,12 @@
   "version": 1,
   "created_at": "2026-04-05T03:39:06.883Z",
   "lifetime": {
-    "total_tokens_estimated": 65296,
-    "total_reads": 138,
-    "total_writes": 360,
-    "total_sessions": 5,
+    "total_tokens_estimated": 73916,
+    "total_reads": 140,
+    "total_writes": 362,
+    "total_sessions": 6,
     "anatomy_hits": 79,
-    "anatomy_misses": 59,
+    "anatomy_misses": 61,
     "repeated_reads_blocked": 10,
     "estimated_savings_vs_bare_cli": 17164
   },
@@ -3264,6 +3264,62 @@
         "writes_count": 2,
         "repeated_reads_blocked": 1,
         "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-07-2338",
+      "started": "2026-04-07T03:38:18.624Z",
+      "ended": "2026-04-07T03:44:19.109Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/vanillax.ini",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/vanillax.ini",
+          "tokens_estimated": 4310,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 4310,
+        "reads_count": 1,
+        "writes_count": 1,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-07-2338",
+      "started": "2026-04-07T03:38:18.624Z",
+      "ended": "2026-04-07T03:45:05.857Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/vanillax.ini",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/vanillax.ini",
+          "tokens_estimated": 4310,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 4310,
+        "reads_count": 1,
+        "writes_count": 1,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 0
       }
     }
   ],
