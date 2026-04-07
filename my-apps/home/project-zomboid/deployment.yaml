@@ -15,6 +15,7 @@ spec:
       labels:
         app: project-zomboid
     spec:
+      terminationGracePeriodSeconds: 120
       initContainers:
         - name: copy-config
           image: busybox
@@ -22,27 +23,31 @@ spec:
             - sh
             - -c
             - |
-              mkdir -p /data/Server
-              cp /config/vanillax.ini /data/Server/vanillax.ini
-              cp /config/vanillax_SandboxVars.lua /data/Server/vanillax_SandboxVars.lua
-              echo "Config files copied"
+              mkdir -p /project-zomboid-config/Server
+              cp /config/vanillax.ini /project-zomboid-config/Server/vanillax.ini
+              cp /config/vanillax_SandboxVars.lua /project-zomboid-config/Server/vanillax_SandboxVars.lua
+              echo "Config files copied to /project-zomboid-config/Server/"
           volumeMounts:
-            - name: data
-              mountPath: /data
+            - name: config-data
+              mountPath: /project-zomboid-config
             - name: config
               mountPath: /config
       containers:
         - name: project-zomboid
-          image: danixu86/project-zomboid-dedicated-server:latest-unstable
+          image: indifferentbroccoli/projectzomboid-server-docker:latest
           env:
-            - name: SERVERNAME
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: SERVER_NAME
               value: "vanillax"
-            - name: ADMINUSERNAME
+            - name: ADMIN_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: zomboid-secrets
                   key: admin-username
-            - name: ADMINPASSWORD
+            - name: ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: zomboid-secrets
@@ -52,26 +57,32 @@ spec:
                 secretKeyRef:
                   name: zomboid-secrets
                   key: server-password
-            - name: RCONPASSWORD
+            - name: RCON_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: zomboid-secrets
                   key: rcon-password
-            - name: STEAMAPPBRANCH
+            - name: SERVER_BRANCH
               value: "unstable"
-            - name: PUBLIC
-              value: "true"
-            - name: DISPLAYNAME
-              value: "VanillaX Zomboid"
-            - name: MIN_MEMORY
-              value: "2048m"
-            - name: MAX_MEMORY
-              value: "10240m"
-            - name: PORT
+            - name: DEFAULT_PORT
               value: "16261"
-            - name: MOD_IDS
+            - name: UDP_PORT
+              value: "16262"
+            - name: RCON_PORT
+              value: "27015"
+            - name: MEMORY_XMX_GB
+              value: "10"
+            - name: MEMORY_XMS_GB
+              value: "2"
+            - name: UPDATE_ON_START
+              value: "true"
+            - name: GENERATE_SETTINGS
+              value: "false"
+            - name: STEAM_VAC
+              value: "true"
+            - name: MODS
               value: "SkillRecoveryJournal;ChuckleberryFinnAlertSystem;errorMagnifier;lgd_antibodies;RealisticDash;ArmorMakesSense;B42Horticulture;ArcheryNexus;PHLockpicking"
-            - name: WORKSHOP_IDS
+            - name: WORKSHOP_ITEMS
               value: "2503622437;2896041179;3077900375;2392676812;3635591071;3677430162;3650168851;3653092321;3617854007;3687010721"
           ports:
             - name: game
@@ -83,9 +94,28 @@ spec:
             - name: rcon
               containerPort: 27015
               protocol: TCP
+          startupProbe:
+            exec:
+              command:
+                - pgrep
+                - -f
+                - ProjectZomboid
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 60
+          livenessProbe:
+            exec:
+              command:
+                - pgrep
+                - -f
+                - ProjectZomboid
+            periodSeconds: 30
+            failureThreshold: 3
           volumeMounts:
-            - name: data
-              mountPath: /home/steam/Zomboid
+            - name: server-files
+              mountPath: /project-zomboid
+            - name: config-data
+              mountPath: /project-zomboid-config
           resources:
             requests:
               memory: 2Gi
@@ -94,7 +124,10 @@ spec:
               memory: 12Gi
               cpu: "4"
       volumes:
-        - name: data
+        - name: server-files
+          persistentVolumeClaim:
+            claimName: zomboid-server-files
+        - name: config-data
           persistentVolumeClaim:
             claimName: zomboid-data
         - name: config
