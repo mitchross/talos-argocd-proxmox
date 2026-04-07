@@ -3,6 +3,10 @@
 > Chronological action log. Hooks and AI append to this file automatically.
 > Old sessions are consolidated by the daemon weekly.
 
+| Time | Description | File(s) | Outcome | ~Tokens |
+|------|-------------|---------|---------|---------|
+| 2026-04-07 | Migrated Project Zomboid from danixu86 to indifferentbroccoli image | deployment.yaml, pvc.yaml, README.md | Committed + pushed to claude/update-zomboid-deployment-zo2qC | ~3000 |
+
 ## Session: 2026-04-05 01:29
 
 | Time | Action | File(s) | Outcome | ~Tokens |
@@ -97,3 +101,16 @@
 | 23:45 | Session end: 1 writes across 1 files (vanillax.ini) | 1 reads | ~4310 tok |
 | 00:10 | Edited my-apps/home/project-zomboid/deployment.yaml | 2→6 lines | ~121 |
 | 00:10 | Session end: 2 writes across 2 files (vanillax.ini, deployment.yaml) | 3 reads | ~4431 tok |
+
+## Session: 2026-04-07 20:26
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 20:29 | Created my-apps/home/project-zomboid/deployment.yaml | — | ~1067 |
+| 20:29 | Created my-apps/home/project-zomboid/pvc.yaml | — | ~155 |
+| 20:29 | Created my-apps/home/project-zomboid/README.md | — | ~528 |
+
+## Session: 2026-04-07 20:46
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
