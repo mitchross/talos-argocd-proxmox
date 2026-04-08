@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-08T02:43:29.299Z
-> Files: 518 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-08T02:56:20.779Z
+> Files: 527 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -718,6 +718,27 @@
 - `role.yaml` — K8s Role: {{ (~132 tok)
 - `rolebinding.yaml` — K8s RoleBinding: {{ (~183 tok)
 
+## infrastructure/controllers/opentelemetry-operator/
+
+- `collector-gateway.yaml` — K8s OpenTelemetryCollector (~1108 tok)
+
 ## infrastructure/networking/cilium/policies/
 
 - `block-lan-access.yaml` — K8s CiliumClusterwideNetworkPolicy (~898 tok)
+
+## monitoring/k8sgpt/
+
+- `grafana-dashboard.yaml` — K8s ConfigMap (~2720 tok)
+
+## monitoring/prometheus-stack/
+
+- `gpu-dashboard.yaml` — K8s ConfigMap (~16675 tok)
+- `kustomization.yaml` — K8s Kustomization (~334 tok)
+- `vpa-overview-dashboard.yaml` — K8s ConfigMap (~7117 tok)
+
+## my-apps/home/frigate/
+
+- `deployment.yaml` — K8s Deployment (~864 tok)
+- `kustomization.yaml` — K8s Kustomization (~108 tok)
+- `service.yaml` — K8s Service (~132 tok)
+- `servicemonitor.yaml` — K8s ServiceMonitor (~90 tok)

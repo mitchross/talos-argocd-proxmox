@@ -88,7 +88,7 @@ data:
           },
           "targets": [
             {
-              "expr": "count(kube_pod_container_resource_requests{resource=\"nvidia.com/gpu\"} > 0) or vector(0)",
+              "expr": "count(kube_pod_container_resource_requests{resource=\"nvidia_com_gpu\"} > 0) or vector(0)",
               "legendFormat": "",
               "refId": "A"
             }
@@ -140,7 +140,7 @@ data:
           },
           "targets": [
             {
-              "expr": "sum(kube_pod_container_resource_requests{resource=\"nvidia.com/gpu\"}) or vector(0)",
+              "expr": "sum(kube_pod_container_resource_requests{resource=\"nvidia_com_gpu\"}) or vector(0)",
               "legendFormat": "",
               "refId": "A"
             }
@@ -192,7 +192,7 @@ data:
           },
           "targets": [
             {
-              "expr": "sum(kube_node_status_allocatable{resource=\"nvidia.com/gpu\"}) or vector(0)",
+              "expr": "sum(kube_node_status_allocatable{resource=\"nvidia_com_gpu\"}) or vector(0)",
               "legendFormat": "",
               "refId": "A"
             }
@@ -337,7 +337,7 @@ data:
           },
           "targets": [
             {
-              "expr": "kube_pod_container_resource_requests{resource=\"nvidia.com/gpu\"} > 0",
+              "expr": "kube_pod_container_resource_requests{resource=\"nvidia_com_gpu\"} > 0",
               "format": "table",
               "instant": true,
               "refId": "A"
