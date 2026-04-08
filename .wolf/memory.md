@@ -149,3 +149,20 @@
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
 | 22:43 | Edited infrastructure/networking/cilium/policies/block-lan-access.yaml | expanded (+12 lines) | ~192 |
+| 22:52 | Edited infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml | 5→7 lines | ~60 |
+| 22:52 | Edited monitoring/k8sgpt/grafana-dashboard.yaml | 2→2 lines | ~27 |
+| 22:52 | Edited monitoring/k8sgpt/grafana-dashboard.yaml | 2→2 lines | ~40 |
+| 22:52 | Edited monitoring/k8sgpt/grafana-dashboard.yaml | 2→2 lines | ~29 |
+| 22:53 | Edited monitoring/k8sgpt/grafana-dashboard.yaml | inline fix | ~13 |
+| 22:53 | Edited monitoring/k8sgpt/grafana-dashboard.yaml | 2→2 lines | ~30 |
+| 22:53 | Edited monitoring/prometheus-stack/gpu-dashboard.yaml | "nvidia.com/gpu\" → "nvidia_com_gpu\" | ~8 |
+| 22:54 | Edited my-apps/home/frigate/deployment.yaml | expanded (+24 lines) | ~193 |
+| 22:54 | Edited my-apps/home/frigate/service.yaml | expanded (+17 lines) | ~86 |
+| 22:54 | Created my-apps/home/frigate/servicemonitor.yaml | — | ~90 |
+| 22:54 | Edited my-apps/home/frigate/kustomization.yaml | 2→3 lines | ~17 |
+| 22:55 | Created monitoring/prometheus-stack/vpa-overview-dashboard.yaml | — | ~7117 |
+| 22:55 | Edited monitoring/prometheus-stack/kustomization.yaml | 1→2 lines | ~38 |
+| 22:56 | Edited my-apps/home/frigate/deployment.yaml | removed 25 lines | ~4 |
+| 22:56 | Edited my-apps/home/frigate/service.yaml | reduced (-17 lines) | ~18 |
+| 22:56 | Created my-apps/home/frigate/servicemonitor.yaml | — | ~90 |
+| 22:56 | Session end: 17 writes across 9 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 13 reads | ~8052 tok |

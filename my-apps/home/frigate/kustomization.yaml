@@ -6,6 +6,7 @@ resources:
   - pvc.yaml
   - mqtt/mqtt.yaml
   - service.yaml
+  - servicemonitor.yaml
   - httproute.yaml
   - externalsecret.yaml
 namespace: frigate

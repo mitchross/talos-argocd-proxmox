@@ -65,7 +65,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "k8sgpt_result_count",
+              "expr": "sum(k8sgpt_number_of_results)",
               "legendFormat": "Issues",
               "refId": "A"
             }
@@ -108,7 +108,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "k8sgpt_result_count{severity=\"critical\"}",
+              "expr": "sum(k8sgpt_number_of_results{object_namespace=~\".+\"}) > 5 or vector(0)",
               "legendFormat": "Critical",
               "refId": "A"
             }
@@ -162,7 +162,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "k8sgpt_result_count",
+              "expr": "sum(k8sgpt_number_of_results)",
               "legendFormat": "Total Issues",
               "refId": "A"
             }
@@ -203,7 +203,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "k8sgpt_result_by_kind",
+              "expr": "k8sgpt_number_of_results_by_type",
               "format": "table",
               "instant": true,
               "legendFormat": "",
@@ -240,7 +240,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "k8sgpt_result_by_kind",
+              "expr": "k8sgpt_number_of_results_by_type",
               "legendFormat": "{{kind}}",
               "refId": "A"
             }
@@ -275,8 +275,8 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "k8sgpt_result_by_namespace",
-              "legendFormat": "{{namespace}}",
+              "expr": "k8sgpt_number_of_results",
+              "legendFormat": "{{object_namespace}}",
               "refId": "A"
             }
           ]

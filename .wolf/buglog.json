@@ -80,6 +80,70 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-07T20:47:44.914Z"
+    },
+    {
+      "id": "bug-006",
+      "timestamp": "2026-04-08T02:52:55.036Z",
+      "error_message": "Incorrect value in code",
+      "file": "monitoring/k8sgpt/grafana-dashboard.yaml",
+      "root_cause": "Had \"k8sgpt_result_count\"",
+      "fix": "Changed to \"sum(k8sgpt_number_of_results)\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 5,
+      "last_seen": "2026-04-08T02:53:02.895Z"
+    },
+    {
+      "id": "bug-007",
+      "timestamp": "2026-04-08T02:53:07.282Z",
+      "error_message": "Incorrect value in code",
+      "file": "monitoring/prometheus-stack/gpu-dashboard.yaml",
+      "root_cause": "Had \"nvidia.com/gpu\\\"",
+      "fix": "Changed to \"nvidia_com_gpu\\\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T02:53:07.282Z"
+    },
+    {
+      "id": "bug-008",
+      "timestamp": "2026-04-08T02:54:17.762Z",
+      "error_message": "Wrong reference: httproute should be servicemonitor",
+      "file": "my-apps/home/frigate/kustomization.yaml",
+      "root_cause": "Used \"httproute\" instead of \"servicemonitor\"",
+      "fix": "Changed httproute → servicemonitor",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T02:54:17.762Z"
+    },
+    {
+      "id": "bug-009",
+      "timestamp": "2026-04-08T02:56:16.586Z",
+      "error_message": "Significant refactor of ",
+      "file": "my-apps/home/frigate/service.yaml",
+      "root_cause": "12 lines replaced/restructured",
+      "fix": "Rewrote 22→5 lines (12 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T02:56:16.586Z"
     }
   ]
 }

@@ -21,6 +21,51 @@
       "count": 1,
       "tokens": 0,
       "first_read": "2026-04-08T02:43:16.815Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml": {
+      "count": 2,
+      "tokens": 0,
+      "first_read": "2026-04-08T02:51:30.891Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml": {
+      "count": 2,
+      "tokens": 0,
+      "first_read": "2026-04-08T02:52:05.530Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/monitoring/loki-stack/values.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-08T02:52:16.823Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-08T02:52:49.149Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-08T02:53:14.320Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml": {
+      "count": 2,
+      "tokens": 0,
+      "first_read": "2026-04-08T02:53:14.907Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-08T02:53:55.588Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-08T02:55:26.962Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/frigate-dashboard.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-08T02:55:34.569Z"
     }
   },
   "files_written": [
@@ -29,14 +74,119 @@
       "action": "edit",
       "tokens": 192,
       "at": "2026-04-08T02:43:29.314Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+      "action": "edit",
+      "tokens": 60,
+      "at": "2026-04-08T02:52:46.096Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+      "action": "edit",
+      "tokens": 27,
+      "at": "2026-04-08T02:52:55.035Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+      "action": "edit",
+      "tokens": 40,
+      "at": "2026-04-08T02:52:56.638Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+      "action": "edit",
+      "tokens": 29,
+      "at": "2026-04-08T02:52:57.587Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+      "action": "edit",
+      "tokens": 13,
+      "at": "2026-04-08T02:53:01.345Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+      "action": "edit",
+      "tokens": 30,
+      "at": "2026-04-08T02:53:02.894Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/gpu-dashboard.yaml",
+      "action": "edit",
+      "tokens": 8,
+      "at": "2026-04-08T02:53:07.281Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+      "action": "edit",
+      "tokens": 193,
+      "at": "2026-04-08T02:54:05.734Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+      "action": "edit",
+      "tokens": 86,
+      "at": "2026-04-08T02:54:10.438Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+      "action": "create",
+      "tokens": 90,
+      "at": "2026-04-08T02:54:14.070Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+      "action": "edit",
+      "tokens": 17,
+      "at": "2026-04-08T02:54:17.761Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/vpa-overview-dashboard.yaml",
+      "action": "create",
+      "tokens": 7117,
+      "at": "2026-04-08T02:55:24.017Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+      "action": "edit",
+      "tokens": 38,
+      "at": "2026-04-08T02:55:30.927Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+      "action": "edit",
+      "tokens": 4,
+      "at": "2026-04-08T02:56:11.400Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+      "action": "edit",
+      "tokens": 18,
+      "at": "2026-04-08T02:56:16.585Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+      "action": "create",
+      "tokens": 90,
+      "at": "2026-04-08T02:56:20.784Z"
     }
   ],
   "edit_counts": {
-    "infrastructure/networking/cilium/policies/block-lan-access.yaml": 1
+    "infrastructure/networking/cilium/policies/block-lan-access.yaml": 1,
+    "infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml": 1,
+    "monitoring/k8sgpt/grafana-dashboard.yaml": 5,
+    "monitoring/prometheus-stack/gpu-dashboard.yaml": 1,
+    "my-apps/home/frigate/deployment.yaml": 2,
+    "my-apps/home/frigate/service.yaml": 2,
+    "my-apps/home/frigate/servicemonitor.yaml": 2,
+    "my-apps/home/frigate/kustomization.yaml": 1,
+    "monitoring/prometheus-stack/vpa-overview-dashboard.yaml": 1,
+    "monitoring/prometheus-stack/kustomization.yaml": 1
   },
   "anatomy_hits": 0,
-  "anatomy_misses": 4,
-  "repeated_reads_warned": 2,
+  "anatomy_misses": 13,
+  "repeated_reads_warned": 5,
   "cerebrum_warnings": 0,
-  "stop_count": 4
+  "stop_count": 5
 }
