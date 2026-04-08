@@ -66,6 +66,11 @@
       "count": 1,
       "tokens": 0,
       "first_read": "2026-04-08T02:55:34.569Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-08T03:12:44.161Z"
     }
   },
   "files_written": [
@@ -170,6 +175,12 @@
       "action": "create",
       "tokens": 90,
       "at": "2026-04-08T02:56:20.784Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+      "action": "edit",
+      "tokens": 197,
+      "at": "2026-04-08T03:12:53.866Z"
     }
   ],
   "edit_counts": {
@@ -182,11 +193,12 @@
     "my-apps/home/frigate/servicemonitor.yaml": 2,
     "my-apps/home/frigate/kustomization.yaml": 1,
     "monitoring/prometheus-stack/vpa-overview-dashboard.yaml": 1,
-    "monitoring/prometheus-stack/kustomization.yaml": 1
+    "monitoring/prometheus-stack/kustomization.yaml": 1,
+    "my-apps/home/frigate/config.yml": 1
   },
   "anatomy_hits": 0,
-  "anatomy_misses": 13,
+  "anatomy_misses": 14,
   "repeated_reads_warned": 5,
   "cerebrum_warnings": 0,
-  "stop_count": 5
+  "stop_count": 16
 }

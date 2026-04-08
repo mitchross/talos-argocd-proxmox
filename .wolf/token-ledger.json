@@ -2,13 +2,13 @@
   "version": 1,
   "created_at": "2026-04-05T03:39:06.883Z",
   "lifetime": {
-    "total_tokens_estimated": 319913,
-    "total_reads": 268,
-    "total_writes": 408,
+    "total_tokens_estimated": 409273,
+    "total_reads": 415,
+    "total_writes": 599,
     "total_sessions": 12,
     "anatomy_hits": 176,
-    "anatomy_misses": 92,
-    "repeated_reads_blocked": 29,
+    "anatomy_misses": 239,
+    "repeated_reads_blocked": 84,
     "estimated_savings_vs_bare_cli": 58934
   },
   "sessions": [
@@ -4548,6 +4548,2030 @@
         "output_tokens_estimated": 8052,
         "reads_count": 13,
         "writes_count": 17,
+        "repeated_reads_blocked": 5,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-08-2228",
+      "started": "2026-04-08T02:28:04.837Z",
+      "ended": "2026-04-08T03:06:57.142Z",
+      "reads": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/solar-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/loki-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/frigate-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 192,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 40,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 29,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 13,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 30,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/gpu-dashboard.yaml",
+          "tokens_estimated": 8,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 193,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 86,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 17,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/vpa-overview-dashboard.yaml",
+          "tokens_estimated": 7117,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 4,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 18,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 8052,
+        "reads_count": 13,
+        "writes_count": 17,
+        "repeated_reads_blocked": 5,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-08-2228",
+      "started": "2026-04-08T02:28:04.837Z",
+      "ended": "2026-04-08T03:07:41.174Z",
+      "reads": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/solar-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/loki-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/frigate-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 192,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 40,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 29,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 13,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 30,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/gpu-dashboard.yaml",
+          "tokens_estimated": 8,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 193,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 86,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 17,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/vpa-overview-dashboard.yaml",
+          "tokens_estimated": 7117,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 4,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 18,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 8052,
+        "reads_count": 13,
+        "writes_count": 17,
+        "repeated_reads_blocked": 5,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-08-2228",
+      "started": "2026-04-08T02:28:04.837Z",
+      "ended": "2026-04-08T03:08:07.630Z",
+      "reads": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/solar-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/loki-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/frigate-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 192,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 40,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 29,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 13,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 30,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/gpu-dashboard.yaml",
+          "tokens_estimated": 8,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 193,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 86,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 17,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/vpa-overview-dashboard.yaml",
+          "tokens_estimated": 7117,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 4,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 18,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 8052,
+        "reads_count": 13,
+        "writes_count": 17,
+        "repeated_reads_blocked": 5,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-08-2228",
+      "started": "2026-04-08T02:28:04.837Z",
+      "ended": "2026-04-08T03:08:44.770Z",
+      "reads": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/solar-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/loki-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/frigate-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 192,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 40,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 29,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 13,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 30,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/gpu-dashboard.yaml",
+          "tokens_estimated": 8,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 193,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 86,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 17,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/vpa-overview-dashboard.yaml",
+          "tokens_estimated": 7117,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 4,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 18,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 8052,
+        "reads_count": 13,
+        "writes_count": 17,
+        "repeated_reads_blocked": 5,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-08-2228",
+      "started": "2026-04-08T02:28:04.837Z",
+      "ended": "2026-04-08T03:09:47.542Z",
+      "reads": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/solar-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/loki-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/frigate-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 192,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 40,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 29,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 13,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 30,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/gpu-dashboard.yaml",
+          "tokens_estimated": 8,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 193,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 86,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 17,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/vpa-overview-dashboard.yaml",
+          "tokens_estimated": 7117,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 4,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 18,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 8052,
+        "reads_count": 13,
+        "writes_count": 17,
+        "repeated_reads_blocked": 5,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-08-2228",
+      "started": "2026-04-08T02:28:04.837Z",
+      "ended": "2026-04-08T03:11:36.313Z",
+      "reads": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/solar-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/loki-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/frigate-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 192,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 40,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 29,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 13,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 30,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/gpu-dashboard.yaml",
+          "tokens_estimated": 8,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 193,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 86,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 17,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/vpa-overview-dashboard.yaml",
+          "tokens_estimated": 7117,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 4,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 18,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 8052,
+        "reads_count": 13,
+        "writes_count": 17,
+        "repeated_reads_blocked": 5,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-08-2228",
+      "started": "2026-04-08T02:28:04.837Z",
+      "ended": "2026-04-08T03:12:38.836Z",
+      "reads": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/solar-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/loki-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/frigate-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 192,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 40,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 29,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 13,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 30,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/gpu-dashboard.yaml",
+          "tokens_estimated": 8,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 193,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 86,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 17,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/vpa-overview-dashboard.yaml",
+          "tokens_estimated": 7117,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 4,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 18,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 8052,
+        "reads_count": 13,
+        "writes_count": 17,
+        "repeated_reads_blocked": 5,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-08-2228",
+      "started": "2026-04-08T02:28:04.837Z",
+      "ended": "2026-04-08T03:13:03.499Z",
+      "reads": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/solar-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/loki-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/frigate-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 192,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 40,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 29,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 13,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 30,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/gpu-dashboard.yaml",
+          "tokens_estimated": 8,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 193,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 86,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 17,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/vpa-overview-dashboard.yaml",
+          "tokens_estimated": 7117,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 4,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 18,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 197,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 8249,
+        "reads_count": 14,
+        "writes_count": 18,
+        "repeated_reads_blocked": 5,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-08-2228",
+      "started": "2026-04-08T02:28:04.837Z",
+      "ended": "2026-04-08T03:13:29.630Z",
+      "reads": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/solar-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/loki-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/frigate-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 192,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 40,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 29,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 13,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 30,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/gpu-dashboard.yaml",
+          "tokens_estimated": 8,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 193,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 86,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 17,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/vpa-overview-dashboard.yaml",
+          "tokens_estimated": 7117,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 4,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 18,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 197,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 8249,
+        "reads_count": 14,
+        "writes_count": 18,
+        "repeated_reads_blocked": 5,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-08-2228",
+      "started": "2026-04-08T02:28:04.837Z",
+      "ended": "2026-04-08T03:14:03.164Z",
+      "reads": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/solar-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/loki-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/frigate-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 192,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 40,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 29,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 13,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 30,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/gpu-dashboard.yaml",
+          "tokens_estimated": 8,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 193,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 86,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 17,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/vpa-overview-dashboard.yaml",
+          "tokens_estimated": 7117,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 4,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 18,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 197,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 8249,
+        "reads_count": 14,
+        "writes_count": 18,
+        "repeated_reads_blocked": 5,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-08-2228",
+      "started": "2026-04-08T02:28:04.837Z",
+      "ended": "2026-04-08T03:15:08.653Z",
+      "reads": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/solar-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/loki-stack/values.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/frigate-dashboard.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+          "tokens_estimated": 192,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml",
+          "tokens_estimated": 60,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 40,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 29,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 13,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/k8sgpt/grafana-dashboard.yaml",
+          "tokens_estimated": 30,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/gpu-dashboard.yaml",
+          "tokens_estimated": 8,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 193,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 86,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 17,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/vpa-overview-dashboard.yaml",
+          "tokens_estimated": 7117,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml",
+          "tokens_estimated": 38,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/deployment.yaml",
+          "tokens_estimated": 4,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/service.yaml",
+          "tokens_estimated": 18,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/servicemonitor.yaml",
+          "tokens_estimated": 90,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 197,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 8249,
+        "reads_count": 14,
+        "writes_count": 18,
         "repeated_reads_blocked": 5,
         "anatomy_lookups": 0
       }
