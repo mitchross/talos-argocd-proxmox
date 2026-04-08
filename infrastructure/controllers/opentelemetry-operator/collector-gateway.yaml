@@ -100,15 +100,15 @@ spec:
         send_batch_max_size: 16384
 
     exporters:
-      # Honeycomb - all signals via OTLP HTTP
-      otlphttp/honeycomb:
-        endpoint: https://api.honeycomb.io
-        headers:
-          x-honeycomb-team: ${env:HONEYCOMB_API_KEY}
-        sending_queue:
-          enabled: true
-          num_consumers: 10
-          queue_size: 10000
+      # Honeycomb - disabled, hit max dataset limit and causes gateway crash-loop
+      # otlphttp/honeycomb:
+      #   endpoint: https://api.honeycomb.io
+      #   headers:
+      #     x-honeycomb-team: ${env:HONEYCOMB_API_KEY}
+      #   sending_queue:
+      #     enabled: true
+      #     num_consumers: 10
+      #     queue_size: 10000
 
       # Tempo - traces via OTLP gRPC
       otlp/tempo:
@@ -135,12 +135,12 @@ spec:
         logs:
           receivers: [otlp, k8sobjects]
           processors: [k8sattributes, resource, batch]
-          exporters: [otlphttp/honeycomb, otlphttp/loki]
+          exporters: [otlphttp/loki]
         traces:
           receivers: [otlp]
           processors: [k8sattributes, resource, batch]
-          exporters: [otlphttp/honeycomb, otlp/tempo]
+          exporters: [otlp/tempo]
         metrics:
           receivers: [otlp, k8s_cluster]
           processors: [k8sattributes, resource, batch]
-          exporters: [otlphttp/honeycomb, otlphttp/prometheus]
+          exporters: [otlphttp/prometheus]
