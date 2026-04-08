@@ -6,6 +6,11 @@
       "count": 1,
       "tokens": 0,
       "first_read": "2026-04-08T05:43:33.354Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/jobs.yaml": {
+      "count": 1,
+      "tokens": 1382,
+      "first_read": "2026-04-08T13:15:38.551Z"
     }
   },
   "files_written": [
@@ -14,14 +19,21 @@
       "action": "edit",
       "tokens": 7,
       "at": "2026-04-08T05:43:48.199Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/jobs.yaml",
+      "action": "edit",
+      "tokens": 59,
+      "at": "2026-04-08T13:15:49.057Z"
     }
   ],
   "edit_counts": {
-    "my-apps/home/project-zomboid/vanillax_SandboxVars.lua": 1
+    "my-apps/home/project-zomboid/vanillax_SandboxVars.lua": 1,
+    "my-apps/development/posthog/core/jobs.yaml": 1
   },
-  "anatomy_hits": 0,
+  "anatomy_hits": 1,
   "anatomy_misses": 1,
   "repeated_reads_warned": 0,
   "cerebrum_warnings": 0,
-  "stop_count": 1
+  "stop_count": 17
 }
