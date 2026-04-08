@@ -85,6 +85,9 @@ spec:
       containers:
         - name: replay-capture
           image: ghcr.io/posthog/posthog/capture:master@sha256:c47226b3a3b648d543fc407053abb0c0873cc142fdb15849e7c7f65064035b3b
+          envFrom:
+            - configMapRef:
+                name: posthog-env
           env:
             - name: ADDRESS
               value: "0.0.0.0:3000"
@@ -98,6 +101,26 @@ spec:
               value: "recordings"
             - name: RUST_LOG
               value: "info,rdkafka=warn"
+            - name: OBJECT_STORAGE_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-access-key
+            - name: OBJECT_STORAGE_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-secret-key
+            - name: SESSION_RECORDING_V2_S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-access-key
+            - name: SESSION_RECORDING_V2_S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-secret-key
           ports:
             - containerPort: 3000
               name: http

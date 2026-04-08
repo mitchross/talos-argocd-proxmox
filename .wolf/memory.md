@@ -178,3 +178,42 @@
 | 23:13 | Session end: 18 writes across 10 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 14 reads | ~8249 tok |
 | 23:14 | Session end: 18 writes across 10 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 14 reads | ~8249 tok |
 | 23:15 | Session end: 18 writes across 10 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 14 reads | ~8249 tok |
+| 23:27 | Created monitoring/prometheus-stack/loki-logs-dashboard.yaml | — | ~1404 |
+| 23:27 | Edited monitoring/prometheus-stack/values.yaml | reduced (-9 lines) | ~65 |
+| 23:27 | Edited monitoring/prometheus-stack/kustomization.yaml | 1→2 lines | ~38 |
+| 23:28 | Session end: 21 writes across 12 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 14 reads | ~9756 tok |
+| 23:30 | Session end: 21 writes across 12 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 14 reads | ~9756 tok |
+| 23:31 | Session end: 21 writes across 12 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 14 reads | ~9756 tok |
+| 23:32 | Session end: 21 writes across 12 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 14 reads | ~9756 tok |
+| 23:36 | Session end: 21 writes across 12 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 14 reads | ~9756 tok |
+| 23:42 | Edited monitoring/prometheus-stack/gpu-dashboard.yaml | expanded (+143 lines) | ~2270 |
+| 23:44 | Session end: 22 writes across 12 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 21 reads | ~32831 tok |
+| 23:44 | Session end: 22 writes across 12 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 21 reads | ~32831 tok |
+| 23:44 | Created ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/feedback_otel_python_instrumentation.md | — | ~203 |
+| 23:45 | Edited ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/MEMORY.md | 3→6 lines | ~47 |
+| 23:45 | Session end: 24 writes across 14 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 22 reads | ~33099 tok |
+| 23:47 | Session end: 24 writes across 14 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 67 reads | ~33963 tok |
+| 23:52 | Session end: 24 writes across 14 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 67 reads | ~33963 tok |
+| 23:52 | Session end: 24 writes across 14 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 67 reads | ~33963 tok |
+| 23:56 | Session end: 24 writes across 14 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 67 reads | ~33963 tok |
+| 01:01 | Session end: 24 writes across 14 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 67 reads | ~33963 tok |
+| 01:30 | Edited infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml | 12→12 lines | ~112 |
+| 01:30 | Edited infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml | 9→9 lines | ~93 |
+| 01:30 | Session end: 26 writes across 14 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 67 reads | ~35276 tok |
+| 01:31 | Session end: 26 writes across 14 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 67 reads | ~35276 tok |
+| 01:32 | Session end: 26 writes across 14 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 67 reads | ~35276 tok |
+| 01:33 | Session end: 26 writes across 14 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 67 reads | ~35276 tok |
+| 01:36 | Session end: 26 writes across 14 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 67 reads | ~35276 tok |
+| 01:36 | Session end: 26 writes across 14 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 67 reads | ~35276 tok |
+| 01:38 | Session end: 26 writes across 14 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 68 reads | ~35276 tok |
+| 01:38 | Session end: 26 writes across 14 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 68 reads | ~35276 tok |
+| 01:39 | Session end: 26 writes across 14 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 69 reads | ~36971 tok |
+| 01:40 | Edited my-apps/development/posthog/core/capture.yaml | expanded (+23 lines) | ~371 |
+| 01:40 | Session end: 27 writes across 15 files (block-lan-access.yaml, collector-gateway.yaml, grafana-dashboard.yaml, gpu-dashboard.yaml, deployment.yaml) | 71 reads | ~38239 tok |
+
+## Session: 2026-04-08 01:43
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 01:43 | Edited my-apps/home/project-zomboid/vanillax_SandboxVars.lua | 1.8 → 0.75 | ~6 |
+| 01:43 | Session end: 1 writes across 1 files (vanillax_SandboxVars.lua) | 1 reads | ~7 tok |
