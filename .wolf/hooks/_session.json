@@ -1,39 +1,77 @@
 {
-  "session_id": "session-2026-04-08-0143",
-  "started": "2026-04-08T05:43:09.272Z",
+  "session_id": "session-2026-04-08-1553",
+  "started": "2026-04-08T15:53:06.236Z",
   "files_read": {
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/vanillax_SandboxVars.lua": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-08T05:43:33.354Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/jobs.yaml": {
-      "count": 1,
-      "tokens": 1382,
-      "first_read": "2026-04-08T13:15:38.551Z"
+    "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml": {
+      "count": 2,
+      "tokens": 1412,
+      "first_read": "2026-04-08T15:54:27.586Z"
     }
   },
   "files_written": [
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/vanillax_SandboxVars.lua",
+      "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
       "action": "edit",
-      "tokens": 7,
-      "at": "2026-04-08T05:43:48.199Z"
+      "tokens": 12,
+      "at": "2026-04-08T15:54:31.352Z"
     },
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/jobs.yaml",
+      "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
       "action": "edit",
-      "tokens": 59,
-      "at": "2026-04-08T13:15:49.057Z"
+      "tokens": 32,
+      "at": "2026-04-08T15:54:35.294Z"
+    },
+    {
+      "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+      "action": "edit",
+      "tokens": 34,
+      "at": "2026-04-08T15:54:39.319Z"
+    },
+    {
+      "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+      "action": "edit",
+      "tokens": 123,
+      "at": "2026-04-08T15:54:46.120Z"
+    },
+    {
+      "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+      "action": "edit",
+      "tokens": 136,
+      "at": "2026-04-08T15:54:52.427Z"
+    },
+    {
+      "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+      "action": "edit",
+      "tokens": 46,
+      "at": "2026-04-08T15:54:56.201Z"
+    },
+    {
+      "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/pdb.yaml",
+      "action": "create",
+      "tokens": 55,
+      "at": "2026-04-08T15:55:00.062Z"
+    },
+    {
+      "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/kustomization.yaml",
+      "action": "edit",
+      "tokens": 34,
+      "at": "2026-04-08T15:55:03.746Z"
+    },
+    {
+      "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+      "action": "edit",
+      "tokens": 42,
+      "at": "2026-04-08T15:56:59.984Z"
     }
   ],
   "edit_counts": {
-    "my-apps/home/project-zomboid/vanillax_SandboxVars.lua": 1,
-    "my-apps/development/posthog/core/jobs.yaml": 1
+    "my-apps/home/project-zomboid/deployment.yaml": 7,
+    "my-apps/home/project-zomboid/pdb.yaml": 1,
+    "my-apps/home/project-zomboid/kustomization.yaml": 1
   },
-  "anatomy_hits": 1,
+  "anatomy_hits": 0,
   "anatomy_misses": 1,
-  "repeated_reads_warned": 0,
+  "repeated_reads_warned": 1,
   "cerebrum_warnings": 0,
-  "stop_count": 17
+  "stop_count": 5
 }

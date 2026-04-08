@@ -163,19 +163,19 @@
     },
     {
       "id": "bug-011",
-      "timestamp": "2026-04-08T13:15:49.058Z",
-      "error_message": "Incorrect value in code",
-      "file": "my-apps/development/posthog/core/jobs.yaml",
-      "root_cause": "Had \"Running async migrations (required by worker)...\"",
-      "fix": "Changed to \"Checking async migrations (non-blocking)...\"",
+      "timestamp": "2026-04-08T15:54:31.353Z",
+      "error_message": "Wrong reference: 120 should be 180",
+      "file": "my-apps/home/project-zomboid/deployment.yaml",
+      "root_cause": "Used \"120\" instead of \"180\"",
+      "fix": "Changed 120 → 180",
       "tags": [
         "auto-detected",
-        "wrong-value",
+        "wrong-reference",
         "yaml"
       ],
       "related_bugs": [],
       "occurrences": 1,
-      "last_seen": "2026-04-08T13:15:49.058Z"
+      "last_seen": "2026-04-08T15:54:31.353Z"
     }
   ]
 }
