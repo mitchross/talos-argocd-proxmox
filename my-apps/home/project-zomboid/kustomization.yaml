@@ -9,6 +9,7 @@ resources:
   - externalsecret.yaml
   - deployment.yaml
   - service.yaml
+  - pdb.yaml
 
 configMapGenerator:
   - name: zomboid-server-config
