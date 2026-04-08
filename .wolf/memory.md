@@ -228,3 +228,12 @@
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
+| 15:54 | Edited my-apps/home/project-zomboid/deployment.yaml | 120 → 180 | ~12 |
+| 15:54 | Edited my-apps/home/project-zomboid/deployment.yaml | 1→2 lines | ~32 |
+| 15:54 | Edited my-apps/home/project-zomboid/deployment.yaml | 4→4 lines | ~34 |
+| 15:54 | Edited my-apps/home/project-zomboid/deployment.yaml | expanded (+11 lines) | ~123 |
+| 15:54 | Edited my-apps/home/project-zomboid/deployment.yaml | expanded (+9 lines) | ~136 |
+| 15:54 | Edited my-apps/home/project-zomboid/deployment.yaml | 7→7 lines | ~46 |
+| 15:55 | Created my-apps/home/project-zomboid/pdb.yaml | — | ~55 |
+| 15:55 | Edited my-apps/home/project-zomboid/kustomization.yaml | 6→7 lines | ~34 |
+| 15:55 | Session end: 8 writes across 3 files (deployment.yaml, pdb.yaml, kustomization.yaml) | 1 reads | ~1884 tok |
