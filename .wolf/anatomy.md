@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T20:47:49.679Z
-> Files: 511 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-08T02:17:22.133Z
+> Files: 512 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -846,3 +846,4 @@
 - `deployment.yaml` — K8s Deployment (~1207 tok)
 - `pvc.yaml` — K8s PersistentVolumeClaim (~155 tok)
 - `README.md` — Project documentation (~495 tok)
+- `vanillax_SandboxVars.lua` (~13868 tok)
