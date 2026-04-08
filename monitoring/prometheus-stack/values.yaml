@@ -54,16 +54,15 @@ prometheus:
     ruleSelectorNilUsesHelmValues: false
     # Additional scrape configs for custom monitoring
     additionalScrapeConfigs:
-      # NOTE: Frigate metrics are scraped via ServiceMonitor if configured
-      # External scraping via HTTPS is commented out to avoid cert issues
-      # - job_name: 'frigate'
-      #   metrics_path: /api/metrics
-      #   scheme: https
-      #   static_configs:
-      #     - targets: ['frigate.vanillax.me']
-      #   tls_config:
-      #     insecure_skip_verify: false
-      []
+      - job_name: 'epever-solar'
+        metrics_path: /metrics
+        scheme: http
+        scrape_interval: 15s
+        static_configs:
+          - targets: ['192.168.10.174:9812']
+            labels:
+              instance: 'rpi4-solar'
+              location: 'home'
     # Remote write configuration (for external storage if needed)
     remoteWrite: []
     # Alerting configuration
