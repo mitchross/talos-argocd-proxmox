@@ -34,7 +34,7 @@ spec:
               mountPath: /config
       containers:
         - name: project-zomboid
-          image: indifferentbroccoli/projectzomboid-server-docker:latest
+          image: indifferentbroccoli/projectzomboid-server-docker:latest@sha256:0058994b51c9cb11d77e025d6b3631af0bb4bc2632565f05c1fd8ec3c4190c6e
           imagePullPolicy: IfNotPresent
           env:
             - name: PUID
