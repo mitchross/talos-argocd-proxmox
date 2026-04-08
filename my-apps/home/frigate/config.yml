@@ -147,14 +147,21 @@ cameras:
       - path: rtsp://127.0.0.1:8554/front-porch-nest?video
         roles:
         - detect
-        - record
+        # No 'record' role - continuous streaming drains the Nest Doorbell battery
+        # even when wired. The trickle charge can't keep up with 24/7 streaming.
     detect:
       enabled: true
-      width: 1280
-      height: 720
+      width: 480
+      height: 640
       fps: 5
+    record:
+      enabled: true
+      events:
+        retain:
+          default: 14
+      # Only record on events, no continuous recording
     live:
-      height: 1080
+      height: 720
     objects:
       track:
       - person
