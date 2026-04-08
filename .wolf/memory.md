@@ -240,3 +240,10 @@
 | 15:55 | Session end: 8 writes across 3 files (deployment.yaml, pdb.yaml, kustomization.yaml) | 1 reads | ~1884 tok |
 | 15:56 | Edited my-apps/home/project-zomboid/deployment.yaml | inline fix | ~42 |
 | 15:57 | Session end: 9 writes across 3 files (deployment.yaml, pdb.yaml, kustomization.yaml) | 1 reads | ~1926 tok |
+
+## Session: 2026-04-08 18:24
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 18:56 | Edited my-apps/home/project-zomboid/pvc.yaml | 2→2 lines | ~14 |
+| 18:56 | Session end: 1 writes across 1 files (pvc.yaml) | 1 reads | ~14 tok |

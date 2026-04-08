@@ -176,6 +176,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-08T15:54:31.353Z"
+    },
+    {
+      "id": "bug-012",
+      "timestamp": "2026-04-08T22:56:12.284Z",
+      "error_message": "Wrong reference: 15Gi should be 60Gi",
+      "file": "my-apps/home/project-zomboid/pvc.yaml",
+      "root_cause": "Used \"15Gi\" instead of \"60Gi\"",
+      "fix": "Changed 15Gi → 60Gi",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T22:56:12.284Z"
     }
   ]
 }
