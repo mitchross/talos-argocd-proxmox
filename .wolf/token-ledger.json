@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-05T03:39:06.883Z",
   "lifetime": {
-    "total_tokens_estimated": 1107607,
-    "total_reads": 1576,
-    "total_writes": 1179,
-    "total_sessions": 15,
+    "total_tokens_estimated": 1109533,
+    "total_reads": 1577,
+    "total_writes": 1188,
+    "total_sessions": 16,
     "anatomy_hits": 200,
-    "anatomy_misses": 1376,
-    "repeated_reads_blocked": 292,
-    "estimated_savings_vs_bare_cli": 639220
+    "anatomy_misses": 1377,
+    "repeated_reads_blocked": 293,
+    "estimated_savings_vs_bare_cli": 640632
   },
   "sessions": [
     {
@@ -16853,6 +16853,74 @@
       "id": "session-2026-04-08-1553",
       "started": "2026-04-08T15:53:06.236Z",
       "ended": "2026-04-08T15:57:16.476Z",
+      "reads": [
+        {
+          "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+          "tokens_estimated": 1412,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+          "tokens_estimated": 12,
+          "action": "edit"
+        },
+        {
+          "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+          "tokens_estimated": 32,
+          "action": "edit"
+        },
+        {
+          "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+          "tokens_estimated": 34,
+          "action": "edit"
+        },
+        {
+          "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+          "tokens_estimated": 123,
+          "action": "edit"
+        },
+        {
+          "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+          "tokens_estimated": 136,
+          "action": "edit"
+        },
+        {
+          "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+          "tokens_estimated": 46,
+          "action": "edit"
+        },
+        {
+          "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/pdb.yaml",
+          "tokens_estimated": 55,
+          "action": "create"
+        },
+        {
+          "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/kustomization.yaml",
+          "tokens_estimated": 34,
+          "action": "edit"
+        },
+        {
+          "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+          "tokens_estimated": 42,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1412,
+        "output_tokens_estimated": 514,
+        "reads_count": 1,
+        "writes_count": 9,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-08-1553",
+      "started": "2026-04-08T15:53:06.236Z",
+      "ended": "2026-04-08T15:57:24.534Z",
       "reads": [
         {
           "file": "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
