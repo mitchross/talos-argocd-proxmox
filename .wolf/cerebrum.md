@@ -21,6 +21,7 @@
 <!-- Format: [YYYY-MM-DD] Description of what went wrong and what to do instead. -->
 - [2026-04-08] Epever RS485 adapter: used `serial.rs485.RS485Settings(rts_level_for_tx=True)` and kernel default `RTS_ON_SEND` — both wrong. Must use kernel ioctl with `SER_RS485_RTS_AFTER_SEND` flag. Always test both polarities when RS485 doesn't respond.
 - [2026-04-08] pymodbus 3.9.x: `read_input_registers(addr, count)` fails — `count` is keyword-only. Use `read_input_registers(addr, count=count, slave=unit)`.
+- [2026-04-08] Epever MPPT voltage registers (0x9003-0x900E): single `write_register` (func 0x06) returns exception code 4. Must use `write_registers` (func 0x10) to batch-write all 12 at once. Non-voltage registers like battery_capacity and temp_coeff accept single writes fine.
 
 ## Decision Log
 

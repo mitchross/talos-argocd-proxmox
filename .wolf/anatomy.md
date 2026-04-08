@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-08T02:26:50.382Z
-> Files: 517 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-08T02:43:29.299Z
+> Files: 518 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -717,3 +717,7 @@
 - `pdb.yaml` — K8s PodDisruptionBudget: {{ (~268 tok)
 - `role.yaml` — K8s Role: {{ (~132 tok)
 - `rolebinding.yaml` — K8s RoleBinding: {{ (~183 tok)
+
+## infrastructure/networking/cilium/policies/
+
+- `block-lan-access.yaml` — K8s CiliumClusterwideNetworkPolicy (~898 tok)
