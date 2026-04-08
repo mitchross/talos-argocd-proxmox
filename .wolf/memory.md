@@ -6,6 +6,7 @@
 | Time | Description | File(s) | Outcome | ~Tokens |
 |------|-------------|---------|---------|---------|
 | 2026-04-07 | Migrated Project Zomboid from danixu86 to indifferentbroccoli image | deployment.yaml, pvc.yaml, README.md | Committed + pushed to claude/update-zomboid-deployment-zo2qC | ~3000 |
+| 2026-04-08 | Deep-dive analysis of indifferentbroccoli/projectzomboid-server-docker repo | External repo (GitHub) | Full technical report: lifecycle, RCON shutdown, volumes, env vars, K8s considerations | ~8000 |
 
 ## Session: 2026-04-05 01:29
 
@@ -219,6 +220,11 @@
 | 01:43 | Session end: 1 writes across 1 files (vanillax_SandboxVars.lua) | 1 reads | ~7 tok |
 
 ## Session: 2026-04-08 15:15
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-04-08 15:53
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|

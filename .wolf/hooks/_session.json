@@ -1,63 +1,12 @@
 {
-  "session_id": "session-2026-04-08-1515",
-  "started": "2026-04-08T15:15:33.351Z",
-  "files_read": {
-    "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/README.md": {
-      "count": 1,
-      "tokens": 3991,
-      "first_read": "2026-04-08T15:16:01.896Z"
-    },
-    "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/kustomization.yaml": {
-      "count": 2,
-      "tokens": 0,
-      "first_read": "2026-04-08T15:16:02.116Z"
-    },
-    "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/namespace.yaml": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-08T15:16:02.247Z"
-    },
-    "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml": {
-      "count": 2,
-      "tokens": 0,
-      "first_read": "2026-04-08T15:16:02.483Z"
-    },
-    "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/service.yaml": {
-      "count": 2,
-      "tokens": 0,
-      "first_read": "2026-04-08T15:16:04.479Z"
-    },
-    "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/pvc.yaml": {
-      "count": 2,
-      "tokens": 0,
-      "first_read": "2026-04-08T15:16:04.702Z"
-    },
-    "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/externalsecret.yaml": {
-      "count": 2,
-      "tokens": 0,
-      "first_read": "2026-04-08T15:16:04.919Z"
-    },
-    "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/vanillax.ini": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-08T15:16:21.478Z"
-    },
-    "/home/user/talos-argocd-proxmox/my-apps/home/project-zomboid/vanillax_SandboxVars.lua": {
-      "count": 1,
-      "tokens": 13868,
-      "first_read": "2026-04-08T15:16:21.880Z"
-    },
-    "/tmp/claude-0/-home-user-talos-argocd-proxmox/6e68cbc5-2dfc-47e8-b18b-a626e40f44dd/tasks/a72e4e0f53d06bc12.output": {
-      "count": 2,
-      "tokens": 0,
-      "first_read": "2026-04-08T15:18:05.917Z"
-    }
-  },
+  "session_id": "session-2026-04-08-1553",
+  "started": "2026-04-08T15:53:06.236Z",
+  "files_read": {},
   "files_written": [],
   "edit_counts": {},
-  "anatomy_hits": 2,
-  "anatomy_misses": 8,
-  "repeated_reads_warned": 6,
+  "anatomy_hits": 0,
+  "anatomy_misses": 0,
+  "repeated_reads_warned": 0,
   "cerebrum_warnings": 0,
   "stop_count": 1
 }
