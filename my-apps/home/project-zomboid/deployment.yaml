@@ -17,6 +17,21 @@ spec:
     spec:
       terminationGracePeriodSeconds: 180
       initContainers:
+        - name: steamcmd-update
+          image: indifferentbroccoli/projectzomboid-server-docker:latest@sha256:0058994b51c9cb11d77e025d6b3631af0bb4bc2632565f05c1fd8ec3c4190c6e
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+            - -c
+            - |
+              echo "Pre-warming SteamCMD to prevent state 0x6 on game install..."
+              cp -a /home/steam/Steam/* /steam-cache/ 2>/dev/null || true
+              /home/steam/Steam/steamcmd.sh +quit || true
+              cp -a /home/steam/Steam/* /steam-cache/
+              echo "SteamCMD self-update complete."
+          volumeMounts:
+            - name: steam-cache
+              mountPath: /steam-cache
         - name: copy-config
           image: busybox
           command:
@@ -137,6 +152,8 @@ spec:
               mountPath: /project-zomboid
             - name: config-data
               mountPath: /project-zomboid-config
+            - name: steam-cache
+              mountPath: /home/steam/Steam
           resources:
             requests:
               memory: 8Gi
@@ -154,3 +171,6 @@ spec:
         - name: config
           configMap:
             name: zomboid-server-config
+        - name: steam-cache
+          emptyDir:
+            sizeLimit: 512Mi
