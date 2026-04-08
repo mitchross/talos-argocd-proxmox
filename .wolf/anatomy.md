@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-08T05:43:48.193Z
-> Files: 509 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-08T22:00:00.460Z
+> Files: 508 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -196,7 +196,7 @@
 ## infrastructure/controllers/opentelemetry-operator/
 
 - `collector-agent.yaml` — start_at: end (~907 tok)
-- `collector-gateway.yaml` — K8s OpenTelemetryCollector (~1106 tok)
+- `collector-gateway.yaml` — K8s OpenTelemetryCollector: otel-gateway (~1106 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: honeycomb-api-key (~106 tok)
 - `instrumentation.yaml` — K8s Instrumentation: default (~329 tok)
 - `kustomization.yaml` — K8s Kustomization: opentelemetry-operator (~138 tok)
@@ -707,10 +707,10 @@
 
 ## my-apps/development/posthog/core/
 
-- `capture.yaml` — K8s Deployment (~1937 tok)
+- `capture.yaml` — K8s Deployment: capture (~1937 tok)
 - `clickhouse-init.yaml` — K8s Job: clickhouse-migrations-init (~900 tok)
 - `ingestion.yaml` — Ingestion General - consumes from events_plugin_ingestion, processes events, (~874 tok)
-- `jobs.yaml` — K8s Job: kafka-init (~1382 tok)
+- `jobs.yaml` — K8s Job: kafka-init (~1397 tok)
 - `microservices.yaml` — Livestream - real-time event streaming (disabled: requires GeoIP MMDB file) (~1992 tok)
 - `plugins.yaml` — K8s Deployment: plugins (~1162 tok)
 - `web.yaml` — K8s Deployment: web (~941 tok)
@@ -837,7 +837,3 @@
 ## my-apps/home/project-nomad/kiwix/
 
 - `deployment.yaml` — K8s Deployment: kiwix (~429 tok)
-
-## my-apps/home/project-zomboid/
-
-- `vanillax_SandboxVars.lua` (~13868 tok)

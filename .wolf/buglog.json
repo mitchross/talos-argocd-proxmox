@@ -160,6 +160,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-08T03:12:53.867Z"
+    },
+    {
+      "id": "bug-011",
+      "timestamp": "2026-04-08T13:15:49.058Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/development/posthog/core/jobs.yaml",
+      "root_cause": "Had \"Running async migrations (required by worker)...\"",
+      "fix": "Changed to \"Checking async migrations (non-blocking)...\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-08T13:15:49.058Z"
     }
   ]
 }
