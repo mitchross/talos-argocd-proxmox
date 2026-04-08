@@ -373,12 +373,155 @@ data:
           "type": "table"
         },
         {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "description": "Live view of GPU workloads — like Task Manager for your GPUs",
+          "fieldConfig": {
+            "defaults": {
+              "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false, "filterable": true },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+            },
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "GPU %" },
+                "properties": [
+                  { "id": "unit", "value": "percent" },
+                  { "id": "max", "value": 100 },
+                  { "id": "min", "value": 0 },
+                  { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+                  { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 60 }, { "color": "red", "value": 90 }] } }
+                ]
+              },
+              {
+                "matcher": { "id": "byName", "options": "VRAM Used" },
+                "properties": [
+                  { "id": "unit", "value": "decmbytes" },
+                  { "id": "custom.cellOptions", "value": { "mode": "gradient", "type": "gauge" } },
+                  { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 16000 }, { "color": "red", "value": 22000 }] } },
+                  { "id": "max", "value": 25000 }
+                ]
+              },
+              {
+                "matcher": { "id": "byName", "options": "VRAM Free" },
+                "properties": [
+                  { "id": "unit", "value": "decmbytes" },
+                  { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 2000 }, { "color": "green", "value": 5000 }] } },
+                  { "id": "custom.cellOptions", "value": { "mode": "basic", "type": "color-text" } }
+                ]
+              },
+              {
+                "matcher": { "id": "byName", "options": "Temp" },
+                "properties": [
+                  { "id": "unit", "value": "celsius" },
+                  { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 85 }] } },
+                  { "id": "custom.cellOptions", "value": { "mode": "basic", "type": "color-text" } }
+                ]
+              },
+              {
+                "matcher": { "id": "byName", "options": "Power" },
+                "properties": [
+                  { "id": "unit", "value": "watt" },
+                  { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 150 }, { "color": "red", "value": 200 }] } },
+                  { "id": "custom.cellOptions", "value": { "mode": "basic", "type": "color-text" } }
+                ]
+              }
+            ]
+          },
+          "gridPos": { "h": 6, "w": 24, "x": 0, "y": 13 },
+          "id": 205,
+          "options": {
+            "showHeader": true,
+            "cellHeight": "md",
+            "sortBy": [{ "desc": true, "displayName": "VRAM Used" }],
+            "footer": { "enablePagination": false }
+          },
+          "title": "GPU Task Manager",
+          "type": "table",
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "DCGM_FI_DEV_GPU_UTIL{exported_pod!=\"\"}",
+              "format": "table",
+              "instant": true,
+              "refId": "gpu_util"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "DCGM_FI_DEV_FB_USED{exported_pod!=\"\"}",
+              "format": "table",
+              "instant": true,
+              "refId": "vram_used"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "DCGM_FI_DEV_FB_FREE{exported_pod!=\"\"}",
+              "format": "table",
+              "instant": true,
+              "refId": "vram_free"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "DCGM_FI_DEV_GPU_TEMP{exported_pod!=\"\"}",
+              "format": "table",
+              "instant": true,
+              "refId": "temp"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "DCGM_FI_DEV_POWER_USAGE{exported_pod!=\"\"}",
+              "format": "table",
+              "instant": true,
+              "refId": "power"
+            }
+          ],
+          "transformations": [
+            {
+              "id": "joinByField",
+              "options": { "byField": "exported_pod", "mode": "outer" }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "__name__": true, "__name__ 1": true, "__name__ 2": true, "__name__ 3": true, "__name__ 4": true,
+                  "Time": true, "Time 1": true, "Time 2": true, "Time 3": true, "Time 4": true,
+                  "job": true, "job 1": true, "job 2": true, "job 3": true, "job 4": true,
+                  "instance": true, "instance 1": true, "instance 2": true, "instance 3": true, "instance 4": true,
+                  "endpoint": true, "endpoint 1": true, "endpoint 2": true, "endpoint 3": true, "endpoint 4": true,
+                  "service": true, "service 1": true, "service 2": true, "service 3": true, "service 4": true,
+                  "exported_container": true, "exported_container 1": true, "exported_container 2": true, "exported_container 3": true, "exported_container 4": true,
+                  "modelName": true, "modelName 1": true, "modelName 2": true, "modelName 3": true, "modelName 4": true,
+                  "Hostname": true, "Hostname 1": true, "Hostname 2": true, "Hostname 3": true, "Hostname 4": true,
+                  "UUID": true, "UUID 1": true, "UUID 2": true, "UUID 3": true, "UUID 4": true,
+                  "DCGM_FI_DRIVER_VERSION": true, "DCGM_FI_DRIVER_VERSION 1": true, "DCGM_FI_DRIVER_VERSION 2": true, "DCGM_FI_DRIVER_VERSION 3": true, "DCGM_FI_DRIVER_VERSION 4": true,
+                  "container": true, "container 1": true, "container 2": true, "container 3": true, "container 4": true,
+                  "namespace": true, "namespace 1": true, "namespace 2": true, "namespace 3": true, "namespace 4": true,
+                  "pod": true, "pod 1": true, "pod 2": true, "pod 3": true, "pod 4": true,
+                  "node": true, "node 1": true, "node 2": true, "node 3": true, "node 4": true,
+                  "gpu 1": true, "gpu 2": true, "gpu 3": true, "gpu 4": true,
+                  "exported_namespace 1": true, "exported_namespace 2": true, "exported_namespace 3": true, "exported_namespace 4": true
+                },
+                "renameByName": {
+                  "exported_pod": "Workload",
+                  "exported_namespace": "Namespace",
+                  "gpu": "GPU",
+                  "Value #gpu_util": "GPU %",
+                  "Value #vram_used": "VRAM Used",
+                  "Value #vram_free": "VRAM Free",
+                  "Value #temp": "Temp",
+                  "Value #power": "Power"
+                }
+              }
+            }
+          ]
+        },
+        {
           "collapsed": false,
           "gridPos": {
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 13
+            "y": 19
           },
           "id": 100,
           "panels": [],
