@@ -1,32 +1,30 @@
 {
-  "generated_at": "2026-04-06T08:00:34.143Z",
+  "generated_at": "2026-04-08T02:28:53.287Z",
   "achievements": [
-    "Deployed Project Zomboid dedicated server (my-apps/home/project-zomboid/) — full manifests with namespace, PVC, deployment, service, externalsecret, configmap, and custom server config (vanillax.ini, SandboxVars.lua)",
-    "Built custom llama.cpp CUDA 12.8 image build pipeline (llama-cpp-build.yml) and deployed v8665",
-    "Fixed ArgoCD Job immutability bug — added hook annotations to all Jobs to prevent Renovate-triggered 'field is immutable' sync failures",
-    "Fixed CI pipeline — resolved shellcheck and kubeconform validation failures, added YAML doc filtering with csplit",
-    "Reduced ArgoCD reconciliation interval to default 180s for cluster stability",
-    "Renovate kept 15+ dependencies current (posthog, temporal, cloudnative-pg, kube-prometheus-stack, opentelemetry-operator, jellyfin, searxng, etc.)"
+    "Deployed Project Zomboid game server — full GitOps setup (namespace, PVC, deployment, service, externalsecret, configmap), then migrated to indifferentbroccoli image with improved config (#1168)",
+    "Built solar MPPT monitoring pipeline — Epever RS485 monitor on RPi4 (192.168.10.174) with Docker, Prometheus scrape endpoint (:9812), and Grafana dashboard ConfigMap",
+    "Created custom llama.cpp CUDA 12.8 image build pipeline in CI (.github/workflows/llama-cpp-build.yml) and updated deployment to v8665",
+    "Fixed ArgoCD Job immutability bug — added hook annotations to prevent 'field is immutable' sync failures on image tag bumps",
+    "CI hardening — fixed kubeconform YAML doc filtering and shellcheck issues",
+    "Renovate processed ~20 dependency updates (kube-prometheus-stack, CNPG, Temporal, OTEL operator, Jellyfin, SearXNG, etc.)"
   ],
   "improvements": [
-    "Project Zomboid deployment was edited 14+ times in one session — consider templating game server deployments with a shared Kustomize component in my-apps/common/ to reduce iteration churn for future game servers",
-    "Commit messages like 'idiot', 'up', 'fixes' lose context — enforce conventional commits via a pre-commit hook or commitlint",
-    "The posthog deployment is massive (8 microservices, custom ClickHouse config) — consider Helm chart migration or at minimum documenting the manual deployment topology in a CLAUDE.md",
-    "Several empty files in gitea/ (deployment.yaml, pvc.yaml, release.yaml, repository.yaml, service.yaml at 0 tok) — either populate or remove to avoid confusion"
+    "Commit the uncommitted solar monitoring changes (solar-dashboard.yaml, kustomization.yaml, values.yaml) — these are live in working tree but not pushed",
+    "Project Zomboid deployment had 14+ iterations on deployment.yaml across sessions — consider templating or documenting the container config requirements to avoid churn on future game servers",
+    "Solar monitor uses raw Docker on RPi4 outside GitOps — consider adding it to a separate repo or documenting the deployment in docs/ for reproducibility",
+    "ArgoCD reconciliation was reduced to default 180s (8cecaf5e) — monitor whether this causes excessive Git polling or is optimal"
   ],
   "next_tasks": [
-    "Verify Project Zomboid is running and accessible — check pod status, PVC binding, and externalsecret sync",
-    "Add backup labels to Project Zomboid PVC if game data is valuable (backup: 'daily' on the PVC, storageClassName: longhorn)",
-    "Clean up empty gitea files (0 tok deployment.yaml, pvc.yaml, release.yaml, repository.yaml, service.yaml) — they either need content or removal",
-    "Consider adding an HTTPRoute for Project Zomboid management web UI if one exists, or document the UDP/TCP port access pattern",
-    "Review OpenTelemetry collector pipeline health after the operator upgrade to v0.109.0",
-    "CNPG operator upgraded to v0.28.0 — verify all 4 database clusters (gitea, immich, khoj, paperless) are healthy"
+    "Commit and push the solar dashboard + Prometheus scrape config changes (3 files modified in monitoring/prometheus-stack/)",
+    "Debug MPPT physical connection — memory notes 'MPPT not responding (physical issue)'; verify RS485 wiring and Exar adapter on RPi4",
+    "Add Prometheus alerts for solar metrics (battery voltage low, charge controller offline, panel power anomalies)",
+    "Verify Project Zomboid server is stable after the indifferentbroccoli image migration — check pod logs and player connectivity",
+    "Review Renovate PRs for any that need manual intervention (large version bumps like Node.js v24 #1141)"
   ],
   "risks": [
-    "Project Zomboid ExternalSecret references 1Password items — verify the secret exists in the homelab-prod vault or pods will CrashLoopBackOff",
-    "15+ Renovate dependency bumps merged this week with no apparent integration testing — one bad image digest could break a service silently; consider adding smoke tests to cluster-ci.yml",
-    "The custom llama-cpp-cuda image is self-built — if the GitHub Actions build pipeline breaks, you're pinned to the current version with no fallback",
-    "Multiple manual commits directly to main (no PR/review) — risky for a production cluster; branch protection rules would catch bad manifests before they sync",
-    "Empty gitea manifests (0 tok files) may cause kubeconform or ArgoCD sync issues if they're listed in kustomization.yaml but contain no valid YAML"
+    "Uncommitted monitoring changes (3 files) could be lost — solar-dashboard.yaml, kustomization.yaml edits, values.yaml scrape config are only in working tree",
+    "Solar MPPT RS485 communication failure flagged as physical issue — monitor may be collecting no data, making the dashboard empty",
+    "Node.js v24 update (#1141) is a major version bump — could break astro build or any JS tooling in the repo",
+    "Three ArgoCD Helm chart versions retained (8.6.4, 9.0.5, 9.1.0) — 780k+ tokens of templates; old chart directories should be pruned after confirming 9.1.0 is stable"
   ]
 }

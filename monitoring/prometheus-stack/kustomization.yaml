@@ -16,6 +16,7 @@ resources:
   - gpu-dashboard.yaml # Grafana dashboard
   - network-policy.yaml # Allow Grafana to access Prometheus
   - frigate-dashboard.yaml # Frigate Grafana dashboard
+  - solar-dashboard.yaml # Epever Solar MPPT dashboard
 # Strategic merge patches to handle resource conflicts
 patchesStrategicMerge:
   - alertmanager-config.yaml

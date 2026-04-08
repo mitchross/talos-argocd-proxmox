@@ -122,3 +122,29 @@
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
+
+## Session: 2026-04-07 19:28
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 20:09 | Edited monitoring/prometheus-stack/values.yaml | 11→10 lines | ~86 |
+| 20:10 | Created monitoring/prometheus-stack/solar-dashboard.yaml | — | ~5029 |
+| 20:10 | Edited monitoring/prometheus-stack/kustomization.yaml | 1→2 lines | ~32 |
+| 20:12 | Deployed epever-solar-monitor Docker container on RPi4 (192.168.10.174) | epever_monitor/*.py, Dockerfile, docker-compose.yml | Container running, API live on :8080/:9812, MPPT not responding (physical issue) | ~8000 |
+| 20:12 | Created ../../../.claude/projects/-Users-mitchross-Documents-Programming-talos-argocd-proxmox/memory/reference_rpi4_solar.md | — | ~284 |
+| 20:13 | Created ../../../.claude/projects/-Users-mitchross-Documents-Programming-talos-argocd-proxmox/memory/MEMORY.md | — | ~42 |
+| 20:13 | Session end: 5 writes across 5 files (values.yaml, solar-dashboard.yaml, kustomization.yaml, reference_rpi4_solar.md, MEMORY.md) | 15 reads | ~39512 tok |
+| 22:15 | Session end: 5 writes across 5 files (values.yaml, solar-dashboard.yaml, kustomization.yaml, reference_rpi4_solar.md, MEMORY.md) | 15 reads | ~39512 tok |
+| 22:22 | Session end: 5 writes across 5 files (values.yaml, solar-dashboard.yaml, kustomization.yaml, reference_rpi4_solar.md, MEMORY.md) | 15 reads | ~39512 tok |
+| 22:24 | Session end: 5 writes across 5 files (values.yaml, solar-dashboard.yaml, kustomization.yaml, reference_rpi4_solar.md, MEMORY.md) | 15 reads | ~39512 tok |
+| 22:26 | Session end: 5 writes across 5 files (values.yaml, solar-dashboard.yaml, kustomization.yaml, reference_rpi4_solar.md, MEMORY.md) | 15 reads | ~39512 tok |
+
+## Session: 2026-04-08 22:27
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-04-08 22:28
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|

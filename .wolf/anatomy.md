@@ -1,10 +1,11 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-07T20:47:49.679Z
-> Files: 511 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-08T02:26:50.382Z
+> Files: 517 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
+- `.DS_Store` (~4915 tok)
 - `.gitattributes` — Git attributes (~6 tok)
 - `.gitignore` — Git ignore rules (~611 tok)
 - `astro.config.mjs` — Astro configuration (~274 tok)
@@ -18,6 +19,17 @@
 - `thermodynamic-corridor-infographic.jsx` — sections (~7027 tok)
 - `thermodynamic-corridor-summary.md` — Civilisation's Thermodynamic Corridor — Summary (~2589 tok)
 - `tsconfig.json` — TypeScript configuration (~12 tok)
+
+## .astro/
+
+- `content-assets.mjs` (~7 tok)
+- `content-modules.mjs` (~60 tok)
+- `content.d.ts` — Resolve an array of entry references from the same collection (~1640 tok)
+- `types.d.ts` — / <reference types="astro/client" /> (~22 tok)
+
+## .astro/collections/
+
+- `docs.schema.json` (~4806 tok)
 
 ## .claude/
 
@@ -40,6 +52,7 @@
 
 ## .github/
 
+- `.DS_Store` (~1640 tok)
 - `copilot-instructions.md` — GitHub Copilot Instructions for talos-argocd-proxmox (~1417 tok)
 - `renovate.json5` (~1410 tok)
 
@@ -58,6 +71,7 @@
 
 ## docs/
 
+- `.DS_Store` (~1640 tok)
 - `argocd.md` — ArgoCD & GitOps Architecture (~5600 tok)
 - `backup-restore.md` — Zero-Touch PVC Backup and Restore (~3381 tok)
 - `cnpg-disaster-recovery.md` — CNPG Database Disaster Recovery (~7577 tok)
@@ -75,7 +89,12 @@
 
 ## infrastructure/
 
+- `.DS_Store` (~3824 tok)
 - `CLAUDE.md` — Infrastructure Guidelines (~869 tok)
+
+## infrastructure/controllers/
+
+- `.DS_Store` (~3278 tok)
 
 ## infrastructure/controllers/1passwordconnect/
 
@@ -85,6 +104,7 @@
 
 ## infrastructure/controllers/argocd/
 
+- `.DS_Store` (~1640 tok)
 - `http-route.yaml` — K8s HTTPRoute: argocd (~139 tok)
 - `kustomization.yaml` — K8s Kustomization: argo-cd (~287 tok)
 - `ns.yaml` — K8s Namespace: argocd (~16 tok)
@@ -110,739 +130,590 @@
 - `snapshot-controller-app.yaml` — Snapshot Controller (~256 tok)
 - `volsync-app.yaml` — VolSync for PVC backup and replication (~289 tok)
 
-## infrastructure/controllers/cert-manager/
-
-- `cloudflare-external-secret.yaml` — K8s ExternalSecret: cloudflare-api-token (~161 tok)
-- `cluster-issuer.yaml` — K8s ClusterIssuer: cloudflare-cluster-issuer (~199 tok)
-- `kustomization.yaml` — K8s Kustomization: cert-manager (~107 tok)
-- `ns.yaml` — K8s Namespace: cert-manager (~18 tok)
-- `values.yaml` — Add leader election namespace to prevent RBAC permissions errors (~551 tok)
-
-## infrastructure/controllers/external-dns/
-
-- `cloudflare-external-secret.yaml` — K8s ExternalSecret: cloudflare-api-token (~154 tok)
-- `kustomization.yaml` — K8s Kustomization: external-dns (~113 tok)
-- `ns.yaml` — K8s Namespace: external-dns (~18 tok)
-- `values.yaml` — ExternalDNS Helm Values for Cloudflare Integration (~579 tok)
-
-## infrastructure/controllers/external-secrets/
-
-- `cluster-secret-store.yaml` — K8s ClusterSecretStore: 1password (~150 tok)
-- `external-secret.yaml` — K8s ExternalSecret: external-secrets (~154 tok)
-- `kustomization.yaml` — K8s Kustomization: external-secrets (~285 tok)
-- `ns.yaml` — K8s Namespace: external-secrets (~19 tok)
-- `values.yaml` (~30 tok)
-
-## infrastructure/controllers/gpu-priority-classes/
-
-- `kustomization.yaml` — K8s Kustomization: gpu-priority-classes (~88 tok)
-- `priority-classes.yaml` — K8s PriorityClass: gpu-workload-high (~203 tok)
-
-## infrastructure/controllers/kyverno-vpa-policies/
-
-- `kustomization.yaml` — K8s Kustomization (~56 tok)
-- `vpa-auto-generate.yaml` — K8s ClusterPolicy: vpa-auto-generate (~1656 tok)
-- `vpa-min-allowed.yaml` — K8s ClusterPolicy: vpa-min-allowed (~621 tok)
-
-## infrastructure/controllers/kyverno/
-
-- `CLAUDE.md` — Kyverno Backup & Restore System (~2614 tok)
-- `kustomization.yaml` — K8s Kustomization: kyverno (~338 tok)
-- `namespace.yaml` — K8s Namespace: kyverno (~17 tok)
-- `rbac-patch.yaml` — K8s ClusterRole: kyverno:background-controller:volsync (~759 tok)
-- `values.yaml` (~962 tok)
-
-## infrastructure/controllers/kyverno/policies/
-
-- `volsync-nfs-inject.yaml` — K8s ClusterPolicy: volsync-nfs-inject (~446 tok)
-- `volsync-orphan-cleanup.yaml` — K8s ClusterCleanupPolicy: volsync-orphan-cleanup (~543 tok)
-- `volsync-pvc-backup-restore.yaml` — K8s ClusterPolicy: volsync-pvc-backup-restore (~2805 tok)
-
-## infrastructure/controllers/metrics-server/
-
-- `kustomization.yaml` — K8s Kustomization: metrics-server (~92 tok)
-- `namespace.yaml` — K8s Namespace: metrics-server (~19 tok)
-- `values.yaml` (~37 tok)
-
-## infrastructure/controllers/node-feature-discovery/
-
-- `coral-tpu-rule.yaml` — NodeFeatureRule to detect Google Coral USB TPU and create a clean label. (~177 tok)
-- `kustomization.yaml` — K8s Kustomization: node-feature-discovery (~476 tok)
-- `ns.yaml` — K8s Namespace: node-feature-discovery (~38 tok)
-
-## infrastructure/controllers/nvidia-device-plugin/
-
-- `config.yaml` — K8s ConfigMap: nvidia-device-plugin-config (~195 tok)
-- `kustomization.yaml` — K8s Kustomization: nvidia-device-plugin (~199 tok)
-- `namespace.yaml` — K8s Namespace: gpu-device-plugin (~115 tok)
-- `nvidia-device-plugin.yml` — K8s DaemonSet: nvidia-device-plugin-daemonset (~994 tok)
-- `nvidia-powerlimit-daemonset.yaml` — K8s DaemonSet: nvidia-powerlimit-daemonset (~600 tok)
-- `rbac.yaml` — K8s ServiceAccount: nvidia-device-plugin (~303 tok)
-- `README.md` — Project documentation (~2514 tok)
-- `runtime.yaml` — K8s RuntimeClass: nvidia (~26 tok)
-- `service.yaml` — K8s Service: nvidia-device-plugin-metrics (~190 tok)
-
-## infrastructure/controllers/nvidia-gpu-operator/
-
-- `cluster-policy.yaml` — K8s ClusterPolicy: cluster-policy (~170 tok)
-- `external-secret.yaml` — K8s ExternalSecret: nvidia-api-key (~268 tok)
-- `kustomization.yaml` — K8s Kustomization: gpu-operator (~491 tok)
-- `namespace.yaml` — K8s Namespace: gpu-operator (~36 tok)
-- `preinstalled-validation-daemonset.yaml` — K8s DaemonSet: nvidia-preinstalled-validation-markers (~408 tok)
-- `test-pod.yaml` — K8s Pod: cuda-vectoradd (~91 tok)
-- `time-slicing-config.yaml` — K8s ConfigMap: time-slicing-config (~148 tok)
-- `toolkit-validation-job.yaml` — K8s Job: nvidia-toolkit-validation (~312 tok)
-
-## infrastructure/controllers/opentelemetry-operator/
-
-- `collector-agent.yaml` — start_at: end (~907 tok)
-- `collector-gateway.yaml` — K8s OpenTelemetryCollector: otel-gateway (~1095 tok)
-- `externalsecret.yaml` — K8s ExternalSecret: honeycomb-api-key (~106 tok)
-- `instrumentation.yaml` — K8s Instrumentation: default (~329 tok)
-- `kustomization.yaml` — K8s Kustomization: opentelemetry-operator (~138 tok)
-- `ns.yaml` — K8s Namespace: opentelemetry (~70 tok)
-- `rbac.yaml` — K8s ServiceAccount: otel-agent (~614 tok)
-- `values.yaml` (~77 tok)
-
-## infrastructure/controllers/pvc-plumber/
-
-- `deployment.yaml` — K8s Deployment: pvc-plumber (~807 tok)
-- `externalsecret.yaml` — K8s ExternalSecret: pvc-plumber-kopia (~128 tok)
-- `kustomization.yaml` — K8s Kustomization (~36 tok)
-
-## infrastructure/controllers/vertical-pod-autoscaler/
-
-- `kustomization.yaml` — K8s Kustomization: vertical-pod-autoscaler (~102 tok)
-- `namespace.yaml` — K8s Namespace: vertical-pod-autoscaler (~21 tok)
-- `README.md` — Project documentation (~510 tok)
-- `values.yaml` (~152 tok)
-
-## infrastructure/database/
-
-- `CLAUDE.md` — Database Guidelines (CNPG CloudNativePG) (~1099 tok)
-
-## infrastructure/database/cloudnative-pg/cloudnative-pg-operator/
-
-- `clusterrole-full-rbac.yaml` — K8s ClusterRole: cloudnative-pg-operator-full-rbac (~234 tok)
-- `clusterrolebinding-full-rbac.yaml` — K8s ClusterRoleBinding: cloudnative-pg-operator-full-rbac (~134 tok)
-- `kustomization.yaml` — K8s Kustomization: cloudnative-pg (~296 tok)
-- `namespace.yaml` — K8s Namespace: cloudnative-pg (~19 tok)
-
-## infrastructure/database/cloudnative-pg/gitea/
-
-- `cluster.yaml` — K8s Cluster: gitea-database (~685 tok)
-- `externalsecret.yaml` — K8s ExternalSecret: gitea-app-secret (~145 tok)
-- `kustomization.yaml` — K8s Kustomization: gitea-db (~90 tok)
-- `scheduled-backup.yaml` — K8s ScheduledBackup: gitea-daily-backup (~67 tok)
-
-## infrastructure/database/cloudnative-pg/immich/
-
-- `cluster.yaml` — K8s Cluster: immich-database (~616 tok)
-- `externalsecret.yaml` — K8s ExternalSecret: immich-app-secret (~146 tok)
-- `kustomization.yaml` — K8s Kustomization: immich-db (~90 tok)
-- `scheduled-backup.yaml` — K8s ScheduledBackup: immich-daily-backup (~68 tok)
-
-## infrastructure/database/cloudnative-pg/khoj/
-
-- `cluster.yaml` — K8s Cluster: khoj-database (~992 tok)
-- `externalsecret.yaml` — Add this new section for khoj (~506 tok)
-- `kustomization.yaml` — K8s Kustomization: khoj-db (~89 tok)
-- `scheduled-backup.yaml` — K8s ScheduledBackup: khoj-daily-backup (~67 tok)
-
-## infrastructure/database/cloudnative-pg/paperless/
-
-- `cluster.yaml` — K8s Cluster: paperless-database (~968 tok)
-- `externalsecret.yaml` — Add this new section for paperless-ngx (~370 tok)
-- `kustomization.yaml` — K8s Kustomization: paperless-db (~91 tok)
-- `scheduled-backup.yaml` — K8s ScheduledBackup: paperless-daily-backup (~70 tok)
-
-## infrastructure/database/cloudnative-pg/postgres-global-secrets/
-
-- `externalsecret.yaml` — K8s ExternalSecret: postgres-superuser-secret (~566 tok)
-- `kustomization.yaml` — K8s Kustomization: postgres-global-secrets (~82 tok)
-
-## infrastructure/database/crunchy-postgres/postgres-operator/
-
-- `kustomization.yaml` — K8s Kustomization: pgo (~94 tok)
-- `ns.yaml` — K8s Namespace: postgres-operator (~20 tok)
-- `values.yaml` — Crunchy Data PostgreSQL Operator configuration (~115 tok)
-
-## infrastructure/database/redis/redis-commander/
-
-- `deployment.yaml` — K8s Deployment: redis-commander (~183 tok)
-- `httproute.yaml` — K8s HTTPRoute: redis-commander (~146 tok)
-- `kustomization.yaml` — K8s Kustomization: redis-commander (~75 tok)
-- `namespace.yaml` — K8s Namespace: redis (~16 tok)
-- `service.yaml` — K8s Service: redis-commander (~78 tok)
-
-## infrastructure/database/redis/redis-instance/
-
-- `kustomization.yaml` — K8s Kustomization: redis (~240 tok)
-- `namespace.yaml` — K8s Namespace: redis-instance (~35 tok)
-- `pvc.yaml` — K8s PersistentVolumeClaim: redis-master-0 (~150 tok)
-- `service.yaml` — K8s Service: redis-external (~124 tok)
-
-## infrastructure/networking/
-
-- `CLAUDE.md` — Networking Guidelines (~418 tok)
-- `README.md` — Project documentation (~2182 tok)
-
-## infrastructure/networking/cilium/
-
-- `ip-pool.yaml` — K8s CiliumLoadBalancerIPPool: first-pool (~208 tok)
-- `kustomization.yaml` — K8s Kustomization: cilium (~178 tok)
-- `l2-announcement.yaml.disabled` (~177 tok)
-- `l2-policy.yaml` — K8s CiliumL2AnnouncementPolicy: l2-policy (~255 tok)
-- `values.yaml` — Cilium Helm Values for Talos Proxmox Production Cluster (~990 tok)
-
-## infrastructure/networking/cilium/policies/
-
-- `block-lan-access.yaml` — K8s CiliumClusterwideNetworkPolicy: default-deny-lan-egress (~800 tok)
-
-## infrastructure/networking/cloudflared/
-
-- `config-explicit.yaml.example` — OPTIONAL: Explicit Cloudflare Tunnel Config (~562 tok)
-- `config.yaml` (~788 tok)
-- `deployment.yaml` — K8s Deployment: cloudflared (~671 tok)
-- `external-secret.yaml` — K8s ExternalSecret: tunnel-credentials (~148 tok)
-- `kustomization.yaml` — K8s Kustomization: config (~79 tok)
-- `ns.yaml` — K8s Namespace: cloudflared (~18 tok)
-
-## infrastructure/networking/gateway/
-
-- `gw-external.yaml` — K8s Gateway: gateway-external (~319 tok)
-- `gw-internal.yaml` — K8s Gateway: gateway-internal (~299 tok)
-- `httproute-argocd.yaml` — K8s HTTPRoute: argocd (~150 tok)
-- `httproute-longhorn.yaml` — K8s HTTPRoute: longhorn (~154 tok)
-- `kustomization.yaml` — K8s Kustomization (~71 tok)
-- `ns.yaml` — K8s Namespace: gateway (~16 tok)
-
-## infrastructure/storage/
-
-- `CLAUDE.md` — Storage Guidelines (~1168 tok)
-
-## infrastructure/storage/container-registry/
-
-- `configmap.yaml` — K8s ConfigMap: registry-config (~120 tok)
-- `deployment.yaml` — K8s Deployment: registry (~209 tok)
-- `httproute.yaml` — K8s HTTPRoute: registry (~127 tok)
-- `kustomization.yaml` — K8s Kustomization (~54 tok)
-- `pvc.yaml` — K8s PersistentVolumeClaim: registry (~166 tok)
-- `service.yaml` — K8s Service: registry (~56 tok)
-
-## infrastructure/storage/csi-driver-nfs/
-
-- `kustomization.yaml` — K8s Kustomization: csi-driver-nfs (~133 tok)
-- `namespace.yaml` — K8s Namespace: csi-driver-nfs (~79 tok)
-- `storage-class.yaml` — 10G NFS Storage Classes (192.168.10.133) - via 10G switch (~550 tok)
-- `values.yaml` — NFS CSI deployment (~51 tok)
-
-## infrastructure/storage/csi-driver-smb/
-
-- `external-secret.yaml` — K8s ExternalSecret: smbcreds (~191 tok)
-- `kustomization.yaml` — K8s Kustomization: csi-driver-smb (~122 tok)
-- `namespace.yaml` — K8s Namespace: csi-driver-smb (~79 tok)
-- `storage-class.yaml` — 10G SMB Storage Classes (192.168.10.133) - Optimized for 10G (~1095 tok)
-- `values.yaml` (~44 tok)
-
-## infrastructure/storage/kopia-ui/
-
-- `configmap.yaml` — K8s ConfigMap: kopia-ui-config (~113 tok)
-- `deployment.yaml` — K8s Deployment: kopia-ui (~800 tok)
-- `externalsecret.yaml` — K8s ExternalSecret: kopia-ui-secrets (~111 tok)
-- `httproute.yaml` — K8s HTTPRoute: kopia-ui (~150 tok)
-- `kustomization.yaml` — K8s Kustomization (~58 tok)
-- `namespace.yaml` — K8s Namespace: kopia-ui (~32 tok)
-
-## infrastructure/storage/local-storage/
-
-- `kustomization.yaml` — K8s Kustomization (~43 tok)
-- `namespace.yaml` — K8s Namespace: local-storage (~18 tok)
-- `native-storage-class.yaml` — K8s StorageClass: local-storage (~76 tok)
-
-## infrastructure/storage/longhorn/
-
-- `httproute.yaml` — K8s HTTPRoute: longhorn (~164 tok)
-- `kustomization.yaml` — K8s Kustomization: longhorn (~114 tok)
-- `namespace.yaml` — K8s Namespace: longhorn-system (~52 tok)
-- `node-failure-settings.yaml` — Longhorn Node Failure and Recovery Settings (~910 tok)
-- `values.yaml` — It's recommended to manage all Longhorn settings via this file (~832 tok)
-- `volumesnapshotclass.yaml` — K8s VolumeSnapshotClass: longhorn (~70 tok)
-
-## infrastructure/storage/snapshot-controller/
-
-- `kustomization.yaml` — K8s Kustomization: snapshot-controller (~101 tok)
-- `namespace.yaml` — K8s Namespace: snapshot-controller (~53 tok)
-- `values.yaml` — Standard values for generic snapshot-controller (~158 tok)
-
-## infrastructure/storage/volsync/
-
-- `kustomization.yaml` — K8s Kustomization: volsync (~103 tok)
-- `namespace.yaml` — K8s Namespace: volsync-system (~51 tok)
-- `values.yaml` — VolSync Helm chart values (~203 tok)
-- `volumesnapshotclass.yaml` — K8s VolumeSnapshotClass: longhorn-snapclass (~84 tok)
-
-## monitoring/
-
-- `CLAUDE.md` — Monitoring Guidelines (~673 tok)
-- `README.md` — Project documentation (~1178 tok)
-
-## monitoring/k8sgpt/
-
-- `grafana-dashboard.yaml` — K8s ConfigMap: k8sgpt-grafana-dashboard (~2698 tok)
-- `k8sgpt.yaml` — K8s K8sGPT: k8sgpt (~178 tok)
-- `kustomization.yaml` — K8s Kustomization: k8sgpt-operator (~100 tok)
-- `ns.yaml` — K8s Namespace: k8sgpt (~16 tok)
-- `values.yaml` — K8sGPT Operator Helm values (~113 tok)
-
-## monitoring/loki-stack/
-
-- `externalsecret.yaml` — K8s ExternalSecret: loki-s3-credentials (~143 tok)
-- `kustomization.yaml` — K8s Kustomization: loki (~101 tok)
-- `loki-http-route.yaml` — K8s HTTPRoute: loki (~142 tok)
-- `ns.yaml` — K8s Namespace: loki-stack (~26 tok)
-- `values.yaml` (~488 tok)
-
-## monitoring/pod-cleanup/
-
-- `cronjob.yaml` — K8s CronJob: pod-cleanup (~261 tok)
-- `kustomization.yaml` — K8s Kustomization (~41 tok)
-- `namespace.yaml` — K8s Namespace: pod-cleanup (~18 tok)
-- `rbac.yaml` — K8s ServiceAccount: pod-cleanup (~150 tok)
-
-## monitoring/prometheus-stack/
-
-- `alertmanager-config.yaml` — K8s Secret: alertmanager-kube-prometheus-stack-alertmanager (~1017 tok)
-- `alertmanager-http-route.yaml` — K8s HTTPRoute: alertmanager (~155 tok)
-- `custom-alerts.yaml` — K8s PrometheusRule: custom-cluster-alerts (~2220 tok)
-- `custom-servicemonitors.yaml` — ArgoCD metrics are handled by the argo-cd Helm chart's built-in ServiceMonitors (~947 tok)
-- `dcgm-exporter.yaml` — K8s DaemonSet: dcgm-exporter (~910 tok)
-- `frigate-dashboard.yaml` — K8s ConfigMap: frigate-dashboard (~1438 tok)
-- `gpu-alerts.yaml` — K8s PrometheusRule: gpu-alerts (~874 tok)
-- `gpu-dashboard.yaml` — K8s ConfigMap: gpu-dashboard (~16675 tok)
-- `GPU-MONITORING.md` — GPU Monitoring with DCGM Exporter (~683 tok)
-- `grafana-http-route.yaml` — K8s HTTPRoute: grafana (~150 tok)
-- `kustomization.yaml` — K8s Kustomization: kube-prometheus-stack (~296 tok)
-- `longhorn-backup-alerts.yaml` — K8s PrometheusRule: longhorn-backup-alerts (~3028 tok)
-- `network-policy.yaml` — K8s CiliumNetworkPolicy: allow-grafana-to-prometheus (~186 tok)
-- `ns.yaml` — K8s Namespace: prometheus-stack (~86 tok)
-- `prometheus-http-route.yaml` — K8s HTTPRoute: prometheus (~153 tok)
-- `values.yaml` — Enhanced kube-prometheus-stack configuration (~4178 tok)
-- `volsync-alerts.yaml` — K8s PrometheusRule: volsync-alerts (~1953 tok)
-- `vpa-alerts.yaml` — K8s PrometheusRule: vpa-alerts (~1141 tok)
-
-## monitoring/tempo/
-
-- `externalsecret.yaml` — K8s ExternalSecret: tempo-s3-credentials (~155 tok)
-- `kustomization.yaml` — K8s Kustomization: tempo (~79 tok)
-- `ns.yaml` — K8s Namespace: monitoring (~18 tok)
-- `values.yaml` (~143 tok)
-
-## my-apps/
-
-- `CLAUDE.md` — Application Guidelines (~1626 tok)
-
-## my-apps/ai/
-
-- `CLAUDE.md` — AI / GPU Workload Guidelines (~348 tok)
-- `README.md` — Project documentation (~3376 tok)
-
-## my-apps/ai/comfyui/
-
-- `configmap.yaml` — K8s ConfigMap: comfyui-manager-config (~3635 tok)
-- `deployment.yaml` — K8s Deployment: comfyui (~969 tok)
-- `download-models-job.yaml` — K8s Job: comfyui-download-models (~1445 tok)
-- `externalsecret.yaml` — K8s ExternalSecret: comfyui-secrets (~132 tok)
-- `httproute.yaml` — K8s HTTPRoute: comfyui-route (~146 tok)
-- `kustomization.yaml` — K8s Kustomization (~118 tok)
-- `namespace.yaml` — K8s Namespace: comfyui (~17 tok)
-- `pvc.yaml` — Static PV - mounts NFS share root directly via CSI (not a CSI-created subdirectory) (~265 tok)
-- `README.md` — Project documentation (~1126 tok)
-- `service.yaml` — K8s Service: comfyui-service (~130 tok)
-
-## my-apps/ai/comfyui/custom-nodes/
-
-- `image_to_llamacpp_base64.py` — Bridge nodes for LlamaCpp vision integration in ComfyUI. (~2497 tok)
-
-## my-apps/ai/comfyui/workflows/
-
-- `florence2-caption.json` (~195 tok)
-- `llamacpp-vision-to-image.json` — Declares your (~1958 tok)
-- `wan22-i2v.json` (~548 tok)
-- `wan22-t2v.json` (~431 tok)
-- `wd14-tagger.json` (~138 tok)
-- `z-image-turbo-t2i.json` (~405 tok)
-
-## my-apps/ai/llama-cpp/
-
-- `configmap.yaml` — K8s ConfigMap: llama-cpp-config (~1359 tok)
-- `deployment.yaml` — K8s Deployment: llama-cpp-server (~1367 tok)
-- `httproute.yaml` — K8s HTTPRoute: llama-cpp-route (~151 tok)
-- `kustomization.yaml` — K8s Kustomization (~59 tok)
-- `namespace.yaml` — K8s Namespace: llama-cpp (~17 tok)
-- `pvc.yaml` — Static PV - mounts NFS share root directly via CSI (not a CSI-created subdirectory) (~270 tok)
-- `service.yaml` — K8s Service: llama-cpp-service (~109 tok)
-
-## my-apps/ai/llmfit/
-
-- `dual-gpu-output.json` (~1630 tok)
-- `job-dual-gpu.yaml` — K8s Job: llmfit-dual-gpu (~335 tok)
-- `job-single-gpu.yaml` — K8s Job: llmfit-single-gpu (~318 tok)
-- `kustomization.yaml` — K8s Kustomization (~47 tok)
-- `namespace.yaml` — K8s Namespace: llmfit (~16 tok)
-
-## my-apps/ai/open-webui/
-
-- `configmap.yaml` — K8s ConfigMap: open-webui-configmap (~1849 tok)
-- `deployment.yaml` — K8s Deployment: open-webui (~408 tok)
-- `function-loader-job.yaml` — K8s Job: load-har-analyzer-v5 (~996 tok)
-- `har-analyzer-function.py` — Pydantic: Valves (12 fields) (~7115 tok)
-- `httproute.yaml` — K8s HTTPRoute: open-webui (~149 tok)
-- `KIWIX_RAG_INSTRUCTIONS.md` — Kiwix RAG Setup Instructions (~586 tok)
-- `kustomization.yaml` — K8s Kustomization: har-analyzer-function (~118 tok)
-- `mcp-config.yaml` — K8s ConfigMap: mcp-config (~657 tok)
-- `mcp-kiwix.yaml` — Kiwix MCP Server - uses fetch to query Kiwix HTTP API (~604 tok)
-- `mcpo-deployment.yaml` — K8s Deployment: mcpo (~456 tok)
-- `namespace.yaml` — K8s Namespace: open-webui (~34 tok)
-- `pvc.yaml` — K8s PersistentVolumeClaim: storage (~115 tok)
-- `README.md` — Project documentation (~406 tok)
-- `SEARXNG-SETUP.md` — SearXNG Integration with Open WebUI (~1175 tok)
-- `service.yaml` — K8s Service: open-webui (~66 tok)
-
-## my-apps/ai/perplexica/
-
-- `deployment.yaml` — K8s Deployment: perplexica (~488 tok)
-- `httproute.yaml` — K8s HTTPRoute: perplexica-route (~129 tok)
-- `kustomization.yaml` — K8s Kustomization (~54 tok)
-- `namespace.yaml` — K8s Namespace: perplexica (~18 tok)
-- `pvc.yaml` — K8s PersistentVolumeClaim: perplexica-data (~71 tok)
-- `service.yaml` — K8s Service: perplexica (~64 tok)
-
-## my-apps/common/deployment-defaults/
-
-- `README.md` — Project documentation (~1061 tok)
-
-## my-apps/development/convertx/
-
-- `deployment.yaml` — K8s Deployment: convertx (~290 tok)
-- `httproute.yaml` — K8s HTTPRoute: convertx-route (~183 tok)
-- `kustomization.yaml` — K8s Kustomization (~48 tok)
-- `ns.yaml` — K8s Namespace: convertx (~17 tok)
-- `service.yaml` — K8s Service: convertx (~58 tok)
-
-## my-apps/development/dvwa/
-
-- `deployment.yaml` — K8s Deployment: dvwa (~311 tok)
-- `httproute.yaml` — K8s HTTPRoute: dvwa-route (~178 tok)
-- `kustomization.yaml` — WARNING: PENTEST / SECURITY TESTING ONLY (~219 tok)
-- `ns.yaml` — K8s Namespace: dvwa (~30 tok)
-- `service.yaml` — K8s Service: dvwa (~65 tok)
-
-## my-apps/development/excalidraw/
-
-- `deployment.yaml` — K8s Deployment: excalidraw (~194 tok)
-- `httproute.yaml` — K8s HTTPRoute: excalidraw (~152 tok)
-- `kustomization.yaml` — K8s Kustomization (~50 tok)
-- `namespace.yaml` — K8s Namespace: excalidraw (~18 tok)
-- `service.yaml` — K8s Service: excalidraw (~58 tok)
-
-## my-apps/development/fizzy/
-
-- `deployment.yaml` — K8s Deployment: fizzy (~422 tok)
-- `externalsecret.yaml` — K8s ExternalSecret: fizzy-secrets (~135 tok)
-- `httproute.yaml` — K8s HTTPRoute: fizzy-route (~180 tok)
-- `kustomization.yaml` — K8s Kustomization (~57 tok)
-- `ns.yaml` — K8s Namespace: fizzy (~32 tok)
-- `pvc.yaml` — K8s PersistentVolumeClaim: data (~108 tok)
-- `service.yaml` — K8s Service: fizzy (~56 tok)
-
-## my-apps/development/gitea/
-
-- `deployment.yaml` (~0 tok)
-- `externalsecret.yaml` — K8s ExternalSecret: gitea-db-secret (~110 tok)
-- `fix-permissions-patch.yaml` — K8s Deployment: gitea (~161 tok)
-- `httproute.yaml` — K8s HTTPRoute: gitea (~128 tok)
-- `kustomization.yaml` — K8s Kustomization: gitea (~111 tok)
-- `namespace.yaml` — K8s Namespace: gitea (~16 tok)
-- `pvc.yaml` (~0 tok)
-- `release.yaml` (~0 tok)
-- `repository.yaml` (~0 tok)
-- `service.yaml` (~0 tok)
-- `values.yaml` (~304 tok)
-
-## my-apps/development/headlamp/
-
-- `clusterrolebinding.yaml` — K8s ClusterRoleBinding: headlamp-admin (~79 tok)
-- `httproute.yaml` — K8s HTTPRoute: headlamp (~144 tok)
-- `kustomization.yaml` — K8s Kustomization: headlamp (~158 tok)
-- `metrics-role.yaml` — K8s ClusterRole: headlamp-metrics-viewer (~222 tok)
-- `namespace.yaml` — K8s Namespace: kube-system (~18 tok)
-- `patch-remove-session-ttl.yaml` — K8s Deployment: headlamp (~84 tok)
-- `serviceaccount.yaml` — K8s ServiceAccount: headlamp-admin (~27 tok)
-- `token-secret.yaml` — K8s Secret: headlamp-admin-token (~59 tok)
-- `values.yaml` — Disable features we're handling separately (~239 tok)
-
-## my-apps/development/it-tools/
-
-- `deployment.yaml` — K8s Deployment: it-tools (~202 tok)
-- `httproute.yaml` — K8s HTTPRoute: it-tools-route (~228 tok)
-- `kustomization.yaml` — K8s Kustomization (~47 tok)
-- `ns.yaml` — K8s Namespace: it-tools (~17 tok)
-- `service.yaml` — K8s Service: it-tools (~58 tok)
-
-## my-apps/development/kafka/
-
-- `kafka-cluster.yaml` (~0 tok)
-- `kustomization.yaml` — K8s Kustomization: kafka (~62 tok)
-- `podmonitor.yaml` (~0 tok)
-- `topics.yaml` (~0 tok)
-
-## my-apps/development/mailpit/
-
-- `deployment.yaml` — K8s Deployment: mailpit (~280 tok)
-- `httproute.yaml` — K8s HTTPRoute: mailpit-route (~182 tok)
-- `kustomization.yaml` — K8s Kustomization (~47 tok)
-- `ns.yaml` — K8s Namespace: mailpit (~17 tok)
-- `service.yaml` — K8s Service: mailpit (~84 tok)
-
-## my-apps/development/n8n/
-
-- `httproute.yaml` — K8s HTTPRoute: n8n (~149 tok)
-- `kustomization.yaml` — K8s Kustomization: n8n (~116 tok)
-- `namespace.yaml` — K8s Namespace: n8n (~56 tok)
-- `pvc.yaml` — K8s PersistentVolumeClaim: data (~110 tok)
-- `values.yaml` (~559 tok)
-
-## my-apps/development/n8n/workflows/
-
-- `daily-cluster-report.json` — Declares nodeReady (~3710 tok)
-- `paperless-auto-tagger.json` — Declares response (~4005 tok)
-- `vehicle-search.json` — Declares searches (~7419 tok)
-
-## my-apps/development/news-reader/
-
-- `deployment.yaml` — K8s Deployment: news-reader (~206 tok)
-- `httproute.yaml` — K8s HTTPRoute: news-reader (~182 tok)
-- `kustomization.yaml` — K8s Kustomization (~43 tok)
-- `namespace.yaml` — K8s Namespace: news-reader (~18 tok)
-- `service.yaml` — K8s Service: news-reader (~60 tok)
-
-## my-apps/development/news-reader/app/
-
-- `.gitignore` — Git ignore rules (~128 tok)
-- `AGENTS.md` — This is NOT the Next.js you know (~82 tok)
-- `CLAUDE.md` (~3 tok)
-- `Dockerfile` — Docker container definition (~92 tok)
-- `next.config.ts` — Next.js configuration (~52 tok)
-- `package-lock.json` — npm lock file (~20817 tok)
-- `package.json` — Node.js package manifest (~139 tok)
-- `postcss.config.mjs` — Declares config (~26 tok)
-- `README.md` — Project documentation (~363 tok)
-- `tsconfig.json` — TypeScript configuration (~191 tok)
-
-## my-apps/development/news-reader/app/app/
-
-- `globals.css` — Styles: 3 rules, 8 vars, 1 media queries (~140 tok)
-- `layout.tsx` — geist (~152 tok)
-- `page.tsx` — CATEGORY_LABELS — uses useState, useCallback, useEffect (~2294 tok)
-
-## my-apps/development/news-reader/app/app/api/digests/
-
-- `route.ts` — Next.js API route: GET (~91 tok)
-
-## my-apps/development/news-reader/app/app/api/trigger/
-
-- `route.ts` — Next.js API route: POST (~135 tok)
-
-## my-apps/development/news-reader/app/app/lib/
-
-- `temporal.ts` — Exports Article, DigestResult, DigestInfo, getDigests, triggerDigest (~600 tok)
-
-## my-apps/development/nginx/
-
-- `deployment.yaml` — K8s Deployment: nginx-example (~134 tok)
-- `httproute.yaml` — File: nginx/httproute.yaml (~150 tok)
-- `kustomization.yaml` — File: nginx/kustomization.yaml (~64 tok)
-- `namespace.yaml` — File: nginx/namespace.yaml (~42 tok)
-- `pvc.yaml` — K8s PersistentVolumeClaim: storage (~110 tok)
-- `service.yaml` — nginx-service.yaml (~206 tok)
-
-## my-apps/development/pairdrop/
-
-- `deployment.yaml` — K8s Deployment: pairdrop (~422 tok)
-- `httproute.yaml` — K8s HTTPRoute: pairdrop-route (~132 tok)
-- `kustomization.yaml` — K8s Kustomization (~45 tok)
-- `ns.yaml` — K8s Namespace: pairdrop (~17 tok)
-- `service.yaml` — K8s Service: pairdrop (~68 tok)
-
-## my-apps/development/posthog/
-
-- `configmap-env.yaml` — K8s ConfigMap: posthog-env (~514 tok)
-- `externalsecret.yaml` — K8s ExternalSecret: posthog-secrets (~383 tok)
-- `httproute.yaml` — K8s HTTPRoute: posthog-ui-internal (~414 tok)
-- `kustomization.yaml` — K8s Kustomization (~158 tok)
-- `namespace.yaml` — K8s Namespace: posthog (~58 tok)
-
-## my-apps/development/posthog/config/
-
-- `kustomization.yaml` — K8s Kustomization: clickhouse-config (~147 tok)
-
-## my-apps/development/posthog/config/clickhouse/
-
-- `config.xml` (~5122 tok)
-- `user_defined_function.xml` — Declares for (~2976 tok)
-- `users.xml` (~2276 tok)
-
-## my-apps/development/posthog/config/clickhouse/config.d/
-
-- `default.xml` (~547 tok)
-- `keeper.xml` (~220 tok)
-
-## my-apps/development/posthog/config/clickhouse/docker-entrypoint-initdb.d/
-
-- `init-posthog.sh` (~42 tok)
-
-## my-apps/development/posthog/core/
-
-- `capture.yaml` — K8s Deployment: capture (~1695 tok)
-- `clickhouse-init.yaml` — K8s Job: clickhouse-migrations-init (~900 tok)
-- `ingestion.yaml` — Ingestion General - consumes from events_plugin_ingestion, processes events, (~874 tok)
-- `jobs.yaml` — K8s Job: kafka-init (~1382 tok)
-- `microservices.yaml` — Livestream - real-time event streaming (disabled: requires GeoIP MMDB file) (~1992 tok)
-- `plugins.yaml` — K8s Deployment: plugins (~1162 tok)
-- `web.yaml` — K8s Deployment: web (~941 tok)
-- `workers.yaml` — K8s Deployment: worker (~711 tok)
-
-## my-apps/development/posthog/data-layer/
-
-- `clickhouse.yaml` — K8s StatefulSet: clickhouse (~1016 tok)
-- `kafka.yaml` — K8s StatefulSet: kafka (~847 tok)
-- `postgres.yaml` — K8s Deployment: db (~653 tok)
-- `redis.yaml` — K8s Deployment: redis7 (~504 tok)
-
-## my-apps/development/stirling-pdf/
-
-- `deployment.yaml` — K8s Deployment: stirling-pdf (~292 tok)
-- `httproute.yaml` — K8s HTTPRoute: stirling-pdf (~147 tok)
-- `kustomization.yaml` — K8s Kustomization (~50 tok)
-- `namespace.yaml` — K8s Namespace: stirling-pdf (~18 tok)
-- `service.yaml` — K8s Service: stirling-pdf (~60 tok)
-
-## my-apps/development/strimzi/
-
-- `kustomization.yaml` — K8s Kustomization: strimzi (~106 tok)
-- `namespace.yaml` — K8s Namespace: kafka (~17 tok)
-- `values.yaml` (~121 tok)
-
-## my-apps/development/temporal-worker/
-
-- `deployment.yaml` — K8s Deployment: temporal-worker (~169 tok)
-- `Dockerfile` — Docker container definition (~43 tok)
-- `kustomization.yaml` — K8s Kustomization (~33 tok)
-- `namespace.yaml` — K8s Namespace: temporal-worker (~19 tok)
-
-## my-apps/development/temporal-worker/app/
-
-- `requirements.txt` — Python dependencies (~8 tok)
-- `worker.py` — import: strip_thinking, fetch_feed, summarize_article, generate_digest_headline + 2 more (~3393 tok)
-
-## my-apps/development/temporal/
-
-- `httproute.yaml` — K8s HTTPRoute: temporal-web (~146 tok)
-- `kustomization.yaml` — K8s Kustomization: temporal (~167 tok)
-- `namespace.yaml` — K8s Namespace: temporal (~17 tok)
-- `values.yaml` (~738 tok)
-
-## my-apps/development/vert/
-
-- `deployment.yaml` — K8s Deployment: vert (~311 tok)
-- `httproute.yaml` — K8s HTTPRoute: vert-route (~222 tok)
-- `kustomization.yaml` — K8s Kustomization (~55 tok)
-- `ns.yaml` — K8s Namespace: vert (~33 tok)
-- `service.yaml` — K8s Service: vert (~58 tok)
-- `vertd-deployment.yaml` — K8s Deployment: vertd (~428 tok)
-- `vertd-service.yaml` — K8s Service: vertd (~61 tok)
-
-## my-apps/home/frigate/
-
-- `config.yml` (~1635 tok)
-- `deployment.yaml` — K8s Deployment: frigate (~864 tok)
-- `externalsecret.yaml` — K8s ExternalSecret: frigate-secrets (~429 tok)
-- `httproute.yaml` — K8s HTTPRoute: frigate (~133 tok)
-- `kustomization.yaml` — K8s Kustomization: frigate-configmap (~101 tok)
-- `namespace.yaml` — K8s Namespace: frigate (~62 tok)
-- `pvc.yaml` — K8s PersistentVolumeClaim: frigate-config (~150 tok)
-- `README.md` — Project documentation (~1347 tok)
-- `service.yaml` — K8s Service: frigate-http (~132 tok)
-
-## my-apps/home/frigate/mqtt/
-
-- `mqtt.yaml` — K8s ConfigMap: mosquitto-configmap (~760 tok)
-
-## my-apps/home/home-assistant/
-
-- `automations.yaml` — Automations will be managed from the UI (~13 tok)
-- `configuration.yaml` — Loads default set of integrations. Do not remove. (~246 tok)
-- `deployment.yaml` — K8s Deployment: home-assistant (~1608 tok)
-- `httproute.yaml` — K8s HTTPRoute: home-assistant (~254 tok)
-- `kustomization.yaml` — K8s Kustomization: home-assistant (~195 tok)
-- `namespace.yaml` — K8s Namespace: home-assistant (~95 tok)
-- `pvc.yaml` — K8s PersistentVolumeClaim: config (~128 tok)
-- `scenes.yaml` — Scenes will be managed from the UI (~12 tok)
-- `scripts.yaml` — Scripts will be managed from the UI (~12 tok)
-- `service.yaml` — K8s Service: home-assistant (~229 tok)
-
-## my-apps/home/paperless-ngx/
-
-- `configmap.yaml` — K8s ConfigMap: paperless-config (~285 tok)
-- `deployment.yaml` — K8s Deployment: paperless-ngx (~720 tok)
-- `externalsecret.yaml` — K8s ExternalSecret: paperless-ngx-credentials (~284 tok)
-- `httproute.yaml` — K8s HTTPRoute: paperless-ngx (~148 tok)
-- `kustomization.yaml` — K8s Kustomization: paperless-ngx (~100 tok)
-- `namespace.yaml` — K8s Namespace: paperless-ngx (~34 tok)
-- `pvc.yaml` — K8s PersistentVolumeClaim: data (~362 tok)
-- `service.yaml` — K8s Service: paperless-ngx (~71 tok)
-- `tika-gotenberg.yaml` — K8s Deployment: tika (~603 tok)
-
-## my-apps/home/project-nomad/
-
-- `configmap.yaml` — K8s ConfigMap: project-nomad-config (~503 tok)
-- `externalsecret.yaml` — K8s ExternalSecret: project-nomad-secrets (~176 tok)
-- `kustomization.yaml` — K8s Kustomization (~386 tok)
-- `namespace.yaml` — K8s Namespace: project-nomad (~18 tok)
-
-## my-apps/home/project-nomad/cyberchef/
-
-- `deployment.yaml` — K8s Deployment: cyberchef (~211 tok)
-- `httproute.yaml` — K8s HTTPRoute: cyberchef (~183 tok)
-- `service.yaml` — K8s Service: cyberchef (~75 tok)
-
-## my-apps/home/project-nomad/embeddings/
-
-- `deployment.yaml` — K8s Deployment: embeddings (~393 tok)
-- `pvc.yaml` — K8s PersistentVolumeClaim: embeddings-model-cache (~57 tok)
-- `service.yaml` — K8s Service: embeddings (~69 tok)
-
-## my-apps/home/project-nomad/flatnotes/
-
-- `deployment.yaml` — K8s Deployment: flatnotes (~282 tok)
-- `httproute.yaml` — K8s HTTPRoute: flatnotes (~183 tok)
-- `pvc.yaml` — K8s PersistentVolumeClaim: flatnotes-data (~84 tok)
-- `service.yaml` — K8s Service: flatnotes (~75 tok)
-
-## my-apps/home/project-nomad/kiwix/
-
-- `deployment.yaml` — K8s Deployment: kiwix (~429 tok)
-- `httproute.yaml` — K8s HTTPRoute: kiwix (~180 tok)
-- `service.yaml` — K8s Service: kiwix (~72 tok)
-
-## my-apps/home/project-nomad/kolibri/
-
-- `deployment.yaml` — K8s Deployment: kolibri (~268 tok)
-- `httproute.yaml` — K8s HTTPRoute: kolibri (~182 tok)
-
-## my-apps/home/project-zomboid/
-
-- `deployment.yaml` — K8s Deployment (~1207 tok)
-- `pvc.yaml` — K8s PersistentVolumeClaim (~155 tok)
-- `README.md` — Project documentation (~495 tok)
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/
+
+- `.helmignore` (~8 tok)
+- `Chart.yaml` — K8s changed: redis-ha (~259 tok)
+- `README.md` — Project documentation (~36715 tok)
+- `values.yaml` — # Argo CD configuration (~46209 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/charts/redis-ha/
+
+- `.helmignore` — Patterns to ignore when building packages. (~97 tok)
+- `Chart.yaml` (~176 tok)
+- `README.md` — Project documentation (~9983 tok)
+- `values.yaml` — # Globally shared configuration (~10288 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/charts/redis-ha/templates/
+
+- `_configs.tpl` (~8033 tok)
+- `_helpers.tpl` (~1243 tok)
+- `NOTES.txt` (~350 tok)
+- `redis-auth-secret.yaml` — K8s Secret: {{ (~128 tok)
+- `redis-ha-announce-service.yaml` — K8s Service: {{ (~560 tok)
+- `redis-ha-configmap.yaml` — K8s ConfigMap: {{ (~290 tok)
+- `redis-ha-exporter-script-configmap.yaml` — K8s ConfigMap: {{ (~122 tok)
+- `redis-ha-health-configmap.yaml` — K8s ConfigMap: {{ (~179 tok)
+- `redis-ha-network-policy.yaml` — K8s NetworkPolicy: {{ (~646 tok)
+- `redis-ha-pdb.yaml` — K8s PodDisruptionBudget: {{ (~166 tok)
+- `redis-ha-prometheus-rule.yaml` — K8s PrometheusRule: {{ (~175 tok)
+- `redis-ha-role.yaml` — K8s Role: {{ (~133 tok)
+- `redis-ha-rolebinding.yaml` — K8s RoleBinding: {{ (~168 tok)
+- `redis-ha-secret.yaml` — K8s Secret: {{ (~314 tok)
+- `redis-ha-service.yaml` — K8s Service: {{ (~431 tok)
+- `redis-ha-serviceaccount.yaml` — K8s ServiceAccount: {{ (~302 tok)
+- `redis-ha-servicemonitor.yaml` — K8s ServiceMonitor: {{ (~434 tok)
+- `redis-ha-statefulset.yaml` — K8s StatefulSet: {{ (~7409 tok)
+- `redis-haproxy-deployment.yaml` — K8s Deployment: {{ (~2206 tok)
+- `redis-haproxy-network-policy.yaml` — K8s NetworkPolicy: {{ (~636 tok)
+- `redis-haproxy-pdb.yaml` — K8s PodDisruptionBudget: {{ (~175 tok)
+- `redis-haproxy-role.yaml` — K8s Role: {{ (~168 tok)
+- `redis-haproxy-rolebinding.yaml` — K8s RoleBinding: {{ (~208 tok)
+- `redis-haproxy-service.yaml` — K8s Service: {{ (~646 tok)
+- `redis-haproxy-serviceaccount.yaml` — K8s ServiceAccount: {{ (~150 tok)
+- `redis-haproxy-servicemonitor.yaml` — K8s ServiceMonitor: {{ (~476 tok)
+- `redis-tls-secret.yaml` — K8s Secret: {{ (~256 tok)
+- `sentinel-auth-secret.yaml` — K8s Secret: {{ (~139 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/charts/redis-ha/templates/tests/
+
+- `test-redis-ha-configmap.yaml` — K8s Pod: {{ (~320 tok)
+- `test-redis-ha-pod.yaml` — K8s Pod: {{ (~299 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/templates/
+
+- `_common.tpl` (~1191 tok)
+- `_helpers.tpl` (~3158 tok)
+- `_versions.tpl` (~56 tok)
+- `aggregate-roles.yaml` — K8s ClusterRole: {{ (~398 tok)
+- `extra-manifests.yaml` (~42 tok)
+- `networkpolicy-default-deny.yaml` — K8s NetworkPolicy: {{ (~117 tok)
+- `NOTES.txt` (~607 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/templates/argocd-application-controller/
+
+- `clusterrole.yaml` — K8s ClusterRole: {{ (~172 tok)
+- `clusterrolebinding.yaml` — K8s ClusterRoleBinding: {{ (~169 tok)
+- `deployment.yaml` — K8s Deployment: {{ (~5278 tok)
+- `metrics.yaml` — K8s Service: {{ (~426 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~190 tok)
+- `pdb.yaml` — K8s PodDisruptionBudget: {{ (~268 tok)
+- `prometheusrule.yaml` — K8s PrometheusRule: {{ (~303 tok)
+- `role.yaml` — K8s Role: {{ (~315 tok)
+- `rolebinding.yaml` — K8s RoleBinding: {{ (~167 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~214 tok)
+- `servicemonitor.yaml` — K8s ServiceMonitor: {{ (~606 tok)
+- `statefulset.yaml` — K8s StatefulSet: {{ (~5402 tok)
+- `vpa.yaml` — K8s VerticalPodAutoscaler: {{ (~316 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/templates/argocd-applicationset/
+
+- `certificate.yaml` — K8s Certificate: {{ (~448 tok)
+- `clusterrole.yaml` — K8s ClusterRole: {{ (~415 tok)
+- `clusterrolebinding.yaml` — K8s ClusterRoleBinding: {{ (~181 tok)
+- `deployment.yaml` — K8s Deployment: {{ (~4792 tok)
+- `ingress.yaml` — K8s Ingress: {{ (~688 tok)
+- `metrics.yaml` — K8s Service: {{ (~442 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~249 tok)
+- `pdb.yaml` — K8s PodDisruptionBudget: {{ (~278 tok)
+- `role.yaml` — K8s Role: {{ (~410 tok)
+- `rolebinding.yaml` — K8s RoleBinding: {{ (~173 tok)
+- `service.yaml` — K8s Service: {{ (~275 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~222 tok)
+- `servicemonitor.yaml` — K8s ServiceMonitor: {{ (~627 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/templates/argocd-commit-server/
+
+- `deployment.yaml` — K8s Deployment: {{ (~2550 tok)
+- `metrics.yaml` — K8s Service: {{ (~443 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~231 tok)
+- `service.yaml` — K8s Service: {{ (~256 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~227 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/templates/argocd-configs/
+
+- `argocd-cm.yaml` — K8s ConfigMap: argocd-cm (~144 tok)
+- `argocd-cmd-params-cm.yaml` — K8s ConfigMap: argocd-cmd-params-cm (~161 tok)
+- `argocd-cmp-cm.yaml` — K8s ConfigMap: argocd-cmp-cm (~215 tok)
+- `argocd-dex-server-tls-secret.yaml` — K8s Secret: argocd-dex-server-tls (~248 tok)
+- `argocd-gpg-keys-cm.yaml` — K8s ConfigMap: argocd-gpg-keys-cm (~132 tok)
+- `argocd-notifications-cm.yaml` — K8s ConfigMap: argocd-notifications-cm (~277 tok)
+- `argocd-notifications-secret.yaml` — K8s Secret: {{ (~220 tok)
+- `argocd-rbac-cm.yaml` — K8s ConfigMap: argocd-rbac-cm (~161 tok)
+- `argocd-repo-server-tls-secret.yaml` — K8s Secret: argocd-repo-server-tls (~255 tok)
+- `argocd-secret.yaml` — K8s Secret: argocd-secret (~650 tok)
+- `argocd-server-tls-secret.yaml` — K8s Secret: argocd-server-tls (~229 tok)
+- `argocd-ssh-known-hosts-cm.yaml` — K8s ConfigMap: argocd-ssh-known-hosts-cm (~174 tok)
+- `argocd-styles-cm.yaml` — K8s ConfigMap: argocd-styles-cm (~109 tok)
+- `argocd-tls-certs-cm.yaml` — K8s ConfigMap: argocd-tls-certs-cm (~149 tok)
+- `cluster-secrets.yaml` — K8s Secret: {{ (~393 tok)
+- `externalredis-secret.yaml` — K8s Secret: argocd-redis (~199 tok)
+- `repository-credentials-secret.yaml` — K8s Secret: argocd-repo-creds-{{ (~188 tok)
+- `repository-secret.yaml` — K8s Secret: argocd-repo-{{ (~174 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/templates/argocd-notifications/
+
+- `clusterrole.yaml` — K8s ClusterRole: {{ (~328 tok)
+- `clusterrolebinding.yaml` — K8s ClusterRoleBinding: {{ (~183 tok)
+- `deployment.yaml` — K8s Deployment: {{ (~2778 tok)
+- `metrics.yaml` — K8s Service: {{ (~439 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~216 tok)
+- `pdb.yaml` — K8s PodDisruptionBudget: {{ (~285 tok)
+- `role.yaml` — K8s Role: {{ (~238 tok)
+- `rolebinding.yaml` — K8s RoleBinding: {{ (~186 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~229 tok)
+- `servicemonitor.yaml` — K8s ServiceMonitor: {{ (~677 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/templates/argocd-repo-server/
+
+- `clusterrole.yaml` — K8s ClusterRole: {{ (~174 tok)
+- `clusterrolebinding.yaml` — K8s ClusterRoleBinding: {{ (~182 tok)
+- `deployment.yaml` — K8s Deployment: {{ (~6243 tok)
+- `hpa.yaml` — K8s HorizontalPodAutoscaler: {{ (~380 tok)
+- `metrics.yaml` — K8s Service: {{ (~436 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~402 tok)
+- `pdb.yaml` — K8s PodDisruptionBudget: {{ (~268 tok)
+- `role.yaml` — K8s Role: {{ (~132 tok)
+- `rolebinding.yaml` — K8s RoleBinding: {{ (~183 tok)
+- `service.yaml` — K8s Service: {{ (~299 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~214 tok)
+- `servicemonitor.yaml` — K8s ServiceMonitor: {{ (~617 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/templates/argocd-server/
+
+- `backendtlspolicy.yaml` — K8s BackendTLSPolicy: {{ (~250 tok)
+- `certificate.yaml` — K8s Certificate: {{ (~499 tok)
+- `clusterrole.yaml` — K8s ClusterRole: {{ (~512 tok)
+- `clusterrolebinding.yaml` — K8s ClusterRoleBinding: {{ (~163 tok)
+- `deployment.yaml` — K8s Deployment: {{ (~6338 tok)
+- `grpcroute.yaml` — K8s GRPCRoute: {{ (~400 tok)
+- `hpa.yaml` — K8s HorizontalPodAutoscaler: {{ (~367 tok)
+- `httproute.yaml` — K8s HTTPRoute: {{ (~398 tok)
+- `ingress-grpc.yaml` — K8s Ingress: {{ (~680 tok)
+- `ingress.yaml` — K8s Ingress: {{ (~752 tok)
+- `metrics.yaml` — K8s Service: {{ (~419 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~167 tok)
+- `pdb.yaml` — K8s PodDisruptionBudget: {{ (~257 tok)
+- `role.yaml` — K8s Role: {{ (~241 tok)
+- `rolebinding.yaml` — K8s RoleBinding: {{ (~160 tok)
+- `service.yaml` — K8s Service: {{ (~641 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~206 tok)
+- `servicemonitor.yaml` — K8s ServiceMonitor: {{ (~595 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/templates/argocd-server/aws/
+
+- `ingress.yaml` — K8s Ingress: {{ (~829 tok)
+- `service.yaml` — K8s Service: {{ (~338 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/templates/argocd-server/gke/
+
+- `backendconfig.yaml` — K8s BackendConfig: {{ (~155 tok)
+- `frontendconfig.yaml` — K8s FrontendConfig: {{ (~157 tok)
+- `ingress.yaml` — K8s Ingress: {{ (~783 tok)
+- `managedcertificate.yaml` — K8s ManagedCertificate: {{ (~193 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/templates/argocd-server/openshift/
+
+- `route.yaml` — K8s Route: {{ (~258 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/templates/crds/
+
+- `crd-application.yaml` — K8s CustomResourceDefinition: applications.argoproj.io (~94345 tok)
+- `crd-applicationset.yaml` — K8s CustomResourceDefinition: applicationsets.argoproj.io (~294315 tok)
+- `crd-project.yaml` — K8s CustomResourceDefinition: appprojects.argoproj.io (~4644 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/templates/dex/
+
+- `deployment.yaml` — K8s Deployment: {{ (~2890 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~263 tok)
+- `pdb.yaml` — K8s PodDisruptionBudget: {{ (~256 tok)
+- `role.yaml` — K8s Role: {{ (~124 tok)
+- `rolebinding.yaml` — K8s RoleBinding: {{ (~167 tok)
+- `service.yaml` — K8s Service: {{ (~358 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~178 tok)
+- `servicemonitor.yaml` — K8s ServiceMonitor: {{ (~546 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/templates/redis-secret-init/
+
+- `job.yaml` — K8s Job: {{ (~946 tok)
+- `role.yaml` — K8s Role: {{ (~214 tok)
+- `rolebinding.yaml` — K8s RoleBinding: {{ (~220 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~234 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-8.6.4/argo-cd/templates/redis/
+
+- `deployment.yaml` — K8s Deployment: {{ (~2653 tok)
+- `health-configmap.yaml` — K8s ConfigMap: {{ (~311 tok)
+- `metrics.yaml` — K8s Service: {{ (~433 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~364 tok)
+- `pdb.yaml` — K8s PodDisruptionBudget: {{ (~277 tok)
+- `service.yaml` — K8s Service: {{ (~259 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~182 tok)
+- `servicemonitor.yaml` — K8s ServiceMonitor: {{ (~577 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/
+
+- `.helmignore` (~8 tok)
+- `Chart.yaml` — K8s fixed: redis-ha (~270 tok)
+- `README.md` — Project documentation (~36261 tok)
+- `values.yaml` — # Argo CD configuration (~45304 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/charts/redis-ha/
+
+- `.helmignore` — Patterns to ignore when building packages. (~97 tok)
+- `Chart.yaml` (~176 tok)
+- `README.md` — Project documentation (~9983 tok)
+- `values.yaml` — # Globally shared configuration (~10288 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/charts/redis-ha/templates/
+
+- `_configs.tpl` (~8033 tok)
+- `_helpers.tpl` (~1243 tok)
+- `NOTES.txt` (~350 tok)
+- `redis-auth-secret.yaml` — K8s Secret: {{ (~128 tok)
+- `redis-ha-announce-service.yaml` — K8s Service: {{ (~560 tok)
+- `redis-ha-configmap.yaml` — K8s ConfigMap: {{ (~290 tok)
+- `redis-ha-exporter-script-configmap.yaml` — K8s ConfigMap: {{ (~122 tok)
+- `redis-ha-health-configmap.yaml` — K8s ConfigMap: {{ (~179 tok)
+- `redis-ha-network-policy.yaml` — K8s NetworkPolicy: {{ (~646 tok)
+- `redis-ha-pdb.yaml` — K8s PodDisruptionBudget: {{ (~166 tok)
+- `redis-ha-prometheus-rule.yaml` — K8s PrometheusRule: {{ (~175 tok)
+- `redis-ha-role.yaml` — K8s Role: {{ (~133 tok)
+- `redis-ha-rolebinding.yaml` — K8s RoleBinding: {{ (~168 tok)
+- `redis-ha-secret.yaml` — K8s Secret: {{ (~314 tok)
+- `redis-ha-service.yaml` — K8s Service: {{ (~431 tok)
+- `redis-ha-serviceaccount.yaml` — K8s ServiceAccount: {{ (~302 tok)
+- `redis-ha-servicemonitor.yaml` — K8s ServiceMonitor: {{ (~434 tok)
+- `redis-ha-statefulset.yaml` — K8s StatefulSet: {{ (~7409 tok)
+- `redis-haproxy-deployment.yaml` — K8s Deployment: {{ (~2206 tok)
+- `redis-haproxy-network-policy.yaml` — K8s NetworkPolicy: {{ (~636 tok)
+- `redis-haproxy-pdb.yaml` — K8s PodDisruptionBudget: {{ (~175 tok)
+- `redis-haproxy-role.yaml` — K8s Role: {{ (~168 tok)
+- `redis-haproxy-rolebinding.yaml` — K8s RoleBinding: {{ (~208 tok)
+- `redis-haproxy-service.yaml` — K8s Service: {{ (~646 tok)
+- `redis-haproxy-serviceaccount.yaml` — K8s ServiceAccount: {{ (~150 tok)
+- `redis-haproxy-servicemonitor.yaml` — K8s ServiceMonitor: {{ (~476 tok)
+- `redis-tls-secret.yaml` — K8s Secret: {{ (~256 tok)
+- `sentinel-auth-secret.yaml` — K8s Secret: {{ (~139 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/charts/redis-ha/templates/tests/
+
+- `test-redis-ha-configmap.yaml` — K8s Pod: {{ (~320 tok)
+- `test-redis-ha-pod.yaml` — K8s Pod: {{ (~299 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/templates/
+
+- `_common.tpl` (~1191 tok)
+- `_helpers.tpl` (~3158 tok)
+- `_versions.tpl` (~56 tok)
+- `aggregate-roles.yaml` — K8s ClusterRole: {{ (~398 tok)
+- `extra-manifests.yaml` (~42 tok)
+- `networkpolicy-default-deny.yaml` — K8s NetworkPolicy: {{ (~117 tok)
+- `NOTES.txt` (~607 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/templates/argocd-application-controller/
+
+- `clusterrole.yaml` — K8s ClusterRole: {{ (~172 tok)
+- `clusterrolebinding.yaml` — K8s ClusterRoleBinding: {{ (~169 tok)
+- `deployment.yaml` — K8s Deployment: {{ (~5278 tok)
+- `metrics.yaml` — K8s Service: {{ (~426 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~190 tok)
+- `pdb.yaml` — K8s PodDisruptionBudget: {{ (~268 tok)
+- `prometheusrule.yaml` — K8s PrometheusRule: {{ (~303 tok)
+- `role.yaml` — K8s Role: {{ (~315 tok)
+- `rolebinding.yaml` — K8s RoleBinding: {{ (~167 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~214 tok)
+- `servicemonitor.yaml` — K8s ServiceMonitor: {{ (~606 tok)
+- `statefulset.yaml` — K8s StatefulSet: {{ (~5402 tok)
+- `vpa.yaml` — K8s VerticalPodAutoscaler: {{ (~316 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/templates/argocd-applicationset/
+
+- `certificate.yaml` — K8s Certificate: {{ (~448 tok)
+- `clusterrole.yaml` — K8s ClusterRole: {{ (~415 tok)
+- `clusterrolebinding.yaml` — K8s ClusterRoleBinding: {{ (~181 tok)
+- `deployment.yaml` — K8s Deployment: {{ (~4792 tok)
+- `ingress.yaml` — K8s Ingress: {{ (~688 tok)
+- `metrics.yaml` — K8s Service: {{ (~442 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~249 tok)
+- `pdb.yaml` — K8s PodDisruptionBudget: {{ (~278 tok)
+- `role.yaml` — K8s Role: {{ (~410 tok)
+- `rolebinding.yaml` — K8s RoleBinding: {{ (~173 tok)
+- `service.yaml` — K8s Service: {{ (~275 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~222 tok)
+- `servicemonitor.yaml` — K8s ServiceMonitor: {{ (~627 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/templates/argocd-commit-server/
+
+- `deployment.yaml` — K8s Deployment: {{ (~2550 tok)
+- `metrics.yaml` — K8s Service: {{ (~443 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~231 tok)
+- `service.yaml` — K8s Service: {{ (~256 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~227 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/templates/argocd-configs/
+
+- `argocd-cm.yaml` — K8s ConfigMap: argocd-cm (~144 tok)
+- `argocd-cmd-params-cm.yaml` — K8s ConfigMap: argocd-cmd-params-cm (~161 tok)
+- `argocd-cmp-cm.yaml` — K8s ConfigMap: argocd-cmp-cm (~215 tok)
+- `argocd-dex-server-tls-secret.yaml` — K8s Secret: argocd-dex-server-tls (~248 tok)
+- `argocd-gpg-keys-cm.yaml` — K8s ConfigMap: argocd-gpg-keys-cm (~132 tok)
+- `argocd-notifications-cm.yaml` — K8s ConfigMap: argocd-notifications-cm (~277 tok)
+- `argocd-notifications-secret.yaml` — K8s Secret: {{ (~220 tok)
+- `argocd-rbac-cm.yaml` — K8s ConfigMap: argocd-rbac-cm (~161 tok)
+- `argocd-repo-server-tls-secret.yaml` — K8s Secret: argocd-repo-server-tls (~255 tok)
+- `argocd-secret.yaml` — K8s Secret: argocd-secret (~650 tok)
+- `argocd-server-tls-secret.yaml` — K8s Secret: argocd-server-tls (~229 tok)
+- `argocd-ssh-known-hosts-cm.yaml` — K8s ConfigMap: argocd-ssh-known-hosts-cm (~174 tok)
+- `argocd-styles-cm.yaml` — K8s ConfigMap: argocd-styles-cm (~109 tok)
+- `argocd-tls-certs-cm.yaml` — K8s ConfigMap: argocd-tls-certs-cm (~149 tok)
+- `cluster-secrets.yaml` — K8s Secret: {{ (~393 tok)
+- `externalredis-secret.yaml` — K8s Secret: argocd-redis (~199 tok)
+- `repository-credentials-secret.yaml` — K8s Secret: argocd-repo-creds-{{ (~188 tok)
+- `repository-secret.yaml` — K8s Secret: argocd-repo-{{ (~174 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/templates/argocd-notifications/
+
+- `clusterrole.yaml` — K8s ClusterRole: {{ (~328 tok)
+- `clusterrolebinding.yaml` — K8s ClusterRoleBinding: {{ (~183 tok)
+- `deployment.yaml` — K8s Deployment: {{ (~2815 tok)
+- `metrics.yaml` — K8s Service: {{ (~439 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~216 tok)
+- `pdb.yaml` — K8s PodDisruptionBudget: {{ (~285 tok)
+- `role.yaml` — K8s Role: {{ (~238 tok)
+- `rolebinding.yaml` — K8s RoleBinding: {{ (~186 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~229 tok)
+- `servicemonitor.yaml` — K8s ServiceMonitor: {{ (~677 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/templates/argocd-repo-server/
+
+- `clusterrole.yaml` — K8s ClusterRole: {{ (~174 tok)
+- `clusterrolebinding.yaml` — K8s ClusterRoleBinding: {{ (~182 tok)
+- `deployment.yaml` — K8s Deployment: {{ (~6243 tok)
+- `hpa.yaml` — K8s HorizontalPodAutoscaler: {{ (~380 tok)
+- `metrics.yaml` — K8s Service: {{ (~436 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~402 tok)
+- `pdb.yaml` — K8s PodDisruptionBudget: {{ (~268 tok)
+- `role.yaml` — K8s Role: {{ (~132 tok)
+- `rolebinding.yaml` — K8s RoleBinding: {{ (~183 tok)
+- `service.yaml` — K8s Service: {{ (~299 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~214 tok)
+- `servicemonitor.yaml` — K8s ServiceMonitor: {{ (~617 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/templates/argocd-server/
+
+- `backendtlspolicy.yaml` — K8s BackendTLSPolicy: {{ (~250 tok)
+- `certificate.yaml` — K8s Certificate: {{ (~499 tok)
+- `clusterrole.yaml` — K8s ClusterRole: {{ (~512 tok)
+- `clusterrolebinding.yaml` — K8s ClusterRoleBinding: {{ (~163 tok)
+- `deployment.yaml` — K8s Deployment: {{ (~6338 tok)
+- `grpcroute.yaml` — K8s GRPCRoute: {{ (~400 tok)
+- `hpa.yaml` — K8s HorizontalPodAutoscaler: {{ (~367 tok)
+- `httproute.yaml` — K8s HTTPRoute: {{ (~411 tok)
+- `ingress-grpc.yaml` — K8s Ingress: {{ (~680 tok)
+- `ingress.yaml` — K8s Ingress: {{ (~752 tok)
+- `metrics.yaml` — K8s Service: {{ (~419 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~167 tok)
+- `pdb.yaml` — K8s PodDisruptionBudget: {{ (~257 tok)
+- `role.yaml` — K8s Role: {{ (~241 tok)
+- `rolebinding.yaml` — K8s RoleBinding: {{ (~160 tok)
+- `service.yaml` — K8s Service: {{ (~641 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~206 tok)
+- `servicemonitor.yaml` — K8s ServiceMonitor: {{ (~595 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/templates/argocd-server/aws/
+
+- `ingress.yaml` — K8s Ingress: {{ (~829 tok)
+- `service.yaml` — K8s Service: {{ (~338 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/templates/argocd-server/gke/
+
+- `backendconfig.yaml` — K8s BackendConfig: {{ (~155 tok)
+- `frontendconfig.yaml` — K8s FrontendConfig: {{ (~157 tok)
+- `ingress.yaml` — K8s Ingress: {{ (~783 tok)
+- `managedcertificate.yaml` — K8s ManagedCertificate: {{ (~193 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/templates/argocd-server/openshift/
+
+- `route.yaml` — K8s Route: {{ (~258 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/templates/crds/
+
+- `crd-application.yaml` — K8s CustomResourceDefinition: applications.argoproj.io (~94345 tok)
+- `crd-applicationset.yaml` — K8s CustomResourceDefinition: applicationsets.argoproj.io (~294315 tok)
+- `crd-project.yaml` — K8s CustomResourceDefinition: appprojects.argoproj.io (~4644 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/templates/dex/
+
+- `deployment.yaml` — K8s Deployment: {{ (~2890 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~263 tok)
+- `pdb.yaml` — K8s PodDisruptionBudget: {{ (~256 tok)
+- `role.yaml` — K8s Role: {{ (~124 tok)
+- `rolebinding.yaml` — K8s RoleBinding: {{ (~167 tok)
+- `service.yaml` — K8s Service: {{ (~358 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~178 tok)
+- `servicemonitor.yaml` — K8s ServiceMonitor: {{ (~546 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/templates/redis-secret-init/
+
+- `job.yaml` — K8s Job: {{ (~946 tok)
+- `role.yaml` — K8s Role: {{ (~214 tok)
+- `rolebinding.yaml` — K8s RoleBinding: {{ (~220 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~234 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.0.5/argo-cd/templates/redis/
+
+- `deployment.yaml` — K8s Deployment: {{ (~2653 tok)
+- `health-configmap.yaml` — K8s ConfigMap: {{ (~311 tok)
+- `metrics.yaml` — K8s Service: {{ (~433 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~364 tok)
+- `pdb.yaml` — K8s PodDisruptionBudget: {{ (~277 tok)
+- `service.yaml` — K8s Service: {{ (~259 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~182 tok)
+- `servicemonitor.yaml` — K8s ServiceMonitor: {{ (~577 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.1.0/argo-cd/
+
+- `.helmignore` (~8 tok)
+- `Chart.yaml` — K8s changed: redis-ha (~257 tok)
+- `README.md` — Project documentation (~36260 tok)
+- `values.yaml` — # Argo CD configuration (~45303 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.1.0/argo-cd/charts/redis-ha/
+
+- `.helmignore` — Patterns to ignore when building packages. (~97 tok)
+- `Chart.yaml` (~198 tok)
+- `README.md` — Project documentation (~10185 tok)
+- `values.yaml` — # Globally shared configuration (~10561 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.1.0/argo-cd/charts/redis-ha/templates/
+
+- `_configs.tpl` (~8289 tok)
+- `_helpers.tpl` (~1397 tok)
+- `NOTES.txt` (~350 tok)
+- `redis-auth-secret.yaml` — K8s Secret: {{ (~180 tok)
+- `redis-ha-announce-service.yaml` — K8s Service: {{ (~558 tok)
+- `redis-ha-configmap.yaml` — K8s ConfigMap: {{ (~290 tok)
+- `redis-ha-exporter-script-configmap.yaml` — K8s ConfigMap: {{ (~122 tok)
+- `redis-ha-health-configmap.yaml` — K8s ConfigMap: {{ (~179 tok)
+- `redis-ha-network-policy.yaml` — K8s NetworkPolicy: {{ (~548 tok)
+- `redis-ha-pdb.yaml` — K8s PodDisruptionBudget: {{ (~166 tok)
+- `redis-ha-prometheus-rule.yaml` — K8s PrometheusRule: {{ (~194 tok)
+- `redis-ha-role.yaml` — K8s Role: {{ (~133 tok)
+- `redis-ha-rolebinding.yaml` — K8s RoleBinding: {{ (~168 tok)
+- `redis-ha-secret.yaml` — K8s Secret: {{ (~314 tok)
+- `redis-ha-service.yaml` — K8s Service: {{ (~431 tok)
+- `redis-ha-serviceaccount.yaml` — K8s ServiceAccount: {{ (~302 tok)
+- `redis-ha-servicemonitor.yaml` — K8s ServiceMonitor: {{ (~529 tok)
+- `redis-ha-statefulset.yaml` — K8s StatefulSet: {{ (~7409 tok)
+- `redis-haproxy-deployment.yaml` — K8s Deployment: {{ (~2317 tok)
+- `redis-haproxy-network-policy.yaml` — K8s NetworkPolicy: {{ (~569 tok)
+- `redis-haproxy-pdb.yaml` — K8s PodDisruptionBudget: {{ (~182 tok)
+- `redis-haproxy-role.yaml` — K8s Role: {{ (~157 tok)
+- `redis-haproxy-rolebinding.yaml` — K8s RoleBinding: {{ (~197 tok)
+- `redis-haproxy-service.yaml` — K8s Service: {{ (~636 tok)
+- `redis-haproxy-serviceaccount.yaml` — K8s ServiceAccount: {{ (~150 tok)
+- `redis-haproxy-servicemonitor.yaml` — K8s ServiceMonitor: {{ (~465 tok)
+- `redis-tls-secret.yaml` — K8s Secret: {{ (~256 tok)
+- `sentinel-auth-secret.yaml` — K8s Secret: {{ (~139 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.1.0/argo-cd/charts/redis-ha/templates/tests/
+
+- `test-redis-ha-configmap.yaml` — K8s Pod: {{ (~320 tok)
+- `test-redis-ha-pod.yaml` — K8s Pod: {{ (~326 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.1.0/argo-cd/templates/
+
+- `_common.tpl` (~1191 tok)
+- `_helpers.tpl` (~3158 tok)
+- `_versions.tpl` (~56 tok)
+- `aggregate-roles.yaml` — K8s ClusterRole: {{ (~398 tok)
+- `extra-manifests.yaml` (~42 tok)
+- `networkpolicy-default-deny.yaml` — K8s NetworkPolicy: {{ (~117 tok)
+- `NOTES.txt` (~607 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.1.0/argo-cd/templates/argocd-application-controller/
+
+- `clusterrole.yaml` — K8s ClusterRole: {{ (~172 tok)
+- `clusterrolebinding.yaml` — K8s ClusterRoleBinding: {{ (~169 tok)
+- `deployment.yaml` — K8s Deployment: {{ (~5343 tok)
+- `metrics.yaml` — K8s Service: {{ (~426 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~190 tok)
+- `pdb.yaml` — K8s PodDisruptionBudget: {{ (~268 tok)
+- `prometheusrule.yaml` — K8s PrometheusRule: {{ (~303 tok)
+- `role.yaml` — K8s Role: {{ (~315 tok)
+- `rolebinding.yaml` — K8s RoleBinding: {{ (~167 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~214 tok)
+- `servicemonitor.yaml` — K8s ServiceMonitor: {{ (~606 tok)
+- `statefulset.yaml` — K8s StatefulSet: {{ (~5466 tok)
+- `vpa.yaml` — K8s VerticalPodAutoscaler: {{ (~316 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.1.0/argo-cd/templates/argocd-applicationset/
+
+- `certificate.yaml` — K8s Certificate: {{ (~448 tok)
+- `clusterrole.yaml` — K8s ClusterRole: {{ (~440 tok)
+- `clusterrolebinding.yaml` — K8s ClusterRoleBinding: {{ (~181 tok)
+- `deployment.yaml` — K8s Deployment: {{ (~4887 tok)
+- `ingress.yaml` — K8s Ingress: {{ (~688 tok)
+- `metrics.yaml` — K8s Service: {{ (~442 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~249 tok)
+- `pdb.yaml` — K8s PodDisruptionBudget: {{ (~278 tok)
+- `role.yaml` — K8s Role: {{ (~508 tok)
+- `rolebinding.yaml` — K8s RoleBinding: {{ (~173 tok)
+- `service.yaml` — K8s Service: {{ (~275 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~222 tok)
+- `servicemonitor.yaml` — K8s ServiceMonitor: {{ (~627 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.1.0/argo-cd/templates/argocd-commit-server/
+
+- `deployment.yaml` — K8s Deployment: {{ (~2550 tok)
+- `metrics.yaml` — K8s Service: {{ (~443 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~231 tok)
+- `service.yaml` — K8s Service: {{ (~256 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~227 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.1.0/argo-cd/templates/argocd-configs/
+
+- `argocd-cm.yaml` — K8s ConfigMap: argocd-cm (~144 tok)
+- `argocd-cmd-params-cm.yaml` — K8s ConfigMap: argocd-cmd-params-cm (~161 tok)
+- `argocd-cmp-cm.yaml` — K8s ConfigMap: argocd-cmp-cm (~215 tok)
+- `argocd-dex-server-tls-secret.yaml` — K8s Secret: argocd-dex-server-tls (~248 tok)
+- `argocd-gpg-keys-cm.yaml` — K8s ConfigMap: argocd-gpg-keys-cm (~132 tok)
+- `argocd-notifications-cm.yaml` — K8s ConfigMap: argocd-notifications-cm (~277 tok)
+- `argocd-notifications-secret.yaml` — K8s Secret: {{ (~220 tok)
+- `argocd-rbac-cm.yaml` — K8s ConfigMap: argocd-rbac-cm (~161 tok)
+- `argocd-repo-server-tls-secret.yaml` — K8s Secret: argocd-repo-server-tls (~255 tok)
+- `argocd-secret.yaml` — K8s Secret: argocd-secret (~650 tok)
+- `argocd-server-tls-secret.yaml` — K8s Secret: argocd-server-tls (~229 tok)
+- `argocd-ssh-known-hosts-cm.yaml` — K8s ConfigMap: argocd-ssh-known-hosts-cm (~174 tok)
+- `argocd-styles-cm.yaml` — K8s ConfigMap: argocd-styles-cm (~109 tok)
+- `argocd-tls-certs-cm.yaml` — K8s ConfigMap: argocd-tls-certs-cm (~149 tok)
+- `cluster-secrets.yaml` — K8s Secret: {{ (~393 tok)
+- `externalredis-secret.yaml` — K8s Secret: argocd-redis (~199 tok)
+- `repository-credentials-secret.yaml` — K8s Secret: argocd-repo-creds-{{ (~188 tok)
+- `repository-secret.yaml` — K8s Secret: argocd-repo-{{ (~174 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.1.0/argo-cd/templates/argocd-notifications/
+
+- `clusterrole.yaml` — K8s ClusterRole: {{ (~328 tok)
+- `clusterrolebinding.yaml` — K8s ClusterRoleBinding: {{ (~183 tok)
+- `deployment.yaml` — K8s Deployment: {{ (~2815 tok)
+- `metrics.yaml` — K8s Service: {{ (~439 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~216 tok)
+- `pdb.yaml` — K8s PodDisruptionBudget: {{ (~285 tok)
+- `role.yaml` — K8s Role: {{ (~238 tok)
+- `rolebinding.yaml` — K8s RoleBinding: {{ (~186 tok)
+- `serviceaccount.yaml` — K8s ServiceAccount: {{ (~229 tok)
+- `servicemonitor.yaml` — K8s ServiceMonitor: {{ (~677 tok)
+
+## infrastructure/controllers/argocd/charts/argo-cd-9.1.0/argo-cd/templates/argocd-repo-server/
+
+- `clusterrole.yaml` — K8s ClusterRole: {{ (~174 tok)
+- `clusterrolebinding.yaml` — K8s ClusterRoleBinding: {{ (~182 tok)
+- `deployment.yaml` — K8s Deployment: {{ (~6243 tok)
+- `hpa.yaml` — K8s HorizontalPodAutoscaler: {{ (~380 tok)
+- `metrics.yaml` — K8s Service: {{ (~436 tok)
+- `networkpolicy.yaml` — K8s NetworkPolicy: {{ (~402 tok)
+- `pdb.yaml` — K8s PodDisruptionBudget: {{ (~268 tok)
+- `role.yaml` — K8s Role: {{ (~132 tok)
+- `rolebinding.yaml` — K8s RoleBinding: {{ (~183 tok)

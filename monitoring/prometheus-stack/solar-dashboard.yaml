@@ -1,0 +1,477 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: solar-dashboard
+  namespace: prometheus-stack
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/name: grafana-dashboards
+data:
+  solar-monitoring.json: |
+    {
+      "annotations": {
+        "list": []
+      },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+          "id": 100,
+          "title": "Live Status",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "thresholds": {
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "orange", "value": 20 },
+                  { "color": "green", "value": 50 }
+                ]
+              },
+              "unit": "percent",
+              "min": 0,
+              "max": 100
+            }
+          },
+          "gridPos": { "h": 6, "w": 4, "x": 0, "y": 1 },
+          "id": 1,
+          "options": {
+            "orientation": "auto",
+            "reduceOptions": { "calcs": ["lastNotNull"] },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true
+          },
+          "title": "Battery SOC",
+          "type": "gauge",
+          "targets": [
+            {
+              "expr": "epever_battery_soc_percent",
+              "legendFormat": "SOC"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "thresholds": {
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "orange", "value": 11.5 },
+                  { "color": "green", "value": 12.4 }
+                ]
+              },
+              "unit": "volt",
+              "decimals": 2
+            }
+          },
+          "gridPos": { "h": 6, "w": 4, "x": 4, "y": 1 },
+          "id": 2,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": { "calcs": ["lastNotNull"] }
+          },
+          "title": "Battery Voltage",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "epever_battery_voltage_volts",
+              "legendFormat": "Battery"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "thresholds": {
+                "steps": [
+                  { "color": "dark-blue", "value": null },
+                  { "color": "yellow", "value": 1 },
+                  { "color": "orange", "value": 50 },
+                  { "color": "red", "value": 200 }
+                ]
+              },
+              "unit": "watt",
+              "decimals": 1
+            }
+          },
+          "gridPos": { "h": 6, "w": 4, "x": 8, "y": 1 },
+          "id": 3,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": { "calcs": ["lastNotNull"] }
+          },
+          "title": "Solar Power",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "epever_pv_power_watts",
+              "legendFormat": "PV Power"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "watt",
+              "decimals": 1,
+              "color": { "mode": "thresholds" },
+              "thresholds": {
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 10 },
+                  { "color": "red", "value": 50 }
+                ]
+              }
+            }
+          },
+          "gridPos": { "h": 6, "w": 4, "x": 12, "y": 1 },
+          "id": 4,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": { "calcs": ["lastNotNull"] }
+          },
+          "title": "Load Power",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "epever_load_power_watts",
+              "legendFormat": "Load"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "celsius",
+              "decimals": 1,
+              "color": { "mode": "thresholds" },
+              "thresholds": {
+                "steps": [
+                  { "color": "blue", "value": null },
+                  { "color": "green", "value": 15 },
+                  { "color": "yellow", "value": 35 },
+                  { "color": "red", "value": 50 }
+                ]
+              }
+            }
+          },
+          "gridPos": { "h": 6, "w": 4, "x": 16, "y": 1 },
+          "id": 5,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": { "calcs": ["lastNotNull"] }
+          },
+          "title": "Battery Temp",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "epever_battery_temp_celsius",
+              "legendFormat": "Battery"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "celsius",
+              "decimals": 1,
+              "color": { "mode": "thresholds" },
+              "thresholds": {
+                "steps": [
+                  { "color": "blue", "value": null },
+                  { "color": "green", "value": 20 },
+                  { "color": "yellow", "value": 40 },
+                  { "color": "red", "value": 55 }
+                ]
+              }
+            }
+          },
+          "gridPos": { "h": 6, "w": 4, "x": 20, "y": 1 },
+          "id": 6,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": { "calcs": ["lastNotNull"] }
+          },
+          "title": "Controller Temp",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "epever_device_temp_celsius",
+              "legendFormat": "Controller"
+            }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+          "id": 101,
+          "title": "Solar Production",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "watt", "custom": { "fillOpacity": 30, "lineWidth": 2, "spanNulls": false } },
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "PV Power" },
+                "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }]
+              },
+              {
+                "matcher": { "id": "byName", "options": "Charge Power" },
+                "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+              },
+              {
+                "matcher": { "id": "byName", "options": "Load Power" },
+                "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
+              }
+            ]
+          },
+          "gridPos": { "h": 8, "w": 16, "x": 0, "y": 8 },
+          "id": 10,
+          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "title": "Power Overview",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "epever_pv_power_watts", "legendFormat": "PV Power" },
+            { "expr": "epever_battery_charge_power_watts", "legendFormat": "Charge Power" },
+            { "expr": "epever_load_power_watts", "legendFormat": "Load Power" }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "volt", "custom": { "fillOpacity": 10, "lineWidth": 2, "spanNulls": false } },
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "PV Voltage" },
+                "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }]
+              },
+              {
+                "matcher": { "id": "byName", "options": "Battery Voltage" },
+                "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+              }
+            ]
+          },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+          "id": 11,
+          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "title": "Voltage",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "epever_pv_voltage_volts", "legendFormat": "PV Voltage" },
+            { "expr": "epever_battery_voltage_volts", "legendFormat": "Battery Voltage" }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+          "id": 102,
+          "title": "Battery",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "custom": { "fillOpacity": 20, "lineWidth": 2, "spanNulls": false, "thresholdsStyle": { "mode": "area" } },
+              "thresholds": {
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "orange", "value": 20 },
+                  { "color": "green", "value": 50 }
+                ]
+              }
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 17 },
+          "id": 20,
+          "options": { "tooltip": { "mode": "single" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "title": "Battery SOC Over Time",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "epever_battery_soc_percent", "legendFormat": "SOC %" }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "amp", "custom": { "fillOpacity": 20, "lineWidth": 2, "spanNulls": false } },
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "Charge Current" },
+                "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+              },
+              {
+                "matcher": { "id": "byName", "options": "Load Current" },
+                "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
+              }
+            ]
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 17 },
+          "id": 21,
+          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "title": "Current",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "epever_battery_charge_current_amps", "legendFormat": "Charge Current" },
+            { "expr": "epever_load_current_amps", "legendFormat": "Load Current" }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 },
+          "id": 103,
+          "title": "Energy Statistics",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "kwatth", "decimals": 2, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "yellow", "value": null }] } }
+          },
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 26 },
+          "id": 30,
+          "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Generated Today",
+          "type": "stat",
+          "targets": [
+            { "expr": "epever_generated_energy_today_kwh", "legendFormat": "Today" }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "kwatth", "decimals": 2, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "yellow", "value": null }] } }
+          },
+          "gridPos": { "h": 4, "w": 6, "x": 6, "y": 26 },
+          "id": 31,
+          "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Generated This Month",
+          "type": "stat",
+          "targets": [
+            { "expr": "epever_generated_energy_month_kwh", "legendFormat": "Month" }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "kwatth", "decimals": 2, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "orange", "value": null }] } }
+          },
+          "gridPos": { "h": 4, "w": 6, "x": 12, "y": 26 },
+          "id": 32,
+          "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Consumed Today",
+          "type": "stat",
+          "targets": [
+            { "expr": "epever_consumed_energy_today_kwh", "legendFormat": "Today" }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "kwatth", "decimals": 2, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "yellow", "value": null }] } }
+          },
+          "gridPos": { "h": 4, "w": 6, "x": 18, "y": 26 },
+          "id": 33,
+          "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Generated Total",
+          "type": "stat",
+          "targets": [
+            { "expr": "epever_generated_energy_total_kwh", "legendFormat": "Total" }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
+          "id": 104,
+          "title": "Charging State",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                { "options": { "0": { "text": "Not Charging", "color": "dark-blue" } }, "type": "value" },
+                { "options": { "1": { "text": "Float", "color": "green" } }, "type": "value" },
+                { "options": { "2": { "text": "Boost", "color": "yellow" } }, "type": "value" },
+                { "options": { "3": { "text": "Equalize", "color": "orange" } }, "type": "value" }
+              ],
+              "color": { "mode": "thresholds" },
+              "thresholds": { "steps": [{ "color": "text", "value": null }] }
+            }
+          },
+          "gridPos": { "h": 4, "w": 8, "x": 0, "y": 31 },
+          "id": 40,
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"] },
+            "textMode": "value"
+          },
+          "title": "Charging State",
+          "type": "stat",
+          "targets": [
+            { "expr": "epever_charging_state", "legendFormat": "State" }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "custom": { "fillOpacity": 50, "lineWidth": 1, "spanNulls": false },
+              "mappings": [
+                { "options": { "0": { "text": "Not Charging" } }, "type": "value" },
+                { "options": { "1": { "text": "Float" } }, "type": "value" },
+                { "options": { "2": { "text": "Boost" } }, "type": "value" },
+                { "options": { "3": { "text": "Equalize" } }, "type": "value" }
+              ]
+            }
+          },
+          "gridPos": { "h": 4, "w": 16, "x": 8, "y": 31 },
+          "id": 41,
+          "options": { "tooltip": { "mode": "single" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "title": "Charging State History",
+          "type": "state-timeline",
+          "targets": [
+            { "expr": "epever_charging_state", "legendFormat": "State" }
+          ]
+        }
+      ],
+      "schemaVersion": 39,
+      "tags": ["solar", "epever", "mppt", "energy"],
+      "templating": { "list": [] },
+      "time": { "from": "now-24h", "to": "now" },
+      "timepicker": {},
+      "timezone": "",
+      "title": "Solar MPPT Monitor",
+      "uid": "solar-mppt-monitor",
+      "version": 1
+    }
