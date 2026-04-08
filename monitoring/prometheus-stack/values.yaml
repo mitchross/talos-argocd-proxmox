@@ -207,19 +207,10 @@ grafana:
         gnetId: 1860
         revision: 36
         datasource: Prometheus
-    logging:
-      loki-logs-app:
-        gnetId: 13639
-        revision: 2
-        datasource:
-          - name: DS_LOKI
-            value: Loki
-      loki-quick-search:
-        gnetId: 12019
-        revision: 2
-        datasource:
-          - name: DS_LOKI
-            value: Loki
+    # Loki dashboards moved to custom ConfigMaps (loki-logs-dashboard.yaml)
+    # because community dashboards use Promtail's 'job' label but we use OTEL
+    # which sends logs with 'service_name' label instead
+    logging: {}
     infrastructure:
       argocd:
         gnetId: 14584
