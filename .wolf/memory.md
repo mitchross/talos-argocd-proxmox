@@ -132,3 +132,10 @@
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
+
+## Session: 2026-04-08 02:17
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 02:17 | Edited my-apps/home/project-zomboid/vanillax_SandboxVars.lua | 1.8 → 0.75 | ~7 |
+| 02:17 | Session end: 1 writes across 1 files (vanillax_SandboxVars.lua) | 1 reads | ~8 tok |
