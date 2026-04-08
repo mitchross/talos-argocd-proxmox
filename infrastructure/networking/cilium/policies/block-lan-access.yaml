@@ -90,3 +90,15 @@ spec:
         - ports:
             - port: "8006"
               protocol: TCP
+
+    # ============================================
+    # ALLOW: RPi4 Solar MPPT Monitor (Prometheus scrape)
+    # ============================================
+    - toCIDR:
+        - 192.168.10.174/32
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+            - port: "9812"
+              protocol: TCP
