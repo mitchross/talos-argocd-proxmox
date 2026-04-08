@@ -6,6 +6,7 @@
 | Time | Description | File(s) | Outcome | ~Tokens |
 |------|-------------|---------|---------|---------|
 | 2026-04-07 | Migrated Project Zomboid from danixu86 to indifferentbroccoli image | deployment.yaml, pvc.yaml, README.md | Committed + pushed to claude/update-zomboid-deployment-zo2qC | ~3000 |
+| 2026-04-08 | Deep-dive analysis of indifferentbroccoli/projectzomboid-server-docker repo | External repo (GitHub) | Full technical report: lifecycle, RCON shutdown, volumes, env vars, K8s considerations | ~8000 |
 
 ## Session: 2026-04-05 01:29
 
@@ -217,3 +218,25 @@
 |------|--------|---------|---------|--------|
 | 01:43 | Edited my-apps/home/project-zomboid/vanillax_SandboxVars.lua | 1.8 → 0.75 | ~6 |
 | 01:43 | Session end: 1 writes across 1 files (vanillax_SandboxVars.lua) | 1 reads | ~7 tok |
+
+## Session: 2026-04-08 15:15
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-04-08 15:53
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 15:54 | Edited my-apps/home/project-zomboid/deployment.yaml | 120 → 180 | ~12 |
+| 15:54 | Edited my-apps/home/project-zomboid/deployment.yaml | 1→2 lines | ~32 |
+| 15:54 | Edited my-apps/home/project-zomboid/deployment.yaml | 4→4 lines | ~34 |
+| 15:54 | Edited my-apps/home/project-zomboid/deployment.yaml | expanded (+11 lines) | ~123 |
+| 15:54 | Edited my-apps/home/project-zomboid/deployment.yaml | expanded (+9 lines) | ~136 |
+| 15:54 | Edited my-apps/home/project-zomboid/deployment.yaml | 7→7 lines | ~46 |
+| 15:55 | Created my-apps/home/project-zomboid/pdb.yaml | — | ~55 |
+| 15:55 | Edited my-apps/home/project-zomboid/kustomization.yaml | 6→7 lines | ~34 |
+| 15:55 | Session end: 8 writes across 3 files (deployment.yaml, pdb.yaml, kustomization.yaml) | 1 reads | ~1884 tok |
+| 15:55 | Session end: 8 writes across 3 files (deployment.yaml, pdb.yaml, kustomization.yaml) | 1 reads | ~1884 tok |
+| 15:56 | Edited my-apps/home/project-zomboid/deployment.yaml | inline fix | ~42 |
+| 15:57 | Session end: 9 writes across 3 files (deployment.yaml, pdb.yaml, kustomization.yaml) | 1 reads | ~1926 tok |
