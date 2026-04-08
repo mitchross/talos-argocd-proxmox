@@ -2,12 +2,12 @@
   "version": 1,
   "created_at": "2026-04-05T03:39:06.883Z",
   "lifetime": {
-    "total_tokens_estimated": 1107607,
-    "total_reads": 1576,
-    "total_writes": 1179,
-    "total_sessions": 15,
+    "total_tokens_estimated": 1107621,
+    "total_reads": 1577,
+    "total_writes": 1180,
+    "total_sessions": 16,
     "anatomy_hits": 200,
-    "anatomy_misses": 1376,
+    "anatomy_misses": 1377,
     "repeated_reads_blocked": 292,
     "estimated_savings_vs_bare_cli": 639220
   },
@@ -16914,6 +16914,34 @@
         "reads_count": 1,
         "writes_count": 9,
         "repeated_reads_blocked": 1,
+        "anatomy_lookups": 0
+      }
+    },
+    {
+      "id": "session-2026-04-08-1824",
+      "started": "2026-04-08T22:24:05.323Z",
+      "ended": "2026-04-08T22:56:17.955Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/pvc.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/pvc.yaml",
+          "tokens_estimated": 14,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 14,
+        "reads_count": 1,
+        "writes_count": 1,
+        "repeated_reads_blocked": 0,
         "anatomy_lookups": 0
       }
     }
