@@ -23,8 +23,8 @@
       "first_read": "2026-04-08T23:10:14.425Z"
     },
     "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/CLAUDE.md": {
-      "count": 2,
-      "tokens": 2907,
+      "count": 3,
+      "tokens": 3047,
       "first_read": "2026-04-08T23:10:21.123Z"
     },
     "/home/vanillax/programming/talos-argocd-proxmox/docs/pvc-plumber-full-flow.md": {
@@ -88,8 +88,8 @@
       "first_read": "2026-04-09T00:37:54.042Z"
     },
     "/home/vanillax/programming/talos-argocd-proxmox/CLAUDE.md": {
-      "count": 2,
-      "tokens": 2907,
+      "count": 4,
+      "tokens": 3047,
       "first_read": "2026-04-09T01:44:34.360Z"
     }
   },
@@ -189,6 +189,18 @@
       "action": "edit",
       "tokens": 211,
       "at": "2026-04-09T01:45:00.210Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/CLAUDE.md",
+      "action": "edit",
+      "tokens": 758,
+      "at": "2026-04-09T01:45:26.520Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/CLAUDE.md",
+      "action": "edit",
+      "tokens": 83,
+      "at": "2026-04-09T01:45:45.979Z"
     }
   ],
   "edit_counts": {
@@ -200,11 +212,12 @@
     "infrastructure/controllers/kyverno/policies/volsync-pvc-validate.yaml": 2,
     "infrastructure/controllers/kyverno/policies/volsync-pvc-mutate.yaml": 1,
     "infrastructure/controllers/kyverno/policies/volsync-pvc-generate.yaml": 2,
-    "CLAUDE.md": 1
+    "CLAUDE.md": 2,
+    "infrastructure/controllers/kyverno/CLAUDE.md": 1
   },
   "anatomy_hits": 15,
   "anatomy_misses": 3,
-  "repeated_reads_warned": 17,
+  "repeated_reads_warned": 20,
   "cerebrum_warnings": 0,
   "stop_count": 43
 }

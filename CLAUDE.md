@@ -128,6 +128,8 @@ docs/                   # Documentation
 - Omit Kyverno canonical defaults (`emitWarning`, `validationFailureAction`, `skipBackgroundRequests`) from policy YAML — **Kyverno webhook adds them, ArgoCD detects the diff, app shows OutOfSync**
 - Create external HTTPRoutes without the three required pieces: `external-dns: "true"` label, `external-dns.alpha.kubernetes.io/target: vanillax.me` annotation, and `sectionName: https` — **DNS won't be created and Cloudflare tunnel routing fails silently**
 - Use `Replace=true,Force=true` sync-options on Jobs — causes duplicate Job execution bug ([#24005](https://github.com/argoproj/argo-cd/issues/24005)); use ArgoCD hooks instead
+- Auto-merge major Helm chart version bumps for critical infrastructure (kube-prometheus-stack, longhorn, kyverno, cilium) — **a kube-prometheus-stack v82→v83 auto-merge caused a full cluster outage on 2026-04-08 via Kyverno webhook deadlock**. Pin Renovate to minor/patch only for these charts.
+- Remove infrastructure namespaces from Kyverno webhook exclusions in `values.yaml` — **longhorn-system, argocd, volsync-system, etc. MUST be excluded or a Kyverno crash causes full cluster deadlock**. See `infrastructure/controllers/kyverno/CLAUDE.md` for details.
 
 ## Nested CLAUDE.md Files
 
@@ -182,3 +184,4 @@ Detailed instructions load automatically when working in these directories:
 - **[docs/argocd.md](docs/argocd.md)** - ArgoCD documentation
 - **[docs/vpa-resource-optimization.md](docs/vpa-resource-optimization.md)** - VPA auto-scaling
 - **[docs/plans/2026-03-22-alloy-otel-honeycomb-design.md](docs/plans/2026-03-22-alloy-otel-honeycomb-design.md)** - OTEL + Honeycomb observability design
+- **[scripts/emergency-webhook-cleanup.sh](scripts/emergency-webhook-cleanup.sh)** - Emergency recovery from Kyverno webhook deadlock
