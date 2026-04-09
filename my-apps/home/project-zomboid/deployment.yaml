@@ -4,7 +4,7 @@ metadata:
   name: project-zomboid
   namespace: project-zomboid
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:

@@ -285,3 +285,5 @@
 | 20:55 | Created infrastructure/controllers/kyverno/policies/volsync-pvc-generate.yaml | — | ~1839 |
 | 20:56 | Created infrastructure/controllers/kyverno/policies/volsync-pvc-generate.yaml | — | ~1876 |
 | 20:57 | Session end: 10 writes across 8 files (pvc.yaml, deployment.yaml, 2026-04-09-kyverno-cel-migration.md, values.yaml, emergency-webhook-cleanup.sh) | 17 reads | ~43110 tok |
+| 20:57 | Session end: 10 writes across 8 files (pvc.yaml, deployment.yaml, 2026-04-09-kyverno-cel-migration.md, values.yaml, emergency-webhook-cleanup.sh) | 17 reads | ~43110 tok |
+| 21:00 | Session end: 10 writes across 8 files (pvc.yaml, deployment.yaml, 2026-04-09-kyverno-cel-migration.md, values.yaml, emergency-webhook-cleanup.sh) | 17 reads | ~43110 tok |
