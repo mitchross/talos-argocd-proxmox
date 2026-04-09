@@ -116,9 +116,9 @@ spec:
                   - /bin/bash
                   - -c
                   - |
-                    /home/steam/server/rcon-cli -c /home/steam/server/rcon.yml "save" || true
+                    rcon-cli -c /home/steam/server/rcon.yml "save" || true
                     sleep 5
-                    /home/steam/server/rcon-cli -c /home/steam/server/rcon.yml "quit" || true
+                    rcon-cli -c /home/steam/server/rcon.yml "quit" || true
                     sleep 15
           startupProbe:
             exec:
@@ -132,7 +132,7 @@ spec:
           readinessProbe:
             exec:
               command:
-                - /home/steam/server/rcon-cli
+                - rcon-cli
                 - -c
                 - /home/steam/server/rcon.yml
                 - "players"
