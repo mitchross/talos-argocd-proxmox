@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-09T01:43:59.132Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-09T01:45:00.204Z
 > Files: 518 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -8,7 +8,7 @@
 - `.gitattributes` — Git attributes (~6 tok)
 - `.gitignore` — Git ignore rules (~611 tok)
 - `astro.config.mjs` — Astro configuration (~274 tok)
-- `CLAUDE.md` — OpenWolf (~2907 tok)
+- `CLAUDE.md` — OpenWolf (~3047 tok)
 - `firewalla-dns-config.txt` — Firewalla Local DNS Configuration for vanillax.me (~424 tok)
 - `MIGRATION_EXTERNAL_DNS.md` — Migration to ExternalDNS-Based Split DNS Architecture (~1870 tok)
 - `mkdocs.yml` (~269 tok)
@@ -847,7 +847,7 @@
 
 ## my-apps/home/project-zomboid/
 
-- `deployment.yaml` — K8s Deployment (~1571 tok)
+- `deployment.yaml` — K8s Deployment (~1615 tok)
 - `kustomization.yaml` — K8s Kustomization (~94 tok)
 - `pdb.yaml` — K8s PodDisruptionBudget (~55 tok)
 - `pvc.yaml` — K8s PersistentVolumeClaim (~155 tok)

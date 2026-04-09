@@ -151,6 +151,8 @@ spec:
               mountPath: /project-zomboid
             - name: config-data
               mountPath: /project-zomboid-config
+            - name: steam-cache
+              mountPath: /home/steam/steamcmd
           resources:
             requests:
               memory: 8Gi
@@ -168,3 +170,6 @@ spec:
         - name: config
           configMap:
             name: zomboid-server-config
+        - name: steam-cache
+          emptyDir:
+            sizeLimit: 1Gi
