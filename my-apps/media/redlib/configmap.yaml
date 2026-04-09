@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: libreddit-env
-  namespace: libreddit
+  name: redlib-env
+  namespace: redlib
 data:
   # Instance settings
   REDLIB_SFW_ONLY: "off"

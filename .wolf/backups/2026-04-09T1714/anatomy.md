@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-09T21:04:17.344Z
-> Files: 517 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-09T10:00:00.149Z
+> Files: 508 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -686,7 +686,7 @@
 
 ## my-apps/development/posthog/
 
-- `configmap-env.yaml` — K8s ConfigMap (~513 tok)
+- `configmap-env.yaml` — K8s ConfigMap: posthog-env (~514 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: posthog-secrets (~383 tok)
 - `httproute.yaml` — K8s HTTPRoute: posthog-ui-internal (~414 tok)
 - `kustomization.yaml` — K8s Kustomization (~158 tok)
@@ -837,21 +837,3 @@
 
 - `deployment.yaml` — K8s Deployment: flatnotes (~282 tok)
 - `httproute.yaml` — K8s HTTPRoute: flatnotes (~183 tok)
-
-## my-apps/media/homepage-dashboard/
-
-- `configmap.yaml` — K8s ConfigMap (~2047 tok)
-
-## my-apps/media/redlib/
-
-- `configmap.yaml` — K8s ConfigMap (~328 tok)
-- `deployment.yaml` — K8s Deployment (~400 tok)
-- `externalsecret.yaml` — K8s ExternalSecret (~110 tok)
-- `httproute.yaml` — K8s HTTPRoute (~225 tok)
-- `kustomization.yaml` — K8s Kustomization (~56 tok)
-- `ns.yaml` — K8s Namespace (~16 tok)
-- `service.yaml` — K8s Service (~61 tok)
-
-## my-apps/privacy/searxng/
-
-- `settings.yaml` (~882 tok)

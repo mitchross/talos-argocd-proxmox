@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: libreddit
-  namespace: libreddit
+  name: redlib
+  namespace: redlib
   labels:
-    app.kubernetes.io/name: libreddit
+    app.kubernetes.io/name: redlib
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: libreddit
+      app.kubernetes.io/name: redlib
   replicas: 1
   strategy:
     type: RollingUpdate
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: libreddit
+        app.kubernetes.io/name: redlib
     spec:
       securityContext:
         runAsNonRoot: true
@@ -23,14 +23,14 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
       containers:
-      - name: libreddit
+      - name: redlib
         image: ghcr.io/mitchross/redlib:sha-874ddd2
         imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:
-            name: libreddit-env
+            name: redlib-env
         - secretRef:
-            name: libreddit-secrets
+            name: redlib-secrets
         ports:
         - name: http
           containerPort: 8080

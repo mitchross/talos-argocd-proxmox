@@ -167,23 +167,3 @@
 | 01:02 | Created ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/project_zomboid_server.md | — | ~328 |
 | 01:02 | Edited ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/MEMORY.md | 1→2 lines | ~66 |
 | 01:02 | Session end: 11 writes across 9 files (block-lan-access.yaml, docker-compose.yml, prometheus.yml, dashboards.yml, .gitignore) | 9 reads | ~8384 tok |
-
-## Session: 2026-04-09 16:58
-
-| Time | Action | File(s) | Outcome | ~Tokens |
-|------|--------|---------|---------|--------|
-| 17:03 | Edited my-apps/media/redlib/kustomization.yaml | inline fix | ~5 |
-| 17:03 | Edited my-apps/media/redlib/ns.yaml | inline fix | ~4 |
-| 17:03 | Created my-apps/media/redlib/httproute.yaml | — | ~225 |
-| 17:03 | Created my-apps/media/redlib/deployment.yaml | — | ~400 |
-| 17:03 | Edited my-apps/media/redlib/service.yaml | 2→2 lines | ~10 |
-| 17:03 | Edited my-apps/media/redlib/service.yaml | inline fix | ~10 |
-| 17:03 | Edited my-apps/media/redlib/configmap.yaml | 2→2 lines | ~11 |
-| 17:03 | Edited my-apps/media/redlib/externalsecret.yaml | 2→2 lines | ~12 |
-| 17:03 | Edited my-apps/media/redlib/externalsecret.yaml | inline fix | ~7 |
-| 17:03 | Edited my-apps/privacy/searxng/settings.yaml | inline fix | ~14 |
-| 17:03 | Edited my-apps/media/homepage-dashboard/configmap.yaml | 4→4 lines | ~40 |
-| 17:03 | Edited my-apps/development/posthog/configmap-env.yaml | inline fix | ~8 |
-| 17:04 | Session end: 12 writes across 9 files (kustomization.yaml, ns.yaml, httproute.yaml, deployment.yaml, service.yaml) | 17 reads | ~1260 tok |
-| 17:04 | Edited my-apps/media/redlib/externalsecret.yaml | inline fix | ~11 |
-| 17:04 | Session end: 13 writes across 9 files (kustomization.yaml, ns.yaml, httproute.yaml, deployment.yaml, service.yaml) | 17 reads | ~1271 tok |

@@ -69,7 +69,7 @@ hostnames:
         - (.*\.)?askubuntu.com$
         - (.*\.)?superuser.com$
     replace:
-        (www\.)?reddit\.com$: libreddit.vanillax.me
+        (www\.)?reddit\.com$: redlib.vanillax.me
 
 engines:
     - name: google

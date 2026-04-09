@@ -1,0 +1,30 @@
+{
+  "generated_at": "2026-04-08T02:28:53.287Z",
+  "achievements": [
+    "Deployed Project Zomboid game server — full GitOps setup (namespace, PVC, deployment, service, externalsecret, configmap), then migrated to indifferentbroccoli image with improved config (#1168)",
+    "Built solar MPPT monitoring pipeline — Epever RS485 monitor on RPi4 (192.168.10.174) with Docker, Prometheus scrape endpoint (:9812), and Grafana dashboard ConfigMap",
+    "Created custom llama.cpp CUDA 12.8 image build pipeline in CI (.github/workflows/llama-cpp-build.yml) and updated deployment to v8665",
+    "Fixed ArgoCD Job immutability bug — added hook annotations to prevent 'field is immutable' sync failures on image tag bumps",
+    "CI hardening — fixed kubeconform YAML doc filtering and shellcheck issues",
+    "Renovate processed ~20 dependency updates (kube-prometheus-stack, CNPG, Temporal, OTEL operator, Jellyfin, SearXNG, etc.)"
+  ],
+  "improvements": [
+    "Commit the uncommitted solar monitoring changes (solar-dashboard.yaml, kustomization.yaml, values.yaml) — these are live in working tree but not pushed",
+    "Project Zomboid deployment had 14+ iterations on deployment.yaml across sessions — consider templating or documenting the container config requirements to avoid churn on future game servers",
+    "Solar monitor uses raw Docker on RPi4 outside GitOps — consider adding it to a separate repo or documenting the deployment in docs/ for reproducibility",
+    "ArgoCD reconciliation was reduced to default 180s (8cecaf5e) — monitor whether this causes excessive Git polling or is optimal"
+  ],
+  "next_tasks": [
+    "Commit and push the solar dashboard + Prometheus scrape config changes (3 files modified in monitoring/prometheus-stack/)",
+    "Debug MPPT physical connection — memory notes 'MPPT not responding (physical issue)'; verify RS485 wiring and Exar adapter on RPi4",
+    "Add Prometheus alerts for solar metrics (battery voltage low, charge controller offline, panel power anomalies)",
+    "Verify Project Zomboid server is stable after the indifferentbroccoli image migration — check pod logs and player connectivity",
+    "Review Renovate PRs for any that need manual intervention (large version bumps like Node.js v24 #1141)"
+  ],
+  "risks": [
+    "Uncommitted monitoring changes (3 files) could be lost — solar-dashboard.yaml, kustomization.yaml edits, values.yaml scrape config are only in working tree",
+    "Solar MPPT RS485 communication failure flagged as physical issue — monitor may be collecting no data, making the dashboard empty",
+    "Node.js v24 update (#1141) is a major version bump — could break astro build or any JS tooling in the repo",
+    "Three ArgoCD Helm chart versions retained (8.6.4, 9.0.5, 9.1.0) — 780k+ tokens of templates; old chart directories should be pruned after confirming 9.1.0 is stable"
+  ]
+}

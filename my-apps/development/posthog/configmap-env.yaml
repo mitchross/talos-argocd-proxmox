@@ -14,7 +14,7 @@ data:
   TRUSTED_PROXIES: "192.168.10.50,192.168.10.51"
   ALLOWED_HOSTS: "posthog.vanillax.me,ingest-posthog.vanillax.me"
   SITE_URL: "https://posthog.vanillax.me"
-  CSRF_TRUSTED_ORIGINS: "https://posthog.vanillax.me,https://ingest-posthog.vanillax.me,https://libreddit.vanillax.me"
+  CSRF_TRUSTED_ORIGINS: "https://posthog.vanillax.me,https://ingest-posthog.vanillax.me,https://redlib.vanillax.me"
 
   # PostgreSQL (in posthog namespace)
   PGHOST: "db"
