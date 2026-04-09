@@ -9,4 +9,4 @@ resources:
 - httproute.yaml
 - ns.yaml
 
-namespace: libreddit
+namespace: redlib

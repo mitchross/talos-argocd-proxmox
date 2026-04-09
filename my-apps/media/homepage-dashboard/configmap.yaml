@@ -145,9 +145,9 @@ data:
             icon: kiwix.png
             href: https://kiwix.vanillax.me
             description: Offline Encyclopedia
-        - Libreddit:
-            icon: libreddit.png
-            href: https://libreddit.vanillax.me
+        - Redlib:
+            icon: redlib.png
+            href: https://redlib.vanillax.me
             description: Private Reddit Frontend
         - CopyParty:
             icon: mdi-folder-upload-outline

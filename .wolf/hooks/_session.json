@@ -1,117 +1,188 @@
 {
-  "session_id": "session-2026-04-08-2228",
-  "started": "2026-04-08T02:28:04.837Z",
+  "session_id": "session-2026-04-09-1658",
+  "started": "2026-04-09T20:58:26.483Z",
   "files_read": {
-    "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/solar-dashboard.yaml": {
-      "count": 2,
-      "tokens": 0,
-      "first_read": "2026-04-08T02:28:18.705Z"
-    },
-    "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/kustomization.yaml": {
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/libreddit/kustomization.yaml": {
       "count": 1,
       "tokens": 0,
-      "first_read": "2026-04-08T02:28:18.943Z"
+      "first_read": "2026-04-09T21:02:20.087Z"
     },
-    "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml": {
-      "count": 3,
-      "tokens": 0,
-      "first_read": "2026-04-08T02:40:10.958Z"
-    },
-    "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml": {
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/libreddit/httproute.yaml": {
       "count": 1,
       "tokens": 0,
-      "first_read": "2026-04-08T02:43:16.815Z"
+      "first_read": "2026-04-09T21:02:21.029Z"
     },
-    "/private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/docs/webui-dashboard.png": {
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/libreddit/ns.yaml": {
       "count": 1,
       "tokens": 0,
-      "first_read": "2026-04-08T03:36:45.683Z"
+      "first_read": "2026-04-09T21:02:21.496Z"
     },
-    "/private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/docs/webui-settings.png": {
-      "count": 2,
-      "tokens": 0,
-      "first_read": "2026-04-08T03:37:03.101Z"
-    },
-    "/private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/docs/grafana-dashboard.png": {
-      "count": 4,
-      "tokens": 0,
-      "first_read": "2026-04-08T03:37:32.841Z"
-    },
-    "/private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/README.md": {
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/libreddit/deployment.yaml": {
       "count": 1,
-      "tokens": 3991,
-      "first_read": "2026-04-08T03:50:39.616Z"
+      "tokens": 0,
+      "first_read": "2026-04-09T21:02:21.971Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/libreddit/service.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-09T21:02:22.437Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/libreddit/configmap.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-09T21:02:22.910Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/libreddit/externalsecret.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-09T21:02:23.196Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/kustomization.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-09T21:02:55.723Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/ns.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-09T21:02:56.180Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/httproute.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-09T21:02:57.127Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/deployment.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-09T21:02:57.595Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/service.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-09T21:02:58.065Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/configmap.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-09T21:02:58.539Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/externalsecret.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-09T21:02:58.887Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/privacy/searxng/settings.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-09T21:03:22.116Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/homepage-dashboard/configmap.yaml": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-09T21:03:23.088Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/configmap-env.yaml": {
+      "count": 1,
+      "tokens": 514,
+      "first_read": "2026-04-09T21:03:56.548Z"
     }
   },
   "files_written": [
     {
-      "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/networking/cilium/policies/block-lan-access.yaml",
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/kustomization.yaml",
       "action": "edit",
-      "tokens": 192,
-      "at": "2026-04-08T02:43:29.314Z"
+      "tokens": 5,
+      "at": "2026-04-09T21:03:03.333Z"
     },
     {
-      "file": "/private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/docker-compose.yml",
-      "action": "create",
-      "tokens": 581,
-      "at": "2026-04-08T03:32:32.096Z"
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/ns.yaml",
+      "action": "edit",
+      "tokens": 4,
+      "at": "2026-04-09T21:03:04.275Z"
     },
     {
-      "file": "/private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/prometheus/prometheus.yml",
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/httproute.yaml",
       "action": "create",
-      "tokens": 67,
-      "at": "2026-04-08T03:32:37.522Z"
+      "tokens": 225,
+      "at": "2026-04-09T21:03:08.655Z"
     },
     {
-      "file": "/private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/grafana/provisioning/datasources/prometheus.yml",
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/deployment.yaml",
       "action": "create",
-      "tokens": 46,
-      "at": "2026-04-08T03:32:42.012Z"
+      "tokens": 400,
+      "at": "2026-04-09T21:03:13.916Z"
     },
     {
-      "file": "/private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/grafana/provisioning/dashboards/dashboards.yml",
-      "action": "create",
-      "tokens": 65,
-      "at": "2026-04-08T03:32:48.053Z"
-    },
-    {
-      "file": "/private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/.gitignore",
-      "action": "create",
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/service.yaml",
+      "action": "edit",
       "tokens": 10,
-      "at": "2026-04-08T03:33:24.348Z"
+      "at": "2026-04-09T21:03:14.811Z"
     },
     {
-      "file": "/private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/README.md",
-      "action": "create",
-      "tokens": 2650,
-      "at": "2026-04-08T03:34:27.914Z"
-    },
-    {
-      "file": "/private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/LICENSE",
-      "action": "create",
-      "tokens": 305,
-      "at": "2026-04-08T03:34:38.660Z"
-    },
-    {
-      "file": "/private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/README.md",
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/service.yaml",
       "action": "edit",
-      "tokens": 55,
-      "at": "2026-04-08T03:50:45.227Z"
+      "tokens": 10,
+      "at": "2026-04-09T21:03:15.750Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/configmap.yaml",
+      "action": "edit",
+      "tokens": 11,
+      "at": "2026-04-09T21:03:16.744Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/externalsecret.yaml",
+      "action": "edit",
+      "tokens": 12,
+      "at": "2026-04-09T21:03:17.685Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/externalsecret.yaml",
+      "action": "edit",
+      "tokens": 7,
+      "at": "2026-04-09T21:03:18.568Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/privacy/searxng/settings.yaml",
+      "action": "edit",
+      "tokens": 14,
+      "at": "2026-04-09T21:03:27.767Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/homepage-dashboard/configmap.yaml",
+      "action": "edit",
+      "tokens": 40,
+      "at": "2026-04-09T21:03:29.599Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/configmap-env.yaml",
+      "action": "edit",
+      "tokens": 8,
+      "at": "2026-04-09T21:03:59.579Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/externalsecret.yaml",
+      "action": "edit",
+      "tokens": 11,
+      "at": "2026-04-09T21:04:17.350Z"
     }
   ],
   "edit_counts": {
-    "infrastructure/networking/cilium/policies/block-lan-access.yaml": 1,
-    "../../../../../private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/docker-compose.yml": 1,
-    "../../../../../private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/prometheus/prometheus.yml": 1,
-    "../../../../../private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/grafana/provisioning/datasources/prometheus.yml": 1,
-    "../../../../../private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/grafana/provisioning/dashboards/dashboards.yml": 1,
-    "../../../../../private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/.gitignore": 1,
-    "../../../../../private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/README.md": 2,
-    "../../../../../private/var/folders/yx/f9pr3m556fq4tc4q0rjq_4qm0000gn/T/tmp.70dL5TJhmO/LICENSE": 1
+    "my-apps/media/redlib/kustomization.yaml": 1,
+    "my-apps/media/redlib/ns.yaml": 1,
+    "my-apps/media/redlib/httproute.yaml": 1,
+    "my-apps/media/redlib/deployment.yaml": 1,
+    "my-apps/media/redlib/service.yaml": 2,
+    "my-apps/media/redlib/configmap.yaml": 1,
+    "my-apps/media/redlib/externalsecret.yaml": 3,
+    "my-apps/privacy/searxng/settings.yaml": 1,
+    "my-apps/media/homepage-dashboard/configmap.yaml": 1,
+    "my-apps/development/posthog/configmap-env.yaml": 1
   },
   "anatomy_hits": 1,
-  "anatomy_misses": 7,
-  "repeated_reads_warned": 7,
+  "anatomy_misses": 16,
+  "repeated_reads_warned": 0,
   "cerebrum_warnings": 0,
-  "stop_count": 8
+  "stop_count": 4
 }
