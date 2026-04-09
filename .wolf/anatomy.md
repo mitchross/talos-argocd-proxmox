@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-09T01:45:00.204Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-09T01:45:45.973Z
 > Files: 518 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -8,7 +8,7 @@
 - `.gitattributes` — Git attributes (~6 tok)
 - `.gitignore` — Git ignore rules (~611 tok)
 - `astro.config.mjs` — Astro configuration (~274 tok)
-- `CLAUDE.md` — OpenWolf (~3047 tok)
+- `CLAUDE.md` — OpenWolf (~3081 tok)
 - `firewalla-dns-config.txt` — Firewalla Local DNS Configuration for vanillax.me (~424 tok)
 - `MIGRATION_EXTERNAL_DNS.md` — Migration to ExternalDNS-Based Split DNS Architecture (~1870 tok)
 - `mkdocs.yml` (~269 tok)
@@ -150,7 +150,7 @@
 
 ## infrastructure/controllers/kyverno/
 
-- `CLAUDE.md` — Kyverno Backup & Restore System (~2614 tok)
+- `CLAUDE.md` — Kyverno Backup & Restore System (~3270 tok)
 - `kustomization.yaml` — K8s Kustomization: kyverno (~338 tok)
 - `namespace.yaml` — K8s Namespace: kyverno (~17 tok)
 - `rbac-patch.yaml` — K8s ClusterRole: kyverno:background-controller:volsync (~759 tok)

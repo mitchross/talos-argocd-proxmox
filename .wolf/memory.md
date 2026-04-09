@@ -298,3 +298,5 @@
 | 21:44 | Edited my-apps/home/project-zomboid/deployment.yaml | 3→6 lines | ~46 |
 | 21:44 | Session end: 15 writes across 8 files (pvc.yaml, deployment.yaml, 2026-04-09-kyverno-cel-migration.md, values.yaml, emergency-webhook-cleanup.sh) | 18 reads | ~46306 tok |
 | 21:45 | Edited CLAUDE.md | 1→3 lines | ~197 |
+| 21:45 | Edited infrastructure/controllers/kyverno/CLAUDE.md | expanded (+57 lines) | ~707 |
+| 21:45 | Edited CLAUDE.md | 1→2 lines | ~77 |

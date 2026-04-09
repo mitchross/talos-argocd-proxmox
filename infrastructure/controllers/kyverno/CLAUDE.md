@@ -227,6 +227,63 @@ spec:
 
 **If you need to re-process existing resources after a policy change**, do a one-time ArgoCD sync or manually trigger resource re-admission — don't enable `mutateExistingOnPolicyUpdate`.
 
+## Critical: Webhook Deadlock Prevention
+
+**Incident: 2026-04-08 — Full cluster outage caused by Kyverno webhook deadlock.**
+
+### What happened
+
+1. Renovate auto-merged a kube-prometheus-stack v82→v83 Helm chart upgrade
+2. ArgoCD synced it, restarting many Prometheus pods simultaneously
+3. The restart flood overwhelmed Kyverno's admission controller — its internal cache sync failed
+4. Kyverno crashed with `"failed to wait for cache sync"` on v1beta1 informers
+5. Kyverno's webhook was still registered with `failurePolicy: Fail`
+6. **Every Deployment/StatefulSet/DaemonSet creation outside kube-system was rejected**
+7. Longhorn (longhorn-system) couldn't restart → no storage → ArgoCD couldn't mount PVCs → ArgoCD died
+8. Full cluster deadlock — even rebooting all nodes didn't fix it because webhook configs survive in etcd
+9. Only manual deletion of webhook configurations broke the deadlock
+
+### The fix
+
+Infrastructure namespaces are excluded from Kyverno's webhook `namespaceSelector` in `values.yaml`:
+
+```yaml
+config:
+  webhooks:
+    namespaceSelector:
+      matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: NotIn
+        values:
+          - kube-system
+          - longhorn-system        # Wave 1 storage
+          - argocd                 # Wave 0 GitOps
+          - volsync-system         # Wave 1 backup controller
+          - snapshot-controller    # Wave 1 snapshots
+          - cert-manager           # Wave 4 but critical
+          - external-secrets       # Wave 0 secrets
+          - 1passwordconnect       # Wave 0 secrets
+```
+
+**Why this works:** The fail-closed PVC gate only needs to protect app namespaces (Waves 4-6). Infrastructure namespaces (Waves 0-2) must boot before Kyverno (Wave 3), so they should never be gated by Kyverno's webhook.
+
+### Emergency recovery
+
+If Kyverno causes a webhook deadlock again:
+
+```bash
+./scripts/emergency-webhook-cleanup.sh
+```
+
+This deletes all Kyverno webhook configurations. Kyverno recreates them once it's healthy. The script is safe to run — it only removes webhook registrations, not policies or generated resources.
+
+### Prevention rules
+
+- **Never remove infrastructure namespaces from the webhook exclusion list**
+- **Pin Renovate to minor/patch for critical charts** (kube-prometheus-stack, longhorn, kyverno, cilium) — major version bumps should be manually reviewed
+- **Monitor Kyverno admission controller restarts** — more than 2 restarts in 10 minutes indicates a potential deadlock forming
+- **If Kyverno shows `"failed to wait for cache sync"` in logs** — run the emergency cleanup script immediately, don't wait
+
 ## Debugging Backup/Restore
 
 ```bash
