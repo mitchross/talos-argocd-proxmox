@@ -26,8 +26,8 @@ data:
             "x": 0,
             "y": 0
           },
-          "id": 100,
-          "title": "Live Status",
+          "id": 1,
+          "title": "At a Glance",
           "type": "row"
         },
         {
@@ -67,7 +67,7 @@ data:
             "x": 0,
             "y": 1
           },
-          "id": 1,
+          "id": 2,
           "options": {
             "orientation": "auto",
             "reduceOptions": {
@@ -78,11 +78,11 @@ data:
             "showThresholdLabels": false,
             "showThresholdMarkers": true
           },
-          "title": "Battery SOC",
+          "title": "Bank SOC",
           "type": "gauge",
           "targets": [
             {
-              "expr": "epever_battery_soc_percent",
+              "expr": "battery_bank_estimated_soc_percent",
               "legendFormat": "SOC"
             }
           ]
@@ -94,6 +94,8 @@ data:
           },
           "fieldConfig": {
             "defaults": {
+              "unit": "volt",
+              "decimals": 2,
               "color": {
                 "mode": "thresholds"
               },
@@ -112,9 +114,7 @@ data:
                     "value": 12.4
                   }
                 ]
-              },
-              "unit": "volt",
-              "decimals": 2
+              }
             }
           },
           "gridPos": {
@@ -123,24 +123,22 @@ data:
             "x": 4,
             "y": 1
           },
-          "id": 2,
+          "id": 3,
           "options": {
             "colorMode": "value",
             "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "auto",
             "reduceOptions": {
               "calcs": [
                 "lastNotNull"
               ]
             }
           },
-          "title": "Battery Voltage",
+          "title": "Bank Voltage",
           "type": "stat",
           "targets": [
             {
-              "expr": "epever_battery_voltage_volts",
-              "legendFormat": "Battery"
+              "expr": "battery_bank_voltage_volts",
+              "legendFormat": "Volts"
             }
           ]
         },
@@ -151,6 +149,8 @@ data:
           },
           "fieldConfig": {
             "defaults": {
+              "unit": "watt",
+              "decimals": 0,
               "color": {
                 "mode": "thresholds"
               },
@@ -166,16 +166,10 @@ data:
                   },
                   {
                     "color": "orange",
-                    "value": 50
-                  },
-                  {
-                    "color": "red",
-                    "value": 200
+                    "value": 100
                   }
                 ]
-              },
-              "unit": "watt",
-              "decimals": 1
+              }
             }
           },
           "gridPos": {
@@ -184,7 +178,7 @@ data:
             "x": 8,
             "y": 1
           },
-          "id": 3,
+          "id": 4,
           "options": {
             "colorMode": "value",
             "graphMode": "area",
@@ -194,12 +188,12 @@ data:
               ]
             }
           },
-          "title": "Solar Power",
+          "title": "Solar Power In",
           "type": "stat",
           "targets": [
             {
               "expr": "epever_pv_power_watts",
-              "legendFormat": "PV Power"
+              "legendFormat": "Solar"
             }
           ]
         },
@@ -210,7 +204,7 @@ data:
           },
           "fieldConfig": {
             "defaults": {
-              "unit": "watt",
+              "unit": "amp",
               "decimals": 1,
               "color": {
                 "mode": "thresholds"
@@ -226,8 +220,12 @@ data:
                     "value": 10
                   },
                   {
-                    "color": "red",
+                    "color": "orange",
                     "value": 50
+                  },
+                  {
+                    "color": "red",
+                    "value": 100
                   }
                 ]
               }
@@ -237,65 +235,6 @@ data:
             "h": 6,
             "w": 4,
             "x": 12,
-            "y": 1
-          },
-          "id": 4,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ]
-            }
-          },
-          "title": "Load Power",
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "epever_load_power_watts",
-              "legendFormat": "Load"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "celsius",
-              "decimals": 1,
-              "color": {
-                "mode": "thresholds"
-              },
-              "thresholds": {
-                "steps": [
-                  {
-                    "color": "blue",
-                    "value": null
-                  },
-                  {
-                    "color": "green",
-                    "value": 15
-                  },
-                  {
-                    "color": "yellow",
-                    "value": 35
-                  },
-                  {
-                    "color": "red",
-                    "value": 50
-                  }
-                ]
-              }
-            }
-          },
-          "gridPos": {
-            "h": 6,
-            "w": 4,
-            "x": 16,
             "y": 1
           },
           "id": 5,
@@ -308,12 +247,12 @@ data:
               ]
             }
           },
-          "title": "Battery Temp",
+          "title": "Est. Discharge",
           "type": "stat",
           "targets": [
             {
-              "expr": "epever_battery_temp_celsius",
-              "legendFormat": "Battery"
+              "expr": "battery_bank_estimated_discharge_amps",
+              "legendFormat": "Amps"
             }
           ]
         },
@@ -324,28 +263,24 @@ data:
           },
           "fieldConfig": {
             "defaults": {
-              "unit": "celsius",
-              "decimals": 1,
+              "unit": "watt",
+              "decimals": 0,
               "color": {
                 "mode": "thresholds"
               },
               "thresholds": {
                 "steps": [
                   {
-                    "color": "blue",
+                    "color": "red",
                     "value": null
                   },
                   {
+                    "color": "orange",
+                    "value": -50
+                  },
+                  {
                     "color": "green",
-                    "value": 20
-                  },
-                  {
-                    "color": "yellow",
-                    "value": 40
-                  },
-                  {
-                    "color": "red",
-                    "value": 55
+                    "value": 0
                   }
                 ]
               }
@@ -354,7 +289,7 @@ data:
           "gridPos": {
             "h": 6,
             "w": 4,
-            "x": 20,
+            "x": 16,
             "y": 1
           },
           "id": 6,
@@ -367,12 +302,67 @@ data:
               ]
             }
           },
-          "title": "Controller Temp",
+          "title": "Net Power",
           "type": "stat",
           "targets": [
             {
-              "expr": "epever_device_temp_celsius",
-              "legendFormat": "Controller"
+              "expr": "battery_bank_net_power_watts",
+              "legendFormat": "Net"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "decimals": 0,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 20
+                  },
+                  {
+                    "color": "green",
+                    "value": 50
+                  }
+                ]
+              }
+            }
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 4,
+            "x": 20,
+            "y": 1
+          },
+          "id": 7,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "title": "Daly 100Ah SOC",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "daly_bms_soc_percent",
+              "legendFormat": "Daly"
             }
           ]
         },
@@ -384,253 +374,9 @@ data:
             "x": 0,
             "y": 7
           },
-          "id": 101,
-          "title": "Solar Production",
+          "id": 8,
+          "title": "Battery Details",
           "type": "row"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "watt",
-              "custom": {
-                "fillOpacity": 30,
-                "lineWidth": 2,
-                "spanNulls": false
-              }
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "PV Power"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "yellow",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Charge Power"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "green",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Load Power"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "orange",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 16,
-            "x": 0,
-            "y": 8
-          },
-          "id": 10,
-          "options": {
-            "tooltip": {
-              "mode": "multi"
-            },
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom"
-            }
-          },
-          "title": "Power Overview",
-          "type": "timeseries",
-          "targets": [
-            {
-              "expr": "epever_pv_power_watts",
-              "legendFormat": "PV Power"
-            },
-            {
-              "expr": "epever_battery_charge_power_watts",
-              "legendFormat": "Charge Power"
-            },
-            {
-              "expr": "epever_load_power_watts",
-              "legendFormat": "Load Power"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "volt",
-              "custom": {
-                "fillOpacity": 10,
-                "lineWidth": 2,
-                "spanNulls": false
-              }
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "PV Voltage"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "yellow",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Battery Voltage"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "green",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 8,
-            "x": 16,
-            "y": 8
-          },
-          "id": 11,
-          "options": {
-            "tooltip": {
-              "mode": "multi"
-            },
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom"
-            }
-          },
-          "title": "Voltage",
-          "type": "timeseries",
-          "targets": [
-            {
-              "expr": "epever_pv_voltage_volts",
-              "legendFormat": "PV Voltage"
-            },
-            {
-              "expr": "epever_battery_voltage_volts",
-              "legendFormat": "Battery Voltage"
-            }
-          ]
-        },
-        {
-          "collapsed": false,
-          "gridPos": {
-            "h": 1,
-            "w": 24,
-            "x": 0,
-            "y": 16
-          },
-          "id": 102,
-          "title": "Battery",
-          "type": "row"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "percent",
-              "min": 0,
-              "max": 100,
-              "custom": {
-                "fillOpacity": 20,
-                "lineWidth": 2,
-                "spanNulls": false,
-                "thresholdsStyle": {
-                  "mode": "area"
-                }
-              },
-              "thresholds": {
-                "steps": [
-                  {
-                    "color": "red",
-                    "value": null
-                  },
-                  {
-                    "color": "orange",
-                    "value": 20
-                  },
-                  {
-                    "color": "green",
-                    "value": 50
-                  }
-                ]
-              }
-            }
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 17
-          },
-          "id": 20,
-          "options": {
-            "tooltip": {
-              "mode": "single"
-            },
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom"
-            }
-          },
-          "title": "Battery SOC Over Time",
-          "type": "timeseries",
-          "targets": [
-            {
-              "expr": "epever_battery_soc_percent",
-              "legendFormat": "SOC %"
-            }
-          ]
         },
         {
           "datasource": {
@@ -640,509 +386,46 @@ data:
           "fieldConfig": {
             "defaults": {
               "unit": "amp",
-              "custom": {
-                "fillOpacity": 20,
-                "lineWidth": 2,
-                "spanNulls": false
-              }
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Charge Current"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "green",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Load Current"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "orange",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 17
-          },
-          "id": 21,
-          "options": {
-            "tooltip": {
-              "mode": "multi"
-            },
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom"
-            }
-          },
-          "title": "Current",
-          "type": "timeseries",
-          "targets": [
-            {
-              "expr": "epever_battery_charge_current_amps",
-              "legendFormat": "Charge Current"
-            },
-            {
-              "expr": "epever_load_current_amps",
-              "legendFormat": "Load Current"
-            }
-          ]
-        },
-        {
-          "collapsed": false,
-          "gridPos": {
-            "h": 1,
-            "w": 24,
-            "x": 0,
-            "y": 25
-          },
-          "id": 103,
-          "title": "Energy Statistics",
-          "type": "row"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "kwatth",
-              "decimals": 2,
+              "decimals": 1,
               "color": {
                 "mode": "thresholds"
               },
               "thresholds": {
                 "steps": [
                   {
-                    "color": "yellow",
+                    "color": "blue",
                     "value": null
-                  }
-                ]
-              }
-            }
-          },
-          "gridPos": {
-            "h": 4,
-            "w": 6,
-            "x": 0,
-            "y": 26
-          },
-          "id": 30,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "none",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ]
-            }
-          },
-          "title": "Generated Today",
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "epever_generated_energy_today_kwh",
-              "legendFormat": "Today"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "kwatth",
-              "decimals": 2,
-              "color": {
-                "mode": "thresholds"
-              },
-              "thresholds": {
-                "steps": [
-                  {
-                    "color": "yellow",
-                    "value": null
-                  }
-                ]
-              }
-            }
-          },
-          "gridPos": {
-            "h": 4,
-            "w": 6,
-            "x": 6,
-            "y": 26
-          },
-          "id": 31,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "none",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ]
-            }
-          },
-          "title": "Generated This Month",
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "epever_generated_energy_month_kwh",
-              "legendFormat": "Month"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "kwatth",
-              "decimals": 2,
-              "color": {
-                "mode": "thresholds"
-              },
-              "thresholds": {
-                "steps": [
-                  {
-                    "color": "orange",
-                    "value": null
-                  }
-                ]
-              }
-            }
-          },
-          "gridPos": {
-            "h": 4,
-            "w": 6,
-            "x": 12,
-            "y": 26
-          },
-          "id": 32,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "none",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ]
-            }
-          },
-          "title": "Consumed Today",
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "epever_consumed_energy_today_kwh",
-              "legendFormat": "Today"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "kwatth",
-              "decimals": 2,
-              "color": {
-                "mode": "thresholds"
-              },
-              "thresholds": {
-                "steps": [
-                  {
-                    "color": "yellow",
-                    "value": null
-                  }
-                ]
-              }
-            }
-          },
-          "gridPos": {
-            "h": 4,
-            "w": 6,
-            "x": 18,
-            "y": 26
-          },
-          "id": 33,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "none",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ]
-            }
-          },
-          "title": "Generated Total",
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "epever_generated_energy_total_kwh",
-              "legendFormat": "Total"
-            }
-          ]
-        },
-        {
-          "collapsed": false,
-          "gridPos": {
-            "h": 1,
-            "w": 24,
-            "x": 0,
-            "y": 30
-          },
-          "id": 104,
-          "title": "Charging State",
-          "type": "row"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "mappings": [
-                {
-                  "options": {
-                    "0": {
-                      "text": "Not Charging",
-                      "color": "dark-blue"
-                    }
-                  },
-                  "type": "value"
-                },
-                {
-                  "options": {
-                    "1": {
-                      "text": "Float",
-                      "color": "green"
-                    }
-                  },
-                  "type": "value"
-                },
-                {
-                  "options": {
-                    "2": {
-                      "text": "Boost",
-                      "color": "yellow"
-                    }
-                  },
-                  "type": "value"
-                },
-                {
-                  "options": {
-                    "3": {
-                      "text": "Equalize",
-                      "color": "orange"
-                    }
-                  },
-                  "type": "value"
-                }
-              ],
-              "color": {
-                "mode": "thresholds"
-              },
-              "thresholds": {
-                "steps": [
-                  {
-                    "color": "text",
-                    "value": null
-                  }
-                ]
-              }
-            }
-          },
-          "gridPos": {
-            "h": 4,
-            "w": 8,
-            "x": 0,
-            "y": 31
-          },
-          "id": 40,
-          "options": {
-            "colorMode": "background",
-            "graphMode": "none",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ]
-            },
-            "textMode": "value"
-          },
-          "title": "Charging State",
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "epever_charging_state",
-              "legendFormat": "State"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "custom": {
-                "fillOpacity": 50,
-                "lineWidth": 1,
-                "spanNulls": false
-              },
-              "mappings": [
-                {
-                  "options": {
-                    "0": {
-                      "text": "Not Charging"
-                    }
-                  },
-                  "type": "value"
-                },
-                {
-                  "options": {
-                    "1": {
-                      "text": "Float"
-                    }
-                  },
-                  "type": "value"
-                },
-                {
-                  "options": {
-                    "2": {
-                      "text": "Boost"
-                    }
-                  },
-                  "type": "value"
-                },
-                {
-                  "options": {
-                    "3": {
-                      "text": "Equalize"
-                    }
-                  },
-                  "type": "value"
-                }
-              ]
-            }
-          },
-          "gridPos": {
-            "h": 4,
-            "w": 16,
-            "x": 8,
-            "y": 31
-          },
-          "id": 41,
-          "options": {
-            "tooltip": {
-              "mode": "single"
-            },
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom"
-            }
-          },
-          "title": "Charging State History",
-          "type": "state-timeline",
-          "targets": [
-            {
-              "expr": "epever_charging_state",
-              "legendFormat": "State"
-            }
-          ]
-        },
-        {
-          "collapsed": false,
-          "gridPos": {
-            "h": 1,
-            "w": 24,
-            "x": 0,
-            "y": 35
-          },
-          "id": 105,
-          "title": "Battery BMS Monitoring",
-          "type": "row"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "thresholds": {
-                "steps": [
-                  {
-                    "color": "red",
-                    "value": null
-                  },
-                  {
-                    "color": "orange",
-                    "value": 20
                   },
                   {
                     "color": "green",
-                    "value": 50
+                    "value": 1
                   }
                 ]
-              },
-              "unit": "percent",
-              "min": 0,
-              "max": 100
+              }
             }
           },
           "gridPos": {
-            "h": 6,
-            "w": 4,
+            "h": 5,
+            "w": 3,
             "x": 0,
-            "y": 36
+            "y": 8
           },
-          "id": 106,
+          "id": 9,
           "options": {
-            "orientation": "auto",
+            "colorMode": "value",
+            "graphMode": "area",
             "reduceOptions": {
               "calcs": [
                 "lastNotNull"
               ]
-            },
-            "showThresholdLabels": false,
-            "showThresholdMarkers": true
+            }
           },
-          "title": "Daly 100Ah SOC",
-          "type": "gauge",
+          "title": "MPPT Charge",
+          "type": "stat",
           "targets": [
             {
-              "expr": "daly_bms_soc_percent",
-              "legendFormat": "SOC"
+              "expr": "epever_battery_charge_current_amps",
+              "legendFormat": "Amps"
             }
           ]
         },
@@ -1154,35 +437,31 @@ data:
           "fieldConfig": {
             "defaults": {
               "unit": "volt",
-              "decimals": 2,
+              "decimals": 1,
               "color": {
                 "mode": "thresholds"
               },
               "thresholds": {
                 "steps": [
                   {
-                    "color": "red",
+                    "color": "dark-blue",
                     "value": null
                   },
                   {
-                    "color": "orange",
-                    "value": 11.5
-                  },
-                  {
-                    "color": "green",
-                    "value": 12.4
+                    "color": "yellow",
+                    "value": 10
                   }
                 ]
               }
             }
           },
           "gridPos": {
-            "h": 6,
-            "w": 4,
-            "x": 4,
-            "y": 36
+            "h": 5,
+            "w": 3,
+            "x": 3,
+            "y": 8
           },
-          "id": 107,
+          "id": 10,
           "options": {
             "colorMode": "value",
             "graphMode": "area",
@@ -1192,12 +471,12 @@ data:
               ]
             }
           },
-          "title": "Daly 100Ah Voltage",
+          "title": "PV Voltage",
           "type": "stat",
           "targets": [
             {
-              "expr": "daly_bms_voltage_volts",
-              "legendFormat": "Daly 100Ah"
+              "expr": "epever_pv_voltage_volts",
+              "legendFormat": "PV"
             }
           ]
         },
@@ -1222,22 +501,18 @@ data:
                   {
                     "color": "green",
                     "value": 0
-                  },
-                  {
-                    "color": "orange",
-                    "value": 10
                   }
                 ]
               }
             }
           },
           "gridPos": {
-            "h": 6,
-            "w": 4,
-            "x": 8,
-            "y": 36
+            "h": 5,
+            "w": 3,
+            "x": 6,
+            "y": 8
           },
-          "id": 108,
+          "id": 11,
           "options": {
             "colorMode": "value",
             "graphMode": "area",
@@ -1247,12 +522,12 @@ data:
               ]
             }
           },
-          "title": "Daly 100Ah Current",
+          "title": "Daly Current",
           "type": "stat",
           "targets": [
             {
               "expr": "daly_bms_current_amps",
-              "legendFormat": "Current"
+              "legendFormat": "Daly"
             }
           ]
         },
@@ -1287,12 +562,12 @@ data:
             }
           },
           "gridPos": {
-            "h": 6,
-            "w": 4,
-            "x": 12,
-            "y": 36
+            "h": 5,
+            "w": 3,
+            "x": 9,
+            "y": 8
           },
-          "id": 109,
+          "id": 12,
           "options": {
             "colorMode": "value",
             "graphMode": "area",
@@ -1302,7 +577,7 @@ data:
               ]
             }
           },
-          "title": "Daly 100Ah Cell Delta",
+          "title": "Cell Delta",
           "type": "stat",
           "targets": [
             {
@@ -1342,12 +617,12 @@ data:
             }
           },
           "gridPos": {
-            "h": 6,
-            "w": 4,
-            "x": 16,
-            "y": 36
+            "h": 5,
+            "w": 3,
+            "x": 12,
+            "y": 8
           },
-          "id": 110,
+          "id": 13,
           "options": {
             "colorMode": "value",
             "graphMode": "area",
@@ -1357,12 +632,71 @@ data:
               ]
             }
           },
-          "title": "Victron 50Ah Voltage",
+          "title": "Victron 50Ah",
           "type": "stat",
           "targets": [
             {
               "expr": "victron_battery_voltage_volts",
-              "legendFormat": "Victron 50Ah"
+              "legendFormat": "Victron"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "celsius",
+              "decimals": 0,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 10
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 35
+                  },
+                  {
+                    "color": "red",
+                    "value": 50
+                  }
+                ]
+              }
+            }
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 3,
+            "x": 15,
+            "y": 8
+          },
+          "id": 14,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "title": "Bat Temp",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "epever_battery_temp_celsius",
+              "legendFormat": "MPPT"
             }
           ]
         },
@@ -1386,27 +720,23 @@ data:
                   },
                   {
                     "color": "green",
-                    "value": 15
+                    "value": 10
                   },
                   {
                     "color": "yellow",
                     "value": 35
-                  },
-                  {
-                    "color": "red",
-                    "value": 50
                   }
                 ]
               }
             }
           },
           "gridPos": {
-            "h": 6,
-            "w": 4,
-            "x": 20,
-            "y": 36
+            "h": 5,
+            "w": 3,
+            "x": 18,
+            "y": 8
           },
-          "id": 111,
+          "id": 15,
           "options": {
             "colorMode": "value",
             "graphMode": "area",
@@ -1416,12 +746,309 @@ data:
               ]
             }
           },
-          "title": "Victron 50Ah Temp",
+          "title": "Victron Temp",
           "type": "stat",
           "targets": [
             {
               "expr": "victron_battery_temp_celsius",
-              "legendFormat": "Temp"
+              "legendFormat": "Victron"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 0,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "0": {
+                      "text": "Off",
+                      "color": "dark-blue"
+                    }
+                  },
+                  "type": "value"
+                },
+                {
+                  "options": {
+                    "1": {
+                      "text": "Float",
+                      "color": "green"
+                    }
+                  },
+                  "type": "value"
+                },
+                {
+                  "options": {
+                    "2": {
+                      "text": "Boost",
+                      "color": "yellow"
+                    }
+                  },
+                  "type": "value"
+                },
+                {
+                  "options": {
+                    "3": {
+                      "text": "Equalize",
+                      "color": "orange"
+                    }
+                  },
+                  "type": "value"
+                }
+              ]
+            }
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 3,
+            "x": 21,
+            "y": 8
+          },
+          "id": 16,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "title": "Charge State",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "epever_charging_state",
+              "legendFormat": "State"
+            }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 13
+          },
+          "id": 17,
+          "title": "Power & Current Graphs",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "watt",
+              "custom": {
+                "fillOpacity": 15,
+                "lineWidth": 2,
+                "spanNulls": false
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Solar In"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "yellow",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Discharge Out"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Net"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 14
+          },
+          "id": 18,
+          "options": {
+            "tooltip": {
+              "mode": "multi"
+            },
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            }
+          },
+          "title": "Power: Solar In vs Load Out",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "battery_bank_charge_power_watts",
+              "legendFormat": "Solar In"
+            },
+            {
+              "expr": "battery_bank_discharge_power_watts",
+              "legendFormat": "Discharge Out"
+            },
+            {
+              "expr": "battery_bank_net_power_watts",
+              "legendFormat": "Net"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "amp",
+              "custom": {
+                "fillOpacity": 15,
+                "lineWidth": 2,
+                "spanNulls": false
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Charge (MPPT)"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Discharge (est. 3x)"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Daly Raw"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "yellow",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "fill": "dash",
+                      "dash": [
+                        10,
+                        10
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 14
+          },
+          "id": 19,
+          "options": {
+            "tooltip": {
+              "mode": "multi"
+            },
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            }
+          },
+          "title": "Current: Charge vs Discharge",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "battery_bank_estimated_charge_amps",
+              "legendFormat": "Charge (MPPT)"
+            },
+            {
+              "expr": "battery_bank_estimated_discharge_amps",
+              "legendFormat": "Discharge (est. 3x)"
+            },
+            {
+              "expr": "daly_bms_current_amps * -1",
+              "legendFormat": "Daly Raw"
             }
           ]
         },
@@ -1434,7 +1061,200 @@ data:
             "defaults": {
               "unit": "volt",
               "custom": {
-                "fillOpacity": 10,
+                "fillOpacity": 15,
+                "lineWidth": 2,
+                "spanNulls": false
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "MPPT"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Daly 100Ah"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "yellow",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Victron 50Ah"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "cyan",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": 22
+          },
+          "id": 20,
+          "options": {
+            "tooltip": {
+              "mode": "multi"
+            },
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            }
+          },
+          "title": "Battery Voltage (all sources)",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "epever_battery_voltage_volts",
+              "legendFormat": "MPPT"
+            },
+            {
+              "expr": "daly_bms_voltage_volts",
+              "legendFormat": "Daly 100Ah"
+            },
+            {
+              "expr": "victron_battery_voltage_volts",
+              "legendFormat": "Victron 50Ah"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "custom": {
+                "fillOpacity": 15,
+                "lineWidth": 2,
+                "spanNulls": false
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Bank Est. (Daly)"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "MPPT (voltage guess)"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "yellow",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "fill": "dash",
+                      "dash": [
+                        10,
+                        10
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 12,
+            "y": 22
+          },
+          "id": 21,
+          "options": {
+            "tooltip": {
+              "mode": "multi"
+            },
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            }
+          },
+          "title": "Battery SOC Over Time",
+          "type": "timeseries",
+          "targets": [
+            {
+              "expr": "battery_bank_estimated_soc_percent",
+              "legendFormat": "Bank Est. (Daly)"
+            },
+            {
+              "expr": "epever_battery_soc_percent",
+              "legendFormat": "MPPT (voltage guess)"
+            }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 29
+          },
+          "id": 22,
+          "title": "Temperature & Cell Health",
+          "type": "row"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "celsius",
+              "custom": {
+                "fillOpacity": 15,
                 "lineWidth": 2,
                 "spanNulls": false
               }
@@ -1484,16 +1304,31 @@ data:
                     }
                   }
                 ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Controller"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "orange",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
               }
             ]
           },
           "gridPos": {
-            "h": 8,
+            "h": 7,
             "w": 12,
             "x": 0,
-            "y": 42
+            "y": 30
           },
-          "id": 112,
+          "id": 23,
           "options": {
             "tooltip": {
               "mode": "multi"
@@ -1503,20 +1338,24 @@ data:
               "placement": "bottom"
             }
           },
-          "title": "Battery Voltage Comparison",
+          "title": "Temperatures",
           "type": "timeseries",
           "targets": [
             {
-              "expr": "epever_battery_voltage_volts",
+              "expr": "epever_battery_temp_celsius",
               "legendFormat": "MPPT Battery"
             },
             {
-              "expr": "daly_bms_voltage_volts",
+              "expr": "daly_bms_max_temp_celsius",
               "legendFormat": "Daly 100Ah"
             },
             {
-              "expr": "victron_battery_voltage_volts",
+              "expr": "victron_battery_temp_celsius",
               "legendFormat": "Victron 50Ah"
+            },
+            {
+              "expr": "epever_device_temp_celsius",
+              "legendFormat": "Controller"
             }
           ]
         },
@@ -1528,7 +1367,6 @@ data:
           "fieldConfig": {
             "defaults": {
               "unit": "volt",
-              "decimals": 3,
               "custom": {
                 "fillOpacity": 15,
                 "lineWidth": 2,
@@ -1588,12 +1426,12 @@ data:
             ]
           },
           "gridPos": {
-            "h": 8,
+            "h": 7,
             "w": 12,
             "x": 12,
-            "y": 42
+            "y": 30
           },
-          "id": 113,
+          "id": 24,
           "options": {
             "tooltip": {
               "mode": "multi"
@@ -1621,261 +1459,15 @@ data:
           ]
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "celsius",
-              "custom": {
-                "fillOpacity": 15,
-                "lineWidth": 2,
-                "spanNulls": false
-              }
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "MPPT Battery"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "green",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Daly 100Ah Max"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "yellow",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Victron 50Ah"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "cyan",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "MPPT Controller"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "orange",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 50
-          },
-          "id": 114,
-          "options": {
-            "tooltip": {
-              "mode": "multi"
-            },
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom"
-            }
-          },
-          "title": "Temperature Comparison",
-          "type": "timeseries",
-          "targets": [
-            {
-              "expr": "epever_battery_temp_celsius",
-              "legendFormat": "MPPT Battery"
-            },
-            {
-              "expr": "daly_bms_max_temp_celsius",
-              "legendFormat": "Daly 100Ah Max"
-            },
-            {
-              "expr": "victron_battery_temp_celsius",
-              "legendFormat": "Victron 50Ah"
-            },
-            {
-              "expr": "epever_device_temp_celsius",
-              "legendFormat": "MPPT Controller"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "mappings": [
-                {
-                  "options": {
-                    "0": {
-                      "text": "OFF",
-                      "color": "red"
-                    }
-                  },
-                  "type": "value"
-                },
-                {
-                  "options": {
-                    "1": {
-                      "text": "ON",
-                      "color": "green"
-                    }
-                  },
-                  "type": "value"
-                }
-              ],
-              "color": {
-                "mode": "thresholds"
-              },
-              "thresholds": {
-                "steps": [
-                  {
-                    "color": "text",
-                    "value": null
-                  }
-                ]
-              }
-            }
-          },
-          "gridPos": {
-            "h": 4,
-            "w": 6,
-            "x": 12,
-            "y": 50
-          },
-          "id": 115,
-          "options": {
-            "colorMode": "background",
-            "graphMode": "none",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ]
-            },
-            "textMode": "value"
-          },
-          "title": "Daly 100Ah Charge MOS",
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "daly_bms_charge_mos",
-              "legendFormat": "Charge"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "mappings": [
-                {
-                  "options": {
-                    "0": {
-                      "text": "OFF",
-                      "color": "red"
-                    }
-                  },
-                  "type": "value"
-                },
-                {
-                  "options": {
-                    "1": {
-                      "text": "ON",
-                      "color": "green"
-                    }
-                  },
-                  "type": "value"
-                }
-              ],
-              "color": {
-                "mode": "thresholds"
-              },
-              "thresholds": {
-                "steps": [
-                  {
-                    "color": "text",
-                    "value": null
-                  }
-                ]
-              }
-            }
-          },
-          "gridPos": {
-            "h": 4,
-            "w": 6,
-            "x": 18,
-            "y": 50
-          },
-          "id": 116,
-          "options": {
-            "colorMode": "background",
-            "graphMode": "none",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ]
-            },
-            "textMode": "value"
-          },
-          "title": "Daly 100Ah Discharge MOS",
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "daly_bms_discharge_mos",
-              "legendFormat": "Discharge"
-            }
-          ]
-        },
-        {
           "collapsed": false,
           "gridPos": {
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 58
+            "y": 37
           },
-          "id": 136,
-          "title": "Battery Bank Overview",
+          "id": 25,
+          "title": "Energy & MPPT Details",
           "type": "row"
         },
         {
@@ -1885,53 +1477,43 @@ data:
           },
           "fieldConfig": {
             "defaults": {
+              "unit": "kwatth",
+              "decimals": 2,
               "color": {
                 "mode": "thresholds"
               },
               "thresholds": {
                 "steps": [
                   {
-                    "color": "red",
+                    "color": "yellow",
                     "value": null
-                  },
-                  {
-                    "color": "orange",
-                    "value": 20
-                  },
-                  {
-                    "color": "green",
-                    "value": 50
                   }
                 ]
-              },
-              "unit": "percent",
-              "min": 0,
-              "max": 100
+              }
             }
           },
           "gridPos": {
-            "h": 6,
-            "w": 6,
+            "h": 5,
+            "w": 3,
             "x": 0,
-            "y": 59
+            "y": 38
           },
-          "id": 137,
+          "id": 26,
           "options": {
-            "orientation": "auto",
+            "colorMode": "value",
+            "graphMode": "area",
             "reduceOptions": {
               "calcs": [
                 "lastNotNull"
               ]
-            },
-            "showThresholdLabels": false,
-            "showThresholdMarkers": true
+            }
           },
-          "title": "Bank Estimated SOC (Daly)",
-          "type": "gauge",
+          "title": "Generated Today",
+          "type": "stat",
           "targets": [
             {
-              "expr": "battery_bank_estimated_soc_percent",
-              "legendFormat": "Bank SOC"
+              "expr": "epever_generated_energy_today_kwh",
+              "legendFormat": "Today"
             }
           ]
         },
@@ -1942,7 +1524,7 @@ data:
           },
           "fieldConfig": {
             "defaults": {
-              "unit": "watt",
+              "unit": "kwatth",
               "decimals": 1,
               "color": {
                 "mode": "thresholds"
@@ -1950,28 +1532,67 @@ data:
               "thresholds": {
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
                     "color": "yellow",
-                    "value": -20
-                  },
-                  {
-                    "color": "red",
-                    "value": -100
+                    "value": null
                   }
                 ]
               }
             }
           },
           "gridPos": {
-            "h": 6,
-            "w": 6,
+            "h": 5,
+            "w": 3,
+            "x": 3,
+            "y": 38
+          },
+          "id": 27,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "title": "Gen. Month",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "epever_generated_energy_month_kwh",
+              "legendFormat": "Month"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "kwatth",
+              "decimals": 0,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "yellow",
+                    "value": null
+                  }
+                ]
+              }
+            }
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 3,
             "x": 6,
-            "y": 59
+            "y": 38
           },
-          "id": 138,
+          "id": 28,
           "options": {
             "colorMode": "value",
             "graphMode": "area",
@@ -1981,233 +1602,12 @@ data:
               ]
             }
           },
-          "title": "Net Power Flow",
+          "title": "Gen. Year",
           "type": "stat",
           "targets": [
             {
-              "expr": "battery_bank_net_power_watts",
-              "legendFormat": "Net"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "watt",
-              "custom": {
-                "fillOpacity": 20,
-                "lineWidth": 2,
-                "spanNulls": false
-              }
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Solar Charge"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "yellow",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Discharge"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "red",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Net"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "green",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 6,
-            "w": 12,
-            "x": 12,
-            "y": 59
-          },
-          "id": 139,
-          "options": {
-            "tooltip": {
-              "mode": "multi"
-            },
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom"
-            }
-          },
-          "title": "Power Flow Over Time",
-          "type": "timeseries",
-          "targets": [
-            {
-              "expr": "battery_bank_charge_power_watts",
-              "legendFormat": "Solar Charge"
-            },
-            {
-              "expr": "battery_bank_discharge_power_watts",
-              "legendFormat": "Discharge"
-            },
-            {
-              "expr": "battery_bank_net_power_watts",
-              "legendFormat": "Net"
-            }
-          ]
-        },
-        {
-          "collapsed": false,
-          "gridPos": {
-            "h": 1,
-            "w": 24,
-            "x": 0,
-            "y": 65
-          },
-          "id": 169,
-          "title": "Estimated Bank Current & Power",
-          "type": "row"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "amp",
-              "decimals": 1,
-              "color": {
-                "mode": "thresholds"
-              },
-              "thresholds": {
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "yellow",
-                    "value": 10
-                  },
-                  {
-                    "color": "orange",
-                    "value": 50
-                  },
-                  {
-                    "color": "red",
-                    "value": 100
-                  }
-                ]
-              }
-            }
-          },
-          "gridPos": {
-            "h": 6,
-            "w": 4,
-            "x": 0,
-            "y": 66
-          },
-          "id": 170,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ]
-            }
-          },
-          "title": "Est. Bank Discharge",
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "battery_bank_estimated_discharge_amps",
-              "legendFormat": "Discharge"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "amp",
-              "decimals": 1,
-              "color": {
-                "mode": "thresholds"
-              },
-              "thresholds": {
-                "steps": [
-                  {
-                    "color": "blue",
-                    "value": null
-                  },
-                  {
-                    "color": "green",
-                    "value": 1
-                  },
-                  {
-                    "color": "yellow",
-                    "value": 20
-                  }
-                ]
-              }
-            }
-          },
-          "gridPos": {
-            "h": 6,
-            "w": 4,
-            "x": 4,
-            "y": 66
-          },
-          "id": 171,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ]
-            }
-          },
-          "title": "MPPT Charge Current",
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "battery_bank_estimated_charge_amps",
-              "legendFormat": "Charge"
+              "expr": "epever_generated_energy_year_kwh",
+              "legendFormat": "Year"
             }
           ]
         },
@@ -2219,7 +1619,7 @@ data:
           "fieldConfig": {
             "defaults": {
               "unit": "kwatth",
-              "decimals": 2,
+              "decimals": 0,
               "color": {
                 "mode": "thresholds"
               },
@@ -2234,27 +1634,27 @@ data:
             }
           },
           "gridPos": {
-            "h": 6,
-            "w": 4,
-            "x": 8,
-            "y": 66
+            "h": 5,
+            "w": 3,
+            "x": 9,
+            "y": 38
           },
-          "id": 172,
+          "id": 29,
           "options": {
             "colorMode": "value",
-            "graphMode": "none",
+            "graphMode": "area",
             "reduceOptions": {
               "calcs": [
                 "lastNotNull"
               ]
             }
           },
-          "title": "Charged Today",
+          "title": "Gen. Total",
           "type": "stat",
           "targets": [
             {
-              "expr": "battery_bank_daily_charge_kwh",
-              "legendFormat": "Charged"
+              "expr": "epever_generated_energy_total_kwh",
+              "legendFormat": "Total"
             }
           ]
         },
@@ -2281,15 +1681,15 @@ data:
             }
           },
           "gridPos": {
-            "h": 6,
-            "w": 4,
+            "h": 5,
+            "w": 3,
             "x": 12,
-            "y": 66
+            "y": 38
           },
-          "id": 173,
+          "id": 30,
           "options": {
             "colorMode": "value",
-            "graphMode": "none",
+            "graphMode": "area",
             "reduceOptions": {
               "calcs": [
                 "lastNotNull"
@@ -2300,8 +1700,102 @@ data:
           "type": "stat",
           "targets": [
             {
-              "expr": "battery_bank_daily_consumed_kwh",
-              "legendFormat": "Consumed"
+              "expr": "epever_consumed_energy_today_kwh",
+              "legendFormat": "Today"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "kwatth",
+              "decimals": 1,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "orange",
+                    "value": null
+                  }
+                ]
+              }
+            }
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 3,
+            "x": 15,
+            "y": 38
+          },
+          "id": 31,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "title": "Con. Month",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "epever_consumed_energy_month_kwh",
+              "legendFormat": "Month"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "volt",
+              "decimals": 1,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
+                  {
+                    "color": "yellow",
+                    "value": null
+                  }
+                ]
+              }
+            }
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 3,
+            "x": 18,
+            "y": 38
+          },
+          "id": 32,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "title": "PV Max Today",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "epever_max_pv_voltage_today_volts",
+              "legendFormat": "Max"
             }
           ]
         },
@@ -2320,28 +1814,20 @@ data:
               "thresholds": {
                 "steps": [
                   {
-                    "color": "red",
-                    "value": null
-                  },
-                  {
-                    "color": "orange",
-                    "value": 11.5
-                  },
-                  {
                     "color": "green",
-                    "value": 12.4
+                    "value": null
                   }
                 ]
               }
             }
           },
           "gridPos": {
-            "h": 6,
-            "w": 4,
-            "x": 16,
-            "y": 66
+            "h": 5,
+            "w": 3,
+            "x": 21,
+            "y": 38
           },
-          "id": 174,
+          "id": 33,
           "options": {
             "colorMode": "value",
             "graphMode": "area",
@@ -2351,14 +1837,26 @@ data:
               ]
             }
           },
-          "title": "Bank Voltage",
+          "title": "Bat Max Today",
           "type": "stat",
           "targets": [
             {
-              "expr": "battery_bank_voltage_volts",
-              "legendFormat": "Voltage"
+              "expr": "epever_max_battery_voltage_today_volts",
+              "legendFormat": "Max"
             }
           ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 43
+          },
+          "id": 34,
+          "title": "BMS Status & Solar",
+          "type": "row"
         },
         {
           "datasource": {
@@ -2367,36 +1865,48 @@ data:
           },
           "fieldConfig": {
             "defaults": {
-              "unit": "watt",
-              "decimals": 0,
+              "unit": "short",
+              "decimals": 1,
               "color": {
                 "mode": "thresholds"
               },
               "thresholds": {
                 "steps": [
                   {
-                    "color": "red",
-                    "value": null
-                  },
-                  {
-                    "color": "orange",
-                    "value": -50
-                  },
-                  {
                     "color": "green",
-                    "value": 0
+                    "value": null
                   }
                 ]
-              }
+              },
+              "mappings": [
+                {
+                  "options": {
+                    "0": {
+                      "text": "OFF",
+                      "color": "red"
+                    }
+                  },
+                  "type": "value"
+                },
+                {
+                  "options": {
+                    "1": {
+                      "text": "ON",
+                      "color": "green"
+                    }
+                  },
+                  "type": "value"
+                }
+              ]
             }
           },
           "gridPos": {
-            "h": 6,
-            "w": 4,
-            "x": 20,
-            "y": 66
+            "h": 5,
+            "w": 3,
+            "x": 0,
+            "y": 44
           },
-          "id": 175,
+          "id": 35,
           "options": {
             "colorMode": "value",
             "graphMode": "area",
@@ -2406,12 +1916,12 @@ data:
               ]
             }
           },
-          "title": "Net Power",
+          "title": "Daly Charge MOS",
           "type": "stat",
           "targets": [
             {
-              "expr": "battery_bank_net_power_watts",
-              "legendFormat": "Net"
+              "expr": "daly_bms_charge_mos",
+              "legendFormat": "Chg"
             }
           ]
         },
@@ -2422,101 +1932,63 @@ data:
           },
           "fieldConfig": {
             "defaults": {
-              "unit": "amp",
-              "custom": {
-                "fillOpacity": 20,
-                "lineWidth": 2,
-                "spanNulls": false
-              }
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Charge (MPPT)"
-                },
-                "properties": [
+              "unit": "short",
+              "decimals": 1,
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "steps": [
                   {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "green",
-                      "mode": "fixed"
-                    }
+                    "color": "green",
+                    "value": null
                   }
                 ]
               },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Discharge (est.)"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "red",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Daly Raw"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "yellow",
-                      "mode": "fixed"
+              "mappings": [
+                {
+                  "options": {
+                    "0": {
+                      "text": "OFF",
+                      "color": "red"
                     }
                   },
-                  {
-                    "id": "custom.lineStyle",
-                    "value": {
-                      "fill": "dash",
-                      "dash": [
-                        10,
-                        10
-                      ]
+                  "type": "value"
+                },
+                {
+                  "options": {
+                    "1": {
+                      "text": "ON",
+                      "color": "green"
                     }
-                  }
-                ]
-              }
-            ]
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 72
-          },
-          "id": 176,
-          "options": {
-            "tooltip": {
-              "mode": "multi"
-            },
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom"
+                  },
+                  "type": "value"
+                }
+              ]
             }
           },
-          "title": "Current: Charge vs Discharge",
-          "type": "timeseries",
+          "gridPos": {
+            "h": 5,
+            "w": 3,
+            "x": 3,
+            "y": 44
+          },
+          "id": 36,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "title": "Daly Discharge MOS",
+          "type": "stat",
           "targets": [
             {
-              "expr": "battery_bank_estimated_charge_amps",
-              "legendFormat": "Charge (MPPT)"
-            },
-            {
-              "expr": "battery_bank_estimated_discharge_amps",
-              "legendFormat": "Discharge (est.)"
-            },
-            {
-              "expr": "daly_bms_current_amps * -1",
-              "legendFormat": "Daly Raw"
+              "expr": "daly_bms_discharge_mos",
+              "legendFormat": "Dis"
             }
           ]
         },
@@ -2529,7 +2001,7 @@ data:
             "defaults": {
               "unit": "watt",
               "custom": {
-                "fillOpacity": 20,
+                "fillOpacity": 15,
                 "lineWidth": 2,
                 "spanNulls": false
               }
@@ -2538,7 +2010,7 @@ data:
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "Solar In"
+                  "options": "PV Power"
                 },
                 "properties": [
                   {
@@ -2553,22 +2025,7 @@ data:
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "Discharge Out"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "red",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "Net"
+                  "options": "Charge Power"
                 },
                 "properties": [
                   {
@@ -2583,12 +2040,12 @@ data:
             ]
           },
           "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 72
+            "h": 6,
+            "w": 18,
+            "x": 6,
+            "y": 44
           },
-          "id": 177,
+          "id": 37,
           "options": {
             "tooltip": {
               "mode": "multi"
@@ -2598,20 +2055,16 @@ data:
               "placement": "bottom"
             }
           },
-          "title": "Power: Solar In vs Load Out",
+          "title": "Solar Production (PV)",
           "type": "timeseries",
           "targets": [
             {
-              "expr": "battery_bank_charge_power_watts",
-              "legendFormat": "Solar In"
+              "expr": "epever_pv_power_watts",
+              "legendFormat": "PV Power"
             },
             {
-              "expr": "battery_bank_discharge_power_watts",
-              "legendFormat": "Discharge Out"
-            },
-            {
-              "expr": "battery_bank_net_power_watts",
-              "legendFormat": "Net"
+              "expr": "epever_battery_charge_power_watts",
+              "legendFormat": "Charge Power"
             }
           ]
         }
@@ -2624,7 +2077,8 @@ data:
         "energy",
         "bms",
         "daly",
-        "victron"
+        "victron",
+        "lifepo4"
       ],
       "templating": {
         "list": []
