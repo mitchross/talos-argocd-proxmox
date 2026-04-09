@@ -208,6 +208,22 @@
       "related_bugs": [],
       "occurrences": 2,
       "last_seen": "2026-04-09T01:04:18.426Z"
+    },
+    {
+      "id": "bug-014",
+      "timestamp": "2026-04-09T02:51:37.742Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/home/project-zomboid/deployment.yaml",
+      "root_cause": "Had \"SkillRecoveryJournal;ChuckleberryFinnAlertSystem;",
+      "fix": "Changed to \"SkillRecoveryJournal;ChuckleberryFinnAlertSystem;",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-09T02:51:42.652Z"
     }
   ]
 }
