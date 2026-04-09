@@ -76,7 +76,7 @@ spec:
             - name: MEMORY_XMS_GB
               value: "8"
             - name: UPDATE_ON_START
-              value: "true"
+              value: "false"
             - name: GENERATE_SETTINGS
               value: "false"
             - name: STEAM_VAC
