@@ -192,6 +192,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-08T22:56:12.284Z"
+    },
+    {
+      "id": "bug-013",
+      "timestamp": "2026-04-09T01:04:06.185Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/home/project-zomboid/deployment.yaml",
+      "root_cause": "Had \"true\"",
+      "fix": "Changed to \"false\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-09T01:04:18.426Z"
     }
   ]
 }

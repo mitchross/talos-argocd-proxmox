@@ -287,3 +287,6 @@
 | 20:57 | Session end: 10 writes across 8 files (pvc.yaml, deployment.yaml, 2026-04-09-kyverno-cel-migration.md, values.yaml, emergency-webhook-cleanup.sh) | 17 reads | ~43110 tok |
 | 20:57 | Session end: 10 writes across 8 files (pvc.yaml, deployment.yaml, 2026-04-09-kyverno-cel-migration.md, values.yaml, emergency-webhook-cleanup.sh) | 17 reads | ~43110 tok |
 | 21:00 | Session end: 10 writes across 8 files (pvc.yaml, deployment.yaml, 2026-04-09-kyverno-cel-migration.md, values.yaml, emergency-webhook-cleanup.sh) | 17 reads | ~43110 tok |
+| 21:03 | Session end: 10 writes across 8 files (pvc.yaml, deployment.yaml, 2026-04-09-kyverno-cel-migration.md, values.yaml, emergency-webhook-cleanup.sh) | 17 reads | ~43088 tok |
+| 21:04 | Edited my-apps/home/project-zomboid/deployment.yaml | 2→2 lines | ~19 |
+| 21:04 | Edited my-apps/home/project-zomboid/deployment.yaml | 2→2 lines | ~18 |
