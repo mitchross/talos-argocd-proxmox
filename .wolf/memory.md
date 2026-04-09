@@ -271,3 +271,17 @@
 | 20:37 | Edited my-apps/home/project-zomboid/deployment.yaml | 2→2 lines | ~31 |
 | 20:37 | Session end: 2 writes across 2 files (pvc.yaml, deployment.yaml) | 7 reads | ~19368 tok |
 | 20:37 | Session end: 2 writes across 2 files (pvc.yaml, deployment.yaml) | 7 reads | ~19368 tok |
+| 20:40 | Session end: 2 writes across 2 files (pvc.yaml, deployment.yaml) | 17 reads | ~27571 tok |
+| 20:43 | Session end: 2 writes across 2 files (pvc.yaml, deployment.yaml) | 17 reads | ~27571 tok |
+| 20:46 | Created docs/superpowers/plans/2026-04-09-kyverno-cel-migration.md | — | ~9275 |
+| 20:47 | Session end: 3 writes across 3 files (pvc.yaml, deployment.yaml, 2026-04-09-kyverno-cel-migration.md) | 17 reads | ~37509 tok |
+| 20:50 | Session end: 3 writes across 3 files (pvc.yaml, deployment.yaml, 2026-04-09-kyverno-cel-migration.md) | 17 reads | ~37509 tok |
+| 20:52 | Session end: 3 writes across 3 files (pvc.yaml, deployment.yaml, 2026-04-09-kyverno-cel-migration.md) | 17 reads | ~37509 tok |
+| 20:53 | Edited infrastructure/controllers/kyverno/values.yaml | expanded (+23 lines) | ~241 |
+| 20:53 | Created scripts/emergency-webhook-cleanup.sh | — | ~246 |
+| 20:54 | Created infrastructure/controllers/kyverno/policies/volsync-pvc-validate.yaml | — | ~391 |
+| 20:54 | Created infrastructure/controllers/kyverno/policies/volsync-pvc-validate.yaml | — | ~405 |
+| 20:55 | Created infrastructure/controllers/kyverno/policies/volsync-pvc-mutate.yaml | — | ~585 |
+| 20:55 | Created infrastructure/controllers/kyverno/policies/volsync-pvc-generate.yaml | — | ~1839 |
+| 20:56 | Created infrastructure/controllers/kyverno/policies/volsync-pvc-generate.yaml | — | ~1876 |
+| 20:57 | Session end: 10 writes across 8 files (pvc.yaml, deployment.yaml, 2026-04-09-kyverno-cel-migration.md, values.yaml, emergency-webhook-cleanup.sh) | 17 reads | ~43110 tok |

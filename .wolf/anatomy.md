@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-09T00:37:26.123Z
-> Files: 513 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-09T00:56:25.733Z
+> Files: 518 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -72,6 +72,10 @@
 - `2026-02-28-single-gpu-llamacpp-comfyui-vision.md` — Single-GPU Llama.cpp + ComfyUI Vision Integration (~2086 tok)
 - `2026-03-16-project-nomad-k8s-openai.md` — Project Nomad: Kubernetes + OpenAI-Compatible LLM Provider (~5421 tok)
 - `2026-03-22-alloy-otel-honeycomb-design.md` — OpenTelemetry Operator + Honeycomb Design (~1136 tok)
+
+## docs/superpowers/plans/
+
+- `2026-04-09-kyverno-cel-migration.md` — Kyverno CEL Migration + Webhook Deadlock Prevention (~8695 tok)
 
 ## infrastructure/
 
@@ -150,13 +154,16 @@
 - `kustomization.yaml` — K8s Kustomization: kyverno (~338 tok)
 - `namespace.yaml` — K8s Namespace: kyverno (~17 tok)
 - `rbac-patch.yaml` — K8s ClusterRole: kyverno:background-controller:volsync (~759 tok)
-- `values.yaml` (~962 tok)
+- `values.yaml` — Webhook namespace exclusions — infrastructure namespaces (Waves 0-2) must boot (~1197 tok)
 
 ## infrastructure/controllers/kyverno/policies/
 
 - `volsync-nfs-inject.yaml` — K8s ClusterPolicy: volsync-nfs-inject (~446 tok)
 - `volsync-orphan-cleanup.yaml` — K8s ClusterCleanupPolicy: volsync-orphan-cleanup (~543 tok)
 - `volsync-pvc-backup-restore.yaml` — K8s ClusterPolicy: volsync-pvc-backup-restore (~2805 tok)
+- `volsync-pvc-generate.yaml` — K8s GeneratingPolicy (~1876 tok)
+- `volsync-pvc-mutate.yaml` — K8s MutatingPolicy (~585 tok)
+- `volsync-pvc-validate.yaml` — K8s ValidatingPolicy (~405 tok)
 
 ## infrastructure/controllers/metrics-server/
 
@@ -845,3 +852,7 @@
 - `pdb.yaml` — K8s PodDisruptionBudget (~55 tok)
 - `pvc.yaml` — K8s PersistentVolumeClaim (~155 tok)
 - `vanillax_SandboxVars.lua` (~13868 tok)
+
+## scripts/
+
+- `emergency-webhook-cleanup.sh` — Emergency: Remove all Kyverno webhooks to unblock cluster recovery (~246 tok)
