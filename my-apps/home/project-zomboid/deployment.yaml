@@ -17,6 +17,20 @@ spec:
     spec:
       terminationGracePeriodSeconds: 180
       initContainers:
+        - name: steamcmd-update
+          image: indifferentbroccoli/projectzomboid-server-docker:latest
+          imagePullPolicy: Always
+          command:
+            - /bin/bash
+            - -c
+            - |
+              echo "Pre-warming SteamCMD to complete self-update..."
+              /home/steam/steamcmd/steamcmd.sh +quit || true
+              cp -a /home/steam/steamcmd/* /steam-cache/ 2>/dev/null || true
+              echo "SteamCMD pre-warm complete."
+          volumeMounts:
+            - name: steam-cache
+              mountPath: /steam-cache
         - name: copy-config
           image: busybox
           command:
