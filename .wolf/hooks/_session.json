@@ -6,6 +6,36 @@
       "count": 1,
       "tokens": 0,
       "first_read": "2026-04-08T22:54:58.322Z"
+    },
+    "/tmp/claude-1000/-home-vanillax-programming-talos-argocd-proxmox/ea3d2582-b40f-4479-bab5-efafd75f3e91/tasks/bp7izexli.output": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-08T22:58:52.333Z"
+    },
+    "/tmp/claude-1000/-home-vanillax-programming-talos-argocd-proxmox/ea3d2582-b40f-4479-bab5-efafd75f3e91/tasks/bi2c438l9.output": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-08T23:00:24.860Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/docs/backup-restore.md": {
+      "count": 1,
+      "tokens": 3381,
+      "first_read": "2026-04-08T23:10:14.425Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/CLAUDE.md": {
+      "count": 1,
+      "tokens": 2907,
+      "first_read": "2026-04-08T23:10:21.123Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/docs/pvc-plumber-full-flow.md": {
+      "count": 2,
+      "tokens": 11603,
+      "first_read": "2026-04-08T23:12:52.384Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml": {
+      "count": 2,
+      "tokens": 1432,
+      "first_read": "2026-04-08T23:19:18.435Z"
     }
   },
   "files_written": [
@@ -14,14 +44,21 @@
       "action": "edit",
       "tokens": 14,
       "at": "2026-04-08T22:56:12.283Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/deployment.yaml",
+      "action": "edit",
+      "tokens": 31,
+      "at": "2026-04-09T00:37:26.134Z"
     }
   ],
   "edit_counts": {
-    "my-apps/home/project-zomboid/pvc.yaml": 1
+    "my-apps/home/project-zomboid/pvc.yaml": 1,
+    "my-apps/home/project-zomboid/deployment.yaml": 1
   },
-  "anatomy_hits": 0,
-  "anatomy_misses": 1,
-  "repeated_reads_warned": 0,
+  "anatomy_hits": 4,
+  "anatomy_misses": 3,
+  "repeated_reads_warned": 2,
   "cerebrum_warnings": 0,
-  "stop_count": 7
+  "stop_count": 30
 }
