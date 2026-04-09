@@ -1,3 +1,26 @@
+# Webhook namespace exclusions — infrastructure namespaces (Waves 0-2) must boot
+# before Kyverno (Wave 3). Without this, a Kyverno crash-loop causes a full cluster
+# deadlock because failurePolicy:Fail blocks all Deployment/StatefulSet/DaemonSet
+# operations in non-excluded namespaces. The fail-closed PVC gate still protects
+# app namespaces (Waves 4-6).
+# RCA: 2026-04-08 full cluster outage caused by this exact deadlock.
+config:
+  webhooks:
+    namespaceSelector:
+      matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: NotIn
+        values:
+          - kube-system
+          - longhorn-system
+          - argocd
+          - volsync-system
+          - snapshot-controller
+          - cert-manager
+          - external-secrets
+          - 1passwordconnect
+  excludeKyvernoNamespace: true
+
 admissionController:
   replicas: 3
   podDisruptionBudget:
