@@ -1,112 +1,44 @@
 {
-  "session_id": "session-2026-04-10-1058",
-  "started": "2026-04-10T14:58:10.797Z",
+  "session_id": "session-2026-04-10-1207",
+  "started": "2026-04-10T16:07:58.546Z",
   "files_read": {
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/kustomization.yaml": {
-      "count": 1,
-      "tokens": 56,
-      "first_read": "2026-04-10T14:58:26.491Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/ns.yaml": {
-      "count": 1,
-      "tokens": 16,
-      "first_read": "2026-04-10T14:58:26.534Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/httproute.yaml": {
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml": {
       "count": 2,
-      "tokens": 225,
-      "first_read": "2026-04-10T14:58:26.622Z"
+      "tokens": 1730,
+      "first_read": "2026-04-10T16:08:13.169Z"
     },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/service.yaml": {
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml": {
       "count": 1,
-      "tokens": 61,
-      "first_read": "2026-04-10T14:58:28.208Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/configmap.yaml": {
-      "count": 2,
-      "tokens": 328,
-      "first_read": "2026-04-10T14:58:28.301Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/deployment.yaml": {
-      "count": 3,
-      "tokens": 400,
-      "first_read": "2026-04-10T14:58:28.312Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/externalsecret.yaml": {
-      "count": 1,
-      "tokens": 110,
-      "first_read": "2026-04-10T14:58:28.323Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/cert-manager/cloudflare-external-secret.yaml": {
-      "count": 1,
-      "tokens": 161,
-      "first_read": "2026-04-10T14:58:30.538Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/external-dns/cloudflare-external-secret.yaml": {
-      "count": 1,
-      "tokens": 154,
-      "first_read": "2026-04-10T14:58:30.995Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/httproute.yaml": {
-      "count": 3,
-      "tokens": 928,
-      "first_read": "2026-04-10T14:59:08.544Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/configmap-env.yaml": {
-      "count": 1,
-      "tokens": 539,
-      "first_read": "2026-04-10T14:59:09.016Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/web.yaml": {
-      "count": 1,
-      "tokens": 1052,
-      "first_read": "2026-04-10T15:02:31.452Z"
+      "tokens": 108,
+      "first_read": "2026-04-10T16:12:04.915Z"
     },
     "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml": {
-      "count": 7,
-      "tokens": 1943,
-      "first_read": "2026-04-10T15:04:03.775Z"
+      "count": 2,
+      "tokens": 2123,
+      "first_read": "2026-04-10T18:18:39.145Z"
     }
   },
   "files_written": [
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
       "action": "edit",
-      "tokens": 23,
-      "at": "2026-04-10T15:05:30.739Z"
+      "tokens": 54,
+      "at": "2026-04-10T16:09:07.208Z"
     },
     {
       "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
       "action": "edit",
-      "tokens": 36,
-      "at": "2026-04-10T15:05:36.158Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/httproute.yaml",
-      "action": "edit",
-      "tokens": 222,
-      "at": "2026-04-10T15:05:48.557Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/httproute.yaml",
-      "action": "edit",
-      "tokens": 208,
-      "at": "2026-04-10T15:05:55.036Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
-      "action": "edit",
-      "tokens": 739,
-      "at": "2026-04-10T16:03:29.033Z"
+      "tokens": 143,
+      "at": "2026-04-10T18:19:43.488Z"
     }
   ],
   "edit_counts": {
-    "my-apps/development/posthog/core/capture.yaml": 3,
-    "my-apps/development/posthog/httproute.yaml": 2
+    "my-apps/home/frigate/config.yml": 1,
+    "my-apps/development/posthog/core/capture.yaml": 1
   },
-  "anatomy_hits": 13,
+  "anatomy_hits": 3,
   "anatomy_misses": 0,
-  "repeated_reads_warned": 12,
+  "repeated_reads_warned": 2,
   "cerebrum_warnings": 0,
-  "stop_count": 16
+  "stop_count": 32
 }

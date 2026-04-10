@@ -285,3 +285,43 @@
 | 12:03 | Edited my-apps/development/posthog/core/capture.yaml | expanded (+20 lines) | ~739 |
 | 12:03 | Session end: 5 writes across 2 files (capture.yaml, httproute.yaml) | 13 reads | ~7201 tok |
 | 12:03 | Session end: 5 writes across 2 files (capture.yaml, httproute.yaml) | 13 reads | ~7201 tok |
+| 12:04 | Session end: 5 writes across 2 files (capture.yaml, httproute.yaml) | 13 reads | ~7201 tok |
+| 12:05 | Session end: 5 writes across 2 files (capture.yaml, httproute.yaml) | 13 reads | ~7201 tok |
+
+## Session: 2026-04-10 12:07
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 12:09 | Edited my-apps/home/frigate/config.yml | 6→9 lines | ~54 |
+| 12:09 | Session end: 1 writes across 1 files (config.yml) | 1 reads | ~1784 tok |
+| 12:09 | Session end: 1 writes across 1 files (config.yml) | 1 reads | ~1784 tok |
+| 12:10 | Session end: 1 writes across 1 files (config.yml) | 1 reads | ~1784 tok |
+| 12:11 | Session end: 1 writes across 1 files (config.yml) | 1 reads | ~1784 tok |
+| 12:11 | Session end: 1 writes across 1 files (config.yml) | 1 reads | ~1784 tok |
+| 12:12 | Session end: 1 writes across 1 files (config.yml) | 1 reads | ~1784 tok |
+| 12:12 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 12:12 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 12:12 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 12:12 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 12:12 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 12:13 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 12:13 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 12:13 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 12:14 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 12:14 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 12:14 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 12:16 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 12:16 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 12:16 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 12:16 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 13:12 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 13:14 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 13:17 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 13:21 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 14:18 | Session end: 1 writes across 1 files (config.yml) | 2 reads | ~1892 tok |
+| 14:19 | Session end: 1 writes across 1 files (config.yml) | 3 reads | ~4015 tok |
+| 14:19 | Edited my-apps/development/posthog/core/capture.yaml | 14→13 lines | ~143 |
+| 14:26 | Session end: 2 writes across 2 files (config.yml, capture.yaml) | 3 reads | ~4158 tok |
+| 15:19 | Session end: 2 writes across 2 files (config.yml, capture.yaml) | 3 reads | ~4158 tok |
+| 15:24 | Session end: 2 writes across 2 files (config.yml, capture.yaml) | 3 reads | ~4158 tok |
+| 15:31 | Session end: 2 writes across 2 files (config.yml, capture.yaml) | 3 reads | ~4158 tok |
