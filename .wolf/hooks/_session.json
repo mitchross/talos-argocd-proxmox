@@ -36,6 +36,11 @@
       "count": 1,
       "tokens": 864,
       "first_read": "2026-04-10T21:06:37.704Z"
+    },
+    "/home/vanillax/.claude/image-cache/c8337a92-81c9-48ee-a6ed-35135f0a5bad/1.png": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-10T21:09:22.115Z"
     }
   },
   "files_written": [
@@ -74,17 +79,23 @@
       "action": "edit",
       "tokens": 29,
       "at": "2026-04-10T21:07:04.237Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+      "action": "edit",
+      "tokens": 81,
+      "at": "2026-04-10T21:13:03.933Z"
     }
   ],
   "edit_counts": {
-    "my-apps/home/frigate/config.yml": 3,
+    "my-apps/home/frigate/config.yml": 4,
     "my-apps/development/posthog/core/capture.yaml": 1,
     "my-apps/media/redlib/httproute.yaml": 1,
     "my-apps/media/redlib/deployment.yaml": 1
   },
   "anatomy_hits": 7,
-  "anatomy_misses": 0,
+  "anatomy_misses": 1,
   "repeated_reads_warned": 4,
   "cerebrum_warnings": 0,
-  "stop_count": 66
+  "stop_count": 74
 }
