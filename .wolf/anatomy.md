@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-10T18:19:43.482Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-10T20:32:23.837Z
 > Files: 522 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -852,7 +852,7 @@
 - `configmap.yaml` — K8s ConfigMap (~328 tok)
 - `deployment.yaml` — K8s Deployment (~400 tok)
 - `externalsecret.yaml` — K8s ExternalSecret (~110 tok)
-- `httproute.yaml` — K8s HTTPRoute (~225 tok)
+- `httproute.yaml` — K8s HTTPRoute (~414 tok)
 - `kustomization.yaml` — K8s Kustomization (~56 tok)
 - `ns.yaml` — K8s Namespace (~16 tok)
 - `service.yaml` — K8s Service (~61 tok)
