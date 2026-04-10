@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-10T16:03:29.027Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-10T18:19:43.482Z
 > Files: 522 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -714,7 +714,7 @@
 
 ## my-apps/development/posthog/core/
 
-- `capture.yaml` — K8s Deployment (~2123 tok)
+- `capture.yaml` — K8s Deployment (~2118 tok)
 - `clickhouse-init.yaml` — K8s Job: clickhouse-migrations-init (~900 tok)
 - `ingestion-sessionreplay.yaml` — Ingestion Session Replay - consumes from session_recording_snapshot_item_events, (~846 tok)
 - `ingestion.yaml` — Ingestion General - consumes from events_plugin_ingestion, processes events, (~874 tok)
@@ -779,7 +779,7 @@
 
 ## my-apps/home/frigate/
 
-- `config.yml` (~1716 tok)
+- `config.yml` (~1730 tok)
 - `deployment.yaml` — K8s Deployment: frigate (~864 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: frigate-secrets (~429 tok)
 - `httproute.yaml` — K8s HTTPRoute: frigate (~133 tok)

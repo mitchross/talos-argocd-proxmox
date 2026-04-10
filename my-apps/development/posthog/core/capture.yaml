@@ -168,16 +168,15 @@ spec:
         app.kubernetes.io/component: feature-flags
     spec:
       initContainers:
-        - name: download-geoip
-          image: curlimages/curl:8.12.1
+        - name: copy-geoip
+          image: posthog/posthog:latest@sha256:334b0b6a604d0cde5f48af199bac141b26f8867ed2f6fd77435cf859a9537d76
           command:
             - /bin/sh
             - -c
             - |
-              echo "Downloading GeoLite2-City.mmdb from PostHog CDN..."
-              curl -fsSL -o /share/GeoLite2-City.mmdb https://mmdbcdn.posthog.net/
+              cp /code/share/GeoLite2-City.mmdb /share/GeoLite2-City.mmdb
               ls -la /share/GeoLite2-City.mmdb
-              echo "GeoIP database downloaded successfully"
+              echo "GeoIP database copied successfully"
           volumeMounts:
             - name: geoip-data
               mountPath: /share

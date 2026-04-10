@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-05T03:39:06.883Z",
   "lifetime": {
-    "total_tokens_estimated": 2585214,
-    "total_reads": 2211,
-    "total_writes": 954,
-    "total_sessions": 16,
-    "anatomy_hits": 1974,
+    "total_tokens_estimated": 2670523,
+    "total_reads": 2299,
+    "total_writes": 999,
+    "total_sessions": 17,
+    "anatomy_hits": 2062,
     "anatomy_misses": 237,
-    "repeated_reads_blocked": 934,
-    "estimated_savings_vs_bare_cli": 1499537
+    "repeated_reads_blocked": 993,
+    "estimated_savings_vs_bare_cli": 1608993
   },
   "sessions": [
     {
@@ -20473,6 +20473,1336 @@
         "writes_count": 5,
         "repeated_reads_blocked": 12,
         "anatomy_lookups": 13
+      }
+    },
+    {
+      "id": "session-2026-04-10-1058",
+      "started": "2026-04-10T14:58:10.797Z",
+      "ended": "2026-04-10T16:04:05.228Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/kustomization.yaml",
+          "tokens_estimated": 56,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/ns.yaml",
+          "tokens_estimated": 16,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/httproute.yaml",
+          "tokens_estimated": 225,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/service.yaml",
+          "tokens_estimated": 61,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/configmap.yaml",
+          "tokens_estimated": 328,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/deployment.yaml",
+          "tokens_estimated": 400,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/externalsecret.yaml",
+          "tokens_estimated": 110,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/cert-manager/cloudflare-external-secret.yaml",
+          "tokens_estimated": 161,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/external-dns/cloudflare-external-secret.yaml",
+          "tokens_estimated": 154,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/httproute.yaml",
+          "tokens_estimated": 928,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/configmap-env.yaml",
+          "tokens_estimated": 539,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/web.yaml",
+          "tokens_estimated": 1052,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 1943,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 23,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 36,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/httproute.yaml",
+          "tokens_estimated": 222,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/httproute.yaml",
+          "tokens_estimated": 208,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 739,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 5973,
+        "output_tokens_estimated": 1228,
+        "reads_count": 13,
+        "writes_count": 5,
+        "repeated_reads_blocked": 12,
+        "anatomy_lookups": 13
+      }
+    },
+    {
+      "id": "session-2026-04-10-1058",
+      "started": "2026-04-10T14:58:10.797Z",
+      "ended": "2026-04-10T16:05:04.781Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/kustomization.yaml",
+          "tokens_estimated": 56,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/ns.yaml",
+          "tokens_estimated": 16,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/httproute.yaml",
+          "tokens_estimated": 225,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/service.yaml",
+          "tokens_estimated": 61,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/configmap.yaml",
+          "tokens_estimated": 328,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/deployment.yaml",
+          "tokens_estimated": 400,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/externalsecret.yaml",
+          "tokens_estimated": 110,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/cert-manager/cloudflare-external-secret.yaml",
+          "tokens_estimated": 161,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/external-dns/cloudflare-external-secret.yaml",
+          "tokens_estimated": 154,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/httproute.yaml",
+          "tokens_estimated": 928,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/configmap-env.yaml",
+          "tokens_estimated": 539,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/web.yaml",
+          "tokens_estimated": 1052,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 1943,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 23,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 36,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/httproute.yaml",
+          "tokens_estimated": 222,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/httproute.yaml",
+          "tokens_estimated": 208,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 739,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 5973,
+        "output_tokens_estimated": 1228,
+        "reads_count": 13,
+        "writes_count": 5,
+        "repeated_reads_blocked": 12,
+        "anatomy_lookups": 13
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:09:05.074Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1716,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 1716,
+        "output_tokens_estimated": 0,
+        "reads_count": 1,
+        "writes_count": 0,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:09:22.117Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1730,
+        "output_tokens_estimated": 54,
+        "reads_count": 1,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:09:39.744Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1730,
+        "output_tokens_estimated": 54,
+        "reads_count": 1,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:10:45.021Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1730,
+        "output_tokens_estimated": 54,
+        "reads_count": 1,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:11:31.847Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1730,
+        "output_tokens_estimated": 54,
+        "reads_count": 1,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:11:39.263Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1730,
+        "output_tokens_estimated": 54,
+        "reads_count": 1,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:12:00.390Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1730,
+        "output_tokens_estimated": 54,
+        "reads_count": 1,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:12:17.753Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:12:38.634Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:12:44.451Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:12:50.323Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:12:57.512Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:13:13.912Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:13:36.918Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:13:39.965Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:14:02.897Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:14:03.059Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:14:48.175Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:16:32.589Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:16:33.892Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:16:48.952Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T16:16:52.859Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T17:12:00.957Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T17:14:06.302Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T17:17:59.255Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T17:21:33.808Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T18:18:19.115Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1838,
+        "output_tokens_estimated": 54,
+        "reads_count": 2,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T18:19:02.858Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 2123,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 3961,
+        "output_tokens_estimated": 54,
+        "reads_count": 3,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 3
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T18:26:37.953Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 2123,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 143,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 3961,
+        "output_tokens_estimated": 197,
+        "reads_count": 3,
+        "writes_count": 2,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 3
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T19:19:34.012Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 2123,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 143,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 3961,
+        "output_tokens_estimated": 197,
+        "reads_count": 3,
+        "writes_count": 2,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 3
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T19:24:04.774Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 2123,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 143,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 3961,
+        "output_tokens_estimated": 197,
+        "reads_count": 3,
+        "writes_count": 2,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 3
+      }
+    },
+    {
+      "id": "session-2026-04-10-1207",
+      "started": "2026-04-10T16:07:58.546Z",
+      "ended": "2026-04-10T19:31:34.389Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 1730,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/kustomization.yaml",
+          "tokens_estimated": 108,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 2123,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 143,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 3961,
+        "output_tokens_estimated": 197,
+        "reads_count": 3,
+        "writes_count": 2,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 3
       }
     }
   ],
