@@ -384,6 +384,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-10T16:09:07.209Z"
+    },
+    {
+      "id": "bug-025",
+      "timestamp": "2026-04-10T20:54:56.121Z",
+      "error_message": "Wrong reference: 532a452 should be af047be",
+      "file": "my-apps/media/redlib/deployment.yaml",
+      "root_cause": "Used \"532a452\" instead of \"af047be\"",
+      "fix": "Changed 532a452 → af047be",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T20:54:56.121Z"
     }
   ]
 }
