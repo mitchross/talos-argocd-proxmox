@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-10T04:38:59.477Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-10T15:05:55.030Z
 > Files: 522 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -688,7 +688,7 @@
 
 - `configmap-env.yaml` — K8s ConfigMap (~539 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: posthog-secrets (~383 tok)
-- `httproute.yaml` — K8s HTTPRoute (~755 tok)
+- `httproute.yaml` — K8s HTTPRoute (~928 tok)
 - `kustomization.yaml` — K8s Kustomization (~192 tok)
 - `namespace.yaml` — K8s Namespace: posthog (~58 tok)
 - `RESEARCH.md` — PostHog Self-Hosting: Clean-Room Research Report (~5052 tok)
@@ -714,7 +714,7 @@
 
 ## my-apps/development/posthog/core/
 
-- `capture.yaml` — K8s Deployment: capture (~1937 tok)
+- `capture.yaml` — K8s Deployment (~1943 tok)
 - `clickhouse-init.yaml` — K8s Job: clickhouse-migrations-init (~900 tok)
 - `ingestion-sessionreplay.yaml` — Ingestion Session Replay - consumes from session_recording_snapshot_item_events, (~846 tok)
 - `ingestion.yaml` — Ingestion General - consumes from events_plugin_ingestion, processes events, (~874 tok)
