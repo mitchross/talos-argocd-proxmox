@@ -3,6 +3,17 @@
 > Chronological action log. Hooks and AI append to this file automatically.
 > Old sessions are consolidated by the daemon weekly.
 
+| 04:10 | PostHog research: 4 parallel agents analyzed upstream docs, Helm chart, Docker images, infra deps | RESEARCH.md | comprehensive report | ~10000 |
+| 04:15 | PostHog gap analysis: compared existing deployment vs upstream findings | report to conductor | 19 gaps identified, prioritized | ~5000 |
+| 04:20 | Added ingestion-sessionreplay Deployment | core/ingestion-sessionreplay.yaml | new file | ~200 |
+| 04:20 | Added recording-api Deployment + Service | core/recording-api.yaml | new file | ~200 |
+| 04:21 | Fixed configmap-env.yaml: added PRIMARY_DB, LOGGING_FORMATTER_NAME, OPT_OUT_CAPTURE; fixed RECORDING_API_URL | configmap-env.yaml | updated | ~50 |
+| 04:22 | Fixed web health checks: /_livez liveness, /_readyz?role=web readiness, preStop hook, metrics port 8001 | core/web.yaml | updated | ~100 |
+| 04:23 | Added temporal-django-worker Deployment | core/temporal-worker.yaml | new file | ~200 |
+| 04:24 | Fixed HTTPRoutes: added capture/replay/webhook paths to internal route, webhook paths to external | httproute.yaml | updated | ~100 |
+| 04:25 | Added toolbox Deployment (replicas: 0) for manage.py debugging | core/toolbox.yaml | new file | ~150 |
+| 04:25 | Updated kustomization.yaml with all new files | kustomization.yaml | updated | ~20 |
+
 | Time | Description | File(s) | Outcome | ~Tokens |
 |------|-------------|---------|---------|---------|
 | 2026-04-07 | Migrated Project Zomboid from danixu86 to indifferentbroccoli image | deployment.yaml, pvc.yaml, README.md | Committed + pushed to claude/update-zomboid-deployment-zo2qC | ~3000 |
@@ -187,3 +198,42 @@
 | 17:04 | Session end: 12 writes across 9 files (kustomization.yaml, ns.yaml, httproute.yaml, deployment.yaml, service.yaml) | 17 reads | ~1260 tok |
 | 17:04 | Edited my-apps/media/redlib/externalsecret.yaml | inline fix | ~11 |
 | 17:04 | Session end: 13 writes across 9 files (kustomization.yaml, ns.yaml, httproute.yaml, deployment.yaml, service.yaml) | 17 reads | ~1271 tok |
+| 17:12 | Session end: 13 writes across 9 files (kustomization.yaml, ns.yaml, httproute.yaml, deployment.yaml, service.yaml) | 17 reads | ~1271 tok |
+
+## Session: 2026-04-09 17:18
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-04-09 17:36
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 17:49 | Created my-apps/development/posthog/RESEARCH.md | — | ~5389 |
+| 17:49 | Session end: 1 writes across 1 files (RESEARCH.md) | 25 reads | ~31564 tok |
+| 17:50 | Session end: 1 writes across 1 files (RESEARCH.md) | 25 reads | ~31564 tok |
+| 17:51 | Session end: 1 writes across 1 files (RESEARCH.md) | 25 reads | ~31564 tok |
+| 17:52 | Session end: 1 writes across 1 files (RESEARCH.md) | 25 reads | ~31564 tok |
+| 18:50 | Session end: 1 writes across 1 files (RESEARCH.md) | 25 reads | ~31564 tok |
+| 18:59 | Session end: 1 writes across 1 files (RESEARCH.md) | 25 reads | ~31564 tok |
+| 19:50 | Session end: 1 writes across 1 files (RESEARCH.md) | 25 reads | ~31564 tok |
+| 20:04 | Session end: 1 writes across 1 files (RESEARCH.md) | 25 reads | ~31564 tok |
+| 20:55 | Session end: 1 writes across 1 files (RESEARCH.md) | 25 reads | ~31564 tok |
+| 21:09 | Session end: 1 writes across 1 files (RESEARCH.md) | 25 reads | ~31564 tok |
+| 21:55 | Session end: 1 writes across 1 files (RESEARCH.md) | 25 reads | ~31564 tok |
+| 22:14 | Session end: 1 writes across 1 files (RESEARCH.md) | 25 reads | ~31564 tok |
+| 23:00 | Session end: 1 writes across 1 files (RESEARCH.md) | 25 reads | ~31564 tok |
+| 23:19 | Session end: 1 writes across 1 files (RESEARCH.md) | 25 reads | ~31564 tok |
+| 00:05 | Created my-apps/development/posthog/core/ingestion-sessionreplay.yaml | — | ~846 |
+| 00:06 | Created my-apps/development/posthog/core/recording-api.yaml | — | ~932 |
+| 00:06 | Edited my-apps/development/posthog/configmap-env.yaml | 11→14 lines | ~159 |
+| 00:06 | Edited my-apps/development/posthog/configmap-env.yaml | 3→3 lines | ~27 |
+| 00:06 | Edited my-apps/development/posthog/core/web.yaml | expanded (+13 lines) | ~288 |
+| 00:06 | Edited my-apps/development/posthog/core/web.yaml | 5→6 lines | ~47 |
+| 00:07 | Created my-apps/development/posthog/core/temporal-worker.yaml | — | ~715 |
+| 00:07 | Edited my-apps/development/posthog/httproute.yaml | expanded (+37 lines) | ~376 |
+| 00:07 | Edited my-apps/development/posthog/httproute.yaml | expanded (+12 lines) | ~165 |
+| 00:07 | Created my-apps/development/posthog/core/toolbox.yaml | — | ~679 |
+| 00:08 | Edited my-apps/development/posthog/kustomization.yaml | 9→13 lines | ~93 |
+| 00:08 | Session end: 12 writes across 9 files (RESEARCH.md, ingestion-sessionreplay.yaml, recording-api.yaml, configmap-env.yaml, web.yaml) | 25 reads | ~35891 tok |
+| 00:24 | Session end: 12 writes across 9 files (RESEARCH.md, ingestion-sessionreplay.yaml, recording-api.yaml, configmap-env.yaml, web.yaml) | 25 reads | ~35891 tok |

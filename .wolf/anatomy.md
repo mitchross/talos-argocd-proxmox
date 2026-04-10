@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-09T21:04:17.344Z
-> Files: 517 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-10T04:08:02.958Z
+> Files: 522 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -686,11 +686,12 @@
 
 ## my-apps/development/posthog/
 
-- `configmap-env.yaml` — K8s ConfigMap (~513 tok)
+- `configmap-env.yaml` — K8s ConfigMap (~539 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: posthog-secrets (~383 tok)
-- `httproute.yaml` — K8s HTTPRoute: posthog-ui-internal (~414 tok)
-- `kustomization.yaml` — K8s Kustomization (~158 tok)
+- `httproute.yaml` — K8s HTTPRoute (~755 tok)
+- `kustomization.yaml` — K8s Kustomization (~192 tok)
 - `namespace.yaml` — K8s Namespace: posthog (~58 tok)
+- `RESEARCH.md` — PostHog Self-Hosting: Clean-Room Research Report (~5052 tok)
 
 ## my-apps/development/posthog/config/
 
@@ -715,11 +716,15 @@
 
 - `capture.yaml` — K8s Deployment: capture (~1937 tok)
 - `clickhouse-init.yaml` — K8s Job: clickhouse-migrations-init (~900 tok)
+- `ingestion-sessionreplay.yaml` — Ingestion Session Replay - consumes from session_recording_snapshot_item_events, (~846 tok)
 - `ingestion.yaml` — Ingestion General - consumes from events_plugin_ingestion, processes events, (~874 tok)
 - `jobs.yaml` — K8s Job: kafka-init (~1397 tok)
 - `microservices.yaml` — Livestream - real-time event streaming (disabled: requires GeoIP MMDB file) (~1992 tok)
 - `plugins.yaml` — K8s Deployment: plugins (~1162 tok)
-- `web.yaml` — K8s Deployment: web (~941 tok)
+- `recording-api.yaml` — Recording API - serves session recording playback requests (~932 tok)
+- `temporal-worker.yaml` — Temporal Django Worker - handles batch exports, data warehouse syncs, (~715 tok)
+- `toolbox.yaml` — Toolbox - debug pod for running manage.py commands (~679 tok)
+- `web.yaml` — K8s Deployment (~1052 tok)
 - `workers.yaml` — K8s Deployment: worker (~711 tok)
 
 ## my-apps/development/posthog/data-layer/

@@ -6,6 +6,7 @@ metadata:
 data:
   # General
   DEPLOYMENT: "hobby"
+  PRIMARY_DB: "clickhouse"
   SKIP_ASYNC_MIGRATIONS_SETUP: "1"
   POSTHOG_SKIP_MIGRATION_CHECKS: "1"
   OTEL_SDK_DISABLED: "true"
@@ -15,6 +16,8 @@ data:
   ALLOWED_HOSTS: "posthog.vanillax.me,ingest-posthog.vanillax.me"
   SITE_URL: "https://posthog.vanillax.me"
   CSRF_TRUSTED_ORIGINS: "https://posthog.vanillax.me,https://ingest-posthog.vanillax.me,https://redlib.vanillax.me"
+  LOGGING_FORMATTER_NAME: "json"
+  OPT_OUT_CAPTURE: "true"
 
   # PostgreSQL (in posthog namespace)
   PGHOST: "db"
@@ -51,7 +54,7 @@ data:
 
   # CDP
   CDP_API_URL: "http://plugins:6738"
-  RECORDING_API_URL: "http://plugins:6738"
+  RECORDING_API_URL: "http://recording-api:6738"
 
   # Feature flags
   FLAGS_REDIS_ENABLED: "false"
