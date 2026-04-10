@@ -16,6 +16,16 @@
       "count": 2,
       "tokens": 2123,
       "first_read": "2026-04-10T18:18:39.145Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/httproute.yaml": {
+      "count": 1,
+      "tokens": 225,
+      "first_read": "2026-04-10T20:32:17.355Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/kustomization.yaml": {
+      "count": 1,
+      "tokens": 56,
+      "first_read": "2026-04-10T20:32:27.213Z"
     }
   },
   "files_written": [
@@ -30,15 +40,22 @@
       "action": "edit",
       "tokens": 143,
       "at": "2026-04-10T18:19:43.488Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/httproute.yaml",
+      "action": "edit",
+      "tokens": 225,
+      "at": "2026-04-10T20:32:23.843Z"
     }
   ],
   "edit_counts": {
     "my-apps/home/frigate/config.yml": 1,
-    "my-apps/development/posthog/core/capture.yaml": 1
+    "my-apps/development/posthog/core/capture.yaml": 1,
+    "my-apps/media/redlib/httproute.yaml": 1
   },
-  "anatomy_hits": 3,
+  "anatomy_hits": 5,
   "anatomy_misses": 0,
   "repeated_reads_warned": 2,
   "cerebrum_warnings": 0,
-  "stop_count": 33
+  "stop_count": 37
 }
