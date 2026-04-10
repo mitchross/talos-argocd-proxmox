@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-10T20:32:23.837Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-10T21:07:04.231Z
 > Files: 522 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -779,7 +779,7 @@
 
 ## my-apps/home/frigate/
 
-- `config.yml` (~1730 tok)
+- `config.yml` (~1715 tok)
 - `deployment.yaml` — K8s Deployment: frigate (~864 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: frigate-secrets (~429 tok)
 - `httproute.yaml` — K8s HTTPRoute: frigate (~133 tok)

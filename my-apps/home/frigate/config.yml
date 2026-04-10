@@ -34,9 +34,9 @@ record:
 detect:
   enabled: true
 detectors:
-  cpu1:
-    type: cpu
-    num_threads: 8
+  ov:
+    type: openvino
+    device: CPU
   # coral:
   #   type: edgetpu
   #   device: usb
@@ -147,8 +147,7 @@ cameras:
       - path: rtsp://127.0.0.1:8554/front-porch-nest?video
         roles:
         - detect
-        # No 'record' role - continuous streaming drains the Nest Doorbell battery
-        # even when wired. The trickle charge can't keep up with 24/7 streaming.
+        - record
     detect:
       enabled: true
       width: 480
@@ -156,13 +155,17 @@ cameras:
       fps: 5
     record:
       enabled: true
+      # Disable continuous recording — doorbell battery can't sustain 24/7 streaming
+      continuous:
+        days: 0
+      motion:
+        days: 3
       alerts:
         retain:
           days: 14
       detections:
         retain:
           days: 14
-      # Only record on events, no continuous recording
     live:
       height: 720
     objects:
