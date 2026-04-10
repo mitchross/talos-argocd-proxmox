@@ -352,6 +352,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-10T04:06:42.189Z"
+    },
+    {
+      "id": "bug-023",
+      "timestamp": "2026-04-10T04:38:59.484Z",
+      "error_message": "Wrong reference: 874ddd2 should be fca4d64",
+      "file": "my-apps/media/redlib/deployment.yaml",
+      "root_cause": "Used \"874ddd2\" instead of \"fca4d64\"",
+      "fix": "Changed 874ddd2 → fca4d64",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T04:38:59.484Z"
     }
   ]
 }
