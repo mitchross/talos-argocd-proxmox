@@ -167,6 +167,20 @@ spec:
         app.kubernetes.io/name: posthog
         app.kubernetes.io/component: feature-flags
     spec:
+      initContainers:
+        - name: download-geoip
+          image: curlimages/curl:8.12.1
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Downloading GeoLite2-City.mmdb from PostHog CDN..."
+              curl -fsSL -o /share/GeoLite2-City.mmdb https://mmdbcdn.posthog.net/
+              ls -la /share/GeoLite2-City.mmdb
+              echo "GeoIP database downloaded successfully"
+          volumeMounts:
+            - name: geoip-data
+              mountPath: /share
       containers:
         - name: feature-flags
           image: ghcr.io/posthog/posthog/feature-flags:master@sha256:fa8d2dbec57fb24fe3bc673172177835b932ccfbb241b0edfb46b7cdb5601b3d
@@ -197,7 +211,7 @@ spec:
                   name: posthog-secrets
                   key: posthog-db-url
             - name: MAXMIND_DB_PATH
-              value: ""  # Empty = skip geo lookups; only needed for geo-targeted flags
+              value: "/share/GeoLite2-City.mmdb"
             - name: REDIS_URL
               value: "redis://redis7:6379/"
             - name: ADDRESS
@@ -211,6 +225,9 @@ spec:
           ports:
             - containerPort: 3001
               name: http
+          volumeMounts:
+            - name: geoip-data
+              mountPath: /share
           livenessProbe:
             httpGet:
               path: /_readiness
@@ -224,6 +241,9 @@ spec:
               memory: 128Mi
             limits:
               memory: 512Mi
+      volumes:
+        - name: geoip-data
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
