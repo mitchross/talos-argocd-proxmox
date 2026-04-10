@@ -1,188 +1,221 @@
 {
-  "session_id": "session-2026-04-09-1658",
-  "started": "2026-04-09T20:58:26.483Z",
+  "session_id": "session-2026-04-09-1736",
+  "started": "2026-04-09T21:36:49.743Z",
   "files_read": {
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/libreddit/kustomization.yaml": {
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/kustomization.yaml": {
       "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-09T21:02:20.087Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/libreddit/httproute.yaml": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-09T21:02:21.029Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/libreddit/ns.yaml": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-09T21:02:21.496Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/libreddit/deployment.yaml": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-09T21:02:21.971Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/libreddit/service.yaml": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-09T21:02:22.437Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/libreddit/configmap.yaml": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-09T21:02:22.910Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/libreddit/externalsecret.yaml": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-09T21:02:23.196Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/kustomization.yaml": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-09T21:02:55.723Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/ns.yaml": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-09T21:02:56.180Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/httproute.yaml": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-09T21:02:57.127Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/deployment.yaml": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-09T21:02:57.595Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/service.yaml": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-09T21:02:58.065Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/configmap.yaml": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-09T21:02:58.539Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/externalsecret.yaml": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-09T21:02:58.887Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/privacy/searxng/settings.yaml": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-09T21:03:22.116Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/homepage-dashboard/configmap.yaml": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-09T21:03:23.088Z"
+      "tokens": 158,
+      "first_read": "2026-04-09T21:39:38.330Z"
     },
     "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/configmap-env.yaml": {
+      "count": 2,
+      "tokens": 513,
+      "first_read": "2026-04-09T21:39:38.798Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/externalsecret.yaml": {
       "count": 1,
-      "tokens": 514,
-      "first_read": "2026-04-09T21:03:56.548Z"
+      "tokens": 383,
+      "first_read": "2026-04-09T21:39:39.298Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/web.yaml": {
+      "count": 1,
+      "tokens": 941,
+      "first_read": "2026-04-09T21:39:43.056Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/workers.yaml": {
+      "count": 1,
+      "tokens": 711,
+      "first_read": "2026-04-09T21:39:43.511Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/plugins.yaml": {
+      "count": 1,
+      "tokens": 1162,
+      "first_read": "2026-04-09T21:39:43.982Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml": {
+      "count": 1,
+      "tokens": 1937,
+      "first_read": "2026-04-09T21:39:44.491Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/ingestion.yaml": {
+      "count": 1,
+      "tokens": 874,
+      "first_read": "2026-04-09T21:39:44.961Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/microservices.yaml": {
+      "count": 1,
+      "tokens": 1992,
+      "first_read": "2026-04-09T21:39:45.499Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/jobs.yaml": {
+      "count": 1,
+      "tokens": 1397,
+      "first_read": "2026-04-09T21:39:46.023Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/clickhouse-init.yaml": {
+      "count": 1,
+      "tokens": 900,
+      "first_read": "2026-04-09T21:39:46.524Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/data-layer/clickhouse.yaml": {
+      "count": 2,
+      "tokens": 1016,
+      "first_read": "2026-04-09T21:39:48.276Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/data-layer/kafka.yaml": {
+      "count": 2,
+      "tokens": 847,
+      "first_read": "2026-04-09T21:39:49.228Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/data-layer/redis.yaml": {
+      "count": 2,
+      "tokens": 504,
+      "first_read": "2026-04-09T21:39:49.753Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/data-layer/postgres.yaml": {
+      "count": 2,
+      "tokens": 653,
+      "first_read": "2026-04-09T21:39:50.170Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/httproute.yaml": {
+      "count": 2,
+      "tokens": 414,
+      "first_read": "2026-04-09T21:39:52.376Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/docker-entrypoint-initdb.d/init-posthog.sh": {
+      "count": 2,
+      "tokens": 42,
+      "first_read": "2026-04-09T21:39:55.270Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.xml": {
+      "count": 2,
+      "tokens": 5122,
+      "first_read": "2026-04-09T21:39:55.741Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/users.xml": {
+      "count": 2,
+      "tokens": 2276,
+      "first_read": "2026-04-09T21:39:56.215Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml": {
+      "count": 2,
+      "tokens": 547,
+      "first_read": "2026-04-09T21:39:56.743Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/keeper.xml": {
+      "count": 2,
+      "tokens": 220,
+      "first_read": "2026-04-09T21:39:57.210Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/user_defined_function.xml": {
+      "count": 2,
+      "tokens": 2976,
+      "first_read": "2026-04-09T21:39:59.234Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/kustomization.yaml": {
+      "count": 1,
+      "tokens": 147,
+      "first_read": "2026-04-09T21:40:05.705Z"
+    },
+    "/tmp/claude-1000/-home-vanillax-programming-talos-argocd-proxmox/4fba2bf1-ba0e-466d-976a-2c5fdaf1c6c5/tasks/aa3149b8f89dc5ed8.output": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-09T21:42:01.178Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/namespace.yaml": {
+      "count": 1,
+      "tokens": 58,
+      "first_read": "2026-04-09T21:49:25.663Z"
     }
   },
   "files_written": [
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/kustomization.yaml",
-      "action": "edit",
-      "tokens": 5,
-      "at": "2026-04-09T21:03:03.333Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/ns.yaml",
-      "action": "edit",
-      "tokens": 4,
-      "at": "2026-04-09T21:03:04.275Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/httproute.yaml",
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/RESEARCH.md",
       "action": "create",
-      "tokens": 225,
-      "at": "2026-04-09T21:03:08.655Z"
+      "tokens": 5774,
+      "at": "2026-04-09T21:49:18.112Z"
     },
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/deployment.yaml",
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/ingestion-sessionreplay.yaml",
       "action": "create",
-      "tokens": 400,
-      "at": "2026-04-09T21:03:13.916Z"
+      "tokens": 846,
+      "at": "2026-04-10T04:05:59.616Z"
     },
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/service.yaml",
-      "action": "edit",
-      "tokens": 10,
-      "at": "2026-04-09T21:03:14.811Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/service.yaml",
-      "action": "edit",
-      "tokens": 10,
-      "at": "2026-04-09T21:03:15.750Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/configmap.yaml",
-      "action": "edit",
-      "tokens": 11,
-      "at": "2026-04-09T21:03:16.744Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/externalsecret.yaml",
-      "action": "edit",
-      "tokens": 12,
-      "at": "2026-04-09T21:03:17.685Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/externalsecret.yaml",
-      "action": "edit",
-      "tokens": 7,
-      "at": "2026-04-09T21:03:18.568Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/privacy/searxng/settings.yaml",
-      "action": "edit",
-      "tokens": 14,
-      "at": "2026-04-09T21:03:27.767Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/homepage-dashboard/configmap.yaml",
-      "action": "edit",
-      "tokens": 40,
-      "at": "2026-04-09T21:03:29.599Z"
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/recording-api.yaml",
+      "action": "create",
+      "tokens": 932,
+      "at": "2026-04-10T04:06:13.554Z"
     },
     {
       "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/configmap-env.yaml",
       "action": "edit",
-      "tokens": 8,
-      "at": "2026-04-09T21:03:59.579Z"
+      "tokens": 159,
+      "at": "2026-04-10T04:06:25.563Z"
     },
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/externalsecret.yaml",
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/configmap-env.yaml",
       "action": "edit",
-      "tokens": 11,
-      "at": "2026-04-09T21:04:17.350Z"
+      "tokens": 27,
+      "at": "2026-04-10T04:06:30.547Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/web.yaml",
+      "action": "edit",
+      "tokens": 288,
+      "at": "2026-04-10T04:06:42.188Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/web.yaml",
+      "action": "edit",
+      "tokens": 47,
+      "at": "2026-04-10T04:06:48.777Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/temporal-worker.yaml",
+      "action": "create",
+      "tokens": 715,
+      "at": "2026-04-10T04:07:16.957Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/httproute.yaml",
+      "action": "edit",
+      "tokens": 376,
+      "at": "2026-04-10T04:07:34.828Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/httproute.yaml",
+      "action": "edit",
+      "tokens": 165,
+      "at": "2026-04-10T04:07:40.731Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/toolbox.yaml",
+      "action": "create",
+      "tokens": 679,
+      "at": "2026-04-10T04:07:55.619Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/kustomization.yaml",
+      "action": "edit",
+      "tokens": 93,
+      "at": "2026-04-10T04:08:02.965Z"
     }
   ],
   "edit_counts": {
-    "my-apps/media/redlib/kustomization.yaml": 1,
-    "my-apps/media/redlib/ns.yaml": 1,
-    "my-apps/media/redlib/httproute.yaml": 1,
-    "my-apps/media/redlib/deployment.yaml": 1,
-    "my-apps/media/redlib/service.yaml": 2,
-    "my-apps/media/redlib/configmap.yaml": 1,
-    "my-apps/media/redlib/externalsecret.yaml": 3,
-    "my-apps/privacy/searxng/settings.yaml": 1,
-    "my-apps/media/homepage-dashboard/configmap.yaml": 1,
-    "my-apps/development/posthog/configmap-env.yaml": 1
+    "my-apps/development/posthog/RESEARCH.md": 1,
+    "my-apps/development/posthog/core/ingestion-sessionreplay.yaml": 1,
+    "my-apps/development/posthog/core/recording-api.yaml": 1,
+    "my-apps/development/posthog/configmap-env.yaml": 2,
+    "my-apps/development/posthog/core/web.yaml": 2,
+    "my-apps/development/posthog/core/temporal-worker.yaml": 1,
+    "my-apps/development/posthog/httproute.yaml": 2,
+    "my-apps/development/posthog/core/toolbox.yaml": 1,
+    "my-apps/development/posthog/kustomization.yaml": 1
   },
-  "anatomy_hits": 1,
-  "anatomy_misses": 16,
-  "repeated_reads_warned": 0,
+  "anatomy_hits": 24,
+  "anatomy_misses": 1,
+  "repeated_reads_warned": 12,
   "cerebrum_warnings": 0,
-  "stop_count": 4
+  "stop_count": 39
 }

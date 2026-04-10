@@ -20,6 +20,7 @@ spec:
         app.kubernetes.io/name: posthog
         app.kubernetes.io/component: web
     spec:
+      terminationGracePeriodSeconds: 55
       nodeSelector:
         feature.node.kubernetes.io/cpu-cpuid.AVX2: "true"
       containers:
@@ -80,9 +81,15 @@ spec:
         ports:
         - containerPort: 8000
           name: http
+        - containerPort: 8001
+          name: metrics
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 20"]
         startupProbe:
           httpGet:
-            path: /_health
+            path: /_readyz
             port: 8000
             httpHeaders:
             - name: Host
@@ -91,9 +98,16 @@ spec:
           periodSeconds: 10
           timeoutSeconds: 45
           failureThreshold: 60
+        livenessProbe:
+          httpGet:
+            path: /_livez
+            port: 8000
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /_health
+            path: /_readyz?role=web
             port: 8000
             httpHeaders:
             - name: Host

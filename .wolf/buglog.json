@@ -320,6 +320,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-09T21:03:59.580Z"
+    },
+    {
+      "id": "bug-021",
+      "timestamp": "2026-04-10T04:06:30.547Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/development/posthog/configmap-env.yaml",
+      "root_cause": "Had \"http://plugins:6738\"",
+      "fix": "Changed to \"http://recording-api:6738\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T04:06:30.547Z"
+    },
+    {
+      "id": "bug-022",
+      "timestamp": "2026-04-10T04:06:42.189Z",
+      "error_message": "Significant refactor of ",
+      "file": "my-apps/development/posthog/core/web.yaml",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 25→38 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T04:06:42.189Z"
     }
   ]
 }

@@ -11,6 +11,43 @@ spec:
   hostnames:
     - "posthog.vanillax.me"
   rules:
+    # Event capture (Rust) - high throughput, must hit dedicated service
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /e
+        - path:
+            type: PathPrefix
+            value: /i/v0
+        - path:
+            type: PathPrefix
+            value: /capture
+        - path:
+            type: PathPrefix
+            value: /batch
+      backendRefs:
+        - name: capture
+          port: 3000
+    # Session replay capture (Rust)
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /s
+      backendRefs:
+        - name: replay-capture
+          port: 3000
+    # CDP webhooks
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /public/webhooks
+        - path:
+            type: PathPrefix
+            value: /public/m
+      backendRefs:
+        - name: plugins
+          port: 6738
+    # Default - Django web UI/API
     - matches:
         - path:
             type: PathPrefix
@@ -59,6 +96,18 @@ spec:
       backendRefs:
         - name: replay-capture
           port: 3000
+    # CDP webhooks
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /public/webhooks
+        - path:
+            type: PathPrefix
+            value: /public/m
+      backendRefs:
+        - name: plugins
+          port: 6738
+    # Default fallback to web
     - matches:
         - path:
             type: PathPrefix

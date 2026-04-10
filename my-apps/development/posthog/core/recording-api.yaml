@@ -1,0 +1,109 @@
+# Recording API - serves session recording playback requests
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recording-api
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: recording-api
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: recording-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: recording-api
+    spec:
+      containers:
+        - name: recording-api
+          image: posthog/posthog-node:latest@sha256:863e76e040ad41aef79f605c33ec71f1529bddf94cfd88941c935da9bde97235
+          command:
+            - node
+            - nodejs/dist/index.js
+          envFrom:
+            - configMapRef:
+                name: posthog-env
+          env:
+            - name: PLUGIN_SERVER_MODE
+              value: "recording-api"
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-secret
+            - name: ENCRYPTION_SALT_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: encryption-salt-keys
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-password
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: posthog-db-url
+            - name: OBJECT_STORAGE_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-access-key
+            - name: OBJECT_STORAGE_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-secret-key
+            - name: SESSION_RECORDING_V2_S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-access-key
+            - name: SESSION_RECORDING_V2_S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-secret-key
+            - name: SESSION_RECORDING_API_REDIS_HOST
+              value: "redis7"
+            - name: SESSION_RECORDING_API_REDIS_PORT
+              value: "6379"
+          ports:
+            - containerPort: 6738
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /_health
+              port: 6738
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: recording-api
+  namespace: posthog
+spec:
+  ports:
+    - name: http
+      port: 6738
+      targetPort: 6738
+  selector:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: recording-api
