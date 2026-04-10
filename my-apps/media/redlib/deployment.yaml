@@ -24,7 +24,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: redlib
-        image: ghcr.io/mitchross/redlib:sha-532a452
+        image: ghcr.io/mitchross/redlib:sha-af047be
         imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:
