@@ -156,7 +156,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "3"
 spec:
-  replicas: 0  # Disabled: requires GeoIP MMDB file; Python web server handles flags for hobby
+  replicas: 1  # Required for /decide endpoint (session replay, feature flags)
   selector:
     matchLabels:
       app.kubernetes.io/name: posthog
@@ -197,7 +197,7 @@ spec:
                   name: posthog-secrets
                   key: posthog-db-url
             - name: MAXMIND_DB_PATH
-              value: "/share/GeoLite2-City.mmdb"
+              value: ""  # Empty = skip geo lookups; only needed for geo-targeted flags
             - name: REDIS_URL
               value: "redis://redis7:6379/"
             - name: ADDRESS
