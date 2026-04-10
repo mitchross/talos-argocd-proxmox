@@ -156,9 +156,12 @@ cameras:
       fps: 5
     record:
       enabled: true
-      events:
+      alerts:
         retain:
-          default: 14
+          days: 14
+      detections:
+        retain:
+          days: 14
       # Only record on events, no continuous recording
     live:
       height: 720
