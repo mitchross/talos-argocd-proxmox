@@ -36,6 +36,17 @@ spec:
       backendRefs:
         - name: replay-capture
           port: 3000
+    # Feature flags + /decide (Rust) — required for session replay config
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /decide
+        - path:
+            type: PathPrefix
+            value: /flags
+      backendRefs:
+        - name: feature-flags
+          port: 3001
     # CDP webhooks
     - matches:
         - path:
@@ -96,6 +107,17 @@ spec:
       backendRefs:
         - name: replay-capture
           port: 3000
+    # Feature flags + /decide (Rust) — required for session replay config
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /decide
+        - path:
+            type: PathPrefix
+            value: /flags
+      backendRefs:
+        - name: feature-flags
+          port: 3001
     # CDP webhooks
     - matches:
         - path:
