@@ -327,6 +327,174 @@ Reference:
 
 This means your platform is philosophically adjacent to enterprise Kubernetes backup, but operationally more bespoke.
 
+## Additional Synthesis After Gemini Review
+
+After comparing this review with Gemini's separate assessment in `docs/plans/storage-review/gemini-review-storage.md`, the merged conclusion is:
+
+- Gemini is right about the existence of a real GitOps/stateful restore gap.
+- Gemini is right that the current custom layer is an orchestration solution, not a reinvention of backup primitives.
+- Gemini is right to worry about restore-surge or “thundering herd” behavior during a full-cluster rebuild.
+- Gemini is right that the current cache behavior introduces a stale-negative edge case.
+- Gemini is right that filesystem recovery and database-native recovery can drift apart in time and create cross-layer consistency problems.
+
+However, Gemini misses or overstates several things that matter to the final architecture conclusion.
+
+### Where Gemini Is Too Weak
+
+#### 1. It misses the most important implementation defect
+
+The most serious current issue is not the cache TTL edge case.
+
+It is that pvc-plumber readiness is not authoritative enough. The service can remain “ready” while the actual backend is inaccessible or semantically broken, and backend errors can still degrade into a false negative restore decision.
+
+That issue is more important than the TTL edge case because it weakens the fail-closed story under real backend failure.
+
+#### 2. It describes TrueNAS too cleanly
+
+Gemini describes TrueNAS as if it is strictly an archival tier.
+
+That is not the real topology.
+
+TrueNAS is currently serving several roles:
+
+- NFS
+- SMB
+- RustFS S3
+- the current PVC backup repository
+
+That means the architecture has good separation from Proxmox, but not enough separation from the broader TrueNAS durability domain.
+
+#### 3. It is too confident on Kopia Repository Server as the answer
+
+Gemini suggests deploying a Kopia Repository Server to preserve deduplication while avoiding some NFS concerns.
+
+This is a plausible direction, but not something the current repo evidence proves is the correct answer. It depends on:
+
+- VolSync compatibility with the required mode
+- restore-on-create behavior remaining intact
+- operational complexity not rising too far
+- repository server availability not becoming a new bottleneck
+
+So this should be treated as an option to evaluate, not the default recommendation.
+
+#### 4. Its 3-2-1 framing is too generous
+
+The current platform has better separation from compute than many homelabs, but too much durability still converges on the same external appliance domain.
+
+That is not a strong 3-2-1 posture yet.
+
+### Where Gemini Strengthens The Final Review
+
+The most useful additions from Gemini are:
+
+1. The GitOps impedance-mismatch framing.
+2. The restore-surge or thundering-herd concern.
+3. The cache TTL stale-negative edge case.
+4. The explicit warning that database recovery and filesystem recovery must be aligned if application consistency matters.
+
+These points should remain in the final architecture discussion.
+
+## Longhorn Replacement Analysis
+
+The user explicitly raised a real concern: Longhorn multi-attach and related runtime behavior can be painful enough to justify considering a replacement.
+
+That is a valid discussion, but it must be framed correctly.
+
+### What replacing Longhorn would solve
+
+Replacing Longhorn could improve:
+
+- attach and detach behavior
+- replica overhead and storage traffic patterns
+- runtime scheduling flexibility in some workloads
+- alignment with more enterprise-familiar external block storage models
+
+### What replacing Longhorn would not solve
+
+Replacing Longhorn does **not** automatically solve:
+
+- restore-on-PVC-create logic
+- DRY backup policy generation
+- backup durability concentration on the TrueNAS domain
+- pvc-plumber correctness and readiness semantics
+
+That means Longhorn is not the first thing to change unless it is already your dominant operational pain.
+
+### Real replacement options
+
+#### 1. Rook-Ceph or external Ceph
+
+This is the strongest move if the goal is “more enterprise-like on-prem primary storage.”
+
+Pros:
+
+- more enterprise-familiar distributed block model
+- stronger separation between the storage system and workload-local node placement
+- closer to how serious on-prem platform teams often converge
+
+Cons:
+
+- much higher operational complexity than Longhorn
+- more moving parts
+- does not solve restore orchestration by itself
+
+Verdict:
+
+- best replacement if the priority is enterprise-style primary storage
+- not best if the priority is preserving simplicity while hardening DR first
+
+#### 2. Proxmox CSI or democratic-csi against TrueNAS
+
+Pros:
+
+- externalizes primary storage away from in-cluster Longhorn
+- can reduce some in-cluster replication overhead
+- may be a better fit if Longhorn runtime behavior is the main pain point
+
+Cons:
+
+- risks collapsing primary storage and backup durability further onto the same appliance domain
+- does not solve restore-on-create logic
+- can weaken separation of concerns if both runtime I/O and backups depend on the same storage appliance
+
+Verdict:
+
+- viable if the goal is reducing Longhorn-specific pain
+- weaker if the goal is stronger disaster-recovery isolation
+
+#### 3. Keep Longhorn and fix the backup architecture first
+
+Pros:
+
+- preserves the current restore model
+- addresses the most important architecture weaknesses first
+- lowest-change path
+
+Cons:
+
+- retains Longhorn's rough edges
+
+Verdict:
+
+- still the best near-term path unless Longhorn pain is already unacceptable
+
+### Recommended position on Longhorn
+
+Do not replace Longhorn first.
+
+Replace it only if one of these becomes true:
+
+- Longhorn is causing repeated, material operational pain
+- attach/detach behavior is materially harming workload reliability
+- you are willing to accept a much more complex storage system for stronger enterprise resemblance
+
+Otherwise, the better order of operations is:
+
+1. Fix pvc-plumber readiness and restore correctness.
+2. Improve backup durability separation.
+3. Run destructive restore drills.
+4. Then reevaluate whether Longhorn is still the main bottleneck.
+
 ### AKS and GKE
 
 AKS and GKE documentation reinforce standard managed-cluster expectations:
@@ -462,6 +630,12 @@ The best near-term evolution is:
 
 That architecture would be much easier to defend in a serious review.
 
+If Longhorn remains a significant operational pain after those changes, then reevaluate primary storage with this priority order:
+
+1. Rook-Ceph or external Ceph if enterprise-like on-prem block storage is the real target.
+2. Proxmox CSI or democratic-csi only if the tradeoff of concentrating more dependence on TrueNAS is acceptable.
+3. Stay on Longhorn if the runtime pain is tolerable and the larger DR issues are still the more important engineering problems.
+
 ## Claims You Can Safely Make
 
 These claims are defensible today or after modest hardening:
@@ -497,6 +671,13 @@ The verdict is:
 - Ready for strongest DR claims: no, not yet.
 
 If the restore oracle is hardened and backup durability is moved to a stronger, replicated object-backed model, this design becomes much easier to defend as a serious internal platform architecture.
+
+In merged form, the final verdict is:
+
+- This is a real platform effort, not a wasted one.
+- The policy-driven restore model is the strongest and most distinctive part of the architecture.
+- The biggest current weaknesses are restore truthfulness and insufficient durability separation.
+- Longhorn may or may not be replaced later, but it is not the first problem to solve unless it is already the dominant operational pain.
 
 ## External References
 

@@ -7,10 +7,12 @@
 ## User Preferences
 
 <!-- How the user likes things done. Code style, tools, patterns, communication. -->
+- User wants architecture review to be direct and technically grounded, not reassuring by default.
 
 ## Key Learnings
 
 - **Project:** talos-argocd-proxmox — Production GitOps K8s cluster on Talos OS with self-managing ArgoCD
+- **Storage direction:** User is open to replacing Longhorn if a materially better fit exists, especially due to Longhorn multi-attach limitations, but wants replacement discussion grounded in the restore/DR requirements rather than generic “use Ceph” advice.
 - **Epever MPPT RS485**: The Exar XR21B1411 USB adapter requires `RS485 RTS_AFTER_SEND` (not RTS_ON_SEND) via kernel ioctl. The built-in `xr_serial` driver on kernel 6.12 supports RS485 natively.
 - **USB device stability**: Always use `/dev/serial/by-id/` paths for Docker device mapping — ttyUSB numbering changes on unplug/replug/reboot.
 - **RPi4 solar monitor**: Docker container at `192.168.10.174` running `epever-solar` with FastAPI + pymodbus. Prometheus scrapes :9812, Swagger UI at :8080/docs.

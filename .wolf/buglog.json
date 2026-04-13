@@ -259,6 +259,22 @@
     },
     {
       "id": "bug-017",
+      "timestamp": "2026-04-12T12:31:00.000Z",
+      "error_message": "Repeated edits to OpenWolf tracking files during storage review drafting",
+      "file": ".wolf/anatomy.md",
+      "root_cause": "Incremental review-document creation and consolidation required multiple updates to anatomy/memory tracking files in one session.",
+      "fix": "Consolidated the canonical storage review into a single primary document to reduce future tracking-file churn.",
+      "tags": [
+        "openwolf",
+        "process",
+        "tracking-files"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-12T12:31:00.000Z"
+    },
+    {
+      "id": "bug-017",
       "timestamp": "2026-04-09T21:03:15.750Z",
       "error_message": "Wrong reference: libreddit should be redlib",
       "file": "my-apps/media/redlib/service.yaml",
