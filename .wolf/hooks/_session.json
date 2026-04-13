@@ -1,27 +1,12 @@
 {
-  "session_id": "session-2026-04-11-2259",
-  "started": "2026-04-11T02:59:40.542Z",
-  "files_read": {
-    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml": {
-      "count": 1,
-      "tokens": 1767,
-      "first_read": "2026-04-11T03:00:14.551Z"
-    }
-  },
-  "files_written": [
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/config.yml",
-      "action": "edit",
-      "tokens": 75,
-      "at": "2026-04-11T03:03:43.972Z"
-    }
-  ],
-  "edit_counts": {
-    "my-apps/home/frigate/config.yml": 1
-  },
-  "anatomy_hits": 1,
+  "session_id": "session-2026-04-13-2327",
+  "started": "2026-04-13T03:27:13.471Z",
+  "files_read": {},
+  "files_written": [],
+  "edit_counts": {},
+  "anatomy_hits": 0,
   "anatomy_misses": 0,
   "repeated_reads_warned": 0,
   "cerebrum_warnings": 0,
-  "stop_count": 1
+  "stop_count": 0
 }
