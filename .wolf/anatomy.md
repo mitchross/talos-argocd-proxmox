@@ -1,7 +1,23 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T04:06:18.066Z
-> Files: 531 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T04:22:22.526Z
+> Files: 536 tracked | Anatomy hits: 0 | Misses: 0
+
+## ../pvc-plumber/cmd/pvc-plumber/
+
+- `main.go` (~1008 tok)
+
+## ../pvc-plumber/internal/handler/
+
+- `handler.go` — Interface: BackendClient (~1093 tok)
+
+## ../pvc-plumber/internal/kopia/
+
+- `client.go` — Interface: CommandExecutor (~1543 tok)
+
+## ../pvc-plumber/internal/s3/
+
+- `client.go` — Struct: Client (~506 tok)
 
 ## ./
 
@@ -81,6 +97,7 @@
 
 ## docs/plans/storage-review/
 
+- `article-draft.md` — The Missing Primitive: Conditional PVC Restore in Declarative Kubernetes (~2705 tok)
 - `claude-review-storage.md` — Architectural Decision Record: PVC-Plumber + Kyverno Zero-Touch DR System (~9459 tok)
 - `final-synthesis.md` — Final Synthesis & Master Architectural Recommendations (~9532 tok)
 - `gemini-review-storage.md` — Gemini's architectural review of zero-touch declarative stateful disaster recovery (~3000 tok)
@@ -226,7 +243,7 @@
 
 ## infrastructure/controllers/pvc-plumber/
 
-- `deployment.yaml` — K8s Deployment: pvc-plumber (~807 tok)
+- `deployment.yaml` — K8s Deployment (~952 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: pvc-plumber-kopia (~128 tok)
 - `kustomization.yaml` — K8s Kustomization (~36 tok)
 

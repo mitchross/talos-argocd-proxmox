@@ -448,6 +448,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-13T03:55:10.091Z"
+    },
+    {
+      "id": "bug-029",
+      "timestamp": "2026-04-13T04:11:34.890Z",
+      "error_message": "Significant refactor of ",
+      "file": "../pvc-plumber/internal/handler/handler.go",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 4→16 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "go"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T04:11:34.890Z"
+    },
+    {
+      "id": "bug-030",
+      "timestamp": "2026-04-13T04:11:45.992Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "../pvc-plumber/internal/kopia/client.go",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "go"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T04:11:45.992Z"
     }
   ]
 }

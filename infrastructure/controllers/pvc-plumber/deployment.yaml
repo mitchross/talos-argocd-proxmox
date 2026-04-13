@@ -19,6 +19,13 @@ spec:
       labels:
         app.kubernetes.io/name: pvc-plumber
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: pvc-plumber
+            topologyKey: kubernetes.io/hostname
       securityContext:
         runAsNonRoot: true
         runAsUser: 568
@@ -28,7 +35,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: pvc-plumber
-        image: ghcr.io/mitchross/pvc-plumber:1.3.0
+        image: ghcr.io/mitchross/pvc-plumber:1.4.0
         ports:
         - name: http
           containerPort: 8080
@@ -114,3 +121,16 @@ spec:
     port: 80
     targetPort: http
     protocol: TCP
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pvc-plumber
+  namespace: volsync-system
+  labels:
+    app.kubernetes.io/name: pvc-plumber
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pvc-plumber
