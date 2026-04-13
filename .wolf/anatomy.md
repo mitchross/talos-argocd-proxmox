@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-10T21:13:03.928Z
-> Files: 522 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-11T03:03:43.960Z
+> Files: 526 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -55,6 +55,12 @@
 - `cluster-ci.yml` — - monitoring/** (~1110 tok)
 - `docs.yml` — CI: Deploy Documentation (~286 tok)
 - `llama-cpp-build.yml` — CI: Build llama.cpp CUDA Image (~1011 tok)
+
+## cloudflare-workers/posthog-injector/
+
+- `README.md` — Project documentation (~900 tok)
+- `worker.js` — PostHog Analytics Injector — Cloudflare Worker (~1182 tok)
+- `wrangler.toml` (~138 tok)
 
 ## docs/
 
@@ -304,6 +310,10 @@
 ## infrastructure/networking/cilium/policies/
 
 - `block-lan-access.yaml` — K8s CiliumClusterwideNetworkPolicy: default-deny-lan-egress (~898 tok)
+
+## infrastructure/networking/cloudflare-workers/
+
+- `posthog-inject.js` — PostHog Analytics Injector — Cloudflare Worker (~1244 tok)
 
 ## infrastructure/networking/cloudflared/
 
@@ -779,7 +789,7 @@
 
 ## my-apps/home/frigate/
 
-- `config.yml` (~1767 tok)
+- `config.yml` (~1761 tok)
 - `deployment.yaml` — K8s Deployment: frigate (~864 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: frigate-secrets (~429 tok)
 - `httproute.yaml` — K8s HTTPRoute: frigate (~133 tok)

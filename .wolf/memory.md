@@ -372,3 +372,74 @@
 | 17:13 | Edited my-apps/home/frigate/config.yml | expanded (+7 lines) | ~81 |
 | 17:13 | Session end: 7 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6186 tok |
 | 17:13 | Session end: 7 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6186 tok |
+| 17:13 | Session end: 7 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6186 tok |
+| 17:13 | Session end: 7 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6186 tok |
+| 17:13 | Session end: 7 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6186 tok |
+| 17:14 | Session end: 7 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6186 tok |
+| 17:14 | Session end: 7 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6186 tok |
+| 17:14 | Session end: 7 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6186 tok |
+| 17:14 | Session end: 7 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6186 tok |
+| 17:17 | Session end: 7 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6186 tok |
+| 17:17 | Session end: 7 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6186 tok |
+| 17:18 | Session end: 7 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6186 tok |
+| 17:18 | Edited my-apps/home/frigate/config.yml | 14→13 lines | ~109 |
+| 17:18 | Session end: 8 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6295 tok |
+| 17:18 | Session end: 8 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6295 tok |
+| 17:19 | Session end: 8 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6295 tok |
+| 17:19 | Session end: 8 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6295 tok |
+| 17:20 | Session end: 8 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6295 tok |
+| 17:21 | Session end: 8 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6295 tok |
+| 17:22 | Edited my-apps/home/frigate/config.yml | 13→14 lines | ~81 |
+| 17:22 | Session end: 9 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6376 tok |
+| 17:22 | Session end: 9 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6376 tok |
+| 17:22 | Session end: 9 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6376 tok |
+| 17:26 | Session end: 9 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6376 tok |
+| 17:28 | Session end: 9 writes across 4 files (config.yml, capture.yaml, httproute.yaml, deployment.yaml) | 8 reads | ~6376 tok |
+
+## Session: 2026-04-10 17:30
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 17:32 | Created cloudflare-workers/posthog-injector/worker.js | — | ~1182 |
+| 17:32 | Created cloudflare-workers/posthog-injector/wrangler.toml | — | ~138 |
+| 17:32 | Created cloudflare-workers/posthog-injector/README.md | — | ~960 |
+| 17:33 | Session end: 3 writes across 3 files (worker.js, wrangler.toml, README.md) | 5 reads | ~4669 tok |
+| 17:34 | Created infrastructure/networking/cloudflare-workers/posthog-inject.js | — | ~1230 |
+| 17:34 | Session end: 4 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 6 reads | ~7081 tok |
+| 17:34 | Session end: 4 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 6 reads | ~7081 tok |
+| 18:22 | Session end: 4 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 6 reads | ~7081 tok |
+| 18:30 | Session end: 4 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 6 reads | ~7081 tok |
+| 18:30 | Session end: 4 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 6 reads | ~7081 tok |
+| 18:30 | Session end: 4 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 6 reads | ~7081 tok |
+| 18:32 | Session end: 4 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 6 reads | ~7081 tok |
+| 18:32 | Session end: 4 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 6 reads | ~7081 tok |
+| 18:34 | Session end: 4 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 6 reads | ~7081 tok |
+| 18:34 | Session end: 4 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 6 reads | ~7081 tok |
+| 18:34 | Session end: 4 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 6 reads | ~7081 tok |
+| 18:35 | Session end: 4 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 6 reads | ~7081 tok |
+| 18:35 | Session end: 4 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 6 reads | ~7081 tok |
+| 18:36 | Edited infrastructure/networking/cloudflare-workers/posthog-inject.js | 3→5 lines | ~34 |
+| 18:36 | Session end: 5 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 7 reads | ~8345 tok |
+| 18:36 | Edited infrastructure/networking/cloudflare-workers/posthog-inject.js | 5→4 lines | ~27 |
+| 18:36 | Session end: 6 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 7 reads | ~8372 tok |
+| 18:37 | Edited infrastructure/networking/cloudflare-workers/posthog-inject.js | 4→5 lines | ~34 |
+| 18:37 | Session end: 7 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 7 reads | ~8406 tok |
+| 18:38 | Session end: 7 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 7 reads | ~8406 tok |
+| 19:22 | Session end: 7 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 7 reads | ~8406 tok |
+| 19:39 | Session end: 7 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 7 reads | ~8406 tok |
+| 19:43 | Session end: 7 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 7 reads | ~8406 tok |
+| 20:27 | Session end: 7 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 7 reads | ~8406 tok |
+| 20:44 | Session end: 7 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 7 reads | ~8406 tok |
+| 20:48 | Session end: 7 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 7 reads | ~8406 tok |
+| 21:32 | Session end: 7 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 7 reads | ~8406 tok |
+| 21:49 | Session end: 7 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 7 reads | ~8406 tok |
+| 21:53 | Session end: 7 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 7 reads | ~8406 tok |
+| 22:32 | Session end: 7 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 7 reads | ~8406 tok |
+| 22:54 | Session end: 7 writes across 4 files (worker.js, wrangler.toml, README.md, posthog-inject.js) | 7 reads | ~8406 tok |
+
+## Session: 2026-04-11 22:59
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 23:03 | Edited my-apps/home/frigate/config.yml | 14→11 lines | ~75 |
+| 23:04 | Session end: 1 writes across 1 files (config.yml) | 1 reads | ~1842 tok |
