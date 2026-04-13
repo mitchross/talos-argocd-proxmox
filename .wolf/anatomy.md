@@ -82,6 +82,7 @@
 ## docs/plans/storage-review/
 
 - `claude-review-storage.md` — Architectural Decision Record: PVC-Plumber + Kyverno Zero-Touch DR System (~9459 tok)
+- `final-synthesis.md` — Master synthesis of multi-LLM storage review conclusions and action plan (~3600 tok)
 - `gemini-review-storage.md` — Gemini's architectural review of zero-touch declarative stateful disaster recovery (~3000 tok)
 - `gpt-5.4-review-storage.md` — Canonical platform review of storage, PVC backup, disaster recovery, Gemini synthesis, and recommendations (~6800 tok)
 - `gpt-review-of-gemini.md` — Review of Gemini's storage assessment, with corrections, agreements, and Longhorn replacement discussion (~4100 tok)
