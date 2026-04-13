@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T03:42:07.646Z
-> Files: 530 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T03:55:10.084Z
+> Files: 531 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -82,7 +82,7 @@
 ## docs/plans/storage-review/
 
 - `claude-review-storage.md` — Architectural Decision Record: PVC-Plumber + Kyverno Zero-Touch DR System (~9459 tok)
-- `final-synthesis.md` — Master synthesis of multi-LLM storage review conclusions and action plan (~3600 tok)
+- `final-synthesis.md` — Final Synthesis & Master Architectural Recommendations (~5666 tok)
 - `gemini-review-storage.md` — Gemini's architectural review of zero-touch declarative stateful disaster recovery (~3000 tok)
 - `gpt-5.4-review-storage.md` — Canonical platform review of storage, PVC backup, disaster recovery, Gemini synthesis, and recommendations (~6800 tok)
 - `gpt-review-of-gemini.md` — Review of Gemini's storage assessment, with corrections, agreements, and Longhorn replacement discussion (~4100 tok)

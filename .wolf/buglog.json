@@ -432,6 +432,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-10T21:18:22.627Z"
+    },
+    {
+      "id": "bug-028",
+      "timestamp": "2026-04-13T03:55:10.091Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "docs/plans/storage-review/final-synthesis.md",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-13T03:55:10.091Z"
     }
   ]
 }
