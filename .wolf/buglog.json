@@ -400,6 +400,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-10T20:54:56.121Z"
+    },
+    {
+      "id": "bug-026",
+      "timestamp": "2026-04-10T21:18:22.627Z",
+      "error_message": "Significant refactor of ",
+      "file": "my-apps/home/frigate/config.yml",
+      "root_cause": "10 lines replaced/restructured",
+      "fix": "Rewrote 14→13 lines (10 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-10T21:18:22.627Z"
     }
   ]
 }
