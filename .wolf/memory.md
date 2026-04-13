@@ -13,6 +13,8 @@
 | 04:24 | Fixed HTTPRoutes: added capture/replay/webhook paths to internal route, webhook paths to external | httproute.yaml | updated | ~100 |
 | 04:25 | Added toolbox Deployment (replicas: 0) for manage.py debugging | core/toolbox.yaml | new file | ~150 |
 | 04:25 | Updated kustomization.yaml with all new files | kustomization.yaml | updated | ~20 |
+| 12:22 | Added review of Gemini storage assessment and Longhorn replacement discussion | docs/plans/storage-review/gpt-review-of-gemini.md, .wolf/cerebrum.md, .wolf/anatomy.md | critique and merge guidance for multi-LLM architecture review | ~5000 |
+| 12:31 | Merged Gemini synthesis and Longhorn replacement analysis into the canonical storage review | docs/plans/storage-review/gpt-5.4-review-storage.md, .wolf/anatomy.md | single canonical storage review now includes merged conclusions | ~3500 |
 
 | Time | Description | File(s) | Outcome | ~Tokens |
 |------|-------------|---------|---------|---------|

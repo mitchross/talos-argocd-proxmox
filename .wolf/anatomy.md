@@ -79,6 +79,12 @@
 - `2026-03-16-project-nomad-k8s-openai.md` — Project Nomad: Kubernetes + OpenAI-Compatible LLM Provider (~5421 tok)
 - `2026-03-22-alloy-otel-honeycomb-design.md` — OpenTelemetry Operator + Honeycomb Design (~1136 tok)
 
+## docs/plans/storage-review/
+
+- `gemini-review-storage.md` — Gemini's architectural review of zero-touch declarative stateful disaster recovery (~3000 tok)
+- `gpt-5.4-review-storage.md` — Canonical platform review of storage, PVC backup, disaster recovery, Gemini synthesis, and recommendations (~6800 tok)
+- `gpt-review-of-gemini.md` — Review of Gemini's storage assessment, with corrections, agreements, and Longhorn replacement discussion (~4100 tok)
+
 ## docs/superpowers/plans/
 
 - `2026-04-09-kyverno-cel-migration.md` — Kyverno CEL Migration + Webhook Deadlock Prevention (~8695 tok)
