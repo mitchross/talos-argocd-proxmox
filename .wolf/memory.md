@@ -3,6 +3,11 @@
 > Chronological action log. Hooks and AI append to this file automatically.
 > Old sessions are consolidated by the daemon weekly.
 
+| Time | Description | Files | Outcome | ~Tokens |
+|------|-------------|-------|---------|---------|
+| 2026-04-13 | Researched community PVC backup/restore practices across 30+ web sources | none | Comprehensive findings on onedr0p/volsync/kopia ecosystem, Longhorn backup patterns, community conventions | ~5000 |
+
+| 2026-04-13 14:00 | Comprehensive ecosystem research on "conditional PVC restore at create time" | web search | 30+ searches, found Longhorn #6748, VolSync VolumePopulator, KubeStash, K8s VolumePopulator GA 1.33, WG-Data-Protection white paper | ~15000 |
 | 20:30 | Wrote comprehensive ADR review of pvc-plumber + Kyverno DR architecture | docs/plans/storage-review/claude-review-storage.md | 7-section review covering risks, trade-offs, verdict | ~4000 |
 | 04:10 | PostHog research: 4 parallel agents analyzed upstream docs, Helm chart, Docker images, infra deps | RESEARCH.md | comprehensive report | ~10000 |
 | 04:15 | PostHog gap analysis: compared existing deployment vs upstream findings | report to conductor | 19 gaps identified, prioritized | ~5000 |
@@ -18,6 +23,14 @@
 | 12:31 | Merged Gemini synthesis and Longhorn replacement analysis into the canonical storage review | docs/plans/storage-review/gpt-5.4-review-storage.md, .wolf/anatomy.md | single canonical storage review now includes merged conclusions | ~3500 |
 | 12:48 | Appended GPT final position to the shared synthesis document | docs/plans/storage-review/final-synthesis.md, .wolf/anatomy.md | master synthesis now includes GPT conclusion and corrected nuance on repo evidence | ~2600 |
 | 2026-04-13 | Added homelab storage reference and decision matrix | docs/homelab-storage-reference.md, docs/index.md, docs/backup-restore.md, .wolf/anatomy.md | documented recommended storage/restore patterns across Longhorn, OpenEBS, democratic-csi, Proxmox CSI, Velero, VolSync, and Kasten | ~3200 |
+| 2026-04-13 | Hardened homelab storage reference with failure modes and guardrails | docs/homelab-storage-reference.md, .wolf/anatomy.md | added Kyverno/Argo sync-wave fragility, NFS injection dependency, alerting reality, cache TTL nuance, and manual restore caveats | ~2200 |
+| 2026-04-13 | Refined storage reference with concrete readiness and silent-failure notes | docs/homelab-storage-reference.md, .wolf/anatomy.md | clarified that pvc-plumber /readyz now checks repo path + kopia status, made NFS injection silent-failure mode explicit, and surfaced guardrail nuance directly in the comparison table | ~700 |
+| 2026-04-14 | Wrote ecosystem research report on conditional PVC restore patterns | docs/conditional-restore-ecosystem-research.md, docs/homelab-storage-reference.md, docs/index.md, .wolf/anatomy.md | documented that public solutions remain explicit/manual, VolSync Volume Populator is the closest upstream option, and linked the report from core docs | ~2500 |
+| 2026-04-14 | Full architecture trace: Karakeep → Kyverno → PVC Plumber → sync waves | read-only | traced storage stack from app layer to foundation for user understanding | ~3000 |
+| 2026-04-14 | Critiqued ChatGPT's homelab-storage-reference.md, reviewed GPT's defense | docs/homelab-storage-reference.md | identified 5 gaps, GPT addressed all 9 sections; doc now honest about sharp edges | ~2000 |
+| 2026-04-14 | Comprehensive community research: blogs, YouTubers, home-ops Discord | web search (60+ queries across 2 agents) | mapped 4 tiers of community practice; confirmed pvc-plumber is novel; no equivalent exists | ~8000 |
+| 2026-04-14 | Wrote ecosystem-research-and-validation.md | docs/plans/storage-review/ecosystem-research-and-validation.md | full report with community evidence, gap validation, alternative landscape, and conclusions | ~4000 |
+| 2026-04-14 | Rewrote article-draft.md for Medium publication | docs/plans/storage-review/article-draft.md | complete rewrite with community evidence, real threat model, guardrails section, honest trade-offs | ~3500 |
 
 | Time | Description | File(s) | Outcome | ~Tokens |
 |------|-------------|---------|---------|---------|
@@ -488,3 +501,7 @@
 
 | Time | Action | File(s) | Outcome | ~Tokens |
 |------|--------|---------|---------|--------|
+| 01:16 | Created docs/plans/storage-review/ecosystem-research-and-validation.md | — | ~7159 |
+| 01:17 | Session end: 1 writes across 1 files (ecosystem-research-and-validation.md) | 47 reads | ~55108 tok |
+| 01:20 | Created docs/plans/storage-review/article-draft.md | — | ~5061 |
+| 01:21 | Session end: 2 writes across 2 files (ecosystem-research-and-validation.md, article-draft.md) | 48 reads | ~63236 tok |

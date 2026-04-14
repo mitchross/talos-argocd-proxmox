@@ -9,6 +9,7 @@ See the [README](https://github.com/mitchross/talos-argocd-proxmox) for setup in
 - [ArgoCD & GitOps Architecture](argocd.md) - Sync waves, app-of-apps pattern, health checks
 - [Backup & Restore](backup-restore.md) - Kyverno + VolSync + PVC Plumber automated backups
 - [Homelab Storage Reference](homelab-storage-reference.md) - Recommended end-to-end storage patterns for single Proxmox hosts and 3-node homelabs
+- [Conditional Restore Ecosystem Research](conditional-restore-ecosystem-research.md) - What public docs, blogs, and homelab operators actually do today for PVC restore workflows
 - [CNPG Disaster Recovery](cnpg-disaster-recovery.md) - Manual Postgres recovery workflow, ArgoCD race handling, and lineage bump rules
 - [AI-Guided CNPG Recovery Prompt](cnpg-disaster-recovery.md#llm-recovery-prompt-templates) - Copy/paste prompts for LLM-assisted recovery
 - [Full Backup Flow](pvc-plumber-full-flow.md) - Complete bare-metal to disaster recovery walkthrough

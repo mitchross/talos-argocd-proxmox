@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-13T04:22:22.526Z
-> Files: 536 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-14T05:20:28.703Z
+> Files: 539 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../pvc-plumber/cmd/pvc-plumber/
 
@@ -83,7 +83,8 @@
 - `argocd.md` — ArgoCD & GitOps Architecture (~5600 tok)
 - `backup-restore.md` — Zero-Touch PVC Backup and Restore (~3381 tok)
 - `cnpg-disaster-recovery.md` — CNPG Database Disaster Recovery (~7577 tok)
-- `homelab-storage-reference.md` — Homelab storage backend and restore-intent decision guide (~3600 tok)
+- `conditional-restore-ecosystem-research.md` — Research report on public Kubernetes/homelab restore patterns and the missing conditional restore primitive (~3200 tok)
+- `homelab-storage-reference.md` — Homelab storage backend, restore-intent guide, and operational sharp-edge reference (~4450 tok)
 - `index.md` — Talos ArgoCD Proxmox (~272 tok)
 - `network-policy.md` — Network Security & LAN Isolation (~1607 tok)
 - `network-topology.md` — Network Topology (~1663 tok)
@@ -98,8 +99,9 @@
 
 ## docs/plans/storage-review/
 
-- `article-draft.md` — The Missing Primitive: Conditional PVC Restore in Declarative Kubernetes (~2705 tok)
+- `article-draft.md` — The Missing Primitive: Conditional PVC Restore for Zero-Touch GitOps Disaster Recovery (~4745 tok)
 - `claude-review-storage.md` — Architectural Decision Record: PVC-Plumber + Kyverno Zero-Touch DR System (~9459 tok)
+- `ecosystem-research-and-validation.md` — Ecosystem Research & Architectural Validation Report (~6711 tok)
 - `final-synthesis.md` — Final Synthesis & Master Architectural Recommendations (~9532 tok)
 - `gemini-review-storage.md` — Gemini's architectural review of zero-touch declarative stateful disaster recovery (~3000 tok)
 - `gpt-5.4-review-storage.md` — Canonical platform review of storage, PVC backup, disaster recovery, Gemini synthesis, and recommendations (~6800 tok)

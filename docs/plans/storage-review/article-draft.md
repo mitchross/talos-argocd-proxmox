@@ -1,121 +1,240 @@
-# The Missing Primitive: Conditional PVC Restore in Declarative Kubernetes
+# The Missing Primitive: Conditional PVC Restore for Zero-Touch GitOps Disaster Recovery
+
+*How a 500-line Go microservice fills a gap that Velero, VolSync, Longhorn, and Kasten K10 all leave open*
+
+---
 
 ## The Problem Nobody Talks About
 
-If you run stateful workloads on Kubernetes with GitOps, you've hit this wall: what happens when you need to rebuild your cluster?
+If you run stateful workloads on Kubernetes with GitOps, you've hit this wall.
 
-ArgoCD syncs your manifests. PVCs get created. Pods bind to empty volumes. Your data is gone.
+You Helm-upgrade something wrong. A Kustomize merge drops a PVC from the resource list. You nuke a namespace to start fresh. You upgrade Talos and rebuild the cluster. ArgoCD syncs your manifests. PVCs get created. Pods bind to empty volumes. Your data is gone.
 
-The obvious answer is "just use a backup tool." But here's the thing — every backup tool in the Kubernetes ecosystem makes the same assumption: a human will trigger the restore. Velero needs `velero restore create`. Kasten needs you to bind a RestorePoint. Longhorn needs you to pick a backup and click restore. Even VolSync, which gets closest to declarative restore, will hang indefinitely if you set a `dataSourceRef` pointing to a backup that doesn't exist yet (because you're deploying the app for the first time).
+The obvious answer is "just use a backup tool." But here's the thing — every backup tool in the Kubernetes ecosystem makes the same assumption: **a human will decide when to restore.**
+
+Velero needs `velero restore create`. Kasten K10 needs a RestoreAction. Longhorn needs you to pick a backup and trigger the restore — via UI, CLI, or CRD, but always an explicit human decision. Even VolSync, which gets closest to declarative restore via its Volume Populator integration, will hang indefinitely if you set a `dataSourceRef` pointing to a backup that doesn't exist yet — because you're deploying the app for the first time.
 
 None of them answer the question that GitOps actually needs answered:
 
-**"At PVC creation time, does a backup exist? If yes, restore from it. If no, provision empty."**
+> At PVC creation time, does a backup exist for this volume? If yes, restore from it. If no, provision empty. If we can't tell, don't provision at all.
 
-That conditional logic doesn't exist anywhere in the Kubernetes API. There's no `spec.dataSourceRef.conditionalRestore`. There's no admission-time backup oracle. There's nothing.
+That conditional logic doesn't exist anywhere in the Kubernetes API. There's no `spec.dataSourceRef.conditionalRestore`. There's no admission-time backup oracle. VolumePopulators, which just graduated to GA in Kubernetes 1.33, provide the plumbing — "populate this PVC from that source" — but have zero decision-making capability. If the source doesn't exist, the PVC hangs in Pending forever.
 
 So I built one.
 
+## Evidence This Gap Is Real
+
+Before diving into the solution, let me show you I'm not solving an imaginary problem.
+
+**Longhorn Issue #6748** — In September 2023, a user named astranero opened an issue requesting exactly this: *"I want that before longhorn creates a new PV it checks backups for PV that has a name and namespace of this PVC that I am creating and then restores this PV binding it with new PVC."* The issue was closed as invalid. No implementation.
+
+**VolSync Issue #627** — When GitOps applies a ReplicationSource to a fresh cluster, VolSync immediately tries to back up the empty data, potentially overwriting the good backup you're about to need. The community works around this with manual triggers and careful ordering.
+
+**The Kubernetes Data Protection Working Group white paper** discusses VolumePopulators as the mechanism for restore but never mentions conditional restore, fail-closed gating, or admission-time backup checking. Every restore workflow described is user-initiated.
+
+**The home-operations community** — the largest GitOps homelab community (~9,000 members on Discord, centered around the [onedr0p/cluster-template](https://github.com/onedr0p/cluster-template)) — uses VolSync with `dataSourceRef` always set on PVCs. On cluster rebuild, VolSync populates from the latest snapshot and apps come online. It works for rebuilds. But deploy a brand-new app with no backup history, and the PVC hangs forever. Their workaround: be careful. Don't deploy new apps during a rebuild. Accept the limitation.
+
+I didn't want to accept the limitation.
+
 ## What I Actually Built
 
-The solution is embarrassingly thin: a 500-line Go microservice called [pvc-plumber](https://github.com/mitchross/pvc-plumber) and ~200 lines of Kyverno policy YAML.
+The solution is embarrassingly thin: a ~500-line Go microservice called [pvc-plumber](https://github.com/mitchross/pvc-plumber) and ~200 lines of Kyverno policy YAML. Zero custom CRDs.
 
 Here's the entire flow:
 
-1. ArgoCD syncs a PVC with a `backup: "hourly"` label
-2. Kyverno intercepts the PVC creation via admission webhook
-3. Kyverno calls pvc-plumber: `GET /exists/{namespace}/{pvc-name}`
-4. pvc-plumber checks the Kopia backup repository (sub-millisecond from in-memory cache)
-5. If backup exists → Kyverno injects `dataSourceRef` → VolSync restores data from backup
-6. If no backup → no mutation → PVC provisions empty → app starts fresh
+```
+Developer adds to Git:
+  PVC with label: backup: "hourly"
 
-That's it. Everything else is off-the-shelf: VolSync handles data movement, Kopia handles deduplication and encryption, Kyverno handles resource generation (ExternalSecrets, ReplicationSource, ReplicationDestination), and ArgoCD handles sync ordering.
+ArgoCD syncs the PVC manifest
+  ↓
+Kyverno intercepts the CREATE via admission webhook
+  ↓
+Rule 0: GET http://pvc-plumber/readyz
+  → If unreachable → DENY PVC creation (fail-closed)
+  ↓
+Rule 1: GET http://pvc-plumber/exists/{namespace}/{pvc-name}
+  → Backup exists?
+    Yes → Kyverno injects dataSourceRef → VolSync restores from backup
+    No  → No mutation → PVC provisions empty → app starts fresh
+  ↓
+Rules 2-4: Kyverno generates backup infrastructure:
+  → ExternalSecret (Kopia credentials from 1Password)
+  → ReplicationSource (backup schedule: hourly or daily)
+  → ReplicationDestination (restore target)
+```
 
-I didn't build a backup engine. I built a decision layer that answers one boolean question.
+That's it. The app developer writes one label. Everything else is automatic.
+
+Everything below pvc-plumber is off-the-shelf: VolSync handles data movement, Kopia handles deduplication and encryption, Longhorn handles block storage and snapshots, and ArgoCD handles sync ordering. I didn't build a backup engine. I built a decision layer that answers one boolean question.
 
 ## The Fail-Closed Design
 
 Here's the part I'm actually proud of.
 
-Most backup systems fail open. If the backup infrastructure is down, apps deploy with empty volumes. Nobody notices until someone asks "where's my data?" — usually at 3am during an incident that's already bad enough.
+Most backup systems fail open. If the backup infrastructure is down during a rebuild, apps deploy with empty volumes. Nobody notices until someone asks "where's my data?" — usually at 3am during an incident that's already bad enough.
 
-This system fails closed. If pvc-plumber is unreachable, Kyverno **denies PVC creation entirely**. The app doesn't deploy. ArgoCD shows it as degraded. You notice immediately.
+This system fails closed. If pvc-plumber is unreachable, Kyverno **denies PVC creation entirely**. The app doesn't deploy. ArgoCD shows it as degraded and retries with exponential backoff. You notice immediately because half your apps are in a retry loop instead of silently running with empty data.
 
-The logic is simple: during a disaster recovery rebuild, if we can't verify whether a backup exists, we refuse to provision the volume. It's better to have an app that won't start than an app that starts with empty data and silently overwrites the backup you're about to need.
+```yaml
+# Kyverno validation rule — if pvc-plumber is down, PVC creation is denied
+context:
+  - name: plumberHealth
+    apiCall:
+      method: GET
+      service:
+        url: "http://pvc-plumber.volsync-system.svc.cluster.local/readyz"
+validate:
+  deny:
+    conditions:
+      all:
+        - key: "{{ plumberHealth || 'unavailable' }}"
+          operator: Equals
+          value: "unavailable"
+```
 
-This required a deliberate architectural choice — pvc-plumber sits at Wave 2 in the ArgoCD sync order, before Kyverno (Wave 3), before any application (Wave 4-6). The backup oracle must be healthy before any stateful workload can deploy.
+The logic is simple: during a disaster recovery rebuild, if we can't verify whether a backup exists, we refuse to provision the volume. It's better to have an app that won't start than an app that starts with empty data.
 
-## The Storage Architecture
+This required a deliberate architectural choice. The cluster bootstraps in strict sync wave order:
 
-Primary storage runs on Longhorn (NVMe drives local to each Proxmox node). Backups go to a separate TrueNAS appliance over NFS. This is a deliberate 3-2-1 trade-off:
+| Wave | Component | Why This Order |
+|------|-----------|----------------|
+| 0 | Cilium, ArgoCD, 1Password, External Secrets | Networking, GitOps, secrets foundation |
+| 1 | Longhorn, Snapshot Controller, VolSync | Storage and backup engine |
+| 2 | **pvc-plumber** | **Backup oracle must be healthy before any PVC decisions** |
+| 3 | Kyverno | Policy engine registers webhooks |
+| 4-6 | Infrastructure, monitoring, apps | Everything that creates PVCs |
 
-- **3 copies**: Longhorn primary + Longhorn replica + Kopia backup on TrueNAS
-- **2 media types**: NVMe (Proxmox) + spinning rust (TrueNAS)
-- **1 offsite**: Not yet (this is the honest gap)
+Custom Lua health checks in ArgoCD enforce that each wave reports Healthy before the next begins. By the time any app PVC hits the API server, pvc-plumber and Kyverno are guaranteed to be running.
 
-I'm paying ~40% write amplification for Longhorn's replica=2, and I'm paying network overhead for NFS backups. In exchange, if a Proxmox node dies, Longhorn rebuilds from the surviving replica in minutes. If the entire cluster burns, TrueNAS has the backups and pvc-plumber orchestrates the restore.
+## The Magic Label
 
-All PVC backups share a single Kopia repository with content-defined chunking. Delete an app and redeploy it? Kopia finds all the chunks already exist — near-instant backup, almost zero new storage. This is better than per-PVC Restic repositories where every delete/recreate means a full re-backup.
+What makes this practical is that the app developer's entire interaction with the backup system is one label:
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-pvc
+  namespace: karakeep
+  labels:
+    backup: "hourly"    # ← this is the entire backup configuration
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: longhorn
+```
+
+From that single label, Kyverno generates:
+
+1. An **ExternalSecret** that pulls the Kopia repository password from 1Password
+2. A **ReplicationSource** with the backup schedule (`0 * * * *` for hourly, `0 2 * * *` for daily) and retention policy (24 hourly, 7 daily, 4 weekly, 2 monthly)
+3. A **ReplicationDestination** for restore capability
+4. A separate Kyverno policy **injects the NFS mount** into every VolSync mover Job automatically — no per-app NFS configuration needed
+
+Remove the label? A cleanup policy runs every 15 minutes and deletes the orphaned resources.
+
+Compare this to the community standard: manually defining a ReplicationSource, ReplicationDestination, and ExternalSecret per app — three extra YAML files per PVC, each with namespace-specific configuration. At 40+ apps, that's 120+ files of backup boilerplate eliminated.
 
 ## Why Not Just Use X?
 
-A Git commit should fully describe the desired state of the cluster, including whether a PVC should be restored from backup or created fresh. No manual `kubectl` commands. No out-of-band orchestration script. That's the constraint. Here's why everything else fails against it:
+A Git commit should fully describe the desired state of the cluster, including whether a PVC should be restored from backup or created fresh. No manual `kubectl` commands. No out-of-band orchestration script.
 
-**Velero** — Restores are imperative CLI operations (`velero restore create`). You can put the schedule in Git, but the actual restore is a manual decision. A fully rebuilt cluster doesn't know it needs to restore anything.
+That's the constraint. Here's why everything else fails against it:
 
-**VolSync alone** — VolSync's `dataSourceRef` hangs indefinitely if the ReplicationDestination has no snapshot yet. First deploy of any new app = infinite pending PVC. VolSync handles data movement perfectly — it just can't make the "restore or empty?" decision.
+**Velero** — Restores are imperative CLI operations (`velero restore create`). You can schedule backups declaratively, but the restore decision requires a human. A fully rebuilt cluster from Git doesn't know it needs to restore anything.
 
-**Init Containers** — "Just add an init container that checks for a backup." This works if you control every workload definition. I run 40+ apps, many from upstream Helm charts I don't maintain. Modifying every chart to add restore logic is a maintenance nightmare. The admission webhook approach is transparent — Helm charts don't know backups exist.
+**VolSync alone** — VolSync's Volume Populator integration hangs indefinitely if the ReplicationDestination has no snapshot yet. First deploy of any new app = infinite pending PVC. This is by design — VolSync handles data movement, not decision-making. As I'd put it to the VolSync maintainers: "VolSync is excellent. Our admission controller adds the decision layer that VolSync intentionally doesn't provide." They're complementary, not competing.
 
-**CSI Snapshots** — You can create a PVC from a VolumeSnapshot declaratively. But you need to know the snapshot name in advance (breaks GitOps), and it fails if no snapshot exists (first deploy).
+**Init Containers** — "Just add an init container that checks for a backup." This works if you control every workload definition. I run 40+ apps, many from upstream Helm charts I don't maintain. Modifying every chart to add restore logic is a maintenance nightmare. Init containers also can't fail-closed — if the init container crashes or can't reach the backup system, the pod starts with an empty volume. Silent data loss. The admission webhook approach is transparent to the application *and* denies creation on unknown state.
 
-**Custom Operator** — The architecturally "correct" answer. A single reconciliation loop that manages PVC lifecycle, backup scheduling, and conditional restore. Also 10x the development effort for what is fundamentally a boolean decision problem. Kyverno + pvc-plumber is ~700 lines total. A proper operator with CRDs, RBAC, leader election, and reconciliation logic is a multi-month project for a team of one.
+**Longhorn built-in** — Longhorn has backup to S3/NFS with restore via UI, CLI, or CRD. But restore still requires knowing *which backup* to restore and triggering it explicitly. There's no mechanism that says "when this PVC is created, automatically check if a backup exists and restore from it." A blogger named Merox [documented restoring 6 apps from Longhorn backups](https://merox.dev/blog/longhorn-backup-restore/) after rebuilding with Flux. It worked. It took hours. Per volume. One at a time.
 
-## What I Got Wrong (And Fixed)
+**CSI Snapshots / VolumePopulators** — You can create a PVC from a VolumeSnapshot declaratively via `dataSourceRef`. But you need to know the snapshot name in advance (breaks GitOps), and it fails immediately if no snapshot exists (breaks first deploy). VolumePopulators provide the plumbing but not the conditional logic.
 
-I subjected this architecture to independent reviews from four LLMs acting as principal cloud architects. They found three implementation gaps:
+**Custom Operator** — The architecturally "correct" long-term answer. A single reconciliation loop that manages PVC lifecycle, backup scheduling, and conditional restore with continuous reconciliation. Also 10x the development effort for what is fundamentally a boolean decision. Kyverno + pvc-plumber is ~700 lines total. A proper operator with CRDs, RBAC, leader election, and reconciliation logic is a multi-month project. At ~40 PVCs with staggered backup schedules, the Kyverno fire-and-forget trade-off is acceptable. At 500+ PVCs, the operator becomes necessary. I'm honest about where that line is.
 
-**1. The readiness probe was lying.** `/readyz` returned 200 OK regardless of whether the Kopia repository was actually accessible. If TrueNAS went down, pvc-plumber would stay "Ready" but silently degrade to `exists: false` for every query — provisioning empty PVCs over lost backups. The fail-closed gate was an illusion.
+**Commercial tools (Portworx, Kasten K10, Trilio)** — Strong products, different operating model, and they cost more than the entire homelab. None of them implement this exact create-time conditional restore pattern in a declarative GitOps flow anyway.
 
-**Fixed:** `/readyz` now performs an active health check — stats the NFS mount path and runs `kopia repository status`. If either fails, the probe returns 503, Kubernetes marks the pod NotReady, and the fail-closed gate becomes real.
+## The Storage Architecture
 
-**2. Single point of failure.** One pvc-plumber pod on one node. Node dies during DR = all stateful deployments blocked with no path to recovery except waiting for the node to come back.
+Three classes of data, three storage approaches:
 
-**Fixed:** Two replicas with pod anti-affinity (forced to different nodes) and a PodDisruptionBudget preventing simultaneous eviction.
+**Human-browsable data** — AI models, media libraries, exported files — lives on **NFS/SMB** with stable, obvious paths on a TrueNAS NAS. People coming from Docker Compose expect to browse files directly. Recovery is easier when folder names are meaningful.
 
-**3. Concurrent NFS access to shared Kopia repository.** Multiple VolSync backup jobs writing to the same repository simultaneously over NFS is outside Kopia's documented safe concurrency model. During a full-cluster restore with 40+ simultaneous operations, this is a corruption risk.
+**Opaque app-private state** — internal app data that should restore correctly but doesn't need human browsing — lives on **Longhorn PVCs** with Kyverno-managed backup.
 
-**Status:** Under evaluation. Options are deploying a Kopia Repository Server (serializes access via gRPC) or moving the backup repository to S3-compatible object storage. The current system works under normal staggered backup schedules; the risk manifests only during mass concurrent operations.
+**Databases** — CloudNativePG with Barman to S3. Filesystem-level snapshots of a running Postgres database are inconsistent without the WAL stream. Database backup is a database problem, not a PVC problem. Excluded from this system entirely.
+
+Backup data goes to a separate TrueNAS appliance over NFS, into a single shared Kopia repository with content-defined chunking. All PVCs share the same repository, so Kopia deduplicates across applications. Delete an app and redeploy it? Kopia finds all the chunks already exist — near-instant backup, almost zero new storage.
+
+## The Hard-Won Guardrails
+
+This is the part that generic architecture diagrams always skip. These guardrails exist because I hit the failure modes they prevent.
+
+### Kyverno fire-and-forget
+
+The backup policy runs with `background: false`, `synchronize: false`, and `mutateExistingOnPolicyUpdate: false`. These sound like they reduce functionality. They do. Here's why:
+
+- `background: true` causes Kyverno to re-evaluate every matching PVC every ~30 seconds, generating hundreds of UpdateRequests that hammer the API server. With 70+ workloads, this caused an API server overload that lasted 23 hours.
+- `synchronize: true` makes Kyverno watch every generated resource for drift. With ~114 generated resources, controllers updating their status fields generate hundreds of thousands of API calls per cycle.
+- `mutateExistingOnPolicyUpdate: true` re-evaluates every matching resource cluster-wide when the policy YAML changes — even a comment edit.
+
+The trade-off: if a generated ReplicationSource is accidentally deleted, Kyverno won't recreate it. Backups stop silently until someone toggles the PVC label. A proper operator would reconcile. I accept this at ~40 PVCs because VolSync metrics in Prometheus catch it.
+
+### Kyverno webhook blast radius
+
+On 2026-04-08, a Renovate auto-merge of a kube-prometheus-stack chart upgrade restarted too many pods simultaneously. Kyverno's admission controller crashed with a cache sync failure. Its webhook was still registered with `failurePolicy: Fail`. Every Deployment, StatefulSet, and DaemonSet creation was rejected. Longhorn couldn't restart. ArgoCD couldn't mount PVCs. Full cluster deadlock. Even rebooting all nodes didn't fix it because webhook configs survive in etcd.
+
+The fix: infrastructure namespaces (longhorn-system, argocd, volsync-system) are now excluded from Kyverno's webhook `namespaceSelector`. A [one-line emergency script](https://github.com/mitchross/talos-argocd-proxmox/blob/main/scripts/emergency-webhook-cleanup.sh) deletes all webhook configurations if it happens again. Kyverno recreates them when healthy.
+
+### Backup timing safeguards
+
+Two preconditions prevent bad backup behavior:
+
+1. ReplicationSource is only generated after the PVC is `Bound` — prevents backing up during an active restore (when the PVC is Pending)
+2. ReplicationSource requires the PVC to be at least 2 hours old — prevents backing up empty data immediately after a fresh provision or restore
+
+Without these, a freshly restored PVC could immediately trigger a backup of its still-populating state, overwriting the good backup. This is the same problem VolSync Issue #627 describes, solved at the policy layer.
+
+## What The Community Actually Does
+
+I spent time researching what the broader homelab and Kubernetes community does for PVC backup and restore. Here's what I found:
+
+**Tier 1 — The home-operations inner circle** (onedr0p, joryirving, kashalls): VolSync + Kopia to NFS + cloud S3. Flux restores manifests, VolSync Volume Populator restores data. Fully automated rebuild in ~1 hour. The most sophisticated approach in the community — but no conditional logic, no fail-closed, and new apps hang forever.
+
+**Tier 2 — Longhorn native users**: Longhorn built-in backup to MinIO/S3. GitOps restores manifests. Manual Longhorn restore per volume. Semi-automated, 2-4 hours with manual steps per volume.
+
+**Tier 3 — NFS externalists** (Techno Tim, democratic-csi users): Data never lives in K8s. Mount NFS from TrueNAS. ZFS handles snapshots. Cluster rebuild = re-mount the shares. Works, but locks you into NFS for everything.
+
+**Tier 4 — YOLO** (more common than admitted): No backup strategy. Databases on VMs outside K8s. Accept data loss on rebuild.
+
+Nobody in the community does admission-time conditional restore. Nobody does fail-closed PVC gating. The problem exists. People work around it manually or accept the limitation.
 
 ## The Trade-Offs I Accept
 
-**Kyverno is fire-and-forget.** I run Kyverno with `background: false` and `synchronize: false` (required to avoid API server overload at scale). This means if a generated ReplicationSource is accidentally deleted, Kyverno won't recreate it. Backups stop silently until someone notices or toggles the PVC label. A proper operator would reconcile continuously. I accept this because the probability of silent backup loss at ~40 PVCs is low enough to monitor via Prometheus alerts rather than building a full controller.
+**Single backup domain.** TrueNAS hosts NFS shares, S3 storage, and the Kopia backup repository. That's concentration, not 3-2-1. A second Kopia target to cloud S3 or remote ZFS replication is the right next step.
 
-**Database backups are separate.** CloudNativePG databases use Barman to S3 with WAL-based PITR. They're excluded from the PVC backup system entirely because filesystem snapshots of a running Postgres database are inconsistent without the WAL stream. This means filesystem restore timestamps and database restore timestamps can drift — applications using both must handle reconciliation on startup.
+**Database temporal drift.** CNPG databases use Barman to S3 with WAL-based PITR on independent schedules. Applications using both database and filesystem state will experience temporal drift on restore. Reconciliation on startup is the app's responsibility.
 
-**Thundering herd during full DR is unthrottled.** A complete cluster rebuild triggers 40+ concurrent VolSync restore jobs. ArgoCD sync waves stagger deployment (infrastructure before apps), but within the application wave, everything hits simultaneously. TrueNAS has a 10Gbps link and 256 NFS threads configured, but I haven't measured worst-case RTO under full concurrent load.
+**Sync wave fragility.** The bootstrap guarantee depends on ArgoCD sync waves and custom Lua health checks. If ArgoCD behavior changes or health check semantics drift, the wave guarantee can silently weaken. This is load-bearing infrastructure, not cosmetic ordering.
 
-## Measured Results
-
-Single-namespace restore drill (delete namespace, ArgoCD re-syncs):
-- PVC creation to pod Running: **47 seconds** (3Gi PVC with ~1.2Gi of data)
-- Kyverno mutation + VolSync restore is the bulk of the time
-- pvc-plumber cache hit: <1ms
-
-RPO:
-- Hourly backups: **maximum 59 minutes of data loss**
-- Daily backups: **maximum 24 hours of data loss**
+**Cache TTL.** pvc-plumber has a 5-minute cache TTL. A backup can complete and a PVC can be created shortly after, but the cache may still report the old answer. For hourly or daily schedules this is usually irrelevant. For tightly-timed backup-and-recreate workflows, it's worth knowing.
 
 ## Where This Should Go
 
-This is a stopgap. The right long-term answer is a native Kubernetes primitive — something like a conditional VolumePopulator that checks for backup existence at provisioning time without requiring an admission webhook.
+This is a stopgap. The right long-term answer is a native Kubernetes primitive.
 
-The Kubernetes VolumePopulator mechanism (`dataSourceRef` pointing to any custom resource) is the upstream path. A controller that implements the VolumePopulator contract with conditional logic built in would eliminate the need for admission webhooks entirely. Until that's mature and widely supported by CSI drivers, composing Kyverno + a thin microservice is the pragmatic bridge.
+The most natural path is a **conditional VolumePopulator** — a controller that implements the VolumePopulator contract with conditional logic built in. The PVC references a custom resource via `dataSourceRef`, the populator checks for backup existence, restores if found, provisions empty if not. No admission webhook needed. No external HTTP calls during PVC creation.
 
-If you're running GitOps with stateful workloads and you've ever had to explain to someone why their app came up empty after a cluster rebuild, this problem is real. The ecosystem will solve it eventually. In the meantime, [pvc-plumber](https://github.com/mitchross/pvc-plumber) is 500 lines of Go that answers one question: "Is there a backup for this PVC?"
+VolumePopulators graduated to GA in Kubernetes 1.33. The plumbing exists. What's missing is the decision logic. pvc-plumber is a proof-of-concept for functionality that CSI provisioners or backup operators should adopt natively.
+
+If you're running GitOps with stateful workloads and you've ever had to explain to someone why their app came up empty after a cluster rebuild, this problem is real. The ecosystem will solve it eventually. In the meantime, [pvc-plumber](https://github.com/mitchross/pvc-plumber) is 500 lines of Go that answers one question: *"Is there a backup for this PVC?"*
 
 Everything else is off-the-shelf components doing what they're good at.
 
 ---
 
-*If you're thinking "why didn't you just use X," you're asking the right question. The answer is almost always: "X solves backup, but not the conditional restore decision at PVC creation time in a fully declarative GitOps pipeline." Eight components to answer one boolean question is excessive. The ideal solution is a native Kubernetes API field that CSI provisioners could implement. Until that exists upstream, we're composing primitives to bridge the gap.*
+*If you're thinking "why didn't you just use X," you're asking the right question. The answer is almost always: "X solves backup, but not the conditional restore decision at PVC creation time in a fully declarative GitOps pipeline." We didn't build a backup tool. We built a 500-line Go microservice that answers one question. You're right that eight components to answer one boolean is excessive. The ideal solution is a native Kubernetes API field — something like `spec.dataSourceRef.conditionalRestore` — that CSI provisioners could implement. Until that exists upstream, we're composing primitives to bridge the gap.*
