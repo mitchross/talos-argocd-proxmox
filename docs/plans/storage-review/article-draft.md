@@ -6,9 +6,19 @@
 
 ## The Problem Nobody Talks About
 
-If you run stateful workloads on Kubernetes with GitOps, you've hit this wall.
+Take a concrete example: Karakeep's `data-pvc` comes back during a rebuild.
 
-You Helm-upgrade something wrong. A Kustomize merge drops a PVC from the resource list. You nuke a namespace to start fresh. You upgrade Talos and rebuild the cluster. ArgoCD syncs your manifests. PVCs get created. Pods bind to empty volumes. Your data is gone.
+There are only three acceptable outcomes:
+
+1. a backup exists → restore from it
+2. no backup exists because this is the first deploy → create empty
+3. the platform cannot tell whether a backup exists → deny the PVC and stop the app from booting into empty state
+
+That sounds obvious. Kubernetes still doesn't have a native primitive for it.
+
+If you run stateful workloads on Kubernetes with GitOps, you've hit this wall in some form. A Helm upgrade goes sideways. A Kustomize merge drops a PVC from the resource list. You nuke a namespace to start fresh. You upgrade Talos and rebuild the cluster. ArgoCD syncs your manifests. PVCs get created. Pods bind to empty volumes. Your data is gone.
+
+This article is about the **full rebuild path**: a cluster comes back from Git and stateful apps restore automatically if backups exist. It is **not** a claim that every targeted point-in-time restore is zero-touch.
 
 The obvious answer is "just use a backup tool." But here's the thing — every backup tool in the Kubernetes ecosystem makes the same assumption: **a human will decide when to restore.**
 
@@ -18,7 +28,7 @@ None of them answer the question that GitOps actually needs answered:
 
 > At PVC creation time, does a backup exist for this volume? If yes, restore from it. If no, provision empty. If we can't tell, don't provision at all.
 
-That conditional logic doesn't exist anywhere in the Kubernetes API. There's no `spec.dataSourceRef.conditionalRestore`. There's no admission-time backup oracle. VolumePopulators, which just graduated to GA in Kubernetes 1.33, provide the plumbing — "populate this PVC from that source" — but have zero decision-making capability. If the source doesn't exist, the PVC hangs in Pending forever.
+Kubernetes has restore plumbing, but not a native conditional restore primitive. There's no `spec.dataSourceRef.conditionalRestore`. There's no admission-time backup oracle. VolumePopulators, which just graduated to GA in Kubernetes 1.33, provide the plumbing — "populate this PVC from that source" — but have zero decision-making capability. If the source doesn't exist, the PVC hangs in Pending forever.
 
 So I built one.
 
@@ -94,6 +104,8 @@ validate:
 ```
 
 The logic is simple: during a disaster recovery rebuild, if we can't verify whether a backup exists, we refuse to provision the volume. It's better to have an app that won't start than an app that starts with empty data.
+
+In the current pvc-plumber implementation, `/readyz` is not just process liveness: it `stat`s the repository path and runs `kopia repository status --json` before returning healthy. That detail matters. A fake readiness probe would turn "fail-closed" into "silently provision empty volumes when the backup system is down," which defeats the whole point.
 
 This required a deliberate architectural choice. The cluster bootstraps in strict sync wave order:
 
@@ -201,23 +213,23 @@ Without these, a freshly restored PVC could immediately trigger a backup of its 
 
 ## What The Community Actually Does
 
-I spent time researching what the broader homelab and Kubernetes community does for PVC backup and restore. Here's what I found:
+I spent time researching what the broader homelab and Kubernetes community actually does for PVC backup and restore. Three patterns show up repeatedly.
 
-**Tier 1 — The home-operations inner circle** (onedr0p, joryirving, kashalls): VolSync + Kopia to NFS + cloud S3. Flux restores manifests, VolSync Volume Populator restores data. Fully automated rebuild in ~1 hour. The most sophisticated approach in the community — but no conditional logic, no fail-closed, and new apps hang forever.
+**1. The home-operations pattern:** VolSync + Kopia, usually with Flux, often with `dataSourceRef` always set on restoreable PVCs. This is the most sophisticated public homelab pattern I found. It works well for cluster rebuilds, but it still assumes the restore source exists. New apps with no backup history hang. There is no admission-time "restore if present, create empty if not" decision.
 
-**Tier 2 — Longhorn native users**: Longhorn built-in backup to MinIO/S3. GitOps restores manifests. Manual Longhorn restore per volume. Semi-automated, 2-4 hours with manual steps per volume.
+**2. The Longhorn-native pattern:** Longhorn handles snapshots and backups to S3/MinIO/NFS, GitOps brings the manifests back, and a human restores the volumes explicitly via UI, CLI, or CRDs. It is a valid DR workflow. It is not zero-touch conditional restore.
 
-**Tier 3 — NFS externalists** (Techno Tim, democratic-csi users): Data never lives in K8s. Mount NFS from TrueNAS. ZFS handles snapshots. Cluster rebuild = re-mount the shares. Works, but locks you into NFS for everything.
+**3. The NAS-first pattern:** important data lives outside Kubernetes on NFS/SMB/ZFS datasets. Rebuild the cluster, re-mount the shares, and move on. This is simple and often smart, but it sidesteps the PVC restore-intent problem rather than solving it.
 
-**Tier 4 — YOLO** (more common than admitted): No backup strategy. Databases on VMs outside K8s. Accept data loss on rebuild.
-
-Nobody in the community does admission-time conditional restore. Nobody does fail-closed PVC gating. The problem exists. People work around it manually or accept the limitation.
+I could not find a widely adopted community pattern for **admission-time conditional restore** or **fail-closed PVC gating**. The gap is real. Most people either accept explicit restore steps, push state outside Kubernetes, or rely on scripts and careful sequencing.
 
 ## The Trade-Offs I Accept
 
 **Single backup domain.** TrueNAS hosts NFS shares, S3 storage, and the Kopia backup repository. That's concentration, not 3-2-1. A second Kopia target to cloud S3 or remote ZFS replication is the right next step.
 
 **Database temporal drift.** CNPG databases use Barman to S3 with WAL-based PITR on independent schedules. Applications using both database and filesystem state will experience temporal drift on restore. Reconciliation on startup is the app's responsibility.
+
+**Targeted restore is still manual.** The full rebuild path is zero-touch. A single-PVC point-in-time restore is not. You still need an explicit VolSync or Longhorn restore action if you want to rewind one workload to a chosen recovery point.
 
 **Sync wave fragility.** The bootstrap guarantee depends on ArgoCD sync waves and custom Lua health checks. If ArgoCD behavior changes or health check semantics drift, the wave guarantee can silently weaken. This is load-bearing infrastructure, not cosmetic ordering.
 
@@ -231,10 +243,8 @@ The most natural path is a **conditional VolumePopulator** — a controller that
 
 VolumePopulators graduated to GA in Kubernetes 1.33. The plumbing exists. What's missing is the decision logic. pvc-plumber is a proof-of-concept for functionality that CSI provisioners or backup operators should adopt natively.
 
-If you're running GitOps with stateful workloads and you've ever had to explain to someone why their app came up empty after a cluster rebuild, this problem is real. The ecosystem will solve it eventually. In the meantime, [pvc-plumber](https://github.com/mitchross/pvc-plumber) is 500 lines of Go that answers one question: *"Is there a backup for this PVC?"*
-
-Everything else is off-the-shelf components doing what they're good at.
+If you're running GitOps with stateful workloads and you've ever had to explain to someone why their app came up empty after a cluster rebuild, this problem is real. The ecosystem will solve it eventually. In the meantime, [pvc-plumber](https://github.com/mitchross/pvc-plumber) is a thin decision layer on top of standard storage and backup tooling.
 
 ---
 
-*If you're thinking "why didn't you just use X," you're asking the right question. The answer is almost always: "X solves backup, but not the conditional restore decision at PVC creation time in a fully declarative GitOps pipeline." We didn't build a backup tool. We built a 500-line Go microservice that answers one question. You're right that eight components to answer one boolean is excessive. The ideal solution is a native Kubernetes API field — something like `spec.dataSourceRef.conditionalRestore` — that CSI provisioners could implement. Until that exists upstream, we're composing primitives to bridge the gap.*
+*If you're thinking "why didn't you just use X," you're asking the right question. The answer is almost always: "X solves backup, but not the conditional restore decision at PVC creation time in a fully declarative GitOps pipeline." We didn't build a backup tool. We built a 500-line Go microservice that answers one question: "Is there a backup for this PVC?" Everything else is off-the-shelf components doing what they're good at. You're right that eight components to answer one question is excessive. The ideal solution is a native Kubernetes API field — something like `spec.dataSourceRef.conditionalRestore` — that CSI provisioners could implement. Until that exists upstream, we're composing primitives to bridge the gap.*
