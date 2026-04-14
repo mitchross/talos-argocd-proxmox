@@ -2,6 +2,8 @@
 
 This document describes the automated backup and restore system for Kubernetes PersistentVolumeClaims (PVCs).
 
+For backend trade-offs and topology-specific recommendations, see [Homelab Storage Reference](homelab-storage-reference.md).
+
 ## Overview
 
 The system automatically backs up PVCs to NFS storage on TrueNAS using **Kopia** and restores them on disaster recovery or app re-deployment. Simply add a label to your PVC and backups happen automatically.

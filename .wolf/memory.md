@@ -17,6 +17,7 @@
 | 12:22 | Added review of Gemini storage assessment and Longhorn replacement discussion | docs/plans/storage-review/gpt-review-of-gemini.md, .wolf/cerebrum.md, .wolf/anatomy.md | critique and merge guidance for multi-LLM architecture review | ~5000 |
 | 12:31 | Merged Gemini synthesis and Longhorn replacement analysis into the canonical storage review | docs/plans/storage-review/gpt-5.4-review-storage.md, .wolf/anatomy.md | single canonical storage review now includes merged conclusions | ~3500 |
 | 12:48 | Appended GPT final position to the shared synthesis document | docs/plans/storage-review/final-synthesis.md, .wolf/anatomy.md | master synthesis now includes GPT conclusion and corrected nuance on repo evidence | ~2600 |
+| 2026-04-13 | Added homelab storage reference and decision matrix | docs/homelab-storage-reference.md, docs/index.md, docs/backup-restore.md, .wolf/anatomy.md | documented recommended storage/restore patterns across Longhorn, OpenEBS, democratic-csi, Proxmox CSI, Velero, VolSync, and Kasten | ~3200 |
 
 | Time | Description | File(s) | Outcome | ~Tokens |
 |------|-------------|---------|---------|---------|
@@ -482,3 +483,8 @@
 | 00:15 | Edited infrastructure/controllers/pvc-plumber/deployment.yaml | 1.3 → 1.4 | ~12 |
 | 00:22 | Created docs/plans/storage-review/article-draft.md | — | ~2885 |
 | 00:22 | Session end: 15 writes across 7 files (claude-review-storage.md, final-synthesis.md, handler.go, client.go, main.go) | 39 reads | ~76285 tok |
+
+## Session: 2026-04-14 22:28
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|

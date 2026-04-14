@@ -83,6 +83,7 @@
 - `argocd.md` — ArgoCD & GitOps Architecture (~5600 tok)
 - `backup-restore.md` — Zero-Touch PVC Backup and Restore (~3381 tok)
 - `cnpg-disaster-recovery.md` — CNPG Database Disaster Recovery (~7577 tok)
+- `homelab-storage-reference.md` — Homelab storage backend and restore-intent decision guide (~3600 tok)
 - `index.md` — Talos ArgoCD Proxmox (~272 tok)
 - `network-policy.md` — Network Security & LAN Isolation (~1607 tok)
 - `network-topology.md` — Network Topology (~1663 tok)
