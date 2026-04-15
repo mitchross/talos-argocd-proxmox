@@ -28,7 +28,7 @@ spec:
         feature.node.kubernetes.io/cpu-cpuid.AVX2: "true"
       containers:
         - name: toolbox
-          image: posthog/posthog:latest@sha256:334b0b6a604d0cde5f48af199bac141b26f8867ed2f6fd77435cf859a9537d76
+          image: posthog/posthog:latest@sha256:fd5dd80329f2dfc1afa8130dba8c2388202f390125a7e6bd40e86b6c4fa3cfdf
           command:
             - /bin/sh
             - -c
