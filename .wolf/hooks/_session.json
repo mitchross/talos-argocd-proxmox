@@ -243,7 +243,7 @@
       "first_read": "2026-04-14T05:17:58.272Z"
     },
     "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-rev1-gold.md": {
-      "count": 1,
+      "count": 2,
       "tokens": 4700,
       "first_read": "2026-04-15T12:55:06.824Z"
     }
@@ -326,15 +326,28 @@
       "action": "create",
       "tokens": 5200,
       "at": "2026-04-15T02:10:16.123Z"
+    },
+    {
+      "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-rev1-gold.md",
+      "action": "edit",
+      "tokens": 1615,
+      "at": "2026-04-15T12:57:33.790Z"
+    },
+    {
+      "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-rev1-gold.md",
+      "action": "edit",
+      "tokens": 1474,
+      "at": "2026-04-15T12:58:22.042Z"
     }
   ],
   "edit_counts": {
     "docs/plans/storage-review/ecosystem-research-and-validation.md": 1,
-    "docs/plans/storage-review/article-draft.md": 12
+    "docs/plans/storage-review/article-draft.md": 12,
+    "docs/plans/storage-review/article-rev1-gold.md": 2
   },
   "anatomy_hits": 32,
   "anatomy_misses": 17,
-  "repeated_reads_warned": 21,
+  "repeated_reads_warned": 22,
   "cerebrum_warnings": 0,
-  "stop_count": 16
+  "stop_count": 18
 }

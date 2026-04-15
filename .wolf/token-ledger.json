@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-05T03:39:06.883Z",
   "lifetime": {
-    "total_tokens_estimated": 4775343,
-    "total_reads": 3947,
-    "total_writes": 1616,
+    "total_tokens_estimated": 4941070,
+    "total_reads": 4045,
+    "total_writes": 1644,
     "total_sessions": 22,
-    "anatomy_hits": 3351,
-    "anatomy_misses": 596,
-    "repeated_reads_blocked": 1518,
-    "estimated_savings_vs_bare_cli": 3650464
+    "anatomy_hits": 3415,
+    "anatomy_misses": 630,
+    "repeated_reads_blocked": 1561,
+    "estimated_savings_vs_bare_cli": 3863364
   },
   "sessions": [
     {
@@ -36857,6 +36857,768 @@
         "writes_count": 13,
         "repeated_reads_blocked": 21,
         "anatomy_lookups": 31
+      }
+    },
+    {
+      "id": "session-2026-04-14-2228",
+      "started": "2026-04-14T02:28:11.008Z",
+      "ended": "2026-04-15T12:55:18.760Z",
+      "reads": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/namespace.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/configmap.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/deployment-web.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/externalsecret.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/service-web.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/httproute.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/pvc-data.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/chrome/deployment-chrome.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/chrome/service-chrome.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/meilisearch/deployment-meilisearch.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/policies/volsync-pvc-backup-restore.yaml",
+          "tokens_estimated": 2805,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/policies/volsync-pvc-mutate.yaml",
+          "tokens_estimated": 585,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/policies/volsync-pvc-validate.yaml",
+          "tokens_estimated": 405,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/policies/volsync-nfs-inject.yaml",
+          "tokens_estimated": 446,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/policies/volsync-orphan-cleanup.yaml",
+          "tokens_estimated": 543,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/values.yaml",
+          "tokens_estimated": 1197,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/meilisearch/pvc-meilisearch.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/meilisearch/service-meilisearch.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/homepage-dashboard/configmap.yaml",
+          "tokens_estimated": 2047,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/infrastructure-appset.yaml",
+          "tokens_estimated": 1079,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/monitoring-appset.yaml",
+          "tokens_estimated": 637,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/database-appset.yaml",
+          "tokens_estimated": 705,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/my-apps-appset.yaml",
+          "tokens_estimated": 782,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/longhorn-app.yaml",
+          "tokens_estimated": 371,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/pvc-plumber/deployment.yaml",
+          "tokens_estimated": 952,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/pvc-plumber/externalsecret.yaml",
+          "tokens_estimated": 128,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/pvc-plumber/kustomization.yaml",
+          "tokens_estimated": 36,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/pvc-plumber-app.yaml",
+          "tokens_estimated": 327,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/snapshot-controller-app.yaml",
+          "tokens_estimated": 256,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/volsync-app.yaml",
+          "tokens_estimated": 289,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/kustomization.yaml",
+          "tokens_estimated": 367,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/pvc-plumber-full-flow.md",
+          "tokens_estimated": 11603,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/root.yaml",
+          "tokens_estimated": 252,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/cilium-app.yaml",
+          "tokens_estimated": 489,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/kyverno-app.yaml",
+          "tokens_estimated": 494,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/opentelemetry-operator-app.yaml",
+          "tokens_estimated": 429,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/argocd.yaml",
+          "tokens_estimated": 241,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/external-secrets.yaml",
+          "tokens_estimated": 319,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/1passwordconnect.yaml",
+          "tokens_estimated": 222,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/argocd.md",
+          "tokens_estimated": 5600,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/src/content/docs/backup/pvc-plumber-full-flow.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/src/content/docs/backup/backup-restore.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/scripts/validate-argocd-apps.sh",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/homelab-storage-reference.md",
+          "tokens_estimated": 4300,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/final-synthesis.md",
+          "tokens_estimated": 9532,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 6970,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-rev1-gold.md",
+          "tokens_estimated": 4700,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/ecosystem-research-and-validation.md",
+          "tokens_estimated": 7670,
+          "action": "create"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 5423,
+          "action": "create"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 368,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 871,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 181,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 138,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 233,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 132,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 450,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 636,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 289,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 620,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 5200,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 59108,
+        "output_tokens_estimated": 22211,
+        "reads_count": 49,
+        "writes_count": 13,
+        "repeated_reads_blocked": 21,
+        "anatomy_lookups": 32
+      }
+    },
+    {
+      "id": "session-2026-04-14-2228",
+      "started": "2026-04-14T02:28:11.008Z",
+      "ended": "2026-04-15T12:58:47.248Z",
+      "reads": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/namespace.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/configmap.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/deployment-web.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/externalsecret.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/service-web.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/httproute.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/pvc-data.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/chrome/deployment-chrome.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/chrome/service-chrome.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/meilisearch/deployment-meilisearch.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/policies/volsync-pvc-backup-restore.yaml",
+          "tokens_estimated": 2805,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/policies/volsync-pvc-mutate.yaml",
+          "tokens_estimated": 585,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/policies/volsync-pvc-validate.yaml",
+          "tokens_estimated": 405,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/policies/volsync-nfs-inject.yaml",
+          "tokens_estimated": 446,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/policies/volsync-orphan-cleanup.yaml",
+          "tokens_estimated": 543,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/values.yaml",
+          "tokens_estimated": 1197,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/meilisearch/pvc-meilisearch.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/karakeep/meilisearch/service-meilisearch.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/my-apps/media/homepage-dashboard/configmap.yaml",
+          "tokens_estimated": 2047,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/infrastructure-appset.yaml",
+          "tokens_estimated": 1079,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/monitoring-appset.yaml",
+          "tokens_estimated": 637,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/database-appset.yaml",
+          "tokens_estimated": 705,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/my-apps-appset.yaml",
+          "tokens_estimated": 782,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/longhorn-app.yaml",
+          "tokens_estimated": 371,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/pvc-plumber/deployment.yaml",
+          "tokens_estimated": 952,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/pvc-plumber/externalsecret.yaml",
+          "tokens_estimated": 128,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/pvc-plumber/kustomization.yaml",
+          "tokens_estimated": 36,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/pvc-plumber-app.yaml",
+          "tokens_estimated": 327,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/snapshot-controller-app.yaml",
+          "tokens_estimated": 256,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/volsync-app.yaml",
+          "tokens_estimated": 289,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/kustomization.yaml",
+          "tokens_estimated": 367,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/pvc-plumber-full-flow.md",
+          "tokens_estimated": 11603,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/root.yaml",
+          "tokens_estimated": 252,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/cilium-app.yaml",
+          "tokens_estimated": 489,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/kyverno-app.yaml",
+          "tokens_estimated": 494,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/opentelemetry-operator-app.yaml",
+          "tokens_estimated": 429,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/argocd.yaml",
+          "tokens_estimated": 241,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/external-secrets.yaml",
+          "tokens_estimated": 319,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/1passwordconnect.yaml",
+          "tokens_estimated": 222,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/argocd.md",
+          "tokens_estimated": 5600,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/src/content/docs/backup/pvc-plumber-full-flow.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/src/content/docs/backup/backup-restore.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/scripts/validate-argocd-apps.sh",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/homelab-storage-reference.md",
+          "tokens_estimated": 4300,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/final-synthesis.md",
+          "tokens_estimated": 9532,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 6970,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-rev1-gold.md",
+          "tokens_estimated": 4700,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/ecosystem-research-and-validation.md",
+          "tokens_estimated": 7670,
+          "action": "create"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 5423,
+          "action": "create"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 368,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 871,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 181,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 138,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 233,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 132,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 450,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 636,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 289,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 620,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 5200,
+          "action": "create"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-rev1-gold.md",
+          "tokens_estimated": 1615,
+          "action": "edit"
+        },
+        {
+          "file": "/Users/mitchross/Documents/Programming/talos-argocd-proxmox/docs/plans/storage-review/article-rev1-gold.md",
+          "tokens_estimated": 1474,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 59108,
+        "output_tokens_estimated": 25300,
+        "reads_count": 49,
+        "writes_count": 15,
+        "repeated_reads_blocked": 22,
+        "anatomy_lookups": 32
       }
     }
   ],

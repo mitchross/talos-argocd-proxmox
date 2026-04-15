@@ -337,29 +337,118 @@ Every alternative fails against one constraint:
 
 > A Git commit should fully describe the desired state of the cluster, including whether a PVC should restore from backup or start fresh. No manual commands. No out-of-band scripts.
 
-**Velero** — Restores are imperative (`velero restore create`). A rebuilt cluster from Git doesn't know it needs to restore anything.
+### Why not Velero?
 
-**VolSync alone** — VolSync moves data. It doesn't make decisions. If you hardcode `dataSourceRef` on every PVC, first deploy of a new app hangs forever because there is no backup to restore from. If you skip `dataSourceRef`, the PVC binds empty before the restore finishes.
+Velero backs up entire namespaces — Kubernetes resources and PV data together — and restores them via `velero restore create`. That's an imperative CLI operation. Someone has to decide to run it. A fully rebuilt cluster syncing from Git doesn't know it needs to restore anything. Velero also backs up the Kubernetes manifests, which in a GitOps cluster are already in Git — redundant work. VolSync only backs up the data, which is the part Git can't track.
 
-**Init Containers** — Requires modifying every upstream Helm chart. Can't fail-closed — if the init container crashes, the pod starts with empty data.
+### Why not Longhorn's built-in backup?
 
-**Longhorn built-in** — Restore requires knowing which backup and triggering it explicitly. No admission-time automation.
+Longhorn has backup to S3/NFS with scheduled snapshots and a full restore workflow. The problem is the restore side. To restore a Longhorn volume, you need to:
 
-**VolumePopulators** — GA in Kubernetes 1.33. They provide the plumbing ("populate this PVC from that source") but have zero conditional logic. The source must exist or the PVC hangs forever.
+1. Know that a backup exists for this specific volume
+2. Know which backup to restore from (by URL or backup name)
+3. Trigger the restore explicitly — via UI, CLI, or by setting `fromBackup` on a Volume CR
 
-**Custom Operator** — The architecturally correct long-term answer. Also 10x the development effort for what is fundamentally a boolean decision. At ~40 PVCs, Kyverno + pvc-plumber at ~700 lines total is the right trade-off.
+There is no mechanism in Longhorn that says "when this PVC is created, automatically check if a backup exists and restore from it." The `fromBackup` field is declarative, but only if the exact backup URL is already known — and in a GitOps rebuild, it isn't, because the backup URL changes with every snapshot. Someone still has to look up the right backup and provide the URL. At 40+ PVCs, that's hours of manual work per rebuild.
+
+### Why not VolSync alone?
+
+VolSync is excellent at data movement. I use it. It's the backup engine in my stack. But VolSync doesn't make the restore decision — it does what it's told.
+
+There are two ways to use VolSync for restore, and both have a gap:
+
+**Option A: Hardcode `dataSourceRef` on every PVC pointing to a ReplicationDestination.** VolSync's Volume Populator kicks in and populates the PVC from the latest snapshot before it binds. Atomic restore. But on first deploy of a new app — before any backup exists — the ReplicationDestination has no snapshot. The PVC stays in Pending forever. The app never starts. You have to manually intervene to remove the `dataSourceRef`, let the PVC create empty, then add it back after the first backup runs.
+
+**Option B: Deploy a ReplicationDestination alongside the PVC without `dataSourceRef`.** VolSync tries to restore on ReplicationDestination creation. If no backup exists, it finds nothing and the PVC starts empty — first deploy works. But the PVC binds immediately (empty) and the restore fills it after. If the app pod starts fast and writes before the restore finishes, you get mixed state. And if the backup target is unreachable, the restore silently fails and the app boots with empty data. No fail-closed gate.
+
+pvc-plumber gives you Option A's atomicity with Option B's first-deploy behavior — plus fail-closed. Kyverno only injects `dataSourceRef` when pvc-plumber confirms a backup exists. No backup → no `dataSourceRef` → PVC creates empty → app starts fresh. Backup exists → `dataSourceRef` injected → Volume Populator fills PVC before bind → atomic restore. Backup system unreachable → PVC creation denied → app retries.
+
+### Why not VolumePopulators directly?
+
+VolumePopulators graduated to GA in Kubernetes 1.33. They solve the plumbing: a PVC declares `dataSourceRef` pointing to a custom resource, and a populator controller fills the volume with data before the PVC binds.
+
+But VolumePopulators have zero conditional logic. The PVC must know its data source at creation time. If the referenced resource doesn't exist, the PVC hangs in Pending forever. There's no built-in way to say "populate from this source if it exists, otherwise create empty." That conditional decision is exactly what pvc-plumber provides. The Volume Populator handles the restore mechanics. pvc-plumber decides whether to invoke them.
+
+### Why not init containers?
+
+"Just add an init container that checks for a backup and restores before the app starts." This works if you control every workload definition. I run 40+ apps, many from upstream Helm charts I don't maintain. Modifying every chart to add restore logic is a maintenance nightmare — every chart upgrade risks losing the modification.
+
+Init containers also can't fail-closed. If the init container crashes, times out, or can't reach the backup system, Kubernetes starts the main container anyway — with an empty volume. Silent data loss. The admission webhook approach is transparent to the application (Helm charts are unmodified) and denies PVC creation entirely on unknown state rather than letting the pod start empty.
+
+### Why not a custom operator?
+
+A custom Kubernetes operator is the architecturally correct long-term answer. A single reconciliation loop that watches PVCs, checks backup existence, manages ReplicationSource/Destination lifecycle, and continuously reconciles drift. Full control.
+
+Also 10x the development effort. A proper operator needs: custom CRDs, RBAC, leader election, reconciliation logic, status reporting, health checks, and tests. That's a multi-month project for a team of one. Kyverno + pvc-plumber is ~700 lines total (500 Go + 200 YAML) using existing Kyverno infrastructure for resource generation, lifecycle management, and TLS certificate handling.
+
+At ~40 PVCs with staggered backup schedules, the Kyverno fire-and-forget trade-off is acceptable. At 500+ PVCs, the probability of undetected backup loss from a deleted generated resource becomes high enough that the operator becomes necessary. I know where that line is.
+
+## The Label System
+
+The entire backup interface is two label values:
+
+| Label | Schedule | When to use |
+|-------|----------|-------------|
+| `backup: "hourly"` | `0 * * * *` | App state that changes frequently (bookmarks, uploads, configs) |
+| `backup: "daily"` | `0 2 * * *` | App state that changes slowly (model caches, large datasets) |
+
+Both get the same retention: 24 hourly, 7 daily, 4 weekly, 2 monthly snapshots.
+
+**What NOT to label:**
+- CNPG database PVCs — they use Barman to S3, not VolSync. Filesystem snapshots of a running Postgres are inconsistent without the WAL stream.
+- System namespace PVCs (kube-system, volsync-system, kyverno) — auto-excluded by the policy.
+- PVCs on non-Longhorn storage classes — VolumeSnapshot support is required for the copy-on-write backup method.
+
+Kyverno matches PVCs with a label selector:
+
+```yaml
+selector:
+  matchExpressions:
+    - key: backup
+      operator: In
+      values: ["hourly", "daily"]
+```
+
+If the label is present, the full pipeline fires. If it's absent, the PVC is invisible to the backup system.
+
+## The Kyverno Policy: How It Actually Works
+
+The backup/restore system is a single `ClusterPolicy` with five rules. The policy settings are critical and non-obvious:
+
+```yaml
+spec:
+  mutateExistingOnPolicyUpdate: false   # don't re-evaluate all PVCs on policy edit
+  background: false                      # don't continuously re-scan matching resources
+  rules:
+    - name: require-pvc-plumber-available     # Rule 0: fail-closed gate
+    - name: add-datasource-if-backup-exists   # Rule 1: conditional restore
+    - name: generate-kopia-secret             # Rule 2: ExternalSecret
+    - name: generate-replication-source        # Rule 3: backup schedule
+    - name: generate-replication-destination    # Rule 4: restore target
+```
+
+**Rules 0-1** are admission-time: they run synchronously during the PVC CREATE and must complete before the PVC is persisted to etcd.
+
+**Rules 2-4** are generate rules: they create new resources asynchronously after the PVC is admitted. The generated resources are labeled `app.kubernetes.io/managed-by: kyverno` and `volsync.backup/pvc: {pvc-name}` so the orphan cleanup policy can find them later.
+
+Every generate rule uses `synchronize: false`. This is critical. With `synchronize: true`, Kyverno watches every generated resource for drift and creates an UpdateRequest whenever a controller updates the resource's status field. With ~114 generated resources across the cluster (ReplicationSources, ReplicationDestinations, ExternalSecrets), controllers updating status fields generate hundreds of thousands of API calls per cycle. The API server buckles.
 
 ## The Hard-Won Guardrails
 
 These exist because I hit the failure modes they prevent.
 
-**Kyverno fire-and-forget.** The policy runs with `background: false` and `synchronize: false`. With `background: true`, Kyverno re-evaluates every matching PVC every ~30 seconds — that caused a 23-hour API server overload with 70+ workloads. The trade-off: if a generated ReplicationSource is accidentally deleted, Kyverno won't recreate it until someone toggles the PVC label.
+**23-hour API server overload (2026-03-25).** The original policy used `background: true` and `synchronize: true`. With 70+ workloads, Kyverno re-evaluated every matching PVC every ~30 seconds, generating hundreds of UpdateRequests that hammered the API server. The fix was `background: false` and `synchronize: false`. The trade-off: if a generated ReplicationSource is accidentally deleted, Kyverno won't recreate it until someone toggles the PVC label. VolSync metrics in Prometheus catch silent backup failures.
 
-**Webhook blast radius.** On 2026-04-08, a Renovate auto-merge crashed Kyverno's admission controller. Its webhook was still registered with `failurePolicy: Fail`. Every resource creation outside kube-system was rejected. Full cluster deadlock. Fix: infrastructure namespaces are excluded from Kyverno's webhook scope. An emergency script deletes all webhook configs if it happens again.
+**Full cluster deadlock (2026-04-08).** A Renovate auto-merge of a kube-prometheus-stack chart upgrade restarted too many pods simultaneously. Kyverno's admission controller crashed with a cache sync failure. Its webhook was still registered with `failurePolicy: Fail`. Every Deployment, StatefulSet, and DaemonSet creation outside kube-system was rejected. Longhorn couldn't restart its pods. ArgoCD couldn't mount PVCs. Even rebooting all nodes didn't fix it — webhook configurations persist in etcd. Fix: infrastructure namespaces (longhorn-system, argocd, volsync-system, cert-manager, external-secrets) are now excluded from Kyverno's webhook `namespaceSelector`. An [emergency script](https://github.com/mitchross/talos-argocd-proxmox/blob/main/scripts/emergency-webhook-cleanup.sh) deletes all webhook configurations to break the deadlock. Kyverno recreates them once healthy.
 
-**Backup timing safeguards.** Two preconditions prevent backing up empty data: the ReplicationSource only generates after the PVC is `Bound`, and only after the PVC is 2+ hours old. Without these, a freshly restored PVC could immediately back up its still-populating state, overwriting the good backup.
+**Backup timing safeguards.** Two preconditions prevent backing up empty data:
 
-**Orphan cleanup.** A ClusterCleanupPolicy runs every 15 minutes. If you remove the `backup` label or delete the PVC, it deletes the orphaned ReplicationSource, ReplicationDestination, and ExternalSecret. No stale backup jobs.
+1. ReplicationSource only generates after the PVC status is `Bound` — prevents backing up during an active restore (when PVC is Pending waiting for the Volume Populator)
+2. ReplicationSource requires the PVC to be at least 2 hours old — prevents immediately backing up empty or partially-restored data after a fresh provision
+
+Without these, the sequence would be: PVC created → VolSync starts restoring → Kyverno generates ReplicationSource → ReplicationSource fires immediately → backs up partially-restored data → overwrites the good backup in the Kopia repository. This is the same problem described in VolSync Issue #627, solved at the policy layer.
+
+**Orphan cleanup.** A `ClusterCleanupPolicy` runs every 15 minutes. If the `backup` label is removed from a PVC, or the PVC is deleted entirely, the policy deletes the orphaned ReplicationSource, ReplicationDestination, and ExternalSecret. No stale backup jobs accumulate.
 
 ## The Trade-Offs
 
