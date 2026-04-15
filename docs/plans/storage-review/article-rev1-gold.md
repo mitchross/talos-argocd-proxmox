@@ -8,16 +8,16 @@
 
 I run 40+ stateful apps on Kubernetes with ArgoCD. I nuke namespaces regularly. I Helm-upgrade things wrong. I rebuild the cluster after Talos upgrades. Every time, ArgoCD syncs my manifests, PVCs get created, and pods bind to empty volumes.
 
-The data is gone.
+The application state is effectively lost unless I intervene manually.
 
 Every backup tool in the ecosystem — Velero, VolSync, Longhorn, Kasten K10 — can back up a PVC. They can also restore one. But none of them answer the question that a GitOps rebuild actually needs answered:
 
-> When this PVC is created from Git, does a backup exist?
-> If yes → restore from it.
-> If no → create empty.
+> When this PVC is created from Git, does a backup exist?  
+> If yes → restore from it.  
+> If no → create empty.  
 > If we can't tell → **don't create it at all.**
 
-That third outcome is the one nobody implements. And it's the one that matters most during a disaster recovery rebuild — when the backup system might be coming up alongside everything else.
+That third outcome is the one I could not find implemented in any public GitOps PVC workflow. And it's the one that matters most during a disaster recovery rebuild — when the backup system might be coming up alongside everything else.
 
 ## Fail-Open vs Fail-Closed
 
@@ -37,7 +37,8 @@ These terms get thrown around loosely. Here's what they mean concretely for PVC 
 │                                     Nobody notices          │
 │                                     until it's too late     │
 │                                                             │
-│  This is what every other system does.                      │
+│  This is the common failure mode when restore happens       │
+│  after PVC creation instead of before it.                   │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -49,9 +50,9 @@ These terms get thrown around loosely. Here's what they mean concretely for PVC 
 │                      │         │                            │
 │               Does backup      └──→ DENY PVC creation       │
 │               exist?                App doesn't deploy      │
-│                │                    ArgoCD retries with      │
-│            Yes │    No              exponential backoff      │
-│                │     │              You notice immediately   │
+│                │                    ArgoCD retries with     │
+│            Yes │    No              exponential backoff     │
+│                │     │              You notice immediately  │
 │         Restore  Create                                     │
 │         from     empty                                      │
 │         backup   PVC                                        │
@@ -78,7 +79,9 @@ Kubernetes has mature tools for every piece of the backup story — except the d
  Decision:  ???              ✗  "Should this PVC restore or start empty?"
 ```
 
-That missing decision layer is pvc-plumber. It's a ~500-line Go microservice with two endpoints:
+That missing decision layer is pvc-plumber. It is not a backup engine. It is an admission-time intent resolver for PVC creation.
+
+It is a ~500-line Go microservice with two endpoints:
 
 - **`/readyz`** — Is the Kopia backup repository accessible? (stats the NFS mount, runs `kopia repository status`)
 - **`/exists/{namespace}/{pvc-name}`** — Does a backup exist for this specific PVC? Returns `{"exists": true/false, "snapshots": N}`
@@ -186,7 +189,7 @@ apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   name: volsync-data-pvc         # auto-named from PVC
-  namespace: karakeep             # same namespace as PVC
+  namespace: karakeep            # same namespace as PVC
 spec:
   secretStoreRef:
     kind: ClusterSecretStore
@@ -336,7 +339,7 @@ Every alternative fails against one constraint:
 
 **Velero** — Restores are imperative (`velero restore create`). A rebuilt cluster from Git doesn't know it needs to restore anything.
 
-**VolSync alone** — VolSync moves data. It doesn't make decisions. If you hardcode `dataSourceRef` on every PVC, first deploy of a new app hangs forever (no backup to restore from). If you skip `dataSourceRef`, the PVC binds empty before the restore finishes — race condition.
+**VolSync alone** — VolSync moves data. It doesn't make decisions. If you hardcode `dataSourceRef` on every PVC, first deploy of a new app hangs forever because there is no backup to restore from. If you skip `dataSourceRef`, the PVC binds empty before the restore finishes.
 
 **Init Containers** — Requires modifying every upstream Helm chart. Can't fail-closed — if the init container crashes, the pod starts with empty data.
 

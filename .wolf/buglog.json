@@ -480,6 +480,54 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-13T04:11:45.992Z"
+    },
+    {
+      "id": "bug-031",
+      "timestamp": "2026-04-14T23:53:57.404Z",
+      "error_message": "Incorrect value in code",
+      "file": "docs/plans/storage-review/article-draft.md",
+      "root_cause": "Had `dataSourceRef`",
+      "fix": "Changed to 's video walkthrough](https://www.youtube.com/watc",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-04-14T23:55:14.891Z"
+    },
+    {
+      "id": "bug-032",
+      "timestamp": "2026-04-14T23:54:33.114Z",
+      "error_message": "Significant refactor of ",
+      "file": "docs/plans/storage-review/article-draft.md",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 17→22 lines (8 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-14T23:54:33.114Z"
+    },
+    {
+      "id": "bug-033",
+      "timestamp": "2026-04-15T00:11:59.115Z",
+      "error_message": "Significant refactor of ",
+      "file": "docs/plans/storage-review/article-draft.md",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 25→28 lines (2 removed) | Also: The two remaining gaps are what motivated pvc-plum; **2. Restore atomicity.** Mircea's PVC binds immed | Also: This is a stopgap. The right long-term answer is a; The most natural path is a **conditional VolumePop",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-04-15T00:13:19.683Z"
     }
   ]
 }
