@@ -528,6 +528,38 @@
       "related_bugs": [],
       "occurrences": 3,
       "last_seen": "2026-04-15T00:13:19.683Z"
+    },
+    {
+      "id": "bug-034",
+      "timestamp": "2026-04-15T12:57:33.791Z",
+      "error_message": "Significant refactor of ",
+      "file": "docs/plans/storage-review/article-rev1-gold.md",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 17→51 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-15T12:57:33.791Z"
+    },
+    {
+      "id": "bug-035",
+      "timestamp": "2026-04-15T12:58:22.043Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "docs/plans/storage-review/article-rev1-gold.md",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-15T12:58:22.043Z"
     }
   ]
 }
