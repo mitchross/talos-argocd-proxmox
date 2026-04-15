@@ -26,11 +26,18 @@
 | 2026-04-13 | Hardened homelab storage reference with failure modes and guardrails | docs/homelab-storage-reference.md, .wolf/anatomy.md | added Kyverno/Argo sync-wave fragility, NFS injection dependency, alerting reality, cache TTL nuance, and manual restore caveats | ~2200 |
 | 2026-04-13 | Refined storage reference with concrete readiness and silent-failure notes | docs/homelab-storage-reference.md, .wolf/anatomy.md | clarified that pvc-plumber /readyz now checks repo path + kopia status, made NFS injection silent-failure mode explicit, and surfaced guardrail nuance directly in the comparison table | ~700 |
 | 2026-04-14 | Wrote ecosystem research report on conditional PVC restore patterns | docs/conditional-restore-ecosystem-research.md, docs/homelab-storage-reference.md, docs/index.md, .wolf/anatomy.md | documented that public solutions remain explicit/manual, VolSync Volume Populator is the closest upstream option, and linked the report from core docs | ~2500 |
+| 2026-04-14 | Tightened article draft for publication after review | docs/plans/storage-review/article-draft.md, .wolf/anatomy.md | rewrote the intro around a concrete Karakeep PVC example, made `/readyz` implementation explicit, compressed the community section, clarified full rebuild vs targeted restore, and strengthened the closing | ~2200 |
+| 2026-04-14 | Leaned article draft harder on the ecosystem validation report | docs/plans/storage-review/article-draft.md, .wolf/anatomy.md | added explicit research-scope framing, reinforced home-operations as the closest public baseline, and inserted a compact community-pattern comparison table | ~900 |
+| 2026-04-14 | Narrowed article claim to the specific public gap and clarified Mircea comparison | docs/plans/storage-review/article-draft.md, .wolf/anatomy.md | made the article claim "I couldn't find a public implementation with this four-part combination," positioned Mircea as the closest public prior art, and clarified that Taskfile/manual ops are operator ergonomics rather than the desired GitOps happy path | ~900 |
 | 2026-04-14 | Full architecture trace: Karakeep → Kyverno → PVC Plumber → sync waves | read-only | traced storage stack from app layer to foundation for user understanding | ~3000 |
 | 2026-04-14 | Critiqued ChatGPT's homelab-storage-reference.md, reviewed GPT's defense | docs/homelab-storage-reference.md | identified 5 gaps, GPT addressed all 9 sections; doc now honest about sharp edges | ~2000 |
 | 2026-04-14 | Comprehensive community research: blogs, YouTubers, home-ops Discord | web search (60+ queries across 2 agents) | mapped 4 tiers of community practice; confirmed pvc-plumber is novel; no equivalent exists | ~8000 |
 | 2026-04-14 | Wrote ecosystem-research-and-validation.md | docs/plans/storage-review/ecosystem-research-and-validation.md | full report with community evidence, gap validation, alternative landscape, and conclusions | ~4000 |
 | 2026-04-14 | Rewrote article-draft.md for Medium publication | docs/plans/storage-review/article-draft.md | complete rewrite with community evidence, real threat model, guardrails section, honest trade-offs | ~3500 |
+| 2026-04-14 | Analyzed Mircea Anton's VolSync video transcript | article-draft.md | identified his approach handles first-deploy gracefully but lacks fail-closed + atomic restore; updated article to credit his work honestly | ~2000 |
+| 2026-04-14 | Discovered user's setup already combines pvc-plumber + VolSync Volume Populator | analysis only | dataSourceRef injection IS the Volume Populator path; user already has conditional + atomic + fail-closed in one flow | ~500 |
+| 2026-04-14 | Updated article with Volume Populator combination and Mircea comparison | docs/plans/storage-review/article-draft.md | added atomic restore via Volume Populator to flow diagram, Taskfile contrast, narrowed final claim to specific four-property gap | ~1500 |
+| 2026-04-14 | Created Rev 1 gold-copy article for Medium/tutorial publication | docs/plans/storage-review/article-rev1-gold.md, .wolf/anatomy.md | saved final flow-first article with end-to-end Karakeep walkthrough, fail-open/fail-closed framing, and softened public claims | ~2200 |
 
 | Time | Description | File(s) | Outcome | ~Tokens |
 |------|-------------|---------|---------|---------|
@@ -505,3 +512,22 @@
 | 01:17 | Session end: 1 writes across 1 files (ecosystem-research-and-validation.md) | 47 reads | ~55108 tok |
 | 01:20 | Created docs/plans/storage-review/article-draft.md | — | ~5061 |
 | 01:21 | Session end: 2 writes across 2 files (ecosystem-research-and-validation.md, article-draft.md) | 48 reads | ~63236 tok |
+| 19:48 | Session end: 2 writes across 2 files (ecosystem-research-and-validation.md, article-draft.md) | 48 reads | ~63236 tok |
+| 19:53 | Edited docs/plans/storage-review/article-draft.md | 3→3 lines | ~344 |
+| 19:54 | Edited docs/plans/storage-review/article-draft.md | 17→22 lines | ~813 |
+| 19:54 | Edited docs/plans/storage-review/article-draft.md | inline fix | ~169 |
+| 19:54 | Edited docs/plans/storage-review/article-draft.md | inline fix | ~129 |
+| 19:55 | Edited docs/plans/storage-review/article-draft.md | "s Volume Populator integr" → "dataSourceRef" | ~217 |
+| 19:55 | Edited docs/plans/storage-review/article-draft.md | inline fix | ~123 |
+| 19:56 | Session end: 8 writes across 2 files (ecosystem-research-and-validation.md, article-draft.md) | 48 reads | ~68535 tok |
+| 20:08 | Session end: 8 writes across 2 files (ecosystem-research-and-validation.md, article-draft.md) | 48 reads | ~68535 tok |
+| 20:08 | Session end: 8 writes across 2 files (ecosystem-research-and-validation.md, article-draft.md) | 48 reads | ~68535 tok |
+| 20:09 | Session end: 8 writes across 2 files (ecosystem-research-and-validation.md, article-draft.md) | 48 reads | ~68535 tok |
+| 20:10 | Session end: 8 writes across 2 files (ecosystem-research-and-validation.md, article-draft.md) | 48 reads | ~68535 tok |
+| 20:11 | Edited docs/plans/storage-review/article-draft.md | 25→28 lines | ~420 |
+| 20:12 | Edited docs/plans/storage-review/article-draft.md | 9→11 lines | ~593 |
+| 20:12 | Edited docs/plans/storage-review/article-draft.md | inline fix | ~270 |
+| 20:13 | Edited docs/plans/storage-review/article-draft.md | 11→11 lines | ~579 |
+| 20:13 | Session end: 12 writes across 2 files (ecosystem-research-and-validation.md, article-draft.md) | 48 reads | ~70955 tok |
+| 22:10 | Created docs/plans/storage-review/article-draft.md | — | ~4853 |
+| 22:10 | Session end: 13 writes across 2 files (ecosystem-research-and-validation.md, article-draft.md) | 48 reads | ~76619 tok |

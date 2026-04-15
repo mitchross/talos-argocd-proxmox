@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-14T05:20:28.703Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-15T02:10:16.106Z
 > Files: 539 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../pvc-plumber/cmd/pvc-plumber/
@@ -99,7 +99,8 @@
 
 ## docs/plans/storage-review/
 
-- `article-draft.md` — The Missing Primitive: Conditional PVC Restore for Zero-Touch GitOps Disaster Recovery (~4745 tok)
+- `article-draft.md` — The Missing Primitive: Conditional PVC Restore for Zero-Touch GitOps Disaster Recovery (~4550 tok)
+- `article-rev1-gold.md` — Rev 1 gold-copy Medium/tutorial version of the conditional PVC restore article with end-to-end Karakeep walkthrough (~4700 tok)
 - `claude-review-storage.md` — Architectural Decision Record: PVC-Plumber + Kyverno Zero-Touch DR System (~9459 tok)
 - `ecosystem-research-and-validation.md` — Ecosystem Research & Architectural Validation Report (~6711 tok)
 - `final-synthesis.md` — Final Synthesis & Master Architectural Recommendations (~9532 tok)
