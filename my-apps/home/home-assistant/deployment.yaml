@@ -42,6 +42,28 @@ spec:
                 - home-assistant
             topologyKey: kubernetes.io/hostname
       initContainers:
+        - name: copy-config
+          image: alpine:latest@sha256:4d889c14e7d5a73929ab00be2ef8ff22437e7cbc545931e52554a7b00e123d8b
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              # Copy config from ConfigMap to PVC (HA needs writable config files)
+              cp /config-source/configuration.yaml /config/configuration.yaml
+              cp /config-source/automations.yaml /config/automations.yaml
+              cp /config-source/scripts.yaml /config/scripts.yaml
+              cp /config-source/scenes.yaml /config/scenes.yaml
+              # Ensure themes directory exists
+              mkdir -p /config/themes
+              echo "Config files copied to PVC"
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: config-files
+              mountPath: /config-source
         - name: install-hacs
           image: alpine:latest@sha256:4d889c14e7d5a73929ab00be2ef8ff22437e7cbc545931e52554a7b00e123d8b
           imagePullPolicy: IfNotPresent
@@ -84,33 +106,21 @@ spec:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 10
             timeoutSeconds: 5
-            failureThreshold: 3
+            failureThreshold: 5
           readinessProbe:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 5
             timeoutSeconds: 3
-            failureThreshold: 3
+            failureThreshold: 10
           volumeMounts:
             - name: config
               mountPath: /config
-            - name: config-files
-              mountPath: /config/configuration.yaml
-              subPath: configuration.yaml
-            - name: config-files
-              mountPath: /config/automations.yaml
-              subPath: automations.yaml
-            - name: config-files
-              mountPath: /config/scripts.yaml
-              subPath: scripts.yaml
-            - name: config-files
-              mountPath: /config/scenes.yaml
-              subPath: scenes.yaml
           resources:
             requests:
               cpu: 100m

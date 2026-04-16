@@ -608,6 +608,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-16T02:23:06.487Z"
+    },
+    {
+      "id": "bug-039",
+      "timestamp": "2026-04-16T06:16:25.315Z",
+      "error_message": "Significant refactor of ",
+      "file": "my-apps/home/home-assistant/deployment.yaml",
+      "root_cause": "12 lines replaced/restructured",
+      "fix": "Rewrote 16→4 lines (12 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-16T06:16:25.315Z"
     }
   ]
 }

@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-16T05:28:22.821Z
-> Files: 546 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-16T06:16:35.590Z
+> Files: 548 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../pvc-plumber/cmd/pvc-plumber/
 
@@ -846,7 +846,7 @@
 
 - `automations.yaml` — Automations will be managed from the UI (~13 tok)
 - `configuration.yaml` — Loads default set of integrations. Do not remove. (~325 tok)
-- `deployment.yaml` — K8s Deployment: home-assistant (~1608 tok)
+- `deployment.yaml` — K8s Deployment (~1752 tok)
 - `httproute.yaml` — K8s HTTPRoute: home-assistant (~254 tok)
 - `kustomization.yaml` — K8s Kustomization: home-assistant (~195 tok)
 - `namespace.yaml` — K8s Namespace: home-assistant (~95 tok)
@@ -908,3 +908,11 @@
 ## my-apps/privacy/searxng/
 
 - `settings.yaml` (~882 tok)
+
+## omni/cluster-template/
+
+- `cluster-template.yaml` — omnictl cluster template sync -v -f cluster-template-working.yaml (~1429 tok)
+
+## omni/cluster-template/patches/
+
+- `docker-hub-auth.yaml` (~46 tok)
