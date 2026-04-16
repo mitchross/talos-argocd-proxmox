@@ -179,6 +179,7 @@ Barman → RustFS S3
 
 | Database | S3 Path | Current serverName | Schedule |
 |----------|---------|-------------------|----------|
+| gitea | `s3://postgres-backups/cnpg/gitea` | `gitea-database-v3` | Daily + WAL |
 | immich | `s3://postgres-backups/cnpg/immich` | `immich-database-v6` | Hourly + WAL |
 | khoj | `s3://postgres-backups/cnpg/khoj` | `khoj-database` | Daily 2am + WAL |
 | paperless | `s3://postgres-backups/cnpg/paperless` | `paperless-database` | Daily 2am + WAL |

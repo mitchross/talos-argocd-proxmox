@@ -31,6 +31,11 @@
       "count": 1,
       "tokens": 3081,
       "first_read": "2026-04-16T02:23:13.209Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/docs/cnpg-disaster-recovery.md": {
+      "count": 1,
+      "tokens": 7577,
+      "first_read": "2026-04-16T02:25:12.161Z"
     }
   },
   "files_written": [
@@ -81,6 +86,12 @@
       "action": "edit",
       "tokens": 67,
       "at": "2026-04-16T02:23:47.210Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/docs/cnpg-disaster-recovery.md",
+      "action": "edit",
+      "tokens": 130,
+      "at": "2026-04-16T02:34:01.069Z"
     }
   ],
   "edit_counts": {
@@ -88,11 +99,12 @@
     "infrastructure/database/cloudnative-pg/gitea/cluster.yaml": 3,
     "my-apps/ai/llama-cpp/deployment.yaml": 2,
     ".github/renovate.json5": 1,
-    "infrastructure/database/CLAUDE.md": 1
+    "infrastructure/database/CLAUDE.md": 1,
+    "docs/cnpg-disaster-recovery.md": 1
   },
-  "anatomy_hits": 4,
+  "anatomy_hits": 5,
   "anatomy_misses": 2,
   "repeated_reads_warned": 0,
   "cerebrum_warnings": 0,
-  "stop_count": 46
+  "stop_count": 47
 }
