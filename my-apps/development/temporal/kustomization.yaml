@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - httproute.yaml
+  - externalsecret.yaml
 helmCharts:
   - name: temporal
     repo: https://go.temporal.io/helm-charts
