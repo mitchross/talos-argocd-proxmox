@@ -24,8 +24,10 @@ spec:
     kernelargs: []
     metavalues: []
     providerdata: |
-      cores: 18
-      sockets: 2
+      # CPU sized for GPU-only inference workloads — ComfyUI/llama-cpp do the
+      # heavy work on the GPU; VM CPU only serves OS, containerd, NFS copies.
+      cores: 8
+      sockets: 1
       memory: 196608
       disk_size: 600
       network_bridge: vmbr1
@@ -39,6 +41,9 @@ spec:
       # GPU passthrough optimizations
       cpu_type: host
       machine_type: q35
+      # numa=true is a HOST-side hint even with sockets:1 in the guest — keeps
+      # the VM's memory on the same NUMA node as its vCPUs and (ideally) as
+      # the PCIe lanes owning the GPUs. Matters on the 2-socket Xeon host.
       numa: true
       # hugepages: 1GB  # Requires host config: echo 256 > /proc/sys/vm/nr_hugepages
       balloon: false

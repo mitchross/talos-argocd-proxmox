@@ -3,69 +3,92 @@ kind: Kustomization
 namespace: gpu-operator
 resources:
 - namespace.yaml
-# - time-slicing-config.yaml
-# - external-secret.yaml
-# helmCharts:
-# - name: gpu-operator
-#   repo: https://helm.ngc.nvidia.com/nvidia
-#   version: v25.3.0
-#   releaseName: gpu-operator
-#   namespace: gpu-operator
-#   includeCRDs: true
-#   valuesInline:
-#     operator:
-#       defaultRuntime: containerd
-#     nfd:
-#       enabled: false
-#     driver:
-#       enabled: false
-#     toolkit:
-#       enabled: false
-#     devicePlugin:
-#       enabled: true
-#       config:
-#         name: time-slicing-config
-#         default: config.yaml
-#       nodeSelector: {}
-#       tolerations:
-#       - key: nvidia.com/gpu
-#         operator: Exists
-#         effect: NoSchedule
-#       - key: "gpu"
-#         operator: Equal
-#         value: "true"
-#         effect: NoSchedule
-#     migManager:
-#       enabled: false
-#     gfd:
-#       enabled: true
-#       nodeSelector: {}
-#       tolerations:
-#       - key: nvidia.com/gpu
-#         operator: Exists
-#         effect: NoSchedule
-#       - key: "gpu"
-#         operator: Equal
-#         value: "true"
-#         effect: NoSchedule
-#     dcgmExporter:
-#       enabled: true
-#       nodeSelector: {}
-#       tolerations:
-#       - key: nvidia.com/gpu
-#         operator: Exists
-#         effect: NoSchedule
-#       - key: "gpu"
-#         operator: Equal
-#         value: "true"
-#         effect: NoSchedule
-#     validator:
-#       nodeSelector: {}
-#       tolerations:
-#       - key: nvidia.com/gpu
-#         operator: Exists
-#         effect: NoSchedule
-#       - key: "gpu"
-#         operator: Equal
-#         value: "true"
-#         effect: NoSchedule
+- external-secret.yaml
+- time-slicing-config.yaml
+# cluster-policy.yaml intentionally not included — the Helm chart generates its
+# own ClusterPolicy from valuesInline below. Keeping both would cause a conflict.
+
+# Talos 1.13 ships the NVIDIA driver + nvidia-container-toolkit via system
+# extensions and emits CDI specs to /run/cdi automatically. The gpu-operator
+# Helm chart manages only the device plugin, GFD, and validator on top of that.
+helmCharts:
+- name: gpu-operator
+  repo: https://helm.ngc.nvidia.com/nvidia
+  # renovate: datasource=helm depName=gpu-operator registryUrl=https://helm.ngc.nvidia.com/nvidia
+  version: v25.10.1
+  releaseName: gpu-operator
+  namespace: gpu-operator
+  includeCRDs: true
+  valuesInline:
+    operator:
+      defaultRuntime: containerd
+      runtimeClass: nvidia
+    # Talos system extensions own the driver + toolkit on the node.
+    driver:
+      enabled: false
+    toolkit:
+      enabled: false
+    # Talos 1.13 has CDI enabled by default and writes specs to /run/cdi.
+    cdi:
+      enabled: true
+      default: true
+    # We already run siderolabs/node-feature-discovery cluster-wide.
+    nfd:
+      enabled: false
+    # Talos-specific host paths. The driver install dir must point to where the
+    # siderolabs/nonfree-kmod-nvidia-production extension places the driver
+    # libraries on a Talos host.
+    hostPaths:
+      driverInstallDir: /usr/local/glibc/usr
+    devicePlugin:
+      enabled: true
+      config:
+        name: time-slicing-config
+        default: config.yaml
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      - key: gpu
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+    gfd:
+      enabled: true
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      - key: gpu
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+    # DCGM exporter runs as a standalone DaemonSet in monitoring/prometheus-stack.
+    # Keep the operator's copy disabled to avoid two exporters scraping the same
+    # GPUs and ServiceMonitor label collisions.
+    dcgm:
+      enabled: false
+    dcgmExporter:
+      enabled: false
+    migManager:
+      enabled: false
+    validator:
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      - key: gpu
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+    nodeStatusExporter:
+      enabled: true
+    daemonsets:
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      - key: gpu
+        operator: Equal
+        value: "true"
+        effect: NoSchedule

@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-16T06:16:35.590Z
-> Files: 548 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-16T19:47:52.208Z
+> Files: 551 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../pvc-plumber/cmd/pvc-plumber/
 
@@ -96,6 +96,7 @@
 - `2026-02-28-single-gpu-llamacpp-comfyui-vision.md` — Single-GPU Llama.cpp + ComfyUI Vision Integration (~2086 tok)
 - `2026-03-16-project-nomad-k8s-openai.md` — Project Nomad: Kubernetes + OpenAI-Compatible LLM Provider (~5421 tok)
 - `2026-03-22-alloy-otel-honeycomb-design.md` — OpenTelemetry Operator + Honeycomb Design (~1136 tok)
+- `2026-04-16-talos-1.13-upgrade-plan.md` — Talos 1.13 + Omni 1.7 Full Upgrade Plan (~3816 tok)
 
 ## docs/plans/storage-review/
 
@@ -137,7 +138,7 @@
 - `cilium-app.yaml` — Critical: Cilium must be deployed first (wave 0) (~489 tok)
 - `database-appset.yaml` — K8s ApplicationSet: database (~705 tok)
 - `external-secrets.yaml` — K8s Application: external-secrets (~319 tok)
-- `infrastructure-appset.yaml` — K8s ApplicationSet: infrastructure (~1079 tok)
+- `infrastructure-appset.yaml` — K8s ApplicationSet (~1124 tok)
 - `kustomization.yaml` — K8s Kustomization (~367 tok)
 - `kyverno-app.yaml` — K8s Application: kyverno (~494 tok)
 - `longhorn-app.yaml` — Critical: Longhorn must be deployed after Cilium (wave 1) (~371 tok)
@@ -227,7 +228,7 @@
 
 - `cluster-policy.yaml` — K8s ClusterPolicy: cluster-policy (~170 tok)
 - `external-secret.yaml` — K8s ExternalSecret: nvidia-api-key (~268 tok)
-- `kustomization.yaml` — K8s Kustomization: gpu-operator (~491 tok)
+- `kustomization.yaml` — K8s Kustomization (~806 tok)
 - `namespace.yaml` — K8s Namespace: gpu-operator (~36 tok)
 - `preinstalled-validation-daemonset.yaml` — K8s DaemonSet: nvidia-preinstalled-validation-markers (~408 tok)
 - `test-pod.yaml` — K8s Pod: cuda-vectoradd (~91 tok)
@@ -911,8 +912,13 @@
 
 ## omni/cluster-template/
 
-- `cluster-template.yaml` — omnictl cluster template sync -v -f cluster-template-working.yaml (~1429 tok)
+- `cluster-template.yaml` — omnictl cluster template sync -v -f cluster-template-working.yaml (~1492 tok)
 
 ## omni/cluster-template/patches/
 
 - `docker-hub-auth.yaml` (~46 tok)
+
+## omni/machine-classes/
+
+- `gpu-worker.yaml` — omnictl apply -f gpu-worker.yaml (~649 tok)
+- `worker.yaml` — omnictl apply -f worker.yaml (~359 tok)

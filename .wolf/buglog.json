@@ -624,6 +624,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-16T06:16:25.315Z"
+    },
+    {
+      "id": "bug-040",
+      "timestamp": "2026-04-16T19:35:51.999Z",
+      "error_message": "Significant refactor of ",
+      "file": "omni/cluster-template/cluster-template.yaml",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 4→5 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-16T19:35:51.999Z"
+    },
+    {
+      "id": "bug-041",
+      "timestamp": "2026-04-16T19:46:44.887Z",
+      "error_message": "Significant refactor of ",
+      "file": "omni/machine-classes/gpu-worker.yaml",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 18→20 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-16T19:46:44.887Z"
     }
   ]
 }
