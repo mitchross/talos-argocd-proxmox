@@ -732,3 +732,4 @@
 | 15:52 | Session end: 9 writes across 5 files (cluster-template.yaml, kustomization.yaml, infrastructure-appset.yaml, worker.yaml, gpu-worker.yaml) | 23 reads | ~20547 tok |
 | 15:58 | Session end: 9 writes across 5 files (cluster-template.yaml, kustomization.yaml, infrastructure-appset.yaml, worker.yaml, gpu-worker.yaml) | 23 reads | ~20547 tok |
 | 16:01 | Session end: 9 writes across 5 files (cluster-template.yaml, kustomization.yaml, infrastructure-appset.yaml, worker.yaml, gpu-worker.yaml) | 23 reads | ~20547 tok |
+| 18:33 | Add install-disk patch to cluster-template (Talos 1.13 fix) | omni/cluster-template/cluster-template.yaml | one patch added | ~200 tok |

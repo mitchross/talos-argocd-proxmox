@@ -26,6 +26,15 @@ patches:
     kind: ResolverConfig
     nameservers:
     - address: 192.168.10.1
+# Talos 1.13 switched install/upgrade to the LifecycleService API; without an
+# explicit install.disk, fresh VMs fail with "system disk not found" in
+# maintenanceUpgrade. virtio-scsi-single + scsi0 presents as /dev/sda in all
+# three machine classes, so this is safe to apply cluster-wide.
+- name: install-disk
+  inline:
+    machine:
+      install:
+        disk: /dev/sda
 - file: patches/docker-hub-auth.yaml
 - name: node-performance
   inline:
