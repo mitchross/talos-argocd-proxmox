@@ -15,7 +15,9 @@ spec:
       - path: infrastructure/controllers/external-dns
       - path: infrastructure/controllers/gpu-priority-classes
       - path: infrastructure/controllers/node-feature-discovery
-      - path: infrastructure/controllers/nvidia-device-plugin
+      # nvidia-device-plugin removed on Talos 1.13 — gpu-operator Helm chart
+      # (in nvidia-gpu-operator) now owns the device plugin on top of the
+      # CDI-based driver/toolkit shipped by Talos system extensions.
       - path: infrastructure/controllers/nvidia-gpu-operator
       - path: infrastructure/controllers/metrics-server
       - path: infrastructure/controllers/vertical-pod-autoscaler

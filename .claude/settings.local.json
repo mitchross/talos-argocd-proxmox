@@ -10,7 +10,8 @@
       "WebFetch(domain:ghcr.io)",
       "WebFetch(domain:api.github.com)",
       "WebFetch(domain:hub.docker.com)",
-      "mcp__cloudflare__zones_list"
+      "mcp__cloudflare__zones_list",
+      "WebFetch(domain:docs.siderolabs.com)"
     ],
     "deny": [
       "Bash(git reset --hard:*)",
