@@ -19,6 +19,7 @@
 - **Project Zomboid (indifferentbroccoli image)**: SteamCMD self-updates and restarts mid-session, causing `0x6`/`0x20006`/`Missing configuration` errors on the validation pass. Fix: add a `steamcmd-update` initContainer that runs `steamcmd.sh +quit` to pre-warm SteamCMD into an emptyDir, then mount it into the main container at `/home/steam/steamcmd`. This prevents the self-restart during game install.
 - **Project Zomboid rcon-cli path**: The indifferentbroccoli image installs rcon-cli at `/usr/bin/rcon-cli`, NOT `/home/steam/server/rcon-cli`. Use just `rcon-cli` (on PATH) in probes and lifecycle hooks.
 - **Project Zomboid PVC sizing**: `zomboid-server-files` needs at least 60Gi — the unstable branch game files are ~7GB installed plus SteamCMD staging space. 15Gi is not enough.
+- **Talos 1.13 requires explicit `machine.install.disk`**: 1.13 switched install/upgrade to LifecycleService API. Fresh VMs in maintenance mode fail with `task upgrade (1/1): failed: system disk not found` if the config has no `install.disk` — auto-pick behavior present in 1.12 is gone. For Proxmox machine classes using `scsihw: virtio-scsi-single` + single `scsi0`, disk is `/dev/sda`. Patch lives in top-level `patches:` block of `cluster-template.yaml` so it applies to all machine sets.
 
 ## Do-Not-Repeat
 
