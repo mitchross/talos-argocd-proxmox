@@ -24,7 +24,7 @@ spec:
         feature.node.kubernetes.io/cpu-cpuid.AVX2: "true"
       containers:
         - name: worker
-          image: posthog/posthog:latest@sha256:fd5dd80329f2dfc1afa8130dba8c2388202f390125a7e6bd40e86b6c4fa3cfdf
+          image: posthog/posthog:latest@sha256:39b123d3123328d0ccf32280d2762bd41e2af270f8a037f177d2e565d53ad777
           command:
             - ./bin/docker-worker-celery
             - --with-scheduler
