@@ -94,11 +94,11 @@
       enabled: true,
     },
     {
-      description: 'Handle llama.cpp custom versioning (custom build with CUDA 12.8)',
+      description: 'Handle llama.cpp upstream versioning (CUDA 12 build)',
       matchPackageNames: [
-        'ghcr.io/mitchross/llama-cpp-cuda',
+        'ghcr.io/ggml-org/llama.cpp',
       ],
-      versioning: 'regex:^server-cuda-b(?<major>\\d+)$',
+      versioning: 'regex:^server-cuda12-b(?<major>\\d+)$',
     },
     {
       description: 'Ignore NVIDIA CUDA updates (breaking changes)',

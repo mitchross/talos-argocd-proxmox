@@ -560,6 +560,54 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-15T12:58:22.043Z"
+    },
+    {
+      "id": "bug-036",
+      "timestamp": "2026-04-16T01:55:52.345Z",
+      "error_message": "Significant refactor of ",
+      "file": "infrastructure/database/cloudnative-pg/gitea/cluster.yaml",
+      "root_cause": "30 lines replaced/restructured",
+      "fix": "Rewrote 34→26 lines (30 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-16T01:55:52.345Z"
+    },
+    {
+      "id": "bug-037",
+      "timestamp": "2026-04-16T01:57:12.085Z",
+      "error_message": "Wrong reference: b8665 should be b8783",
+      "file": "my-apps/ai/llama-cpp/deployment.yaml",
+      "root_cause": "Used \"b8665\" instead of \"b8783\"",
+      "fix": "Changed b8665 → b8783",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-16T01:57:12.085Z"
+    },
+    {
+      "id": "bug-038",
+      "timestamp": "2026-04-16T02:23:06.487Z",
+      "error_message": "Significant refactor of ",
+      "file": "infrastructure/database/cloudnative-pg/gitea/cluster.yaml",
+      "root_cause": "22 lines replaced/restructured",
+      "fix": "Rewrote 26→34 lines (22 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-16T02:23:06.487Z"
     }
   ]
 }
