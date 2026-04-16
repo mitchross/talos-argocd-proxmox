@@ -34,3 +34,4 @@
 ## Decision Log
 
 <!-- Significant technical decisions with rationale. Why X was chosen over Y. -->
+- [2026-04-15] Migrated ComfyUI from `cu128-megapak` to `cu130-megapak-pt211`. CUDA 13.0 is now the upstream-recommended version — performance libraries (SageAttention, FlashAttention, Nunchaku) target it. ComfyUI-Manager moved from git-cloned custom node to pip package with `--enable-manager` flag. CLI_ARGS cleared since entrypoint already passes `--listen --port 8188 --enable-manager --enable-manager-legacy-ui`.
