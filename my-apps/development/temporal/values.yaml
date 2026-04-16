@@ -100,7 +100,7 @@ web:
   replicaCount: 1
   image:
     repository: temporalio/ui
-    tag: 2.48.1
+    tag: 2.48.3
   resources:
     requests:
       cpu: 50m
