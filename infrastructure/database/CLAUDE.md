@@ -97,6 +97,7 @@ Track these — must match for recovery:
 
 | Database | Current backup serverName |
 |----------|--------------------------|
+| gitea | `gitea-database-v3` |
 | immich | `immich-database-v6` |
 | khoj | `khoj-database` (original) |
 | paperless | `paperless-database` (original) |

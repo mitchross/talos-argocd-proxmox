@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-15T12:58:22.033Z
-> Files: 540 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-16T02:23:47.204Z
+> Files: 545 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../pvc-plumber/cmd/pvc-plumber/
 
@@ -57,7 +57,7 @@
 ## .github/
 
 - `copilot-instructions.md` — GitHub Copilot Instructions for talos-argocd-proxmox (~1417 tok)
-- `renovate.json5` (~1410 tok)
+- `renovate.json5` (~1406 tok)
 
 ## .github/instructions/
 
@@ -260,7 +260,7 @@
 
 ## infrastructure/database/
 
-- `CLAUDE.md` — Database Guidelines (CNPG CloudNativePG) (~1099 tok)
+- `CLAUDE.md` — Database Guidelines (CNPG CloudNativePG) (~1107 tok)
 
 ## infrastructure/database/cloudnative-pg/cloudnative-pg-operator/
 
@@ -271,7 +271,7 @@
 
 ## infrastructure/database/cloudnative-pg/gitea/
 
-- `cluster.yaml` — K8s Cluster: gitea-database (~685 tok)
+- `cluster.yaml` — K8s Cluster (~685 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: gitea-app-secret (~145 tok)
 - `kustomization.yaml` — K8s Kustomization: gitea-db (~90 tok)
 - `scheduled-backup.yaml` — K8s ScheduledBackup: gitea-daily-backup (~67 tok)
@@ -301,6 +301,13 @@
 
 - `externalsecret.yaml` — K8s ExternalSecret: postgres-superuser-secret (~566 tok)
 - `kustomization.yaml` — K8s Kustomization: postgres-global-secrets (~82 tok)
+
+## infrastructure/database/cloudnative-pg/temporal/
+
+- `cluster.yaml` — K8s Cluster (~720 tok)
+- `externalsecret.yaml` — K8s ExternalSecret (~148 tok)
+- `kustomization.yaml` — K8s Kustomization (~90 tok)
+- `scheduled-backup.yaml` — K8s ScheduledBackup (~69 tok)
 
 ## infrastructure/database/crunchy-postgres/postgres-operator/
 
@@ -524,7 +531,7 @@
 ## my-apps/ai/llama-cpp/
 
 - `configmap.yaml` — K8s ConfigMap: llama-cpp-config (~1359 tok)
-- `deployment.yaml` — K8s Deployment: llama-cpp-server (~1367 tok)
+- `deployment.yaml` — K8s Deployment (~1366 tok)
 - `httproute.yaml` — K8s HTTPRoute: llama-cpp-route (~151 tok)
 - `kustomization.yaml` — K8s Kustomization (~59 tok)
 - `namespace.yaml` — K8s Namespace: llama-cpp (~17 tok)
@@ -801,10 +808,11 @@
 
 ## my-apps/development/temporal/
 
+- `externalsecret.yaml` — K8s ExternalSecret (~114 tok)
 - `httproute.yaml` — K8s HTTPRoute: temporal-web (~146 tok)
-- `kustomization.yaml` — K8s Kustomization: temporal (~167 tok)
+- `kustomization.yaml` — K8s Kustomization (~173 tok)
 - `namespace.yaml` — K8s Namespace: temporal (~17 tok)
-- `values.yaml` (~738 tok)
+- `values.yaml` (~647 tok)
 
 ## my-apps/development/vert/
 

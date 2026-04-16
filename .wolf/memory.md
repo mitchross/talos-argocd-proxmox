@@ -535,3 +535,62 @@
 | 08:57 | Edited docs/plans/storage-review/article-rev1-gold.md | expanded (+34 lines) | ~1507 |
 | 08:58 | Edited docs/plans/storage-review/article-rev1-gold.md | expanded (+55 lines) | ~1376 |
 | 08:58 | Session end: 15 writes across 3 files (ecosystem-research-and-validation.md, article-draft.md, article-rev1-gold.md) | 49 reads | ~84408 tok |
+| 19:00 | Created infrastructure/database/cloudnative-pg/temporal/kustomization.yaml | — | ~90 |
+| 21:35 | Created infrastructure/database/cloudnative-pg/temporal/externalsecret.yaml | — | ~148 |
+| 21:35 | Created infrastructure/database/cloudnative-pg/temporal/scheduled-backup.yaml | — | ~69 |
+| 21:35 | Created infrastructure/database/cloudnative-pg/temporal/cluster.yaml | — | ~720 |
+| 21:35 | Created my-apps/development/temporal/externalsecret.yaml | — | ~114 |
+| 21:36 | Created my-apps/development/temporal/values.yaml | — | ~663 |
+| 21:36 | Edited my-apps/development/temporal/kustomization.yaml | 3→4 lines | ~21 |
+
+## Session: 2026-04-16 21:37
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 21:43 | Edited my-apps/development/temporal/values.yaml | — | ~0 |
+| 21:44 | Session end: 1 writes across 1 files (values.yaml) | 1 reads | ~0 tok |
+| 21:47 | Session end: 1 writes across 1 files (values.yaml) | 1 reads | ~0 tok |
+| 21:47 | Session end: 1 writes across 1 files (values.yaml) | 1 reads | ~0 tok |
+| 21:49 | Session end: 1 writes across 1 files (values.yaml) | 1 reads | ~0 tok |
+| 21:49 | Session end: 1 writes across 1 files (values.yaml) | 1 reads | ~0 tok |
+| 21:50 | Session end: 1 writes across 1 files (values.yaml) | 2 reads | ~0 tok |
+| 21:55 | Edited infrastructure/database/cloudnative-pg/gitea/cluster.yaml | reduced (-8 lines) | ~215 |
+| 21:56 | Session end: 2 writes across 2 files (values.yaml, cluster.yaml) | 3 reads | ~900 tok |
+| 21:56 | Session end: 2 writes across 2 files (values.yaml, cluster.yaml) | 3 reads | ~900 tok |
+| 21:57 | Edited my-apps/ai/llama-cpp/deployment.yaml | inline fix | ~20 |
+| 21:57 | Session end: 3 writes across 3 files (values.yaml, cluster.yaml, deployment.yaml) | 4 reads | ~2287 tok |
+| 21:58 | Edited my-apps/ai/llama-cpp/deployment.yaml | inline fix | ~18 |
+| 21:58 | Session end: 4 writes across 3 files (values.yaml, cluster.yaml, deployment.yaml) | 4 reads | ~2305 tok |
+| 21:59 | Edited .github/renovate.json5 | 7→7 lines | ~59 |
+| 21:59 | Session end: 5 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3778 tok |
+| 22:16 | Edited infrastructure/database/cloudnative-pg/gitea/cluster.yaml | 15→15 lines | ~129 |
+| 22:18 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:18 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:18 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:18 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:18 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:18 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:18 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:18 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:19 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:19 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:19 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:19 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:19 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:19 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:19 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:19 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:19 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:19 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:20 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:20 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:20 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:20 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:20 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:20 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:20 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:20 | Session end: 6 writes across 4 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5) | 5 reads | ~3907 tok |
+| 22:23 | Edited infrastructure/database/cloudnative-pg/gitea/cluster.yaml | expanded (+8 lines) | ~363 |
+| 22:23 | Edited infrastructure/database/CLAUDE.md | 5→6 lines | ~62 |
+| 22:23 | Session end: 8 writes across 5 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5, CLAUDE.md) | 6 reads | ~7418 tok |
+| 22:24 | Session end: 8 writes across 5 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5, CLAUDE.md) | 6 reads | ~7418 tok |
