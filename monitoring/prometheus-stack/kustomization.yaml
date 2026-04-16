@@ -25,7 +25,7 @@ patchesStrategicMerge:
 helmCharts:
   - name: kube-prometheus-stack
     repo: https://prometheus-community.github.io/helm-charts
-    version: 83.1.0
+    version: 83.4.3
     releaseName: kube-prometheus-stack
     namespace: prometheus-stack
     valuesFile: values.yaml
