@@ -41,6 +41,16 @@
       "count": 2,
       "tokens": 647,
       "first_read": "2026-04-16T02:50:41.674Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/comfyui/deployment.yaml": {
+      "count": 1,
+      "tokens": 969,
+      "first_read": "2026-04-16T02:52:36.646Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/comfyui/configmap.yaml": {
+      "count": 1,
+      "tokens": 3635,
+      "first_read": "2026-04-16T02:53:17.417Z"
     }
   },
   "files_written": [
@@ -109,6 +119,12 @@
       "action": "create",
       "tokens": 588,
       "at": "2026-04-16T02:51:39.282Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/comfyui/deployment.yaml",
+      "action": "edit",
+      "tokens": 246,
+      "at": "2026-04-16T02:53:12.113Z"
     }
   ],
   "edit_counts": {
@@ -118,11 +134,11 @@
     ".github/renovate.json5": 1,
     "infrastructure/database/CLAUDE.md": 1,
     "docs/cnpg-disaster-recovery.md": 1,
-    "my-apps/ai/comfyui/deployment.yaml": 1
+    "my-apps/ai/comfyui/deployment.yaml": 2
   },
-  "anatomy_hits": 6,
+  "anatomy_hits": 8,
   "anatomy_misses": 2,
   "repeated_reads_warned": 1,
   "cerebrum_warnings": 0,
-  "stop_count": 50
+  "stop_count": 52
 }
