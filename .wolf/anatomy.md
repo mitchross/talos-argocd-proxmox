@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-16T02:23:47.204Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-16T02:34:01.064Z
 > Files: 545 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../pvc-plumber/cmd/pvc-plumber/
@@ -82,7 +82,7 @@
 
 - `argocd.md` — ArgoCD & GitOps Architecture (~5600 tok)
 - `backup-restore.md` — Zero-Touch PVC Backup and Restore (~3381 tok)
-- `cnpg-disaster-recovery.md` — CNPG Database Disaster Recovery (~7577 tok)
+- `cnpg-disaster-recovery.md` — CNPG Database Disaster Recovery (~7598 tok)
 - `conditional-restore-ecosystem-research.md` — Research report on public Kubernetes/homelab restore patterns and the missing conditional restore primitive (~3200 tok)
 - `homelab-storage-reference.md` — Homelab storage backend, restore-intent guide, and operational sharp-edge reference (~4450 tok)
 - `index.md` — Talos ArgoCD Proxmox (~272 tok)
