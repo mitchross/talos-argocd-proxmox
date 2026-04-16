@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-16T02:34:01.064Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-16T02:51:39.276Z
 > Files: 545 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../pvc-plumber/cmd/pvc-plumber/
@@ -505,7 +505,7 @@
 ## my-apps/ai/comfyui/
 
 - `configmap.yaml` — K8s ConfigMap: comfyui-manager-config (~3635 tok)
-- `deployment.yaml` — K8s Deployment: comfyui (~969 tok)
+- `deployment.yaml` — K8s Deployment (~969 tok)
 - `download-models-job.yaml` — K8s Job: comfyui-download-models (~1445 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: comfyui-secrets (~132 tok)
 - `httproute.yaml` — K8s HTTPRoute: comfyui-route (~146 tok)
@@ -812,7 +812,7 @@
 - `httproute.yaml` — K8s HTTPRoute: temporal-web (~146 tok)
 - `kustomization.yaml` — K8s Kustomization (~173 tok)
 - `namespace.yaml` — K8s Namespace: temporal (~17 tok)
-- `values.yaml` (~647 tok)
+- `values.yaml` (~588 tok)
 
 ## my-apps/development/vert/
 
