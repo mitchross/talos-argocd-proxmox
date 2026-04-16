@@ -4,11 +4,7 @@ server:
     repository: temporalio/server
     tag: 1.30.3
     pullPolicy: IfNotPresent
-  configMapsToMount: "sprig"
-  setConfigFilePath: true
   replicaCount: 1
-  podAnnotations:
-    cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
   resources:
     requests:
       cpu: 100m
@@ -18,10 +14,34 @@ server:
       memory: 512Mi
   config:
     logLevel: "info"
-    numHistoryShards: 1
+    persistence:
+      defaultStore: default
+      visibilityStore: visibility
+      numHistoryShards: 1
+      datastores:
+        default:
+          sql:
+            createDatabase: false
+            manageSchema: true
+            pluginName: postgres12
+            driverName: postgres12
+            databaseName: temporal
+            connectAddr: "temporal-database-rw.cloudnative-pg.svc.cluster.local:5432"
+            user: temporal
+            existingSecret: temporal-db-secret
+            secretKey: password
+        visibility:
+          sql:
+            createDatabase: false
+            manageSchema: true
+            pluginName: postgres12
+            driverName: postgres12
+            databaseName: temporal_visibility
+            connectAddr: "temporal-database-rw.cloudnative-pg.svc.cluster.local:5432"
+            user: temporal
+            existingSecret: temporal-db-secret
+            secretKey: password
   frontend:
-    podAnnotations:
-      cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
     resources:
       requests:
         cpu: 100m
@@ -30,8 +50,6 @@ server:
         cpu: 200m
         memory: 256Mi
   history:
-    podAnnotations:
-      cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
     resources:
       requests:
         cpu: 100m
@@ -40,8 +58,6 @@ server:
         cpu: 200m
         memory: 256Mi
   matching:
-    podAnnotations:
-      cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
     resources:
       requests:
         cpu: 100m
@@ -50,8 +66,6 @@ server:
         cpu: 200m
         memory: 256Mi
   worker:
-    podAnnotations:
-      cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
     resources:
       requests:
         cpu: 100m
@@ -60,52 +74,9 @@ server:
         cpu: 200m
         memory: 256Mi
 
-cassandra:
-  enabled: true
-  config:
-    cluster_size: 1
-  persistence:
-    enabled: true
-    size: 5Gi
-  resources:
-    requests:
-      cpu: 100m
-      memory: 512Mi
-    limits:
-      cpu: 1000m
-      memory: 1Gi
-
-elasticsearch:
-  enabled: true
-  replicas: 1
-  minimumMasterNodes: 1
-  sysctlInitContainer:
-    enabled: false
-  persistence:
-    enabled: true
-    size: 5Gi
-  resources:
-    requests:
-      cpu: 100m
-      memory: 512Mi
-    limits:
-      cpu: 1000m
-      memory: 1Gi
-  imageTag: 7.17.3
-  host: elasticsearch-master-headless
-  scheme: http
-  port: 9200
-  version: "v7"
-  logLevel: "error"
-  visibilityIndex: "temporal_visibility_v1_dev"
-
 schema:
-  setup:
-    enabled: true
-    backoffLimit: 20
-  update:
-    enabled: true
-    backoffLimit: 20
+  useHelmHooks: false
+  backoffLimit: 20
   resources:
     requests:
       cpu: 100m
@@ -138,7 +109,3 @@ web:
       cpu: 200m
       memory: 256Mi
 
-prometheus:
-  enabled: false
-grafana:
-  enabled: false
