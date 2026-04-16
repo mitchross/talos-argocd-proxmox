@@ -1,3 +1,25 @@
+# ServiceMonitor for Home Assistant (Tapo power monitoring)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: home-assistant-metrics
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: home-assistant
+    release: kube-prometheus-stack
+    prometheus: kube-prometheus-stack-prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: home-assistant
+  namespaceSelector:
+    matchNames:
+      - home-assistant
+  endpoints:
+    - port: http
+      interval: 60s
+      path: /api/prometheus
+---
 # ArgoCD metrics are handled by the argo-cd Helm chart's built-in ServiceMonitors
 # (enabled via per-component metrics.serviceMonitor.enabled in ArgoCD values.yaml)
 ---

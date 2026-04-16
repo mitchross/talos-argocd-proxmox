@@ -21,6 +21,17 @@ http:
 # Enable the recorder (database)
 recorder:
   db_url: sqlite:////config/home-assistant_v2.db
+# Prometheus metrics endpoint for Grafana
+prometheus:
+  requires_auth: false
+  filter:
+    include_entity_globs:
+      - sensor.*_current_consumption
+      - sensor.*_today_energy
+      - sensor.*_current
+      - sensor.*_power
+      - sensor.*_voltage
+      - sensor.*energy*
 # Enable energy monitoring
 energy:
 # Enable the person integration

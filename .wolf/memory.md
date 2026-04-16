@@ -3,6 +3,8 @@
 > Chronological action log. Hooks and AI append to this file automatically.
 > Old sessions are consolidated by the daemon weekly.
 
+| 2026-04-15 | Migrated ComfyUI from cu128-megapak to cu130-megapak-pt211 (CUDA 13.0, Python 3.13, PyTorch 2.11) | my-apps/ai/comfyui/deployment.yaml | pushed | ~3000 |
+
 | Time | Description | Files | Outcome | ~Tokens |
 |------|-------------|-------|---------|---------|
 | 2026-04-13 | Researched community PVC backup/restore practices across 30+ web sources | none | Comprehensive findings on onedr0p/volsync/kopia ecosystem, Longhorn backup patterns, community conventions | ~5000 |
@@ -604,3 +606,29 @@
 | 22:53 | Edited my-apps/ai/comfyui/deployment.yaml | 16→17 lines | ~246 |
 | 22:53 | Session end: 12 writes across 6 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5, CLAUDE.md) | 10 reads | ~21266 tok |
 | 22:53 | Session end: 12 writes across 6 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5, CLAUDE.md) | 10 reads | ~21266 tok |
+| 01:00 | Session end: 12 writes across 6 files (values.yaml, cluster.yaml, deployment.yaml, renovate.json5, CLAUDE.md) | 10 reads | ~21266 tok |
+
+## Session: 2026-04-16 01:15
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 01:27 | Edited my-apps/home/home-assistant/configuration.yaml | expanded (+11 lines) | ~89 |
+| 01:27 | Edited monitoring/prometheus-stack/custom-servicemonitors.yaml | expanded (+22 lines) | ~180 |
+
+## Session: 2026-04-16 01:27
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-04-16 01:27
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 01:28 | Created monitoring/prometheus-stack/tapo-power-dashboard.yaml | — | ~2785 |
+| 01:28 | Edited monitoring/prometheus-stack/kustomization.yaml | 1→2 lines | ~34 |
+| 01:28 | Session end: 2 writes across 2 files (tapo-power-dashboard.yaml, kustomization.yaml) | 0 reads | ~2819 tok |
+| 01:29 | Session end: 2 writes across 2 files (tapo-power-dashboard.yaml, kustomization.yaml) | 1 reads | ~3118 tok |
+| 01:29 | Session end: 2 writes across 2 files (tapo-power-dashboard.yaml, kustomization.yaml) | 1 reads | ~3118 tok |
+| 01:30 | Session end: 2 writes across 2 files (tapo-power-dashboard.yaml, kustomization.yaml) | 1 reads | ~3118 tok |
+| 01:37 | Session end: 2 writes across 2 files (tapo-power-dashboard.yaml, kustomization.yaml) | 7 reads | ~4726 tok |
+| 01:39 | Session end: 2 writes across 2 files (tapo-power-dashboard.yaml, kustomization.yaml) | 11 reads | ~6605 tok |

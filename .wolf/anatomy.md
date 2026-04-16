@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-16T02:53:12.107Z
-> Files: 545 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-16T05:28:22.821Z
+> Files: 546 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../pvc-plumber/cmd/pvc-plumber/
 
@@ -467,20 +467,21 @@
 - `alertmanager-config.yaml` — K8s Secret: alertmanager-kube-prometheus-stack-alertmanager (~1017 tok)
 - `alertmanager-http-route.yaml` — K8s HTTPRoute: alertmanager (~155 tok)
 - `custom-alerts.yaml` — K8s PrometheusRule: custom-cluster-alerts (~2220 tok)
-- `custom-servicemonitors.yaml` — ArgoCD metrics are handled by the argo-cd Helm chart's built-in ServiceMonitors (~947 tok)
+- `custom-servicemonitors.yaml` — ServiceMonitor for Home Assistant (Tapo power monitoring) (~1103 tok)
 - `dcgm-exporter.yaml` — K8s DaemonSet: dcgm-exporter (~910 tok)
 - `frigate-dashboard.yaml` — K8s ConfigMap: frigate-dashboard (~1438 tok)
 - `gpu-alerts.yaml` — K8s PrometheusRule: gpu-alerts (~874 tok)
 - `gpu-dashboard.yaml` — K8s ConfigMap: gpu-dashboard (~18867 tok)
 - `GPU-MONITORING.md` — GPU Monitoring with DCGM Exporter (~683 tok)
 - `grafana-http-route.yaml` — K8s HTTPRoute: grafana (~150 tok)
-- `kustomization.yaml` — K8s Kustomization: kube-prometheus-stack (~356 tok)
+- `kustomization.yaml` — K8s Kustomization (~374 tok)
 - `loki-logs-dashboard.yaml` — K8s ConfigMap: loki-logs-dashboard (~1404 tok)
 - `longhorn-backup-alerts.yaml` — K8s PrometheusRule: longhorn-backup-alerts (~3028 tok)
 - `network-policy.yaml` — K8s CiliumNetworkPolicy: allow-grafana-to-prometheus (~186 tok)
 - `ns.yaml` — K8s Namespace: prometheus-stack (~86 tok)
 - `prometheus-http-route.yaml` — K8s HTTPRoute: prometheus (~153 tok)
 - `solar-dashboard.yaml` — K8s ConfigMap: solar-dashboard (~13474 tok)
+- `tapo-power-dashboard.yaml` — K8s ConfigMap (~2785 tok)
 - `values.yaml` — Enhanced kube-prometheus-stack configuration (~4130 tok)
 - `volsync-alerts.yaml` — K8s PrometheusRule: volsync-alerts (~1953 tok)
 - `vpa-alerts.yaml` — K8s PrometheusRule: vpa-alerts (~1141 tok)
@@ -844,7 +845,7 @@
 ## my-apps/home/home-assistant/
 
 - `automations.yaml` — Automations will be managed from the UI (~13 tok)
-- `configuration.yaml` — Loads default set of integrations. Do not remove. (~246 tok)
+- `configuration.yaml` — Loads default set of integrations. Do not remove. (~325 tok)
 - `deployment.yaml` — K8s Deployment: home-assistant (~1608 tok)
 - `httproute.yaml` — K8s HTTPRoute: home-assistant (~254 tok)
 - `kustomization.yaml` — K8s Kustomization: home-assistant (~195 tok)
