@@ -1,9 +1,5 @@
 server:
   enabled: true
-  image:
-    repository: temporalio/server
-    tag: 1.30.4
-    pullPolicy: IfNotPresent
   replicaCount: 1
   resources:
     requests:
@@ -84,9 +80,6 @@ schema:
 
 admintools:
   enabled: true
-  image:
-    repository: temporalio/admin-tools
-    tag: 1.30.4
   resources:
     requests:
       cpu: 50m
@@ -98,9 +91,6 @@ admintools:
 web:
   enabled: true
   replicaCount: 1
-  image:
-    repository: temporalio/ui
-    tag: 2.48.3
   resources:
     requests:
       cpu: 50m
@@ -108,4 +98,3 @@ web:
     limits:
       cpu: 200m
       memory: 256Mi
-
