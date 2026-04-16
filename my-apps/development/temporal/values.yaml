@@ -86,7 +86,7 @@ admintools:
   enabled: true
   image:
     repository: temporalio/admin-tools
-    tag: 1.30.3
+    tag: 1.30.4
   resources:
     requests:
       cpu: 50m
