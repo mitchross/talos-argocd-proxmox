@@ -809,3 +809,8 @@
 | 15:15 | Edited infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml | 5→6 lines | ~54 |
 | 15:15 | Session end: 27 writes across 13 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 31 reads | ~55016 tok |
 | 15:16 | Edited infrastructure/controllers/nvidia-gpu-operator/hook-sa.yaml | expanded (+10 lines) | ~228 |
+| 15:17 | Session end: 28 writes across 13 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 31 reads | ~55244 tok |
+| 2026-04-17 | Fixed nvidia-gpu-operator bootstrap on Talos 1.13. Two issues: (1) chart v25.10.1 renders upgrade-crd Hook SA in namespace nvidia-gpu-operator but Job references it in gpu-operator (chart bug) — worked around with PreSync hook SA in hook-sa.yaml (wave -1 to beat chart's wave 0 Job); (2) hostPaths.driverInstallDir was /usr/local/glibc/usr, Talos 1.13 docs require /usr/local/glibc/usr/lib. CRDs installed, ClusterPolicy ready, all 5 operator pods rolling. | infrastructure/controllers/nvidia-gpu-operator/{hook-sa.yaml,kustomization.yaml} | completed | ~800 |
+| 15:18 | Session end: 28 writes across 13 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 31 reads | ~55244 tok |
+| 17:40 | Edited infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml | 8→13 lines | ~222 |
+| 17:40 | Session end: 29 writes across 13 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 31 reads | ~55466 tok |
