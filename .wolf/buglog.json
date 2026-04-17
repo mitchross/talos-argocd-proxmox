@@ -2,6 +2,27 @@
   "version": 1,
   "bugs": [
     {
+      "id": "bug-gpu-operator-hook-sa-namespace",
+      "timestamp": "2026-04-17T19:18:00Z",
+      "error_message": "serviceaccount \"gpu-operator-upgrade-crd-hook-sa\" not found",
+      "file": "infrastructure/controllers/nvidia-gpu-operator/hook-sa.yaml",
+      "root_cause": "NVIDIA gpu-operator Helm chart v25.10.1 renders the upgrade-crd Helm pre-upgrade hook's ServiceAccount in namespace 'nvidia-gpu-operator' (hardcoded template), but the Job pod and ClusterRoleBinding subject reference the SA in Release.Namespace='gpu-operator'. Job cannot start pod → ArgoCD stalls in PreSync phase indefinitely → CRDs never install → operator never deploys.",
+      "fix": "Add a persistent SA with the same name in gpu-operator namespace as a PreSync hook (argocd.argoproj.io/hook: PreSync, sync-wave: -1) so it applies BEFORE the chart's hook Job (wave 0). Also correct hostPaths.driverInstallDir from /usr/local/glibc/usr to /usr/local/glibc/usr/lib per Talos 1.13 NVIDIA Proprietary Drivers guide.",
+      "tags": [
+        "gpu-operator",
+        "nvidia",
+        "helm",
+        "hook",
+        "presync",
+        "argocd",
+        "talos-1.13",
+        "bootstrap"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-17T19:18:00Z"
+    },
+    {
       "id": "bug-pvcplumber-probe-timeout",
       "timestamp": "2026-04-17T18:25:00Z",
       "error_message": "readiness check failed: kopia repository status failed: signal: killed",
@@ -789,6 +810,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-17T19:14:49.099Z"
+    },
+    {
+      "id": "bug-051",
+      "timestamp": "2026-04-17T21:40:20.577Z",
+      "error_message": "Significant refactor of ",
+      "file": "infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 8→13 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-17T21:40:20.577Z"
     }
   ]
 }

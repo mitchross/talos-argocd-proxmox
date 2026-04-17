@@ -326,6 +326,12 @@
       "action": "edit",
       "tokens": 228,
       "at": "2026-04-17T19:16:55.091Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml",
+      "action": "edit",
+      "tokens": 222,
+      "at": "2026-04-17T21:40:20.576Z"
     }
   ],
   "edit_counts": {
@@ -344,12 +350,12 @@
     "scripts/cnpg-recovery.sh": 1,
     "infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml": 4,
     "infrastructure/storage/volsync/kustomization.yaml": 1,
-    "infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml": 2,
+    "infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml": 3,
     "infrastructure/controllers/nvidia-gpu-operator/hook-sa.yaml": 2
   },
   "anatomy_hits": 19,
   "anatomy_misses": 12,
   "repeated_reads_warned": 2,
   "cerebrum_warnings": 0,
-  "stop_count": 35
+  "stop_count": 38
 }
