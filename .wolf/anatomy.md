@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-17T18:53:44.466Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-17T19:04:00.421Z
 > Files: 560 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
@@ -436,7 +436,7 @@
 
 ## infrastructure/storage/volsync/
 
-- `kopia-maintenance-cronjob.yaml` — Kopia repository maintenance — consolidates index blobs, GCs unreachable content, (~1530 tok)
+- `kopia-maintenance-cronjob.yaml` — Kopia repository maintenance — consolidates index blobs, GCs unreachable content, (~1788 tok)
 - `kustomization.yaml` — K8s Kustomization (~113 tok)
 - `namespace.yaml` — K8s Namespace: volsync-system (~51 tok)
 - `values.yaml` — VolSync Helm chart values (~203 tok)

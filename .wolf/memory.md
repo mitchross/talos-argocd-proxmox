@@ -792,3 +792,15 @@
 | 2026-04-17 | Drafted CNPG DR script (scripts/cnpg-recovery.sh) — interactive, dry-run by default, auto-extracts serverName from cluster.yaml and bumps next lineage. NOT run. | scripts/cnpg-recovery.sh | drafted | ~600 |
 | 2026-04-17 | Added Kopia maintenance CronJob (volsync-system, 03:00 UTC daily, kopia/kopia:0.20.0 image). Fixes "too many index blobs" warning (17974). Stable synthetic identity maintenance@cluster avoids VolSync mover pod churn breaking ownership. | infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml, infrastructure/storage/volsync/kustomization.yaml | pending user push + manual first-run trigger | ~500 |
 | 14:54 | Session end: 21 writes across 12 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 28 reads | ~51366 tok |
+| 14:57 | Session end: 21 writes across 12 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 28 reads | ~51366 tok |
+| 15:01 | Edited infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml | expanded (+8 lines) | ~183 |
+| 15:01 | Session end: 22 writes across 12 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 28 reads | ~51549 tok |
+| 15:03 | Edited infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml | 6→11 lines | ~162 |
+| 15:03 | Session end: 23 writes across 12 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 28 reads | ~51711 tok |
+| 15:04 | Edited infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml | 2→6 lines | ~71 |
+| 15:04 | Session end: 24 writes across 12 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 28 reads | ~51782 tok |
+| 15:05 | Session end: 24 writes across 12 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 29 reads | ~53570 tok |
+| 15:05 | Session end: 24 writes across 12 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 29 reads | ~53570 tok |
+| 15:05 | Session end: 24 writes across 12 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 29 reads | ~53570 tok |
+| 15:07 | Session end: 24 writes across 12 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 29 reads | ~53570 tok |
+| 15:07 | Session end: 24 writes across 12 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 29 reads | ~53570 tok |
