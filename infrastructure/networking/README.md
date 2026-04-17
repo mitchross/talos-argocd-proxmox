@@ -326,7 +326,7 @@ gatewayAPI:
 
 ## References
 
-- [Talos + Cilium Official Guide](https://www.talos.dev/v1.11/kubernetes-guides/network/cilium/)
+- [Talos + Cilium Official Guide](https://www.talos.dev/v1.13/kubernetes-guides/network/cilium/)
 - [Cilium kube-proxy Replacement](https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/)
 - [Gateway API Documentation](https://gateway-api.sigs.k8s.io/)
 - [Cilium L2 Announcements](https://docs.cilium.io/en/stable/network/l2-announcements/)

@@ -656,6 +656,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-16T19:46:44.887Z"
+    },
+    {
+      "id": "bug-042",
+      "timestamp": "2026-04-17T17:43:04.371Z",
+      "error_message": "Incorrect value in code",
+      "file": "README.md",
+      "root_cause": "Had `cilium install --version 1.19.2`",
+      "fix": "Changed to `cilium install --version 1.19.3`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-17T17:43:04.371Z"
+    },
+    {
+      "id": "bug-043",
+      "timestamp": "2026-04-17T17:44:05.251Z",
+      "error_message": "Significant refactor of ",
+      "file": "infrastructure/controllers/nvidia-device-plugin/README.md",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 3→15 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-17T17:44:05.251Z"
     }
   ]
 }

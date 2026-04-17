@@ -674,8 +674,8 @@ cilium version
 ### Upgrade Cilium
 
 ```bash
-# Upgrade to specific version
-cilium upgrade --version 1.15.0
+# Upgrade to specific version (must match chart version in infrastructure/networking/cilium/kustomization.yaml)
+cilium upgrade --version 1.19.3
 
 # Or latest
 cilium upgrade
@@ -825,7 +825,7 @@ EOF
 ## Resources
 
 - [Cilium Documentation](https://docs.cilium.io/)
-- [Talos + Cilium Guide](https://www.talos.dev/v1.11/kubernetes-guides/network/deploying-cilium/)
+- [Talos + Cilium Guide](https://www.talos.dev/v1.13/kubernetes-guides/network/deploying-cilium/)
 - [Gateway API Docs](https://gateway-api.sigs.k8s.io/)
 - [Hubble Documentation](https://docs.cilium.io/en/stable/gettingstarted/hubble/)
 - [Cilium Slack](https://cilium.io/slack)

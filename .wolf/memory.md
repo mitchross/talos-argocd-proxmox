@@ -746,3 +746,28 @@
 | 13:23 | Edited omni/cluster-template/cluster-template.yaml | 6→6 lines | ~135 |
 | 2026-04-17 | Talos 1.13 config review: removed duplicated siderolabs/qemu-guest-agent from all 3 machine sets (auto-installed by Proxmox provider). ResolverConfig/kernel-modules/NVIDIA extensions verified 1.13-compatible as-is. | omni/cluster-template/cluster-template.yaml | cleanup committed | ~200 |
 | 13:35 | Bump k8s 1.35.3→1.35.4, drop deprecated default-watch-cache-size apiserver flag | omni/cluster-template/cluster-template.yaml | 1.13 forward-compat review | ~400 tok |
+| 13:37 | Session end: 3 writes across 1 files (cluster-template.yaml) | 5 reads | ~3057 tok |
+| 13:43 | Edited README.md | 2→2 lines | ~12 |
+| 13:43 | Edited README.md | inline fix | ~120 |
+| 13:43 | Edited infrastructure/networking/README.md | 11 → 13 | ~26 |
+| 13:43 | Edited omni/docs/CILIUM_CNI.md | 11 → 13 | ~26 |
+| 13:43 | Edited omni/docs/CILIUM_CNI.md | 2→2 lines | ~39 |
+| 13:43 | Edited omni/docs/TROUBLESHOOTING.md | 5→5 lines | ~65 |
+| 13:43 | Edited docs/vpa-resource-optimization.md | 2→2 lines | ~26 |
+| 13:43 | Edited src/content/docs/architecture/vpa-resource-optimization.md | 2→2 lines | ~26 |
+| 13:44 | Edited infrastructure/controllers/nvidia-device-plugin/README.md | Plugin() → Notes() | ~231 |
+| 13:44 | Edited docs/vpa-resource-optimization.md | 35.3 → 35.4 | ~53 |
+| 13:44 | Edited src/content/docs/architecture/vpa-resource-optimization.md | 35.3 → 35.4 | ~53 |
+| 2026-04-17 | Version refresh across READMEs/docs: Cilium 1.19.2→1.19.3 in root README (2 places); K8s v1.35.3→v1.35.4 + Talos v1.12.6→v1.13.0-rc.0 in vpa docs (src/ mirror); Talos doc URL v1.11→v1.13 in networking README + CILIUM_CNI.md; TROUBLESHOOTING imager/extension refs v1.11.0→v1.13.0; nvidia-device-plugin README marked DEPRECATED (removed from appset on 1.13, replaced by gpu-operator); cilium upgrade example 1.15.0→1.19.3. | README.md, docs/vpa-resource-optimization.md, src/content/docs/architecture/vpa-resource-optimization.md, infrastructure/networking/README.md, infrastructure/controllers/nvidia-device-plugin/README.md, omni/docs/CILIUM_CNI.md, omni/docs/TROUBLESHOOTING.md | updated | ~600 |
+| 13:44 | Session end: 14 writes across 5 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 14 reads | ~20828 tok |
+| 13:47 | Session end: 14 writes across 5 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 14 reads | ~20828 tok |
+| 13:48 | Session end: 14 writes across 5 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 14 reads | ~20828 tok |
+| 13:50 | Session end: 14 writes across 5 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 14 reads | ~20828 tok |
+| 13:52 | Session end: 14 writes across 5 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 14 reads | ~20828 tok |
+| 13:53 | Session end: 14 writes across 5 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 14 reads | ~20828 tok |
+| 13:56 | Session end: 14 writes across 5 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 14 reads | ~20828 tok |
+| 13:57 | Session end: 14 writes across 5 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 14 reads | ~20828 tok |
+| 13:59 | Session end: 14 writes across 5 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 14 reads | ~20828 tok |
+| 13:59 | Session end: 14 writes across 5 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 14 reads | ~20828 tok |
+| 14:01 | Session end: 14 writes across 5 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 14 reads | ~20828 tok |
+| 14:02 | Session end: 14 writes across 5 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 14 reads | ~20828 tok |

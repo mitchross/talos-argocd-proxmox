@@ -1,6 +1,18 @@
-# NVIDIA GPUs on Talos 1.10 — Standalone Device Plugin (RTX 3090)
+# [DEPRECATED] NVIDIA Device Plugin — Replaced by GPU Operator on Talos 1.13+
 
-This repository uses a **standalone NVIDIA Device Plugin** deployment (without GPU Operator) to provide GPU time-slicing on Talos Linux. This approach avoids known compatibility issues between the NVIDIA GPU Operator and Talos Linux while still enabling time-slicing functionality.
+> **Status**: No longer deployed. The cluster migrated to the NVIDIA GPU Operator
+> (`infrastructure/controllers/nvidia-gpu-operator/`) with Talos 1.13. See
+> `infrastructure/controllers/argocd/apps/infrastructure-appset.yaml` — the
+> `nvidia-device-plugin` path has been removed from the appset.
+>
+> This directory is kept for historical reference only. Notes below describe
+> the standalone device-plugin approach used pre-Talos-1.13.
+
+---
+
+## Historical Notes (Talos 1.10 era)
+
+This repository *previously* used a **standalone NVIDIA Device Plugin** deployment (without GPU Operator) to provide GPU time-slicing on Talos Linux. This approach avoided known compatibility issues between the NVIDIA GPU Operator and early Talos releases while still enabling time-slicing functionality.
 
 ## 🎯 Configuration Summary
 

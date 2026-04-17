@@ -327,7 +327,7 @@ See `infrastructure/controllers/argocd/values.yaml` for the actual implementatio
 
 ## Initial Mode (K8s 1.35)
 
-This cluster runs K8s v1.35.3 where In-Place Pod Resize is GA. VPA uses `updateMode: "Initial"` which sets optimal resources **at pod creation time only** — it does not resize or evict running pods.
+This cluster runs K8s v1.35.4 where In-Place Pod Resize is GA. VPA uses `updateMode: "Initial"` which sets optimal resources **at pod creation time only** — it does not resize or evict running pods.
 
 ### How It Works
 
@@ -472,5 +472,5 @@ kubectl get events -A --field-selector reason=VpaUpdated
 
 ---
 
-**Last Updated**: 2026-03-26
-**Cluster**: talos-prod-cluster (K8s v1.35.3, Talos v1.12.6)
+**Last Updated**: 2026-04-17
+**Cluster**: talos-prod-cluster (K8s v1.35.4, Talos v1.13.0-rc.0)
