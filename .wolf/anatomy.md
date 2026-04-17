@@ -1,7 +1,12 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-16T19:47:52.208Z
-> Files: 551 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-17T17:23:37.662Z
+> Files: 553 tracked | Anatomy hits: 0 | Misses: 0
+
+## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
+
+- `MEMORY.md` — Memory Index (~299 tok)
+- `project_talos_1_13_install_disk.md` (~455 tok)
 
 ## ../pvc-plumber/cmd/pvc-plumber/
 
@@ -912,7 +917,7 @@
 
 ## omni/cluster-template/
 
-- `cluster-template.yaml` — omnictl cluster template sync -v -f cluster-template-working.yaml (~1492 tok)
+- `cluster-template.yaml` — omnictl cluster template sync -v -f cluster-template-working.yaml (~1590 tok)
 
 ## omni/cluster-template/patches/
 
