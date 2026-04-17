@@ -111,6 +111,36 @@
       "count": 1,
       "tokens": 0,
       "first_read": "2026-04-17T18:20:44.135Z"
+    },
+    "/home/vanillax/programming/pvc-plumber/internal/kopia/client_test.go": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-17T18:36:14.418Z"
+    },
+    "/home/vanillax/programming/pvc-plumber/internal/s3/client.go": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-17T18:36:41.039Z"
+    },
+    "/home/vanillax/programming/pvc-plumber/Makefile": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-17T18:38:14.761Z"
+    },
+    "/tmp/argocd-apps2.png": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-17T18:41:17.433Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/docs/cnpg-disaster-recovery.md": {
+      "count": 1,
+      "tokens": 7598,
+      "first_read": "2026-04-17T18:47:55.382Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kustomization.yaml": {
+      "count": 1,
+      "tokens": 103,
+      "first_read": "2026-04-17T18:52:38.326Z"
     }
   },
   "files_written": [
@@ -209,6 +239,36 @@
       "action": "edit",
       "tokens": 122,
       "at": "2026-04-17T18:21:58.217Z"
+    },
+    {
+      "file": "/home/vanillax/programming/pvc-plumber/internal/kopia/client.go",
+      "action": "edit",
+      "tokens": 302,
+      "at": "2026-04-17T18:37:30.062Z"
+    },
+    {
+      "file": "/home/vanillax/programming/pvc-plumber/internal/kopia/client_test.go",
+      "action": "edit",
+      "tokens": 830,
+      "at": "2026-04-17T18:38:01.611Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/scripts/cnpg-recovery.sh",
+      "action": "create",
+      "tokens": 3157,
+      "at": "2026-04-17T18:49:32.536Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml",
+      "action": "create",
+      "tokens": 1530,
+      "at": "2026-04-17T18:53:40.447Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kustomization.yaml",
+      "action": "edit",
+      "tokens": 27,
+      "at": "2026-04-17T18:53:44.472Z"
     }
   ],
   "edit_counts": {
@@ -221,11 +281,16 @@
     "src/content/docs/architecture/vpa-resource-optimization.md": 2,
     "infrastructure/controllers/nvidia-device-plugin/README.md": 1,
     "scripts/bootstrap-argocd.sh": 1,
-    "infrastructure/controllers/pvc-plumber/deployment.yaml": 1
+    "infrastructure/controllers/pvc-plumber/deployment.yaml": 1,
+    "../pvc-plumber/internal/kopia/client.go": 1,
+    "../pvc-plumber/internal/kopia/client_test.go": 1,
+    "scripts/cnpg-recovery.sh": 1,
+    "infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml": 1,
+    "infrastructure/storage/volsync/kustomization.yaml": 1
   },
-  "anatomy_hits": 14,
-  "anatomy_misses": 8,
+  "anatomy_hits": 16,
+  "anatomy_misses": 12,
   "repeated_reads_warned": 2,
   "cerebrum_warnings": 0,
-  "stop_count": 20
+  "stop_count": 25
 }

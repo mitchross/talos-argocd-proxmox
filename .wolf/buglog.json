@@ -741,6 +741,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-17T18:21:58.218Z"
+    },
+    {
+      "id": "bug-047",
+      "timestamp": "2026-04-17T18:37:30.063Z",
+      "error_message": "Significant refactor of ",
+      "file": "../pvc-plumber/internal/kopia/client.go",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 20→25 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "go"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-17T18:37:30.063Z"
     }
   ]
 }
