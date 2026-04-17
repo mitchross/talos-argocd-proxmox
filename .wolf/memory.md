@@ -808,3 +808,4 @@
 | 15:15 | Created infrastructure/controllers/nvidia-gpu-operator/hook-sa.yaml | — | ~416 |
 | 15:15 | Edited infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml | 5→6 lines | ~54 |
 | 15:15 | Session end: 27 writes across 13 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 31 reads | ~55016 tok |
+| 15:16 | Edited infrastructure/controllers/nvidia-gpu-operator/hook-sa.yaml | expanded (+10 lines) | ~228 |

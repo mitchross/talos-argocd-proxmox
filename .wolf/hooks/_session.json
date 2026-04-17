@@ -320,6 +320,12 @@
       "action": "edit",
       "tokens": 54,
       "at": "2026-04-17T19:15:19.550Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-gpu-operator/hook-sa.yaml",
+      "action": "edit",
+      "tokens": 228,
+      "at": "2026-04-17T19:16:55.091Z"
     }
   ],
   "edit_counts": {
@@ -339,7 +345,7 @@
     "infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml": 4,
     "infrastructure/storage/volsync/kustomization.yaml": 1,
     "infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml": 2,
-    "infrastructure/controllers/nvidia-gpu-operator/hook-sa.yaml": 1
+    "infrastructure/controllers/nvidia-gpu-operator/hook-sa.yaml": 2
   },
   "anatomy_hits": 19,
   "anatomy_misses": 12,
