@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-17T19:14:49.092Z
-> Files: 560 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-17T19:15:19.545Z
+> Files: 561 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
 
@@ -234,7 +234,8 @@
 
 - `cluster-policy.yaml` — K8s ClusterPolicy: cluster-policy (~170 tok)
 - `external-secret.yaml` — K8s ExternalSecret: nvidia-api-key (~268 tok)
-- `kustomization.yaml` — K8s Kustomization (~868 tok)
+- `hook-sa.yaml` — Workaround: The gpu-operator Helm chart (v25.10.1) renders its upgrade-crd (~416 tok)
+- `kustomization.yaml` — K8s Kustomization (~893 tok)
 - `namespace.yaml` — K8s Namespace: gpu-operator (~36 tok)
 - `preinstalled-validation-daemonset.yaml` — K8s DaemonSet: nvidia-preinstalled-validation-markers (~408 tok)
 - `test-pod.yaml` — K8s Pod: cuda-vectoradd (~91 tok)
