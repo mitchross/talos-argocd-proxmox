@@ -30,3 +30,13 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/part-of: gpu-operator
+  annotations:
+    # The chart's upgrade-crd Job is a Helm pre-upgrade hook (→ ArgoCD
+    # PreSync hook). ArgoCD stalls in PreSync waiting for it to complete
+    # and never reaches the Sync phase — so a regular Sync-phase SA would
+    # never be applied in time. Declare this SA as a PreSync hook too,
+    # with sync-wave -1 so it applies BEFORE the chart's hook Job (wave 0).
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/sync-wave: "-1"
+    # No hook-delete-policy → resource persists after each sync (idempotent
+    # re-apply is safe for a plain ServiceAccount).

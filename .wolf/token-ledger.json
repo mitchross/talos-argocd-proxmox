@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-05T03:39:06.883Z",
   "lifetime": {
-    "total_tokens_estimated": 7235473,
-    "total_reads": 6094,
-    "total_writes": 2891,
+    "total_tokens_estimated": 7290489,
+    "total_reads": 6125,
+    "total_writes": 2918,
     "total_sessions": 30,
-    "anatomy_hits": 4601,
-    "anatomy_misses": 1459,
-    "repeated_reads_blocked": 1677,
-    "estimated_savings_vs_bare_cli": 4206518
+    "anatomy_hits": 4620,
+    "anatomy_misses": 1471,
+    "repeated_reads_blocked": 1679,
+    "estimated_savings_vs_bare_cli": 4211908
   },
   "sessions": [
     {
@@ -58924,6 +58924,344 @@
         "writes_count": 24,
         "repeated_reads_blocked": 2,
         "anatomy_lookups": 17
+      }
+    },
+    {
+      "id": "session-2026-04-17-1306",
+      "started": "2026-04-17T17:06:33.199Z",
+      "ended": "2026-04-17T19:15:37.630Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/cluster-template/cluster-template.yaml",
+          "tokens_estimated": 1590,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/machine-classes/gpu-worker.yaml",
+          "tokens_estimated": 649,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/machine-classes/worker.yaml",
+          "tokens_estimated": 359,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/cluster-template/patches/gpu-worker.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/cluster-template/patches/docker-hub-auth.yaml",
+          "tokens_estimated": 46,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/cilium-app.yaml",
+          "tokens_estimated": 489,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cilium/kustomization.yaml",
+          "tokens_estimated": 178,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/README.md",
+          "tokens_estimated": 3991,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/README.md",
+          "tokens_estimated": 3991,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/docs/TROUBLESHOOTING.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/docs/CILIUM_CNI.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-device-plugin/README.md",
+          "tokens_estimated": 3991,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/docs/vpa-resource-optimization.md",
+          "tokens_estimated": 4408,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/src/content/docs/architecture/vpa-resource-optimization.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/scripts/bootstrap-argocd.sh",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/CLAUDE.md",
+          "tokens_estimated": 3081,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/docs/pvc-plumber-full-flow.md",
+          "tokens_estimated": 11603,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/values.yaml",
+          "tokens_estimated": 1197,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/argocd-apps.png",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/pvc-plumber/internal/handler/handler.go",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/pvc-plumber/deployment.yaml",
+          "tokens_estimated": 952,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/pvc-plumber/internal/kopia/client.go",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/pvc-plumber/internal/kopia/client_test.go",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/pvc-plumber/internal/s3/client.go",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/pvc-plumber/Makefile",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/argocd-apps2.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/docs/cnpg-disaster-recovery.md",
+          "tokens_estimated": 7598,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kustomization.yaml",
+          "tokens_estimated": 103,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml",
+          "tokens_estimated": 1788,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml",
+          "tokens_estimated": 806,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-gpu-operator/namespace.yaml",
+          "tokens_estimated": 36,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/cluster-template/cluster-template.yaml",
+          "tokens_estimated": 140,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/cluster-template/cluster-template.yaml",
+          "tokens_estimated": 138,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/cluster-template/cluster-template.yaml",
+          "tokens_estimated": 135,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/README.md",
+          "tokens_estimated": 13,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/README.md",
+          "tokens_estimated": 128,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/README.md",
+          "tokens_estimated": 28,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/docs/CILIUM_CNI.md",
+          "tokens_estimated": 28,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/docs/CILIUM_CNI.md",
+          "tokens_estimated": 41,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/docs/TROUBLESHOOTING.md",
+          "tokens_estimated": 70,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/docs/vpa-resource-optimization.md",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/src/content/docs/architecture/vpa-resource-optimization.md",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-device-plugin/README.md",
+          "tokens_estimated": 247,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/docs/vpa-resource-optimization.md",
+          "tokens_estimated": 57,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/src/content/docs/architecture/vpa-resource-optimization.md",
+          "tokens_estimated": 57,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/scripts/bootstrap-argocd.sh",
+          "tokens_estimated": 36,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/pvc-plumber/deployment.yaml",
+          "tokens_estimated": 122,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/pvc-plumber/internal/kopia/client.go",
+          "tokens_estimated": 302,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/pvc-plumber/internal/kopia/client_test.go",
+          "tokens_estimated": 830,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/scripts/cnpg-recovery.sh",
+          "tokens_estimated": 3157,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml",
+          "tokens_estimated": 1530,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml",
+          "tokens_estimated": 183,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml",
+          "tokens_estimated": 162,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml",
+          "tokens_estimated": 71,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml",
+          "tokens_estimated": 134,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-gpu-operator/hook-sa.yaml",
+          "tokens_estimated": 416,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml",
+          "tokens_estimated": 54,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 46856,
+        "output_tokens_estimated": 8160,
+        "reads_count": 31,
+        "writes_count": 27,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 19
       }
     }
   ],
