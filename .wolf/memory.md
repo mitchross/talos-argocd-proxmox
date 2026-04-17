@@ -771,3 +771,12 @@
 | 13:59 | Session end: 14 writes across 5 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 14 reads | ~20828 tok |
 | 14:01 | Session end: 14 writes across 5 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 14 reads | ~20828 tok |
 | 14:02 | Session end: 14 writes across 5 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 14 reads | ~20828 tok |
+| 14:08 | Edited scripts/bootstrap-argocd.sh | 2→2 lines | ~33 |
+| 14:08 | Session end: 15 writes across 6 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 15 reads | ~20864 tok |
+| 14:10 | Session end: 15 writes across 6 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 15 reads | ~20864 tok |
+| 14:12 | Session end: 15 writes across 6 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 18 reads | ~36745 tok |
+| 14:17 | Session end: 15 writes across 6 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 18 reads | ~36745 tok |
+| 14:18 | Session end: 15 writes across 6 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 19 reads | ~36745 tok |
+| 14:21 | Edited infrastructure/controllers/pvc-plumber/deployment.yaml | 12→16 lines | ~122 |
+| 2026-04-17 | Bootstrap Wave 2 blocker: pvc-plumber readiness failing with "kopia repository status failed: signal: killed" — probe timeout defaulted to 1s, kopia subprocess killed by context cancel. Fixed probe config: timeoutSeconds:15, initialDelaySeconds:60, periodSeconds:30. Kopia+NFS+24 existing snapshot sources all intact — only probe bug. Source code at /home/vanillax/programming/pvc-plumber should refactor HealthCheck to avoid kopia subprocess on probe path. | infrastructure/controllers/pvc-plumber/deployment.yaml | pending user commit+push+argo sync | ~400 |
+| 14:22 | Session end: 16 writes across 7 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 22 reads | ~37819 tok |

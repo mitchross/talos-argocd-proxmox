@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-17T17:44:30.583Z
-> Files: 556 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-17T18:21:58.212Z
+> Files: 557 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
 
@@ -253,7 +253,7 @@
 
 ## infrastructure/controllers/pvc-plumber/
 
-- `deployment.yaml` — K8s Deployment (~952 tok)
+- `deployment.yaml` — K8s Deployment (~985 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: pvc-plumber-kopia (~128 tok)
 - `kustomization.yaml` — K8s Kustomization (~36 tok)
 
@@ -932,6 +932,10 @@
 
 - `gpu-worker.yaml` — omnictl apply -f gpu-worker.yaml (~649 tok)
 - `worker.yaml` — omnictl apply -f worker.yaml (~359 tok)
+
+## scripts/
+
+- `bootstrap-argocd.sh` (~1497 tok)
 
 ## src/content/docs/architecture/
 

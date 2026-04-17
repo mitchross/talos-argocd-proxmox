@@ -71,6 +71,46 @@
       "count": 1,
       "tokens": 0,
       "first_read": "2026-04-17T17:43:51.764Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/scripts/bootstrap-argocd.sh": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-17T18:08:36.491Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/CLAUDE.md": {
+      "count": 1,
+      "tokens": 3081,
+      "first_read": "2026-04-17T18:11:33.481Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/docs/pvc-plumber-full-flow.md": {
+      "count": 1,
+      "tokens": 11603,
+      "first_read": "2026-04-17T18:12:05.602Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/values.yaml": {
+      "count": 1,
+      "tokens": 1197,
+      "first_read": "2026-04-17T18:12:20.547Z"
+    },
+    "/tmp/argocd-apps.png": {
+      "count": 2,
+      "tokens": 0,
+      "first_read": "2026-04-17T18:18:29.570Z"
+    },
+    "/home/vanillax/programming/pvc-plumber/internal/handler/handler.go": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-17T18:20:25.632Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/pvc-plumber/deployment.yaml": {
+      "count": 1,
+      "tokens": 952,
+      "first_read": "2026-04-17T18:20:25.883Z"
+    },
+    "/home/vanillax/programming/pvc-plumber/internal/kopia/client.go": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-17T18:20:44.135Z"
     }
   },
   "files_written": [
@@ -157,6 +197,18 @@
       "action": "edit",
       "tokens": 57,
       "at": "2026-04-17T17:44:30.589Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/scripts/bootstrap-argocd.sh",
+      "action": "edit",
+      "tokens": 36,
+      "at": "2026-04-17T18:08:40.973Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/pvc-plumber/deployment.yaml",
+      "action": "edit",
+      "tokens": 122,
+      "at": "2026-04-17T18:21:58.217Z"
     }
   ],
   "edit_counts": {
@@ -167,11 +219,13 @@
     "omni/docs/TROUBLESHOOTING.md": 1,
     "docs/vpa-resource-optimization.md": 2,
     "src/content/docs/architecture/vpa-resource-optimization.md": 2,
-    "infrastructure/controllers/nvidia-device-plugin/README.md": 1
+    "infrastructure/controllers/nvidia-device-plugin/README.md": 1,
+    "scripts/bootstrap-argocd.sh": 1,
+    "infrastructure/controllers/pvc-plumber/deployment.yaml": 1
   },
-  "anatomy_hits": 10,
-  "anatomy_misses": 4,
-  "repeated_reads_warned": 1,
+  "anatomy_hits": 14,
+  "anatomy_misses": 8,
+  "repeated_reads_warned": 2,
   "cerebrum_warnings": 0,
-  "stop_count": 14
+  "stop_count": 20
 }

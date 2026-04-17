@@ -2,6 +2,27 @@
   "version": 1,
   "bugs": [
     {
+      "id": "bug-pvcplumber-probe-timeout",
+      "timestamp": "2026-04-17T18:25:00Z",
+      "error_message": "readiness check failed: kopia repository status failed: signal: killed",
+      "file": "infrastructure/controllers/pvc-plumber/deployment.yaml",
+      "root_cause": "readinessProbe httpGet defaults to timeoutSeconds:1 when unset. /readyz handler runs kopia subprocess which takes >1s over NFS with 24 snapshot sources. Kubelet's 1s HTTP timeout cancels the request context, Go exec.CommandContext sends SIGKILL to kopia subprocess. Architectural: handler runs kopia on every probe — expensive.",
+      "fix": "Set timeoutSeconds:15 on readinessProbe, initialDelaySeconds:60 (first NFS kopia connect takes ~57s), periodSeconds:30, failureThreshold:3. Liveness: timeoutSeconds:5, initialDelaySeconds:60. Follow-up: simplify HealthCheck() in internal/kopia/client.go to os.Stat(repoPath) + c.connected — avoid kopia subprocess on probe path.",
+      "tags": [
+        "pvc-plumber",
+        "kopia",
+        "nfs",
+        "readiness-probe",
+        "timeout",
+        "bootstrap",
+        "wave-2",
+        "fail-closed-gate"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-17T18:21:16Z"
+    },
+    {
       "id": "bug-001",
       "timestamp": "2026-04-05T05:50:12.283Z",
       "error_message": "Wrong reference: SERVERPRESET should be MIN_MEMORY",
@@ -688,6 +709,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-17T17:44:05.251Z"
+    },
+    {
+      "id": "bug-044",
+      "timestamp": "2026-04-17T18:08:40.973Z",
+      "error_message": "Incorrect value in code",
+      "file": "scripts/bootstrap-argocd.sh",
+      "root_cause": "Had \"1.19.2\"",
+      "fix": "Changed to \"1.19.3\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "sh"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-17T18:08:40.973Z"
+    },
+    {
+      "id": "bug-045",
+      "timestamp": "2026-04-17T18:21:58.218Z",
+      "error_message": "Significant refactor of ",
+      "file": "infrastructure/controllers/pvc-plumber/deployment.yaml",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 12→16 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-17T18:21:58.218Z"
     }
   ]
 }
