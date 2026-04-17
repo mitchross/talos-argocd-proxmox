@@ -5,6 +5,7 @@ resources:
 - namespace.yaml
 - external-secret.yaml
 - time-slicing-config.yaml
+- hook-sa.yaml  # Workaround for upstream chart hook SA namespace bug (see file header)
 # cluster-policy.yaml intentionally not included — the Helm chart generates its
 # own ClusterPolicy from valuesInline below. Keeping both would cause a conflict.
 
