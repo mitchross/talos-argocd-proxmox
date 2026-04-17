@@ -745,3 +745,4 @@
 | 13:23 | Edited omni/cluster-template/cluster-template.yaml | 8→8 lines | ~138 |
 | 13:23 | Edited omni/cluster-template/cluster-template.yaml | 6→6 lines | ~135 |
 | 2026-04-17 | Talos 1.13 config review: removed duplicated siderolabs/qemu-guest-agent from all 3 machine sets (auto-installed by Proxmox provider). ResolverConfig/kernel-modules/NVIDIA extensions verified 1.13-compatible as-is. | omni/cluster-template/cluster-template.yaml | cleanup committed | ~200 |
+| 13:35 | Bump k8s 1.35.3→1.35.4, drop deprecated default-watch-cache-size apiserver flag | omni/cluster-template/cluster-template.yaml | 1.13 forward-compat review | ~400 tok |
