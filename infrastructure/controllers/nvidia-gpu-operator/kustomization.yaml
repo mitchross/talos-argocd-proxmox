@@ -35,11 +35,14 @@ helmCharts:
     # We already run siderolabs/node-feature-discovery cluster-wide.
     nfd:
       enabled: false
-    # Talos-specific host paths. The driver install dir must point to where the
-    # siderolabs/nonfree-kmod-nvidia-production extension places the driver
-    # libraries on a Talos host.
+    # Talos-specific host paths. Per Talos 1.13 NVIDIA Proprietary Drivers
+    # guide, driverInstallDir must be /usr/local/glibc/usr/lib (NOT /usr).
+    # siderolabs/nonfree-kmod-nvidia-production places the driver libraries
+    # under that lib subdir; pointing one level up hides them from the
+    # operator's validator/toolkit-validation and causes the ClusterPolicy
+    # pods to fail validation.
     hostPaths:
-      driverInstallDir: /usr/local/glibc/usr
+      driverInstallDir: /usr/local/glibc/usr/lib
     devicePlugin:
       enabled: true
       config:
