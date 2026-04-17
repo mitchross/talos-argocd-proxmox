@@ -16,7 +16,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
 
 # Expected Cilium version — must match infrastructure/networking/cilium/kustomization.yaml
-EXPECTED_CILIUM_VERSION="1.19.2"
+EXPECTED_CILIUM_VERSION="1.19.3"
 
 if command -v cilium > /dev/null 2>&1; then
   CILIUM_CMD="cilium"
