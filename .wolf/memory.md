@@ -733,3 +733,15 @@
 | 15:58 | Session end: 9 writes across 5 files (cluster-template.yaml, kustomization.yaml, infrastructure-appset.yaml, worker.yaml, gpu-worker.yaml) | 23 reads | ~20547 tok |
 | 16:01 | Session end: 9 writes across 5 files (cluster-template.yaml, kustomization.yaml, infrastructure-appset.yaml, worker.yaml, gpu-worker.yaml) | 23 reads | ~20547 tok |
 | 18:33 | Add install-disk patch to cluster-template (Talos 1.13 fix) | omni/cluster-template/cluster-template.yaml | one patch added | ~200 tok |
+| 18:35 | Created ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/project_talos_1_13_install_disk.md | — | ~471 |
+| 18:36 | Edited ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/MEMORY.md | 2→3 lines | ~70 |
+| 18:36 | Session end: 11 writes across 7 files (cluster-template.yaml, kustomization.yaml, infrastructure-appset.yaml, worker.yaml, gpu-worker.yaml) | 23 reads | ~21127 tok |
+
+## Session: 2026-04-17 13:06
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 13:22 | Edited omni/cluster-template/cluster-template.yaml | 8→8 lines | ~140 |
+| 13:23 | Edited omni/cluster-template/cluster-template.yaml | 8→8 lines | ~138 |
+| 13:23 | Edited omni/cluster-template/cluster-template.yaml | 6→6 lines | ~135 |
+| 2026-04-17 | Talos 1.13 config review: removed duplicated siderolabs/qemu-guest-agent from all 3 machine sets (auto-installed by Proxmox provider). ResolverConfig/kernel-modules/NVIDIA extensions verified 1.13-compatible as-is. | omni/cluster-template/cluster-template.yaml | cleanup committed | ~200 |

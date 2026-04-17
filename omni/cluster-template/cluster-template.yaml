@@ -70,7 +70,7 @@ systemExtensions:
 - siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
 - siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
-- siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
+# qemu-guest-agent auto-installed by Proxmox provider (see machine-classes/*.yaml)
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 patches:
 - name: control-plane-performance
@@ -105,7 +105,7 @@ systemExtensions:
 - siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
 - siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
-- siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
+# qemu-guest-agent auto-installed by Proxmox provider (see machine-classes/*.yaml)
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 patches:
 - name: kubelet-performance
@@ -136,7 +136,7 @@ systemExtensions:
 - siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
 # nfs-utils removed — incompatible with NVIDIA drivers on Talos 1.12.x (siderolabs/extensions#1021)
 # rpc-statd crash loop corrupts containerd boltdb, taking the entire node down
-- siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
+# qemu-guest-agent auto-installed by Proxmox provider (see machine-classes/gpu-worker.yaml)
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 - siderolabs/nonfree-kmod-nvidia-production # renovate: datasource=docker depName=siderolabs/nonfree-kmod-nvidia-production
 - siderolabs/nvidia-container-toolkit-production # renovate: datasource=docker depName=siderolabs/nvidia-container-toolkit-production
