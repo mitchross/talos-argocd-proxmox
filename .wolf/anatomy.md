@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-17T18:21:58.212Z
-> Files: 557 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-17T18:53:44.466Z
+> Files: 560 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
 
@@ -18,7 +18,8 @@
 
 ## ../pvc-plumber/internal/kopia/
 
-- `client.go` — Interface: CommandExecutor (~1543 tok)
+- `client_test.go` — Struct: mockExecutor (~2326 tok)
+- `client.go` — Interface: CommandExecutor (~1622 tok)
 
 ## ../pvc-plumber/internal/s3/
 
@@ -435,7 +436,8 @@
 
 ## infrastructure/storage/volsync/
 
-- `kustomization.yaml` — K8s Kustomization: volsync (~103 tok)
+- `kopia-maintenance-cronjob.yaml` — Kopia repository maintenance — consolidates index blobs, GCs unreachable content, (~1530 tok)
+- `kustomization.yaml` — K8s Kustomization (~113 tok)
 - `namespace.yaml` — K8s Namespace: volsync-system (~51 tok)
 - `values.yaml` — VolSync Helm chart values (~203 tok)
 - `volumesnapshotclass.yaml` — K8s VolumeSnapshotClass: longhorn-snapclass (~84 tok)
@@ -936,6 +938,7 @@
 ## scripts/
 
 - `bootstrap-argocd.sh` (~1497 tok)
+- `cnpg-recovery.sh` — CNPG Disaster Recovery — interactive driver for docs/cnpg-disaster-recovery.md (~2946 tok)
 
 ## src/content/docs/architecture/
 

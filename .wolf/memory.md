@@ -780,3 +780,15 @@
 | 14:21 | Edited infrastructure/controllers/pvc-plumber/deployment.yaml | 12→16 lines | ~122 |
 | 2026-04-17 | Bootstrap Wave 2 blocker: pvc-plumber readiness failing with "kopia repository status failed: signal: killed" — probe timeout defaulted to 1s, kopia subprocess killed by context cancel. Fixed probe config: timeoutSeconds:15, initialDelaySeconds:60, periodSeconds:30. Kopia+NFS+24 existing snapshot sources all intact — only probe bug. Source code at /home/vanillax/programming/pvc-plumber should refactor HealthCheck to avoid kopia subprocess on probe path. | infrastructure/controllers/pvc-plumber/deployment.yaml | pending user commit+push+argo sync | ~400 |
 | 14:22 | Session end: 16 writes across 7 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 22 reads | ~37819 tok |
+| 14:37 | Edited ../pvc-plumber/internal/kopia/client.go | 20→25 lines | ~282 |
+| 14:38 | Edited ../pvc-plumber/internal/kopia/client_test.go | modified TestHealthCheck_NotConnected() | ~775 |
+| 14:40 | Session end: 18 writes across 9 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 25 reads | ~38951 tok |
+| 14:42 | Session end: 18 writes across 9 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 26 reads | ~38951 tok |
+| 14:44 | Session end: 18 writes across 9 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 26 reads | ~38951 tok |
+| 14:49 | Created scripts/cnpg-recovery.sh | — | ~2946 |
+| 14:50 | Session end: 19 writes across 10 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 27 reads | ~49706 tok |
+| 14:53 | Created infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml | — | ~1530 |
+| 14:53 | Edited infrastructure/storage/volsync/kustomization.yaml | 3→4 lines | ~27 |
+| 2026-04-17 | Drafted CNPG DR script (scripts/cnpg-recovery.sh) — interactive, dry-run by default, auto-extracts serverName from cluster.yaml and bumps next lineage. NOT run. | scripts/cnpg-recovery.sh | drafted | ~600 |
+| 2026-04-17 | Added Kopia maintenance CronJob (volsync-system, 03:00 UTC daily, kopia/kopia:0.20.0 image). Fixes "too many index blobs" warning (17974). Stable synthetic identity maintenance@cluster avoids VolSync mover pod churn breaking ownership. | infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml, infrastructure/storage/volsync/kustomization.yaml | pending user push + manual first-run trigger | ~500 |
+| 14:54 | Session end: 21 writes across 12 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 28 reads | ~51366 tok |

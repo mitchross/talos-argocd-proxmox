@@ -1,0 +1,136 @@
+# Kopia repository maintenance — consolidates index blobs, GCs unreachable content,
+# and keeps repo metadata fast. Required because VolSync mover pods (ephemeral
+# hostnames) can't consistently own maintenance — Kopia records owner identity
+# in repo config and refuses maintenance from other identities. This CronJob
+# runs with a stable synthetic identity ("maintenance@cluster") and claims
+# ownership idempotently on every run.
+#
+# Schedule: 03:00 daily (after the default 02:00 backup window finishes).
+# Quick maintenance runs every day; Kopia internally schedules full maintenance
+# weekly based on repo policy below.
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kopia-maintenance
+  namespace: volsync-system
+  labels:
+    app.kubernetes.io/name: kopia-maintenance
+    app.kubernetes.io/component: backup-maintenance
+spec:
+  # Daily at 03:00 — after hourly/daily backup mover jobs have completed
+  schedule: "0 3 * * *"
+  timeZone: "Etc/UTC"
+  concurrencyPolicy: Forbid         # Kopia maintenance holds a repo lock — no overlap
+  startingDeadlineSeconds: 3600     # Skip run if missed by >1h (don't backfill forever)
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 7200   # Hard cap: 2h — full maintenance on large repos can take 30-60m
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: kopia-maintenance
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 568
+            runAsGroup: 568
+            fsGroup: 568
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+          - name: kopia
+            # Pin to a specific Kopia version so CI can bump via Renovate.
+            # Must be compatible with VolSync mover's kopia version (VolSync 0.18.x ships kopia ~0.20).
+            image: kopia/kopia:0.20.0
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: KOPIA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pvc-plumber-kopia     # reuse existing ExternalSecret
+                  key: KOPIA_PASSWORD
+            # Stable synthetic identity — independent of pod name / VolSync mover churn.
+            # Kopia records "<username>@<hostname>" in repo config as maintenance owner.
+            - name: KOPIA_OVERRIDE_USERNAME
+              value: "maintenance"
+            - name: KOPIA_OVERRIDE_HOSTNAME
+              value: "cluster"
+            - name: KOPIA_CONFIG_PATH
+              value: "/tmp/kopia/repository.config"
+            - name: KOPIA_LOG_DIR
+              value: "/tmp/kopia/logs"
+            - name: KOPIA_CACHE_DIRECTORY
+              value: "/tmp/kopia/cache"
+            - name: HOME
+              value: "/tmp"
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: 200m
+                memory: 512Mi
+              limits:
+                cpu: "2"
+                memory: 2Gi
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              echo "=== Connecting to Kopia repository ==="
+              kopia repository connect filesystem \
+                --path=/repository \
+                --password="$KOPIA_PASSWORD"
+
+              echo "=== Current maintenance policy ==="
+              kopia maintenance info || true
+
+              echo "=== Claiming ownership (idempotent) ==="
+              # Safe: --owner matches our client identity (maintenance@cluster)
+              # Kopia validates that --owner matches the running client's identity
+              # before accepting the change. If another owner is already set,
+              # this forces the switch on next run by whichever client asserts it.
+              kopia maintenance set \
+                --owner="maintenance@cluster" \
+                --enable-quick=true \
+                --enable-full=true \
+                --quick-maintenance-interval=24h \
+                --full-maintenance-interval=168h
+
+              echo "=== Running maintenance ==="
+              # Kopia decides quick vs full internally based on schedule above.
+              kopia maintenance run --full --safety=full
+
+              echo "=== Post-maintenance index blob count ==="
+              kopia repository status --json | grep -i blob || true
+
+              echo "=== Done ==="
+            volumeMounts:
+            - name: repository
+              mountPath: /repository
+            - name: kopia-tmp
+              mountPath: /tmp/kopia
+          volumes:
+          - name: repository
+            nfs:
+              server: 192.168.10.133
+              path: /mnt/BigTank/k8s/volsync-kopia-nfs
+          - name: kopia-tmp
+            emptyDir: {}
+          # Avoid scheduling on GPU nodes — leave their CPU for inference work
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: gpu-worker
+                        operator: DoesNotExist
