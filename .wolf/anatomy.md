@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-17T17:23:37.662Z
-> Files: 553 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-17T17:44:30.583Z
+> Files: 556 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
 
@@ -94,7 +94,7 @@
 - `network-policy.md` — Network Security & LAN Isolation (~1607 tok)
 - `network-topology.md` — Network Topology (~1663 tok)
 - `pvc-plumber-full-flow.md` — Zero-Touch PVC Backup/Restore: The Complete Picture (~11603 tok)
-- `vpa-resource-optimization.md` — VPA Resource Optimization Guide (~4408 tok)
+- `vpa-resource-optimization.md` — VPA Resource Optimization Guide (~4410 tok)
 
 ## docs/plans/
 
@@ -225,7 +225,7 @@
 - `nvidia-device-plugin.yml` — K8s DaemonSet: nvidia-device-plugin-daemonset (~994 tok)
 - `nvidia-powerlimit-daemonset.yaml` — K8s DaemonSet: nvidia-powerlimit-daemonset (~600 tok)
 - `rbac.yaml` — K8s ServiceAccount: nvidia-device-plugin (~303 tok)
-- `README.md` — Project documentation (~2514 tok)
+- `README.md` — Project documentation (~2643 tok)
 - `runtime.yaml` — K8s RuntimeClass: nvidia (~26 tok)
 - `service.yaml` — K8s Service: nvidia-device-plugin-metrics (~190 tok)
 
@@ -923,7 +923,16 @@
 
 - `docker-hub-auth.yaml` (~46 tok)
 
+## omni/docs/
+
+- `CILIUM_CNI.md` — Cilium CNI on Talos Linux (~4467 tok)
+- `TROUBLESHOOTING.md` — Troubleshooting Guide (~3832 tok)
+
 ## omni/machine-classes/
 
 - `gpu-worker.yaml` — omnictl apply -f gpu-worker.yaml (~649 tok)
 - `worker.yaml` — omnictl apply -f worker.yaml (~359 tok)
+
+## src/content/docs/architecture/
+
+- `vpa-resource-optimization.md` — TL;DR — Just Tell Me What To Do (~4413 tok)

@@ -403,10 +403,10 @@ talosctl -n <control-plane-ip> get members
 **Solution 1**: Use custom ISO with extensions pre-baked
 ```bash
 docker run --rm -i \
-  ghcr.io/siderolabs/imager:v1.11.0 \
+  ghcr.io/siderolabs/imager:v1.13.0 \
   iso \
-  --system-extension-image ghcr.io/siderolabs/nonfree-kmod-nvidia:550.127.05-v1.11.0 \
-  --system-extension-image ghcr.io/siderolabs/nvidia-container-toolkit:550.127.05-v1.11.0-v1.16.2
+  --system-extension-image ghcr.io/siderolabs/nonfree-kmod-nvidia-production:v1.13.0 \
+  --system-extension-image ghcr.io/siderolabs/nvidia-container-toolkit-production:v1.13.0
 ```
 
 **Solution 2**: Check Proxmox console/tty settings
