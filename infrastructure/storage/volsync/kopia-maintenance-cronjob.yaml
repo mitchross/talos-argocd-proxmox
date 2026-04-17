@@ -68,11 +68,23 @@ spec:
               value: "/tmp/kopia/cache"
             - name: HOME
               value: "/tmp"
+            # Kopia's static-build binary can't resolve the current user via NSS
+            # (no CGO), so it falls back to $USER — must be set or kopia aborts
+            # with "Cannot determine current user: user: Current requires cgo
+            # or $USER set in environment"
+            - name: USER
+              value: "maintenance"
+            # Go's user.Current() falls back to USER *or* LOGNAME when built
+            # without cgo — set both for safety.
+            - name: LOGNAME
+              value: "maintenance"
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false
               capabilities:
                 drop: ["ALL"]
+              seccompProfile:
+                type: RuntimeDefault
             resources:
               requests:
                 cpu: 200m
@@ -98,12 +110,17 @@ spec:
               # Kopia validates that --owner matches the running client's identity
               # before accepting the change. If another owner is already set,
               # this forces the switch on next run by whichever client asserts it.
+              # Claim ownership with our synthetic identity. Kopia validates
+              # that --owner matches the client's resolved identity
+              # ($KOPIA_OVERRIDE_USERNAME@$KOPIA_OVERRIDE_HOSTNAME).
               kopia maintenance set \
-                --owner="maintenance@cluster" \
-                --enable-quick=true \
-                --enable-full=true \
-                --quick-maintenance-interval=24h \
-                --full-maintenance-interval=168h
+                --owner="maintenance@cluster"
+
+              # Schedule the internal maintenance cadences (flags are
+              # --quick-interval / --full-interval, NOT --*-maintenance-interval).
+              kopia maintenance set \
+                --quick-interval=24h \
+                --full-interval=168h
 
               echo "=== Running maintenance ==="
               # Kopia decides quick vs full internally based on schedule above.
