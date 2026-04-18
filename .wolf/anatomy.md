@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-17T21:40:20.570Z
-> Files: 561 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-18T04:51:24.448Z
+> Files: 566 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
 
@@ -77,6 +77,14 @@
 - `cluster-ci.yml` — - monitoring/** (~1110 tok)
 - `docs.yml` — CI: Deploy Documentation (~286 tok)
 - `llama-cpp-build.yml` — CI: Build llama.cpp CUDA Image (~1011 tok)
+
+## .wolf/
+
+- `anatomy.md` — OpenWolf file index (~4300 tok)
+- `buglog.json` — OpenWolf bug log (~9400 tok)
+- `cerebrum.md` — OpenWolf learning memory (~2000 tok)
+- `memory.md` — OpenWolf chronological action log (~11500 tok)
+- `OPENWOLF.md` — OpenWolf operating protocol (~1440 tok)
 
 ## cloudflare-workers/posthog-injector/
 
@@ -312,7 +320,7 @@
 
 ## infrastructure/database/cloudnative-pg/temporal/
 
-- `cluster.yaml` — K8s Cluster (~720 tok)
+- `cluster.yaml` — K8s Cluster (~741 tok)
 - `externalsecret.yaml` — K8s ExternalSecret (~148 tok)
 - `kustomization.yaml` — K8s Kustomization (~90 tok)
 - `scheduled-backup.yaml` — K8s ScheduledBackup (~69 tok)

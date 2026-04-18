@@ -814,3 +814,15 @@
 | 15:18 | Session end: 28 writes across 13 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 31 reads | ~55244 tok |
 | 17:40 | Edited infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml | 8→13 lines | ~222 |
 | 17:40 | Session end: 29 writes across 13 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 31 reads | ~55466 tok |
+| 17:43 | Session end: 29 writes across 13 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 31 reads | ~55466 tok |
+| 22:25 | Diagnosed NVIDIA deployment report: live pods are healthy in gpu-operator; AppSet destination namespace drift creates an empty nvidia-gpu-operator namespace and misleading ArgoCD OutOfSync state | infrastructure/controllers/argocd/apps/infrastructure-appset.yaml, infrastructure/controllers/nvidia-gpu-operator/{kustomization.yaml,namespace.yaml,hook-sa.yaml} | diagnosis complete | ~3500 |
+| 00:40 | Session end: 29 writes across 13 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 31 reads | ~55466 tok |
+| 00:42 | Session end: 29 writes across 13 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 31 reads | ~55466 tok |
+| 00:43 | Session end: 29 writes across 13 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 31 reads | ~55466 tok |
+| 00:48 | Session end: 29 writes across 13 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 31 reads | ~55466 tok |
+| 00:51 | Edited infrastructure/database/cloudnative-pg/temporal/cluster.yaml | 36→33 lines | ~366 |
+| 00:51 | Edited infrastructure/database/cloudnative-pg/temporal/cluster.yaml | 3→5 lines | ~70 |
+| 00:51 | Session end: 31 writes across 14 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 32 reads | ~56622 tok |
+| 00:51 | Session end: 31 writes across 14 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 32 reads | ~56622 tok |
+| 00:52 | Session end: 31 writes across 14 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 32 reads | ~56622 tok |
+| 00:54 | Session end: 31 writes across 14 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 32 reads | ~56622 tok |
