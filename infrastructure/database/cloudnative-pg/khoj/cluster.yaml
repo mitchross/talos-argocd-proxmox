@@ -5,6 +5,9 @@ metadata:
   namespace: cloudnative-pg
   labels:
     app: khoj
+  annotations:
+    # Enables dual-bootstrap (initdb + recovery) for DR. See gitea/cluster.yaml.
+    cnpg.io/validation: disabled
 spec:
   instances: 1
   imageName: ghcr.io/cloudnative-pg/postgresql:16.2
@@ -23,13 +26,12 @@ spec:
       log_statement: "ddl"
     pg_hba:
       - host all all 0.0.0.0/0 md5
-  # === NORMAL OPERATION: initdb (comment out for DR recovery) ===
   bootstrap:
     initdb:
       database: khoj
       owner: khoj_admin
       secret:
-        name: khoj-app-secret # Use khoj-app-secret here
+        name: khoj-app-secret
       postInitApplicationSQL:
         - ALTER ROLE "khoj_admin" WITH SUPERUSER;
         - CREATE EXTENSION IF NOT EXISTS "vector";
@@ -38,33 +40,6 @@ spec:
         - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "khoj_admin";
         - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "khoj_admin";
         - ALTER ROLE "khoj_admin" WITH NOSUPERUSER;
-  # === DISASTER RECOVERY ===
-  # 1. Comment out the initdb bootstrap above
-  # 2. Uncomment the recovery bootstrap + externalClusters below
-  # 3. Update serverName in externalClusters to match CURRENT backup.serverName (khoj-database-v2)
-  # 4. Bump backup.serverName to next version (e.g. khoj-database-v3)
-  # 5. Apply directly with: kubectl kustomize ... | kubectl create -f -
-  #    (ArgoCD SSA + CNPG webhook = initdb always wins, must bypass ArgoCD)
-  # 6. After recovery completes, revert to initdb and push
-  #
-  # bootstrap:
-  #   recovery:
-  #     source: khoj-backup
-  # externalClusters:
-  #   - name: khoj-backup
-  #     barmanObjectStore:
-  #       serverName: khoj-database-v2
-  #       destinationPath: s3://postgres-backups/cnpg/khoj
-  #       endpointURL: http://192.168.10.133:30293
-  #       s3Credentials:
-  #         accessKeyId:
-  #           name: cnpg-s3-credentials
-  #           key: AWS_ACCESS_KEY_ID
-  #         secretAccessKey:
-  #           name: cnpg-s3-credentials
-  #           key: AWS_SECRET_ACCESS_KEY
-  #       wal:
-  #         compression: gzip
   storage:
     size: 20Gi
     storageClass: longhorn
@@ -93,6 +68,7 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
+      # Keep in sync with lineage.yaml .currentServerName
       serverName: khoj-database-v2
       destinationPath: s3://postgres-backups/cnpg/khoj
       endpointURL: http://192.168.10.133:30293

@@ -1,0 +1,22 @@
+# CNPG DR lineage tracker for temporal.
+# See gitea/lineage.yaml for field docs.
+#
+# NOTE: temporal's pre-nuke backup lineage was unversioned (just "temporal-database").
+# My earlier manual edit already bumped cluster.yaml backup serverName to
+# temporal-database-v2. The first restore goes FROM the unversioned store WITH
+# PITR to pre-nuke, and writes NEW backups to -v2. Subsequent DRs bump -v3, -v4...
+
+db: temporal
+clusterName: temporal-database
+namespace: cloudnative-pg
+
+# Current backup write target (new backups go here post-restore).
+currentServerName: temporal-database-v2
+
+# Source lineage on S3 that has pre-nuke good data. For temporal this is the
+# unversioned original path because we never bumped it before.
+restoreFromServerName: temporal-database
+
+restoreTarget: "2026-04-16T23:59:59Z"
+firstBoot: false
+lastRestored: null

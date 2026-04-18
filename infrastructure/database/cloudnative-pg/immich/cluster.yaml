@@ -5,6 +5,10 @@ metadata:
   namespace: cloudnative-pg
   labels:
     app: immich
+  annotations:
+    # Enables dual-bootstrap (initdb + recovery) for DR. See gitea/cluster.yaml
+    # comment for rationale and docs/plans/cnpg-dr-implementation-plan.md.
+    cnpg.io/validation: disabled
 spec:
   instances: 1
   imageName: ghcr.io/tensorchord/cloudnative-vectorchord:17.5-0.4.3
@@ -38,11 +42,6 @@ spec:
         - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "immich";
         - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "immich";
         - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "immich";
-  # === DISASTER RECOVERY ===
-  # See docs/cnpg-disaster-recovery.md for full procedure
-  # Recovery source: immich-database-v6 (current backup lineage)
-  # Next recovery target: immich-database-v7
-  # IMPORTANT: Recovery code must NOT be committed to Git (CNPG webhook rejects dual bootstrap)
   storage:
     size: 50Gi
     storageClass: longhorn
@@ -54,6 +53,7 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
+      # Keep in sync with lineage.yaml .currentServerName
       serverName: immich-database-v6
       destinationPath: s3://postgres-backups/cnpg/immich
       endpointURL: http://192.168.10.133:30293

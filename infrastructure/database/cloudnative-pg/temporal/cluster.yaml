@@ -5,6 +5,9 @@ metadata:
   namespace: cloudnative-pg
   labels:
     app: temporal
+  annotations:
+    # Enables dual-bootstrap (initdb + recovery) for DR. See gitea/cluster.yaml.
+    cnpg.io/validation: disabled
 spec:
   instances: 1
   imageName: ghcr.io/cloudnative-pg/postgresql:16.2
@@ -21,39 +24,14 @@ spec:
       wal_compression: "on"
     pg_hba:
       - host all all 0.0.0.0/0 md5
-  # === DISASTER RECOVERY MODE (2026-04-18) ===
-  # Restoring FROM: temporal-database (existing Barman lineage on S3)
-  # Writing NEW TO: temporal-database-v2 (next lineage, set in backup.barmanObjectStore below)
-  # After restore completes + data validated, DELETE this block and restore
-  # the initdb block below. Do NOT leave both — CNPG webhook rejects dual
-  # bootstrap even if one is commented (it still parses as YAML).
   bootstrap:
-    recovery:
-      source: temporal-backup
-  externalClusters:
-    - name: temporal-backup
-      barmanObjectStore:
-        serverName: temporal-database
-        destinationPath: s3://postgres-backups/cnpg/temporal
-        endpointURL: http://192.168.10.133:30293
-        s3Credentials:
-          accessKeyId:
-            name: cnpg-s3-credentials
-            key: AWS_ACCESS_KEY_ID
-          secretAccessKey:
-            name: cnpg-s3-credentials
-            key: AWS_SECRET_ACCESS_KEY
-        wal:
-          compression: gzip
-  # === NORMAL OPERATION (restore this block AFTER recovery, remove the above) ===
-  # bootstrap:
-  #   initdb:
-  #     database: temporal
-  #     owner: temporal
-  #     secret:
-  #       name: temporal-app-secret
-  #     postInitApplicationSQL:
-  #       - CREATE DATABASE temporal_visibility OWNER temporal;
+    initdb:
+      database: temporal
+      owner: temporal
+      secret:
+        name: temporal-app-secret
+      postInitApplicationSQL:
+        - CREATE DATABASE temporal_visibility OWNER temporal;
   storage:
     size: 10Gi
     storageClass: longhorn
@@ -65,8 +43,7 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
-      # Bumped from temporal-database → temporal-database-v2 for post-recovery lineage.
-      # Old backups stay at temporal-database (PITR source); new backups write to v2.
+      # Keep in sync with lineage.yaml .currentServerName
       serverName: temporal-database-v2
       destinationPath: s3://postgres-backups/cnpg/temporal
       endpointURL: http://192.168.10.133:30293
