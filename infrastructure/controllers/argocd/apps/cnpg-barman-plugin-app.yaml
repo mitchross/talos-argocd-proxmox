@@ -1,0 +1,38 @@
+# CloudNativePG Barman Cloud Plugin — replaces deprecated native barmanObjectStore
+# (removed in CNPG 1.30.0). Standalone Application (not in infrastructure AppSet)
+# because the manifest targets cnpg-system namespace, not the Application basename.
+# Must be ready before any Cluster references a barman-cloud plugin.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cnpg-barman-plugin
+  namespace: argocd
+  annotations:
+    # Wave 3 (before database AppSet at Wave 4) so Clusters can reference it
+    argocd.argoproj.io/sync-wave: "3"
+  labels:
+    app.kubernetes.io/part-of: infrastructure
+spec:
+  project: infrastructure
+  source:
+    repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+    targetRevision: main
+    path: infrastructure/database/cnpg-barman-plugin
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cnpg-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
+    - RespectIgnoreDifferences=true
+    retry:
+      limit: -1
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 5m
