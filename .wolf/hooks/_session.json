@@ -156,6 +156,11 @@
       "count": 1,
       "tokens": 36,
       "first_read": "2026-04-17T19:14:14.590Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/cluster.yaml": {
+      "count": 1,
+      "tokens": 720,
+      "first_read": "2026-04-18T04:50:59.633Z"
     }
   },
   "files_written": [
@@ -332,6 +337,18 @@
       "action": "edit",
       "tokens": 222,
       "at": "2026-04-17T21:40:20.576Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/cluster.yaml",
+      "action": "edit",
+      "tokens": 366,
+      "at": "2026-04-18T04:51:19.860Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/cluster.yaml",
+      "action": "edit",
+      "tokens": 70,
+      "at": "2026-04-18T04:51:24.453Z"
     }
   ],
   "edit_counts": {
@@ -351,11 +368,12 @@
     "infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml": 4,
     "infrastructure/storage/volsync/kustomization.yaml": 1,
     "infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml": 3,
-    "infrastructure/controllers/nvidia-gpu-operator/hook-sa.yaml": 2
+    "infrastructure/controllers/nvidia-gpu-operator/hook-sa.yaml": 2,
+    "infrastructure/database/cloudnative-pg/temporal/cluster.yaml": 2
   },
-  "anatomy_hits": 19,
+  "anatomy_hits": 20,
   "anatomy_misses": 12,
   "repeated_reads_warned": 2,
   "cerebrum_warnings": 0,
-  "stop_count": 38
+  "stop_count": 47
 }

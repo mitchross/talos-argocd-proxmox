@@ -826,6 +826,28 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-17T21:40:20.577Z"
+    },
+    {
+      "id": "bug-nvidia-gpu-operator-namespace-drift",
+      "timestamp": "2026-04-17T22:25:58-04:00",
+      "error_message": "NVIDIA pods won't deploy / nvidia-gpu-operator namespace appears empty",
+      "file": "infrastructure/controllers/argocd/apps/infrastructure-appset.yaml",
+      "root_cause": "The infrastructure ApplicationSet derives destination.namespace from path.basename (`nvidia-gpu-operator`), but the GPU operator manifests explicitly deploy to `gpu-operator`. ArgoCD auto-creates an empty `nvidia-gpu-operator` namespace while the real NVIDIA workloads run in `gpu-operator`, which makes namespace-scoped checks look like a deployment failure and leaves the app OutOfSync.",
+      "fix": "No repo change in this session. Verified that live workloads are healthy in `gpu-operator`; future fix should align the ApplicationSet destination namespace with the manifests or add a special-case override for this app.",
+      "tags": [
+        "nvidia",
+        "gpu-operator",
+        "argocd",
+        "applicationset",
+        "namespace",
+        "talos-1.13",
+        "diagnosis"
+      ],
+      "related_bugs": [
+        "bug-gpu-operator-hook-sa-namespace"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-04-17T22:25:58-04:00"
     }
   ]
 }

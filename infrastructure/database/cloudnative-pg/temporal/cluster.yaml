@@ -21,42 +21,39 @@ spec:
       wal_compression: "on"
     pg_hba:
       - host all all 0.0.0.0/0 md5
-  # === NORMAL OPERATION: initdb (comment out for DR recovery) ===
+  # === DISASTER RECOVERY MODE (2026-04-18) ===
+  # Restoring FROM: temporal-database (existing Barman lineage on S3)
+  # Writing NEW TO: temporal-database-v2 (next lineage, set in backup.barmanObjectStore below)
+  # After restore completes + data validated, DELETE this block and restore
+  # the initdb block below. Do NOT leave both — CNPG webhook rejects dual
+  # bootstrap even if one is commented (it still parses as YAML).
   bootstrap:
-    initdb:
-      database: temporal
-      owner: temporal
-      secret:
-        name: temporal-app-secret
-      postInitApplicationSQL:
-        - CREATE DATABASE temporal_visibility OWNER temporal;
-  # === DISASTER RECOVERY ===
-  # 1. Comment out the initdb bootstrap above
-  # 2. Uncomment the recovery bootstrap + externalClusters below
-  # 3. Update serverName in externalClusters to match CURRENT backup.serverName (temporal-database)
-  # 4. Bump backup.serverName to next version (e.g. temporal-database-v2)
-  # 5. Apply directly with: kubectl kustomize ... | kubectl create -f -
-  #    (ArgoCD SSA + CNPG webhook = initdb always wins, must bypass ArgoCD)
-  # 6. After recovery completes, revert to initdb and push
-  #
+    recovery:
+      source: temporal-backup
+  externalClusters:
+    - name: temporal-backup
+      barmanObjectStore:
+        serverName: temporal-database
+        destinationPath: s3://postgres-backups/cnpg/temporal
+        endpointURL: http://192.168.10.133:30293
+        s3Credentials:
+          accessKeyId:
+            name: cnpg-s3-credentials
+            key: AWS_ACCESS_KEY_ID
+          secretAccessKey:
+            name: cnpg-s3-credentials
+            key: AWS_SECRET_ACCESS_KEY
+        wal:
+          compression: gzip
+  # === NORMAL OPERATION (restore this block AFTER recovery, remove the above) ===
   # bootstrap:
-  #   recovery:
-  #     source: temporal-backup
-  # externalClusters:
-  #   - name: temporal-backup
-  #     barmanObjectStore:
-  #       serverName: temporal-database
-  #       destinationPath: s3://postgres-backups/cnpg/temporal
-  #       endpointURL: http://192.168.10.133:30293
-  #       s3Credentials:
-  #         accessKeyId:
-  #           name: cnpg-s3-credentials
-  #           key: AWS_ACCESS_KEY_ID
-  #         secretAccessKey:
-  #           name: cnpg-s3-credentials
-  #           key: AWS_SECRET_ACCESS_KEY
-  #       wal:
-  #         compression: gzip
+  #   initdb:
+  #     database: temporal
+  #     owner: temporal
+  #     secret:
+  #       name: temporal-app-secret
+  #     postInitApplicationSQL:
+  #       - CREATE DATABASE temporal_visibility OWNER temporal;
   storage:
     size: 10Gi
     storageClass: longhorn
@@ -68,7 +65,9 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
-      serverName: temporal-database
+      # Bumped from temporal-database → temporal-database-v2 for post-recovery lineage.
+      # Old backups stay at temporal-database (PITR source); new backups write to v2.
+      serverName: temporal-database-v2
       destinationPath: s3://postgres-backups/cnpg/temporal
       endpointURL: http://192.168.10.133:30293
       s3Credentials:

@@ -2,7 +2,7 @@
 
 > OpenWolf's learning memory. Updated automatically as the AI learns from interactions.
 > Do not edit manually unless correcting an error.
-> Last updated: 2026-04-09
+> Last updated: 2026-04-17
 
 ## User Preferences
 
@@ -22,6 +22,7 @@
 - **Talos 1.13 requires explicit `machine.install.disk`**: 1.13 switched install/upgrade to LifecycleService API. Fresh VMs in maintenance mode fail with `task upgrade (1/1): failed: system disk not found` if the config has no `install.disk` — auto-pick behavior present in 1.12 is gone. For Proxmox machine classes using `scsihw: virtio-scsi-single` + single `scsi0`, disk is `/dev/sda`. Patch lives in top-level `patches:` block of `cluster-template.yaml` so it applies to all machine sets.
 - **Talos 1.13 forward-compat audit (2026-04-17)**: After 1.13 review, the only required fix is `install.disk`. These are NOT issues for this cluster: `.machine.env` (unused), `.machine.network.kubespan` (unused), `apiServer.extraArgs` protobuf format change (YAML map<string,string> stays backward-compat), ResolverConfig merge→overwrite (single-layer config is unaffected), DHCPv4Config (still first-class). Valid cleanup: remove `siderolabs/qemu-guest-agent` from systemExtensions — Proxmox provider auto-installs it (see machine-classes/*.yaml comments).
 - **Talos Omni extension conflict — don't re-list what the provider auto-installs**: Listing `siderolabs/qemu-guest-agent` in cluster-template systemExtensions while the Proxmox provider already auto-installs it = duplicate install. Check machine-class comments ("auto-installed by the provider") before listing extensions in cluster-template.
+- **NVIDIA operator namespace drift**: The ArgoCD infrastructure ApplicationSet names the app from the directory (`nvidia-gpu-operator`) and sets `destination.namespace` from `path.basename`, but the manifests themselves target `gpu-operator`. Result: ArgoCD auto-creates an empty `nvidia-gpu-operator` namespace while the real NVIDIA pods run in `gpu-operator`.
 
 ## Do-Not-Repeat
 
@@ -33,6 +34,7 @@
 - [2026-04-09] Never pin indifferentbroccoli/projectzomboid-server-docker to a SHA256 digest with `imagePullPolicy: IfNotPresent` — SteamCMD versions in older images break when Steam pushes updates (security patches, branch changes). Use `:latest` with `imagePullPolicy: Always`.
 - [2026-04-09] Never wipe `zomboid-server-files` PVC without checking — save data is on `zomboid-data` PVC, but always confirm first. Server files are re-downloadable.
 - [2026-04-09] ArcheryNexus mod (workshop 3653092321/3617854007) causes infinite loop loading broken animation XMLs on Build 42 unstable. Removed from mod list.
+- [2026-04-17] Do not assume the `nvidia-gpu-operator` app deploys into a same-named namespace. Check the manifests first: this repo's GPU operator resources target `gpu-operator`, so `kubectl get pods -n nvidia-gpu-operator` is a false negative.
 
 ## Decision Log
 
