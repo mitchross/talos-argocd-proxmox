@@ -1,0 +1,20 @@
+# CloudNativePG Barman Cloud Plugin
+#
+# Replaces the deprecated in-Cluster `spec.backup.barmanObjectStore` (removed in
+# CNPG 1.30.0). Provides the ObjectStore CRD and a plugin sidecar that the CNPG
+# operator reaches via gRPC over a cnpg-system/barman-cloud Service.
+#
+# Upstream: https://github.com/cloudnative-pg/plugin-barman-cloud
+# Pinned to v0.12.0 (2026-04-14). Bump this file + manifest.yaml together.
+#
+# The plugin's own Service + Deployment live in cnpg-system (default in
+# manifest). The CNPG operator in cloudnative-pg talks to it cross-namespace
+# via the ClusterRoleBindings the manifest creates.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "-9"  # after CNPG operator (-10), before Clusters
+
+resources:
+  - manifest.yaml

@@ -13,6 +13,7 @@ resources:
   - volsync-app.yaml       # Wave 1 - PVC backup and replication (Kopia + NFS)
   - pvc-plumber-app.yaml   # Wave 2 - Backup existence checker for restore
   - kyverno-app.yaml       # Wave 3 - Policy engine (must be healthy before apps create PVCs)
+  - cnpg-barman-plugin-app.yaml # Wave 3 - Barman Cloud Plugin (before CNPG Clusters in Wave 4)
   # ApplicationSets for automatic discovery
   - infrastructure-appset.yaml  # Wave 4
   - database-appset.yaml        # Wave 4 - Database operators/instances (selfHeal: false for DR)
