@@ -5,6 +5,9 @@ metadata:
   namespace: cloudnative-pg
   labels:
     app: paperless-ngx
+  annotations:
+    # Enables dual-bootstrap (initdb + recovery) for DR. See gitea/cluster.yaml.
+    cnpg.io/validation: disabled
 spec:
   instances: 1
   imageName: ghcr.io/cloudnative-pg/postgresql:16.2
@@ -23,45 +26,17 @@ spec:
       log_statement: "ddl"
     pg_hba:
       - host all all 0.0.0.0/0 md5
-  # === NORMAL OPERATION: initdb (comment out for DR recovery) ===
   bootstrap:
     initdb:
       database: paperless
       owner: paperless
       secret:
-        name: paperless-app-secret # Use paperless-app-secret here
+        name: paperless-app-secret
       postInitApplicationSQL:
         - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "paperless";
         - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "paperless";
         - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "paperless";
         - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "paperless";
-  # === DISASTER RECOVERY ===
-  # 1. Comment out the initdb bootstrap above
-  # 2. Uncomment the recovery bootstrap + externalClusters below
-  # 3. Update serverName in externalClusters to match CURRENT backup.serverName (paperless-database-v2)
-  # 4. Bump backup.serverName to next version (e.g. paperless-database-v3)
-  # 5. Apply directly with: kubectl kustomize ... | kubectl create -f -
-  #    (ArgoCD SSA + CNPG webhook = initdb always wins, must bypass ArgoCD)
-  # 6. After recovery completes, revert to initdb and push
-  #
-  # bootstrap:
-  #   recovery:
-  #     source: paperless-backup
-  # externalClusters:
-  #   - name: paperless-backup
-  #     barmanObjectStore:
-  #       serverName: paperless-database-v2
-  #       destinationPath: s3://postgres-backups/cnpg/paperless
-  #       endpointURL: http://192.168.10.133:30293
-  #       s3Credentials:
-  #         accessKeyId:
-  #           name: cnpg-s3-credentials
-  #           key: AWS_ACCESS_KEY_ID
-  #         secretAccessKey:
-  #           name: cnpg-s3-credentials
-  #           key: AWS_SECRET_ACCESS_KEY
-  #       wal:
-  #         compression: gzip
   storage:
     size: 50Gi
     storageClass: longhorn
@@ -90,6 +65,7 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
+      # Keep in sync with lineage.yaml .currentServerName
       serverName: paperless-database-v2
       destinationPath: s3://postgres-backups/cnpg/paperless
       endpointURL: http://192.168.10.133:30293

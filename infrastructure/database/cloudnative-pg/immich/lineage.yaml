@@ -1,0 +1,12 @@
+# CNPG DR lineage tracker for immich.
+# See gitea/lineage.yaml for field docs.
+
+db: immich
+clusterName: immich-database
+namespace: cloudnative-pg
+
+currentServerName: immich-database-v6
+restoreFromServerName: immich-database-v6
+restoreTarget: "2026-04-16T23:59:59Z"
+firstBoot: false
+lastRestored: null

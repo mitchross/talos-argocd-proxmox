@@ -5,6 +5,13 @@ metadata:
   namespace: cloudnative-pg
   labels:
     app: gitea
+  annotations:
+    # Enables dual-bootstrap (initdb + recovery) for DR. Without this the CNPG
+    # validation webhook rejects any manifest with both bootstrap methods set.
+    # The reconciler prefers recovery when both are present (verified in lab
+    # Test 0.1 — see docs/plans/cnpg-dr-implementation-plan.md). DR state
+    # lives in lineage.yaml next to this file.
+    cnpg.io/validation: disabled
 spec:
   instances: 1
   imageName: ghcr.io/cloudnative-pg/postgresql:16.2
@@ -21,40 +28,15 @@ spec:
       wal_compression: "on"
     pg_hba:
       - host all all 0.0.0.0/0 md5
-  # === NORMAL OPERATION: initdb (comment out for DR recovery) ===
+  # Steady-state bootstrap. During DR, scripts/dr/restore-one.sh generates
+  # an ephemeral manifest that adds bootstrap.recovery + externalClusters
+  # on top of this; the validation annotation lets it through.
   bootstrap:
     initdb:
       database: gitea
       owner: gitea
       secret:
         name: gitea-app-secret
-  # === DISASTER RECOVERY ===
-  # 1. Comment out the initdb bootstrap above
-  # 2. Uncomment the recovery bootstrap + externalClusters below
-  # 3. Update serverName in externalClusters to match CURRENT backup.serverName (gitea-database-v3)
-  # 4. Bump backup.serverName to next version (e.g. gitea-database-v4)
-  # 5. Apply directly with: kubectl kustomize ... | kubectl create -f -
-  #    (ArgoCD SSA + CNPG webhook = initdb always wins, must bypass ArgoCD)
-  # 6. After recovery completes, revert to initdb and push
-  #
-  # bootstrap:
-  #   recovery:
-  #     source: gitea-backup
-  # externalClusters:
-  #   - name: gitea-backup
-  #     barmanObjectStore:
-  #       serverName: gitea-database-v3
-  #       destinationPath: s3://postgres-backups/cnpg/gitea
-  #       endpointURL: http://192.168.10.133:30293
-  #       s3Credentials:
-  #         accessKeyId:
-  #           name: cnpg-s3-credentials
-  #           key: AWS_ACCESS_KEY_ID
-  #         secretAccessKey:
-  #           name: cnpg-s3-credentials
-  #           key: AWS_SECRET_ACCESS_KEY
-  #       wal:
-  #         compression: gzip
   storage:
     size: 20Gi
     storageClass: longhorn
@@ -66,6 +48,7 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
+      # Keep in sync with lineage.yaml .currentServerName
       serverName: gitea-database-v3
       destinationPath: s3://postgres-backups/cnpg/gitea
       endpointURL: http://192.168.10.133:30293
