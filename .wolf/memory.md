@@ -1129,3 +1129,12 @@
 | 16:40 | Edited my-apps/ai/llama-cpp/configmap.yaml | 4→5 lines | ~77 |
 | 16:40 | Session end: 104 writes across 30 files (infrastructure-appset.yaml, values.yaml, kustomization.yaml, CLAUDE.md, deployment.yaml) | 83 reads | ~211379 tok |
 | 16:42 | Session end: 104 writes across 30 files (infrastructure-appset.yaml, values.yaml, kustomization.yaml, CLAUDE.md, deployment.yaml) | 83 reads | ~211379 tok |
+| 16:44 | Session end: 104 writes across 30 files (infrastructure-appset.yaml, values.yaml, kustomization.yaml, CLAUDE.md, deployment.yaml) | 83 reads | ~211379 tok |
+| 16:48 | Session end: 104 writes across 30 files (infrastructure-appset.yaml, values.yaml, kustomization.yaml, CLAUDE.md, deployment.yaml) | 83 reads | ~211379 tok |
+| 16:49 | Session end: 104 writes across 30 files (infrastructure-appset.yaml, values.yaml, kustomization.yaml, CLAUDE.md, deployment.yaml) | 83 reads | ~211379 tok |
+| 16:51 | Created docs/plans/2026-04-19-followup-notes.md | — | ~2180 |
+| 16:51 | Session end: 105 writes across 31 files (infrastructure-appset.yaml, values.yaml, kustomization.yaml, CLAUDE.md, deployment.yaml) | 83 reads | ~213715 tok |
+| 16:59 | Created my-apps/ai/perplexica/configmap.yaml | — | ~654 |
+| 16:59 | Edited my-apps/ai/perplexica/deployment.yaml | expanded (+43 lines) | ~598 |
+| 16:59 | Edited my-apps/ai/perplexica/deployment.yaml | expanded (+6 lines) | ~79 |
+| 16:59 | Edited my-apps/ai/perplexica/kustomization.yaml | 6→7 lines | ~48 |

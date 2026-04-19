@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T20:40:02.879Z
-> Files: 623 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T20:59:36.014Z
+> Files: 625 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
 
@@ -111,6 +111,7 @@
 - `2026-03-16-project-nomad-k8s-openai.md` — Project Nomad: Kubernetes + OpenAI-Compatible LLM Provider (~5421 tok)
 - `2026-03-22-alloy-otel-honeycomb-design.md` — OpenTelemetry Operator + Honeycomb Design (~1136 tok)
 - `2026-04-16-talos-1.13-upgrade-plan.md` — Talos 1.13 + Omni 1.7 Full Upgrade Plan (~3816 tok)
+- `2026-04-19-followup-notes.md` — Follow-up notes — 2026-04-19 (~2044 tok)
 - `cnpg-dr-session-notes.md` — CNPG DR Session Notes — 2026-04-17/18/19 (~2778 tok)
 
 ## docs/plans/storage-review/
@@ -673,9 +674,10 @@
 
 ## my-apps/ai/perplexica/
 
-- `deployment.yaml` — K8s Deployment: perplexica (~488 tok)
+- `configmap.yaml` — Perplexica config seed (GitOps source of truth for model providers). (~654 tok)
+- `deployment.yaml` — K8s Deployment (~1053 tok)
 - `httproute.yaml` — K8s HTTPRoute: perplexica-route (~129 tok)
-- `kustomization.yaml` — K8s Kustomization (~54 tok)
+- `kustomization.yaml` — K8s Kustomization (~73 tok)
 - `namespace.yaml` — K8s Namespace: perplexica (~18 tok)
 - `pvc.yaml` — K8s PersistentVolumeClaim: perplexica-data (~71 tok)
 - `service.yaml` — K8s Service: perplexica (~64 tok)
