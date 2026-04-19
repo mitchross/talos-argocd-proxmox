@@ -1012,6 +1012,18 @@
       "action": "edit",
       "tokens": 75,
       "at": "2026-04-19T20:05:50.298Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml",
+      "action": "edit",
+      "tokens": 153,
+      "at": "2026-04-19T20:12:05.010Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml",
+      "action": "edit",
+      "tokens": 170,
+      "at": "2026-04-19T20:12:12.938Z"
     }
   ],
   "edit_counts": {
@@ -1067,7 +1079,8 @@
     "my-apps/ai/open-webui/configmap.yaml": 5,
     "my-apps/ai/README.md": 7,
     "my-apps/ai/comfyui/configmap.yaml": 1,
-    "my-apps/ai/CLAUDE.md": 1
+    "my-apps/ai/CLAUDE.md": 1,
+    "infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml": 2
   },
   "anatomy_hits": 69,
   "anatomy_misses": 13,

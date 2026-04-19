@@ -1518,6 +1518,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-19T20:05:45.068Z"
+    },
+    {
+      "id": "bug-094",
+      "timestamp": "2026-04-19T20:12:05.011Z",
+      "error_message": "Significant refactor of ",
+      "file": "infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 7→12 lines (2 removed) | Also: # Kopia decides quick vs full internally based on ; kopia maintenance run --full --safety=full",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-19T20:12:12.940Z"
     }
   ]
 }
