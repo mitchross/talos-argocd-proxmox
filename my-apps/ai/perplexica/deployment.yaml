@@ -28,12 +28,16 @@ spec:
       # else stays user-controlled.
       initContainers:
         - name: seed-config
-          image: ghcr.io/jqlang/jq:1.8.1
+          # Alpine with inline `apk add jq` because the upstream jq image
+          # (ghcr.io/jqlang/jq) is distroless and has no shell — we need
+          # /bin/sh for the merge logic below.
+          image: alpine:3.20
           command:
             - /bin/sh
             - -c
             - |
               set -eu
+              apk add --no-cache jq >/dev/null
               SEED=/seed/config.json
               DEST=/data/config.json
               mkdir -p /data
@@ -41,7 +45,7 @@ spec:
                 echo "[seed] fresh PVC, writing config.json verbatim"
                 cp "$SEED" "$DEST"
               else
-                echo "[seed] merging modelProviders from seed into existing config.json"
+                echo "[seed] merging modelProviders + search from seed into existing config.json"
                 jq --slurpfile seed "$SEED" \
                    '.modelProviders = $seed[0].modelProviders
                     | .search = $seed[0].search' \
@@ -57,10 +61,12 @@ spec:
               mountPath: /data
           resources:
             requests: { cpu: 10m, memory: 32Mi }
-            limits:   { cpu: 100m, memory: 128Mi }
+            limits:   { cpu: 200m, memory: 128Mi }
           securityContext:
+            # apk needs a writable root FS to unpack jq into /usr/bin.
+            # Still no privilege escalation, all caps dropped.
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
+            readOnlyRootFilesystem: false
             capabilities: { drop: ["ALL"] }
             seccompProfile: { type: RuntimeDefault }
       containers:
