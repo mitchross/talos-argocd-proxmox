@@ -46,7 +46,7 @@ spec:
           - name: kopia
             # Pin to a specific Kopia version so CI can bump via Renovate.
             # Must be compatible with VolSync mover's kopia version (VolSync 0.18.x ships kopia ~0.20).
-            image: kopia/kopia:0.20.0
+            image: kopia/kopia:0.22.3
             imagePullPolicy: IfNotPresent
             env:
             - name: KOPIA_PASSWORD
