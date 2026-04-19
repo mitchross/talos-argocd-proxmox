@@ -51,4 +51,4 @@ Open WebUI: https://open-webui.vanillax.me
 - `kustomization.yaml` - Kustomize configuration 
 
 
-Model: `general - qwen3.5` (Qwen3.5-35B-A3B Q4_K_XL) — single consolidated model for all tasks (general, vision, coding). 16K context.
+Model: `general - qwen3.5` (Qwen3.5-35B-A3B Q4_K_XL) — single consolidated model for all tasks (general, vision, coding). 32K context.
