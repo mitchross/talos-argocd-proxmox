@@ -901,6 +901,95 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-19T17:42:20.644Z"
+    },
+    {
+      "id": "bug-056",
+      "timestamp": "2026-04-19T18:04:20.199Z",
+      "error_message": "Significant refactor of ",
+      "file": "infrastructure/controllers/argocd/apps/database-appset.yaml",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 9→15 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T18:04:20.199Z"
+    },
+    {
+      "id": "bug-llama-cpp-unschedulable-insufficient-cpu",
+      "timestamp": "2026-04-19T14:06:34-04:00",
+      "error_message": "llama-cpp pod Pending: 0/7 nodes are available: 1 Insufficient cpu",
+      "file": "my-apps/ai/llama-cpp/deployment.yaml",
+      "root_cause": "GPU worker node was scaled down to 8 vCPU (~7950m allocatable), but llama-cpp requested 8 CPU cores. With ~7701m already requested on that node, scheduler could never place the pod.",
+      "fix": "Reduced llama-cpp CPU request from 8 to 2 while keeping GPU=1 and existing limits so the pod can schedule on the scaled-down GPU node.",
+      "tags": [
+        "llama-cpp",
+        "scheduler",
+        "insufficient-cpu",
+        "gpu-node",
+        "kubernetes",
+        "resources"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T14:06:34-04:00"
+    },
+    {
+      "id": "bug-058",
+      "timestamp": "2026-04-19T18:15:04.069Z",
+      "error_message": "Significant refactor of ",
+      "file": "infrastructure/database/cloudnative-pg/gitea/base/cluster.yaml",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 3→4 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T18:15:04.069Z"
+    },
+    {
+      "id": "bug-llama-cpp-post-reboot-gpu-zero-allocatable",
+      "timestamp": "2026-04-19T18:22:00Z",
+      "error_message": "llama-cpp pod Pending after reboot: Insufficient nvidia.com/gpu and Insufficient cpu",
+      "file": "my-apps/ai/llama-cpp/deployment.yaml",
+      "root_cause": "After GPU worker VM reboot, NVIDIA daemonset pods on the node were in Unknown state and node advertised nvidia.com/gpu allocatable=0. Scheduler could not place llama-cpp until GPU resources were re-registered.",
+      "fix": "Restarted gpu-operator daemonsets (nvidia-device-plugin-daemonset, gpu-feature-discovery, nvidia-operator-validator) to refresh node GPU resource registration. Node returned to nvidia.com/gpu capacity/allocatable=8 and llama-cpp scheduled/ran with cpu request 6.",
+      "tags": [
+        "llama-cpp",
+        "gpu-operator",
+        "device-plugin",
+        "post-reboot",
+        "insufficient-gpu",
+        "kubernetes",
+        "talos"
+      ],
+      "related_bugs": [
+        "bug-llama-cpp-unschedulable-insufficient-cpu"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T18:22:00Z"
+    },
+    {
+      "id": "bug-060",
+      "timestamp": "2026-04-19T18:52:43.512Z",
+      "error_message": "Significant refactor of ",
+      "file": "docs/cnpg-disaster-recovery.md",
+      "root_cause": "10 lines replaced/restructured",
+      "fix": "Rewrote 14→95 lines (10 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T18:52:43.512Z"
     }
   ]
 }
