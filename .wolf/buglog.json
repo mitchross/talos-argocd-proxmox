@@ -1102,6 +1102,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-19T19:09:48.542Z"
+    },
+    {
+      "id": "bug-068",
+      "timestamp": "2026-04-19T19:14:53.926Z",
+      "error_message": "Wrong reference: 16K should be 32K",
+      "file": "my-apps/ai/open-webui/README.md",
+      "root_cause": "Used \"16K\" instead of \"32K\"",
+      "fix": "Changed 16K → 32K",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:14:53.926Z"
+    },
+    {
+      "id": "bug-069",
+      "timestamp": "2026-04-19T19:15:07.275Z",
+      "error_message": "Significant refactor of ",
+      "file": "omni/omni/README.md",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 9→3 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:15:07.275Z"
     }
   ]
 }

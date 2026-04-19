@@ -63,7 +63,7 @@
       "first_read": "2026-04-19T18:57:18.363Z"
     },
     "/home/vanillax/programming/talos-argocd-proxmox/README.md": {
-      "count": 1,
+      "count": 2,
       "tokens": 3991,
       "first_read": "2026-04-19T18:57:56.187Z"
     },
@@ -178,7 +178,7 @@
       "first_read": "2026-04-19T19:08:48.712Z"
     },
     "/home/vanillax/programming/talos-argocd-proxmox/monitoring/README.md": {
-      "count": 1,
+      "count": 2,
       "tokens": 3991,
       "first_read": "2026-04-19T19:08:58.756Z"
     },
@@ -201,6 +201,71 @@
       "count": 1,
       "tokens": 3081,
       "first_read": "2026-04-19T19:10:04.027Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/README.md": {
+      "count": 1,
+      "tokens": 3991,
+      "first_read": "2026-04-19T19:11:37.636Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-device-plugin/README.md": {
+      "count": 1,
+      "tokens": 3991,
+      "first_read": "2026-04-19T19:11:37.841Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/README.md": {
+      "count": 1,
+      "tokens": 3991,
+      "first_read": "2026-04-19T19:11:38.054Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/comfyui/README.md": {
+      "count": 1,
+      "tokens": 3991,
+      "first_read": "2026-04-19T19:11:38.264Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/open-webui/README.md": {
+      "count": 3,
+      "tokens": 3991,
+      "first_read": "2026-04-19T19:11:38.475Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/common/deployment-defaults/README.md": {
+      "count": 1,
+      "tokens": 3991,
+      "first_read": "2026-04-19T19:11:38.684Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/news-reader/app/README.md": {
+      "count": 1,
+      "tokens": 3991,
+      "first_read": "2026-04-19T19:11:38.942Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/frigate/README.md": {
+      "count": 1,
+      "tokens": 3991,
+      "first_read": "2026-04-19T19:11:39.106Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/home/project-zomboid/README.md": {
+      "count": 1,
+      "tokens": 3991,
+      "first_read": "2026-04-19T19:11:39.377Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/immich/README.md": {
+      "count": 1,
+      "tokens": 3991,
+      "first_read": "2026-04-19T19:11:39.529Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/omni/README.md": {
+      "count": 1,
+      "tokens": 3991,
+      "first_read": "2026-04-19T19:11:39.740Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/omni/omni/README.md": {
+      "count": 2,
+      "tokens": 3991,
+      "first_read": "2026-04-19T19:11:39.912Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml": {
+      "count": 1,
+      "tokens": 982,
+      "first_read": "2026-04-19T19:19:43.171Z"
     }
   },
   "files_written": [
@@ -371,6 +436,30 @@
       "action": "edit",
       "tokens": 62,
       "at": "2026-04-19T19:10:09.097Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/open-webui/README.md",
+      "action": "edit",
+      "tokens": 39,
+      "at": "2026-04-19T19:14:53.925Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/omni/README.md",
+      "action": "edit",
+      "tokens": 64,
+      "at": "2026-04-19T19:15:07.274Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-gpu-operator/powerlimit-daemonset.yaml",
+      "action": "create",
+      "tokens": 1185,
+      "at": "2026-04-19T19:19:33.872Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml",
+      "action": "edit",
+      "tokens": 127,
+      "at": "2026-04-19T19:19:47.655Z"
     }
   ],
   "edit_counts": {
@@ -397,11 +486,15 @@
     "docs/pvc-plumber-full-flow.md": 2,
     "infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml": 1,
     "infrastructure/controllers/opentelemetry-operator/rbac.yaml": 1,
-    "CLAUDE.md": 1
+    "CLAUDE.md": 1,
+    "my-apps/ai/open-webui/README.md": 1,
+    "omni/omni/README.md": 1,
+    "infrastructure/controllers/nvidia-gpu-operator/powerlimit-daemonset.yaml": 1,
+    "infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml": 1
   },
-  "anatomy_hits": 32,
+  "anatomy_hits": 45,
   "anatomy_misses": 7,
-  "repeated_reads_warned": 1,
+  "repeated_reads_warned": 6,
   "cerebrum_warnings": 0,
-  "stop_count": 6
+  "stop_count": 13
 }
