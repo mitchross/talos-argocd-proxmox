@@ -33,11 +33,8 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
-      # Forward write target.
-      # Pre-nuke: unversioned "temporal-database".
-      # Post-nuke empty backups went to -v2 (from earlier session edit).
-      # New lineage: -v3 (clean, no pollution).
-      serverName: temporal-database-v3
+      # Write target. Clean-slate baseline after 2026-04-19 RustFS wipe.
+      serverName: temporal-database-v1
       destinationPath: s3://postgres-backups/cnpg/temporal
       endpointURL: http://192.168.10.133:30293
       s3Credentials:

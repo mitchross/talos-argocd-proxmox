@@ -11,8 +11,8 @@ spec:
   externalClusters:
     - name: temporal-recovery-source
       barmanObjectStore:
-        # Prior lineage with pre-nuke data — unversioned original path.
-        serverName: temporal-database
+        # Prior lineage to restore from. Bump to N-1 at DR time.
+        serverName: temporal-database-v1
         destinationPath: s3://postgres-backups/cnpg/temporal
         endpointURL: http://192.168.10.133:30293
         s3Credentials:

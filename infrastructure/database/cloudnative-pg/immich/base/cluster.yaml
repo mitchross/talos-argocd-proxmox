@@ -36,8 +36,8 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
-      # Forward write target (bumped v6 → v7 after restore so new backups are clean).
-      serverName: immich-database-v7
+      # Write target. Clean-slate baseline after 2026-04-19 RustFS wipe.
+      serverName: immich-database-v1
       destinationPath: s3://postgres-backups/cnpg/immich
       endpointURL: http://192.168.10.133:30293
       s3Credentials:
