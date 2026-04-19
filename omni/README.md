@@ -156,11 +156,62 @@ cilium install \
 
 ## Important Notes
 
-⚠️ **Proxmox Provider Status**: The Proxmox infrastructure provider is currently in **beta**. Expect some limitations and potential bugs. Please report issues to the [upstream repository](https://github.com/siderolabs/omni-infra-provider-proxmox).
+⚠️ **Proxmox Provider Status**: The Proxmox infrastructure provider is
+currently in **beta**. Expect some limitations and potential bugs. Please
+report issues to the [upstream
+repository](https://github.com/siderolabs/omni-infra-provider-proxmox).
 
-⚠️ **Known Limitations**:
-- Single disk per VM (multiple disk support is a potential enhancement)
-- Extensions must be included in Talos image or specified in cluster template
+### Concrete beta limitations (as of Talos 1.13 / Omni 1.7)
+
+These are things that hit me in practice — the generic "it's beta" line
+isn't enough to plan around.
+
+- **Single disk per VM.** The provider creates one disk when it
+  provisions a VM. Want separate OS + data disks? You'll have to attach
+  them manually in Proxmox after the fact, which means they won't be
+  recreated if the VM is destroyed and re-provisioned. In practice: plan
+  all storage as Longhorn replicas on the single disk, or use external
+  storage (NFS to TrueNAS, RustFS S3) for stateful data.
+- **No HA local storage.** Because of the single-disk limit, Longhorn can
+  replicate across nodes but not across dedicated storage tiers within
+  a node. Not a real problem for homelab scale, worth flagging for prod.
+- **Extensions must be baked into the Talos image OR declared in the
+  cluster template.** You can't "install an extension" at runtime the
+  way you would a package. Changing extensions = image rebuild in Omni +
+  node replacement. This is especially relevant for NVIDIA driver
+  swaps (production → OSS) — see the OSS NVIDIA migration plan in
+  `docs/superpowers/plans/`.
+- **`machine.install.disk` is mandatory on Talos 1.13.** Without it,
+  fresh VMs provision but stay stuck in `UPGRADING` forever (see root
+  README). This is a Talos 1.13 LifecycleService change, not a provider
+  bug, but it surfaces through the provider first. The patch is already
+  in `omni/cluster-template/cluster-template.yaml`.
+- **No VM migration on node failure.** If a Proxmox host dies, its VMs
+  don't auto-migrate to another host. You'll need Proxmox HA separately
+  (cluster-level, not Omni-level) for that.
+- **Cloud-init equivalent is… Talos machine config.** If you're used to
+  Proxmox cloud-init hooks, ignore them — all node customization goes
+  through Omni cluster-template patches, not Proxmox.
+
+## Licensing — what "BSL" actually means for you
+
+Omni uses the **Business Source License** (BSL). Practical impact:
+
+- ✅ **Free for non-production use** — homelabs, dev, staging, learning.
+  This repo's cluster falls squarely in this bucket.
+- ✅ **Free for production use up to a user/seat limit** set by Sidero
+  (check their current terms — they've adjusted this more than once).
+- 💰 **Paid license required** for production beyond that limit, or for
+  any commercial SaaS offering that incorporates Omni.
+- 🕰️ **Converts to MPL-2.0 after 4 years** per commit — old versions
+  eventually become fully open source, but the current one isn't.
+
+Talos Linux itself is MPL-2.0 (fully open). The Proxmox provider is also
+MPL-2.0. Only Omni the control-plane is BSL-restricted.
+
+If you're running Omni **for a business**, read the actual license at
+https://github.com/siderolabs/omni/blob/main/LICENSE before assuming
+your use case is covered.
 
 ## Use Cases
 
@@ -171,10 +222,12 @@ cilium install \
 
 ## License
 
-This starter kit is provided as-is for use with Sidero Omni. Note that:
-- Omni uses Business Source License (BSL) - free for non-production use
-- Talos Linux is MPL-2.0 licensed
-- Proxmox provider is MPL-2.0 licensed
+This starter kit is provided as-is. See the **Licensing** section above
+for what BSL means in practice.
+
+- Omni: Business Source License (BSL) — free for non-prod / below seat cap
+- Talos Linux: MPL-2.0 (fully open)
+- Proxmox provider: MPL-2.0 (fully open)
 
 ## Contributing
 

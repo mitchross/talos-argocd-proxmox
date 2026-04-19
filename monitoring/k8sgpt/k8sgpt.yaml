@@ -6,7 +6,10 @@ metadata:
 spec:
   ai:
     enabled: true
-    model: "nothink - qwen3.5"
+    # K8sGPT has short timeouts and wants fast, deterministic output.
+    # Qwen 3.6 nothink: same weights as the agentic chat model but skips
+    # <think> tokens so analyses return inside K8sGPT's timeout window.
+    model: "qwen3.6-nothink - qwen3.6-35b-a3b-nothink"
     backend: localai
     baseUrl: http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1
     anonymized: false

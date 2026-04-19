@@ -123,7 +123,7 @@
         "url": "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1/chat/completions",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: 'general - qwen3.5', messages: [ { role: 'system', content: $json.systemPrompt }, { role: 'user', content: 'Score these listings:\\n\\n' + $json.listingText } ], max_tokens: 2048, temperature: 0.2 }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: 'qwen3.6-nothink - qwen3.6-35b-a3b-nothink', messages: [ { role: 'system', content: $json.systemPrompt }, { role: 'user', content: 'Score these listings:\\n\\n' + $json.listingText } ], max_tokens: 2048, temperature: 0.2 }) }}",
         "options": {
           "response": {
             "response": {

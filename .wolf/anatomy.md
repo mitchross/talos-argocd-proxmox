@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T19:19:47.649Z
-> Files: 619 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T20:05:50.292Z
+> Files: 623 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
 
@@ -30,13 +30,13 @@
 - `.gitattributes` — Git attributes (~6 tok)
 - `.gitignore` — Git ignore rules (~611 tok)
 - `astro.config.mjs` — Astro configuration (~274 tok)
-- `CLAUDE.md` — OpenWolf (~3057 tok)
-- `firewalla-dns-config.txt` — Firewalla Local DNS Configuration for vanillax.me (~424 tok)
+- `CLAUDE.md` — OpenWolf (~3163 tok)
+- `firewalla-dns-config.txt` — Firewalla Local DNS Configuration for vanillax.me (~415 tok)
 - `MIGRATION_EXTERNAL_DNS.md` — Migration to ExternalDNS-Based Split DNS Architecture (~1870 tok)
 - `mkdocs.yml` (~269 tok)
 - `package-lock.json` — npm lock file (~90080 tok)
 - `package.json` — Node.js package manifest (~242 tok)
-- `README.md` — Project documentation (~3991 tok)
+- `README.md` — Project documentation (~4859 tok)
 - `thermodynamic-corridor-infographic.jsx` — sections (~7027 tok)
 - `thermodynamic-corridor-summary.md` — Civilisation's Thermodynamic Corridor — Summary (~2589 tok)
 - `tsconfig.json` — TypeScript configuration (~12 tok)
@@ -193,7 +193,7 @@
 ## infrastructure/controllers/gpu-priority-classes/
 
 - `kustomization.yaml` — K8s Kustomization: gpu-priority-classes (~88 tok)
-- `priority-classes.yaml` — K8s PriorityClass: gpu-workload-high (~203 tok)
+- `priority-classes.yaml` — K8s PriorityClass (~199 tok)
 
 ## infrastructure/controllers/kyverno-vpa-policies/
 
@@ -251,7 +251,7 @@
 - `powerlimit-daemonset.yaml` — GPU Power-Limit DaemonSet (~1185 tok)
 - `preinstalled-validation-daemonset.yaml` — K8s DaemonSet: nvidia-preinstalled-validation-markers (~408 tok)
 - `test-pod.yaml` — K8s Pod: cuda-vectoradd (~91 tok)
-- `time-slicing-config.yaml` — K8s ConfigMap: time-slicing-config (~148 tok)
+- `time-slicing-config.yaml` — GPU Device Plugin ConfigMap (~559 tok)
 - `toolkit-validation-job.yaml` — K8s Job: nvidia-toolkit-validation (~312 tok)
 
 ## infrastructure/controllers/opentelemetry-operator/
@@ -437,7 +437,7 @@
 ## infrastructure/networking/
 
 - `CLAUDE.md` — Networking Guidelines (~418 tok)
-- `README.md` — Project documentation (~2182 tok)
+- `README.md` — Project documentation (~3002 tok)
 
 ## infrastructure/networking/cilium/
 
@@ -543,12 +543,12 @@
 ## monitoring/
 
 - `CLAUDE.md` — Monitoring Guidelines (~673 tok)
-- `README.md` — Project documentation (~1175 tok)
+- `README.md` — Project documentation (~2525 tok)
 
 ## monitoring/k8sgpt/
 
 - `grafana-dashboard.yaml` — K8s ConfigMap: k8sgpt-grafana-dashboard (~2720 tok)
-- `k8sgpt.yaml` — K8s K8sGPT: k8sgpt (~178 tok)
+- `k8sgpt.yaml` — K8s K8sGPT (~246 tok)
 - `kustomization.yaml` — K8s Kustomization: k8sgpt-operator (~100 tok)
 - `ns.yaml` — K8s Namespace: k8sgpt (~16 tok)
 - `values.yaml` — K8sGPT Operator Helm values (~113 tok)
@@ -577,7 +577,7 @@
 - `dcgm-exporter.yaml` — K8s DaemonSet: dcgm-exporter (~910 tok)
 - `frigate-dashboard.yaml` — K8s ConfigMap: frigate-dashboard (~1438 tok)
 - `gpu-alerts.yaml` — K8s PrometheusRule: gpu-alerts (~874 tok)
-- `gpu-dashboard.yaml` — K8s ConfigMap: gpu-dashboard (~18867 tok)
+- `gpu-dashboard.yaml` — GPU Monitoring Dashboard (Grafana) (~3789 tok)
 - `GPU-MONITORING.md` — GPU Monitoring with DCGM Exporter (~683 tok)
 - `grafana-http-route.yaml` — K8s HTTPRoute: grafana (~150 tok)
 - `kustomization.yaml` — K8s Kustomization (~335 tok)
@@ -602,16 +602,16 @@
 
 ## my-apps/
 
-- `CLAUDE.md` — Application Guidelines (~1626 tok)
+- `CLAUDE.md` — Application Guidelines (~1635 tok)
 
 ## my-apps/ai/
 
-- `CLAUDE.md` — AI / GPU Workload Guidelines (~348 tok)
-- `README.md` — Project documentation (~3376 tok)
+- `CLAUDE.md` — AI / GPU Workload Guidelines (~539 tok)
+- `README.md` — Project documentation (~3745 tok)
 
 ## my-apps/ai/comfyui/
 
-- `configmap.yaml` — K8s ConfigMap: comfyui-manager-config (~3635 tok)
+- `configmap.yaml` — K8s ConfigMap (~3678 tok)
 - `deployment.yaml` — K8s Deployment (~993 tok)
 - `download-models-job.yaml` — K8s Job: comfyui-download-models (~1445 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: comfyui-secrets (~132 tok)
@@ -619,17 +619,17 @@
 - `kustomization.yaml` — K8s Kustomization (~118 tok)
 - `namespace.yaml` — K8s Namespace: comfyui (~17 tok)
 - `pvc.yaml` — Static PV - mounts NFS share root directly via CSI (not a CSI-created subdirectory) (~265 tok)
-- `README.md` — Project documentation (~1126 tok)
+- `README.md` — Project documentation (~1917 tok)
 - `service.yaml` — K8s Service: comfyui-service (~130 tok)
 
 ## my-apps/ai/comfyui/custom-nodes/
 
-- `image_to_llamacpp_base64.py` — Bridge nodes for LlamaCpp vision integration in ComfyUI. (~2497 tok)
+- `image_to_llamacpp_base64.py` — Bridge nodes for LlamaCpp vision integration in ComfyUI. (~2499 tok)
 
 ## my-apps/ai/comfyui/workflows/
 
 - `florence2-caption.json` (~195 tok)
-- `llamacpp-vision-to-image.json` — Declares your (~1958 tok)
+- `llamacpp-vision-to-image.json` — Declares your (~1963 tok)
 - `wan22-i2v.json` (~548 tok)
 - `wan22-t2v.json` (~431 tok)
 - `wd14-tagger.json` (~138 tok)
@@ -637,8 +637,8 @@
 
 ## my-apps/ai/llama-cpp/
 
-- `configmap.yaml` — K8s ConfigMap: llama-cpp-config (~1359 tok)
-- `deployment.yaml` — K8s Deployment (~1372 tok)
+- `configmap.yaml` — K8s ConfigMap (~2250 tok)
+- `deployment.yaml` — K8s Deployment (~1516 tok)
 - `httproute.yaml` — K8s HTTPRoute: llama-cpp-route (~151 tok)
 - `kustomization.yaml` — K8s Kustomization (~59 tok)
 - `namespace.yaml` — K8s Namespace: llama-cpp (~17 tok)
@@ -655,7 +655,7 @@
 
 ## my-apps/ai/open-webui/
 
-- `configmap.yaml` — K8s ConfigMap: open-webui-configmap (~1849 tok)
+- `configmap.yaml` — K8s ConfigMap (~2073 tok)
 - `deployment.yaml` — K8s Deployment (~391 tok)
 - `function-loader-job.yaml` — K8s Job: load-har-analyzer-v5 (~996 tok)
 - `har-analyzer-function.py` — Pydantic: Valves (12 fields) (~7115 tok)
@@ -667,7 +667,7 @@
 - `mcpo-deployment.yaml` — K8s Deployment: mcpo (~456 tok)
 - `namespace.yaml` — K8s Namespace: open-webui (~34 tok)
 - `pvc.yaml` — K8s PersistentVolumeClaim: storage (~115 tok)
-- `README.md` — Project documentation (~406 tok)
+- `README.md` — Project documentation (~2517 tok)
 - `SEARXNG-SETUP.md` — SearXNG Integration with Open WebUI (~1175 tok)
 - `service.yaml` — K8s Service: open-webui (~66 tok)
 
@@ -777,9 +777,9 @@
 
 ## my-apps/development/n8n/workflows/
 
-- `daily-cluster-report.json` — Declares nodeReady (~3710 tok)
-- `paperless-auto-tagger.json` — Declares response (~4005 tok)
-- `vehicle-search.json` — Declares searches (~7419 tok)
+- `daily-cluster-report.json` — Declares nodeReady (~3717 tok)
+- `paperless-auto-tagger.json` — Declares response (~4012 tok)
+- `vehicle-search.json` — Declares searches (~7426 tok)
 
 ## my-apps/development/news-reader/
 
@@ -799,7 +799,7 @@
 - `package-lock.json` — npm lock file (~20817 tok)
 - `package.json` — Node.js package manifest (~139 tok)
 - `postcss.config.mjs` — Declares config (~26 tok)
-- `README.md` — Project documentation (~363 tok)
+- `README.md` — Project documentation (~1271 tok)
 - `tsconfig.json` — TypeScript configuration (~191 tok)
 
 ## my-apps/development/news-reader/app/app/
@@ -975,7 +975,7 @@
 
 ## my-apps/home/project-nomad/
 
-- `configmap.yaml` — K8s ConfigMap: project-nomad-config (~503 tok)
+- `configmap.yaml` — K8s ConfigMap (~524 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: project-nomad-secrets (~176 tok)
 - `kustomization.yaml` — K8s Kustomization (~386 tok)
 - `namespace.yaml` — K8s Namespace: project-nomad (~18 tok)
@@ -1001,6 +1001,10 @@
 
 - `deployment.yaml` — K8s Deployment (~314 tok)
 
+## my-apps/home/project-zomboid/
+
+- `README.md` — Project documentation (~2428 tok)
+
 ## my-apps/media/homepage-dashboard/
 
 - `configmap.yaml` — K8s ConfigMap (~2047 tok)
@@ -1009,10 +1013,15 @@
 
 - `deployment-machine-learning.yaml` — K8s Deployment (~767 tok)
 - `deployment-server.yaml` — K8s Deployment (~1080 tok)
+- `README.md` — Project documentation (~2366 tok)
 
 ## my-apps/media/karakeep/chrome/
 
 - `deployment-chrome.yaml` — K8s Deployment (~197 tok)
+
+## my-apps/media/karakeep/karakeep/
+
+- `configmap.yaml` — K8s ConfigMap (~333 tok)
 
 ## my-apps/media/redlib/
 
@@ -1031,6 +1040,10 @@
 ## my-apps/privacy/searxng/
 
 - `settings.yaml` (~882 tok)
+
+## omni/
+
+- `README.md` — Project documentation (~2637 tok)
 
 ## omni/cluster-template/
 

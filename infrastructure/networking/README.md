@@ -314,15 +314,82 @@ gatewayAPI:
 - Managed by: Kubernetes API + Cilium
 
 ### LoadBalancer IPs
-- Pool: `192.168.10.49-50` (configured in `cilium/ip-pool.yaml`)
-- Assignment:
-  - `192.168.10.49` - gateway-external
-  - `192.168.10.50` - gateway-internal
-- Managed by: Cilium L2 announcements
+- Pool: `192.168.10.32/27` → `192.168.10.32` – `192.168.10.63` (32 addresses, configured in `cilium/ip-pool.yaml`)
+- `allowFirstLastIPs: "No"` — `.32` and `.63` are reserved for network/broadcast, not used
+- Current assignments:
+  - `192.168.10.49` — `gateway-external`
+  - `192.168.10.50` — `gateway-internal`
+  - `192.168.10.51` — `project-zomboid` (UDP game server)
+- Managed by: Cilium L2 announcements (`cilium/l2-policy.yaml`)
+
+### Adding a new LoadBalancer IP
+
+Most apps should use Gateway API (HTTPRoute on the existing
+`gateway-external` or `gateway-internal`) rather than claim a fresh LB IP —
+it's one IP per gateway, not per app. Reserve direct `LoadBalancer`
+Services for protocols Gateway API can't carry (UDP, TCP non-HTTP,
+custom).
+
+1. **Pick an IP in the pool range.** Anything in `192.168.10.33` –
+   `192.168.10.62` that isn't already listed above. `kubectl get svc -A -o wide`
+   will show assigned LBs.
+2. **Pin the IP explicitly** on the Service (so it survives a cluster
+   rebuild without re-shuffling):
+   ```yaml
+   apiVersion: v1
+   kind: Service
+   metadata:
+     name: my-service
+     annotations:
+       lbipam.cilium.io/ips: "192.168.10.52"   # pin this IP
+   spec:
+     type: LoadBalancer
+     ports: [...]
+   ```
+3. **Update this README's assignment table** and the comment block in
+   `cilium/ip-pool.yaml` so the next person knows the IP is taken.
+4. **Expand the pool if you run out.** Edit `cilium/ip-pool.yaml` and
+   add another `cidr:` block — e.g., `192.168.10.64/27` for another 32
+   addresses. Make sure the range is free in the Firewalla DHCP config
+   before expanding, or you'll fight with DHCP leases.
+5. **If the IP must be LAN-reachable from outside the cluster subnet,**
+   also check `cilium/l2-policy.yaml` — the L2 announcement policy
+   selects which interfaces advertise which pools. By default every
+   node's primary interface announces the whole pool.
+
+### Why a `/27` and not the whole /24?
+
+The Firewalla DHCP pool covers most of `192.168.10.0/24`. Carving out a
+dedicated `/27` for LoadBalancer IPs prevents DHCP from ever handing
+`192.168.10.49` to a random IoT device. If you expand, pick another
+DHCP-excluded block — don't just enlarge the CIDR.
 
 ### Node Network
 - CIDR: `192.168.10.0/24`
 - Static IPs configured in Omni machine configs
+
+## Talos 1.13 compatibility notes
+
+The cluster runs Talos 1.13 (migrated from 1.12 in April 2026). Key
+networking-adjacent gotchas for that migration:
+
+- **KubePrism port (`7445`) is unchanged** across 1.12 → 1.13. Existing
+  Cilium values (`k8sServiceHost: localhost`, `k8sServicePort: 7445`)
+  don't need touching.
+- **Cilium 1.19.x** is the tested pairing with Talos 1.13 in this repo
+  (`infrastructure/networking/cilium/kustomization.yaml` pins 1.19.3).
+  Older Cilium 1.17/1.18 may boot, but Hubble TLS behavior changed
+  enough that mixing versions during a rolling upgrade caused cert
+  issues — don't cross-version unless you plan to reinstall Cilium.
+- **`machine.install.disk`** is now mandatory on 1.13 (new
+  LifecycleService API). This is networking-adjacent only because a
+  missing disk patch keeps the LoadBalancer unhealthy forever —
+  symptoms look like "L2 isn't announcing" when the real cause is that
+  nodes never made it out of `UPGRADING`. See the root README for the
+  fix (already applied in `omni/cluster-template/cluster-template.yaml`).
+- **NVIDIA OSS driver migration** (in progress) changes the GPU
+  worker's extension set but doesn't change its networking posture —
+  node IP, L2 membership, and Cilium pod CIDR are unaffected.
 
 ## References
 

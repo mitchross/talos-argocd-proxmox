@@ -29,7 +29,6 @@ headlamp.vanillax.me    192.168.10.50
 homeassistant.vanillax.me    192.168.10.50
 homepage.vanillax.me    192.168.10.50
 jellyfin.vanillax.me    192.168.10.50
-khoj.vanillax.me    192.168.10.50
 llama.vanillax.me    192.168.10.50
 longhorn.vanillax.me#Youcanchangethishostname    192.168.10.50
 n8n.vanillax.me    192.168.10.50

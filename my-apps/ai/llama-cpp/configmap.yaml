@@ -4,21 +4,60 @@ metadata:
   name: llama-cpp-config
   namespace: llama-cpp
 data:
+  # Consumed by llama-server via `--models-preset /config/presets.ini` (see
+  # deployment.yaml). Each [section] is a selectable model preset; the
+  # section-name BEFORE the " - " is the OpenAI-API-compatible model ID
+  # that clients send in their `model` field.
+  #
+  # Three model families live here:
+  #   Qwen 3.6         - primary everything (text + coding + tool calls + vision)
+  #   Gemma 4 (26B)    - multimodal fallback (kept in case Qwen 3.6's vision
+  #                      regresses on something Gemma handles well)
+  #   Qwen 3.5 uncens. - unfiltered variant for adult / red-team / jailbreak work
+  #
+  # Qwen 3.6 now has vision via `mmproj-BF16.gguf` (Unsloth), so it covers
+  # every real workload — chat, coding, agentic tool calls, and image input —
+  # from a single resident set of weights. Both Qwen 3.6 presets (think and
+  # nothink) share the same GGUF + mmproj: switching between them is just a
+  # chat-template change, no weight reload.
+  #
+  # Why NOT vanilla Qwen 3.5 here: replaced by Qwen 3.6, which is strictly
+  # better for tool-calling (improved nested-object parsing) and longer
+  # context (256K native).
+  #
+  # The old Qwen3.5 GGUFs can stay on the NFS share as fallbacks, but they
+  # aren't mapped to any preset so nothing in the cluster can select them
+  # via the API.
   presets.ini: |
     # ==========================================================
-    # GENERAL + VISION + CODE - Qwen3.5-35B-A3B [MULTIMODAL]
-    # Single GPU (1x RTX 3090) — second GPU freed for ComfyUI
+    # QWEN 3.6 35B-A3B [THINK]  - primary general / coding / agentic / vision
     # ==========================================================
-    [general - qwen3.5]
-    # 35B total / 3B active (MoE) - Gated DeltaNet + Gated Attention
-    # Natively multimodal (vision + language), 256K context native
-    # Q4_K_XL (20.6GB) + mmproj (858MB) fits in 1x 24GB RTX 3090
-    # Qwen official "precise" thinking params: temp=0.6, top_p=0.95, top_k=20, presence_penalty=0.0
-    # General thinking params use presence_penalty=1.5 but causes thinking loops on simple questions
-    model = /models/Qwen3.5-35B-A3B-UD-Q4_K_XL.gguf
-    mmproj = /models/mmproj-F16.gguf
-    alias = qwen3.5, qwen 3.5
-    ctx-size = 131072
+    # 35B total / 3B active (MoE). Unsloth UD-Q4_K_XL quant (~23GB).
+    # Native 256K context, extendable to 1M with YaRN. We run at 64K
+    # as the sweet spot for a single 3090 with 128GB system RAM:
+    #   - KV cache ~4.8GB at q8_0, spills only ~2GB into CUDA unified
+    #     memory (CPU-driven attention for spilled pages — minimal hit).
+    #   - Holds every realistic tool payload we see: Perplexica search
+    #     results (~15-30K tokens), OpenWebUI chat + RAG (~20-40K),
+    #     n8n paperless-tagger docs (<5K), Karakeep URLs (<10K).
+    #   - At 128K we'd spill ~7GB, costing real CPU cycles — painful on
+    #     a node that may be downclocked. Not worth it for the edge cases.
+    # If a specific workload ever needs >64K, add a dedicated
+    # `qwen3.6-longctx` preset instead of raising the default.
+    #
+    # Multimodal via mmproj-BF16.gguf (Unsloth's vision projector) — so
+    # this preset handles text, coding, tool calls, AND vision. One model
+    # covers every real use case on this cluster; Gemma 4 is kept only
+    # as a multimodal fallback.
+    #
+    # Unsloth documents improved nested-object parsing for tool calling
+    # in this release, so keep this preset in mind for agentic work.
+    # Sampling is Qwen's official "precise" thinking profile.
+    [qwen3.6 - qwen3.6-35b-a3b]
+    model = /models/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf
+    mmproj = /models/mmproj-BF16.gguf
+    alias = qwen3.6, qwen 3.6, general, coder, code, agentic, vision, image, multimodal
+    ctx-size = 65536
     n-gpu-layers = 99
     temp = 0.6
     top-p = 0.95
@@ -29,14 +68,20 @@ data:
     jinja = 1
 
     # ==========================================================
-    # NO-THINK PRESET - Same model with thinking disabled
-    # For tools like K8sGPT that have short timeouts
+    # QWEN 3.6 35B-A3B [NOTHINK]  - tool calls, structured output, short timeouts
     # ==========================================================
-    [nothink - qwen3.5]
-    model = /models/Qwen3.5-35B-A3B-UD-Q4_K_XL.gguf
-    mmproj = /models/mmproj-F16.gguf
-    alias = nothink-qwen
-    ctx-size = 131072
+    # Same GGUF + mmproj as the think variant — switching presets is
+    # instant (weights stay resident, just the chat template changes).
+    # Use this for:
+    #   - K8sGPT (short timeout, wants fast structured output)
+    #   - n8n workflows that parse JSON-only responses
+    #   - Karakeep tagger (classification, JSON-only)
+    #   - Any tool-call loop where <think> tokens would pollute parsing
+    [qwen3.6-nothink - qwen3.6-35b-a3b-nothink]
+    model = /models/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf
+    mmproj = /models/mmproj-BF16.gguf
+    alias = qwen3.6-nothink, nothink, fast, tools, vision-nothink
+    ctx-size = 65536
     n-gpu-layers = 99
     temp = 0.6
     top-p = 0.95
@@ -47,16 +92,19 @@ data:
     jinja = 1
 
     # ==========================================================
-    # GEMMA 4 26B-A4B [MULTIMODAL] - THINK
-    # 26B total / 3.8B active (MoE, 128 experts, 8+1 active)
-    # Q4_K_XL (~17GB) + mmproj (~850MB) — ~6GB VRAM headroom
-    # 256K native context, vision, thinking mode
-    # Google recommended params: temp=1.0, top_p=0.95, top_k=64
+    # GEMMA 4 26B-A4B [THINK]  - multimodal fallback
     # ==========================================================
+    # Qwen 3.6 is now the primary multimodal model (it has its own mmproj).
+    # Gemma 4 is kept here as a fallback in case a specific workload does
+    # better on Gemma's vision projector — and because it's a nice second
+    # opinion to have loadable on demand. 26B total / 3.8B active (MoE,
+    # 128 experts, 8+1 active). ~17GB + 850MB mmproj, plenty of headroom
+    # on a single 3090. Google-recommended sampling: temp=1.0, top_p=0.95,
+    # top_k=64.
     [gemma4 - gemma4-26b]
     model = /models/gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf
     mmproj = /models/mmproj-gemma4-BF16.gguf
-    alias = gemma4, gemma 4, gemma4-think, general, vision, image, multimodal, coder, code
+    alias = gemma4, gemma 4, gemma4-think, vision, image, multimodal
     ctx-size = 131072
     n-gpu-layers = 99
     temp = 1.0
@@ -68,13 +116,14 @@ data:
     jinja = 1
 
     # ==========================================================
-    # GEMMA 4 NO-THINK - Same model, thinking disabled
-    # Same GGUF as think variant — switching is instant (no reload)
+    # GEMMA 4 26B-A4B [NOTHINK]  - fast vision captioning
     # ==========================================================
+    # Same GGUF as think variant. For ComfyUI's llamacpp-vision node
+    # and other bulk captioning where reasoning is overkill.
     [gemma4-nothink - gemma4-26b-nothink]
     model = /models/gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf
     mmproj = /models/mmproj-gemma4-BF16.gguf
-    alias = gemma4-nothink, gemma4-fast, nothink
+    alias = gemma4-nothink, gemma4-fast, vision-nothink
     ctx-size = 131072
     n-gpu-layers = 99
     temp = 1.0
@@ -86,11 +135,12 @@ data:
     jinja = 1
 
     # ==========================================================
-    # UNCENSORED (THINK) - HauhauCS Aggressive variant
-    # Same Qwen3.5-35B-A3B base, uncensored fine-tune
-    # Q4_K_M (21.2GB) is 600MB larger than Q4_K_XL — ctx-size reduced
-    # to 32K to keep model fully on GPU
+    # QWEN 3.5 UNCENSORED (HauhauCS Aggressive) [THINK]
     # ==========================================================
+    # Unfiltered fine-tune of the older Qwen3.5 base. Kept because there's
+    # no equivalent Qwen3.6 uncensored quant available yet. Q4_K_M is 600MB
+    # larger than UD-Q4_K_XL, so ctx-size is dropped to 32K to keep the
+    # model fully GPU-resident on one 3090.
     [uncensored - qwen3.5-uncensored]
     model = /models/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive-Q4_K_M.gguf
     mmproj = /models/mmproj-Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive-f16.gguf
@@ -106,9 +156,10 @@ data:
     jinja = 1
 
     # ==========================================================
-    # UNCENSORED (NO-THINK) - Fast uncensored responses
-    # Same GGUF as think variant — switching is instant (no reload)
+    # QWEN 3.5 UNCENSORED [NOTHINK]  - fast unfiltered responses
     # ==========================================================
+    # Same GGUF as think variant. For bulk generation / red-team testing
+    # where you don't want thinking tokens in the stream.
     [nothink-uncensored - qwen3.5-uncensored-nothink]
     model = /models/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive-Q4_K_M.gguf
     mmproj = /models/mmproj-Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive-f16.gguf

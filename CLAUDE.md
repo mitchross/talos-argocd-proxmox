@@ -17,7 +17,7 @@ This is a production-grade GitOps Kubernetes cluster running on **Talos OS** wit
 
 **Tech Stack**: Talos OS + ArgoCD + Cilium (Gateway API) + Longhorn + 1Password + GPU support
 
-**AI/LLM Backend**: This cluster uses **llama-cpp** (NOT ollama) for all local AI inference. The llama-cpp server runs at `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080` with an OpenAI-compatible API at `/v1`. Current model: **Qwen3.5-35B-A3B** (Q4_K_XL). Always use llama-cpp when configuring AI backends for in-cluster tools.
+**AI/LLM Backend**: This cluster uses **llama-cpp** (NOT ollama) for all local AI inference. The llama-cpp server runs at `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080` with an OpenAI-compatible API at `/v1`. Primary model: **Qwen3.6-35B-A3B** (Unsloth UD-Q4_K_XL + `mmproj-BF16.gguf`) — multimodal, covers chat/coding/tool-calling and vision. **Gemma 4 26B-A4B** and **Qwen 3.5 Uncensored** are kept as additional presets. Full preset list + ctx/sampling is in `my-apps/ai/llama-cpp/configmap.yaml`. GPU topology: GPU 0 → llama-cpp, GPU 1 → ComfyUI (whole-card allocation, time-slicing disabled). Always use llama-cpp when configuring AI backends for in-cluster tools.
 
 ## Core Architecture Pattern: GitOps Self-Management
 
@@ -32,9 +32,9 @@ Manual Bootstrap → ArgoCD → Root App → ApplicationSets → Auto-discovered
 
 **Critical Understanding**: Directory = Application
 ```
-my-apps/ai/ollama/          → ArgoCD Application "ollama"
+my-apps/ai/llama-cpp/           → ArgoCD Application "llama-cpp"
 infrastructure/storage/longhorn/ → ArgoCD Application "longhorn"
-monitoring/prometheus-stack/    → ArgoCD Application "prometheus-stack"
+monitoring/prometheus-stack/     → ArgoCD Application "prometheus-stack"
 ```
 
 ## Sync Wave Architecture
@@ -161,7 +161,7 @@ Detailed instructions load automatically when working in these directories:
 | **Minimal app** | `my-apps/development/nginx/` |
 | **GPU workload** | `my-apps/ai/comfyui/` |
 | **Complex app with storage** | `my-apps/media/immich/` |
-| **PVC with automatic backup** | `my-apps/ai/khoj/pvc.yaml` |
+| **PVC with automatic backup** | `my-apps/home/project-zomboid/pvc.yaml` (backup on `zomboid-data`, unlabeled `zomboid-server-files`) |
 | **Kyverno backup policies** | `infrastructure/controllers/kyverno/policies/volsync-pvc-backup-restore.yaml` |
 | **PVC Plumber** | `infrastructure/controllers/pvc-plumber/` |
 | **VolSync configuration** | `infrastructure/storage/volsync/` |

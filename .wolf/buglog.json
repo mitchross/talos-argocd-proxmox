@@ -1134,6 +1134,390 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-19T19:15:07.275Z"
+    },
+    {
+      "id": "bug-070",
+      "timestamp": "2026-04-19T19:25:43.863Z",
+      "error_message": "Significant refactor of ",
+      "file": "my-apps/ai/llama-cpp/deployment.yaml",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 7→8 lines (2 removed) | Also: # With time-slicing disabled, the GPU Operator's d; # assigns this pod a whole physical GPU — exposed ",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-19T19:27:04.685Z"
+    },
+    {
+      "id": "bug-071",
+      "timestamp": "2026-04-19T19:39:46.292Z",
+      "error_message": "Significant refactor of ",
+      "file": "infrastructure/networking/README.md",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 6→50 lines (5 removed) | Also: ⚠️ **Proxmox Provider Status**: The Proxmox infras; ⚠️ **Known Limitations**:",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-19T19:40:30.782Z"
+    },
+    {
+      "id": "bug-072",
+      "timestamp": "2026-04-19T19:40:13.193Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/home/project-nomad/configmap.yaml",
+      "root_cause": "Had \"general - qwen3.5\"",
+      "fix": "Changed to \"gemma4 - gemma4-26b\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:40:13.193Z"
+    },
+    {
+      "id": "bug-073",
+      "timestamp": "2026-04-19T19:40:36.846Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/development/n8n/workflows/daily-cluster-report.json",
+      "root_cause": "Had 'general - qwen3.5'",
+      "fix": "Changed to 'gemma4-nothink - gemma4-26b-nothink'",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:40:36.846Z"
+    },
+    {
+      "id": "bug-074",
+      "timestamp": "2026-04-19T19:40:43.074Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/development/n8n/workflows/paperless-auto-tagger.json",
+      "root_cause": "Had 'general - qwen3.5'",
+      "fix": "Changed to 'gemma4-nothink - gemma4-26b-nothink'",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:40:43.074Z"
+    },
+    {
+      "id": "bug-075",
+      "timestamp": "2026-04-19T19:40:49.572Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/development/n8n/workflows/vehicle-search.json",
+      "root_cause": "Had 'general - qwen3.5'",
+      "fix": "Changed to 'gemma4-nothink - gemma4-26b-nothink'",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:40:49.572Z"
+    },
+    {
+      "id": "bug-076",
+      "timestamp": "2026-04-19T19:41:16.699Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/ai/comfyui/workflows/llamacpp-vision-to-image.json",
+      "root_cause": "Had \"general - qwen3.5\"",
+      "fix": "Changed to \"gemma4 - gemma4-26b\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:41:16.699Z"
+    },
+    {
+      "id": "bug-077",
+      "timestamp": "2026-04-19T19:41:33.684Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/ai/comfyui/custom-nodes/image_to_llamacpp_base64.py",
+      "root_cause": "Had \"general - qwen3.5\"",
+      "fix": "Changed to \"gemma4 - gemma4-26b\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:41:33.684Z"
+    },
+    {
+      "id": "bug-078",
+      "timestamp": "2026-04-19T19:41:39.624Z",
+      "error_message": "Incorrect value in code",
+      "file": "CLAUDE.md",
+      "root_cause": "Had `my-apps/ai/khoj/pvc.yaml`",
+      "fix": "Changed to `my-apps/home/project-zomboid/pvc.yaml`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-19T19:41:42.458Z"
+    },
+    {
+      "id": "bug-079",
+      "timestamp": "2026-04-19T19:41:48.844Z",
+      "error_message": "Wrong reference: khoj should be llama",
+      "file": "firewalla-dns-config.txt",
+      "root_cause": "Used \"khoj\" instead of \"llama\"",
+      "fix": "Changed khoj → llama",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "txt"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:41:48.844Z"
+    },
+    {
+      "id": "bug-080",
+      "timestamp": "2026-04-19T19:49:29.451Z",
+      "error_message": "Significant refactor of ",
+      "file": "my-apps/ai/open-webui/configmap.yaml",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 7→8 lines (2 removed) | Also: # Use lightweight MoE for background tasks (title ; TASK_MODEL: \"gemma4 - gemma4-26b\" | Also: #   Qwen 3.6         - primary general/coding/tool; #   Gemma 4 (26B)    - primary vision / multimodal | Also: # Native 256K context, extendable to 1M with YaRN.; # here so the KV cache fits on a single RTX 3090 a | Also: # Default parameters (Gemma 4 Google recommended: ; CONTEXT_WINDOW: \"16384\" | Also: # Native 256K context, extendable to 1M with YaRN.; # here as a compromise: heavy-RAG tools (Perplexic",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 6,
+      "last_seen": "2026-04-19T20:00:12.985Z"
+    },
+    {
+      "id": "bug-081",
+      "timestamp": "2026-04-19T19:49:42.716Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/home/project-nomad/configmap.yaml",
+      "root_cause": "Had \"gemma4 - gemma4-26b\"",
+      "fix": "Changed to \"qwen3.6 - qwen3.6-35b-a3b\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:49:42.716Z"
+    },
+    {
+      "id": "bug-082",
+      "timestamp": "2026-04-19T19:50:00.695Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/development/n8n/workflows/daily-cluster-report.json",
+      "root_cause": "Had 'gemma4-nothink - gemma4-26b-nothink'",
+      "fix": "Changed to 'qwen3.6-nothink - qwen3.6-35b-a3b-nothink'",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:50:00.695Z"
+    },
+    {
+      "id": "bug-083",
+      "timestamp": "2026-04-19T19:50:06.470Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/development/n8n/workflows/paperless-auto-tagger.json",
+      "root_cause": "Had 'gemma4-nothink - gemma4-26b-nothink'",
+      "fix": "Changed to 'qwen3.6-nothink - qwen3.6-35b-a3b-nothink'",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:50:06.470Z"
+    },
+    {
+      "id": "bug-084",
+      "timestamp": "2026-04-19T19:50:09.908Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/development/n8n/workflows/vehicle-search.json",
+      "root_cause": "Had 'gemma4-nothink - gemma4-26b-nothink'",
+      "fix": "Changed to 'qwen3.6-nothink - qwen3.6-35b-a3b-nothink'",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:50:09.908Z"
+    },
+    {
+      "id": "bug-085",
+      "timestamp": "2026-04-19T19:51:07.483Z",
+      "error_message": "Significant refactor of ",
+      "file": "my-apps/ai/README.md",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 8→17 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:51:07.483Z"
+    },
+    {
+      "id": "bug-086",
+      "timestamp": "2026-04-19T19:51:10.788Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/ai/README.md",
+      "root_cause": "Had \"general - qwen3.5\"",
+      "fix": "Changed to \"qwen3.6 - qwen3.6-35b-a3b\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:51:10.788Z"
+    },
+    {
+      "id": "bug-087",
+      "timestamp": "2026-04-19T19:54:53.662Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/media/karakeep/karakeep/configmap.yaml",
+      "root_cause": "Had \"gemma4 - gemma4-26b\"",
+      "fix": "Changed to \"qwen3.6 - qwen3.6-35b-a3b\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:54:53.662Z"
+    },
+    {
+      "id": "bug-088",
+      "timestamp": "2026-04-19T19:55:00.072Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/ai/comfyui/custom-nodes/image_to_llamacpp_base64.py",
+      "root_cause": "Had \"gemma4 - gemma4-26b\"",
+      "fix": "Changed to \"qwen3.6 - qwen3.6-35b-a3b\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:55:00.072Z"
+    },
+    {
+      "id": "bug-089",
+      "timestamp": "2026-04-19T19:55:45.428Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/ai/comfyui/workflows/llamacpp-vision-to-image.json",
+      "root_cause": "Had \"gemma4 - gemma4-26b\"",
+      "fix": "Changed to \"qwen3.6 - qwen3.6-35b-a3b\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:55:45.428Z"
+    },
+    {
+      "id": "bug-090",
+      "timestamp": "2026-04-19T19:57:20.743Z",
+      "error_message": "Wrong reference: 65536 should be 131072",
+      "file": "my-apps/ai/llama-cpp/configmap.yaml",
+      "root_cause": "Used \"65536\" instead of \"131072\"",
+      "fix": "Changed 65536 → 131072",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 4,
+      "last_seen": "2026-04-19T20:00:22.922Z"
+    },
+    {
+      "id": "bug-091",
+      "timestamp": "2026-04-19T19:57:28.084Z",
+      "error_message": "Incorrect value in code",
+      "file": "my-apps/ai/llama-cpp/deployment.yaml",
+      "root_cause": "Had \"65536\"",
+      "fix": "Changed to \"131072\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-19T20:00:28.239Z"
+    },
+    {
+      "id": "bug-092",
+      "timestamp": "2026-04-19T20:04:42.541Z",
+      "error_message": "Significant refactor of ",
+      "file": "my-apps/ai/README.md",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 4→6 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T20:04:42.541Z"
+    },
+    {
+      "id": "bug-093",
+      "timestamp": "2026-04-19T20:05:45.068Z",
+      "error_message": "Incorrect value in code",
+      "file": "CLAUDE.md",
+      "root_cause": "Had `my-apps/ai/llama-cpp/configmap.yaml`",
+      "fix": "Changed to `mmproj-BF16.gguf`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T20:05:45.068Z"
     }
   ]
 }

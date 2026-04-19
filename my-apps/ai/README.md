@@ -1,7 +1,9 @@
 # AI Stack Guide
 
-Local AI infrastructure running on dual RTX 3090s (24GB each) + 400GB system RAM.
-Each GPU runs one workload — llama-server on GPU 0, ComfyUI on GPU 1.
+Local AI infrastructure running on dual RTX 3090s (24 GB each) + 128 GB
+system RAM, 12-core CPU. Each GPU runs one workload — llama-server on
+GPU 0, ComfyUI on GPU 1. Time-slicing is OFF; whole-card allocation is
+enforced via the GPU Operator.
 
 ## Architecture
 
@@ -13,11 +15,11 @@ Each GPU runs one workload — llama-server on GPU 0, ComfyUI on GPU 1.
            (LLM inference) (image+video) (web search)
            port 8080       port 8188
            ┌──────────┐   ┌──────────────────────┐
-           │ Qwen3.5  │   │ Z-Image-Turbo (t2i)  │
+           │ Qwen 3.6 │   │ Z-Image-Turbo (t2i)  │
            │ 35B-A3B  │   │ Qwen-Image-Edit (i2i)│
            │ Q4_K_XL  │   │ Wan 2.2 T2V (video)  │
            │ +mmproj  │   │ Wan 2.2 I2V (video)  │
-           └──────────┘   │ Florence-2 (caption)  │
+           └──────────┘   │ Florence-2 (caption) │
            GPU 0 (24GB)   │ WD14 Tagger (tags)   │
                           └──────────────────────┘
                           GPU 1 (24GB)
@@ -25,14 +27,28 @@ Each GPU runs one workload — llama-server on GPU 0, ComfyUI on GPU 1.
 
 ## LLM Model (llama-cpp)
 
-Single model served via `llama-server` on GPU 0. Qwen3.5-35B-A3B is a MoE model (3B active params)
-with native multimodal support (vision + language). Q4_K_XL (20.6GB) + mmproj (858MB) fits in 1x 24GB RTX 3090.
+Multiple presets served via `llama-server` on GPU 0. Presets hot-swap on
+the same GPU — weights only re-load when you switch between different
+model files (`qwen3.6` ↔ `gemma4` ↔ `uncensored`). Switching between
+`think` / `nothink` variants of the same model is instant (same GGUF,
+different chat template).
 
-| Preset | Model | Active Params | VRAM | Context | Use Case |
-|--------|-------|--------------|------|---------|----------|
-| `general - qwen3.5` | Qwen3.5-35B-A3B Q4_K_XL | 3B (MoE) | ~21GB | 32K | General, vision, coding, agentic tool-calling |
+Qwen 3.6-35B-A3B is the primary model — it handles chat, coding,
+agentic tool calls, AND vision via the Unsloth `mmproj-BF16.gguf`
+projector. Gemma 4 is kept as a multimodal fallback. A Qwen 3.5
+uncensored fine-tune covers unfiltered / red-team work.
 
-Aliases: `qwen3.5`, `general`, `vision`, `image`, `multimodal`, `coder`, `code`
+| Preset | Model | Think | Context | Primary Use |
+|--------|-------|-------|---------|-------------|
+| `qwen3.6 - qwen3.6-35b-a3b`                       | Qwen3.6-35B-A3B UD-Q4_K_XL (multimodal) | ✅ | 64K  | Chat, coding, agentic tool calls, vision |
+| `qwen3.6-nothink - qwen3.6-35b-a3b-nothink`       | (same GGUF + mmproj)                    | ❌ | 64K  | JSON / tool output, short timeouts |
+| `gemma4 - gemma4-26b`                             | Gemma-4-26B-A4B UD-Q4_K_XL              | ✅ | 128K | Multimodal fallback |
+| `gemma4-nothink - gemma4-26b-nothink`             | (same GGUF)                             | ❌ | 128K | Fast multimodal fallback |
+| `uncensored - qwen3.5-uncensored`                 | Qwen3.5-35B-A3B Uncensored Q4_K_M       | ✅ | 32K  | Unfiltered / red-team |
+| `nothink-uncensored - qwen3.5-uncensored-nothink` | (same GGUF)                             | ❌ | 32K  | Bulk unfiltered gen |
+
+Source of truth: `my-apps/ai/llama-cpp/configmap.yaml` (each preset has
+its own aliases listed there).
 
 ### Key llama-server Optimizations
 
@@ -40,8 +56,8 @@ Aliases: `qwen3.5`, `general`, `vision`, `image`, `multimodal`, `coder`, `code`
 |---------|-------|-----|
 | `cache-type-k = q8_0` | KV cache | Halves KV key cache VRAM (~0.002 perplexity cost) |
 | `cache-type-v = q8_0` | KV cache | Quantized KV value cache (q8_0 not q4_0 — Qwen GQA sensitive to V cache quant) |
-| `--no-mmap` | Global | Prevents page fault stalls during inference (we have 400GB RAM) |
-| `-t 4` | Global | Low CPU thread count — fully GPU-offloaded model, auto-detect over-allocates in K8s |
+| `--no-mmap` | Global | Load model fully into memory instead of faulting from NFS-backed file. 128 GB system RAM leaves plenty of room. |
+| `-t 4` | Global | Low CPU thread count — fully GPU-offloaded model, auto-detect over-allocates in K8s. CPU is only needed for prefill orchestration and spilled-KV attention. |
 | `-b 4096 -ub 512` | Global | Batch sizes for prompt processing (4096 logical, 512 physical) |
 | `--parallel 1` | Global | Single-user -- maximize VRAM for context, not concurrent slots |
 | `--fit on` | Global | Auto-fit dense layers to available VRAM |
@@ -55,7 +71,7 @@ llama-server natively supports the Anthropic Messages API at `/v1/messages`. No 
 export ANTHROPIC_BASE_URL="http://llama.vanillax.me"
 export ANTHROPIC_AUTH_TOKEN="no-key-required"
 export ANTHROPIC_API_KEY=""
-claude --model "general - qwen3.5"
+claude --model "qwen3.6 - qwen3.6-35b-a3b"
 ```
 
 ### Using with OpenClaw / Other Tools
@@ -111,10 +127,12 @@ Two options, both pre-installed in the megapak Docker image:
 
 **Workflows**: `workflows/florence2-caption.json`, `workflows/wd14-tagger.json`
 
-For deeper image analysis (visual Q&A, reasoning), use **Qwen3.5** via Open WebUI chat
-(upload image -> ask questions). This goes through llama-server, not ComfyUI.
-ComfyUI can also call llama-server's vision API directly via the `comfyui-llamacpp-client` node
-(URL: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080`).
+For deeper image analysis (visual Q&A, reasoning), use **Qwen 3.6** via Open WebUI chat
+(upload image → ask questions). This goes through llama-server, not ComfyUI.
+ComfyUI can also call llama-server's vision API directly via the `comfyui-llamacpp-client`
+node (URL: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080`, model:
+`qwen3.6 - qwen3.6-35b-a3b`). See `custom-nodes/image_to_llamacpp_base64.py` and
+`workflows/llamacpp-vision-to-image.json`.
 
 ## Video Generation (ComfyUI)
 
@@ -240,7 +258,9 @@ The job downloads (skips existing):
 ### Task Model
 
 Background tasks (title generation, chat tagging, follow-up suggestions) use
-`general - qwen3.5` -- the single consolidated model handles all tasks.
+`qwen3.6-nothink - qwen3.6-35b-a3b-nothink` -- same weights as the primary
+chat preset, but skips the thinking phase so short structured jobs return
+faster.
 
 ### RAG Tuning
 

@@ -289,6 +289,87 @@ All PVC backups use **Kopia on NFS** via VolSync, automated by Kyverno policies.
 - **Details**: See [docs/pvc-plumber-full-flow.md](docs/pvc-plumber-full-flow.md), [docs/backup-restore.md](docs/backup-restore.md), and [docs/cnpg-disaster-recovery.md](docs/cnpg-disaster-recovery.md)
 - **AI-guided database recovery**: Copy/paste prompts are in [LLM Recovery Prompt Templates](docs/cnpg-disaster-recovery.md#llm-recovery-prompt-templates)
 
+## Cluster Upgrades & Talos 1.13 Notes
+
+The cluster is running Talos **1.13** (migrated from 1.12 in April 2026).
+A few things changed at 1.13 that you'll hit if you spin up or rebuild a
+cluster — read this before touching the cluster template.
+
+### `machine.install.disk` is now mandatory
+
+Talos 1.13 replaced the old install/upgrade flow with the
+**LifecycleService API**. Earlier versions could auto-detect a system
+disk during `maintenanceUpgrade`; 1.13 requires an explicit
+`machine.install.disk` in the machine config.
+
+**Symptom if missing:** fresh VMs boot, but control planes stay stuck in
+`stage=7 (UPGRADING)` with `configuptodate=false` forever. Resource
+versions cycle into the hundreds. The LoadBalancer never goes healthy,
+Kubernetes never bootstraps. **No error surfaces anywhere** — it silently
+fails inside `maintenanceUpgrade`.
+
+This repo ships the fix as a cluster-level config patch in
+`omni/cluster-template/cluster-template.yaml`:
+
+```yaml
+- name: install-disk
+  inline:
+    machine:
+      install:
+        disk: /dev/sda   # Proxmox virtio-scsi-single + scsi0 presents as /dev/sda
+```
+
+All machine classes (CP / worker / GPU) use the same bus layout, so the
+patch goes at cluster scope — not per-machineset. If you add a class
+with a different disk presentation (e.g., NVMe passthrough →
+`/dev/nvme0n1`), override it per-machineset instead.
+
+### NVIDIA driver migration (in progress)
+
+Talos 1.13 is the target point for migrating the GPU worker from the
+proprietary NVIDIA kernel modules to the NVIDIA **open** kernel modules.
+Talos continues to own the host driver and the container toolkit via
+system extensions; the GPU Operator stays scoped to device plugin, GFD,
+validator, and runtime-class management.
+
+Plan: `docs/superpowers/plans/2026-04-19-talos-1.13-oss-nvidia-migration.md`
+
+Key files touched by the migration:
+- `omni/cluster-template/cluster-template.yaml` — swap extension from
+  `nonfree-kmod-nvidia-production` to the OSS equivalent.
+- `infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml` —
+  align with Talos 1.13 beta OSS guide, especially
+  `hostPaths.driverInstallDir`.
+- `infrastructure/controllers/nvidia-gpu-operator/cluster-policy.yaml` —
+  keep dormant reference aligned with OSS assumptions.
+
+Because there's only **one** GPU worker, this is a maintenance-window
+migration with explicit rollback — not a canary. `llama-cpp` is offline
+for the duration.
+
+### Upgrading Omni / omnictl to the 1.13 toolchain
+
+Omni 1.7 is required to provision/upgrade Talos 1.13 clusters. When
+upgrading:
+
+1. Take an Omni etcd snapshot (`omni/omni/README.md` → Backup/Recovery).
+2. Upgrade the Omni container to 1.7.x, restart. Verify the UI loads
+   and existing clusters still show healthy.
+3. Upgrade `omnictl` on your workstation to match the server version —
+   mismatched versions fail with obscure gRPC errors.
+4. Regenerate the service-account kubeconfig if it's older than 30
+   days (token rotation often lags server upgrades).
+
+### CNPG clean-slate baseline (April 2026)
+
+After the RustFS wipe in April 2026, every CNPG database was re-bootstrapped
+from scratch via `initdb` (v1 of each overlay). Any database DR
+runbook older than 2026-04-18 references the old WAL chain and will not
+work. Current procedure is in
+[docs/cnpg-disaster-recovery.md](docs/cnpg-disaster-recovery.md) — that
+doc was rewritten against the new clean-slate pattern, so treat it as
+authoritative over anything in `docs/research/storage/`.
+
 ## Hardware
 
 ```

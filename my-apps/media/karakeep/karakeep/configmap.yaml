@@ -10,8 +10,13 @@ data:
   OPENAI_BASE_URL: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
   OPENAI_API_KEY: "sk-required"
   OLLAMA_KEEP_ALIVE: "5m"
-  INFERENCE_TEXT_MODEL: "general - qwen3.5"
-  INFERENCE_IMAGE_MODEL: "general - qwen3.5"
+  # Text tagging = structured/classification, JSON-only output.
+  # Qwen 3.6 nothink: improved nested-object tool-call parsing, no <think>
+  # tokens leaking into the JSON, faster response.
+  INFERENCE_TEXT_MODEL: "qwen3.6-nothink - qwen3.6-35b-a3b-nothink"
+  # Qwen 3.6 is multimodal via mmproj-BF16.gguf, so vision captioning
+  # runs on the same preset as text tagging. One model for everything.
+  INFERENCE_IMAGE_MODEL: "qwen3.6 - qwen3.6-35b-a3b"
   EMBEDDING_TEXT_MODEL: "granite-embedding:278m"
   # For webhook functionality (new in 0.22.0)
   WEBHOOK_ENABLED: "false"
