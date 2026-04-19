@@ -5,6 +5,7 @@ namespace: perplexica
 resources:
   - namespace.yaml
   - pvc.yaml
+  - configmap.yaml     # model-provider seed for the initContainer
   - deployment.yaml
   - service.yaml
   - httproute.yaml
