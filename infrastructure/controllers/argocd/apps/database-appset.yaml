@@ -52,14 +52,20 @@ spec:
             factor: 2
             maxDuration: 10m
       # NOTE: .status ignored globally by ArgoCD 3.0+ — only non-status fields listed
+      #
+      # DO NOT add .spec.bootstrap or .spec.externalClusters here.
+      # RespectIgnoreDifferences=true + ServerSideApply STRIPS those fields
+      # during apply — blocks the overlay-based DR flow from ever reaching
+      # the live Cluster. Each DB's root kustomization.yaml switches between
+      # overlays/initdb and overlays/recovery; ArgoCD must fully apply that.
+      # CNPG ignores spec.bootstrap on existing Clusters semantically (it's
+      # creation-time only), so post-recovery drift between git and live is
+      # cosmetic — the extra sync churn is worth it for correctness.
       ignoreDifferences:
       - group: postgresql.cnpg.io
         kind: Cluster
         jsonPointers:
         - /metadata/generation
-        jqPathExpressions:
-        - .spec.bootstrap
-        - .spec.externalClusters
       - group: external-secrets.io
         kind: ExternalSecret
         jqPathExpressions:
