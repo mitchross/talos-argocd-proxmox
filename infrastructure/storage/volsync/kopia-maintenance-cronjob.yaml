@@ -88,10 +88,15 @@ spec:
             resources:
               requests:
                 cpu: 200m
-                memory: 512Mi
+                memory: 1Gi
               limits:
                 cpu: "2"
-                memory: 2Gi
+                # 4Gi: `kopia maintenance run --full` loads blob indexes
+                # into memory. 2Gi was enough for small repos but the
+                # Kopia NFS share is ~27Gi of blobs now and the job OOMed
+                # silently before printing anything useful. 4Gi gives
+                # headroom for future growth without being extravagant.
+                memory: 4Gi
             command:
             - /bin/sh
             - -c
@@ -123,8 +128,14 @@ spec:
                 --full-interval=168h
 
               echo "=== Running maintenance ==="
-              # Kopia decides quick vs full internally based on schedule above.
-              kopia maintenance run --full --safety=full
+              # Kopia decides quick vs full internally based on schedule
+              # above. `--safety=full` requires two runs spaced apart
+              # (~24h) to garbage-collect because it needs to prove that
+              # no concurrent backup could still be referencing a blob.
+              # `--safety=none` does aggressive GC in one pass — fine
+              # on a homelab cluster where we don't have concurrent
+              # writers to the repo outside our own schedule.
+              kopia maintenance run --full --safety=none
 
               echo "=== Post-maintenance index blob count ==="
               kopia repository status --json | grep -i blob || true
