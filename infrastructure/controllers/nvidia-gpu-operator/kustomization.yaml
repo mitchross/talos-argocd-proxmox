@@ -23,17 +23,19 @@ helmCharts:
   includeCRDs: true
   valuesInline:
     operator:
-      defaultRuntime: containerd
+      # `operator.defaultRuntime` was deprecated in gpu-operator v26.3 —
+      # containerd is the only supported runtime anyway, so we don't set it.
       runtimeClass: nvidia
     # Talos system extensions own the driver + toolkit on the node.
     driver:
       enabled: false
     toolkit:
       enabled: false
-    # Talos 1.13 has CDI enabled by default and writes specs to /run/cdi.
+    # Talos 1.13 writes CDI specs to /run/cdi. CDI is enabled by default in
+    # gpu-operator v26.3+ (the explicit `cdi.default` field was deprecated),
+    # so we just opt in here — no `default: true` needed.
     cdi:
       enabled: true
-      default: true
     # We already run siderolabs/node-feature-discovery cluster-wide.
     nfd:
       enabled: false
