@@ -2,6 +2,8 @@
 
 > Auto-maintained by OpenWolf. Last scanned: 2026-04-19T18:52:43.505Z
 > Files: 611 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T18:58:00.000Z
+> Files: 612 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
 
@@ -127,6 +129,7 @@
 ## docs/superpowers/plans/
 
 - `2026-04-09-kyverno-cel-migration.md` — Kyverno CEL Migration + Webhook Deadlock Prevention (~8695 tok)
+- `2026-04-19-talos-1.13-oss-nvidia-migration.md` — Talos 1.13 OSS NVIDIA migration plan with maintenance-window rollout and rollback (~7600 tok)
 
 ## infrastructure/
 
