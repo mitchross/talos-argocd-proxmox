@@ -239,6 +239,66 @@
       "action": "edit",
       "tokens": 27,
       "at": "2026-04-19T03:34:42.939Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/gitea/kustomization.yaml",
+      "action": "edit",
+      "tokens": 58,
+      "at": "2026-04-19T03:37:27.590Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+      "action": "edit",
+      "tokens": 58,
+      "at": "2026-04-19T03:37:29.563Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+      "action": "edit",
+      "tokens": 58,
+      "at": "2026-04-19T03:37:31.280Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+      "action": "edit",
+      "tokens": 58,
+      "at": "2026-04-19T03:37:33.316Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+      "action": "edit",
+      "tokens": 58,
+      "at": "2026-04-19T03:37:35.518Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/gitea/kustomization.yaml",
+      "action": "edit",
+      "tokens": 62,
+      "at": "2026-04-19T03:49:13.550Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+      "action": "edit",
+      "tokens": 62,
+      "at": "2026-04-19T03:49:15.846Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+      "action": "edit",
+      "tokens": 62,
+      "at": "2026-04-19T03:49:18.135Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+      "action": "edit",
+      "tokens": 62,
+      "at": "2026-04-19T03:49:20.135Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+      "action": "edit",
+      "tokens": 62,
+      "at": "2026-04-19T03:49:22.391Z"
     }
   ],
   "edit_counts": {
@@ -248,22 +308,22 @@
     "infrastructure/database/cloudnative-pg/immich/overlays/initdb/bootstrap-patch.yaml": 1,
     "infrastructure/database/cloudnative-pg/immich/overlays/recovery/kustomization.yaml": 1,
     "infrastructure/database/cloudnative-pg/immich/overlays/recovery/bootstrap-patch.yaml": 1,
-    "infrastructure/database/cloudnative-pg/immich/kustomization.yaml": 1,
-    "infrastructure/database/cloudnative-pg/khoj/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/immich/kustomization.yaml": 3,
+    "infrastructure/database/cloudnative-pg/khoj/kustomization.yaml": 3,
     "infrastructure/database/cloudnative-pg/khoj/base/kustomization.yaml": 1,
     "infrastructure/database/cloudnative-pg/khoj/base/cluster.yaml": 1,
     "infrastructure/database/cloudnative-pg/khoj/overlays/initdb/kustomization.yaml": 1,
     "infrastructure/database/cloudnative-pg/khoj/overlays/initdb/bootstrap-patch.yaml": 1,
     "infrastructure/database/cloudnative-pg/khoj/overlays/recovery/kustomization.yaml": 1,
     "infrastructure/database/cloudnative-pg/khoj/overlays/recovery/bootstrap-patch.yaml": 1,
-    "infrastructure/database/cloudnative-pg/paperless/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/paperless/kustomization.yaml": 3,
     "infrastructure/database/cloudnative-pg/paperless/base/kustomization.yaml": 1,
     "infrastructure/database/cloudnative-pg/paperless/base/cluster.yaml": 1,
     "infrastructure/database/cloudnative-pg/paperless/overlays/initdb/kustomization.yaml": 1,
     "infrastructure/database/cloudnative-pg/paperless/overlays/initdb/bootstrap-patch.yaml": 1,
     "infrastructure/database/cloudnative-pg/paperless/overlays/recovery/kustomization.yaml": 1,
     "infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml": 1,
-    "infrastructure/database/cloudnative-pg/temporal/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/temporal/kustomization.yaml": 3,
     "infrastructure/database/cloudnative-pg/temporal/base/kustomization.yaml": 1,
     "infrastructure/database/cloudnative-pg/temporal/base/cluster.yaml": 1,
     "infrastructure/database/cloudnative-pg/temporal/overlays/initdb/kustomization.yaml": 1,
@@ -272,11 +332,12 @@
     "infrastructure/database/cloudnative-pg/temporal/overlays/recovery/bootstrap-patch.yaml": 1,
     "infrastructure/networking/cloudflared/config.yaml": 1,
     "infrastructure/networking/cloudflared/restart-cronjob.yaml": 1,
-    "infrastructure/networking/cloudflared/kustomization.yaml": 1
+    "infrastructure/networking/cloudflared/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/gitea/kustomization.yaml": 2
   },
   "anatomy_hits": 7,
   "anatomy_misses": 3,
   "repeated_reads_warned": 0,
   "cerebrum_warnings": 0,
-  "stop_count": 4
+  "stop_count": 28
 }
