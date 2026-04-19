@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: mailpit
-          image: axllent/mailpit:latest@sha256:2f1fe11f8ef84dc3175a788ba04522149e546dee105b11cdc6b06344049b56fc
+          image: axllent/mailpit:latest@sha256:c5fa09022cf2139438f09461f942d56fab2ed63cdf1a4046467af032fb2403ba
           imagePullPolicy: IfNotPresent
           env:
             - name: TZ
