@@ -8,7 +8,6 @@ metadata:
     app.kubernetes.io/component: db
   annotations:
     argocd.argoproj.io/sync-wave: "0"
-    vpa.kubernetes.io/min-memory: "256Mi"
 spec:
   replicas: 1
   strategy:

@@ -3,8 +3,6 @@ kind: Deployment
 metadata:
   name: open-webui
   namespace: open-webui
-  annotations:
-    vpa.kubernetes.io/min-memory: "512Mi"
 spec:
   strategy:
     type: Recreate

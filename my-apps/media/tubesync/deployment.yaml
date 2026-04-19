@@ -5,8 +5,6 @@ metadata:
   namespace: tubesync
   labels:
     app: tubesync
-  annotations:
-    vpa.kubernetes.io/min-memory: "512Mi"
 spec:
   replicas: 1
   strategy:

@@ -1,9 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T18:52:43.505Z
-> Files: 611 tracked | Anatomy hits: 0 | Misses: 0
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T18:58:00.000Z
-> Files: 612 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T19:10:09.091Z
+> Files: 617 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
 
@@ -32,7 +30,7 @@
 - `.gitattributes` — Git attributes (~6 tok)
 - `.gitignore` — Git ignore rules (~611 tok)
 - `astro.config.mjs` — Astro configuration (~274 tok)
-- `CLAUDE.md` — OpenWolf (~3081 tok)
+- `CLAUDE.md` — OpenWolf (~3057 tok)
 - `firewalla-dns-config.txt` — Firewalla Local DNS Configuration for vanillax.me (~424 tok)
 - `MIGRATION_EXTERNAL_DNS.md` — Migration to ExternalDNS-Based Split DNS Architecture (~1870 tok)
 - `mkdocs.yml` (~269 tok)
@@ -104,7 +102,7 @@
 - `index.md` — Talos ArgoCD Proxmox (~272 tok)
 - `network-policy.md` — Network Security & LAN Isolation (~1607 tok)
 - `network-topology.md` — Network Topology (~1663 tok)
-- `pvc-plumber-full-flow.md` — Zero-Touch PVC Backup/Restore: The Complete Picture (~11603 tok)
+- `pvc-plumber-full-flow.md` — Zero-Touch PVC Backup/Restore: The Complete Picture (~11582 tok)
 - `vpa-resource-optimization.md` — VPA Resource Optimization Guide (~4410 tok)
 
 ## docs/plans/
@@ -157,7 +155,7 @@
 - `cnpg-barman-plugin-app.yaml` — CloudNativePG Barman Cloud Plugin — replaces deprecated native barmanObjectStore (~340 tok)
 - `database-appset.yaml` — K8s ApplicationSet (~852 tok)
 - `external-secrets.yaml` — K8s Application: external-secrets (~319 tok)
-- `infrastructure-appset.yaml` — K8s ApplicationSet (~1124 tok)
+- `infrastructure-appset.yaml` — K8s ApplicationSet (~1088 tok)
 - `kustomization.yaml` — K8s Kustomization (~395 tok)
 - `kyverno-app.yaml` — K8s Application: kyverno (~494 tok)
 - `longhorn-app.yaml` — Critical: Longhorn must be deployed after Cilium (wave 1) (~371 tok)
@@ -206,9 +204,9 @@
 ## infrastructure/controllers/kyverno/
 
 - `CLAUDE.md` — Kyverno Backup & Restore System (~3270 tok)
-- `kustomization.yaml` — K8s Kustomization: kyverno (~338 tok)
+- `kustomization.yaml` — K8s Kustomization (~256 tok)
 - `namespace.yaml` — K8s Namespace: kyverno (~17 tok)
-- `rbac-patch.yaml` — K8s ClusterRole: kyverno:background-controller:volsync (~759 tok)
+- `rbac-patch.yaml` — K8s ClusterRole (~643 tok)
 - `values.yaml` — Webhook namespace exclusions — infrastructure namespaces (Waves 0-2) must boot (~1197 tok)
 
 ## infrastructure/controllers/kyverno/policies/
@@ -258,12 +256,12 @@
 ## infrastructure/controllers/opentelemetry-operator/
 
 - `collector-agent.yaml` — start_at: end (~907 tok)
-- `collector-gateway.yaml` — K8s OpenTelemetryCollector: otel-gateway (~1106 tok)
+- `collector-gateway.yaml` — K8s OpenTelemetryCollector (~1048 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: honeycomb-api-key (~106 tok)
 - `instrumentation.yaml` — K8s Instrumentation: default (~329 tok)
 - `kustomization.yaml` — K8s Kustomization: opentelemetry-operator (~138 tok)
 - `ns.yaml` — K8s Namespace: opentelemetry (~70 tok)
-- `rbac.yaml` — K8s ServiceAccount: otel-agent (~614 tok)
+- `rbac.yaml` — K8s ServiceAccount (~574 tok)
 - `values.yaml` (~77 tok)
 
 ## infrastructure/controllers/pvc-plumber/
@@ -477,7 +475,7 @@
 
 ## infrastructure/storage/
 
-- `CLAUDE.md` — Storage Guidelines (~1168 tok)
+- `CLAUDE.md` — Storage Guidelines (~1122 tok)
 
 ## infrastructure/storage/container-registry/
 
@@ -544,7 +542,7 @@
 ## monitoring/
 
 - `CLAUDE.md` — Monitoring Guidelines (~673 tok)
-- `README.md` — Project documentation (~1178 tok)
+- `README.md` — Project documentation (~1175 tok)
 
 ## monitoring/k8sgpt/
 
@@ -581,7 +579,7 @@
 - `gpu-dashboard.yaml` — K8s ConfigMap: gpu-dashboard (~18867 tok)
 - `GPU-MONITORING.md` — GPU Monitoring with DCGM Exporter (~683 tok)
 - `grafana-http-route.yaml` — K8s HTTPRoute: grafana (~150 tok)
-- `kustomization.yaml` — K8s Kustomization (~374 tok)
+- `kustomization.yaml` — K8s Kustomization (~335 tok)
 - `loki-logs-dashboard.yaml` — K8s ConfigMap: loki-logs-dashboard (~1404 tok)
 - `longhorn-backup-alerts.yaml` — K8s PrometheusRule: longhorn-backup-alerts (~3028 tok)
 - `network-policy.yaml` — K8s CiliumNetworkPolicy: allow-grafana-to-prometheus (~186 tok)
@@ -589,7 +587,7 @@
 - `prometheus-http-route.yaml` — K8s HTTPRoute: prometheus (~153 tok)
 - `solar-dashboard.yaml` — K8s ConfigMap: solar-dashboard (~13474 tok)
 - `tapo-power-dashboard.yaml` — K8s ConfigMap (~2785 tok)
-- `values.yaml` — Enhanced kube-prometheus-stack configuration (~4130 tok)
+- `values.yaml` — Enhanced kube-prometheus-stack configuration (~2524 tok)
 - `volsync-alerts.yaml` — K8s PrometheusRule: volsync-alerts (~1953 tok)
 - `vpa-alerts.yaml` — K8s PrometheusRule: vpa-alerts (~1141 tok)
 - `vpa-overview-dashboard.yaml` — K8s ConfigMap: vpa-overview-dashboard (~7117 tok)
@@ -639,7 +637,7 @@
 ## my-apps/ai/llama-cpp/
 
 - `configmap.yaml` — K8s ConfigMap: llama-cpp-config (~1359 tok)
-- `deployment.yaml` — K8s Deployment (llama.cpp GPU server resources tuned for performance) (~1380 tok)
+- `deployment.yaml` — K8s Deployment (~1372 tok)
 - `httproute.yaml` — K8s HTTPRoute: llama-cpp-route (~151 tok)
 - `kustomization.yaml` — K8s Kustomization (~59 tok)
 - `namespace.yaml` — K8s Namespace: llama-cpp (~17 tok)
@@ -657,7 +655,7 @@
 ## my-apps/ai/open-webui/
 
 - `configmap.yaml` — K8s ConfigMap: open-webui-configmap (~1849 tok)
-- `deployment.yaml` — K8s Deployment: open-webui (~408 tok)
+- `deployment.yaml` — K8s Deployment (~391 tok)
 - `function-loader-job.yaml` — K8s Job: load-har-analyzer-v5 (~996 tok)
 - `har-analyzer-function.py` — Pydantic: Valves (12 fields) (~7115 tok)
 - `httproute.yaml` — K8s HTTPRoute: open-webui (~149 tok)
@@ -883,14 +881,14 @@
 
 ## my-apps/development/posthog/data-layer/
 
-- `clickhouse.yaml` — K8s StatefulSet: clickhouse (~1016 tok)
-- `kafka.yaml` — K8s StatefulSet: kafka (~847 tok)
-- `postgres.yaml` — K8s Deployment: db (~653 tok)
+- `clickhouse.yaml` — K8s StatefulSet (~1005 tok)
+- `kafka.yaml` — K8s StatefulSet (~836 tok)
+- `postgres.yaml` — K8s Deployment (~641 tok)
 - `redis.yaml` — K8s Deployment: redis7 (~504 tok)
 
 ## my-apps/development/stirling-pdf/
 
-- `deployment.yaml` — K8s Deployment: stirling-pdf (~292 tok)
+- `deployment.yaml` — K8s Deployment (~275 tok)
 - `httproute.yaml` — K8s HTTPRoute: stirling-pdf (~147 tok)
 - `kustomization.yaml` — K8s Kustomization (~50 tok)
 - `namespace.yaml` — K8s Namespace: stirling-pdf (~18 tok)
@@ -972,7 +970,7 @@
 - `namespace.yaml` — K8s Namespace: paperless-ngx (~34 tok)
 - `pvc.yaml` — K8s PersistentVolumeClaim: data (~362 tok)
 - `service.yaml` — K8s Service: paperless-ngx (~71 tok)
-- `tika-gotenberg.yaml` — K8s Deployment: tika (~603 tok)
+- `tika-gotenberg.yaml` — K8s Deployment (~571 tok)
 
 ## my-apps/home/project-nomad/
 
@@ -989,7 +987,7 @@
 
 ## my-apps/home/project-nomad/embeddings/
 
-- `deployment.yaml` — K8s Deployment: embeddings (~393 tok)
+- `deployment.yaml` — K8s Deployment (~377 tok)
 - `pvc.yaml` — K8s PersistentVolumeClaim: embeddings-model-cache (~57 tok)
 - `service.yaml` — K8s Service: embeddings (~69 tok)
 
@@ -998,9 +996,22 @@
 - `deployment.yaml` — K8s Deployment: flatnotes (~282 tok)
 - `httproute.yaml` — K8s HTTPRoute: flatnotes (~183 tok)
 
+## my-apps/home/project-nomad/mysql/
+
+- `deployment.yaml` — K8s Deployment (~314 tok)
+
 ## my-apps/media/homepage-dashboard/
 
 - `configmap.yaml` — K8s ConfigMap (~2047 tok)
+
+## my-apps/media/immich/
+
+- `deployment-machine-learning.yaml` — K8s Deployment (~767 tok)
+- `deployment-server.yaml` — K8s Deployment (~1080 tok)
+
+## my-apps/media/karakeep/chrome/
+
+- `deployment-chrome.yaml` — K8s Deployment (~197 tok)
 
 ## my-apps/media/redlib/
 
@@ -1011,6 +1022,10 @@
 - `kustomization.yaml` — K8s Kustomization (~56 tok)
 - `ns.yaml` — K8s Namespace (~16 tok)
 - `service.yaml` — K8s Service (~61 tok)
+
+## my-apps/media/tubesync/
+
+- `deployment.yaml` — K8s Deployment (~304 tok)
 
 ## my-apps/privacy/searxng/
 

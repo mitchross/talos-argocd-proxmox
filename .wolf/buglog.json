@@ -990,6 +990,118 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-19T18:52:43.512Z"
+    },
+    {
+      "id": "bug-061",
+      "timestamp": "2026-04-19T19:06:00.964Z",
+      "error_message": "Significant refactor of ",
+      "file": "monitoring/prometheus-stack/values.yaml",
+      "root_cause": "129 lines replaced/restructured",
+      "fix": "Rewrote 141→10 lines (129 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:06:00.964Z"
+    },
+    {
+      "id": "bug-062",
+      "timestamp": "2026-04-19T19:06:22.848Z",
+      "error_message": "Significant refactor of ",
+      "file": "infrastructure/storage/CLAUDE.md",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 6→3 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:06:22.848Z"
+    },
+    {
+      "id": "bug-063",
+      "timestamp": "2026-04-19T19:06:52.590Z",
+      "error_message": "Wrong reference: annotations should be spec",
+      "file": "my-apps/ai/llama-cpp/deployment.yaml",
+      "root_cause": "Used \"annotations\" instead of \"spec\"",
+      "fix": "Changed annotations → spec",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 6,
+      "last_seen": "2026-04-19T19:08:23.187Z"
+    },
+    {
+      "id": "bug-064",
+      "timestamp": "2026-04-19T19:07:36.032Z",
+      "error_message": "Significant refactor of ",
+      "file": "my-apps/home/paperless-ngx/tika-gotenberg.yaml",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 5→3 lines (2 removed) | Also: annotations:; vpa.kubernetes.io/min-memory: \"256Mi\"",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-19T19:07:39.256Z"
+    },
+    {
+      "id": "bug-065",
+      "timestamp": "2026-04-19T19:08:17.255Z",
+      "error_message": "Wrong reference: annotations should be spec",
+      "file": "my-apps/media/karakeep/chrome/deployment-chrome.yaml",
+      "root_cause": "Used \"annotations\" instead of \"spec\"",
+      "fix": "Changed annotations → spec",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:08:17.255Z"
+    },
+    {
+      "id": "bug-066",
+      "timestamp": "2026-04-19T19:08:38.544Z",
+      "error_message": "Significant refactor of ",
+      "file": "infrastructure/controllers/kyverno/rbac-patch.yaml",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 8→4 lines (3 removed) | Also: # Required for admission webhook to validate VPA g; - apiGroups: [ \"autoscaling.k8s.io\" ]",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-19T19:08:42.765Z"
+    },
+    {
+      "id": "bug-067",
+      "timestamp": "2026-04-19T19:09:48.542Z",
+      "error_message": "Significant refactor of ",
+      "file": "infrastructure/controllers/opentelemetry-operator/rbac.yaml",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 8→4 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T19:09:48.542Z"
     }
   ]
 }

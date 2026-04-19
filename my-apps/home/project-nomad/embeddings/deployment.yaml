@@ -5,8 +5,6 @@ metadata:
   namespace: project-nomad
   labels:
     app: embeddings
-  annotations:
-    vpa.kubernetes.io/min-memory: "1Gi"
 spec:
   strategy:
     type: Recreate

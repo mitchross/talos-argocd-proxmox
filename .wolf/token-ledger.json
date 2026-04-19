@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-05T03:39:06.883Z",
   "lifetime": {
-    "total_tokens_estimated": 9182400,
-    "total_reads": 7457,
+    "total_tokens_estimated": 9203057,
+    "total_reads": 7473,
     "total_writes": 5703,
     "total_sessions": 33,
-    "anatomy_hits": 5518,
-    "anatomy_misses": 1905,
+    "anatomy_hits": 5532,
+    "anatomy_misses": 1907,
     "repeated_reads_blocked": 1759,
-    "estimated_savings_vs_bare_cli": 4438880
+    "estimated_savings_vs_bare_cli": 4441680
   },
   "sessions": [
     {
@@ -82449,6 +82449,118 @@
         "writes_count": 0,
         "repeated_reads_blocked": 0,
         "anatomy_lookups": 13
+      }
+    },
+    {
+      "id": "session-2026-04-19-1455",
+      "started": "2026-04-19T18:55:09.046Z",
+      "ended": "2026-04-19T19:05:21.485Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/.github/copilot-instructions.md",
+          "tokens_estimated": 1417,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/.github/instructions/standards.instructions.md",
+          "tokens_estimated": 1373,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/.vscode/settings.json",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/mkdocs.yml",
+          "tokens_estimated": 269,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/.github/workflows/docs.yml",
+          "tokens_estimated": 286,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/.github/workflows/llama-cpp-build.yml.disabled",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/.githooks/pre-commit",
+          "tokens_estimated": 110,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/.claude/commands/new-app.md",
+          "tokens_estimated": 455,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/.claude/rules/openwolf.md",
+          "tokens_estimated": 313,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/docs/plans/storage-review/article-draft.md",
+          "tokens_estimated": 4550,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/docs/plans/storage-review/gemini-review-storage.md",
+          "tokens_estimated": 3000,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/docs/plans/cnpg-dr-session-notes.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/README.md",
+          "tokens_estimated": 3991,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/.gitignore",
+          "tokens_estimated": 611,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/vertical-pod-autoscaler/values.yaml",
+          "tokens_estimated": 152,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/monitoring/prometheus-stack/values.yaml",
+          "tokens_estimated": 4130,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 20657,
+        "output_tokens_estimated": 0,
+        "reads_count": 16,
+        "writes_count": 0,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 14
       }
     }
   ],

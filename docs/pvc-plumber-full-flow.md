@@ -111,7 +111,6 @@
 ┃  │    - volsync-pvc-backup-restore (FAIL-CLOSED + auto-restore)       │             ┃
 ┃  │    - volsync-nfs-inject (NFS mount into VolSync mover jobs)        │             ┃
 ┃  │    - volsync-orphan-cleanup (cleanup every 15 min)                 │             ┃
-┃  │    - vpa-auto-generate (VPA for all workloads)                     │             ┃
 ┃  └─────────────────────────────────────────────────────────────────────┘             ┃
 ┃                                                                                     ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
@@ -128,12 +127,12 @@
 ┃  │  Let's Encrypt      │  │  via Cloudflare     │  │  + HTTPRoutes       │         ┃
 ┃  └─────────────────────┘  └─────────────────────┘  └─────────────────────┘         ┃
 ┃                                                                                     ┃
-┃  ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐         ┃
-┃  │   CloudNativePG     │  │    GPU Operator     │  │      VPA            │         ┃
-┃  │   (Database AppSet) │  │    (if needed)      │  │                     │         ┃
-┃  │  PostgreSQL         │  │                     │  │  Vertical Pod       │         ┃
-┃  │  clusters           │  │  NVIDIA drivers     │  │  Autoscaler         │         ┃
-┃  └─────────────────────┘  └─────────────────────┘  └─────────────────────┘         ┃
+┃  ┌─────────────────────┐  ┌─────────────────────┐                                   ┃
+┃  │   CloudNativePG     │  │    GPU Operator     │                                   ┃
+┃  │   (Database AppSet) │  │    (if needed)      │                                   ┃
+┃  │  PostgreSQL         │  │                     │                                   ┃
+┃  │  clusters           │  │  NVIDIA drivers     │                                   ┃
+┃  └─────────────────────┘  └─────────────────────┘                                   ┃
 ┃                                                                                     ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
                                           │

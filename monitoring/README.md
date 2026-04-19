@@ -74,13 +74,13 @@ Supported languages: Python, Node.js, Java, Go, .NET.
                ↓                               ↓
       stores in time-series DB         holds latest snapshot in memory
                ↓                               ↓
-      Grafana, Alertmanager            VPA, HPA, kubectl top
+      Grafana, Alertmanager            HPA, kubectl top
 ```
 
 | | **Prometheus** | **metrics-server** |
 |---|---|---|
 | **What it stores** | Historical time-series (15 day retention) | Last ~30 seconds only, in-memory |
-| **Consumers** | Grafana, Alertmanager | VPA, HPA, `kubectl top` |
+| **Consumers** | Grafana, Alertmanager | HPA, `kubectl top` |
 | **Installed via** | `monitoring/prometheus-stack/` (Wave 5) | `infrastructure/controllers/metrics-server/` (Wave 4) |
 
 ## Storage Backends
