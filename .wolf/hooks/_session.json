@@ -33,8 +33,8 @@
       "first_read": "2026-04-19T03:17:36.335Z"
     },
     "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml": {
-      "count": 1,
-      "tokens": 90,
+      "count": 2,
+      "tokens": 182,
       "first_read": "2026-04-19T03:17:36.620Z"
     },
     "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/deployment.yaml": {
@@ -51,6 +51,11 @@
       "count": 1,
       "tokens": 79,
       "first_read": "2026-04-19T03:26:40.308Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml": {
+      "count": 1,
+      "tokens": 220,
+      "first_read": "2026-04-19T17:41:28.060Z"
     }
   },
   "files_written": [
@@ -299,6 +304,12 @@
       "action": "edit",
       "tokens": 62,
       "at": "2026-04-19T03:49:22.391Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml",
+      "action": "edit",
+      "tokens": 172,
+      "at": "2026-04-19T17:42:20.643Z"
     }
   ],
   "edit_counts": {
@@ -322,7 +333,7 @@
     "infrastructure/database/cloudnative-pg/paperless/overlays/initdb/kustomization.yaml": 1,
     "infrastructure/database/cloudnative-pg/paperless/overlays/initdb/bootstrap-patch.yaml": 1,
     "infrastructure/database/cloudnative-pg/paperless/overlays/recovery/kustomization.yaml": 1,
-    "infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml": 1,
+    "infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml": 2,
     "infrastructure/database/cloudnative-pg/temporal/kustomization.yaml": 3,
     "infrastructure/database/cloudnative-pg/temporal/base/kustomization.yaml": 1,
     "infrastructure/database/cloudnative-pg/temporal/base/cluster.yaml": 1,
@@ -335,9 +346,9 @@
     "infrastructure/networking/cloudflared/kustomization.yaml": 1,
     "infrastructure/database/cloudnative-pg/gitea/kustomization.yaml": 2
   },
-  "anatomy_hits": 7,
+  "anatomy_hits": 8,
   "anatomy_misses": 3,
-  "repeated_reads_warned": 0,
+  "repeated_reads_warned": 1,
   "cerebrum_warnings": 0,
-  "stop_count": 28
+  "stop_count": 34
 }

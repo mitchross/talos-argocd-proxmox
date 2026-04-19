@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-05T03:39:06.883Z",
   "lifetime": {
-    "total_tokens_estimated": 8893982,
-    "total_reads": 7183,
-    "total_writes": 4803,
+    "total_tokens_estimated": 8942032,
+    "total_reads": 7244,
+    "total_writes": 5050,
     "total_sessions": 31,
-    "anatomy_hits": 5311,
-    "anatomy_misses": 1838,
-    "repeated_reads_blocked": 1731,
-    "estimated_savings_vs_bare_cli": 4391124
+    "anatomy_hits": 5354,
+    "anatomy_misses": 1856,
+    "repeated_reads_blocked": 1737,
+    "estimated_savings_vs_bare_cli": 4400816
   },
   "sessions": [
     {
@@ -75902,6 +75902,1709 @@
         "writes_count": 41,
         "repeated_reads_blocked": 0,
         "anatomy_lookups": 7
+      }
+    },
+    {
+      "id": "session-2026-04-19-2316",
+      "started": "2026-04-19T03:16:23.642Z",
+      "ended": "2026-04-19T17:38:17.503Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/httproute.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/deployment-web.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/service-web.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 90,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 89,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 91,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 182,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/deployment.yaml",
+          "tokens_estimated": 671,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/config.yaml",
+          "tokens_estimated": 788,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/kustomization.yaml",
+          "tokens_estimated": 79,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/base/cluster.yaml",
+          "tokens_estimated": 398,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 69,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 208,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 69,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 215,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 191,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 178,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/base/cluster.yaml",
+          "tokens_estimated": 521,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 68,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 208,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 68,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 212,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 181,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/base/cluster.yaml",
+          "tokens_estimated": 529,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 167,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 220,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 180,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/base/cluster.yaml",
+          "tokens_estimated": 407,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 87,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 225,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/config.yaml",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/restart-cronjob.yaml",
+          "tokens_estimated": 532,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/gitea/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/gitea/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1990,
+        "output_tokens_estimated": 5953,
+        "reads_count": 10,
+        "writes_count": 41,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 7
+      }
+    },
+    {
+      "id": "session-2026-04-19-2316",
+      "started": "2026-04-19T03:16:23.642Z",
+      "ended": "2026-04-19T17:38:26.490Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/httproute.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/deployment-web.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/service-web.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 90,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 89,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 91,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 182,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/deployment.yaml",
+          "tokens_estimated": 671,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/config.yaml",
+          "tokens_estimated": 788,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/kustomization.yaml",
+          "tokens_estimated": 79,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/base/cluster.yaml",
+          "tokens_estimated": 398,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 69,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 208,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 69,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 215,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 191,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 178,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/base/cluster.yaml",
+          "tokens_estimated": 521,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 68,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 208,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 68,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 212,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 181,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/base/cluster.yaml",
+          "tokens_estimated": 529,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 167,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 220,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 180,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/base/cluster.yaml",
+          "tokens_estimated": 407,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 87,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 225,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/config.yaml",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/restart-cronjob.yaml",
+          "tokens_estimated": 532,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/gitea/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/gitea/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1990,
+        "output_tokens_estimated": 5953,
+        "reads_count": 10,
+        "writes_count": 41,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 7
+      }
+    },
+    {
+      "id": "session-2026-04-19-2316",
+      "started": "2026-04-19T03:16:23.642Z",
+      "ended": "2026-04-19T17:39:23.130Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/httproute.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/deployment-web.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/service-web.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 90,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 89,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 91,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 182,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/deployment.yaml",
+          "tokens_estimated": 671,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/config.yaml",
+          "tokens_estimated": 788,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/kustomization.yaml",
+          "tokens_estimated": 79,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/base/cluster.yaml",
+          "tokens_estimated": 398,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 69,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 208,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 69,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 215,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 191,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 178,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/base/cluster.yaml",
+          "tokens_estimated": 521,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 68,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 208,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 68,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 212,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 181,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/base/cluster.yaml",
+          "tokens_estimated": 529,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 167,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 220,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 180,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/base/cluster.yaml",
+          "tokens_estimated": 407,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 87,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 225,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/config.yaml",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/restart-cronjob.yaml",
+          "tokens_estimated": 532,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/gitea/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/gitea/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1990,
+        "output_tokens_estimated": 5953,
+        "reads_count": 10,
+        "writes_count": 41,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 7
+      }
+    },
+    {
+      "id": "session-2026-04-19-2316",
+      "started": "2026-04-19T03:16:23.642Z",
+      "ended": "2026-04-19T17:40:11.583Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/httproute.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/deployment-web.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/service-web.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 90,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 89,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 91,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 182,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/deployment.yaml",
+          "tokens_estimated": 671,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/config.yaml",
+          "tokens_estimated": 788,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/kustomization.yaml",
+          "tokens_estimated": 79,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/base/cluster.yaml",
+          "tokens_estimated": 398,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 69,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 208,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 69,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 215,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 191,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 178,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/base/cluster.yaml",
+          "tokens_estimated": 521,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 68,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 208,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 68,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 212,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 181,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/base/cluster.yaml",
+          "tokens_estimated": 529,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 167,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 220,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 180,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/base/cluster.yaml",
+          "tokens_estimated": 407,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 87,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 225,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/config.yaml",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/restart-cronjob.yaml",
+          "tokens_estimated": 532,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/gitea/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/gitea/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1990,
+        "output_tokens_estimated": 5953,
+        "reads_count": 10,
+        "writes_count": 41,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 7
+      }
+    },
+    {
+      "id": "session-2026-04-19-2316",
+      "started": "2026-04-19T03:16:23.642Z",
+      "ended": "2026-04-19T17:40:57.343Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/httproute.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/deployment-web.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/service-web.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 90,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 89,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 91,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 182,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/deployment.yaml",
+          "tokens_estimated": 671,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/config.yaml",
+          "tokens_estimated": 788,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/kustomization.yaml",
+          "tokens_estimated": 79,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/base/cluster.yaml",
+          "tokens_estimated": 398,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 69,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 208,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 69,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 215,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 191,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 178,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/base/cluster.yaml",
+          "tokens_estimated": 521,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 68,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 208,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 68,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 212,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 181,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/base/cluster.yaml",
+          "tokens_estimated": 529,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 167,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 220,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 180,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/base/cluster.yaml",
+          "tokens_estimated": 407,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 87,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 225,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/config.yaml",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/restart-cronjob.yaml",
+          "tokens_estimated": 532,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/gitea/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/gitea/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1990,
+        "output_tokens_estimated": 5953,
+        "reads_count": 10,
+        "writes_count": 41,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 7
+      }
+    },
+    {
+      "id": "session-2026-04-19-2316",
+      "started": "2026-04-19T03:16:23.642Z",
+      "ended": "2026-04-19T17:43:31.103Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/httproute.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/deployment-web.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/service-web.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 90,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 89,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 91,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 182,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/deployment.yaml",
+          "tokens_estimated": 671,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/config.yaml",
+          "tokens_estimated": 788,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/kustomization.yaml",
+          "tokens_estimated": 79,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 220,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/base/cluster.yaml",
+          "tokens_estimated": 398,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 69,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 208,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 69,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 215,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 191,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 178,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/base/cluster.yaml",
+          "tokens_estimated": 521,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 68,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 208,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 68,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 212,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 181,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/base/cluster.yaml",
+          "tokens_estimated": 529,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 167,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 220,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 180,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/base/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/base/cluster.yaml",
+          "tokens_estimated": 407,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/initdb/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/initdb/bootstrap-patch.yaml",
+          "tokens_estimated": 87,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/recovery/kustomization.yaml",
+          "tokens_estimated": 70,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 225,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/config.yaml",
+          "tokens_estimated": 5,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/restart-cronjob.yaml",
+          "tokens_estimated": 532,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/kustomization.yaml",
+          "tokens_estimated": 27,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/gitea/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 58,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/gitea/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+          "tokens_estimated": 62,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml",
+          "tokens_estimated": 172,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 2210,
+        "output_tokens_estimated": 6125,
+        "reads_count": 11,
+        "writes_count": 42,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 8
       }
     }
   ],
