@@ -19,8 +19,8 @@ spec:
   externalClusters:
     - name: paperless-recovery-source
       barmanObjectStore:
-        # Prior lineage with pre-nuke data.
-        serverName: paperless-database-v2
+        # Prior lineage to restore from. Bump to N-1 at DR time.
+        serverName: paperless-database-v1
         destinationPath: s3://postgres-backups/cnpg/paperless
         endpointURL: http://192.168.10.133:30293
         s3Credentials:

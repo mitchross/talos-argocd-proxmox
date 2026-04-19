@@ -52,8 +52,8 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
-      # Forward write target (bumped v2 → v3 after restore so new backups are clean).
-      serverName: paperless-database-v3
+      # Write target. Clean-slate baseline after 2026-04-19 RustFS wipe.
+      serverName: paperless-database-v1
       destinationPath: s3://postgres-backups/cnpg/paperless
       endpointURL: http://192.168.10.133:30293
       s3Credentials:

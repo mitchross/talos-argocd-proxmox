@@ -11,7 +11,7 @@ commonLabels:
 commonAnnotations:
   argocd.argoproj.io/sync-wave: "-5"
 resources:
-  - overlays/recovery        # ← ACTIVE: restore from Barman at PITR pre-nuke
-  # - overlays/initdb        # swap to this for fresh DB (no recovery)
+  # - overlays/recovery      # swap to this for DR (restore from Barman)
+  - overlays/initdb          # ← ACTIVE: fresh DB / normal operation
   - externalsecret.yaml
   - scheduled-backup.yaml

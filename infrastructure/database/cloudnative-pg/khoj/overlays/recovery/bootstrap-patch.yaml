@@ -15,8 +15,8 @@ spec:
   externalClusters:
     - name: khoj-recovery-source
       barmanObjectStore:
-        # Prior lineage with pre-nuke data.
-        serverName: khoj-database-v2
+        # Prior lineage to restore from. Bump to N-1 at DR time.
+        serverName: khoj-database-v1
         destinationPath: s3://postgres-backups/cnpg/khoj
         endpointURL: http://192.168.10.133:30293
         s3Credentials:

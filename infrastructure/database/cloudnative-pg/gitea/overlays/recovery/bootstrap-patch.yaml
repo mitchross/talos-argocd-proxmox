@@ -18,8 +18,9 @@ spec:
   externalClusters:
     - name: gitea-recovery-source
       barmanObjectStore:
-        # Prior lineage with pre-nuke data.
-        serverName: gitea-database-v3
+        # Prior lineage to restore from. Keep this at N-1 when bumping
+        # base/cluster.yaml to vN. E.g. first DR: base → v2, this → v1.
+        serverName: gitea-database-v1
         destinationPath: s3://postgres-backups/cnpg/gitea
         endpointURL: http://192.168.10.133:30293
         s3Credentials:

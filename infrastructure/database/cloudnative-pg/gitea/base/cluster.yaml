@@ -40,9 +40,10 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
-      # Forward write target — new backups go here post-recovery.
-      # Bumped from v3 → v4 to avoid polluted v3 on S3.
-      serverName: gitea-database-v4
+      # Write target. Clean-slate baseline after 2026-04-19 wipe of
+      # s3://postgres-backups/cnpg/gitea/*. Next DR event will bump
+      # this to v2 (and recovery overlay will restore FROM v1).
+      serverName: gitea-database-v1
       destinationPath: s3://postgres-backups/cnpg/gitea
       endpointURL: http://192.168.10.133:30293
       s3Credentials:
