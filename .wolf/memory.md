@@ -5,6 +5,7 @@
 
 | 2026-04-15 | Migrated ComfyUI from cu128-megapak to cu130-megapak-pt211 (CUDA 13.0, Python 3.13, PyTorch 2.11) | my-apps/ai/comfyui/deployment.yaml | pushed | ~3000 |
 | 2026-04-19 | Recovered llama-cpp post-reboot scheduling by restarting NVIDIA daemonsets after node reported nvidia.com/gpu allocatable=0; pod now Running with cpu request 6 | my-apps/ai/llama-cpp/deployment.yaml, .wolf/buglog.json | fixed live cluster incident | ~1200 |
+| 2026-04-19 | Wrote Talos 1.13 beta OSS NVIDIA migration plan grounded in the beta GPU docs and current repo wiring | docs/superpowers/plans/2026-04-19-talos-1.13-oss-nvidia-migration.md, .wolf/cerebrum.md, .wolf/anatomy.md | plan saved | ~5000 |
 
 | Time | Description | Files | Outcome | ~Tokens |
 |------|-------------|-------|---------|---------|
@@ -984,3 +985,13 @@
 | 14:47 | Created infrastructure/database/CLAUDE.md | — | ~1612 |
 | 14:48 | Session end: 60 writes across 9 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml, config.yaml, restart-cronjob.yaml) | 12 reads | ~22571 tok |
 | 14:52 | Edited docs/cnpg-disaster-recovery.md | expanded (+81 lines) | ~1205 |
+
+## Session: 2026-04-19 14:54
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+
+## Session: 2026-04-19 14:55
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|

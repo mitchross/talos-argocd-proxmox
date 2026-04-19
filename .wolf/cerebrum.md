@@ -9,6 +9,7 @@
 <!-- How the user likes things done. Code style, tools, patterns, communication. -->
 - User wants architecture review to be direct and technically grounded, not reassuring by default.
 - For `my-apps/ai/llama-cpp`, user is comfortable assigning a higher CPU request (e.g., `cpu: "6"`) for inference performance.
+- For Talos 1.13 GPU and driver decisions, user expects the beta docs to be consulted directly before making recommendations.
 
 ## Key Learnings
 
@@ -25,6 +26,7 @@
 - **Talos Omni extension conflict — don't re-list what the provider auto-installs**: Listing `siderolabs/qemu-guest-agent` in cluster-template systemExtensions while the Proxmox provider already auto-installs it = duplicate install. Check machine-class comments ("auto-installed by the provider") before listing extensions in cluster-template.
 - **NVIDIA operator namespace drift**: The ArgoCD infrastructure ApplicationSet names the app from the directory (`nvidia-gpu-operator`) and sets `destination.namespace` from `path.basename`, but the manifests themselves target `gpu-operator`. Result: ArgoCD auto-creates an empty `nvidia-gpu-operator` namespace while the real NVIDIA pods run in `gpu-operator`.
 - **Scaled-down GPU worker scheduling gotcha**: On an 8-vCPU GPU node (7950m allocatable), `llama-cpp` with `requests.cpu: "8"` is unschedulable even when NVIDIA is healthy. If events show `Insufficient cpu`, tune requests first (e.g., `cpu: "2"`) and keep performance headroom in limits.
+- **Talos 1.13 beta OSS extension name**: The Sidero production OSS kernel-module extension is `siderolabs/nvidia-open-gpu-kernel-modules-production`; the toolkit extension remains `siderolabs/nvidia-container-toolkit-production`.
 
 ## Do-Not-Repeat
 
