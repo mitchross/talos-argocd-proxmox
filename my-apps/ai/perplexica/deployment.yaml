@@ -20,6 +20,49 @@ spec:
       annotations:
         instrumentation.opentelemetry.io/inject-nodejs: "opentelemetry/default"
     spec:
+      # Seed /data/config.json on every start from the ConfigMap. If the
+      # file is missing (fresh PVC) we write the seed verbatim. If it
+      # exists we merge just `modelProviders` in-place so user UI
+      # preferences (theme, personalization) aren't stomped on each
+      # deploy — model-provider list is authoritative from git, everything
+      # else stays user-controlled.
+      initContainers:
+        - name: seed-config
+          image: ghcr.io/jqlang/jq:1.8.1
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              SEED=/seed/config.json
+              DEST=/data/config.json
+              mkdir -p /data
+              if [ ! -s "$DEST" ]; then
+                echo "[seed] fresh PVC, writing config.json verbatim"
+                cp "$SEED" "$DEST"
+              else
+                echo "[seed] merging modelProviders from seed into existing config.json"
+                jq --slurpfile seed "$SEED" \
+                   '.modelProviders = $seed[0].modelProviders
+                    | .search = $seed[0].search' \
+                   "$DEST" > "$DEST.tmp"
+                mv "$DEST.tmp" "$DEST"
+              fi
+              echo "[seed] done. providers now:"
+              jq -r '.modelProviders[] | "  - \(.name) (\(.type)) — \(.chatModels | length) models"' "$DEST"
+          volumeMounts:
+            - name: seed
+              mountPath: /seed
+            - name: data
+              mountPath: /data
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits:   { cpu: 100m, memory: 128Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+            seccompProfile: { type: RuntimeDefault }
       containers:
         - name: perplexica
           image: itzcrazykns1337/perplexica:slim-v1.12.0@sha256:6b0ab14429c6d120357877cce5894c55c35e7e016c2b55066a1559ac5682de8e
@@ -60,3 +103,9 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: perplexica-data
+        - name: seed
+          configMap:
+            name: perplexica-config-seed
+            items:
+              - key: config.json
+                path: config.json

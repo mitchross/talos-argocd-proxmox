@@ -1,0 +1,59 @@
+# Perplexica config seed (GitOps source of truth for model providers).
+#
+# Perplexica stores its runtime config at /home/perplexica/data/config.json
+# on a PVC. Without this ConfigMap + seed initContainer, the model
+# provider list is entered once via the UI and lives only in PVC state —
+# a rebuild/migration loses it, and git has no record of which model
+# IDs we're pointing clients at.
+#
+# The initContainer in deployment.yaml runs `jq` on every pod start:
+#   - If /data/config.json doesn't exist → write this seed verbatim.
+#   - If it does → overwrite only `modelProviders`, preserving user UI
+#     preferences (theme, setupComplete, etc.).
+#
+# When you rotate llama-cpp presets, edit this file and Argo rolls out
+# the change. No UI fiddling.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: perplexica-config-seed
+  namespace: perplexica
+data:
+  config.json: |
+    {
+      "version": 1,
+      "setupComplete": true,
+      "preferences": {},
+      "personalization": {},
+      "modelProviders": [
+        {
+          "id": "transformers-default",
+          "name": "Transformers",
+          "type": "transformers",
+          "chatModels": [],
+          "embeddingModels": [],
+          "config": {}
+        },
+        {
+          "id": "llama-cpp-cluster",
+          "name": "llama-cpp",
+          "type": "openai",
+          "config": {
+            "apiKey": "sk-no-key-required",
+            "baseURL": "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
+          },
+          "chatModels": [
+            { "name": "Qwen 3.6 (think)",              "key": "qwen3.6 - qwen3.6-35b-a3b" },
+            { "name": "Qwen 3.6 (nothink, fast)",      "key": "qwen3.6-nothink - qwen3.6-35b-a3b-nothink" },
+            { "name": "Gemma 4 (think)",               "key": "gemma4 - gemma4-26b" },
+            { "name": "Gemma 4 (nothink)",             "key": "gemma4-nothink - gemma4-26b-nothink" },
+            { "name": "Qwen 3.5 Uncensored (think)",   "key": "uncensored - qwen3.5-uncensored" },
+            { "name": "Qwen 3.5 Uncensored (nothink)", "key": "nothink-uncensored - qwen3.5-uncensored-nothink" }
+          ],
+          "embeddingModels": []
+        }
+      ],
+      "search": {
+        "searxngURL": "http://searxng.searxng.svc.cluster.local:8080"
+      }
+    }

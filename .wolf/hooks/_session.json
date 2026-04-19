@@ -416,6 +416,16 @@
       "count": 1,
       "tokens": 1788,
       "first_read": "2026-04-19T20:09:21.663Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/kustomization.yaml": {
+      "count": 1,
+      "tokens": 54,
+      "first_read": "2026-04-19T20:58:56.759Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml": {
+      "count": 1,
+      "tokens": 488,
+      "first_read": "2026-04-19T20:59:13.153Z"
     }
   },
   "files_written": [
@@ -1042,6 +1052,36 @@
       "action": "edit",
       "tokens": 77,
       "at": "2026-04-19T20:40:02.885Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/docs/plans/2026-04-19-followup-notes.md",
+      "action": "create",
+      "tokens": 2336,
+      "at": "2026-04-19T20:51:32.072Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/configmap.yaml",
+      "action": "create",
+      "tokens": 654,
+      "at": "2026-04-19T20:59:10.080Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
+      "action": "edit",
+      "tokens": 598,
+      "at": "2026-04-19T20:59:26.343Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
+      "action": "edit",
+      "tokens": 79,
+      "at": "2026-04-19T20:59:31.638Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/kustomization.yaml",
+      "action": "edit",
+      "tokens": 48,
+      "at": "2026-04-19T20:59:36.020Z"
     }
   ],
   "edit_counts": {
@@ -1098,11 +1138,15 @@
     "my-apps/ai/README.md": 7,
     "my-apps/ai/comfyui/configmap.yaml": 1,
     "my-apps/ai/CLAUDE.md": 1,
-    "infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml": 3
+    "infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml": 3,
+    "docs/plans/2026-04-19-followup-notes.md": 1,
+    "my-apps/ai/perplexica/configmap.yaml": 1,
+    "my-apps/ai/perplexica/deployment.yaml": 2,
+    "my-apps/ai/perplexica/kustomization.yaml": 1
   },
-  "anatomy_hits": 69,
+  "anatomy_hits": 71,
   "anatomy_misses": 13,
   "repeated_reads_warned": 40,
   "cerebrum_warnings": 0,
-  "stop_count": 36
+  "stop_count": 40
 }
