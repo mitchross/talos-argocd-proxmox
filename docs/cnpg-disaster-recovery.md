@@ -1,732 +1,420 @@
-# CNPG Database Disaster Recovery
+# CloudNativePG Disaster Recovery
 
-## Overview
+This doc is the canonical reference for backing up, restoring, and managing
+CloudNativePG (CNPG) Postgres clusters in this repository.
 
-CloudNativePG (CNPG) databases are backed up via **Barman** to RustFS S3 (`s3://postgres-backups/cnpg/`). Unlike PVC backups (which auto-restore via Kyverno + PVC Plumber), database recovery is **manual** and must bypass ArgoCD.
+## Quick links
 
-## Database ApplicationSet Architecture
+- [Concepts](#concepts) — what each piece does
+- [Repo layout per DB](#repo-layout-per-db) — overlay pattern
+- [Runbook: fresh DB](#runbook-fresh-db-initdb)
+- [Runbook: restore from Barman](#runbook-restore-from-barman-recovery)
+- [Runbook: cluster nuke rebuild](#runbook-cluster-nuke-rebuild)
+- [Monitoring & tools](#monitoring--tools)
+- [Troubleshooting / gotchas](#troubleshooting--gotchas)
 
-Database Applications are managed by a **separate ApplicationSet** (`database-appset.yaml`) with key differences from the infrastructure AppSet:
+## Concepts
 
-| Setting | Infrastructure AppSet | Database AppSet |
-|---------|----------------------|-----------------|
-| `selfHeal` | `true` | **`false`** |
-| `ignoreApplicationDifferences` | none | preserves `skip-reconcile` |
+CNPG databases live in two layers:
 
-**Why**: Databases have a fundamentally different lifecycle from infrastructure. During disaster recovery, you need to manually create recovery clusters with `kubectl create`, which conflicts with ArgoCD's auto-sync. With `selfHeal: false`:
-- ArgoCD still auto-syncs **from Git** (push = deploy)
-- ArgoCD does **not** revert manual kubectl changes (needed for DR)
-- `skip-reconcile` annotations **stick** (ApplicationSet doesn't strip them)
+| Layer | What | Backup mechanism | Restore mechanism |
+|-------|------|------------------|-------------------|
+| **Postgres data** | inside the CNPG `Cluster` CR | Barman Cloud → RustFS S3 | `spec.bootstrap.recovery` + `externalClusters` |
+| **App state** | outside (ExternalSecret, ScheduledBackup) | committed to Git as declarative state | ArgoCD sync |
 
-This means recovery no longer requires scaling down ArgoCD controllers.
+**Barman ≠ PVC backups.** The PVC/Kopia system (Kyverno + VolSync + pvc-plumber)
+handles *file-level* PVC backups to NFS. CNPG has its own SQL-aware backup
+path: Barman Cloud → RustFS S3. The two never touch each other. See
+[docs/backup-restore.md](backup-restore.md) for why both exist.
 
-## Why Recovery Can't Go Through ArgoCD
+### How recovery works (the 30-second version)
 
-ArgoCD uses **Server-Side Apply (SSA)**. CNPG has a **mutating admission webhook** that adds `initdb` defaults to every Cluster creation. When combined:
+- Normal operation → `Cluster` has `bootstrap.initdb`, Postgres comes up empty, Barman writes WAL + scheduled base backups to S3.
+- DR event → flip the feature flag to `bootstrap.recovery` + specify `externalClusters` pointing at the prior backup lineage, CNPG runs `barman-cloud-restore` on first boot to pull base backup + replay WAL.
 
-1. ArgoCD sends SSA patch with `bootstrap.recovery`
-2. CNPG webhook intercepts and adds `bootstrap.initdb` defaults
-3. SSA merges both field managers — `initdb` wins
-4. Result: fresh empty database, every time
+### Why "lineage" (`-v1`, `-v2`, ...)
 
-Additionally, the infrastructure ApplicationSet uses `selfHeal: true`, which would recreate deleted clusters sub-second. Database Applications are now managed by a **separate ApplicationSet** with `selfHeal: false` to avoid this (see [Database ApplicationSet Architecture](#database-applicationset-architecture) above).
-
-**Solution**: Pause ArgoCD with `skip-reconcile` annotations, then apply recovery manifests directly with `kubectl create`.
-
-## GitOps During Recovery: Source of Truth & skip-reconcile
-
-**Key principle: Git is ALWAYS source of truth.** But during recovery, we temporarily pause ArgoCD's auto-sync to avoid conflicts.
-
-### Normal GitOps Flow (Always)
-
-```
-┌──────────────┐
-│     Git      │  ← Source of truth (cluster.yaml, values, etc.)
-└──────┬───────┘
-       │
-       │ (ArgoCD watches continuously)
-       │ "Any change in Git = auto-sync to cluster"
-       ↓
-┌──────────────┐
-│   ArgoCD     │
-│ (auto-sync)  │
-└──────┬───────┘
-       │
-       │ (SSA, Helm rendering, kustomize apply)
-       ↓
-┌──────────────┐
-│   Cluster    │
-│ (synced to   │
-│  Git state)  │
-└──────────────┘
-```
-
-Git change → ArgoCD auto-discovers → Cluster updates. Simple, automated, always consistent.
-
-### Recovery Flow: Temporary skip-reconcile
-
-During CNPG recovery, we PAUSE auto-sync to prevent conflicts:
+CNPG requires a **clean WAL archive** for every new cluster. After a recovery,
+the new cluster cannot write WAL to the same S3 directory that the previous
+cluster wrote to. So every recovery bumps the `serverName` by one:
 
 ```
-STEP 1: Pause auto-sync (Set skip-reconcile=true)
-┌──────────────┐
-│     Git      │
-└──────┬───────┘
-       │
-       X (ArgoCD paused)
-       │ "Don't auto-sync yet"
-       ↓
-┌──────────────────────────────┐
-│   ArgoCD (PAUSED)            │
-│ skip-reconcile=true          │
-│ (manual sync only)           │
-└──────────────────────────────┘
-       │
-       │ (Manual sync via UI still works)
-       ↓
-┌──────────────────────────────┐
-│   Cluster (unchanged so far) │
-└──────────────────────────────┘
-
-STEP 2: Manual kubectl recovery (bypass ArgoCD)
-┌──────────────────────────────┐
-│   You (kubectl create)       │
-│   recovery-cluster.yaml      │
-└──────┬───────────────────────┘
-       │
-       │ (Direct API call, no SSA conflict)
-       ↓
-┌──────────────────────────────┐
-│   Cluster                    │
-│ (recovery pod running)       │
-└──────────────────────────────┘
-
-STEP 3: Recovery completes, unpause (Remove skip-reconcile)
-┌──────────────┐
-│     Git      │
-└──────┬───────┘
-       │
-       │ (ArgoCD unpaused)
-       │ "Resume auto-sync"
-       ↓
-┌──────────────────────────────┐
-│   ArgoCD (RESUMING)          │
-│ skip-reconcile removed       │
-│ (auto-sync enabled)          │
-└──────────────────────────────┘
-       │
-       │ (normal GitOps resumes)
-       ↓
-┌──────────────────────────────┐
-│   Cluster (final state)      │
-│  (recovered data + Git sync) │
-└──────────────────────────────┘
-```
-
-### Why skip-reconcile Doesn't Break GitOps
-
-**Git remains source of truth the whole time:**
-- You commit recovered state back to Git (cluster.yaml reverted to initdb, backup lineage bumped to next version)
-- skip-reconcile only blocks **automatic reconciliation** (ArgoCD watching)
-- Manual sync (UI click) still reads Git and applies to cluster
-- Once skip-reconcile is removed, auto-sync resumes from Git state
-
-**Think of it like:**
-- Normal: ArgoCD is always watching Git, automatically syncing any changes
-- skip-reconcile pause: You tell ArgoCD "ignore Git for now, let me work"
-- Manual recovery: You directly fix the cluster
-- Unpause: ArgoCD starts watching Git again, makes sure cluster matches Git
-
-**After unpause, if someone changed Git while paused:**
-- ArgoCD syncs the newest Git state
-- Old recover state is overwritten by Git
-- Git wins (as it should)
-
-### Cleanup Checklist
-
-```
-[ ] Recovery cluster is healthy (pod Ready 1/1, data validated)
-[ ] cluster.yaml reverted to initdb mode (not recovery)
-[ ] ⚠️  ALL recovery code DELETED from cluster.yaml (not just commented!)
-    - bootstrap.recovery section removed
-    - externalClusters section removed
-    - REASON: CNPG webhook blocks sync if both bootstrap methods present
-[ ] cluster.yaml backup lineage bumped to NEXT version (e.g. v4→v5)
-[ ] Commit cluster.yaml to Git
-[ ] Push to main branch
-[ ] Verify Git shows only initdb block (no recovery code)
-[ ] Wait for ArgoCD to auto-detect sync → should show Synced
-[ ] Manual sync via Argo UI (if needed)
-[ ] Remove skip-reconcile annotations
-[ ] Verify auto-sync working again
-```
-
-**Key reminder: CNPG webhook validates mutual exclusivity of bootstrap methods. Recovery code must be completely removed before committing to Git, or ArgoCD will remain OutOfSync forever.**
-
-After unpause, Git and cluster sync normally, and you're back to true GitOps.
-
-## Backup Architecture
-
-```
-CNPG Cluster
-    ↓ (continuous WAL archiving + scheduled base backups)
-Barman → RustFS S3
-    s3://postgres-backups/cnpg/<app>/<serverName>/base/     (base backups)
-    s3://postgres-backups/cnpg/<app>/<serverName>/wals/     (WAL files)
-```
-
-### Current Database Inventory
-
-| Database | S3 Path | Current serverName | Schedule |
-|----------|---------|-------------------|----------|
-| gitea | `s3://postgres-backups/cnpg/gitea` | `gitea-database-v3` | Daily + WAL |
-| immich | `s3://postgres-backups/cnpg/immich` | `immich-database-v6` | Hourly + WAL |
-| khoj | `s3://postgres-backups/cnpg/khoj` | `khoj-database` | Daily 2am + WAL |
-| paperless | `s3://postgres-backups/cnpg/paperless` | `paperless-database` | Daily 2am + WAL |
-
-### serverName Versioning
-
-CNPG requires a **clean WAL archive** for new clusters. After recovery, the new cluster can't write WALs to the same path as the old cluster. The `serverName` in `backup.barmanObjectStore` controls the subdirectory:
-
-```
-s3://postgres-backups/cnpg/immich/
-├── immich-database/        ← original (pre-recovery backups)
+s3://postgres-backups/cnpg/<app>/
+├── <app>-database-v1/     ← original / day-0 lineage
+│   ├── base/              (full backups)
+│   └── wals/              (WAL archive — append-only)
+├── <app>-database-v2/     ← lineage created after first DR
 │   ├── base/
 │   └── wals/
-├── immich-database-v2/     ← first recovery lineage
-│   ├── base/
-│   └── wals/
-├── immich-database-v5/     ← previous recovery lineage
-│   ├── base/
-│   └── wals/
-└── immich-database-v6/     ← current (post-recovery backups)
+└── <app>-database-v3/     ← current write target (after second DR)
     ├── base/
     └── wals/
 ```
 
-**Each recovery bumps the version**: `-v2` → `-v3` → `-v4`, etc.
+During DR, you restore FROM one lineage (e.g., v2) and point new backups AT
+the next (v3). The prior lineage stays untouched as a PITR source for future
+DR events.
 
-### Restore Source vs Backup Target (Critical)
+## Repo layout per DB
 
-During recovery, treat these as two different values:
-
-- `externalClusters[].barmanObjectStore.serverName` = **restore source** (existing lineage, e.g. `immich-database-v4`)
-- `backup.barmanObjectStore.serverName` = **new backup target** (next lineage, e.g. `immich-database-v5`)
-
-After recovery succeeds, keep backups on the new lineage (`v3`). Do **not** switch backup target back to `v2`.
-
-## CNPG Normal Operation (Continuous Backups)
-
-This is what happens every day to keep backups current:
+Each database directory has a base + two overlays. The root `kustomization.yaml`
+picks the active overlay — **this is the DR feature flag.**
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│   CNPG Cluster (Normal Operation)                          │
-│                                                             │
-│   ┌──────────────┐                                          │
-│   │  Postgres    │  ← Running, accepting transactions      │
-│   │  (immich)    │                                          │
-│   └──────┬───────┘                                          │
-│          │                                                   │
-│  ┌───────┴──────────────────────┬────────────────────────┐  │
-│  │ split into two paths:        │                        │  │
-│  ↓                              ↓                        │  │
-│  ┌──────────────┐       ┌──────────────────┐           │  │
-│  │  WAL Stream  │       │ Scheduled Base   │           │  │
-│  │  (every txn) │       │ Backups (daily)  │           │  │
-│  └──────┬───────┘       └────────┬─────────┘           │  │
-│         │                        │                     │  │
-│         │ (continuous)           │ (full dump)         │  │
-│         ↓                        ↓                     │  │
-│  ┌──────────────────────────────────────────┐         │  │
-│  │  Barman (CloudNativePG operator)         │         │  │
-│  │  "Archive everything to S3"              │         │  │
-│  └──────┬───────────────────────────────────┘         │  │
-│         │                                             │  │
-│         │ (upload to S3)                              │  │
-│         ↓                                             │  │
-│  ┌──────────────────────────────────────────┐         │  │
-│  │  RustFS S3 Storage                       │         │  │
-│  │                                          │         │  │
-│  │  s3://postgres-backups/cnpg/immich/     │         │  │
-│  │  ├── immich-database-v4/                │         │  │
-│  │  │   ├── base/     (full backups)       │         │  │
-│  │  │   └── wals/     (transaction logs)   │         │  │
-│  │  └── (encrypted, compressed)            │         │  │
-│  └──────────────────────────────────────────┘         │  │
-│                                                       │  │
-└───────────────────────────────────────────────────────┘  │
+infrastructure/database/cloudnative-pg/<db>/
+├── kustomization.yaml              ← FEATURE FLAG. Change this one line to switch modes.
+├── externalsecret.yaml             ← shared, never edited during DR
+├── scheduled-backup.yaml           ← shared, never edited during DR
+├── base/
+│   ├── kustomization.yaml
+│   └── cluster.yaml                ← NO `spec.bootstrap`; serverName = current write target
+└── overlays/
+    ├── initdb/
+    │   ├── kustomization.yaml
+    │   └── bootstrap-patch.yaml    ← strategic merge: adds bootstrap.initdb
+    └── overlays/recovery/
+        ├── kustomization.yaml
+        └── bootstrap-patch.yaml    ← strategic merge: adds bootstrap.recovery + externalClusters
 ```
 
-**Result**: If something breaks tomorrow, backups with all transactions up to the failure moment are sitting on S3.
+### Root kustomization.yaml — the feature flag
 
-## CNPG Disaster Recovery (Reading from Backups)
-
-When you nuke the cluster and rebuild, CNPG needs to restore from S3:
-
-```
-SCENARIO: Cluster crashed, PVCs deleted, you're rebuilding
-
-STEP 1: You tell CNPG "Use recovery mode" (in cluster.yaml)
-┌─────────────────────────────────────┐
-│  cluster.yaml bootstrap section:    │
-│  recovery:                          │
-│    source: immich-backup       ← points to S3│
-├─────────────────────────────────────┤
-│  externalClusters:                 │
-│    serverName: v2              ← restore FROM this version
-└─────────────────────────────────────┘
-         │
-         │ (kubectl create - bypass ArgoCD)
-         ↓
-┌─────────────────────────────────────────────────────────┐
-│   CNPG Operator sees "recovery" mode                   │
-│   Looks for source in externalClusters                 │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     ↓
-         ┌───────────────────────┐
-         │  RustFS S3            │
-         │  (look for v2)        │
-         └─────────┬─────────────┘
-                   │
-              ┌────┴────┐
-              ↓         ↓
-         ┌────────┐  ┌───────┐
-         │ base/  │  │ wals/ │  ← Latest transaction logs
-         └────┬───┘  └───┬───┘
-              │          │
-              └────┬─────┘
-                   │ (download + restore)
-                   ↓
-         ┌─────────────────────┐
-         │  New Postgres Pod   │
-         │  (recovering...)    │
-         │  + Longhorn PVCs    │
-         │  (data being written)
-         └────────┬────────────┘
-                  │ (after restore completes)
-                  ↓
-         ┌─────────────────────┐
-         │  Postgres Ready     │
-         │  All data restored! │
-         │  (v2 lineage)       │
-         └─────────────────────┘
-
-STEP 2: You change cluster.yaml back to initdb (normal mode)
-         BUT change backup.serverName to v3 (new lineage)
-         
-         This prevents WAL conflicts:
-         - Old backups stay at v2 (untouched, point-in-time recovery available)
-         - New writes go to v3 (fresh archive)
-         - Next recovery will restore from v3, then bump to v4
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cloudnative-pg
+commonLabels: { ... }
+resources:
+  # Comment one, uncomment the other. That IS the DR switch.
+  - overlays/initdb           # ← fresh DB, no restore
+  # - overlays/recovery       # ← pull from Barman on first boot
+  - externalsecret.yaml
+  - scheduled-backup.yaml
 ```
 
-## Bootstrap Decision Tree
+### `base/cluster.yaml` — everything except bootstrap
 
-CNPG's bootstrap section determines what happens when a Cluster is created:
+The base Cluster manifest contains all immutable spec (image, resources,
+storage, monitoring, backup target). `backup.barmanObjectStore.serverName` in
+base is always the **write target for new backups** — bump this when you bump
+the lineage.
 
+### `overlays/initdb/bootstrap-patch.yaml`
+
+Strategic-merge patch adding `spec.bootstrap.initdb` with database, owner,
+secret, and any `postInitApplicationSQL` (extensions, grants, initial data).
+
+### `overlays/recovery/bootstrap-patch.yaml`
+
+Adds `spec.bootstrap.recovery` pointing at a named `externalClusters` entry,
+which in turn points at the **prior lineage** on S3. Optionally includes
+`recoveryTarget.targetTime` for point-in-time recovery. **Do not set a
+targetTime beyond the last archived WAL** — Postgres will FATAL with
+"recovery ended before configured recovery target was reached."
+
+---
+
+## Runbook: fresh DB (initdb)
+
+New day-zero app, no data to restore:
+
+1. Edit root `kustomization.yaml` → `overlays/initdb` active.
+2. Ensure `base/cluster.yaml` `backup.barmanObjectStore.serverName` = `<db>-database-v1`.
+3. Ensure `overlays/initdb/bootstrap-patch.yaml` has your database name, owner, secret, postInitApplicationSQL.
+4. `git add / commit / push`.
+5. ArgoCD syncs, CNPG operator creates Cluster with `bootstrap.initdb`, Postgres comes up empty, scheduled backups start writing to `<db>-database-v1/` on S3.
+
+---
+
+## Runbook: restore from Barman (recovery)
+
+In-place disaster recovery — an existing DB has bad/corrupt data (or is empty
+after a cluster nuke) and you want to restore from backups.
+
+**Critical facts:**
+
+- CNPG evaluates `spec.bootstrap` **only at Cluster creation**. To force a
+  fresh bootstrap, you MUST delete the live Cluster + its PVCs and let
+  ArgoCD re-create it.
+- `kubectl delete cluster` does NOT delete PVCs — CNPG leaves them as a
+  data-protection measure. You must explicitly delete the PVCs.
+
+### Steps
+
+**1. Bump lineage versions in Git.**
+
+```yaml
+# base/cluster.yaml — bump write target to the NEW lineage
+backup:
+  barmanObjectStore:
+    serverName: <db>-database-vN     # N = new lineage, e.g. v2 → v3
+
+# overlays/recovery/bootstrap-patch.yaml — point externalClusters at the PRIOR lineage
+spec:
+  bootstrap:
+    recovery:
+      source: <db>-recovery-source
+      database: <db>                 # required — CNPG defaults to "app" otherwise
+      owner: <owner>
+      secret:
+        name: <db>-app-secret
+      # Optional PITR — ONLY if you know WAL exists at that timestamp
+      # recoveryTarget:
+      #   targetTime: "2026-04-17T23:59:59Z"
+  externalClusters:
+    - name: <db>-recovery-source
+      barmanObjectStore:
+        serverName: <db>-database-v(N-1)   # N-1 = the lineage with good data
+        destinationPath: s3://postgres-backups/cnpg/<db>
+        endpointURL: http://192.168.10.133:30293
+        s3Credentials: { ... same as backup ... }
+        wal: { compression: gzip }
 ```
-        ┌──────────────────────────────────┐
-        │  CNPG Cluster Created            │
-        │  (kubectl create or apply)       │
-        └──────────────┬───────────────────┘
-                       │
-                       │ Check spec.bootstrap:
-                       │
-            ┌──────────┴──────────┐
-            │                     │
-            ↓                     ↓
-    ┌───────────────┐    ┌──────────────┐
-    │   initdb      │    │   recovery   │
-    │   (default)   │    │   (restore)  │
-    └───────┬───────┘    └──────┬───────┘
-            │                   │
-            ↓                   │ Look for externalClusters:
-    ┌──────────────────────┐    │
-    │ Create fresh db      │    ↓
-    │ (empty, new owner)   │ ┌──────────────────────────┐
-    │                      │ │ Find serverName=v2 in S3 │
-    │ Starting postgres,   │ │ Download base backup     │
-    │ then run            │ │ + replay WALs            │
-    │ postInitSQL:        │ │                          │
-    │  - CREATE EXT       │ │ → Postgres starts with   │
-    │  - GRANT PRIVS      │ │   restored data!         │
-    │                      │ └──────────────────────────┘
-    │ RESULT: Empty DB    │
-    │ User must sign up   │    RESULT: Full data restored
-    │ or restore from     │    Users see their data
-    │ PVCs               │    All tables/users back
-    └──────────────────────┘
-            OR
-    ┌──────────────────────┐
-    │ BUG: Both present    │
-    │ (initdb + recovery)  │
-    │                      │
-    │ CNPG webhook adds    │
-    │ defaults → merger    │
-    │ conflict → initdb    │
-    │ wins                 │
-    │                      │
-    │ RESULT: Empty DB    │
-    │ (lost data!)        │
-    └──────────────────────┘
+
+**2. Flip the feature flag.**
+
+```yaml
+# root kustomization.yaml
+resources:
+  # - overlays/initdb
+  - overlays/recovery        # ← activate recovery
+  - externalsecret.yaml
+  - scheduled-backup.yaml
 ```
 
-**Key takeaway:** Only ONE bootstrap section should be present. If both exist, `initdb` wins and you lose data. Always remove recovery section before pushing to Git.
-
-## Recovery Procedure
-
-### Prerequisites
-
-- Cluster is running (ArgoCD has bootstrapped)
-- CNPG operator is deployed
-- `cnpg-s3-credentials` secret exists in `cloudnative-pg` namespace
-- Barman backups exist on RustFS S3
-
-### Step-by-Step (example: immich)
-
-**1. Check if backups exist:**
+**3. Commit and push.**
 
 ```bash
-kubectl run -it --rm barman-check --image=amazon/aws-cli:latest \
-  --restart=Never --namespace=cloudnative-pg --overrides='{
-  "spec":{"containers":[{"name":"check","image":"amazon/aws-cli:latest",
-  "command":["sh","-c","aws --endpoint-url http://192.168.10.133:30293 s3 ls s3://postgres-backups/cnpg/immich/immich-database-v6/base/ 2>&1 | tail -5"],
-  "env":[
-    {"name":"AWS_ACCESS_KEY_ID","valueFrom":{"secretKeyRef":{"name":"cnpg-s3-credentials","key":"AWS_ACCESS_KEY_ID"}}},
-    {"name":"AWS_SECRET_ACCESS_KEY","valueFrom":{"secretKeyRef":{"name":"cnpg-s3-credentials","key":"AWS_SECRET_ACCESS_KEY"}}}
-  ]}]}}'
-```
-
-**2. Edit the cluster.yaml locally:**
-
-In `infrastructure/database/cloudnative-pg/immich/cluster.yaml`:
-- Replace the `bootstrap.initdb` section with `bootstrap.recovery` + `externalClusters`
-- Set `externalClusters[].barmanObjectStore.serverName` to the **current** backup serverName (check inventory table above, e.g. `immich-database-v6`)
-- Bump `backup.barmanObjectStore.serverName` to the **next** version (e.g. `immich-database-v7`)
-
-⚠️ **CRITICAL: Webhook Validation (Do Not Commit Both Methods)**
-
-The CNPG webhook validates that **only ONE bootstrap method is present**. Even commented-out recovery code will cause ArgoCD sync to fail with:
-```
-admission webhook "vcluster.cnpg.io" denied the request: 
-spec.bootstrap: Forbidden: Only one bootstrap method can be specified at a time
-```
-
-**Why**: After recovery completes, you must **DELETE all recovery code** from the manifest before committing to Git. Do not leave `bootstrap.recovery` or `externalClusters` commented in Git — remove them entirely.
-
-**Procedure**:
-1. During recovery: edit cluster.yaml locally, toggle bootstrap methods
-2. Test recovery with `kubectl create`
-3. **Before committing**: Delete ALL recovery code blocks
-4. Revert to `bootstrap.initdb` (normal mode)
-5. Keep `backup.barmanObjectStore.serverName` at the bumped version (e.g. `v3`)
-6. Commit and push — ArgoCD will accept the manifest
-
-**3. Extract just the Cluster resource:**
-
-```bash
-kubectl kustomize infrastructure/database/cloudnative-pg/immich/ \
-  | awk '/^apiVersion: postgresql.cnpg.io\/v1/{p=1} p{print} /^---/{if(p) exit}' \
-  > /tmp/immich-recovery.yaml
-
-# Verify it has recovery, not initdb:
-grep -c "recovery" /tmp/immich-recovery.yaml  # should be >= 1
-grep -c "initdb" /tmp/immich-recovery.yaml    # should be 0
-```
-
-**4. Pause ArgoCD and delete/recreate:**
-
-Database Applications use `selfHeal: false` (via `database-appset.yaml`), so `skip-reconcile` annotations are preserved by the ApplicationSet controller.
-
-```bash
-# Pause ArgoCD reconciliation for the database app and its consumer
-kubectl annotate application immich -n argocd argocd.argoproj.io/skip-reconcile=true --overwrite
-kubectl annotate application my-apps-immich -n argocd argocd.argoproj.io/skip-reconcile=true --overwrite
-
-# Delete existing cluster and wait for PVC cleanup
-kubectl delete cluster immich-database -n cloudnative-pg --wait=false
-kubectl wait --for=delete cluster/immich-database -n cloudnative-pg --timeout=180s
-
-# Create recovery cluster (bypasses SSA — must use create, not apply)
-kubectl create -f /tmp/immich-recovery.yaml
-```
-
-> **Note**: If `kubectl wait` times out, PVCs may still be terminating (Longhorn cleanup). Wait 15-30 seconds and retry the create.
-
-**4b. Confirm live cluster is actually in recovery mode:**
-
-```bash
-kubectl get cluster immich-database -n cloudnative-pg -o yaml | sed -n '/bootstrap:/,/storage:/p'
-# Must show: bootstrap.recovery
-# Must NOT show: bootstrap.initdb
-```
-
-**5. Monitor recovery:**
-
-```bash
-# Watch cluster status
-kubectl get clusters -n cloudnative-pg -w
-
-# Watch recovery pod logs
-kubectl logs -n cloudnative-pg -l cnpg.io/cluster=immich-database -f
-```
-
-Recovery typically takes 1-5 minutes depending on backup size.
-
-**6. Verify data:**
-
-```bash
-kubectl exec -n cloudnative-pg immich-database-1 -- \
-  psql -U postgres -d immich -c "SELECT email FROM \"user\" LIMIT 5;"
-```
-
-**7. Revert to normal operation:**
-
-In `cluster.yaml`:
-- Replace `bootstrap.recovery` + `externalClusters` with `bootstrap.initdb` (normal mode)
-- **DELETE all recovery code** — do not leave it commented in Git (CNPG webhook rejects dual bootstrap)
-- Keep `backup.barmanObjectStore.serverName` at the bumped version (e.g. `immich-database-v4`)
-- Update the DR comment with the new recovery source for next time
-
-```bash
-git add infrastructure/database/cloudnative-pg/immich/cluster.yaml
-git commit -m "CNPG: revert immich to initdb after successful recovery"
+git add infrastructure/database/cloudnative-pg/<db>/
+git commit -m "dr(<db>): flip to recovery — restore from vN-1, write to vN"
 git push
 ```
 
-**8. Remove skip-reconcile and resume ArgoCD:**
+**4. Delete the live Cluster + PVCs (forces CNPG to re-evaluate bootstrap).**
 
 ```bash
-kubectl annotate application immich -n argocd argocd.argoproj.io/skip-reconcile- --overwrite
-kubectl annotate application my-apps-immich -n argocd argocd.argoproj.io/skip-reconcile- --overwrite
+kubectl -n cloudnative-pg delete cluster <db>-database
+kubectl -n cloudnative-pg delete pvc -l cnpg.io/cluster=<db>-database
+# Wait for Longhorn to finish terminating the PVCs (~30–90s)
+kubectl -n cloudnative-pg get pvc -l cnpg.io/cluster=<db>-database
 ```
 
-ArgoCD syncs. CNPG ignores `initdb` bootstrap on existing clusters — your data is safe.
-
-### Quick Example Timeline (Immich)
-
-- Before nuke: backups writing to `immich-database-v5`
-- Recovery manifest: restore from `v5`, write new backups to `v6`
-- After recovery: normal manifest with `initdb` active, backup still on `v6`
-- Next DR event: restore from `v6`, then bump backup target to `v7`
-
-## Troubleshooting
-
-### "Expected empty archive"
-
-**Cause**: `backup.barmanObjectStore.serverName` matches old backup path (WALs already exist).
-
-**Fix**: Bump `serverName` to next version (e.g. `-v2` → `-v3`).
-
-### "no target backup found"
-
-**Cause**: `externalClusters[].barmanObjectStore.serverName` is wrong or missing.
-
-**Fix**: Set it to the serverName that the old backups were written under. Check S3:
-```bash
-aws --endpoint-url http://192.168.10.133:30293 s3 ls s3://postgres-backups/cnpg/immich/
-# Lists subdirectories like: immich-database/, immich-database-v2/, immich-database-v4/
-```
-
-### ArgoCD recreates cluster before manual apply
-
-**Cause**: `skip-reconcile` annotation wasn't set before deleting the cluster.
-
-**Fix**: Database Applications use `selfHeal: false` (via `database-appset.yaml`), so the recovery procedure is:
-1. Set `skip-reconcile` annotation on both Applications **first**
-2. Then delete and recreate the cluster
-
-The `database-appset.yaml` has `ignoreApplicationDifferences` configured to preserve the `skip-reconcile` annotation, so the ApplicationSet controller won't strip it.
-
-### `Error from server (AlreadyExists)` during `kubectl create`
-
-**Cause**: ArgoCD recreated the cluster before your manual create landed (annotation wasn't set).
-
-**Fix**:
-1. Verify `skip-reconcile` is set: `kubectl get application immich -n argocd -o jsonpath='{.metadata.annotations}'`
-2. If missing, re-annotate and retry delete/wait/create.
-3. `kubectl create -f /tmp/immich-recovery.yaml`.
-4. Verify live spec shows `bootstrap.recovery`.
-
-### Recovery pod stuck in Pending
-
-**Cause**: Old PVCs from previous cluster still terminating (Longhorn cleanup).
-
-**Fix**: Wait 30-60 seconds for PVCs to fully delete, then recreate the cluster. Longhorn cleanup can take longer than expected, especially with larger volumes.
-
-### Recovery pod stuck at `Init:0/1` with `volume is not ready for workloads`
-
-**Cause**: Longhorn data/WAL volume is still attaching/remounting after restore.
-
-**Fix**:
-```bash
-kubectl get pods -n cloudnative-pg -l cnpg.io/cluster=immich-database -o wide
-kubectl -n longhorn-system get volumes.longhorn.io | grep immich-database-1
-kubectl -n longhorn-system describe volumes.longhorn.io <wal-volume-name>
-```
-Wait for Longhorn volume `state=attached` and `robustness=healthy`; CNPG will proceed automatically.
-
-### "Only one bootstrap method can be specified"
-
-**Cause**: Both `initdb` and `recovery` present in manifest (ArgoCD SSA merged them).
-
-**Fix**: Don't use `kubectl apply`. Use `kubectl create` to bypass SSA.
-
-### ArgoCD shows "OutOfSync + SyncFailed" with webhook error after recovery
-
-**Cause**: Recovery code (commented `bootstrap.recovery` + `externalClusters`) left in Git.
-
-**Error message**:
-```
-admission webhook "vcluster.cnpg.io" denied the request: 
-spec.bootstrap: Forbidden: Only one bootstrap method can be specified
-```
-
-**Fix**: Delete all recovery code from `cluster.yaml` before committing to Git.
-1. Remove the `bootstrap.recovery` section entirely (not just comment it).
-2. Remove the `externalClusters` section entirely (not just comment it).
-3. Keep `bootstrap.initdb` as the only bootstrap method.
-4. Commit and push.
-5. ArgoCD will sync successfully.
-
-**Why**: The CNPG webhook validates at the manifest yaml level, not at the applied level. Even commented-out code blocks parse as valid YAML and trigger validation errors.
-
-### ArgoCD shows OutOfSync (Healthy) after recovery — bootstrap diff
-
-**Cause**: After recovery, the live Cluster object has `bootstrap.recovery` (from `kubectl create`) while Git has `bootstrap.initdb`. SSA can't reconcile because the CNPG webhook mutates the object on every apply, adding defaults that don't match Git.
-
-**Fix**: This is now handled permanently by `ignoreDifferences` in `database-appset.yaml`:
-```yaml
-ignoreDifferences:
-- group: postgresql.cnpg.io
-  kind: Cluster
-  jqPathExpressions:
-  - .spec.bootstrap
-  - .spec.externalClusters
-```
-
-**Why safe**: CNPG completely ignores the `bootstrap` section on existing running clusters — it's only evaluated at creation time. The `externalClusters` section is similarly inert after recovery completes.
-
-If you see OutOfSync after recovery, verify `RespectIgnoreDifferences=true` is set in syncOptions and the `ignoreDifferences` entries above are present in the database AppSet.
-
-### Immich stuck in maintenance mode after restore
-
-**Cause**: If Immich was in maintenance mode before the backup was taken, the `maintenance-mode` key in the `system_metadata` table will be restored along with all other data.
-
-**Fix**:
-```bash
-kubectl exec -n cloudnative-pg immich-database-1 -- \
-  psql -U postgres -d immich -c "DELETE FROM system_metadata WHERE key = 'maintenance-mode';"
-kubectl rollout restart deployment/immich-server -n immich
-```
-
-**Note**: If the maintenance flag was set *after* the last backup, it won't be in the restored data (no cleanup needed).
-
-## Deprecation Warnings (Action Required)
-
-### CNPG Native Barman Support (Removal in 1.29.0)
-
-As of CNPG 1.26+, native `spec.backup.barmanObjectStore` and `spec.externalClusters[].barmanObjectStore` are deprecated. They will be **completely removed in CloudNativePG 1.29.0**.
-
-**Migration**: Switch to the [Barman Cloud Plugin](https://cloudnative-pg.io/documentation/current/backup_barmanobjectstore/) before upgrading to CNPG 1.29.0.
-
-### enablePodMonitor Deprecation
-
-`spec.monitoring.enablePodMonitor` is deprecated. Migrate to manually managed PodMonitor resources.
-
-## Verifying Backups Are Running
+**5. Trigger ArgoCD sync.**
 
 ```bash
-# Check scheduled backups
-kubectl get scheduledbackup -n cloudnative-pg
-
-# Check latest backup timestamp
-kubectl get backup -n cloudnative-pg --sort-by=.metadata.creationTimestamp | tail -5
-
-# Check WAL archiving status
-kubectl get cluster -n cloudnative-pg -o jsonpath='{range .items[*]}{.metadata.name}: {.status.firstRecoverabilityPoint}{"\n"}{end}'
-
-# Check S3 for actual backup files
-kubectl run -it --rm barman-ls --image=amazon/aws-cli:latest \
-  --restart=Never --namespace=cloudnative-pg --overrides='{...}'
+kubectl -n argocd patch application <db> --type merge \
+  -p '{"operation":{"sync":{"revision":"HEAD"}}}'
 ```
 
-## Two Backup Systems Summary
+**6. Watch the recovery.**
 
-```
-┌──────────────────────────────────┐    ┌──────────────────────────────────┐
-│     PVC BACKUPS (App Data)       │    │   DATABASE BACKUPS (CNPG)        │
-│                                  │    │                                  │
-│  Tool: VolSync + Kopia           │    │  Tool: CNPG + Barman             │
-│  Dest: TrueNAS NFS               │    │  Dest: RustFS S3                 │
-│  Auto-restore: YES               │    │  Auto-restore: NO                │
-│    (PVC Plumber + Kyverno)       │    │    (manual kubectl create)       │
-│  Trigger: PVC label              │    │  Trigger: ScheduledBackup CRD    │
-│  Schedule: hourly/daily          │    │  Schedule: hourly + WAL          │
-│                                  │    │                                  │
-│  Covers:                         │    │  Covers:                         │
-│  - App configs                   │    │  - User accounts                 │
-│  - Thumbnails/previews           │    │  - Metadata (albums, tags)       │
-│  - ML model caches               │    │  - Search indexes                │
-│  - Home automation data          │    │  - App state                     │
-│                                  │    │                                  │
-└──────────────────────────────────┘    └──────────────────────────────────┘
+```bash
+kubectl -n cloudnative-pg get cluster <db>-database -w
+kubectl -n cloudnative-pg get pods | grep <db>
+
+# Once a <db>-database-1-full-recovery-* pod is Running, tail its logs
+kubectl -n cloudnative-pg logs <db>-database-1-full-recovery-xxxxx -f
 ```
 
-## LLM Recovery Prompt Templates
+Look for:
 
-Use these prompts when you want an AI assistant to guide or execute CNPG disaster recovery safely.
+- `"restored log file \"...\" from archive"` — WAL being pulled
+- `"consistent recovery state reached at ..."` — success signal
+- `"recovery ended before configured recovery target was reached"` — FATAL, means your `recoveryTarget.targetTime` is beyond last archived WAL. Remove the target or pick an earlier one.
 
-### Option A: System Prompt (for agent/custom mode)
+**7. Verify data.**
 
-```text
-You are assisting with CloudNativePG disaster recovery in this repository.
-
-Hard rules:
-1) Recovery must bypass ArgoCD apply/SSA path for Cluster creation.
-2) Never use kubectl apply for recovery cluster creation; use kubectl create.
-3) Verify rendered recovery manifest contains bootstrap.recovery and does not contain bootstrap.initdb.
-4) If create fails with AlreadyExists, treat as ArgoCD race; pause reconcile on both immich applications, then retry delete/wait/create.
-5) After recovery, revert manifest to initdb mode but keep bumped backup serverName lineage (do not roll back lineage).
-6) Always validate restored data with SQL query before declaring success.
-
-Required sequence:
-- Confirm backup source lineage (e.g., externalClusters serverName=v2) and backup target lineage (backup serverName=v3).
-- Render /tmp/immich-recovery.yaml from kustomize output and verify recovery-only bootstrap.
-- Delete cluster and create recovery cluster from /tmp/immich-recovery.yaml.
-- Monitor cluster/pods until ready.
-- If pod is stuck with volume not ready, check Longhorn volume state and wait for attached/healthy.
-- Validate SQL (e.g., SELECT count(*) FROM "user";).
-- Revert cluster.yaml to normal initdb mode; keep backup lineage bumped.
-- Summarize exactly what changed and next operator actions.
-
-Output requirements:
-- Be explicit, command-by-command.
-- Explain failures and fallback commands.
-- Do not skip verification steps.
+```bash
+kubectl exec -n cloudnative-pg <db>-database-1 -c postgres -- \
+  psql -U postgres -d <db> -c "\dt"   # should show restored tables
 ```
 
-### Option B: Copy/Paste User Prompt (for ChatGPT/Copilot/Claude)
+**8. Restart the consumer app** so it picks up the fresh DB connection.
 
-```text
-Help me perform CloudNativePG disaster recovery for Immich in this repo.
-
-Context:
-- This cluster uses ArgoCD with self-heal and server-side apply.
-- CNPG recovery must be created with kubectl create (not apply).
-- Current backup lineage is [FILL ME, e.g. immich-database-v4].
-- New backup lineage target is [FILL ME, e.g. immich-database-v5].
-
-What I need from you:
-1) Give exact commands to render /tmp/immich-recovery.yaml from kustomize.
-2) Include checks to confirm manifest has recovery and no initdb.
-3) Give safe delete/create commands for immich-database.
-4) Include fallback if kubectl create returns AlreadyExists (Argo race).
-5) Include readiness checks and Longhorn attach troubleshooting.
-6) Include SQL validation commands to confirm data restored.
-7) Include exact post-recovery steps to revert manifest to initdb mode while keeping bumped backup serverName.
-
-Do not skip any verification commands. Explain what success/failure looks like at each step.
+```bash
+kubectl -n <db> rollout restart deployment/<app>
 ```
+
+**9. (Optional) Flip back to initdb.** Once the Cluster exists and is running
+with the recovered data, `spec.bootstrap` is a no-op — CNPG ignores it on
+existing Clusters. You can leave the overlay on `recovery` forever, or flip
+the root `kustomization.yaml` back to `overlays/initdb` for a tidier "steady
+state" git declaration. Both are valid.
+
+---
+
+## Runbook: cluster nuke rebuild
+
+Entire K8s cluster was rebuilt, ArgoCD bootstrapping fresh, CNPG DBs need to
+come back:
+
+- If Barman S3 still has usable backups → set root `kustomization.yaml` to
+  `overlays/recovery` **before ArgoCD first-syncs** the DB. The AppSet will
+  create each Cluster with `bootstrap.recovery` on initial creation — no
+  delete/recreate dance needed.
+- If Barman S3 is empty or unreliable → use `overlays/initdb` and rebuild
+  the DB fresh. Apps will re-migrate their schemas on first connect.
+
+**Post-bootstrap app rollout.** After DBs come up, the apps that talk to
+them may still be pointing at stale connections and need a rolling restart:
+
+```bash
+for ns in gitea immich paperless-ngx temporal; do
+  kubectl -n "$ns" get deploy --no-headers | awk '{print $1}' | \
+    xargs -I {} kubectl -n "$ns" rollout restart deployment/{}
+done
+```
+
+---
+
+## Monitoring & tools
+
+**Currently deployed (use these first):**
+
+- **ArgoCD UI** (http://localhost:39681 or https://argocd.vanillax.me)
+  Shows sync/health status per DB app. Good for "is this DB's git in sync with cluster?"
+- **Grafana** (https://grafana.vanillax.me) via kube-prometheus-stack
+  The CNPG Helm chart ships with Grafana dashboards — check for panels under
+  "CloudNativePG" folder. Covers backup timing, WAL archiving, Cluster state.
+  If missing, import from https://github.com/cloudnative-pg/grafana-dashboards.
+- **K8sGPT** (in `monitoring/k8sgpt/`) — detects CNPG Cluster anomalies and
+  surfaces them in its dashboard.
+- **Headlamp** (https://headlamp.vanillax.me) — generic K8s UI, can view CNPG
+  Cluster CRDs, pods, events. Good for "why is this DB stuck?"
+- **`kubectl cnpg plugin`** (install locally):
+  ```bash
+  curl -sSfL https://github.com/cloudnative-pg/cloudnative-pg/raw/main/hack/install-cnpg-plugin.sh | sudo sh
+  kubectl cnpg status <cluster> -n cloudnative-pg
+  ```
+  Shows replication lag, backup timing, WAL position, recovery progress — all
+  in a colored terminal view. **This is the single best CLI tool for CNPG health.**
+
+**State visibility quick-check (copy-paste this script):**
+
+```bash
+for db in gitea immich paperless temporal; do
+  echo "--- $db ---"
+  kubectl -n cloudnative-pg get cluster "$db-database" \
+    -o jsonpath='  mode={.spec.bootstrap.*}{"\n"}  serverName={.spec.backup.barmanObjectStore.serverName}{"\n"}  ready={.status.readyInstances}/{.spec.instances}{"\n"}  phase={.status.phase}{"\n"}'
+  echo
+done
+```
+
+**What we don't have yet (aspirational):**
+
+- **Custom DR wizard** — a small local CLI or web UI that:
+  - lists current lineage per DB (read from git + live Cluster)
+  - offers "flip to recovery" / "flip to initdb" actions that edit the right
+    YAML, open a PR, and (optionally) trigger the delete-recreate dance
+  - validates that the recovery target WAL actually exists on S3 before letting
+    you commit
+  - Would turn a 30-minute runbook into a 3-click operation
+
+  For now, the runbook above is the source of truth. A thin wrapper script or
+  Makefile target would be a good weekend project if DR becomes routine.
+
+---
+
+## Troubleshooting / gotchas
+
+### "recovery ended before configured recovery target was reached"
+
+Your `recoveryTarget.targetTime` is AFTER the last archived WAL on S3.
+Remove the target (restore to latest-WAL-available) OR pick an earlier
+timestamp. Symptom: `full-recovery` pods CrashLoopBackOff with this FATAL in
+the Postgres log.
+
+### "relation does not exist" after a successful recovery
+
+The restored DB is empty (or has a subset of data). Common causes:
+- Barman base backup was taken BEFORE the app had populated its tables.
+- WAL archive had a gap (archiving was broken for some period). Check with:
+  ```bash
+  kubectl exec -n cloudnative-pg <db>-database-1 -c postgres -- \
+    psql -U postgres -c "SELECT count(*) FROM pg_tables WHERE schemaname='public';"
+  ```
+- Recovery ran, but the consumer app hasn't been restarted — its migration
+  logic hasn't touched the new DB. Rolling-restart the app.
+
+### New Cluster comes up with `bootstrap.initdb` despite git saying `recovery`
+
+ArgoCD's `ignoreDifferences` on `.spec.bootstrap` + `RespectIgnoreDifferences=true`
+will **strip** the bootstrap field during apply. We removed that from the
+database AppSet (commit 61d4aef0) — verify `infrastructure/controllers/argocd/apps/database-appset.yaml`
+does NOT have `.spec.bootstrap` in its `jqPathExpressions`. If it does, ArgoCD
+is silently dropping your recovery config.
+
+### Sync "Succeeded" but Cluster doesn't appear
+
+The DB's ArgoCD Application may have a stuck `argocd.argoproj.io/skip-reconcile: "true"`
+annotation (left over from old scripts). ArgoCD reports sync success but never
+actually reconciles. Fix:
+
+```bash
+kubectl -n argocd annotate application <db> \
+  argocd.argoproj.io/skip-reconcile- --overwrite
+```
+
+### PVCs stuck in Terminating
+
+Longhorn cleanup sometimes takes >60s when many volumes delete concurrently.
+If they stay Terminating >5 min:
+
+```bash
+# Check Longhorn volumes
+kubectl -n longhorn-system get volumes.longhorn.io | grep <cluster-name>
+
+# If the Longhorn volume is detached but PVC is stuck, it's a K8s finalizer —
+# last resort, remove finalizer manually:
+kubectl -n cloudnative-pg patch pvc <pvc-name> --type=merge -p '{"metadata":{"finalizers":[]}}'
+```
+
+### ExternalSecret says Synced but the actual Secret is missing
+
+The ExternalSecret status lags when the Secret was deleted externally.
+Force a re-sync:
+
+```bash
+kubectl -n cloudnative-pg annotate externalsecret <name> \
+  force-sync="$(date +%s)" --overwrite
+```
+
+If the ES itself has a stuck deletion finalizer:
+
+```bash
+kubectl -n cloudnative-pg patch externalsecret <name> \
+  --type=merge -p '{"metadata":{"finalizers":[]}}'
+```
+
+### Polluted S3 lineage after a failed DR attempt
+
+If post-DR scheduled backups wrote EMPTY base backups to the wrong `serverName`
+(happened in our session), the cleanest fix is:
+
+1. Wipe the polluted `serverName` directory on RustFS (`postgres-backups/cnpg/<db>/<serverName>/`).
+2. Bump `base/cluster.yaml` `backup.barmanObjectStore.serverName` to the next
+   lineage (e.g. `-v4`).
+3. Let the next scheduled backup populate cleanly.
+
+---
+
+## Deprecation / forward migration
+
+### Native `spec.backup.barmanObjectStore` will be removed in CNPG 1.30.0
+
+We currently use the native (in-Cluster) Barman config. The upstream
+replacement is the **Barman Cloud Plugin** (`infrastructure/database/cnpg-barman-plugin/`,
+already installed as `cnpg-barman-plugin-app.yaml`). Migration is required
+before CNPG 1.30.0.
+
+Migration plan: each DB's `base/cluster.yaml` moves from
+`spec.backup.barmanObjectStore` to a `spec.plugins[]` entry that references
+an `ObjectStore` CR. Same for `overlays/recovery/bootstrap-patch.yaml`'s
+`externalClusters`. Not urgent — track CNPG release notes for the 1.29 → 1.30
+cutover.
+
+### `spec.monitoring.enablePodMonitor` deprecated
+
+Currently used by all DBs. CNPG 1.30.0 will remove it. Migration: replace with
+a manually-managed `PodMonitor` resource per cluster. Also not urgent but note
+the warning in CNPG logs.
