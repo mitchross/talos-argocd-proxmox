@@ -5,10 +5,13 @@ resources:
 - namespace.yaml
 - external-secret.yaml
 - time-slicing-config.yaml
-- hook-sa.yaml                 # Workaround for upstream chart hook SA namespace bug (see file header)
 - powerlimit-daemonset.yaml    # Caps each GPU at 220W (default 420W on RTX 3090) — see file header
 # cluster-policy.yaml intentionally not included — the Helm chart generates its
 # own ClusterPolicy from valuesInline below. Keeping both would cause a conflict.
+# hook-sa.yaml removed — the upstream chart hook-SA namespace bug that this
+# workaround addressed was fixed in gpu-operator v26.3.x (the chart now
+# renders upgrade-crd-hook-sa in the correct release namespace, so our
+# duplicate SA caused a kustomize generator collision).
 
 # Talos 1.13 ships the NVIDIA driver + nvidia-container-toolkit via system
 # extensions and emits CDI specs to /run/cdi automatically. The gpu-operator
