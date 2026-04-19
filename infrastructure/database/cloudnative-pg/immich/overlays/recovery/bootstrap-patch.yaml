@@ -6,8 +6,12 @@ spec:
   bootstrap:
     recovery:
       source: immich-recovery-source
-      recoveryTarget:
-        targetTime: "2026-04-16T23:59:59Z"
+      database: immich
+      owner: immich
+      secret:
+        name: immich-app-secret
+      # No recoveryTarget → restore to latest-WAL available on S3.
+      # See gitea/overlays/recovery/bootstrap-patch.yaml for rationale.
   externalClusters:
     - name: immich-recovery-source
       barmanObjectStore:

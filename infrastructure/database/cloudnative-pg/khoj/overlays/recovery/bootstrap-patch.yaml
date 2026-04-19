@@ -6,8 +6,12 @@ spec:
   bootstrap:
     recovery:
       source: khoj-recovery-source
-      recoveryTarget:
-        targetTime: "2026-04-16T23:59:59Z"
+      database: khoj
+      owner: khoj_admin
+      secret:
+        name: khoj-app-secret
+      # No recoveryTarget → restore to latest-WAL available on S3.
+      # See gitea/overlays/recovery/bootstrap-patch.yaml for rationale.
   externalClusters:
     - name: khoj-recovery-source
       barmanObjectStore:

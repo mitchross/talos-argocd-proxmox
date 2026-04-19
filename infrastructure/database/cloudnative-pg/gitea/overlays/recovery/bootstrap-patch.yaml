@@ -6,14 +6,19 @@ spec:
   bootstrap:
     recovery:
       source: gitea-recovery-source
-      # PITR: restore to just before the 2026-04-17 cluster nuke.
-      # Remove recoveryTarget entirely to restore to latest-WAL.
-      recoveryTarget:
-        targetTime: "2026-04-16T23:59:59Z"
+      database: gitea
+      owner: gitea
+      secret:
+        name: gitea-app-secret
+      # No recoveryTarget → restore to latest-WAL available on S3.
+      # Our pre-nuke PITR target (2026-04-16T23:59:59Z) was unreachable —
+      # Barman WAL archiving appears to have stopped archiving before
+      # that timestamp for all DBs. Restoring to latest-WAL gets us
+      # whatever data was archived, which is still better than nothing.
   externalClusters:
     - name: gitea-recovery-source
       barmanObjectStore:
-        # Prior lineage — where the pre-nuke data lives on S3.
+        # Prior lineage with pre-nuke data.
         serverName: gitea-database-v3
         destinationPath: s3://postgres-backups/cnpg/gitea
         endpointURL: http://192.168.10.133:30293

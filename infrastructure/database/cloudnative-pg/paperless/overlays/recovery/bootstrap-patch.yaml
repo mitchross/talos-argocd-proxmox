@@ -6,6 +6,10 @@ spec:
   bootstrap:
     recovery:
       source: paperless-recovery-source
+      database: paperless
+      owner: paperless
+      secret:
+        name: paperless-app-secret
       # No recoveryTarget → restore to latest-WAL available on S3.
       # Our PITR target of pre-nuke (2026-04-16) is unreachable because
       # paperless's WAL archiving broke on 2026-03-26 (last available WAL).
