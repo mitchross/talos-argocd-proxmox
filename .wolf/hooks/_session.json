@@ -1,379 +1,282 @@
 {
-  "session_id": "session-2026-04-17-1306",
-  "started": "2026-04-17T17:06:33.199Z",
+  "session_id": "session-2026-04-19-2316",
+  "started": "2026-04-19T03:16:23.642Z",
   "files_read": {
-    "/home/vanillax/programming/talos-argocd-proxmox/omni/cluster-template/cluster-template.yaml": {
-      "count": 2,
-      "tokens": 1590,
-      "first_read": "2026-04-17T17:21:20.023Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/omni/machine-classes/gpu-worker.yaml": {
-      "count": 1,
-      "tokens": 649,
-      "first_read": "2026-04-17T17:21:20.396Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/omni/machine-classes/worker.yaml": {
-      "count": 1,
-      "tokens": 359,
-      "first_read": "2026-04-17T17:21:21.283Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/omni/cluster-template/patches/gpu-worker.yaml": {
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/httproute.yaml": {
       "count": 1,
       "tokens": 0,
-      "first_read": "2026-04-17T17:21:24.552Z"
+      "first_read": "2026-04-19T03:16:38.716Z"
     },
-    "/home/vanillax/programming/talos-argocd-proxmox/omni/cluster-template/patches/docker-hub-auth.yaml": {
-      "count": 1,
-      "tokens": 46,
-      "first_read": "2026-04-17T17:21:25.324Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/cilium-app.yaml": {
-      "count": 1,
-      "tokens": 489,
-      "first_read": "2026-04-17T17:41:27.136Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cilium/kustomization.yaml": {
-      "count": 1,
-      "tokens": 178,
-      "first_read": "2026-04-17T17:41:27.380Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/README.md": {
-      "count": 1,
-      "tokens": 3991,
-      "first_read": "2026-04-17T17:41:33.087Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/README.md": {
-      "count": 1,
-      "tokens": 3991,
-      "first_read": "2026-04-17T17:42:15.363Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/omni/docs/TROUBLESHOOTING.md": {
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/deployment-web.yaml": {
       "count": 1,
       "tokens": 0,
-      "first_read": "2026-04-17T17:42:34.141Z"
+      "first_read": "2026-04-19T03:16:46.912Z"
     },
-    "/home/vanillax/programming/talos-argocd-proxmox/omni/docs/CILIUM_CNI.md": {
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/karakeep/karakeep/service-web.yaml": {
       "count": 1,
       "tokens": 0,
-      "first_read": "2026-04-17T17:42:34.914Z"
+      "first_read": "2026-04-19T03:16:47.297Z"
     },
-    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-device-plugin/README.md": {
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml": {
       "count": 1,
-      "tokens": 3991,
-      "first_read": "2026-04-17T17:42:35.708Z"
+      "tokens": 90,
+      "first_read": "2026-04-19T03:17:26.489Z"
     },
-    "/home/vanillax/programming/talos-argocd-proxmox/docs/vpa-resource-optimization.md": {
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml": {
       "count": 1,
-      "tokens": 4408,
-      "first_read": "2026-04-17T17:43:51.187Z"
+      "tokens": 89,
+      "first_read": "2026-04-19T03:17:35.579Z"
     },
-    "/home/vanillax/programming/talos-argocd-proxmox/src/content/docs/architecture/vpa-resource-optimization.md": {
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml": {
       "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-17T17:43:51.764Z"
+      "tokens": 91,
+      "first_read": "2026-04-19T03:17:36.335Z"
     },
-    "/home/vanillax/programming/talos-argocd-proxmox/scripts/bootstrap-argocd.sh": {
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml": {
       "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-17T18:08:36.491Z"
+      "tokens": 90,
+      "first_read": "2026-04-19T03:17:36.620Z"
     },
-    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/CLAUDE.md": {
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/deployment.yaml": {
       "count": 1,
-      "tokens": 3081,
-      "first_read": "2026-04-17T18:11:33.481Z"
+      "tokens": 671,
+      "first_read": "2026-04-19T03:23:28.433Z"
     },
-    "/home/vanillax/programming/talos-argocd-proxmox/docs/pvc-plumber-full-flow.md": {
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/config.yaml": {
       "count": 1,
-      "tokens": 11603,
-      "first_read": "2026-04-17T18:12:05.602Z"
+      "tokens": 788,
+      "first_read": "2026-04-19T03:26:39.774Z"
     },
-    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/kyverno/values.yaml": {
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/kustomization.yaml": {
       "count": 1,
-      "tokens": 1197,
-      "first_read": "2026-04-17T18:12:20.547Z"
-    },
-    "/tmp/argocd-apps.png": {
-      "count": 2,
-      "tokens": 0,
-      "first_read": "2026-04-17T18:18:29.570Z"
-    },
-    "/home/vanillax/programming/pvc-plumber/internal/handler/handler.go": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-17T18:20:25.632Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/pvc-plumber/deployment.yaml": {
-      "count": 1,
-      "tokens": 952,
-      "first_read": "2026-04-17T18:20:25.883Z"
-    },
-    "/home/vanillax/programming/pvc-plumber/internal/kopia/client.go": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-17T18:20:44.135Z"
-    },
-    "/home/vanillax/programming/pvc-plumber/internal/kopia/client_test.go": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-17T18:36:14.418Z"
-    },
-    "/home/vanillax/programming/pvc-plumber/internal/s3/client.go": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-17T18:36:41.039Z"
-    },
-    "/home/vanillax/programming/pvc-plumber/Makefile": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-17T18:38:14.761Z"
-    },
-    "/tmp/argocd-apps2.png": {
-      "count": 1,
-      "tokens": 0,
-      "first_read": "2026-04-17T18:41:17.433Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/docs/cnpg-disaster-recovery.md": {
-      "count": 1,
-      "tokens": 7598,
-      "first_read": "2026-04-17T18:47:55.382Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kustomization.yaml": {
-      "count": 1,
-      "tokens": 103,
-      "first_read": "2026-04-17T18:52:38.326Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml": {
-      "count": 1,
-      "tokens": 1788,
-      "first_read": "2026-04-17T19:04:50.350Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml": {
-      "count": 1,
-      "tokens": 806,
-      "first_read": "2026-04-17T19:12:49.514Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-gpu-operator/namespace.yaml": {
-      "count": 1,
-      "tokens": 36,
-      "first_read": "2026-04-17T19:14:14.590Z"
-    },
-    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/cluster.yaml": {
-      "count": 1,
-      "tokens": 720,
-      "first_read": "2026-04-18T04:50:59.633Z"
+      "tokens": 79,
+      "first_read": "2026-04-19T03:26:40.308Z"
     }
   },
   "files_written": [
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/cluster-template/cluster-template.yaml",
-      "action": "edit",
-      "tokens": 140,
-      "at": "2026-04-17T17:22:40.838Z"
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/base/kustomization.yaml",
+      "action": "create",
+      "tokens": 27,
+      "at": "2026-04-19T03:17:02.401Z"
     },
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/cluster-template/cluster-template.yaml",
-      "action": "edit",
-      "tokens": 138,
-      "at": "2026-04-17T17:23:23.063Z"
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/base/cluster.yaml",
+      "action": "create",
+      "tokens": 398,
+      "at": "2026-04-19T03:17:09.813Z"
     },
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/cluster-template/cluster-template.yaml",
-      "action": "edit",
-      "tokens": 135,
-      "at": "2026-04-17T17:23:37.668Z"
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/initdb/kustomization.yaml",
+      "action": "create",
+      "tokens": 69,
+      "at": "2026-04-19T03:17:11.652Z"
     },
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/README.md",
-      "action": "edit",
-      "tokens": 13,
-      "at": "2026-04-17T17:43:02.447Z"
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/initdb/bootstrap-patch.yaml",
+      "action": "create",
+      "tokens": 208,
+      "at": "2026-04-19T03:17:15.098Z"
     },
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/README.md",
-      "action": "edit",
-      "tokens": 128,
-      "at": "2026-04-17T17:43:04.370Z"
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/recovery/kustomization.yaml",
+      "action": "create",
+      "tokens": 69,
+      "at": "2026-04-19T03:17:16.610Z"
     },
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/README.md",
-      "action": "edit",
-      "tokens": 28,
-      "at": "2026-04-17T17:43:39.327Z"
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/recovery/bootstrap-patch.yaml",
+      "action": "create",
+      "tokens": 215,
+      "at": "2026-04-19T03:17:20.116Z"
     },
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/docs/CILIUM_CNI.md",
-      "action": "edit",
-      "tokens": 28,
-      "at": "2026-04-17T17:43:40.475Z"
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/kustomization.yaml",
+      "action": "create",
+      "tokens": 191,
+      "at": "2026-04-19T03:17:35.119Z"
     },
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/docs/CILIUM_CNI.md",
-      "action": "edit",
-      "tokens": 41,
-      "at": "2026-04-17T17:43:44.941Z"
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/kustomization.yaml",
+      "action": "create",
+      "tokens": 178,
+      "at": "2026-04-19T03:17:43.988Z"
     },
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/omni/docs/TROUBLESHOOTING.md",
-      "action": "edit",
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/base/kustomization.yaml",
+      "action": "create",
+      "tokens": 27,
+      "at": "2026-04-19T03:17:44.790Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/base/cluster.yaml",
+      "action": "create",
+      "tokens": 521,
+      "at": "2026-04-19T03:17:54.750Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/initdb/kustomization.yaml",
+      "action": "create",
+      "tokens": 68,
+      "at": "2026-04-19T03:17:56.260Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/initdb/bootstrap-patch.yaml",
+      "action": "create",
+      "tokens": 208,
+      "at": "2026-04-19T03:18:00.468Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/recovery/kustomization.yaml",
+      "action": "create",
+      "tokens": 68,
+      "at": "2026-04-19T03:18:01.628Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/recovery/bootstrap-patch.yaml",
+      "action": "create",
+      "tokens": 212,
+      "at": "2026-04-19T03:18:05.462Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/kustomization.yaml",
+      "action": "create",
+      "tokens": 181,
+      "at": "2026-04-19T03:18:07.761Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/base/kustomization.yaml",
+      "action": "create",
+      "tokens": 27,
+      "at": "2026-04-19T03:18:08.992Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/base/cluster.yaml",
+      "action": "create",
+      "tokens": 529,
+      "at": "2026-04-19T03:18:15.365Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/initdb/kustomization.yaml",
+      "action": "create",
       "tokens": 70,
-      "at": "2026-04-17T17:43:45.015Z"
+      "at": "2026-04-19T03:18:17.161Z"
     },
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/docs/vpa-resource-optimization.md",
-      "action": "edit",
-      "tokens": 27,
-      "at": "2026-04-17T17:43:56.360Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/src/content/docs/architecture/vpa-resource-optimization.md",
-      "action": "edit",
-      "tokens": 27,
-      "at": "2026-04-17T17:43:58.059Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-device-plugin/README.md",
-      "action": "edit",
-      "tokens": 247,
-      "at": "2026-04-17T17:44:05.250Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/docs/vpa-resource-optimization.md",
-      "action": "edit",
-      "tokens": 57,
-      "at": "2026-04-17T17:44:28.671Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/src/content/docs/architecture/vpa-resource-optimization.md",
-      "action": "edit",
-      "tokens": 57,
-      "at": "2026-04-17T17:44:30.589Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/scripts/bootstrap-argocd.sh",
-      "action": "edit",
-      "tokens": 36,
-      "at": "2026-04-17T18:08:40.973Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/pvc-plumber/deployment.yaml",
-      "action": "edit",
-      "tokens": 122,
-      "at": "2026-04-17T18:21:58.217Z"
-    },
-    {
-      "file": "/home/vanillax/programming/pvc-plumber/internal/kopia/client.go",
-      "action": "edit",
-      "tokens": 302,
-      "at": "2026-04-17T18:37:30.062Z"
-    },
-    {
-      "file": "/home/vanillax/programming/pvc-plumber/internal/kopia/client_test.go",
-      "action": "edit",
-      "tokens": 830,
-      "at": "2026-04-17T18:38:01.611Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/scripts/cnpg-recovery.sh",
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/initdb/bootstrap-patch.yaml",
       "action": "create",
-      "tokens": 3157,
-      "at": "2026-04-17T18:49:32.536Z"
+      "tokens": 167,
+      "at": "2026-04-19T03:18:18.625Z"
     },
     {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml",
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/kustomization.yaml",
       "action": "create",
-      "tokens": 1530,
-      "at": "2026-04-17T18:53:40.447Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kustomization.yaml",
-      "action": "edit",
-      "tokens": 27,
-      "at": "2026-04-17T18:53:44.472Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml",
-      "action": "edit",
-      "tokens": 183,
-      "at": "2026-04-17T19:01:52.747Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml",
-      "action": "edit",
-      "tokens": 162,
-      "at": "2026-04-17T19:03:07.079Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml",
-      "action": "edit",
-      "tokens": 71,
-      "at": "2026-04-17T19:04:00.427Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml",
-      "action": "edit",
-      "tokens": 134,
-      "at": "2026-04-17T19:14:49.098Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-gpu-operator/hook-sa.yaml",
-      "action": "create",
-      "tokens": 416,
-      "at": "2026-04-17T19:15:14.100Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml",
-      "action": "edit",
-      "tokens": 54,
-      "at": "2026-04-17T19:15:19.550Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-gpu-operator/hook-sa.yaml",
-      "action": "edit",
-      "tokens": 228,
-      "at": "2026-04-17T19:16:55.091Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml",
-      "action": "edit",
-      "tokens": 222,
-      "at": "2026-04-17T21:40:20.576Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/cluster.yaml",
-      "action": "edit",
-      "tokens": 366,
-      "at": "2026-04-18T04:51:19.860Z"
-    },
-    {
-      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/cluster.yaml",
-      "action": "edit",
       "tokens": 70,
-      "at": "2026-04-18T04:51:24.453Z"
+      "at": "2026-04-19T03:18:20.386Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml",
+      "action": "create",
+      "tokens": 220,
+      "at": "2026-04-19T03:18:23.439Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/kustomization.yaml",
+      "action": "create",
+      "tokens": 180,
+      "at": "2026-04-19T03:18:25.349Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/base/kustomization.yaml",
+      "action": "create",
+      "tokens": 27,
+      "at": "2026-04-19T03:18:26.197Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/base/cluster.yaml",
+      "action": "create",
+      "tokens": 407,
+      "at": "2026-04-19T03:18:32.161Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/initdb/kustomization.yaml",
+      "action": "create",
+      "tokens": 70,
+      "at": "2026-04-19T03:18:33.331Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/initdb/bootstrap-patch.yaml",
+      "action": "create",
+      "tokens": 87,
+      "at": "2026-04-19T03:18:35.219Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/recovery/kustomization.yaml",
+      "action": "create",
+      "tokens": 70,
+      "at": "2026-04-19T03:18:37.210Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/recovery/bootstrap-patch.yaml",
+      "action": "create",
+      "tokens": 225,
+      "at": "2026-04-19T03:18:39.574Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/config.yaml",
+      "action": "edit",
+      "tokens": 5,
+      "at": "2026-04-19T03:34:37.389Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/restart-cronjob.yaml",
+      "action": "create",
+      "tokens": 532,
+      "at": "2026-04-19T03:34:41.721Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/cloudflared/kustomization.yaml",
+      "action": "edit",
+      "tokens": 27,
+      "at": "2026-04-19T03:34:42.939Z"
     }
   ],
   "edit_counts": {
-    "omni/cluster-template/cluster-template.yaml": 3,
-    "README.md": 2,
-    "infrastructure/networking/README.md": 1,
-    "omni/docs/CILIUM_CNI.md": 2,
-    "omni/docs/TROUBLESHOOTING.md": 1,
-    "docs/vpa-resource-optimization.md": 2,
-    "src/content/docs/architecture/vpa-resource-optimization.md": 2,
-    "infrastructure/controllers/nvidia-device-plugin/README.md": 1,
-    "scripts/bootstrap-argocd.sh": 1,
-    "infrastructure/controllers/pvc-plumber/deployment.yaml": 1,
-    "../pvc-plumber/internal/kopia/client.go": 1,
-    "../pvc-plumber/internal/kopia/client_test.go": 1,
-    "scripts/cnpg-recovery.sh": 1,
-    "infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml": 4,
-    "infrastructure/storage/volsync/kustomization.yaml": 1,
-    "infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml": 3,
-    "infrastructure/controllers/nvidia-gpu-operator/hook-sa.yaml": 2,
-    "infrastructure/database/cloudnative-pg/temporal/cluster.yaml": 2
+    "infrastructure/database/cloudnative-pg/immich/base/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/immich/base/cluster.yaml": 1,
+    "infrastructure/database/cloudnative-pg/immich/overlays/initdb/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/immich/overlays/initdb/bootstrap-patch.yaml": 1,
+    "infrastructure/database/cloudnative-pg/immich/overlays/recovery/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/immich/overlays/recovery/bootstrap-patch.yaml": 1,
+    "infrastructure/database/cloudnative-pg/immich/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/khoj/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/khoj/base/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/khoj/base/cluster.yaml": 1,
+    "infrastructure/database/cloudnative-pg/khoj/overlays/initdb/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/khoj/overlays/initdb/bootstrap-patch.yaml": 1,
+    "infrastructure/database/cloudnative-pg/khoj/overlays/recovery/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/khoj/overlays/recovery/bootstrap-patch.yaml": 1,
+    "infrastructure/database/cloudnative-pg/paperless/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/paperless/base/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/paperless/base/cluster.yaml": 1,
+    "infrastructure/database/cloudnative-pg/paperless/overlays/initdb/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/paperless/overlays/initdb/bootstrap-patch.yaml": 1,
+    "infrastructure/database/cloudnative-pg/paperless/overlays/recovery/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml": 1,
+    "infrastructure/database/cloudnative-pg/temporal/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/temporal/base/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/temporal/base/cluster.yaml": 1,
+    "infrastructure/database/cloudnative-pg/temporal/overlays/initdb/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/temporal/overlays/initdb/bootstrap-patch.yaml": 1,
+    "infrastructure/database/cloudnative-pg/temporal/overlays/recovery/kustomization.yaml": 1,
+    "infrastructure/database/cloudnative-pg/temporal/overlays/recovery/bootstrap-patch.yaml": 1,
+    "infrastructure/networking/cloudflared/config.yaml": 1,
+    "infrastructure/networking/cloudflared/restart-cronjob.yaml": 1,
+    "infrastructure/networking/cloudflared/kustomization.yaml": 1
   },
-  "anatomy_hits": 20,
-  "anatomy_misses": 12,
-  "repeated_reads_warned": 2,
+  "anatomy_hits": 7,
+  "anatomy_misses": 3,
+  "repeated_reads_warned": 0,
   "cerebrum_warnings": 0,
-  "stop_count": 47
+  "stop_count": 4
 }

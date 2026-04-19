@@ -1,0 +1,13 @@
+# initdb overlay — fresh DB, no restore.
+# Used for day-zero deploy of a brand-new app.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+patches:
+  - path: bootstrap-patch.yaml
+    target:
+      group: postgresql.cnpg.io
+      version: v1
+      kind: Cluster
+      name: gitea-database

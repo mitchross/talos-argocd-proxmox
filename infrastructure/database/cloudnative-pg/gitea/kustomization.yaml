@@ -1,3 +1,16 @@
+# gitea CNPG database — root kustomization
+#
+# DR FEATURE FLAG: change the active overlay on this line to switch
+# bootstrap mode. Everything else is in Git.
+#
+#   overlays/initdb   = fresh DB, no data restored
+#   overlays/recovery = restore from Barman S3 (see overlay for source + PITR)
+#
+# In-place DR also requires:
+#   kubectl delete cluster gitea-database -n cloudnative-pg
+#   kubectl delete pvc -n cloudnative-pg -l cnpg.io/cluster=gitea-database
+# ...because CNPG evaluates spec.bootstrap only at Cluster creation and
+# leaves PVCs behind on cluster delete.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: cloudnative-pg
@@ -7,6 +20,7 @@ commonLabels:
 commonAnnotations:
   argocd.argoproj.io/sync-wave: "-5"
 resources:
-  - cluster.yaml
+  - overlays/recovery        # ← ACTIVE: restore from Barman at PITR pre-nuke
+  # - overlays/initdb        # swap to this for fresh DB (no recovery)
   - externalsecret.yaml
   - scheduled-backup.yaml

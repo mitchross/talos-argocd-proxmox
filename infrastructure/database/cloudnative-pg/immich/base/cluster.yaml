@@ -1,14 +1,11 @@
+# Base CNPG Cluster manifest — NO bootstrap stanza. See gitea/base/cluster.yaml
+# for serverName bump rationale.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: immich-database
-  namespace: cloudnative-pg
   labels:
     app: immich
-  annotations:
-    # Enables dual-bootstrap (initdb + recovery) for DR. See gitea/cluster.yaml
-    # comment for rationale and docs/plans/cnpg-dr-implementation-plan.md.
-    cnpg.io/validation: disabled
 spec:
   instances: 1
   imageName: ghcr.io/tensorchord/cloudnative-vectorchord:17.5-0.4.3
@@ -28,20 +25,6 @@ spec:
       wal_compression: "on"
     pg_hba:
       - host all all 0.0.0.0/0 md5
-  bootstrap:
-    initdb:
-      database: immich
-      owner: immich
-      secret:
-        name: immich-app-secret
-      postInitApplicationSQL:
-        - CREATE EXTENSION IF NOT EXISTS vchord CASCADE;
-        - CREATE EXTENSION IF NOT EXISTS vector;
-        - CREATE EXTENSION IF NOT EXISTS earthdistance CASCADE;
-        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "immich";
-        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "immich";
-        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "immich";
-        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "immich";
   storage:
     size: 50Gi
     storageClass: longhorn
@@ -53,8 +36,8 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
-      # Keep in sync with lineage.yaml .currentServerName
-      serverName: immich-database-v6
+      # Forward write target (bumped v6 → v7 after restore so new backups are clean).
+      serverName: immich-database-v7
       destinationPath: s3://postgres-backups/cnpg/immich
       endpointURL: http://192.168.10.133:30293
       s3Credentials:

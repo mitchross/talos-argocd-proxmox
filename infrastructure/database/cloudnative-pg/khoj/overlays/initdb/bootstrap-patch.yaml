@@ -1,0 +1,19 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: khoj-database
+spec:
+  bootstrap:
+    initdb:
+      database: khoj
+      owner: khoj_admin
+      secret:
+        name: khoj-app-secret
+      postInitApplicationSQL:
+        - ALTER ROLE "khoj_admin" WITH SUPERUSER;
+        - CREATE EXTENSION IF NOT EXISTS "vector";
+        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "khoj_admin";
+        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "khoj_admin";
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "khoj_admin";
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "khoj_admin";
+        - ALTER ROLE "khoj_admin" WITH NOSUPERUSER;

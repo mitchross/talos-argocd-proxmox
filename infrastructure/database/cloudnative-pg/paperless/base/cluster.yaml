@@ -1,13 +1,11 @@
+# Base CNPG Cluster manifest — NO bootstrap stanza. See gitea/base/cluster.yaml
+# for serverName bump rationale.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: khoj-database
-  namespace: cloudnative-pg
+  name: paperless-database
   labels:
-    app: khoj
-  annotations:
-    # Enables dual-bootstrap (initdb + recovery) for DR. See gitea/cluster.yaml.
-    cnpg.io/validation: disabled
+    app: paperless-ngx
 spec:
   instances: 1
   imageName: ghcr.io/cloudnative-pg/postgresql:16.2
@@ -26,25 +24,11 @@ spec:
       log_statement: "ddl"
     pg_hba:
       - host all all 0.0.0.0/0 md5
-  bootstrap:
-    initdb:
-      database: khoj
-      owner: khoj_admin
-      secret:
-        name: khoj-app-secret
-      postInitApplicationSQL:
-        - ALTER ROLE "khoj_admin" WITH SUPERUSER;
-        - CREATE EXTENSION IF NOT EXISTS "vector";
-        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "khoj_admin";
-        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "khoj_admin";
-        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "khoj_admin";
-        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "khoj_admin";
-        - ALTER ROLE "khoj_admin" WITH NOSUPERUSER;
   storage:
-    size: 20Gi
+    size: 50Gi
     storageClass: longhorn
   walStorage:
-    size: 10Gi
+    size: 50Gi
     storageClass: longhorn
   managed:
     services:
@@ -53,9 +37,9 @@ spec:
           updateStrategy: patch
           serviceTemplate:
             metadata:
-              name: khoj-postgres-external
+              name: paperless-postgres-external
               annotations:
-                lbipam.cilium.io/ips: "192.168.10.47"
+                lbipam.cilium.io/ips: "192.168.10.42"
             spec:
               type: LoadBalancer
               ports:
@@ -68,9 +52,9 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
-      # Keep in sync with lineage.yaml .currentServerName
-      serverName: khoj-database-v2
-      destinationPath: s3://postgres-backups/cnpg/khoj
+      # Forward write target (bumped v2 → v3 after restore so new backups are clean).
+      serverName: paperless-database-v3
+      destinationPath: s3://postgres-backups/cnpg/paperless
       endpointURL: http://192.168.10.133:30293
       s3Credentials:
         accessKeyId:

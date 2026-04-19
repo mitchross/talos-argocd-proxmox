@@ -11,3 +11,4 @@ resources:
   - ns.yaml
   - external-secret.yaml
   - deployment.yaml
+  - restart-cronjob.yaml

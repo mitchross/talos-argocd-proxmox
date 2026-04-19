@@ -1,17 +1,18 @@
+# Base CNPG Cluster manifest — NO bootstrap stanza.
+# Overlays (overlays/initdb, overlays/recovery) supply the bootstrap
+# via strategic-merge patch.
+#
+# backup.barmanObjectStore.serverName = FORWARD write target (new lineage).
+# On fresh-nuke recovery, set this to the NEXT lineage so post-restore
+# backups don't append to the polluted current-lineage directory on S3.
+# Bump this whenever you trigger a new recovery — keep in sync with the
+# recovery overlay's externalClusters (which points at the PRIOR lineage).
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: gitea-database
-  namespace: cloudnative-pg
   labels:
     app: gitea
-  annotations:
-    # Enables dual-bootstrap (initdb + recovery) for DR. Without this the CNPG
-    # validation webhook rejects any manifest with both bootstrap methods set.
-    # The reconciler prefers recovery when both are present (verified in lab
-    # Test 0.1 — see docs/plans/cnpg-dr-implementation-plan.md). DR state
-    # lives in lineage.yaml next to this file.
-    cnpg.io/validation: disabled
 spec:
   instances: 1
   imageName: ghcr.io/cloudnative-pg/postgresql:16.2
@@ -28,15 +29,6 @@ spec:
       wal_compression: "on"
     pg_hba:
       - host all all 0.0.0.0/0 md5
-  # Steady-state bootstrap. During DR, scripts/dr/restore-one.sh generates
-  # an ephemeral manifest that adds bootstrap.recovery + externalClusters
-  # on top of this; the validation annotation lets it through.
-  bootstrap:
-    initdb:
-      database: gitea
-      owner: gitea
-      secret:
-        name: gitea-app-secret
   storage:
     size: 20Gi
     storageClass: longhorn
@@ -48,8 +40,9 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
-      # Keep in sync with lineage.yaml .currentServerName
-      serverName: gitea-database-v3
+      # Forward write target — new backups go here post-recovery.
+      # Bumped from v3 → v4 to avoid polluted v3 on S3.
+      serverName: gitea-database-v4
       destinationPath: s3://postgres-backups/cnpg/gitea
       endpointURL: http://192.168.10.133:30293
       s3Credentials:

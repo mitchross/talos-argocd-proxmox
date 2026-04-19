@@ -848,6 +848,43 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-04-17T22:25:58-04:00"
+    },
+    {
+      "id": "bug-cloudflared-stale-tunnel-403",
+      "timestamp": "2026-04-18T03:20:00Z",
+      "error_message": "karakeep.vanillax.me (and potentially other *.vanillax.me hostnames) returning HTTP 403 \"Access denied\" from server: cloudflare edge, while in-cluster curl to karakeep-web:3000 returns healthy 307",
+      "file": "infrastructure/networking/cloudflared/",
+      "root_cause": "cloudflared pods got into a bad state. Two compounding issues: (1) cloudflared aggressively caches origin DNS resolution for cilium-gateway-gateway-external.gateway.svc.cluster.local and does not re-resolve when gateway pods reschedule; (2) long-lived QUIC tunnel connections (protocol: quic) can wedge — cloudflared pod shows Running but Cloudflare edge treats the tunnel session as unhealthy and returns 403 for routed requests. With 3 replicas, failures are intermittent (~33% per bad replica).",
+      "fix": "Delete cloudflared pods — fresh pods re-resolve service DNS and establish new QUIC sessions. Long-term: add livenessProbe hitting http://localhost:2000/ready on the cloudflared container so K8s auto-restarts wedged pods. Consider switching protocol: quic → http2 if recurrent. Periodic CronJob restart is a crude backstop.",
+      "tags": [
+        "cloudflared",
+        "tunnel",
+        "403",
+        "cloudflare",
+        "quic",
+        "stale-dns",
+        "gateway-api",
+        "intermittent"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-18T03:20:00Z"
+    },
+    {
+      "id": "bug-054",
+      "timestamp": "2026-04-19T03:34:37.390Z",
+      "error_message": "Wrong reference: quic should be http2",
+      "file": "infrastructure/networking/cloudflared/config.yaml",
+      "root_cause": "Used \"quic\" instead of \"http2\"",
+      "fix": "Changed quic → http2",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T03:34:37.390Z"
     }
   ]
 }
