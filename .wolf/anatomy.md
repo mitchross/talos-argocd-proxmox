@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T17:42:20.637Z
-> Files: 610 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T18:52:43.505Z
+> Files: 611 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
 
@@ -96,7 +96,7 @@
 
 - `argocd.md` — ArgoCD & GitOps Architecture (~5600 tok)
 - `backup-restore.md` — Zero-Touch PVC Backup and Restore (~3381 tok)
-- `cnpg-disaster-recovery.md` — CNPG Database Disaster Recovery (~7598 tok)
+- `cnpg-disaster-recovery.md` — CloudNativePG Disaster Recovery (~4945 tok)
 - `conditional-restore-ecosystem-research.md` — Research report on public Kubernetes/homelab restore patterns and the missing conditional restore primitive (~3200 tok)
 - `homelab-storage-reference.md` — Homelab storage backend, restore-intent guide, and operational sharp-edge reference (~4450 tok)
 - `index.md` — Talos ArgoCD Proxmox (~272 tok)
@@ -111,6 +111,7 @@
 - `2026-03-16-project-nomad-k8s-openai.md` — Project Nomad: Kubernetes + OpenAI-Compatible LLM Provider (~5421 tok)
 - `2026-03-22-alloy-otel-honeycomb-design.md` — OpenTelemetry Operator + Honeycomb Design (~1136 tok)
 - `2026-04-16-talos-1.13-upgrade-plan.md` — Talos 1.13 + Omni 1.7 Full Upgrade Plan (~3816 tok)
+- `cnpg-dr-session-notes.md` — CNPG DR Session Notes — 2026-04-17/18/19 (~2778 tok)
 
 ## docs/plans/storage-review/
 
@@ -151,7 +152,7 @@
 - `argocd.yaml` — K8s Application: argocd (~241 tok)
 - `cilium-app.yaml` — Critical: Cilium must be deployed first (wave 0) (~489 tok)
 - `cnpg-barman-plugin-app.yaml` — CloudNativePG Barman Cloud Plugin — replaces deprecated native barmanObjectStore (~340 tok)
-- `database-appset.yaml` — K8s ApplicationSet: database (~705 tok)
+- `database-appset.yaml` — K8s ApplicationSet (~852 tok)
 - `external-secrets.yaml` — K8s Application: external-secrets (~319 tok)
 - `infrastructure-appset.yaml` — K8s ApplicationSet (~1124 tok)
 - `kustomization.yaml` — K8s Kustomization (~395 tok)
@@ -277,7 +278,7 @@
 
 ## infrastructure/database/
 
-- `CLAUDE.md` — Database Guidelines (CNPG CloudNativePG) (~1107 tok)
+- `CLAUDE.md` — Database Guidelines (CNPG CloudNativePG) (~1511 tok)
 
 ## infrastructure/database/cloudnative-pg/cloudnative-pg-operator/
 
@@ -296,7 +297,7 @@
 
 ## infrastructure/database/cloudnative-pg/gitea/base/
 
-- `cluster.yaml` — Base CNPG Cluster manifest — NO bootstrap stanza. (~497 tok)
+- `cluster.yaml` — Base CNPG Cluster manifest — NO bootstrap stanza. (~519 tok)
 - `kustomization.yaml` — K8s Kustomization (~27 tok)
 
 ## infrastructure/database/cloudnative-pg/gitea/overlays/initdb/
@@ -306,7 +307,7 @@
 
 ## infrastructure/database/cloudnative-pg/gitea/overlays/recovery/
 
-- `bootstrap-patch.yaml` — K8s Cluster (~257 tok)
+- `bootstrap-patch.yaml` — K8s Cluster (~348 tok)
 - `kustomization.yaml` — recovery overlay — restore from Barman S3. (~236 tok)
 
 ## infrastructure/database/cloudnative-pg/immich/
@@ -319,7 +320,7 @@
 
 ## infrastructure/database/cloudnative-pg/immich/base/
 
-- `cluster.yaml` — Base CNPG Cluster manifest — NO bootstrap stanza. See gitea/base/cluster.yaml (~398 tok)
+- `cluster.yaml` — Base CNPG Cluster manifest — NO bootstrap stanza. See gitea/base/cluster.yaml (~394 tok)
 - `kustomization.yaml` — K8s Kustomization (~27 tok)
 
 ## infrastructure/database/cloudnative-pg/immich/overlays/initdb/
@@ -329,7 +330,7 @@
 
 ## infrastructure/database/cloudnative-pg/immich/overlays/recovery/
 
-- `bootstrap-patch.yaml` — K8s Cluster (~215 tok)
+- `bootstrap-patch.yaml` — K8s Cluster (~268 tok)
 - `kustomization.yaml` — K8s Kustomization (~69 tok)
 
 ## infrastructure/database/cloudnative-pg/khoj/
@@ -342,7 +343,7 @@
 
 ## infrastructure/database/cloudnative-pg/khoj/base/
 
-- `cluster.yaml` — Base CNPG Cluster manifest — NO bootstrap stanza. See gitea/base/cluster.yaml (~521 tok)
+- `cluster.yaml` — Base CNPG Cluster manifest — NO bootstrap stanza. See gitea/base/cluster.yaml (~517 tok)
 - `kustomization.yaml` — K8s Kustomization (~27 tok)
 
 ## infrastructure/database/cloudnative-pg/khoj/overlays/initdb/
@@ -352,7 +353,7 @@
 
 ## infrastructure/database/cloudnative-pg/khoj/overlays/recovery/
 
-- `bootstrap-patch.yaml` — K8s Cluster (~212 tok)
+- `bootstrap-patch.yaml` — K8s Cluster (~265 tok)
 - `kustomization.yaml` — K8s Kustomization (~68 tok)
 
 ## infrastructure/database/cloudnative-pg/paperless/
@@ -365,7 +366,7 @@
 
 ## infrastructure/database/cloudnative-pg/paperless/base/
 
-- `cluster.yaml` — Base CNPG Cluster manifest — NO bootstrap stanza. See gitea/base/cluster.yaml (~529 tok)
+- `cluster.yaml` — Base CNPG Cluster manifest — NO bootstrap stanza. See gitea/base/cluster.yaml (~526 tok)
 - `kustomization.yaml` — K8s Kustomization (~27 tok)
 
 ## infrastructure/database/cloudnative-pg/paperless/overlays/initdb/
@@ -375,7 +376,7 @@
 
 ## infrastructure/database/cloudnative-pg/paperless/overlays/recovery/
 
-- `bootstrap-patch.yaml` — K8s Cluster (~322 tok)
+- `bootstrap-patch.yaml` — K8s Cluster (~356 tok)
 - `kustomization.yaml` — K8s Kustomization (~70 tok)
 
 ## infrastructure/database/cloudnative-pg/postgres-global-secrets/
@@ -393,7 +394,7 @@
 
 ## infrastructure/database/cloudnative-pg/temporal/base/
 
-- `cluster.yaml` — Base CNPG Cluster manifest — NO bootstrap stanza. See gitea/base/cluster.yaml (~407 tok)
+- `cluster.yaml` — Base CNPG Cluster manifest — NO bootstrap stanza. See gitea/base/cluster.yaml (~370 tok)
 - `kustomization.yaml` — K8s Kustomization (~27 tok)
 
 ## infrastructure/database/cloudnative-pg/temporal/overlays/initdb/
@@ -403,7 +404,7 @@
 
 ## infrastructure/database/cloudnative-pg/temporal/overlays/recovery/
 
-- `bootstrap-patch.yaml` — K8s Cluster (~225 tok)
+- `bootstrap-patch.yaml` — K8s Cluster (~224 tok)
 - `kustomization.yaml` — K8s Kustomization (~70 tok)
 
 ## infrastructure/database/cnpg-barman-plugin/
@@ -635,7 +636,7 @@
 ## my-apps/ai/llama-cpp/
 
 - `configmap.yaml` — K8s ConfigMap: llama-cpp-config (~1359 tok)
-- `deployment.yaml` — K8s Deployment (~1366 tok)
+- `deployment.yaml` — K8s Deployment (llama.cpp GPU server resources tuned for performance) (~1380 tok)
 - `httproute.yaml` — K8s HTTPRoute: llama-cpp-route (~151 tok)
 - `kustomization.yaml` — K8s Kustomization (~59 tok)
 - `namespace.yaml` — K8s Namespace: llama-cpp (~17 tok)

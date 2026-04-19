@@ -4,6 +4,7 @@
 > Old sessions are consolidated by the daemon weekly.
 
 | 2026-04-15 | Migrated ComfyUI from cu128-megapak to cu130-megapak-pt211 (CUDA 13.0, Python 3.13, PyTorch 2.11) | my-apps/ai/comfyui/deployment.yaml | pushed | ~3000 |
+| 2026-04-19 | Recovered llama-cpp post-reboot scheduling by restarting NVIDIA daemonsets after node reported nvidia.com/gpu allocatable=0; pod now Running with cpu request 6 | my-apps/ai/llama-cpp/deployment.yaml, .wolf/buglog.json | fixed live cluster incident | ~1200 |
 
 | Time | Description | Files | Outcome | ~Tokens |
 |------|-------------|-------|---------|---------|
@@ -949,3 +950,37 @@
 | 13:40 | Session end: 41 writes across 5 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml, config.yaml, restart-cronjob.yaml) | 10 reads | ~7943 tok |
 | 13:42 | Edited infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml | 11→15 lines | ~172 |
 | 13:43 | Session end: 42 writes across 5 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml, config.yaml, restart-cronjob.yaml) | 11 reads | ~8335 tok |
+| 13:45 | Session end: 42 writes across 5 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml, config.yaml, restart-cronjob.yaml) | 11 reads | ~8335 tok |
+| 13:47 | Session end: 42 writes across 5 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml, config.yaml, restart-cronjob.yaml) | 11 reads | ~8335 tok |
+| 13:49 | Session end: 42 writes across 5 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml, config.yaml, restart-cronjob.yaml) | 11 reads | ~8335 tok |
+| 13:56 | Created docs/plans/cnpg-dr-session-notes.md | — | ~2964 |
+| 13:56 | Session end: 43 writes across 6 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml, config.yaml, restart-cronjob.yaml) | 11 reads | ~11510 tok |
+| 13:59 | Created infrastructure/database/cloudnative-pg/gitea/overlays/recovery/bootstrap-patch.yaml | — | ~320 |
+| 13:59 | Created infrastructure/database/cloudnative-pg/immich/overlays/recovery/bootstrap-patch.yaml | — | ~262 |
+| 14:00 | Created infrastructure/database/cloudnative-pg/khoj/overlays/recovery/bootstrap-patch.yaml | — | ~259 |
+| 14:00 | Edited infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml | 9→13 lines | ~168 |
+| 14:04 | Edited infrastructure/controllers/argocd/apps/database-appset.yaml | expanded (+6 lines) | ~235 |
+| 14:06 | Fixed llama-cpp Pending scheduler failure on scaled-down GPU node by lowering CPU request 8 -> 2 after confirming node allocatable 7950m and existing requested ~7701m | my-apps/ai/llama-cpp/deployment.yaml | fixed | ~1800 |
+| 14:07 | Updated llama-cpp CPU request to 6 per user preference for higher inference performance | my-apps/ai/llama-cpp/deployment.yaml | updated | ~300 |
+| 14:08 | Session end: 48 writes across 7 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml, config.yaml, restart-cronjob.yaml) | 11 reads | ~12856 tok |
+| 14:09 | Session end: 48 writes across 7 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml, config.yaml, restart-cronjob.yaml) | 11 reads | ~12856 tok |
+| 14:09 | Session end: 48 writes across 7 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml, config.yaml, restart-cronjob.yaml) | 11 reads | ~12856 tok |
+| 14:14 | Session end: 48 writes across 7 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml, config.yaml, restart-cronjob.yaml) | 11 reads | ~12856 tok |
+| 14:15 | Edited infrastructure/database/cloudnative-pg/gitea/base/cluster.yaml | 3→4 lines | ~68 |
+| 14:15 | Edited infrastructure/database/cloudnative-pg/immich/base/cluster.yaml | 2→2 lines | ~32 |
+| 14:15 | Edited infrastructure/database/cloudnative-pg/khoj/base/cluster.yaml | 2→2 lines | ~31 |
+| 14:15 | Edited infrastructure/database/cloudnative-pg/paperless/base/cluster.yaml | 2→2 lines | ~32 |
+| 14:15 | Edited infrastructure/database/cloudnative-pg/temporal/base/cluster.yaml | 5→2 lines | ~32 |
+| 14:15 | Edited infrastructure/database/cloudnative-pg/gitea/overlays/recovery/bootstrap-patch.yaml | 2→3 lines | ~52 |
+| 14:15 | Edited infrastructure/database/cloudnative-pg/immich/overlays/recovery/bootstrap-patch.yaml | 2→2 lines | ~30 |
+| 14:15 | Edited infrastructure/database/cloudnative-pg/khoj/overlays/recovery/bootstrap-patch.yaml | 2→2 lines | ~29 |
+| 14:15 | Edited infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml | 2→2 lines | ~31 |
+| 14:15 | Edited infrastructure/database/cloudnative-pg/temporal/overlays/recovery/bootstrap-patch.yaml | 2→2 lines | ~30 |
+| 14:31 | Session end: 58 writes across 7 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml, config.yaml, restart-cronjob.yaml) | 11 reads | ~13223 tok |
+| 14:32 | Session end: 58 writes across 7 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml, config.yaml, restart-cronjob.yaml) | 11 reads | ~13223 tok |
+| 14:36 | Session end: 58 writes across 7 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml, config.yaml, restart-cronjob.yaml) | 11 reads | ~13223 tok |
+| 14:43 | Session end: 58 writes across 7 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml, config.yaml, restart-cronjob.yaml) | 11 reads | ~13223 tok |
+| 14:46 | Created docs/cnpg-disaster-recovery.md | — | ~4238 |
+| 14:47 | Created infrastructure/database/CLAUDE.md | — | ~1612 |
+| 14:48 | Session end: 60 writes across 9 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml, config.yaml, restart-cronjob.yaml) | 12 reads | ~22571 tok |
+| 14:52 | Edited docs/cnpg-disaster-recovery.md | expanded (+81 lines) | ~1205 |

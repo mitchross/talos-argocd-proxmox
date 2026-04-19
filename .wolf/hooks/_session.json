@@ -53,9 +53,19 @@
       "first_read": "2026-04-19T03:26:40.308Z"
     },
     "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml": {
-      "count": 1,
-      "tokens": 220,
+      "count": 2,
+      "tokens": 322,
       "first_read": "2026-04-19T17:41:28.060Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/CLAUDE.md": {
+      "count": 1,
+      "tokens": 3081,
+      "first_read": "2026-04-19T18:47:02.577Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/docs/cnpg-disaster-recovery.md": {
+      "count": 2,
+      "tokens": 3973,
+      "first_read": "2026-04-19T18:52:00.472Z"
     }
   },
   "files_written": [
@@ -310,45 +320,165 @@
       "action": "edit",
       "tokens": 172,
       "at": "2026-04-19T17:42:20.643Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/docs/plans/cnpg-dr-session-notes.md",
+      "action": "create",
+      "tokens": 3175,
+      "at": "2026-04-19T17:56:20.470Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/gitea/overlays/recovery/bootstrap-patch.yaml",
+      "action": "create",
+      "tokens": 320,
+      "at": "2026-04-19T17:59:54.685Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/recovery/bootstrap-patch.yaml",
+      "action": "create",
+      "tokens": 262,
+      "at": "2026-04-19T17:59:57.699Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/recovery/bootstrap-patch.yaml",
+      "action": "create",
+      "tokens": 259,
+      "at": "2026-04-19T18:00:01.356Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml",
+      "action": "edit",
+      "tokens": 168,
+      "at": "2026-04-19T18:00:09.641Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/apps/database-appset.yaml",
+      "action": "edit",
+      "tokens": 235,
+      "at": "2026-04-19T18:04:20.198Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/gitea/base/cluster.yaml",
+      "action": "edit",
+      "tokens": 68,
+      "at": "2026-04-19T18:15:04.068Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/base/cluster.yaml",
+      "action": "edit",
+      "tokens": 32,
+      "at": "2026-04-19T18:15:05.928Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/base/cluster.yaml",
+      "action": "edit",
+      "tokens": 31,
+      "at": "2026-04-19T18:15:07.453Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/base/cluster.yaml",
+      "action": "edit",
+      "tokens": 32,
+      "at": "2026-04-19T18:15:09.015Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/base/cluster.yaml",
+      "action": "edit",
+      "tokens": 32,
+      "at": "2026-04-19T18:15:11.651Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/gitea/overlays/recovery/bootstrap-patch.yaml",
+      "action": "edit",
+      "tokens": 52,
+      "at": "2026-04-19T18:15:14.329Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/immich/overlays/recovery/bootstrap-patch.yaml",
+      "action": "edit",
+      "tokens": 30,
+      "at": "2026-04-19T18:15:15.915Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/khoj/overlays/recovery/bootstrap-patch.yaml",
+      "action": "edit",
+      "tokens": 29,
+      "at": "2026-04-19T18:15:17.405Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml",
+      "action": "edit",
+      "tokens": 31,
+      "at": "2026-04-19T18:15:18.967Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/cloudnative-pg/temporal/overlays/recovery/bootstrap-patch.yaml",
+      "action": "edit",
+      "tokens": 30,
+      "at": "2026-04-19T18:15:20.200Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/docs/cnpg-disaster-recovery.md",
+      "action": "create",
+      "tokens": 4540,
+      "at": "2026-04-19T18:46:57.563Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/database/CLAUDE.md",
+      "action": "create",
+      "tokens": 1727,
+      "at": "2026-04-19T18:47:46.696Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/docs/cnpg-disaster-recovery.md",
+      "action": "edit",
+      "tokens": 1291,
+      "at": "2026-04-19T18:52:43.511Z"
     }
   ],
   "edit_counts": {
     "infrastructure/database/cloudnative-pg/immich/base/kustomization.yaml": 1,
-    "infrastructure/database/cloudnative-pg/immich/base/cluster.yaml": 1,
+    "infrastructure/database/cloudnative-pg/immich/base/cluster.yaml": 2,
     "infrastructure/database/cloudnative-pg/immich/overlays/initdb/kustomization.yaml": 1,
     "infrastructure/database/cloudnative-pg/immich/overlays/initdb/bootstrap-patch.yaml": 1,
     "infrastructure/database/cloudnative-pg/immich/overlays/recovery/kustomization.yaml": 1,
-    "infrastructure/database/cloudnative-pg/immich/overlays/recovery/bootstrap-patch.yaml": 1,
+    "infrastructure/database/cloudnative-pg/immich/overlays/recovery/bootstrap-patch.yaml": 3,
     "infrastructure/database/cloudnative-pg/immich/kustomization.yaml": 3,
     "infrastructure/database/cloudnative-pg/khoj/kustomization.yaml": 3,
     "infrastructure/database/cloudnative-pg/khoj/base/kustomization.yaml": 1,
-    "infrastructure/database/cloudnative-pg/khoj/base/cluster.yaml": 1,
+    "infrastructure/database/cloudnative-pg/khoj/base/cluster.yaml": 2,
     "infrastructure/database/cloudnative-pg/khoj/overlays/initdb/kustomization.yaml": 1,
     "infrastructure/database/cloudnative-pg/khoj/overlays/initdb/bootstrap-patch.yaml": 1,
     "infrastructure/database/cloudnative-pg/khoj/overlays/recovery/kustomization.yaml": 1,
-    "infrastructure/database/cloudnative-pg/khoj/overlays/recovery/bootstrap-patch.yaml": 1,
+    "infrastructure/database/cloudnative-pg/khoj/overlays/recovery/bootstrap-patch.yaml": 3,
     "infrastructure/database/cloudnative-pg/paperless/kustomization.yaml": 3,
     "infrastructure/database/cloudnative-pg/paperless/base/kustomization.yaml": 1,
-    "infrastructure/database/cloudnative-pg/paperless/base/cluster.yaml": 1,
+    "infrastructure/database/cloudnative-pg/paperless/base/cluster.yaml": 2,
     "infrastructure/database/cloudnative-pg/paperless/overlays/initdb/kustomization.yaml": 1,
     "infrastructure/database/cloudnative-pg/paperless/overlays/initdb/bootstrap-patch.yaml": 1,
     "infrastructure/database/cloudnative-pg/paperless/overlays/recovery/kustomization.yaml": 1,
-    "infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml": 2,
+    "infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml": 4,
     "infrastructure/database/cloudnative-pg/temporal/kustomization.yaml": 3,
     "infrastructure/database/cloudnative-pg/temporal/base/kustomization.yaml": 1,
-    "infrastructure/database/cloudnative-pg/temporal/base/cluster.yaml": 1,
+    "infrastructure/database/cloudnative-pg/temporal/base/cluster.yaml": 2,
     "infrastructure/database/cloudnative-pg/temporal/overlays/initdb/kustomization.yaml": 1,
     "infrastructure/database/cloudnative-pg/temporal/overlays/initdb/bootstrap-patch.yaml": 1,
     "infrastructure/database/cloudnative-pg/temporal/overlays/recovery/kustomization.yaml": 1,
-    "infrastructure/database/cloudnative-pg/temporal/overlays/recovery/bootstrap-patch.yaml": 1,
+    "infrastructure/database/cloudnative-pg/temporal/overlays/recovery/bootstrap-patch.yaml": 2,
     "infrastructure/networking/cloudflared/config.yaml": 1,
     "infrastructure/networking/cloudflared/restart-cronjob.yaml": 1,
     "infrastructure/networking/cloudflared/kustomization.yaml": 1,
-    "infrastructure/database/cloudnative-pg/gitea/kustomization.yaml": 2
+    "infrastructure/database/cloudnative-pg/gitea/kustomization.yaml": 2,
+    "docs/plans/cnpg-dr-session-notes.md": 1,
+    "infrastructure/database/cloudnative-pg/gitea/overlays/recovery/bootstrap-patch.yaml": 2,
+    "infrastructure/controllers/argocd/apps/database-appset.yaml": 1,
+    "infrastructure/database/cloudnative-pg/gitea/base/cluster.yaml": 1,
+    "docs/cnpg-disaster-recovery.md": 2,
+    "infrastructure/database/CLAUDE.md": 1
   },
-  "anatomy_hits": 8,
+  "anatomy_hits": 10,
   "anatomy_misses": 3,
-  "repeated_reads_warned": 1,
+  "repeated_reads_warned": 3,
   "cerebrum_warnings": 0,
-  "stop_count": 34
+  "stop_count": 47
 }

@@ -8,6 +8,7 @@
 
 <!-- How the user likes things done. Code style, tools, patterns, communication. -->
 - User wants architecture review to be direct and technically grounded, not reassuring by default.
+- For `my-apps/ai/llama-cpp`, user is comfortable assigning a higher CPU request (e.g., `cpu: "6"`) for inference performance.
 
 ## Key Learnings
 
@@ -23,6 +24,7 @@
 - **Talos 1.13 forward-compat audit (2026-04-17)**: After 1.13 review, the only required fix is `install.disk`. These are NOT issues for this cluster: `.machine.env` (unused), `.machine.network.kubespan` (unused), `apiServer.extraArgs` protobuf format change (YAML map<string,string> stays backward-compat), ResolverConfig merge→overwrite (single-layer config is unaffected), DHCPv4Config (still first-class). Valid cleanup: remove `siderolabs/qemu-guest-agent` from systemExtensions — Proxmox provider auto-installs it (see machine-classes/*.yaml comments).
 - **Talos Omni extension conflict — don't re-list what the provider auto-installs**: Listing `siderolabs/qemu-guest-agent` in cluster-template systemExtensions while the Proxmox provider already auto-installs it = duplicate install. Check machine-class comments ("auto-installed by the provider") before listing extensions in cluster-template.
 - **NVIDIA operator namespace drift**: The ArgoCD infrastructure ApplicationSet names the app from the directory (`nvidia-gpu-operator`) and sets `destination.namespace` from `path.basename`, but the manifests themselves target `gpu-operator`. Result: ArgoCD auto-creates an empty `nvidia-gpu-operator` namespace while the real NVIDIA pods run in `gpu-operator`.
+- **Scaled-down GPU worker scheduling gotcha**: On an 8-vCPU GPU node (7950m allocatable), `llama-cpp` with `requests.cpu: "8"` is unschedulable even when NVIDIA is healthy. If events show `Insufficient cpu`, tune requests first (e.g., `cpu: "2"`) and keep performance headroom in limits.
 
 ## Do-Not-Repeat
 

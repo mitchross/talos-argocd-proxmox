@@ -300,18 +300,99 @@ for db in gitea immich paperless temporal; do
 done
 ```
 
-**What we don't have yet (aspirational):**
+---
 
-- **Custom DR wizard** — a small local CLI or web UI that:
-  - lists current lineage per DB (read from git + live Cluster)
-  - offers "flip to recovery" / "flip to initdb" actions that edit the right
-    YAML, open a PR, and (optionally) trigger the delete-recreate dance
-  - validates that the recovery target WAL actually exists on S3 before letting
-    you commit
-  - Would turn a 30-minute runbook into a 3-click operation
+## Future improvements (ideas to come back to)
 
-  For now, the runbook above is the source of truth. A thin wrapper script or
-  Makefile target would be a good weekend project if DR becomes routine.
+Unfinished work — revisit when DR becomes a routine drill (quarterly) or when
+this is painful enough the tools are worth building. Rough-ordered by
+effort-vs-payoff.
+
+### Tier 1 — quick wins (do first when you have 30 min)
+
+- **Import the official CNPG Grafana dashboards.** Upstream publishes
+  ready-made JSON at https://github.com/cloudnative-pg/grafana-dashboards.
+  Drop into `monitoring/prometheus-stack/` as ConfigMaps with the Grafana
+  sidecar label so they auto-import. Covers: backup age per cluster, WAL
+  archiving lag, connection count, checkpoint stats. One-time commit, forever-on
+  visibility.
+
+- **Install the `kubectl cnpg` plugin locally.** Single best tool for CNPG
+  state. Already referenced above — pin this as prerequisite in onboarding.
+
+- **Committed state-check script** in `scripts/` that prints a summary table
+  of all CNPG DBs: current serverName, last successful backup, last WAL
+  archive age, Cluster phase. Just expands the inline script above into a
+  standalone tool with nicer formatting. ~30 lines of bash.
+
+### Tier 2 — DR wizard CLI (weekend project, ~1-2 days)
+
+A thin local CLI (`scripts/dr-wizard`) that turns the full DR runbook into
+guided steps. Minimum viable feature set:
+
+- `dr-wizard status` — reads git + live state, prints "here's each DB's
+  current lineage, mode flag, backup age."
+- `dr-wizard plan <db>` — dry-run: "you want to restore `<db>`. Available
+  lineages on S3: v1 (WAL ends 2026-04-16). Proposed changes: base.serverName
+  v1 → v2; recovery overlay serverName → v1. Here's the diff, ready to open
+  a PR?"
+- `dr-wizard execute <db>` — after PR merged, performs the destructive
+  kubectl delete cluster + PVC + sync step with y/N confirmations.
+- `dr-wizard validate <db>` — post-recovery, runs SQL sanity check (counts
+  rows in a few tables, reports vs. previously-known counts).
+
+Why it's worth it IF DR becomes routine: collapses a 30-minute copy-paste
+dance into ~3 commands with built-in guardrails (WAL range check, lineage
+math, consumer-app restart). Not worth building for a once-a-year use case.
+
+**Scope creep to avoid:** don't try to build a web UI. CLI + GitHub PR
+checkout is already a UI. Just make the CLI nice.
+
+### Tier 3 — proper state-management UI (only if scale grows)
+
+If the cluster grows to 10+ CNPG DBs, revisit with a real web interface:
+
+- **Adopt an existing tool first.** Check if CNPG has an upstream dashboard
+  project by the time this matters (they had hints of one in 2025). If yes,
+  use that.
+- **Custom web UI (last resort).** Only build if nothing upstream exists
+  AND DR is happening monthly+. A Next.js dashboard reading the Cluster
+  CRDs, showing backup lineage timelines per DB, offering the same wizard
+  actions the CLI has. Weekend project × several. Huge maintenance tax.
+
+### Tier 4 — backup-plugin migration (mandatory before CNPG 1.30.0)
+
+Separate deprecation work, not a DR feature — tracked here for visibility.
+
+CNPG is removing native `spec.backup.barmanObjectStore` in 1.30.0. We
+already have the Barman Cloud Plugin installed at
+`infrastructure/database/cnpg-barman-plugin/` but no DB uses it yet. Before
+upgrading CNPG past 1.29:
+
+1. Each DB's `base/cluster.yaml` moves from `spec.backup.barmanObjectStore`
+   to `spec.plugins[]` referencing an `ObjectStore` CR.
+2. Same for `overlays/recovery/bootstrap-patch.yaml` `externalClusters`.
+3. Each DB gets an `ObjectStore` CR (shared ones OK — bucket + creds are
+   the same).
+4. Test migration on one DB first (e.g. paperless), verify backups continue
+   flowing, migrate the rest.
+
+Budget: probably 1 evening per DB. Schedule when CNPG 1.30.0 is announced
+(watch https://cloudnative-pg.io/releases/).
+
+### Explicitly NOT worth building
+
+- **General-purpose Postgres management GUI** (pgAdmin, Adminer, DBeaver
+  server, etc.). They operate at the SQL layer, not the CNPG Cluster
+  lifecycle you actually care about during DR. Install locally as a client
+  tool if useful for ad-hoc queries — but they add zero value for DR.
+- **Lua / Helm-hook automation** around the delete-cluster-PVC step. The
+  manual `kubectl` sequence is already 2 commands and explicitly destructive;
+  hiding it behind automation just makes "oops I meant the other DB"
+  blastier.
+- **Automated PITR-target guessing** (e.g. "restore to yesterday 23:59").
+  Always specify targets explicitly or omit them entirely. Guesswork here
+  produces the same "recovery ended before target" FATAL we hit on 2026-04-19.
 
 ---
 
