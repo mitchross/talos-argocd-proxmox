@@ -103,9 +103,19 @@ spec:
             - |
               set -eu
               echo "=== Connecting to Kopia repository ==="
+              # Kopia 0.20 ignores the KOPIA_OVERRIDE_HOSTNAME env var —
+              # only the `--override-hostname` flag on `repository connect`
+              # actually sets the client identity. Without this, the pod
+              # hostname (some generated string) is used, and then
+              # `kopia maintenance run` errors out with:
+              #   "maintenance must be run by designated user: maintenance@cluster"
+              # because the owner stored on the repo (maintenance@cluster)
+              # doesn't match the running client (maintenance@<pod-name>).
               kopia repository connect filesystem \
                 --path=/repository \
-                --password="$KOPIA_PASSWORD"
+                --password="$KOPIA_PASSWORD" \
+                --override-hostname=cluster \
+                --override-username=maintenance
 
               echo "=== Current maintenance policy ==="
               kopia maintenance info || true
