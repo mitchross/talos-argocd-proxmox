@@ -104,7 +104,10 @@ data:
     [gemma4 - gemma4-26b]
     model = /models/gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf
     mmproj = /models/mmproj-gemma4-BF16.gguf
-    alias = gemma4, gemma 4, gemma4-think, vision, image, multimodal
+    # Aliases intentionally do NOT include generic `vision`/`image`/`multimodal` —
+    # those belong to the primary qwen3.6 preset. llama-server rejects the
+    # entire presets.ini if two presets share any alias (even across files).
+    alias = gemma4, gemma 4, gemma4-think
     ctx-size = 131072
     n-gpu-layers = 99
     temp = 1.0
@@ -123,7 +126,8 @@ data:
     [gemma4-nothink - gemma4-26b-nothink]
     model = /models/gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf
     mmproj = /models/mmproj-gemma4-BF16.gguf
-    alias = gemma4-nothink, gemma4-fast, vision-nothink
+    # `vision-nothink` is owned by qwen3.6-nothink — keep only Gemma-specific aliases.
+    alias = gemma4-nothink, gemma4-fast
     ctx-size = 131072
     n-gpu-layers = 99
     temp = 1.0

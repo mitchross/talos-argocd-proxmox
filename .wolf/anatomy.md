@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T20:22:33.055Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T20:40:02.879Z
 > Files: 623 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
@@ -637,7 +637,7 @@
 
 ## my-apps/ai/llama-cpp/
 
-- `configmap.yaml` — K8s ConfigMap (~2250 tok)
+- `configmap.yaml` — K8s ConfigMap (~2330 tok)
 - `deployment.yaml` — K8s Deployment (~1516 tok)
 - `httproute.yaml` — K8s HTTPRoute: llama-cpp-route (~151 tok)
 - `kustomization.yaml` — K8s Kustomization (~59 tok)
