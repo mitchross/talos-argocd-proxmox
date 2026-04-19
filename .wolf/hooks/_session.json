@@ -411,6 +411,11 @@
       "count": 1,
       "tokens": 3635,
       "first_read": "2026-04-19T19:55:02.578Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml": {
+      "count": 1,
+      "tokens": 1788,
+      "first_read": "2026-04-19T20:09:21.663Z"
     }
   },
   "files_written": [
@@ -1064,7 +1069,7 @@
     "my-apps/ai/comfyui/configmap.yaml": 1,
     "my-apps/ai/CLAUDE.md": 1
   },
-  "anatomy_hits": 68,
+  "anatomy_hits": 69,
   "anatomy_misses": 13,
   "repeated_reads_warned": 40,
   "cerebrum_warnings": 0,
