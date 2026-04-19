@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T03:34:42.930Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T03:49:22.385Z
 > Files: 610 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
@@ -290,7 +290,7 @@
 
 - `cluster.yaml` — K8s Cluster (~546 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: gitea-app-secret (~145 tok)
-- `kustomization.yaml` — gitea CNPG database — root kustomization (~290 tok)
+- `kustomization.yaml` — gitea CNPG database — root kustomization (~291 tok)
 - `lineage.yaml` — CNPG DR lineage tracker for gitea. (~394 tok)
 - `scheduled-backup.yaml` — K8s ScheduledBackup: gitea-daily-backup (~67 tok)
 
@@ -313,7 +313,7 @@
 
 - `cluster.yaml` — K8s Cluster (~607 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: immich-app-secret (~146 tok)
-- `kustomization.yaml` — immich CNPG database — root kustomization (~191 tok)
+- `kustomization.yaml` — immich CNPG database — root kustomization (~192 tok)
 - `lineage.yaml` — CNPG DR lineage tracker for immich. (~86 tok)
 - `scheduled-backup.yaml` — K8s ScheduledBackup: immich-daily-backup (~68 tok)
 
@@ -336,7 +336,7 @@
 
 - `cluster.yaml` — K8s Cluster (~708 tok)
 - `externalsecret.yaml` — Add this new section for khoj (~506 tok)
-- `kustomization.yaml` — khoj CNPG database — root kustomization (~178 tok)
+- `kustomization.yaml` — khoj CNPG database — root kustomization (~179 tok)
 - `lineage.yaml` — CNPG DR lineage tracker for khoj. (~84 tok)
 - `scheduled-backup.yaml` — K8s ScheduledBackup: khoj-daily-backup (~67 tok)
 
@@ -359,7 +359,7 @@
 
 - `cluster.yaml` — K8s Cluster (~674 tok)
 - `externalsecret.yaml` — Add this new section for paperless-ngx (~370 tok)
-- `kustomization.yaml` — paperless CNPG database — root kustomization (~181 tok)
+- `kustomization.yaml` — paperless CNPG database — root kustomization (~182 tok)
 - `lineage.yaml` — CNPG DR lineage tracker for paperless. (~91 tok)
 - `scheduled-backup.yaml` — K8s ScheduledBackup: paperless-daily-backup (~70 tok)
 
@@ -387,7 +387,7 @@
 
 - `cluster.yaml` — K8s Cluster (~439 tok)
 - `externalsecret.yaml` — K8s ExternalSecret (~148 tok)
-- `kustomization.yaml` — temporal CNPG database — root kustomization (~180 tok)
+- `kustomization.yaml` — temporal CNPG database — root kustomization (~182 tok)
 - `lineage.yaml` — CNPG DR lineage tracker for temporal. (~241 tok)
 - `scheduled-backup.yaml` — K8s ScheduledBackup (~69 tok)
 
