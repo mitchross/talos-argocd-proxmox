@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-18T04:51:24.448Z
-> Files: 566 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T03:34:42.930Z
+> Files: 610 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
 
@@ -150,10 +150,11 @@
 - `1passwordconnect.yaml` — K8s Application: 1passwordconnect (~222 tok)
 - `argocd.yaml` — K8s Application: argocd (~241 tok)
 - `cilium-app.yaml` — Critical: Cilium must be deployed first (wave 0) (~489 tok)
+- `cnpg-barman-plugin-app.yaml` — CloudNativePG Barman Cloud Plugin — replaces deprecated native barmanObjectStore (~340 tok)
 - `database-appset.yaml` — K8s ApplicationSet: database (~705 tok)
 - `external-secrets.yaml` — K8s Application: external-secrets (~319 tok)
 - `infrastructure-appset.yaml` — K8s ApplicationSet (~1124 tok)
-- `kustomization.yaml` — K8s Kustomization (~367 tok)
+- `kustomization.yaml` — K8s Kustomization (~395 tok)
 - `kyverno-app.yaml` — K8s Application: kyverno (~494 tok)
 - `longhorn-app.yaml` — Critical: Longhorn must be deployed after Cilium (wave 1) (~371 tok)
 - `monitoring-appset.yaml` — K8s ApplicationSet: monitoring (~637 tok)
@@ -287,31 +288,95 @@
 
 ## infrastructure/database/cloudnative-pg/gitea/
 
-- `cluster.yaml` — K8s Cluster (~685 tok)
+- `cluster.yaml` — K8s Cluster (~546 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: gitea-app-secret (~145 tok)
-- `kustomization.yaml` — K8s Kustomization: gitea-db (~90 tok)
+- `kustomization.yaml` — gitea CNPG database — root kustomization (~290 tok)
+- `lineage.yaml` — CNPG DR lineage tracker for gitea. (~394 tok)
 - `scheduled-backup.yaml` — K8s ScheduledBackup: gitea-daily-backup (~67 tok)
+
+## infrastructure/database/cloudnative-pg/gitea/base/
+
+- `cluster.yaml` — Base CNPG Cluster manifest — NO bootstrap stanza. (~497 tok)
+- `kustomization.yaml` — K8s Kustomization (~27 tok)
+
+## infrastructure/database/cloudnative-pg/gitea/overlays/initdb/
+
+- `bootstrap-patch.yaml` — K8s Cluster (~57 tok)
+- `kustomization.yaml` — initdb overlay — fresh DB, no restore. (~94 tok)
+
+## infrastructure/database/cloudnative-pg/gitea/overlays/recovery/
+
+- `bootstrap-patch.yaml` — K8s Cluster (~257 tok)
+- `kustomization.yaml` — recovery overlay — restore from Barman S3. (~236 tok)
 
 ## infrastructure/database/cloudnative-pg/immich/
 
-- `cluster.yaml` — K8s Cluster: immich-database (~616 tok)
+- `cluster.yaml` — K8s Cluster (~607 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: immich-app-secret (~146 tok)
-- `kustomization.yaml` — K8s Kustomization: immich-db (~90 tok)
+- `kustomization.yaml` — immich CNPG database — root kustomization (~191 tok)
+- `lineage.yaml` — CNPG DR lineage tracker for immich. (~86 tok)
 - `scheduled-backup.yaml` — K8s ScheduledBackup: immich-daily-backup (~68 tok)
+
+## infrastructure/database/cloudnative-pg/immich/base/
+
+- `cluster.yaml` — Base CNPG Cluster manifest — NO bootstrap stanza. See gitea/base/cluster.yaml (~398 tok)
+- `kustomization.yaml` — K8s Kustomization (~27 tok)
+
+## infrastructure/database/cloudnative-pg/immich/overlays/initdb/
+
+- `bootstrap-patch.yaml` — K8s Cluster (~208 tok)
+- `kustomization.yaml` — K8s Kustomization (~69 tok)
+
+## infrastructure/database/cloudnative-pg/immich/overlays/recovery/
+
+- `bootstrap-patch.yaml` — K8s Cluster (~215 tok)
+- `kustomization.yaml` — K8s Kustomization (~69 tok)
 
 ## infrastructure/database/cloudnative-pg/khoj/
 
-- `cluster.yaml` — K8s Cluster: khoj-database (~992 tok)
+- `cluster.yaml` — K8s Cluster (~708 tok)
 - `externalsecret.yaml` — Add this new section for khoj (~506 tok)
-- `kustomization.yaml` — K8s Kustomization: khoj-db (~89 tok)
+- `kustomization.yaml` — khoj CNPG database — root kustomization (~178 tok)
+- `lineage.yaml` — CNPG DR lineage tracker for khoj. (~84 tok)
 - `scheduled-backup.yaml` — K8s ScheduledBackup: khoj-daily-backup (~67 tok)
+
+## infrastructure/database/cloudnative-pg/khoj/base/
+
+- `cluster.yaml` — Base CNPG Cluster manifest — NO bootstrap stanza. See gitea/base/cluster.yaml (~521 tok)
+- `kustomization.yaml` — K8s Kustomization (~27 tok)
+
+## infrastructure/database/cloudnative-pg/khoj/overlays/initdb/
+
+- `bootstrap-patch.yaml` — K8s Cluster (~208 tok)
+- `kustomization.yaml` — K8s Kustomization (~68 tok)
+
+## infrastructure/database/cloudnative-pg/khoj/overlays/recovery/
+
+- `bootstrap-patch.yaml` — K8s Cluster (~212 tok)
+- `kustomization.yaml` — K8s Kustomization (~68 tok)
 
 ## infrastructure/database/cloudnative-pg/paperless/
 
-- `cluster.yaml` — K8s Cluster: paperless-database (~968 tok)
+- `cluster.yaml` — K8s Cluster (~674 tok)
 - `externalsecret.yaml` — Add this new section for paperless-ngx (~370 tok)
-- `kustomization.yaml` — K8s Kustomization: paperless-db (~91 tok)
+- `kustomization.yaml` — paperless CNPG database — root kustomization (~181 tok)
+- `lineage.yaml` — CNPG DR lineage tracker for paperless. (~91 tok)
 - `scheduled-backup.yaml` — K8s ScheduledBackup: paperless-daily-backup (~70 tok)
+
+## infrastructure/database/cloudnative-pg/paperless/base/
+
+- `cluster.yaml` — Base CNPG Cluster manifest — NO bootstrap stanza. See gitea/base/cluster.yaml (~529 tok)
+- `kustomization.yaml` — K8s Kustomization (~27 tok)
+
+## infrastructure/database/cloudnative-pg/paperless/overlays/initdb/
+
+- `bootstrap-patch.yaml` — K8s Cluster (~167 tok)
+- `kustomization.yaml` — K8s Kustomization (~70 tok)
+
+## infrastructure/database/cloudnative-pg/paperless/overlays/recovery/
+
+- `bootstrap-patch.yaml` — K8s Cluster (~220 tok)
+- `kustomization.yaml` — K8s Kustomization (~70 tok)
 
 ## infrastructure/database/cloudnative-pg/postgres-global-secrets/
 
@@ -320,10 +385,30 @@
 
 ## infrastructure/database/cloudnative-pg/temporal/
 
-- `cluster.yaml` — K8s Cluster (~741 tok)
+- `cluster.yaml` — K8s Cluster (~439 tok)
 - `externalsecret.yaml` — K8s ExternalSecret (~148 tok)
-- `kustomization.yaml` — K8s Kustomization (~90 tok)
+- `kustomization.yaml` — temporal CNPG database — root kustomization (~180 tok)
+- `lineage.yaml` — CNPG DR lineage tracker for temporal. (~241 tok)
 - `scheduled-backup.yaml` — K8s ScheduledBackup (~69 tok)
+
+## infrastructure/database/cloudnative-pg/temporal/base/
+
+- `cluster.yaml` — Base CNPG Cluster manifest — NO bootstrap stanza. See gitea/base/cluster.yaml (~407 tok)
+- `kustomization.yaml` — K8s Kustomization (~27 tok)
+
+## infrastructure/database/cloudnative-pg/temporal/overlays/initdb/
+
+- `bootstrap-patch.yaml` — K8s Cluster (~87 tok)
+- `kustomization.yaml` — K8s Kustomization (~70 tok)
+
+## infrastructure/database/cloudnative-pg/temporal/overlays/recovery/
+
+- `bootstrap-patch.yaml` — K8s Cluster (~225 tok)
+- `kustomization.yaml` — K8s Kustomization (~70 tok)
+
+## infrastructure/database/cnpg-barman-plugin/
+
+- `kustomization.yaml` — CloudNativePG Barman Cloud Plugin (~278 tok)
 
 ## infrastructure/database/crunchy-postgres/postgres-operator/
 
@@ -373,8 +458,9 @@
 - `config.yaml` (~788 tok)
 - `deployment.yaml` — K8s Deployment: cloudflared (~671 tok)
 - `external-secret.yaml` — K8s ExternalSecret: tunnel-credentials (~148 tok)
-- `kustomization.yaml` — K8s Kustomization: config (~79 tok)
+- `kustomization.yaml` — K8s Kustomization (~86 tok)
 - `ns.yaml` — K8s Namespace: cloudflared (~18 tok)
+- `restart-cronjob.yaml` — K8s ServiceAccount (~532 tok)
 
 ## infrastructure/networking/gateway/
 
@@ -948,6 +1034,18 @@
 
 - `bootstrap-argocd.sh` (~1497 tok)
 - `cnpg-recovery.sh` — CNPG Disaster Recovery — interactive driver for docs/cnpg-disaster-recovery.md (~2946 tok)
+
+## scripts/dr/
+
+- `lineage-bump.sh` — Post-restore lineage bump. Updates BOTH lineage.yaml and cluster.yaml so (~357 tok)
+- `restore-all.sh` — Parallel CNPG DR orchestrator — restores ALL databases under (~556 tok)
+- `restore-one.sh` — Single-DB CNPG DR orchestrator (Path A — validation-annotation flow). (~1740 tok)
+
+## scripts/dr/lib/
+
+- `common.sh` — Shared helpers for scripts/dr/* (~785 tok)
+- `render-recovery.sh` — Render an ephemeral recovery manifest for a single CNPG Cluster. (~828 tok)
+- `wait-ready.sh` — Block until a CNPG Cluster reports readyInstances=1 or timeout expires. (~293 tok)
 
 ## src/content/docs/architecture/
 

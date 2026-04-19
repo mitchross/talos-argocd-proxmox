@@ -1,13 +1,11 @@
+# Base CNPG Cluster manifest — NO bootstrap stanza. See gitea/base/cluster.yaml
+# for serverName bump rationale.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: temporal-database
-  namespace: cloudnative-pg
   labels:
     app: temporal
-  annotations:
-    # Enables dual-bootstrap (initdb + recovery) for DR. See gitea/cluster.yaml.
-    cnpg.io/validation: disabled
 spec:
   instances: 1
   imageName: ghcr.io/cloudnative-pg/postgresql:16.2
@@ -24,14 +22,6 @@ spec:
       wal_compression: "on"
     pg_hba:
       - host all all 0.0.0.0/0 md5
-  bootstrap:
-    initdb:
-      database: temporal
-      owner: temporal
-      secret:
-        name: temporal-app-secret
-      postInitApplicationSQL:
-        - CREATE DATABASE temporal_visibility OWNER temporal;
   storage:
     size: 10Gi
     storageClass: longhorn
@@ -43,8 +33,11 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
-      # Keep in sync with lineage.yaml .currentServerName
-      serverName: temporal-database-v2
+      # Forward write target.
+      # Pre-nuke: unversioned "temporal-database".
+      # Post-nuke empty backups went to -v2 (from earlier session edit).
+      # New lineage: -v3 (clean, no pollution).
+      serverName: temporal-database-v3
       destinationPath: s3://postgres-backups/cnpg/temporal
       endpointURL: http://192.168.10.133:30293
       s3Credentials:

@@ -1,0 +1,13 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: temporal-database
+spec:
+  bootstrap:
+    initdb:
+      database: temporal
+      owner: temporal
+      secret:
+        name: temporal-app-secret
+      postInitApplicationSQL:
+        - CREATE DATABASE temporal_visibility OWNER temporal;

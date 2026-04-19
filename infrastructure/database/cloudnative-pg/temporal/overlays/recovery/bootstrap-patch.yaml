@@ -1,0 +1,26 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: temporal-database
+spec:
+  bootstrap:
+    recovery:
+      source: temporal-recovery-source
+      recoveryTarget:
+        targetTime: "2026-04-16T23:59:59Z"
+  externalClusters:
+    - name: temporal-recovery-source
+      barmanObjectStore:
+        # Prior lineage with pre-nuke data — unversioned original path.
+        serverName: temporal-database
+        destinationPath: s3://postgres-backups/cnpg/temporal
+        endpointURL: http://192.168.10.133:30293
+        s3Credentials:
+          accessKeyId:
+            name: cnpg-s3-credentials
+            key: AWS_ACCESS_KEY_ID
+          secretAccessKey:
+            name: cnpg-s3-credentials
+            key: AWS_SECRET_ACCESS_KEY
+        wal:
+          compression: gzip

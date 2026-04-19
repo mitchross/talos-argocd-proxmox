@@ -1,0 +1,26 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: paperless-database
+spec:
+  bootstrap:
+    recovery:
+      source: paperless-recovery-source
+      recoveryTarget:
+        targetTime: "2026-04-16T23:59:59Z"
+  externalClusters:
+    - name: paperless-recovery-source
+      barmanObjectStore:
+        # Prior lineage with pre-nuke data.
+        serverName: paperless-database-v2
+        destinationPath: s3://postgres-backups/cnpg/paperless
+        endpointURL: http://192.168.10.133:30293
+        s3Credentials:
+          accessKeyId:
+            name: cnpg-s3-credentials
+            key: AWS_ACCESS_KEY_ID
+          secretAccessKey:
+            name: cnpg-s3-credentials
+            key: AWS_SECRET_ACCESS_KEY
+        wal:
+          compression: gzip

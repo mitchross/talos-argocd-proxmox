@@ -1,13 +1,11 @@
+# Base CNPG Cluster manifest — NO bootstrap stanza. See gitea/base/cluster.yaml
+# for serverName bump rationale.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: paperless-database
-  namespace: cloudnative-pg
+  name: khoj-database
   labels:
-    app: paperless-ngx
-  annotations:
-    # Enables dual-bootstrap (initdb + recovery) for DR. See gitea/cluster.yaml.
-    cnpg.io/validation: disabled
+    app: khoj
 spec:
   instances: 1
   imageName: ghcr.io/cloudnative-pg/postgresql:16.2
@@ -26,22 +24,11 @@ spec:
       log_statement: "ddl"
     pg_hba:
       - host all all 0.0.0.0/0 md5
-  bootstrap:
-    initdb:
-      database: paperless
-      owner: paperless
-      secret:
-        name: paperless-app-secret
-      postInitApplicationSQL:
-        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "paperless";
-        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "paperless";
-        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "paperless";
-        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "paperless";
   storage:
-    size: 50Gi
+    size: 20Gi
     storageClass: longhorn
   walStorage:
-    size: 50Gi
+    size: 10Gi
     storageClass: longhorn
   managed:
     services:
@@ -50,9 +37,9 @@ spec:
           updateStrategy: patch
           serviceTemplate:
             metadata:
-              name: paperless-postgres-external
+              name: khoj-postgres-external
               annotations:
-                lbipam.cilium.io/ips: "192.168.10.42"
+                lbipam.cilium.io/ips: "192.168.10.47"
             spec:
               type: LoadBalancer
               ports:
@@ -65,9 +52,9 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
-      # Keep in sync with lineage.yaml .currentServerName
-      serverName: paperless-database-v2
-      destinationPath: s3://postgres-backups/cnpg/paperless
+      # Forward write target (bumped v2 → v3 after restore so new backups are clean).
+      serverName: khoj-database-v3
+      destinationPath: s3://postgres-backups/cnpg/khoj
       endpointURL: http://192.168.10.133:30293
       s3Credentials:
         accessKeyId:

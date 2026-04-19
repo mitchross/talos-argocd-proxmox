@@ -1,0 +1,22 @@
+# recovery overlay — restore from Barman S3.
+#
+# Change externalClusters.serverName to point at the Barman lineage on S3
+# that holds the data you want back. Change recoveryTarget.targetTime for
+# PITR (omit the field for "latest").
+#
+# After a successful restore, if you want subsequent DR events to restore
+# FROM the just-restored lineage (now the good copy), bump both:
+#   - base/cluster.yaml   .spec.backup.barmanObjectStore.serverName → vN+1
+#   - this file           .externalClusters[0].barmanObjectStore.serverName → vN
+#                         (the new "known-good" lineage)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+patches:
+  - path: bootstrap-patch.yaml
+    target:
+      group: postgresql.cnpg.io
+      version: v1
+      kind: Cluster
+      name: gitea-database

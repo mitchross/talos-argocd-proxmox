@@ -826,3 +826,85 @@
 | 00:51 | Session end: 31 writes across 14 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 32 reads | ~56622 tok |
 | 00:52 | Session end: 31 writes across 14 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 32 reads | ~56622 tok |
 | 00:54 | Session end: 31 writes across 14 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 32 reads | ~56622 tok |
+| 01:07 | Session end: 31 writes across 14 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 32 reads | ~56622 tok |
+| 11:44 | Session end: 31 writes across 14 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 32 reads | ~56622 tok |
+| 11:52 | Session end: 31 writes across 14 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 32 reads | ~56622 tok |
+| 12:01 | Session end: 31 writes across 14 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 32 reads | ~56622 tok |
+| 13:10 | Session end: 31 writes across 14 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 33 reads | ~56622 tok |
+| 13:13 | Created infrastructure/database/cnpg-barman-plugin/kustomization.yaml | — | ~232 |
+| 13:14 | Created infrastructure/controllers/argocd/apps/cnpg-barman-plugin-app.yaml | — | ~340 |
+| 13:15 | Edited infrastructure/controllers/argocd/apps/kustomization.yaml | 4→5 lines | ~106 |
+| 19:02 | Created infrastructure/database/cloudnative-pg/gitea/cluster.yaml | — | ~546 |
+| 19:02 | Created infrastructure/database/cloudnative-pg/gitea/lineage.yaml | — | ~394 |
+| 19:02 | Created infrastructure/database/cloudnative-pg/immich/cluster.yaml | — | ~607 |
+| 19:02 | Created infrastructure/database/cloudnative-pg/immich/lineage.yaml | — | ~86 |
+| 19:03 | Created infrastructure/database/cloudnative-pg/khoj/cluster.yaml | — | ~708 |
+| 19:03 | Created infrastructure/database/cloudnative-pg/khoj/lineage.yaml | — | ~84 |
+| 19:03 | Created infrastructure/database/cloudnative-pg/paperless/cluster.yaml | — | ~674 |
+| 19:03 | Created infrastructure/database/cloudnative-pg/paperless/lineage.yaml | — | ~91 |
+| 19:03 | Created infrastructure/database/cloudnative-pg/temporal/cluster.yaml | — | ~439 |
+| 19:03 | Created infrastructure/database/cloudnative-pg/temporal/lineage.yaml | — | ~241 |
+| 19:04 | Created scripts/dr/lib/common.sh | — | ~785 |
+| 19:04 | Created scripts/dr/lib/render-recovery.sh | — | ~959 |
+| 19:04 | Created scripts/dr/lib/wait-ready.sh | — | ~293 |
+| 19:04 | Created scripts/dr/lineage-bump.sh | — | ~357 |
+| 19:05 | Created scripts/dr/lib/render-recovery.sh | — | ~845 |
+| 19:06 | Created scripts/dr/restore-one.sh | — | ~1740 |
+| 19:06 | Created scripts/dr/restore-all.sh | — | ~556 |
+| 19:06 | Created scripts/dr/lib/render-recovery.sh | — | ~828 |
+| 19:08 | Session end: 52 writes across 22 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 42 reads | ~73928 tok |
+| 22:38 | Created infrastructure/database/cnpg-barman-plugin/kustomization.yaml | — | ~278 |
+| 22:38 | Session end: 53 writes across 22 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 42 reads | ~74206 tok |
+| 22:39 | Session end: 53 writes across 22 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 42 reads | ~74206 tok |
+| 22:39 | Session end: 53 writes across 22 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 42 reads | ~74206 tok |
+| 23:10 | Session end: 53 writes across 22 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 42 reads | ~74206 tok |
+| 23:13 | Session end: 53 writes across 22 files (cluster-template.yaml, README.md, CILIUM_CNI.md, TROUBLESHOOTING.md, vpa-resource-optimization.md) | 42 reads | ~74206 tok |
+| 23:15 | Created infrastructure/database/cloudnative-pg/gitea/kustomization.yaml | — | ~290 |
+| 23:15 | Created infrastructure/database/cloudnative-pg/gitea/base/kustomization.yaml | — | ~27 |
+| 23:16 | Created infrastructure/database/cloudnative-pg/gitea/base/cluster.yaml | — | ~497 |
+| 23:16 | Created infrastructure/database/cloudnative-pg/gitea/overlays/initdb/kustomization.yaml | — | ~94 |
+| 23:16 | Created infrastructure/database/cloudnative-pg/gitea/overlays/initdb/bootstrap-patch.yaml | — | ~57 |
+| 23:16 | Created infrastructure/database/cloudnative-pg/gitea/overlays/recovery/kustomization.yaml | — | ~236 |
+| 23:16 | Created infrastructure/database/cloudnative-pg/gitea/overlays/recovery/bootstrap-patch.yaml | — | ~257 |
+
+## Session: 2026-04-19 23:16
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 23:17 | Created infrastructure/database/cloudnative-pg/immich/base/kustomization.yaml | — | ~27 |
+| 23:17 | Created infrastructure/database/cloudnative-pg/immich/base/cluster.yaml | — | ~398 |
+| 23:17 | Created infrastructure/database/cloudnative-pg/immich/overlays/initdb/kustomization.yaml | — | ~69 |
+| 23:17 | Created infrastructure/database/cloudnative-pg/immich/overlays/initdb/bootstrap-patch.yaml | — | ~208 |
+| 23:17 | Created infrastructure/database/cloudnative-pg/immich/overlays/recovery/kustomization.yaml | — | ~69 |
+| 23:17 | Created infrastructure/database/cloudnative-pg/immich/overlays/recovery/bootstrap-patch.yaml | — | ~215 |
+| 23:17 | Created infrastructure/database/cloudnative-pg/immich/kustomization.yaml | — | ~191 |
+| 23:17 | Created infrastructure/database/cloudnative-pg/khoj/kustomization.yaml | — | ~178 |
+| 23:17 | Created infrastructure/database/cloudnative-pg/khoj/base/kustomization.yaml | — | ~27 |
+| 23:17 | Created infrastructure/database/cloudnative-pg/khoj/base/cluster.yaml | — | ~521 |
+| 23:17 | Created infrastructure/database/cloudnative-pg/khoj/overlays/initdb/kustomization.yaml | — | ~68 |
+| 23:17 | Session end: 11 writes across 3 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml) | 7 reads | ~2331 tok |
+| 23:18 | Created infrastructure/database/cloudnative-pg/khoj/overlays/initdb/bootstrap-patch.yaml | — | ~208 |
+| 23:18 | Created infrastructure/database/cloudnative-pg/khoj/overlays/recovery/kustomization.yaml | — | ~68 |
+| 23:18 | Created infrastructure/database/cloudnative-pg/khoj/overlays/recovery/bootstrap-patch.yaml | — | ~212 |
+| 23:18 | Created infrastructure/database/cloudnative-pg/paperless/kustomization.yaml | — | ~181 |
+| 23:18 | Created infrastructure/database/cloudnative-pg/paperless/base/kustomization.yaml | — | ~27 |
+| 23:18 | Created infrastructure/database/cloudnative-pg/paperless/base/cluster.yaml | — | ~529 |
+| 23:18 | Created infrastructure/database/cloudnative-pg/paperless/overlays/initdb/kustomization.yaml | — | ~70 |
+| 23:18 | Created infrastructure/database/cloudnative-pg/paperless/overlays/initdb/bootstrap-patch.yaml | — | ~167 |
+| 23:18 | Created infrastructure/database/cloudnative-pg/paperless/overlays/recovery/kustomization.yaml | — | ~70 |
+| 23:18 | Created infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml | — | ~220 |
+| 23:18 | Created infrastructure/database/cloudnative-pg/temporal/kustomization.yaml | — | ~180 |
+| 23:18 | Created infrastructure/database/cloudnative-pg/temporal/base/kustomization.yaml | — | ~27 |
+| 23:18 | Created infrastructure/database/cloudnative-pg/temporal/base/cluster.yaml | — | ~407 |
+| 23:18 | Created infrastructure/database/cloudnative-pg/temporal/overlays/initdb/kustomization.yaml | — | ~70 |
+| 23:18 | Created infrastructure/database/cloudnative-pg/temporal/overlays/initdb/bootstrap-patch.yaml | — | ~87 |
+| 23:18 | Created infrastructure/database/cloudnative-pg/temporal/overlays/recovery/kustomization.yaml | — | ~70 |
+| 23:18 | Created infrastructure/database/cloudnative-pg/temporal/overlays/recovery/bootstrap-patch.yaml | — | ~225 |
+| 03:20 | diagnosed karakeep 403 — cloudflared stale QUIC/origin DNS; user fixed by killing pods | cloudflared deployment | resolved | ~8000 |
+| 23:19 | Session end: 28 writes across 3 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml) | 7 reads | ~5149 tok |
+| 23:19 | Session end: 28 writes across 3 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml) | 7 reads | ~5149 tok |
+| 23:23 | Session end: 28 writes across 3 files (kustomization.yaml, cluster.yaml, bootstrap-patch.yaml) | 8 reads | ~5820 tok |
+| 23:34 | Edited infrastructure/networking/cloudflared/config.yaml | inline fix | ~5 |
+| 23:34 | Created infrastructure/networking/cloudflared/restart-cronjob.yaml | — | ~532 |
+| 23:34 | Edited infrastructure/networking/cloudflared/kustomization.yaml | 4→5 lines | ~27 |
+| 03:25 | cloudflared: protocol quic→http2 + nightly rollout-restart CronJob | infrastructure/networking/cloudflared/{config.yaml,restart-cronjob.yaml,kustomization.yaml} | kustomize build OK | ~3500 |

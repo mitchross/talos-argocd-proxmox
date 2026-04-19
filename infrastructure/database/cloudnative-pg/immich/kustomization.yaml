@@ -1,3 +1,8 @@
+# immich CNPG database — root kustomization
+#
+# DR FEATURE FLAG — edit the active overlay to switch bootstrap mode.
+# See infrastructure/database/cloudnative-pg/gitea/kustomization.yaml
+# for the full DR runbook comment.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: cloudnative-pg
@@ -7,6 +12,7 @@ commonLabels:
 commonAnnotations:
   argocd.argoproj.io/sync-wave: "-5"
 resources:
-  - cluster.yaml
+  - overlays/recovery        # ← ACTIVE: restore from Barman at PITR pre-nuke
+  # - overlays/initdb        # swap to this for fresh DB (no recovery)
   - externalsecret.yaml
   - scheduled-backup.yaml
