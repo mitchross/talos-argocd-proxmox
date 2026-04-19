@@ -29,14 +29,6 @@ spec:
           http:
             endpoint: 0.0.0.0:4318
 
-      # Watch VPA recommendations as log events
-      k8sobjects:
-        objects:
-        - name: verticalpodautoscalers
-          mode: pull
-          interval: 5m
-          group: autoscaling.k8s.io
-
       # Cluster-wide metrics from K8s API (pod phases, deployments, restarts, node conditions)
       k8s_cluster:
         auth_type: serviceAccount

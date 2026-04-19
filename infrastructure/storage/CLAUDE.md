@@ -1,8 +1,5 @@
 # Storage Guidelines
 
-> **Required reading before modifying VPA or resource optimization:**
-> - `docs/vpa-resource-optimization.md` — VPA architecture, auto-scaling modes, Kyverno auto-generation policy
-
 ## Storage Classes
 
 | Class | Use Case |

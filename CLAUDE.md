@@ -182,6 +182,5 @@ Detailed instructions load automatically when working in these directories:
 - **[docs/network-topology.md](docs/network-topology.md)** - Network architecture details
 - **[docs/network-policy.md](docs/network-policy.md)** - Cilium network policies
 - **[docs/argocd.md](docs/argocd.md)** - ArgoCD documentation
-- **[docs/vpa-resource-optimization.md](docs/vpa-resource-optimization.md)** - VPA auto-scaling
 - **[docs/plans/2026-03-22-alloy-otel-honeycomb-design.md](docs/plans/2026-03-22-alloy-otel-honeycomb-design.md)** - OTEL + Honeycomb observability design
 - **[scripts/emergency-webhook-cleanup.sh](scripts/emergency-webhook-cleanup.sh)** - Emergency recovery from Kyverno webhook deadlock

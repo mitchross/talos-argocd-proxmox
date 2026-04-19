@@ -12,12 +12,10 @@ resources:
   - volsync-alerts.yaml # VolSync backup/restore alerts
   - dcgm-exporter.yaml # DCGM GPU monitoring
   - gpu-alerts.yaml # GPU alerting rules
-  - vpa-alerts.yaml # VPA resource recommendation alerts
   - gpu-dashboard.yaml # Grafana dashboard
   - network-policy.yaml # Allow Grafana to access Prometheus
   - frigate-dashboard.yaml # Frigate Grafana dashboard
   - loki-logs-dashboard.yaml # Custom Loki logs dashboard (uses OTEL labels)
-  - vpa-overview-dashboard.yaml # VPA human-readable resource sizing dashboard
   - solar-dashboard.yaml # Epever Solar MPPT dashboard
   - tapo-power-dashboard.yaml # Tapo smart plug power monitoring
 # Strategic merge patches to handle resource conflicts

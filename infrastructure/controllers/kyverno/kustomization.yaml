@@ -7,10 +7,6 @@ resources:
 - policies/volsync-pvc-backup-restore.yaml
 - policies/volsync-nfs-inject.yaml
 - policies/volsync-orphan-cleanup.yaml
-# NOTE: VPA policies moved to infrastructure/controllers/kyverno-vpa-policies/
-# They deploy at wave 4 (via infrastructure AppSet) after the VPA CRD exists.
-# Including them here (wave 3) causes Kyverno's webhook to reject them because
-# the VerticalPodAutoscaler CRD doesn't exist yet.
 helmCharts:
 - name: kyverno
   repo: https://kyverno.github.io/kyverno
