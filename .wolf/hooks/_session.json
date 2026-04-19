@@ -426,6 +426,11 @@
       "count": 1,
       "tokens": 488,
       "first_read": "2026-04-19T20:59:13.153Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/csi-driver-smb/storage-class.yaml": {
+      "count": 2,
+      "tokens": 1095,
+      "first_read": "2026-04-19T21:00:08.280Z"
     }
   },
   "files_written": [
@@ -1082,6 +1087,12 @@
       "action": "edit",
       "tokens": 48,
       "at": "2026-04-19T20:59:36.020Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/storage/csi-driver-smb/storage-class.yaml",
+      "action": "edit",
+      "tokens": 11,
+      "at": "2026-04-19T21:00:21.041Z"
     }
   ],
   "edit_counts": {
@@ -1142,11 +1153,12 @@
     "docs/plans/2026-04-19-followup-notes.md": 1,
     "my-apps/ai/perplexica/configmap.yaml": 1,
     "my-apps/ai/perplexica/deployment.yaml": 2,
-    "my-apps/ai/perplexica/kustomization.yaml": 1
+    "my-apps/ai/perplexica/kustomization.yaml": 1,
+    "infrastructure/storage/csi-driver-smb/storage-class.yaml": 1
   },
-  "anatomy_hits": 71,
+  "anatomy_hits": 72,
   "anatomy_misses": 13,
-  "repeated_reads_warned": 40,
+  "repeated_reads_warned": 41,
   "cerebrum_warnings": 0,
-  "stop_count": 40
+  "stop_count": 41
 }

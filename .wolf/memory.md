@@ -1138,3 +1138,5 @@
 | 16:59 | Edited my-apps/ai/perplexica/deployment.yaml | expanded (+43 lines) | ~598 |
 | 16:59 | Edited my-apps/ai/perplexica/deployment.yaml | expanded (+6 lines) | ~79 |
 | 16:59 | Edited my-apps/ai/perplexica/kustomization.yaml | 6→7 lines | ~48 |
+| 17:00 | Edited infrastructure/storage/csi-driver-smb/storage-class.yaml | removed 27 lines | ~11 |
+| 17:01 | Session end: 110 writes across 32 files (infrastructure-appset.yaml, values.yaml, kustomization.yaml, CLAUDE.md, deployment.yaml) | 86 reads | ~216742 tok |

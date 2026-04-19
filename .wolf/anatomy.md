@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T20:59:36.014Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T21:00:21.036Z
 > Files: 625 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
@@ -500,7 +500,7 @@
 - `external-secret.yaml` — K8s ExternalSecret: smbcreds (~191 tok)
 - `kustomization.yaml` — K8s Kustomization: csi-driver-smb (~122 tok)
 - `namespace.yaml` — K8s Namespace: csi-driver-smb (~79 tok)
-- `storage-class.yaml` — 10G SMB Storage Classes (192.168.10.133) - Optimized for 10G (~1095 tok)
+- `storage-class.yaml` — ============================================================================= (~924 tok)
 - `values.yaml` (~44 tok)
 
 ## infrastructure/storage/kopia-ui/
