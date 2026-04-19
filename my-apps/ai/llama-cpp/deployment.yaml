@@ -114,7 +114,8 @@ spec:
               nvidia.com/gpu: "1"
               ephemeral-storage: "50Gi"
             requests:
-              cpu: "8"
+              # User prefers higher reserved CPU for llama.cpp responsiveness.
+              cpu: "6"
               memory: 32Gi
               nvidia.com/gpu: "1"
               ephemeral-storage: "10Gi"
