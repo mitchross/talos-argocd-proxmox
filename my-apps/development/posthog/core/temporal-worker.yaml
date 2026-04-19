@@ -26,7 +26,7 @@ spec:
         feature.node.kubernetes.io/cpu-cpuid.AVX2: "true"
       containers:
         - name: temporal-django-worker
-          image: posthog/posthog:latest@sha256:f3b46e7c31fa9b3ecf21025713ea969f46faf167217bff7da0f351f5e52a7dfa
+          image: posthog/posthog:latest@sha256:9b518de9d2e7337848742240657368209b261a6b33074e3491c03b6dff7da5d3
           command:
             - ./bin/temporal-django-worker
           envFrom:
