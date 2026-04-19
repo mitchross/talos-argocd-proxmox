@@ -13,16 +13,26 @@ data:
   ENABLE_OLLAMA_API: "false"
 
   # Semantic Routing - Model Selection
-  # Primary model: Gemma 4 26B-A4B (general + vision + thinking)
-  DEFAULT_MODELS: "gemma4 - gemma4-26b"
+  # Qwen 3.6 handles everything — chat, coding, tool calls, AND vision
+  # (via the Unsloth mmproj-BF16.gguf projector loaded in llama-cpp).
+  DEFAULT_MODELS: "qwen3.6 - qwen3.6-35b-a3b"
   WHITELISTED_MODELS: ""
 
-  # Vision Models - tell Open WebUI which models support images
-  VISION_MODELS: "gemma4 - gemma4-26b"
+  # Vision Models — same Qwen 3.6 preset. Gemma 4 is still served by
+  # llama-cpp as a fallback you can pick manually, but it's not the
+  # default route anymore.
+  VISION_MODELS: "qwen3.6 - qwen3.6-35b-a3b"
 
-  # Default parameters (Gemma 4 Google recommended: temp=1.0, top_p=0.95, top_k=64)
-  CONTEXT_WINDOW: "16384"
-  TEMPERATURE: "1.0"
+  # Match llama-cpp's qwen3.6 ctx-size (65536 = 64K). The previous 16384
+  # value was the real cause of "tools timing out" — Open WebUI was
+  # trimming chat history and RAG chunks before they ever reached
+  # llama-cpp. With 64K here, every realistic payload goes through:
+  # Perplexica search results, OpenWebUI + RAG, Karakeep URLs all fit.
+  CONTEXT_WINDOW: "65536"
+  # Qwen 3.6 official "precise" sampling (temp=0.6, top_p=0.95, top_k=20).
+  # The top_k slot isn't settable here at the app level; llama-cpp picks
+  # it up from the preset.
+  TEMPERATURE: "0.6"
   TOP_P: "0.95"
   MIN_P: "0.0"
 
@@ -77,9 +87,11 @@ data:
   ENABLE_TOOLS: "True"
   # MCP proxies for tools, multi-tools, and Kiwix knowledge base
   OPENAPI_API_ENDPOINTS: "mcpo-time:http://mcpo.open-webui.svc.cluster.local:8000:mcp-demo-key;mcpo-multi:http://mcpo-multi.open-webui.svc.cluster.local:8001:mcp-multi-key;mcpo-kiwix:http://mcpo-kiwix.open-webui.svc.cluster.local:8002:mcp-kiwix-key"
-  # Use lightweight MoE for background tasks (title gen, tagging) - 3B active params
-  TASK_MODEL: "gemma4 - gemma4-26b"
-  TASK_MODEL_EXTERNAL: "gemma4 - gemma4-26b"
+  # Background tasks (title gen, tagging) use Qwen 3.6 nothink — same model
+  # weights as DEFAULT_MODELS so no VRAM swap, but skips thinking tokens so
+  # these short structured jobs return faster.
+  TASK_MODEL: "qwen3.6-nothink - qwen3.6-35b-a3b-nothink"
+  TASK_MODEL_EXTERNAL: "qwen3.6-nothink - qwen3.6-35b-a3b-nothink"
 
   # ---------------------------------------------------------------------------
   # Default System Prompt (Kiwix RAG)

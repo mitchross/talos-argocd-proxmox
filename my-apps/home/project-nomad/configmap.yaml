@@ -31,7 +31,8 @@ data:
   LLM_HOST: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
   LLM_API_KEY: "unused"
   # Benchmark model — must match a model ID from /v1/models
-  AI_BENCHMARK_MODEL: "general - qwen3.5"
+  # Qwen 3.6 think = best reasoning quality for Q&A benchmarking.
+  AI_BENCHMARK_MODEL: "qwen3.6 - qwen3.6-35b-a3b"
 
   # --- Embeddings / RAG ---
   # Dedicated embedding service (HuggingFace TEI with nomic-embed-text-v1.5)

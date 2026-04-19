@@ -40,7 +40,7 @@ spec:
             - "--models-preset"
             - "/config/presets.ini"
             - "-c"
-            - "65536"
+            - "65536"            # Default ctx when a preset doesn't override. 64K = ~2GB KV spill on a 24GB 3090, tolerable on 128GB RAM + downclocked CPU.
             - "-ngl"
             - "99"
             - "-fa"
@@ -67,10 +67,13 @@ spec:
             - "--port"
             - "8080"
           env:
-            - name: NVIDIA_VISIBLE_DEVICES
-              value: "all"
-            - name: CUDA_VISIBLE_DEVICES
-              value: "0"
+            # GPU selection is handled by the device plugin + CDI.
+            # Under whole-card allocation (time-slicing disabled) the plugin
+            # mounts exactly one physical GPU into this pod, and that card
+            # appears as device 0 inside the container. Do NOT set
+            # NVIDIA_VISIBLE_DEVICES or CUDA_VISIBLE_DEVICES — either one
+            # overrides the plugin's injection and causes the app to run
+            # on a different card than the one the scheduler allocated.
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: "compute,utility"
             - name: LLAMA_SET_ROWS

@@ -5,9 +5,23 @@
 This cluster uses **llama-cpp** (NOT ollama) for all local AI inference.
 - Endpoint: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080`
 - OpenAI-compatible API at `/v1`
-- Current model: **Qwen3.5-35B-A3B** (Q4_K_XL)
+- Primary model: **Qwen3.6-35B-A3B** (Unsloth UD-Q4_K_XL, multimodal via `mmproj-BF16.gguf`)
+- Fallbacks: Gemma 4 26B-A4B (multimodal) + Qwen 3.5 Uncensored
+- Full preset list (model IDs clients send in the `model` field): `my-apps/ai/llama-cpp/configmap.yaml`
 
 Always use llama-cpp when configuring AI backends for in-cluster tools.
+
+## GPU Topology
+
+Two RTX 3090s (24 GB each), dedicated split — one pod per card:
+- **GPU 0 → llama-cpp** (always-on, serves every AI-using app)
+- **GPU 1 → ComfyUI** (bursty, needs whole card for Wan 2.2 / Qwen-Image-Edit)
+
+Time-slicing is DISABLED (`time-slicing-config.yaml` has no sharing block)
+so the node advertises `nvidia.com/gpu: 2` and whole-card allocation is
+enforced. Don't set `NVIDIA_VISIBLE_DEVICES` or `CUDA_VISIBLE_DEVICES`
+in pod env — they override the device-plugin's CDI injection and steer
+the workload onto the wrong card.
 
 ## GPU Workload Pattern
 

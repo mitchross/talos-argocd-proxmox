@@ -1,3 +1,28 @@
+# GPU Device Plugin ConfigMap
+#
+# This config is consumed by the NVIDIA device plugin DaemonSet managed by
+# the GPU Operator. The Operator looks up this ConfigMap via
+# `devicePlugin.config.name` in the gpu-operator Helm values.
+#
+# Time-slicing is DISABLED (no `sharing.timeSlicing` block).
+# Rationale:
+#   - We have 2 physical RTX 3090s on this node.
+#   - We have exactly 2 long-lived GPU workloads:
+#         * llama-cpp (Qwen3.5-35B-A3B, ~21GB resident on GPU 0)
+#         * comfyui    (diffusion models, 10–20GB resident on GPU 1)
+#   - Every other "AI" app (Perplexica, Karakeep, Open WebUI, Project-Nomad,
+#     n8n, Homepage dashboard) calls llama-cpp's OpenAI-compatible HTTP API.
+#     None of them allocate their own GPU.
+#   - With time-slicing, two VRAM-heavy pods could land on the same card,
+#     fight over VRAM, and OOM. Whole-card allocation makes that impossible.
+#
+# Effect: node advertises `nvidia.com/gpu: 2` (one per physical card).
+# A pod requesting `nvidia.com/gpu: 1` gets an entire GPU; the second pod
+# is scheduled onto the other card. A third GPU-requesting pod Pends.
+#
+# Trade-off: our `llmfit` dual-GPU Job needs both cards and will block
+# while llama-cpp + comfyui are running. Scale comfyui/llama-cpp to 0
+# temporarily if you want to run llmfit.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -14,11 +39,13 @@ data:
         passDeviceSpecs: true
         deviceListStrategy: "volume-mounts"
         deviceIDStrategy: "uuid"
-    sharing:
-      timeSlicing:
-        resources:
-          - name: nvidia.com/gpu
-            replicas: 4
+    # No `sharing.timeSlicing` block — whole-card allocation, one pod per
+    # physical GPU. To re-enable time-slicing, add back:
+    #   sharing:
+    #     timeSlicing:
+    #       resources:
+    #         - name: nvidia.com/gpu
+    #           replicas: 4
     resources:
       nvidia.com/gpu:
         pattern: "*"

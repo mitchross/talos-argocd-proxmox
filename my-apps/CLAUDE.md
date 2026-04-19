@@ -237,7 +237,7 @@ components:
 | **Minimal app** | `my-apps/development/nginx/` |
 | **GPU workload** | `my-apps/ai/comfyui/` |
 | **Complex app with storage** | `my-apps/media/immich/` |
-| **PVC with automatic backup** | `my-apps/ai/khoj/pvc.yaml` |
+| **PVC with automatic backup** | `my-apps/home/project-zomboid/pvc.yaml` (see `zomboid-data`) |
 | **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
 | **Secret management** | Any app with `externalsecret.yaml` |
 | **Job with ArgoCD hooks** | `my-apps/development/posthog/core/jobs.yaml` |
