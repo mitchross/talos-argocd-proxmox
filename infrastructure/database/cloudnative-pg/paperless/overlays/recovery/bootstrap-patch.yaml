@@ -6,8 +6,12 @@ spec:
   bootstrap:
     recovery:
       source: paperless-recovery-source
-      recoveryTarget:
-        targetTime: "2026-04-16T23:59:59Z"
+      # No recoveryTarget → restore to latest-WAL available on S3.
+      # Our PITR target of pre-nuke (2026-04-16) is unreachable because
+      # paperless's WAL archiving broke on 2026-03-26 (last available WAL).
+      # We'll get paperless data as of 2026-03-26 instead of pre-nuke.
+      # TODO: investigate WHY WAL archiving stopped — check ScheduledBackup
+      # + CNPG operator logs around that date post-restore.
   externalClusters:
     - name: paperless-recovery-source
       barmanObjectStore:

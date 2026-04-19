@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T03:49:22.385Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T17:42:20.637Z
 > Files: 610 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
@@ -375,7 +375,7 @@
 
 ## infrastructure/database/cloudnative-pg/paperless/overlays/recovery/
 
-- `bootstrap-patch.yaml` — K8s Cluster (~220 tok)
+- `bootstrap-patch.yaml` — K8s Cluster (~322 tok)
 - `kustomization.yaml` — K8s Kustomization (~70 tok)
 
 ## infrastructure/database/cloudnative-pg/postgres-global-secrets/

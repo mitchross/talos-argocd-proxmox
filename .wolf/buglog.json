@@ -885,6 +885,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-19T03:34:37.390Z"
+    },
+    {
+      "id": "bug-055",
+      "timestamp": "2026-04-19T17:42:20.644Z",
+      "error_message": "Significant refactor of ",
+      "file": "infrastructure/database/cloudnative-pg/paperless/overlays/recovery/bootstrap-patch.yaml",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 11→15 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-19T17:42:20.644Z"
     }
   ]
 }
