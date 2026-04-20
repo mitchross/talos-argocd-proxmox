@@ -57,6 +57,11 @@ data:
     install_node "https://github.com/kijai/ComfyUI-WanVideoWrapper.git"
     install_node "https://github.com/PanicTitan/ComfyUI-Gallery.git"
     install_node "https://github.com/fidecastro/comfyui-llamacpp-client.git"
+    install_node "https://github.com/mit-han-lab/ComfyUI-nunchaku.git"
+    install_node "https://github.com/Zlata-Salyukova/Comfy-Canvas.git"
+    install_node "https://github.com/cubiq/ComfyUI_IPAdapter_plus.git"
+    install_node "https://github.com/welltop-cn/ComfyUI-TeaCache.git"
+    install_node "https://github.com/ltdrdata/ComfyUI-Inspire-Pack.git"
 
     # ── Python Dependencies ────────────────────────────────────
     # uv resolves quickly and skips already-installed; --link-mode copy avoids NFS hardlink warnings
@@ -66,6 +71,27 @@ data:
       colorama huggingface_hub \
       watchdog piexif aiohttp \
       pywavelets
+
+    # Nunchaku SVDQ runtime wheel (CUDA 13.0 + PyTorch 2.11, Ampere+)
+    # Required for ComfyUI-nunchaku node to load Qwen-Image / Qwen-Image-Edit SVDQ int4 weights.
+    # Wheel tag (cp312/cp313) is selected from the live Python so future megapak bumps don't break it.
+    echo "[INFO] Installing nunchaku wheel..."
+    if ! python3 -c "import nunchaku" 2>/dev/null; then
+      PYTAG="cp$(python3 -c 'import sys; print(f"{sys.version_info.major}{sys.version_info.minor}")')"
+      UV_LINK_MODE=copy uv pip install --system \
+        "https://github.com/nunchaku-ai/nunchaku/releases/download/v1.2.1/nunchaku-1.2.1+cu13.0torch2.11-${PYTAG}-${PYTAG}-linux_x86_64.whl"
+    else
+      echo "[SKIP] nunchaku already installed"
+    fi
+
+    # Custom-node Python requirements (idempotent; uv skips already-installed)
+    echo "[INFO] Installing custom-node deps..."
+    for d in Comfy-Canvas ComfyUI-nunchaku ComfyUI_IPAdapter_plus ComfyUI-TeaCache ComfyUI-Inspire-Pack; do
+      req="/root/ComfyUI/custom_nodes/$d/requirements.txt"
+      if [ -f "$req" ]; then
+        UV_LINK_MODE=copy uv pip install --system -r "$req" 2>&1 | tail -2 || true
+      fi
+    done
 
     # ── System Setup ───────────────────────────────────────────
     mkdir -p /usr/share/fonts/truetype
