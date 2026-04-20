@@ -1,0 +1,43 @@
+# Temporal Worker Controller (from Temporal themselves, Public Preview).
+#
+# What it does: replaces traditional Deployments for Temporal workers
+# with a `TemporalWorkerDeployment` CR that automates Worker Versioning
+# (https://docs.temporal.io/production-deployment/worker-deployments/worker-versioning).
+#
+# When you change the image on a TemporalWorkerDeployment, the controller:
+#   1. Registers the new version with the Temporal server
+#   2. Creates a new K8s Deployment for the new version
+#   3. Leaves the OLD Deployment running so in-flight "Pinned" workflows
+#      finish on their original code
+#   4. Routes NEW workflows and "AutoUpgrade" workflows to the new version
+#      progressively (percent-based ramp)
+#   5. Cleans up drained old versions automatically
+#
+# Eliminates the need for Temporal's Patching API in most cases.
+
+# cert-manager issues the webhook cert. Cluster already has cert-manager
+# (wave 4) and this is the Temporal-recommended path.
+certmanager:
+  install: false   # we already run cert-manager cluster-wide
+  enabled: true
+webhookCertificate:
+  certManager:
+    enabled: true
+
+controller:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Leader election is on by default; leave single-replica since this is
+# a homelab and the controller is idempotent on restart.
+
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true

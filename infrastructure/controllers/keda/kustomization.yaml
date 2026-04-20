@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: keda
+
+resources:
+  - namespace.yaml
+
+# KEDA v2.19.0 (Feb 2026). Ships with the Temporal external scaler out of
+# the box — no addon needed. Chart repo is the kedacore github.io index.
+helmCharts:
+  - name: keda
+    repo: https://kedacore.github.io/charts
+    # renovate: datasource=helm depName=keda registryUrl=https://kedacore.github.io/charts
+    version: 2.19.0
+    releaseName: keda
+    namespace: keda
+    includeCRDs: true
+    valuesFile: values.yaml
