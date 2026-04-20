@@ -247,11 +247,11 @@ data:
               ]
             }
           },
-          "title": "Est. Discharge",
+          "title": "Load Out (Est.)",
           "type": "stat",
           "targets": [
             {
-              "expr": "battery_bank_estimated_discharge_amps",
+              "expr": "load_amps_out_estimated",
               "legendFormat": "Amps"
             }
           ]
@@ -934,12 +934,12 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "battery_bank_charge_power_watts",
+              "expr": "solar_watts_in",
               "legendFormat": "Solar In"
             },
             {
-              "expr": "battery_bank_discharge_power_watts",
-              "legendFormat": "Discharge Out"
+              "expr": "load_watts_out_estimated",
+              "legendFormat": "Load Out (Est.)"
             },
             {
               "expr": "battery_bank_net_power_watts",
@@ -1035,20 +1035,24 @@ data:
               "placement": "bottom"
             }
           },
-          "title": "Current: Charge vs Discharge",
+          "title": "Current: Solar In vs Load Out (Est.)",
           "type": "timeseries",
           "targets": [
             {
-              "expr": "battery_bank_estimated_charge_amps",
-              "legendFormat": "Charge (MPPT)"
+              "expr": "solar_amps_in",
+              "legendFormat": "Solar In (A)"
             },
             {
-              "expr": "battery_bank_estimated_discharge_amps",
-              "legendFormat": "Discharge (est. 3x)"
+              "expr": "load_amps_out_estimated",
+              "legendFormat": "Load Out Est. (A)"
             },
             {
-              "expr": "daly_bms_current_amps * -1",
-              "legendFormat": "Daly Raw"
+              "expr": "bank_net_amps_estimated",
+              "legendFormat": "Bank Net Est. (A)"
+            },
+            {
+              "expr": "daly_bms_current_amps",
+              "legendFormat": "Daly Raw (A)"
             }
           ]
         },
