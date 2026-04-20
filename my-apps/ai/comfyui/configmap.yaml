@@ -62,6 +62,9 @@ data:
     install_node "https://github.com/cubiq/ComfyUI_IPAdapter_plus.git"
     install_node "https://github.com/welltop-cn/ComfyUI-TeaCache.git"
     install_node "https://github.com/ltdrdata/ComfyUI-Inspire-Pack.git"
+    # Provides NunchakuQwenImageLoraStackV3 used by QuantFunc's Qwen SVDQ workflows.
+    # Upstream mit-han-lab/ComfyUI-nunchaku only ships the Flux LoRA nodes, not Qwen.
+    install_node "https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader.git"
 
     # ── Python Dependencies ────────────────────────────────────
     # uv resolves quickly and skips already-installed; --link-mode copy avoids NFS hardlink warnings
@@ -91,7 +94,7 @@ data:
 
     # Custom-node Python requirements — install into py3.13 so ComfyUI can import them.
     echo "[INFO] Installing custom-node deps into py3.13..."
-    for d in Comfy-Canvas ComfyUI-nunchaku ComfyUI_IPAdapter_plus ComfyUI-TeaCache ComfyUI-Inspire-Pack; do
+    for d in Comfy-Canvas ComfyUI-nunchaku ComfyUI_IPAdapter_plus ComfyUI-TeaCache ComfyUI-Inspire-Pack ComfyUI-QwenImageLoraLoader; do
       req="/root/ComfyUI/custom_nodes/$d/requirements.txt"
       if [ -f "$req" ]; then
         $PY313 -m pip install --no-cache-dir --root-user-action=ignore -r "$req" 2>&1 | tail -2 || true
@@ -107,6 +110,36 @@ data:
     # Bump this when the backend (via megapak image) moves forward.
     echo "[INFO] Pinning comfyui_frontend_package==1.42.11 in py3.13..."
     $PY313 -m pip install --no-cache-dir --root-user-action=ignore "comfyui_frontend_package==1.42.11" 2>&1 | tail -2 || true
+
+    # ── Opinionated UI defaults (GitOps-reproducible) ──────────
+    # Merges specific keys into /root/ComfyUI/user/default/comfy.settings.json
+    # without touching any other keys you've set via the UI. Runs every boot,
+    # so changes here take effect on pod restart. Remove a key from the merge
+    # block to let the UI fully own it again.
+    SETTINGS=/root/ComfyUI/user/default/comfy.settings.json
+    mkdir -p "$(dirname $SETTINGS)"
+    [ -f "$SETTINGS" ] || echo "{}" > "$SETTINGS"
+    $PY313 <<'PYSETTINGS'
+import json, pathlib
+p = pathlib.Path("/root/ComfyUI/user/default/comfy.settings.json")
+data = json.loads(p.read_text() or "{}")
+overrides = {
+    # Hide API pricing badges on cloud nodes — this cluster runs fully local.
+    "Comfy.NodeBadge.ShowApiPricing": False,
+    # Live sampler preview using tiny autoencoder — keeps generation interactive.
+    "Comfy.Execution.PreviewMethod": "taesd",
+}
+changed = False
+for k, v in overrides.items():
+    if data.get(k) != v:
+        data[k] = v
+        changed = True
+        print(f"[settings] {k} = {v}")
+if changed:
+    p.write_text(json.dumps(data, indent=4))
+else:
+    print("[settings] already up-to-date")
+PYSETTINGS
 
     # ── System Setup ───────────────────────────────────────────
     mkdir -p /usr/share/fonts/truetype
