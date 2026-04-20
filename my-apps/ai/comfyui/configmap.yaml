@@ -93,6 +93,12 @@ data:
       fi
     done
 
+    # Keep comfyui_frontend_package current — the megapak image can ship a
+    # frontend one patch behind upstream, which breaks subgraph blueprint loading
+    # on newer WanVideoWrapper example workflows.
+    echo "[INFO] Upgrading comfyui_frontend_package..."
+    UV_LINK_MODE=copy uv pip install --system -U comfyui_frontend_package 2>&1 | tail -2 || true
+
     # ── System Setup ───────────────────────────────────────────
     mkdir -p /usr/share/fonts/truetype
 
