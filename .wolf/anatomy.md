@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-19T21:00:21.036Z
-> Files: 625 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-20T01:45:26.622Z
+> Files: 626 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
 
@@ -247,7 +247,7 @@
 - `cluster-policy.yaml` — K8s ClusterPolicy: cluster-policy (~170 tok)
 - `external-secret.yaml` — K8s ExternalSecret: nvidia-api-key (~268 tok)
 - `hook-sa.yaml` — Workaround: The gpu-operator Helm chart (v25.10.1) renders its upgrade-crd (~583 tok)
-- `kustomization.yaml` — K8s Kustomization (~1015 tok)
+- `kustomization.yaml` — K8s Kustomization (~1130 tok)
 - `namespace.yaml` — K8s Namespace: gpu-operator (~36 tok)
 - `powerlimit-daemonset.yaml` — GPU Power-Limit DaemonSet (~1185 tok)
 - `preinstalled-validation-daemonset.yaml` — K8s DaemonSet: nvidia-preinstalled-validation-markers (~408 tok)
@@ -612,7 +612,7 @@
 
 ## my-apps/ai/comfyui/
 
-- `configmap.yaml` — K8s ConfigMap (~3678 tok)
+- `configmap.yaml` — K8s ConfigMap (~4110 tok)
 - `deployment.yaml` — K8s Deployment (~993 tok)
 - `download-models-job.yaml` — K8s Job: comfyui-download-models (~1445 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: comfyui-secrets (~132 tok)
@@ -675,7 +675,7 @@
 ## my-apps/ai/perplexica/
 
 - `configmap.yaml` — Perplexica config seed (GitOps source of truth for model providers). (~654 tok)
-- `deployment.yaml` — K8s Deployment (~1053 tok)
+- `deployment.yaml` — K8s Deployment (~1160 tok)
 - `httproute.yaml` — K8s HTTPRoute: perplexica-route (~129 tok)
 - `kustomization.yaml` — K8s Kustomization (~73 tok)
 - `namespace.yaml` — K8s Namespace: perplexica (~18 tok)
@@ -921,7 +921,7 @@
 - `httproute.yaml` — K8s HTTPRoute: temporal-web (~146 tok)
 - `kustomization.yaml` — K8s Kustomization (~173 tok)
 - `namespace.yaml` — K8s Namespace: temporal (~17 tok)
-- `values.yaml` (~588 tok)
+- `values.yaml` (~691 tok)
 
 ## my-apps/development/vert/
 
@@ -1072,6 +1072,7 @@
 ## scripts/
 
 - `bootstrap-argocd.sh` (~1497 tok)
+- `build-push-custom-apps.sh` — Build and push the two custom app images we maintain in this repo. (~702 tok)
 - `cnpg-recovery.sh` — CNPG Disaster Recovery — interactive driver for docs/cnpg-disaster-recovery.md (~2946 tok)
 
 ## scripts/dr/
