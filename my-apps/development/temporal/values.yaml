@@ -23,6 +23,11 @@ server:
             driverName: postgres12
             databaseName: temporal
             connectAddr: "temporal-database-rw.cloudnative-pg.svc.cluster.local:5432"
+            # Temporal server 1.28+ refuses to boot without this —
+            # chart v1.1.1 doesn't set it by default, which is why every
+            # frontend/history/matching/worker pod was CrashLooping with
+            # `Persistence.DataStores[...].SQL.ConnectProtocol: zero value`.
+            connectProtocol: "tcp"
             user: temporal
             existingSecret: temporal-db-secret
             secretKey: password
@@ -34,6 +39,7 @@ server:
             driverName: postgres12
             databaseName: temporal_visibility
             connectAddr: "temporal-database-rw.cloudnative-pg.svc.cluster.local:5432"
+            connectProtocol: "tcp"
             user: temporal
             existingSecret: temporal-db-secret
             secretKey: password
