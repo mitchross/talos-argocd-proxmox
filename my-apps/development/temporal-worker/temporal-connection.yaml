@@ -1,0 +1,18 @@
+# TemporalConnection — the Temporal Worker Controller's way of describing
+# "how to reach our Temporal server" as a reusable CR that TemporalWorkerDeployment
+# references by name. Self-hosted (no mTLS) since our frontend is a plain
+# in-cluster Service on port 7233.
+#
+# This resource is always safe to apply — it describes a target, not a workload.
+apiVersion: temporal.io/v1alpha1
+kind: TemporalConnection
+metadata:
+  name: cluster-temporal
+  namespace: temporal-worker
+spec:
+  hostPort: "temporal-frontend.temporal.svc.cluster.local:7233"
+  # No mutualTLSSecretRef — our self-hosted frontend has no auth configured.
+  # If you later add mTLS (recommended for production), create a Secret with
+  # tls.crt + tls.key + ca.crt and set:
+  #   mutualTLSSecretRef:
+  #     name: temporal-cluster-mtls

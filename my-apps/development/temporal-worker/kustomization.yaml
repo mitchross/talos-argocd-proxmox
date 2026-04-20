@@ -2,4 +2,11 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - namespace.yaml
-  - deployment.yaml
+  - temporal-connection.yaml         # CR describing how to reach our Temporal frontend
+  - temporal-worker-deployment.yaml  # TemporalWorkerDeployment — replaces classic Deployment
+
+# NOTE: the old classic `apps/v1 Deployment` and its KEDA ScaledObject
+# were retired when we cut over to Temporal Worker Versioning. If you
+# want queue-backlog autoscaling back, ship a `WorkerResourceTemplate`
+# that wraps an HPA targeting `ApproximateBacklogCount` — see
+# https://github.com/temporalio/temporal-worker-controller/blob/main/examples/wrt-hpa-backlog.yaml

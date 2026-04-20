@@ -15,6 +15,7 @@ Temporal concepts demonstrated:
 import asyncio
 import json
 import logging
+import os
 import re
 import xml.etree.ElementTree as ET
 from datetime import timedelta
@@ -23,9 +24,13 @@ from dataclasses import dataclass
 import httpx
 from temporalio import activity, workflow
 from temporalio.client import Client
-from temporalio.worker import Worker
+from temporalio.common import RetryPolicy, VersioningBehavior
+from temporalio.worker import (
+    Worker,
+    WorkerDeploymentConfig,
+    WorkerDeploymentVersion,
+)
 from temporalio.worker.workflow_sandbox import SandboxedWorkflowRunner, SandboxRestrictions
-from temporalio.common import RetryPolicy
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -221,7 +226,12 @@ async def generate_digest_headline(digest_info: dict) -> str:
 # Workflow
 # ──────────────────────────────────────────────
 
-@workflow.defn
+# versioning_behavior=AUTO_UPGRADE means: when a new worker version is
+# deployed, already-running workflows migrate to the new code on their
+# next workflow task. Fine for short, idempotent pipelines like this
+# digest — swap to VersioningBehavior.PINNED for long-running workflows
+# whose state would break if code shape changes mid-execution.
+@workflow.defn(versioning_behavior=VersioningBehavior.AUTO_UPGRADE)
 class NewsDigestWorkflow:
     """
     AI-powered news digest pipeline.
@@ -329,11 +339,25 @@ class NewsDigestWorkflow:
 # ──────────────────────────────────────────────
 
 async def main():
-    logger.info("Connecting to Temporal...")
-    client = await Client.connect(
-        "temporal-frontend.temporal.svc.cluster.local:7233",
-        namespace="default",
+    # The Temporal Worker Controller (infrastructure/controllers/
+    # temporal-worker-controller/) injects these env vars into every Pod
+    # it creates. We require them — if you run this worker outside the
+    # controller (e.g. local dev), set them manually:
+    #
+    #   export TEMPORAL_ADDRESS=127.0.0.1:7233
+    #   export TEMPORAL_NAMESPACE=default
+    #   export TEMPORAL_DEPLOYMENT_NAME=news-digest
+    #   export TEMPORAL_WORKER_BUILD_ID=local-dev
+    address = os.environ["TEMPORAL_ADDRESS"]
+    namespace = os.environ["TEMPORAL_NAMESPACE"]
+    deployment_name = os.environ["TEMPORAL_DEPLOYMENT_NAME"]
+    build_id = os.environ["TEMPORAL_WORKER_BUILD_ID"]
+
+    logger.info(
+        f"Connecting to Temporal at {address} (namespace={namespace}, "
+        f"deployment={deployment_name}, build={build_id})"
     )
+    client = await Client.connect(address, namespace=namespace)
 
     logger.info("Starting worker on task queue: news-digest")
     worker = Worker(
@@ -343,6 +367,17 @@ async def main():
         activities=[fetch_feed, summarize_article, generate_digest_headline],
         workflow_runner=SandboxedWorkflowRunner(
             restrictions=SandboxRestrictions.default.with_passthrough_modules("httpx"),
+        ),
+        # Enrolls this worker in Temporal Worker Versioning. The controller
+        # manages version registration + traffic routing on the server side;
+        # all this code does is declare "I am version <build_id> of deployment
+        # <deployment_name>".
+        deployment_config=WorkerDeploymentConfig(
+            version=WorkerDeploymentVersion(
+                deployment_name=deployment_name,
+                build_id=build_id,
+            ),
+            use_worker_versioning=True,
         ),
     )
 

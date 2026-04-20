@@ -1,0 +1,5 @@
+# Intentionally empty — the temporal-worker-controller-crds chart has no
+# tunable values, but Kustomize's helmCharts block requires a valuesFile.
+# Creating this stub so the render pipeline doesn't error with
+# "evalsymlink failure on ... values.yaml".
+{}

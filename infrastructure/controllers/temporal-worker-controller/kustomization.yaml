@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: temporal-worker-controller
+
+resources:
+  - namespace.yaml
+
+# Temporal ships two OCI charts: one for CRDs (upgradeable independently)
+# and one for the controller itself. We declare both here.
+#
+# CRDs:
+#   - temporal.io/v1alpha1 / TemporalWorkerDeployment
+#   - temporal.io/v1alpha1 / WorkerResourceTemplate
+#
+# Chart repo is docker.io OCI — Kustomize supports `oci://` in helmCharts.
+helmCharts:
+  # Chart version (0.24.x) is separate from controller app version (v1.5.x).
+  # These are the CHART tags — the controller image itself is pinned inside
+  # the chart values.
+  - name: temporal-worker-controller-crds
+    repo: oci://docker.io/temporalio
+    # renovate: datasource=docker depName=docker.io/temporalio/temporal-worker-controller-crds
+    version: 0.24.1
+    releaseName: temporal-worker-controller-crds
+    namespace: temporal-worker-controller
+    includeCRDs: true
+    # CRDs chart ships no values.yaml but kustomize insists on reading
+    # one; crds-values.yaml is an empty stub to satisfy the pipeline.
+    valuesFile: crds-values.yaml
+  - name: temporal-worker-controller
+    repo: oci://docker.io/temporalio
+    # renovate: datasource=docker depName=docker.io/temporalio/temporal-worker-controller
+    version: 0.24.1
+    releaseName: temporal-worker-controller
+    namespace: temporal-worker-controller
+    valuesFile: values.yaml

@@ -72,32 +72,41 @@ data:
       watchdog piexif aiohttp \
       pywavelets
 
+    # ComfyUI runs under /usr/bin/python3.13 on this megapak image, while
+    # the default `python3` / `uv pip install --system` targets py3.12. Any
+    # package ComfyUI has to import (wheels, frontend package) must go into
+    # py3.13 explicitly — use the full path and python3.13 -m pip.
+    PY313=/usr/bin/python3.13
+    PYTAG="cp$($PY313 -c 'import sys; print(f"{sys.version_info.major}{sys.version_info.minor}")')"
+
     # Nunchaku SVDQ runtime wheel (CUDA 13.0 + PyTorch 2.11, Ampere+)
     # Required for ComfyUI-nunchaku node to load Qwen-Image / Qwen-Image-Edit SVDQ int4 weights.
-    # Wheel tag (cp312/cp313) is selected from the live Python so future megapak bumps don't break it.
-    echo "[INFO] Installing nunchaku wheel..."
-    if ! python3 -c "import nunchaku" 2>/dev/null; then
-      PYTAG="cp$(python3 -c 'import sys; print(f"{sys.version_info.major}{sys.version_info.minor}")')"
-      UV_LINK_MODE=copy uv pip install --system \
+    echo "[INFO] Installing nunchaku wheel into py3.13 (${PYTAG})..."
+    if ! $PY313 -c "import nunchaku" 2>/dev/null; then
+      $PY313 -m pip install --no-cache-dir --root-user-action=ignore \
         "https://github.com/nunchaku-ai/nunchaku/releases/download/v1.2.1/nunchaku-1.2.1+cu13.0torch2.11-${PYTAG}-${PYTAG}-linux_x86_64.whl"
     else
-      echo "[SKIP] nunchaku already installed"
+      echo "[SKIP] nunchaku already installed in py3.13"
     fi
 
-    # Custom-node Python requirements (idempotent; uv skips already-installed)
-    echo "[INFO] Installing custom-node deps..."
+    # Custom-node Python requirements — install into py3.13 so ComfyUI can import them.
+    echo "[INFO] Installing custom-node deps into py3.13..."
     for d in Comfy-Canvas ComfyUI-nunchaku ComfyUI_IPAdapter_plus ComfyUI-TeaCache ComfyUI-Inspire-Pack; do
       req="/root/ComfyUI/custom_nodes/$d/requirements.txt"
       if [ -f "$req" ]; then
-        UV_LINK_MODE=copy uv pip install --system -r "$req" 2>&1 | tail -2 || true
+        $PY313 -m pip install --no-cache-dir --root-user-action=ignore -r "$req" 2>&1 | tail -2 || true
       fi
     done
 
-    # Keep comfyui_frontend_package current — the megapak image can ship a
-    # frontend one patch behind upstream, which breaks subgraph blueprint loading
-    # on newer WanVideoWrapper example workflows.
-    echo "[INFO] Upgrading comfyui_frontend_package..."
-    UV_LINK_MODE=copy uv pip install --system -U comfyui_frontend_package 2>&1 | tail -2 || true
+    # Pin comfyui_frontend_package to the backend's recommended patch (1.42.11).
+    # The megapak image ships 1.42.10, which produces a "Failed to load subgraph
+    # blueprints" error on newer WanVideoWrapper example workflows. Upgrading
+    # past the backend's supported line (e.g. 1.43.x) breaks Vue bootstrap
+    # entirely ("Loading Error — A required resource failed to load") because
+    # ComfyUI backend 0.19.x isn't on that major yet — so we pin exactly.
+    # Bump this when the backend (via megapak image) moves forward.
+    echo "[INFO] Pinning comfyui_frontend_package==1.42.11 in py3.13..."
+    $PY313 -m pip install --no-cache-dir --root-user-action=ignore "comfyui_frontend_package==1.42.11" 2>&1 | tail -2 || true
 
     # ── System Setup ───────────────────────────────────────────
     mkdir -p /usr/share/fonts/truetype

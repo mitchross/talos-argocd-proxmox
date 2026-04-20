@@ -1,0 +1,65 @@
+# TemporalWorkerDeployment — managed by the Temporal Worker Controller
+# (infrastructure/controllers/temporal-worker-controller/). Replaces the
+# classic `apps/v1 Deployment` with a CR that automates Temporal Worker
+# Versioning for safe blue/green rollouts of workflow worker code.
+#
+# On image bump the controller:
+#   1. Registers the new build_id with the Temporal server
+#   2. Creates a NEW `apps/v1 Deployment` (and new Pods) for that version
+#   3. Leaves the old Deployment running for any PINNED workflows still
+#      executing on it
+#   4. Ramps new-workflow (and AUTO_UPGRADE) traffic onto the new version
+#      per the `rollout` steps below
+#   5. Scales down + deletes the old version once `sunset.scaledownDelay`
+#      passes with zero pinned work left
+#
+# The app/worker.py enrolls itself in versioning via
+# `WorkerDeploymentConfig(version=WorkerDeploymentVersion(...))`, reading
+# the `TEMPORAL_DEPLOYMENT_NAME` / `TEMPORAL_WORKER_BUILD_ID` env vars
+# that the controller injects into every Pod.
+apiVersion: temporal.io/v1alpha1
+kind: TemporalWorkerDeployment
+metadata:
+  name: news-digest
+  namespace: temporal-worker
+spec:
+  replicas: 1
+  workerOptions:
+    connectionRef:
+      name: cluster-temporal      # references temporal-connection.yaml
+    temporalNamespace: default
+  rollout:
+    # Progressive: ramp new-workflow traffic to the new version in steps,
+    # pausing between each. Homelab defaults — tune for prod.
+    strategy: Progressive
+    steps:
+      - rampPercentage: 10
+        pauseDuration: 2m
+      - rampPercentage: 50
+        pauseDuration: 5m
+      # final 100% is implicit when the last step finishes
+  sunset:
+    # Once the new version owns 100% of new work, how long to keep the old
+    # version running (so Pinned workflows still in flight can finish), and
+    # how long after scale-down before deleting its resources.
+    scaledownDelay: 10m
+    deleteDelay: 1h
+  template:
+    metadata:
+      labels:
+        app: temporal-worker
+    spec:
+      containers:
+        - name: worker
+          image: registry.vanillax.me/temporal-worker:latest
+          imagePullPolicy: Always
+          # Controller injects TEMPORAL_ADDRESS, TEMPORAL_NAMESPACE,
+          # TEMPORAL_DEPLOYMENT_NAME, TEMPORAL_WORKER_BUILD_ID automatically
+          # — do not set them here.
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi

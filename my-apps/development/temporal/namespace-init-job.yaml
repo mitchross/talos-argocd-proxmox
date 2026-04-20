@@ -1,0 +1,49 @@
+# Seeds Temporal user namespaces at deploy time via GitOps, so a rebuild
+# of Temporal (or a fresh PGDATA restore) doesn't leave the cluster with
+# only `temporal-system`.
+#
+# The shell script lives in scripts/seed-namespaces.sh and is loaded into
+# a ConfigMap by the `configMapGenerator` in kustomization.yaml. Mounted
+# here at /scripts/seed-namespaces.sh.
+#
+# Hook mechanics:
+#   - PostSync: runs AFTER the server Deployments are applied so the
+#     frontend is reachable when the script probes it.
+#   - BeforeHookCreation: prior attempts are deleted on re-sync (K8s Jobs
+#     are immutable).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: temporal-namespace-seed
+  namespace: temporal
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+  labels:
+    app.kubernetes.io/name: temporal-namespace-seed
+    app.kubernetes.io/part-of: temporal
+spec:
+  backoffLimit: 20
+  ttlSecondsAfterFinished: 3600   # keep 1h so `kubectl logs` still works post-success
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: temporal-namespace-seed
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: seed
+          image: temporalio/admin-tools:1.30.3
+          command: ["/bin/sh", "/scripts/seed-namespaces.sh"]
+          volumeMounts:
+            - name: seed-script
+              mountPath: /scripts
+              readOnly: true
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits:   { cpu: 200m, memory: 128Mi }
+      volumes:
+        - name: seed-script
+          configMap:
+            name: temporal-seed-scripts
+            defaultMode: 0555   # readable + executable
