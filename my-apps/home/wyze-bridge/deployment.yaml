@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: wyze-bridge
-        image: ghcr.io/idisposable/docker-wyze-bridge:3.12.3
+        image: ghcr.io/idisposable/docker-wyze-bridge:4.3.0
         imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:
