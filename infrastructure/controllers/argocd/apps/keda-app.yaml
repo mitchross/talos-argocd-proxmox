@@ -1,0 +1,42 @@
+# KEDA — standalone Application (not via AppSet).
+#
+# Standalone because the infrastructure AppSet's sync history is currently
+# tangled with repo-server caching (adding paths to the AppSet generator
+# wasn't getting reflected live; Argo kept reverting the update). Direct
+# Application manifest dodges that path entirely — identical pattern to
+# kyverno-app.yaml, longhorn-app.yaml, volsync-app.yaml.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: keda
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+  labels:
+    app.kubernetes.io/part-of: infrastructure
+spec:
+  project: infrastructure
+  revisionHistoryLimit: 3
+  source:
+    repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+    targetRevision: main
+    path: infrastructure/controllers/keda
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: keda
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+      - Replace=false
+    retry:
+      limit: -1
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 10m

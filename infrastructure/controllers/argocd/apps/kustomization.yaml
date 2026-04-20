@@ -14,9 +14,17 @@ resources:
   - pvc-plumber-app.yaml   # Wave 2 - Backup existence checker for restore
   - kyverno-app.yaml       # Wave 3 - Policy engine (must be healthy before apps create PVCs)
   - cnpg-barman-plugin-app.yaml # Wave 3 - Barman Cloud Plugin (before CNPG Clusters in Wave 4)
+  - keda-app.yaml          # Wave 4 - Event-driven autoscaler
+  - temporal-worker-controller-app.yaml # Wave 4 - Worker Versioning for Temporal workers
   # ApplicationSets for automatic discovery
   - infrastructure-appset.yaml  # Wave 4
   - database-appset.yaml        # Wave 4 - Database operators/instances (selfHeal: false for DR)
-  - opentelemetry-operator-app.yaml # Wave 5 - OTEL (needs cert-manager from Wave 4)
+  # opentelemetry-operator-app.yaml — TEMPORARILY REMOVED 2026-04-20.
+  # otel-gateway-collector was in CrashLoopBackOff for 9h+ on a Cilium
+  # "operation not permitted" network error, jamming root sync and
+  # preventing new infra (KEDA, TWC) from being applied. Will re-add
+  # once the gateway issue is resolved (likely a NetworkPolicy / Cilium
+  # identity problem around the collector targets — Loki/Tempo svc IPs).
+  # - opentelemetry-operator-app.yaml
   - monitoring-appset.yaml      # Wave 5
   - my-apps-appset.yaml         # Wave 6
