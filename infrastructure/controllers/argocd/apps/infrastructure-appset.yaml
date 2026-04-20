@@ -20,15 +20,12 @@ spec:
       # CDI-based driver/toolkit shipped by Talos system extensions.
       - path: infrastructure/controllers/nvidia-gpu-operator
       - path: infrastructure/controllers/metrics-server
-      # KEDA — event-driven autoscaler. Temporal workers scale on Task
-      # Queue backlog via the built-in temporal scaler (CPU/memory metrics
-      # don't reflect real load for workers). Also usable for any other
-      # app that needs scale-to-zero / queue-driven scaling.
-      - path: infrastructure/controllers/keda
-      # Temporal Worker Controller — provides `TemporalWorkerDeployment`
-      # CR that automates Temporal Worker Versioning (blue/green for
-      # workflow workers, pinned vs auto-upgrade workflows).
-      - path: infrastructure/controllers/temporal-worker-controller
+      # NOTE: keda and temporal-worker-controller are NOT listed here.
+      # They have dedicated standalone Applications at Wave 4
+      # (keda-app.yaml, temporal-worker-controller-app.yaml) because
+      # adding them via this AppSet hit a repo-server render-cache loop
+      # where Argo kept reverting the new generator paths (see git log
+      # around 2026-04-20). Standalone Applications dodge that entirely.
       # NOTE: opentelemetry-operator is NOT listed here
       # It has a dedicated standalone Application at Wave 5 (opentelemetry-operator-app.yaml)
       # to ensure cert-manager (Wave 4) is ready for webhook certificates
