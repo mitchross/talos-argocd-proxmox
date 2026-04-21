@@ -122,9 +122,8 @@
       versioning: 'regex:^(?<major>\\d{4})\\.(?<minor>\\d{1,2})\\.(?<patch>\\d{1,2})-[a-f0-9]+$',
     },
     {
-      description: 'PostHog app images: group all digest updates into one PR (images must stay in sync)',
+      description: 'PostHog app images: group sidecar digest updates into one PR (Rust services can stay current)',
       matchPackageNames: [
-        'posthog/posthog',
         'posthog/posthog-node',
         'ghcr.io/posthog/posthog/capture',
         'ghcr.io/posthog/posthog/property-defs-rs',
@@ -138,6 +137,12 @@
       automerge: true,
       automergeType: 'branch',
       schedule: ['every weekend'],
+    },
+    {
+      description: 'PostHog MONOLITH (posthog/posthog): do NOT auto-bump. Requires ClickHouse-side config changes per release (named collections, satellite clusters, etc.) that our self-hosted config drifts from. 2026-04-19: the `9b518de` auto-merge broke migrate_clickhouse for a full day because upstream 0227_warpstream migration required a `warpstream_calculated_events` named collection our CH config lacked. Manually bump after checking PostHog/posthog/docker/clickhouse/config.d/default.xml for any new named_collections / remote_servers / storage_policies our config.d/default.xml is missing.',
+      matchPackageNames: ['posthog/posthog'],
+      matchFileNames: ['my-apps/development/posthog/**'],
+      enabled: false,
     },
     {
       description: 'PostHog data layer: disable auto-updates (versions must match PostHog docker-compose.base.yml)',

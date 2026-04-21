@@ -1630,6 +1630,38 @@
       "related_bugs": [],
       "occurrences": 2,
       "last_seen": "2026-04-20T23:48:48.596Z"
+    },
+    {
+      "id": "bug-101",
+      "timestamp": "2026-04-21T00:39:11.034Z",
+      "error_message": "Significant refactor of ",
+      "file": "my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 16→35 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "xml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-21T00:39:11.034Z"
+    },
+    {
+      "id": "bug-102",
+      "timestamp": "2026-04-21T05:20:20.267Z",
+      "error_message": "Significant refactor of ",
+      "file": ".github/renovate.json5",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 18→23 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "json5"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-21T05:20:20.267Z"
     }
   ]
 }

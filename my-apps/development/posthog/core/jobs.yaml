@@ -80,7 +80,18 @@ spec:
         feature.node.kubernetes.io/cpu-cpuid.AVX2: "true"
       containers:
       - name: migrate
-        image: posthog/posthog:latest@sha256:9b518de9d2e7337848742240657368209b261a6b33074e3491c03b6dff7da5d3
+        # Pinned to a SHA from 2026-04-05 (4 days BEFORE the 0227_warpstream
+        # ClickHouse migration was added upstream on 2026-04-09 in commit
+        # fccbc6b92e, PR #53820). Newer builds require ClickHouse-side
+        # `warpstream_*` named collections that only exist in PostHog's
+        # managed-Cloud WarpStream infra — self-hosted doesn't ship with
+        # them, so `migrate_clickhouse` hits `DB::Exception: There is no
+        # named collection 'warpstream_calculated_events'` and cascades
+        # into BackoffLimitExceeded + stuck Argo sync hook.
+        # See docs/plans/2026-04-21-posthog-upstream-drift.md for the plan
+        # to track what PostHog self-hosted actually supports and bump
+        # deliberately (not via Renovate auto-merge on `latest`).
+        image: posthog/posthog:latest@sha256:334b0b6a604d0cde5f48af199bac141b26f8867ed2f6fd77435cf859a9537d76
         command:
         - /bin/sh
         - -c

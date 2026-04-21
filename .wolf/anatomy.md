@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-20T23:49:19.564Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-21T05:20:20.261Z
 > Files: 642 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
@@ -63,7 +63,7 @@
 ## .github/
 
 - `copilot-instructions.md` — GitHub Copilot Instructions for talos-argocd-proxmox (~1417 tok)
-- `renovate.json5` (~1406 tok)
+- `renovate.json5` (~1599 tok)
 
 ## .github/instructions/
 
@@ -875,7 +875,7 @@
 
 ## my-apps/development/posthog/config/clickhouse/config.d/
 
-- `default.xml` (~547 tok)
+- `default.xml` (~1089 tok)
 - `keeper.xml` (~220 tok)
 
 ## my-apps/development/posthog/config/clickhouse/docker-entrypoint-initdb.d/
@@ -884,18 +884,18 @@
 
 ## my-apps/development/posthog/core/
 
-- `capture.yaml` — K8s Deployment (~2118 tok)
+- `capture.yaml` — K8s Deployment (~2139 tok)
 - `clickhouse-init.yaml` — K8s Job: clickhouse-migrations-init (~900 tok)
 - `ingestion-sessionreplay.yaml` — Ingestion Session Replay - consumes from session_recording_snapshot_item_events, (~846 tok)
 - `ingestion.yaml` — Ingestion General - consumes from events_plugin_ingestion, processes events, (~874 tok)
-- `jobs.yaml` — K8s Job: kafka-init (~1397 tok)
+- `jobs.yaml` — K8s Job (~1621 tok)
 - `microservices.yaml` — Livestream - real-time event streaming (disabled: requires GeoIP MMDB file) (~1992 tok)
 - `plugins.yaml` — K8s Deployment: plugins (~1162 tok)
 - `recording-api.yaml` — Recording API - serves session recording playback requests (~932 tok)
-- `temporal-worker.yaml` — Temporal Django Worker - handles batch exports, data warehouse syncs, (~715 tok)
-- `toolbox.yaml` — Toolbox - debug pod for running manage.py commands (~679 tok)
-- `web.yaml` — K8s Deployment (~1052 tok)
-- `workers.yaml` — K8s Deployment: worker (~711 tok)
+- `temporal-worker.yaml` — Temporal Django Worker - handles batch exports, data warehouse syncs, (~736 tok)
+- `toolbox.yaml` — Toolbox - debug pod for running manage.py commands (~700 tok)
+- `web.yaml` — K8s Deployment (~1073 tok)
+- `workers.yaml` — K8s Deployment (~732 tok)
 
 ## my-apps/development/posthog/data-layer/
 
