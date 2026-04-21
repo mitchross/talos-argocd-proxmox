@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-21T05:20:20.261Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-21T05:25:14.044Z
 > Files: 642 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
@@ -875,7 +875,7 @@
 
 ## my-apps/development/posthog/config/clickhouse/config.d/
 
-- `default.xml` (~1089 tok)
+- `default.xml` (~1271 tok)
 - `keeper.xml` (~220 tok)
 
 ## my-apps/development/posthog/config/clickhouse/docker-entrypoint-initdb.d/

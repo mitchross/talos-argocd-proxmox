@@ -97,6 +97,16 @@
         </sessions>
     </remote_servers>
 
+    <!--
+      named_collections — kept in sync with upstream
+      PostHog/posthog:docker/clickhouse/config.d/default.xml. All three
+      collections just point at $KAFKA_HOSTS; they exist as aliases so
+      Kafka-engine table DDL in migrations can reference
+      `kafka(warpstream_calculated_events, ...)` instead of hard-coding
+      brokers. Missing `warpstream_calculated_events` is what broke
+      migrate_clickhouse on 2026-04-19 after PostHog PR #53820 (commit
+      fccbc6b92e, 2026-04-09) added the 0227_warpstream migration.
+    -->
     <named_collections>
         <msk_cluster>
             <kafka_broker_list from_env="KAFKA_HOSTS"/>
@@ -104,6 +114,9 @@
         <warpstream_ingestion>
             <kafka_broker_list from_env="KAFKA_HOSTS"/>
         </warpstream_ingestion>
+        <warpstream_calculated_events>
+            <kafka_broker_list from_env="KAFKA_HOSTS"/>
+        </warpstream_calculated_events>
     </named_collections>
 
     <macros>
