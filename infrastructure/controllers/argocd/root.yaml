@@ -23,7 +23,15 @@ spec:
     - ServerSideApply=true
     - RespectIgnoreDifferences=true
     retry:
-      limit: -1
+      # Bounded retry on root (children keep `limit: -1`). A stuck sync op
+      # holds a frozen manifest snapshot; while `limit: -1` is infinite, a
+      # failed child (e.g. otel's CrashLoopBackOff on 2026-04-20) keeps
+      # the op alive forever and wedges every new git push behind the
+      # stale snapshot. With `limit: 10`, the op fails cleanly after
+      # ~10×3m = ~30 min ceiling; `selfHeal: true` then triggers a FRESH
+      # sync op on the next reconcile with CURRENT git — functionally
+      # still infinite, just with manifest-refresh between ops.
+      limit: 10
       backoff:
         duration: 5s
         factor: 2
