@@ -42,6 +42,59 @@
                 </replica>
             </shard>
         </posthog_primary_replica>
+        <!--
+          ai_events — newer PostHog (image sha 9b518de) expects this cluster
+          when running `migrate_clickhouse`. It's used by the AI/LLM event
+          ingestion path which assumes a separate "satellite" ClickHouse
+          cluster. On single-node installs we just point it at the same
+          node; queries resolve transparently. Without this cluster, every
+          migrate_clickhouse run fails with:
+            DB::Exception: Requested cluster 'ai_events' not found (code 701)
+          which cascades into the entire posthog-migrate PostSync hook
+          hitting backoffLimit and Argo wedging the app sync.
+        -->
+        <ai_events>
+            <shard>
+                <replica>
+                    <host>clickhouse-0.clickhouse.posthog.svc.cluster.local</host>
+                    <port>9000</port>
+                </replica>
+            </shard>
+        </ai_events>
+        <!--
+          Satellite clusters — PostHog's `CLICKHOUSE_SATELLITE_CLUSTERS`
+          defaults to `"ai_events,aux,ops,sessions"` (see
+          posthog/settings/data_stores.py). All four must exist or
+          `migrate_clickhouse` fails with
+          `DB::Exception: Requested cluster '<name>' not found (code 701)`
+          and cascades into the PostSync hook wedging Argo. On a single-
+          node install we point every satellite at the same host; queries
+          resolve transparently.
+        -->
+        <aux>
+            <shard>
+                <replica>
+                    <host>clickhouse-0.clickhouse.posthog.svc.cluster.local</host>
+                    <port>9000</port>
+                </replica>
+            </shard>
+        </aux>
+        <ops>
+            <shard>
+                <replica>
+                    <host>clickhouse-0.clickhouse.posthog.svc.cluster.local</host>
+                    <port>9000</port>
+                </replica>
+            </shard>
+        </ops>
+        <sessions>
+            <shard>
+                <replica>
+                    <host>clickhouse-0.clickhouse.posthog.svc.cluster.local</host>
+                    <port>9000</port>
+                </replica>
+            </shard>
+        </sessions>
     </remote_servers>
 
     <named_collections>
