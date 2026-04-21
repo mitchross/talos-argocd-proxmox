@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-05T03:39:06.883Z",
   "lifetime": {
-    "total_tokens_estimated": 17785886,
-    "total_reads": 11123,
-    "total_writes": 10080,
+    "total_tokens_estimated": 17789607,
+    "total_reads": 11126,
+    "total_writes": 10081,
     "total_sessions": 37,
-    "anatomy_hits": 8470,
+    "anatomy_hits": 8473,
     "anatomy_misses": 2578,
-    "repeated_reads_blocked": 3121,
-    "estimated_savings_vs_bare_cli": 10591575
+    "repeated_reads_blocked": 3122,
+    "estimated_savings_vs_bare_cli": 10593446
   },
   "sessions": [
     {
@@ -128088,6 +128088,78 @@
         "writes_count": 54,
         "repeated_reads_blocked": 4,
         "anatomy_lookups": 15
+      }
+    },
+    {
+      "id": "session-2026-04-21-0122",
+      "started": "2026-04-21T05:22:35.847Z",
+      "ended": "2026-04-21T05:23:37.506Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+          "tokens_estimated": 1089,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 1089,
+        "output_tokens_estimated": 0,
+        "reads_count": 1,
+        "writes_count": 0,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-21-0122",
+      "started": "2026-04-21T05:22:35.847Z",
+      "ended": "2026-04-21T05:23:44.226Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+          "tokens_estimated": 1089,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [],
+      "totals": {
+        "input_tokens_estimated": 1089,
+        "output_tokens_estimated": 0,
+        "reads_count": 1,
+        "writes_count": 0,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-21-0122",
+      "started": "2026-04-21T05:22:35.847Z",
+      "ended": "2026-04-21T05:25:24.959Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+          "tokens_estimated": 1271,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+          "tokens_estimated": 272,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1271,
+        "output_tokens_estimated": 272,
+        "reads_count": 1,
+        "writes_count": 1,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 1
       }
     }
   ],
