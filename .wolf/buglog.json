@@ -1662,6 +1662,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-21T05:20:20.267Z"
+    },
+    {
+      "id": "bug-103",
+      "timestamp": "2026-04-21T05:28:33.452Z",
+      "error_message": "Wrong reference: perplexica should be vane",
+      "file": "my-apps/ai/perplexica/deployment.yaml",
+      "root_cause": "Used \"perplexica\" instead of \"vane\"",
+      "fix": "Changed perplexica → vane",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-21T05:28:33.452Z"
     }
   ]
 }

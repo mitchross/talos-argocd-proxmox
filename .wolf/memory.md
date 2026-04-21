@@ -1285,3 +1285,7 @@
 |------|--------|---------|---------|--------|
 | 01:25 | Edited my-apps/development/posthog/config/clickhouse/config.d/default.xml | expanded (+13 lines) | ~254 |
 | 01:25 | Session end: 1 writes across 1 files (default.xml) | 1 reads | ~1543 tok |
+| 01:25 | Session end: 1 writes across 1 files (default.xml) | 1 reads | ~1543 tok |
+| 01:28 | Edited my-apps/ai/perplexica/deployment.yaml | expanded (+13 lines) | ~274 |
+| 01:28 | Edited my-apps/ai/perplexica/deployment.yaml | inline fix | ~12 |
+| 01:28 | Edited my-apps/ai/perplexica/configmap.yaml | 2→3 lines | ~48 |
