@@ -125,7 +125,15 @@ spec:
     service:
       pipelines:
         logs:
-          receivers: [otlp, k8sobjects]
+          # `k8sobjects` removed 2026-04-20 when VPA was ripped out —
+          # that receiver was watching VerticalPodAutoscaler CRs, which
+          # no longer exist. Leaving its reference in the pipeline made
+          # the collector refuse to boot for 9h with
+          # "invalid configuration: references receiver k8sobjects
+          # which is not configured". If you re-add CR-event ingestion,
+          # define the k8sobjects receiver in the receivers: block above
+          # THEN add it here.
+          receivers: [otlp]
           processors: [k8sattributes, resource, batch]
           exporters: [otlphttp/loki]
         traces:

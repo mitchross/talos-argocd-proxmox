@@ -1614,6 +1614,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-20T05:14:09.220Z"
+    },
+    {
+      "id": "bug-100",
+      "timestamp": "2026-04-20T23:48:27.977Z",
+      "error_message": "Significant refactor of ",
+      "file": "scripts/validate-otel-configs.sh",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 21→47 lines (3 removed) | Also: cat > \"$WORK/sa/ca.crt\" <<'CERT'; -----BEGIN CERTIFICATE-----",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "sh"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-20T23:48:48.596Z"
     }
   ]
 }

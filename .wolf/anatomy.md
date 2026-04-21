@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-20T01:45:26.622Z
-> Files: 626 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-20T23:49:19.564Z
+> Files: 642 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
 
@@ -74,7 +74,7 @@
 
 ## .github/workflows/
 
-- `cluster-ci.yml` — - monitoring/** (~1110 tok)
+- `cluster-ci.yml` — - monitoring/** (~1350 tok)
 - `docs.yml` — CI: Deploy Documentation (~286 tok)
 - `llama-cpp-build.yml` — CI: Build llama.cpp CUDA Image (~1011 tok)
 
@@ -145,7 +145,7 @@
 - `http-route.yaml` — K8s HTTPRoute: argocd (~139 tok)
 - `kustomization.yaml` — K8s Kustomization: argo-cd (~287 tok)
 - `ns.yaml` — K8s Namespace: argocd (~16 tok)
-- `root.yaml` — K8s Application: root (~252 tok)
+- `root.yaml` — K8s Application (~415 tok)
 - `values.yaml` — Global settings for the Argo CD chart (~2440 tok)
 
 ## infrastructure/controllers/argocd/apps/
@@ -156,8 +156,9 @@
 - `cnpg-barman-plugin-app.yaml` — CloudNativePG Barman Cloud Plugin — replaces deprecated native barmanObjectStore (~340 tok)
 - `database-appset.yaml` — K8s ApplicationSet (~852 tok)
 - `external-secrets.yaml` — K8s Application: external-secrets (~319 tok)
-- `infrastructure-appset.yaml` — K8s ApplicationSet (~1088 tok)
-- `kustomization.yaml` — K8s Kustomization (~395 tok)
+- `infrastructure-appset.yaml` — K8s ApplicationSet (~1207 tok)
+- `keda-app.yaml` — KEDA — standalone Application (not via AppSet). (~349 tok)
+- `kustomization.yaml` — K8s Kustomization (~438 tok)
 - `kyverno-app.yaml` — K8s Application: kyverno (~494 tok)
 - `longhorn-app.yaml` — Critical: Longhorn must be deployed after Cilium (wave 1) (~371 tok)
 - `monitoring-appset.yaml` — K8s ApplicationSet: monitoring (~637 tok)
@@ -166,6 +167,7 @@
 - `projects.yaml` — K8s AppProject: infrastructure (~454 tok)
 - `pvc-plumber-app.yaml` — K8s Application: pvc-plumber (~327 tok)
 - `snapshot-controller-app.yaml` — Snapshot Controller (~256 tok)
+- `temporal-worker-controller-app.yaml` — Temporal Worker Controller — standalone Application (not via AppSet). (~295 tok)
 - `volsync-app.yaml` — VolSync for PVC backup and replication (~289 tok)
 
 ## infrastructure/controllers/cert-manager/
@@ -195,6 +197,12 @@
 
 - `kustomization.yaml` — K8s Kustomization: gpu-priority-classes (~88 tok)
 - `priority-classes.yaml` — K8s PriorityClass (~199 tok)
+
+## infrastructure/controllers/keda/
+
+- `kustomization.yaml` — K8s Kustomization (~153 tok)
+- `namespace.yaml` — K8s Namespace (~28 tok)
+- `values.yaml` — KEDA Helm values — event-driven autoscaler. (~512 tok)
 
 ## infrastructure/controllers/kyverno-vpa-policies/
 
@@ -258,12 +266,12 @@
 ## infrastructure/controllers/opentelemetry-operator/
 
 - `collector-agent.yaml` — start_at: end (~907 tok)
-- `collector-gateway.yaml` — K8s OpenTelemetryCollector (~1048 tok)
+- `collector-gateway.yaml` — K8s OpenTelemetryCollector (~1190 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: honeycomb-api-key (~106 tok)
 - `instrumentation.yaml` — K8s Instrumentation: default (~329 tok)
 - `kustomization.yaml` — K8s Kustomization: opentelemetry-operator (~138 tok)
 - `ns.yaml` — K8s Namespace: opentelemetry (~70 tok)
-- `rbac.yaml` — K8s ServiceAccount (~574 tok)
+- `rbac.yaml` — K8s ServiceAccount (~649 tok)
 - `values.yaml` (~77 tok)
 
 ## infrastructure/controllers/pvc-plumber/
@@ -271,6 +279,13 @@
 - `deployment.yaml` — K8s Deployment (~985 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: pvc-plumber-kopia (~128 tok)
 - `kustomization.yaml` — K8s Kustomization (~36 tok)
+
+## infrastructure/controllers/temporal-worker-controller/
+
+- `crds-values.yaml` — Intentionally empty — the temporal-worker-controller-crds chart has no (~74 tok)
+- `kustomization.yaml` — K8s Kustomization (~408 tok)
+- `namespace.yaml` — K8s Namespace (~41 tok)
+- `values.yaml` — Temporal Worker Controller (from Temporal themselves, Public Preview). (~414 tok)
 
 ## infrastructure/controllers/vertical-pod-autoscaler/
 
@@ -612,7 +627,7 @@
 
 ## my-apps/ai/comfyui/
 
-- `configmap.yaml` — K8s ConfigMap (~4110 tok)
+- `configmap.yaml` — K8s ConfigMap (~4829 tok)
 - `deployment.yaml` — K8s Deployment (~993 tok)
 - `download-models-job.yaml` — K8s Job: comfyui-download-models (~1445 tok)
 - `externalsecret.yaml` — K8s ExternalSecret: comfyui-secrets (~132 tok)
@@ -907,21 +922,30 @@
 
 - `deployment.yaml` — K8s Deployment: temporal-worker (~169 tok)
 - `Dockerfile` — Docker container definition (~43 tok)
-- `kustomization.yaml` — K8s Kustomization (~33 tok)
+- `kustomization.yaml` — K8s Kustomization (~186 tok)
 - `namespace.yaml` — K8s Namespace: temporal-worker (~19 tok)
+- `scaledobject.yaml` — KEDA ScaledObject — autoscales the Temporal worker Deployment on (~667 tok)
+- `temporal-connection.yaml` — TemporalConnection — the Temporal Worker Controller's way of describing (~228 tok)
+- `temporal-worker-deployment.yaml` — TemporalWorkerDeployment — managed by the Temporal Worker Controller (~709 tok)
+- `temporal-worker-deployment.yaml.future` — TemporalWorkerDeployment — managed by the Temporal Worker Controller. (~1038 tok)
 
 ## my-apps/development/temporal-worker/app/
 
-- `requirements.txt` — Python dependencies (~8 tok)
-- `worker.py` — import: strip_thinking, fetch_feed, summarize_article, generate_digest_headline + 2 more (~3393 tok)
+- `requirements.txt` — Python dependencies (~24 tok)
+- `worker.py` — import: strip_thinking, fetch_feed, summarize_article, generate_digest_headline + 1 more (~3883 tok)
 
 ## my-apps/development/temporal/
 
 - `externalsecret.yaml` — K8s ExternalSecret (~114 tok)
 - `httproute.yaml` — K8s HTTPRoute: temporal-web (~146 tok)
-- `kustomization.yaml` — K8s Kustomization (~173 tok)
+- `kustomization.yaml` — K8s Kustomization (~418 tok)
+- `namespace-init-job.yaml` — Seeds Temporal user namespaces at deploy time via GitOps, so a rebuild (~489 tok)
 - `namespace.yaml` — K8s Namespace: temporal (~17 tok)
 - `values.yaml` (~691 tok)
+
+## my-apps/development/temporal/scripts/
+
+- `seed-namespaces.sh` — Seeds Temporal user namespaces. Run as a PostSync Job after the (~396 tok)
 
 ## my-apps/development/vert/
 
@@ -1074,6 +1098,7 @@
 - `bootstrap-argocd.sh` (~1497 tok)
 - `build-push-custom-apps.sh` — Build and push the two custom app images we maintain in this repo. (~702 tok)
 - `cnpg-recovery.sh` — CNPG Disaster Recovery — interactive driver for docs/cnpg-disaster-recovery.md (~2946 tok)
+- `validate-otel-configs.sh` — Validate OpenTelemetry Collector configs in the repo. (~1024 tok)
 
 ## scripts/dr/
 

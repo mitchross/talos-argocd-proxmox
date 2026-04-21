@@ -55,7 +55,11 @@ rules:
   verbs: ["get", "list", "watch"]
 # k8s_cluster receiver
 - apiGroups: [""]
-  resources: ["events", "resourcequotas", "services"]
+  # `replicationcontrollers` added 2026-04-20 — the k8s_cluster receiver
+  # watches RCs cluster-wide even if you never use them, and without this
+  # the collector log spams "replicationcontrollers is forbidden" every
+  # few seconds.
+  resources: ["events", "resourcequotas", "services", "replicationcontrollers"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["apps"]
   resources: ["replicasets", "deployments", "statefulsets", "daemonsets"]

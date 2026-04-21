@@ -19,12 +19,6 @@ resources:
   # ApplicationSets for automatic discovery
   - infrastructure-appset.yaml  # Wave 4
   - database-appset.yaml        # Wave 4 - Database operators/instances (selfHeal: false for DR)
-  # opentelemetry-operator-app.yaml — TEMPORARILY REMOVED 2026-04-20.
-  # otel-gateway-collector was in CrashLoopBackOff for 9h+ on a Cilium
-  # "operation not permitted" network error, jamming root sync and
-  # preventing new infra (KEDA, TWC) from being applied. Will re-add
-  # once the gateway issue is resolved (likely a NetworkPolicy / Cilium
-  # identity problem around the collector targets — Loki/Tempo svc IPs).
-  # - opentelemetry-operator-app.yaml
+  - opentelemetry-operator-app.yaml # Wave 5 - OTEL (needs cert-manager from Wave 4)
   - monitoring-appset.yaml      # Wave 5
   - my-apps-appset.yaml         # Wave 6
