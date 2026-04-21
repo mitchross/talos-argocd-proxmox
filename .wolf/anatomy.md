@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-21T05:25:14.044Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-21T05:28:38.114Z
 > Files: 642 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
@@ -689,8 +689,8 @@
 
 ## my-apps/ai/perplexica/
 
-- `configmap.yaml` — Perplexica config seed (GitOps source of truth for model providers). (~654 tok)
-- `deployment.yaml` — K8s Deployment (~1160 tok)
+- `configmap.yaml` — Perplexica config seed (GitOps source of truth for model providers). (~662 tok)
+- `deployment.yaml` — K8s Deployment (~1395 tok)
 - `httproute.yaml` — K8s HTTPRoute: perplexica-route (~129 tok)
 - `kustomization.yaml` — K8s Kustomization (~73 tok)
 - `namespace.yaml` — K8s Namespace: perplexica (~18 tok)

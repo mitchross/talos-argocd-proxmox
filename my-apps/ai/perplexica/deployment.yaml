@@ -71,7 +71,20 @@ spec:
             seccompProfile: { type: RuntimeDefault }
       containers:
         - name: perplexica
-          image: itzcrazykns1337/perplexica:slim-v1.12.0@sha256:6b0ab14429c6d120357877cce5894c55c35e7e016c2b55066a1559ac5682de8e
+          # Upstream renamed the project Perplexica -> Vane. The old
+          # `itzcrazykns1337/perplexica` repo is frozen at v1.12.0; all new
+          # releases ship from `itzcrazykns1337/vane`. The Dockerfile also
+          # moved WORKDIR from /home/perplexica -> /home/vane, so the PVC
+          # mountPath below had to follow.
+          #
+          # Why the bump: v1.12.0 has no guard against stuffing scraped page
+          # content into the agent's tool-message history across iterations,
+          # so a single "quality" search could push the prompt past 2M tokens
+          # and explode llama-cpp's 64K ctx window. v1.12.2 adds embedding-
+          # based result filtering + chunked context management that keeps
+          # prompts bounded. Our ctx-size stays at 64K (see llama-cpp
+          # configmap for why).
+          image: itzcrazykns1337/vane:slim-v1.12.2@sha256:d2878cf9c91962aa3fc053b59bc9b89adcbdcaeb7ee36b54906e853464b2c190
           ports:
             - name: http
               containerPort: 3000
@@ -85,7 +98,7 @@ spec:
               value: "sk-no-key-required"
           volumeMounts:
             - name: data
-              mountPath: /home/perplexica/data
+              mountPath: /home/vane/data
           livenessProbe:
             httpGet:
               path: /

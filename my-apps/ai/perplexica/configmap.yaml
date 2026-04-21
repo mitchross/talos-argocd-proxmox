@@ -1,7 +1,8 @@
 # Perplexica config seed (GitOps source of truth for model providers).
 #
-# Perplexica stores its runtime config at /home/perplexica/data/config.json
-# on a PVC. Without this ConfigMap + seed initContainer, the model
+# Perplexica (now upstream-renamed "Vane") stores its runtime config at
+# /home/vane/data/config.json on a PVC. Without this ConfigMap + seed
+# initContainer, the model
 # provider list is entered once via the UI and lives only in PVC state —
 # a rebuild/migration loses it, and git has no record of which model
 # IDs we're pointing clients at.

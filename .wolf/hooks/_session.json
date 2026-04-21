@@ -14,14 +14,34 @@
       "action": "edit",
       "tokens": 272,
       "at": "2026-04-21T05:25:14.050Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
+      "action": "edit",
+      "tokens": 274,
+      "at": "2026-04-21T05:28:30.808Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
+      "action": "edit",
+      "tokens": 12,
+      "at": "2026-04-21T05:28:33.451Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/configmap.yaml",
+      "action": "edit",
+      "tokens": 48,
+      "at": "2026-04-21T05:28:38.120Z"
     }
   ],
   "edit_counts": {
-    "my-apps/development/posthog/config/clickhouse/config.d/default.xml": 1
+    "my-apps/development/posthog/config/clickhouse/config.d/default.xml": 1,
+    "my-apps/ai/perplexica/deployment.yaml": 2,
+    "my-apps/ai/perplexica/configmap.yaml": 1
   },
   "anatomy_hits": 1,
   "anatomy_misses": 0,
   "repeated_reads_warned": 1,
   "cerebrum_warnings": 0,
-  "stop_count": 3
+  "stop_count": 4
 }
