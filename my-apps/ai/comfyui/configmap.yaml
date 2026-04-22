@@ -123,26 +123,26 @@ data:
     mkdir -p "$(dirname $SETTINGS)"
     [ -f "$SETTINGS" ] || echo "{}" > "$SETTINGS"
     $PY313 <<'PYSETTINGS'
-import json, pathlib
-p = pathlib.Path("/root/ComfyUI/user/default/comfy.settings.json")
-data = json.loads(p.read_text() or "{}")
-overrides = {
-    # Hide API pricing badges on cloud nodes — this cluster runs fully local.
-    "Comfy.NodeBadge.ShowApiPricing": False,
-    # Live sampler preview using tiny autoencoder — keeps generation interactive.
-    "Comfy.Execution.PreviewMethod": "taesd",
-}
-changed = False
-for k, v in overrides.items():
-    if data.get(k) != v:
-        data[k] = v
-        changed = True
-        print(f"[settings] {k} = {v}")
-if changed:
-    p.write_text(json.dumps(data, indent=4))
-else:
-    print("[settings] already up-to-date")
-PYSETTINGS
+    import json, pathlib
+    p = pathlib.Path("/root/ComfyUI/user/default/comfy.settings.json")
+    data = json.loads(p.read_text() or "{}")
+    overrides = {
+        # Hide API pricing badges on cloud nodes — this cluster runs fully local.
+        "Comfy.NodeBadge.ShowApiPricing": False,
+        # Live sampler preview using tiny autoencoder — keeps generation interactive.
+        "Comfy.Execution.PreviewMethod": "taesd",
+    }
+    changed = False
+    for k, v in overrides.items():
+        if data.get(k) != v:
+            data[k] = v
+            changed = True
+            print(f"[settings] {k} = {v}")
+    if changed:
+        p.write_text(json.dumps(data, indent=4))
+    else:
+        print("[settings] already up-to-date")
+    PYSETTINGS
 
     # ── System Setup ───────────────────────────────────────────
     mkdir -p /usr/share/fonts/truetype

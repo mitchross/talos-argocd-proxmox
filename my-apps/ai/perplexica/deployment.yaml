@@ -99,25 +99,42 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /home/vane/data
+          # `/` is Next.js SSR — under load (embedding filter over 50+ search
+          # results + Playwright/Chromium scraping + LLM streaming) it can
+          # easily exceed the 1s default probe timeout. Observed: kubelet
+          # killed the container mid-research with "context deadline
+          # exceeded" on v1.12.2. Give it 10s per probe and 6 failures before
+          # declaring the container dead (~3m of blocking tolerated) so a
+          # long-running search doesn't self-destruct.
           livenessProbe:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: 15
+            initialDelaySeconds: 30
             periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 6
           readinessProbe:
             httpGet:
               path: /
               port: http
-            initialDelaySeconds: 10
-            periodSeconds: 10
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 4
+          # v1.12.2 bundles Playwright + Chromium for the new scraper and
+          # runs @xenova/transformers in-process for the embedding-based
+          # result filter. Chromium alone wants 300-500MiB resident; add
+          # Node + embedding inference for N chunks and 512Mi gets wiped
+          # out fast. 2Gi / 2 CPU is the floor that keeps searches
+          # completing without the event loop starving the liveness probe.
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
-            limits:
-              cpu: "1"
+              cpu: 200m
               memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
       volumes:
         - name: data
           persistentVolumeClaim:

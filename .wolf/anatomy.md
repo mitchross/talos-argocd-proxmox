@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-22T03:19:27.858Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-22T03:34:06.996Z
 > Files: 643 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
@@ -631,7 +631,7 @@
 
 ## my-apps/ai/comfyui/
 
-- `configmap.yaml` — K8s ConfigMap (~4912 tok)
+- `configmap.yaml` — K8s ConfigMap (~4935 tok)
 - `deployment.yaml` — K8s Deployment (~993 tok)
 - `download-models-job.yaml` — K8s Job: comfyui-download-models (~1445 tok)
 - `externalsecret.yaml` — K8s ExternalSecret (~316 tok)
@@ -694,7 +694,7 @@
 ## my-apps/ai/perplexica/
 
 - `configmap.yaml` — Perplexica config seed (GitOps source of truth for model providers). (~695 tok)
-- `deployment.yaml` — K8s Deployment (~1395 tok)
+- `deployment.yaml` — K8s Deployment (~1698 tok)
 - `httproute.yaml` — K8s HTTPRoute: perplexica-route (~129 tok)
 - `kustomization.yaml` — K8s Kustomization (~73 tok)
 - `namespace.yaml` — K8s Namespace: perplexica (~18 tok)
