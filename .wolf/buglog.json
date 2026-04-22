@@ -1742,6 +1742,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-22T03:45:07.829Z"
+    },
+    {
+      "id": "bug-108",
+      "timestamp": "2026-04-22T03:58:54.576Z",
+      "error_message": "Wrong reference: af047be should be 891dcb5",
+      "file": "my-apps/media/redlib/deployment.yaml",
+      "root_cause": "Used \"af047be\" instead of \"891dcb5\"",
+      "fix": "Changed af047be → 891dcb5",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-22T03:58:54.576Z"
+    },
+    {
+      "id": "bug-109",
+      "timestamp": "2026-04-22T04:10:05.703Z",
+      "error_message": "Wrong reference: disable should be disabled",
+      "file": "my-apps/privacy/searxng/settings.yaml",
+      "root_cause": "Used \"disable\" instead of \"disabled\"",
+      "fix": "Changed disable → disabled",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-22T04:10:08.565Z"
     }
   ]
 }

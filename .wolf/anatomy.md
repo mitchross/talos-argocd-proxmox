@@ -1,15 +1,18 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-22T03:45:07.821Z
-> Files: 645 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-22T04:10:08.556Z
+> Files: 648 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
-- `gen_canvas_workflows.py` — Generate three Comfy Canvas-integrated workflow JSONs. (~4403 tok)
+- `gen_canvas_workflows.py` — Generate three Comfy Canvas-integrated workflow JSONs. (~4406 tok)
+- `inject_canvas.py` — find, max_id, make_canvas_editor, inject_canvas (~1353 tok)
+- `ui_to_api.py` — Convert a ComfyUI UI workflow JSON to the /api/prompt 'prompt' dict format. (~1346 tok)
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
 
-- `MEMORY.md` — Memory Index (~299 tok)
+- `MEMORY.md` — Memory Index (~339 tok)
+- `project_posthog_version_pinning.md` (~552 tok)
 - `project_talos_1_13_install_disk.md` (~455 tok)
 
 ## ../pvc-plumber/cmd/pvc-plumber/
@@ -31,7 +34,7 @@
 
 ## ../redlib/
 
-- `Dockerfile.build` — Build stage (~283 tok)
+- `Dockerfile.build` — Build stage (~286 tok)
 
 ## ../redlib/templates/
 
@@ -1077,7 +1080,7 @@
 
 ## my-apps/privacy/searxng/
 
-- `settings.yaml` (~1192 tok)
+- `settings.yaml` (~1195 tok)
 
 ## omni/
 
