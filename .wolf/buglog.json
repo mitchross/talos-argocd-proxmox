@@ -1678,6 +1678,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-21T05:28:33.452Z"
+    },
+    {
+      "id": "bug-104",
+      "timestamp": "2026-04-22T02:35:27.898Z",
+      "error_message": "Function not marked async",
+      "file": "my-apps/ai/llama-cpp/configmap.yaml",
+      "root_cause": "Function uses await but wasn't declared async",
+      "fix": "Added async modifier",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-22T02:35:27.898Z"
     }
   ]
 }
