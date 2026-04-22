@@ -65,21 +65,24 @@ data:
     # Provides NunchakuQwenImageLoraStackV3 used by QuantFunc's Qwen SVDQ workflows.
     # Upstream mit-han-lab/ComfyUI-nunchaku only ships the Flux LoRA nodes, not Qwen.
     install_node "https://github.com/ussoewwin/ComfyUI-QwenImageLoraLoader.git"
+    # Provides EsesImageCompare used by the Flux2 Klein 9B Ultimate v2.1 workflow.
+    install_node "https://github.com/quasiblob/ComfyUI-EsesImageCompare.git"
 
     # ── Python Dependencies ────────────────────────────────────
-    # uv resolves quickly and skips already-installed; --link-mode copy avoids NFS hardlink warnings
-    echo "[INFO] Installing Python dependencies..."
-    UV_LINK_MODE=copy uv pip install --system \
+    # Install base deps into py3.13 explicitly (same as nunchaku / frontend_package / custom-node deps below).
+    # Default `uv pip install --system` targets py3.12 which ComfyUI doesn't use,
+    # so colorama/watchdog etc. would be invisible to the custom-node imports.
+    # This is why ComfyUI-Prompt-Manager ("No module named 'colorama'") and
+    # ComfyUI-Gallery ("No module named 'watchdog'") were failing to import.
+    PY313=/usr/bin/python3.13
+    echo "[INFO] Installing Python dependencies into py3.13..."
+    $PY313 -m pip install --no-cache-dir --root-user-action=ignore \
       transformers "bitsandbytes>=0.46.1" \
       colorama huggingface_hub \
       watchdog piexif aiohttp \
       pywavelets
 
-    # ComfyUI runs under /usr/bin/python3.13 on this megapak image, while
-    # the default `python3` / `uv pip install --system` targets py3.12. Any
-    # package ComfyUI has to import (wheels, frontend package) must go into
-    # py3.13 explicitly — use the full path and python3.13 -m pip.
-    PY313=/usr/bin/python3.13
+    # $PY313 was defined above. Compute cp-tag for nunchaku wheel.
     PYTAG="cp$($PY313 -c 'import sys; print(f"{sys.version_info.major}{sys.version_info.minor}")')"
 
     # Nunchaku SVDQ runtime wheel (CUDA 13.0 + PyTorch 2.11, Ampere+)
