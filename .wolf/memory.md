@@ -1289,3 +1289,12 @@
 | 01:28 | Edited my-apps/ai/perplexica/deployment.yaml | expanded (+13 lines) | ~274 |
 | 01:28 | Edited my-apps/ai/perplexica/deployment.yaml | inline fix | ~12 |
 | 01:28 | Edited my-apps/ai/perplexica/configmap.yaml | 2→3 lines | ~48 |
+| 01:28 | Session end: 4 writes across 3 files (default.xml, deployment.yaml, configmap.yaml) | 1 reads | ~1877 tok |
+| 22:23 | Session end: 4 writes across 3 files (default.xml, deployment.yaml, configmap.yaml) | 3 reads | ~4862 tok |
+| 22:27 | Session end: 4 writes across 3 files (default.xml, deployment.yaml, configmap.yaml) | 4 reads | ~4862 tok |
+| 22:30 | Session end: 4 writes across 3 files (default.xml, deployment.yaml, configmap.yaml) | 8 reads | ~4862 tok |
+| 22:32 | Session end: 4 writes across 3 files (default.xml, deployment.yaml, configmap.yaml) | 8 reads | ~4862 tok |
+| 22:35 | Edited my-apps/ai/llama-cpp/configmap.yaml | expanded (+35 lines) | ~527 |
+| 22:35 | Edited my-apps/ai/perplexica/configmap.yaml | 8→9 lines | ~218 |
+| 22:35 | Session end: 6 writes across 3 files (default.xml, deployment.yaml, configmap.yaml) | 8 reads | ~5607 tok |
+| 22:37 | Session end: 6 writes across 3 files (default.xml, deployment.yaml, configmap.yaml) | 9 reads | ~5607 tok |

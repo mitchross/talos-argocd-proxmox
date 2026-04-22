@@ -92,6 +92,41 @@ data:
     jinja = 1
 
     # ==========================================================
+    # QWEN 3.6 35B-A3B [LONGCTX NOTHINK]  - Vane/Perplexica research loops
+    # ==========================================================
+    # Same GGUF + mmproj as the main qwen3.6 presets — switching to this
+    # preset just re-sizes the KV cache, no weight reload. Exists because
+    # Vane (formerly Perplexica) accumulates scraped page content across
+    # its research iterations and, even after the v1.12.2 embedding filter
+    # + chunked context mgmt fix, prompts plateau around 60-80K tokens
+    # (observed: 77854 tokens crashed 64K with exceed_context_size_error).
+    # 128K gives enough headroom without jumping to 256K.
+    #
+    # VRAM trade-off: at 128K the KV cache spills ~7GB into CUDA unified
+    # memory (vs. ~2GB at 64K), so attention during a Vane query is
+    # slower. That's fine — Vane searches are already async and this
+    # cache is only resident while *this* preset is selected. OpenWebUI
+    # and other 64K clients keep using the main qwen3.6 presets and pay
+    # nothing for this one's existence.
+    #
+    # Nothink: Vane's researcher is a pure tool-call loop; `<think>`
+    # tokens would inflate the agent history and burn ctx we're trying
+    # to save.
+    [qwen3.6-longctx - qwen3.6-35b-a3b-longctx]
+    model = /models/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf
+    mmproj = /models/mmproj-BF16.gguf
+    alias = qwen3.6-longctx, longctx, perplexica, vane
+    ctx-size = 131072
+    n-gpu-layers = 99
+    temp = 0.6
+    top-p = 0.95
+    top-k = 20
+    min-p = 0.0
+    presence-penalty = 0.0
+    chat-template-kwargs = {"enable_thinking": false}
+    jinja = 1
+
+    # ==========================================================
     # GEMMA 4 26B-A4B [THINK]  - multimodal fallback
     # ==========================================================
     # Qwen 3.6 is now the primary multimodal model (it has its own mmproj).

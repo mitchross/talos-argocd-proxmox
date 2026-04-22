@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-05T03:39:06.883Z",
   "lifetime": {
-    "total_tokens_estimated": 17791150,
-    "total_reads": 11127,
-    "total_writes": 10082,
+    "total_tokens_estimated": 17823689,
+    "total_reads": 11168,
+    "total_writes": 10114,
     "total_sessions": 37,
-    "anatomy_hits": 8474,
-    "anatomy_misses": 2578,
-    "repeated_reads_blocked": 3123,
-    "estimated_savings_vs_bare_cli": 10594917
+    "anatomy_hits": 8493,
+    "anatomy_misses": 2600,
+    "repeated_reads_blocked": 3130,
+    "estimated_savings_vs_bare_cli": 10607614
   },
   "sessions": [
     {
@@ -128188,6 +128188,531 @@
         "writes_count": 1,
         "repeated_reads_blocked": 1,
         "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-21-0122",
+      "started": "2026-04-21T05:22:35.847Z",
+      "ended": "2026-04-21T05:28:58.888Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+          "tokens_estimated": 1271,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+          "tokens_estimated": 272,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
+          "tokens_estimated": 274,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
+          "tokens_estimated": 12,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/configmap.yaml",
+          "tokens_estimated": 48,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 1271,
+        "output_tokens_estimated": 606,
+        "reads_count": 1,
+        "writes_count": 4,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 1
+      }
+    },
+    {
+      "id": "session-2026-04-21-0122",
+      "started": "2026-04-21T05:22:35.847Z",
+      "ended": "2026-04-22T02:23:54.209Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+          "tokens_estimated": 1271,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 2139,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/ingestion-sessionreplay.yaml",
+          "tokens_estimated": 846,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+          "tokens_estimated": 272,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
+          "tokens_estimated": 274,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
+          "tokens_estimated": 12,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/configmap.yaml",
+          "tokens_estimated": 48,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 4256,
+        "output_tokens_estimated": 606,
+        "reads_count": 3,
+        "writes_count": 4,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 3
+      }
+    },
+    {
+      "id": "session-2026-04-21-0122",
+      "started": "2026-04-21T05:22:35.847Z",
+      "ended": "2026-04-22T02:27:25.028Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+          "tokens_estimated": 1271,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 2139,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/ingestion-sessionreplay.yaml",
+          "tokens_estimated": 846,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-day2-wf.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+          "tokens_estimated": 272,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
+          "tokens_estimated": 274,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
+          "tokens_estimated": 12,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/configmap.yaml",
+          "tokens_estimated": 48,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 4256,
+        "output_tokens_estimated": 606,
+        "reads_count": 4,
+        "writes_count": 4,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 3
+      }
+    },
+    {
+      "id": "session-2026-04-21-0122",
+      "started": "2026-04-21T05:22:35.847Z",
+      "ended": "2026-04-22T02:30:43.319Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+          "tokens_estimated": 1271,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 2139,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/ingestion-sessionreplay.yaml",
+          "tokens_estimated": 846,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-day2-wf.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-day2-clean.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-day2-done.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-gen-result.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-output.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+          "tokens_estimated": 272,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
+          "tokens_estimated": 274,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
+          "tokens_estimated": 12,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/configmap.yaml",
+          "tokens_estimated": 48,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 4256,
+        "output_tokens_estimated": 606,
+        "reads_count": 8,
+        "writes_count": 4,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 3
+      }
+    },
+    {
+      "id": "session-2026-04-21-0122",
+      "started": "2026-04-21T05:22:35.847Z",
+      "ended": "2026-04-22T02:32:20.493Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+          "tokens_estimated": 1271,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 2139,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/ingestion-sessionreplay.yaml",
+          "tokens_estimated": 846,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-day2-wf.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-day2-clean.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-day2-done.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-gen-result.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-output.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+          "tokens_estimated": 272,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
+          "tokens_estimated": 274,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
+          "tokens_estimated": 12,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/configmap.yaml",
+          "tokens_estimated": 48,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 4256,
+        "output_tokens_estimated": 606,
+        "reads_count": 8,
+        "writes_count": 4,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 3
+      }
+    },
+    {
+      "id": "session-2026-04-21-0122",
+      "started": "2026-04-21T05:22:35.847Z",
+      "ended": "2026-04-22T02:35:47.987Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+          "tokens_estimated": 1271,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 2139,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/ingestion-sessionreplay.yaml",
+          "tokens_estimated": 846,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-day2-wf.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-day2-clean.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-day2-done.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-gen-result.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-output.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+          "tokens_estimated": 272,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
+          "tokens_estimated": 274,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
+          "tokens_estimated": 12,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/configmap.yaml",
+          "tokens_estimated": 48,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/llama-cpp/configmap.yaml",
+          "tokens_estimated": 527,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/configmap.yaml",
+          "tokens_estimated": 218,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 4256,
+        "output_tokens_estimated": 1351,
+        "reads_count": 8,
+        "writes_count": 6,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 3
+      }
+    },
+    {
+      "id": "session-2026-04-21-0122",
+      "started": "2026-04-21T05:22:35.847Z",
+      "ended": "2026-04-22T02:37:51.238Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+          "tokens_estimated": 1271,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml",
+          "tokens_estimated": 2139,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/ingestion-sessionreplay.yaml",
+          "tokens_estimated": 846,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-day2-wf.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-day2-clean.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-day2-done.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-gen-result.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/comfy-output.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/wan-i2v-prepped.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/config/clickhouse/config.d/default.xml",
+          "tokens_estimated": 272,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
+          "tokens_estimated": 274,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/deployment.yaml",
+          "tokens_estimated": 12,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/configmap.yaml",
+          "tokens_estimated": 48,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/llama-cpp/configmap.yaml",
+          "tokens_estimated": 527,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/configmap.yaml",
+          "tokens_estimated": 218,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 4256,
+        "output_tokens_estimated": 1351,
+        "reads_count": 9,
+        "writes_count": 6,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 3
       }
     }
   ],

@@ -6,6 +6,46 @@
       "count": 2,
       "tokens": 1271,
       "first_read": "2026-04-21T05:23:03.643Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/capture.yaml": {
+      "count": 1,
+      "tokens": 2139,
+      "first_read": "2026-04-22T02:20:11.722Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/posthog/core/ingestion-sessionreplay.yaml": {
+      "count": 1,
+      "tokens": 846,
+      "first_read": "2026-04-22T02:20:12.606Z"
+    },
+    "/tmp/comfy-day2-wf.png": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-22T02:26:36.836Z"
+    },
+    "/tmp/comfy-day2-clean.png": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-22T02:28:09.153Z"
+    },
+    "/tmp/comfy-day2-done.png": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-22T02:29:17.947Z"
+    },
+    "/tmp/comfy-gen-result.png": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-22T02:29:57.377Z"
+    },
+    "/tmp/comfy-output.png": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-22T02:30:24.228Z"
+    },
+    "/tmp/wan-i2v-prepped.png": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-04-22T02:37:09.975Z"
     }
   },
   "files_written": [
@@ -32,16 +72,29 @@
       "action": "edit",
       "tokens": 48,
       "at": "2026-04-21T05:28:38.120Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/llama-cpp/configmap.yaml",
+      "action": "edit",
+      "tokens": 527,
+      "at": "2026-04-22T02:35:27.897Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/perplexica/configmap.yaml",
+      "action": "edit",
+      "tokens": 218,
+      "at": "2026-04-22T02:35:37.224Z"
     }
   ],
   "edit_counts": {
     "my-apps/development/posthog/config/clickhouse/config.d/default.xml": 1,
     "my-apps/ai/perplexica/deployment.yaml": 2,
-    "my-apps/ai/perplexica/configmap.yaml": 1
+    "my-apps/ai/perplexica/configmap.yaml": 2,
+    "my-apps/ai/llama-cpp/configmap.yaml": 1
   },
-  "anatomy_hits": 1,
-  "anatomy_misses": 0,
+  "anatomy_hits": 3,
+  "anatomy_misses": 6,
   "repeated_reads_warned": 1,
   "cerebrum_warnings": 0,
-  "stop_count": 4
+  "stop_count": 11
 }

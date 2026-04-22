@@ -44,6 +44,7 @@ data:
             "baseURL": "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
           },
           "chatModels": [
+            { "name": "Qwen 3.6 (longctx, 128K) — recommended", "key": "qwen3.6-longctx - qwen3.6-35b-a3b-longctx" },
             { "name": "Qwen 3.6 (think)",              "key": "qwen3.6 - qwen3.6-35b-a3b" },
             { "name": "Qwen 3.6 (nothink, fast)",      "key": "qwen3.6-nothink - qwen3.6-35b-a3b-nothink" },
             { "name": "Gemma 4 (think)",               "key": "gemma4 - gemma4-26b" },
