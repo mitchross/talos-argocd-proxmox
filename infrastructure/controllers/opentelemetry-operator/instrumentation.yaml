@@ -20,7 +20,7 @@ spec:
   nodejs:
     image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest@sha256:b20a694693ea809ad506e23620785cae60be67aa4c4dbe4f7af46248b19f0ff1
   java:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest@sha256:b45c2b04e690e1146740863bacd6fb2197f820f5147d0ed27a69d718543994c1
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest@sha256:6d263ee46a3faace8950aec57ad4fd03b70a84169908e5f26eb1e42d92a0a441
   go:
     image: ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:latest@sha256:ad3cb879d58545276e14756742a3373e17fba589c19fc930b70b08f90190b0aa
   dotnet:
