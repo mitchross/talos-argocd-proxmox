@@ -1,0 +1,42 @@
+# Self-hosted Open-Meteo API. Backed by model data synced into the PVC by
+# the open-meteo-sync-gfs and open-meteo-sync-hrrr CronJobs.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open-meteo
+  namespace: radar-ng
+  labels:
+    app: open-meteo
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: open-meteo
+  template:
+    metadata:
+      labels:
+        app: open-meteo
+    spec:
+      containers:
+        - name: open-meteo
+          image: ghcr.io/open-meteo/open-meteo:latest
+          args: ["serve", "--bind", "0.0.0.0:8080"]
+          ports:
+            - containerPort: 8080
+              name: http
+          volumeMounts:
+            - name: openmeteo-data
+              mountPath: /app/data
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+      volumes:
+        - name: openmeteo-data
+          persistentVolumeClaim:
+            claimName: openmeteo-data

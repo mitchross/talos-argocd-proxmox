@@ -1,0 +1,42 @@
+# Lightning ingestor — streams Blitzortung realtime strikes over websocket,
+# maintains a 15-minute rolling GeoJSON buffer at /data/state/lightning.json
+# served by tile-server at /api/lightning.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingest-lightning
+  namespace: radar-ng
+  labels:
+    app: ingest-lightning
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ingest-lightning
+  template:
+    metadata:
+      labels:
+        app: ingest-lightning
+    spec:
+      containers:
+        - name: ingest-lightning
+          image: registry.vanillax.me/radar-ng-ingest-lightning:latest
+          imagePullPolicy: Always
+          env:
+            - name: STATE_DIR
+              value: /data/state
+            - name: LIGHTNING_RETENTION_MIN
+              value: "15"
+          volumeMounts:
+            - { name: state, mountPath: /data/state }
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+      volumes:
+        - { name: state, persistentVolumeClaim: { claimName: state } }

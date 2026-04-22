@@ -1,0 +1,58 @@
+# Nowcast — pysteps S-PROG linear extrapolation of the last N MRMS frames.
+# Reads /data/grids/radar/*.bin (dumped by ingest-mrms), writes forecast tiles
+# to /data/tiles/nowcast/{palette}/{timestamp}/{z}/{x}/{y}.png every 2 min.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nowcast
+  namespace: radar-ng
+  labels:
+    app: nowcast
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nowcast
+  template:
+    metadata:
+      labels:
+        app: nowcast
+    spec:
+      containers:
+        - name: nowcast
+          image: registry.vanillax.me/radar-ng-nowcast:latest
+          imagePullPolicy: Always
+          env:
+            - name: TILE_DIR
+              value: /data/tiles
+            - name: GRID_DIR
+              value: /data/grids
+            - name: STATE_DIR
+              value: /data/state
+            - name: PALETTES
+              value: classic,vivid,muted
+            - name: POLL_INTERVAL
+              value: "120"
+            - name: NOWCAST_HORIZON_MIN
+              value: "60"
+            - name: NOWCAST_STEP_MIN
+              value: "5"
+            - name: NOWCAST_INPUT_FRAMES
+              value: "4"
+          volumeMounts:
+            - { name: tiles, mountPath: /data/tiles }
+            - { name: grids, mountPath: /data/grids, readOnly: true }
+            - { name: state, mountPath: /data/state }
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+      volumes:
+        - { name: tiles, persistentVolumeClaim: { claimName: tiles } }
+        - { name: grids, persistentVolumeClaim: { claimName: grids } }
+        - { name: state, persistentVolumeClaim: { claimName: state } }

@@ -1,0 +1,57 @@
+# Shared Longhorn RWX PVCs for the radar-ng backend.
+#
+# Access-mode rationale:
+#   - tiles/grids/state are written by multiple pods (ingestors, nowcast) and
+#     read by tile-server, so RWX.
+#   - openmeteo-data is written by the serve Deployment and its sync CronJobs,
+#     which can run concurrently with serve, so RWX.
+#
+# Longhorn RWX auto-provisions an NFS share-manager pod for each volume.
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tiles
+  namespace: radar-ng
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 50Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grids
+  namespace: radar-ng
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: state
+  namespace: radar-ng
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: openmeteo-data
+  namespace: radar-ng
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 30Gi

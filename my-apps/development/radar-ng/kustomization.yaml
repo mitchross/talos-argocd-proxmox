@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - pvcs.yaml
+  - services.yaml
+  - httproute.yaml
+  - deployment-tile-server.yaml
+  - deployment-basemap.yaml
+  - deployment-open-meteo.yaml
+  - deployment-ingest-mrms.yaml
+  - deployment-ingest-hrrr.yaml
+  - deployment-ingest-lightning.yaml
+  - deployment-ingest-tropical.yaml
+  - deployment-nowcast.yaml
+  - cronjob-tile-cleanup.yaml
+  - cronjob-open-meteo-sync.yaml

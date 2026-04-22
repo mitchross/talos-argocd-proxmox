@@ -1,0 +1,58 @@
+# HRRR ingestor — polls NOAA HRRR hourly runs, byte-range subsets the GRIB2
+# for the variables we use (reflectivity, U/V wind, CAPE, temp, precip, cloud),
+# renders tiles, and dumps U/V grids for wind particles.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingest-hrrr
+  namespace: radar-ng
+  labels:
+    app: ingest-hrrr
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ingest-hrrr
+  template:
+    metadata:
+      labels:
+        app: ingest-hrrr
+    spec:
+      containers:
+        - name: ingest-hrrr
+          image: registry.vanillax.me/radar-ng-ingest-hrrr:latest
+          imagePullPolicy: Always
+          env:
+            - name: TILE_DIR
+              value: /data/tiles
+            - name: STATE_DIR
+              value: /data/state
+            - name: GRID_DIR
+              value: /data/grids
+            - name: PALETTES
+              value: classic,vivid,muted
+            - name: POLL_INTERVAL
+              value: "3600"
+            - name: FORECAST_HOURS
+              value: "18"
+            - name: EXTENDED_FORECAST_HOURS
+              value: "48"
+            - name: LOG_LEVEL
+              value: INFO
+          volumeMounts:
+            - { name: tiles, mountPath: /data/tiles }
+            - { name: state, mountPath: /data/state }
+            - { name: grids, mountPath: /data/grids }
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+      volumes:
+        - { name: tiles, persistentVolumeClaim: { claimName: tiles } }
+        - { name: state, persistentVolumeClaim: { claimName: state } }
+        - { name: grids, persistentVolumeClaim: { claimName: grids } }
