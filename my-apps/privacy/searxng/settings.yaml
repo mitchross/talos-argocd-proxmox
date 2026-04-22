@@ -78,30 +78,30 @@ engines:
     # an unmerged POC — bumping the image won't help. Re-enable once
     # that PR lands in a tagged release.
     - name: google
-      disable: true
+      disabled: true
     - name: duckduckgo
-      disable: false
+      disabled: false
     # Bing gets rate-limited hard when called from a datacenter IP range
     # and then SearXNG auto-suspends it for 180s (SearxEngineAccessDenied).
     # Left enabled because when it works the results are good, but it
     # is NOT relied on as a primary — the brave/startpage/qwant trio
     # below is what keeps general search alive when bing is suspended.
     - name: bing
-      disable: false
+      disabled: false
     - name: brave
-      disable: false
+      disabled: false
     - name: startpage
-      disable: false
+      disabled: false
     - name: qwant
-      disable: false
+      disabled: false
     - name: mojeek
-      disable: false
+      disabled: false
     - name: wikipedia
-      disable: false
+      disabled: false
     - name: stackoverflow
-      disable: false
+      disabled: false
     - name: github
-      disable: false
+      disabled: false
     # Kiwix engine removed - not available in SearXNG 2025.10.17
     # Re-add when upgrading SearXNG to a version with kiwix engine support
 
