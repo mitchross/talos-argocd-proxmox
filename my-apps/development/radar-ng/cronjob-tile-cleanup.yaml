@@ -1,0 +1,53 @@
+# Tile cache cleanup — runs cleanup.sh every 30 minutes. The script is baked
+# into a tiny alpine image via a ConfigMap mount (keeps us from maintaining a
+# custom "cleanup" image just to hold one shell script).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tile-cleanup-script
+  namespace: radar-ng
+data:
+  cleanup.sh: |
+    #!/bin/sh
+    # Remove tile directories older than TTL_HOURS (default 6h). Keeps the
+    # most recent tile set per layer; anything older is pruned.
+    set -eu
+    : "${TILE_DIR:=/data/tiles}"
+    : "${TTL_HOURS:=6}"
+    find "$TILE_DIR" -mindepth 2 -maxdepth 3 -type d \
+      -mmin +$((TTL_HOURS * 60)) -print -exec rm -rf {} + 2>/dev/null || true
+    echo "[tile-cleanup] swept ${TILE_DIR} (ttl=${TTL_HOURS}h)"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: tile-cleanup
+  namespace: radar-ng
+  labels:
+    app: tile-cleanup
+spec:
+  schedule: "*/30 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: cleanup
+              image: alpine:3.19
+              command: ["/bin/sh", "/scripts/cleanup.sh"]
+              env:
+                - { name: TILE_DIR,   value: /data/tiles }
+                - { name: TTL_HOURS,  value: "6" }
+              volumeMounts:
+                - { name: tiles,   mountPath: /data/tiles }
+                - { name: scripts, mountPath: /scripts }
+              resources:
+                requests: { cpu: 10m, memory: 32Mi }
+                limits:   { cpu: 200m, memory: 128Mi }
+          volumes:
+            - { name: tiles,   persistentVolumeClaim: { claimName: tiles } }
+            - { name: scripts, configMap: { name: tile-cleanup-script, defaultMode: 0755 } }

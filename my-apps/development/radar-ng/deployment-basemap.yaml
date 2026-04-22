@@ -1,0 +1,35 @@
+# Basemap — go-pmtiles serving a CONUS PMTiles archive baked into the image.
+# No PVC needed; update the image to refresh the map data.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: basemap
+  namespace: radar-ng
+  labels:
+    app: basemap
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: basemap
+  template:
+    metadata:
+      labels:
+        app: basemap
+    spec:
+      containers:
+        - name: basemap
+          image: registry.vanillax.me/radar-ng-basemap:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8081
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

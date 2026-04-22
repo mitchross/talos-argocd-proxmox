@@ -1,0 +1,69 @@
+# Tile-server — Caddy + FastAPI. Serves:
+#   /tiles/*          rendered radar/HRRR/etc PNG tiles (from PVC)
+#   /basemap/tiles/*  proxied to basemap service (go-pmtiles)
+#   /basemap/styles/* Protomaps style JSONs baked into the image
+#   /api/*            FastAPI endpoints (manifest, wind-field, storms, etc.)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tile-server
+  namespace: radar-ng
+  labels:
+    app: tile-server
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: tile-server
+  template:
+    metadata:
+      labels:
+        app: tile-server
+    spec:
+      containers:
+        - name: tile-server
+          image: registry.vanillax.me/radar-ng-tile-server:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: TILE_DIR
+              value: /data/tiles
+            - name: GRID_DIR
+              value: /data/grids
+            - name: STATE_DIR
+              value: /data/state
+            - name: OPEN_METEO_BASE
+              value: http://open-meteo:8080/v1/forecast
+            - name: MRMS_MAX_AGE_S
+              value: "600"
+          volumeMounts:
+            - name: tiles
+              mountPath: /data/tiles
+              readOnly: true
+            - name: grids
+              mountPath: /data/grids
+              readOnly: true
+            - name: state
+              mountPath: /data/state
+              readOnly: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+      volumes:
+        - name: tiles
+          persistentVolumeClaim:
+            claimName: tiles
+        - name: grids
+          persistentVolumeClaim:
+            claimName: grids
+        - name: state
+          persistentVolumeClaim:
+            claimName: state

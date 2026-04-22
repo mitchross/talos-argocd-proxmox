@@ -1,0 +1,54 @@
+# MRMS ingestor — polls NOAA MRMS S3 every 2 minutes, renders reflectivity
+# tiles into /data/tiles/{palette}/{timestamp}/{z}/{x}/{y}.png and dumps the
+# raw reflectivity grid to /data/grids/radar/*.bin for nowcast + storm-cell.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingest-mrms
+  namespace: radar-ng
+  labels:
+    app: ingest-mrms
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ingest-mrms
+  template:
+    metadata:
+      labels:
+        app: ingest-mrms
+    spec:
+      containers:
+        - name: ingest-mrms
+          image: registry.vanillax.me/radar-ng-ingest-mrms:latest
+          imagePullPolicy: Always
+          env:
+            - name: TILE_DIR
+              value: /data/tiles
+            - name: STATE_DIR
+              value: /data/state
+            - name: GRID_DIR
+              value: /data/grids
+            - name: PALETTES
+              value: classic,vivid,muted
+            - name: POLL_INTERVAL
+              value: "120"
+            - name: LOG_LEVEL
+              value: INFO
+          volumeMounts:
+            - { name: tiles, mountPath: /data/tiles }
+            - { name: state, mountPath: /data/state }
+            - { name: grids, mountPath: /data/grids }
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+      volumes:
+        - { name: tiles, persistentVolumeClaim: { claimName: tiles } }
+        - { name: state, persistentVolumeClaim: { claimName: state } }
+        - { name: grids, persistentVolumeClaim: { claimName: grids } }

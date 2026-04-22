@@ -1,0 +1,41 @@
+# Tropical ingestor — pulls NHC active-storm feed (positions, forecast track,
+# cone of uncertainty) every 5 minutes to /data/state/tropical.json.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingest-tropical
+  namespace: radar-ng
+  labels:
+    app: ingest-tropical
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ingest-tropical
+  template:
+    metadata:
+      labels:
+        app: ingest-tropical
+    spec:
+      containers:
+        - name: ingest-tropical
+          image: registry.vanillax.me/radar-ng-ingest-tropical:latest
+          imagePullPolicy: Always
+          env:
+            - name: STATE_DIR
+              value: /data/state
+            - name: POLL_INTERVAL
+              value: "300"
+          volumeMounts:
+            - { name: state, mountPath: /data/state }
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+      volumes:
+        - { name: state, persistentVolumeClaim: { claimName: state } }
