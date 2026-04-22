@@ -1694,6 +1694,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-04-22T02:35:27.898Z"
+    },
+    {
+      "id": "bug-105",
+      "timestamp": "2026-04-22T03:19:11.148Z",
+      "error_message": "Significant refactor of ",
+      "file": "my-apps/ai/comfyui/configmap.yaml",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 8→13 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "yaml"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-22T03:19:11.148Z"
     }
   ]
 }

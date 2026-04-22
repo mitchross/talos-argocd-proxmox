@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-22T02:35:37.218Z
-> Files: 642 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-22T03:19:27.858Z
+> Files: 643 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
 
@@ -24,6 +24,10 @@
 ## ../pvc-plumber/internal/s3/
 
 - `client.go` — Struct: Client (~506 tok)
+
+## ../redlib/templates/
+
+- `base.html` — {% block title %}Redlib{% endblock %} (~1406 tok)
 
 ## ./
 
@@ -627,10 +631,10 @@
 
 ## my-apps/ai/comfyui/
 
-- `configmap.yaml` — K8s ConfigMap (~4829 tok)
+- `configmap.yaml` — K8s ConfigMap (~4912 tok)
 - `deployment.yaml` — K8s Deployment (~993 tok)
 - `download-models-job.yaml` — K8s Job: comfyui-download-models (~1445 tok)
-- `externalsecret.yaml` — K8s ExternalSecret: comfyui-secrets (~132 tok)
+- `externalsecret.yaml` — K8s ExternalSecret (~316 tok)
 - `httproute.yaml` — K8s HTTPRoute: comfyui-route (~146 tok)
 - `kustomization.yaml` — K8s Kustomization (~118 tok)
 - `namespace.yaml` — K8s Namespace: comfyui (~17 tok)
