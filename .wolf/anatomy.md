@@ -1,7 +1,11 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-22T03:34:06.996Z
-> Files: 643 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-22T03:45:07.821Z
+> Files: 645 tracked | Anatomy hits: 0 | Misses: 0
+
+## ../../../../tmp/
+
+- `gen_canvas_workflows.py` — Generate three Comfy Canvas-integrated workflow JSONs. (~4403 tok)
 
 ## ../../.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/
 
@@ -24,6 +28,10 @@
 ## ../pvc-plumber/internal/s3/
 
 - `client.go` — Struct: Client (~506 tok)
+
+## ../redlib/
+
+- `Dockerfile.build` — Build stage (~283 tok)
 
 ## ../redlib/templates/
 
@@ -1069,7 +1077,7 @@
 
 ## my-apps/privacy/searxng/
 
-- `settings.yaml` (~882 tok)
+- `settings.yaml` (~1192 tok)
 
 ## omni/
 

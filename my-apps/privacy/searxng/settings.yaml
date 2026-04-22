@@ -72,11 +72,29 @@ hostnames:
         (www\.)?reddit\.com$: redlib.vanillax.me
 
 engines:
+    # Google is disabled: its frontend parser broke in 2026.4.17
+    # (google.py:385 IndexError: list index out of range when
+    # extracting content_nodes[0]). Upstream fix is PR #5984, still
+    # an unmerged POC — bumping the image won't help. Re-enable once
+    # that PR lands in a tagged release.
     - name: google
-      use_mobile_ui: false
+      disable: true
     - name: duckduckgo
       disable: false
+    # Bing gets rate-limited hard when called from a datacenter IP range
+    # and then SearXNG auto-suspends it for 180s (SearxEngineAccessDenied).
+    # Left enabled because when it works the results are good, but it
+    # is NOT relied on as a primary — the brave/startpage/qwant trio
+    # below is what keeps general search alive when bing is suspended.
     - name: bing
+      disable: false
+    - name: brave
+      disable: false
+    - name: startpage
+      disable: false
+    - name: qwant
+      disable: false
+    - name: mojeek
       disable: false
     - name: wikipedia
       disable: false
@@ -88,7 +106,11 @@ engines:
     # Re-add when upgrading SearXNG to a version with kiwix engine support
 
 outgoing:
-    request_timeout: 3.0
+    # Bumped from 3s -> 6s because Vane/Perplexica fires 3 parallel
+    # research queries; brave/startpage/qwant can take 2-4s on a cold
+    # connection and were getting suspended as "too slow" under the
+    # 3s timeout. max_request_timeout stays the hard ceiling.
+    request_timeout: 6.0
     max_request_timeout: 15.0
     pool_connections: 100
     pool_maxsize: 20
