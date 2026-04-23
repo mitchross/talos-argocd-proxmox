@@ -33,7 +33,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: seed
-          image: temporalio/admin-tools:1.30.3
+          image: temporalio/admin-tools:1.30.4
           command: ["/bin/sh", "/scripts/seed-namespaces.sh"]
           volumeMounts:
             - name: seed-script
