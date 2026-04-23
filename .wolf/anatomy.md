@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-22T04:10:08.556Z
-> Files: 648 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-23T16:09:18.950Z
+> Files: 649 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -157,8 +157,9 @@
 
 ## infrastructure/controllers/argocd/
 
+- `externalsecret-webhook.yaml` — Webhook secret for the GitHub -> ArgoCD webhook at (~342 tok)
 - `http-route.yaml` — K8s HTTPRoute: argocd (~139 tok)
-- `kustomization.yaml` — K8s Kustomization: argo-cd (~287 tok)
+- `kustomization.yaml` — K8s Kustomization (~296 tok)
 - `ns.yaml` — K8s Namespace: argocd (~16 tok)
 - `root.yaml` — K8s Application (~415 tok)
 - `values.yaml` — Global settings for the Argo CD chart (~2440 tok)

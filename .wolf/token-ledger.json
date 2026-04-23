@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-05T03:39:06.883Z",
   "lifetime": {
-    "total_tokens_estimated": 18280887,
-    "total_reads": 11818,
-    "total_writes": 10605,
+    "total_tokens_estimated": 18308820,
+    "total_reads": 11845,
+    "total_writes": 10638,
     "total_sessions": 38,
-    "anatomy_hits": 8693,
-    "anatomy_misses": 3050,
-    "repeated_reads_blocked": 3220,
-    "estimated_savings_vs_bare_cli": 10862225
+    "anatomy_hits": 8708,
+    "anatomy_misses": 3062,
+    "repeated_reads_blocked": 3223,
+    "estimated_savings_vs_bare_cli": 10866425
   },
   "sessions": [
     {
@@ -135986,6 +135986,384 @@
         "writes_count": 9,
         "repeated_reads_blocked": 1,
         "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-04-22-2355",
+      "started": "2026-04-22T03:55:00.714Z",
+      "ended": "2026-04-23T16:10:00.703Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/MEMORY.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/redlib/Dockerfile.ubuntu",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/.github/renovate.json5",
+          "tokens_estimated": 1599,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/deployment.yaml",
+          "tokens_estimated": 400,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/canvas-out1.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/canvas-test-result.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/values.yaml",
+          "tokens_estimated": 2440,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/comfyui/externalsecret.yaml",
+          "tokens_estimated": 316,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/kustomization.yaml",
+          "tokens_estimated": 287,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/project_posthog_version_pinning.md",
+          "tokens_estimated": 615,
+          "action": "create"
+        },
+        {
+          "file": "/tmp/ui_to_api.py",
+          "tokens_estimated": 1346,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/MEMORY.md",
+          "tokens_estimated": 80,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/gen_canvas_workflows.py",
+          "tokens_estimated": 268,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/deployment.yaml",
+          "tokens_estimated": 15,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/gen_canvas_workflows.py",
+          "tokens_estimated": 198,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/inject_canvas.py",
+          "tokens_estimated": 1353,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/privacy/searxng/settings.yaml",
+          "tokens_estimated": 6,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/privacy/searxng/settings.yaml",
+          "tokens_estimated": 6,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/externalsecret-webhook.yaml",
+          "tokens_estimated": 342,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/kustomization.yaml",
+          "tokens_estimated": 40,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 5042,
+        "output_tokens_estimated": 4269,
+        "reads_count": 9,
+        "writes_count": 11,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 5
+      }
+    },
+    {
+      "id": "session-2026-04-22-2355",
+      "started": "2026-04-22T03:55:00.714Z",
+      "ended": "2026-04-23T17:09:51.520Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/MEMORY.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/redlib/Dockerfile.ubuntu",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/.github/renovate.json5",
+          "tokens_estimated": 1599,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/deployment.yaml",
+          "tokens_estimated": 400,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/canvas-out1.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/canvas-test-result.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/values.yaml",
+          "tokens_estimated": 2440,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/comfyui/externalsecret.yaml",
+          "tokens_estimated": 316,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/kustomization.yaml",
+          "tokens_estimated": 287,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/project_posthog_version_pinning.md",
+          "tokens_estimated": 615,
+          "action": "create"
+        },
+        {
+          "file": "/tmp/ui_to_api.py",
+          "tokens_estimated": 1346,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/MEMORY.md",
+          "tokens_estimated": 80,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/gen_canvas_workflows.py",
+          "tokens_estimated": 268,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/deployment.yaml",
+          "tokens_estimated": 15,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/gen_canvas_workflows.py",
+          "tokens_estimated": 198,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/inject_canvas.py",
+          "tokens_estimated": 1353,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/privacy/searxng/settings.yaml",
+          "tokens_estimated": 6,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/privacy/searxng/settings.yaml",
+          "tokens_estimated": 6,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/externalsecret-webhook.yaml",
+          "tokens_estimated": 342,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/kustomization.yaml",
+          "tokens_estimated": 40,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 5042,
+        "output_tokens_estimated": 4269,
+        "reads_count": 9,
+        "writes_count": 11,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 5
+      }
+    },
+    {
+      "id": "session-2026-04-22-2355",
+      "started": "2026-04-22T03:55:00.714Z",
+      "ended": "2026-04-23T17:13:17.076Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/MEMORY.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/redlib/Dockerfile.ubuntu",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/.github/renovate.json5",
+          "tokens_estimated": 1599,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/deployment.yaml",
+          "tokens_estimated": 400,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/canvas-out1.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/canvas-test-result.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/values.yaml",
+          "tokens_estimated": 2440,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/comfyui/externalsecret.yaml",
+          "tokens_estimated": 316,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/kustomization.yaml",
+          "tokens_estimated": 287,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/project_posthog_version_pinning.md",
+          "tokens_estimated": 615,
+          "action": "create"
+        },
+        {
+          "file": "/tmp/ui_to_api.py",
+          "tokens_estimated": 1346,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/MEMORY.md",
+          "tokens_estimated": 80,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/gen_canvas_workflows.py",
+          "tokens_estimated": 268,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/deployment.yaml",
+          "tokens_estimated": 15,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/gen_canvas_workflows.py",
+          "tokens_estimated": 198,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/inject_canvas.py",
+          "tokens_estimated": 1353,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/privacy/searxng/settings.yaml",
+          "tokens_estimated": 6,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/privacy/searxng/settings.yaml",
+          "tokens_estimated": 6,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/externalsecret-webhook.yaml",
+          "tokens_estimated": 342,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/kustomization.yaml",
+          "tokens_estimated": 40,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 5042,
+        "output_tokens_estimated": 4269,
+        "reads_count": 9,
+        "writes_count": 11,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 5
       }
     }
   ],

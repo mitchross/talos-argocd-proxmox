@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: argocd
 resources:
   - ns.yaml
+  - externalsecret-webhook.yaml
   # NOTE: http-route.yaml moved to infrastructure/networking/gateway/ so it deploys
   # at wave 4 with the Gateway. Including it here (wave 0) causes a bootstrap deadlock:
   # HTTPRoute stays Progressing with no Gateway, blocking all subsequent sync waves.
