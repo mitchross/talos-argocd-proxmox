@@ -31,6 +31,21 @@
       "count": 1,
       "tokens": 0,
       "first_read": "2026-04-22T04:09:04.809Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/values.yaml": {
+      "count": 1,
+      "tokens": 2440,
+      "first_read": "2026-04-23T16:06:19.805Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/comfyui/externalsecret.yaml": {
+      "count": 1,
+      "tokens": 316,
+      "first_read": "2026-04-23T16:08:39.610Z"
+    },
+    "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/kustomization.yaml": {
+      "count": 1,
+      "tokens": 287,
+      "first_read": "2026-04-23T16:09:14.932Z"
     }
   },
   "files_written": [
@@ -87,6 +102,18 @@
       "action": "edit",
       "tokens": 6,
       "at": "2026-04-22T04:10:08.563Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/externalsecret-webhook.yaml",
+      "action": "create",
+      "tokens": 342,
+      "at": "2026-04-23T16:09:09.230Z"
+    },
+    {
+      "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/kustomization.yaml",
+      "action": "edit",
+      "tokens": 40,
+      "at": "2026-04-23T16:09:18.956Z"
     }
   ],
   "edit_counts": {
@@ -96,11 +123,13 @@
     "../../../../tmp/gen_canvas_workflows.py": 2,
     "my-apps/media/redlib/deployment.yaml": 1,
     "../../../../tmp/inject_canvas.py": 1,
-    "my-apps/privacy/searxng/settings.yaml": 2
+    "my-apps/privacy/searxng/settings.yaml": 2,
+    "infrastructure/controllers/argocd/externalsecret-webhook.yaml": 1,
+    "infrastructure/controllers/argocd/kustomization.yaml": 1
   },
-  "anatomy_hits": 2,
+  "anatomy_hits": 5,
   "anatomy_misses": 4,
   "repeated_reads_warned": 1,
   "cerebrum_warnings": 0,
-  "stop_count": 18
+  "stop_count": 21
 }
