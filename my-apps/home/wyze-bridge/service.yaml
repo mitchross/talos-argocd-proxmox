@@ -9,9 +9,6 @@ spec:
   selector:
     app: wyze-bridge
   ports:
-    - name: rtmp
-      port: 1935
-      targetPort: 1935
     - name: rtsp
       port: 8554
       targetPort: 8554
@@ -26,7 +23,7 @@ spec:
       protocol: UDP
       targetPort: 8189
     - name: web-ui
-      port: 5000
-      targetPort: 5000
+      port: 5080
+      targetPort: 5080
   type: LoadBalancer
   loadBalancerClass: io.cilium/l2-announcer

@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: wyze-bridge
-        image: ghcr.io/idisposable/docker-wyze-bridge:3.12.3
+        image: ghcr.io/idisposable/docker-wyze-bridge:4.3.0
         imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:
@@ -25,8 +25,6 @@ spec:
         - secretRef:
             name: wyze-bridge-secrets
         ports:
-        - containerPort: 1935
-          name: rtmp
         - containerPort: 8554
           name: rtsp
         - containerPort: 8888
@@ -36,7 +34,7 @@ spec:
         - containerPort: 8189
           name: webrtc-ice
           protocol: UDP
-        - containerPort: 5000
+        - containerPort: 5080
           name: web-ui
         resources:
           requests:
@@ -48,7 +46,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /
-            port: 5000
+            port: 5080
           initialDelaySeconds: 30
           periodSeconds: 60
           timeoutSeconds: 5
@@ -56,14 +54,14 @@ spec:
         readinessProbe:
           httpGet:
             path: /
-            port: 5000
+            port: 5080
           initialDelaySeconds: 15
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
         volumeMounts:
-        - name: wyze-tokens
-          mountPath: /tokens
+        - name: wyze-config
+          mountPath: /config
       volumes:
-      - name: wyze-tokens
+      - name: wyze-config
         emptyDir: {}
