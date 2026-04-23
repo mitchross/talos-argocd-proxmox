@@ -4,14 +4,10 @@ metadata:
   name: wyze-bridge-config
   namespace: wyze-bridge
 data:
-  WB_AUTH: "False"
+  BRIDGE_AUTH: "false"
   TZ: "America/Detroit"
-  FILTER_BLOCK: "True"
-  QUALITY: "HD120"
-  ROTATE_DOOR: "True"
-  WB_IP: "192.168.10.46"
+  FILTER_BLOCKS: "true"
+  QUALITY: "hd"
+  BRIDGE_IP: "192.168.10.46"
   LOG_LEVEL: "info"
-  ON_DEMAND: "False"
-  FORCE_IOTC_DETAIL: "True"
-  # Add any other non-sensitive environment variables here
-  # WB_IP: "your.node.ip.address"
+  FORCE_IOTC_DETAIL: "true"
