@@ -30,7 +30,7 @@ helmCharts:
   - name: temporal-worker-controller
     repo: oci://docker.io/temporalio
     # renovate: datasource=docker depName=docker.io/temporalio/temporal-worker-controller
-    version: 0.24.1
+    version: v1.5.2
     releaseName: temporal-worker-controller
     namespace: temporal-worker-controller
     valuesFile: values.yaml
