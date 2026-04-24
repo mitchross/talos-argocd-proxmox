@@ -1,10 +1,3 @@
-# OpenWolf
-
-@.wolf/OPENWOLF.md
-
-This project uses OpenWolf for context management. Read and follow .wolf/OPENWOLF.md every session. Check .wolf/cerebrum.md before generating code. Check .wolf/anatomy.md before reading files.
-
-
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
@@ -173,6 +166,13 @@ Detailed instructions load automatically when working in these directories:
 | **OTEL auto-instrumentation** | `infrastructure/controllers/opentelemetry-operator/instrumentation.yaml` |
 | **Jobs with ArgoCD hooks** | `my-apps/development/posthog/core/jobs.yaml` |
 | **Helm Job Kustomize patch** | `my-apps/development/temporal/kustomization.yaml` |
+
+## Mink capture
+
+At the end of any substantive working session, proactively propose
+`/mink:note` captures for: decisions made, bugs fixed with root causes,
+gotchas discovered, or cross-repo implications. Do not capture routine
+edits or transient debugging.
 
 ## Additional Documentation
 
