@@ -22,6 +22,11 @@ kind: HTTPRoute
 metadata:
   name: otel-gateway
   namespace: opentelemetry
+  labels:
+    # Required by external-dns (see infrastructure/controllers/external-dns/values.yaml:
+    # --label-filter=external-dns=true). Without this label, external-dns
+    # silently ignores the route and no CNAME is created in Cloudflare.
+    external-dns: "true"
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
