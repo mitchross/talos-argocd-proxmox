@@ -206,8 +206,15 @@ kubectl logs -n opentelemetry -l app.kubernetes.io/component=opentelemetry-colle
 # Visit: https://prometheus.vanillax.me/targets
 
 # Loki is receiving logs — in Grafana Explore, try:
-#   {namespace=~".+"}
-# If nothing returns, check Loki's ingester + the Gateway's loki exporter.
+#   {k8s_namespace_name=~".+"}
+# Labels are OTEL-semconv style (dots → underscores) because logs come from the
+# OTEL Gateway's loki exporter, NOT Promtail. Available labels include:
+#   k8s_cluster_name, k8s_namespace_name, k8s_pod_name, k8s_container_name,
+#   k8s_deployment_name, k8s_daemonset_name, k8s_statefulset_name,
+#   k8s_replicaset_name, service_name
+# Querying `{namespace=~".+"}` returns "No data" — that Prometheus-legacy label
+# does not exist here. If the right selector also returns nothing, then check
+# Loki's ingester + the Gateway's loki exporter.
 
 # Honeycomb is receiving anything
 # Visit: https://ui.honeycomb.io — look for datasets with k8s.namespace.name attribute.
