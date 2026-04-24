@@ -182,5 +182,4 @@ edits or transient debugging.
 - **[docs/network-topology.md](docs/network-topology.md)** - Network architecture details
 - **[docs/network-policy.md](docs/network-policy.md)** - Cilium network policies
 - **[docs/argocd.md](docs/argocd.md)** - ArgoCD documentation
-- **[docs/plans/2026-03-22-alloy-otel-honeycomb-design.md](docs/plans/2026-03-22-alloy-otel-honeycomb-design.md)** - OTEL + Honeycomb observability design
 - **[scripts/emergency-webhook-cleanup.sh](scripts/emergency-webhook-cleanup.sh)** - Emergency recovery from Kyverno webhook deadlock

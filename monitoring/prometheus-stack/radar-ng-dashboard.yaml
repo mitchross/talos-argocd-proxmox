@@ -1,0 +1,167 @@
+# Grafana dashboard for radar-ng.
+#
+# Sources:
+#   - Loki   (logs)    — uses OTEL labels: k8s_namespace_name, k8s_container_name
+#   - Prometheus (metrics) — scraped from tile-server's /api/metrics via
+#     my-apps/development/radar-ng/servicemonitor.yaml
+#
+# The dashboard is auto-imported via the `grafana_dashboard: "1"` label.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: radar-ng-dashboard
+  namespace: prometheus-stack
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/name: grafana-dashboards
+data:
+  radar-ng.json: |
+    {
+      "title": "radar-ng",
+      "uid": "radar-ng-overview",
+      "tags": ["radar-ng", "app"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "editable": true,
+      "graphTooltip": 1,
+      "refresh": "30s",
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "type": "datasource",
+            "name": "DS_PROM",
+            "label": "Prometheus",
+            "query": "prometheus",
+            "current": { "text": "Prometheus", "value": "Prometheus" }
+          },
+          {
+            "type": "datasource",
+            "name": "DS_LOKI",
+            "label": "Loki",
+            "query": "loki",
+            "current": { "text": "Loki", "value": "Loki" }
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "MRMS radar data age (seconds)",
+          "description": "Time since the newest radar tile was written. Should stay < 300s during normal MRMS polling.",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "gridPos": { "x": 0, "y": 0, "w": 6, "h": 5 },
+          "targets": [
+            { "expr": "stormscope_mrms_age_seconds", "refId": "A" }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 300 },
+                  { "color": "red", "value": 900 }
+                ]
+              }
+            }
+          },
+          "options": { "colorMode": "background", "graphMode": "area" }
+        },
+        {
+          "id": 2,
+          "type": "timeseries",
+          "title": "tile-server requests/sec by endpoint",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "gridPos": { "x": 6, "y": 0, "w": 12, "h": 5 },
+          "targets": [
+            { "expr": "rate(stormscope_manifest_requests_total[5m])", "refId": "A", "legendFormat": "manifest" },
+            { "expr": "rate(stormscope_forecast_requests_total[5m])", "refId": "B", "legendFormat": "forecast" }
+          ],
+          "fieldConfig": { "defaults": { "unit": "reqps" } }
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Forecast cache hit %",
+          "description": "Open-Meteo forecast cache efficiency.",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "gridPos": { "x": 18, "y": 0, "w": 6, "h": 5 },
+          "targets": [
+            {
+              "expr": "100 * sum(rate(stormscope_forecast_cache_hits_total[5m])) / clamp_min(sum(rate(stormscope_forecast_requests_total[5m])), 1)",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "yellow", "value": 50 },
+                  { "color": "green", "value": 80 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 4,
+          "type": "timeseries",
+          "title": "Log volume by container",
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "gridPos": { "x": 0, "y": 5, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum by (k8s_container_name) (count_over_time({k8s_namespace_name=\"radar-ng\"}[1m]))",
+              "refId": "A",
+              "legendFormat": "{{k8s_container_name}}"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" } }
+        },
+        {
+          "id": 5,
+          "type": "timeseries",
+          "title": "Upstream errors (forecast)",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "gridPos": { "x": 12, "y": 5, "w": 12, "h": 8 },
+          "targets": [
+            { "expr": "rate(stormscope_forecast_upstream_errors_total[5m])", "refId": "A", "legendFormat": "errors/sec" }
+          ],
+          "fieldConfig": { "defaults": { "unit": "reqps" } }
+        },
+        {
+          "id": 6,
+          "type": "logs",
+          "title": "Recent error lines (all radar-ng containers)",
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "gridPos": { "x": 0, "y": 13, "w": 24, "h": 10 },
+          "targets": [
+            {
+              "expr": "{k8s_namespace_name=\"radar-ng\"} |~ \"(?i)error|exception|traceback|failed\"",
+              "refId": "A"
+            }
+          ],
+          "options": { "showTime": true, "wrapLogMessage": true, "dedupStrategy": "none" }
+        },
+        {
+          "id": 7,
+          "type": "timeseries",
+          "title": "Tile timestamps per layer",
+          "description": "Number of available timestamp slices per rendered layer. Drops here usually indicate an ingestor stall.",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "gridPos": { "x": 0, "y": 23, "w": 24, "h": 8 },
+          "targets": [
+            { "expr": "stormscope_tile_timestamps", "refId": "A", "legendFormat": "{{layer}}" }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" } }
+        }
+      ]
+    }

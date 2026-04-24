@@ -3,17 +3,18 @@
 ## Observability Architecture
 
 ```
-OTEL Collector Agent (DaemonSet)  →  OTEL Collector Gateway (Deployment)  →  Honeycomb (OTLP)
-  per node: filelog + OTLP recv        k8sattributes, batch, fan-out    →  Tempo (traces)
-                                                                         →  Loki (logs)
+OTEL Collector Agent (DaemonSet)  →  OTEL Collector Gateway (Deployment)  →  Tempo (traces)
+  per node: filelog + OTLP recv        k8sattributes, batch, fan-out     →  Loki (logs)
                                                                          →  Prometheus (metrics)
 ```
+
+External clients (e.g. the radar-ng mobile app) hit the Gateway over HTTPS at
+`otel.vanillax.me/v1/{traces,logs,metrics}` via `collector-gateway-httproute.yaml`.
 
 - **OTEL Operator** (`infrastructure/controllers/opentelemetry-operator/`) — manages Collectors and auto-instrumentation
 - **Prometheus + Grafana** (`monitoring/prometheus-stack/`) — metrics storage, dashboards, alerting
 - **Loki** (`monitoring/loki-stack/`) — log storage (S3 backend on RustFS)
 - **Tempo** (`monitoring/tempo/`) — trace storage (S3 backend on RustFS)
-- **Honeycomb** — SaaS observability, receives all signals via OTLP
 
 ## Auto-Instrumentation
 
@@ -44,5 +45,5 @@ The OTEL Operator webhook injects an init container with the OTEL SDK. Traces ar
 - GPU alerts: `monitoring/prometheus-stack/gpu-alerts.yaml`
 - OTEL Collector Agent: `infrastructure/controllers/opentelemetry-operator/collector-agent.yaml`
 - OTEL Collector Gateway: `infrastructure/controllers/opentelemetry-operator/collector-gateway.yaml`
+- OTEL Gateway public HTTPRoute: `infrastructure/controllers/opentelemetry-operator/collector-gateway-httproute.yaml`
 - Auto-instrumentation: `infrastructure/controllers/opentelemetry-operator/instrumentation.yaml`
-- Honeycomb secret: `infrastructure/controllers/opentelemetry-operator/externalsecret.yaml`

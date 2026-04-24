@@ -1,9 +1,8 @@
 # Monitoring & Observability Stack
 
 Full three-pillar observability (metrics / logs / traces) for the cluster,
-with a **dual-ship** pipeline: everything lands in local storage (for raw
-access, low-cost queries, zero egress) *and* in Honeycomb (for fast queries,
-cross-service correlation, longer retention per plan).
+fully self-hosted: metrics in Prometheus, logs in Loki, traces in Tempo,
+visualized in Grafana. No SaaS in the pipeline.
 
 ## Architecture
 
@@ -25,10 +24,6 @@ graph TB
         E -->|metrics| H[Prometheus<br/>prometheus-stack/]
     end
 
-    subgraph "SaaS"
-        E -->|OTLP HTTP| I[Honeycomb]
-    end
-
     subgraph "Visualization"
         F --> J[Grafana]
         G --> J
@@ -43,32 +38,20 @@ graph TB
     end
 ```
 
-## Why dual-ship?
+## Design notes
 
-Local (Prometheus/Loki/Tempo) and Honeycomb aren't redundant — they answer
-different kinds of questions. The Collector Gateway fans out to both so you
-always have both lenses available, with no extra app-side work.
+Everything is self-hosted — no SaaS in the pipeline. Each signal has one
+authoritative sink so there's never a "which one do I trust" question:
 
-| Use case                                                 | Query in Local (Grafana) | Query in Honeycomb |
-|----------------------------------------------------------|:------------------------:|:------------------:|
-| "Show me the CPU trend on this one node"                 | ✅                       |                    |
-| "Tail logs from `foo-ns` right now"                      | ✅ (Loki / Grafana Explore) |                  |
-| "Why is p99 latency spiking — what attribute correlates?"|                          | ✅ (BubbleUp)      |
-| "Span-level view across 3 services in a user's request"  |                          | ✅                 |
-| "Alert on metric threshold"                              | ✅ (Alertmanager)        |                    |
-| "Ad-hoc group-by I didn't pre-plan"                      |                          | ✅                 |
-| "Zero-egress: airgapped debug after internet outage"     | ✅                       |                    |
-| "Retention longer than 30 days / 72 hours"               |                          | ✅ (per plan)      |
+| Signal  | Sink                            | Query in      |
+|---------|---------------------------------|---------------|
+| Metrics | Prometheus (`prometheus-stack/`)| Grafana       |
+| Logs    | Loki (`loki-stack/`)            | Grafana Explore |
+| Traces  | Tempo (`tempo/`)                | Grafana Explore |
+| Alerts  | Alertmanager                    | alertmanager.vanillax.me |
 
-**Rule of thumb:** start in Honeycomb for anything trace-shaped or
-"why is this slow/broken right now"; start in Grafana for anything
-metric-shaped, alert-shaped, or historical. Logs live in both — Loki for
-raw tail, Honeycomb for correlated-with-traces.
-
-**Cost note:** Honeycomb bills by event volume. The OTEL Gateway's
-`batch` + `k8sattributes` processors keep per-event overhead sane, but if
-you add a chatty service, check Honeycomb usage before blaming the bill on
-metrics.
+Retention: metrics 15d, logs 30d, traces 72h (see table near the bottom).
+For anything longer-term, export from Loki/Tempo to S3 before rotation.
 
 ## Components
 
@@ -80,7 +63,6 @@ metrics.
 | **Prometheus** | `monitoring/prometheus-stack/` | Metrics storage, alerting, Grafana |
 | **Loki** | `monitoring/loki-stack/` | Log storage (S3 on RustFS) |
 | **Tempo** | `monitoring/tempo/` | Trace storage (S3 on RustFS) |
-| **Honeycomb** | External SaaS | All signals via OTLP HTTP |
 
 ## Auto-Instrumentation
 
@@ -175,7 +157,6 @@ Grafana has data, it's the reverse.
 | Prometheus | https://prometheus.vanillax.me |
 | Alertmanager | https://alertmanager.vanillax.me |
 | Loki | https://loki.vanillax.me |
-| Honeycomb | https://ui.honeycomb.io |
 
 ## Key Files
 
@@ -184,16 +165,15 @@ Grafana has data, it's the reverse.
 - GPU alerts/dashboard: `monitoring/prometheus-stack/gpu-alerts.yaml`, `gpu-dashboard.yaml`
 - OTEL Collectors: `infrastructure/controllers/opentelemetry-operator/collector-*.yaml`
 - Auto-instrumentation: `infrastructure/controllers/opentelemetry-operator/instrumentation.yaml`
-- Honeycomb secret: `infrastructure/controllers/opentelemetry-operator/externalsecret.yaml`
 
 ## Retention
 
-| Signal | Local | Honeycomb |
-|--------|-------|-----------|
-| Metrics | 15 days (Prometheus) | Per plan |
-| Logs | 30 days (Loki) | Per plan |
-| Traces | 72 hours (Tempo) | Per plan |
-| Alerts | 72 hours (Alertmanager) | N/A |
+| Signal | Retention |
+|--------|-----------|
+| Metrics | 15 days (Prometheus) |
+| Logs | 30 days (Loki) |
+| Traces | 72 hours (Tempo) |
+| Alerts | 72 hours (Alertmanager) |
 
 ## Troubleshooting
 
@@ -215,11 +195,6 @@ kubectl logs -n opentelemetry -l app.kubernetes.io/component=opentelemetry-colle
 # Querying `{namespace=~".+"}` returns "No data" — that Prometheus-legacy label
 # does not exist here. If the right selector also returns nothing, then check
 # Loki's ingester + the Gateway's loki exporter.
-
-# Honeycomb is receiving anything
-# Visit: https://ui.honeycomb.io — look for datasets with k8s.namespace.name attribute.
-# No dataset = the Gateway's OTLP HTTP exporter isn't authenticating (check the
-# externalsecret-mounted Honeycomb API key).
 
 # Trace a specific app's pipeline end-to-end
 kubectl logs -n opentelemetry ds/collector-agent        # agent received spans?

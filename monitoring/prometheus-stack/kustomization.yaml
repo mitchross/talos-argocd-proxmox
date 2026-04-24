@@ -18,6 +18,7 @@ resources:
   - loki-logs-dashboard.yaml # Custom Loki logs dashboard (uses OTEL labels)
   - solar-dashboard.yaml # Epever Solar MPPT dashboard
   - tapo-power-dashboard.yaml # Tapo smart plug power monitoring
+  - radar-ng-dashboard.yaml # radar-ng app dashboard (logs + tile-server metrics)
 # Strategic merge patches to handle resource conflicts
 patchesStrategicMerge:
   - alertmanager-config.yaml

@@ -1,0 +1,43 @@
+# Exposes the OTEL Collector Gateway's OTLP/HTTP receiver publicly at
+# https://otel.vanillax.me/v1/{traces,logs,metrics} via gateway-external
+# (Cloudflare Tunnel). Required so the radar-ng mobile app can ship
+# telemetry from anywhere — cellular, away from home, etc., which is when
+# the most interesting crash/latency data happens.
+#
+# Security posture (intentional): no auth, public write-only endpoint.
+# - Write-only: reads (Grafana/Tempo/Loki) are on gateway-internal, so
+#   attackers cannot exfiltrate telemetry.
+# - DoS hardened: collector-gateway.yaml enforces max_request_body_size
+#   and memory_limiter — spam can't OOM the collector or fill storage
+#   unbounded.
+# - No secrets in payloads: traces record lat/lon + HTTP status; there's
+#   no PII or auth token in the telemetry.
+#
+# Service name convention: the OpenTelemetryCollector operator creates
+# <collector-name>-collector with a port per receiver. For `otel-gateway`
+# in mode: deployment, OTLP/HTTP is 4318 on service otel-gateway-collector.
+# OTLP/gRPC (4317) stays cluster-local.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: otel-gateway
+  namespace: opentelemetry
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-external
+      namespace: gateway
+  hostnames:
+    - otel.vanillax.me
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /v1/
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: otel-gateway-collector
+          port: 4318
+          weight: 1

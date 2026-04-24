@@ -8,6 +8,8 @@ kind: Service
 metadata:
   name: tile-server
   namespace: radar-ng
+  labels:
+    app: tile-server
 spec:
   selector:
     app: tile-server

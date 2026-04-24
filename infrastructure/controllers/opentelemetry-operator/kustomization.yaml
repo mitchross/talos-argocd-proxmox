@@ -4,9 +4,9 @@ namespace: opentelemetry
 resources:
   - ns.yaml
   - rbac.yaml
-  - externalsecret.yaml
   - collector-agent.yaml
   - collector-gateway.yaml
+  - collector-gateway-httproute.yaml
   - instrumentation.yaml
 helmCharts:
   - name: opentelemetry-operator
