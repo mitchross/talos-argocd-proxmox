@@ -14,12 +14,6 @@ spec:
     limits:
       cpu: "1"
       memory: 1Gi
-  env:
-  - name: HONEYCOMB_API_KEY
-    valueFrom:
-      secretKeyRef:
-        name: honeycomb-api-key
-        key: api-key
   config:
     receivers:
       otlp:
@@ -28,6 +22,21 @@ spec:
             endpoint: 0.0.0.0:4317
           http:
             endpoint: 0.0.0.0:4318
+            # Cap per-request body at 4 MiB — protects the public
+            # otel.vanillax.me endpoint from fill-storage floods. A normal
+            # OTLP batch is well under 1 MiB; 4 MiB is generous for big
+            # span/log batches from the mobile app.
+            max_request_body_size: 4194304
+            # CORS is needed for OTLP/HTTP from browser / Expo-web debug
+            # builds. Native RN doesn't enforce CORS. "*" is safe here
+            # because the endpoint is write-only (reads are on the
+            # internal Grafana).
+            cors:
+              allowed_origins:
+                - "*"
+              allowed_headers:
+                - "*"
+              max_age: 7200
 
       # Cluster-wide metrics from K8s API (pod phases, deployments, restarts, node conditions)
       k8s_cluster:
@@ -43,6 +52,15 @@ spec:
         - nvidia.com/gpu
 
     processors:
+      # Refuses new data if the collector is approaching its memory limit.
+      # MUST be first in every pipeline so backpressure happens BEFORE
+      # k8sattributes / batch allocate more memory on a malformed or
+      # flood-sized payload. Tuned for the 1Gi pod limit above.
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 800
+        spike_limit_mib: 200
+
       # Enrich with Kubernetes metadata from API server
       k8sattributes:
         auth_type: "serviceAccount"
@@ -92,16 +110,6 @@ spec:
         send_batch_max_size: 16384
 
     exporters:
-      # Honeycomb - disabled, hit max dataset limit and causes gateway crash-loop
-      # otlphttp/honeycomb:
-      #   endpoint: https://api.honeycomb.io
-      #   headers:
-      #     x-honeycomb-team: ${env:HONEYCOMB_API_KEY}
-      #   sending_queue:
-      #     enabled: true
-      #     num_consumers: 10
-      #     queue_size: 10000
-
       # Tempo - traces via OTLP gRPC
       otlp/tempo:
         endpoint: tempo.monitoring.svc.cluster.local:4317
@@ -134,13 +142,13 @@ spec:
           # define the k8sobjects receiver in the receivers: block above
           # THEN add it here.
           receivers: [otlp]
-          processors: [k8sattributes, resource, batch]
+          processors: [memory_limiter, k8sattributes, resource, batch]
           exporters: [otlphttp/loki]
         traces:
           receivers: [otlp]
-          processors: [k8sattributes, resource, batch]
+          processors: [memory_limiter, k8sattributes, resource, batch]
           exporters: [otlp/tempo]
         metrics:
           receivers: [otlp, k8s_cluster]
-          processors: [k8sattributes, resource, batch]
+          processors: [memory_limiter, k8sattributes, resource, batch]
           exporters: [otlphttp/prometheus]
