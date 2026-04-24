@@ -22,16 +22,32 @@ spec:
       annotations:
         instrumentation.opentelemetry.io/inject-nodejs: "opentelemetry/default"
     spec:
+      initContainers:
+        - name: fetch-mmdb
+          image: ghcr.io/posthog/posthog/property-defs-rs:master@sha256:98f5823d7fe411d3a385971e27b0b63da2da8c7401d75e865e3f7f3a7e77671f
+          command:
+            - sh
+            - -c
+            - cp /app/share/GeoLite2-City.mmdb /shared/GeoLite2-City.mmdb
+          volumeMounts:
+            - name: mmdb
+              mountPath: /shared
       containers:
         - name: plugins
           image: posthog/posthog-node:latest@sha256:863e76e040ad41aef79f605c33ec71f1529bddf94cfd88941c935da9bde97235
           command:
             - node
             - nodejs/dist/index.js
+          volumeMounts:
+            - name: mmdb
+              mountPath: /code/share
+              readOnly: true
           envFrom:
             - configMapRef:
                 name: posthog-env
           env:
+            - name: MMDB_FILE_LOCATION
+              value: "/code/share/GeoLite2-City.mmdb"
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
@@ -116,6 +132,10 @@ spec:
               memory: 512Mi
             limits:
               memory: 2Gi
+      volumes:
+        - name: mmdb
+          emptyDir:
+            sizeLimit: 128Mi
 ---
 apiVersion: v1
 kind: Service
