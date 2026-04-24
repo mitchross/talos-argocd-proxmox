@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-04-23T16:09:18.950Z
-> Files: 649 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-04-24T02:57:19.257Z
+> Files: 652 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ../../../../tmp/
 
@@ -14,6 +14,14 @@
 - `MEMORY.md` — Memory Index (~339 tok)
 - `project_posthog_version_pinning.md` (~552 tok)
 - `project_talos_1_13_install_disk.md` (~455 tok)
+
+## ../news-reader/
+
+- `package.json` — Node.js package manifest (~141 tok)
+
+## ../news-reader/scripts/
+
+- `build-push.sh` — Build and push the news-reader container image to registry.vanillax.me. (~255 tok)
 
 ## ../pvc-plumber/cmd/pvc-plumber/
 
@@ -1082,6 +1090,10 @@
 ## my-apps/privacy/searxng/
 
 - `settings.yaml` (~1195 tok)
+
+## my-apps/utility/excalidraw/
+
+- `httproute.yaml` — Public HTTPRoute via gateway-external (Cloudflare tunnel + external-dns). (~224 tok)
 
 ## omni/
 

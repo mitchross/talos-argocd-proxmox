@@ -1382,3 +1382,20 @@
 | 12:10 | Session end: 11 writes across 9 files (project_posthog_version_pinning.md, ui_to_api.py, MEMORY.md, gen_canvas_workflows.py, deployment.yaml) | 9 reads | ~9311 tok |
 | 13:09 | Session end: 11 writes across 9 files (project_posthog_version_pinning.md, ui_to_api.py, MEMORY.md, gen_canvas_workflows.py, deployment.yaml) | 9 reads | ~9311 tok |
 | 13:13 | Session end: 11 writes across 9 files (project_posthog_version_pinning.md, ui_to_api.py, MEMORY.md, gen_canvas_workflows.py, deployment.yaml) | 9 reads | ~9311 tok |
+| 13:15 | Session end: 11 writes across 9 files (project_posthog_version_pinning.md, ui_to_api.py, MEMORY.md, gen_canvas_workflows.py, deployment.yaml) | 9 reads | ~9311 tok |
+
+## Session: 2026-04-23 14:53
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 14:55 | merge open renovate PRs (6 safe digest bumps); rebase requested #1231/#1232; held #1224 (major v0.24→v1 bump) | gh pr | 6 merged | ~12k |
+| 15:26 | fix cloudflared-restart ImagePullBackOff (stale Job with bitnami/kubectl pre-migration) | .wolf/buglog.json | job deleted, manual run succeeded | ~3k |
+
+## Session: 2026-04-24 22:47
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 22:56 | Created my-apps/utility/excalidraw/httproute.yaml | — | ~224 |
+| 22:57 | Edited ../news-reader/package.json | inline fix | ~7 |
+| 22:57 | Created ../news-reader/scripts/build-push.sh | — | ~255 |
+| 22:58 | Session end: 3 writes across 3 files (httproute.yaml, package.json, build-push.sh) | 17 reads | ~7072 tok |

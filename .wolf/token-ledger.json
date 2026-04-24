@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-04-05T03:39:06.883Z",
   "lifetime": {
-    "total_tokens_estimated": 18308820,
-    "total_reads": 11845,
-    "total_writes": 10638,
-    "total_sessions": 38,
-    "anatomy_hits": 8708,
-    "anatomy_misses": 3062,
-    "repeated_reads_blocked": 3223,
-    "estimated_savings_vs_bare_cli": 10866425
+    "total_tokens_estimated": 18325203,
+    "total_reads": 11871,
+    "total_writes": 10652,
+    "total_sessions": 40,
+    "anatomy_hits": 8722,
+    "anatomy_misses": 3074,
+    "repeated_reads_blocked": 3224,
+    "estimated_savings_vs_bare_cli": 10869625
   },
   "sessions": [
     {
@@ -136364,6 +136364,266 @@
         "writes_count": 11,
         "repeated_reads_blocked": 1,
         "anatomy_lookups": 5
+      }
+    },
+    {
+      "id": "session-2026-04-22-2355",
+      "started": "2026-04-22T03:55:00.714Z",
+      "ended": "2026-04-23T17:15:50.844Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/MEMORY.md",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/redlib/Dockerfile.ubuntu",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/.github/renovate.json5",
+          "tokens_estimated": 1599,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/deployment.yaml",
+          "tokens_estimated": 400,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/canvas-out1.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/tmp/canvas-test-result.png",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/values.yaml",
+          "tokens_estimated": 2440,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/ai/comfyui/externalsecret.yaml",
+          "tokens_estimated": 316,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/kustomization.yaml",
+          "tokens_estimated": 287,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/project_posthog_version_pinning.md",
+          "tokens_estimated": 615,
+          "action": "create"
+        },
+        {
+          "file": "/tmp/ui_to_api.py",
+          "tokens_estimated": 1346,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/.claude/projects/-home-vanillax-programming-talos-argocd-proxmox/memory/MEMORY.md",
+          "tokens_estimated": 80,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/gen_canvas_workflows.py",
+          "tokens_estimated": 268,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/media/redlib/deployment.yaml",
+          "tokens_estimated": 15,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/gen_canvas_workflows.py",
+          "tokens_estimated": 198,
+          "action": "edit"
+        },
+        {
+          "file": "/tmp/inject_canvas.py",
+          "tokens_estimated": 1353,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/privacy/searxng/settings.yaml",
+          "tokens_estimated": 6,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/privacy/searxng/settings.yaml",
+          "tokens_estimated": 6,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/externalsecret-webhook.yaml",
+          "tokens_estimated": 342,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/controllers/argocd/kustomization.yaml",
+          "tokens_estimated": 40,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 5042,
+        "output_tokens_estimated": 4269,
+        "reads_count": 9,
+        "writes_count": 11,
+        "repeated_reads_blocked": 1,
+        "anatomy_lookups": 5
+      }
+    },
+    {
+      "id": "session-2026-04-24-2247",
+      "started": "2026-04-24T02:47:37.025Z",
+      "ended": "2026-04-24T02:58:18.201Z",
+      "reads": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/utility/excalidraw/httproute.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/utility/excalidraw/deployment.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/utility/excalidraw/service.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/utility/excalidraw/kustomization.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/gitea/httproute.yaml",
+          "tokens_estimated": 128,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/infrastructure/networking/README.md",
+          "tokens_estimated": 4859,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/radar-ng/httproute.yaml",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/news-reader/deployment.yaml",
+          "tokens_estimated": 206,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/news-reader/Dockerfile",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/news-reader/app/Dockerfile",
+          "tokens_estimated": 92,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/radar-ng/scripts/build-push.sh",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/headlamp/httproute.yaml",
+          "tokens_estimated": 144,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/news-reader/kustomization.yaml",
+          "tokens_estimated": 43,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/development/news-reader/app/package.json",
+          "tokens_estimated": 242,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/news-reader/package.json",
+          "tokens_estimated": 242,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/news-reader/next.config.ts",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "/home/vanillax/programming/news-reader/.gitignore",
+          "tokens_estimated": 611,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "/home/vanillax/programming/talos-argocd-proxmox/my-apps/utility/excalidraw/httproute.yaml",
+          "tokens_estimated": 224,
+          "action": "create"
+        },
+        {
+          "file": "/home/vanillax/programming/news-reader/package.json",
+          "tokens_estimated": 7,
+          "action": "edit"
+        },
+        {
+          "file": "/home/vanillax/programming/news-reader/scripts/build-push.sh",
+          "tokens_estimated": 274,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 6567,
+        "output_tokens_estimated": 505,
+        "reads_count": 17,
+        "writes_count": 3,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 9
       }
     }
   ],

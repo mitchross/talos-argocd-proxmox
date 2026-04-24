@@ -1774,6 +1774,42 @@
       "related_bugs": [],
       "occurrences": 2,
       "last_seen": "2026-04-22T04:10:08.565Z"
+    },
+    {
+      "id": "bug-cloudflared-restart-cronjob-image-pull",
+      "timestamp": "2026-04-23T17:30:00Z",
+      "error_message": "ImagePullBackOff: Back-off pulling image \"bitnami/kubectl:1.33.1\" on cloudflared-restart-29610960-jzd2f (4522 attempts over 17h)",
+      "file": "my-apps/media/cloudflared/cronjob.yaml",
+      "root_cause": "Bitnami moved kubectl image to 'bitnamilegacy' org; bitnami/kubectl:1.33.1 no longer exists. Commit 7761c9d7 fixed the CronJob spec to use bitnamilegacy/kubectl:1.33.1, but the previously-created Job 'cloudflared-restart-29610960' was already running with the old image and K8s Jobs are immutable — the spec update did not propagate to the running Job. Kubelet retried the bad pull indefinitely.",
+      "fix": "kubectl -n cloudflared delete job cloudflared-restart-29610960 so the next CronJob firing creates a fresh Job from the corrected spec. Verified by manually triggering: kubectl -n cloudflared create job --from=cronjob/cloudflared-restart test — pod pulled bitnamilegacy/kubectl:1.33.1 and completed in ~20s with 'deployment.apps/cloudflared restarted'.",
+      "tags": [
+        "cloudflared",
+        "cronjob",
+        "bitnami",
+        "bitnamilegacy",
+        "kubectl",
+        "image-pull",
+        "job-immutability"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-23T17:30:00Z"
+    },
+    {
+      "id": "bug-111",
+      "timestamp": "2026-04-24T02:57:06.476Z",
+      "error_message": "Incorrect value in code",
+      "file": "../news-reader/package.json",
+      "root_cause": "Had \"app\"",
+      "fix": "Changed to \"news-reader\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-24T02:57:06.476Z"
     }
   ]
 }
