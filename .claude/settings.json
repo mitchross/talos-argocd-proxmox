@@ -9,8 +9,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/session-start.js\"",
-            "timeout": 5
+            "command": "bun run /home/vanillax/.bun/install/global/node_modules/@drewpayment/mink/dist/cli.js session-start"
           }
         ]
       }
@@ -21,18 +20,25 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/pre-read.js\"",
-            "timeout": 5
+            "command": "bun run /home/vanillax/.bun/install/global/node_modules/@drewpayment/mink/dist/cli.js pre-read"
           }
         ]
       },
       {
-        "matcher": "Write|Edit|MultiEdit",
+        "matcher": "Edit",
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/pre-write.js\"",
-            "timeout": 5
+            "command": "bun run /home/vanillax/.bun/install/global/node_modules/@drewpayment/mink/dist/cli.js pre-write"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run /home/vanillax/.bun/install/global/node_modules/@drewpayment/mink/dist/cli.js pre-write"
           }
         ]
       }
@@ -43,18 +49,25 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/post-read.js\"",
-            "timeout": 5
+            "command": "bun run /home/vanillax/.bun/install/global/node_modules/@drewpayment/mink/dist/cli.js post-read"
           }
         ]
       },
       {
-        "matcher": "Write|Edit|MultiEdit",
+        "matcher": "Edit",
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/post-write.js\"",
-            "timeout": 10
+            "command": "bun run /home/vanillax/.bun/install/global/node_modules/@drewpayment/mink/dist/cli.js post-write"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run /home/vanillax/.bun/install/global/node_modules/@drewpayment/mink/dist/cli.js post-write"
           }
         ]
       }
@@ -65,8 +78,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.wolf/hooks/stop.js\"",
-            "timeout": 10
+            "command": "bun run /home/vanillax/.bun/install/global/node_modules/@drewpayment/mink/dist/cli.js session-stop"
           }
         ]
       }
