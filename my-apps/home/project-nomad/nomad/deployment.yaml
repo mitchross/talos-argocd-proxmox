@@ -27,7 +27,7 @@ spec:
             - name: nomad-storage
               mountPath: /app/storage
         - name: migrate
-          image: ghcr.io/mitchross/project-nomad:sha-6cb54a0
+          image: ghcr.io/mitchross/project-nomad:sha-593d3f4
           command: ["sh", "-c", "node ace migration:run --force && node ace db:seed"]
           envFrom:
             - configMapRef:
@@ -48,7 +48,7 @@ spec:
               mountPath: /app/storage
       containers:
         - name: project-nomad
-          image: ghcr.io/mitchross/project-nomad:sha-6cb54a0
+          image: ghcr.io/mitchross/project-nomad:sha-593d3f4
           command: ["sh", "-c", "node ace queue:work --all & exec node bin/server.js"]
           ports:
             - containerPort: 8080
