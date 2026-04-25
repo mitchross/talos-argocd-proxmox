@@ -36,10 +36,24 @@ spec:
           labelSelector:
             matchLabels:
               app: tile-server
+      # Pod-level securityContext satisfies the radar-ng namespace
+      # PodSecurity "restricted" profile (currently warn-only). Image
+      # creates UID 1000 'app' user; ports 8000/8080 don't need
+      # NET_BIND_SERVICE so all caps can be dropped.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: tile-server
-          image: registry.vanillax.me/radar-ng-tile-server:v1.0.0
+          image: registry.vanillax.me/radar-ng-tile-server:v1.0.1
           imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           ports:
             - containerPort: 8080
               name: http
