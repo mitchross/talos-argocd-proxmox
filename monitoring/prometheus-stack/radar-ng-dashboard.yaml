@@ -162,6 +162,158 @@ data:
             { "expr": "stormscope_tile_timestamps", "refId": "A", "legendFormat": "{{layer}}" }
           ],
           "fieldConfig": { "defaults": { "unit": "short" } }
+        },
+        {
+          "id": 100,
+          "type": "row",
+          "title": "Backend pressure",
+          "collapsed": false,
+          "gridPos": { "x": 0, "y": 31, "w": 24, "h": 1 },
+          "panels": []
+        },
+        {
+          "id": 8,
+          "type": "timeseries",
+          "title": "Pod CPU vs request (% of CPU request)",
+          "description": "Per-pod CPU consumption normalized to the pod's CPU request. >100% means the pod is bursting into limit headroom; sustained >70% on tile-server triggers HPA scale-out.",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "gridPos": { "x": 0, "y": 32, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "100 * sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"radar-ng\", container!=\"\", container!=\"POD\"}[5m])) / on (pod) group_left sum by (pod) (kube_pod_container_resource_requests{namespace=\"radar-ng\", resource=\"cpu\"})",
+              "refId": "A",
+              "legendFormat": "{{pod}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 70 },
+                  { "color": "red", "value": 100 }
+                ]
+              }
+            }
+          },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
+        },
+        {
+          "id": 9,
+          "type": "timeseries",
+          "title": "Pod memory vs limit (% of memory limit)",
+          "description": "Working set as percent of memory limit. >85% sustained = OOM kill risk.",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "gridPos": { "x": 12, "y": 32, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "100 * sum by (pod) (container_memory_working_set_bytes{namespace=\"radar-ng\", container!=\"\", container!=\"POD\"}) / on (pod) group_left sum by (pod) (kube_pod_container_resource_limits{namespace=\"radar-ng\", resource=\"memory\"})",
+              "refId": "A",
+              "legendFormat": "{{pod}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 70 },
+                  { "color": "red", "value": 85 }
+                ]
+              }
+            }
+          },
+          "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
+        },
+        {
+          "id": 10,
+          "type": "timeseries",
+          "title": "tile-server replicas (HPA)",
+          "description": "Current vs desired vs min/max. If current pins at maxReplicas you're undersized — bump the HPA cap.",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "gridPos": { "x": 0, "y": 40, "w": 12, "h": 7 },
+          "targets": [
+            {
+              "expr": "kube_horizontalpodautoscaler_status_current_replicas{namespace=\"radar-ng\", horizontalpodautoscaler=\"tile-server\"}",
+              "refId": "A",
+              "legendFormat": "current"
+            },
+            {
+              "expr": "kube_horizontalpodautoscaler_status_desired_replicas{namespace=\"radar-ng\", horizontalpodautoscaler=\"tile-server\"}",
+              "refId": "B",
+              "legendFormat": "desired"
+            },
+            {
+              "expr": "kube_horizontalpodautoscaler_spec_max_replicas{namespace=\"radar-ng\", horizontalpodautoscaler=\"tile-server\"}",
+              "refId": "C",
+              "legendFormat": "max"
+            },
+            {
+              "expr": "kube_horizontalpodautoscaler_spec_min_replicas{namespace=\"radar-ng\", horizontalpodautoscaler=\"tile-server\"}",
+              "refId": "D",
+              "legendFormat": "min"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short", "min": 0 } }
+        },
+        {
+          "id": 11,
+          "type": "stat",
+          "title": "OOM kills (1h)",
+          "description": "Pods killed for exceeding memory limit in the last hour. Should be 0 in steady state.",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "gridPos": { "x": 12, "y": 40, "w": 6, "h": 7 },
+          "targets": [
+            {
+              "expr": "sum(increase(container_oom_events_total{namespace=\"radar-ng\"}[1h]))",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "red", "value": 1 }
+                ]
+              }
+            }
+          },
+          "options": { "colorMode": "background", "graphMode": "area" }
+        },
+        {
+          "id": 12,
+          "type": "stat",
+          "title": "Container restarts (1h)",
+          "description": "All restarts in radar-ng over the last hour. ingest-mrms typically restarts on retention sweeps; spike on tile-server is the one to chase.",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "gridPos": { "x": 18, "y": 40, "w": 6, "h": 7 },
+          "targets": [
+            {
+              "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"radar-ng\"}[1h]))",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 3 },
+                  { "color": "red", "value": 10 }
+                ]
+              }
+            }
+          },
+          "options": { "colorMode": "background", "graphMode": "area" }
         }
       ]
     }
