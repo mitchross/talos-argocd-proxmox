@@ -4,6 +4,18 @@ metadata:
   name: llama-cpp-config
   namespace: llama-cpp
 data:
+  # ---------------------------------------------------------------
+  # EXPERIMENTAL TUNING — 2026-04-25
+  # ---------------------------------------------------------------
+  # Sampling and ctx values below are an in-flight A/B experiment, NOT
+  # validated rules. Aimed at the cluster's actual workload mix:
+  # tool-calling, agentic tasks, Vane/Perplexica research, n8n/Karakeep
+  # utility — explicitly NOT code generation. If something regresses
+  # (tool-call quality, JSON validity, RP coherence on uncensored,
+  # agent-loop behavior) revert the relevant preset rather than treating
+  # these numbers as canonical. See git history for prior values.
+  # ---------------------------------------------------------------
+  #
   # Consumed by llama-server via `--models-preset /config/presets.ini` (see
   # deployment.yaml). Each [section] is a selectable model preset; the
   # section-name BEFORE the " - " is the OpenAI-API-compatible model ID
@@ -50,20 +62,23 @@ data:
     # covers every real use case on this cluster; Gemma 4 is kept only
     # as a multimodal fallback.
     #
-    # Unsloth documents improved nested-object parsing for tool calling
-    # in this release, so keep this preset in mind for agentic work.
-    # Sampling is Qwen's official "precise" thinking profile.
+    # Sampling is Unsloth's official "general THINK" profile (temp=1.0,
+    # presence-penalty=1.5) — diversity for the <think> exploration plus
+    # presence-penalty>0 to break repetitive tool-call / reasoning loops.
+    # We deliberately do NOT use Unsloth's "precise coding" profile here
+    # because this cluster's workloads are agentic / utility / research,
+    # not code generation.
     [qwen3.6 - qwen3.6-35b-a3b]
     model = /models/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf
     mmproj = /models/mmproj-BF16.gguf
-    alias = qwen3.6, qwen 3.6, general, coder, code, agentic, vision, image, multimodal
+    alias = qwen3.6, qwen 3.6, general, agentic, vision, image, multimodal
     ctx-size = 65536
     n-gpu-layers = 99
-    temp = 0.6
+    temp = 1.0
     top-p = 0.95
     top-k = 20
     min-p = 0.0
-    presence-penalty = 0.0
+    presence-penalty = 1.5
     chat-template-kwargs = {"enable_thinking": true}
     jinja = 1
 
@@ -77,52 +92,58 @@ data:
     #   - n8n workflows that parse JSON-only responses
     #   - Karakeep tagger (classification, JSON-only)
     #   - Any tool-call loop where <think> tokens would pollute parsing
+    # Unsloth's "general Instruct/nothink" profile: temp=0.7, top_p=0.8,
+    # presence-penalty=1.5. Lower top_p tightens JSON/tool-call output;
+    # presence-penalty=1.5 stops agent loops re-issuing the same tool.
     [qwen3.6-nothink - qwen3.6-35b-a3b-nothink]
     model = /models/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf
     mmproj = /models/mmproj-BF16.gguf
     alias = qwen3.6-nothink, nothink, fast, tools, vision-nothink
     ctx-size = 65536
     n-gpu-layers = 99
-    temp = 0.6
-    top-p = 0.95
+    temp = 0.7
+    top-p = 0.8
     top-k = 20
     min-p = 0.0
-    presence-penalty = 0.0
+    presence-penalty = 1.5
     chat-template-kwargs = {"enable_thinking": false}
     jinja = 1
 
     # ==========================================================
-    # QWEN 3.6 35B-A3B [LONGCTX NOTHINK]  - Vane/Perplexica research loops
+    # QWEN 3.6 35B-A3B [MAXCTX NOTHINK]  - Vane/Perplexica research loops
     # ==========================================================
     # Same GGUF + mmproj as the main qwen3.6 presets — switching to this
     # preset just re-sizes the KV cache, no weight reload. Exists because
     # Vane (formerly Perplexica) accumulates scraped page content across
-    # its research iterations and, even after the v1.12.2 embedding filter
-    # + chunked context mgmt fix, prompts plateau around 60-80K tokens
-    # (observed: 77854 tokens crashed 64K with exceed_context_size_error).
-    # 128K gives enough headroom without jumping to 256K.
+    # research iterations; long sessions can cross 100K tokens and the
+    # cluster's primary use cases (agentic tools / research / utility)
+    # benefit from never having to think about context ceilings.
     #
-    # VRAM trade-off: at 128K the KV cache spills ~7GB into CUDA unified
-    # memory (vs. ~2GB at 64K), so attention during a Vane query is
-    # slower. That's fine — Vane searches are already async and this
-    # cache is only resident while *this* preset is selected. OpenWebUI
-    # and other 64K clients keep using the main qwen3.6 presets and pay
-    # nothing for this one's existence.
+    # ctx-size = 262144 (256K = Qwen3.6's native max, no YaRN required).
+    # KV cache @ 256K with q8_0 ≈ 14GB; ~7GB stays in VRAM, ~7GB spills
+    # into CUDA unified memory backed by 128GB system RAM. Attention on
+    # spilled pages is CPU-driven and slower, but Vane / Perplexica /
+    # n8n research loops are already async — throughput is acceptable
+    # and the ceiling is now well above any prompt the cluster generates.
+    # (1M via YaRN is technically possible but ~56GB KV is impractical
+    # on a single 3090 + 128GB host.)
     #
-    # Nothink: Vane's researcher is a pure tool-call loop; `<think>`
-    # tokens would inflate the agent history and burn ctx we're trying
-    # to save.
+    # Sampling: Unsloth "general Instruct" (temp=0.7, top_p=0.8) plus
+    # presence-penalty=1.5 — critical for research loops to stop the
+    # agent re-fetching the same URL or re-citing the same chunk.
+    # Nothink because Vane/Perplexica are pure tool-call agents; <think>
+    # tokens would inflate history and burn the very ctx we're growing.
     [qwen3.6-longctx - qwen3.6-35b-a3b-longctx]
     model = /models/Qwen3.6-35B-A3B-UD-Q4_K_XL.gguf
     mmproj = /models/mmproj-BF16.gguf
-    alias = qwen3.6-longctx, longctx, perplexica, vane
-    ctx-size = 131072
+    alias = qwen3.6-longctx, longctx, maxctx, perplexica, vane, research
+    ctx-size = 262144
     n-gpu-layers = 99
-    temp = 0.6
-    top-p = 0.95
+    temp = 0.7
+    top-p = 0.8
     top-k = 20
     min-p = 0.0
-    presence-penalty = 0.0
+    presence-penalty = 1.5
     chat-template-kwargs = {"enable_thinking": false}
     jinja = 1
 
@@ -149,7 +170,7 @@ data:
     top-p = 0.95
     top-k = 64
     min-p = 0.0
-    presence-penalty = 0.0
+    presence-penalty = 1.5
     chat-template-kwargs = {"enable_thinking": true}
     jinja = 1
 
@@ -169,7 +190,7 @@ data:
     top-p = 0.95
     top-k = 64
     min-p = 0.0
-    presence-penalty = 0.0
+    presence-penalty = 1.5
     chat-template-kwargs = {"enable_thinking": false}
     jinja = 1
 
@@ -180,17 +201,24 @@ data:
     # no equivalent Qwen3.6 uncensored quant available yet. Q4_K_M is 600MB
     # larger than UD-Q4_K_XL, so ctx-size is dropped to 32K to keep the
     # model fully GPU-resident on one 3090.
+    #
+    # Sampling tuned for red-team / adult / creative work — NOT coding.
+    # Standard creative/RP profile: temp=0.9 for variety, min_p=0.05 to
+    # cut low-prob garbage while preserving diversity, top_k=40, and a
+    # modest presence-penalty=0.6 (low enough to keep character voice
+    # consistent, high enough to avoid stuck loops). Higher than this
+    # would hurt coherence in long RP sessions.
     [uncensored - qwen3.5-uncensored]
     model = /models/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive-Q4_K_M.gguf
     mmproj = /models/mmproj-Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive-f16.gguf
     alias = uncensored, nsfw, hauhau, aggressive, obliterated, think-uncensored
     ctx-size = 32768
     n-gpu-layers = 99
-    temp = 0.6
+    temp = 0.9
     top-p = 0.95
-    top-k = 20
-    min-p = 0.0
-    presence-penalty = 0.0
+    top-k = 40
+    min-p = 0.05
+    presence-penalty = 0.6
     chat-template-kwargs = {"enable_thinking": true}
     jinja = 1
 
@@ -198,17 +226,18 @@ data:
     # QWEN 3.5 UNCENSORED [NOTHINK]  - fast unfiltered responses
     # ==========================================================
     # Same GGUF as think variant. For bulk generation / red-team testing
-    # where you don't want thinking tokens in the stream.
+    # where you don't want thinking tokens in the stream. Same creative
+    # sampling as the think variant — these are not coding workloads.
     [nothink-uncensored - qwen3.5-uncensored-nothink]
     model = /models/Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive-Q4_K_M.gguf
     mmproj = /models/mmproj-Qwen3.5-35B-A3B-Uncensored-HauhauCS-Aggressive-f16.gguf
     alias = nothink-uncensored, nothink-nsfw, fast-uncensored, nothink-obliterated
     ctx-size = 32768
     n-gpu-layers = 99
-    temp = 0.6
+    temp = 0.9
     top-p = 0.95
-    top-k = 20
-    min-p = 0.0
-    presence-penalty = 0.0
+    top-k = 40
+    min-p = 0.05
+    presence-penalty = 0.6
     chat-template-kwargs = {"enable_thinking": false}
     jinja = 1
