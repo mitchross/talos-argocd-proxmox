@@ -24,6 +24,7 @@ spec:
           # files end up GID 999 — readable + writable by the serve pod.
           securityContext:
             runAsNonRoot: true
+            runAsUser: 999
             runAsGroup: 999
             fsGroup: 999
             fsGroupChangePolicy: OnRootMismatch
@@ -72,6 +73,7 @@ spec:
           # files end up GID 999 — readable + writable by the serve pod.
           securityContext:
             runAsNonRoot: true
+            runAsUser: 999
             runAsGroup: 999
             fsGroup: 999
             fsGroupChangePolicy: OnRootMismatch

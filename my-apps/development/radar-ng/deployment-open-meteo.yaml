@@ -26,6 +26,7 @@ spec:
       # interleave cleanly with cronjob-written files.
       securityContext:
         runAsNonRoot: true
+        runAsUser: 999
         runAsGroup: 999
         fsGroup: 999
         fsGroupChangePolicy: OnRootMismatch
