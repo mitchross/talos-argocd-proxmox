@@ -1,0 +1,61 @@
+# Gitea Actions runner: gitea/act_runner with rootless dockerd baked in.
+# The dockerd is per-pod (no shared cluster cache), but workflows use
+# registry-based BuildKit cache (`type=registry,ref=...:buildcache`) so
+# successive builds across pod restarts still warm up. This trades local
+# cache speed for portability — every workflow file we write here is
+# byte-identical to a .github/workflows/ file (just different runner
+# registration), so flipping to GitHub-hosted runners later is a `git mv`.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: act-runner
+  namespace: gitea-actions
+  labels:
+    app: act-runner
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate          # only one runner identity, never two at once
+  selector:
+    matchLabels:
+      app: act-runner
+  template:
+    metadata:
+      labels:
+        app: act-runner
+    spec:
+      containers:
+        - name: runner
+          image: gitea/act_runner:nightly-dind-rootless
+          env:
+            - name: GITEA_INSTANCE_URL
+              value: https://gitea.vanillax.me
+            - name: GITEA_RUNNER_REGISTRATION_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: act-runner-token
+                  key: token
+            - name: GITEA_RUNNER_NAME
+              value: cluster-runner-1
+            - name: GITEA_RUNNER_LABELS
+              # Standard 'ubuntu-latest' label so workflows look like GHA.
+              # Map to the catthehacker image act_runner uses by default.
+              value: ubuntu-latest:docker://catthehacker/ubuntu:act-latest
+          # Rootless DinD still needs privileged for user namespace setup.
+          # Acceptable here because the runner namespace is exempted from
+          # PodSecurity restricted; cluster-wide policy stays in place.
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - { name: data,    mountPath: /var/lib/docker }
+            - { name: workdir, mountPath: /data }
+          resources:
+            requests:
+              cpu: 200m
+              memory: 1Gi
+            limits:
+              cpu: 4000m
+              memory: 8Gi
+      volumes:
+        - { name: data,    emptyDir: {} }   # ephemeral docker storage
+        - { name: workdir, emptyDir: {} }

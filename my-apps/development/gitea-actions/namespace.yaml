@@ -1,0 +1,13 @@
+# act_runner is rootless DinD which still needs privileged: true for
+# user namespace setup. The runner namespace is therefore exempted from
+# PodSecurity restricted enforcement — every other namespace in the
+# cluster keeps the lock-down. If we ever swap to standalone buildkitd,
+# this exemption can come off.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gitea-actions
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/warn: privileged
+    pod-security.kubernetes.io/audit: privileged
