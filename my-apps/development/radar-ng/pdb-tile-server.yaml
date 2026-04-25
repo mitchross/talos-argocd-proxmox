@@ -1,0 +1,13 @@
+# Keep at least one tile-server pod available during voluntary disruptions
+# (node drains, rolling cordons). HPA floor is 2, so allowing 1 disruption
+# at a time gives kured / Talos upgrades room to work.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: tile-server
+  namespace: radar-ng
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: tile-server

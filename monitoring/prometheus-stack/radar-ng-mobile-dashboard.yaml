@@ -1,0 +1,158 @@
+# Grafana dashboard for the radar-ng mobile app — driven entirely by data
+# the React Native client emits via OpenTelemetry to otel.vanillax.me.
+#
+# Sources:
+#   - Tempo (traces) — span name = api.fetch* / map.fetchStyle / api.inspectPoint
+#   - Loki  (logs)   — service_name="radar-ng-mobile", error sink wired in
+#                      _layout.tsx (QueryCache/MutationCache + ErrorUtils)
+#
+# Auto-imported via the `grafana_dashboard: "1"` label.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: radar-ng-mobile-dashboard
+  namespace: prometheus-stack
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/name: grafana-dashboards
+data:
+  radar-ng-mobile.json: |
+    {
+      "title": "radar-ng mobile (load + errors)",
+      "uid": "radar-ng-mobile-load",
+      "tags": ["radar-ng", "mobile", "otel"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "editable": true,
+      "graphTooltip": 1,
+      "refresh": "30s",
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "type": "datasource",
+            "name": "DS_TEMPO",
+            "label": "Tempo",
+            "query": "tempo",
+            "current": { "text": "Tempo", "value": "Tempo" }
+          },
+          {
+            "type": "datasource",
+            "name": "DS_LOKI",
+            "label": "Loki",
+            "query": "loki",
+            "current": { "text": "Loki", "value": "Loki" }
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "Active app instances (last 5m)",
+          "description": "Distinct sessions seen in Loki by service.instance.id (one per app launch).",
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "expr": "sum(count by (service_instance_id) (count_over_time({service_name=\"radar-ng-mobile\"}[5m])))",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" } }
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Error log rate (per min)",
+          "description": "Severity ≥ ERROR — RN red-screens, react-query failures, unhandled promise rejections.",
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "expr": "sum(rate({service_name=\"radar-ng-mobile\"} | json | severity_text=\"ERROR\" [1m])) * 60",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 5 },
+                  { "color": "red", "value": 30 }
+                ]
+              }
+            }
+          },
+          "options": { "colorMode": "background" }
+        },
+        {
+          "id": 3,
+          "type": "timeseries",
+          "title": "Span rate by operation (Tempo)",
+          "description": "How often each backend call fires from the app. Watch for runaways (polling loops, retry storms).",
+          "datasource": { "type": "tempo", "uid": "${DS_TEMPO}" },
+          "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "queryType": "traceqlSearch",
+              "refId": "A",
+              "query": "{resource.service.name=\"radar-ng-mobile\"} | rate() by (name)",
+              "tableType": "spans"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "reqps" } }
+        },
+        {
+          "id": 4,
+          "type": "timeseries",
+          "title": "p95 latency by operation (Tempo)",
+          "description": "Tail latency per app→backend call. Spikes here = backend or network slowdown.",
+          "datasource": { "type": "tempo", "uid": "${DS_TEMPO}" },
+          "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "queryType": "traceqlSearch",
+              "refId": "A",
+              "query": "{resource.service.name=\"radar-ng-mobile\"} | quantile_over_time(duration, 0.95) by (name)",
+              "tableType": "spans"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "ms" } }
+        },
+        {
+          "id": 5,
+          "type": "logs",
+          "title": "Recent app errors",
+          "description": "Live tail of the app's error log. Click a line to copy the stack.",
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "gridPos": { "x": 0, "y": 12, "w": 24, "h": 10 },
+          "targets": [
+            {
+              "expr": "{service_name=\"radar-ng-mobile\"} | json | severity_text=\"ERROR\"",
+              "refId": "A"
+            }
+          ],
+          "options": { "showTime": true, "wrapLogMessage": true, "dedupStrategy": "exact" }
+        },
+        {
+          "id": 6,
+          "type": "table",
+          "title": "Top error messages (last hour)",
+          "description": "Counts grouped by message body — fastest way to spot a regression after a release.",
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "gridPos": { "x": 0, "y": 22, "w": 24, "h": 8 },
+          "targets": [
+            {
+              "expr": "topk(20, sum by (body) (count_over_time({service_name=\"radar-ng-mobile\"} | json | severity_text=\"ERROR\" [1h])))",
+              "refId": "A",
+              "instant": true,
+              "format": "table"
+            }
+          ]
+        }
+      ]
+    }

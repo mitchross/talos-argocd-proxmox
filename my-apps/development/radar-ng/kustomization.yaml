@@ -6,6 +6,8 @@ resources:
   - services.yaml
   - httproute.yaml
   - deployment-tile-server.yaml
+  - hpa-tile-server.yaml
+  - pdb-tile-server.yaml
   - deployment-basemap.yaml
   - deployment-open-meteo.yaml
   - deployment-ingest-mrms.yaml
