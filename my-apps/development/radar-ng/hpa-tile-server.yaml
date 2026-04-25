@@ -1,0 +1,36 @@
+# Autoscale tile-server on CPU. Min=2 keeps HA; max=6 caps cost.
+# Average per-pod CPU is normally <50m, so 70% of 100m request gives plenty
+# of headroom before scale-out triggers, while still reacting to bursts
+# (cold MapLibre style fetches, manifest polling spikes).
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: tile-server
+  namespace: radar-ng
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: tile-server
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60

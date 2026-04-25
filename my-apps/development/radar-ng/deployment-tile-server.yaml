@@ -11,9 +11,13 @@ metadata:
   labels:
     app: tile-server
 spec:
-  replicas: 1
+  # Replicas managed by HPA (hpa-tile-server.yaml). Floor of 2 for HA.
+  replicas: 2
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   selector:
     matchLabels:
       app: tile-server
@@ -22,6 +26,16 @@ spec:
       labels:
         app: tile-server
     spec:
+      # Spread replicas across nodes so a single node failure can't take
+      # the API offline. ScheduleAnyway lets the second pod schedule even
+      # if there's only one matching node available.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: tile-server
       containers:
         - name: tile-server
           image: registry.vanillax.me/radar-ng-tile-server:latest
