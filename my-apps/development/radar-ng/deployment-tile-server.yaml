@@ -38,8 +38,8 @@ spec:
               app: tile-server
       containers:
         - name: tile-server
-          image: registry.vanillax.me/radar-ng-tile-server:latest
-          imagePullPolicy: Always
+          image: registry.vanillax.me/radar-ng-tile-server:v1.0.0
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
               name: http
