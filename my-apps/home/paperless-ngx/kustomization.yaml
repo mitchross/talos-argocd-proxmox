@@ -7,9 +7,13 @@ commonLabels:
 resources:
   - namespace.yaml
   - pvc.yaml
-  - configmap.yaml
   - deployment.yaml
   - service.yaml
   - httproute.yaml
   - externalsecret.yaml
   - tika-gotenberg.yaml
+
+configMapGenerator:
+  - name: paperless-config
+    envs:
+      - paperless-config.env

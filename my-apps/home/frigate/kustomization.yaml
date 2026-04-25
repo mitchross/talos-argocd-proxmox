@@ -10,9 +10,15 @@ resources:
   - httproute.yaml
   - externalsecret.yaml
 namespace: frigate
-generatorOptions:
-  disableNameSuffixHash: true
+
+# Hash-suffixed ConfigMaps so any data change forces a Deployment rollout
+# (Kustomize rewrites the volume reference to the new hashed name). Was
+# previously `generatorOptions: disableNameSuffixHash: true` — that meant
+# editing config.yml or mosquitto.conf would NOT restart the consumer.
 configMapGenerator:
   - name: frigate-configmap
     files:
       - config.yml
+  - name: mosquitto-configmap
+    files:
+      - mqtt/mosquitto.conf

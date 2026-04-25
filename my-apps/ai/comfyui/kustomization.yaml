@@ -1,9 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
+namespace: comfyui
+
 resources:
 - namespace.yaml
 - pvc.yaml
-- configmap.yaml
 - deployment.yaml
 - service.yaml
 - httproute.yaml
@@ -11,5 +13,17 @@ resources:
 # NOTE: download-models-job.yaml is intentionally excluded.
 # It's a one-time job applied manually: kubectl apply -f download-models-job.yaml
 # Including it would re-run on every ArgoCD sync.
+
+configMapGenerator:
+  - name: comfyui-manager-config
+    files:
+      - config.ini
+  - name: comfyui-pre-start
+    files:
+      - pre-start.sh
+  - name: comfyui-custom-nodes
+    files:
+      - image_to_llamacpp_base64.py
+
 commonLabels:
   app: comfyui

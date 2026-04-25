@@ -3,10 +3,14 @@ kind: Kustomization
 
 resources:
 - deployment.yaml
-- configmap.yaml
 - externalsecret.yaml
 - service.yaml
 - httproute.yaml
 - ns.yaml
+
+configMapGenerator:
+  - name: redlib-env
+    envs:
+      - redlib-env.env
 
 namespace: redlib

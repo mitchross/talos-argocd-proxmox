@@ -7,5 +7,9 @@ resources:
   - deployment.yaml
   - service.yaml
   - pvc.yaml
-  - configmap.yaml
   - httproute.yaml
+
+configMapGenerator:
+  - name: registry-config
+    files:
+      - config.yml
