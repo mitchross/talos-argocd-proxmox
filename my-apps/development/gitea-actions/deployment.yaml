@@ -29,7 +29,13 @@ spec:
           # Rootful DinD: Talos sets user.max_user_namespaces=0 so the
           # -rootless variant can't start. Rootful needs `privileged: true`
           # (we have it) but no kernel sysctl changes on the host.
-          image: gitea/act_runner:nightly-dind
+          #
+          # Pinned to 0.2.11-dind: the nightly tag auto-passes `--gpus`
+          # when launching step containers, which fails on dockerd that
+          # has no nvidia runtime registered. 0.2.11 doesn't have that
+          # behavior. Bump deliberately when nightly is needed for some
+          # specific feature.
+          image: gitea/act_runner:0.2.11-dind
           env:
             - name: GITEA_INSTANCE_URL
               value: https://gitea.vanillax.me
