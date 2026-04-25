@@ -53,9 +53,14 @@ spec:
             - { name: data,    mountPath: /var/lib/docker }
             - { name: workdir, mountPath: /data }
           resources:
+            # Guaranteed QoS — request == limit so the scheduler reserves
+            # the full 4 cores + 8Gi for this pod. Worth it during builds
+            # because the BuildKit cache replay parallelizes well; idle
+            # cost (no jobs queued) is just the reservation, not actual
+            # consumption.
             requests:
-              cpu: 200m
-              memory: 1Gi
+              cpu: 4000m
+              memory: 8Gi
             limits:
               cpu: 4000m
               memory: 8Gi
