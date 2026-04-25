@@ -18,3 +18,10 @@ resources:
   - cronjob-tile-cleanup.yaml
   - cronjob-open-meteo-sync.yaml
   - servicemonitor.yaml
+
+namespace: radar-ng
+
+configMapGenerator:
+  - name: tile-cleanup-script
+    files:
+      - cleanup.sh=tile-cleanup.sh
