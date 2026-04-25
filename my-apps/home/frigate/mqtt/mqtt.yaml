@@ -1,16 +1,7 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: mosquitto-configmap
-  namespace: frigate
-data:
-  mosquitto.conf: |
-    persistence true
-    persistence_location /mosquitto/data/
-    log_dest file /mosquitto/log/mosquitto.log
-    allow_anonymous false
-    password_file /mosquitto/config/mosquitto.passwd
----
+# Mosquitto broker for Frigate's MQTT events. The mosquitto.conf is
+# delivered via a kustomize-generated ConfigMap (see kustomization.yaml
+# for the configMapGenerator entry); editing mosquitto.conf will
+# auto-roll this Deployment on next sync.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

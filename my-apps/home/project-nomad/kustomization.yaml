@@ -4,7 +4,6 @@ namespace: project-nomad
 
 resources:
   - namespace.yaml
-  - configmap.yaml
   - externalsecret.yaml
   # Core — Nomad app
   - nomad/deployment.yaml
@@ -48,3 +47,8 @@ resources:
   - flatnotes/service.yaml
   - flatnotes/pvc.yaml
   - flatnotes/httproute.yaml
+
+configMapGenerator:
+  - name: project-nomad-config
+    envs:
+      - project-nomad-config.env

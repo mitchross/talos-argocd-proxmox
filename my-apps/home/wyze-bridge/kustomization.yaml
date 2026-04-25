@@ -5,10 +5,13 @@ resources:
 
   - namespace.yaml
   - external-secret.yaml
-  - configmap.yaml
   - deployment.yaml
   - service.yaml
   - httproute.yaml
 
+configMapGenerator:
+  - name: wyze-bridge-config
+    envs:
+      - wyze-bridge-config.env
 
 namespace: wyze-bridge

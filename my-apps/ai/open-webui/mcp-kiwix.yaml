@@ -70,22 +70,6 @@ spec:
           name: mcp-kiwix-config
 ---
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: mcp-kiwix-config
-  namespace: open-webui
-data:
-  config.json: |
-    {
-      "mcpServers": {
-        "fetch": {
-          "command": "uvx",
-          "args": ["mcp-server-fetch"]
-        }
-      }
-    }
----
-apiVersion: v1
 kind: Service
 metadata:
   name: mcpo-kiwix

@@ -5,6 +5,10 @@ namespace: kopia-ui
 resources:
   - namespace.yaml
   - externalsecret.yaml
-  - configmap.yaml
   - deployment.yaml
   - httproute.yaml
+
+configMapGenerator:
+  - name: kopia-ui-config
+    files:
+      - repository.config

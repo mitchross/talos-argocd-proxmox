@@ -1,0 +1,32 @@
+title: VanillaX Dashboard
+theme: dark
+color: slate
+headerStyle: clean
+layout:
+  Public · Knowledge:
+    style: row
+    columns: 4
+  Public · Tools:
+    style: row
+    columns: 4
+  Public · Privacy:
+    style: row
+    columns: 2
+  Internal · AI:
+    style: row
+    columns: 4
+  Internal · Development:
+    style: row
+    columns: 4
+  Internal · Home:
+    style: row
+    columns: 4
+  Internal · Media:
+    style: row
+    columns: 4
+  Internal · Utilities:
+    style: row
+    columns: 2
+  Internal · Infrastructure:
+    style: row
+    columns: 4

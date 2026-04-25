@@ -5,7 +5,13 @@ namespace: perplexica
 resources:
   - namespace.yaml
   - pvc.yaml
-  - configmap.yaml     # model-provider seed for the initContainer
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+
+# Model-provider seed for the initContainer. Hash-suffixed so any
+# config.json change auto-rolls the deployment.
+configMapGenerator:
+  - name: perplexica-config-seed
+    files:
+      - config.json

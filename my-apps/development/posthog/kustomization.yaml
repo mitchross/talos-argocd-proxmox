@@ -6,7 +6,6 @@ resources:
   - namespace.yaml
   - externalsecret.yaml
   - httproute.yaml
-  - configmap-env.yaml
   # Data layer (all in posthog namespace)
   - data-layer/postgres.yaml
   - data-layer/redis.yaml
@@ -26,3 +25,14 @@ resources:
   - core/temporal-worker.yaml
   - core/microservices.yaml
   - core/toolbox.yaml
+
+# Hash-suffixed env configmap. Consumed via envFrom by 11+ posthog
+# workloads (web, capture, ingestion, recording-api, plugins, workers,
+# temporal-worker, toolbox, jobs, etc.) — Kustomize rewrites every
+# `configMapRef.name: posthog-env` to the hashed name, so any env edit
+# rolls *all* of them automatically. (Previously, an env change required
+# manually `kubectl rollout restart` on each Deployment.)
+configMapGenerator:
+  - name: posthog-env
+    envs:
+      - posthog-env.env
