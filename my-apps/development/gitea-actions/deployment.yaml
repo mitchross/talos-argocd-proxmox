@@ -26,7 +26,10 @@ spec:
     spec:
       containers:
         - name: runner
-          image: gitea/act_runner:nightly-dind-rootless
+          # Rootful DinD: Talos sets user.max_user_namespaces=0 so the
+          # -rootless variant can't start. Rootful needs `privileged: true`
+          # (we have it) but no kernel sysctl changes on the host.
+          image: gitea/act_runner:nightly-dind
           env:
             - name: GITEA_INSTANCE_URL
               value: https://gitea.vanillax.me
