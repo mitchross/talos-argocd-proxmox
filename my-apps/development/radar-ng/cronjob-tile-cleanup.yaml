@@ -1,23 +1,8 @@
-# Tile cache cleanup — runs cleanup.sh every 30 minutes. The script is baked
-# into a tiny alpine image via a ConfigMap mount (keeps us from maintaining a
-# custom "cleanup" image just to hold one shell script).
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: tile-cleanup-script
-  namespace: radar-ng
-data:
-  cleanup.sh: |
-    #!/bin/sh
-    # Remove tile directories older than TTL_HOURS (default 6h). Keeps the
-    # most recent tile set per layer; anything older is pruned.
-    set -eu
-    : "${TILE_DIR:=/data/tiles}"
-    : "${TTL_HOURS:=6}"
-    find "$TILE_DIR" -mindepth 2 -maxdepth 3 -type d \
-      -mmin +$((TTL_HOURS * 60)) -print -exec rm -rf {} + 2>/dev/null || true
-    echo "[tile-cleanup] swept ${TILE_DIR} (ttl=${TTL_HOURS}h)"
----
+# Tile cache cleanup — runs cleanup.sh every 30 minutes. The script is
+# delivered to the pod via a ConfigMap mount (kustomize generator in
+# kustomization.yaml — keeps us from baking a custom image for one
+# shell script). Editing tile-cleanup.sh changes the configmap hash
+# and triggers a fresh CronJob template on the next sync.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -35,10 +20,24 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
+          # Match the ingest pods' UID so cleanup.sh can rm tiles owned
+          # by GID 1000 (set via ingest pods' fsGroup).
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
           containers:
             - name: cleanup
               image: alpine:3.19
               command: ["/bin/sh", "/scripts/cleanup.sh"]
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: [ALL]
               env:
                 - { name: TILE_DIR,   value: /data/tiles }
                 - { name: TTL_HOURS,  value: "6" }

@@ -19,10 +19,21 @@ spec:
       labels:
         app: basemap
     spec:
+      # No PVC, so no fsGroup needed. Image bakes data + chowns at build.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: basemap
-          image: registry.vanillax.me/radar-ng-basemap:latest
-          imagePullPolicy: Always
+          image: registry.vanillax.me/radar-ng-basemap:v1.0.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           ports:
             - containerPort: 8081
               name: http

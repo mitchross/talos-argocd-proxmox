@@ -20,9 +20,22 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
+          # Same securityContext as the open-meteo Deployment so cron-written
+          # files end up GID 999 — readable + writable by the serve pod.
+          securityContext:
+            runAsNonRoot: true
+            runAsGroup: 999
+            fsGroup: 999
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
           containers:
             - name: sync
               image: ghcr.io/open-meteo/open-meteo:latest
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: [ALL]
               args:
                 - sync
                 - ncep_gfs025
@@ -55,9 +68,22 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
+          # Same securityContext as the open-meteo Deployment so cron-written
+          # files end up GID 999 — readable + writable by the serve pod.
+          securityContext:
+            runAsNonRoot: true
+            runAsGroup: 999
+            fsGroup: 999
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
           containers:
             - name: sync
               image: ghcr.io/open-meteo/open-meteo:latest
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: [ALL]
               args:
                 - sync
                 - ncep_hrrr_conus

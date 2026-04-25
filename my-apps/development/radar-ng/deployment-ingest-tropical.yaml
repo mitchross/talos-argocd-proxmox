@@ -19,10 +19,22 @@ spec:
       labels:
         app: ingest-tropical
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: ingest-tropical
-          image: registry.vanillax.me/radar-ng-ingest-tropical:latest
-          imagePullPolicy: Always
+          image: registry.vanillax.me/radar-ng-ingest-tropical:v1.0.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           env:
             - name: STATE_DIR
               value: /data/state

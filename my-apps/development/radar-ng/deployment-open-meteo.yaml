@@ -19,9 +19,25 @@ spec:
       labels:
         app: open-meteo
     spec:
+      # Upstream open-meteo image already runs as UID 999 ("openmeteo").
+      # Don't override runAsUser — let the image's USER directive apply
+      # so file paths the binary writes (PVC at /app/data) match the UID
+      # the cronjobs sync as. fsGroup matches so writes from the deploy
+      # interleave cleanly with cronjob-written files.
+      securityContext:
+        runAsNonRoot: true
+        runAsGroup: 999
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: open-meteo
           image: ghcr.io/open-meteo/open-meteo:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           args: ["serve", "--bind", "0.0.0.0:8080"]
           ports:
             - containerPort: 8080
