@@ -46,6 +46,12 @@ spec:
                   key: token
             - name: GITEA_RUNNER_NAME
               value: cluster-runner-1
+            # Concurrent jobs in a single runner pod. Shares one dockerd
+            # so layer cache is reused across parallel jobs (the big win
+            # vs. multiple replicas). Combined with the 4-core resource
+            # request below this is roughly 1 core per concurrent job.
+            - name: GITEA_RUNNER_CAPACITY
+              value: "4"
             - name: GITEA_RUNNER_LABELS
               # Standard 'ubuntu-latest' label so workflows look like GHA.
               # Map to the catthehacker image act_runner uses by default.
