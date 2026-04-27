@@ -30,9 +30,12 @@ data:
       enabled: true
 
     container:
-      # Strip auto-added `--gpus all` so step containers can start on a
-      # dockerd without nvidia runtime registered.
-      options: "--gpus="
+      # Override act_runner's auto-added `--gpus=all` (which fails on a
+      # dockerd with no nvidia runtime). Docker uses last-value-wins for
+      # repeated flags, so `--gpus=0` after `--gpus=all` resolves to "no
+      # GPUs" — same effect as not passing it. Empty string ("") is NOT
+      # valid: docker bails with `invalid argument "" for "--gpus": EOF`.
+      options: "--gpus=0"
       # buildx + DinD need privileged step containers.
       privileged: true
       valid_volumes:
