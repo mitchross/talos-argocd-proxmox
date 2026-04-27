@@ -1,5 +1,15 @@
 server:
   enabled: true
+  # Override chart 1.1.1's default tag (1.30.3) → 1.30.4 (Docker Hub
+  # 2026-04-10). Temporal cuts patch images more often than helm-chart
+  # releases, so the chart can lag the server by weeks. Bump this line
+  # whenever a relevant fix lands; a chart-level bump (1.1.x → 1.2.x)
+  # will reset our override only if the chart's own default goes ABOVE
+  # this value.
+  image:
+    repository: temporalio/server
+    tag: 1.30.4
+    pullPolicy: IfNotPresent
   replicaCount: 1
   resources:
     requests:
