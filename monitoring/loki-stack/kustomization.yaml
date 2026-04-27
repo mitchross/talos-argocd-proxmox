@@ -5,10 +5,15 @@ resources:
   - ns.yaml
   - loki-http-route.yaml
   - externalsecret.yaml
+# Repo migrated 2026-04-27 from grafana/helm-charts to grafana-community/helm-charts.
+# Upstream Grafana split the OSS Loki Helm chart out of the main repo on 2026-03-16:
+# the original chart at grafana/helm-charts went GEL-only at v7.0.0; OSS users were
+# forked to grafana-community/helm-charts continuing as 13.x. Same chart maintainers,
+# OSS Loki binary 3.6.7 → 3.7.1, no values.yaml schema changes for our config.
 helmCharts:
   - name: loki
-    repo: https://grafana.github.io/helm-charts
-    version: 6.55.0
+    repo: https://grafana-community.github.io/helm-charts
+    version: 13.2.5
     releaseName: loki
     namespace: loki-stack
     valuesFile: values.yaml
