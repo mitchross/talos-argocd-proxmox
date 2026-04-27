@@ -7,10 +7,17 @@ defaultSettings:
   # a single scalar or a JSON string with per-engine values like {"v1":"...","v2":"..."} when needed.
   defaultDataPath: "/var/lib/longhorn"
   storageMinimalAvailablePercentage: "10"
-  # 200% is required with replicaCount=2 — each PVC counts double against the
-  # scheduling limit. At 100%, bootstrap fails with "insufficient storage" when
-  # all ~58 volumes are created at once, even though physical disk space is available.
-  storageOverProvisioningPercentage: "200"
+  # 200% was the previous floor (replicaCount=2 doubles every PVC against the
+  # scheduling limit). 2026-04-27 the cluster crossed 200% allocation on
+  # `talos-prod-cluster-workers-smgrbs` (1077 Gi reserved vs 1046 Gi cap →
+  # node went Unschedulable). Actual cluster fill is only 228 Gi / 4184 Gi
+  # physical (~5%) — every big PVC (immich/library 300G@5.8G used, posthog
+  # clickhouse 100G@23G, project-nomad nomad-storage 120G@2.4G) reserves
+  # full PVC size × replica count. Bumping the over-provisioning cap to 300%
+  # gives ~1568 Gi reservation budget per node, restoring Schedulable.
+  # Rebalance/PVC-shrink/migrate-to-NFS are the long-term levers; this is
+  # the band-aid that unsticks scheduling immediately.
+  storageOverProvisioningPercentage: "300"
   allowRecurringJobWhileVolumeDetached: "true"
   replicaAutoBalance: "best-effort"
   # Ensure new consolidated settings that can be per-engine stay simple scalars for V1-only clusters
