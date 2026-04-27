@@ -97,10 +97,51 @@ spec:
               command: [docker, info]
             periodSeconds: 30
 
+        # Prune sidecar — keeps the dind PVC from filling up. Runs every
+        # 6h; bounds buildkit cache to 20Gi and removes stopped
+        # containers + images older than 72h. Without this, the layer
+        # cache grows indefinitely as new image versions keep landing.
+        - name: prune
+          image: docker:27-cli
+          env:
+            - name: DOCKER_HOST
+              value: unix:///var/run/docker.sock
+          command:
+            - sh
+            - -c
+            - |
+              while true; do
+                # Wait for dockerd before first prune (pod fresh-start case)
+                for i in $(seq 1 30); do
+                  docker info >/dev/null 2>&1 && break
+                  sleep 2
+                done
+                echo "[prune] starting cycle at $(date -u)"
+                docker buildx prune -af --keep-storage 20GB --filter until=24h 2>&1 || true
+                docker system prune -af --filter "until=72h" 2>&1 || true
+                df -h /var/lib/docker 2>/dev/null || true
+                sleep 21600
+              done
+          volumeMounts:
+            - { name: var-run, mountPath: /var/run }
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+
       volumes:
-        - { name: var-run,        emptyDir: {} }
-        - { name: data,           emptyDir: {} }
-        - { name: docker-storage, emptyDir: {} }
+        - { name: var-run, emptyDir: {} }
+        - { name: data,    emptyDir: {} }
+        # /var/lib/docker is a PVC so the catthehacker image (3 GB) and
+        # every base image we pull stay warm across pod restarts. See
+        # pvc.yaml. Was emptyDir — every restart wiped the cache and the
+        # next build re-pulled everything (≈2 min cold-start tax).
+        - name: docker-storage
+          persistentVolumeClaim:
+            claimName: act-runner-docker-cache
         - name: config
           configMap:
             name: act-runner-config

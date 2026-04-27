@@ -17,10 +17,12 @@ data:
 
     runner:
       file: /data/.runner
-      # 2 parallel jobs — high enough to pipeline radar-ng's 8 build
-      # workflows when they all fire on a master push, low enough that
-      # 4 concurrent buildkit instances don't choke a cold dockerd.
-      capacity: 2
+      # 1 job at a time. Higher capacity actually slowed cold runs:
+      # concurrent `docker pull` of the same base image hit containerd's
+      # content-store lock and serialized anyway, while quadrupling
+      # peak RAM. Layer-cache hits from the dind PVC mean serial jobs
+      # are fast enough that parallelism doesn't pay.
+      capacity: 1
       timeout: 1h
       shutdown_timeout: 5m
       insecure: false
