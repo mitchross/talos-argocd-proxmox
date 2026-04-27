@@ -56,7 +56,7 @@ spec:
               # bitnami moved their free images to the bitnamilegacy namespace
               # on Docker Hub in Aug 2025; `bitnami/kubectl:1.33.1` no longer
               # resolves. bitnamilegacy/kubectl:1.33.1 is the same bits.
-              image: bitnamilegacy/kubectl:1.33.1
+              image: bitnamilegacy/kubectl:1.33.4
               command:
                 - kubectl
                 - -n
