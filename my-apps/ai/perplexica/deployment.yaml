@@ -31,7 +31,7 @@ spec:
           # Alpine with inline `apk add jq` because the upstream jq image
           # (ghcr.io/jqlang/jq) is distroless and has no shell — we need
           # /bin/sh for the merge logic below.
-          image: alpine:3.20
+          image: alpine:3.23
           command:
             - /bin/sh
             - -c
