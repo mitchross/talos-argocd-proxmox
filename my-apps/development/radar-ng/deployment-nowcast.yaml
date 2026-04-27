@@ -59,11 +59,11 @@ spec:
             - { name: state, mountPath: /data/state }
           resources:
             requests:
-              cpu: 200m
-              memory: 512Mi
+              cpu: 500m
+              memory: 1Gi
             limits:
-              cpu: 2000m
-              memory: 2Gi
+              cpu: 4000m
+              memory: 4Gi
       volumes:
         - { name: tiles, persistentVolumeClaim: { claimName: tiles } }
         - { name: grids, persistentVolumeClaim: { claimName: grids } }
