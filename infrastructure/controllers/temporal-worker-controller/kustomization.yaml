@@ -27,10 +27,17 @@ helmCharts:
     # CRDs chart ships no values.yaml but kustomize insists on reading
     # one; crds-values.yaml is an empty stub to satisfy the pipeline.
     valuesFile: crds-values.yaml
+  # The Helm CHART and the controller IMAGE both publish to the same OCI
+  # repo (docker.io/temporalio/temporal-worker-controller). Tags like
+  # v1.5.x are the IMAGE; the CHART uses a separate 0.24.x stream. A
+  # plain `datasource=docker` lookup picks the highest tag and lands on
+  # the image, breaking `helm pull` (PR #1224 did exactly that, broke CI
+  # repo-wide for ~9 days). The packageRules entry in renovate.json5
+  # constrains future bumps here to chart-style versions only.
   - name: temporal-worker-controller
     repo: oci://docker.io/temporalio
     # renovate: datasource=docker depName=docker.io/temporalio/temporal-worker-controller
-    version: v1.5.2
+    version: 0.24.1
     releaseName: temporal-worker-controller
     namespace: temporal-worker-controller
     valuesFile: values.yaml
