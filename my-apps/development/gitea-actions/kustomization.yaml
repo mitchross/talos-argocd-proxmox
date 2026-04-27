@@ -4,6 +4,7 @@ namespace: gitea-actions
 resources:
   - namespace.yaml
   - configmap.yaml
+  - pvc.yaml
   - deployment.yaml
 
 # act-runner-token Secret is created out-of-band via kubectl — the
