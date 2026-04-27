@@ -171,7 +171,12 @@
       allowedVersions: '/^\\d+\\.\\d+\\.\\d+$/',
     },
     {
-      description: 'radar-ng images (in-cluster registry): only consider semver vX.Y.Z tags, auto-merge minor+patch. Build flow lives in radar-ng/.gitea/workflows/build-*.yml — every push to master auto-bumps patch (next semver computed by reading the registry), pushes the image, Renovate sees it within an hour and PRs the bump here.',
+      // Renovate forbids combining matchUpdateTypes with allowedVersions or
+      // versioning in the same packageRule (they're orthogonal scoping
+      // axes). Split into two rules: one defines the candidate-version
+      // stream for the package; the other says how to behave on minor/patch
+      // updates within that stream.
+      description: 'radar-ng images (in-cluster registry): only consider semver vX.Y.Z tags. Build flow lives in radar-ng/.gitea/workflows/build-*.yml — every push to master auto-bumps patch (next semver computed by reading the registry), pushes the image, Renovate sees it within an hour and PRs the bump here. Excludes :latest, :git-<sha>, and :buildcache from candidate set so Renovate never proposes downgrading a pinned :v1.0.x to a floating tag.',
       matchDatasources: ['docker'],
       matchPackageNames: [
         'registry.vanillax.me/radar-ng-tile-server',
@@ -183,10 +188,20 @@
         'registry.vanillax.me/radar-ng-basemap',
       ],
       versioning: 'semver-coerced',
-      // Excludes :latest, :git-<sha>, and :buildcache from candidate set
-      // so Renovate never proposes downgrading a pinned :v1.0.x to a
-      // floating tag.
       allowedVersions: '/^v\\d+\\.\\d+\\.\\d+$/',
+    },
+    {
+      description: 'radar-ng images: auto-merge minor+patch within the v\\d+.\\d+.\\d+ stream constrained above.',
+      matchDatasources: ['docker'],
+      matchPackageNames: [
+        'registry.vanillax.me/radar-ng-tile-server',
+        'registry.vanillax.me/radar-ng-ingest-mrms',
+        'registry.vanillax.me/radar-ng-ingest-hrrr',
+        'registry.vanillax.me/radar-ng-ingest-lightning',
+        'registry.vanillax.me/radar-ng-ingest-tropical',
+        'registry.vanillax.me/radar-ng-nowcast',
+        'registry.vanillax.me/radar-ng-basemap',
+      ],
       matchUpdateTypes: ['patch', 'minor'],
       automerge: true,
       automergeType: 'branch',
