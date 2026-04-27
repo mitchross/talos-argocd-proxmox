@@ -30,7 +30,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: ingest-hrrr
-          image: registry.vanillax.me/radar-ng-ingest-hrrr:v1.0.0
+          image: registry.vanillax.me/radar-ng-ingest-hrrr:v1.0.2
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
