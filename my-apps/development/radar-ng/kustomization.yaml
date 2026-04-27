@@ -11,6 +11,7 @@ resources:
   - deployment-basemap.yaml
   - deployment-open-meteo.yaml
   - deployment-ingest-mrms.yaml
+  - deployment-ingest-radar-composite.yaml
   - deployment-ingest-hrrr.yaml
   - deployment-ingest-lightning.yaml
   - deployment-ingest-tropical.yaml

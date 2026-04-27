@@ -1,6 +1,6 @@
 # Scrapes tile-server's /api/metrics (Prometheus text format, see
 # radar-ng/services/tile-server/api/server.py::metrics). Exposes
-# stormscope_* counters + stormscope_mrms_age_seconds gauge.
+# radar_ng_* counters + radar_ng_mrms_age_seconds gauge.
 #
 # Prometheus discovers this because kube-prometheus-stack is deployed with
 # serviceMonitorSelectorNilUsesHelmValues: false, i.e. no selector => all.

@@ -53,7 +53,7 @@ data:
           "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
           "gridPos": { "x": 0, "y": 0, "w": 6, "h": 5 },
           "targets": [
-            { "expr": "stormscope_mrms_age_seconds", "refId": "A" }
+            { "expr": "radar_ng_mrms_age_seconds", "refId": "A" }
           ],
           "fieldConfig": {
             "defaults": {
@@ -77,8 +77,8 @@ data:
           "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
           "gridPos": { "x": 6, "y": 0, "w": 12, "h": 5 },
           "targets": [
-            { "expr": "rate(stormscope_manifest_requests_total[5m])", "refId": "A", "legendFormat": "manifest" },
-            { "expr": "rate(stormscope_forecast_requests_total[5m])", "refId": "B", "legendFormat": "forecast" }
+            { "expr": "rate(radar_ng_manifest_requests_total[5m])", "refId": "A", "legendFormat": "manifest" },
+            { "expr": "rate(radar_ng_forecast_requests_total[5m])", "refId": "B", "legendFormat": "forecast" }
           ],
           "fieldConfig": { "defaults": { "unit": "reqps" } }
         },
@@ -91,7 +91,7 @@ data:
           "gridPos": { "x": 18, "y": 0, "w": 6, "h": 5 },
           "targets": [
             {
-              "expr": "100 * sum(rate(stormscope_forecast_cache_hits_total[5m])) / clamp_min(sum(rate(stormscope_forecast_requests_total[5m])), 1)",
+              "expr": "100 * sum(rate(radar_ng_forecast_cache_hits_total[5m])) / clamp_min(sum(rate(radar_ng_forecast_requests_total[5m])), 1)",
               "refId": "A"
             }
           ],
@@ -133,7 +133,7 @@ data:
           "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
           "gridPos": { "x": 12, "y": 5, "w": 12, "h": 8 },
           "targets": [
-            { "expr": "rate(stormscope_forecast_upstream_errors_total[5m])", "refId": "A", "legendFormat": "errors/sec" }
+            { "expr": "rate(radar_ng_forecast_upstream_errors_total[5m])", "refId": "A", "legendFormat": "errors/sec" }
           ],
           "fieldConfig": { "defaults": { "unit": "reqps" } }
         },
@@ -159,7 +159,7 @@ data:
           "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
           "gridPos": { "x": 0, "y": 23, "w": 24, "h": 8 },
           "targets": [
-            { "expr": "stormscope_tile_timestamps", "refId": "A", "legendFormat": "{{layer}}" }
+            { "expr": "radar_ng_tile_timestamps", "refId": "A", "legendFormat": "{{layer}}" }
           ],
           "fieldConfig": { "defaults": { "unit": "short" } }
         },

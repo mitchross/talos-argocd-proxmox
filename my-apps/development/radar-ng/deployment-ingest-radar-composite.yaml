@@ -1,24 +1,26 @@
-# HRRR ingestor — polls NOAA HRRR hourly runs, byte-range subsets the GRIB2
-# for the variables we use (reflectivity, U/V wind, CAPE, temp, precip, cloud),
-# renders tiles, and dumps U/V grids for wind particles.
+# Composite reflectivity ingestor — runs the SAME image as ingest-mrms but
+# pointed at MRMS_PREFIX=CONUS/MergedReflectivityQComposite (full-atmosphere
+# composite, what AccuWeather/Apple Weather actually show) and writes to
+# /data/tiles/radar-composite/. Layer name is exposed in the manifest so the
+# client can show it as its own picker option.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ingest-hrrr
+  name: ingest-radar-composite
   namespace: radar-ng
   labels:
-    app: ingest-hrrr
+    app: ingest-radar-composite
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app: ingest-hrrr
+      app: ingest-radar-composite
   template:
     metadata:
       labels:
-        app: ingest-hrrr
+        app: ingest-radar-composite
     spec:
       securityContext:
         runAsNonRoot: true
@@ -29,14 +31,18 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: ingest-hrrr
-          image: registry.vanillax.me/radar-ng-ingest-hrrr:v1.0.3
+        - name: ingest-radar-composite
+          image: registry.vanillax.me/radar-ng-ingest-mrms:v1.0.3
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop: [ALL]
           env:
+            - name: MRMS_PREFIX
+              value: CONUS/MergedReflectivityQComposite
+            - name: LAYER_NAME
+              value: radar-composite
             - name: TILE_DIR
               value: /data/tiles
             - name: STATE_DIR
@@ -46,11 +52,9 @@ spec:
             - name: PALETTES
               value: classic,vivid,muted
             - name: POLL_INTERVAL
-              value: "3600"
-            - name: FORECAST_HOURS
-              value: "18"
-            - name: EXTENDED_FORECAST_HOURS
-              value: "48"
+              value: "120"
+            - name: BACKLOG_PER_CYCLE
+              value: "3"
             - name: LOG_LEVEL
               value: INFO
           volumeMounts:
@@ -59,11 +63,11 @@ spec:
             - { name: grids, mountPath: /data/grids }
           resources:
             requests:
-              cpu: 500m
+              cpu: 1000m
               memory: 1Gi
             limits:
-              cpu: 4000m
-              memory: 4Gi
+              cpu: 6000m
+              memory: 6Gi
       volumes:
         - { name: tiles, persistentVolumeClaim: { claimName: tiles } }
         - { name: state, persistentVolumeClaim: { claimName: state } }

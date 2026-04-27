@@ -29,7 +29,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: ingest-tropical
-          image: registry.vanillax.me/radar-ng-ingest-tropical:v1.0.2
+          image: registry.vanillax.me/radar-ng-ingest-tropical:v1.0.3
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false

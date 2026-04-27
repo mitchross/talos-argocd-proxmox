@@ -33,7 +33,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: ingest-mrms
-          image: registry.vanillax.me/radar-ng-ingest-mrms:v1.0.2
+          image: registry.vanillax.me/radar-ng-ingest-mrms:v1.0.3
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
