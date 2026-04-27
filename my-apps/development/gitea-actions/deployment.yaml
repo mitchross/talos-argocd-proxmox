@@ -1,10 +1,15 @@
-# Gitea Actions runner: gitea/act_runner with rootless dockerd baked in.
-# The dockerd is per-pod (no shared cluster cache), but workflows use
-# registry-based BuildKit cache (`type=registry,ref=...:buildcache`) so
-# successive builds across pod restarts still warm up. This trades local
-# cache speed for portability — every workflow file we write here is
-# byte-identical to a .github/workflows/ file (just different runner
-# registration), so flipping to GitHub-hosted runners later is a `git mv`.
+# Gitea Actions runner — two-container pattern.
+#
+# `runner` runs act_runner (no docker baked in) and talks to a sidecar
+# `dind` over a shared unix socket in /var/run. This sidesteps the bugs
+# in the gitea/act_runner:*-dind image family:
+#   • s6 readiness race that left act_runner blocked on s6-svwait
+#   • dockerd-entrypoint.sh auto-passing --gpus=all to job containers
+#   • dind's bundled server cert having incompatible TLS key usage
+#
+# The dind container is privileged (required for any DinD); the runner
+# container is unprivileged. Workflow files stay byte-identical to a
+# .github/workflows/ file — `runs-on: ubuntu-latest` still works.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -26,41 +31,11 @@ spec:
     spec:
       containers:
         - name: runner
-          # Rootful DinD: Talos sets user.max_user_namespaces=0 so the
-          # -rootless variant can't start. Rootful needs `privileged: true`
-          # (we have it) but no kernel sysctl changes on the host.
-          #
-          # Pinned to 0.4.1-dind (current stable). Avoid `nightly-dind` —
-          # newer dockerd builds in nightly hit an s6 readiness race that
-          # leaves act_runner blocked on `s6-svwait -U /etc/s6/docker`,
-          # so the pod looks healthy but never registers with Gitea.
-          image: gitea/act_runner:0.4.1-dind
-          # The 0.4.x-dind images wrap dockerd-entrypoint.sh in
-          # s6-notifyoncheck, but the entrypoint does `exec docker-init --
-          # dockerd …` which replaces the wrapper process. The s6 readiness
-          # signal never fires, and act_runner blocks forever on
-          # `s6-svwait -U /etc/s6/docker`. Once dockerd is responsive on
-          # tcp://localhost:2376, the wait is pointless — kill it so
-          # act_runner proceeds. Self-deactivating: if upstream fixes the
-          # bug, pkill matches nothing.
-          lifecycle:
-            postStart:
-              exec:
-                command:
-                  - sh
-                  - -c
-                  - |
-                    for i in $(seq 1 60); do
-                      if docker -H tcp://localhost:2376 --tlsverify \
-                         --tlscacert /certs/server/ca.pem \
-                         --tlscert /certs/server/cert.pem \
-                         --tlskey /certs/server/key.pem info >/dev/null 2>&1; then
-                        pkill -f 's6-svwait -U /etc/s6/docker' || true
-                        exit 0
-                      fi
-                      sleep 1
-                    done
+          image: gitea/act_runner:0.4.1
           env:
+            # Talk to the dind sidecar via the shared /var/run socket.
+            - name: DOCKER_HOST
+              value: unix:///var/run/docker.sock
             - name: GITEA_INSTANCE_URL
               value: https://gitea.vanillax.me
             - name: GITEA_RUNNER_REGISTRATION_TOKEN
@@ -70,36 +45,62 @@ spec:
                   key: token
             - name: GITEA_RUNNER_NAME
               value: cluster-runner-1
-            # Concurrent jobs in a single runner pod. Shares one dockerd
-            # so layer cache is reused across parallel jobs (the big win
-            # vs. multiple replicas). Combined with the 4-core resource
-            # request below this is roughly 1 core per concurrent job.
-            - name: GITEA_RUNNER_CAPACITY
-              value: "4"
             - name: GITEA_RUNNER_LABELS
-              # Standard 'ubuntu-latest' label so workflows look like GHA.
-              # Map to the catthehacker image act_runner uses by default.
               value: ubuntu-latest:docker://catthehacker/ubuntu:act-latest
-          # Rootless DinD still needs privileged for user namespace setup.
-          # Acceptable here because the runner namespace is exempted from
-          # PodSecurity restricted; cluster-wide policy stays in place.
+            - name: CONFIG_FILE
+              value: /etc/act_runner/config.yaml
+          volumeMounts:
+            - { name: var-run, mountPath: /var/run }
+            - { name: data,    mountPath: /data }
+            - { name: config,  mountPath: /etc/act_runner }
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+
+        # Plain Docker-in-Docker. Privileged is required (the gitea-actions
+        # namespace is PSA-exempt). TLS disabled because the socket is
+        # only reachable from sibling containers in the same pod — no
+        # network exposure. Layer cache lives in /var/lib/docker on
+        # emptyDir; persistent caching is via the registry buildcache tag
+        # the workflows already use.
+        - name: dind
+          image: docker:27-dind
+          args:
+            - --host=unix:///var/run/docker.sock
+          env:
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
           securityContext:
             privileged: true
           volumeMounts:
-            - { name: data,    mountPath: /var/lib/docker }
-            - { name: workdir, mountPath: /data }
+            - { name: var-run,        mountPath: /var/run }
+            - { name: docker-storage, mountPath: /var/lib/docker }
           resources:
-            # Guaranteed QoS — request == limit so the scheduler reserves
-            # the full 4 cores + 8Gi for this pod. Worth it during builds
-            # because the BuildKit cache replay parallelizes well; idle
-            # cost (no jobs queued) is just the reservation, not actual
-            # consumption.
             requests:
-              cpu: 4000m
-              memory: 8Gi
+              cpu: 1000m
+              memory: 2Gi
             limits:
               cpu: 4000m
-              memory: 8Gi
+              memory: 6Gi
+          # Dockerd ready when `docker info` over the shared socket succeeds.
+          startupProbe:
+            exec:
+              command: [docker, info]
+            periodSeconds: 2
+            failureThreshold: 30
+          livenessProbe:
+            exec:
+              command: [docker, info]
+            periodSeconds: 30
+
       volumes:
-        - { name: data,    emptyDir: {} }   # ephemeral docker storage
-        - { name: workdir, emptyDir: {} }
+        - { name: var-run,        emptyDir: {} }
+        - { name: data,           emptyDir: {} }
+        - { name: docker-storage, emptyDir: {} }
+        - name: config
+          configMap:
+            name: act-runner-config
