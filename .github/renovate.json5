@@ -163,6 +163,14 @@
       allowedVersions: '<9.0.0',
     },
     {
+      description: 'temporal-worker-controller: chart and IMAGE share the same OCI repo (docker.io/temporalio/temporal-worker-controller). Image tags look like v1.5.x; chart tags look like 0.24.x. Constrain to chart-style (no `v` prefix, two-part minor) so Renovate cannot bump us onto an image tag (it did exactly that in #1224, breaking CI repo-wide for ~9 days because `helm pull` rejects a plain image OCI artifact with "manifest does not contain minimum number of descriptors").',
+      matchPackageNames: [
+        'docker.io/temporalio/temporal-worker-controller',
+        'docker.io/temporalio/temporal-worker-controller-crds',
+      ],
+      allowedVersions: '/^\\d+\\.\\d+\\.\\d+$/',
+    },
+    {
       description: 'radar-ng images (in-cluster registry): only consider semver vX.Y.Z tags, auto-merge minor+patch. Build flow lives in radar-ng/.gitea/workflows/build-*.yml — every push to master auto-bumps patch (next semver computed by reading the registry), pushes the image, Renovate sees it within an hour and PRs the bump here.',
       matchDatasources: ['docker'],
       matchPackageNames: [
