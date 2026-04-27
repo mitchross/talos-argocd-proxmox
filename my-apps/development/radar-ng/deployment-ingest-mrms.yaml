@@ -50,6 +50,8 @@ spec:
               value: classic,vivid,muted
             - name: POLL_INTERVAL
               value: "120"
+            - name: BACKLOG_PER_CYCLE
+              value: "3"
             - name: LOG_LEVEL
               value: INFO
           volumeMounts:
@@ -58,11 +60,11 @@ spec:
             - { name: grids, mountPath: /data/grids }
           resources:
             requests:
-              cpu: 100m
-              memory: 256Mi
-            limits:
               cpu: 1000m
               memory: 1Gi
+            limits:
+              cpu: 6000m
+              memory: 6Gi
       volumes:
         - { name: tiles, persistentVolumeClaim: { claimName: tiles } }
         - { name: state, persistentVolumeClaim: { claimName: state } }
