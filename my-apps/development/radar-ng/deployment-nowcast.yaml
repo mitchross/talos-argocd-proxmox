@@ -30,7 +30,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: nowcast
-          image: registry.vanillax.me/radar-ng-nowcast:v1.0.2
+          image: registry.vanillax.me/radar-ng-nowcast:v1.0.3
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false

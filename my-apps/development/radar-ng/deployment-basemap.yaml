@@ -28,7 +28,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: basemap
-          image: registry.vanillax.me/radar-ng-basemap:v1.0.2
+          image: registry.vanillax.me/radar-ng-basemap:v1.0.3
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false

@@ -1,0 +1,19 @@
+# Persistent Docker-storage cache for the act-runner DinD sidecar.
+# Without this, /var/lib/docker is an emptyDir and every pod restart
+# wipes the layer cache — so catthehacker (3 GB) and every base image
+# get re-pulled from scratch on the next build.
+#
+# 50 Gi is comfortable headroom: catthehacker (~3 GB) + every
+# radar-ng image's layers + buildkit content store. Longhorn replicates
+# across nodes so the PVC isn't pinned to a single host.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: act-runner-docker-cache
+  namespace: gitea-actions
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 50Gi

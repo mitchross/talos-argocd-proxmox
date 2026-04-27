@@ -62,6 +62,8 @@ spec:
         - .spec.data[].remoteRef.conversionStrategy
         - .spec.data[].remoteRef.decodingStrategy
         - .spec.data[].remoteRef.metadataPolicy
+        - .spec.data[].remoteRef.nullBytePolicy
+        - .spec.target.deletionPolicy
       # imagePullPolicy may differ from Git due to previous Kyverno admission mutation
       - group: apps
         kind: StatefulSet
