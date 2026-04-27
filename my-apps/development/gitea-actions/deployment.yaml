@@ -35,6 +35,31 @@ spec:
           # leaves act_runner blocked on `s6-svwait -U /etc/s6/docker`,
           # so the pod looks healthy but never registers with Gitea.
           image: gitea/act_runner:0.4.1-dind
+          # The 0.4.x-dind images wrap dockerd-entrypoint.sh in
+          # s6-notifyoncheck, but the entrypoint does `exec docker-init --
+          # dockerd …` which replaces the wrapper process. The s6 readiness
+          # signal never fires, and act_runner blocks forever on
+          # `s6-svwait -U /etc/s6/docker`. Once dockerd is responsive on
+          # tcp://localhost:2376, the wait is pointless — kill it so
+          # act_runner proceeds. Self-deactivating: if upstream fixes the
+          # bug, pkill matches nothing.
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - |
+                    for i in $(seq 1 60); do
+                      if docker -H tcp://localhost:2376 --tlsverify \
+                         --tlscacert /certs/server/ca.pem \
+                         --tlscert /certs/server/cert.pem \
+                         --tlskey /certs/server/key.pem info >/dev/null 2>&1; then
+                        pkill -f 's6-svwait -U /etc/s6/docker' || true
+                        exit 0
+                      fi
+                      sleep 1
+                    done
           env:
             - name: GITEA_INSTANCE_URL
               value: https://gitea.vanillax.me
