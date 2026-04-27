@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: gitea-actions
 resources:
   - namespace.yaml
+  - configmap.yaml
   - deployment.yaml
 
 # act-runner-token Secret is created out-of-band via kubectl — the

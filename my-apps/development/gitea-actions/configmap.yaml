@@ -1,0 +1,43 @@
+# act_runner config. Mounted at /etc/act_runner/config.yaml in the runner
+# container. CONFIG_FILE env var points act_runner at this path.
+#
+# The container.options field is the escape hatch for `--gpus all` — by
+# default act adds it when starting job containers, which fails on a
+# dockerd with no nvidia runtime. Empty `--gpus=` overrides it (last
+# value wins in docker's flag parsing).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: act-runner-config
+  namespace: gitea-actions
+data:
+  config.yaml: |
+    log:
+      level: info
+
+    runner:
+      file: /data/.runner
+      # 2 parallel jobs — high enough to pipeline radar-ng's 8 build
+      # workflows when they all fire on a master push, low enough that
+      # 4 concurrent buildkit instances don't choke a cold dockerd.
+      capacity: 2
+      timeout: 1h
+      shutdown_timeout: 5m
+      insecure: false
+      fetch_interval: 2s
+
+    cache:
+      enabled: true
+
+    container:
+      # Strip auto-added `--gpus all` so step containers can start on a
+      # dockerd without nvidia runtime registered.
+      options: "--gpus="
+      # buildx + DinD need privileged step containers.
+      privileged: true
+      valid_volumes:
+        - "**"
+      force_pull: false
+
+    host:
+      workdir_parent: /data/cache
