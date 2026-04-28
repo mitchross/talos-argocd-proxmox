@@ -257,14 +257,18 @@ If `/readyz` merely checks process liveness, the whole guarantee collapses:
 - `/exists` can degrade into false-negative behavior
 - the cluster may create empty PVCs over restorable state
 
-In the current `pvc-plumber` codebase, `/readyz` is implemented as a real backend health check:
+In the current `pvc-plumber` codebase, `/readyz` is intentionally cheap:
 
-- `os.Stat()` on the repository path to catch stale or missing mounts
-- `kopia repository status --json` to verify the repository is still readable
+- startup Kopia connect must have succeeded
+- `os.Stat()` on the repository path must still succeed
 
-That is the correct shape for this architecture.
+The authoritative per-PVC safety check is `/exists/{namespace}/{pvc}`. It now returns:
 
-Operational note: the deployment here is pinned to `ghcr.io/mitchross/pvc-plumber:1.4.0`. If the published image ever drifts from the checked-in code, re-verify that `/readyz` still performs those backend checks before relying on the fail-closed claim.
+- `decision=restore`, `authoritative=true`, HTTP 200 when a backup exists
+- `decision=fresh`, `authoritative=true`, HTTP 200 when no backup exists
+- `decision=unknown`, `authoritative=false`, HTTP 503 for backend/query/parse uncertainty
+
+Operational note: the deployment here is pinned to `ghcr.io/mitchross/pvc-plumber:1.5.0`. If the published image ever drifts from the checked-in code, re-verify that `/exists` returns HTTP 503 for unknown backup truth before relying on the fail-closed claim.
 
 ### 6. The 5-minute cache TTL is a real trade-off
 
