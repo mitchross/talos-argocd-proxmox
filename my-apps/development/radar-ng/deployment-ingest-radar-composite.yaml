@@ -32,7 +32,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: ingest-radar-composite
-          image: registry.vanillax.me/radar-ng-ingest-mrms:v1.0.3
+          image: registry.vanillax.me/radar-ng-ingest-mrms:v1.0.5
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
