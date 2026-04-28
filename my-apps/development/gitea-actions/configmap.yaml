@@ -32,12 +32,14 @@ data:
       enabled: true
 
     container:
-      # Override act_runner's auto-added `--gpus=all` (which fails on a
-      # dockerd with no nvidia runtime). Docker uses last-value-wins for
-      # repeated flags, so `--gpus=0` after `--gpus=all` resolves to "no
-      # GPUs" — same effect as not passing it. Empty string ("") is NOT
-      # valid: docker bails with `invalid argument "" for "--gpus": EOF`.
-      options: "--gpus=0"
+      # No --gpus override. `--gpus=0` and `--gpus=` both still leave
+      # Capabilities:[[gpu]] in the HostConfig DeviceRequests, which
+      # makes dockerd refuse to start the container ("could not select
+      # device driver"). The only way to avoid the gpu cap entirely is
+      # to NOT pass any --gpus flag. act_runner only adds it when the
+      # user puts it here, so leaving options empty yields a clean
+      # docker create with no DeviceRequests.
+      options: ""
       # buildx + DinD need privileged step containers.
       privileged: true
       valid_volumes:
