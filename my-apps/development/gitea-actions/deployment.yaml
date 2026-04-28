@@ -31,7 +31,16 @@ spec:
     spec:
       containers:
         - name: runner
-          image: gitea/act_runner:0.4.1
+          # Custom build of act_runner v0.4.1 with one patch:
+          # gitea.com/gitea/act @ pkg/container/docker_cli.go:604 — the
+          # `DeviceRequests: copts.gpus.Value()` line was forced to nil
+          # so no container ever gets a `[[gpu]]` capability cap. On a
+          # host without an nvidia device driver registered, dockerd
+          # rejects any container with that cap ("could not select
+          # device driver"), and act_runner adds it via codepaths that
+          # fire even when `container.options` is empty. The patched
+          # binary lives at registry.vanillax.me/act_runner-nogpu:v1.
+          image: registry.vanillax.me/act_runner-nogpu:v1
           env:
             # Talk to the dind sidecar via the shared /var/run socket.
             - name: DOCKER_HOST
