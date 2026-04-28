@@ -46,28 +46,31 @@ The system automatically backs up PVCs to NFS storage on TrueNAS using **Kopia**
 
 ## Automatic Restore Flow
 
+For the infographic version with swimlanes and review tradeoffs, see
+[`docs/pvc-restore-decision-flow.md`](pvc-restore-decision-flow.md).
+
 When a PVC is created with a backup label, the system automatically checks if a backup exists and restores it:
 
 ```
-PVC Created ──▶ Kyverno Rule 0 ──▶ Calls pvc-plumber ──▶ Backup exists?
-                                                              │
-                    ┌─────────────────────────────────────────┴─────────┐
-                    │ YES                                               │ NO
-                    ▼                                                   ▼
-            Add dataSourceRef                                   No mutation
-            to PVC spec                                         (fresh PVC)
+PVC Created ──▶ Kyverno ──▶ pvc-plumber /exists ──▶ restore / fresh / unknown
+                                                        │          │          │
+                    ┌───────────────────────────────────┘          │          │
+                    ▼                                              ▼          ▼
+            Add dataSourceRef                              No mutation    Deny PVC
+            to PVC spec                                    (fresh PVC)    (Argo retries)
                     │
                     ▼
             VolSync populates PVC
             from Kopia backup
                     │
                     ▼
-            PVC becomes Bound ──▶ Kyverno Rule 2 ──▶ Creates ReplicationSource
+            PVC becomes Bound ──▶ Kyverno Rule 3 ──▶ Creates ReplicationSource
                                                     (backup schedule starts)
 ```
 
 **Key protections:**
 - **Fail-closed gate:** PVC creation denied if PVC Plumber is unreachable (prevents empty PVCs during disaster recovery)
+- **Authoritative decision gate:** PVC creation denied if pvc-plumber cannot prove `restore` or `fresh`
 - Backup ReplicationSource only created AFTER PVC is Bound (prevents backup/restore conflicts)
 - Restore uses VolumePopulator pattern (dataSourceRef) for atomic restore
 
@@ -87,15 +90,16 @@ PVC Created ──▶ Kyverno Rule 0 ──▶ Calls pvc-plumber ──▶ Backu
 - HTTP service that checks if a backup exists in Kopia repository
 - Called by Kyverno before creating a PVC to determine if restore is needed
 - Image: `ghcr.io/mitchross/pvc-plumber`
-- Endpoint: `GET /exists/{namespace}/{pvc}` returns `{"exists": true/false}`
+- Endpoint: `GET /exists/{namespace}/{pvc}` returns `decision: restore|fresh|unknown` plus `authoritative: true|false`
 
 ### 4. Kyverno ClusterPolicy
 - Triggers on PVCs with label `backup: hourly` or `backup: daily`
 - **Rule 0 (validate, FAIL-CLOSED):** Calls pvc-plumber `/readyz`; if unreachable, **denies PVC creation** to prevent data loss during disaster recovery
-- **Rule 1 (mutate):** Calls pvc-plumber `/exists`; if backup exists, adds `dataSourceRef` to trigger restore
-- **Rule 2 (generate):** Creates ExternalSecret (fetches KOPIA_PASSWORD from 1Password)
-- **Rule 3 (generate):** Creates ReplicationSource (backup schedule) - only after PVC is Bound
-- **Rule 4 (generate):** Creates ReplicationDestination (restore capability)
+- **Rule 1 (validate, FAIL-CLOSED):** Calls pvc-plumber `/exists`; if the answer is `unknown` or not authoritative, **denies PVC creation**
+- **Rule 2 (mutate):** Calls pvc-plumber `/exists`; if the answer is authoritative `restore`, adds `dataSourceRef` to trigger restore
+- **Rule 3 (generate):** Creates ExternalSecret (fetches KOPIA_PASSWORD from 1Password)
+- **Rule 4 (generate):** Creates ReplicationSource (backup schedule) - only after PVC is Bound
+- **Rule 5 (generate):** Creates ReplicationDestination (restore capability)
 
 ### 4a. Kyverno ClusterCleanupPolicy (Orphan Cleanup)
 - **Runs every 15 minutes** to clean up orphaned backup resources

@@ -206,9 +206,16 @@
 │  │  If healthy -> proceed to step 2                                          │    │
 │  └────────────────────────────────────────────────────────────────────────────┘    │
 │                                                                                     │
-│  Step 2: Mutate rule checks if backup exists                                       │
+│  Step 2: Validate rule requires authoritative per-PVC backup truth                 │
 │  ┌────────────────────────────────────────────────────────────────────────────┐    │
 │  │  HTTP GET http://pvc-plumber.volsync-system/exists/karakeep/data-pvc      │    │
+│  │  If decision=unknown or authoritative=false -> DENY PVC creation          │    │
+│  │  If decision=restore or fresh -> proceed                                  │    │
+│  └────────────────────────────────────────────────────────────────────────────┘    │
+│                                                                                     │
+│  Step 3: Mutate rule adds dataSourceRef only for authoritative restore             │
+│  ┌────────────────────────────────────────────────────────────────────────────┐    │
+│  │  Requires: decision=restore, authoritative=true, exists=true              │    │
 │  └────────────────────────────────────────────────────────────────────────────┘    │
 │                                                                                     │
 └─────────────────────────────────────────────────────────────────────────────────────┘
@@ -227,26 +234,40 @@
 │  └────────────────────────────────────────────────────────────────────────────┘    │
 │                                                                                     │
 │  Returns JSON to Kyverno:                                                          │
-│    {"exists": true}   OR   {"exists": false}                                       │
+│    {"decision":"restore","authoritative":true,"exists":true}                      │
+│    {"decision":"fresh","authoritative":true,"exists":false}                       │
+│    {"decision":"unknown","authoritative":false,"exists":false}                    │
 │                                                                                     │
-│  On ANY error (timeout, network, parse) -> {"exists": false}                       │
-│  NOTE: Kyverno validate rule DENIES PVC creation if PVC Plumber is unreachable    │
-│  (fail-closed). See Scenario 5 below.                                              │
+│  On ANY backend/query/parse error -> HTTP 503 + decision=unknown                  │
+│  NOTE: Kyverno DENIES PVC creation when backup truth is unknown.                  │
 │                                                                                     │
 └─────────────────────────────────────────────────────────────────────────────────────┘
                                           │
-                          ┌───────────────┴───────────────┐
-                          │                               │
-                          ▼                               ▼
+              ┌───────────┴───────────┬───────────────────┐
+              │                       │                   │
+              ▼                       ▼                   ▼
 ┌──────────────────────────────────────┐  ┌──────────────────────────────────────┐
 │                                      │  │                                      │
 │  BACKUP EXISTS                       │  │  NO BACKUP                           │
 │     (Disaster Recovery)              │  │     (Fresh Install)                  │
 │                                      │  │                                      │
 │  pvc-plumber returns:                │  │  pvc-plumber returns:                │
-│  {"exists": true}                    │  │  {"exists": false}                   │
+│  decision=restore                    │  │  decision=fresh                      │
+│  authoritative=true                  │  │  authoritative=true                  │
 │                                      │  │                                      │
 └──────────────────────────────────────┘  └──────────────────────────────────────┘
+              │                       │     ┌──────────────────────────────────────┐
+              │                       │     │                                      │
+              │                       │     │  UNKNOWN                             │
+              │                       │     │                                      │
+              │                       │     │  pvc-plumber returns HTTP 503:       │
+              │                       │     │  decision=unknown                    │
+              │                       │     │  authoritative=false                 │
+              │                       │     │                                      │
+              │                       │     │  Kyverno DENIES PVC creation         │
+              │                       │     │  ArgoCD retries after backend fix    │
+              │                       │     │                                      │
+              │                       │     └──────────────────────────────────────┘
                           │                               │
                           ▼                               ▼
 ┌──────────────────────────────────────┐  ┌──────────────────────────────────────┐
@@ -372,7 +393,7 @@
 │  1. ArgoCD syncs your apps                                                         │
 │  2. PVC created with backup: "hourly" (or "daily")                                │
 │  3. Kyverno calls pvc-plumber                                                      │
-│  4. pvc-plumber checks Kopia repo on NFS -> nothing there -> {"exists": false}     │
+│  4. pvc-plumber checks Kopia repo -> decision=fresh, authoritative=true           │
 │  5. Kyverno does NOT add dataSourceRef                                             │
 │  6. Longhorn creates empty volume                                                   │
 │  7. App starts fresh                                                                │
@@ -392,7 +413,7 @@
 │  2. ArgoCD syncs your apps (same Git repo as before)                               │
 │  3. PVC created with backup: "hourly" (or "daily")                                │
 │  4. Kyverno calls pvc-plumber                                                      │
-│  5. pvc-plumber checks Kopia repo on NFS -> backup exists -> {"exists": true}      │
+│  5. pvc-plumber checks Kopia repo -> decision=restore, authoritative=true         │
 │  6. Kyverno MUTATES PVC with dataSourceRef                                         │
 │  7. VolSync VolumePopulator restores data from Kopia NFS backup                    │
 │  8. App starts with ALL YOUR DATA                                                   │
@@ -426,7 +447,7 @@
 │  Same as Scenario 1:                                                               │
 │  1. New app synced by ArgoCD                                                        │
 │  2. PVC created with backup label                                                   │
-│  3. pvc-plumber checks Kopia repo -> no backup -> {"exists": false}                │
+│  3. pvc-plumber checks Kopia repo -> decision=fresh, authoritative=true           │
 │  4. Empty volume created                                                            │
 │  5. Backups begin after PVC is Bound + 2 hours old                                 │
 │                                                                                     │
@@ -508,14 +529,15 @@
 │                                  │         │  ClusterPolicy:                      │
 │  Image:                          │         │  volsync-pvc-backup-restore          │
 │  ghcr.io/mitchross/pvc-plumber   │         │                                      │
-│  :0.3.1                          │         │  Rules:                              │
-│                                  │         │  0. Check backup via pvc-plumber    │
-│  Env:                            │         │     (mutate PVC if backup exists)    │
-│  - BACKEND_TYPE: kopia-fs        │         │  1. Generate ExternalSecret          │
+│  :1.5.0                          │         │  Rules:                              │
+│                                  │         │  0. Check pvc-plumber readiness      │
+│  Env:                            │         │  1. Require authoritative decision   │
+│  - BACKEND_TYPE: kopia-fs        │         │  2. Mutate PVC if restore exists     │
+│  - HTTP_TIMEOUT: 3s              │         │  3. Generate ExternalSecret          │
 │  - KOPIA_REPOSITORY_PATH:        │         │     (Kopia password from 1Password)  │
-│    /repository                   │         │  2. Generate ReplicationSource       │
+│    /repository                   │         │  4. Generate ReplicationSource       │
 │  - KOPIA_PASSWORD (from secret)  │         │     (waits for PVC Bound + 2h age)   │
-│  - KOPIA_CONFIG_PATH:            │         │  3. Generate ReplicationDestination  │
+│  - KOPIA_CONFIG_PATH:            │         │  5. Generate ReplicationDestination  │
 │    /tmp/kopia/config/            │         │                                      │
 │    repository.config             │         │  + volsync-nfs-inject policy:         │
 │                                  │         │    Injects NFS mount into all        │
