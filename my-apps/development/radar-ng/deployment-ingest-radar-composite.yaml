@@ -1,5 +1,5 @@
 # Composite reflectivity ingestor — runs the SAME image as ingest-mrms but
-# pointed at MRMS_PREFIX=CONUS/MergedReflectivityQComposite (full-atmosphere
+# pointed at MRMS_PREFIX=CONUS/MergedReflectivityComposite_00.50 (full-atmosphere
 # composite, what AccuWeather/Apple Weather actually show) and writes to
 # /data/tiles/radar-composite/. Layer name is exposed in the manifest so the
 # client can show it as its own picker option.
@@ -40,7 +40,7 @@ spec:
               drop: [ALL]
           env:
             - name: MRMS_PREFIX
-              value: CONUS/MergedReflectivityQComposite
+              value: CONUS/MergedReflectivityComposite_00.50
             - name: LAYER_NAME
               value: radar-composite
             - name: TILE_DIR
