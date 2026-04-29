@@ -17,11 +17,19 @@ tempo:
   retention: 72h
   resources:
     requests:
-      cpu: 50m
-      memory: 192Mi
-    limits:
-      cpu: 500m
+      cpu: 100m
       memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  livenessProbe:
+    httpGet:
+      path: /ready
+      port: 3200
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 6
   extraEnvFrom:
   - secretRef:
       name: tempo-s3-credentials
