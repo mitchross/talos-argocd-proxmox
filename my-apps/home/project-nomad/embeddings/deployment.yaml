@@ -23,6 +23,8 @@ spec:
           args:
             - --model-id
             - nomic-ai/nomic-embed-text-v1.5
+            - --revision
+            - e5cf08aadaa3
             - --port
             - "8080"
           ports:
