@@ -1,0 +1,82 @@
+name: build temporal-worker
+
+# Auto-semver build & push for the news-digest temporal worker.
+#
+# Flow:
+#   1. Read existing :vX.Y.Z tags from registry.vanillax.me
+#   2. Bump patch by 1 (or start at v1.0.0 if no semver tag exists)
+#   3. Build the image
+#   4. Push :vX.Y.Z + :latest
+#
+# Renovate (this repo's .github/renovate.json5) scans the registry,
+# sees the new :vX.Y.Z, and auto-PRs the bump in
+# my-apps/development/temporal-worker/temporal-worker-deployment.yaml.
+# The Temporal Worker Controller then registers a new build_id and
+# rolls workers progressively per the deployment spec.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'my-apps/development/temporal-worker/app/**'
+      - 'my-apps/development/temporal-worker/Dockerfile'
+      - '.github/workflows/build-temporal-worker.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute next semver from registry
+        id: ver
+        run: |
+          set -euo pipefail
+          REGISTRY="registry.vanillax.me"
+          IMAGE="temporal-worker"
+          LATEST=$(curl -sS "https://${REGISTRY}/v2/${IMAGE}/tags/list" \
+            | jq -r '.tags[]?' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -V \
+            | tail -1 \
+            || true)
+          if [ -z "${LATEST:-}" ]; then
+            NEXT="v1.0.0"
+          else
+            STRIPPED=${LATEST#v}
+            MAJOR=${STRIPPED%%.*}
+            REST=${STRIPPED#*.}
+            MINOR=${REST%%.*}
+            PATCH=${REST#*.}
+            NEXT="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+          fi
+          echo "current=${LATEST:-none}"
+          echo "next=$NEXT"
+          echo "version=$NEXT" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: my-apps/development/temporal-worker
+          file: my-apps/development/temporal-worker/Dockerfile
+          push: true
+          tags: |
+            registry.vanillax.me/temporal-worker:${{ steps.ver.outputs.version }}
+            registry.vanillax.me/temporal-worker:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.ver.outputs.version }}
+          cache-from: type=registry,ref=registry.vanillax.me/temporal-worker:buildcache
+          cache-to:   type=registry,ref=registry.vanillax.me/temporal-worker:buildcache,mode=max
+
+      - name: Summary
+        run: |
+          echo "Pushed registry.vanillax.me/temporal-worker:${{ steps.ver.outputs.version }}"
+          echo "Renovate will PR the deployment bump; Temporal Worker Controller will roll the new build_id."
