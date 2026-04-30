@@ -1,4 +1,4 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: temporal-worker
+  name: news-reader-temporal-worker
