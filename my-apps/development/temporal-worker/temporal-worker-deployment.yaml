@@ -51,12 +51,7 @@ spec:
     spec:
       containers:
         - name: worker
-          # Versioned tag — Renovate auto-PRs bumps when CI pushes a
-          # new registry.vanillax.me/temporal-worker:vX.Y.Z. The Temporal
-          # Worker Controller turns each tag bump into a new build_id +
-          # progressive worker rollout. Do not pin to :latest here —
-          # the controller cannot tell two pushes apart.
-          image: registry.vanillax.me/temporal-worker:v1.0.0
+          image: registry.vanillax.me/temporal-worker:latest
           imagePullPolicy: Always
           # Controller injects TEMPORAL_ADDRESS, TEMPORAL_NAMESPACE,
           # TEMPORAL_DEPLOYMENT_NAME, TEMPORAL_WORKER_BUILD_ID automatically

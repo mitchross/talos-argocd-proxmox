@@ -207,21 +207,19 @@
       automergeType: 'branch',
     },
     {
-      description: 'news-reader + temporal-worker images (in-cluster registry): only consider semver vX.Y.Z tags. Build flows live in news-reader/.gitea/workflows/build.yml and this repo .github/workflows/build-temporal-worker.yml — every push to main auto-bumps patch (next semver computed by reading the registry), pushes the image, Renovate sees it within an hour and PRs the bump here. Excludes :latest and :buildcache from the candidate set.',
+      description: 'news-reader image (in-cluster registry): only consider semver vX.Y.Z tags. Build flow lives in news-reader/.gitea/workflows/build.yml — every push to main auto-bumps patch (next semver computed by reading the registry), pushes the image, Renovate sees it within an hour and PRs the bump here. Excludes :latest and :buildcache from the candidate set.',
       matchDatasources: ['docker'],
       matchPackageNames: [
         'registry.vanillax.me/news-reader',
-        'registry.vanillax.me/temporal-worker',
       ],
       versioning: 'semver-coerced',
       allowedVersions: '/^v\\d+\\.\\d+\\.\\d+$/',
     },
     {
-      description: 'news-reader + temporal-worker images: auto-merge minor+patch within the v\\d+.\\d+.\\d+ stream.',
+      description: 'news-reader image: auto-merge minor+patch within the v\\d+.\\d+.\\d+ stream.',
       matchDatasources: ['docker'],
       matchPackageNames: [
         'registry.vanillax.me/news-reader',
-        'registry.vanillax.me/temporal-worker',
       ],
       matchUpdateTypes: ['patch', 'minor'],
       automerge: true,
