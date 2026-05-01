@@ -11,6 +11,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: act-runner-docker-cache
   namespace: gitea-actions
+  labels:
+    backup-exempt: "true"
+  annotations:
+    backup-exempt-reason: "Docker layer cache for the act-runner DinD sidecar; rebuilds from registries on next CI run"
 spec:
   accessModes: [ReadWriteOnce]
   storageClassName: longhorn

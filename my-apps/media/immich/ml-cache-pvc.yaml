@@ -6,6 +6,9 @@ metadata:
   labels:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: machine-learning
+    backup-exempt: "true"
+  annotations:
+    backup-exempt-reason: "Immich ML model cache; downloads on demand if missing"
 spec:
   accessModes:
     - ReadWriteOnce

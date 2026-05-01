@@ -6,6 +6,9 @@ metadata:
   labels:
     app: project-nomad
     type: protomaps
+    backup-exempt: "true"
+  annotations:
+    backup-exempt-reason: "Protomaps tile data; downloadable from upstream protomaps.com builds"
 spec:
   accessModes:
     - ReadWriteOnce

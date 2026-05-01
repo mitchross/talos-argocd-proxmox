@@ -66,10 +66,13 @@ kind: PersistentVolumeClaim
 metadata:
   name: redis-data
   namespace: searxng
+  labels:
+    backup-exempt: "true"
   annotations:
     # Longhorn backup settings - Standard tier for search cache
     longhorn.io/recurring-job-source: enabled
-    longhorn.io/recurring-job-group: standard  
+    longhorn.io/recurring-job-group: standard
+    backup-exempt-reason: "SearxNG Redis cache for query results; ephemeral by design"
 spec:
   accessModes:
     - ReadWriteOnce

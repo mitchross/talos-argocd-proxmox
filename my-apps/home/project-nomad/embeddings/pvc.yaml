@@ -3,6 +3,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: embeddings-model-cache
   namespace: project-nomad
+  labels:
+    backup-exempt: "true"
+  annotations:
+    backup-exempt-reason: "Sentence-transformer model cache; downloads on demand from HuggingFace"
 spec:
   accessModes:
     - ReadWriteOnce

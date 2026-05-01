@@ -21,6 +21,9 @@ metadata:
   namespace: project-zomboid
   labels:
     app: project-zomboid
+    backup-exempt: "true"
+  annotations:
+    backup-exempt-reason: "SteamCMD-installed game files; rebuildable via the existing SteamCMD pre-warm path"
 spec:
   accessModes:
     - ReadWriteOnce

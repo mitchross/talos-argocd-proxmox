@@ -10,6 +10,9 @@ metadata:
   labels:
     app: mosquitto
     type: storage
+    backup-exempt: "true"
+  annotations:
+    backup-exempt-reason: "MQTT broker — retained messages and ACLs rebuild on client reconnect; not worth backing up"
 spec:
   accessModes:
     - ReadWriteOnce

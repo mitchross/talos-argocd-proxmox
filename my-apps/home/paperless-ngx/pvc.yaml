@@ -42,6 +42,9 @@ metadata:
   labels:
     app: paperless-ngx
     type: export
+    backup-exempt: "true"
+  annotations:
+    backup-exempt-reason: "Paperless export staging dir; content is rebuildable from /media which has backup=hourly"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -58,6 +61,9 @@ metadata:
   labels:
     app: paperless-ngx
     type: consume
+    backup-exempt: "true"
+  annotations:
+    backup-exempt-reason: "Paperless consume inbox; transient — files move to /media after ingestion"
 spec:
   accessModes:
     - ReadWriteOnce

@@ -56,3 +56,7 @@ valkey:
     persistence:
       size: 5Gi
       storageClass: longhorn
+      labels:
+        backup-exempt: "true"
+      annotations:
+        backup-exempt-reason: "Valkey/Redis cache for Gitea sessions and queues; ephemeral by design"
