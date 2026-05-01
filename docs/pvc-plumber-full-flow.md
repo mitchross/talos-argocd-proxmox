@@ -533,7 +533,7 @@
 │                                  │         │  0. Check pvc-plumber readiness      │
 │  Env:                            │         │  1. Require authoritative decision   │
 │  - BACKEND_TYPE: kopia-fs        │         │  2. Mutate PVC if restore exists     │
-│  - HTTP_TIMEOUT: 3s              │         │  3. Generate ExternalSecret          │
+│  - HTTP_TIMEOUT: 7s              │         │  3. Generate ExternalSecret          │
 │  - KOPIA_REPOSITORY_PATH:        │         │     (Kopia password from 1Password)  │
 │    /repository                   │         │  4. Generate ReplicationSource       │
 │  - KOPIA_PASSWORD (from secret)  │         │     (waits for PVC Bound + 2h age)   │

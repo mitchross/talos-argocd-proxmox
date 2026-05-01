@@ -10,22 +10,22 @@ metadata:
       Audit-only. Surfaces Longhorn PVCs that declare neither
       'backup' (hourly|daily) nor 'backup-exempt: "true"' so that backup
       intent is explicit per PVC. Never blocks admission; emits
-      PolicyReport entries that show up via 'kubectl get policyreport'.
+      PolicyReport entries via 'kubectl get policyreport'. Background
+      scan is enabled so existing PVCs are flagged on the next
+      ~30s evaluation cycle, not just future creates.
 spec:
   mutateExistingOnPolicyUpdate: false
-  background: false
+  background: true
   emitWarning: false
   validationFailureAction: Audit
   rules:
     - name: require-backup-or-exempt-label
-      skipBackgroundRequests: true
+      skipBackgroundRequests: false
       match:
         any:
           - resources:
               kinds:
                 - PersistentVolumeClaim
-              operations:
-                - CREATE
       exclude:
         any:
           - resources:

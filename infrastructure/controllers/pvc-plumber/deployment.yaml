@@ -50,7 +50,7 @@ spec:
         - name: CACHE_TTL
           value: "5m"
         - name: HTTP_TIMEOUT
-          value: "10s"
+          value: "7s"
         - name: RE_WARM_INTERVAL
           value: "90s"
         - name: KOPIA_PASSWORD
