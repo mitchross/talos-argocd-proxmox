@@ -49,22 +49,30 @@ spec:
         failureAction: Audit
         allowExistingViolations: true
         message: >-
-          Longhorn PVC '{{request.object.metadata.namespace}}/{{request.object.metadata.name}}'
-          declares neither 'backup' nor 'backup-exempt'. Set
-          'backup: hourly' or 'backup: daily' for VolSync-managed backup,
-          or 'backup-exempt: "true"' (with rationale annotation) to opt out
-          explicitly.
-        deny:
-          conditions:
-            all:
-              - key: "{{ request.object.spec.storageClassName || '' }}"
-                operator: Equals
-                value: "longhorn"
-              - key: "{{ request.object.metadata.labels.backup || '' }}"
-                operator: AllNotIn
-                value:
-                  - hourly
-                  - daily
-              - key: '{{ request.object.metadata.labels."backup-exempt" || "" }}'
-                operator: NotEquals
-                value: "true"
+          Longhorn PVC declares neither 'backup' (hourly|daily) nor
+          'backup-exempt: "true"'. Set one explicitly to make backup
+          intent clear. Pattern-based check works in both admission and
+          background scan.
+        # Pass if any of the patterns match. Each pattern is split out
+        # so we don't depend on Kyverno's string-OR ("hourly | daily")
+        # behavior inside a pattern value — fewer moving parts.
+        # Caveat: =(storageClassName): "!longhorn" passes when the field
+        # is absent, which means a Longhorn-default-storageclass PVC
+        # without an explicit field would slip through. This cluster has
+        # 2 such PVCs today and both are NFS-backed (correctly not
+        # Longhorn), so the gap is benign in practice. If a Longhorn PVC
+        # ever ships without an explicit storageClassName, add a
+        # preconditions check on .status.storageClassName or fall back
+        # to admission-only auditing.
+        anyPattern:
+          - spec:
+              =(storageClassName): "!longhorn"
+          - metadata:
+              labels:
+                backup: "hourly"
+          - metadata:
+              labels:
+                backup: "daily"
+          - metadata:
+              labels:
+                backup-exempt: "true"
