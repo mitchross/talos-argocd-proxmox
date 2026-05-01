@@ -47,6 +47,16 @@ spec:
                 - kube-system
                 - volsync-system
                 - kyverno
+      preconditions:
+        all:
+          # Escape hatch: if the PVC explicitly opts out of restore-on-create,
+          # do not require an authoritative decision from pvc-plumber. This
+          # lets you "nuke and start fresh" on a labeled PVC without having
+          # to clear the kopia repo first. Backup generation rules below
+          # still fire, so the new fresh PVC gets backed up going forward.
+          - key: "{{ request.object.metadata.annotations.\"volsync.backup/skip-restore\" || 'false' }}"
+            operator: NotEquals
+            value: "true"
       context:
         - name: backupCheck
           apiCall:
@@ -114,6 +124,11 @@ spec:
               url: "http://pvc-plumber.volsync-system.svc.cluster.local/exists/{{request.object.metadata.namespace}}/{{request.object.metadata.name}}"
       preconditions:
         all:
+          # Escape hatch: opt out of restore-on-create when nuking an app.
+          # Pair with the matching precondition in rule 1 above.
+          - key: "{{ request.object.metadata.annotations.\"volsync.backup/skip-restore\" || 'false' }}"
+            operator: NotEquals
+            value: "true"
           - key: "{{ backupCheck.authoritative || false }}"
             operator: Equals
             value: true
