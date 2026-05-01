@@ -1,12 +1,14 @@
-# Temporal cluster connection used by the radar-ng worker. Mirrors the
-# news-reader-temporal-worker / temporal-connection.yaml pattern: each
-# worker namespace declares its own Connection CR pointing at the shared
-# Temporal frontend in the temporal/ namespace.
+# Temporal cluster connection used by the radar-ng workers. Mirrors the
+# news-reader-temporal-worker / temporal-connection.yaml pattern.
+#
+# Self-hosted, no mTLS. If you later add mTLS to the Temporal frontend,
+# create a Secret with tls.crt + tls.key + ca.crt and add:
+#   mutualTLSSecretRef:
+#     name: temporal-cluster-mtls
 apiVersion: temporal.io/v1alpha1
 kind: TemporalConnection
 metadata:
   name: cluster-temporal
   namespace: radar-ng
 spec:
-  hostPort: temporal-frontend.temporal.svc.cluster.local:7233
-  mTLS: false
+  hostPort: "temporal-frontend.temporal.svc.cluster.local:7233"

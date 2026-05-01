@@ -1,13 +1,11 @@
-# radar-ng open-meteo Temporal worker.
+# radar-ng open-meteo Temporal worker — second worker pool.
 #
-# Mirrors the news-reader-temporal-worker pattern: separate worker pool
-# whose image carries the third-party binary it needs. Both this worker
-# and radar-ng-temporal-worker poll the same task_queue=radar-ng;
-# Temporal dispatches the open_meteo_sync activity here because the
-# main worker doesn't register it.
+# Image is FROM ghcr.io/open-meteo/open-meteo (Swift binary at
+# /app/openmeteo-api) with Python + temporalio layered on top. The activity
+# subprocess-execs the binary; no Kubernetes Job/CronJob resources are
+# created in the cluster.
 #
-# Image is built by .gitea/workflows/build-open-meteo-worker.yml in the
-# radar-ng monorepo and tagged registry.vanillax.me/radar-ng-open-meteo-worker.
+# The Temporal Worker Controller injects TEMPORAL_* env vars at runtime.
 apiVersion: temporal.io/v1alpha1
 kind: TemporalWorkerDeployment
 metadata:
@@ -16,16 +14,25 @@ metadata:
   labels:
     app: radar-ng-open-meteo-worker
 spec:
+  replicas: 1
   workerOptions:
     connectionRef:
-      name: cluster-temporal      # shared with the main worker
+      name: cluster-temporal
     temporalNamespace: default
+  rollout:
+    strategy: Progressive
+    steps:
+      - rampPercentage: 100
+        pauseDuration: 1m
+  sunset:
+    scaledownDelay: 5m
+    deleteDelay: 30m
   template:
     metadata:
       labels:
         app: radar-ng-open-meteo-worker
     spec:
-      # The upstream open-meteo image runs as uid 999 — keep that.
+      # Upstream image runs as uid 999.
       securityContext:
         runAsNonRoot: true
         runAsUser: 999

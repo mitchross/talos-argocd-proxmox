@@ -5,8 +5,12 @@
 # same Longhorn PVCs the API + legacy ingestors already use. PVCs are
 # namespace-scoped; sharing a namespace is the simplest answer.
 #
-# Image is built + tagged by .gitea/workflows/build-temporal-worker.yml in
-# the radar-ng repo. Renovate watches the registry and PRs the bump here.
+# The Temporal Worker Controller injects TEMPORAL_ADDRESS, TEMPORAL_NAMESPACE,
+# TEMPORAL_DEPLOYMENT_NAME, TEMPORAL_WORKER_BUILD_ID into every Pod — do not
+# set them via env here.
+#
+# Image is built by .gitea/workflows/build-temporal-worker.yml. Renovate
+# auto-PRs bumps. Each tag bump becomes a new build_id + progressive rollout.
 apiVersion: temporal.io/v1alpha1
 kind: TemporalWorkerDeployment
 metadata:
@@ -15,10 +19,23 @@ metadata:
   labels:
     app: radar-ng-worker
 spec:
+  replicas: 2
   workerOptions:
     connectionRef:
-      name: cluster-temporal      # see temporal-connection.yaml in this same dir
+      name: cluster-temporal
     temporalNamespace: default
+  rollout:
+    # Same progressive shape as news-reader-temporal-worker. Tune per
+    # workload — radar ingest is more time-sensitive than news.
+    strategy: Progressive
+    steps:
+      - rampPercentage: 10
+        pauseDuration: 2m
+      - rampPercentage: 50
+        pauseDuration: 5m
+  sunset:
+    scaledownDelay: 10m
+    deleteDelay: 1h
   template:
     metadata:
       labels:

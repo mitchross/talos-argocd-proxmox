@@ -48,7 +48,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: tile-server
-          image: registry.vanillax.me/radar-ng-tile-server:v1.0.5
+          image: registry.vanillax.me/radar-ng-tile-server:v1.0.6
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
