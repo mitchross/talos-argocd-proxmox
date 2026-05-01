@@ -31,9 +31,7 @@ Status: working notes, not final recommendations.
   - `policies/volsync-pvc-backup-restore.yaml`
   - `policies/volsync-nfs-inject.yaml`
   - `policies/volsync-orphan-cleanup.yaml`
-- Two newer Kyverno policy files exist but are not included in the Kyverno kustomization:
-  - `policies/volsync-pvc-mutate.yaml` (`policies.kyverno.io/v1` MutatingPolicy)
-  - `policies/volsync-pvc-validate.yaml` (`policies.kyverno.io/v1` ValidatingPolicy)
+- At initial review, two newer Kyverno CEL policy files existed but were not included in the Kyverno kustomization. That dead-code risk was resolved in the hardening pass by deleting the unwired files and keeping the active combined `ClusterPolicy` as the bridge.
 - `pvc-plumber` deployment is at image `ghcr.io/mitchross/pvc-plumber:1.4.0`, with 2 replicas, pod anti-affinity, and a PDB.
 - Kyverno admission controller has 3 replicas, topology spread, PDB, and infrastructure namespace exclusions in chart values.
 - VolSync alerts exist, but no ServiceMonitor or alert for pvc-plumber metrics was found in the repo search.
@@ -42,8 +40,7 @@ Status: working notes, not final recommendations.
   - Old combined policy sets `validationFailureAction: Audit`: `infrastructure/controllers/kyverno/policies/volsync-pvc-backup-restore.yaml:14-18`.
   - Old policy checks `/readyz`: `infrastructure/controllers/kyverno/policies/volsync-pvc-backup-restore.yaml:44-61`.
   - Old policy mutates only when `backupCheck.exists == true`: `infrastructure/controllers/kyverno/policies/volsync-pvc-backup-restore.yaml:87-106`.
-  - New ValidatingPolicy has `validationActions: [Deny]`: `infrastructure/controllers/kyverno/policies/volsync-pvc-validate.yaml:13-38`.
-  - New MutatingPolicy checks `http.Get(.../exists)` and only mutates on `exists == true`: `infrastructure/controllers/kyverno/policies/volsync-pvc-mutate.yaml:37-60`.
+  - The unwired CEL ValidatingPolicy and MutatingPolicy files were dead code and are no longer part of the working tree after the hardening pass.
   - ArgoCD health checks wait for Application, ClusterPolicy, ReplicationSource, and ReplicationDestination status: `infrastructure/controllers/argocd/values.yaml:53-107`.
   - pvc-plumber is deployed HA-ish with 2 replicas, anti-affinity, and PDB: `infrastructure/controllers/pvc-plumber/deployment.yaml:12-28`, `129-140`.
   - Kyverno namespace exclusions and HA admission-controller settings: `infrastructure/controllers/kyverno/values.yaml:1-29`.
@@ -68,8 +65,7 @@ Status: working notes, not final recommendations.
 ### Potentially Important Risks
 
 - The currently included `volsync-pvc-backup-restore.yaml` has `validationFailureAction: Audit` while its docs describe a fail-closed deny gate. Need verify Kyverno semantics for `validate.deny` under this setting, but this looks suspicious.
-- The newer `ValidatingPolicy` uses `validationActions: [Deny]`, but it is not included in `infrastructure/controllers/kyverno/kustomization.yaml`.
-- The newer `MutatingPolicy` is also not included, so the cluster appears to be using the older combined `ClusterPolicy` unless something else applies those files.
+- The initial repo had newer CEL `ValidatingPolicy`/`MutatingPolicy` files that were not included in `infrastructure/controllers/kyverno/kustomization.yaml`. This has been resolved by deleting those unwired files; the cluster bridge is deliberately the older combined `ClusterPolicy` until the controller migration.
 - pvc-plumber `/readyz` is improved from earlier reviews, but current source only checks:
   - Kopia connected at startup.
   - repository path still `stat()`s.
@@ -80,9 +76,9 @@ Status: working notes, not final recommendations.
 - pvc-plumber pre-warms cache with `kopia snapshot list --all --json`; failures are logged and then it falls back to on-demand checks.
 - Positive and negative cache entries are cached only when `result.Error == ""`, which is good. Error results are not cached.
 - Pre-warmed positive entries expire after `CACHE_TTL`; with deployment `CACHE_TTL=5m`, a full rebuild should only hit pre-warm cache for the first five minutes unless per-request checks refresh entries.
-- Monitoring appears incomplete for the most important custom component:
-  - pvc-plumber exposes `/metrics`, but no ServiceMonitor/PodMonitor was found.
-  - VolSync alerts exist, but at least the restore-pending alert may be brittle because it tries to identify VolSync restore PVCs via `kube_persistentvolumeclaim_info{volumeattributesclass=~".*volsync.*"}`. Need verify this metric/label exists in the actual cluster.
+- Initial monitoring gap:
+  - pvc-plumber exposed `/metrics`, but no ServiceMonitor/PodMonitor was found.
+  - VolSync restore-pending alert tried to identify restore PVCs via `kube_persistentvolumeclaim_info{volumeattributesclass=~".*volsync.*"}`. This was replaced during hardening with a protected-PVC pending alert keyed off the real `backup` label.
 - Kopia maintenance currently uses `kopia maintenance run --full --safety=none` from `infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml:140-148`.
 - That maintenance job runs at `0 3 * * *`, while hourly VolSync backups generated by Kyverno run at `0 * * * *`. At 03:00 UTC, maintenance can overlap with hourly backup writers.
 - Kopia upstream docs warn `--safety=none` disables safety features and requires the operator to ensure no concurrent operations are happening. Given the generated hourly schedule, that guarantee is not currently encoded.
@@ -207,7 +203,7 @@ Most important local findings:
   - `volsync-pvc-backup-restore.yaml`
   - `volsync-nfs-inject.yaml`
   - `volsync-orphan-cleanup.yaml`
-- Newer `volsync-pvc-validate.yaml` and `volsync-pvc-mutate.yaml` exist but are not included.
+- Newer `volsync-pvc-validate.yaml` and `volsync-pvc-mutate.yaml` existed but were not included. They were deleted in the hardening pass to avoid shipping dead code.
 - Included `volsync-pvc-backup-restore.yaml` is legacy `ClusterPolicy` and sets `validationFailureAction: Audit`.
 - Kyverno docs say Audit records/allows; Enforce blocks. This conflicts with docs claiming fail-closed.
 - pvc-plumber `/exists` returns HTTP 200 and `exists:false` with an `error` field on Kopia command/JSON errors.
@@ -230,7 +226,7 @@ Likely next steps:
 
 1. Decide implementation shape for fail-closed:
    - Option A: keep old ClusterPolicy but change to Enforce/rule-level failureAction and add deny rule for `/exists` errors.
-   - Option B: migrate admission validate/mutate to included `policies.kyverno.io/v1` `ValidatingPolicy`/`MutatingPolicy`, plus add error-deny.
+   - Option B: migrate admission validate/mutate to `policies.kyverno.io/v1` `ValidatingPolicy`/`MutatingPolicy`, plus add error-deny.
    - Option C: change pvc-plumber `/exists` to return non-2xx on backend errors and make Kyverno deny on missing/invalid response.
 2. Add pvc-plumber ServiceMonitor/alerts because it is the custom critical admission oracle.
 3. Change Kopia maintenance to default safety and stop forcing daily full GC, or otherwise encode a real no-concurrent-writers window.
@@ -262,15 +258,26 @@ Code/manifests were updated after the review to make the current bridge safer be
   - `decision=unknown`, `authoritative=false`, HTTP 503 when Kopia/S3/backend truth is unavailable.
 - `HTTP_TIMEOUT` is now applied to per-request `/exists` backend calls.
 - `pvc-plumber` exposes `pvc_plumber_backup_check_total{backend,decision}` so unknown decisions can alert directly.
-- Talos deployment is updated to `ghcr.io/mitchross/pvc-plumber:1.5.0` and explicitly sets `HTTP_TIMEOUT=3s`.
+- Talos deployment is updated to `ghcr.io/mitchross/pvc-plumber:1.5.1` and explicitly sets `HTTP_TIMEOUT=3s`.
 - The active Kyverno `volsync-pvc-backup-restore` policy now uses Enforce semantics and denies backup-labeled PVC CREATE when `/exists` is not authoritative.
 - Kyverno `apiCall.default` maps pvc-plumber HTTP failures to `decision=unknown`, `authoritative=false`, so service-call failure also denies rather than relying on implicit behavior.
 - The Kyverno mutate rule now requires authoritative `decision=restore`, not just `exists=true`.
+- The unwired CEL `volsync-pvc-validate.yaml` and `volsync-pvc-mutate.yaml` files were deleted; the active bridge is intentionally the combined `ClusterPolicy` until controller webhook shadow/enforce mode.
 - Kopia maintenance now runs default-safe `kopia maintenance run` at `37 3 * * *`, avoiding recurring `--safety=none` and the top-of-hour backup herd.
 - Prometheus now scrapes pvc-plumber and alerts on down/unknown/error conditions.
+- The brittle restore-pending alert was replaced with `ProtectedPVCPendingTooLong`, which matches `kube_persistentvolumeclaim_labels{label_backup=~"hourly|daily"}` instead of an unproven `volumeattributesclass` label.
 - New infographic docs:
   - `docs/pvc-restore-decision-flow.md`
   - `/home/vanillax/programming/pvc-plumber/docs/restore-decision-flow.md`
+
+Image publication verification:
+
+- `pvc-plumber` commit `0fe5fac7fd8fe26f7768b749ee0a3e2d66695ce4` was pushed to `main` and passed Build and Test run `25083282281`.
+- Tag `v1.5.1` was created on the same commit and passed Release run `25084078480`.
+- GHCR publishes immutable release tags `1.5.1`, `1.5`, and moving tag `latest` to digest `sha256:75e5483bb358cc7aca5ccb6466f1dee867771a5fa1b6262e532dfeea0e182a17`.
+- GHCR publishes snapshot tags `main` and `sha-0fe5fac` to digest `sha256:3782e58a0836d9c6855e97b34acb3e50fe7ad330e135a9754f2859c8c0c0bdfe`.
+- The `1.5.1` image config label `org.opencontainers.image.revision` is `0fe5fac7fd8fe26f7768b749ee0a3e2d66695ce4`.
+- The GitHub repository description now states that pvc-plumber checks Kubernetes PVC backups in S3 or NFS-backed Kopia repositories.
 
 Controller/CRD implication:
 
@@ -280,7 +287,7 @@ Controller/CRD implication:
 
 ## Remaining Questions For Controller Design
 
-- Should the controller migration keep the old combined Kyverno `ClusterPolicy` as the live bridge until webhook enforce mode, or should the dormant CEL `MutatingPolicy`/`ValidatingPolicy` be adopted during the bridge phase?
+- Controller migration decision: keep the combined Kyverno `ClusterPolicy` as the live bridge until webhook enforce mode. Do not introduce the deleted CEL `MutatingPolicy`/`ValidatingPolicy` bridge.
 - What is the expected number of backup-labeled PVCs during a full rebuild, and how many are large enough to materially affect restore time?
 - For apps with both PVC state and CNPG databases, is temporal skew acceptable, or do any need an app-specific recovery order/marker?
 

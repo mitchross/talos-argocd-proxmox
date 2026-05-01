@@ -5,7 +5,7 @@
 # runs with a stable synthetic identity ("maintenance@cluster") and claims
 # ownership idempotently on every run.
 #
-# Schedule: 03:00 daily (after the default 02:00 backup window finishes).
+# Schedule: 03:37 daily (off the top of the hour to avoid generated hourly backups).
 # Quick maintenance runs every day; Kopia internally schedules full maintenance
 # weekly based on repo policy below.
 ---
@@ -18,8 +18,9 @@ metadata:
     app.kubernetes.io/name: kopia-maintenance
     app.kubernetes.io/component: backup-maintenance
 spec:
-  # Daily at 03:00 — after hourly/daily backup mover jobs have completed
-  schedule: "0 3 * * *"
+  # Daily at 03:37 UTC — intentionally off the top of the hour so it does not
+  # start at the same minute as generated hourly VolSync backup jobs.
+  schedule: "37 3 * * *"
   timeZone: "Etc/UTC"
   concurrencyPolicy: Forbid         # Kopia maintenance holds a repo lock — no overlap
   startingDeadlineSeconds: 3600     # Skip run if missed by >1h (don't backfill forever)
@@ -138,14 +139,10 @@ spec:
                 --full-interval=168h
 
               echo "=== Running maintenance ==="
-              # Kopia decides quick vs full internally based on schedule
-              # above. `--safety=full` requires two runs spaced apart
-              # (~24h) to garbage-collect because it needs to prove that
-              # no concurrent backup could still be referencing a blob.
-              # `--safety=none` does aggressive GC in one pass — fine
-              # on a homelab cluster where we don't have concurrent
-              # writers to the repo outside our own schedule.
-              kopia maintenance run --full --safety=none
+              # Kopia decides quick vs full internally based on the policy
+              # above. Keep default safety for recurring GitOps maintenance:
+              # unsafe GC belongs in a manual break-glass operation only.
+              kopia maintenance run
 
               echo "=== Post-maintenance index blob count ==="
               kopia repository status --json | grep -i blob || true

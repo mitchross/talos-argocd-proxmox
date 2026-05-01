@@ -355,7 +355,10 @@ Applied in code/manifests:
 - Kyverno Enforce denial for non-authoritative backup decisions.
 - Kyverno restore mutation gated on authoritative `decision=restore`.
 - Kopia recurring maintenance changed to default safety.
+- pvc-plumber released as `v1.5.1` and Talos pinned to `ghcr.io/mitchross/pvc-plumber:1.5.1`.
 - pvc-plumber ServiceMonitor and alerts.
+- Restore pending alert changed to `ProtectedPVCPendingTooLong` keyed off `backup=hourly|daily` PVC labels instead of an unproven `volumeattributesclass` metric.
+- Dead/unwired Kyverno CEL `ValidatingPolicy` and `MutatingPolicy` files deleted; the active bridge remains the combined `ClusterPolicy` until controller webhook migration.
 - Infographic flow docs in both repos.
 
 Still required before calling the platform fully proven:

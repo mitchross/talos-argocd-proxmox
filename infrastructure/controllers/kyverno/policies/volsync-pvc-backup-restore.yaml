@@ -15,12 +15,18 @@ spec:
   mutateExistingOnPolicyUpdate: false
   background: false
   emitWarning: false
-  validationFailureAction: Audit
+  validationFailureAction: Enforce
   rules:
-    # Rule 0: Gate PVC creation on PVC Plumber availability (FAIL-CLOSED)
-    # If PVC Plumber is unreachable, DENY PVC creation to prevent data loss
-    # during disaster recovery. Apps retry via ArgoCD backoff until Plumber is healthy.
-    - name: require-pvc-plumber-available
+    # Rule 1: Gate PVC creation on authoritative per-PVC backup truth.
+    # This single rule covers BOTH plumber-availability and per-PVC backup
+    # truth: when pvc-plumber is unreachable the apiCall on /exists below
+    # returns the configured `default` (decision=unknown, authoritative=false)
+    # which trips the deny block. The previous separate /readyz probe rule
+    # was redundant and added a second serial HTTP call to the admission
+    # path — under DR-storm load that risked a 10s webhook timeout.
+    # If the repository lookup is unknown/error, DENY PVC creation. A false
+    # negative here can let apps initialize empty state over restorable data.
+    - name: require-authoritative-backup-decision
       skipBackgroundRequests: true
       match:
         any:
@@ -42,25 +48,37 @@ spec:
                 - volsync-system
                 - kyverno
       context:
-        - name: plumberHealth
+        - name: backupCheck
           apiCall:
             method: GET
+            default:
+              exists: false
+              decision: unknown
+              authoritative: false
+              error: pvc-plumber lookup failed
             service:
-              url: "http://pvc-plumber.volsync-system.svc.cluster.local/readyz"
+              url: "http://pvc-plumber.volsync-system.svc.cluster.local/exists/{{request.object.metadata.namespace}}/{{request.object.metadata.name}}"
       validate:
+        failureAction: Enforce
         allowExistingViolations: true
         message: >-
-          PVC Plumber is not available. Backup-labeled PVCs cannot be created
-          until PVC Plumber is healthy in volsync-system namespace. This ensures
-          backup restoration works correctly during disaster recovery.
+          PVC Plumber could not make an authoritative restore/fresh decision
+          for this backup-labeled PVC. PVC creation is denied to prevent silent
+          empty-volume initialization when backup state is unknown.
         deny:
           conditions:
-            all:
-              - key: "{{ plumberHealth || 'unavailable' }}"
+            any:
+              - key: "{{ backupCheck.authoritative || false }}"
                 operator: Equals
-                value: "unavailable"
+                value: false
+              - key: "{{ backupCheck.decision || 'unknown' }}"
+                operator: Equals
+                value: "unknown"
+              - key: "{{ backupCheck.error || '' }}"
+                operator: NotEquals
+                value: ""
 
-    # Rule 1: Conditionally add dataSourceRef if backup exists in Kopia
+    # Rule 2: Conditionally add dataSourceRef if backup exists in Kopia
     # IMPORTANT: Only trigger on CREATE to avoid race conditions during PVC deletion
     - name: add-datasource-if-backup-exists
       skipBackgroundRequests: true
@@ -87,10 +105,21 @@ spec:
         - name: backupCheck
           apiCall:
             method: GET
+            default:
+              exists: false
+              decision: unknown
+              authoritative: false
+              error: pvc-plumber lookup failed
             service:
               url: "http://pvc-plumber.volsync-system.svc.cluster.local/exists/{{request.object.metadata.namespace}}/{{request.object.metadata.name}}"
       preconditions:
         all:
+          - key: "{{ backupCheck.authoritative || false }}"
+            operator: Equals
+            value: true
+          - key: "{{ backupCheck.decision || 'unknown' }}"
+            operator: Equals
+            value: "restore"
           - key: "{{ backupCheck.exists || false }}"
             operator: Equals
             value: true
@@ -209,8 +238,14 @@ spec:
           spec:
             sourcePVC: "{{request.object.metadata.name}}"
             trigger:
-              # Use label value for schedule: hourly = every hour, daily = once per day at 2am
-              schedule: "{{ request.object.metadata.labels.backup == 'hourly' && '0 * * * *' || '0 2 * * *' }}"
+              # Length-based deterministic spread across the minute field
+              # (TEMPORARY — not a real hash). Better than every PVC firing
+              # at :00, but PVC names share length ranges so this clusters.
+              # Replace with a sha256-derived minute (or controller-driven
+              # schedule) when inventory grows past ~50 backup-labeled PVCs.
+              # - hourly:  "<minute> * * * *"
+              # - daily:   "<minute> 2 * * *"
+              schedule: "{{ to_string(modulo(length(join('-', [request.object.metadata.namespace, request.object.metadata.name])), `60`)) }} {{ request.object.metadata.labels.backup == 'hourly' && '* * * *' || '2 * * *' }}"
             kopia:
               repository: "volsync-{{request.object.metadata.name}}"
               compression: zstd-fastest

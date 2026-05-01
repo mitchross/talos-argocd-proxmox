@@ -290,6 +290,12 @@ kubeStateMetrics:
     limits:
       cpu: 200m
       memory: 512Mi
+# kube-state-metrics sub-chart values. Expose PVC backup labels so that
+# alerts like ProtectedPVCPendingTooLong can join on the real backup
+# label rather than on a missing volumeattributesclass series.
+kube-state-metrics:
+  metricLabelsAllowlist:
+    - persistentvolumeclaims=[backup,backup-exempt]
 # Prometheus Operator Configuration
 prometheusOperator:
   enabled: true

@@ -2,7 +2,7 @@
 
 Date: 2026-04-28
 
-Status: product requirements draft.
+Status: expanded product requirements draft.
 
 ## Product Name
 
@@ -29,6 +29,58 @@ The controller must decide at PVC creation time whether to:
 - or block creation because backup truth is unknown.
 
 This keeps the zero-click GitOps restore model while moving the logic into a purpose-built control plane with status, metrics, drift correction, and safer scheduling.
+
+This is not a weekend replacement for Kyverno. Treat it as a staged platform component: first prove the hardened bridge with restore drills, then ship an observe-only controller, then move reconciliation, and only then move admission.
+
+## ELI5 Summary
+
+Today, a helper service and Kyverno ask, "Does this PVC already have a backup?" If yes, they restore it before the app starts; if no, the app gets a fresh empty disk; if the answer is unclear, the PVC is blocked.
+
+The controller idea turns that into a real Kubernetes product: one controller remembers backup truth, makes the admission decision, creates the VolSync restore/backup objects, and reports status instead of spreading the behavior across Kyverno rules and a sidecar API.
+
+## Product Thesis
+
+The unusual part of this homelab is not "backing up PVCs." The unusual part is **conditional restore at PVC creation time** with no operator action.
+
+Most backup systems assume a human or runbook chooses restore mode. This design assumes the cluster can be rebuilt from Git and should automatically choose:
+
+```text
+----------------+       +-----------------------+
+| Git says PVC   | ----> | Is there a backup?    |
+| should exist   |       +-----------+-----------+
++----------------+                   |
+                                     |
+                 +-------------------+-------------------+
+                 |                   |                   |
+                 v                   v                   v
+          +-------------+      +-------------+      +-------------+
+          | Restore old |      | Create new  |      | Wait/deny   |
+          | data first  |      | empty PVC   |      | unsafe path |
+          +-------------+      +-------------+      +-------------+
+```
+
+That decision must happen before Kubernetes binds the PVC and before the app initializes state.
+
+## Bridge Gate Before Controller
+
+The current hardened Kyverno + pvc-plumber bridge is the mandatory proving ground. Do not start webhook enforcement until these bridge drills pass in a disposable namespace:
+
+| Drill | Setup | Expected Result | Evidence To Capture |
+|---|---|---|---|
+| Fresh install | Create backup-labeled PVC with no Kopia/S3 backup | PVC admitted unchanged, app starts fresh | pvc-plumber decision `fresh`, Kyverno allow, PVC has no `dataSourceRef` |
+| Restore install | Delete app/PVC after known backup exists, then reapply Git | PVC admitted with `dataSourceRef`, VolSync restores before app starts | pvc-plumber decision `restore`, PVC `dataSourceRef`, app sees old data |
+| pvc-plumber down | Scale pvc-plumber to zero, apply backup-labeled PVC | PVC CREATE denied | Kyverno admission denial and Argo retry |
+| Kopia query error | Break repository path/password or make backend unavailable | PVC CREATE denied | pvc-plumber HTTP 503, decision `unknown`, Kyverno denial |
+| Stale/slow backend | Force timeout longer than `HTTP_TIMEOUT` | PVC CREATE denied | timeout metric, decision `unknown` |
+| App ordering | Apply app Deployment and PVC together during restore | Pod waits until restored PVC is bound | no empty app initialization |
+
+Bridge completion criteria:
+
+- `pvc-plumber:1.5.1` or newer is deployed.
+- `/exists` returns tri-state `restore|fresh|unknown`.
+- Unknown truth returns non-2xx and Kyverno maps call failures to `unknown`.
+- Prometheus sees pvc-plumber metrics and alerts on unknown/error/down.
+- At least one real app restore drill has been performed from Git.
 
 ## Problem Statement
 
@@ -69,6 +121,49 @@ The real product is missing a dedicated API and controller.
 - Replace recurring unsafe Kopia maintenance assumptions.
 - Support GitOps rebuilds without GUI, scripts, or comment toggles.
 - Support 100+ apps without per-app restore manifests.
+
+## Requirements
+
+### Functional Requirements
+
+| ID | Requirement | Priority |
+|---|---|---|
+| FR-1 | Match protected PVCs from labels and `PVCProtectionClass` selectors | P0 |
+| FR-2 | Decide `Restore`, `Fresh`, or `Unknown` before protected PVC creation binds | P0 |
+| FR-3 | Mutate restore PVCs with `spec.dataSourceRef` pointing at a VolSync `ReplicationDestination` | P0 |
+| FR-4 | Deny protected PVC creation when backup truth is unknown | P0 |
+| FR-5 | Generate or adopt ExternalSecret, ReplicationSource, and ReplicationDestination resources | P0 |
+| FR-6 | Publish `PVCProtection` status for every protected PVC | P0 |
+| FR-7 | Stagger backup schedules deterministically across minutes | P0 |
+| FR-8 | Exempt intentionally disposable PVCs with explicit labels and auditable reasons | P1 |
+| FR-9 | Run observe/shadow mode beside the current Kyverno + pvc-plumber bridge | P1 |
+| FR-10 | Provide migration tooling or controller adoption rules for existing Kyverno-generated resources | P1 |
+| FR-11 | Surface restore drill status and last successful restore evidence | P1 |
+
+### Nonfunctional Requirements
+
+| Area | Requirement |
+|---|---|
+| Availability | Admission webhook runs at least 2 replicas with leader election for reconcilers |
+| Failure mode | Matching protected PVC admission fails closed when the webhook or catalog is unavailable |
+| Latency | P95 admission decision under 250 ms from in-memory catalog |
+| Scale | 250 protected PVCs and 2,000 snapshots without per-admission Kopia shell-out |
+| Catalog freshness | Configurable max staleness, default 10 minutes |
+| GitOps | All configuration is declarative YAML; no GUI or comment toggles required |
+| Security | Least-privilege RBAC; no namespace gets cluster-wide backup credentials |
+| Upgrade | CRDs support conversion or documented v1alpha1 to v1beta1 migration before enforce mode |
+| Observability | Metrics, events, and status conditions must explain every deny/restore/fresh decision |
+
+### Success Metrics
+
+| Metric | Target |
+|---|---:|
+| Unknown decisions during healthy steady state | 0 |
+| Protected PVCs with stale catalog | 0 |
+| Admission decision P95 | <250 ms |
+| Reconciler drift repair time | <2 minutes |
+| Full GitOps rebuild manual restore steps | 0 |
+| Restore drills passing before enforce rollout | 100% of gate drills |
 
 ## Non-Goals
 
@@ -172,6 +267,52 @@ Pre-hardening weakness that Phase 0 fixed:
                    v
                 VolSync
 ```
+
+## Target Swimlane
+
+```mermaid
+sequenceDiagram
+    participant Git as Git / ArgoCD
+    participant API as Kubernetes API
+    participant Webhook as protected-pvc webhook
+    participant Catalog as Backup catalog
+    participant Controller as Reconcilers
+    participant VolSync as VolSync
+    participant App as App pod
+
+    Git->>API: Apply PVC with backup label
+    API->>Webhook: AdmissionReview CREATE PVC
+    Webhook->>Catalog: Lookup namespace/pvc
+
+    alt Backup exists
+        Catalog-->>Webhook: decision=Restore authoritative=true
+        Webhook-->>API: Patch dataSourceRef
+        Controller->>API: Ensure ReplicationDestination
+        VolSync->>API: Populate PVC from backup
+        API-->>App: Pod starts after PVC Bound
+        Controller->>API: Ensure ReplicationSource after protectAfter
+    else No backup exists
+        Catalog-->>Webhook: decision=Fresh authoritative=true
+        Webhook-->>API: Allow unchanged
+        API-->>App: Pod starts on fresh PVC
+        Controller->>API: Ensure backup resources after protectAfter
+    else Unknown backup truth
+        Catalog-->>Webhook: decision=Unknown authoritative=false
+        Webhook-->>API: Deny PVC CREATE
+        API-->>Git: Argo retries after catalog/backend recovers
+    end
+```
+
+## Core Decision Table
+
+| Catalog State | Backup Entry | Repository Health | Decision | Admission | Reason |
+|---|---|---|---|---|---|
+| Fresh | Found | Healthy | `Restore` | Allow + mutate | Existing backup must win over app initialization |
+| Fresh | Missing | Healthy | `Fresh` | Allow unchanged | First install or intentionally new PVC |
+| Missing | Unknown | Healthy | `Unknown` | Deny | Catalog has not proven absence |
+| Stale | Any | Healthy or unhealthy | `Unknown` | Deny | Stale truth is not safe truth |
+| Refresh failed | Any | Unhealthy | `Unknown` | Deny | Backend unavailable |
+| Config invalid | Any | Unknown | `Unknown` | Deny | Operator must fix class/repository |
 
 ## Boxes And Arrows: Restore Path
 
@@ -521,6 +662,63 @@ status:
       reason: ScheduleActive
 ```
 
+## CRD Contract Details
+
+### `PVCProtectionClass.spec`
+
+| Field | Type | Required | Default | Notes |
+|---|---|---:|---|---|
+| `selector.matchLabels` | map | yes | none | Selects PVCs by label, normally `backup: hourly|daily` |
+| `restore.policy` | enum | yes | `IfBackupExists` | First version supports `IfBackupExists` only |
+| `restore.unknownPolicy` | enum | yes | `Deny` | First version must support `Deny`; `AllowFresh` is intentionally not supported |
+| `backup.schedule.type` | enum | yes | none | `HashedHourly`, `HashedDaily`, or explicit cron later |
+| `backup.schedule.hour` | int | no | `2` for daily | Hour in cluster local time unless UTC is later chosen |
+| `backup.protectAfter` | duration | no | `2h` | Prevents immediate backup of newly restored/fresh PVCs |
+| `backup.retention` | object | yes | class-specific | Maps to VolSync/Kopia retention |
+| `volsync.copyMethod` | enum | yes | `Snapshot` | Must match current working VolSync pattern |
+| `volsync.volumeSnapshotClassName` | string | yes | none | Longhorn snapshot class |
+| `volsync.storageClassName` | string | yes | none | Restore target storage class |
+| `volsync.cacheCapacity` | quantity | no | `2Gi` | VolSync cache PVC size |
+| `repositoryRef.name` | string | yes | none | References `PVCBackupRepository` |
+
+### `PVCBackupRepository.spec`
+
+| Field | Type | Required | Notes |
+|---|---|---:|---|
+| `type` | enum | yes | `KopiaFilesystem` first; S3 can be added after parity |
+| `identity.sourceFormat` | string | yes | Default `{pvc}-backup@{namespace}:/data` |
+| `secret.externalSecretStoreRef` | object | yes | Reuses existing External Secrets trust model |
+| `secret.remoteRef` | object | yes | Points to Kopia password source |
+| `filesystem.mount.nfs` | object | yes for NFS | Server/path for controller catalog and VolSync movers |
+| `filesystem.mount.mountPath` | string | yes | Default `/repository` |
+| `catalog.refreshInterval` | duration | yes | Default `2m` |
+| `catalog.maxStaleness` | duration | yes | Default `10m` |
+
+### `PVCProtection.status`
+
+| Field | Meaning |
+|---|---|
+| `phase` | Human-readable lifecycle phase |
+| `decision` | Last controller decision: `Restore`, `Fresh`, `Unknown`, or `Disabled` |
+| `decisionObservedAt` | Time the decision was made |
+| `backup.source` | Kopia source string used for lookup |
+| `backup.latestSnapshotTime` | Newest snapshot observed for this PVC |
+| `catalog.generation` | Catalog generation used for the decision |
+| `catalog.observedAt` | Catalog refresh time used for the decision |
+| `generated.*` | Names of generated/adopted resources |
+| `conditions[]` | Kubernetes-style conditions for catalog, restore, backup, drift, and maintenance |
+
+Minimum condition set:
+
+| Condition | True Meaning | False/Unknown Meaning |
+|---|---|---|
+| `CatalogReady` | Catalog refresh is within max staleness | Webhook should deny protected PVCs |
+| `DecisionReady` | Restore/fresh decision is authoritative | PVC creation is blocked |
+| `RestoreReady` | Required ReplicationDestination exists | Restore PVC may remain pending |
+| `BackupReady` | ReplicationSource exists and latest run healthy | Backup SLO may be violated |
+| `GeneratedResourcesReady` | Managed objects match desired state | Reconciler is still repairing drift |
+| `MaintenanceReady` | Last repository maintenance succeeded | Operator should inspect Kopia |
+
 ## Controller Components
 
 ### 1. Admission Webhook
@@ -681,6 +879,71 @@ Prometheus alerts:
 - No app namespace gets broad repository credentials beyond what VolSync already needs.
 - Webhook failure policy is `Fail` for protected PVCs.
 
+## RBAC Requirements
+
+The controller should use one service account with tightly scoped verbs:
+
+| Resource | Verbs | Why |
+|---|---|---|
+| `persistentvolumeclaims` | `get`, `list`, `watch` | Observe PVCs and match classes |
+| `persistentvolumeclaims/status` | none | Controller should not edit core PVC status |
+| `replicationsources.volsync.backube` | `get`, `list`, `watch`, `create`, `update`, `patch`, `delete` | Manage backup jobs |
+| `replicationdestinations.volsync.backube` | `get`, `list`, `watch`, `create`, `update`, `patch`, `delete` | Manage restore sources |
+| `externalsecrets.external-secrets.io` | `get`, `list`, `watch`, `create`, `update`, `patch`, `delete` | Manage per-PVC Kopia credentials |
+| `pvcprotectionclasses.storage.vanillax.dev` | `get`, `list`, `watch` | Read policy |
+| `pvcbackuprepositories.storage.vanillax.dev` | `get`, `list`, `watch` | Read repository config |
+| `pvcprotections.storage.vanillax.dev` | `get`, `list`, `watch`, `create`, `update`, `patch`, `delete` | Manage per-PVC status objects |
+| `pvcprotections/status` | `get`, `update`, `patch` | Write status and conditions |
+| `events` | `create`, `patch` | Explain decisions in namespace events |
+| `leases.coordination.k8s.io` | `get`, `list`, `watch`, `create`, `update`, `patch` | Leader election |
+
+Webhook permissions should be separated if the implementation splits admission and reconciliation deployments later.
+
+## Webhook Requirements
+
+| Setting | Requirement |
+|---|---|
+| Type | MutatingAdmissionWebhook for PVC CREATE |
+| Matching | PVCs selected by protection classes or backup labels |
+| Failure policy | `Fail` for protected PVCs |
+| Timeout | 2 seconds default, configurable |
+| Side effects | `None` |
+| Reinvocation policy | `Never` unless proven necessary |
+| TLS | cert-manager-managed serving certificate or controller-runtime cert rotation |
+| HA | At least 2 replicas behind a Service |
+| Readiness | Ready only when catalog is fresh enough for all enforce-mode repositories |
+| Audit annotations | Include decision, class, catalog generation, and reason |
+
+Webhook response rules:
+
+```text
+Restore -> JSONPatch add /spec/dataSourceRef and allow
+Fresh   -> allow with no patch
+Unknown -> deny with clear message and event
+```
+
+The webhook must not create VolSync resources inside the admission request. It can only patch the PVC. Reconcilers create or repair secondary resources outside the admission path.
+
+## Release And Packaging Requirements
+
+| Artifact | Requirement |
+|---|---|
+| Container image | Multi-arch `linux/amd64` and `linux/arm64` |
+| Image tags | Semver release tags plus optional `main`/`sha-*`; clusters pin immutable semver or digest |
+| Helm chart or Kustomize base | Install CRDs, deployment, service, webhook, RBAC, metrics ServiceMonitor |
+| CRD lifecycle | CRDs applied before controller/webhook; conversion plan before v1beta1 |
+| GitOps waves | CRDs -> controller secret/config -> controller/webhook -> classes/repositories -> apps |
+| Metrics | `/metrics` with Prometheus-compatible labels |
+| Health | `/healthz` for process, `/readyz` for catalog/webhook readiness |
+
+Release gate:
+
+- Build and unit tests pass.
+- Envtest admission tests pass.
+- Image exists in GHCR before Talos points at it.
+- Release notes include exact pull tag.
+- OCI revision label matches the commit being deployed.
+
 ## Migration Plan
 
 ### Phase 0: Harden Current Flow
@@ -711,6 +974,31 @@ Success criteria:
 - Controller decisions match pvc-plumber decisions.
 - No generated resources are modified.
 - Catalog stays fresh across normal backup load.
+
+Concrete shadow comparison:
+
+| Signal | Source | How to Compare |
+|---|---|---|
+| pvc-plumber decision | Call `/exists/{namespace}/{pvc}` from controller in observe mode or scrape sampled logs/metrics | Must match controller catalog decision for the same PVC |
+| Kyverno restore mutation | Observe admitted PVC `spec.dataSourceRef` | `dataSourceRef` present only when controller decision would be `Restore` |
+| Kyverno deny | Argo/Kubernetes admission event | Deny reason should map to controller `Unknown` |
+| VolSync generated resources | Existing Kyverno-generated ExternalSecret/Replication* | Desired names/specs should match controller plan |
+| App behavior | Pod waits for PVC Bound | Restore path should not start app before PVC bind |
+
+Shadow mode should publish mismatch metrics:
+
+```text
+protected_pvc_shadow_decision_mismatch_total{class,namespace,decision,bridge_decision}
+protected_pvc_shadow_datasourceref_mismatch_total{class,namespace}
+protected_pvc_shadow_generated_resource_mismatch_total{kind,namespace}
+```
+
+Any mismatch blocks promotion to reconcile or enforce mode until classified as:
+
+- controller bug,
+- bridge bug,
+- intentional migration difference,
+- or test fixture error.
 
 ### Phase 2: Reconcile Mode
 
@@ -747,6 +1035,77 @@ Controller webhook becomes the admission authority:
 - Keep or replace NFS mover injection depending on VolSync support.
 - Retire pvc-plumber.
 - Keep docs and runbooks updated.
+
+## Implementation Roadmap
+
+This is a realistic staged build, not a single sprint.
+
+| Milestone | Scope | Exit Criteria |
+|---|---|---|
+| M0 bridge proof | Finish current hardening, image release hygiene, and restore drills | All bridge gate drills pass |
+| M1 CRD skeleton | CRDs, controller manager, metrics, leader election, no webhook enforcement | CRDs install and status reconciler runs in a test cluster |
+| M2 catalog | Kopia catalog manager, freshness conditions, decision engine | Unit/envtest coverage for restore/fresh/unknown |
+| M3 observe mode | `PVCProtection` status, bridge comparison, mismatch metrics | 1 week shadow run with zero unexplained mismatches |
+| M4 reconcile mode | Adopt/create ExternalSecret, ReplicationSource, ReplicationDestination | Deleting generated resources results in repair |
+| M5 admission shadow | Webhook computes decisions but does not replace Kyverno | Webhook decision logs match bridge decisions |
+| M6 enforce mode | Webhook owns admission; Kyverno mutation disabled | Restore/fresh/unknown drills pass with controller only |
+| M7 cleanup | Remove old policy and retire pvc-plumber | Docs/runbooks updated, no pvc-plumber admission dependency |
+
+Estimated effort:
+
+| Workstream | Complexity | Notes |
+|---|---|---|
+| CRD/API design | Medium | Needs careful status/conditions but small domain |
+| Catalog correctness | High | This is the safety-critical decision source |
+| Admission webhook | High | Fail-closed semantics and Kubernetes admission edge cases |
+| Reconciliation/adoption | Medium-high | Must avoid fighting Kyverno during migration |
+| Tests/drills | High | Required before trusting enforce mode |
+| Packaging/GitOps | Medium | Manage CRD/webhook/cert ordering cleanly |
+
+Do not enforce admission until M0 through M5 are complete.
+
+## Work Breakdown By Package
+
+Future repo layout should keep decision logic testable outside Kubernetes plumbing:
+
+```text
+cmd/protected-pvc-controller/
+  main.go
+api/v1alpha1/
+  pvcprotectionclass_types.go
+  pvcbackuprepository_types.go
+  pvcprotection_types.go
+internal/catalog/
+  kopia.go
+  index.go
+  freshness.go
+internal/decision/
+  decision.go
+  decision_test.go
+internal/controller/
+  pvcprotection_controller.go
+  generated_resources.go
+  adoption.go
+internal/webhook/
+  pvc_admission.go
+  patches.go
+config/
+  crd/
+  rbac/
+  manager/
+  webhook/
+  prometheus/
+docs/
+  drills/
+  migration/
+```
+
+Rules:
+
+- `internal/decision` must have no Kubernetes client dependency.
+- `internal/catalog` owns repository indexing and freshness.
+- `internal/webhook` may read the catalog and create patches, but may not create secondary resources.
+- `internal/controller` owns Kubernetes reconciliation and status.
 
 ## Rollout Diagram
 
@@ -817,6 +1176,64 @@ P2:
 | Backup label removed | Generated resources cleaned up, snapshots retained |
 | 50 protected PVCs applied | Schedules are distributed across minutes |
 | Restore drill | App does not start until PVC is bound |
+
+## Test Matrix
+
+| Layer | Tool | Cases |
+|---|---|---|
+| Decision unit tests | Go tests | restore/fresh/unknown, stale catalog, missing class, bad repository |
+| Catalog unit tests | Go tests with fixture JSON | parse Kopia JSON, duplicate sources, latest snapshot selection, malformed JSON |
+| Webhook unit tests | Go tests | JSON patches, deny messages, audit annotations, existing `dataSourceRef` |
+| Controller envtest | controller-runtime envtest | CRD reconcile, owner refs, finalizers, status conditions, adoption |
+| Render tests | `kustomize build` or Helm template | CRD install order, RBAC, ServiceMonitor, webhook config |
+| Integration tests | kind/k3d | webhook fail-closed, generated VolSync resources, catalog refresh failure |
+| Homelab drills | Talos cluster disposable namespace | real Kopia restore, app start ordering, Argo retry behavior |
+
+Minimum unit test examples:
+
+```text
+Decision(Restore): fresh catalog + matching source -> allow patch dataSourceRef
+Decision(Fresh): fresh catalog + no source -> allow no patch
+Decision(Unknown): stale catalog -> deny
+Decision(Unknown): catalog refresh failed -> deny
+Decision(Unknown): class missing repository -> deny
+```
+
+Minimum envtest examples:
+
+```text
+Create PVC backup=hourly -> PVCProtection status appears
+Delete ReplicationSource -> reconciler recreates it
+Remove backup label -> generated resources removed, snapshots untouched
+Existing Kyverno-generated resource -> controller adopts without spec churn
+Two controllers -> only leader writes status/reconciles
+```
+
+## Risk Register
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Webhook denies too much during outage | Apps cannot create protected PVCs | Fail-closed is intentional; expose clear events and alerts |
+| Webhook allows fresh when backup exists | Data loss via empty initialization | Decision unit tests, shadow parity, restore drills before enforce |
+| Catalog stale but marked ready | Unsafe restore/fresh decision | Max staleness condition, metrics, tests for refresh failure |
+| Controller fights Kyverno during migration | Resource churn and confusing status | Observe first, then adoption, then disable Kyverno generation |
+| VolSync CRD changes | Generated specs break | Pin VolSync version and render/envtest CRDs in CI |
+| Repository lock/maintenance conflict | Backups/restores slow or fail | Safe Kopia maintenance only; alerts; avoid recurring `--safety=none` |
+| NFS repository unavailable | Unknown decisions block restores | Alerts and documented operational fix |
+| App/database skew | App PVC and DB backups restored to inconsistent times | Use DB-native backups for databases; document per-app recovery order where needed |
+| CRD schema mistake | Upgrade pain | Keep v1alpha1 until drills; conversion plan before v1beta1 |
+
+## Decision Log
+
+| Decision | Rationale |
+|---|---|
+| Keep VolSync as restore engine | It already provides VolumePopulator semantics and Kopia integration |
+| Keep tri-state truth | Binary `exists` cannot distinguish no backup from broken backup lookup |
+| Fail closed for protected PVCs | Empty app initialization is worse than delayed GitOps convergence |
+| Use catalog-backed admission | Per-PVC Kopia shell-out in admission does not scale or produce predictable latency |
+| Keep semver image pins in Talos | Moving tags are useful for humans but not for production GitOps |
+| Stagger schedules by hash | Avoid top-of-hour backup herd without per-app config |
+| Do not delete snapshots automatically | Destructive retention/delete policy needs separate explicit design |
 
 ## Open Technical Questions
 

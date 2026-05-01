@@ -7,10 +7,11 @@ resources:
 - policies/volsync-pvc-backup-restore.yaml
 - policies/volsync-nfs-inject.yaml
 - policies/volsync-orphan-cleanup.yaml
+- policies/longhorn-pvc-backup-audit.yaml
 helmCharts:
 - name: kyverno
   repo: https://kyverno.github.io/kyverno
-  version: 3.7.2
+  version: 3.8.0
   releaseName: kyverno
   namespace: kyverno
   valuesFile: values.yaml

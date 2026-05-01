@@ -91,6 +91,29 @@ spec:
       interval: 30s
       path: /metrics
 ---
+# ServiceMonitor for pvc-plumber (PVC restore decision oracle)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: pvc-plumber-metrics
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: pvc-plumber
+    release: kube-prometheus-stack
+    prometheus: kube-prometheus-stack-prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pvc-plumber
+  namespaceSelector:
+    matchNames:
+      - volsync-system
+  endpoints:
+    - port: http
+      interval: 30s
+      path: /metrics
+      scrapeTimeout: 10s
+---
 # ServiceMonitor for Cilium
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor

@@ -1,0 +1,70 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: longhorn-pvc-backup-audit
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+    policies.kyverno.io/title: Audit Longhorn PVC backup intent
+    policies.kyverno.io/description: >-
+      Audit-only. Surfaces Longhorn PVCs that declare neither
+      'backup' (hourly|daily) nor 'backup-exempt: "true"' so that backup
+      intent is explicit per PVC. Never blocks admission; emits
+      PolicyReport entries that show up via 'kubectl get policyreport'.
+spec:
+  mutateExistingOnPolicyUpdate: false
+  background: false
+  emitWarning: false
+  validationFailureAction: Audit
+  rules:
+    - name: require-backup-or-exempt-label
+      skipBackgroundRequests: true
+      match:
+        any:
+          - resources:
+              kinds:
+                - PersistentVolumeClaim
+              operations:
+                - CREATE
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - volsync-system
+                - kyverno
+                - longhorn-system
+                - argocd
+                - cert-manager
+                - external-secrets
+                - 1passwordconnect
+                - snapshot-controller
+                - cloudnative-pg
+                - prometheus-stack
+                - loki-stack
+          - resources:
+              names:
+                - "volsync-*"
+      validate:
+        failureAction: Audit
+        allowExistingViolations: true
+        message: >-
+          Longhorn PVC '{{request.object.metadata.namespace}}/{{request.object.metadata.name}}'
+          declares neither 'backup' nor 'backup-exempt'. Set
+          'backup: hourly' or 'backup: daily' for VolSync-managed backup,
+          or 'backup-exempt: "true"' (with rationale annotation) to opt out
+          explicitly.
+        deny:
+          conditions:
+            all:
+              - key: "{{ request.object.spec.storageClassName || '' }}"
+                operator: Equals
+                value: "longhorn"
+              - key: "{{ request.object.metadata.labels.backup || '' }}"
+                operator: AllNotIn
+                value:
+                  - hourly
+                  - daily
+              - key: '{{ request.object.metadata.labels."backup-exempt" || "" }}'
+                operator: NotEquals
+                value: "true"

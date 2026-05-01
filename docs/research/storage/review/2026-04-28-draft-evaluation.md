@@ -2,7 +2,7 @@
 
 Date: 2026-04-28
 
-Status: draft for review, not an implementation plan.
+Status: draft for review with post-hardening updates noted.
 
 ## Executive Verdict
 
@@ -22,10 +22,19 @@ I did not find a current free/open tool that provides the full behavior you want
 
 That is the important gap. VolSync, KubeStash, Velero, K8up, Longhorn, Kasten, OADP, and Portworx solve adjacent backup/restore problems, but they do not remove the restore-intent decision in the exact way this repo does.
 
-The implementation is close, but two things should be fixed before calling it production-like:
+The initial implementation was close, but two things needed to be fixed before calling it production-like:
 
 1. Admission must fail closed when pvc-plumber cannot prove backup truth.
 2. Routine Kopia maintenance must stop using `--safety=none` unless the platform also guarantees no concurrent repository operations.
+
+Post-hardening update:
+
+- pvc-plumber now publishes tri-state `restore|fresh|unknown` decisions and returns HTTP 503 for unknown backend truth.
+- The active Kyverno bridge now denies backup-labeled PVC creation when pvc-plumber cannot make an authoritative decision.
+- Routine Kopia maintenance no longer runs recurring `--safety=none`.
+- pvc-plumber has ServiceMonitor and alert coverage.
+- The dead, unwired CEL Kyverno policies were removed.
+- The restore-pending alert now matches protected PVCs by the real `backup` label instead of an unproven `volumeattributesclass` metric label.
 
 ## Platform Bar
 
@@ -63,15 +72,15 @@ The actual PVC estate mostly matches the design. I found 48 explicit PVC manifes
 
 ## Main Risks
 
-### 1. Fail-Closed Semantics Are Weaker Than The Docs Claim
+### 1. Fail-Closed Semantics Were Weaker Than The Docs Claim
 
-The currently included policy is the old combined `ClusterPolicy`, not the newer `ValidatingPolicy` and `MutatingPolicy`.
+Initial finding: the included policy was the old combined `ClusterPolicy`, not the newer `ValidatingPolicy` and `MutatingPolicy`.
 
-The included `ClusterPolicy` sets `validationFailureAction: Audit`, while the docs describe a deny gate. Current Kyverno docs say Audit records the violation but allows the resource.
+The included `ClusterPolicy` set `validationFailureAction: Audit`, while the docs described a deny gate. Current Kyverno docs say Audit records the violation but allows the resource.
 
-pvc-plumber also returns HTTP 200 with `exists:false` on Kopia command and JSON parse errors. Kyverno currently only mutates when `exists == true`; it does not appear to deny when the response contains an error.
+pvc-plumber also returned HTTP 200 with `exists:false` on Kopia command and JSON parse errors. Kyverno only mutated when `exists == true`; it did not deny when the response contained an error.
 
-The platform rule should be:
+This is now hardened. The platform rule is:
 
 > `exists=true` means restore, `exists=false` with no error means create fresh, and any error/unknown/unreachable state means deny PVC admission.
 
@@ -110,7 +119,7 @@ This is not fatal at today's scale, but enterprise-like behavior would eventuall
 
 pvc-plumber exposes `/metrics`, but I did not find a ServiceMonitor or alert for it.
 
-VolSync alerts exist, but the restore-pending rule may need live validation against actual Prometheus labels.
+VolSync alerts exist. The restore-pending rule was changed to alert on protected PVCs using `kube_persistentvolumeclaim_labels{label_backup=~"hourly|daily"}` because that label is part of the platform contract.
 
 For a managed-platform feel, the custom admission oracle should have first-class health signals:
 

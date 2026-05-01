@@ -38,8 +38,16 @@ spec:
 
 | Label | Schedule | Retention |
 |-------|----------|-----------|
-| `backup: "hourly"` | Every hour (`0 * * * *`) | 24 hourly, 7 daily, 4 weekly, 2 monthly |
-| `backup: "daily"` | Daily at 2am (`0 2 * * *`) | 24 hourly, 7 daily, 4 weekly, 2 monthly |
+| `backup: "hourly"` | Hourly at `<minute> * * * *` (length-spread) | 24 hourly, 7 daily, 4 weekly, 2 monthly |
+| `backup: "daily"` | Daily at `<minute> 2 * * *` (length-spread) | 24 hourly, 7 daily, 4 weekly, 2 monthly |
+
+The `<minute>` field is `length(namespace-name) modulo 60` — a **temporary
+deterministic spread**, not a real hash. PVC names share length ranges so this
+clusters; it's still better than every PVC firing at `:00`. Replace with a
+sha256-derived minute (or move scheduling into a future controller) when
+inventory grows past ~50 backup-labeled PVCs. Existing ReplicationSources keep
+whatever minute Kyverno generated at admission time (`synchronize: false`); the
+new minute only takes effect when a PVC is recreated.
 
 ## How It Works
 

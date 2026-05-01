@@ -529,7 +529,7 @@
 │                                  │         │  ClusterPolicy:                      │
 │  Image:                          │         │  volsync-pvc-backup-restore          │
 │  ghcr.io/mitchross/pvc-plumber   │         │                                      │
-│  :1.5.0                          │         │  Rules:                              │
+│  :1.5.1                          │         │  Rules:                              │
 │                                  │         │  0. Check pvc-plumber readiness      │
 │  Env:                            │         │  1. Require authoritative decision   │
 │  - BACKEND_TYPE: kopia-fs        │         │  2. Mutate PVC if restore exists     │

@@ -268,7 +268,7 @@ The authoritative per-PVC safety check is `/exists/{namespace}/{pvc}`. It now re
 - `decision=fresh`, `authoritative=true`, HTTP 200 when no backup exists
 - `decision=unknown`, `authoritative=false`, HTTP 503 for backend/query/parse uncertainty
 
-Operational note: the deployment here is pinned to `ghcr.io/mitchross/pvc-plumber:1.5.0`. If the published image ever drifts from the checked-in code, re-verify that `/exists` returns HTTP 503 for unknown backup truth before relying on the fail-closed claim.
+Operational note: the deployment here is pinned to `ghcr.io/mitchross/pvc-plumber:1.5.1`. If the published image ever drifts from the checked-in code, re-verify that `/exists` returns HTTP 503 for unknown backup truth before relying on the fail-closed claim.
 
 ### 6. The 5-minute cache TTL is a real trade-off
 

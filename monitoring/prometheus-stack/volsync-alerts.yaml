@@ -110,13 +110,13 @@ spec:
 
     - name: volsync.restore
       rules:
-        # Restore Taking Too Long
-        - alert: VolSyncRestoreTooLong
+        # Protected PVC Pending Too Long
+        - alert: ProtectedPVCPendingTooLong
           expr: |
             (
               kube_persistentvolumeclaim_status_phase{phase="Pending"} == 1
             ) and on (persistentvolumeclaim, namespace) (
-              kube_persistentvolumeclaim_info{volumeattributesclass=~".*volsync.*"} == 1
+              kube_persistentvolumeclaim_labels{label_backup=~"hourly|daily"} == 1
             )
           for: 15m
           labels:
@@ -124,15 +124,19 @@ spec:
             component: volsync
             category: restore
           annotations:
-            summary: "VolSync restore PVC pending too long: {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}"
+            summary: "Protected PVC pending too long: {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}"
             description: |
-              PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} has been pending for more than 15 minutes
-              while waiting for VolSync restore.
+              Backup-labeled PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}
+              has been pending for more than 15 minutes.
+
+              This may be a VolSync restore waiting on its mover job, a storage
+              provisioning problem, or a missing generated ReplicationDestination.
 
               Troubleshooting:
-              1. Check ReplicationDestination: kubectl get replicationdestination -n {{ $labels.namespace }}
-              2. Check mover pod: kubectl get pods -n {{ $labels.namespace }} -l volsync.backube/replicationdestination
-              3. Check if backup exists on NFS
+              1. Check the PVC: kubectl get pvc {{ $labels.persistentvolumeclaim }} -n {{ $labels.namespace }} -o yaml
+              2. Check ReplicationDestination: kubectl get replicationdestination -n {{ $labels.namespace }}
+              3. Check mover pod: kubectl get pods -n {{ $labels.namespace }} -l volsync.backube/replicationdestination
+              4. Check pvc-plumber decision logs and VolSync events
             runbook_url: "https://volsync.readthedocs.io/en/stable/usage/index.html"
 
     - name: volsync.health
@@ -157,3 +161,64 @@ spec:
               2. Verify NFS connectivity
               3. Consider running manual maintenance
             runbook_url: "https://kopia.io/docs/advanced/maintenance/"
+
+    - name: pvc-plumber.health
+      rules:
+        - alert: PVCPlumberDown
+          expr: |
+            absent(up{namespace="volsync-system", service="pvc-plumber"})
+            or min(up{namespace="volsync-system", service="pvc-plumber"}) == 0
+          for: 2m
+          labels:
+            severity: critical
+            component: pvc-plumber
+            category: backup
+          annotations:
+            summary: "PVC Plumber is down"
+            description: |
+              pvc-plumber is unavailable in volsync-system.
+              Backup-labeled PVC admission is fail-closed, so new protected PVCs
+              will be denied until the restore decision service is healthy.
+
+              Actions:
+              1. Check pods: kubectl get pods -n volsync-system -l app.kubernetes.io/name=pvc-plumber
+              2. Check logs: kubectl logs -n volsync-system -l app.kubernetes.io/name=pvc-plumber
+              3. Check readiness: kubectl get endpoints -n volsync-system pvc-plumber
+
+        - alert: PVCPlumberUnknownDecisions
+          expr: increase(pvc_plumber_backup_check_total{decision="unknown"}[5m]) > 0
+          for: 0m
+          labels:
+            severity: critical
+            component: pvc-plumber
+            category: backup
+          annotations:
+            summary: "PVC Plumber returned unknown backup decisions"
+            description: |
+              pvc-plumber returned one or more unknown backup decisions in the
+              last 5 minutes. Kyverno should deny those PVC creations instead of
+              allowing an app to initialize an empty volume.
+
+              Actions:
+              1. Check pvc-plumber logs for backend errors.
+              2. Verify Kopia repository access from pvc-plumber pods.
+              3. Retry the ArgoCD sync after the backend issue is resolved.
+
+        - alert: PVCPlumberBackupCheckErrors
+          expr: increase(pvc_plumber_requests_errors_total[5m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            component: pvc-plumber
+            category: backup
+          annotations:
+            summary: "PVC Plumber backup check errors"
+            description: |
+              pvc-plumber has returned backup check errors for at least 5 minutes.
+              New protected PVCs may be denied until the backend can make
+              authoritative restore/fresh decisions.
+
+              Actions:
+              1. Check pvc-plumber logs.
+              2. Check NFS repository mount health.
+              3. Check Kopia repository connectivity and credentials.
