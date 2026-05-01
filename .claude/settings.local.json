@@ -12,7 +12,9 @@
       "WebFetch(domain:hub.docker.com)",
       "mcp__cloudflare__zones_list",
       "WebFetch(domain:docs.siderolabs.com)",
-      "WebFetch(domain:cloudnative-pg.io)"
+      "WebFetch(domain:cloudnative-pg.io)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ],
     "deny": [
       "Bash(git reset --hard:*)",
