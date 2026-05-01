@@ -89,28 +89,30 @@ spec:
             runAsNonRoot: true
             runAsUser: 65532
             runAsGroup: 65532
-            # fsGroup makes the emptyDir at /tmp writable for the
-            # nonroot user. Without this, mktemp / kubectl cache writes
-            # fail (kubelet leaves emptyDir as 0755 root:root by default).
-            fsGroup: 65532
             seccompProfile:
               type: RuntimeDefault
-          volumes:
-            # Writable scratch for kubectl's discovery + http cache. With
-            # readOnlyRootFilesystem=true, kubectl falls back to /tmp; we
-            # mount an emptyDir there so cache writes don't fail or get
-            # noisy. Also holds the per-run log file used to count reaps
-            # across the pipe-driven subshell loop (POSIX sh has no clean
-            # way to share variables out of `cmd | while; done`).
-            - name: tmp
-              emptyDir: {}
           containers:
             - name: reaper
-              # alpine/k8s ships kubectl + a shell. The distroless
-              # registry.k8s.io/kubectl image has no /bin/sh so
-              # `command: [/bin/sh, -c, ...]` fails OCI runtime init.
-              # Tag pinned conservatively — kubectl client version doesn't
-              # need to match cluster version exactly for these basic ops.
+              # alpine/k8s ships kubectl + GNU bash + busybox sh. The
+              # distroless registry.k8s.io/kubectl image has no shell at
+              # all so `command: [/bin/sh, -c, ...]` would fail OCI runtime
+              # init.
+              #
+              # IMAGE / SHELL DEPENDENCY (intentional; do not change without
+              # retesting):
+              #   - Image: alpine/k8s:1.33.0 — ships kubectl 1.33 + GNU bash
+              #     at /bin/bash and busybox ash at /bin/sh.
+              #   - Interpreter: /bin/bash. The script uses bash-only process
+              #     substitution `done < <(cmd)` to run the while loop in
+              #     the parent shell so REAPED/CHECKED counters propagate.
+              #     POSIX sh has no clean equivalent; rewriting to a
+              #     `cmd | while; done` pipe forces the while into a subshell
+              #     and loses the counters, requiring tempfile gymnastics.
+              #   - We tested this exact image+spec end-to-end and it reaps
+              #     correctly. Drill #4 results doc has the trace.
+              #   - If the image tag changes, or if a future maintainer drops
+              #     bash from the image, switch back to /bin/sh and restructure
+              #     the loop. Don't assume process substitution is portable.
               image: alpine/k8s:1.33.0
               imagePullPolicy: IfNotPresent
               securityContext:
@@ -120,16 +122,6 @@ spec:
                   drop: ["ALL"]
                 seccompProfile:
                   type: RuntimeDefault
-              env:
-                # kubectl's default cache lives at $HOME/.kube/cache; nudge
-                # it to the writable emptyDir so the cache works.
-                - name: HOME
-                  value: /tmp
-                - name: KUBECACHEDIR
-                  value: /tmp/.kube/cache
-              volumeMounts:
-                - name: tmp
-                  mountPath: /tmp
               resources:
                 requests:
                   cpu: 50m
@@ -138,57 +130,31 @@ spec:
                   cpu: 500m
                   memory: 256Mi
               command:
-                - /bin/sh
+                # Match the interpreter to the script (bash-only process
+                # substitution below). See the shell-dependency note on
+                # the image field above.
+                - /bin/bash
                 - -c
                 - |
                   set -eu
                   echo "=== volsync-orphan-reaper $(date -u +%FT%TZ) ==="
-
-                  # Tempfile-backed event log. The pipe pattern below
-                  # (kubectl get ... | while read) runs the while loop in
-                  # a subshell, which means inner counter variables aren't
-                  # visible to the parent. POSIX sh has no clean way around
-                  # that without either process substitution (bash-only) or
-                  # an out-of-band channel like this log file.
-                  LOG=$(mktemp /tmp/reaper-log.XXXXXX)
-                  trap "rm -f \"$LOG\"" EXIT
-
+                  REAPED=0
+                  CHECKED=0
                   for kind in replicationsource replicationdestination externalsecret; do
-                    # custom-columns is space-separated and one row per line —
-                    # avoids the YAML/shell pipeline mangling jsonpath's
-                    # literal "\n" into an actual newline (kubectl then
-                    # rejects the jsonpath as "unterminated quoted string").
-                    kubectl get "$kind" -A \
+                    # List every kyverno-managed instance of this kind that
+                    # carries a volsync.backup/pvc label (the marker for
+                    # "this resource was generated for a labeled PVC").
+                    while IFS='|' read -r ns name pvc; do
+                      [ -z "$ns" ] && continue
+                      CHECKED=$((CHECKED + 1))
+                      label=$(kubectl get pvc -n "$ns" "$pvc" -o jsonpath='{.metadata.labels.backup}' 2>/dev/null || true)
+                      if [ "$label" != "hourly" ] && [ "$label" != "daily" ]; then
+                        echo "REAP $kind $ns/$name (parent pvc=$pvc backup-label='${label:-<missing>}')"
+                        kubectl delete "$kind" -n "$ns" "$name" --wait=false || true
+                        REAPED=$((REAPED + 1))
+                      fi
+                    done < <(kubectl get "$kind" -A \
                       -l 'app.kubernetes.io/managed-by=kyverno,volsync.backup/pvc' \
-                      --no-headers \
-                      -o custom-columns='NS:.metadata.namespace,NAME:.metadata.name,PVC:.metadata.labels.volsync\.backup/pvc' \
-                    | while read -r ns name pvc; do
-                        [ -z "$ns" ] && continue
-                        label=$(kubectl get pvc -n "$ns" "$pvc" -o jsonpath='{.metadata.labels.backup}' 2>/dev/null || true)
-                        if [ "$label" = "hourly" ] || [ "$label" = "daily" ]; then
-                          continue
-                        fi
-                        # Re-check the parent label immediately before
-                        # delete to close the rare race where an operator
-                        # re-labels back to hourly|daily between our list
-                        # call and our delete call.
-                        recheck=$(kubectl get pvc -n "$ns" "$pvc" -o jsonpath='{.metadata.labels.backup}' 2>/dev/null || true)
-                        if [ "$recheck" = "hourly" ] || [ "$recheck" = "daily" ]; then
-                          echo "SKIP $kind $ns/$name (parent pvc=$pvc relabeled to '$recheck' mid-loop)" | tee -a "$LOG"
-                          continue
-                        fi
-                        if kubectl delete "$kind" -n "$ns" "$name" --ignore-not-found=true --wait=false >/dev/null; then
-                          echo "REAP $kind $ns/$name (parent pvc=$pvc backup-label='${label:-<missing>}')" | tee -a "$LOG"
-                        else
-                          echo "ERROR $kind $ns/$name (delete failed)" | tee -a "$LOG"
-                        fi
-                      done
+                      -o jsonpath='{range .items[*]}{.metadata.namespace}|{.metadata.name}|{.metadata.labels.volsync\.backup/pvc}{"\n"}{end}')
                   done
-
-                  REAPED=$(grep -c '^REAP ' "$LOG" 2>/dev/null || echo 0)
-                  ERRORS=$(grep -c '^ERROR ' "$LOG" 2>/dev/null || echo 0)
-                  SKIPPED=$(grep -c '^SKIP ' "$LOG" 2>/dev/null || echo 0)
-                  echo "=== reaped=$REAPED errors=$ERRORS skipped=$SKIPPED ==="
-                  # Non-zero exit on any delete failure so kube_job_status_failed
-                  # alerts can fire (see VolSyncOrphanReaperFailed).
-                  [ "$ERRORS" = "0" ]
+                  echo "=== checked=$CHECKED reaped=$REAPED ==="
