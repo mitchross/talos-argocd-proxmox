@@ -28,8 +28,6 @@ spec:
                 values:
                 - jellyfin
             topologyKey: kubernetes.io/hostname
-      nodeSelector:
-        kubernetes.io/hostname: vanillax-ai
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
