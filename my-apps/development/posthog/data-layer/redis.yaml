@@ -73,6 +73,10 @@ metadata:
   labels:
     app: posthog-redis
     backup: "daily"
+  annotations:
+    # TEMPORARY (2026-05-01): wiping posthog data + starting fresh.
+    # Remove once posthog is back up on fresh data.
+    volsync.backup/skip-restore: "true"
 spec:
   accessModes:
   - ReadWriteOnce

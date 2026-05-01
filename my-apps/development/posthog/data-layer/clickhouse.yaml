@@ -8,6 +8,12 @@ metadata:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: clickhouse
     backup: "daily"
+  annotations:
+    # TEMPORARY (2026-05-01): wiping posthog data + starting fresh.
+    # Without this, kyverno would auto-restore from kopia on PVC recreate
+    # and we'd just get the broken state back. Remove this annotation
+    # once posthog has been recreated and is running on fresh data.
+    volsync.backup/skip-restore: "true"
 spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: longhorn
