@@ -50,7 +50,7 @@ spec:
         - name: CACHE_TTL
           value: "5m"
         - name: HTTP_TIMEOUT
-          value: "3s"
+          value: "10s"
         - name: KOPIA_PASSWORD
           valueFrom:
             secretKeyRef:
