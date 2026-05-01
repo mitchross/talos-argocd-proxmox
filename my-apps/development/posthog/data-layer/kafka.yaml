@@ -1,5 +1,22 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redpanda-data-kafka-0
+  namespace: posthog
+  labels:
+    app: posthog-kafka
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: kafka
+    backup: "daily"
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 20Gi
+---
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: kafka
   namespace: posthog
@@ -9,8 +26,9 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
-  serviceName: kafka
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: posthog
@@ -75,18 +93,10 @@ spec:
         volumeMounts:
         - name: redpanda-data
           mountPath: /var/lib/redpanda/data
-  volumeClaimTemplates:
-  - metadata:
-      name: redpanda-data
-      labels:
-        app: posthog-kafka
-        backup: "daily"
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: longhorn
-      resources:
-        requests:
-          storage: 20Gi
+      volumes:
+      - name: redpanda-data
+        persistentVolumeClaim:
+          claimName: redpanda-data-kafka-0
 ---
 apiVersion: v1
 kind: Service
@@ -107,3 +117,33 @@ spec:
   selector:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: kafka
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: redpanda-data-kafka-0-backup
+  namespace: posthog
+  labels:
+    app.kubernetes.io/managed-by: kyverno
+    volsync.backup/pvc: redpanda-data-kafka-0
+spec:
+  sourcePVC: redpanda-data-kafka-0
+  trigger:
+    schedule: "29 2 * * *"
+  kopia:
+    repository: volsync-redpanda-data-kafka-0
+    compression: zstd-fastest
+    parallelism: 2
+    retain:
+      hourly: 24
+      daily: 7
+      weekly: 4
+      monthly: 2
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    volumeSnapshotClassName: longhorn-snapclass
+    cacheCapacity: 2Gi
+    moverSecurityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568

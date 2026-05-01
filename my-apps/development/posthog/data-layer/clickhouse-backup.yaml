@@ -1,0 +1,29 @@
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: clickhouse-data-clickhouse-0-backup
+  namespace: posthog
+  labels:
+    app.kubernetes.io/managed-by: kyverno
+    volsync.backup/pvc: clickhouse-data-clickhouse-0
+spec:
+  sourcePVC: clickhouse-data-clickhouse-0
+  trigger:
+    schedule: "32 2 * * *"
+  kopia:
+    repository: volsync-clickhouse-data-clickhouse-0
+    compression: zstd-fastest
+    parallelism: 2
+    retain:
+      hourly: 24
+      daily: 7
+      weekly: 4
+      monthly: 2
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    volumeSnapshotClassName: longhorn-snapclass
+    cacheCapacity: 2Gi
+    moverSecurityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
