@@ -162,6 +162,33 @@ spec:
               3. Consider running manual maintenance
             runbook_url: "https://kopia.io/docs/advanced/maintenance/"
 
+        # Orphan reaper — workaround for the broken Kyverno cleanup policy
+        # (see infrastructure/storage/volsync/orphan-reaper.yaml). If this
+        # job keeps failing, helper resources for relabeled/deleted PVCs
+        # accumulate forever.
+        - alert: VolSyncOrphanReaperFailed
+          expr: |
+            kube_job_status_failed{job_name=~"volsync-orphan-reaper-.*"} > 0
+          for: 30m
+          labels:
+            severity: warning
+            component: volsync
+            category: cleanup
+          annotations:
+            summary: "VolSync orphan-reaper job failed: {{ $labels.job_name }}"
+            description: |
+              The volsync-orphan-reaper CronJob failed. Helper resources
+              (ReplicationSource / ReplicationDestination / ExternalSecret)
+              whose parent PVCs have lost the backup={hourly,daily} label
+              will not be cleaned up until the next successful run.
+
+              Actions:
+              1. Check job logs: kubectl logs -n volsync-system job/{{ $labels.job_name }}
+              2. Verify the orphan-reaper ServiceAccount RBAC is intact
+                 (get/list/delete on rs/rd/es; get/list on pvc).
+              3. If the pod is failing for a non-RBAC reason, see
+                 infrastructure/storage/volsync/orphan-reaper.yaml comments.
+
     - name: pvc-plumber.health
       rules:
         - alert: PVCPlumberDown

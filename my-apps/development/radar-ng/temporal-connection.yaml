@@ -1,0 +1,12 @@
+# Temporal cluster connection used by the radar-ng worker. Mirrors the
+# news-reader-temporal-worker / temporal-connection.yaml pattern: each
+# worker namespace declares its own Connection CR pointing at the shared
+# Temporal frontend in the temporal/ namespace.
+apiVersion: temporal.io/v1alpha1
+kind: TemporalConnection
+metadata:
+  name: cluster-temporal
+  namespace: radar-ng
+spec:
+  hostPort: temporal-frontend.temporal.svc.cluster.local:7233
+  mTLS: false

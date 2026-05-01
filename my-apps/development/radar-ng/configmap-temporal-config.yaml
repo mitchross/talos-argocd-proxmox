@@ -1,0 +1,32 @@
+# All non-secret tunables for the Temporal worker. envFrom'd into the
+# worker container alongside the OTEL/TILE_DIR vars set inline in the
+# TemporalWorkerDeployment.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: radar-ng-temporal-config
+  namespace: radar-ng
+  labels:
+    app: radar-ng-worker
+data:
+  # ingest tunables
+  PALETTES: "classic,muted,colorblind"
+  BACKLOG_PER_CYCLE: "3"
+  MRMS_PREFIX: "CONUS/MergedBaseReflectivityQC_00.50"
+  FORECAST_HOURS: "18"
+  EXTENDED_FORECAST_HOURS: "48"
+  # nowcast
+  NOWCAST_HORIZON_MIN: "60"
+  NOWCAST_STEP_MIN: "5"
+  NOWCAST_INPUT_FRAMES: "4"
+  # storm-watch + alerts
+  WATCH_RADIUS_KM: "20"
+  INTENSIFY_DBZ_DELTA: "10"
+  DISSIPATE_DBZ_DELTA: "10"
+  HAIL_DBZ_THRESHOLD: "60"
+  NWS_ALERTS_URL: "https://api.weather.gov/alerts/active?status=actual"
+  NWS_USER_AGENT: "(radar-ng, mitch@vanillax.me)"
+  TROPICAL_FEED_URL: "https://www.nhc.noaa.gov/CurrentStorms.json"
+  # lightning
+  LIGHTNING_RETENTION_MIN: "15"
+  LIGHTNING_FLUSH_S: "2.0"

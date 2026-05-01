@@ -1,0 +1,57 @@
+# radar-ng open-meteo Temporal worker.
+#
+# Mirrors the news-reader-temporal-worker pattern: separate worker pool
+# whose image carries the third-party binary it needs. Both this worker
+# and radar-ng-temporal-worker poll the same task_queue=radar-ng;
+# Temporal dispatches the open_meteo_sync activity here because the
+# main worker doesn't register it.
+#
+# Image is built by .gitea/workflows/build-open-meteo-worker.yml in the
+# radar-ng monorepo and tagged registry.vanillax.me/radar-ng-open-meteo-worker.
+apiVersion: temporal.io/v1alpha1
+kind: TemporalWorkerDeployment
+metadata:
+  name: radar-ng-open-meteo-worker
+  namespace: radar-ng
+  labels:
+    app: radar-ng-open-meteo-worker
+spec:
+  workerOptions:
+    connectionRef:
+      name: cluster-temporal      # shared with the main worker
+    temporalNamespace: default
+  template:
+    metadata:
+      labels:
+        app: radar-ng-open-meteo-worker
+    spec:
+      # The upstream open-meteo image runs as uid 999 — keep that.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: registry.vanillax.me/radar-ng-open-meteo-worker:v1.0.0
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          env:
+            - name: OPENMETEO_BIN
+              value: /app/openmeteo-api
+            - name: OPENMETEO_DATA_DIR
+              value: /app/data
+          volumeMounts:
+            - { name: openmeteo-data, mountPath: /app/data }
+          resources:
+            requests: { cpu: "200m",  memory: "512Mi" }
+            limits:   { cpu: "2",     memory: "4Gi" }
+      volumes:
+        - name: openmeteo-data
+          persistentVolumeClaim:
+            claimName: openmeteo-data

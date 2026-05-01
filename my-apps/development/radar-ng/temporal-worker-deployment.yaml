@@ -1,0 +1,73 @@
+# radar-ng Temporal worker — TemporalWorkerDeployment CR.
+#
+# Lives in the radar-ng namespace (NOT a separate worker namespace, the way
+# news-reader-temporal-worker does it) because the worker needs to mount the
+# same Longhorn PVCs the API + legacy ingestors already use. PVCs are
+# namespace-scoped; sharing a namespace is the simplest answer.
+#
+# Image is built + tagged by .gitea/workflows/build-temporal-worker.yml in
+# the radar-ng repo. Renovate watches the registry and PRs the bump here.
+apiVersion: temporal.io/v1alpha1
+kind: TemporalWorkerDeployment
+metadata:
+  name: radar-ng-worker
+  namespace: radar-ng
+  labels:
+    app: radar-ng-worker
+spec:
+  workerOptions:
+    connectionRef:
+      name: cluster-temporal      # see temporal-connection.yaml in this same dir
+    temporalNamespace: default
+  template:
+    metadata:
+      labels:
+        app: radar-ng-worker
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: registry.vanillax.me/radar-ng-temporal-worker:v1.0.4
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://opentelemetry-collector.observability:4317
+            - name: TILE_DIR
+              value: /data/tiles
+            - name: STATE_DIR
+              value: /data/state
+            - name: GRID_DIR
+              value: /data/grids
+          envFrom:
+            - configMapRef: { name: radar-ng-temporal-config }
+            - secretRef:    { name: radar-ng-temporal-secrets, optional: true }
+          volumeMounts:
+            - { name: tiles,  mountPath: /data/tiles }
+            - { name: grids,  mountPath: /data/grids }
+            - { name: state,  mountPath: /data/state }
+            - { name: push-keys, mountPath: /secrets, readOnly: true }
+          resources:
+            requests: { cpu: "500m", memory: "1Gi" }
+            limits:   { cpu: "2",    memory: "4Gi" }
+      volumes:
+        - name: tiles
+          persistentVolumeClaim: { claimName: tiles }
+        - name: grids
+          persistentVolumeClaim: { claimName: grids }
+        - name: state
+          persistentVolumeClaim: { claimName: state }
+        - name: push-keys
+          secret:
+            secretName: radar-ng-temporal-secrets
+            optional: true
+            items:
+              - { key: APNS_KEY,             path: apns.p8 }
+              - { key: FCM_CREDENTIALS_JSON, path: fcm.json }

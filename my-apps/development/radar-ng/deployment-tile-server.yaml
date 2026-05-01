@@ -68,6 +68,12 @@ spec:
               value: http://open-meteo:8080/v1/forecast
             - name: MRMS_MAX_AGE_S
               value: "600"
+            # Temporal client — used by /v1/push-tokens, /v1/watches, /v1/workflows.
+            # See backend/api/api/routes_workflows.py in the radar-ng repo.
+            - name: TEMPORAL_ADDRESS
+              value: temporal-frontend.temporal.svc.cluster.local:7233
+            - name: TEMPORAL_NAMESPACE
+              value: default
           volumeMounts:
             - name: tiles
               mountPath: /data/tiles

@@ -10,19 +10,16 @@ resources:
   - pdb-tile-server.yaml
   - deployment-basemap.yaml
   - deployment-open-meteo.yaml
-  - deployment-ingest-mrms.yaml
-  - deployment-ingest-radar-composite.yaml
-  - deployment-ingest-hrrr.yaml
-  - deployment-ingest-lightning.yaml
-  - deployment-ingest-tropical.yaml
-  - deployment-nowcast.yaml
-  - cronjob-tile-cleanup.yaml
-  - cronjob-open-meteo-sync.yaml
   - servicemonitor.yaml
+  # Temporal worker pool — replaces the six ingest deployments +
+  # tile-cleanup cronjob + open-meteo sync cronjobs. Two workers, one
+  # task queue: the main worker handles all radar-ng-owned activities;
+  # the open-meteo worker (FROM ghcr.io/open-meteo/open-meteo) handles
+  # the openmeteo-api subprocess. Schedules are seeded one-time via
+  # `python -m temporal.schedules.seed` after rollout.
+  - configmap-temporal-config.yaml
+  - temporal-connection.yaml
+  - temporal-worker-deployment.yaml
+  - open-meteo-worker-deployment.yaml
 
 namespace: radar-ng
-
-configMapGenerator:
-  - name: tile-cleanup-script
-    files:
-      - cleanup.sh=tile-cleanup.sh
