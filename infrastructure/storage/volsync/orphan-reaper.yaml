@@ -154,10 +154,15 @@ spec:
                   trap "rm -f \"$LOG\"" EXIT
 
                   for kind in replicationsource replicationdestination externalsecret; do
+                    # custom-columns is space-separated and one row per line —
+                    # avoids the YAML/shell pipeline mangling jsonpath's
+                    # literal "\n" into an actual newline (kubectl then
+                    # rejects the jsonpath as "unterminated quoted string").
                     kubectl get "$kind" -A \
                       -l 'app.kubernetes.io/managed-by=kyverno,volsync.backup/pvc' \
-                      -o jsonpath='{range .items[*]}{.metadata.namespace}|{.metadata.name}|{.metadata.labels.volsync\.backup/pvc}{"\n"}{end}' \
-                    | while IFS='|' read -r ns name pvc; do
+                      --no-headers \
+                      -o custom-columns='NS:.metadata.namespace,NAME:.metadata.name,PVC:.metadata.labels.volsync\.backup/pvc' \
+                    | while read -r ns name pvc; do
                         [ -z "$ns" ] && continue
                         label=$(kubectl get pvc -n "$ns" "$pvc" -o jsonpath='{.metadata.labels.backup}' 2>/dev/null || true)
                         if [ "$label" = "hourly" ] || [ "$label" = "daily" ]; then
