@@ -78,6 +78,14 @@ spec:
     spec:
       backoffLimit: 1
       activeDeadlineSeconds: 300
+      # Auto-evaporate Job objects 1h after Complete or Failed. Without this,
+      # `kube_job_status_failed` retains transient failures (held by
+      # failedJobsHistoryLimit: 3) and the VolSyncOrphanReaperFailed alert
+      # keeps firing well after a subsequent successful run. With TTL, every
+      # Job is gone an hour after it terminated regardless of phase, so the
+      # alert self-resolves and we don't need manual `kubectl delete job`
+      # cleanup. Debug window is the 1h before TTL fires.
+      ttlSecondsAfterFinished: 3600
       template:
         metadata:
           labels:
