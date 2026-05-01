@@ -53,10 +53,11 @@ valkey:
   enabled: true
   architecture: standalone
   primary:
+    # Cache-only workload: emptyDir is the right home. The previous StatefulSet
+    # PVC made every cache restart drag along Longhorn block storage and a
+    # backup-restore policy decision (backup or backup-exempt?), neither of
+    # which adds value for ephemeral session/queue/cache data. Pod restarts
+    # cost users a re-login, in-flight queue jobs replay on next reconciliation
+    # — both fine for a homelab gitea.
     persistence:
-      size: 5Gi
-      storageClass: longhorn
-      labels:
-        backup-exempt: "true"
-      annotations:
-        backup-exempt-reason: "Valkey/Redis cache for Gitea sessions and queues; ephemeral by design"
+      enabled: false
