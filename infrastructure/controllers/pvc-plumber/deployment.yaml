@@ -35,7 +35,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: pvc-plumber
-        image: ghcr.io/mitchross/pvc-plumber:1.5.1
+        image: ghcr.io/mitchross/pvc-plumber:1.6.0
         ports:
         - name: http
           containerPort: 8080
@@ -51,6 +51,8 @@ spec:
           value: "5m"
         - name: HTTP_TIMEOUT
           value: "10s"
+        - name: RE_WARM_INTERVAL
+          value: "90s"
         - name: KOPIA_PASSWORD
           valueFrom:
             secretKeyRef:
