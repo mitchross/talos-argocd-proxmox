@@ -5,6 +5,7 @@ resources:
   - namespace.yaml
   - volumesnapshotclass.yaml
   - kopia-maintenance-cronjob.yaml
+  - orphan-reaper.yaml
 helmCharts:
   - name: volsync
     repo: https://perfectra1n.github.io/volsync/charts
