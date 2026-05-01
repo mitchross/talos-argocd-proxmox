@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: news-reader
-          image: registry.vanillax.me/news-reader:v0.2.2
+          image: registry.vanillax.me/news-reader:v0.2.3
           env:
             - name: HOSTNAME
               value: "0.0.0.0"
