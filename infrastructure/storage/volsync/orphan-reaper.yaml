@@ -89,6 +89,10 @@ spec:
             runAsNonRoot: true
             runAsUser: 65532
             runAsGroup: 65532
+            # fsGroup makes the emptyDir at /tmp writable for the
+            # nonroot user. Without this, mktemp / kubectl cache writes
+            # fail (kubelet leaves emptyDir as 0755 root:root by default).
+            fsGroup: 65532
             seccompProfile:
               type: RuntimeDefault
           volumes:
