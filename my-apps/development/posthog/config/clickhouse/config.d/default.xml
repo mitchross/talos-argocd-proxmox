@@ -5,7 +5,7 @@
         <posthog>
             <shard>
                 <replica>
-                    <host>clickhouse-0.clickhouse.posthog.svc.cluster.local</host>
+                    <host>clickhouse.posthog.svc.cluster.local</host>
                     <port>9000</port>
                 </replica>
             </shard>
@@ -13,7 +13,7 @@
         <posthog_single_shard>
             <shard>
                 <replica>
-                    <host>clickhouse-0.clickhouse.posthog.svc.cluster.local</host>
+                    <host>clickhouse.posthog.svc.cluster.local</host>
                     <port>9000</port>
                 </replica>
             </shard>
@@ -21,7 +21,7 @@
         <posthog_migrations>
             <shard>
                 <replica>
-                    <host>clickhouse-0.clickhouse.posthog.svc.cluster.local</host>
+                    <host>clickhouse.posthog.svc.cluster.local</host>
                     <port>9000</port>
                 </replica>
             </shard>
@@ -29,7 +29,7 @@
         <posthog_writable>
             <shard>
                 <replica>
-                    <host>clickhouse-0.clickhouse.posthog.svc.cluster.local</host>
+                    <host>clickhouse.posthog.svc.cluster.local</host>
                     <port>9000</port>
                 </replica>
             </shard>
@@ -37,7 +37,7 @@
         <posthog_primary_replica>
             <shard>
                 <replica>
-                    <host>clickhouse-0.clickhouse.posthog.svc.cluster.local</host>
+                    <host>clickhouse.posthog.svc.cluster.local</host>
                     <port>9000</port>
                 </replica>
             </shard>
@@ -56,7 +56,7 @@
         <ai_events>
             <shard>
                 <replica>
-                    <host>clickhouse-0.clickhouse.posthog.svc.cluster.local</host>
+                    <host>clickhouse.posthog.svc.cluster.local</host>
                     <port>9000</port>
                 </replica>
             </shard>
@@ -74,7 +74,7 @@
         <aux>
             <shard>
                 <replica>
-                    <host>clickhouse-0.clickhouse.posthog.svc.cluster.local</host>
+                    <host>clickhouse.posthog.svc.cluster.local</host>
                     <port>9000</port>
                 </replica>
             </shard>
@@ -82,7 +82,7 @@
         <ops>
             <shard>
                 <replica>
-                    <host>clickhouse-0.clickhouse.posthog.svc.cluster.local</host>
+                    <host>clickhouse.posthog.svc.cluster.local</host>
                     <port>9000</port>
                 </replica>
             </shard>
@@ -90,7 +90,7 @@
         <sessions>
             <shard>
                 <replica>
-                    <host>clickhouse-0.clickhouse.posthog.svc.cluster.local</host>
+                    <host>clickhouse.posthog.svc.cluster.local</host>
                     <port>9000</port>
                 </replica>
             </shard>

@@ -12,7 +12,6 @@ resources:
   - data-layer/kafka.yaml
   - config
   - data-layer/clickhouse.yaml
-  - data-layer/clickhouse-backup.yaml
   # Core application
   - core/clickhouse-init.yaml
   - core/jobs.yaml

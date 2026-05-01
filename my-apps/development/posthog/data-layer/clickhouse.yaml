@@ -1,5 +1,22 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: clickhouse-data-clickhouse-0
+  namespace: posthog
+  labels:
+    app: posthog-clickhouse
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: clickhouse
+    backup: "daily"
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 100Gi
+---
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: clickhouse
   namespace: posthog
@@ -9,8 +26,9 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "0"
 spec:
-  serviceName: clickhouse
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: posthog
@@ -82,6 +100,9 @@ spec:
           mountPath: /docker-entrypoint-initdb.d/init-posthog.sh
           subPath: init-posthog.sh
       volumes:
+      - name: clickhouse-data
+        persistentVolumeClaim:
+          claimName: clickhouse-data-clickhouse-0
       - name: config
         configMap:
           name: clickhouse-config
@@ -101,18 +122,6 @@ spec:
         configMap:
           name: clickhouse-init
           defaultMode: 0755
-  volumeClaimTemplates:
-  - metadata:
-      name: clickhouse-data
-      labels:
-        app: posthog-clickhouse
-        backup: "daily"
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: longhorn
-      resources:
-        requests:
-          storage: 100Gi
 ---
 apiVersion: v1
 kind: Service
@@ -130,3 +139,33 @@ spec:
   selector:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: clickhouse
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: clickhouse-data-clickhouse-0-backup
+  namespace: posthog
+  labels:
+    app.kubernetes.io/managed-by: kyverno
+    volsync.backup/pvc: clickhouse-data-clickhouse-0
+spec:
+  sourcePVC: clickhouse-data-clickhouse-0
+  trigger:
+    schedule: "32 2 * * *"
+  kopia:
+    repository: volsync-clickhouse-data-clickhouse-0
+    compression: zstd-fastest
+    parallelism: 2
+    retain:
+      hourly: 24
+      daily: 7
+      weekly: 4
+      monthly: 2
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    volumeSnapshotClassName: longhorn-snapclass
+    cacheCapacity: 2Gi
+    moverSecurityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
