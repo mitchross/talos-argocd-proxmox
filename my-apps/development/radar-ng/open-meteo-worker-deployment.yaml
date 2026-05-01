@@ -20,9 +20,12 @@ spec:
       name: cluster-temporal
     temporalNamespace: default
   rollout:
+    # The controller implicitly ramps to 100% after the last step finishes,
+    # so the explicit step caps at 99. Single replica → just one observe
+    # window before the new build_id owns all new-workflow traffic.
     strategy: Progressive
     steps:
-      - rampPercentage: 100
+      - rampPercentage: 50
         pauseDuration: 1m
   sunset:
     scaledownDelay: 5m
