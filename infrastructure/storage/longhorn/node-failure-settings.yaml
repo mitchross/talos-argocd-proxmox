@@ -100,3 +100,20 @@ metadata:
   name: auto-delete-pod-when-volume-detached-unexpectedly
   namespace: longhorn-system
 value: "true"
+
+---
+# Over-provisioning ceiling for replica scheduling.
+# values.yaml's defaultSettings only seeds on FIRST install — Longhorn
+# manages settings via this CRD post-install, so the chart value at 300
+# was being silently reverted to 200 by longhorn-manager's reconciliation.
+# Pinning it here means ArgoCD owns the value and it stays at 300.
+#
+# Per-node ceiling math: (disk_size - reserved_25%) * over_provisioning%
+# At 300%: ~1568 Gi/node ceiling vs ~1046 Gi at 200%.
+# Cluster physical usage is only ~25-40% per node, so 300% is safe headroom.
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: storage-over-provisioning-percentage
+  namespace: longhorn-system
+value: "300"
