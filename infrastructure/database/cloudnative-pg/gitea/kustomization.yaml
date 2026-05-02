@@ -20,7 +20,7 @@ commonLabels:
 commonAnnotations:
   argocd.argoproj.io/sync-wave: "-5"
 resources:
-  # - overlays/recovery      # swap to this for DR (restore from Barman)
-  - overlays/initdb          # ← ACTIVE: fresh DB / normal operation
+  - overlays/recovery        # ← ACTIVE: DR (restore from Barman v1, write to v2)
+  # - overlays/initdb        # swap back once v2 is healthy and DR is done
   - externalsecret.yaml
   - scheduled-backup.yaml
