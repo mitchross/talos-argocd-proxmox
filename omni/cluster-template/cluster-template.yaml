@@ -7,10 +7,13 @@ labels:
 kubernetes:
   version: v1.36.0
 talos:
-  # v1.13.0-rc.0 released 2026-04-16 (beta.1 had an init segfault loop on CP
-  # nodes in Proxmox). Bump to v1.13.0 once GA (scheduled 2026-04-27).
-  # Requires Omni server started with --enable-talos-pre-release-versions.
-  version: v1.13.0-rc.0
+  # v1.13.0 GA shipped 2026-04-27. We rode v1.13.0-rc.0 from 2026-04-16 to
+  # GA — beta.1 had an init segfault loop on CP nodes in Proxmox; rc.0
+  # resolved it and we never saw a regression on rc.0 → GA. The Omni
+  # --enable-talos-pre-release-versions flag is no longer required for
+  # Talos itself now that we're on GA; leave it in place on the Omni
+  # server if you still need it for other pre-release components.
+  version: v1.13.0
 patches:
 - name: disable-default-cni
   inline:
