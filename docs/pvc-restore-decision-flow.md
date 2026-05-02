@@ -55,16 +55,20 @@ sequenceDiagram
 
     Git->>Argo: backup-labeled PVC
     Argo->>API: apply PVC
-    API->>Kyverno: admission review
-    Kyverno->>Plumber: GET /readyz
-    Plumber-->>Kyverno: status=ok
-    Kyverno->>Plumber: GET /exists/ns/pvc
+    API->>Kyverno: admission review (mutate phase)
+    Kyverno->>Plumber: GET /exists/ns/pvc (mutate rule, call A)
     Plumber->>Kopia: snapshot list source
 
     alt decision=restore
         Kopia-->>Plumber: snapshots exist
         Plumber-->>Kyverno: 200 restore authoritative=true
-        Kyverno-->>API: add dataSourceRef
+        Kyverno-->>API: inject dataSourceRef
+        API->>Kyverno: admission review (validate phase, post-mutation)
+        Kyverno->>Plumber: GET /exists (validate rule 1, call B)
+        Plumber-->>Kyverno: 200 restore authoritative=true (cached)
+        Kyverno->>Plumber: GET /exists (validate rule 3, belt-and-suspenders, call C)
+        Plumber-->>Kyverno: 200 restore authoritative=true (cached)
+        Kyverno-->>API: admit (all three rules pass)
         API->>VolSync: populate PVC from ReplicationDestination
         VolSync->>Longhorn: create restored volume
         Longhorn-->>API: PVC Bound
@@ -72,17 +76,26 @@ sequenceDiagram
     else decision=fresh
         Kopia-->>Plumber: no snapshots
         Plumber-->>Kyverno: 200 fresh authoritative=true
-        Kyverno-->>API: allow unchanged
+        Kyverno-->>API: allow unchanged (no dataSourceRef needed)
         API->>Longhorn: provision empty volume
         Longhorn-->>API: PVC Bound
         API-->>App: start pod
     else decision=unknown
         Kopia-->>Plumber: error, timeout, invalid JSON
-        Plumber-->>Kyverno: 503 unknown authoritative=false
-        Kyverno-->>API: deny admission
+        Plumber-->>Kyverno: 503 unknown authoritative=false (or apiCall default fires when unreachable)
+        Kyverno-->>API: deny admission (validate rule 1)
         API-->>Argo: sync not healthy yet
     end
 ```
+
+The validate webhook makes two `/exists` calls (rules 1 and 3) in addition to
+the mutate webhook's call. The third rule is a belt-and-suspenders check that
+denies admission if `/exists` says `restore` but the post-mutation PVC is
+missing the expected `dataSourceRef` — closes the validate/mutate
+inconsistency where independent calls could disagree under transient
+flakiness. pvc-plumber's 5-minute in-memory catalog keeps the three calls
+consistent in practice; the singleflight wrapper added in image v1.7+
+also dedupes concurrent identical lookups.
 
 ## What Changed
 
@@ -92,7 +105,7 @@ sequenceDiagram
 | Unknown backup truth | Could look like "no backup" | HTTP 503 and `decision: unknown` |
 | Kyverno validation | Policy-level `Audit` | Enforced deny for unavailable or non-authoritative checks |
 | Kyverno mutation | Mutated on `exists == true` only | Mutates only on authoritative `restore` |
-| App startup safety | `/readyz` could pass while `/exists` failed open | `/exists` is the source of per-PVC truth |
+| App startup safety | `/readyz` could pass while `/exists` failed open | `/exists` is the single source of truth; the apiCall default fires fail-closed when pvc-plumber is unreachable, and a third validate rule denies admission when restore is required but `dataSourceRef` is missing |
 | Kopia maintenance | Daily full maintenance with `--safety=none` | Daily safe maintenance off the top of the hour |
 | Monitoring | VolSync alerts, no pvc-plumber scrape | pvc-plumber ServiceMonitor and decision/error alerts |
 

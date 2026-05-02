@@ -1,27 +1,26 @@
-# VolSync orphan reaper — bash CronJob workaround for a Kyverno cleanup bug.
+# VolSync orphan reaper — canonical bash-based cleanup for kyverno-generated
+# backup helpers. THIS IS THE ONLY ACTIVE REAPER.
 #
 # Background: the volsync-pvc-backup-restore Kyverno ClusterPolicy generates
 # an ExternalSecret + ReplicationSource + ReplicationDestination per
 # backup-labeled PVC. When the operator removes the `backup` label (or the
 # value changes to something other than hourly|daily), those generated
-# resources should be reaped automatically.
+# resources need to be reaped.
 #
-# We have a `volsync-orphan-cleanup` ClusterCleanupPolicy that's supposed to
-# do exactly this on a 15-minute schedule, but it has been silently broken on
-# both Kyverno 1.17.2 and 1.18.0. Drill #4 (2026-04-30 + 2026-05-01) confirmed
-# 6+ consecutive ticks fired with `lastExecutionTime` updates and zero
-# resources reaped. Suspected bug: `apiCall` context evaluation inside
-# ClusterCleanupPolicy is non-functional. The simpler no-apiCall control
-# policy worked, but we couldn't replicate the parent-PVC-label check
-# without an apiCall.
+# History: a `volsync-orphan-cleanup` Kyverno ClusterCleanupPolicy was the
+# original reaper. It was silently broken on both Kyverno 1.17.2 and 1.18.0
+# — drill #4 (2026-04-30 + 2026-05-01) confirmed 6+ consecutive ticks fired
+# with `lastExecutionTime` updates and zero resources reaped. Suspected
+# upstream bug: `apiCall` context evaluation inside ClusterCleanupPolicy is
+# non-functional. A simpler no-apiCall control policy worked, but couldn't
+# replicate the parent-PVC-label check. The cleanup policy has been removed
+# from the active kustomization to avoid dual-truth confusion (see git
+# history if you want to restore it after upstream fixes the apiCall bug).
 #
-# This CronJob does the same job in bash. It walks every kyverno-managed
+# This CronJob does the cleanup job in bash. It walks every kyverno-managed
 # RS/RD/ES, fetches its parent PVC's `backup` label, and deletes the helper
 # resource if the label is missing or set to something other than
-# hourly|daily. Idempotent, debuggable.
-#
-# Remove this file once the Kyverno upstream bug is fixed and
-# `volsync-orphan-cleanup` actually reaps on schedule.
+# hourly|daily. Idempotent, debuggable, and verified working in drill #4.
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -66,8 +65,8 @@ metadata:
     app.kubernetes.io/name: volsync-orphan-reaper
     app.kubernetes.io/component: cleanup
 spec:
-  # Match the broken Kyverno ClusterCleanupPolicy schedule so behavior is
-  # identical from an operator perspective.
+  # 15-minute cadence inherited from the original Kyverno
+  # ClusterCleanupPolicy this CronJob replaces.
   schedule: "*/15 * * * *"
   timeZone: "Etc/UTC"
   concurrencyPolicy: Forbid

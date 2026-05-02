@@ -100,10 +100,11 @@ PVC populated from last backup
    - Automatically injects NFS volume into VolSync mover jobs
    - No manual NFS configuration needed per app
 
-3. **volsync-orphan-cleanup.yaml** - Orphan resource cleanup (ClusterCleanupPolicy)
+3. **`infrastructure/storage/volsync/orphan-reaper.yaml`** - Orphan resource cleanup (bash CronJob, NOT a Kyverno policy)
    - Runs every 15 minutes
    - Deletes orphaned ReplicationSource, ReplicationDestination, ExternalSecret when backup label is removed or PVC deleted
    - Prevents stale backup/restore jobs
+   - **History**: replaced the `volsync-orphan-cleanup` ClusterCleanupPolicy after it was found silently broken on Kyverno 1.17.x and 1.18.x (apiCall context evaluation never reaped despite ticking on schedule). Drill #4 (2026-04-30 + 2026-05-01) confirmed the regression. The Kyverno policy file has been removed from the active kustomization; restore from git history if upstream fixes the apiCall bug.
 
 ## PVC Plumber Service
 
@@ -122,9 +123,9 @@ PVC populated from last backup
 ```
 
 **Kyverno uses this to**:
-- First validate PVC Plumber is healthy (`/readyz`) — if not, PVC creation is **denied** (fail-closed)
-- Then call PVC Plumber API (`/exists`) during PVC CREATE operation
-- If backup exists, add `dataSourceRef` to auto-restore
+- Validate PVC creation against pvc-plumber (`/exists`). The apiCall context has a configured `default` of `decision=unknown, authoritative=false, error=...`; if pvc-plumber is unreachable or non-authoritative, the rule **denies PVC creation** (fail-closed). One admission call covers both plumber availability and per-PVC truth — no separate `/readyz` probe is needed.
+- Mutate the PVC during `CREATE`: if `/exists` says authoritative `restore`, inject `dataSourceRef` pointing at `<pvc>-backup` (the generated ReplicationDestination)
+- Belt-and-suspenders validation: a third rule re-checks `/exists` from the validate webhook (post-mutation) and denies if the response says `restore` but the PVC is missing the expected `dataSourceRef`. Closes the validate/mutate inconsistency where independent `/exists` calls could disagree under transient flakiness.
 - Prevents data loss when recreating PVCs or during disaster recovery
 
 ## Manual Backup Operations
@@ -142,8 +143,10 @@ kubectl get replicationdestination -A
 # View VolSync mover job logs
 kubectl logs -n <namespace> -l app.kubernetes.io/created-by=volsync
 
-# Manually trigger restore
-kubectl patch replicationdestination app-data-restore -n app-name \
+# Manually trigger restore. NOTE: the generated ReplicationDestination is
+# named <pvc-name>-backup (same suffix as ReplicationSource — different kind,
+# same name).
+kubectl patch replicationdestination app-data-backup -n app-name \
   --type merge -p '{"spec":{"trigger":{"manual":"restore-now"}}}'
 ```
 
@@ -158,7 +161,7 @@ metadata:
 # Kyverno will generate:
 # - ExternalSecret: volsync-app-data
 # - ReplicationSource: app-data-backup
-# - ReplicationDestination: app-data-restore
+# - ReplicationDestination: app-data-backup    (same -backup suffix; the kind disambiguates)
 
 # Verify resources were created
 kubectl get externalsecret,replicationsource,replicationdestination -n app-name
@@ -187,7 +190,7 @@ spec:
   # dataSourceRef:
   #   apiGroup: volsync.backube
   #   kind: ReplicationDestination
-  #   name: app-data-restore
+  #   name: app-data-backup
 
 # 2. Apply → PVC Plumber checks → Kyverno adds dataSourceRef → VolSync restores
 ```
@@ -200,7 +203,13 @@ spec:
 - Keep PVC names consistent for restore to work
 - Test restores periodically
 
-**Removing backups**: Remove the `backup` label. The `volsync-orphan-cleanup` ClusterCleanupPolicy runs every 15 minutes and automatically deletes orphaned resources.
+**Removing backups**: Remove the `backup` label. The `volsync-orphan-reaper` CronJob (`infrastructure/storage/volsync/orphan-reaper.yaml`) runs every 15 minutes and automatically deletes orphaned resources.
+
+**Escape hatch — `volsync.backup/skip-restore`**: Setting `volsync.backup/skip-restore: "true"` as an annotation on a backup-labeled PVC tells Kyverno NOT to inject `dataSourceRef`, so the PVC initializes fresh even if a Kopia backup exists. Use it for "nuke and start fresh" scenarios (corruption wipes, schema rebuilds) where you don't want to clear the Kopia repo first. Backup generation rules still fire, so the new fresh data gets backed up going forward.
+
+Two guardrails:
+1. **`volsync.backup/skip-restore-reason` is required** (Rule 4 in `volsync-pvc-backup-restore.yaml`). Setting `skip-restore=true` without a non-empty reason annotation denies admission.
+2. **`ProtectedPVCSkipRestoreStale` alert** fires after a Bound PVC has carried `skip-restore=true` for 24h — that's a primed footgun in Git that will silently skip restore on the next delete/recreate. The alert depends on kube-state-metrics' `metricAnnotationsAllowList` exposure (configured in `monitoring/prometheus-stack/values.yaml`).
 
 **DON'T**:
 - Add backup labels to system namespace PVCs (auto-excluded)

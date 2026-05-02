@@ -235,7 +235,59 @@ spec:
                 operator: NotEquals
                 value: "volsync.backube"
 
-    # Rule 4: Generate ExternalSecret for Kopia repository credentials
+    # Rule 4: Require a reason when opting out of restore-on-create.
+    # The volsync.backup/skip-restore=true annotation disables the fail-closed
+    # admission gate (rules 1, 2, 3 all skip when it's set). That makes it a
+    # very small piece of YAML with a very large baseball bat — one stale
+    # annotation in Git means "restore disabled forever for this PVC". To keep
+    # operators honest, require a non-empty volsync.backup/skip-restore-reason
+    # annotation whenever skip-restore is true. Pairs with the
+    # ProtectedPVCSkipRestoreStale Prometheus alert (24h watchdog) and the
+    # docs note in docs/backup-restore.md.
+    - name: require-skip-restore-reason
+      skipBackgroundRequests: true
+      match:
+        any:
+          - resources:
+              kinds:
+                - PersistentVolumeClaim
+              operations:
+                - CREATE
+              selector:
+                matchExpressions:
+                  - key: backup
+                    operator: In
+                    values: ["hourly", "daily"]
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - volsync-system
+                - kyverno
+      preconditions:
+        all:
+          - key: "{{ request.object.metadata.annotations.\"volsync.backup/skip-restore\" || 'false' }}"
+            operator: Equals
+            value: "true"
+      validate:
+        failureAction: Enforce
+        allowExistingViolations: true
+        message: >-
+          PVC has volsync.backup/skip-restore=true but is missing
+          volsync.backup/skip-restore-reason. Skipping restore disables the
+          fail-closed admission gate and could initialize an empty volume
+          over a real Kopia backup. Add an annotation explaining why, e.g.
+          volsync.backup/skip-restore-reason="posthog data wipe — drill
+          2026-05-01". The reason must be non-empty.
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.metadata.annotations.\"volsync.backup/skip-restore-reason\" || '' }}"
+                operator: Equals
+                value: ""
+
+    # Rule 5: Generate ExternalSecret for Kopia repository credentials
     - name: generate-kopia-secret
       skipBackgroundRequests: true
       match:
@@ -292,7 +344,7 @@ spec:
                   key: rustfs
                   property: kopia_password
 
-    # Rule 5: Generate ReplicationSource (backup schedule)
+    # Rule 6: Generate ReplicationSource (backup schedule)
     # IMPORTANT: Only create backup AFTER PVC is Bound to avoid conflicts with restore
     - name: generate-replication-source
       skipBackgroundRequests: true
@@ -365,7 +417,7 @@ spec:
                 runAsGroup: 568
                 fsGroup: 568
 
-    # Rule 6: Generate ReplicationDestination (restore capability)
+    # Rule 7: Generate ReplicationDestination (restore capability)
     - name: generate-replication-destination
       skipBackgroundRequests: true
       match:
