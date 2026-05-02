@@ -154,7 +154,7 @@ Edit `omni.env` with your values:
 # Required: Omni Configuration
 OMNI_ACCOUNT_UUID=your-uuid-here              # Generate with: uuidgen
 NAME=omni-prod                                 # Deployment name
-OMNI_IMG_TAG=v1.3.2                           # Omni version (latest stable - note the 'v' prefix)
+OMNI_IMG_TAG=v1.7.1                           # Omni version (latest stable - note the 'v' prefix)
 
 # Required: Domain and Network
 OMNI_DOMAIN_NAME=omni.yourdomain.com          # Your domain
