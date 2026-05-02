@@ -190,7 +190,24 @@ git commit -m "dr(<db>): flip to recovery — restore from vN-1, write to vN"
 git push
 ```
 
-**4. Delete the live Cluster + PVCs (forces CNPG to re-evaluate bootstrap).**
+**4. Hard-refresh the ArgoCD app FIRST so its manifest cache matches the
+new git state.** Without this, ArgoCD may re-create the deleted Cluster
+from a stale rendered manifest (pre-recovery-flip) — you'll get a fresh
+empty database with `bootstrap.initdb` and `serverName: v(N-1)` despite
+git being correct. Drill 2026-05-02 burned a cycle on exactly this.
+
+```bash
+kubectl annotate application <db> -n argocd \
+  argocd.argoproj.io/refresh=hard --overwrite
+
+# Verify ArgoCD now sees the Cluster as OutOfSync (proves cache picked
+# up the new bootstrap.recovery + new serverName)
+kubectl get application <db> -n argocd \
+  -o jsonpath='{.status.resources[?(@.kind=="Cluster")].status}{"\n"}'
+# Expect: OutOfSync
+```
+
+**5. Delete the live Cluster + PVCs (forces CNPG to re-evaluate bootstrap).**
 
 ```bash
 kubectl -n cloudnative-pg delete cluster <db>-database
@@ -199,14 +216,14 @@ kubectl -n cloudnative-pg delete pvc -l cnpg.io/cluster=<db>-database
 kubectl -n cloudnative-pg get pvc -l cnpg.io/cluster=<db>-database
 ```
 
-**5. Trigger ArgoCD sync.**
+**6. Trigger ArgoCD sync.**
 
 ```bash
 kubectl -n argocd patch application <db> --type merge \
   -p '{"operation":{"sync":{"revision":"HEAD"}}}'
 ```
 
-**6. Watch the recovery.**
+**7. Watch the recovery.**
 
 ```bash
 kubectl -n cloudnative-pg get cluster <db>-database -w
@@ -222,20 +239,20 @@ Look for:
 - `"consistent recovery state reached at ..."` — success signal
 - `"recovery ended before configured recovery target was reached"` — FATAL, means your `recoveryTarget.targetTime` is beyond last archived WAL. Remove the target or pick an earlier one.
 
-**7. Verify data.**
+**8. Verify data.**
 
 ```bash
 kubectl exec -n cloudnative-pg <db>-database-1 -c postgres -- \
   psql -U postgres -d <db> -c "\dt"   # should show restored tables
 ```
 
-**8. Restart the consumer app** so it picks up the fresh DB connection.
+**9. Restart the consumer app** so it picks up the fresh DB connection.
 
 ```bash
 kubectl -n <db> rollout restart deployment/<app>
 ```
 
-**9. (Optional) Flip back to initdb.** Once the Cluster exists and is running
+**10. (Optional) Flip back to initdb.** Once the Cluster exists and is running
 with the recovered data, `spec.bootstrap` is a no-op — CNPG ignores it on
 existing Clusters. You can leave the overlay on `recovery` forever, or flip
 the root `kustomization.yaml` back to `overlays/initdb` for a tidier "steady
