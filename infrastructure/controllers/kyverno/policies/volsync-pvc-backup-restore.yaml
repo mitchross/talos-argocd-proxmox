@@ -149,7 +149,93 @@ spec:
               kind: ReplicationDestination
               name: "{{request.object.metadata.name}}-backup"
 
-    # Rule 2: Generate ExternalSecret for Kopia repository credentials
+    # Rule 3: Belt-and-suspenders — when /exists confirms a restore is needed,
+    # the admission object MUST carry the expected dataSourceRef. The mutate
+    # rule above and the validate rule below each issue independent /exists
+    # calls; if the mutate call returns `unknown` (HTTP timeout, transient
+    # plumber error) while a separate /exists call succeeds with
+    # decision=restore, the PVC could otherwise be admitted without
+    # dataSourceRef → Longhorn would provision an empty volume on top of
+    # restorable backup data. This rule closes that race by re-asking
+    # pvc-plumber from the validate webhook (post-mutation object) and
+    # denying when restore is required but dataSourceRef is missing/wrong.
+    - name: require-datasource-when-restore
+      skipBackgroundRequests: true
+      match:
+        any:
+          - resources:
+              kinds:
+                - PersistentVolumeClaim
+              operations:
+                - CREATE
+              selector:
+                matchExpressions:
+                  - key: backup
+                    operator: In
+                    values: ["hourly", "daily"]
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - volsync-system
+                - kyverno
+      preconditions:
+        all:
+          # Same skip-restore opt-out as rules 1 & 2 — user explicitly wants
+          # to nuke and start fresh, dataSourceRef intentionally absent.
+          - key: "{{ request.object.metadata.annotations.\"volsync.backup/skip-restore\" || 'false' }}"
+            operator: NotEquals
+            value: "true"
+      context:
+        - name: backupCheck
+          apiCall:
+            method: GET
+            default:
+              exists: false
+              decision: unknown
+              authoritative: false
+              error: pvc-plumber lookup failed
+            service:
+              url: "http://pvc-plumber.volsync-system.svc.cluster.local/exists/{{request.object.metadata.namespace}}/{{request.object.metadata.name}}"
+      validate:
+        failureAction: Enforce
+        allowExistingViolations: true
+        message: >-
+          PVC Plumber reports a Kopia backup exists for this PVC
+          (decision=restore, authoritative), but the admitted object is
+          missing the expected dataSourceRef pointing at
+          ReplicationDestination <pvc-name>-backup. This typically means
+          the mutate webhook's pvc-plumber call failed or returned
+          non-authoritative while the validate-side call succeeded —
+          admitting the PVC would provision an empty volume over
+          restorable backup data. ArgoCD will retry; if pvc-plumber stays
+          flaky, check its pods/logs. To intentionally start fresh, set
+          annotation volsync.backup/skip-restore=true on the PVC.
+        deny:
+          conditions:
+            all:
+              - key: "{{ backupCheck.authoritative || false }}"
+                operator: Equals
+                value: true
+              - key: "{{ backupCheck.decision || 'unknown' }}"
+                operator: Equals
+                value: "restore"
+              - key: "{{ backupCheck.exists || false }}"
+                operator: Equals
+                value: true
+            any:
+              - key: "{{ request.object.spec.dataSourceRef.name || '' }}"
+                operator: NotEquals
+                value: "{{request.object.metadata.name}}-backup"
+              - key: "{{ request.object.spec.dataSourceRef.kind || '' }}"
+                operator: NotEquals
+                value: "ReplicationDestination"
+              - key: "{{ request.object.spec.dataSourceRef.apiGroup || '' }}"
+                operator: NotEquals
+                value: "volsync.backube"
+
+    # Rule 4: Generate ExternalSecret for Kopia repository credentials
     - name: generate-kopia-secret
       skipBackgroundRequests: true
       match:
@@ -206,7 +292,7 @@ spec:
                   key: rustfs
                   property: kopia_password
 
-    # Rule 3: Generate ReplicationSource (backup schedule)
+    # Rule 5: Generate ReplicationSource (backup schedule)
     # IMPORTANT: Only create backup AFTER PVC is Bound to avoid conflicts with restore
     - name: generate-replication-source
       skipBackgroundRequests: true
@@ -279,7 +365,7 @@ spec:
                 runAsGroup: 568
                 fsGroup: 568
 
-    # Rule 4: Generate ReplicationDestination (restore capability)
+    # Rule 6: Generate ReplicationDestination (restore capability)
     - name: generate-replication-destination
       skipBackgroundRequests: true
       match:
