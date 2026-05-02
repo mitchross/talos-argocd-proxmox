@@ -77,7 +77,7 @@ spec:
         # emptyDir; persistent caching is via the registry buildcache tag
         # the workflows already use.
         - name: dind
-          image: docker:27-dind
+          image: docker:29-dind
           args:
             - --host=unix:///var/run/docker.sock
           env:
@@ -111,7 +111,7 @@ spec:
         # containers + images older than 72h. Without this, the layer
         # cache grows indefinitely as new image versions keep landing.
         - name: prune
-          image: docker:27-cli
+          image: docker:29-cli
           env:
             - name: DOCKER_HOST
               value: unix:///var/run/docker.sock
