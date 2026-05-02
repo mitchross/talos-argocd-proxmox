@@ -63,14 +63,19 @@ spec:
               value: /data/state
             - name: GRID_DIR
               value: /data/grids
+            # Push notifications are disabled by default — the
+            # `send_push_notification` activity logs+returns without
+            # touching APNS/FCM. Re-enable by setting PUSH_DISABLED=0
+            # AND mounting the push-keys secret (see git history of this
+            # file for the secret/volume blocks that were removed).
+            - name: PUSH_DISABLED
+              value: "1"
           envFrom:
             - configMapRef: { name: radar-ng-temporal-config }
-            - secretRef:    { name: radar-ng-temporal-secrets, optional: true }
           volumeMounts:
             - { name: tiles,  mountPath: /data/tiles }
             - { name: grids,  mountPath: /data/grids }
             - { name: state,  mountPath: /data/state }
-            - { name: push-keys, mountPath: /secrets, readOnly: true }
           resources:
             requests: { cpu: "500m", memory: "1Gi" }
             limits:   { cpu: "2",    memory: "4Gi" }
@@ -81,10 +86,3 @@ spec:
           persistentVolumeClaim: { claimName: grids }
         - name: state
           persistentVolumeClaim: { claimName: state }
-        - name: push-keys
-          secret:
-            secretName: radar-ng-temporal-secrets
-            optional: true
-            items:
-              - { key: APNS_KEY,             path: apns.p8 }
-              - { key: FCM_CREDENTIALS_JSON, path: fcm.json }
