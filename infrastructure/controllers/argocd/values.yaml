@@ -235,3 +235,13 @@ notifications:
 # utilization percentages, leading to unnecessary scale events.
 hpa:
   enabled: false
+# Disable the redis-secret-init PreSync hook. The Job creates the redis
+# auth secret on first install; once created, it persists in the cluster
+# and the chart re-runs the Job on every sync as a hook. On chart
+# upgrades the Job's hook-delete-policy can race with Argo's
+# operationState tracking and wedge the sync indefinitely. The actual
+# `argocd-redis` Secret already exists (Argo Redis HA is Healthy), so
+# disabling the bootstrapper is safe and idempotent. Bit us on 2026-05-01
+# when Renovate PR #1259 bumped argo-cd to v9.5.9.
+redisSecretInit:
+  enabled: false
