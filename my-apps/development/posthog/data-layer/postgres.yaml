@@ -97,6 +97,7 @@ metadata:
     # TEMPORARY (2026-05-01): wiping posthog data + starting fresh.
     # Remove once posthog is back up on fresh data.
     volsync.backup/skip-restore: "true"
+    volsync.backup/skip-restore-reason: "posthog corruption wipe 2026-05-01 — remove once data verified"
 spec:
   accessModes:
   - ReadWriteOnce

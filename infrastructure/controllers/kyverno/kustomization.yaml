@@ -6,7 +6,14 @@ resources:
 - rbac-patch.yaml
 - policies/volsync-pvc-backup-restore.yaml
 - policies/volsync-nfs-inject.yaml
-- policies/volsync-orphan-cleanup.yaml
+# volsync-orphan-cleanup.yaml (ClusterCleanupPolicy) was the original reaper
+# but it has been silently broken on Kyverno 1.17.x and 1.18.x — apiCall
+# context evaluation inside ClusterCleanupPolicy never reaped any resources
+# despite ticking on schedule (drill #4, 2026-04-30 + 2026-05-01). The
+# canonical reaper is now the volsync-orphan-reaper bash CronJob in
+# infrastructure/storage/volsync/orphan-reaper.yaml. The policy file has
+# been removed from the tree to avoid dual-truth confusion; restore from
+# git history if upstream Kyverno fixes the apiCall bug.
 - policies/longhorn-pvc-backup-audit.yaml
 helmCharts:
 - name: kyverno

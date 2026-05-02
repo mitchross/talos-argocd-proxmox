@@ -94,19 +94,22 @@ PVC Created ──▶ Kyverno ──▶ pvc-plumber /exists ──▶ restore / 
 
 ### 4. Kyverno ClusterPolicy
 - Triggers on PVCs with label `backup: hourly` or `backup: daily`
-- **Rule 0 (validate, FAIL-CLOSED):** Calls pvc-plumber `/readyz`; if unreachable, **denies PVC creation** to prevent data loss during disaster recovery
-- **Rule 1 (validate, FAIL-CLOSED):** Calls pvc-plumber `/exists`; if the answer is `unknown` or not authoritative, **denies PVC creation**
+- **Rule 1 (validate, FAIL-CLOSED):** Calls pvc-plumber `/exists` with a configured `default` of `decision=unknown, authoritative=false, error=...`. If pvc-plumber is unreachable, the default fires and the rule **denies PVC creation**. (This rule replaces the old separate `/readyz` probe — the `/exists` default+deny pattern handles both plumber-availability and per-PVC truth in a single admission call.)
 - **Rule 2 (mutate):** Calls pvc-plumber `/exists`; if the answer is authoritative `restore`, adds `dataSourceRef` to trigger restore
-- **Rule 3 (generate):** Creates ExternalSecret (fetches KOPIA_PASSWORD from 1Password)
-- **Rule 4 (generate):** Creates ReplicationSource (backup schedule) - only after PVC is Bound
-- **Rule 5 (generate):** Creates ReplicationDestination (restore capability)
+- **Rule 3 (validate):** Belt-and-suspenders for the validate/mutate race — calls `/exists` from the validate webhook (post-mutation). If it confirms `decision=restore` but the admitted PVC does not carry the expected `dataSourceRef` (`volsync.backube/ReplicationDestination/<pvc>-backup`), **denies PVC creation**
+- **Rule 4 (validate):** Requires `volsync.backup/skip-restore-reason` to be non-empty whenever `volsync.backup/skip-restore=true`. Without this, the escape-hatch annotation could land in Git unexplained
+- **Rule 5 (generate):** Creates ExternalSecret (fetches KOPIA_PASSWORD from 1Password)
+- **Rule 6 (generate):** Creates ReplicationSource (backup schedule) - only after PVC is Bound and at least 2h old
+- **Rule 7 (generate):** Creates ReplicationDestination (restore capability), named `<pvc-name>-backup`
 
-### 4a. Kyverno ClusterCleanupPolicy (Orphan Cleanup)
-- **Runs every 15 minutes** to clean up orphaned backup resources
-- Targets ReplicationSource, ReplicationDestination, and ExternalSecret with labels `app.kubernetes.io/managed-by=kyverno` and `volsync.backup/pvc`
-- Checks if the corresponding PVC still has `backup: hourly` or `backup: daily` label
-- If label was removed or PVC no longer exists, **deletes the orphaned resources**
-- Prevents stale backup/restore jobs from running after backups are disabled
+### 4a. VolSync orphan-reaper CronJob
+
+- **Runs every 15 minutes** to clean up orphaned backup helpers
+- Lives at `infrastructure/storage/volsync/orphan-reaper.yaml` (a bash CronJob, NOT a Kyverno cleanup policy)
+- Walks every kyverno-managed `ReplicationSource`, `ReplicationDestination`, and `ExternalSecret`
+- Checks the parent PVC's `backup` label and deletes the helper if the label is missing or set to anything other than `hourly|daily`
+- Prevents stale backup/restore jobs from running after the `backup` label is removed
+- **History:** the original `volsync-orphan-cleanup` Kyverno `ClusterCleanupPolicy` was silently broken on Kyverno 1.17.x and 1.18.x (apiCall context evaluation never reaped). The CronJob replaces it; the policy was deleted from the active kustomization. Restore from git history if upstream Kyverno fixes the apiCall bug.
 
 ### 5. VolSync
 - Performs actual backup/restore operations using **Kopia**
@@ -128,7 +131,7 @@ metadata:
     # backup: "hourly"   # Comment out or remove to disable backup
 ```
 
-The `volsync-orphan-cleanup` ClusterCleanupPolicy runs every 15 minutes and automatically deletes the orphaned ReplicationSource, ReplicationDestination, and ExternalSecret. No manual cleanup needed.
+The `volsync-orphan-reaper` CronJob (`infrastructure/storage/volsync/orphan-reaper.yaml`) runs every 15 minutes and automatically deletes the orphaned ReplicationSource, ReplicationDestination, and ExternalSecret. No manual cleanup needed.
 
 **Note:** Removing the label does NOT delete existing backups from NFS. The Kopia repository on TrueNAS retains all previous snapshots. To re-enable backups later, simply re-add the label.
 
@@ -161,8 +164,17 @@ That's it! Kyverno automatically generates all required resources.
 
 | Label | Schedule | Retention |
 |-------|----------|-----------|
-| `backup: hourly` | Every hour (0 * * * *) | 24 hourly, 7 daily, 4 weekly, 2 monthly |
-| `backup: daily` | 2am daily (0 2 * * *) | 24 hourly, 7 daily, 4 weekly, 2 monthly |
+| `backup: hourly` | Hourly at `<minute> * * * *` (length-spread) | 24 hourly, 7 daily, 4 weekly, 2 monthly |
+| `backup: daily` | Daily at `<minute> 2 * * *` (length-spread) | 24 hourly, 7 daily, 4 weekly, 2 monthly |
+
+The `<minute>` field is `length(namespace-name) modulo 60` — a **temporary
+deterministic spread** rather than a real hash. PVC names share length ranges
+so this clusters slightly; it's still much better than every PVC firing at
+`:00`. Replace with a sha256-derived minute (or move scheduling into a
+controller) when inventory grows past ~50 backup-labeled PVCs. Existing
+ReplicationSources keep whatever minute Kyverno generated at admission time
+(`synchronize: false`); the new minute only takes effect when a PVC is
+recreated.
 
 ## 1Password Configuration
 
@@ -237,9 +249,11 @@ To manually trigger a restore:
 Or use the ReplicationDestination directly:
 
 ```bash
-# Trigger manual restore
-kubectl patch replicationdestination <pvc-name>-restore -n <namespace> \
-  --type merge -p '{"spec":{"trigger":{"manual":"restore-$(date +%s)"}}}'
+# Trigger manual restore. NOTE: the generated ReplicationDestination is named
+# <pvc-name>-backup, NOT <pvc-name>-restore. The "-backup" suffix is shared
+# with ReplicationSource — they're different kinds, not different names.
+kubectl patch replicationdestination <pvc-name>-backup -n <namespace> \
+  --type merge -p '{"spec":{"trigger":{"manual":"restore-'"$(date +%s)"'"}}}'
 ```
 
 ## Troubleshooting
@@ -310,7 +324,7 @@ The following namespaces are excluded from automatic backup:
 | `infrastructure/controllers/kyverno/policies/volsync-nfs-inject.yaml` | Injects NFS mount into mover pods |
 | `infrastructure/storage/kopia-ui/` | Kopia web UI for browsing backups |
 | `infrastructure/controllers/kyverno/policies/volsync-pvc-backup-restore.yaml` | Kyverno backup/restore policy |
-| `infrastructure/controllers/kyverno/policies/volsync-orphan-cleanup.yaml` | Cleanup orphaned backup resources |
+| `infrastructure/storage/volsync/orphan-reaper.yaml` | CronJob that cleans up orphaned backup resources (replaces the broken Kyverno cleanup policy) |
 | `monitoring/prometheus-stack/volsync-alerts.yaml` | Prometheus alerting rules |
 | `infrastructure/database/cloudnative-pg/` | CNPG database clusters (separate backup path) |
 

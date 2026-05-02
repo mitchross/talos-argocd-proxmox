@@ -110,7 +110,10 @@
 ┃  │    Policies:                                                        │             ┃
 ┃  │    - volsync-pvc-backup-restore (FAIL-CLOSED + auto-restore)       │             ┃
 ┃  │    - volsync-nfs-inject (NFS mount into VolSync mover jobs)        │             ┃
-┃  │    - volsync-orphan-cleanup (cleanup every 15 min)                 │             ┃
+┃  │    Orphan cleanup is the volsync-orphan-reaper bash CronJob in     │             ┃
+┃  │    infrastructure/storage/volsync/ (every 15 min). The original    │             ┃
+┃  │    Kyverno volsync-orphan-cleanup ClusterCleanupPolicy was         │             ┃
+┃  │    silently broken on Kyverno 1.17.x and 1.18.x and was removed.   │             ┃
 ┃  └─────────────────────────────────────────────────────────────────────┘             ┃
 ┃                                                                                     ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
@@ -199,23 +202,27 @@
 │                                                                                     │
 │  "I see a PVC with backup: hourly (or daily)"                                      │
 │                                                                                     │
-│  Step 1: Validate rule checks PVC Plumber health (FAIL-CLOSED)                     │
-│  ┌────────────────────────────────────────────────────────────────────────────┐    │
-│  │  HTTP GET http://pvc-plumber.volsync-system/readyz                        │    │
-│  │  If unreachable -> DENY PVC creation (apps retry via ArgoCD backoff)      │    │
-│  │  If healthy -> proceed to step 2                                          │    │
-│  └────────────────────────────────────────────────────────────────────────────┘    │
-│                                                                                     │
-│  Step 2: Validate rule requires authoritative per-PVC backup truth                 │
+│  Step 1: Validate rule requires authoritative per-PVC backup truth (FAIL-CLOSED)   │
 │  ┌────────────────────────────────────────────────────────────────────────────┐    │
 │  │  HTTP GET http://pvc-plumber.volsync-system/exists/karakeep/data-pvc      │    │
-│  │  If decision=unknown or authoritative=false -> DENY PVC creation          │    │
-│  │  If decision=restore or fresh -> proceed                                  │    │
+│  │  apiCall context has a configured `default` of                            │    │
+│  │    {decision=unknown, authoritative=false, error=...}                     │    │
+│  │  If pvc-plumber unreachable, the default fires -> DENY                    │    │
+│  │  If decision=unknown or authoritative=false -> DENY                       │    │
+│  │  If decision=restore or fresh (authoritative) -> proceed                  │    │
+│  │  (One admission call covers both plumber-availability and per-PVC truth.  │    │
+│  │  The old separate /readyz probe was removed.)                             │    │
 │  └────────────────────────────────────────────────────────────────────────────┘    │
 │                                                                                     │
-│  Step 3: Mutate rule adds dataSourceRef only for authoritative restore             │
+│  Step 2: Mutate rule adds dataSourceRef only for authoritative restore             │
 │  ┌────────────────────────────────────────────────────────────────────────────┐    │
 │  │  Requires: decision=restore, authoritative=true, exists=true              │    │
+│  └────────────────────────────────────────────────────────────────────────────┘    │
+│                                                                                     │
+│  Step 3: Validate rule (belt-and-suspenders) re-checks /exists post-mutation       │
+│  ┌────────────────────────────────────────────────────────────────────────────┐    │
+│  │  If decision=restore and the admitted PVC is missing dataSourceRef -> DENY│    │
+│  │  Closes the validate/mutate inconsistency under transient flakiness.      │    │
 │  └────────────────────────────────────────────────────────────────────────────┘    │
 │                                                                                     │
 └─────────────────────────────────────────────────────────────────────────────────────┘
@@ -347,7 +354,9 @@
 │                                                                                     │
 │  ONGOING: REPLICATIONSOURCE RUNS ON SCHEDULE                                        │
 │                                                                                     │
-│  Schedule: "0 * * * *" (hourly) or "0 2 * * *" (daily at 2am)                     │
+│  Schedule: "<minute> * * * *" (hourly) or "<minute> 2 * * *" (daily at 2am)        │
+│  <minute> = length(namespace-pvcname) modulo 60 (deterministic spread,            │
+│  not a real hash; see CLAUDE.md notes on future controller ownership).             │
 │  Note: Backup only starts after PVC is Bound AND at least 2 hours old              │
 │                                                                                     │
 │  1. Creates Longhorn snapshot of PVC (copy-on-write, no downtime)                  │
@@ -467,11 +476,12 @@
 │  3. PVC Plumber (Wave 2) is unhealthy                                              │
 │  4. Kyverno (Wave 4) deploys with validate rule                                   │
 │  5. Apps (Wave 6) attempt to create PVCs with backup labels                        │
-│  6. Kyverno validate rule calls PVC Plumber /readyz -> UNREACHABLE                 │
+│  6. Kyverno validate rule calls PVC Plumber /exists; the apiCall default          │
+│     (decision=unknown, authoritative=false) fires when unreachable -> DENY         │
 │  7. PVC creation DENIED                                                             │
 │  8. ArgoCD retries with exponential backoff (5s -> 10s -> 20s -> 40s -> 3m)        │
 │  9. Operator fixes PVC Plumber                                                     │
-│  10. PVC Plumber starts, /readyz returns 200                                       │
+│  10. PVC Plumber starts; /exists returns authoritative answers                     │
 │  11. ArgoCD retries -> PVC creates -> pvc-plumber finds backup -> data restored    │
 │                                                                                     │
 │  Result: Apps wait for PVC Plumber. Data safety over availability.                 │
@@ -602,8 +612,10 @@ TO YOUR EXISTING APPS:
   That's it. Everything else is automatic.
 
   Label options:
-  - backup: "hourly"  -> backs up every hour (0 * * * *)
-  - backup: "daily"   -> backs up daily at 2am (0 2 * * *)
+  - backup: "hourly"  -> backs up every hour at <minute> * * * *
+  - backup: "daily"   -> backs up daily at <minute> 2 * * *
+  (<minute> is length(namespace-pvcname) modulo 60 — a temporary deterministic
+  spread; replace with sha256 once inventory grows past ~50 PVCs.)
 
 TO YOUR INFRASTRUCTURE REPO:
 

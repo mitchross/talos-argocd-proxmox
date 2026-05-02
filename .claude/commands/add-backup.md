@@ -33,4 +33,4 @@ kubectl get replicationsource,replicationdestination,externalsecret -n <namespac
 
 ## Removing Backups
 
-Just remove the `backup` label. The `volsync-orphan-cleanup` ClusterCleanupPolicy runs every 15 minutes and auto-deletes orphaned resources.
+Just remove the `backup` label. The `volsync-orphan-reaper` CronJob (`infrastructure/storage/volsync/orphan-reaper.yaml`) runs every 15 minutes and auto-deletes orphaned resources. (The earlier `volsync-orphan-cleanup` Kyverno ClusterCleanupPolicy was removed after it was found silently broken on Kyverno 1.17.x/1.18.x.)

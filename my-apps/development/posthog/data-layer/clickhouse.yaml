@@ -14,6 +14,7 @@ metadata:
     # and we'd just get the broken state back. Remove this annotation
     # once posthog has been recreated and is running on fresh data.
     volsync.backup/skip-restore: "true"
+    volsync.backup/skip-restore-reason: "posthog corruption wipe 2026-05-01 — remove once data verified"
 spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: longhorn
