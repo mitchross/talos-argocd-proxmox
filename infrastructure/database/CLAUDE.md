@@ -56,14 +56,16 @@ The `serverName` values below live in each DB's `base/cluster.yaml` and
 
 | Database  | Current write target (base)  | Prior lineage (recovery source) |
 |-----------|------------------------------|---------------------------------|
-| gitea     | `gitea-database-v1`          | `gitea-database-v1`             |
+| gitea     | `gitea-database-v2`          | `gitea-database-v1`             |
 | immich    | `immich-database-v1`         | `immich-database-v1`            |
 | paperless | `paperless-database-v1`      | `paperless-database-v1`         |
 | temporal  | `temporal-database-v1`       | `temporal-database-v1`          |
 
 All DBs reset to `-v1` baseline on 2026-04-19 after S3 was wiped — prior
-lineages (`-v2` through `-v7`) no longer exist on RustFS. Next DR event bumps
-to `-v2`.
+lineages (`-v2` through `-v7`) no longer exist on RustFS. gitea bumped to
+`-v2` on 2026-05-02 after a GPU worker node deletion left the WAL Longhorn
+volume faulted; restored from `gitea-database-v1` (last good Barman base
+2026-05-02T17:09:43Z).
 
 ## Normal operation (add a new CNPG DB)
 

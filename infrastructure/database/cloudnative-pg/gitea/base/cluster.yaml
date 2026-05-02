@@ -40,10 +40,12 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
-      # Write target. Clean-slate baseline after 2026-04-19 wipe of
-      # s3://postgres-backups/cnpg/gitea/*. Next DR event will bump
-      # this to v2 (and recovery overlay will restore FROM v1).
-      serverName: gitea-database-v1
+      # Write target. v2 lineage opened 2026-05-02 after the GPU worker
+      # node deletion left gitea-database-1-wal Longhorn volume faulted.
+      # The prior v1 lineage on S3 has clean Barman backups through
+      # 2026-05-02T17:09:43Z; recovery overlay restores FROM v1, this
+      # writes new WAL/base to v2 going forward.
+      serverName: gitea-database-v2
       destinationPath: s3://postgres-backups/cnpg/gitea
       endpointURL: http://192.168.10.133:30293
       s3Credentials:
