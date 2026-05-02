@@ -219,14 +219,15 @@
   },
   customManagers: [
     {
-      description: 'in-cluster registry (registry.vanillax.me) images — route through custom.gitea-vanillax to bypass Gitea/Renovate pagination mismatch (n=1000 vs n=10000).',
+      description: 'in-cluster registry (registry.vanillax.me) images — route through custom.gitea-vanillax to bypass Gitea/Renovate pagination mismatch (n=1000 vs n=10000). Capture just the image path as packageName so the customDatasource URL template (https://registry.vanillax.me/v2/{{packageName}}/...) lands at the correct endpoint; rebuild the display name via depNameTemplate so dashboard/PR titles still show the full registry-qualified ref.',
       customType: 'regex',
       managerFilePatterns: [
         '/^my-apps/.+\\.yaml$/',
       ],
       matchStrings: [
-        'image:\\s*(?<depName>registry\\.vanillax\\.me/[\\w._-]+):(?<currentValue>v[\\w.-]+)',
+        'image:\\s*registry\\.vanillax\\.me/(?<packageName>[\\w._-]+):(?<currentValue>v[\\w.-]+)',
       ],
+      depNameTemplate: 'registry.vanillax.me/{{packageName}}',
       datasourceTemplate: 'custom.gitea-vanillax',
       versioningTemplate: 'semver-coerced',
     },
