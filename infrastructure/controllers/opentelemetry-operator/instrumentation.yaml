@@ -18,7 +18,7 @@ spec:
   - name: OTEL_RESOURCE_ATTRIBUTES
     value: k8s.cluster.name=talos-prod
   nodejs:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest@sha256:c19f680415fda478fdc9ad947a69232ac866e996c353fd84bea79f6feca73d21
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest@sha256:6f66a82a31fae26c8fc129291d8c4ccad6662a0ad1d9c98ced8e3665a611472d
   java:
     image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest@sha256:6d263ee46a3faace8950aec57ad4fd03b70a84169908e5f26eb1e42d92a0a441
   go:
