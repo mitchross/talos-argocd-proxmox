@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: renovate-config
+  namespace: renovate
+data:
+  # Runtime config — tells self-hosted Renovate which repo to scan and how to
+  # auth. Per-repo update policies still live in the repo itself at
+  # .github/renovate.json5 and are read after clone.
+  config.json: |
+    {
+      "platform": "github",
+      "endpoint": "https://api.github.com/",
+      "repositories": ["mitchross/talos-argocd-proxmox"],
+      "onboarding": false,
+      "requireConfig": "required",
+      "gitAuthor": "Renovate Bot <renovate@vanillax.me>",
+      "binarySource": "install",
+      "persistRepoData": false
+    }
