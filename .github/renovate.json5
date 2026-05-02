@@ -171,67 +171,65 @@
       allowedVersions: '/^\\d+\\.\\d+\\.\\d+$/',
     },
     {
-      // Renovate forbids combining matchUpdateTypes with allowedVersions or
-      // versioning in the same packageRule (they're orthogonal scoping
-      // axes). Split into two rules: one defines the candidate-version
-      // stream for the package; the other says how to behave on minor/patch
-      // updates within that stream.
-      description: 'radar-ng images (in-cluster registry): only consider semver vX.Y.Z tags. Build flow lives in radar-ng/.gitea/workflows/build-*.yml — every push to master auto-bumps patch (next semver computed by reading the registry), pushes the image, Renovate sees it within an hour and PRs the bump here. Excludes :latest, :git-<sha>, and :buildcache from candidate set so Renovate never proposes downgrading a pinned :v1.0.x to a floating tag.',
-      matchDatasources: ['docker'],
-      matchPackageNames: [
-        'registry.vanillax.me/radar-ng-tile-server',
-        'registry.vanillax.me/radar-ng-ingest-mrms',
-        'registry.vanillax.me/radar-ng-ingest-hrrr',
-        'registry.vanillax.me/radar-ng-ingest-lightning',
-        'registry.vanillax.me/radar-ng-ingest-tropical',
-        'registry.vanillax.me/radar-ng-nowcast',
-        'registry.vanillax.me/radar-ng-basemap',
-      ],
+      // Gitea registry caps tag pagination at n=1000 but Renovate's docker
+      // datasource hardcodes ?n=10000 — every lookup hits PAGINATION_NUMBER_INVALID
+      // and returns no-result. Route registry.vanillax.me images through a
+      // customDatasource (defined below) that asks for n=1000 instead. The
+      // kubernetes manager still extracts the deps from the YAML; the
+      // packageRule below switches the datasource at lookup time isn't
+      // possible (datasource isn't overridable in packageRules), so a
+      // customManager picks them up under custom.gitea-vanillax and the
+      // companion `enabled: false` rule mutes the kubernetes-manager copy.
+      description: 'in-cluster registry images: only consider semver vX.Y.Z tags. Build flows in each repo (radar-ng/.gitea/workflows, news-reader/.gitea/workflows, etc.) auto-bump patch on every master/main push and tag the registry; Renovate sees it within an hour and PRs the bump here. Excludes :latest, :git-<sha>, :buildcache.',
+      matchDatasources: ['custom.gitea-vanillax'],
       versioning: 'semver-coerced',
       allowedVersions: '/^v\\d+\\.\\d+\\.\\d+$/',
     },
     {
-      description: 'radar-ng images: auto-merge minor+patch within the v\\d+.\\d+.\\d+ stream constrained above.',
-      matchDatasources: ['docker'],
-      matchPackageNames: [
-        'registry.vanillax.me/radar-ng-tile-server',
-        'registry.vanillax.me/radar-ng-ingest-mrms',
-        'registry.vanillax.me/radar-ng-ingest-hrrr',
-        'registry.vanillax.me/radar-ng-ingest-lightning',
-        'registry.vanillax.me/radar-ng-ingest-tropical',
-        'registry.vanillax.me/radar-ng-nowcast',
-        'registry.vanillax.me/radar-ng-basemap',
-      ],
+      description: 'in-cluster registry images: auto-merge minor+patch within the v\\d+.\\d+.\\d+ stream.',
+      matchDatasources: ['custom.gitea-vanillax'],
       matchUpdateTypes: ['patch', 'minor'],
       automerge: true,
       automergeType: 'branch',
     },
     {
-      description: 'news-reader + news-reader-temporal-worker images (in-cluster registry): only consider semver vX.Y.Z tags. Build flows live in news-reader/.gitea/workflows/build.yml and news-reader-temporal-worker/.gitea/workflows/build.yml (both Gitea Actions, both run on the in-cluster act-runner so they can reach registry.vanillax.me — GitHub-hosted runners cannot). Every push to main auto-bumps patch (next semver computed by reading the registry), pushes the image, Renovate sees it within an hour and PRs the bump here. Excludes :latest and :buildcache from the candidate set.',
-      matchDatasources: ['docker'],
-      matchPackageNames: [
-        'registry.vanillax.me/news-reader',
-        'registry.vanillax.me/news-reader-temporal-worker',
-      ],
-      versioning: 'semver-coerced',
-      allowedVersions: '/^v\\d+\\.\\d+\\.\\d+$/',
-    },
-    {
-      description: 'news-reader + news-reader-temporal-worker images: auto-merge minor+patch within the v\\d+.\\d+.\\d+ stream.',
-      matchDatasources: ['docker'],
-      matchPackageNames: [
-        'registry.vanillax.me/news-reader',
-        'registry.vanillax.me/news-reader-temporal-worker',
-      ],
-      matchUpdateTypes: ['patch', 'minor'],
-      automerge: true,
-      automergeType: 'branch',
+      description: 'Mute the kubernetes-manager copy of registry.vanillax.me deps so we only get one PR per bump (the customManager + custom.gitea-vanillax datasource defined below is the canonical path).',
+      matchManagers: ['kubernetes'],
+      matchPackageNames: ['/^registry\\.vanillax\\.me//'],
+      enabled: false,
     },
   ],
   ignorePaths: [
     '**/charts/**',
   ],
+  customDatasources: {
+    'gitea-vanillax': {
+      // Gitea container registry caps tag pagination at n=1000 (Renovate's
+      // built-in docker datasource asks for n=10000 → PAGINATION_NUMBER_INVALID).
+      // Hit n=1000 directly; Renovate walks the Link: rel=next header for the
+      // rare case a single image has >1000 tags.
+      defaultRegistryUrlTemplate: 'https://registry.vanillax.me/v2/{{packageName}}/tags/list?n=1000',
+      format: 'json',
+      // Gitea returns {"name": "...", "tags": ["v1", "v2", ...]}.
+      // Renovate's customDatasource expects {"releases": [{"version": "..."}]}.
+      transformTemplates: [
+        '{ "releases": tags.{ "version": $ } }',
+      ],
+    },
+  },
   customManagers: [
+    {
+      description: 'in-cluster registry (registry.vanillax.me) images — route through custom.gitea-vanillax to bypass Gitea/Renovate pagination mismatch (n=1000 vs n=10000).',
+      customType: 'regex',
+      managerFilePatterns: [
+        '/^my-apps/.+\\.yaml$/',
+      ],
+      matchStrings: [
+        'image:\\s*(?<depName>registry\\.vanillax\\.me/[\\w._-]+):(?<currentValue>v[\\w.-]+)',
+      ],
+      datasourceTemplate: 'custom.gitea-vanillax',
+      versioningTemplate: 'semver-coerced',
+    },
     {
       description: 'Omni cluster template - Talos version',
       customType: 'regex',
