@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "claude-tempo": {
+      "command": "claude-tempo-server"
+    }
+  }
+}
