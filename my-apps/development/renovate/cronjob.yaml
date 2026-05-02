@@ -1,0 +1,86 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: renovate
+  namespace: renovate
+  labels:
+    app.kubernetes.io/name: renovate
+spec:
+  # Top of every hour. renovate.json5 caps prHourlyLimit: 3 so this respects
+  # GitHub rate limits even on first run.
+  schedule: "0 * * * *"
+  timeZone: "Etc/UTC"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 86400
+      activeDeadlineSeconds: 3600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: renovate
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 12021
+            runAsGroup: 0
+            fsGroup: 0
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: renovate
+              image: ghcr.io/renovatebot/renovate:43.160.5
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: LOG_LEVEL
+                  value: info
+                - name: RENOVATE_CONFIG_FILE
+                  value: /config/config.json
+                - name: RENOVATE_BASE_DIR
+                  value: /tmp/renovate
+                - name: RENOVATE_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: renovate-secrets
+                      key: RENOVATE_TOKEN
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop: ["ALL"]
+                seccompProfile:
+                  type: RuntimeDefault
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 512Mi
+                limits:
+                  cpu: "2"
+                  memory: 2Gi
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+                  readOnly: true
+                - name: workdir
+                  mountPath: /tmp
+          volumes:
+            - name: config
+              configMap:
+                name: renovate-config
+            - name: workdir
+              emptyDir:
+                sizeLimit: 8Gi
+          # Don't take cycles from GPU inference nodes
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: gpu-worker
+                        operator: DoesNotExist
