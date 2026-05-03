@@ -1,0 +1,92 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgres-backups-lifecycle-apply
+  namespace: rustfs-lifecycle
+  annotations:
+    # ArgoCD-hook so re-applies on every Sync without "field is immutable"
+    # errors when the ConfigMap content changes. PUT bucket-lifecycle is
+    # idempotent so re-running on every sync is safe.
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  ttlSecondsAfterFinished: 86400
+  backoffLimit: 3
+  # Bound the hook's wall-clock so a stuck aws call (RustFS down, network
+  # blackhole, missing creds) cannot wedge the Application's sync. 5 min is
+  # generous for a single PUT/GET round-trip.
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels:
+        app: postgres-backups-lifecycle
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: aws-cli
+          # renovate: datasource=docker depName=amazon/aws-cli
+          image: amazon/aws-cli:2.18.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: rustfs-admin-credentials
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: rustfs-admin-credentials
+                  key: AWS_SECRET_ACCESS_KEY
+            # Region is required by SigV4 even though RustFS ignores it.
+            - name: AWS_DEFAULT_REGION
+              value: us-east-1
+            # Skip the IMDS lookup attempt — we're not on EC2 and the probe
+            # adds latency / spurious "could not connect" log noise.
+            - name: AWS_EC2_METADATA_DISABLED
+              value: "true"
+            - name: HOME
+              value: /tmp
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              echo "=== Applying lifecycle to s3://postgres-backups ==="
+              aws --endpoint-url http://192.168.10.133:30293 \
+                s3api put-bucket-lifecycle-configuration \
+                --bucket postgres-backups \
+                --lifecycle-configuration file:///lifecycle/lifecycle.json
+              echo "=== Verifying ==="
+              aws --endpoint-url http://192.168.10.133:30293 \
+                s3api get-bucket-lifecycle-configuration \
+                --bucket postgres-backups
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+          volumeMounts:
+            - name: lifecycle
+              mountPath: /lifecycle
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: lifecycle
+          configMap:
+            name: postgres-backups-lifecycle
+        - name: tmp
+          emptyDir: {}
