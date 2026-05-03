@@ -20,10 +20,13 @@ prometheus:
     storageSpec:
       volumeClaimTemplate:
         metadata:
-          annotations:
-            # Longhorn backup settings - Important tier for monitoring data
-            longhorn.io/recurring-job-source: enabled
-            longhorn.io/recurring-job-group: important
+          # backup: daily enrolls this PVC in the active Kyverno+VolSync+Kopia
+          # backup pipeline (see infrastructure/controllers/kyverno/CLAUDE.md).
+          # The dead longhorn.io/recurring-job-* annotations were removed
+          # 2026-05-03 -- they referenced the old Longhorn-direct backup system
+          # that was retired when the cluster moved to NFS+Kopia.
+          labels:
+            backup: "daily"
         spec:
           storageClassName: longhorn
           accessModes:
@@ -150,10 +153,10 @@ alertmanager:
     storage:
       volumeClaimTemplate:
         metadata:
-          annotations:
-            # Longhorn backup settings - Important tier for alerting data
-            longhorn.io/recurring-job-source: enabled
-            longhorn.io/recurring-job-group: important
+          # backup: daily enrolls in Kyverno+VolSync+Kopia pipeline.
+          # Dead longhorn.io/recurring-job-* annotations removed 2026-05-03.
+          labels:
+            backup: "daily"
         spec:
           storageClassName: longhorn
           accessModes:
@@ -192,10 +195,10 @@ grafana:
     size: 10Gi
     accessModes:
       - ReadWriteOnce
-    annotations:
-      # Longhorn backup settings - Important tier for dashboard data
-      longhorn.io/recurring-job-source: enabled
-      longhorn.io/recurring-job-group: important
+    # backup: daily enrolls in Kyverno+VolSync+Kopia pipeline.
+    # Dead longhorn.io/recurring-job-* annotations removed 2026-05-03.
+    labels:
+      backup: "daily"
   # Resource allocation
   resources:
     requests:
