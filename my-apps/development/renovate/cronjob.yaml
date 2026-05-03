@@ -37,8 +37,15 @@ spec:
               image: ghcr.io/renovatebot/renovate:43.160.5
               imagePullPolicy: IfNotPresent
               env:
+                # Debug logging temporarily to diagnose why customManager
+                # `registry.vanillax.me/*` only extracts 1 of 6 expected
+                # matches (gitea-actions/deployment.yaml is picked up;
+                # radar-ng + news-reader-temporal-worker manifests are not).
+                # Regex tested-clean locally with Python re — Renovate
+                # extracts only act_runner-nogpu. Revert to `info` once
+                # the misextraction is understood + fixed.
                 - name: LOG_LEVEL
-                  value: info
+                  value: debug
                 - name: RENOVATE_CONFIG_FILE
                   value: /config/config.json
                 - name: RENOVATE_BASE_DIR
