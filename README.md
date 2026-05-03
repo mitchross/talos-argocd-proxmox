@@ -286,6 +286,7 @@ All PVC backups use **Kopia on NFS** via VolSync, automated by Kyverno policies.
 - **Backend**: Kopia filesystem repository on TrueNAS NFS (`192.168.10.133:/mnt/BigTank/k8s/volsync-kopia-nfs`)
 - **Encryption**: Kopia password from 1Password (`rustfs` item)
 - **Restore**: Automatic on PVC recreation - PVC Plumber checks for existing backups, Kyverno injects `dataSourceRef`
+- **Database backups**: CNPG uses Barman to RustFS S3; abandoned database backup prefixes are cleaned by the GitOps-managed `rustfs-lifecycle` controller
 - **Details**: See [docs/pvc-plumber-full-flow.md](docs/pvc-plumber-full-flow.md), [docs/backup-restore.md](docs/backup-restore.md), and [docs/cnpg-disaster-recovery.md](docs/cnpg-disaster-recovery.md)
 - **AI-guided database recovery**: Copy/paste prompts are in [LLM Recovery Prompt Templates](docs/cnpg-disaster-recovery.md#llm-recovery-prompt-templates)
 
@@ -394,7 +395,7 @@ Network
 
 | Issue | Steps |
 |-------|-------|
-| **ArgoCD not syncing** | `kubectl get applicationsets -n argocd` / `kubectl describe applicationset infrastructure -n argocd` / Force refresh: delete and re-apply `root.yaml` |
+| **ArgoCD not syncing** | `kubectl get applicationsets -n argocd` / `kubectl describe applicationset infrastructure -n argocd` / Check for stale operations before reverting Git: `kubectl get application argocd -n argocd -o yaml` |
 | **Cilium issues** | `cilium status` / `kubectl logs -n kube-system -l k8s-app=cilium` / `cilium connectivity test` |
 | **Storage issues** | `kubectl get pvc -A` / `kubectl get pods -n longhorn-system` |
 | **Secrets not syncing** | `kubectl get externalsecret -A` / `kubectl get pods -n 1passwordconnect` / `kubectl describe clustersecretstore 1password` |
@@ -416,6 +417,7 @@ kubectl delete applications --all -n argocd
 - **[docs/pvc-plumber-full-flow.md](docs/pvc-plumber-full-flow.md)** - Complete PVC backup/restore flow diagram
 - **[docs/backup-restore.md](docs/backup-restore.md)** - Backup/restore workflow
 - **[docs/argocd.md](docs/argocd.md)** - ArgoCD GitOps patterns
+- **[docs/argocd-entrypoints.md](docs/argocd-entrypoints.md)** - Root entrypoints, waves, and AppSet/custom-entrypoint decisions
 - **[docs/network-topology.md](docs/network-topology.md)** - Network architecture
 - **[docs/network-policy.md](docs/network-policy.md)** - Cilium network policies
 - **[omni/](omni/)** - Omni deployment configs, machine classes, and cluster templates

@@ -39,6 +39,14 @@ do not self-apply; after editing it, re-apply it explicitly or run the bootstrap
 script. This avoids a circular ownership relationship between the root app and
 the self-managed `argocd` app.
 
+After bootstrap, Argo CD manages the child entrypoint tree, including the
+`argocd` child Application that owns the Helm values in
+`infrastructure/controllers/argocd/values.yaml`. If a global Argo setting
+appears not to work after a push, first verify the live `argocd` child app has
+actually synced those values before reverting Git. A stale operation on the
+self-managed `argocd` app can leave `argocd-cm` on the previous revision even
+while downstream apps continue retrying.
+
 ### ApplicationSets
 We use four ApplicationSets to categorize workloads:
 1. **Infrastructure** (`apps/appsets/infrastructure-appset.yaml`): Core system components (Cert-Manager, GPU operators, Gateway, etc.).
@@ -496,6 +504,49 @@ patches:
 - **Standalone Jobs**: `my-apps/development/posthog/core/jobs.yaml`
 - **Helm Job patches**: `my-apps/development/temporal/kustomization.yaml`
 - **PostSync Job**: `my-apps/ai/open-webui/function-loader-job.yaml`
+- **Idempotent controller Job**: `infrastructure/storage/rustfs-lifecycle/postgres-backups-lifecycle-job.yaml`
+
+## Operational Checks
+
+### When Git Looks Right but Argo Behaves Like Old Config
+
+Before undoing a repo cleanup because an app still fails, check whether the
+self-managed `argocd` Application has applied the current revision:
+
+```bash
+kubectl get application argocd -n argocd \
+  -o jsonpath='{.status.sync.revision}{"\n"}{.status.operationState.phase}{"\n"}{.status.operationState.message}{"\n"}{.status.operationState.operation.sync.revision}{"\n"}'
+
+kubectl get configmap argocd-cm -n argocd -o yaml
+```
+
+This matters for global `resource.customizations.ignoreDifferences.*` rules.
+For example, restored PVCs depend on the global PVC ignore rules in
+`argocd-cm`; if the `argocd` app is stuck before applying `values.yaml`, child
+apps may still try to remove immutable PVC restore fields.
+
+### Clearing a Stale Application Operation
+
+Only clear an operation after confirming it references a stale or nonexistent
+hook/resource and the desired Git state is otherwise correct:
+
+```bash
+kubectl patch application argocd -n argocd \
+  --type=json \
+  -p='[{"op":"remove","path":"/operation"}]'
+```
+
+Then watch the self-managed app and the affected child app:
+
+```bash
+kubectl get application argocd root <affected-app> -n argocd -w
+```
+
+The 2026-05-03 Argo cleanup hit this exact case: `argocd` was waiting on an old
+`argocd-redis-secret-init` hook that no longer existed, so the new global PVC
+ignore rules had not landed in `argocd-cm`. Clearing the stale operation let
+Argo apply the config; after that, `my-apps-project-nomad` synced without
+putting per-AppSet PVC ignores back.
 
 ## Known ArgoCD Issues
 
