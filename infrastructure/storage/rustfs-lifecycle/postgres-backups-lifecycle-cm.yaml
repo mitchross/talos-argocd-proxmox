@@ -22,6 +22,12 @@ data:
           "Status": "Enabled",
           "Filter": { "Prefix": "cnpg/gitea/gitea-database-v1/" },
           "Expiration": { "Days": 60 }
+        },
+        {
+          "ID": "expire-abandoned-temporal-v1-2026-05-03",
+          "Status": "Enabled",
+          "Filter": { "Prefix": "cnpg/temporal/temporal-database-v1/" },
+          "Expiration": { "Days": 60 }
         }
       ]
     }

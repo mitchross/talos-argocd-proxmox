@@ -33,8 +33,17 @@ spec:
     enablePodMonitor: true
   backup:
     barmanObjectStore:
-      # Write target. Clean-slate baseline after 2026-04-19 RustFS wipe.
-      serverName: temporal-database-v1
+      # Write target. v2 lineage opened 2026-05-03 after the WAL-PVC-full
+      # deadlock incident. The original v1 prefix on RustFS contains
+      # 4252 WALs + 292 base backups from 2026-04-19 to 2026-05-01 21:13;
+      # when the cluster was recreated on 2026-05-01 21:54 (bootstrap=initdb,
+      # same serverName=v1), barman-cloud-check-wal-archive refused to
+      # write into the non-empty prefix ("Expected empty archive"), which
+      # cascaded into the WAL-volume-full crash loop. Bumping to v2 lets
+      # archiving start fresh against an empty prefix. The old v1 prefix
+      # is now an abandoned lineage; expiry rule lives in
+      # infrastructure/storage/rustfs-lifecycle/postgres-backups-lifecycle-cm.yaml.
+      serverName: temporal-database-v2
       destinationPath: s3://postgres-backups/cnpg/temporal
       endpointURL: http://192.168.10.133:30293
       s3Credentials:

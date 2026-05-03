@@ -6,8 +6,12 @@ spec:
   bootstrap:
     recovery:
       source: temporal-recovery-source
-      recoveryTarget:
-        targetTime: "2026-04-16T23:59:59Z"
+      # No recoveryTarget -> restore to latest available WAL.
+      # Prior dated targetTime "2026-04-16T23:59:59Z" was a DR landmine
+      # (predates earliest archived WAL on -v1) and was removed 2026-05-03
+      # alongside the v1->v2 lineage bump. If a future PITR is needed,
+      # set targetTime to a value that is verifiably present in the
+      # externalClusters serverName's wals/ prefix on RustFS.
   externalClusters:
     - name: temporal-recovery-source
       barmanObjectStore:
