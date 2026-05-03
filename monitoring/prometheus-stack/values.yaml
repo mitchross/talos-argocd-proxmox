@@ -53,6 +53,23 @@ prometheus:
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
     # Additional scrape configs for custom monitoring
+    #
+    # Control plane scraping (etcd / kube-controller-manager / kube-scheduler)
+    # uses kubernetes_sd_configs role:node + relabeling to discover CP nodes
+    # by label rather than hardcoding IPs. This is intentional: the cluster
+    # is regularly destroyed/recreated via Omni machine classes, so any
+    # static IP list (chart's `kubeEtcd.endpoints:` field, DHCP reservations,
+    # static machineconfig IPs) would break on every rebuild.
+    #
+    # Requires the matching Talos machineconfig patch in
+    # omni/cluster-template/cluster-template.yaml control-plane-performance:
+    #   etcd.listen-metrics-urls: http://0.0.0.0:2381
+    #   controllerManager.bind-address: 0.0.0.0   (port 10257)
+    #   scheduler.bind-address: 0.0.0.0           (port 10259)
+    #
+    # Job names match what the chart's default PrometheusRules and Grafana
+    # dashboards expect, so KubeControllerManagerDown / KubeSchedulerDown /
+    # etcd* alerts and the standard etcd dashboard "just work".
     additionalScrapeConfigs:
       - job_name: 'epever-solar'
         metrics_path: /metrics
@@ -63,6 +80,54 @@ prometheus:
             labels:
               instance: 'rpi4-solar'
               location: 'home'
+      - job_name: 'kube-etcd'
+        scheme: http
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          # Keep only control-plane nodes. Talos applies the standard
+          # node-role.kubernetes.io/control-plane label automatically; using
+          # `labelpresent` is more robust than matching the (empty-string) value.
+          - source_labels: [__meta_kubernetes_node_labelpresent_node_role_kubernetes_io_control_plane]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_node_address_InternalIP]
+            target_label: __address__
+            replacement: ${1}:2381
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: instance
+      - job_name: 'kube-controller-manager'
+        scheme: https
+        tls_config:
+          insecure_skip_verify: true
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_node_labelpresent_node_role_kubernetes_io_control_plane]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_node_address_InternalIP]
+            target_label: __address__
+            replacement: ${1}:10257
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: instance
+      - job_name: 'kube-scheduler'
+        scheme: https
+        tls_config:
+          insecure_skip_verify: true
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_node_labelpresent_node_role_kubernetes_io_control_plane]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_node_address_InternalIP]
+            target_label: __address__
+            replacement: ${1}:10259
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: instance
     # Remote write configuration (for external storage if needed)
     remoteWrite: []
     # Alerting configuration
