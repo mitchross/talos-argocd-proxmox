@@ -61,26 +61,9 @@ spec:
       # CNPG ignores spec.bootstrap on existing Clusters semantically (it's
       # creation-time only), so post-recovery drift between git and live is
       # cosmetic — the extra sync churn is worth it for correctness.
+      # ExternalSecret and PVC restore diff noise is ignored globally.
       ignoreDifferences:
       - group: postgresql.cnpg.io
         kind: Cluster
         jsonPointers:
         - /metadata/generation
-      - group: external-secrets.io
-        kind: ExternalSecret
-        jqPathExpressions:
-        - .metadata.generation
-        - .metadata.finalizers
-        - .spec.data[].remoteRef.conversionStrategy
-        - .spec.data[].remoteRef.decodingStrategy
-        - .spec.data[].remoteRef.metadataPolicy
-        - .spec.data[].remoteRef.nullBytePolicy
-        - .spec.target.deletionPolicy
-      # PVC fields that are immutable after creation
-      - group: ""
-        kind: PersistentVolumeClaim
-        jqPathExpressions:
-        - .spec.dataSourceRef
-        - .spec.dataSource
-        - .spec.volumeName
-        - .spec.resources.requests.storage

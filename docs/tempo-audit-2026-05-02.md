@@ -76,14 +76,14 @@ Hard rules enforced: no `apply/delete/patch/edit/scale`, no `argocd app sync/ref
 | **Why** | Operators reaching for either tool today get errors or silent zero-effect. Companion `docs/plans/2026-04-19-followup-notes.md:31-40` instructs the same wrong build-push paths. |
 | **Fix** | (a) Restore Dockerfiles + `app/` subdirs in repo, OR delete the script and document where the build pipeline actually lives. (b) Delete OR rewrite to trigger VolSync `ReplicationSource` immediate runs (Kyverno-generated names follow `<pvc>-backup`). |
 
-#### H5. `my-apps` AppSet exclude pattern doesn't match
+#### H5. `my-apps` AppSet exclude pattern doesn't match (resolved)
 
 | | |
 |---|---|
-| **Evidence** | `infrastructure/controllers/argocd/apps/my-apps-appset.yaml:14-16` — first generator `path: my-apps/*/*` matches `my-apps/home/project-nomad`. Exclude uses `path: my-apps/home/project-nomad/*` (children glob), which never matches the directory itself. |
-| **Why** | An unintended `my-apps-project-nomad` Application is being created. Project Nomad is meant to be deployed via its own internal logic. |
-| **Verify** | `kubectl get app my-apps-project-nomad -n argocd`. |
-| **Fix** | Change line 15 to `path: my-apps/home/project-nomad` (no trailing `/*`). |
+| **Evidence** | The old AppSet used `path: my-apps/home/project-nomad/*`, which never excluded the parent app directory matched by `path: my-apps/*/*`. |
+| **Resolution** | `project-nomad` is now intentionally managed by `infrastructure/controllers/argocd/apps/appsets/my-apps-appset.yaml` as one bundled app at `my-apps/home/project-nomad`. The bad exclude was removed. |
+| **Verify** | `kubectl get app my-apps-project-nomad -n argocd`; the app should exist and point to `my-apps/home/project-nomad`. |
+| **Follow-up** | Do not add child `kustomization.yaml` files under `my-apps/home/project-nomad/*` unless you also change the generator strategy. |
 
 ---
 

@@ -11,9 +11,9 @@ spec:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
       revision: main
       directories:
+      # project-nomad is intentionally one bundled app at my-apps/home/project-nomad.
+      # Its child folders are resources, not generated apps.
       - path: my-apps/*/*
-      - path: my-apps/home/project-nomad/*
-        exclude: true
   template:
     metadata:
       name: 'my-apps-{{path.basename}}'
@@ -47,23 +47,7 @@ spec:
             factor: 2
             maxDuration: 10m
       ignoreDifferences:
-      # NOTE: .status ignored globally by ArgoCD 3.0+ — only non-status fields listed
-      - group: gateway.networking.k8s.io
-        kind: HTTPRoute
-        jqPathExpressions:
-        - .spec.rules[].backendRefs[].group
-        - .spec.rules[].backendRefs[].kind
-        - .spec.rules[].backendRefs[].weight
-      - group: external-secrets.io
-        kind: ExternalSecret
-        jqPathExpressions:
-        - .metadata.generation
-        - .metadata.finalizers
-        - .spec.data[].remoteRef.conversionStrategy
-        - .spec.data[].remoteRef.decodingStrategy
-        - .spec.data[].remoteRef.metadataPolicy
-        - .spec.data[].remoteRef.nullBytePolicy
-        - .spec.target.deletionPolicy
+      # HTTPRoute, ExternalSecret, and PVC restore diff noise is ignored globally.
       # imagePullPolicy may differ from Git due to previous Kyverno admission mutation
       - group: apps
         kind: StatefulSet
@@ -72,14 +56,6 @@ spec:
         - .spec.template.spec.initContainers[].imagePullPolicy
         - .spec.volumeClaimTemplates[].apiVersion
         - .spec.volumeClaimTemplates[].kind
-      # PVC fields that are immutable after creation - needed for Volume Populator
-      - group: ""
-        kind: PersistentVolumeClaim
-        jqPathExpressions:
-        - .spec.dataSourceRef
-        - .spec.dataSource
-        - .spec.volumeName
-        - .spec.resources.requests.storage
 
       info:
       - name: 'Description'

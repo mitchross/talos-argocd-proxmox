@@ -2,23 +2,27 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - projects.yaml
-  # Critical applications with specific sync waves to prevent race conditions
-  # Wave 0: Foundation components (networking + secrets infrastructure)
-  - argocd.yaml            # Wave 0 - ArgoCD self-management (Helm chart + config)
-  - cilium-app.yaml        # Wave 0 - Networking foundation
-  - 1passwordconnect.yaml  # Wave 0 - Secret backend (required by External Secrets)
-  - external-secrets.yaml  # Wave 0 - External Secrets CRDs (required by Longhorn)
-  - longhorn-app.yaml      # Wave 1 - Storage foundation
-  - snapshot-controller-app.yaml # Wave 1 - VolumeSnapshot controller + CRDs
-  - volsync-app.yaml       # Wave 1 - PVC backup and replication (Kopia + NFS)
-  - pvc-plumber-app.yaml   # Wave 2 - Backup existence checker for restore
-  - kyverno-app.yaml       # Wave 3 - Policy engine (must be healthy before apps create PVCs)
-  - cnpg-barman-plugin-app.yaml # Wave 3 - Barman Cloud Plugin (before CNPG Clusters in Wave 4)
-  - keda-app.yaml          # Wave 4 - Event-driven autoscaler
-  - temporal-worker-controller-app.yaml # Wave 4 - Worker Versioning for Temporal workers
-  # ApplicationSets for automatic discovery
-  - infrastructure-appset.yaml  # Wave 4
-  - database-appset.yaml        # Wave 4 - Database operators/instances (selfHeal: false for DR)
-  - opentelemetry-operator-app.yaml # Wave 5 - OTEL (needs cert-manager from Wave 4)
-  - monitoring-appset.yaml      # Wave 5
-  - my-apps-appset.yaml         # Wave 6
+  # Bootstrap entrypoints: Argo CD itself plus cluster services required by later waves.
+  - bootstrap/argocd.yaml
+  - bootstrap/cilium-app.yaml
+  - bootstrap/1passwordconnect.yaml
+  - bootstrap/external-secrets.yaml
+
+  # Core dependencies: storage, restore, and policy services required by later waves.
+  - core-dependencies/longhorn-app.yaml
+  - core-dependencies/snapshot-controller-app.yaml
+  - core-dependencies/volsync-app.yaml
+  - core-dependencies/pvc-plumber-app.yaml
+  - core-dependencies/kyverno-app.yaml
+
+  # Custom entrypoints: standalone apps kept out of AppSets for ordering or render reasons.
+  - custom-entrypoints/cnpg-barman-plugin-app.yaml
+  - custom-entrypoints/keda-app.yaml
+  - custom-entrypoints/temporal-worker-controller-app.yaml
+  - custom-entrypoints/opentelemetry-operator-app.yaml
+
+  # ApplicationSet entrypoints: broad discovery after core dependencies are in place.
+  - appsets/infrastructure-appset.yaml
+  - appsets/database-appset.yaml
+  - appsets/monitoring-appset.yaml
+  - appsets/my-apps-appset.yaml

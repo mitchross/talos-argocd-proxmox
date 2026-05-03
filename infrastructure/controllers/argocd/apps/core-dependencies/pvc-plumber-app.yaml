@@ -32,15 +32,3 @@ spec:
         duration: 10s
         factor: 2
         maxDuration: 5m
-  # NOTE: .status ignored globally by ArgoCD 3.0+
-  ignoreDifferences:
-  - group: external-secrets.io
-    kind: ExternalSecret
-    jqPathExpressions:
-    - .metadata.generation
-    - .metadata.finalizers
-    - .spec.data[].remoteRef.conversionStrategy
-    - .spec.data[].remoteRef.decodingStrategy
-    - .spec.data[].remoteRef.metadataPolicy
-    - .spec.data[].remoteRef.nullBytePolicy
-    - .spec.target.deletionPolicy

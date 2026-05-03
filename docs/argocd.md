@@ -33,16 +33,32 @@ The entry point is `infrastructure/controllers/argocd/root.yaml`. This applicati
 2. Deploys the `ApplicationSet` definitions found there.
 3. Is the *only* thing applied manually (during bootstrap).
 
+`root.yaml` is intentionally **not** listed in
+`infrastructure/controllers/argocd/kustomization.yaml`. Changes to `root.yaml`
+do not self-apply; after editing it, re-apply it explicitly or run the bootstrap
+script. This avoids a circular ownership relationship between the root app and
+the self-managed `argocd` app.
+
 ### ApplicationSets
 We use four ApplicationSets to categorize workloads:
-1. **Infrastructure** (`infrastructure-appset.yaml`): Core system components (Cert-Manager, GPU operators, Gateway, etc.).
-2. **Database** (`database-appset.yaml`): Database operators and instances via glob discovery (`infrastructure/database/*/*`). Uses `selfHeal: false` to preserve `skip-reconcile` annotations during DR.
-3. **Monitoring** (`monitoring-appset.yaml`): Observability stack (Prometheus, Grafana).
-4. **My Apps** (`my-apps-appset.yaml`): User workloads.
+1. **Infrastructure** (`apps/appsets/infrastructure-appset.yaml`): Core system components (Cert-Manager, GPU operators, Gateway, etc.).
+2. **Database** (`apps/appsets/database-appset.yaml`): Database operators and instances via glob discovery (`infrastructure/database/*/*`). Uses `selfHeal: false` to preserve `skip-reconcile` annotations during DR.
+3. **Monitoring** (`apps/appsets/monitoring-appset.yaml`): Observability stack (Prometheus, Grafana).
+4. **My Apps** (`apps/appsets/my-apps-appset.yaml`): User workloads. `project-nomad` is intentionally generated as one bundled app at `my-apps/home/project-nomad`.
+
+For the full entrypoint list, see [argocd-entrypoints.md](argocd-entrypoints.md).
+
+### AppProjects
+
+The `infrastructure`, `monitoring`, and `my-apps` AppProjects are intentionally
+permissive in this single-operator homelab. They are used for UI grouping and
+policy intent, not hard multi-tenant isolation. Tighten `destinations` and
+`clusterResourceWhitelist` before allowing untrusted users or external
+automation to write application manifests.
 
 ### Standalone Applications
 
-Some components need **guaranteed ordering** that ApplicationSets cannot provide (AppSets report "healthy" immediately on creation). These are deployed as standalone `Application` resources with explicit sync waves:
+Some components need **guaranteed ordering** that ApplicationSets cannot provide (AppSets report "healthy" immediately on creation). These are deployed as standalone `Application` resources with explicit sync waves under `apps/bootstrap/`, `apps/core-dependencies/`, and `apps/custom-entrypoints/`:
 
 | App | Wave | Why standalone? |
 |-----|------|-----------------|
@@ -55,6 +71,9 @@ Some components need **guaranteed ordering** that ApplicationSets cannot provide
 | `volsync` | 1 | Backup/restore engine |
 | `pvc-plumber` | 2 | Must be healthy before Kyverno calls its API |
 | `kyverno` | 3 | Webhooks must register before app PVCs are created |
+| `cnpg-barman-plugin` | 3 | Must exist before CNPG Cluster manifests reference the Barman plugin |
+| `keda` | 4 | Standalone due to previous ApplicationSet generator/render-cache loop |
+| `temporal-worker-controller` | 4 | Standalone for the same AppSet generator/render-cache reason as KEDA |
 | `opentelemetry-operator` | 5 | Needs cert-manager (Wave 4) for webhook certificates |
 
 ## Sync Waves & Dependency Management
@@ -80,8 +99,8 @@ To solve the "chicken-and-egg" problem of bootstrapping a cluster (e.g., needing
 | **0** | **Foundation** | `cilium`, `argocd`, `1password-connect`, `external-secrets`, `projects` | **Networking & Secrets**. The absolute minimum required for other pods to start and pull credentials. |
 | **1** | **Storage** | `longhorn`, `snapshot-controller`, `volsync` | **Persistence**. Depends on Wave 0 for Pod-to-Pod communication and secrets. |
 | **2** | **PVC Plumber** | `pvc-plumber` | **Backup checker**. Must be running before Kyverno policies in Wave 3 call its API. |
-| **3** | **Kyverno** | `kyverno` | **Policy engine**. Standalone Application (not in AppSet) so webhooks register before any app PVCs are created. |
-| **4** | **Infrastructure** | `cert-manager`, `gpu-operator`, `gateway`, etc. | **Core Services** via Infrastructure ApplicationSet (explicit path list). |
+| **3** | **Policy + DB Backup Plugin** | `kyverno`, `cnpg-barman-plugin` | **Policy engine + Barman plugin**. Kyverno is standalone so webhooks register before app PVCs; the CNPG Barman plugin must exist before CNPG Clusters reference it. |
+| **4** | **Infrastructure** | `cert-manager`, `gpu-operator`, `gateway`, `keda`, `temporal-worker-controller`, etc. | **Core Services** via Infrastructure ApplicationSet plus custom standalone controller entrypoints. |
 | **4** | **Database** | `cloudnative-pg/*/*` | **Databases** via Database ApplicationSet (glob discovery). Uses `selfHeal: false` for DR. |
 | **5** | **OTEL + Monitoring** | `opentelemetry-operator`, `prometheus-stack`, `loki-stack` | **Observability**. OTEL is standalone (needs cert-manager from Wave 4). |
 | **6** | **User** | `my-apps/*/*` | **Workloads** via My-Apps ApplicationSet (discovers `my-apps/*/*`). |
@@ -99,6 +118,16 @@ metadata:
 ```
 
 ArgoCD processes these waves sequentially. **Wave 1 will NOT start until Wave 0 is healthy.**
+
+Application-level waves and resource-level waves are separate scopes:
+
+- `infrastructure/controllers/argocd/apps/*.yaml` controls ordering between
+  child Applications and ApplicationSets.
+- `argocd.argoproj.io/sync-wave` annotations inside an application directory
+  only order resources inside that one child Application.
+- Negative resource waves, such as PostHog's namespace and ExternalSecret at
+  `-1`, are intentionally local preflight ordering. They do not make the app
+  deploy before parent wave 6.
 
 ## Health Check Customizations
 
@@ -301,14 +330,17 @@ ArgoCD 3.0 expanded status ignoring from CRD-only to **all resources** ([PR #222
 
 | Scope | Where | Use for |
 |-------|-------|---------|
-| **Global** | `values.yaml` → `resource.customizations.ignoreDifferences.*` | CRDs, resource types that always need ignoring cluster-wide |
-| **Per-AppSet** | `template.spec.ignoreDifferences` | HTTPRoute, ExternalSecret, PVC fields for all apps in that AppSet |
+| **Global** | `values.yaml` → `resource.customizations.ignoreDifferences.*` | CRDs, HTTPRoute defaults, ExternalSecret defaults, PVC restore fields, resource types that always need ignoring cluster-wide |
+| **Per-AppSet** | `template.spec.ignoreDifferences` | AppSet-specific cases only, such as CNPG Cluster generation or legacy StatefulSet mutations |
 | **Per-App** | `spec.ignoreDifferences` | Operator-specific mutations (Kyverno webhooks, OTEL collector) |
 
 ### Current ignoreDifferences Map
 
 ```
 Global (values.yaml):
+├── HTTPRoute: parentRefs normalization, backendRefs group/kind/weight
+├── ExternalSecret: .metadata.generation/finalizers, remoteRef defaults
+├── PVC: dataSourceRef, dataSource, volumeName, storage
 ├── CRDs: .metadata.generation, .spec.conversion
 ├── OpenTelemetryCollector: .metadata.generation, .metadata.annotations
 └── All resources: managedFieldsManagers (kube-controller-manager, kube-scheduler)
@@ -318,21 +350,17 @@ Kyverno App:
 ├── Webhook configs: .webhooks[].clientConfig.caBundle
 └── CRDs: .metadata.generation, .metadata.labels, .spec.conversion
 
-Infrastructure/My-Apps/Monitoring AppSets:
-├── HTTPRoute: backendRefs group/kind/weight
-├── ExternalSecret: .metadata.generation/finalizers, remoteRef defaults
-└── PVC: dataSourceRef, dataSource, volumeName, storage
+Infrastructure AppSet:
+└── Kyverno ClusterPolicy: .metadata.generation
 
 My-Apps AppSet (additional):
 └── StatefulSet: imagePullPolicy, volumeClaimTemplates apiVersion/kind
 
 Database AppSet:
-├── CNPG Cluster: .metadata.generation
-├── ExternalSecret: (same as above)
-└── PVC: (same as above)
+└── CNPG Cluster: .metadata.generation
 
-OTEL Operator App:
-└── OpenTelemetryCollector: .metadata.generation, .metadata.annotations
+OTEL Collector ignores are global because collectors can be defined outside the
+operator Application.
 ```
 
 ## Performance Tuning

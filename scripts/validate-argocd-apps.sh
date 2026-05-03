@@ -9,6 +9,20 @@ set -euo pipefail
 APPS_DIR="infrastructure/controllers/argocd/apps"
 ERRORS=0
 
+app_yaml_files() {
+  find "$APPS_DIR" -type f -name "*.yaml" | sort
+}
+
+application_files() {
+  app_yaml_files | while IFS= read -r f; do
+    grep -q "^kind: Application$" "$f" 2>/dev/null && printf '%s\n' "$f"
+  done
+}
+
+appset_files() {
+  find "$APPS_DIR" -type f -name "*-appset.yaml" | sort
+}
+
 echo "=== ArgoCD Application Validation ==="
 echo ""
 
@@ -21,19 +35,17 @@ echo "--- Check 1: Duplicate Application Names ---"
 # Extract standalone Application names
 standalone_names=()
 standalone_paths=()
-for f in "$APPS_DIR"/*-app.yaml "$APPS_DIR"/*connect.yaml "$APPS_DIR"/external-secrets.yaml "$APPS_DIR"/kyverno-app.yaml; do
-  [ -f "$f" ] || continue
+while IFS= read -r f; do
   name=$(grep -A1 "^  name:" "$f" 2>/dev/null | head -1 | sed 's/.*name: //' | tr -d "'\"" | xargs || true)
   path=$(grep "path:" "$f" 2>/dev/null | grep -v "repoURL\|targetRevision\|manifest" | head -1 | sed 's/.*path: //' | tr -d "'\"" | xargs || true)
   if [ -n "$name" ] && [ -n "$path" ]; then
     standalone_names+=("$name")
     standalone_paths+=("$path")
   fi
-done
+done < <(application_files)
 
 # Extract AppSet generator paths and their template name patterns
-for appset in "$APPS_DIR"/*-appset.yaml; do
-  [ -f "$appset" ] || continue
+while IFS= read -r appset; do
   appset_name=$(basename "$appset")
 
   # Extract paths from git directory generators
@@ -56,7 +68,7 @@ for appset in "$APPS_DIR"/*-appset.yaml; do
       fi
     done
   done < <(grep "path:" "$appset" | grep -v "repoURL\|targetRevision\|manifest\|exclude\|template" | grep "infrastructure/\|monitoring/\|my-apps/" || true)
-done
+done < <(appset_files)
 
 [ $ERRORS -eq 0 ] && echo "  OK: No duplicate Application names found"
 echo ""
@@ -68,13 +80,12 @@ echo ""
 echo "--- Check 2: Sync Wave Continuity ---"
 
 waves=()
-for f in "$APPS_DIR"/*.yaml; do
-  [ -f "$f" ] || continue
+while IFS= read -r f; do
   wave=$(grep "sync-wave:" "$f" 2>/dev/null | head -1 | sed 's/.*sync-wave: *//' | tr -d '"' | xargs || true)
   if [ -n "$wave" ]; then
     waves+=("$wave")
   fi
-done
+done < <(app_yaml_files)
 
 # Sort and deduplicate
 mapfile -t sorted_waves < <(printf '%s\n' "${waves[@]}" | sort -n | uniq)
@@ -100,20 +111,17 @@ echo "--- Check 3: All YAML files listed in kustomization.yaml ---"
 
 kustomization="$APPS_DIR/kustomization.yaml"
 if [ -f "$kustomization" ]; then
-  for f in "$APPS_DIR"/*.yaml; do
-    [ -f "$f" ] || continue
-    fname=$(basename "$f")
-    [ "$fname" = "kustomization.yaml" ] && continue
+  while IFS= read -r f; do
+    relpath="${f#"$APPS_DIR"/}"
+    [ "$relpath" = "kustomization.yaml" ] && continue
     # Skip non-Application files (Helm values, etc.)
     grep -q "kind: Application\|kind: ApplicationSet\|kind: AppProject" "$f" 2>/dev/null || continue
-    # argocd.yaml is intentionally excluded (circular dependency with root.yaml)
-    [ "$fname" = "argocd.yaml" ] && continue
-    if ! grep -q "$fname" "$kustomization" 2>/dev/null; then
-      echo "  ERROR: $fname exists but is NOT listed in kustomization.yaml"
+    if ! grep -q "$relpath" "$kustomization" 2>/dev/null; then
+      echo "  ERROR: $relpath exists but is NOT listed in kustomization.yaml"
       echo "         This file will NEVER be deployed by ArgoCD!"
       ERRORS=$((ERRORS + 1))
     fi
-  done
+  done < <(app_yaml_files)
   echo "  OK: All YAML files are listed in kustomization.yaml"
 fi
 echo ""
@@ -124,8 +132,7 @@ echo ""
 # ─────────────────────────────────────────────
 echo "--- Check 4: Internal sync-wave consistency ---"
 
-for f in "$APPS_DIR"/*-app.yaml "$APPS_DIR"/pvc-plumber-app.yaml; do
-  [ -f "$f" ] || continue
+while IFS= read -r f; do
   app_name=$(grep "name:" "$f" | head -1 | sed 's/.*name: //' | tr -d "'\"" | xargs)
   app_wave=$(grep "sync-wave:" "$f" 2>/dev/null | head -1 | sed 's/.*sync-wave: *//' | tr -d '"' | xargs || true)
   app_path=$(grep "path:" "$f" 2>/dev/null | grep -v "repoURL\|targetRevision" | head -1 | sed 's/.*path: //' | tr -d "'\"" | xargs || true)
@@ -142,7 +149,85 @@ for f in "$APPS_DIR"/*-app.yaml "$APPS_DIR"/pvc-plumber-app.yaml; do
       echo "           The Application wave controls deployment order. Namespace annotation is misleading."
     fi
   fi
-done
+done < <(application_files)
+echo ""
+
+# ─────────────────────────────────────────────
+# 5. Check bootstrap Argo CD chart matches self-managed chart
+# ─────────────────────────────────────────────
+echo "--- Check 5: Bootstrap ArgoCD chart version ---"
+
+bootstrap_script="scripts/bootstrap-argocd.sh"
+argocd_kustomization="infrastructure/controllers/argocd/kustomization.yaml"
+if [ -f "$bootstrap_script" ] && [ -f "$argocd_kustomization" ]; then
+  bootstrap_version=$(grep -A4 "helm upgrade --install argocd argo-cd" "$bootstrap_script" | grep -- "--version" | head -1 | sed 's/.*--version //' | sed 's/[\\'\''"]//g' | xargs || true)
+  gitops_version=$(grep -A5 "name: argo-cd" "$argocd_kustomization" | grep "version:" | head -1 | sed 's/.*version: //' | sed 's/#.*//' | tr -d "'\"" | xargs || true)
+
+  if [ -z "$bootstrap_version" ] || [ -z "$gitops_version" ]; then
+    echo "  ERROR: Could not determine bootstrap/self-managed ArgoCD chart versions"
+    ERRORS=$((ERRORS + 1))
+  elif [ "$bootstrap_version" != "$gitops_version" ]; then
+    echo "  ERROR: Bootstrap installs ArgoCD chart $bootstrap_version but GitOps manages $gitops_version"
+    echo "         Fresh bootstrap will immediately perform an ArgoCD chart upgrade."
+    ERRORS=$((ERRORS + 1))
+  else
+    echo "  OK: Bootstrap and self-managed ArgoCD chart versions match ($gitops_version)"
+  fi
+fi
+echo ""
+
+# ─────────────────────────────────────────────
+# 6. Check AppSet exclude patterns do not miss the parent app
+# ─────────────────────────────────────────────
+echo "--- Check 6: ApplicationSet exclude patterns ---"
+
+while IFS= read -r appset; do
+  appset_name=$(basename "$appset")
+
+  while IFS= read -r excluded_path; do
+    excluded_path=$(echo "$excluded_path" | sed 's/.*path: //' | tr -d "'\"" | xargs)
+    [ -z "$excluded_path" ] && continue
+
+    if [[ "$excluded_path" == */\* ]]; then
+      parent_path="${excluded_path%/*}"
+      if [ -f "$parent_path/kustomization.yaml" ]; then
+        echo "  ERROR: $appset_name excludes '$excluded_path' but '$parent_path' is itself an app directory"
+        echo "         Use '$parent_path' if the parent Application should be excluded."
+        ERRORS=$((ERRORS + 1))
+      fi
+    fi
+  done < <(grep -B1 "exclude: true" "$appset" | grep "path:" || true)
+done < <(appset_files)
+
+[ $ERRORS -eq 0 ] && echo "  OK: AppSet exclude patterns do not miss parent app directories"
+echo ""
+
+# ─────────────────────────────────────────────
+# 7. Check Project Nomad remains a single bundled app
+# ─────────────────────────────────────────────
+echo "--- Check 7: Project Nomad AppSet ownership ---"
+
+my_apps_appset="$APPS_DIR/appsets/my-apps-appset.yaml"
+project_nomad_path="my-apps/home/project-nomad"
+if [ -f "$my_apps_appset" ] && [ -f "$project_nomad_path/kustomization.yaml" ]; then
+  nested_nomad_kustomizations=$(find "$project_nomad_path" -mindepth 2 -name kustomization.yaml -print | wc -l | xargs)
+
+  if ! grep -q "path: my-apps/\*/\*" "$my_apps_appset"; then
+    echo "  ERROR: my-apps AppSet no longer discovers my-apps/*/*"
+    echo "         Project Nomad will not be generated unless it has a dedicated entrypoint."
+    ERRORS=$((ERRORS + 1))
+  elif grep -B1 "exclude: true" "$my_apps_appset" | grep -q "$project_nomad_path"; then
+    echo "  ERROR: Project Nomad is excluded from the my-apps AppSet"
+    echo "         It is intended to be one bundled app at $project_nomad_path."
+    ERRORS=$((ERRORS + 1))
+  elif [ "$nested_nomad_kustomizations" -gt 0 ]; then
+    echo "  ERROR: Project Nomad has nested kustomization.yaml files"
+    echo "         The my-apps/*/* generator treats $project_nomad_path as the app boundary."
+    ERRORS=$((ERRORS + 1))
+  else
+    echo "  OK: Project Nomad is managed as one bundled my-apps Application"
+  fi
+fi
 echo ""
 
 # ─────────────────────────────────────────────
