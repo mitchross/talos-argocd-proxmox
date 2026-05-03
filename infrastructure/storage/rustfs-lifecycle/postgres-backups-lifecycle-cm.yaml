@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-backups-lifecycle
+  namespace: rustfs-lifecycle
+data:
+  # Lifecycle policy for s3://postgres-backups on RustFS.
+  #
+  # Rule of thumb: NEVER set lifecycle that overlaps with Barman's per-cluster
+  # retentionPolicy on an ACTIVE serverName -- they will fight and produce
+  # backup gaps. Only lifecycle:
+  #   - ABANDONED lineages (gitea-v1 after the v1->v2 cutover on 2026-05-02)
+  #   - Future abandoned lineages (e.g. temporal-v1 once it moves to v2)
+  #
+  # Bumping the days value or adding a new rule and committing will trigger
+  # ArgoCD PostSync hook -> Job -> aws s3api put-bucket-lifecycle-configuration.
+  lifecycle.json: |
+    {
+      "Rules": [
+        {
+          "ID": "expire-abandoned-gitea-v1-2026-05-03",
+          "Status": "Enabled",
+          "Filter": { "Prefix": "cnpg/gitea/gitea-database-v1/" },
+          "Expiration": { "Days": 60 }
+        }
+      ]
+    }

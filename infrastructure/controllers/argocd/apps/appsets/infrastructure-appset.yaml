@@ -40,6 +40,7 @@ spec:
       # snapshot-controller-app.yaml, volsync-app.yaml) to ensure storage is
       # healthy before PVC Plumber (Wave 2) and Kyverno (Wave 3).
       - path: infrastructure/storage/kopia-ui
+      - path: infrastructure/storage/rustfs-lifecycle
   template:
     metadata:
       name: '{{path.basename}}'
