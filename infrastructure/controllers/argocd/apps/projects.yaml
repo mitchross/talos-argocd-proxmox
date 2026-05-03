@@ -1,3 +1,9 @@
+# Homelab trust boundary: these AppProjects are intentionally permissive.
+# This repo is a single-operator cluster, and many "apps" legitimately manage
+# namespace-scoped storage, Gateway API routes, ExternalSecrets, and occasional
+# CRDs/operators. The projects are used for UI grouping and policy intent, not
+# as hard multi-tenant guardrails. Tighten these before allowing untrusted app
+# authors or external automation to write into my-apps/.
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:

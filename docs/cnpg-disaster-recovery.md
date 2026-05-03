@@ -438,7 +438,7 @@ The restored DB is empty (or has a subset of data). Common causes:
 
 ArgoCD's `ignoreDifferences` on `.spec.bootstrap` + `RespectIgnoreDifferences=true`
 will **strip** the bootstrap field during apply. We removed that from the
-database AppSet (commit 61d4aef0) — verify `infrastructure/controllers/argocd/apps/database-appset.yaml`
+database AppSet (commit 61d4aef0) — verify `infrastructure/controllers/argocd/apps/appsets/database-appset.yaml`
 does NOT have `.spec.bootstrap` in its `jqPathExpressions`. If it does, ArgoCD
 is silently dropping your recovery config.
 

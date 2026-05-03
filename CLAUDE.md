@@ -39,10 +39,10 @@ Applications deploy in strict order to prevent race conditions:
 | **0** | Foundation | Cilium (CNI), ArgoCD, 1Password Connect, External Secrets, AppProjects |
 | **1** | Storage | Longhorn, VolumeSnapshot Controller, VolSync |
 | **2** | PVC Plumber | Backup existence checker (FAIL-CLOSED gate) |
-| **3** | Kyverno | Policy engine (standalone App, webhooks must register before app PVCs) |
-| **4** | Infrastructure AppSet | Explicit path list: cert-manager, external-dns, GPU operators, gateway |
+| **3** | Kyverno + CNPG Barman Plugin | Policy engine plus database backup plugin before apps/DB clusters |
+| **4** | Infrastructure AppSet + custom entrypoints | Explicit path list plus KEDA and Temporal Worker Controller standalone Apps |
 | **4** | Database AppSet | Discovers `infrastructure/database/*/*` — `selfHeal: false` for DR |
-| **5** | Monitoring AppSet | Discovers `monitoring/*` |
+| **5** | OTEL + Monitoring AppSet | OpenTelemetry Operator plus `monitoring/*` |
 | **6** | My-Apps AppSet | Discovers `my-apps/*/*` |
 
 **FAIL-CLOSED**: If PVC Plumber is down, Kyverno denies backup-labeled PVC creation. Apps retry via ArgoCD backoff. This prevents data loss during disaster recovery.
@@ -50,6 +50,11 @@ Applications deploy in strict order to prevent race conditions:
 **Kyverno** is a standalone Application (not in an AppSet) to guarantee webhooks register before app PVCs. ApplicationSets are considered "healthy" immediately on creation.
 
 **Databases** use a separate AppSet with `selfHeal: false` so `skip-reconcile` annotations stick during DR recovery. The infrastructure AppSet uses `selfHeal: true` which would strip manual annotations.
+
+**AppProjects** are intentionally permissive for this single-operator homelab.
+They provide UI grouping and policy intent, not multi-tenant security. Tighten
+`destinations` and `clusterResourceWhitelist` before allowing untrusted authors
+or external automation to write application manifests.
 
 ## Secret Management Flow
 
@@ -93,7 +98,7 @@ docs/                   # Documentation
 - Add `backup: "hourly"` or `backup: "daily"` labels to critical PVCs for automatic Kyverno backup
 - Use `storageClassName: longhorn` for PVCs that need backups (volumesnapshot required)
 - Use NFS CSI driver (`csi: driver: nfs.csi.k8s.io`) for static NFS PVs — **legacy `nfs:` silently ignores mountOptions**
-- Add new infrastructure component paths to `infrastructure-appset.yaml` explicitly (not glob-discovered)
+- Add new infrastructure component paths to `infrastructure/controllers/argocd/apps/appsets/infrastructure-appset.yaml` explicitly (not glob-discovered)
 - List ALL YAML files in each directory's `kustomization.yaml` under `resources:` — **unlisted files are never deployed**
 - Use llama-cpp (not ollama) for in-cluster AI backends
 - Use sync waves when adding infrastructure components
@@ -160,7 +165,7 @@ Detailed instructions load automatically when working in these directories:
 | **VolSync configuration** | `infrastructure/storage/volsync/` |
 | **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
 | **Database with CNPG** | `infrastructure/database/cloudnative-pg/immich/` |
-| **Database AppSet** | `infrastructure/controllers/argocd/apps/database-appset.yaml` |
+| **Database AppSet** | `infrastructure/controllers/argocd/apps/appsets/database-appset.yaml` |
 | **Gateway API routing** | `infrastructure/networking/gateway/` |
 | **OTEL Operator + Collectors** | `infrastructure/controllers/opentelemetry-operator/` |
 | **OTEL auto-instrumentation** | `infrastructure/controllers/opentelemetry-operator/instrumentation.yaml` |
@@ -182,4 +187,5 @@ edits or transient debugging.
 - **[docs/network-topology.md](docs/network-topology.md)** - Network architecture details
 - **[docs/network-policy.md](docs/network-policy.md)** - Cilium network policies
 - **[docs/argocd.md](docs/argocd.md)** - ArgoCD documentation
+- **[docs/argocd-entrypoints.md](docs/argocd-entrypoints.md)** - ArgoCD root entrypoints, waves, and AppSet/custom-entrypoint decisions
 - **[scripts/emergency-webhook-cleanup.sh](scripts/emergency-webhook-cleanup.sh)** - Emergency recovery from Kyverno webhook deadlock

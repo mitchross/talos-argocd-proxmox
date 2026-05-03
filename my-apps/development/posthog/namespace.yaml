@@ -3,6 +3,9 @@ kind: Namespace
 metadata:
   name: posthog
   annotations:
+    # Internal resource wave for the posthog Application only. This creates the
+    # namespace before wave 0 data-layer resources; it does not affect the
+    # parent my-apps ApplicationSet wave.
     argocd.argoproj.io/sync-wave: "-1"
   labels:
     app.kubernetes.io/name: posthog
