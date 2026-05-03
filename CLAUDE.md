@@ -105,6 +105,7 @@ docs/                   # Documentation
 - Add ArgoCD hook annotations to all Kubernetes Jobs — `argocd.argoproj.io/hook: Sync` + `argocd.argoproj.io/hook-delete-policy: BeforeHookCreation`. K8s Jobs are immutable after creation; without these, image tag bumps from Renovate cause "field is immutable" sync failures. For standalone Jobs, add annotations directly. For Helm-rendered Jobs, use Kustomize patches targeting `kind: Job`
 - Check `helm show values <chart> | grep -A20 certManager` when adding any Helm chart with webhooks — if a `certManager.enabled` option exists, **set it to `true`**. Helm hook Jobs for webhook certs break under ArgoCD (SA deleted before Job runs = stuck forever = API server death)
 - Verify Kyverno generated backup resources after creating PVCs with backup labels
+- For abandoned CNPG backup lineages, update `infrastructure/storage/rustfs-lifecycle/postgres-backups-lifecycle-cm.yaml`; keep the full bucket lifecycle policy there because PUT replaces the whole RustFS lifecycle config
 - Use `strategy: type: Recreate` on Deployments with RWO PVCs — **RollingUpdate causes Multi-Attach deadlock**
 
 ### DON'T:
@@ -116,6 +117,7 @@ docs/                   # Documentation
 - Bypass GitOps workflow for configuration changes
 - Deploy without considering sync wave order
 - Add Kyverno backup labels to CNPG database PVCs (they use Barman to S3, not Kyverno/VolSync)
+- Add active CNPG `serverName` prefixes to RustFS lifecycle expiration rules; only abandoned lineages belong there
 - Add backup labels to system namespace PVCs (kube-system, volsync-system, kyverno)
 - Manually create or delete ReplicationSource/ReplicationDestination (Kyverno manages these)
 - Use legacy `nfs:` block for NFS PVs (mountOptions silently ignored — use CSI)
@@ -163,6 +165,7 @@ Detailed instructions load automatically when working in these directories:
 | **Kyverno backup policies** | `infrastructure/controllers/kyverno/policies/volsync-pvc-backup-restore.yaml` |
 | **PVC Plumber** | `infrastructure/controllers/pvc-plumber/` |
 | **VolSync configuration** | `infrastructure/storage/volsync/` |
+| **RustFS lifecycle policy** | `infrastructure/storage/rustfs-lifecycle/` |
 | **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
 | **Database with CNPG** | `infrastructure/database/cloudnative-pg/immich/` |
 | **Database AppSet** | `infrastructure/controllers/argocd/apps/appsets/database-appset.yaml` |
@@ -171,13 +174,6 @@ Detailed instructions load automatically when working in these directories:
 | **OTEL auto-instrumentation** | `infrastructure/controllers/opentelemetry-operator/instrumentation.yaml` |
 | **Jobs with ArgoCD hooks** | `my-apps/development/posthog/core/jobs.yaml` |
 | **Helm Job Kustomize patch** | `my-apps/development/temporal/kustomization.yaml` |
-
-## Mink capture
-
-At the end of any substantive working session, proactively propose
-`/mink:note` captures for: decisions made, bugs fixed with root causes,
-gotchas discovered, or cross-repo implications. Do not capture routine
-edits or transient debugging.
 
 ## Additional Documentation
 
@@ -189,3 +185,11 @@ edits or transient debugging.
 - **[docs/argocd.md](docs/argocd.md)** - ArgoCD documentation
 - **[docs/argocd-entrypoints.md](docs/argocd-entrypoints.md)** - ArgoCD root entrypoints, waves, and AppSet/custom-entrypoint decisions
 - **[scripts/emergency-webhook-cleanup.sh](scripts/emergency-webhook-cleanup.sh)** - Emergency recovery from Kyverno webhook deadlock
+
+## Mink capture
+
+Keep Mink updated during substantive work. Mink hooks may track session activity automatically, but durable project knowledge still needs explicit capture with `mink note` or the `/mink:note` skill.
+
+Capture decisions that change architecture or operations, verified bug root causes, live-system gotchas, reusable patterns, and future-operator context. Do not capture routine edits, raw command output, or unverified hypotheses.
+
+Use `mink note --project talos-argocd-proxmox --category resources` for durable runbooks/gotchas/patterns and `--category projects` for active decisions or followups. Mention saved Mink note paths in the final response.
