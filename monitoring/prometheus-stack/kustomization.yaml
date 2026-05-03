@@ -13,6 +13,7 @@ resources:
   - dcgm-exporter.yaml # DCGM GPU monitoring
   - gpu-alerts.yaml # GPU alerting rules
   - gpu-dashboard.yaml # Grafana dashboard
+  - etcd-dashboard.yaml # etcd cluster dashboard (Grafana 3070; pairs with kube-etcd scrape job)
   - network-policy.yaml # Allow Grafana to access Prometheus
   - frigate-dashboard.yaml # Frigate Grafana dashboard
   - loki-logs-dashboard.yaml # Custom Loki logs dashboard (uses OTEL labels)
