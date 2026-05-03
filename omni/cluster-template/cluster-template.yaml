@@ -89,14 +89,29 @@ patches:
           snapshot-count: "5000"
           auto-compaction-mode: "periodic"
           auto-compaction-retention: "5m"
+          # Expose etcd metrics on port 2381 (HTTP, no mTLS) so Prometheus
+          # can scrape without certificate juggling. Listener is bound to
+          # the host network on CP nodes only — not reachable from worker
+          # pods directly, so node-discovery scraping (see
+          # monitoring/prometheus-stack/values.yaml additionalScrapeConfigs)
+          # is the way in. Path B (mTLS on 2379) requires extracting
+          # /system/secrets/etcd/* into a K8s Secret on every cert rotation;
+          # not worth it for a single-operator homelab.
+          listen-metrics-urls: "http://0.0.0.0:2381"
       controllerManager:
         extraArgs:
           concurrent-deployment-syncs: "10"
           concurrent-replicaset-syncs: "10"
           concurrent-namespace-syncs: "20"
+          # Default bind-address is 127.0.0.1; flip to 0.0.0.0 so Prometheus
+          # node-discovery can scrape :10257 from inside the cluster.
+          bind-address: "0.0.0.0"
       scheduler:
         extraArgs:
           kube-api-qps: "100"
+          # Same reason as controllerManager: default 127.0.0.1 hides the
+          # /metrics endpoint on :10259.
+          bind-address: "0.0.0.0"
 ---
 kind: Workers
 name: workers
