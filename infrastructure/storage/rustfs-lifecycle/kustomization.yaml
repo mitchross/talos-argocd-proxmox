@@ -4,5 +4,24 @@ namespace: rustfs-lifecycle
 resources:
   - namespace.yaml
   - externalsecret.yaml
-  - postgres-backups-lifecycle-cm.yaml
   - postgres-backups-lifecycle-job.yaml
+
+# Lifecycle policy lives in lifecycle.json and is rendered into a ConfigMap
+# via configMapGenerator. The default name-suffix-hash means edits to
+# lifecycle.json produce a NEW CM name (e.g. postgres-backups-lifecycle-7c9f...),
+# which forces the Job's volumeMount to point at the new CM, which forces
+# ArgoCD to recreate the Job (BeforeHookCreation hook policy), which makes
+# the Job re-run with the actually-updated lifecycle data on its first try.
+#
+# This avoids the race we hit on 2026-05-03 where the CM data was updated
+# in-place but the PostSync Job had already been created (and mounted the
+# old CM) before the CM update committed.
+#
+# Rule of thumb for editing lifecycle.json:
+#   - Only lifecycle ABANDONED lineages (e.g. *-database-v1 after the cluster
+#     bumped to -v2). NEVER lifecycle an active serverName -- it will fight
+#     the per-cluster Barman retentionPolicy and produce backup gaps.
+configMapGenerator:
+  - name: postgres-backups-lifecycle
+    files:
+      - lifecycle.json

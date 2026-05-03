@@ -26,7 +26,7 @@ spec:
     providerdata: |
       # CPU sized for GPU-only inference workloads — ComfyUI/llama-cpp do the
       # heavy work on the GPU; VM CPU only serves OS, containerd, NFS copies.
-      cores: 8
+      cores: 16
       sockets: 1
       memory: 196608
       disk_size: 800
