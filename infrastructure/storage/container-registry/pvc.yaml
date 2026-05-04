@@ -17,5 +17,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 10Gi
+      # Bumped 10Gi -> 50Gi 2026-05-04 after registry filled. Longhorn
+      # online-expanded the PV; kustomize manifest now matches live.
+      storage: 50Gi
   # dataSourceRef is added dynamically by Kyverno if a backup exists
