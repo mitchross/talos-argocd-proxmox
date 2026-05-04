@@ -147,6 +147,21 @@ spec:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: clickhouse
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickhouse-headless
+  namespace: posthog
+spec:
+  clusterIP: None
+  ports:
+  - port: 9000
+    targetPort: 9000
+    name: tcp
+  selector:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: clickhouse
+---
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationSource
 metadata:
