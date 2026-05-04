@@ -20,13 +20,15 @@ prometheus:
     storageSpec:
       volumeClaimTemplate:
         metadata:
-          # backup: daily enrolls this PVC in the active Kyverno+VolSync+Kopia
-          # backup pipeline (see infrastructure/controllers/kyverno/CLAUDE.md).
-          # The dead longhorn.io/recurring-job-* annotations were removed
-          # 2026-05-03 -- they referenced the old Longhorn-direct backup system
-          # that was retired when the cluster moved to NFS+Kopia.
+          # Intentionally backup-exempt. Prometheus metrics are re-scrapeable
+          # within retention; restoring 15d of historical metrics from a backup
+          # snapshot is not worth the I/O. The 2026-05-03 backup-label
+          # migration was reverted same-day after explicit decision that
+          # monitoring data does not warrant the backup pipeline overhead.
           labels:
-            backup: "daily"
+            backup-exempt: "true"
+          annotations:
+            backup-exempt-reason: "Prometheus metrics are re-scrapeable; monitoring data not worth backup pipeline overhead"
         spec:
           storageClassName: longhorn
           accessModes:
@@ -153,10 +155,13 @@ alertmanager:
     storage:
       volumeClaimTemplate:
         metadata:
-          # backup: daily enrolls in Kyverno+VolSync+Kopia pipeline.
-          # Dead longhorn.io/recurring-job-* annotations removed 2026-05-03.
+          # Intentionally backup-exempt. Alertmanager state (silences,
+          # inhibitions, notification log) is operator-set and trivially
+          # recreated; not worth backup pipeline overhead.
           labels:
-            backup: "daily"
+            backup-exempt: "true"
+          annotations:
+            backup-exempt-reason: "Alertmanager silences are operator-set; trivially recreated"
         spec:
           storageClassName: longhorn
           accessModes:
@@ -195,10 +200,13 @@ grafana:
     size: 10Gi
     accessModes:
       - ReadWriteOnce
-    # backup: daily enrolls in Kyverno+VolSync+Kopia pipeline.
-    # Dead longhorn.io/recurring-job-* annotations removed 2026-05-03.
+    # Intentionally backup-exempt. Grafana dashboards and datasource
+    # configs are GitOps-managed; only user prefs / unsaved drafts live
+    # in the PVC. Not worth backup pipeline overhead.
     labels:
-      backup: "daily"
+      backup-exempt: "true"
+    annotations:
+      backup-exempt-reason: "Dashboards/datasources are GitOps-managed; only user prefs in PVC"
   # Resource allocation
   resources:
     requests:
