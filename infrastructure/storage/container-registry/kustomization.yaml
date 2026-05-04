@@ -8,6 +8,7 @@ resources:
   - service.yaml
   - pvc.yaml
   - httproute.yaml
+  - gc-cronjob.yaml
 
 configMapGenerator:
   - name: registry-config

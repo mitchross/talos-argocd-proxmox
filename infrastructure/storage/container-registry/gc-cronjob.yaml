@@ -1,0 +1,93 @@
+# Weekly registry GC. Reclaims blobs left over from deleted manifests
+# (`:buildcache`, retired `:vX.Y.Z`, etc.). Without this, the registry PVC
+# fills silently — pushes start failing once it's full.
+#
+# Flow:
+#   1. Flip REGISTRY_STORAGE_MAINTENANCE_READONLY_ENABLED=true on the
+#      registry deploy. Concurrent pushes during GC can corrupt the store
+#      (in-flight blob upload + GC sweep = lost data) so we go read-only
+#      first.
+#   2. Wait for the rolled pod to be Ready.
+#   3. Exec `registry garbage-collect -m` inside the pod. `-m` is
+#      mark-and-sweep (the safe variant introduced in distribution 2.x).
+#   4. Unset the env var, wait for rollout.
+#
+# Schedule is Sunday 04:00 UTC — off-peak for this cluster's CI bursts.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: registry-gc
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: container-registry
+    app.kubernetes.io/component: maintenance
+spec:
+  schedule: "0 4 * * 0"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: registry-gc
+          containers:
+            - name: gc
+              image: bitnami/kubectl:1.31
+              command: [/bin/bash, -euo, pipefail, -c]
+              args:
+                - |
+                  echo "[gc] flipping registry to read-only"
+                  kubectl -n kube-system set env deploy/registry \
+                    REGISTRY_STORAGE_MAINTENANCE_READONLY_ENABLED=true
+                  kubectl -n kube-system rollout status deploy/registry --timeout=180s
+
+                  echo "[gc] running garbage-collect -m"
+                  POD=$(kubectl -n kube-system get pod -l app=registry \
+                    -o jsonpath='{.items[0].metadata.name}')
+                  kubectl -n kube-system exec "$POD" -- \
+                    registry garbage-collect -m /etc/distribution/config.yml
+
+                  echo "[gc] restoring writes"
+                  kubectl -n kube-system set env deploy/registry \
+                    REGISTRY_STORAGE_MAINTENANCE_READONLY_ENABLED-
+                  kubectl -n kube-system rollout status deploy/registry --timeout=180s
+                  echo "[gc] done"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: registry-gc
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: registry-gc
+  namespace: kube-system
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "patch", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: registry-gc
+  namespace: kube-system
+subjects:
+  - kind: ServiceAccount
+    name: registry-gc
+    namespace: kube-system
+roleRef:
+  kind: Role
+  name: registry-gc
+  apiGroup: rbac.authorization.k8s.io
