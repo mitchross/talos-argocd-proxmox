@@ -1,13 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: load-har-analyzer-v5
+  name: load-har-analyzer-v6
   namespace: open-webui
   annotations:
     argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
 spec:
   ttlSecondsAfterFinished: 300
+  backoffLimit: 3
   template:
     spec:
       restartPolicy: OnFailure
@@ -27,8 +28,10 @@ spec:
         - -c
         - |
           import sys
-          sys.path.insert(0, "/app/backend")
           import os
+          import asyncio
+
+          sys.path.insert(0, "/app/backend")
           os.environ.setdefault("DATA_DIR", "/app/backend/data")
 
           with open("/functions/har-analyzer-function.py") as f:
@@ -37,54 +40,108 @@ spec:
           from open_webui.models.functions import Functions, FunctionForm, FunctionMeta
           from open_webui.models.users import Users
 
-          # Find first admin user
-          users_data = Users.get_users()
-          admin_id = None
-          if isinstance(users_data, dict) and "users" in users_data:
-              for u in users_data["users"]:
-                  if u.role == "admin":
+
+          def _maybe_await(value):
+              """Await `value` if it is a coroutine, else return as-is.
+              Open-WebUI converted these ORM methods from sync to async; this
+              keeps the script working across both shapes."""
+              import inspect
+              if inspect.iscoroutine(value):
+                  return value
+              async def _wrap():
+                  return value
+              return _wrap()
+
+
+          def _extract_users_list(users_data):
+              """get_users() may return a dict {"users": [...]}, a list, or a
+              Pydantic model with a `.users` attribute. Normalize all three."""
+              if users_data is None:
+                  return []
+              if isinstance(users_data, dict) and "users" in users_data:
+                  return users_data["users"]
+              if isinstance(users_data, list):
+                  return users_data
+              if hasattr(users_data, "users"):
+                  return users_data.users
+              return []
+
+
+          async def main():
+              # Find first admin user
+              users_data = await _maybe_await(Users.get_users())
+              admin_id = None
+              for u in _extract_users_list(users_data):
+                  if getattr(u, "role", None) == "admin":
                       admin_id = u.id
                       break
 
-          if not admin_id:
-              print("WARNING: No admin user found, using placeholder ID")
-              admin_id = "system"
+              if not admin_id:
+                  print("WARNING: No admin user found, using placeholder ID")
+                  admin_id = "system"
 
-          form = FunctionForm(
-              id="har_forensics_analyzer",
-              name="HAR Forensics Analyzer",
-              type="filter",
-              content=code,
-              meta=FunctionMeta(
-                  description="Filter: preprocesses uploaded .har files into forensic reports for LLM analysis"
+              form = FunctionForm(
+                  id="har_forensics_analyzer",
+                  name="HAR Forensics Analyzer",
+                  type="filter",
+                  content=code,
+                  meta=FunctionMeta(
+                      description="Filter: preprocesses uploaded .har files into forensic reports for LLM analysis"
+                  ),
               )
-          )
 
-          existing = Functions.get_function_by_id("har_forensics_analyzer")
-          if existing:
-              result = Functions.update_function_by_id("har_forensics_analyzer", {
-                  "name": "HAR Forensics Analyzer",
-                  "type": "filter",
-                  "content": code,
-                  "meta": {"description": "Filter: preprocesses uploaded .har files into forensic reports for LLM analysis"},
-                  "is_active": True,
-                  "is_global": True,
-              })
-              print(f"Updated function: {result.id}")
-          else:
-              result = Functions.insert_new_function(admin_id, "filter", form)
-              if result:
-                  Functions.update_function_by_id("har_forensics_analyzer", {
-                      "is_active": True,
-                      "is_global": True,
-                  })
-                  print(f"Created function: {result.id}")
+              existing = await _maybe_await(
+                  Functions.get_function_by_id("har_forensics_analyzer")
+              )
+
+              if existing:
+                  result = await _maybe_await(
+                      Functions.update_function_by_id(
+                          "har_forensics_analyzer",
+                          {
+                              "name": "HAR Forensics Analyzer",
+                              "type": "filter",
+                              "content": code,
+                              "meta": {
+                                  "description": "Filter: preprocesses uploaded .har files into forensic reports for LLM analysis"
+                              },
+                              "is_active": True,
+                              "is_global": True,
+                          },
+                      )
+                  )
+                  if result is None:
+                      print("ERROR: Failed to update function")
+                      sys.exit(1)
+                  print(f"Updated function: {result.id}")
               else:
-                  print("ERROR: Failed to create function")
-                  sys.exit(1)
+                  result = await _maybe_await(
+                      Functions.insert_new_function(admin_id, "filter", form)
+                  )
+                  if result is None:
+                      print("ERROR: Failed to create function")
+                      sys.exit(1)
+                  await _maybe_await(
+                      Functions.update_function_by_id(
+                          "har_forensics_analyzer",
+                          {"is_active": True, "is_global": True},
+                      )
+                  )
+                  print(f"Created function: {result.id}")
 
-          print(f"Active: {result.is_active}, Global: {result.is_global}")
-          print("Done!")
+              # Re-read to confirm the active/global flags actually stuck.
+              final = await _maybe_await(
+                  Functions.get_function_by_id("har_forensics_analyzer")
+              )
+              if final is not None:
+                  print(
+                      f"Active: {getattr(final, 'is_active', '?')}, "
+                      f"Global: {getattr(final, 'is_global', '?')}"
+                  )
+              print("Done!")
+
+
+          asyncio.run(main())
         envFrom:
         - configMapRef:
             name: open-webui-configmap
