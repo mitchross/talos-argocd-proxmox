@@ -4,7 +4,10 @@ metadata:
   name: paperless-daily-backup
   namespace: cloudnative-pg
 spec:
-  schedule: "0 3 * * *"
+  # CNPG schedule is 6-field cron — first field is SECONDS, not minute.
+  # See immich/scheduled-backup.yaml for the gotcha. Daily at 05:00:00
+  # (staggered last in the 02–05 sequence).
+  schedule: "0 0 5 * * *"
   backupOwnerReference: self
   cluster:
     name: paperless-database
