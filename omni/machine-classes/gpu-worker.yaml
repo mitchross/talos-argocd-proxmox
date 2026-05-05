@@ -28,7 +28,12 @@ spec:
       # heavy work on the GPU; VM CPU only serves OS, containerd, NFS copies.
       cores: 16
       sockets: 1
-      memory: 196608
+      # Phase 1 right-size: 192G -> 128G. Capacity baseline 2026-05-04
+      # showed GPU worker observed ~26.7 GiB of 188.2 GiB allocatable
+      # while running llama-cpp + ComfyUI + nvidia operator stack. 128 GiB
+      # leaves >4x headroom over current peak for model loads. CPU and
+      # GPU passthrough configuration unchanged in Phase 1.
+      memory: 131072
       disk_size: 800
       network_bridge: vmbr1
       storage_selector: name == "ssdpool"

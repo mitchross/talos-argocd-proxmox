@@ -25,7 +25,11 @@ spec:
     providerdata: |
       cores: 16
       sockets: 1
-      memory: 98304
+      # Phase 1 right-size: 96G -> 64G. Capacity baseline 2026-05-04 showed
+      # worker observed P95 ~21 GiB and max ~27.5 GiB per node, well under
+      # the prior 93.8 GiB allocatable. Memory is reduced first while CPU
+      # stays at 16 to isolate one variable per the rollout plan.
+      memory: 65536
       disk_size: 800
       network_bridge: vmbr1
       storage_selector: name == "ssdpool"
