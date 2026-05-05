@@ -55,6 +55,16 @@ spec:
                     secretKeyRef:
                       name: renovate-secrets
                       key: RENOVATE_TOKEN
+                # JSON array of host rules — currently just Docker Hub auth
+                # so Renovate's docker datasource lookups don't share the
+                # 100/6h anonymous quota with the rest of the cluster.
+                # Populated from 1Password item `renovate-dockerhub` →
+                # field `host_rules`. See externalsecret.yaml.
+                - name: RENOVATE_HOST_RULES
+                  valueFrom:
+                    secretKeyRef:
+                      name: renovate-secrets
+                      key: RENOVATE_HOST_RULES
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: false
