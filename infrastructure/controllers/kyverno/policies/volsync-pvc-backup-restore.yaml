@@ -243,7 +243,7 @@ spec:
     # operators honest, require a non-empty volsync.backup/skip-restore-reason
     # annotation whenever skip-restore is true. Pairs with the
     # ProtectedPVCSkipRestoreStale Prometheus alert (24h watchdog) and the
-    # docs note in docs/backup-restore.md.
+    # docs note in docs/volsync-storage-recovery.md.
     - name: require-skip-restore-reason
       skipBackgroundRequests: true
       match:

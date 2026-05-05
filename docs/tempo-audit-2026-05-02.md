@@ -72,7 +72,7 @@ Hard rules enforced: no `apply/delete/patch/edit/scale`, no `argocd app sync/ref
 | | |
 |---|---|
 | **Evidence (a)** | `scripts/build-push-custom-apps.sh:31-34` references `my-apps/development/news-reader/app/` and `my-apps/development/temporal-worker/`. Neither exists. `find . -name Dockerfile` returns ZERO matches anywhere in the repo. |
-| **Evidence (b)** | `scripts/trigger-immediate-backups.sh:51-63` creates `longhorn.io/v1beta2 Backup` CRs and selects volumes by label `recurring-job.longhorn.io/<tier>=enabled`. Zero such labels exist in `infrastructure/` or `my-apps/`. The cluster moved to Kyverno → VolSync → Kopia → NFS per `docs/backup-restore.md` (2026-05-02). Also references MinIO at `192.168.10.133:9002` — backup target is now NFS / RustFS S3, not MinIO. |
+| **Evidence (b)** | `scripts/trigger-immediate-backups.sh:51-63` creates `longhorn.io/v1beta2 Backup` CRs and selects volumes by label `recurring-job.longhorn.io/<tier>=enabled`. Zero such labels exist in `infrastructure/` or `my-apps/`. The cluster moved to Kyverno → VolSync → Kopia → NFS per `docs/volsync-storage-recovery.md` (2026-05-02). Also references MinIO at `192.168.10.133:9002` — backup target is now NFS / RustFS S3, not MinIO. |
 | **Why** | Operators reaching for either tool today get errors or silent zero-effect. Companion `docs/plans/2026-04-19-followup-notes.md:31-40` instructs the same wrong build-push paths. |
 | **Fix** | (a) Restore Dockerfiles + `app/` subdirs in repo, OR delete the script and document where the build pipeline actually lives. (b) Delete OR rewrite to trigger VolSync `ReplicationSource` immediate runs (Kyverno-generated names follow `<pvc>-backup`). |
 
