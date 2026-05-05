@@ -80,8 +80,12 @@ spec:
             # Capacity baseline 2026-05-04 showed each replica observed
             # 1.91-1.93 cores, saturating the 2-core limit. CPU request was
             # 4x under-allocated (500m) and limit was the bottleneck.
-            requests: { cpu: "1500m", memory: "1Gi" }
-            limits:   { cpu: "3",    memory: "4Gi" }
+            # Memory bumped 2026-05-05: with pysteps>=1.21 actually loading
+            # (vs distutils-failing on 1.14) and MRMS pyramid render z=4-9
+            # × 3 palettes spiking to 3+ Gi, the 4Gi limit OOMKilled the pod
+            # mid-render and the Cancel cascade left tiles only at z=4-5.
+            requests: { cpu: "1500m", memory: "2Gi" }
+            limits:   { cpu: "3",    memory: "8Gi" }
       volumes:
         - name: tiles
           persistentVolumeClaim: { claimName: tiles }

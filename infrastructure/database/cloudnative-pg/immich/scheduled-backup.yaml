@@ -4,7 +4,12 @@ metadata:
   name: immich-daily-backup
   namespace: cloudnative-pg
 spec:
-  schedule: "0 2 * * *"
+  # CNPG schedule is 6-field cron — first field is SECONDS, not minute.
+  # 5-field "0 2 * * *" was parsed as "seconds=0 minute=2 hour=* * * *" and
+  # fired hourly at xx:02:00, contributing to etcd write-storms. 6-field
+  # "0 0 2 * * *" = daily at 02:00:00. Staggered across 02–05 across the
+  # 4 ScheduledBackups so they don't pile up on the same etcd fsync.
+  schedule: "0 0 2 * * *"
   backupOwnerReference: self
   cluster:
     name: immich-database
