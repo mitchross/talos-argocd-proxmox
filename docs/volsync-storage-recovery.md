@@ -13,6 +13,40 @@ The single source of truth for **PVC backup and restore** in this cluster.
 > is operations, troubleshooting, and the file index. Stop reading wherever
 > the depth matches what you came for.
 
+> **Reading from another homelab?** This is internal documentation for one
+> specific cluster, not a product. It works on my hardware with my choices.
+> See [Adapting this to your cluster](#adapting-this-to-your-cluster) and
+> [Known limitations](#known-limitations--non-goals) before adopting any of
+> this — the *pattern* is more portable than the specific stack.
+
+---
+
+## Stack at a glance — required vs swappable
+
+This doc references specific tools because that's what this cluster runs.
+Most of them are swappable; only a few are actually required for the pattern
+to work.
+
+| Layer | This cluster uses | What's actually required | Common swaps |
+|---|---|---|---|
+| OS / K8s | Talos OS | Any Kubernetes ≥ 1.27 | k3s, k0s, kubeadm, EKS/GKE/AKS |
+| CNI | Cilium | Any CNI | Flannel, Calico, Antrea |
+| GitOps | ArgoCD + ApplicationSets | None — `kubectl apply` is fine | FluxCD, raw kustomize, Helm |
+| Storage CSI | Longhorn | **CSI driver with [VolumeSnapshot](https://kubernetes.io/docs/concepts/storage/volume-snapshots/) support** (required for VolSync's `copyMethod: Snapshot`) | OpenEBS Mayastor, Rook/Ceph, Portworx, TopoLVM, Linstor |
+| Backup mover | VolSync | **VolSync** (the whole `ReplicationSource`/`ReplicationDestination`/VolumePopulator dance is VolSync-specific) | — none, this is the load-bearing piece |
+| Backup format | Kopia (filesystem repo) | Any [VolSync mover](https://volsync.readthedocs.io/) | Restic (S3, no cross-PVC dedup), Rclone, Rsync, Syncthing |
+| Backup destination | TrueNAS NFS | Anywhere VolSync's mover can write | Synology / Unraid / pi-with-USB-drive NFS, S3 (Restic mover), MinIO/RustFS, SMB |
+| Admission engine | Kyverno | **Kyverno** (the apiCall context + generate rules are Kyverno-specific) | — could rewrite as a custom controller + CRDs (cleaner long-term, more code) |
+| Backup-existence oracle | [pvc-plumber](https://github.com/mitchross/pvc-plumber) | A small HTTP service that answers `does a backup exist for ns/pvc?` | Roll your own; it's a few hundred lines of Go |
+| Secret store | 1Password Connect + ESO | Anything that produces a Secret | Bitwarden via ESO, HashiCorp Vault, AWS/GCP Secret Manager, sealed-secrets, plain `Secret` |
+| Snapshot scheduling spread | `length(ns-name) modulo 60` | Anything that doesn't all fire at `:00` | sha256-derived minute, controller-driven schedule |
+
+If you only have a single-node k3s cluster with local-path-provisioner, this
+pattern doesn't apply directly — you need a CSI with snapshot support.
+[OpenEBS LVM-LocalPV](https://openebs.io/docs/concepts/lvmlocalpv) or
+[TopoLVM](https://github.com/topolvm/topolvm) are the usual single-node
+replacements for Longhorn.
+
 ---
 
 ## Why this exists
@@ -488,7 +522,7 @@ The **invariant** the entire system protects:
 |---|---|---|---|
 | **Longhorn** | `infrastructure/storage/longhorn/` | 1 | RWO block storage, VolumeSnapshot capable. The `longhorn` StorageClass is required for any backup-labeled PVC. |
 | **VolSync operator** | `infrastructure/storage/volsync/` | 1 | Watches `ReplicationSource` / `ReplicationDestination` and runs Kopia mover Jobs. |
-| **pvc-plumber** | `infrastructure/controllers/pvc-plumber/` | 2 | `ghcr.io/mitchross/pvc-plumber:1.7.0`, 2 replicas + podAntiAffinity + PDB minAvailable=1. Mounts NFS read-write at `/repository`, runs Kopia CLI, exposes `GET /exists/{ns}/{pvc}`, `/healthz`, `/readyz`. Cache TTL 5 min, re-warm 90 s, HTTP timeout 7 s, singleflight on identical concurrent lookups. |
+| **[pvc-plumber](https://github.com/mitchross/pvc-plumber)** | `infrastructure/controllers/pvc-plumber/` | 2 | Source: [`mitchross/pvc-plumber`](https://github.com/mitchross/pvc-plumber). Image `ghcr.io/mitchross/pvc-plumber:1.7.0`, 2 replicas + podAntiAffinity + PDB minAvailable=1. Mounts NFS read-write at `/repository`, runs Kopia CLI, exposes `GET /exists/{ns}/{pvc}`, `/healthz`, `/readyz`. Cache TTL 5 min, re-warm 90 s, HTTP timeout 7 s, singleflight on identical concurrent lookups. |
 | **Kyverno** | `infrastructure/controllers/kyverno/` | 3 | Standalone Application. Webhooks register before app PVCs are created. Infrastructure namespaces (longhorn-system, argocd, volsync-system, etc.) are excluded from the webhook namespaceSelector — see `infrastructure/controllers/kyverno/CLAUDE.md` for why. |
 | **`volsync-pvc-backup-restore` ClusterPolicy** | `infrastructure/controllers/kyverno/policies/volsync-pvc-backup-restore.yaml` | 4 | Seven rules. See [policy rules](#policy-rules) below. Enforce mode (this is the admission-safety policy). |
 | **`volsync-nfs-inject` ClusterPolicy** | `infrastructure/controllers/kyverno/policies/volsync-nfs-inject.yaml` | 4 | Mutates `Job` resources labeled `app.kubernetes.io/created-by: volsync` to add the NFS volume + `/repository` mount. App namespaces never touch NFS config. |
@@ -741,6 +775,144 @@ controller owns the entire `postgres-backups` bucket lifecycle config (the
 S3 PUT replaces the whole policy, so every rule lives in one ConfigMap).
 Add abandoned `serverName` prefixes there only — active CNPG retention
 belongs in the CNPG backup config.
+
+---
+
+## Adapting this to your cluster
+
+If you want to adopt this pattern in your own cluster, here's the minimum
+viable stack and where to start.
+
+**You need:**
+
+1. **A Kubernetes cluster with CSI snapshots.** Run
+   `kubectl get volumesnapshotclass` — you need at least one, and the
+   driver behind it must support `copyMethod: Snapshot` in VolSync. If
+   you don't have this, [install VolumeSnapshot CRDs + a CSI](https://github.com/kubernetes-csi/external-snapshotter)
+   before anything else.
+2. **VolSync.** `helm install volsync` from the
+   [VolSync chart](https://volsync.readthedocs.io/en/stable/installation/index.html).
+3. **Kyverno.** `helm install kyverno` from the
+   [Kyverno chart](https://kyverno.io/docs/installation/methods/). Make
+   sure your infrastructure namespaces (Longhorn-equivalent, ArgoCD/Flux,
+   VolSync, etc.) are in the webhook `namespaceSelector` exclusion list,
+   or a Kyverno crash loop will deadlock your storage layer. Hard lesson;
+   see `infrastructure/controllers/kyverno/CLAUDE.md` in this repo.
+4. **A way to deliver the Kopia password as a Secret.** ESO + a backend
+   you trust, sealed-secrets, or just `kubectl create secret`. The
+   policy expects a Secret named `volsync-<pvc>` with keys
+   `KOPIA_REPOSITORY`, `KOPIA_FS_PATH`, `KOPIA_PASSWORD`.
+5. **An NFS server reachable from your cluster** (or pick a different
+   VolSync mover and adjust the policy accordingly — Restic to S3 works
+   identically modulo the NFS-inject policy).
+
+**Then:**
+
+1. **Fork or run [`pvc-plumber`](https://github.com/mitchross/pvc-plumber).**
+   It's a small Go service. The published image (`ghcr.io/mitchross/pvc-plumber`)
+   is what this cluster uses, but the README in that repo covers building
+   your own. Point its NFS volume at your repository.
+2. **Copy `infrastructure/controllers/kyverno/policies/volsync-pvc-backup-restore.yaml`
+   and `volsync-nfs-inject.yaml`.** Edit:
+   - The `service.url` in each apiCall context → your `pvc-plumber` Service DNS.
+   - The `nfs.server` and `nfs.path` in the inject policy → your NFS export.
+   - The 1Password references in rule 5 → your secret backend.
+   - The excluded namespaces → whatever your storage / GitOps / policy
+     namespaces are.
+3. **Pick a CSI snapshot class and StorageClass for your cluster** and
+   substitute them in the `generate-replication-source` /
+   `generate-replication-destination` rules.
+
+The pattern is portable. The specific image tags, hostnames, and 1Password
+item names in this repo are not.
+
+---
+
+## Known limitations & non-goals
+
+This is a working homelab system, not a hardened product. Things you should
+know before adopting:
+
+**Trust model.**
+
+- **Single-operator homelab.** Threat model is "I might fat-finger a
+  delete," not "an attacker is in my cluster." AppProjects are permissive,
+  the Kopia repo has one shared password, and there's no per-namespace
+  blast-radius isolation. If your model is different, tighten before
+  adopting.
+- **One Kopia password = full blast radius.** Leak it and every backup
+  across every PVC is decrypted. Acceptable here because backups never
+  leave the LAN.
+
+**3-2-1 compliance: no.**
+
+- NFS on TrueNAS is the only copy of the backups. There is **no off-site
+  copy, no second NAS, no cloud cold storage.** A NAS-level disaster
+  (fire, theft, ransomware on the NAS) loses everything. Add a second
+  destination (Restic to S3 in parallel, ZFS replication to another
+  TrueNAS, rclone to Backblaze B2, etc.) if you need real DR coverage.
+
+**Webhook math.**
+
+- Each PVC admission triggers up to **3 `/exists` calls** (mutate + 2
+  validate). With `HTTP_TIMEOUT=7s`, the worst-case wall time is 21 s,
+  which would exceed Kyverno's default 10 s webhook timeout. The 5-minute
+  cache + singleflight in pvc-plumber v1.7+ keeps p99 well under that in
+  practice — but a cold-cache, slow-NFS scenario could time out and trip
+  fail-closed. The desired failure mode either way (deny + retry), but
+  you should know it's possible.
+- The Kyverno webhook for these specific rules is `failurePolicy: Fail` —
+  required for fail-closed to mean anything. If Kyverno itself is down,
+  *every* backup-labeled PVC create blocks until it's back. See the
+  Kyverno deadlock incident in `infrastructure/controllers/kyverno/CLAUDE.md`
+  for what that costs when it goes wrong.
+
+**Upgrade windows.**
+
+- pvc-plumber rolling update with `replicas: 2` + `PDB minAvailable: 1`
+  keeps one pod up — fine.
+- During a single-node cluster reboot, or when both pvc-plumber pods land
+  on the same node briefly (rare with podAntiAffinity but possible), the
+  fail-closed gate denies new PVC creates. ArgoCD retries.
+- Kyverno admission controller upgrades have the same brief gate
+  unavailability.
+- None of this is a problem if you treat backup-labeled PVC creates as
+  "best effort, will eventually succeed" — which they are.
+
+**Generated resources are not reconciled.**
+
+- Kyverno generate rules use `synchronize: false` (required for API-server
+  health — see the same CLAUDE.md). If you `kubectl delete
+  replicationsource <pvc>-backup`, **Kyverno will not recreate it.** The
+  orphan-reaper handles the *opposite* direction (label removed → reap
+  helpers); it does not handle "helper deleted but label still present."
+  Recovery: edit the PVC's `backup` label to anything else, then back, to
+  re-trigger admission.
+
+**Schedule clustering.**
+
+- The `length(ns-name) modulo 60` minute spread is a stopgap (the doc
+  admits this in [Backup schedules](#backup-schedules--retention)). PVC
+  names share length ranges → backups cluster on the same minute. Replace
+  with a sha256-derived minute or a real controller before scaling past
+  ~50 backup-labeled PVCs.
+
+**Things this deliberately does not try to do.**
+
+- Continuous data protection / RPO < 1 h.
+- Application-consistent backups for stateful apps that need quiescing
+  (databases — use their native tooling; here CNPG handles Postgres
+  separately).
+- Multi-cluster federation.
+- Backup verification / restore testing automation. There's a
+  `ProtectedPVCSkipRestoreStale` alert and Prometheus rules on backup age,
+  but no scheduled "restore to a scratch namespace and diff" job.
+- Encryption-at-rest on the NAS itself — relies on Kopia's encryption
+  alone.
+
+If any of these are showstoppers for your environment, this is not the
+system you want. The pattern is sound; the *operational maturity* is
+"single homelab, one operator, accept some sharp edges."
 
 ---
 
