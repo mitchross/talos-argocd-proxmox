@@ -27,6 +27,11 @@ defaultSettings:
   engineReplicaTimeout: "8"
   # Reduced from 12 to 8 for homelab - still provides good performance with less CPU reservation
   guaranteedInstanceManagerCPU: "8"
+  # Capacity baseline 2026-05-04 showed instance-manager + share-manager pods
+  # holding 11 GiB across the cluster with ZERO memory requests, breaking
+  # scheduler math. 1 GiB guaranteed per instance-manager covers the 1.2-2.1
+  # GiB observed per pod with reasonable headroom.
+  guaranteedInstanceManagerMemory: "1Gi"
   # Performance: prefer local disk for reads when replica is on same node
   defaultDataLocality: "best-effort"
   # Cleanup: limit snapshot accumulation per volume

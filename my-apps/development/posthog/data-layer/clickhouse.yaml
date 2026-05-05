@@ -82,9 +82,13 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 5
         resources:
+          # Capacity baseline 2026-05-04 showed ClickHouse pod observed
+          # 1.0 GiB / 0.36 cores. 8 GiB request was ~8x over-allocated.
+          # Lowered to 4 GiB; mark cache + merges can still spike, but
+          # the 16 GiB limit absorbs the burst.
           requests:
             cpu: 500m
-            memory: 8Gi
+            memory: 4Gi
           limits:
             memory: 16Gi
         volumeMounts:
