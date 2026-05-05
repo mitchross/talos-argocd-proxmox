@@ -55,6 +55,74 @@ If that's all you wanted, you can stop here.
 
 ---
 
+## The picture, simply
+
+**Who does what.** Five pieces, left to right. Each one only knows about its
+neighbours.
+
+```mermaid
+flowchart LR
+    APP["📦 Your app<br/>(PVC with backup label)"]
+    KY["🛡️ Kyverno<br/>(admission gate)"]
+    PL["🔍 pvc-plumber<br/>(does a backup exist?)"]
+    VS["🚚 VolSync<br/>(runs the backup/restore)"]
+    KO["🔐 Kopia<br/>(encrypt + dedup)"]
+    NFS[("💾 TrueNAS NFS<br/>(the actual storage)")]
+
+    APP -->|"create PVC"| KY
+    KY -->|"GET /exists/ns/pvc"| PL
+    PL -->|"reads repo"| NFS
+    KY -->|"generates RS + RD"| VS
+    VS -->|"runs Kopia"| KO
+    KO -->|"writes/reads snapshots"| NFS
+
+    classDef app fill:#fef3c7,stroke:#92400e,color:#451a03;
+    classDef gate fill:#fee2e2,stroke:#991b1b,color:#450a0a;
+    classDef worker fill:#dbeafe,stroke:#1e40af,color:#0c1f4a;
+    classDef store fill:#d1fae5,stroke:#065f46,color:#022c22;
+    class APP app;
+    class KY,PL gate;
+    class VS,KO worker;
+    class NFS store;
+```
+
+**What happens when a PVC is created.** The whole decision in one diagram.
+
+```mermaid
+flowchart TD
+    START(["📦 New PVC created<br/>with backup: hourly|daily"]) --> Q{"🔍 Does a backup<br/>already exist<br/>on NFS?"}
+
+    Q -->|"✅ YES"| R1["🛡️ Kyverno injects<br/>dataSourceRef"]
+    R1 --> R2["🚚 VolSync restores<br/>from Kopia snapshot"]
+    R2 --> R3(["💾 PVC bound<br/>WITH your data<br/>App starts normally"])
+
+    Q -->|"❌ NO"| F1["🛡️ Kyverno admits<br/>PVC unchanged"]
+    F1 --> F2["🟣 Longhorn provisions<br/>empty volume"]
+    F2 --> F3(["🆕 PVC bound EMPTY<br/>App starts fresh<br/>Backups begin in 2h"])
+
+    Q -->|"❓ UNKNOWN<br/>(plumber down,<br/>NFS broken, etc.)"| D1["🛡️ Kyverno DENIES<br/>the PVC"]
+    D1 --> D2["⏳ ArgoCD retries<br/>with backoff"]
+    D2 --> D3(["🛠️ Operator fixes<br/>plumber/NFS"])
+    D3 --> Q
+
+    classDef start fill:#fef3c7,stroke:#92400e,color:#451a03;
+    classDef restore fill:#d1fae5,stroke:#065f46,color:#022c22;
+    classDef fresh fill:#dbeafe,stroke:#1e40af,color:#0c1f4a;
+    classDef block fill:#fee2e2,stroke:#991b1b,color:#450a0a;
+    classDef decision fill:#f3e8ff,stroke:#6b21a8,color:#3b0764;
+    class START start;
+    class Q decision;
+    class R1,R2,R3 restore;
+    class F1,F2,F3 fresh;
+    class D1,D2,D3 block;
+```
+
+The third branch — `UNKNOWN → DENY → retry` — is the part that makes this a
+**fail-closed** system. When in doubt, refuse to create the PVC. Empty
+volumes over real backup data is the catastrophe we will never accept.
+
+---
+
 ## If this, then that
 
 The whole behaviour, as a flat lookup table:
