@@ -8,7 +8,7 @@ Databases use **CloudNativePG** with Barman backups to RustFS S3 — a **separat
 - **PVC backups**: Kopia on NFS via VolSync (automated by Kyverno)
 - **Database backups**: Barman to S3 (SQL-aware base backup + WAL archiving for PITR)
 
-See [`docs/backup-restore.md`](../../docs/backup-restore.md#why-two-backup-systems-nfs-for-pvcs-s3-for-databases) for why both exist.
+See [`docs/volsync-storage-recovery.md`](../../docs/volsync-storage-recovery.md#why-two-backup-systems-pvcs-vs-databases) for why both exist.
 
 ## Repo layout per DB
 
