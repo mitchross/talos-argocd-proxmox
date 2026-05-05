@@ -117,8 +117,15 @@ spec:
           python manage.py migrate --noinput
           echo "Running ClickHouse migrations..."
           python manage.py migrate_clickhouse
-          echo "Checking async migrations (non-blocking)..."
-          python manage.py run_async_migrations || echo "Async migrations skipped (will run via worker)"
+          # Async ClickHouse migrations gate worker startup (worker entrypoint
+          # hardcodes SKIP_ASYNC_MIGRATIONS_SETUP=0). Best-effort run, then
+          # --check is the gate: any required migration still pending → Job
+          # fails → ArgoCD sync fails. Beats a silent worker CrashLoop.
+          # Single-node CH gotcha: 0007* queries posthog.sharded_events; if
+          # hit, mark Complete via the PostHog admin and re-sync.
+          echo "Running async ClickHouse migrations..."
+          python manage.py run_async_migrations || true
+          python manage.py run_async_migrations --check
           echo "All migrations complete"
         envFrom:
         - configMapRef:
