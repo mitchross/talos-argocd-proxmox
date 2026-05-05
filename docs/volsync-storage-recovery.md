@@ -15,6 +15,75 @@ The single source of truth for **PVC backup and restore** in this cluster.
 
 ---
 
+## Why this exists
+
+**One sentence:** I can nuke the entire Kubernetes cluster, redeploy from
+Git, and every app comes back with its data — no scripts, no manual restore
+commands, no ordering choreography. It just happens.
+
+That's the whole point. Per-PVC restore is just the mechanism; **cluster
+rebuild is the use case.**
+
+```mermaid
+flowchart LR
+    subgraph BEFORE["💥 Before: cluster died / I rebuilt it from scratch"]
+      B1["🔥 Cluster: gone<br/>Apps: gone<br/>PVCs: gone"]
+      B2["💾 TrueNAS NFS: untouched<br/>(Kopia repo intact)"]
+      B3["📂 Git: untouched"]
+    end
+
+    subgraph DURING["🔄 What I do"]
+      D1["./scripts/bootstrap-argocd.sh"]
+      D2["☕ wait"]
+    end
+
+    subgraph AFTER["✅ After: ~10 minutes later"]
+      A1["🟢 30+ apps running"]
+      A2["🟢 All PVCs auto-restored<br/>from last backup"]
+      A3["🟢 Backups already running<br/>on schedule"]
+    end
+
+    BEFORE --> DURING --> AFTER
+
+    classDef gone fill:#fee2e2,stroke:#991b1b,color:#450a0a;
+    classDef kept fill:#d1fae5,stroke:#065f46,color:#022c22;
+    classDef action fill:#fef3c7,stroke:#92400e,color:#451a03;
+    classDef ok fill:#dbeafe,stroke:#1e40af,color:#0c1f4a;
+    class B1 gone;
+    class B2,B3 kept;
+    class D1,D2 action;
+    class A1,A2,A3 ok;
+```
+
+**What I do NOT do during a cluster rebuild:**
+
+- ❌ Run a restore script per app
+- ❌ Remember which PVC needed which snapshot ID
+- ❌ Worry about ordering — "restore Postgres before Immich starts"
+- ❌ Manually mount NFS, run kopia restore, fix permissions, etc.
+- ❌ Worry about an app starting fresh and overwriting good backup data
+  (Kyverno blocks that — see the fail-closed branch in the next section)
+
+**What's the alternative I'd be doing without this?**
+
+| Without this system | With this system |
+|---|---|
+| Per-app restore scripts in `scripts/restore-<app>.sh` | One label on the PVC |
+| Remember snapshot IDs / dates / paths | The system finds the latest snapshot for `<namespace>/<pvc>` automatically |
+| Restart order matters (Postgres before Immich, etc.) | Doesn't matter — every PVC gates itself on its own restore |
+| If you forget to restore one app, it boots empty | Kyverno **denies** an empty PVC when a backup exists; can't forget |
+| New apps need a fresh-vs-restore decision baked into a script | Same one label handles both fresh-install and rebuild |
+| Cluster rebuild = day-long project | Cluster rebuild ≈ ArgoCD sync time + ~10 min for VolSync to populate volumes |
+
+So while the rest of this doc reads like "here's how a single PVC create
+works", remember the leverage: **that one admission flow runs across every
+backup-labeled PVC during a rebuild, in parallel, with no human in the
+loop.** Day-zero install and day-N disaster recovery are literally the
+same code path — the only difference is whether pvc-plumber finds a
+snapshot or not.
+
+---
+
 ## In plain English
 
 We have a homelab Kubernetes cluster. Apps store their state in PVCs
