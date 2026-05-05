@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: k8sgpt
 resources:
   - ns.yaml
+  - secret.yaml
   - k8sgpt.yaml
   - grafana-dashboard.yaml
 helmCharts:
