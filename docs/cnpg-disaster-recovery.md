@@ -25,7 +25,7 @@ CNPG databases live in two layers:
 **Barman ≠ PVC backups.** The PVC/Kopia system (Kyverno + VolSync + pvc-plumber)
 handles *file-level* PVC backups to NFS. CNPG has its own SQL-aware backup
 path: Barman Cloud → RustFS S3. The two never touch each other. See
-[docs/backup-restore.md](backup-restore.md) for why both exist.
+[docs/volsync-storage-recovery.md](volsync-storage-recovery.md) for why both exist.
 
 ### How recovery works (the 30-second version)
 

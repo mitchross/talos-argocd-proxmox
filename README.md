@@ -287,7 +287,7 @@ All PVC backups use **Kopia on NFS** via VolSync, automated by Kyverno policies.
 - **Encryption**: Kopia password from 1Password (`rustfs` item)
 - **Restore**: Automatic on PVC recreation - PVC Plumber checks for existing backups, Kyverno injects `dataSourceRef`
 - **Database backups**: CNPG uses Barman to RustFS S3; abandoned database backup prefixes are cleaned by the GitOps-managed `rustfs-lifecycle` controller
-- **Details**: See [docs/pvc-plumber-full-flow.md](docs/pvc-plumber-full-flow.md), [docs/backup-restore.md](docs/backup-restore.md), and [docs/cnpg-disaster-recovery.md](docs/cnpg-disaster-recovery.md)
+- **Details**: See [docs/volsync-storage-recovery.md](docs/volsync-storage-recovery.md) and [docs/cnpg-disaster-recovery.md](docs/cnpg-disaster-recovery.md)
 - **AI-guided database recovery**: Copy/paste prompts are in [LLM Recovery Prompt Templates](docs/cnpg-disaster-recovery.md#llm-recovery-prompt-templates)
 
 ## Cluster Upgrades & Talos 1.13 Notes
@@ -414,8 +414,7 @@ kubectl delete applications --all -n argocd
 ## Documentation
 
 - **[CLAUDE.md](CLAUDE.md)** - Full development guide and patterns for this repository
-- **[docs/pvc-plumber-full-flow.md](docs/pvc-plumber-full-flow.md)** - Complete PVC backup/restore flow diagram
-- **[docs/backup-restore.md](docs/backup-restore.md)** - Backup/restore workflow
+- **[docs/volsync-storage-recovery.md](docs/volsync-storage-recovery.md)** - PVC backup/restore (architecture, admission flow, scenarios, troubleshooting)
 - **[docs/argocd.md](docs/argocd.md)** - ArgoCD GitOps patterns
 - **[docs/argocd-entrypoints.md](docs/argocd-entrypoints.md)** - Root entrypoints, waves, and AppSet/custom-entrypoint decisions
 - **[docs/network-topology.md](docs/network-topology.md)** - Network architecture
