@@ -16,7 +16,7 @@ The single source of truth for **PVC backup and restore** in this cluster.
 > **Reading from another homelab?** This is internal documentation for one
 > specific cluster, not a product. It works on my hardware with my choices.
 > See [Adapting this to your cluster](#adapting-this-to-your-cluster) and
-> [Known limitations](#known-limitations--non-goals) before adopting any of
+> [Known limitations](#known-limitations-and-non-goals) before adopting any of
 > this — the *pattern* is more portable than the specific stack.
 
 ---
@@ -276,13 +276,13 @@ spec:
 - [Decision table](#decision-table)
 - [The five scenarios](#the-five-scenarios)
 - [Components](#components)
-- [Backup schedules & retention](#backup-schedules--retention)
+- [Backup schedules & retention](#backup-schedules-and-retention)
 - [Operations](#operations)
   - [Enable backup](#enable-backup)
   - [Disable backup](#disable-backup)
   - [Skip restore (escape hatch)](#skip-restore-escape-hatch)
   - [Manual restore](#manual-restore)
-- [NFS repository layout & deduplication](#nfs-repository-layout--deduplication)
+- [NFS repository layout & deduplication](#nfs-repository-layout-and-deduplication)
 - [Troubleshooting](#troubleshooting)
 - [Why two backup systems (PVCs vs databases)](#why-two-backup-systems-pvcs-vs-databases)
 - [Files reference](#files-reference)
@@ -530,7 +530,7 @@ The **invariant** the entire system protects:
 | **Kopia maintenance** | `infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml` | 1 | Daily safe maintenance off the top of the hour. |
 | **Kopia UI** (optional) | `infrastructure/storage/kopia-ui/` | — | Web browser for the repo at `kopia-ui.{domain}`. Mounts the same NFS share. |
 | **Prometheus alerts** | `monitoring/prometheus-stack/volsync-alerts.yaml` | 5 | VolSync backup age, pvc-plumber decision/error rate, `ProtectedPVCSkipRestoreStale` 24h watchdog. |
-| **TrueNAS NFS** | `192.168.10.133:/mnt/BigTank/k8s/volsync-kopia-nfs` | — | 10 Gbps to Proxmox. One shared Kopia repository for the whole cluster (see [dedup](#nfs-repository-layout--deduplication)). |
+| **TrueNAS NFS** | `192.168.10.133:/mnt/BigTank/k8s/volsync-kopia-nfs` | — | 10 Gbps to Proxmox. One shared Kopia repository for the whole cluster (see [dedup](#nfs-repository-layout-and-deduplication)). |
 | **1Password** | item `rustfs`, field `kopia_password` | — | Single source of truth for the Kopia repository encryption password. |
 
 ### Policy rules
@@ -555,7 +555,7 @@ what saves debugging time:
 
 ---
 
-## Backup schedules & retention
+## Backup schedules and retention
 
 | Label | Cron | Retention |
 |---|---|---|
@@ -629,7 +629,7 @@ kubectl patch replicationdestination <pvc>-backup -n <ns> \
 
 ---
 
-## NFS repository layout & deduplication
+## NFS repository layout and deduplication
 
 ```
 /mnt/BigTank/k8s/volsync-kopia-nfs/
@@ -828,7 +828,7 @@ item names in this repo are not.
 
 ---
 
-## Known limitations & non-goals
+## Known limitations and non-goals
 
 This is a working homelab system, not a hardened product. Things you should
 know before adopting:
@@ -892,7 +892,7 @@ know before adopting:
 **Schedule clustering.**
 
 - The `length(ns-name) modulo 60` minute spread is a stopgap (the doc
-  admits this in [Backup schedules](#backup-schedules--retention)). PVC
+  admits this in [Backup schedules](#backup-schedules-and-retention)). PVC
   names share length ranges → backups cluster on the same minute. Replace
   with a sha256-derived minute or a real controller before scaling past
   ~50 backup-labeled PVCs.
