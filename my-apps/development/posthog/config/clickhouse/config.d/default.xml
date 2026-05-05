@@ -5,7 +5,7 @@
         <posthog>
             <shard>
                 <replica>
-                    <host>127.0.0.1</host>
+                    <host>clickhouse.clickhouse-headless.posthog.svc.cluster.local</host>
                     <port>9000</port>
                 </replica>
             </shard>
@@ -13,7 +13,7 @@
         <posthog_single_shard>
             <shard>
                 <replica>
-                    <host>127.0.0.1</host>
+                    <host>clickhouse.clickhouse-headless.posthog.svc.cluster.local</host>
                     <port>9000</port>
                 </replica>
             </shard>
@@ -21,7 +21,7 @@
         <posthog_migrations>
             <shard>
                 <replica>
-                    <host>127.0.0.1</host>
+                    <host>clickhouse.clickhouse-headless.posthog.svc.cluster.local</host>
                     <port>9000</port>
                 </replica>
             </shard>
@@ -29,7 +29,7 @@
         <posthog_writable>
             <shard>
                 <replica>
-                    <host>127.0.0.1</host>
+                    <host>clickhouse.clickhouse-headless.posthog.svc.cluster.local</host>
                     <port>9000</port>
                 </replica>
             </shard>
@@ -37,7 +37,7 @@
         <posthog_primary_replica>
             <shard>
                 <replica>
-                    <host>127.0.0.1</host>
+                    <host>clickhouse.clickhouse-headless.posthog.svc.cluster.local</host>
                     <port>9000</port>
                 </replica>
             </shard>
@@ -57,7 +57,7 @@
         <ai_events>
             <shard>
                 <replica>
-                    <host>127.0.0.1</host>
+                    <host>clickhouse.clickhouse-headless.posthog.svc.cluster.local</host>
                     <port>9000</port>
                 </replica>
             </shard>
@@ -75,7 +75,7 @@
         <aux>
             <shard>
                 <replica>
-                    <host>127.0.0.1</host>
+                    <host>clickhouse.clickhouse-headless.posthog.svc.cluster.local</host>
                     <port>9000</port>
                 </replica>
             </shard>
@@ -83,7 +83,7 @@
         <ops>
             <shard>
                 <replica>
-                    <host>127.0.0.1</host>
+                    <host>clickhouse.clickhouse-headless.posthog.svc.cluster.local</host>
                     <port>9000</port>
                 </replica>
             </shard>
@@ -91,7 +91,7 @@
         <sessions>
             <shard>
                 <replica>
-                    <host>127.0.0.1</host>
+                    <host>clickhouse.clickhouse-headless.posthog.svc.cluster.local</host>
                     <port>9000</port>
                 </replica>
             </shard>
