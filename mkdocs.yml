@@ -1,0 +1,94 @@
+site_name: talos-argocd-proxmox
+site_description: GitOps Kubernetes homelab on Talos OS, ArgoCD, Cilium, Longhorn, with self-managing applications
+site_url: https://mitchross.github.io/talos-argocd-proxmox/
+repo_url: https://github.com/mitchross/talos-argocd-proxmox
+repo_name: mitchross/talos-argocd-proxmox
+edit_uri: edit/main/docs/
+
+docs_dir: docs
+
+# Skip internal-only directories from publication.
+exclude_docs: |
+  plans/
+  research/
+  superpowers/
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+    - content.tooltips
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Storage & recovery:
+      - PVC backup/restore (VolSync): volsync-storage-recovery.md
+      - Database DR (CloudNativePG): cnpg-disaster-recovery.md
+  - GitOps:
+      - ArgoCD architecture: argocd.md
+      - Root entrypoints & sync waves: argocd-entrypoints.md
+  - Networking:
+      - Topology: network-topology.md
+      - Cilium policies: network-policy.md
+  - Observability:
+      - radar-ng cookbook: radar-ng-observability.md
+      - Tempo audit (2026-05-02): tempo-audit-2026-05-02.md
