@@ -36,14 +36,18 @@ prometheus:
           resources:
             requests:
               storage: 50Gi
-    # Resource allocation
+    # Resource allocation (memory bumped 2026-05-04)
+    # Capacity baseline 2026-05-04 showed Prometheus pod at 2.0 GiB observed
+    # against the 4 GiB limit ceiling (request=2 Gi was at limit-of-use).
+    # Retention 15d + WAL + chunk caches will keep growing; raising headroom
+    # to avoid OOM as series count grows.
     resources:
       requests:
         cpu: 500m
-        memory: 2Gi
+        memory: 3Gi
       limits:
         cpu: 2000m
-        memory: 4Gi
+        memory: 6Gi
     # Security context
     securityContext:
       runAsNonRoot: true

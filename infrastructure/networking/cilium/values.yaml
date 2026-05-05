@@ -104,14 +104,17 @@ gatewayAPI:
   sessionAffinity: true
   sessionAffinityTimeoutSeconds: 10800 # 3 hours
 
-# Cilium agent resources (VPA-optimized 2026-02-28)
+# Cilium agent resources (VPA-optimized 2026-02-28; mem limit raised 2026-05-04)
+# Capacity baseline 2026-05-04 showed cilium-* daemonset pods observed
+# 0.8-1.2 GiB at the 2 GiB limit boundary. Endpoint maps grow with churn.
+# Bumping limit to 3 GiB to give headroom; request unchanged (VPA target).
 resources:
   requests:
     cpu: 500m
     memory: 1Gi
   limits:
     cpu: 2000m
-    memory: 2Gi
+    memory: 3Gi
 
 # Hubble (Observability)
 hubble:

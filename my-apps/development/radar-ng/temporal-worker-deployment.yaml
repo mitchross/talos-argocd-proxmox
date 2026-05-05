@@ -77,8 +77,11 @@ spec:
             - { name: grids,  mountPath: /data/grids }
             - { name: state,  mountPath: /data/state }
           resources:
-            requests: { cpu: "500m", memory: "1Gi" }
-            limits:   { cpu: "2",    memory: "4Gi" }
+            # Capacity baseline 2026-05-04 showed each replica observed
+            # 1.91-1.93 cores, saturating the 2-core limit. CPU request was
+            # 4x under-allocated (500m) and limit was the bottleneck.
+            requests: { cpu: "1500m", memory: "1Gi" }
+            limits:   { cpu: "3",    memory: "4Gi" }
       volumes:
         - name: tiles
           persistentVolumeClaim: { claimName: tiles }
