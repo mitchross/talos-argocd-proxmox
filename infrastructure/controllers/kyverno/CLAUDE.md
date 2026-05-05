@@ -1,8 +1,7 @@
 # Kyverno Backup & Restore System
 
 > **Required reading before modifying backup policies or troubleshooting backup issues:**
-> - `docs/backup-restore.md` — Full architecture, why Kopia+NFS (not S3), cross-PVC deduplication
-> - `docs/pvc-plumber-full-flow.md` — Complete flow from bare metal bootstrap to automatic DR
+> - `docs/volsync-storage-recovery.md` — Full PVC backup/restore architecture, admission flow, sync waves, scenarios, and troubleshooting
 
 ## The Magic Label Pattern
 

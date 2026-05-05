@@ -10,8 +10,8 @@ CloudNativePG (CNPG) Postgres clusters in this repository.
 - [Runbook: fresh DB](#runbook-fresh-db-initdb)
 - [Runbook: restore from Barman](#runbook-restore-from-barman-recovery)
 - [Runbook: cluster nuke rebuild](#runbook-cluster-nuke-rebuild)
-- [Monitoring & tools](#monitoring--tools)
-- [Troubleshooting / gotchas](#troubleshooting--gotchas)
+- [Monitoring and tools](#monitoring-and-tools)
+- [Troubleshooting and gotchas](#troubleshooting-and-gotchas)
 
 ## Concepts
 
@@ -25,7 +25,7 @@ CNPG databases live in two layers:
 **Barman ≠ PVC backups.** The PVC/Kopia system (Kyverno + VolSync + pvc-plumber)
 handles *file-level* PVC backups to NFS. CNPG has its own SQL-aware backup
 path: Barman Cloud → RustFS S3. The two never touch each other. See
-[docs/backup-restore.md](backup-restore.md) for why both exist.
+[docs/volsync-storage-recovery.md](volsync-storage-recovery.md) for why both exist.
 
 ### How recovery works (the 30-second version)
 
@@ -284,7 +284,7 @@ done
 
 ---
 
-## Monitoring & tools
+## Monitoring and tools
 
 **Currently deployed (use these first):**
 
@@ -413,7 +413,7 @@ Budget: probably 1 evening per DB. Schedule when CNPG 1.30.0 is announced
 
 ---
 
-## Troubleshooting / gotchas
+## Troubleshooting and gotchas
 
 ### "recovery ended before configured recovery target was reached"
 

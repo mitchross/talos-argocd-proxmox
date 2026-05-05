@@ -207,4 +207,4 @@ namespace recreate:
 4. World saves and config come back intact. `server-files` PVC is empty,
    `UPDATE_ON_START=true` re-downloads Zomboid from Steam (~10 min).
 
-See `docs/pvc-plumber-full-flow.md` for the full flow.
+See `docs/volsync-storage-recovery.md` for the full flow.

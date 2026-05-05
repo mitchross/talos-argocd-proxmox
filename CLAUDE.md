@@ -177,9 +177,8 @@ Detailed instructions load automatically when working in these directories:
 
 ## Additional Documentation
 
-- **[docs/backup-restore.md](docs/backup-restore.md)** - Full backup/restore architecture with diagrams
-- **[docs/cnpg-disaster-recovery.md](docs/cnpg-disaster-recovery.md)** - CNPG database DR procedures
-- **[docs/pvc-plumber-full-flow.md](docs/pvc-plumber-full-flow.md)** - Complete PVC backup flow from bare metal
+- **[docs/volsync-storage-recovery.md](docs/volsync-storage-recovery.md)** - PVC backup/restore single source of truth (architecture, sync waves, admission flow, scenarios, troubleshooting)
+- **[docs/cnpg-disaster-recovery.md](docs/cnpg-disaster-recovery.md)** - CNPG database DR procedures (separate system: Barman → S3)
 - **[docs/network-topology.md](docs/network-topology.md)** - Network architecture details
 - **[docs/network-policy.md](docs/network-policy.md)** - Cilium network policies
 - **[docs/argocd.md](docs/argocd.md)** - ArgoCD documentation
