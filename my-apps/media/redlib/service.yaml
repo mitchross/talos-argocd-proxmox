@@ -4,6 +4,7 @@ metadata:
   name: redlib
   namespace: redlib
 spec:
+  sessionAffinity: ClientIP
   ports:
     - name: http
       port: 8080
