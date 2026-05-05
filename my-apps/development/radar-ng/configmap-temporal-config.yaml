@@ -10,7 +10,9 @@ metadata:
     app: radar-ng-worker
 data:
   # ingest tunables
-  PALETTES: "classic,muted,colorblind"
+  # Drop the missing colorblind palette (no backend/shared/palettes/colorblind.json
+  # exists). The muted palette already advertises colorblind-safety.
+  PALETTES: "classic,muted,vivid"
   BACKLOG_PER_CYCLE: "3"
   MRMS_PREFIX: "CONUS/MergedBaseReflectivityQC_00.50"
   FORECAST_HOURS: "18"
