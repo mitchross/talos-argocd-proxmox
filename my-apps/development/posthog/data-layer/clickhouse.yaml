@@ -46,6 +46,8 @@ spec:
         app.kubernetes.io/name: posthog
         app.kubernetes.io/component: clickhouse
     spec:
+      hostname: clickhouse
+      subdomain: clickhouse-headless
       containers:
       - name: clickhouse
         image: clickhouse/clickhouse-server:25.12.8.9
