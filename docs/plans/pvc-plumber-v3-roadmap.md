@@ -109,7 +109,36 @@ The v3 spec's documented fallback ("standard `MutatingWebhookConfiguration` serv
 
 ### Migration complexity
 
-The 7-phase plan is rigorous but requires **Kyverno still running as the source of truth through phases 0–5**. v2 already cut over from Kyverno on a single boundary because v2 was built to be idempotent with Kyverno's existing generators. Reintroducing Kyverno coexistence for the v3 migration window is a step backwards in operational simplicity vs. the cutover we already have lined up.
+The original v3 spec's 7-phase plan required **Kyverno still running as the source of truth through phases 0–5**. The v3 author corrected this on 2026-05-06: the right migration path is **v2 webhook → v3 native admission**, NOT a re-introduction of Kyverno coexistence. v2 already cut over from Kyverno on a single boundary; v3 should cut over from v2 the same way.
+
+Updated migration sequence (per v3 author's correction):
+
+```
+v2 webhooks are source of truth
+  ↓
+v2.1 adds CRDs/status/schedule/maintenance improvements (additive)
+  ↓
+v3 observe mode writes PVCBackupCatalog (no admission policy yet)
+  ↓
+native VAP Warn/Audit compares against v2 webhook decisions
+  ↓
+native MAP canary namespace (only if API version available)
+  ↓
+native VAP Deny canary
+  ↓
+disable v2 webhooks only after measured parity
+```
+
+---
+
+## The invariant that must survive
+
+Both authors agree on the one rule any "no Kyverno" architecture must hold:
+
+> **`Fresh` means a live, authoritative "no backup exists" check.
+> `Unknown` means deny.**
+
+v2 satisfies this trivially via per-request kopia calls. v3 only satisfies it if the catalog is updated **write-through** by the operator — periodic refresh alone is insufficient.
 
 ---
 
@@ -130,24 +159,72 @@ Cherry-pick the cheap, non-architectural wins from the v3 spec into a v2.1 PR on
 | c | `backup-exempt: "true"` + `storage.vanillax.dev/backup-exempt-reason` contract | Validating webhook + cluster manifests | Fits existing `skip-restore` validation pattern |
 | d | Operator-owned Kopia maintenance | Either CronJob owner or in-process Job runner | Folds in the existing maintenance CronJob |
 
-### Gate before committing to v3
+### Gates before committing to v3
 
-Run v2 in production for **4–6 weeks**. Measure two things:
+Run v2 in production for **4–6 weeks**. All three gates must clear before v3 work starts:
 
 1. **Per-request kopia admission latency.** If p99 PVC admission stays under ~200ms, the catalog model's primary speed argument is moot.
-2. **Talos k8s version trajectory.** If Talos lands 1.36 with `admissionregistration.k8s.io/v1` MAP GA, v3's no-webhook win becomes available. If we're still on 1.30/1.32 by then, v3's webhook fallback is a wash with v2.
+2. **Talos k8s version trajectory.** Cluster must expose `admissionregistration.k8s.io/v1` `MutatingAdmissionPolicy` (k8s 1.36+). `v1beta1`-only is a wash with v2.
+3. **Catalog staleness solved at the design level.** Write-through from the backup-trigger path (Resolved Question 1) must be implemented or proved unnecessary. A periodic-refresh catalog model is rejected.
 
-If both gates favor v3 *and* the staleness-window concern above is addressed in the design, revisit. Otherwise, v2 + v2.1 is the right shape for this homelab.
+If all three favor v3, revisit. Otherwise v2 + v2.1 is the right shape for this homelab.
 
 ---
 
-## Open questions for the v3 spec author
+## Resolved questions (with the v3 spec author, 2026-05-06)
 
-1. **Staleness mitigation**: how would you address the "catalog stale when a backup just completed" race? Write-through from the RS controller? Live-fallback path?
-2. **MAP API readiness**: have you confirmed `MutatingAdmissionPolicy` at `admissionregistration.k8s.io/v1` (not `v1beta1`) on a target Talos version? If only `v1beta1` is available, would you ship v3 against the beta API and pin the cluster version?
-3. **CRD versioning**: the spec is at `v1alpha1`. What's the contract for migrating to `v1beta1`/`v1`? Conversion webhooks required, given the catalog is read by admission policies?
-4. **`PVCProtectionClass` selectors**: the spec uses `matchLabels: {backup: hourly}`. What's the conflict-resolution rule when a PVC matches multiple classes (e.g. `backup: hourly` + `backup-tier: gold`)?
-5. **Coexistence**: phase 0 says "current Kyverno path remains source of truth." Given that v2 already replaces Kyverno cleanly, is that still required, or could v3 cut over directly from v2 (operator-managed → operator-managed-with-CRDs)?
+### 1. Staleness mitigation
+
+**Resolved**: do not use a periodic catalog as the admission source for `Fresh` decisions. The only native-CEL path worth pursuing is **write-through plus in-flight state**:
+
+```
+Fresh is allowed only if:
+  catalog authoritative=true
+  key has no restore entry
+  no backup is in-flight for that key
+  fresh decision was proven after the last possible backup completion
+```
+
+The operator must:
+
+1. Own or reliably observe backup scheduling.
+2. Mark a PVC key as `Unknown`/`InProgress` **before** a backup that could create the first snapshot.
+3. On backup completion, immediately refresh that PVC's Kopia truth.
+4. Write `Restore` to `PVCBackupCatalog` before allowing `Fresh` again.
+5. Deny `Fresh` if the key is `InProgress`, `Unknown`, stale, or not recently proven.
+
+If we can't prove this event ordering — and VolSync currently schedules backups independently of pvc-plumber, so the operator only discovers completion after the fact — there's still a tiny race. The fully-equivalent version is **the operator controlling the backup trigger and marking the catalog unsafe before triggering**. That's a non-trivial scope expansion (currently ReplicationSource owns the trigger).
+
+**Until that ordering is proven**, keep v2's per-request live webhook check. A periodic catalog with `maxStaleness: 30s` was explicitly rejected as "weaker safety, not recommended for stated goal."
+
+### 2. MAP API readiness
+
+**Resolved**: do not target native `MutatingAdmissionPolicy` until the cluster's Talos/Kubernetes version exposes `admissionregistration.k8s.io/v1`. As of 2026-05-06: `ValidatingAdmissionPolicy` is stable since k8s 1.30; `MutatingAdmissionPolicy` is **k8s 1.34 beta** under `v1beta1` (feature-gated), with `v1` arrival in the k8s 1.36 generated API reference. If the target cluster only has `v1beta1`, keep v2 webhooks. The webhook fallback partially defeats the no-webhook win, so a beta-API rollout is not worth it.
+
+### 3. CRD versioning
+
+**Resolved**:
+- `PVCProtection` (status/visibility only) can stay `v1alpha1` indefinitely — it's read by humans, not admission.
+- `PVCBackupCatalog` is **production admission infrastructure** the moment native MAP/VAP starts reading it. Either bump it to `v1beta1` before that binding, or accept homelab-style "breaking migration = delete + recreate" and document it. If anyone outside this homelab consumes the CRD, add conversion webhooks before any version bump.
+
+### 4. `PVCProtectionClass` selector conflicts
+
+**Resolved**: the rule is explicit — **exactly one class may match a PVC**. If multiple match:
+
+- Deny the protection config wiring.
+- Set `PVCProtection.status.phase: Degraded`.
+- Do not create backup resources until the operator picks a single class.
+
+If we ever want richer tiering, add a `spec.priority: <int>` field to `PVCProtectionClass`:
+
+- Highest priority wins.
+- Tie at the same priority → error (no implicit ordering).
+
+Never let class selection be "whatever the controller saw first."
+
+### 5. Coexistence with Kyverno
+
+**Resolved (correction)**: v2 already replaces Kyverno cleanly, so Kyverno is **out of the v3 migration plan**. The path is `v2 webhook → v3 native`, not `Kyverno → v2 → Kyverno coexistence → v3`. The original v3 spec's phase 0 ("current Kyverno path remains source of truth") was an error; the v3 author corrected it.
 
 ---
 
