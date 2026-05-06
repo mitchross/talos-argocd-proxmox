@@ -11,6 +11,28 @@ resources:
   - clusterrole-full-rbac.yaml
   - clusterrolebinding-full-rbac.yaml
   - cnpg-backup-cleanup.yaml
+
+# clusters.postgresql.cnpg.io and poolers.postgresql.cnpg.io render at
+# 450KB and 650KB respectively — far over the 256KB k8s annotation
+# limit. Even with global ServerSideApply=true on the Application,
+# ArgoCD has been falling back to client-side apply for these CRDs and
+# failing with "metadata.annotations: Too long". Per-resource
+# sync-options annotation forces SSA reliably.
+patches:
+  - target:
+      kind: CustomResourceDefinition
+      name: clusters.postgresql.cnpg.io
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: ServerSideApply=true
+  - target:
+      kind: CustomResourceDefinition
+      name: poolers.postgresql.cnpg.io
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: ServerSideApply=true
 helmCharts:
   - name: cloudnative-pg
     repo: https://cloudnative-pg.github.io/charts
