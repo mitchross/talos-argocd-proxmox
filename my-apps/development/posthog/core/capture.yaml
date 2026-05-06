@@ -9,7 +9,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "3"
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: posthog
@@ -71,7 +71,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "3"
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: posthog
@@ -156,7 +156,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "3"
 spec:
-  replicas: 1  # Required for /decide endpoint (session replay, feature flags)
+  replicas: 2  # Required for /decide endpoint (session replay, feature flags)
   selector:
     matchLabels:
       app.kubernetes.io/name: posthog
