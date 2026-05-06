@@ -16,6 +16,17 @@
 #
 # 2026-04-08 incident: a Kyverno crash with the same webhook-failurePolicy=Fail
 # configuration caused full cluster deadlock. Do not deviate from this list.
+#
+# Blast-radius scoping — the PVC webhooks (mutate-pvc, validate-pvc) carry an
+# `objectSelector` matching `backup in (hourly, daily)`. This restores the
+# scoping the Kyverno volsync-pvc-backup-restore policy had via its `match`
+# selector. Without it, a pvc-plumber outage with failurePolicy=Fail would
+# block ALL PVC creation in app namespaces, far wider than the Kyverno setup
+# ever was. The operator code already short-circuits unlabeled PVCs to
+# Allowed, but matching at the apiserver level means kube-apiserver doesn't
+# even consult pvc-plumber for unlabeled PVCs.
+# The mutate-job webhook keeps its own selector
+# (app.kubernetes.io/created-by=volsync) — leave that alone.
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
@@ -39,6 +50,11 @@ webhooks:
         apiVersions: ["v1"]
         resources: ["persistentvolumeclaims"]
         operations: ["CREATE"]
+    objectSelector:
+      matchExpressions:
+        - key: backup
+          operator: In
+          values: ["hourly", "daily"]
     namespaceSelector:
       matchExpressions:
         - key: kubernetes.io/metadata.name
@@ -117,6 +133,13 @@ webhooks:
         apiVersions: ["v1"]
         resources: ["persistentvolumeclaims"]
         operations: ["CREATE"]
+    # See blast-radius comment on the MutatingWebhookConfiguration above.
+    # Only backup-labeled PVCs are gated by pvc-plumber.
+    objectSelector:
+      matchExpressions:
+        - key: backup
+          operator: In
+          values: ["hourly", "daily"]
     namespaceSelector:
       matchExpressions:
         - key: kubernetes.io/metadata.name
