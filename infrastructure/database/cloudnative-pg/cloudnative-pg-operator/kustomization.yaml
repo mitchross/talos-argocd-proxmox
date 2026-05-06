@@ -25,14 +25,14 @@ patches:
     patch: |-
       - op: add
         path: /metadata/annotations/argocd.argoproj.io~1sync-options
-        value: ServerSideApply=true
+        value: ServerSideApply=true,Replace=true
   - target:
       kind: CustomResourceDefinition
       name: poolers.postgresql.cnpg.io
     patch: |-
       - op: add
         path: /metadata/annotations/argocd.argoproj.io~1sync-options
-        value: ServerSideApply=true
+        value: ServerSideApply=true,Replace=true
 helmCharts:
   - name: cloudnative-pg
     repo: https://cloudnative-pg.github.io/charts
