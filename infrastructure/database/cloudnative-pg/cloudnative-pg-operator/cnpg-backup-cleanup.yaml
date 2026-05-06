@@ -1,0 +1,113 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cnpg-backup-cleanup
+  namespace: cloudnative-pg
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cnpg-backup-cleanup
+  namespace: cloudnative-pg
+rules:
+  - apiGroups: ["postgresql.cnpg.io"]
+    resources: ["backups"]
+    verbs: ["get", "list", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cnpg-backup-cleanup
+  namespace: cloudnative-pg
+subjects:
+  - kind: ServiceAccount
+    name: cnpg-backup-cleanup
+    namespace: cloudnative-pg
+roleRef:
+  kind: Role
+  name: cnpg-backup-cleanup
+  apiGroup: rbac.authorization.k8s.io
+---
+# Native cleanup for CloudNativePG Backup CRs.
+# Workaround for cloudnative-pg/cloudnative-pg#8599 (retentionPolicy
+# does not prune Backup custom resources). Deletes completed backups
+# older than RETENTION_DAYS. Leaves failed backups untouched so they
+# remain visible for diagnosis.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cnpg-backup-cleanup
+  namespace: cloudnative-pg
+spec:
+  schedule: "0 4 * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 600
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          serviceAccountName: cnpg-backup-cleanup
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: cleanup
+              image: alpine/k8s:1.32.0
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: RETENTION_DAYS
+                  value: "7"
+                - name: NAMESPACE
+                  value: cloudnative-pg
+              command: ["/bin/bash", "-c"]
+              args:
+                - |
+                  set -euo pipefail
+                  CUTOFF=$(date -u -d "${RETENTION_DAYS} days ago" +%Y-%m-%dT%H:%M:%SZ)
+                  echo "Pruning Backup CRs in ns=${NAMESPACE} with phase=completed and creationTimestamp < ${CUTOFF}"
+                  STALE=$(kubectl -n "${NAMESPACE}" get backups.postgresql.cnpg.io -o json \
+                    | jq -r --arg cutoff "${CUTOFF}" '
+                        .items[]
+                        | select(.status.phase == "completed")
+                        | select(.metadata.creationTimestamp < $cutoff)
+                        | .metadata.name')
+                  if [ -z "${STALE}" ]; then
+                    echo "Nothing to prune."
+                    exit 0
+                  fi
+                  COUNT=$(echo "${STALE}" | wc -l)
+                  echo "Pruning ${COUNT} Backup CR(s):"
+                  echo "${STALE}" | sed 's/^/  - /'
+                  echo "${STALE}" | xargs -r -n1 kubectl -n "${NAMESPACE}" delete backup.postgresql.cnpg.io
+                  echo "Done."
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+                - name: home
+                  mountPath: /.kube
+          volumes:
+            - name: tmp
+              emptyDir: {}
+            - name: home
+              emptyDir: {}
