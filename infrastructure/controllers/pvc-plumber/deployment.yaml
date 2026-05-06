@@ -19,6 +19,7 @@ spec:
       labels:
         app.kubernetes.io/name: pvc-plumber
     spec:
+      serviceAccountName: pvc-plumber
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -35,10 +36,17 @@ spec:
           type: RuntimeDefault
       containers:
       - name: pvc-plumber
-        image: ghcr.io/mitchross/pvc-plumber:1.7.0
+        # Forward-reference: v2 operator image (webhook + reconciler). Renovate
+        # will track this once the tag exists on ghcr.io. Phase 4 of the
+        # migration plan (docs/plans/pvc-plumber-operator-design.md) covers
+        # the cutover from the v1 HTTP-only image.
+        image: ghcr.io/mitchross/pvc-plumber:2.0.0-rc1
         ports:
         - name: http
           containerPort: 8080
+          protocol: TCP
+        - name: webhook
+          containerPort: 9443
           protocol: TCP
         env:
         - name: BACKEND_TYPE
@@ -68,6 +76,21 @@ spec:
           value: "/tmp"
         - name: USER
           value: "plumber"
+        # Operator-mode configuration. The v2 binary uses these to enable the
+        # controller-runtime manager + admission webhooks alongside the
+        # existing /exists HTTP server.
+        - name: OPERATOR_MODE
+          value: "true"
+        - name: NFS_SERVER
+          value: "192.168.10.133"
+        - name: NFS_PATH
+          value: "/mnt/BigTank/k8s/volsync-kopia-nfs"
+        # Namespaces the operator must NOT touch when reconciling/mutating.
+        # Mirrors the webhook namespaceSelector exclusion list (see
+        # webhooks.yaml). Kept in sync to make sure reconciler and admission
+        # paths agree on what is "infrastructure".
+        - name: SYSTEM_NAMESPACES
+          value: "kube-system,volsync-system,kyverno,argocd,longhorn-system,snapshot-controller,cert-manager,external-secrets,1passwordconnect"
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: false
@@ -103,6 +126,12 @@ spec:
           readOnly: false
         - name: kopia-tmp
           mountPath: /tmp/kopia
+        # controller-runtime default location for webhook serving cert.
+        # Populated by cert-manager via the pvc-plumber-webhook-tls secret
+        # (see certificate.yaml).
+        - name: webhook-tls
+          mountPath: /tmp/k8s-webhook-server/serving-certs
+          readOnly: true
       volumes:
       - name: repository
         nfs:
@@ -110,6 +139,9 @@ spec:
           path: /mnt/BigTank/k8s/volsync-kopia-nfs
       - name: kopia-tmp
         emptyDir: {}
+      - name: webhook-tls
+        secret:
+          secretName: pvc-plumber-webhook-tls
 ---
 apiVersion: v1
 kind: Service
@@ -128,6 +160,10 @@ spec:
   - name: http
     port: 80
     targetPort: http
+    protocol: TCP
+  - name: webhook
+    port: 9443
+    targetPort: webhook
     protocol: TCP
 ---
 apiVersion: policy/v1

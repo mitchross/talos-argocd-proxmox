@@ -1,0 +1,59 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pvc-plumber
+  namespace: volsync-system
+  labels:
+    app.kubernetes.io/name: pvc-plumber
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+---
+# pvc-plumber v2 (operator mode) needs to:
+#   - watch PVCs and reconcile companion ES/RS/RD resources
+#   - manage volsync ReplicationSource/ReplicationDestination lifecycle
+#   - manage ExternalSecrets that supply the kopia repo password to mover jobs
+#   - run controller-runtime leader election (leases)
+#   - emit Kubernetes Events for observability
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pvc-plumber
+  labels:
+    app.kubernetes.io/name: pvc-plumber
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["external-secrets.io"]
+    resources: ["externalsecrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["volsync.backube"]
+    resources: ["replicationsources", "replicationdestinations"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Leader election (controller-runtime needs this).
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pvc-plumber
+  labels:
+    app.kubernetes.io/name: pvc-plumber
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pvc-plumber
+subjects:
+  - kind: ServiceAccount
+    name: pvc-plumber
+    namespace: volsync-system
