@@ -73,13 +73,13 @@ spec:
               args:
                 - |
                   set -euo pipefail
-                  CUTOFF=$(date -u -d "${RETENTION_DAYS} days ago" +%Y-%m-%dT%H:%M:%SZ)
-                  echo "Pruning Backup CRs in ns=${NAMESPACE} with phase=completed and creationTimestamp < ${CUTOFF}"
+                  echo "Pruning Backup CRs in ns=${NAMESPACE} where phase=completed and age > ${RETENTION_DAYS}d"
                   STALE=$(kubectl -n "${NAMESPACE}" get backups.postgresql.cnpg.io -o json \
-                    | jq -r --arg cutoff "${CUTOFF}" '
-                        .items[]
+                    | jq -r --argjson days "${RETENTION_DAYS}" '
+                        (now - ($days * 86400)) as $cutoff
+                        | .items[]
                         | select(.status.phase == "completed")
-                        | select(.metadata.creationTimestamp < $cutoff)
+                        | select((.metadata.creationTimestamp | fromdateiso8601) < $cutoff)
                         | .metadata.name')
                   if [ -z "${STALE}" ]; then
                     echo "Nothing to prune."
