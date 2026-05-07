@@ -20,7 +20,13 @@ commonLabels:
 commonAnnotations:
   argocd.argoproj.io/sync-wave: "-5"
 resources:
-  - overlays/recovery        # ← ACTIVE: DR (restore from Barman v1, write to v2)
-  # - overlays/initdb        # swap back once v2 is healthy and DR is done
+  # - overlays/recovery      # swap to this for DR (restore from Barman)
+  - overlays/initdb          # ← ACTIVE: steady-state. v2 lineage opened
+                             # 2026-05-02 via Barman recovery from v1; live
+                             # cluster has been healthy on v2 for days, so
+                             # the recovery overlay is now stale config
+                             # leftover. Flipping back ahead of the CNPG
+                             # in-tree → plugin migration so steady-state
+                             # git matches steady-state cluster.
   - externalsecret.yaml
   - scheduled-backup.yaml
