@@ -40,7 +40,7 @@ spec:
         # will track this once the tag exists on ghcr.io. Phase 4 of the
         # migration plan (docs/plans/pvc-plumber-operator-design.md) covers
         # the cutover from the v1 HTTP-only image.
-        image: ghcr.io/mitchross/pvc-plumber:2.0.0-rc1
+        image: ghcr.io/mitchross/pvc-plumber:2.1.0
         ports:
         - name: http
           containerPort: 8080
