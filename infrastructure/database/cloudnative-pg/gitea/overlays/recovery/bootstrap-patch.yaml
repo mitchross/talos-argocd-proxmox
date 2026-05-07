@@ -15,20 +15,23 @@ spec:
       # Barman WAL archiving appears to have stopped archiving before
       # that timestamp for all DBs. Restoring to latest-WAL gets us
       # whatever data was archived, which is still better than nothing.
+  # Plugin-shape externalClusters (replaces the deprecated in-tree
+  # barmanObjectStore field on externalClusters[]; removed in CNPG 1.30.0).
+  # Reuses the prod ObjectStore CR (base/objectstore.yaml) — the only thing
+  # that differs from the prod path is the serverName, which selects the
+  # PRIOR lineage subtree on the same RustFS bucket. Migration plan:
+  # docs/plans/cnpg-plugin-migration.md.
   externalClusters:
     - name: gitea-recovery-source
-      barmanObjectStore:
-        # Prior lineage to restore from. Keep this at N-1 when bumping
-        # base/cluster.yaml to vN. E.g. first DR: base → v2, this → v1.
-        serverName: gitea-database-v1
-        destinationPath: s3://postgres-backups/cnpg/gitea
-        endpointURL: http://192.168.10.133:30293
-        s3Credentials:
-          accessKeyId:
-            name: cnpg-s3-credentials
-            key: AWS_ACCESS_KEY_ID
-          secretAccessKey:
-            name: cnpg-s3-credentials
-            key: AWS_SECRET_ACCESS_KEY
-        wal:
-          compression: gzip
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          # Reuse the prod ObjectStore (same bucket, same creds, same
+          # endpoint). Only serverName changes between live writes and
+          # recovery reads.
+          barmanObjectName: gitea-objectstore
+          # Previous lineage to recover FROM. DO NOT change without
+          # bumping recovery target lineage. See cnpg-plugin-migration.md
+          # §9.1. Keep this at N-1 when bumping base/cluster.yaml to vN.
+          # E.g. last DR (2026-05-02): base → v2, this → v1.
+          serverName: gitea-database-v1
