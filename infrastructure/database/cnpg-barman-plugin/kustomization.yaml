@@ -2,7 +2,7 @@
 #
 # Replaces the deprecated in-Cluster `spec.backup.barmanObjectStore` (removed
 # in CNPG 1.30.0). Provides the ObjectStore CRD and a plugin sidecar that the
-# CNPG operator reaches via gRPC over a cnpg-system/barman-cloud Service.
+# CNPG operator reaches via gRPC over a barman-cloud Service.
 #
 # Upstream: https://github.com/cloudnative-pg/plugin-barman-cloud
 # Pinned to v0.12.0 (2026-04-14). Bump the URL tag to upgrade.
@@ -10,9 +10,37 @@
 # Why URL instead of a vendored manifest.yaml: upstream doesn't publish a
 # Helm chart, and the raw manifest is ~1100 lines (mostly CRD OpenAPI
 # schema). Pulling from the tag keeps the repo lean and consistent with how
-# cilium/kyverno charts are fetched (remote reference, pinned version).
+# the cilium chart is fetched (remote reference, pinned version).
+#
+# CRITICAL: the plugin MUST be installed in the same namespace as the CNPG
+# operator. The CNPG operator's plugin discovery only finds Services within
+# its OWN namespace, regardless of the cnpg.io/pluginName label being set
+# correctly. We hit this 2026-05-07: plugin in cnpg-system, operator in
+# cloudnative-pg → operator silently failed to discover the plugin →
+# Cluster status: "wal archive plugin is not available:
+# barman-cloud.cloudnative-pg.io". Documented at
+# https://cloudnative-pg.io/plugin-barman-cloud/docs/next/installation/
+# ("The plugin must be installed in the same namespace as the CloudNativePG
+# operator").
+#
+# Solution: kustomize `namespace:` directive overrides metadata.namespace
+# on every namespaced resource the upstream manifest creates (Deployment,
+# Service, ServiceAccount, Role, RoleBinding, Issuer, Certificate). Subjects
+# of ClusterRoleBinding are also rewritten by kustomize. The Namespace kind
+# named `cnpg-system` in the upstream manifest is cluster-scoped and would
+# still be created; we patch it out below so we don't end up with an empty
+# cnpg-system ns.
+#
+# After the cutover, the OLD plugin Deployment/Service/Secrets in the
+# pre-existing cnpg-system namespace become dangling (ArgoCD no longer
+# tracks them since the App's destination changed). Clean up manually
+# after verifying the new plugin works:
+#   kubectl delete ns cnpg-system
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
+# Co-locate with the CNPG operator. Discovery requires same-namespace.
+namespace: cloudnative-pg
 
 commonAnnotations:
   # Internal wave for resources inside the cnpg-barman-plugin Application.
@@ -22,3 +50,18 @@ commonAnnotations:
 
 resources:
   - https://github.com/cloudnative-pg/plugin-barman-cloud/releases/download/v0.12.0/manifest.yaml
+
+patches:
+  # The upstream manifest creates a Namespace resource named `cnpg-system`.
+  # Strip it — we're co-located in cloudnative-pg now (see header). Without
+  # this strip, kustomize would still emit the Namespace (cluster-scoped
+  # kinds are not affected by the `namespace:` directive above).
+  - patch: |
+      $patch: delete
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: cnpg-system
+    target:
+      kind: Namespace
+      name: cnpg-system
