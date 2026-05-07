@@ -25,8 +25,7 @@ This is the review map for everything directly rendered by the root Application 
 | `core-dependencies/longhorn-app.yaml` | Application | 1 | Storage foundation before PVC consumers | No, required before restore/app PVC flows |
 | `core-dependencies/snapshot-controller-app.yaml` | Application | 1 | VolumeSnapshot CRDs and controller | No, required by backup/restore flows |
 | `core-dependencies/volsync-app.yaml` | Application | 1 | Backup/restore engine | No, required before PVC Plumber and restore policies |
-| `core-dependencies/pvc-plumber-app.yaml` | Application | 2 | Backup existence API used by Kyverno | No, Kyverno calls this service |
-| `core-dependencies/kyverno-app.yaml` | Application | 3 | Policy webhooks must be ready before app PVCs | No, webhook readiness gates later apps |
+| `core-dependencies/pvc-plumber-app.yaml` | Application | 1 | pvc-plumber v2 operator: PVC reconciler + admission webhooks (`failurePolicy: Fail` on validate-pvc) gate backup-labeled PVC creation | No, the operator's webhooks must be ready before app PVCs in waves 4–6 |
 | `custom-entrypoints/cnpg-barman-plugin-app.yaml` | Application | 3 | CNPG clusters reference the plugin in wave 4 | Not now, dependency must precede database AppSet |
 | `custom-entrypoints/keda-app.yaml` | Application | 4 | Standalone after prior AppSet generator/render-cache loop | Maybe, after proving AppSet render stability |
 | `custom-entrypoints/temporal-worker-controller-app.yaml` | Application | 4 | Same AppSet render-cache history as KEDA | Maybe, after proving AppSet render stability |
