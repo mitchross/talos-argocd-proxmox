@@ -50,9 +50,9 @@ kubectl get externalsecret -A
 kubectl get pods -n longhorn-system && kubectl get pvc -A
 kubectl get nodes -l feature.node.kubernetes.io/pci-0300_10de.present=true
 kubectl get gateway -A && kubectl get httproute -A
-kubectl get clusterpolicy volsync-pvc-backup-restore
 kubectl get replicationsource -A && kubectl get replicationdestination -A
 kubectl get pods -n volsync-system -l app.kubernetes.io/name=pvc-plumber
+kubectl logs -n volsync-system -l app.kubernetes.io/name=pvc-plumber --tail=50
 ```
 
 ## Infrastructure AppSet Rules

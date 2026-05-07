@@ -56,9 +56,9 @@ ArgoCD deploys applications in strict order to prevent dependency issues:
 | Wave | Component | Purpose |
 |------|-----------|---------|
 | **0** | Foundation | Cilium (CNI), ArgoCD, 1Password Connect, External Secrets, AppProjects |
-| **1** | Storage | Longhorn, VolumeSnapshot Controller, VolSync |
-| **2** | PVC Plumber | Backup existence checker (must run before Kyverno in Wave 3) |
-| **3** | Kyverno + CNPG Barman Plugin | Policy engine/webhooks and CNPG Barman plugin before app PVCs and DB clusters |
+| **1** | Storage + backup operator | Longhorn, VolumeSnapshot Controller, VolSync, pvc-plumber v2 operator |
+| **2** | pvc-plumber webhook configs | FAIL-CLOSED PVC admission gate registers after the operator pod is healthy |
+| **3** | CNPG Barman Plugin | Database backup plugin before DB clusters |
 | **4** | Infrastructure AppSet + custom entrypoints | Cert-Manager, External-DNS, GPU Operators, Gateway, KEDA, Temporal Worker Controller |
 | **4** | Database AppSet | CloudNativePG operators & instances (`selfHeal: false` for DR) |
 | **5** | OTEL + Monitoring AppSet | OpenTelemetry Operator, Prometheus, Grafana, Loki |
@@ -234,9 +234,9 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 ArgoCD takes over and manages everything from Git:
 
 1. **Wave 0**: Cilium, 1Password Connect, External Secrets deploy in parallel
-2. **Wave 1**: Longhorn, Snapshot Controller, VolSync deploy after networking + secrets are ready
-3. **Wave 2**: PVC Plumber deploys (backup checker for Kyverno)
-4. **Wave 3**: Kyverno and CNPG Barman Plugin deploy (webhooks + DB backup plugin readiness)
+2. **Wave 1**: Longhorn, Snapshot Controller, VolSync, and the pvc-plumber v2 operator deploy after networking + secrets are ready
+3. **Wave 2**: pvc-plumber webhook configurations register (FAIL-CLOSED admission gate for backup-labeled PVCs in app namespaces)
+4. **Wave 3**: CNPG Barman Plugin deploys (DB backup plugin readiness before DB clusters)
 5. **Wave 4**: Infrastructure AppSet plus custom standalone entrypoints deploy cert-manager, GPU operators, gateway, KEDA, Temporal Worker Controller, etc.
 6. **Wave 4**: Database AppSet deploys CloudNativePG operators and instances
 7. **Wave 5**: OpenTelemetry Operator and Monitoring AppSet deploy Prometheus, Grafana, Loki
@@ -281,11 +281,11 @@ omnictl serviceaccount create talos-prod-sa --use-user-role
 
 ## Backup System
 
-All PVC backups use **Kopia on NFS** via VolSync, automated by Kyverno policies. Add `backup: "hourly"` or `backup: "daily"` label to any PVC and backups happen automatically with zero-touch disaster recovery.
+All PVC backups use **Kopia on NFS** via VolSync, automated by the **pvc-plumber v2 operator**. Add `backup: "hourly"` or `backup: "daily"` label to any PVC and backups happen automatically with zero-touch disaster recovery.
 
 - **Backend**: Kopia filesystem repository on TrueNAS NFS (`192.168.10.133:/mnt/BigTank/k8s/volsync-kopia-nfs`)
 - **Encryption**: Kopia password from 1Password (`rustfs` item)
-- **Restore**: Automatic on PVC recreation - PVC Plumber checks for existing backups, Kyverno injects `dataSourceRef`
+- **Restore**: Automatic on PVC recreation — the operator's mutating webhook calls Kopia live, and on `decision=restore` injects `dataSourceRef` so VolSync populates the PVC before the app gets a Bound volume. Validating webhook is fail-closed: denies admission if Kopia truth is unknown
 - **Database backups**: CNPG uses Barman to RustFS S3; abandoned database backup prefixes are cleaned by the GitOps-managed `rustfs-lifecycle` controller
 - **Details**: See [docs/volsync-storage-recovery.md](docs/volsync-storage-recovery.md) and [docs/cnpg-disaster-recovery.md](docs/cnpg-disaster-recovery.md)
 - **AI-guided database recovery**: Copy/paste prompts are in [LLM Recovery Prompt Templates](docs/cnpg-disaster-recovery.md#llm-recovery-prompt-templates)

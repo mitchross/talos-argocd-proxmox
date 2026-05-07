@@ -19,18 +19,19 @@ Add automatic backup to PVC(s) in `$ARGUMENTS`.
 
 ## What NOT to backup with this system
 
-- **CNPG database PVCs** — they use Barman to S3, not Kyverno/VolSync
-- System namespace PVCs (auto-excluded by Kyverno)
-- Temporary/cache data
+- **CNPG database PVCs** — they use Barman to S3, not VolSync
+- System namespace PVCs (auto-excluded by the operator's webhook namespaceSelector)
+- Temporary/cache data — use the `backup-exempt: "true"` label + `storage.vanillax.dev/backup-exempt-reason: "<reason>"` annotation to declare these intentionally
 - Non-Longhorn PVCs (snapshot support required)
 
 ## Verification
 
-After applying, Kyverno auto-generates backup resources:
+After applying, the pvc-plumber v2 operator auto-generates backup resources:
 ```bash
-kubectl get replicationsource,replicationdestination,externalsecret -n <namespace>
+kubectl get replicationsource,replicationdestination,externalsecret -n <namespace> \
+  -l app.kubernetes.io/managed-by=pvc-plumber
 ```
 
 ## Removing Backups
 
-Just remove the `backup` label. The `volsync-orphan-reaper` CronJob (`infrastructure/storage/volsync/orphan-reaper.yaml`) runs every 15 minutes and auto-deletes orphaned resources. (The earlier `volsync-orphan-cleanup` Kyverno ClusterCleanupPolicy was removed after it was found silently broken on Kyverno 1.17.x/1.18.x.)
+Just remove the `backup` label (or add `backup-exempt: "true"` + a reason annotation if the intent is permanent exemption). The pvc-plumber operator's PVC reconciler `cleanup()` reaps orphaned ES/RS/RD resources by the `volsync.backup/pvc=<pvcname>` label on the next reconcile pass — no separate orphan-reaper CronJob.
