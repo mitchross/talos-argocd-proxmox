@@ -172,7 +172,7 @@ webhooks:
   # `backup-exempt=true` and no `backup` label — those PVCs would not match
   # the validate-pvc entry above and the validator would never run, so the
   # required `storage.vanillax.dev/backup-exempt-reason` annotation could
-  # not be enforced fail-closed.
+  # not be enforced.
   #
   # Both entries route to the same handler path (/validate-v1-pvc). The
   # operator's pvc_validate.go checks the exempt label first (denies if
@@ -181,6 +181,18 @@ webhooks:
   # namespaceSelector exclusion is preserved here too — exempt PVCs in
   # infrastructure namespaces are NOT subject to admission gating, just like
   # backup-labeled ones.
+  #
+  # failurePolicy asymmetry — IMPORTANT.
+  # validate-pvc above uses `Fail` (data-safety contract: a backup-labeled
+  # PVC that bypasses the validator could initialize empty over a real
+  # backup → silent data loss).
+  # validate-pvc-exempt uses `Ignore` (audit contract: an exempt PVC that
+  # slips through without a reason annotation is a housekeeping miss, not
+  # a data-loss risk). Using `Fail` here would silently widen the outage
+  # blast radius vs. v2 — operator outage would block exempt PVCs too,
+  # not just backup-labeled ones. The operator still enforces the reason
+  # contract as defense-in-depth in pvc_validate.go; this webhook is the
+  # admission-time enforcement layer for the steady-state path.
   #
   # No parallel split on the mutating webhook: mutate-pvc only injects
   # dataSourceRef on the restore path. An exempt PVC has no mutation to
@@ -218,6 +230,9 @@ webhooks:
             - cert-manager
             - external-secrets
             - 1passwordconnect
-    failurePolicy: Fail
+    # Audit contract, not data-safety contract — preserves v2 blast radius
+    # (only backup-labeled PVCs blocked on operator outage). See comment
+    # block above for the full asymmetry rationale.
+    failurePolicy: Ignore
     sideEffects: None
     timeoutSeconds: 10

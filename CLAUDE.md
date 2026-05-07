@@ -175,7 +175,7 @@ Detailed instructions load automatically when working in these directories:
 - **[docs/network-policy.md](docs/network-policy.md)** - Cilium network policies
 - **[docs/argocd.md](docs/argocd.md)** - ArgoCD documentation
 - **[docs/argocd-entrypoints.md](docs/argocd-entrypoints.md)** - ArgoCD root entrypoints, waves, and AppSet/custom-entrypoint decisions
-- **[scripts/emergency-webhook-cleanup.sh](scripts/emergency-webhook-cleanup.sh)** - Emergency recovery from Kyverno webhook deadlock
+- **[scripts/emergency-webhook-cleanup.sh](scripts/emergency-webhook-cleanup.sh)** - Emergency recovery from pvc-plumber webhook deadlock (or any future webhook with failurePolicy: Fail in volsync-system/argocd/longhorn-system path)
 
 ## Mink capture
 
