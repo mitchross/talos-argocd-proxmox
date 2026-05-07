@@ -144,9 +144,18 @@ v2 satisfies this trivially via per-request kopia calls. v3 only satisfies it if
 
 ## Plan
 
-### Now: ship v2
+### Now: ship v2 (single-cutover)
 
-PRs `mitchross/pvc-plumber#3` and `mitchross/talos-argocd-proxmox#1270` are production-shaped, fail-closed, and don't depend on beta admission APIs. Merge, build image `2.0.0-rc1`, validate with `OPERATOR_MODE=false` (parity), then flip to `OPERATOR_MODE=true` and verify lifecycle on a test PVC. Follow-up PR removes Kyverno volsync policies + orphan-reaper.
+PRs `mitchross/pvc-plumber#3` and `mitchross/talos-argocd-proxmox#1270` are production-shaped, fail-closed, and don't depend on beta admission APIs. The cluster PR ships the full rip-and-replace: operator manifests in, Kyverno volsync policies + orphan-reaper out, `OPERATOR_MODE=true` from day one.
+
+The 4-phase coexistence migration in `pvc-plumber-operator-design.md` § "Migration Strategy" was production-caution boilerplate; for a single-operator homelab where rollback = `git revert + argocd sync`, coexistence is actively worse than clean cutover (Kyverno and the operator both try to generate the same ES/RS/RD by name and fight over label ownership).
+
+**Merge ordering** (the one real prerequisite):
+1. Merge `mitchross/pvc-plumber#3` → CI builds + pushes `ghcr.io/mitchross/pvc-plumber:2.0.0-rc1`.
+2. Wait for image to land in GHCR.
+3. Merge `mitchross/talos-argocd-proxmox#1270` → ArgoCD syncs operator manifests AND removes Kyverno volsync policies + orphan-reaper in the same wave.
+
+Existing `managed-by: kyverno`-labeled ReplicationSources keep running independently — VolSync owns the schedule once a RS exists, Kyverno being gone doesn't stop them. The operator's `ensure*` is Get-or-Create idempotent so it won't fight existing resources; new backup-labeled PVCs created post-cutover get `managed-by: pvc-plumber`-labeled resources. The reconciler's `cleanup()` reaps by `volsync.backup/pvc: <pvc>` label, which is the same label Kyverno used, so eventual PVC recreation transitions ownership cleanly.
 
 ### Next: v2.1 follow-up PR (additive only)
 

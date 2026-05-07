@@ -4,16 +4,23 @@ namespace: kyverno
 resources:
 - namespace.yaml
 - rbac-patch.yaml
-- policies/volsync-pvc-backup-restore.yaml
-- policies/volsync-nfs-inject.yaml
-# volsync-orphan-cleanup.yaml (ClusterCleanupPolicy) was the original reaper
-# but it has been silently broken on Kyverno 1.17.x and 1.18.x — apiCall
-# context evaluation inside ClusterCleanupPolicy never reaped any resources
-# despite ticking on schedule (drill #4, 2026-04-30 + 2026-05-01). The
-# canonical reaper is now the volsync-orphan-reaper bash CronJob in
-# infrastructure/storage/volsync/orphan-reaper.yaml. The policy file has
-# been removed from the tree to avoid dual-truth confusion; restore from
-# git history if upstream Kyverno fixes the apiCall bug.
+# VolSync PVC backup/restore automation has moved to the pvc-plumber v2
+# operator (infrastructure/controllers/pvc-plumber/). The following Kyverno
+# policies were removed in this branch:
+#   - policies/volsync-pvc-backup-restore.yaml — replaced by the operator's
+#     PVC reconciler (ES/RS/RD lifecycle) and admission webhooks (mutate
+#     dataSourceRef, fail-closed restore gate, skip-restore reason check).
+#   - policies/volsync-nfs-inject.yaml — replaced by the operator's
+#     job_mutate webhook.
+# The bash orphan-reaper CronJob (infrastructure/storage/volsync/orphan-reaper.yaml)
+# was also removed — the operator's PVC reconciler cleanup() reaps orphan
+# ES/RS/RD by label on PVC delete or backup label removal.
+# See docs/plans/pvc-plumber-operator-design.md and
+# docs/plans/pvc-plumber-v3-roadmap.md for the full architecture and
+# migration rationale. Only longhorn-pvc-backup-audit.yaml remains here:
+# it's a read-only audit policy with no generate, no admission gate, and
+# no external HTTP — none of the Kyverno failure modes that drove this
+# refactor apply.
 - policies/longhorn-pvc-backup-audit.yaml
 helmCharts:
 - name: kyverno
