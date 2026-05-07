@@ -1,7 +1,7 @@
 ---
 # Webhook configurations for pvc-plumber v2 (operator mode).
 #
-# CRITICAL — Webhook Deadlock Prevention (see infrastructure/controllers/kyverno/CLAUDE.md):
+# CRITICAL — Webhook Deadlock Prevention.
 # Infrastructure namespaces MUST be excluded from `namespaceSelector`. If
 # pvc-plumber crashes while these webhooks are registered with
 # failurePolicy=Fail, every PVC CREATE in the cluster would be rejected,
@@ -9,13 +9,15 @@
 # secrets (external-secrets, 1passwordconnect, cert-manager), and GitOps
 # (argocd) from booting — full cluster deadlock.
 #
-# This is the SAME exclusion list Kyverno uses
-# (infrastructure/controllers/kyverno/values.yaml), with `kyverno` itself
-# included explicitly because pvc-plumber has no `excludeKyvernoNamespace`
-# equivalent.
-#
 # 2026-04-08 incident: a Kyverno crash with the same webhook-failurePolicy=Fail
-# configuration caused full cluster deadlock. Do not deviate from this list.
+# configuration caused full cluster deadlock. The `kyverno` namespace stays
+# in this list as a defensive forward-compatibility marker — Kyverno itself
+# was removed from this cluster on 2026-05-07, but if it ever returns the
+# exclusion is already in place.
+#
+# This list is also mirrored verbatim into the Deployment's SYSTEM_NAMESPACES
+# env var so the reconciler and admission paths agree on what is
+# infrastructure. Keep them in sync.
 #
 # Blast-radius scoping — the PVC webhooks (mutate-pvc, validate-pvc) carry an
 # `objectSelector` matching `backup in (hourly, daily)`. This restores the
