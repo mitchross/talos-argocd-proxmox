@@ -25,6 +25,59 @@ resources:
 # Strategic merge patches to handle resource conflicts
 patchesStrategicMerge:
   - alertmanager-config.yaml
+
+# Per-CRD sync-options — kube-prometheus-stack ships several CRDs whose
+# OpenAPI schemas are large enough that ArgoCD's default client-side apply
+# tries to write a `kubectl.kubernetes.io/last-applied-configuration`
+# annotation that exceeds Kubernetes' 256KB metadata.annotations cap. The
+# 6 CRDs annotated below have all hit this in practice; we force per-CRD
+# ServerSideApply + Replace to skip the client-side annotation entirely.
+# See infrastructure/database/cloudnative-pg/cloudnative-pg-operator/
+# kustomization.yaml for the same defensive pattern on CNPG's CRDs.
+# Incident: 2026-05-07 ArgoCD sync failure post-Kyverno-removal merge.
+patches:
+  - target:
+      kind: CustomResourceDefinition
+      name: scrapeconfigs.monitoring.coreos.com
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: ServerSideApply=true,Replace=true
+  - target:
+      kind: CustomResourceDefinition
+      name: thanosrulers.monitoring.coreos.com
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: ServerSideApply=true,Replace=true
+  - target:
+      kind: CustomResourceDefinition
+      name: alertmanagerconfigs.monitoring.coreos.com
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: ServerSideApply=true,Replace=true
+  - target:
+      kind: CustomResourceDefinition
+      name: alertmanagers.monitoring.coreos.com
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: ServerSideApply=true,Replace=true
+  - target:
+      kind: CustomResourceDefinition
+      name: prometheusagents.monitoring.coreos.com
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: ServerSideApply=true,Replace=true
+  - target:
+      kind: CustomResourceDefinition
+      name: prometheuses.monitoring.coreos.com
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: ServerSideApply=true,Replace=true
 helmCharts:
   - name: kube-prometheus-stack
     repo: https://prometheus-community.github.io/helm-charts
