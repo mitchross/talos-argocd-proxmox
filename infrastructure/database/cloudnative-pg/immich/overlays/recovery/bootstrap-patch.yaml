@@ -12,19 +12,23 @@ spec:
         name: immich-app-secret
       # No recoveryTarget → restore to latest-WAL available on S3.
       # See gitea/overlays/recovery/bootstrap-patch.yaml for rationale.
+  # Plugin-shape externalClusters (replaces the deprecated in-tree
+  # barmanObjectStore field on externalClusters[]; removed in CNPG 1.30.0).
+  # Reuses the prod ObjectStore CR (base/objectstore.yaml) — the only thing
+  # that differs from the prod path is the serverName, which selects the
+  # PRIOR lineage subtree on the same RustFS bucket. Migration plan:
+  # docs/plans/cnpg-plugin-migration.md.
   externalClusters:
     - name: immich-recovery-source
-      barmanObjectStore:
-        # Prior lineage to restore from. Bump to N-1 at DR time.
-        serverName: immich-database-v1
-        destinationPath: s3://postgres-backups/cnpg/immich
-        endpointURL: http://192.168.10.133:30293
-        s3Credentials:
-          accessKeyId:
-            name: cnpg-s3-credentials
-            key: AWS_ACCESS_KEY_ID
-          secretAccessKey:
-            name: cnpg-s3-credentials
-            key: AWS_SECRET_ACCESS_KEY
-        wal:
-          compression: gzip
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          # Reuse the prod ObjectStore (same bucket, same creds, same
+          # endpoint). Only serverName changes between live writes and
+          # recovery reads.
+          barmanObjectName: immich-objectstore
+          # Previous lineage to recover FROM. DO NOT change without
+          # bumping recovery target lineage. See cnpg-plugin-migration.md
+          # §9.1. Bump to N-1 at DR time (immich has had no actual DR
+          # yet; this matches the runtime serverName as a placeholder).
+          serverName: immich-database-v1
