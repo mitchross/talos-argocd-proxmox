@@ -80,13 +80,19 @@ jobs:
       - name: Validate Kubernetes schemas
         run: |
           set -euo pipefail
-          # Filter out Gitea Helm-rendered Service gitea-http (targetPort triggers
-          # oneOf false positive in kubeconform — valid K8s but ambiguous schema match).
-          # Split multi-doc YAML into per-document files, skip the offending one.
+          # Filter known kubeconform false positives:
+          # - Gitea Helm-rendered Service gitea-http: targetPort triggers a
+          #   oneOf ambiguity in the Kubernetes Service schema.
+          # - VolSync ReplicationSource: Datree's CRD catalog schema is stale
+          #   for our installed VolSync and rejects valid spec.kopia configs.
+          # Split multi-doc YAML into per-document files, skip those documents.
           csplit -z -f /tmp/doc- /tmp/all-manifests.yaml '/^---$/' '{*}' > /dev/null
           : > /tmp/filtered-manifests.yaml
           for f in /tmp/doc-*; do
             if grep -q 'kind: Service' "$f" && grep -q 'name: gitea-http' "$f"; then
+              continue
+            fi
+            if grep -q 'apiVersion: volsync.backube/v1alpha1' "$f" && grep -q 'kind: ReplicationSource' "$f"; then
               continue
             fi
             cat "$f" >> /tmp/filtered-manifests.yaml
