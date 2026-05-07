@@ -29,6 +29,11 @@
 # even consult pvc-plumber for unlabeled PVCs.
 # The mutate-job webhook keeps its own selector
 # (app.kubernetes.io/created-by=volsync) — leave that alone.
+#
+# The ValidatingWebhookConfiguration carries TWO entries
+# (validate-pvc + validate-pvc-exempt) so admission fires for both the
+# backup-labeled path and the backup-exempt path. See the comment block
+# above validate-pvc-exempt for the full rationale.
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
@@ -142,6 +147,63 @@ webhooks:
         - key: backup
           operator: In
           values: ["hourly", "daily"]
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values:
+            - kube-system
+            - volsync-system
+            - kyverno
+            - argocd
+            - longhorn-system
+            - snapshot-controller
+            - cert-manager
+            - external-secrets
+            - 1passwordconnect
+    failurePolicy: Fail
+    sideEffects: None
+    timeoutSeconds: 10
+
+  # Second entry — sole reason it exists: Kubernetes LabelSelector
+  # matchExpressions AND together; there is no OR. To enforce the
+  # `backup-exempt: "true"` contract (introduced in pvc-plumber v2.1) at
+  # admission time, we need a selector that fires on PVCs carrying ONLY
+  # `backup-exempt=true` and no `backup` label — those PVCs would not match
+  # the validate-pvc entry above and the validator would never run, so the
+  # required `storage.vanillax.dev/backup-exempt-reason` annotation could
+  # not be enforced fail-closed.
+  #
+  # Both entries route to the same handler path (/validate-v1-pvc). The
+  # operator's pvc_validate.go checks the exempt label first (denies if
+  # missing reason) and falls through to the backup-label path otherwise,
+  # so a single handler safely serves both selectors. The deadlock-prevention
+  # namespaceSelector exclusion is preserved here too — exempt PVCs in
+  # infrastructure namespaces are NOT subject to admission gating, just like
+  # backup-labeled ones.
+  #
+  # No parallel split on the mutating webhook: mutate-pvc only injects
+  # dataSourceRef on the restore path. An exempt PVC has no mutation to
+  # perform, so calling the mutator just to short-circuit to Allowed is
+  # wasted apiserver→pvc-plumber traffic. Validate splits, mutate doesn't.
+  - name: validate-pvc-exempt.pvc-plumber.io
+    admissionReviewVersions: ["v1"]
+    clientConfig:
+      service:
+        name: pvc-plumber
+        namespace: volsync-system
+        path: /validate-v1-pvc
+        port: 9443
+    rules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["persistentvolumeclaims"]
+        operations: ["CREATE"]
+    objectSelector:
+      matchExpressions:
+        - key: backup-exempt
+          operator: In
+          values: ["true"]
     namespaceSelector:
       matchExpressions:
         - key: kubernetes.io/metadata.name
