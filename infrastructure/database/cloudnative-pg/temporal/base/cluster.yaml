@@ -1,5 +1,10 @@
 # Base CNPG Cluster manifest — NO bootstrap stanza. See gitea/base/cluster.yaml
 # for serverName bump rationale.
+#
+# Plugin-mode backup config (replaces deprecated spec.backup.barmanObjectStore;
+# removed in CNPG 1.30.0). The S3 destination + retention live on a sibling
+# ObjectStore CR (base/objectstore.yaml). Migration plan:
+# docs/plans/cnpg-plugin-migration.md.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -31,30 +36,20 @@ spec:
   enableSuperuserAccess: true
   monitoring:
     enablePodMonitor: true
-  backup:
-    barmanObjectStore:
-      # Write target. v2 lineage opened 2026-05-03 after the WAL-PVC-full
-      # deadlock incident. The original v1 prefix on RustFS contains
-      # 4252 WALs + 292 base backups from 2026-04-19 to 2026-05-01 21:13;
-      # when the cluster was recreated on 2026-05-01 21:54 (bootstrap=initdb,
-      # same serverName=v1), barman-cloud-check-wal-archive refused to
-      # write into the non-empty prefix ("Expected empty archive"), which
-      # cascaded into the WAL-volume-full crash loop. Bumping to v2 lets
-      # archiving start fresh against an empty prefix. The old v1 prefix
-      # is now an abandoned lineage; expiry rule lives in
-      # infrastructure/storage/rustfs-lifecycle/postgres-backups-lifecycle-cm.yaml.
-      serverName: temporal-database-v2
-      destinationPath: s3://postgres-backups/cnpg/temporal
-      endpointURL: http://192.168.10.133:30293
-      s3Credentials:
-        accessKeyId:
-          name: cnpg-s3-credentials
-          key: AWS_ACCESS_KEY_ID
-        secretAccessKey:
-          name: cnpg-s3-credentials
-          key: AWS_SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-      data:
-        compression: gzip
-    retentionPolicy: "14d"
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      # Designates this Cluster as the active WAL writer for the referenced
+      # ObjectStore. Keep at most one Cluster per ObjectStore as
+      # isWALArchiver=true; replicas / cross-cluster recovery readers must
+      # be isWALArchiver=false to avoid double-writing the WAL prefix.
+      isWALArchiver: true
+      parameters:
+        # Name of the sibling ObjectStore CR (see base/objectstore.yaml).
+        barmanObjectName: temporal-objectstore
+        # Preserved from previous spec.backup.barmanObjectStore.serverName —
+        # see cnpg-plugin-migration.md §9.1. The v2 lineage was opened
+        # 2026-05-03 after the WAL-PVC-full deadlock incident; the v1
+        # prefix on RustFS is an abandoned lineage with its own lifecycle
+        # rule in infrastructure/storage/rustfs-lifecycle/postgres-backups-lifecycle-cm.yaml.
+        # DO NOT change this value without bumping lineage in lockstep.
+        serverName: temporal-database-v2
