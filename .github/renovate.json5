@@ -203,6 +203,29 @@
       matchPackageNames: ['registry.vanillax.me/act_runner-nogpu'],
       enabled: false,
     },
+    {
+      // Pinned during the CNPG in-tree → plugin backup-path migration. The
+      // operator chart `cloudnative-pg` v0.28.0 ships appVersion 1.29.0,
+      // which still accepts `spec.backup.barmanObjectStore` on Cluster CRs.
+      // appVersion 1.30 REMOVES that field; auto-merging a chart bump that
+      // ships appVersion 1.30 would brick all 4 production CNPG clusters
+      // simultaneously (immich, gitea, paperless, temporal) until each is
+      // migrated to `spec.plugins[]`.
+      //
+      // Migration plan: docs/plans/cnpg-plugin-migration.md.
+      // REMOVE THIS ENTRY once all 4 Cluster CRs are on spec.plugins[] AND
+      // verified writing backups via the plugin path. Verify by:
+      //   for c in immich gitea paperless temporal; do
+      //     kubectl get cluster -n cloudnative-pg ${c}-database \
+      //       -o jsonpath='{.spec.plugins[0].name}{"\n"}'
+      //   done
+      // Expect each to print: barman-cloud.cloudnative-pg.io
+      description: 'Pin CNPG operator chart during in-tree → plugin migration. See docs/plans/cnpg-plugin-migration.md §9.6. Remove once all 4 Cluster CRs are on spec.plugins[].',
+      matchDatasources: ['helm'],
+      matchPackageNames: ['cloudnative-pg'],
+      registryUrls: ['https://cloudnative-pg.github.io/charts'],
+      enabled: false,
+    },
   ],
   ignorePaths: [
     '**/charts/**',
