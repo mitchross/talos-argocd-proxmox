@@ -257,7 +257,7 @@ func (r *PVCReconciler) cleanup(ctx context.Context, pvc *corev1.PersistentVolum
 2. If not found, build the object and `Create`
 3. Set labels: `app.kubernetes.io/managed-by: pvc-plumber`, `volsync.backup/pvc: <name>`
 
-The spec for each is a direct port from the Kyverno generate rules. See the existing `volsync-pvc-backup-restore.yaml` — rules 5, 6, 7 are the source of truth for the spec fields.
+The spec for each is a direct port from the former Kyverno generate rules. See the now-deleted `volsync-pvc-backup-restore.yaml` (removed in `refactor-replace-kyverno`) — rules 5, 6, 7 were the source of truth for the spec fields.
 
 **Schedule determinism** (port from Kyverno rule 6):
 ```go
@@ -582,30 +582,35 @@ Add `serviceAccountName: pvc-plumber` to the Deployment (currently runs with the
 
 ---
 
-## Migration Strategy (zero-downtime cutover)
+## Migration: single-cutover (what was actually shipped)
 
-**Phase 1: Build & test in isolation** (no cluster changes)
-- Build the operator binary
-- Run unit tests for reconciler logic and webhook handlers
-- Test in a dev namespace with Kyverno still active
+After the original 4-phase coexistence plan was drafted, we cut over in one
+ArgoCD sync via the `refactor-replace-kyverno` branch. Coexistence was
+rejected for a single-operator homelab where:
 
-**Phase 2: Deploy operator alongside Kyverno**
-- Deploy new pvc-plumber image with operator mode (both HTTP server + controller running)
-- Do NOT register webhooks yet — operator runs in reconcile-only mode
-- Watch for ES/RS/RD creation on test PVCs — operator should create them (Kyverno will also try; idempotent if both create the same resource with the same name)
-- Verify operator cleans up orphans correctly
+- Rollback is `git revert + argocd sync`, not "fall back to Kyverno"
+- Kyverno + the operator both generate ES/RS/RD by the same name and would
+  fight over `app.kubernetes.io/managed-by` label ownership
+- Verifying two competing systems run identically is harder than verifying
+  one new system works
 
-**Phase 3: Webhook cutover**
-- Apply `MutatingWebhookConfiguration` and `ValidatingWebhookConfiguration`
-- Scale down (or delete) the Kyverno `volsync-pvc-backup-restore` ClusterPolicy and `volsync-nfs-inject` ClusterPolicy
-- Test a PVC create → verify webhook fires, dataSourceRef injected, ES/RS/RD generated
+The merge ordering was the only real prerequisite:
+1. Merge `mitchross/pvc-plumber#3` first → CI pushes
+   `ghcr.io/mitchross/pvc-plumber:2.0.0-rc1` to GHCR
+2. Wait for image to land
+3. Merge `mitchross/talos-argocd-proxmox#1270` → ArgoCD syncs operator
+   manifests AND deletes the Kyverno volsync policies in the same wave
 
-**Phase 4: Cleanup**
-- Delete `infrastructure/controllers/kyverno/policies/volsync-pvc-backup-restore.yaml`
-- Delete `infrastructure/controllers/kyverno/policies/volsync-nfs-inject.yaml`
-- Delete `infrastructure/storage/volsync/orphan-reaper.yaml` (CronJob + SA + RBAC)
-- Update kustomization.yaml files for both directories
-- If Kyverno is now only used for `longhorn-pvc-backup-audit.yaml`, evaluate whether Kyverno is still worth running at all
+Existing `managed-by: kyverno`-labeled ReplicationSources kept running
+(VolSync owns the schedule once a RS exists, independent of who created it).
+The operator's `ensure*` is Get-or-Create idempotent so it didn't fight
+existing resources; new backup-labeled PVCs created post-cutover get
+`managed-by: pvc-plumber`-labeled resources. The reconciler's `cleanup()`
+reaps by `volsync.backup/pvc: <pvc>` label (the same label Kyverno used),
+so eventual PVC recreation transitions ownership cleanly.
+
+For future architectural rewrites (catalog model + native CEL admission),
+see [`pvc-plumber-v3-roadmap.md`](./pvc-plumber-v3-roadmap.md).
 
 ---
 
@@ -650,9 +655,13 @@ env:
 
 ---
 
-## What Remains in Kyverno After This
+## What Remained in Kyverno After This (and what happened)
 
-Only one policy: `longhorn-pvc-backup-audit.yaml` (audits PVCs missing backup labels on Longhorn storage). That's a read-only audit policy — no generate, no external HTTP. If that's the only remaining Kyverno use, you could replace it with a Prometheus alert on `kube_persistentvolumeclaim_info` and remove Kyverno entirely from the cluster.
+After this refactor, only one Kyverno policy remained: `longhorn-pvc-backup-audit.yaml`
+(auditing PVCs missing backup labels on Longhorn storage — read-only, no generate, no
+external HTTP). That policy has since been replaced with a PrometheusRule
+(`monitoring/prometheus-stack/longhorn-pvc-backup-audit.yaml`) and Kyverno is being
+removed entirely from the cluster.
 
 ---
 
