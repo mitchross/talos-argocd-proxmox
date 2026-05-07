@@ -19,7 +19,6 @@ needed.
 - **Backup**: VolSync + Kopia + custom [pvc-plumber](https://github.com/mitchross/pvc-plumber) admission gate
 - **Database**: CloudNativePG (Postgres) with Barman backups to RustFS S3
 - **Secrets**: 1Password Connect + External Secrets Operator
-- **Policy**: Kyverno (admission, generation, mutation)
 - **Observability**: kube-prometheus-stack, Loki, Tempo, OpenTelemetry, Grafana
 - **AI**: llama-cpp (Qwen3.6-35B-A3B multimodal) on dedicated GPU
 

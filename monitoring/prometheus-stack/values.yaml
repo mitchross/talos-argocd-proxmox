@@ -377,7 +377,10 @@ kubeStateMetrics:
 # escape-hatch annotations the operator forgot to remove after a rebuild.
 kube-state-metrics:
   metricLabelsAllowlist:
-    - persistentvolumeclaims=[backup,backup-exempt]
+    # cnpg.io/cluster is exposed so the longhorn-pvc-backup-audit alert can
+    # exclude CNPG-managed PVCs (they back up via Barman to S3, not VolSync).
+    # kube-state-metrics sanitizes the label name to label_cnpg_io_cluster.
+    - persistentvolumeclaims=[backup,backup-exempt,cnpg.io/cluster]
   metricAnnotationsAllowList:
     - persistentvolumeclaims=[volsync.backup/skip-restore,volsync.backup/skip-restore-reason]
 # Prometheus Operator Configuration
