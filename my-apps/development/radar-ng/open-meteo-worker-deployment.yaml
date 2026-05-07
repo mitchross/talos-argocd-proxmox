@@ -52,6 +52,8 @@ spec:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
           env:
+            - name: TEMPORAL_TASK_QUEUE
+              value: radar-ng-open-meteo
             - name: OPENMETEO_BIN
               value: /app/openmeteo-api
             - name: OPENMETEO_DATA_DIR
