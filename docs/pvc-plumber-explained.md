@@ -2,7 +2,7 @@
 
 If you've got a Kubernetes cluster at home and you've ever wondered "OK but how do I actually back up my Karakeep bookmarks / Immich photos / Home Assistant config without writing a CronJob from scratch every time," this is the doc that explains how pvc-plumber gets you there. No prior controller-runtime knowledge needed.
 
-The cluster runs **pvc-plumber v3.0.0** as of 2026-05-08.
+The cluster runs **pvc-plumber v3.1.0** as of 2026-05-08.
 
 ---
 
@@ -315,17 +315,31 @@ ESO's `ExternalSecret` CRD status struct has `RefreshTime`, `SyncedResourceVersi
 
 But ESO DOES publish `status.syncedResourceVersion` in the format `"<generation>-<hash>"` — and that's exactly what we need.
 
-### The fix — operator-side, NOT a Lua health check
+### The fix — operator-side, shipped as v3.1.0
 
-The cluster keeps ArgoCD simple. A cluster-wide Lua health check on ExternalSecret was considered (it's what argo-cd#22707 proposes upstream) and rejected because it's the kind of "tons of Lua scripts" complexity the cluster's already cleaned up once. Trade-off accepted: the other 30+ ExternalSecrets in the repo stay exposed to this race during any future schema change.
+The cluster keeps ArgoCD simple. A cluster-wide Lua health check on ExternalSecret was considered (it's what [argo-cd#22707](https://github.com/argoproj/argo-cd/issues/22707) proposes upstream) and rejected because it's the kind of "tons of Lua scripts" complexity the cluster's already cleaned up once. Trade-off accepted: the other 30+ ExternalSecrets in the repo stay exposed to this race during any future schema change.
 
-The fix instead lives in the application layer and ships as **pvc-plumber v3.1.0**: make the operator pod tolerate a mid-update Secret. Read AWS creds + kopia password lazily on the first kopia call, not via `secretKeyRef` env vars at pod startup. Pod becomes Ready immediately; first kopia subprocess retries-with-backoff until the Secret has all expected keys. Pair with a `/readyz` handler that validates the kopia connection actually works, so kubelet doesn't mark the pod Ready until the backend is genuinely usable.
+The fix lives in the application layer and shipped as **pvc-plumber v3.1.0**:
+
+- Operator pod no longer reads `KOPIA_PASSWORD` / `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` via `secretKeyRef` env vars. Those env vars are gone from the Deployment.
+- Instead, the same `pvc-plumber-kopia` Secret is **mounted as a directory** at `/var/secret/pvc-plumber-kopia`. Each Secret key becomes a file (kopia_password, aws_access_key_id, aws_secret_access_key).
+- The kopia client reads creds from disk on **every kopia subprocess invocation**, not at pod startup. If a file is missing or empty (ESO mid-render), Connect returns `ErrCredentialsNotReady` and is retried with exponential backoff up to 60s.
+- Pod becomes `Running` immediately. **`/readyz` is upgraded** to actually validate the kopia connection (5s cap) — pod is `Ready: false` until kopia is genuinely usable, even though it's `Running`. Kubelet doesn't route admission webhook traffic to a not-Ready pod, so a half-initialized operator can't deny PVC creates.
+
+Behavior change worth knowing: pods will flap Ready/NotReady during transient S3 outages. That's the intended signal — `failurePolicy: Fail` webhooks stop receiving traffic from a pod that can't reach kopia.
 
 This narrows the blast radius — only pvc-plumber benefits — but it's the architecturally cleaner answer:
 
 - No new ArgoCD config to babysit
 - Fix is portable to any cluster running pvc-plumber, not bound to this cluster's specific argocd-cm
 - Survives a future ArgoCD upstream fix (#22707) without needing to delete config to avoid duplication
+
+### v3.1.0 also fixed the 63-byte reconciler crash
+
+Bundled into the same release: PVCs whose names exceed Kubernetes' 63-byte label-value limit (e.g. `prometheus-kube-prometheus-stack-prometheus-db-prometheus-kube-prometheus-stack-prometheus-0` at 104 chars) used to put the reconciler into an error-loop because it was building a `volsync.backup/pvc=<full-name>` label selector that failed validation. Two-layer fix:
+
+1. **Primary**: system-namespace check moved to the top of `Reconcile()` so PVCs in `prometheus-stack` / `kube-system` / etc. short-circuit before the cleanup() label-selector path.
+2. **Defense-in-depth**: `labelSafePVCRef()` truncates names >63 bytes to `pvc-<sha256[:24hex]>` for label-selector use. App-namespace PVCs with long names (rare in practice) get a stable hash-based label.
 
 ### Pair fix already in tree: tighter refreshInterval
 
@@ -352,14 +366,14 @@ This pattern is cataloged in `~/.mink/wiki/resources/argocd-blocks-manifest-appl
 
 ## Where we are right now (2026-05-08)
 
-- ✅ pvc-plumber `:3.0.0` running, two pods Ready in `volsync-system`
+- ✅ pvc-plumber `:3.1.0` running, two pods Ready in `volsync-system`
 - ✅ kopia repo on RustFS S3 (`http://192.168.10.133:30293`, bucket `volsync-kopia`, ~600 MiB and growing)
-- ✅ All 27 backup-labeled PVCs have ExternalSecrets in the new S3 schema
-- ✅ 26 of 27 RSes have fresh post-cutover backups in S3 (the 28th is `kube-system/registry`, which the operator skips because of the namespace exclusion — it carries the label cosmetically)
+- ✅ All 27 backup-labeled PVCs have ExternalSecrets in the S3 schema
+- ✅ All 27 RSes have fresh post-cutover backups in S3 (`kube-system/registry` carries a cosmetic backup label but is skipped by the operator's system-namespace exclusion — operator never touches it)
 - ✅ JobMutator deleted permanently (the v2.x admission-time NFS volume injection that caused the 2026-05-08 cluster outage)
-- ✅ ArgoCD ↔ ESO race fixed via the cluster-wide Lua block
-- ⏳ Karakeep restore-on-create test is the last unproven piece — fresh karakeep snapshot landed at 18:12:50 UTC, ready to do the delete-and-restore drill on demand
-- ⏳ pvc-plumber v3.1.0 lazy creds queued
+- ✅ ArgoCD ↔ ESO race fixed at the operator layer (v3.1.0 lazy credential load — pod tolerates mid-update Secrets)
+- ✅ **Karakeep restore-on-create test PASSED end-to-end on 2026-05-08.** Deleted the data-pvc, re-applied the manifest, watched the mutating webhook inject `dataSourceRef`, watched VolSync's populator pull from kopia S3, watched the new PV bind with restored data. 231 files, byte-for-byte identical to pre-delete state. Saved to Mink as `karakeep-restore-on-create-proven-end-to-end-on-2026-05-08-pvc-plumber-v300.md`.
+- ⚠️ Backup-labeled PVCs that have been recreated stay `OutOfSync` in their ArgoCD app indefinitely (cosmetic — data is correct, the OutOfSync flag is because ArgoCD wants to remove the mutating-webhook-injected `dataSourceRef`, which is immutable post-creation). Documented in Mink as a known issue with three resolution paths to choose from later.
 
 ---
 
