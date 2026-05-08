@@ -53,7 +53,12 @@ spec:
         - name: BACKEND_TYPE
           value: "kopia-s3"
         - name: KOPIA_S3_ENDPOINT
-          value: "http://192.168.10.133:30293"
+          # kopia's S3 backend rejects fully-qualified URLs ("Endpoint url
+          # cannot have fully qualified paths") — pass bare host:port and
+          # let KOPIA_S3_DISABLE_TLS below select HTTP. CNPG Barman uses
+          # the http:// scheme on the same endpoint because barman-cloud
+          # parses URLs differently; do not unify them.
+          value: "192.168.10.133:30293"
         - name: KOPIA_S3_BUCKET
           value: "volsync-kopia"
         - name: KOPIA_S3_DISABLE_TLS
