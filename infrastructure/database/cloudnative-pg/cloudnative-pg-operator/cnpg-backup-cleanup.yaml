@@ -62,7 +62,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: cleanup
-              image: alpine/k8s:1.32.0
+              image: alpine/k8s:1.36.0
               imagePullPolicy: IfNotPresent
               env:
                 - name: RETENTION_DAYS
