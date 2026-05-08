@@ -148,7 +148,7 @@
       description: 'PostHog data layer: disable auto-updates (versions must match PostHog docker-compose.base.yml)',
       matchPackageNames: [
         'postgres',
-        'valkey/valkey',
+        'ghcr.io/valkey-io/valkey',
         'redis',
         'clickhouse/clickhouse-server',
         'docker.redpanda.com/redpandadata/redpanda',
