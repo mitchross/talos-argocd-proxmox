@@ -29,7 +29,7 @@ spec:
       containers:
         - name: toolbox
           # Pinned to pre-WarpStream SHA — see jobs.yaml header comment.
-          image: posthog/posthog:latest@sha256:334b0b6a604d0cde5f48af199bac141b26f8867ed2f6fd77435cf859a9537d76
+          image: ghcr.io/posthog/posthog:latest@sha256:334b0b6a604d0cde5f48af199bac141b26f8867ed2f6fd77435cf859a9537d76
           command:
             - /bin/sh
             - -c
