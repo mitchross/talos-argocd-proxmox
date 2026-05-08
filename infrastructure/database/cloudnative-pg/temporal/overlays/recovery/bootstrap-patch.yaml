@@ -30,4 +30,8 @@ spec:
           # Previous lineage to recover FROM. DO NOT change without
           # bumping recovery target lineage. See cnpg-plugin-migration.md
           # §9.1.
-          serverName: temporal-database-v1
+          #   v1 — abandoned 2026-05-03 (WAL-PVC-full).
+          #   v2 — source for the 2026-05-08 GitOps DR drill (this commit
+          #        bumped base/cluster.yaml to v3 AND flipped this serverName
+          #        from v1 → v2 in lockstep).
+          serverName: temporal-database-v2
