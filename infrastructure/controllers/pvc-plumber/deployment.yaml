@@ -35,13 +35,36 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
+      # ─────────────────────────────────────────────────────────────────
+      # v3.1.0 ES-race fix (2026-05-08).
+      #
+      # v3.0.0 read KOPIA_PASSWORD / AWS_ACCESS_KEY_ID /
+      # AWS_SECRET_ACCESS_KEY through `valueFrom.secretKeyRef` env vars at
+      # pod-start time. When ArgoCD syncs the ExternalSecret manifest in
+      # the same wave that this Deployment rolls, kubelet's secretKeyRef
+      # resolver can race the ESO render and the pod enters
+      # CreateContainerConfigError → CrashLoopBackOff. With
+      # `failurePolicy: Fail` on the validating webhook (see webhooks.yaml),
+      # that crash-loop denies every backup-labeled PVC creation cluster-
+      # wide. The 2026-05-08 cutover incident was this exact race.
+      #
+      # v3.1.0 mounts the same `pvc-plumber-kopia` Secret as a directory
+      # at /var/secret/pvc-plumber-kopia (each Secret key becomes a file).
+      # The kopia client reads creds from disk on every subprocess
+      # invocation rather than relying on env-var resolution at pod start,
+      # so the pod starts cleanly regardless of ESO render state. A Secret
+      # update from ESO is observed on the next kopia call without a pod
+      # restart. ESO-rendered Secret data and the ExternalSecret CR are
+      # unchanged. See pvc-plumber CHANGELOG `[3.1.0]` for the full
+      # rationale and the related /readyz semantic change.
+      #
+      # Per-PVC volsync-<pvc> Secrets the reconciler renders for VolSync
+      # mover Jobs are NOT touched — those continue to use secretKeyRef
+      # env vars and are not subject to the ArgoCD sync race because they
+      # are operator-rendered, not Argo-rendered.
+      # ─────────────────────────────────────────────────────────────────
       - name: pvc-plumber
-        # v3.0.0 — kopia repo on RustFS S3, JobMutator removed.
-        # See pvc-plumber CHANGELOG `[3.0.0]` for the cutover details.
-        # Pre-3.0.0 images use the legacy kopia-fs backend with an NFS
-        # `/repository` mount; do NOT roll back to those without also
-        # restoring the NFS volume + mount + NFS env vars below.
-        image: ghcr.io/mitchross/pvc-plumber:3.0.0
+        image: ghcr.io/mitchross/pvc-plumber:3.1.0
         ports:
         - name: http
           containerPort: 8080
@@ -74,26 +97,17 @@ spec:
           value: "7s"
         - name: RE_WARM_INTERVAL
           value: "90s"
-        # Kopia repo password + S3 admin keys all come from the same
+        # Kopia repo password + S3 admin keys come from the same
         # `pvc-plumber-kopia` Secret rendered by ExternalSecret (see
-        # externalsecret.yaml). Mover Jobs use the same credential names —
-        # the Secret here and the per-PVC `volsync-<pvc>` Secret the
-        # reconciler creates carry identical keys.
-        - name: KOPIA_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: pvc-plumber-kopia
-              key: KOPIA_PASSWORD
-        - name: AWS_ACCESS_KEY_ID
-          valueFrom:
-            secretKeyRef:
-              name: pvc-plumber-kopia
-              key: AWS_ACCESS_KEY_ID
-        - name: AWS_SECRET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: pvc-plumber-kopia
-              key: AWS_SECRET_ACCESS_KEY
+        # externalsecret.yaml). v3.1.0 mounts that Secret as a directory
+        # under /var/secret/pvc-plumber-kopia (see volumeMounts below)
+        # and reads creds from disk on each kopia subprocess invocation,
+        # avoiding the pod-startup secretKeyRef race that crashed v3.0.0
+        # during ArgoCD sync waves (CHANGELOG [3.1.0]). Mover Jobs still
+        # consume the per-PVC volsync-<pvc> Secret via secretKeyRef —
+        # those are operator-rendered, not Argo-rendered, and aren't
+        # subject to the same race. Operators rolling back to ≤3.0.0 must
+        # restore the three secretKeyRef env vars below.
         - name: KOPIA_CONFIG_PATH
           value: "/tmp/kopia/config/repository.config"
         - name: KOPIA_LOG_DIR
@@ -153,12 +167,27 @@ spec:
         - name: webhook-tls
           mountPath: /tmp/k8s-webhook-server/serving-certs
           readOnly: true
+        # v3.1.0 lazy-credentials mount. The pvc-plumber-kopia Secret's
+        # three keys (KOPIA_PASSWORD, AWS_ACCESS_KEY_ID,
+        # AWS_SECRET_ACCESS_KEY) are exposed as files at this path. The
+        # operator reads them on each kopia subprocess invocation and
+        # retries with backoff if any file is missing/empty (ESO not done
+        # rendering yet). See CHANGELOG [3.1.0] for the ES-race rationale.
+        - name: kopia-credentials
+          mountPath: /var/secret/pvc-plumber-kopia
+          readOnly: true
       volumes:
       - name: kopia-tmp
         emptyDir: {}
       - name: webhook-tls
         secret:
           secretName: pvc-plumber-webhook-tls
+      - name: kopia-credentials
+        secret:
+          secretName: pvc-plumber-kopia
+          # 0440 = readable by the pvc-plumber container's UID/GID (568)
+          # and the runtime's group; nothing else.
+          defaultMode: 0440
 ---
 apiVersion: v1
 kind: Service
