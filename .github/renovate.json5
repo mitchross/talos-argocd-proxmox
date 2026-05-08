@@ -105,6 +105,7 @@
       enabled: false,
       matchPackageNames: [
         '/^nvidia/cuda/',
+        '/^nvcr.io/nvidia/cuda/',
       ],
     },
     {
