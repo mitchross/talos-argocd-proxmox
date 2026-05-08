@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: karakeep-web
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: karakeep-web
+  template:
+    metadata:
+      labels:
+        app: karakeep-web
+      annotations:
+        instrumentation.opentelemetry.io/inject-nodejs: "opentelemetry/default"
+    spec:
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+        runAsGroup: 1001
+      containers:
+        - name: karakeep
+          image: ghcr.io/karakeep-app/karakeep:release@sha256:20754dbdafb11dfe288bbb1c2342a7855081b08ea069e86fcf2d4a2d945d3653
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          env:
+            - name: MEILI_ADDR
+              value: http://karakeep-meilisearch.karakeep.svc.cluster.local:7700
+            - name: BROWSER_WEB_URL
+              value: http://karakeep-chrome.karakeep.svc.cluster.local:9222
+            - name: DATA_DIR
+              value: /data
+              # Add OPENAI_API_KEY to the ConfigMap if necessary
+          volumeMounts:
+            - mountPath: /data
+              name: data
+          envFrom:
+            - secretRef:
+                name: karakeep-secret
+            - configMapRef:
+                name: karakeep-configuration
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: data-pvc
