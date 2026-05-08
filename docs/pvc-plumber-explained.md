@@ -315,32 +315,38 @@ ESO's `ExternalSecret` CRD status struct has `RefreshTime`, `SyncedResourceVersi
 
 But ESO DOES publish `status.syncedResourceVersion` in the format `"<generation>-<hash>"` — and that's exactly what we need.
 
-### The fix (now in `infrastructure/controllers/argocd/values.yaml`)
+### The fix — operator-side, NOT a Lua health check
 
-A custom Lua health check for ExternalSecret. About 30 lines, mostly comments. It says:
+The cluster keeps ArgoCD simple. A cluster-wide Lua health check on ExternalSecret was considered (it's what argo-cd#22707 proposes upstream) and rejected because it's the kind of "tons of Lua scripts" complexity the cluster's already cleaned up once. Trade-off accepted: the other 30+ ExternalSecrets in the repo stay exposed to this race during any future schema change.
 
-> "Don't declare an ExternalSecret Healthy until ESO has observed the current generation (i.e., `syncedResourceVersion` starts with `<metadata.generation>-`)."
+The fix instead lives in the application layer and ships as **pvc-plumber v3.1.0**: make the operator pod tolerate a mid-update Secret. Read AWS creds + kopia password lazily on the first kopia call, not via `secretKeyRef` env vars at pod startup. Pod becomes Ready immediately; first kopia subprocess retries-with-backoff until the Secret has all expected keys. Pair with a `/readyz` handler that validates the kopia connection actually works, so kubelet doesn't mark the pod Ready until the backend is genuinely usable.
 
-This is **cluster-wide** — every ExternalSecret in the repo gets the gate. The `pvc-plumber-kopia` ES is one of 30+; all of them are now safe against this race for any future schema change.
+This narrows the blast radius — only pvc-plumber benefits — but it's the architecturally cleaner answer:
 
-### Pair fix: tighter refreshInterval
+- No new ArgoCD config to babysit
+- Fix is portable to any cluster running pvc-plumber, not bound to this cluster's specific argocd-cm
+- Survives a future ArgoCD upstream fix (#22707) without needing to delete config to avoid duplication
 
-Also lowered `pvc-plumber-kopia` ES `refreshInterval` from `1h` to `1m`. Doesn't affect the spec-change case (ESO observes those via watch, not refresh), but bounds the worst case if ESO ever has to catch up after a controller restart.
+### Pair fix already in tree: tighter refreshInterval
 
-### Why one Lua block, not "tons of Lua scripts"
+Lowered `pvc-plumber-kopia` ES `refreshInterval` from `1h` to `1m`. Doesn't affect the spec-change case (ESO observes those via watch, not refresh), but bounds the worst case if ESO ever has to catch up after a controller restart.
 
-The cluster has had Lua creep before. The general rule is: don't reach for Lua when a sync-wave annotation, sync-options, or upstream fix would do. This case clears a four-bar test:
+### What about the other 30 ExternalSecrets?
 
-1. Upstream CRD provably never publishes observedGeneration (it's not in the type struct).
-2. ArgoCD upstream hasn't shipped the fix (#22707 is open with no PR).
-3. The absence of this check has already caused a production outage (2026-05-08).
-4. The block is heavily commented, references the upstream tracker, and links back to this doc.
+Honest answer: they keep the latent race. ES schema changes are rare in steady-state — most ESes are write-once-and-forget. When the race does bite again (some future schema change, on some other operator), the documented unstick pattern is:
 
-When upstream ships a real fix, we delete the Lua block. Until then it's the authoritative health check for ExternalSecret in this cluster.
+```bash
+# 1. apply the new ES manifest directly, bypassing ArgoCD's stuck wave
+kubectl apply --server-side --force-conflicts -f <es-manifest>
 
-### Pair fix queued: pvc-plumber v3.1.0 lazy creds
+# 2. force ESO to re-render the Secret immediately
+kubectl annotate externalsecret <name> -n <ns> force-sync=$(date +%s) --overwrite
 
-The Lua block solves the cluster-wide class. But pvc-plumber specifically should also be made resilient at the operator level — read AWS creds lazily on first kopia call, not at pod startup. That way a half-rendered Secret doesn't crash the operator pod, just delays the first backup decision by a heartbeat. Tracked as a v3.1.0 task. Belt-and-suspenders.
+# 3. let ArgoCD reconcile to match
+kubectl annotate -n argocd application <app> argocd.argoproj.io/refresh=hard --overwrite
+```
+
+This pattern is cataloged in `~/.mink/wiki/resources/argocd-blocks-manifest-application-during-failing-deployment-rollout.md` for the next time it happens.
 
 ---
 
