@@ -26,7 +26,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: echo-server
-          image: mendhak/http-https-echo
+          image: ghcr.io/mendhak/http-https-echo
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
