@@ -2,7 +2,59 @@
 
 **Purpose**: a narrative explanation of what the cluster's PVC backup/restore system does, why it's shaped this way, and what changed when Kyverno was removed.
 
-For the operational reference (tables, troubleshooting, recovery scenarios) see [`volsync-storage-recovery.md`](./volsync-storage-recovery.md). For the architecture decisions and migration history see [`plans/pvc-plumber-operator-design.md`](./plans/pvc-plumber-operator-design.md). For future direction see [`plans/pvc-plumber-v3-roadmap.md`](./plans/pvc-plumber-v3-roadmap.md).
+For the operational reference (tables, troubleshooting, recovery scenarios) see [`volsync-storage-recovery.md`](./volsync-storage-recovery.md). For the architecture decisions and migration history see [`plans/pvc-plumber-operator-design.md`](./plans/pvc-plumber-operator-design.md). For future direction see [`plans/pvc-plumber-v3-roadmap.md`](./plans/pvc-plumber-v3-roadmap.md). For the deep technical internals (webhook code, reconciler logic, Go implementation) see [the pvc-plumber repo docs](https://github.com/mitchross/pvc-plumber/blob/main/docs/).
+
+---
+
+## System at a glance
+
+Two phases happen every time a backup-labeled PVC is created. Here they are separately, then the prose ties them together.
+
+**Phase 1 — Admission** (happens in ~200ms, before the PVC exists):
+
+```mermaid
+graph LR
+  user(["You"])
+  api["kube-apiserver"]
+  mut["mutating webhook"]
+  val["validating webhook"]
+  kopia[(Kopia / NFS)]
+
+  user -->|"CREATE PVC"| api
+  api -->|"mutate"| mut
+  mut -->|"CheckBackup inline"| kopia
+  mut -->|"inject dataSourceRef<br/>(if backup exists)"| api
+  api -->|"validate"| val
+  val -->|"CheckBackup inline"| kopia
+  val -->|"admit or deny"| api
+
+  style mut fill:#e1f5fe,stroke:#01579b
+  style val fill:#fce4ec,stroke:#880e4f
+  style kopia fill:#fff8e1,stroke:#f57f17
+```
+
+*Blue = mutating webhook (enriches). Red = validating webhook (the fail-closed gate). If Kopia can't give an authoritative answer, the red webhook denies admission — no empty volumes over real backup data.*
+
+**Phase 2 — Provisioning** (happens after the PVC is admitted):
+
+```mermaid
+graph LR
+  api["kube-apiserver"]
+  rec["PVC reconciler"]
+  helpers["ES · RS · RD<br/>(per-PVC resources)"]
+  vs["VolSync"]
+  kopia[(Kopia / NFS)]
+
+  api -->|"PVC event"| rec
+  rec -->|"Get-or-Create"| helpers
+  helpers -->|"drives"| vs
+  vs -->|"backup / restore"| kopia
+
+  style rec fill:#e8f5e9,stroke:#1b5e20
+  style kopia fill:#fff8e1,stroke:#f57f17
+```
+
+*Green = PVC reconciler. It creates the ExternalSecret (Kopia password), ReplicationDestination (restore handle), and ReplicationSource (backup schedule). The RS only appears after the PVC has been Bound for ≥ 2 hours — to prevent backing up a freshly-empty volume.*
 
 ---
 
@@ -44,7 +96,33 @@ This worked but was brittle. Kyverno is a general-purpose policy engine with foo
 
 `pvc-plumber` used to be just a tiny HTTP service that answered one question: "does a backup exist for this PVC?" It was the oracle Kyverno called.
 
-The v2 refactor turns it into a proper Kubernetes operator: a single Go binary that runs as a Deployment in `volsync-system` (replicas=2, leader-elected) and now does everything Kyverno used to plus the orphan cleanup. It has four parts running in the same pod.
+The v2 refactor turns it into a proper Kubernetes operator: a single Go binary that runs as a Deployment in `volsync-system` (replicas=2, leader-elected) and now does everything Kyverno used to plus the orphan cleanup. The four parts share one process and one Kopia client:
+
+```mermaid
+graph TB
+  subgraph op["pvc-plumber operator  ·  volsync-system"]
+    direction TB
+    kopia["🔍 Kopia client<br/>CheckBackup · shared cache"]
+    rec["⚙️ PVC reconciler<br/>ensure ES + RD + RS<br/>cleanup on delete"]
+    mwh["✏️ Mutating webhook<br/>fail-open<br/>injects dataSourceRef"]
+    vwh["🛡️ Validating webhook<br/>fail-CLOSED gate<br/>denies if unknown"]
+    jwh["📦 Job webhook<br/>fail-ignore<br/>injects NFS volume"]
+    http["📡 HTTP /exists<br/>OPERATOR_MODE=false<br/>rollback escape hatch"]
+    kopia --> mwh
+    kopia --> vwh
+    kopia --> rec
+  end
+  nfs[(Kopia / NFS)] <--> kopia
+
+  style mwh fill:#e1f5fe,stroke:#01579b
+  style vwh fill:#fce4ec,stroke:#880e4f
+  style rec fill:#e8f5e9,stroke:#1b5e20
+  style jwh fill:#f3e5f5,stroke:#4a148c
+  style http fill:#f5f5f5,stroke:#9e9e9e
+  style kopia fill:#fff8e1,stroke:#f57f17
+```
+
+*One Kopia client, shared by all components. The gate is the red box — if it's unreachable, Kubernetes denies backup-labeled PVC creates until it recovers.*
 
 ### Part 1 — the existing Kopia client
 
@@ -101,7 +179,134 @@ In production we run `OPERATOR_MODE=true` from day one. There's no staged "run i
 
 ---
 
+## Lifecycle of a backup-labeled PVC create
+
+**Happy path — first time (no backup exists in Kopia):**
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant User
+  participant API as kube-apiserver
+  participant Mut as Mutating webhook
+  participant Val as Validating webhook
+  participant Rec as PVC reconciler
+
+  User->>API: kubectl apply PVC (backup: hourly)
+  API->>Mut: admission review
+  Note over Mut: CheckBackup → fresh, authoritative=true ✓
+  Mut-->>API: allow (no patch — fresh install)
+  API->>Val: admission review
+  Note over Val: CheckBackup → fresh ✓
+  Val-->>API: admit
+  API-->>User: PVC created
+  API->>Rec: PVC event
+  Rec->>API: create ExternalSecret + ReplicationDestination
+  Note over Rec: wait for Bound AND age ≥ 2h
+  Rec->>API: create ReplicationSource (backup schedule)
+```
+
+*Kopia runs inside the webhook pod — no separate participant. Steps 1–7: admission takes ~200ms. Steps 8–11: the reconciler provisions the companion resources; the 2h wait prevents backing up an empty volume right after a fresh install.*
+
+---
+
+## Restore on PVC recreate — the killer feature
+
+This is the scenario that justifies everything else. You delete an app (or the cluster dies). When it comes back from Git, the PVC is recreated — and the operator detects the existing Kopia backup, injects the `dataSourceRef`, and VolSync populates the new PVC from the last snapshot **automatically, without any operator intervention**.
+
+**Part 1 — operator decides "restore" at admission time:**
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Argo as ArgoCD
+  participant API as kube-apiserver
+  participant Mut as Mutating webhook
+  participant Val as Validating webhook
+  participant Kopia as Kopia / NFS
+
+  Note over API: PVC is gone — rebuilding from Git
+  Argo->>API: CREATE PVC (backup: hourly)
+  API->>Mut: mutate admission
+  Mut->>Kopia: CheckBackup(ns/pvc)
+  Kopia-->>Mut: restore, authoritative=true ✓
+  Mut-->>API: PATCH dataSourceRef → pvc-backup
+  API->>Val: validate (post-mutate)
+  Val->>Kopia: CheckBackup (belt-and-suspenders)
+  Kopia-->>Val: restore ✓ — dataSourceRef correct ✓
+  Val-->>API: admit ✅
+```
+
+**Part 2 — VolSync populates the volume:**
+
+```mermaid
+sequenceDiagram
+  participant API as kube-apiserver
+  participant VS as VolSync
+  participant Kopia as Kopia / NFS
+  participant App as App pod
+
+  API->>VS: VolumePopulator: fill from ReplicationDestination
+  VS->>Kopia: kopia restore (latest snapshot)
+  Kopia-->>VS: data stream
+  VS->>API: volume ready
+  API-->>App: PVC Bound — data intact
+  App->>App: starts normally 🎉
+```
+
+*The belt-and-suspenders check in Part 1 closes a real race: if the mutate call errors transiently but the validate call succeeds, the PVC would be admitted with no `dataSourceRef` and Longhorn would silently provision an empty volume over restorable data. The validator re-checks and blocks that.*
+
+**What if the operator is down during the restore?**
+
+```mermaid
+sequenceDiagram
+  participant Argo as ArgoCD
+  participant API as kube-apiserver
+  participant Val as Validating webhook
+  participant Kopia as Kopia / NFS
+
+  Argo->>API: CREATE PVC (backup: hourly)
+  API->>Val: admission review
+  Note over Val: pvc-plumber unreachable<br/>OR Kopia check returns unknown
+  Val-->>API: DENY (failurePolicy: Fail)
+  API-->>Argo: admission denied
+  Argo->>Argo: exponential backoff retry
+  Note over Argo: ...operator recovers...
+  Argo->>API: CREATE PVC (retry)
+  Note over API,Kopia: normal restore flow proceeds
+```
+
+*The fail-closed design means "unknown = deny + retry." No empty volumes are ever admitted over restorable backup data. The 9-namespace exclusion list ensures infrastructure namespaces (Longhorn, ArgoCD, etc.) never gate on the operator, so an operator crash can't deadlock the cluster.*
+
+---
+
 ## What replaced what
+
+Before vs. after — the same function, different implementation:
+
+```mermaid
+graph LR
+  subgraph old["Before — three separate systems"]
+    OA[PVC] --> OB[Kyverno webhook]
+    OB -->|"HTTP /exists"| OC[pvc-plumber v1]
+    OC --> OD[(Kopia)]
+    OE[orphan-reaper CronJob] -.->|cleanup| OB
+  end
+
+  subgraph new["After — one binary"]
+    NA[PVC] --> NB[pvc-plumber v2<br/>webhooks]
+    NB -->|"inline check"| NC[(Kopia)]
+    ND[PVC reconciler] --> NB
+  end
+
+  style OB fill:#fff3e0,stroke:#e65100
+  style OC fill:#fff3e0,stroke:#e65100
+  style OE fill:#fff3e0,stroke:#e65100
+  style NB fill:#e8f5e9,stroke:#1b5e20
+  style ND fill:#e8f5e9,stroke:#1b5e20
+```
+
+*Left: three processes, HTTP round-trips between them, a CronJob patching over Kyverno's broken cleanup. Right: one binary, Kopia call inline, reconciler handles cleanup automatically.*
 
 | Old (Kyverno-based) | New (operator-based) |
 |---|---|

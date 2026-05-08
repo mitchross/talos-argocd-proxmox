@@ -191,20 +191,16 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    START(["📦 New PVC created<br/>with backup: hourly|daily"]) --> Q{"🔍 Does a backup<br/>already exist<br/>on NFS?"}
+    START(["📦 PVC created<br/>backup: hourly|daily"]) --> Q{"Backup in Kopia?"}
 
-    Q -->|"✅ YES"| R1["🛡️ pvc-plumber mutate webhook<br/>injects dataSourceRef"]
-    R1 --> R2["🚚 VolSync restores<br/>from Kopia snapshot"]
-    R2 --> R3(["💾 PVC bound<br/>WITH your data<br/>App starts normally"])
+    Q -->|"✅ YES"| RESTORE["mutating webhook<br/>injects dataSourceRef<br/>VolSync restores"]
+    RESTORE --> RBOUND(["PVC Bound<br/>with prior data ✅"])
 
-    Q -->|"❌ NO"| F1["🛡️ pvc-plumber validate webhook<br/>admits PVC unchanged"]
-    F1 --> F2["🟣 Longhorn provisions<br/>empty volume"]
-    F2 --> F3(["🆕 PVC bound EMPTY<br/>App starts fresh<br/>Backups begin in 2h"])
+    Q -->|"❌ NO"| FRESH["validating webhook admits<br/>Longhorn provisions empty"]
+    FRESH --> FBOUND(["PVC Bound empty<br/>Backups begin in 2h"])
 
-    Q -->|"❓ UNKNOWN<br/>(plumber down,<br/>NFS broken, etc.)"| D1["🛡️ pvc-plumber validate webhook<br/>DENIES the PVC"]
-    D1 --> D2["⏳ ArgoCD retries<br/>with backoff"]
-    D2 --> D3(["🛠️ Operator fixes<br/>plumber/NFS"])
-    D3 --> Q
+    Q -->|"❓ UNKNOWN<br/>(plumber down / NFS)"| DENY["validating webhook<br/>DENIES"]
+    DENY -->|"ArgoCD retries<br/>until operator recovers"| Q
 
     classDef start fill:#fef3c7,stroke:#92400e,color:#451a03;
     classDef restore fill:#d1fae5,stroke:#065f46,color:#022c22;
@@ -213,9 +209,9 @@ flowchart TD
     classDef decision fill:#f3e8ff,stroke:#6b21a8,color:#3b0764;
     class START start;
     class Q decision;
-    class R1,R2,R3 restore;
-    class F1,F2,F3 fresh;
-    class D1,D2,D3 block;
+    class RESTORE,RBOUND restore;
+    class FRESH,FBOUND fresh;
+    class DENY block;
 ```
 
 The third branch — `UNKNOWN → DENY → retry` — is the part that makes this a
@@ -334,6 +330,32 @@ flowchart LR
     class NFS store;
 ```
 
+### 🔍 Inspect each layer — where to look when something breaks
+
+When something goes wrong, work top-to-bottom through these five layers. Most failures live at the operator pod or NFS layer.
+
+```mermaid
+flowchart LR
+    PVC["📦 App PVC<br/>backup: hourly|daily"]
+    OP["🛡️ pvc-plumber<br/>volsync-system"]
+    WH["🔗 Webhooks<br/>mutate · validate"]
+    GEN["📋 ES · RS · RD<br/>per PVC"]
+    NFS["💾 Kopia repo<br/>TrueNAS"]
+
+    PVC --> OP --> WH --> GEN --> NFS
+
+    classDef layer fill:#dbeafe,stroke:#1e40af,color:#0c1f4a;
+    class PVC,OP,WH,GEN,NFS layer;
+```
+
+| Layer | Check with |
+|---|---|
+| **App PVC** | `kubectl describe pvc NAME -n NS` — look at Events at the bottom |
+| **pvc-plumber operator** | `kubectl get pods -n volsync-system` · `kubectl logs -n volsync-system -l app.kubernetes.io/name=pvc-plumber --tail=50` |
+| **Webhooks** | `kubectl get mutatingwebhookconfiguration pvc-plumber` · `kubectl get validatingwebhookconfiguration pvc-plumber` |
+| **Generated resources** | `kubectl get externalsecret,replicationsource,replicationdestination -n NS -l managed-by=pvc-plumber` |
+| **NFS / Kopia repo** | `kubectl exec -n volsync-system deploy/pvc-plumber -- ls -la /repository` |
+
 Four components in the pvc-plumber operator do the work:
 
 | Component | What it does |
@@ -406,58 +428,60 @@ backup-labeled PVC. The operator runs one Kopia check per webhook call (mutate
 and validate each call Kopia independently, with singleflight dedup on
 identical concurrent lookups).
 
+**Path A — backup exists (restore):**
+
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Git
     participant Argo as ArgoCD
     participant API as K8s API
-    participant Mut as pvc-plumber (mutate webhook)
-    participant Val as pvc-plumber (validate webhook)
+    participant Mut as mutating webhook
+    participant Val as validating webhook
     participant Kopia as Kopia / NFS
-    participant VS as VolSync
-    participant LH as Longhorn
 
-    Git->>Argo: PVC w/ backup label
-    Argo->>API: CREATE PVC
-    API->>Mut: admission review
-    Mut->>Kopia: snapshot list (CheckBackup inline)
+    Argo->>API: CREATE PVC (backup: hourly)
+    API->>Mut: mutate admission
+    Mut->>Kopia: CheckBackup inline
+    Kopia-->>Mut: restore · authoritative=true
+    Mut-->>API: patch dataSourceRef → pvc-backup
+    API->>Val: validate (post-mutate)
+    Val->>Kopia: CheckBackup (belt-and-suspenders)
+    Kopia-->>Val: restore ✓ · dataSourceRef correct ✓
+    Val-->>API: admit ✅
+    Note over API: VolSync VolumePopulator restores PVC from Kopia snapshot
+```
 
-    alt decision = restore (authoritative)
-        Kopia-->>Mut: restore authoritative=true
-        Mut-->>API: patch dataSourceRef → <pvc>-backup
-        API->>Val: validate review (post-mutate)
-        Val->>Kopia: snapshot list (CheckBackup inline)
-        Kopia-->>Val: restore authoritative=true
-        Val->>Val: belt-and-suspenders: verify dataSourceRef present + correct
-        Val-->>API: admit
-        API->>VS: populate via ReplicationDestination
-        VS->>LH: restored volume
-        LH-->>API: PVC Bound
-    else decision = fresh
-        Kopia-->>Mut: fresh authoritative=true
+**Path B — no backup (fresh) or operator down (deny):**
+
+```mermaid
+sequenceDiagram
+    participant Argo as ArgoCD
+    participant API as K8s API
+    participant Mut as mutating webhook
+    participant Val as validating webhook
+    participant Kopia as Kopia / NFS
+
+    alt fresh — no backup in Kopia
+        Argo->>API: CREATE PVC
+        API->>Mut: mutate
+        Kopia-->>Mut: fresh · authoritative=true
         Mut-->>API: pass through (no patch)
-        API->>Val: validate review
-        Val->>Kopia: snapshot list (CheckBackup inline)
-        Kopia-->>Val: fresh authoritative=true
-        Val-->>API: admit
-        API->>LH: provision empty volume
-        LH-->>API: PVC Bound
-    else decision = unknown  (plumber down, kopia error, etc.)
-        Kopia-->>Mut: error / timeout
-        Mut-->>API: pass through (mutate is fail-open)
-        API->>Val: validate review
-        Val->>Kopia: snapshot list (CheckBackup inline)
-        Kopia-->>Val: unknown / authoritative=false
-        Val-->>API: deny (failurePolicy: Fail)
+        API->>Val: validate
+        Kopia-->>Val: fresh ✓
+        Val-->>API: admit ✅
+        Note over API: Longhorn provisions empty. Backups begin in 2h.
+    else unknown — plumber down or Kopia error
+        Argo->>API: CREATE PVC
+        API->>Mut: mutate (fail-open — passes through)
+        API->>Val: validate
+        Note over Val: Kopia unknown / authoritative=false
+        Val-->>API: DENY (failurePolicy: Fail)
         API-->>Argo: admission denied
         Argo->>Argo: exponential backoff retry
     end
-
-    Note over API,VS: After PVC is Bound AND ≥2h old, PVC reconciler<br/>creates ReplicationSource and scheduled backups begin.
 ```
 
-The belt-and-suspenders validate check closes a real race: the mutate
+The belt-and-suspenders validate check (Path A, steps 6–8) closes a real race: the mutate
 call could fail transiently while the validate call succeeds — without the
 post-mutate check, the PVC would be admitted without `dataSourceRef` and
 Longhorn would silently provision an empty volume on top of restorable backup
@@ -494,6 +518,51 @@ The **invariant** the entire system protects:
    cluster. Kopia repo intact → `decision=restore` → pvc-plumber mutating
    webhook injects `dataSourceRef` → VolSync restores → app comes up with
    all prior data. No human action.
+
+   Here's exactly what happens when ArgoCD recreates the PVC. Two phases:
+
+   **Phase 1 — the operator decides "restore"** (admission time, ~200ms):
+
+   ```mermaid
+   sequenceDiagram
+       autonumber
+       participant Argo as ArgoCD
+       participant API as K8s API
+       participant Mut as Mutating webhook
+       participant Val as Validating webhook
+       participant Kopia as Kopia / NFS
+
+       Note over API: 💥 PVC is gone (rebuild or delete)
+       Argo->>API: CREATE PVC (from Git)
+       API->>Mut: mutate admission
+       Mut->>Kopia: CheckBackup("ns/pvc")
+       Kopia-->>Mut: restore · authoritative=true ✓
+       Mut-->>API: patch dataSourceRef → pvc-backup
+       API->>Val: validate (post-mutate)
+       Val->>Kopia: CheckBackup (independent check)
+       Kopia-->>Val: restore ✓ · dataSourceRef correct ✓
+       Val-->>API: admit ✅
+   ```
+
+   **Phase 2 — VolSync populates the volume** (restore, seconds to minutes):
+
+   ```mermaid
+   sequenceDiagram
+       participant API as K8s API
+       participant VS as VolSync
+       participant Kopia as Kopia / NFS
+       participant App as App pod
+
+       API->>VS: VolumePopulator (ReplicationDestination)
+       VS->>Kopia: kopia restore — latest snapshot for ns/pvc
+       Kopia-->>VS: data stream
+       VS->>API: volume ready
+       API-->>App: PVC Bound · data intact
+       App->>App: starts normally 🎉
+
+       Note over VS,App: Runs in parallel for every backup-labeled PVC.<br/>No human action needed.
+   ```
+
 3. **Oops, I deleted the app.** Re-add to Git → identical to scenario 2 →
    data restored automatically. The mistake fixes itself.
 4. **New app added to existing cluster.** No prior backup → `decision=fresh`
@@ -665,6 +734,55 @@ The operator's PVC reconciler creates an `ExternalSecret` that produces a Secret
 ---
 
 ## Troubleshooting
+
+### PVC stuck Pending? Start here.
+
+Two decision trees — pick the one that matches your symptom.
+
+**Branch A: admission denied** — you see a webhook denial in `kubectl describe pvc`:
+
+```mermaid
+flowchart TB
+    A(["Admission denied"])
+    A --> B{"Which message?"}
+    B -->|"decision=unknown"| C{"pvc-plumber pod Running?"}
+    B -->|"dataSourceRef wrong"| D["Usually transient<br/>ArgoCD retries"]
+    B -->|"reason missing"| E["Add annotation to Git"]
+    C -->|No| F["Fix pod<br/>(image pull? RBAC?)"]
+    C -->|Yes| G{"NFS mounted?<br/>kubectl exec ls /repository"}
+    G -->|No| H["Fix TrueNAS / NFS"]
+    G -->|Yes| I["Check ESO + Kopia"]
+
+    classDef q fill:#f3e8ff,stroke:#6b21a8,color:#3b0764;
+    classDef fix fill:#d1fae5,stroke:#065f46,color:#022c22;
+    classDef info fill:#fef3c7,stroke:#92400e,color:#451a03;
+    class A,B,C,G q;
+    class D,E info;
+    class F,H,I fix;
+```
+
+**Branch B: PVC admitted but still Pending or empty** — no denial, just waiting:
+
+```mermaid
+flowchart TB
+    A(["PVC admitted — not Bound"])
+    A --> B{"kubectl get pvc<br/>shows Bound?"}
+    B -->|No| C["Longhorn issue<br/>kubectl describe pvc"]
+    B -->|Yes| D{"ReplicationDestination exists?"}
+    D -->|No| E["Reconciler creates it shortly<br/>check plumber logs"]
+    D -->|Yes| F{"RD lastSyncTime set?"}
+    F -->|No| G["Check mover Job logs<br/>-l created-by=volsync"]
+    F -->|Yes| H["✅ Restore complete<br/>App should be starting"]
+
+    classDef q fill:#f3e8ff,stroke:#6b21a8,color:#3b0764;
+    classDef fix fill:#d1fae5,stroke:#065f46,color:#022c22;
+    classDef ok fill:#dbeafe,stroke:#1e40af,color:#0c1f4a;
+    class A,B,D,F q;
+    class C,E,G fix;
+    class H ok;
+```
+
+### Quick health commands
 
 ```bash
 # Quick health pass
