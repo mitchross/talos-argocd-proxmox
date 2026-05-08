@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: protomaps
-          image: protomaps/go-pmtiles:latest@sha256:1b83e9ea258b5a6379528753e7afb84902badba602a88fcc683df9cc13622c28
+          image: ghcr.io/protomaps/go-pmtiles:latest@sha256:1b83e9ea258b5a6379528753e7afb84902badba602a88fcc683df9cc13622c28
           args: ["serve", "/data"]
           ports:
             - containerPort: 8080
