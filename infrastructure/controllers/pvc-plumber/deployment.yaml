@@ -36,11 +36,11 @@ spec:
           type: RuntimeDefault
       containers:
       - name: pvc-plumber
-        # Forward-reference: v2 operator image (webhook + reconciler). Renovate
-        # will track this once the tag exists on ghcr.io. Phase 4 of the
-        # migration plan (docs/plans/pvc-plumber-operator-design.md) covers
-        # the cutover from the v1 HTTP-only image.
-        image: ghcr.io/mitchross/pvc-plumber:2.1.0
+        # v2 operator image (controller-runtime manager + admission webhooks).
+        # 2.1.1 fixes the v2.1.0 build regression where Dockerfile pointed at
+        # the v1 legacy entrypoint (./cmd/pvc-plumber) instead of the operator
+        # entrypoint (./cmd/operator). Pre-2.1.1 images do NOT listen on :9443.
+        image: ghcr.io/mitchross/pvc-plumber:2.1.1
         ports:
         - name: http
           containerPort: 8080
