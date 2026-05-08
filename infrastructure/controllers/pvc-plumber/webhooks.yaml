@@ -93,9 +93,30 @@ webhooks:
         apiVersions: ["v1"]
         resources: ["jobs"]
         operations: ["CREATE"]
+    # EMERGENCY DISABLED 2026-05-08 — pvc-plumber/issues/TBD.
+    #
+    # The JobMutator approach (admission-time inject /repository NFS mount
+    # into VolSync mover Jobs) is incompatible with the perfectra1n/volsync
+    # fork's `CreateOrUpdateDeleteOnImmutableErr` reconciler. VolSync
+    # computes a "desired" Job spec WITHOUT the injected volume, sees the
+    # actual Job spec HAS it, tries to update (fails — Jobs immutable),
+    # then deletes + recreates. The recreate goes through admission again,
+    # gets the volume injected, drift detected, delete+recreate. Tight
+    # loop: 68 immutable errors / 30s, 7 RSes simultaneously thrashing,
+    # control-plane CPU 58–68%. v2.1.1 cutover (2026-05-08 02:14 UTC)
+    # uncovered this — the v2.1.0 image was the v1 binary which never ran
+    # webhooks, so the JobMutator was dormant in production until v2.1.1
+    # made the webhook server actually start serving.
+    #
+    # never-match objectSelector below disables the webhook without
+    # deleting it, so cluster-wide ArgoCD sync stays clean. Re-enable
+    # by removing this objectSelector once pvc-plumber's Job-mutation
+    # approach is replaced with `spec.kopia.moverConfig.volumes` on the
+    # ReplicationSource (VolSync's own volume mounting, no admission-time
+    # mutation, no drift loop).
     objectSelector:
       matchLabels:
-        app.kubernetes.io/created-by: volsync
+        pvc-plumber.io/emergency-disabled: "2026-05-08"
     namespaceSelector:
       matchExpressions:
         - key: kubernetes.io/metadata.name
