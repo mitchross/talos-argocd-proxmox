@@ -29,8 +29,8 @@ spec:
           type: RuntimeDefault
       containers:
         - name: aws-cli
-          # renovate: datasource=docker depName=amazon/aws-cli
-          image: amazon/aws-cli:2.18.0
+          # renovate: datasource=docker depName=public.ecr.aws/aws-cli/aws-cli
+          image: public.ecr.aws/aws-cli/aws-cli:2.18.0
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
