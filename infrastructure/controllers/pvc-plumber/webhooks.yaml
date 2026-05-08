@@ -1,5 +1,5 @@
 ---
-# Webhook configurations for pvc-plumber v2 (operator mode).
+# Webhook configurations for pvc-plumber v3 (operator mode).
 #
 # CRITICAL — Webhook Deadlock Prevention.
 # Infrastructure namespaces MUST be excluded from `namespaceSelector`. If
@@ -19,6 +19,16 @@
 # env var so the reconciler and admission paths agree on what is
 # infrastructure. Keep them in sync.
 #
+# 2026-05-08 — JobMutator REMOVED.
+# pvc-plumber v3.0.0 deleted the third webhook (`mutate-job.pvc-plumber.io`
+# at `/mutate-batch-v1-job`) entirely. The JobMutator injected an NFS volume
+# into VolSync mover Jobs at admission time, which collided with VolSync's
+# CreateOrUpdateDeleteOnImmutableErr reconciler and caused a cluster-wide
+# backup outage. The replacement is to switch the Kopia repo from NFS to
+# RustFS S3 — mover Jobs need no shared volume in the S3 shape, so admission
+# has nothing to inject. The operator no longer registers the route, and
+# the cluster-side webhook entry is gone with this commit.
+#
 # Blast-radius scoping — the PVC webhooks (mutate-pvc, validate-pvc) carry an
 # `objectSelector` matching `backup in (hourly, daily)`. This restores the
 # scoping the Kyverno volsync-pvc-backup-restore policy had via its `match`
@@ -27,8 +37,6 @@
 # ever was. The operator code already short-circuits unlabeled PVCs to
 # Allowed, but matching at the apiserver level means kube-apiserver doesn't
 # even consult pvc-plumber for unlabeled PVCs.
-# The mutate-job webhook keeps its own selector
-# (app.kubernetes.io/created-by=volsync) — leave that alone.
 #
 # The ValidatingWebhookConfiguration carries TWO entries
 # (validate-pvc + validate-pvc-exempt) so admission fires for both the
@@ -77,64 +85,6 @@ webhooks:
             - external-secrets
             - 1passwordconnect
     failurePolicy: Fail
-    sideEffects: None
-    timeoutSeconds: 10
-
-  - name: mutate-job.pvc-plumber.io
-    admissionReviewVersions: ["v1"]
-    clientConfig:
-      service:
-        name: pvc-plumber
-        namespace: volsync-system
-        path: /mutate-batch-v1-job
-        port: 9443
-    rules:
-      - apiGroups: ["batch"]
-        apiVersions: ["v1"]
-        resources: ["jobs"]
-        operations: ["CREATE"]
-    # EMERGENCY DISABLED 2026-05-08 — pvc-plumber/issues/TBD.
-    #
-    # The JobMutator approach (admission-time inject /repository NFS mount
-    # into VolSync mover Jobs) is incompatible with the perfectra1n/volsync
-    # fork's `CreateOrUpdateDeleteOnImmutableErr` reconciler. VolSync
-    # computes a "desired" Job spec WITHOUT the injected volume, sees the
-    # actual Job spec HAS it, tries to update (fails — Jobs immutable),
-    # then deletes + recreates. The recreate goes through admission again,
-    # gets the volume injected, drift detected, delete+recreate. Tight
-    # loop: 68 immutable errors / 30s, 7 RSes simultaneously thrashing,
-    # control-plane CPU 58–68%. v2.1.1 cutover (2026-05-08 02:14 UTC)
-    # uncovered this — the v2.1.0 image was the v1 binary which never ran
-    # webhooks, so the JobMutator was dormant in production until v2.1.1
-    # made the webhook server actually start serving.
-    #
-    # never-match objectSelector below disables the webhook without
-    # deleting it, so cluster-wide ArgoCD sync stays clean. Re-enable
-    # by removing this objectSelector once pvc-plumber's Job-mutation
-    # approach is replaced with `spec.kopia.moverConfig.volumes` on the
-    # ReplicationSource (VolSync's own volume mounting, no admission-time
-    # mutation, no drift loop).
-    objectSelector:
-      matchLabels:
-        pvc-plumber.io/emergency-disabled: "2026-05-08"
-    namespaceSelector:
-      matchExpressions:
-        - key: kubernetes.io/metadata.name
-          operator: NotIn
-          values:
-            - kube-system
-            - volsync-system
-            - kyverno
-            - argocd
-            - longhorn-system
-            - snapshot-controller
-            - cert-manager
-            - external-secrets
-            - 1passwordconnect
-    # Ignore: NFS inject failure means a single backup mover Job runs without
-    # its repository volume and fails — backup retries, cluster keeps moving.
-    # Not worth deadlocking admission for this.
-    failurePolicy: Ignore
     sideEffects: None
     timeoutSeconds: 10
 ---
