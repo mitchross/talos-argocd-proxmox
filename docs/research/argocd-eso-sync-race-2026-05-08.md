@@ -1,5 +1,21 @@
 # ArgoCD vs External Secrets Operator: the "syncResult Synced but ES spec stale" race
 
+> **Decision update 2026-05-08:** the §3 recommended Lua health check was
+> evaluated AND rejected. Reason: the block (22 lines of Lua + header comments)
+> hit the "tons of Lua scripts" feel the cluster has explicitly cleaned up
+> once. The ArgoCD↔ESO race is now exclusively addressed at the application
+> layer via pvc-plumber v3.1.0 lazy-credential-load (task #34). The other 30+
+> ExternalSecrets in this cluster remain exposed to the race during any
+> future schema change; documented unstick pattern is `kubectl apply
+> --server-side --force-conflicts` + `kubectl annotate externalsecret
+> force-sync=...` + `argocd refresh=hard`, cataloged in
+> `~/.mink/wiki/resources/argocd-blocks-manifest-application-during-failing-deployment-rollout.md`.
+> Full decision rationale:
+> `~/.mink/wiki/resources/decision-2026-05-08-rejected-cluster-wide-es-lua-health-check-queued-pvc-plumber.md`.
+> The §1, §2, §6 root-cause analysis remains accurate and useful — only the
+> §3 recommendation has been superseded.
+
+
 **Date:** 2026-05-08
 **Trigger:** pvc-plumber v3.0.0 cutover (`dceee632`). New pod looped on
 `CreateContainerConfigError: couldn't find key AWS_ACCESS_KEY_ID in Secret
