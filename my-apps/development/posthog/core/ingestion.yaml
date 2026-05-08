@@ -35,7 +35,7 @@ spec:
               mountPath: /shared
       containers:
         - name: ingestion-general
-          image: posthog/posthog-node:latest@sha256:863e76e040ad41aef79f605c33ec71f1529bddf94cfd88941c935da9bde97235
+          image: ghcr.io/posthog/posthog-node:latest@sha256:863e76e040ad41aef79f605c33ec71f1529bddf94cfd88941c935da9bde97235
           command:
             - node
             - nodejs/dist/index.js
