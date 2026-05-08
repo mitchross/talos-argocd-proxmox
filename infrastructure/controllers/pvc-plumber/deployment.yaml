@@ -36,11 +36,12 @@ spec:
           type: RuntimeDefault
       containers:
       - name: pvc-plumber
-        # v2 operator image (controller-runtime manager + admission webhooks).
-        # 2.1.1 fixes the v2.1.0 build regression where Dockerfile pointed at
-        # the v1 legacy entrypoint (./cmd/pvc-plumber) instead of the operator
-        # entrypoint (./cmd/operator). Pre-2.1.1 images do NOT listen on :9443.
-        image: ghcr.io/mitchross/pvc-plumber:2.1.1
+        # v3.0.0 — kopia repo on RustFS S3, JobMutator removed.
+        # See pvc-plumber CHANGELOG `[3.0.0]` for the cutover details.
+        # Pre-3.0.0 images use the legacy kopia-fs backend with an NFS
+        # `/repository` mount; do NOT roll back to those without also
+        # restoring the NFS volume + mount + NFS env vars below.
+        image: ghcr.io/mitchross/pvc-plumber:3.0.0
         ports:
         - name: http
           containerPort: 8080
@@ -50,9 +51,16 @@ spec:
           protocol: TCP
         env:
         - name: BACKEND_TYPE
-          value: "kopia-fs"
-        - name: KOPIA_REPOSITORY_PATH
-          value: "/repository"
+          value: "kopia-s3"
+        - name: KOPIA_S3_ENDPOINT
+          value: "http://192.168.10.133:30293"
+        - name: KOPIA_S3_BUCKET
+          value: "volsync-kopia"
+        - name: KOPIA_S3_DISABLE_TLS
+          # In-cluster RustFS over plaintext HTTP (same shape CNPG Barman
+          # uses against the same endpoint). Flip to "false" if the cluster
+          # ever fronts RustFS with TLS termination.
+          value: "true"
         - name: LOG_LEVEL
           value: "info"
         - name: CACHE_TTL
@@ -61,11 +69,26 @@ spec:
           value: "7s"
         - name: RE_WARM_INTERVAL
           value: "90s"
+        # Kopia repo password + S3 admin keys all come from the same
+        # `pvc-plumber-kopia` Secret rendered by ExternalSecret (see
+        # externalsecret.yaml). Mover Jobs use the same credential names —
+        # the Secret here and the per-PVC `volsync-<pvc>` Secret the
+        # reconciler creates carry identical keys.
         - name: KOPIA_PASSWORD
           valueFrom:
             secretKeyRef:
               name: pvc-plumber-kopia
               key: KOPIA_PASSWORD
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: pvc-plumber-kopia
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: pvc-plumber-kopia
+              key: AWS_SECRET_ACCESS_KEY
         - name: KOPIA_CONFIG_PATH
           value: "/tmp/kopia/config/repository.config"
         - name: KOPIA_LOG_DIR
@@ -76,15 +99,11 @@ spec:
           value: "/tmp"
         - name: USER
           value: "plumber"
-        # Operator-mode configuration. The v2 binary uses these to enable the
+        # Operator-mode configuration. The v3 binary uses these to enable the
         # controller-runtime manager + admission webhooks alongside the
         # existing /exists HTTP server.
         - name: OPERATOR_MODE
           value: "true"
-        - name: NFS_SERVER
-          value: "192.168.10.133"
-        - name: NFS_PATH
-          value: "/mnt/BigTank/k8s/volsync-kopia-nfs"
         # Namespaces the operator must NOT touch when reconciling/mutating.
         # Mirrors the webhook namespaceSelector exclusion list (see
         # webhooks.yaml). Kept in sync to make sure reconciler and admission
@@ -121,9 +140,6 @@ spec:
           timeoutSeconds: 15
           failureThreshold: 3
         volumeMounts:
-        - name: repository
-          mountPath: /repository
-          readOnly: false
         - name: kopia-tmp
           mountPath: /tmp/kopia
         # controller-runtime default location for webhook serving cert.
@@ -133,10 +149,6 @@ spec:
           mountPath: /tmp/k8s-webhook-server/serving-certs
           readOnly: true
       volumes:
-      - name: repository
-        nfs:
-          server: 192.168.10.133
-          path: /mnt/BigTank/k8s/volsync-kopia-nfs
       - name: kopia-tmp
         emptyDir: {}
       - name: webhook-tls
