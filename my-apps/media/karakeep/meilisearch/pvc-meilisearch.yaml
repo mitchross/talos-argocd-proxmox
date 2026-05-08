@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: meilisearch-pvc
+  namespace: karakeep
+  labels:
+    app: karakeep
+    type: meilisearch-storage
+    backup: "hourly"
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: longhorn
+  # dataSourceRef is added dynamically by Kyverno if a backup exists

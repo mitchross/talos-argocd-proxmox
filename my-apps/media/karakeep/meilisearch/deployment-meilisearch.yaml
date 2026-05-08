@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: karakeep-meilisearch
+  labels:
+    app: karakeep-meilisearch
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: karakeep-meilisearch
+  template:
+    metadata:
+      labels:
+        app: karakeep-meilisearch
+    spec:
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+        runAsGroup: 1001
+      containers:
+        - name: meilisearch
+          image: getmeili/meilisearch:v1.13.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 7700
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 7700
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 7700
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          env:
+            - name: MEILI_NO_ANALYTICS
+              value: "true"
+          volumeMounts:
+            - mountPath: /meili_data
+              name: meilisearch
+          envFrom:
+            - secretRef:
+                name: karakeep-secret
+      volumes:
+        - name: meilisearch
+          persistentVolumeClaim:
+            claimName: meilisearch-pvc
