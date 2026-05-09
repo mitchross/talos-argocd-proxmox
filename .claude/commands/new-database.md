@@ -42,7 +42,7 @@ Create a new CNPG (CloudNativePG) database for `$ARGUMENTS`.
 
 ## Critical Rules
 
-- DO NOT add Kyverno backup labels to CNPG PVCs (Barman handles database backups via S3)
+- DO NOT add `backup: "hourly"|"daily"` labels to CNPG PVCs (Barman handles database backups via S3; the pvc-plumber operator must not double-manage them)
 - `serverName` must be bumped after each DR recovery (e.g. `-v2`, `-v3`)
 - Recovery cannot go through ArgoCD (SSA + CNPG webhook conflict)
 - See `docs/cnpg-disaster-recovery.md` for DR procedures

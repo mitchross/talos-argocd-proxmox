@@ -6,9 +6,9 @@ metadata:
   labels:
     app.kubernetes.io/name: renovate
 spec:
-  # Top of every hour. renovate.json5 caps prHourlyLimit: 3 so this respects
-  # GitHub rate limits even on first run.
-  schedule: "0 * * * *"
+  # Poll frequently so Dependency Dashboard checkbox edits behave close to the
+  # hosted GitHub App. concurrencyPolicy=Forbid prevents overlapping scans.
+  schedule: "*/5 * * * *"
   timeZone: "Etc/UTC"
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 600
@@ -34,7 +34,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: renovate
-              image: ghcr.io/renovatebot/renovate:43.160.5
+              image: ghcr.io/renovatebot/renovate:43.170.12
               imagePullPolicy: IfNotPresent
               env:
                 # Debug logging temporarily to diagnose why customManager

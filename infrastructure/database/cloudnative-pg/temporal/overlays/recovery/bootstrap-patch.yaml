@@ -12,19 +12,26 @@ spec:
       # alongside the v1->v2 lineage bump. If a future PITR is needed,
       # set targetTime to a value that is verifiably present in the
       # externalClusters serverName's wals/ prefix on RustFS.
+  # Plugin-shape externalClusters (replaces the deprecated in-tree
+  # barmanObjectStore field on externalClusters[]; removed in CNPG 1.30.0).
+  # Reuses the prod ObjectStore CR (base/objectstore.yaml) — the only thing
+  # that differs from the prod path is the serverName, which selects the
+  # PRIOR lineage subtree on the same RustFS bucket. Migration plan:
+  # docs/plans/cnpg-plugin-migration.md.
   externalClusters:
     - name: temporal-recovery-source
-      barmanObjectStore:
-        # Prior lineage to restore from. Bump to N-1 at DR time.
-        serverName: temporal-database-v1
-        destinationPath: s3://postgres-backups/cnpg/temporal
-        endpointURL: http://192.168.10.133:30293
-        s3Credentials:
-          accessKeyId:
-            name: cnpg-s3-credentials
-            key: AWS_ACCESS_KEY_ID
-          secretAccessKey:
-            name: cnpg-s3-credentials
-            key: AWS_SECRET_ACCESS_KEY
-        wal:
-          compression: gzip
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          # Reuse the prod ObjectStore (same bucket, same creds, same
+          # endpoint). Only serverName changes between live writes and
+          # recovery reads.
+          barmanObjectName: temporal-objectstore
+          # Previous lineage to recover FROM. DO NOT change without
+          # bumping recovery target lineage. See cnpg-plugin-migration.md
+          # §9.1.
+          #   v1 — abandoned 2026-05-03 (WAL-PVC-full).
+          #   v2 — source for the 2026-05-08 GitOps DR drill (this commit
+          #        bumped base/cluster.yaml to v3 AND flipped this serverName
+          #        from v1 → v2 in lockstep).
+          serverName: temporal-database-v2
