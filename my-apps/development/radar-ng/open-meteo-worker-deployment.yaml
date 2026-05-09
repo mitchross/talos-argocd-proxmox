@@ -7,7 +7,7 @@
 #
 # The Temporal Worker Controller injects TEMPORAL_* env vars at runtime.
 apiVersion: temporal.io/v1alpha1
-kind: TemporalWorkerDeployment
+kind: WorkerDeployment
 metadata:
   name: radar-ng-open-meteo-worker
   namespace: radar-ng
