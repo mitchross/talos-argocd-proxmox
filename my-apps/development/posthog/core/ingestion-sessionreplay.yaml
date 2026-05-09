@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
         - name: ingestion-sessionreplay
-          image: ghcr.io/posthog/posthog-node:latest@sha256:91d5fa2f5ae47f85528d9a1eca73fb86bae01cc67570fe1f413ae1d59a032248
+          image: ghcr.io/posthog/posthog-node:master-d29bad5@sha256:91d5fa2f5ae47f85528d9a1eca73fb86bae01cc67570fe1f413ae1d59a032248
           command:
             - node
             - nodejs/dist/index.js

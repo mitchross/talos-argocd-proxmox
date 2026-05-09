@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
         - name: livestream
-          image: ghcr.io/posthog/posthog/livestream:master@sha256:211f1d57e9f19729318ab306b90fe75d18a143d93230e8c68293a5f1c34867f4
+          image: ghcr.io/posthog/posthog/livestream:master-957aa3e@sha256:211f1d57e9f19729318ab306b90fe75d18a143d93230e8c68293a5f1c34867f4
           env:
             - name: KAFKA_HOSTS
               value: "kafka:9092"
@@ -83,7 +83,7 @@ spec:
     spec:
       containers:
         - name: property-defs-rs
-          image: ghcr.io/posthog/posthog/property-defs-rs:master@sha256:1ada1c8c963bc3e15b9ae84f83eb1fbb2f720cff89961c1d513bcdba90d2b850
+          image: ghcr.io/posthog/posthog/property-defs-rs:master-a0c01a5@sha256:1ada1c8c963bc3e15b9ae84f83eb1fbb2f720cff89961c1d513bcdba90d2b850
           env:
             - name: PGPASSWORD
               valueFrom:
@@ -131,7 +131,7 @@ spec:
     spec:
       containers:
         - name: cyclotron-janitor
-          image: ghcr.io/posthog/posthog/cyclotron-janitor:master@sha256:d9ce06c27d20a11526431ca2c6bd85f9770c1b5c8fbf96b9adf00adb79149fe0
+          image: ghcr.io/posthog/posthog/cyclotron-janitor:master-a0c01a5@sha256:d9ce06c27d20a11526431ca2c6bd85f9770c1b5c8fbf96b9adf00adb79149fe0
           env:
             - name: PGPASSWORD
               valueFrom:
@@ -181,7 +181,7 @@ spec:
     spec:
       containers:
         - name: cymbal
-          image: ghcr.io/posthog/posthog/cymbal:master@sha256:f1212fadbb00bc088b10becabdd23977d52adfa869e7f4b47eab0ca547afa990
+          image: ghcr.io/posthog/posthog/cymbal:master-a0c01a5@sha256:f1212fadbb00bc088b10becabdd23977d52adfa869e7f4b47eab0ca547afa990
           env:
             - name: PGPASSWORD
               valueFrom:

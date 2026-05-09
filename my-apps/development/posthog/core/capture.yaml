@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: capture
-          image: ghcr.io/posthog/posthog/capture:master@sha256:662ff7c0f4c5e85d3a4e5dadfc6d574425f2361df50e6be4a6db64657a05b2dd
+          image: ghcr.io/posthog/posthog/capture:master-a0c01a5@sha256:662ff7c0f4c5e85d3a4e5dadfc6d574425f2361df50e6be4a6db64657a05b2dd
           env:
             - name: ADDRESS
               value: "0.0.0.0:3000"
@@ -84,7 +84,7 @@ spec:
     spec:
       containers:
         - name: replay-capture
-          image: ghcr.io/posthog/posthog/capture:master@sha256:662ff7c0f4c5e85d3a4e5dadfc6d574425f2361df50e6be4a6db64657a05b2dd
+          image: ghcr.io/posthog/posthog/capture:master-a0c01a5@sha256:662ff7c0f4c5e85d3a4e5dadfc6d574425f2361df50e6be4a6db64657a05b2dd
           envFrom:
             - configMapRef:
                 name: posthog-env
@@ -170,7 +170,7 @@ spec:
       initContainers:
         - name: copy-geoip
           # Pinned to pre-WarpStream SHA — see jobs.yaml header comment.
-          image: ghcr.io/posthog/posthog:latest@sha256:334b0b6a604d0cde5f48af199bac141b26f8867ed2f6fd77435cf859a9537d76
+          image: ghcr.io/posthog/posthog:master-ae44104@sha256:334b0b6a604d0cde5f48af199bac141b26f8867ed2f6fd77435cf859a9537d76
           command:
             - /bin/sh
             - -c
@@ -183,7 +183,7 @@ spec:
               mountPath: /share
       containers:
         - name: feature-flags
-          image: ghcr.io/posthog/posthog/feature-flags:master@sha256:4163d5e04f21d4e16fbdbc151404bd2799269cfcea0e90e716df5469c617f67f
+          image: ghcr.io/posthog/posthog/feature-flags:master-a0c01a5@sha256:4163d5e04f21d4e16fbdbc151404bd2799269cfcea0e90e716df5469c617f67f
           env:
             - name: PGPASSWORD
               valueFrom:
