@@ -68,7 +68,7 @@
         'argocd',
       ],
       automerge: true,
-      automergeType: 'branch',
+      automergeType: 'pr',
     },
     {
       matchUpdateTypes: [
@@ -105,6 +105,7 @@
       enabled: false,
       matchPackageNames: [
         '/^nvidia/cuda/',
+        '/^nvcr.io/nvidia/cuda/',
       ],
     },
     {
@@ -121,10 +122,32 @@
       ],
       versioning: 'regex:^(?<major>\\d{4})\\.(?<minor>\\d{1,2})\\.(?<patch>\\d{1,2})-[a-f0-9]+$',
     },
+    // -------------------------------------------------------------------
+    // PostHog image rules
+    // -------------------------------------------------------------------
+    // Context (2026-05-09 incident):
+    //   The posthog-migrate Job entered a perma-retry loop hitting
+    //   `Code: 60. DB::Exception: Could not find table: sharded_events.
+    //   (UNKNOWN_TABLE)` on migration 0026. Root cause: a Renovate
+    //   weekend auto-merge had advanced the `posthog/posthog-node` and
+    //   sidecar digests, which re-fired the ArgoCD Sync hook, which
+    //   re-ran migrate_clickhouse, which discovered single-node CH
+    //   config drift (`posthog.events` is Distributed but the local
+    //   `sharded_events` shard table was never bootstrapped — config
+    //   drift dating back to install). See companion commit b6ef0c78
+    //   for the in-cluster fix and 3b4fbb23 for the tag-format change
+    //   (`:latest` / `:master` -> `master-<sha7>`) that makes future
+    //   PRs surface the upstream commit delta in the title.
+    //
+    //   Sidecar auto-merges are now OFF for the same reason that
+    //   monolith auto-merges are off: every PostHog sidecar bump can
+    //   ride alongside an upstream CH/migration change that breaks our
+    //   self-hosted config silently. Reviewer-required from now on.
+    // -------------------------------------------------------------------
     {
-      description: 'PostHog app images: group sidecar digest updates into one PR (Rust services can stay current)',
+      description: 'PostHog sidecars (Rust + node): track master-<sha7> tags via loose versioning. Group into one PR per sweep, but do NOT auto-merge — the 2026-05-09 sharded_events outage was triggered by a sidecar digest auto-merge re-firing the migrate hook against a pre-existing CH config drift. A human reviewer must check each PR against the upstream commit range surfaced by the new master-<sha7> tag format before merging.',
       matchPackageNames: [
-        'posthog/posthog-node',
+        'ghcr.io/posthog/posthog-node',
         'ghcr.io/posthog/posthog/capture',
         'ghcr.io/posthog/posthog/property-defs-rs',
         'ghcr.io/posthog/posthog/feature-flags',
@@ -134,13 +157,14 @@
       ],
       matchFileNames: ['my-apps/development/posthog/**'],
       groupName: 'posthog images',
-      automerge: true,
-      automergeType: 'branch',
+      versioning: 'loose',
+      matchUpdateTypes: ['digest', 'patch', 'minor'],
+      automerge: false,
       schedule: ['every weekend'],
     },
     {
-      description: 'PostHog MONOLITH (posthog/posthog): do NOT auto-bump. Requires ClickHouse-side config changes per release (named collections, satellite clusters, etc.) that our self-hosted config drifts from. 2026-04-19: the `9b518de` auto-merge broke migrate_clickhouse for a full day because upstream 0227_warpstream migration required a `warpstream_calculated_events` named collection our CH config lacked. Manually bump after checking PostHog/posthog/docker/clickhouse/config.d/default.xml for any new named_collections / remote_servers / storage_policies our config.d/default.xml is missing.',
-      matchPackageNames: ['posthog/posthog'],
+      description: 'PostHog MONOLITH (posthog/posthog): do NOT auto-bump. Requires ClickHouse-side config changes per release (named collections, satellite clusters, sharded_events bootstrap, etc.) that our self-hosted config drifts from. 2026-04-19: the `9b518de` auto-merge broke migrate_clickhouse for a full day because upstream 0227_warpstream migration required a `warpstream_calculated_events` named collection our CH config lacked. 2026-05-09: a sidecar auto-merge re-fired the migrate hook and surfaced an even older config drift — `posthog.events` Distributed table pointing at a never-created `sharded_events` shard table. Manually bump after checking PostHog/posthog/docker/clickhouse/config.d/default.xml for any new named_collections / remote_servers / storage_policies our config.d/default.xml is missing AND verifying our clickhouse-init.yaml stub covers any new sharded_* tables introduced by the target release.',
+      matchPackageNames: ['ghcr.io/posthog/posthog'],
       matchFileNames: ['my-apps/development/posthog/**'],
       enabled: false,
     },
@@ -148,7 +172,7 @@
       description: 'PostHog data layer: disable auto-updates (versions must match PostHog docker-compose.base.yml)',
       matchPackageNames: [
         'postgres',
-        'valkey/valkey',
+        'ghcr.io/valkey-io/valkey',
         'redis',
         'clickhouse/clickhouse-server',
         'docker.redpanda.com/redpandadata/redpanda',
@@ -190,7 +214,7 @@
       matchDatasources: ['custom.gitea-vanillax'],
       matchUpdateTypes: ['patch', 'minor'],
       automerge: true,
-      automergeType: 'branch',
+      automergeType: 'pr',
     },
     {
       description: 'Mute the kubernetes-manager copy of registry.vanillax.me deps so we only get one PR per bump (the customManager + custom.gitea-vanillax datasource defined below is the canonical path).',
@@ -201,6 +225,29 @@
     {
       description: 'act_runner-nogpu publishes only a single floating :v1 tag (Gitea Actions runner image) — no semver bumping path. Disable so the dashboard does not warn about an unresolvable lookup.',
       matchPackageNames: ['registry.vanillax.me/act_runner-nogpu'],
+      enabled: false,
+    },
+    {
+      // Pinned during the CNPG in-tree → plugin backup-path migration. The
+      // operator chart `cloudnative-pg` v0.28.0 ships appVersion 1.29.0,
+      // which still accepts `spec.backup.barmanObjectStore` on Cluster CRs.
+      // appVersion 1.30 REMOVES that field; auto-merging a chart bump that
+      // ships appVersion 1.30 would brick all 4 production CNPG clusters
+      // simultaneously (immich, gitea, paperless, temporal) until each is
+      // migrated to `spec.plugins[]`.
+      //
+      // Migration plan: docs/plans/cnpg-plugin-migration.md.
+      // REMOVE THIS ENTRY once all 4 Cluster CRs are on spec.plugins[] AND
+      // verified writing backups via the plugin path. Verify by:
+      //   for c in immich gitea paperless temporal; do
+      //     kubectl get cluster -n cloudnative-pg ${c}-database \
+      //       -o jsonpath='{.spec.plugins[0].name}{"\n"}'
+      //   done
+      // Expect each to print: barman-cloud.cloudnative-pg.io
+      description: 'Pin CNPG operator chart during in-tree → plugin migration. See docs/plans/cnpg-plugin-migration.md §9.6. Remove once all 4 Cluster CRs are on spec.plugins[].',
+      matchDatasources: ['helm'],
+      matchPackageNames: ['cloudnative-pg'],
+      registryUrls: ['https://cloudnative-pg.github.io/charts'],
       enabled: false,
     },
   ],

@@ -1,0 +1,81 @@
+---
+# Replaces the Kyverno ClusterPolicy `longhorn-pvc-backup-audit` (deleted in
+# the no-Kyverno migration). The original policy emitted PolicyReport entries
+# for Longhorn-backed PVCs that declared neither `backup: hourly|daily` nor
+# `backup-exempt: "true"`, surfacing PVCs whose backup intent was implicit.
+#
+# This PrometheusRule preserves the audit logic with two main differences:
+#   * Severity is "warning" (alert), not policy-failure — nothing is denied.
+#   * The check runs against kube-state-metrics rather than the live API,
+#     so it depends on `metricLabelsAllowlist` exposing the relevant labels
+#     (configured in values.yaml: backup, backup-exempt, cnpg.io/cluster).
+#
+# CNPG database PVCs are excluded via the `cnpg.io/cluster` label rather than
+# only by namespace, because CNPG `Cluster` CRs can live in app namespaces.
+# Their backup path is Barman → S3, not VolSync/Kopia.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: longhorn-pvc-backup-audit
+  namespace: prometheus-stack
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack
+    app.kubernetes.io/instance: kube-prometheus-stack
+    app.kubernetes.io/managed-by: Helm
+    prometheus: kube-prometheus-stack-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: longhorn-pvc-backup-audit
+      rules:
+        - alert: LonghornPVCMissingBackupLabel
+          # Surfaces Longhorn PVCs whose backup intent is implicit. To clear
+          # this alert, set one of:
+          #   metadata.labels.backup: "hourly"     (hourly Kopia backup)
+          #   metadata.labels.backup: "daily"      (daily Kopia backup)
+          #   metadata.labels.backup-exempt: "true" (acknowledged: not backed up)
+          #
+          # System / infra namespaces are excluded inline (mirrors the
+          # original Kyverno policy's exclude list, plus cnpg-system).
+          # `volsync-*` PVC names are excluded because VolSync's mover cache
+          # PVCs live alongside the source and are never operator-authored.
+          # CNPG-managed PVCs are excluded via label, not namespace, because
+          # Cluster CRs can live in app namespaces.
+          expr: |
+            kube_persistentvolumeclaim_info{
+              storageclass="longhorn",
+              namespace!~"kube-system|volsync-system|kyverno|argocd|longhorn-system|snapshot-controller|cert-manager|external-secrets|1passwordconnect|cnpg-system|cloudnative-pg",
+              persistentvolumeclaim!~"volsync-.*"
+            }
+            unless on (namespace, persistentvolumeclaim) (
+              kube_persistentvolumeclaim_labels{label_backup=~"hourly|daily"}
+              or
+              kube_persistentvolumeclaim_labels{label_backup_exempt="true"}
+              or
+              kube_persistentvolumeclaim_labels{label_cnpg_io_cluster!=""}
+            )
+          for: 30m
+          labels:
+            severity: warning
+            component: longhorn
+            category: backup
+          annotations:
+            summary: "Longhorn PVC missing explicit backup intent: {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}"
+            description: |
+              Longhorn PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}
+              declares neither `backup` (hourly|daily) nor
+              `backup-exempt: "true"`. Set one explicitly so backup intent
+              is recorded in Git.
+
+              Actions:
+                1. Critical data: add label `backup: hourly` or `backup: daily`.
+                   The volsync-pvc-backup-restore controller will provision
+                   ExternalSecret + ReplicationSource + ReplicationDestination
+                   on the next reconcile.
+                2. Ephemeral / reproducible / cache: add
+                   `backup-exempt: "true"` to acknowledge it is not backed up.
+                3. Wrong storage class for this PVC? Move it off Longhorn —
+                   Longhorn is reserved for snapshot-capable, backup-eligible
+                   workloads.

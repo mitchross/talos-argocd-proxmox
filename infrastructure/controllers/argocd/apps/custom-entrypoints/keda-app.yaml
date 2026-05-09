@@ -4,7 +4,8 @@
 # tangled with repo-server caching (adding paths to the AppSet generator
 # wasn't getting reflected live; Argo kept reverting the update). Direct
 # Application manifest dodges that path entirely — identical pattern to
-# kyverno-app.yaml, longhorn-app.yaml, volsync-app.yaml.
+# longhorn-app.yaml, snapshot-controller-app.yaml, volsync-app.yaml,
+# pvc-plumber-app.yaml.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

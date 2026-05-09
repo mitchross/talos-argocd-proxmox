@@ -8,12 +8,11 @@ resources:
   - bootstrap/1passwordconnect.yaml
   - bootstrap/external-secrets.yaml
 
-  # Core dependencies: storage, restore, and policy services required by later waves.
+  # Core dependencies: storage and restore services required by later waves.
   - core-dependencies/longhorn-app.yaml
   - core-dependencies/snapshot-controller-app.yaml
   - core-dependencies/volsync-app.yaml
   - core-dependencies/pvc-plumber-app.yaml
-  - core-dependencies/kyverno-app.yaml
 
   # Custom entrypoints: standalone apps kept out of AppSets for ordering or render reasons.
   - custom-entrypoints/cnpg-barman-plugin-app.yaml

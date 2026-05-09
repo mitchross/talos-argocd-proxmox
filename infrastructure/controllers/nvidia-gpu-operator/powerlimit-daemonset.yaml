@@ -57,7 +57,9 @@ spec:
           # renovate: ignore
           # Minimal image that ships nvidia-smi. Any CUDA base tag works;
           # pin a specific SHA if you want to stop Renovate from bumping.
-          image: nvidia/cuda:12.8.1-base-ubuntu22.04
+          # Source from NVIDIA's own registry (nvcr.io) to dodge Docker Hub
+          # rate limits — same byte-identical image as docker.io/nvidia/cuda.
+          image: nvcr.io/nvidia/cuda:12.8.1-base-ubuntu22.04
           command:
             - /bin/bash
             - -c

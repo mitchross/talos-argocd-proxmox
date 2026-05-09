@@ -16,5 +16,6 @@ data:
       "requireConfig": "required",
       "gitAuthor": "Renovate Bot <renovate@vanillax.me>",
       "binarySource": "install",
-      "persistRepoData": false
+      "persistRepoData": false,
+      "ignorePrAuthor": true
     }

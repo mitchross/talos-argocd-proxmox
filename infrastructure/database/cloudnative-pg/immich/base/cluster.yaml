@@ -1,5 +1,18 @@
 # Base CNPG Cluster manifest — NO bootstrap stanza. See gitea/base/cluster.yaml
 # for serverName bump rationale.
+#
+# Plugin-mode backup config (replaces deprecated spec.backup.barmanObjectStore;
+# removed in CNPG 1.30.0). The S3 destination + retention live on a sibling
+# ObjectStore CR (base/objectstore.yaml). Migration plan:
+# docs/plans/cnpg-plugin-migration.md.
+#
+# Note on the cluster image: this cluster runs the vchord vector extension
+# (shared_preload_libraries: vchord.so) on cloudnative-vectorchord image.
+# The barman-cloud plugin sidecar runs in a separate container in the
+# Postgres pod and is image-agnostic, so the migration is expected to be
+# transparent to the vchord setup. Per the migration plan, immich is the
+# last cluster to migrate so all of the verification learnings from
+# temporal/paperless/gitea apply here.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -34,21 +47,17 @@ spec:
   enableSuperuserAccess: true
   monitoring:
     enablePodMonitor: true
-  backup:
-    barmanObjectStore:
-      # Write target. Clean-slate baseline after 2026-04-19 RustFS wipe.
-      serverName: immich-database-v1
-      destinationPath: s3://postgres-backups/cnpg/immich
-      endpointURL: http://192.168.10.133:30293
-      s3Credentials:
-        accessKeyId:
-          name: cnpg-s3-credentials
-          key: AWS_ACCESS_KEY_ID
-        secretAccessKey:
-          name: cnpg-s3-credentials
-          key: AWS_SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-      data:
-        compression: gzip
-    retentionPolicy: "14d"
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      # Designates this Cluster as the active WAL writer for the referenced
+      # ObjectStore. Keep at most one Cluster per ObjectStore as
+      # isWALArchiver=true.
+      isWALArchiver: true
+      parameters:
+        # Name of the sibling ObjectStore CR (see base/objectstore.yaml).
+        barmanObjectName: immich-objectstore
+        # Preserved from previous spec.backup.barmanObjectStore.serverName —
+        # see cnpg-plugin-migration.md §9.1. Clean-slate baseline after the
+        # 2026-04-19 RustFS wipe; no abandoned lineages for immich.
+        # DO NOT change this value without bumping lineage in lockstep.
+        serverName: immich-database-v1

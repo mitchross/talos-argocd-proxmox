@@ -2,11 +2,16 @@
 # Overlays (overlays/initdb, overlays/recovery) supply the bootstrap
 # via strategic-merge patch.
 #
-# backup.barmanObjectStore.serverName = FORWARD write target (new lineage).
-# On fresh-nuke recovery, set this to the NEXT lineage so post-restore
+# serverName encodes the FORWARD write target (current lineage). On
+# fresh-nuke recovery, set this to the NEXT lineage so post-restore
 # backups don't append to the polluted current-lineage directory on S3.
 # Bump this whenever you trigger a new recovery — keep in sync with the
 # recovery overlay's externalClusters (which points at the PRIOR lineage).
+#
+# Plugin-mode backup config (replaces deprecated spec.backup.barmanObjectStore;
+# removed in CNPG 1.30.0). The S3 destination + retention live on a sibling
+# ObjectStore CR (base/objectstore.yaml). Migration plan:
+# docs/plans/cnpg-plugin-migration.md.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -38,25 +43,20 @@ spec:
   enableSuperuserAccess: true
   monitoring:
     enablePodMonitor: true
-  backup:
-    barmanObjectStore:
-      # Write target. v2 lineage opened 2026-05-02 after the GPU worker
-      # node deletion left gitea-database-1-wal Longhorn volume faulted.
-      # The prior v1 lineage on S3 has clean Barman backups through
-      # 2026-05-02T17:09:43Z; recovery overlay restores FROM v1, this
-      # writes new WAL/base to v2 going forward.
-      serverName: gitea-database-v2
-      destinationPath: s3://postgres-backups/cnpg/gitea
-      endpointURL: http://192.168.10.133:30293
-      s3Credentials:
-        accessKeyId:
-          name: cnpg-s3-credentials
-          key: AWS_ACCESS_KEY_ID
-        secretAccessKey:
-          name: cnpg-s3-credentials
-          key: AWS_SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-      data:
-        compression: gzip
-    retentionPolicy: "14d"
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      # Designates this Cluster as the active WAL writer for the referenced
+      # ObjectStore. Keep at most one Cluster per ObjectStore as
+      # isWALArchiver=true.
+      isWALArchiver: true
+      parameters:
+        # Name of the sibling ObjectStore CR (see base/objectstore.yaml).
+        barmanObjectName: gitea-objectstore
+        # Preserved from previous spec.backup.barmanObjectStore.serverName —
+        # see cnpg-plugin-migration.md §9.1. v2 lineage opened 2026-05-02
+        # after the GPU worker node deletion left gitea-database-1-wal
+        # Longhorn volume faulted; the prior v1 lineage on RustFS has clean
+        # Barman backups through 2026-05-02T17:09:43Z and remains readable
+        # via the recovery overlay's externalClusters block.
+        # DO NOT change this value without bumping lineage in lockstep.
+        serverName: gitea-database-v2

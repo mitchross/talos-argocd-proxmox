@@ -97,7 +97,7 @@ echo ""
 echo "⎈ Installing ArgoCD via Helm..."
 helm upgrade --install argocd argo-cd \
   --repo https://argoproj.github.io/argo-helm \
-  --version 9.5.9 \
+  --version 9.5.13 \
   --namespace argocd \
   --values "$ROOT_DIR/infrastructure/controllers/argocd/values.yaml" \
   --wait \
@@ -127,10 +127,10 @@ echo "✅ ArgoCD bootstrap complete!"
 echo ""
 echo "📊 ArgoCD will now sync applications in this order:"
 echo "   Wave 0: Cilium (networking), 1Password Connect, External Secrets"
-echo "   Wave 1: Longhorn (storage), Snapshot Controller, VolSync"
-echo "   Wave 2: PVC Plumber (backup checker, FAIL-CLOSED gate)"
-echo "   Wave 3: Kyverno (policy engine, must register webhooks before app PVCs)"
-echo "   Wave 4: Infrastructure AppSet (cert-manager, GPU operators, gateway, etc.)"
+echo "   Wave 1: Longhorn (storage), Snapshot Controller, VolSync, pvc-plumber v2 operator"
+echo "   Wave 2: pvc-plumber webhook configs (FAIL-CLOSED PVC admission gate)"
+echo "   Wave 3: CNPG Barman Plugin (database backup plugin)"
+echo "   Wave 4: Infrastructure AppSet (cert-manager, GPU operators, gateway, etc.) + Database AppSet"
 echo "   Wave 5: Monitoring AppSet (Prometheus, Grafana, Loki)"
 echo "   Wave 6: My-Apps AppSet (user workloads)"
 echo ""
