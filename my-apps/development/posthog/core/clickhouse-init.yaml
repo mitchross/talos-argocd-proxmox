@@ -70,6 +70,46 @@ spec:
 
           echo "ClickHouse migration tables initialized successfully"
 
+          # Stub `sharded_events` so migration 0026 can target it (single-node CH gotcha).
+          # ---------------------------------------------------------------
+          # PostHog's `posthog.events` is a Distributed engine that fans out
+          # to a local `sharded_events` table on each shard. Single-node
+          # self-hosted CH was bootstrapped without `sharded_events` ever
+          # being created (config drift — see TODO below). That makes
+          # migration `0026_fix_materialized_window_and_session_ids.py` fail
+          # with `Code: 60. DB::Exception: Could not find table:
+          # sharded_events. (UNKNOWN_TABLE)` and the posthog-migrate Job
+          # spins in BackoffLimitExceeded forever, blocking ArgoCD sync.
+          #
+          # 0026's actual SQL is `ALTER TABLE sharded_events ON CLUSTER ...
+          # DROP/RENAME COLUMN IF EXISTS mat_$session_id / mat_$window_id`.
+          # The `IF EXISTS` guards make a stub MergeTree with a single
+          # placeholder column a safe target — both ALTERs no-op cleanly,
+          # the migration row is written to infi_clickhouse_orm_migrations,
+          # and the Job exits 0. The stub never receives writes (the
+          # Distributed `events` table was already routing to a
+          # nonexistent target before this), so existing behavior is
+          # preserved.
+          #
+          # TODO(out-of-scope): The Distributed `posthog.events` table has
+          # been pointing at a missing `sharded_events` for the lifetime
+          # of this single-node deployment. INSERTs from `events_json_mv`
+          # into `events` → Distributed → no-shard-target → silently
+          # dropped. The proper fix is to either (a) recreate `events` as
+          # a single-node ReplicatedMergeTree (PostHog's
+          # CLICKHOUSE_REPLICATION=false code path), or (b) materialize a
+          # real `sharded_events` schema mirroring all 80+ columns of the
+          # current Distributed view and update the routing. Tracked
+          # separately — DO NOT bundle with this loop-stop fix.
+          echo "Creating stub sharded_events for single-node migration compat..."
+          clickhouse-client --host=clickhouse --port=9000 --query "
+          CREATE TABLE IF NOT EXISTS posthog.sharded_events ON CLUSTER 'posthog' (
+            uuid UUID
+          ) ENGINE = MergeTree() ORDER BY uuid
+          SETTINGS index_granularity = 8192;
+          "
+          echo "  sharded_events stub ready"
+
           # Force-create lazy system log tables that PostHog migrations depend on
           echo "Ensuring system log tables exist..."
           clickhouse-client --host=clickhouse --port=9000 --query "SYSTEM FLUSH LOGS" || true
