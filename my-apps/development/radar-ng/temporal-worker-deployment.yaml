@@ -57,8 +57,11 @@ spec:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
           env:
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: http://opentelemetry-collector.observability:4317
+            # OTEL collector is not deployed in the cluster — leaving the
+            # endpoint set caused continuous "UNAVAILABLE" gRPC retries from
+            # BatchSpanProcessor, swamping logs. The bootstrap in
+            # temporal/shared/otel.py installs the OTLP exporter only when
+            # this env is set, so omitting it gives a no-op tracer.
             - name: TILE_DIR
               value: /data/tiles
             - name: STATE_DIR
