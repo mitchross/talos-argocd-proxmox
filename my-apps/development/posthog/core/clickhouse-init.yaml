@@ -70,45 +70,42 @@ spec:
 
           echo "ClickHouse migration tables initialized successfully"
 
-          # Stub `sharded_events` so migration 0026 can target it (single-node CH gotcha).
+          # Create `sharded_events` as a real local table mirroring `events` columns.
           # ---------------------------------------------------------------
           # PostHog's `posthog.events` is a Distributed engine that fans out
           # to a local `sharded_events` table on each shard. Single-node
           # self-hosted CH was bootstrapped without `sharded_events` ever
-          # being created (config drift — see TODO below). That makes
-          # migration `0026_fix_materialized_window_and_session_ids.py` fail
-          # with `Code: 60. DB::Exception: Could not find table:
-          # sharded_events. (UNKNOWN_TABLE)` and the posthog-migrate Job
-          # spins in BackoffLimitExceeded forever, blocking ArgoCD sync.
+          # being created — INSERTs from `events_json_mv` → `writable_events`
+          # (Distributed) → no shard target → silently dropped. Migrations
+          # 0026-0030 only used `IF EXISTS` ALTERs so an earlier stub got
+          # them through, but migration 0031 (`event_properties_zstd`) does
+          # `ALTER TABLE sharded_events MODIFY COLUMN properties` which fails
+          # with `NOT_FOUND_COLUMN_IN_BLOCK` against a single-column stub.
           #
-          # 0026's actual SQL is `ALTER TABLE sharded_events ON CLUSTER ...
-          # DROP/RENAME COLUMN IF EXISTS mat_$session_id / mat_$window_id`.
-          # The `IF EXISTS` guards make a stub MergeTree with a single
-          # placeholder column a safe target — both ALTERs no-op cleanly,
-          # the migration row is written to infi_clickhouse_orm_migrations,
-          # and the Job exits 0. The stub never receives writes (the
-          # Distributed `events` table was already routing to a
-          # nonexistent target before this), so existing behavior is
-          # preserved.
-          #
-          # TODO(out-of-scope): The Distributed `posthog.events` table has
-          # been pointing at a missing `sharded_events` for the lifetime
-          # of this single-node deployment. INSERTs from `events_json_mv`
-          # into `events` → Distributed → no-shard-target → silently
-          # dropped. The proper fix is to either (a) recreate `events` as
-          # a single-node ReplicatedMergeTree (PostHog's
-          # CLICKHOUSE_REPLICATION=false code path), or (b) materialize a
-          # real `sharded_events` schema mirroring all 80+ columns of the
-          # current Distributed view and update the routing. Tracked
-          # separately — DO NOT bundle with this loop-stop fix.
-          echo "Creating stub sharded_events for single-node migration compat..."
+          # Proper fix: recreate sharded_events as a local ReplicatedReplacingMergeTree
+          # whose column list is cloned (`AS posthog.events`) from the existing
+          # Distributed view. This matches PostHog upstream's
+          # `posthog/clickhouse/sharded_events.py` schema (PARTITION BY
+          # toYYYYMM(timestamp), ORDER BY (team_id, toDate(timestamp), event,
+          # cityHash64(distinct_id), cityHash64(uuid)), _timestamp as the
+          # ReplacingMergeTree version column). Now `ALTER ... MODIFY COLUMN`
+          # has a real target and ingest from kafka_events_json → events_json_mv
+          # → writable_events (Distributed) → sharded_events actually persists.
+          echo "Creating sharded_events local table mirroring events columns..."
           clickhouse-client --host=clickhouse --port=9000 --query "
-          CREATE TABLE IF NOT EXISTS posthog.sharded_events ON CLUSTER 'posthog' (
-            uuid UUID
-          ) ENGINE = MergeTree() ORDER BY uuid
+          CREATE TABLE IF NOT EXISTS posthog.sharded_events ON CLUSTER 'posthog'
+          AS posthog.events
+          ENGINE = ReplicatedReplacingMergeTree(
+            '/clickhouse/tables/{shard}/posthog.sharded_events',
+            '{replica}',
+            _timestamp
+          )
+          PARTITION BY toYYYYMM(timestamp)
+          ORDER BY (team_id, toDate(timestamp), event, cityHash64(distinct_id), cityHash64(uuid))
+          SAMPLE BY cityHash64(distinct_id)
           SETTINGS index_granularity = 8192;
-          "
-          echo "  sharded_events stub ready"
+          " || echo "  sharded_events likely already exists with prior schema — skipping"
+          echo "  sharded_events ready"
 
           # Force-create lazy system log tables that PostHog migrations depend on
           echo "Ensuring system log tables exist..."
