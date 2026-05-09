@@ -1,13 +1,30 @@
-# Kopia repository maintenance — consolidates index blobs, GCs unreachable content,
-# and keeps repo metadata fast. Required because VolSync mover pods (ephemeral
-# hostnames) can't consistently own maintenance — Kopia records owner identity
-# in repo config and refuses maintenance from other identities. This CronJob
-# runs with a stable synthetic identity ("maintenance@cluster") and claims
-# ownership idempotently on every run.
+# Kopia repository maintenance — consolidates index blobs, GCs unreachable
+# content, and keeps repo metadata fast. VolSync mover pods have ephemeral
+# hostnames, so they can't consistently own maintenance — Kopia records owner
+# identity in repo config and refuses maintenance from other identities. This
+# CronJob runs with a stable synthetic identity ("maintenance@cluster") and
+# claims ownership idempotently on every run.
 #
-# Schedule: 03:37 daily (off the top of the hour to avoid generated hourly backups).
-# Quick maintenance runs every day; Kopia internally schedules full maintenance
-# weekly based on repo policy below.
+# Schedule: 03:37 daily (off the top of the hour to avoid generated hourly
+# backups). Quick maintenance runs every day; Kopia internally schedules full
+# maintenance weekly based on repo policy below.
+#
+# Backend: S3 (kopia v3.1.0 alignment with the pvc-plumber operator). Pre-v3.0
+# the repo lived on an NFS share and this CronJob mounted it via a legacy
+# `nfs:` volume + `kopia repository connect filesystem`. v3.0 cut over to S3 —
+# mover Jobs need no shared volume, JobMutator is gone, and this maintenance
+# Job connects via `kopia repository connect s3` against the same bucket the
+# operator uses (RustFS at 192.168.10.133:30293, bucket `volsync-kopia`).
+#
+# Sourcing the password + S3 creds: `Secret/pvc-plumber-kopia` is rendered by
+# the ExternalSecret in the pvc-plumber directory (see
+# infrastructure/controllers/pvc-plumber/externalsecret.yaml). Its three keys
+# (KOPIA_PASSWORD, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) are mounted as
+# files at /var/secret/pvc-plumber-kopia and read at runtime — same lazy-
+# credentials pattern the v3.1.0 operator uses (CHANGELOG [3.1.0]). This
+# CronJob doesn't strictly need the lazy pattern (a once-a-day Job doesn't race
+# ArgoCD startup the way the operator pod did), but mirroring the operator's
+# mount layout keeps the Secret-shape contract single-sourced.
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -45,18 +62,24 @@ spec:
               type: RuntimeDefault
           containers:
           - name: kopia
-            # Pin to a specific Kopia version so CI can bump via Renovate.
-            # Must be compatible with VolSync mover's kopia version (VolSync 0.18.x ships kopia ~0.20).
-            image: kopia/kopia:0.22.3
+            # SHA-pinned per .claude/rules/always-pin-sha. Must be compatible
+            # with VolSync mover's Kopia version (VolSync 0.18.x ships kopia
+            # ~0.20). Renovate tracks tag + digest in lockstep.
+            image: kopia/kopia:0.22.3@sha256:4dcc208c1b191770bf4d0854f8deec06b4a16b35be4b63abdcfa9755cee7960e
             imagePullPolicy: IfNotPresent
             env:
-            - name: KOPIA_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: pvc-plumber-kopia     # reuse existing ExternalSecret
-                  key: KOPIA_PASSWORD
-            # Stable synthetic identity — independent of pod name / VolSync mover churn.
-            # Kopia records "<username>@<hostname>" in repo config as maintenance owner.
+            # Same S3 endpoint + bucket as the pvc-plumber operator's
+            # deployment.yaml. Bare host:port (kopia rejects fully-qualified
+            # URLs); KOPIA_S3_DISABLE_TLS=true selects HTTP.
+            - name: KOPIA_S3_ENDPOINT
+              value: "192.168.10.133:30293"
+            - name: KOPIA_S3_BUCKET
+              value: "volsync-kopia"
+            - name: KOPIA_S3_DISABLE_TLS
+              value: "true"
+            # Stable synthetic identity — independent of pod name / VolSync
+            # mover churn. Kopia records "<username>@<hostname>" in repo
+            # config as maintenance owner.
             - name: KOPIA_OVERRIDE_USERNAME
               value: "maintenance"
             - name: KOPIA_OVERRIDE_HOSTNAME
@@ -69,10 +92,10 @@ spec:
               value: "/tmp/kopia/cache"
             - name: HOME
               value: "/tmp"
-            # Kopia's static-build binary can't resolve the current user via NSS
-            # (no CGO), so it falls back to $USER — must be set or kopia aborts
-            # with "Cannot determine current user: user: Current requires cgo
-            # or $USER set in environment"
+            # Kopia's static-build binary can't resolve the current user via
+            # NSS (no CGO), so it falls back to $USER — must be set or kopia
+            # aborts with "Cannot determine current user: user: Current
+            # requires cgo or $USER set in environment".
             - name: USER
               value: "maintenance"
             # Go's user.Current() falls back to USER *or* LOGNAME when built
@@ -92,28 +115,57 @@ spec:
                 memory: 1Gi
               limits:
                 cpu: "2"
-                # 4Gi: `kopia maintenance run --full` loads blob indexes
-                # into memory. 2Gi was enough for small repos but the
-                # Kopia NFS share is ~27Gi of blobs now and the job OOMed
-                # silently before printing anything useful. 4Gi gives
-                # headroom for future growth without being extravagant.
+                # 4Gi: `kopia maintenance run --full` loads blob indexes into
+                # memory. 2Gi was enough for small repos but the kopia repo
+                # grew past ~27Gi of blobs and the job OOMed silently before
+                # printing anything useful. 4Gi gives headroom.
                 memory: 4Gi
             command:
             - /bin/sh
             - -c
             - |
               set -eu
-              echo "=== Connecting to Kopia repository ==="
-              # Kopia 0.20 ignores the KOPIA_OVERRIDE_HOSTNAME env var —
-              # only the `--override-hostname` flag on `repository connect`
-              # actually sets the client identity. Without this, the pod
-              # hostname (some generated string) is used, and then
-              # `kopia maintenance run` errors out with:
-              #   "maintenance must be run by designated user: maintenance@cluster"
+              # Read credentials lazily from the mounted Secret directory.
+              # The operator deployment uses the same mount path; keeping
+              # this CronJob in sync means a single
+              #   kubectl describe secret pvc-plumber-kopia -n volsync-system
+              # is the source of truth for what the maintenance pipeline
+              # expects.
+              CREDS_DIR=/var/secret/pvc-plumber-kopia
+              if [ ! -s "$CREDS_DIR/KOPIA_PASSWORD" ] || \
+                 [ ! -s "$CREDS_DIR/AWS_ACCESS_KEY_ID" ] || \
+                 [ ! -s "$CREDS_DIR/AWS_SECRET_ACCESS_KEY" ]; then
+                echo "ERROR: Secret/pvc-plumber-kopia not fully populated."
+                echo "  Expected files in $CREDS_DIR:"
+                echo "    - KOPIA_PASSWORD"
+                echo "    - AWS_ACCESS_KEY_ID"
+                echo "    - AWS_SECRET_ACCESS_KEY"
+                echo "  Confirm ESO has rendered the Secret."
+                exit 1
+              fi
+              KOPIA_PASSWORD="$(cat "$CREDS_DIR/KOPIA_PASSWORD")"
+              AWS_ACCESS_KEY_ID="$(cat "$CREDS_DIR/AWS_ACCESS_KEY_ID")"
+              AWS_SECRET_ACCESS_KEY="$(cat "$CREDS_DIR/AWS_SECRET_ACCESS_KEY")"
+              export KOPIA_PASSWORD AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+
+              echo "=== Connecting to Kopia repository (S3) ==="
+              # Kopia 0.20+ ignores KOPIA_OVERRIDE_HOSTNAME env — only the
+              # `--override-hostname` flag on `repository connect` actually
+              # sets the client identity. Without it, the pod hostname
+              # (some generated string) is used, and `kopia maintenance
+              # run` errors out with:
+              #   "maintenance must be run by designated user:
+              #    maintenance@cluster"
               # because the owner stored on the repo (maintenance@cluster)
-              # doesn't match the running client (maintenance@<pod-name>).
-              kopia repository connect filesystem \
-                --path=/repository \
+              # doesn't match the running client identity
+              # (maintenance@<pod-name>).
+              #
+              # `--disable-tls` aligns with KOPIA_S3_DISABLE_TLS=true. Flip
+              # BOTH together if RustFS ever moves behind TLS termination.
+              kopia repository connect s3 \
+                --endpoint="$KOPIA_S3_ENDPOINT" \
+                --bucket="$KOPIA_S3_BUCKET" \
+                --disable-tls \
                 --password="$KOPIA_PASSWORD" \
                 --override-hostname=cluster \
                 --override-username=maintenance
@@ -122,25 +174,22 @@ spec:
               kopia maintenance info || true
 
               echo "=== Claiming ownership (idempotent) ==="
-              # Safe: --owner matches our client identity (maintenance@cluster)
-              # Kopia validates that --owner matches the running client's identity
-              # before accepting the change. If another owner is already set,
-              # this forces the switch on next run by whichever client asserts it.
-              # Claim ownership with our synthetic identity. Kopia validates
-              # that --owner matches the client's resolved identity
-              # ($KOPIA_OVERRIDE_USERNAME@$KOPIA_OVERRIDE_HOSTNAME).
+              # Safe: --owner matches our resolved identity. Kopia validates
+              # that --owner matches the running client's identity before
+              # accepting the change.
               kopia maintenance set \
                 --owner="maintenance@cluster"
 
-              # Schedule the internal maintenance cadences (flags are
-              # --quick-interval / --full-interval, NOT --*-maintenance-interval).
+              # Schedule internal maintenance cadences (flags are
+              # --quick-interval / --full-interval, NOT
+              # --*-maintenance-interval).
               kopia maintenance set \
                 --quick-interval=24h \
                 --full-interval=168h
 
               echo "=== Running maintenance ==="
               # Kopia decides quick vs full internally based on the policy
-              # above. Keep default safety for recurring GitOps maintenance:
+              # above. No --safety=none for recurring GitOps maintenance —
               # unsafe GC belongs in a manual break-glass operation only.
               kopia maintenance run
 
@@ -149,15 +198,21 @@ spec:
 
               echo "=== Done ==="
             volumeMounts:
-            - name: repository
-              mountPath: /repository
+            - name: kopia-credentials
+              mountPath: /var/secret/pvc-plumber-kopia
+              readOnly: true
             - name: kopia-tmp
               mountPath: /tmp/kopia
           volumes:
-          - name: repository
-            nfs:
-              server: 192.168.10.133
-              path: /mnt/BigTank/k8s/volsync-kopia-nfs
+          # Lazy-credentials mount — same pattern as the operator Deployment
+          # in ../../controllers/pvc-plumber/. The pvc-plumber-kopia Secret's
+          # three keys are exposed as files at /var/secret/pvc-plumber-kopia.
+          - name: kopia-credentials
+            secret:
+              secretName: pvc-plumber-kopia
+              # 0440 = readable by the kopia container's UID/GID (568) and
+              # the runtime's group; nothing else.
+              defaultMode: 0440
           - name: kopia-tmp
             emptyDir: {}
           # Avoid scheduling on GPU nodes — leave their CPU for inference work
