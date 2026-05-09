@@ -1,4 +1,6 @@
-# radar-ng Temporal worker — TemporalWorkerDeployment CR.
+# radar-ng Temporal worker — WorkerDeployment CR (migrated from
+# TemporalWorkerDeployment, which the v1.7.0 controller no longer
+# reconciles — its `deprecated-twd` handler is a no-op).
 #
 # Lives in the radar-ng namespace (NOT a separate worker namespace, the way
 # news-reader-temporal-worker does it) because the worker needs to mount the
@@ -12,7 +14,7 @@
 # Image is built by .gitea/workflows/build-temporal-worker.yml. Renovate
 # auto-PRs bumps. Each tag bump becomes a new build_id + progressive rollout.
 apiVersion: temporal.io/v1alpha1
-kind: TemporalWorkerDeployment
+kind: WorkerDeployment
 metadata:
   name: radar-ng-worker
   namespace: radar-ng
