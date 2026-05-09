@@ -6,7 +6,7 @@
 #   mutualTLSSecretRef:
 #     name: temporal-cluster-mtls
 apiVersion: temporal.io/v1alpha1
-kind: TemporalConnection
+kind: Connection
 metadata:
   name: cluster-temporal
   namespace: radar-ng
