@@ -68,7 +68,7 @@
         'argocd',
       ],
       automerge: true,
-      automergeType: 'branch',
+      automergeType: 'pr',
     },
     {
       matchUpdateTypes: [
@@ -136,7 +136,7 @@
       matchFileNames: ['my-apps/development/posthog/**'],
       groupName: 'posthog images',
       automerge: true,
-      automergeType: 'branch',
+      automergeType: 'pr',
       schedule: ['every weekend'],
     },
     {
@@ -191,7 +191,7 @@
       matchDatasources: ['custom.gitea-vanillax'],
       matchUpdateTypes: ['patch', 'minor'],
       automerge: true,
-      automergeType: 'branch',
+      automergeType: 'pr',
     },
     {
       description: 'Mute the kubernetes-manager copy of registry.vanillax.me deps so we only get one PR per bump (the customManager + custom.gitea-vanillax datasource defined below is the canonical path).',
