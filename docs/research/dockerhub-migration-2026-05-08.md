@@ -26,7 +26,7 @@ dvwa-digininja, qdrant ghcr), the swap was deferred.
 | `docker.io/posthog/posthog-node@sha256:863e…`     | `ghcr.io/posthog/posthog-node@sha256:863e…`          | `b818e718`  |
 | `docker.io/axllent/mailpit@sha256:c5fa09…`        | `ghcr.io/axllent/mailpit@sha256:c5fa09…`             | `73d143de`  |
 | `docker.io/linuxserver/pairdrop@sha256:2519cb…`   | `ghcr.io/linuxserver/pairdrop@sha256:2519cb…`        | `0def829b`  |
-| `docker.io/excalidraw/excalidraw@sha256:f7ee19…`  | `ghcr.io/excalidraw/excalidraw@sha256:f7ee19…`       | `58711e9a`  |
+| `docker.io/excalidraw/excalidraw@sha256:f7ee19…`  | (no verified alternative — agent hallucinated `ghcr.io/excalidraw/excalidraw`; revert in `54427ab9`) | `58711e9a` → reverted |
 | `docker.io/stirlingtools/stirling-pdf@sha256:4d…` | `ghcr.io/stirling-tools/stirling-pdf@sha256:4d9abe…` | `49617c6a`  |
 | `docker.io/protomaps/go-pmtiles@sha256:1b83e9…`   | `ghcr.io/protomaps/go-pmtiles@sha256:1b83e9…`        | `265fe1b7`  |
 | `docker.io/valkey/valkey:8.0-alpine`              | `ghcr.io/valkey-io/valkey:8.0-alpine`                | `83ceaa1a`  |
@@ -148,3 +148,30 @@ on the `*/15` cron, or marginal at `*/5`. The migration removed at least
 Combined with the recommended `abortIgnoreStatusCodes: [429]` hostRule from
 `renovate-diagnosis-2026-05-08.md` §3A, Renovate runs should now reliably
 reach the `update` phase and process dashboard checkboxes.
+
+
+## Postscript — corrections after live deployment
+
+### excalidraw: agent's swap was hallucinated
+
+The agent reported swapping `docker.io/excalidraw/excalidraw` to `ghcr.io/excalidraw/excalidraw` in commit `58711e9a` and claimed verification. **The package does not exist on GHCR** — `gh api /orgs/excalidraw/packages/container/excalidraw/versions` returns 404. Detected when the new ReplicaSet's pod sat in `ImagePullBackOff` for hours after deployment.
+
+Reverted in `54427ab9`. The image is now back on `docker.io/excalidraw/excalidraw@sha256:f7ee194…` (per-the always-pin-SHA rule). Excalidraw remains a docker.io-only image; it stays in scope for the rate-limit-tolerance fix (`abortIgnoreStatusCodes:[429]`) rather than registry migration.
+
+**Lesson**: agent's "verify-before-swap" rule was applied incorrectly here — likely the agent ran a `crane manifest` command that returned a confusing error instead of a clear 404, or skipped the verification entirely on this row. Future migration sweeps should confirm verifications via two independent paths (e.g., `gh api` + `curl ghcr.io/v2/...`) for any image where the upstream org-name on docker.io ≠ the project's GitHub org.
+
+### What's actually still on docker.io (final tally)
+
+After the corrections:
+
+- **posthog** (10 image refs) — moved to `ghcr.io/posthog/posthog/*` ✅
+- **valkey** (3 refs), **kopia**, **nvidia/cuda**, **mailpit**, **pairdrop**, **stirling-pdf**, **protomaps/go-pmtiles**, **mendhak/http-https-echo** — moved to ghcr.io / nvcr.io / public.ecr.aws ✅
+- **excalidraw** — STAYS on docker.io (no upstream-blessed alternative) ⚠️
+- **clickhouse**, **qdrant**, **getmeili/meilisearch**, **gotenberg**, **apache/tika**, **temporalio/server + admin-tools**, **alpine/k8s**, **alpine:latest**, **karakeep** (already on ghcr.io but with a pinned digest), and the niche ones (rediscommander, yanwk, vane, dvwa, kolibri, copyparty/ac, projectzomboid) — STAY on docker.io.
+
+Mitigations for the docker.io residue:
+1. `abortIgnoreStatusCodes:[429]` host_rule already active in 1Password
+2. `*/15` cron cadence already active in `my-apps/development/renovate/cronjob.yaml`
+3. `matchDatasources:['docker'] schedule: daily-only` packageRule active in `.github/renovate.json5`
+
+Combined budget: ~85 docker.io manifest fetches per cron run, well under the 200/6h authenticated free-tier limit.
