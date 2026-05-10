@@ -69,6 +69,13 @@ spec:
               value: http://open-meteo:8080/v1/forecast
             - name: MRMS_MAX_AGE_S
               value: "600"
+            # 2026-05-10: dropped from default 900s → 300s. Pull-to-refresh
+            # on the home tab refetches client-side, but the response was
+            # still served from this in-process cache for up to 15 min so
+            # the user-visible data didn't change. 5 min keeps us polite to
+            # Open-Meteo upstream while making refresh feel responsive.
+            - name: FORECAST_TTL_S
+              value: "300"
             # Temporal client — used by /v1/push-tokens, /v1/watches, /v1/workflows.
             # See backend/api/api/routes_workflows.py in the radar-ng repo.
             - name: TEMPORAL_ADDRESS
