@@ -86,8 +86,11 @@ spec:
             # 1.91-1.93 cores, saturating the old 2-core limit. On
             # 2026-05-10 Temporal was down for ~3h, then radar-ng needed
             # enough worker capacity to catch up MRMS + nowcast without
-            # starving schedule seeding or API traffic.
-            requests: { cpu: "2", memory: "3Gi" }
+            # starving schedule seeding or API traffic. Keep CPU request
+            # at 1 core so progressive rollouts can overlap old+new
+            # ReplicaSets without hitting cluster scheduling limits; the
+            # 4-core limit still lets active render work burst.
+            requests: { cpu: "1", memory: "3Gi" }
             limits:   { cpu: "4", memory: "10Gi" }
       volumes:
         - name: tiles
