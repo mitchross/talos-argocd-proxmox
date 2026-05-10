@@ -422,6 +422,48 @@ Server-side diff adds ~5-10x overhead per reconciliation (dry-run API calls to t
 - **Caching** — dry-run results are cached; new API calls only trigger on refresh, new git revision, or app spec change
 - **Status processors increased** (50) to handle the higher per-app reconciliation time
 
+### Manifest-Generate-Paths Cache Hint
+
+Every Application and ApplicationSet template in this repo carries the
+`argocd.argoproj.io/manifest-generate-paths` annotation. This is the single
+biggest perf optimization for a multi-app repo and the reason the repo-server
+stays cool when ~80 apps share one git repository.
+
+**Without the annotation**: any commit anywhere in the repo invalidates the
+manifest cache for **every** Application. Push a typo fix to
+`my-apps/utility/excalidraw/values.yaml` and the repo-server re-renders Cilium,
+Longhorn, every CNPG cluster, every monitoring component — everything.
+
+**With the annotation**: the repo-server checks whether the commit touched the
+listed path; if not, it serves cached manifests. Only the apps whose paths
+were actually modified get re-rendered.
+
+**How it's wired up**:
+
+- **AppSets** set it in their template:
+  ```yaml
+  template:
+    metadata:
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: '{{path}}'
+  ```
+  Each generated child Application gets its own path baked in.
+- **Standalone Applications** (bootstrap/, core-dependencies/, custom-entrypoints/)
+  hard-code the same path their `source.path` points at. Twelve such files
+  exist; all carry the annotation.
+- **Root** uses `infrastructure/controllers/argocd/apps` so it only re-renders
+  when AppSet/AppProject/entrypoint manifests change — not when any downstream
+  app's values.yaml is touched.
+
+**Multi-path syntax**: the annotation accepts `;`-separated paths and a
+trailing `*` glob. Example: `infrastructure/controllers/foo;my-apps/common`
+would re-render the app when either path changed. Currently no app needs the
+multi-path form because no app references `my-apps/common` (which is empty).
+
+**When you add a new standalone Application**: copy the annotation pattern from
+any existing entrypoint file. Forgetting it is silent — the app still works,
+it just contributes to repo-server cache thrash on unrelated commits.
+
 ## Retry Policy
 
 All Applications and ApplicationSets use **infinite retries** (`limit: -1`) with exponential backoff:

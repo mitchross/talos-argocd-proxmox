@@ -3,6 +3,11 @@ kind: Application
 metadata:
   name: root
   namespace: argocd
+  annotations:
+    # Manifest-generate-paths cache hint: only invalidate root's manifest cache
+    # when files under apps/ change. Without this, any commit anywhere in the
+    # repo forces the repo-server to re-render the root app-of-apps tree.
+    argocd.argoproj.io/manifest-generate-paths: infrastructure/controllers/argocd/apps
   finalizers:
   - resources-finalizer.argocd.argoproj.io
 spec:

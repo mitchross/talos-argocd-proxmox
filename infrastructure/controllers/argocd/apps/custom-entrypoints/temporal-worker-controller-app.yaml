@@ -7,6 +7,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/manifest-generate-paths: infrastructure/controllers/temporal-worker-controller
   labels:
     app.kubernetes.io/part-of: infrastructure
 spec:
