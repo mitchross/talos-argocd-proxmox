@@ -23,12 +23,21 @@ spec:
     kernelargs: []
     metavalues: []
     providerdata: |
-      cores: 16
+      cores: 32
       sockets: 1
       # Phase 1 right-size: 96G -> 64G. Capacity baseline 2026-05-04 showed
       # worker observed P95 ~21 GiB and max ~27.5 GiB per node, well under
-      # the prior 93.8 GiB allocatable. Memory is reduced first while CPU
-      # stays at 16 to isolate one variable per the rollout plan.
+      # the prior 93.8 GiB allocatable.
+      #
+      # Phase 2 capacity bump 2026-05-10: cores 16 -> 32. Cluster CPU
+      # requests sat at 91-97% per worker (actual usage 27-39%) — request-
+      # bound, not capacity-bound. radar-ng worker rollout (3 replicas at
+      # 2 CPU each, on top of f547 sunset replicas at 1.5 CPU each) had no
+      # room. Doubling vCPUs gives ~32 cores headroom cluster-wide and
+      # restores 1.5-2x overcommit margin without provisioning a new node.
+      # NOTE: existing VMs are NOT auto-resized by the Proxmox provider.
+      # Cold-resize each worker in Proxmox (qm shutdown + qm set --cores
+      # 32 + qm start) one at a time after omnictl apply.
       memory: 65536
       disk_size: 800
       network_bridge: vmbr1
