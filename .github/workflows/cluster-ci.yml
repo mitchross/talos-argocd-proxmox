@@ -9,6 +9,7 @@ on:
       - scripts/**
       - scripts/validate-argocd-apps.sh
       - .github/workflows/cluster-ci.yml
+      - .github/renovate.json5
   push:
     branches:
       - main
@@ -19,6 +20,7 @@ on:
       - scripts/**
       - scripts/validate-argocd-apps.sh
       - .github/workflows/cluster-ci.yml
+      - .github/renovate.json5
 
 permissions:
   contents: read
@@ -139,6 +141,31 @@ jobs:
 
       - name: Validate all OpenTelemetryCollector configs
         run: bash ./scripts/validate-otel-configs.sh
+
+  renovate-config-validate:
+    name: Renovate Config Validation
+    # Catches the class of bug that opened issue #1284 on 2026-05-10:
+    # `packageRules` cannot combine `matchUpdateTypes` and `versioning`,
+    # but the validator only flags it at runtime — Renovate stops opening
+    # PRs cluster-wide until fixed. Run validator on every PR that touches
+    # .github/renovate.json5 so the bad rule never reaches main.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate Renovate config
+        run: |
+          set -euo pipefail
+          # The validator looks at the filename to decide global vs repo
+          # config; .github/renovate.json5 is treated as global, which
+          # surfaces the same packageRules / managers errors we care about.
+          npx --yes --package=renovate renovate-config-validator --strict .github/renovate.json5
 
   shellcheck:
     name: Shell Script Lint (Informational)
