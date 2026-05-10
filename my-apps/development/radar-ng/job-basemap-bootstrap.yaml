@@ -1,0 +1,82 @@
+# One-shot Job that populates the `pmtiles` PVC with a Protomaps basemap
+# extract (CONUS bbox). The basemap Deployment's init container blocks pod
+# start until /data/basemap.pmtiles exists, so we can deploy this Job and
+# the Deployment together — order doesn't matter, the Deployment just
+# waits.
+#
+# Refresh strategy:
+#   - Stable name `basemap-bootstrap`. Once Complete, Argo won't recreate.
+#   - To refresh the basemap (newer Protomaps build OR wider bbox), bump
+#     the SOURCE_DATE label below — Argo sees a spec change, recreates
+#     the Job, the new Job overwrites /data/basemap.pmtiles, and a quick
+#     `kubectl -n radar-ng rollout restart deploy basemap` (or just delete
+#     the basemap pod) picks up the new file via mmap.
+#
+# Why a Job and not a Temporal workflow:
+#   - This is a one-time bootstrap (re-run only on bbox/source change).
+#   - Worker images don't ship pmtiles binary; bundling go-pmtiles into the
+#     temporal-worker image just for this would bloat the build.
+#   - Job is the K8s-native pattern for "run this script once on the cluster."
+#
+# BBox = CONUS (lower 48 + a tile of Canada/Mexico padding).
+# Adjust to e.g. -180,15,-50,75 for full North America, or drop the bbox
+# flag entirely to mirror the entire planet (~120 GB; PVC needs to grow).
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: basemap-bootstrap
+  namespace: radar-ng
+  labels:
+    app: basemap
+    # Bump SOURCE_DATE → Argo recreates the Job → re-extract.
+    source-date: "20260509"
+    bbox: "conus"
+spec:
+  ttlSecondsAfterFinished: 86400  # 1d after Complete, k8s GCs the Pod
+  backoffLimit: 5
+  template:
+    metadata:
+      labels:
+        app: basemap
+        job: basemap-bootstrap
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000  # so the non-root container can write to the PVC
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: extract
+          # Same image basemap uses — has `pmtiles extract` subcommand.
+          image: protomaps/go-pmtiles:latest
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          # `pmtiles extract` streams only the relevant tiles from the
+          # remote source and writes a new PMTiles file. For CONUS this
+          # downloads ~10–15 GB out of the planet's ~120 GB.
+          args:
+            - extract
+            - https://build.protomaps.com/20260509.pmtiles
+            - /data/basemap.pmtiles
+            - --bbox=-125,24,-66,50
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          volumeMounts:
+            - name: pmtiles
+              mountPath: /data
+      volumes:
+        - name: pmtiles
+          persistentVolumeClaim:
+            claimName: pmtiles

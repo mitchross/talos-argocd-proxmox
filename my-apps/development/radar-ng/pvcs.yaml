@@ -71,3 +71,22 @@ spec:
   resources:
     requests:
       storage: 30Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pmtiles
+  namespace: radar-ng
+  labels:
+    backup-exempt: "true"
+  annotations:
+    backup-exempt-reason: "Protomaps basemap extract; rebuildable by re-running basemap-bootstrap Job from a build.protomaps.com daily build"
+spec:
+  # Single basemap pod reads the file via mmap, so RWO is fine and avoids
+  # spinning up a Longhorn share-manager NFS pod just for one reader.
+  # Bootstrap Job + future refresh Job also run one-at-a-time, so RWO holds.
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 50Gi
