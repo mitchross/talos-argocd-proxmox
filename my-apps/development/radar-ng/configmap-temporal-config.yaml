@@ -13,7 +13,15 @@ data:
   # Drop the missing colorblind palette (no backend/shared/palettes/colorblind.json
   # exists). The muted palette already advertises colorblind-safety.
   PALETTES: "classic,muted,vivid"
-  BACKLOG_PER_CYCLE: "3"
+  # 2026-05-10: a single mrms_process_frame run currently takes ~10 min
+  # (multi-palette × multi-zoom render per frame). With BACKLOG_PER_CYCLE=3,
+  # each schedule run processes 3 frames sequentially → ~30 min/run vs the
+  # 2-min schedule cadence → backlog grows + manifest goes stale.
+  # Drop to 1 so each 2-min schedule fire renders only the newest frame and
+  # surfaces it ASAP. Older backlog gets aged out by the next-fire cycle.
+  # Restore to 3 once render perf improves (palette parallelism / smaller
+  # zoom pyramid / GPU).
+  BACKLOG_PER_CYCLE: "1"
   MRMS_PREFIX: "CONUS/MergedBaseReflectivityQC_00.50"
   FORECAST_HOURS: "18"
   EXTENDED_FORECAST_HOURS: "48"
