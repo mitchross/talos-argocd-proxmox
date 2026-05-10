@@ -42,11 +42,6 @@ spec:
     metadata:
       labels:
         app: radar-ng-worker
-      annotations:
-        # Bump to force a new build_id rollout when only the envFrom'd
-        # ConfigMap changes (envFrom is resolved at pod start, so a
-        # ConfigMap edit alone doesn't restart pods). Bump = trigger.
-        config-rev: "2026-05-10-backlog1"
     spec:
       securityContext:
         runAsNonRoot: true
@@ -67,6 +62,14 @@ spec:
             # BatchSpanProcessor, swamping logs. The bootstrap in
             # temporal/shared/otel.py installs the OTLP exporter only when
             # this env is set, so omitting it gives a no-op tracer.
+            #
+            # CONFIG_REV is a no-op env var; bumping its value forces the
+            # Temporal Worker Controller to compute a new build_id and roll
+            # the pods, which is what we need to pick up envFrom'd
+            # ConfigMap changes. (Pod template annotations are excluded
+            # from the controller's hash, so they don't trigger a roll.)
+            - name: CONFIG_REV
+              value: "2026-05-10-backlog1"
             - name: TILE_DIR
               value: /data/tiles
             - name: STATE_DIR
