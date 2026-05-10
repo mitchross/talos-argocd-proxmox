@@ -11,8 +11,9 @@ metadata:
   labels:
     app: tile-server
 spec:
-  # Replicas managed by HPA (hpa-tile-server.yaml). Floor of 2 for HA.
-  replicas: 2
+  # Replicas managed by HPA (hpa-tile-server.yaml). Floor of 3 keeps the
+  # public API responsive while workers catch up tile generation.
+  replicas: 3
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -86,10 +87,10 @@ spec:
               readOnly: true
           resources:
             requests:
-              cpu: 200m
+              cpu: 250m
               memory: 256Mi
             limits:
-              cpu: 2000m
+              cpu: "1"
               memory: 1Gi
       volumes:
         - name: tiles
