@@ -15,6 +15,16 @@ configs:
     reposerver.parallelism.limit: "5"
     # Performance: increase repo-server timeout for large Helm charts like prometheus-stack
     controller.repo.server.timeout.seconds: "300"
+    # Server-Side Diff — controller asks the API server for a dry-run apply
+    # result and compares predicted-live vs actual-live. CRD defaults get
+    # applied to both sides, eliminating drift on operator-defaulted fields
+    # (CNPG enablePDB/failoverDelay/etc., cert-manager, KEDA, …). Required
+    # to be in argocd-cmd-params-cm (this block); the argocd-cm key
+    # `resource.server-side-diff` is a no-op for the controller.
+    # Combine with per-app annotation
+    #   argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
+    # to also pipe through mutating admission webhooks (CNPG ships one).
+    controller.diff.server.side: "true"
   cm:
     url: "https://argocd.vanillax.me"
     kustomize.buildOptions: "--enable-helm"
@@ -25,10 +35,10 @@ configs:
     # the informational tracking-id annotation. See mink:
     # argocd-cnpg-permanent-outofsync-tracking-method-fix.md
     application.resourceTrackingMethod: "annotation+label"
-    # Use server-side diff to match ServerSideApply - prevents false "in-sync" detection
-    # Without this, client-side diff + server-side apply disagree on changes, causing
-    # configmaps and other resources to silently not get applied
-    resource.server-side-diff: "true"
+    # NOTE: The legacy `resource.server-side-diff: "true"` key was a no-op —
+    # the controller reads its diff mode from argocd-cmd-params-cm key
+    # `controller.diff.server.side` (set in configs.params above), exposed
+    # via env var ARGOCD_APPLICATION_CONTROLLER_SERVER_SIDE_DIFF.
     # Default ArgoCD polling interval (180s) with modest jitter
     timeout.reconciliation: "180s"
     timeout.reconciliation.jitter: "60s"

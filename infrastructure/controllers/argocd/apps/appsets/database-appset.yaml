@@ -23,6 +23,16 @@ spec:
       annotations:
         argocd.argoproj.io/manifest-generate-paths: '{{path}}'
         argocd.argoproj.io/sync-wave: "4"
+        # Server-Side Diff + IncludeMutationWebhook closes the CNPG drift gap.
+        # CNPG operator uses k8s API Update (not Apply) and owns zero fields
+        # under SSA, so managedFieldsManagers below strips nothing. SSD asks
+        # the API server for a dry-run apply and compares predicted-live vs
+        # actual-live — CRD defaults (enablePDB, failoverDelay, encoding, ...)
+        # apply to both sides and disappear from the diff. IncludeMutationWebhook
+        # also pipes through CNPG's mutating admission webhook so webhook-injected
+        # defaults are captured too. Requires controller.diff.server.side=true
+        # in argocd-cmd-params-cm (see ../argocd/values.yaml configs.params).
+        argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
       labels:
         app.kubernetes.io/part-of: database
     spec:
