@@ -33,6 +33,9 @@ patches:
   # Scoped to Helm-rendered Jobs only (they carry `helm.sh/chart`).
   # Without this scope, the patch stomps annotations on our own
   # `temporal-namespace-seed` Job and turns its PostSync hook into Sync.
+  # The schema job must run in an earlier Sync wave than the server
+  # Deployments, otherwise a Temporal image bump can roll pods before SQL
+  # schema migrations have completed.
   - target:
       kind: Job
       labelSelector: helm.sh/chart
@@ -40,6 +43,9 @@ patches:
       - op: add
         path: /metadata/annotations/argocd.argoproj.io~1hook
         value: Sync
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-wave
+        value: "-1"
       - op: add
         path: /metadata/annotations/argocd.argoproj.io~1hook-delete-policy
         value: BeforeHookCreation
