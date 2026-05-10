@@ -42,6 +42,11 @@ spec:
     metadata:
       labels:
         app: radar-ng-worker
+      annotations:
+        # Bump to force a new build_id rollout when only the envFrom'd
+        # ConfigMap changes (envFrom is resolved at pod start, so a
+        # ConfigMap edit alone doesn't restart pods). Bump = trigger.
+        config-rev: "2026-05-10-backlog1"
     spec:
       securityContext:
         runAsNonRoot: true
