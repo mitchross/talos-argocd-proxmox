@@ -9,6 +9,11 @@ resources:
   - hpa-tile-server.yaml
   - pdb-tile-server.yaml
   - deployment-basemap.yaml
+  # One-shot Job: extracts a CONUS bbox from the latest Protomaps daily
+  # build and writes /data/basemap.pmtiles on the pmtiles PVC. The
+  # basemap Deployment's init container blocks pod start until the file
+  # exists, so order doesn't matter.
+  - job-basemap-bootstrap.yaml
   - deployment-open-meteo.yaml
   - servicemonitor.yaml
   # Temporal worker pool — replaces the six ingest deployments +

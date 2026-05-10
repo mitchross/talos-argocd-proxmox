@@ -1,5 +1,12 @@
-# Basemap — go-pmtiles serving a CONUS PMTiles archive baked into the image.
-# No PVC needed; update the image to refresh the map data.
+# Basemap — go-pmtiles serving a Protomaps PMTiles archive from a PVC
+# populated by the basemap-bootstrap Job. Earlier this image baked the
+# pmtiles file in (see git history); the baked extract was Michigan-only
+# (bbox -90,40 → -80,48), so zooming out showed blank tiles for most of
+# CONUS. Splitting data from image lets us swap the bbox via the bootstrap
+# Job without rebuilding/repushing the image.
+#
+# Init container blocks pod start until the Job has populated the PVC, so
+# we never serve a window of "Archive not found" 204s on a fresh deploy.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -10,7 +17,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate
+    type: Recreate  # RWO PVC; only one writer at a time
   selector:
     matchLabels:
       app: basemap
@@ -19,15 +26,45 @@ spec:
       labels:
         app: basemap
     spec:
-      # No PVC, so no fsGroup needed. Image bakes data + chowns at build.
+      # fsGroup so the non-root container can read the file the Job wrote
+      # (the Job uses the same uid/gid).
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
+        fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+        # Block pod start until the bootstrap Job has populated the PVC.
+        # `until` loop polls every 5s; the busybox image is tiny so the
+        # extra startup latency is just the image pull (~2 MB).
+        - name: wait-for-pmtiles
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "waiting for /data/basemap.pmtiles..."
+              until [ -s /data/basemap.pmtiles ]; do
+                sleep 5
+              done
+              echo "found $(ls -lh /data/basemap.pmtiles)"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: pmtiles
+              mountPath: /data
+              readOnly: true
       containers:
         - name: basemap
+          # Image still bakes a Michigan-only extract at /data/basemap.pmtiles
+          # (built from backend/basemap/Dockerfile in the radar-ng repo). The
+          # PVC mount below shadows that path entirely, so the baked file is
+          # invisible at runtime — only the PVC contents are served. Future
+          # cleanup: a v1.0.7 image that drops the COPY step.
           image: registry.vanillax.me/radar-ng-basemap:v1.0.6
           imagePullPolicy: IfNotPresent
           securityContext:
@@ -37,6 +74,10 @@ spec:
           ports:
             - containerPort: 8081
               name: http
+          volumeMounts:
+            - name: pmtiles
+              mountPath: /data
+              readOnly: true
           resources:
             requests:
               cpu: 50m
@@ -44,3 +85,7 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+      volumes:
+        - name: pmtiles
+          persistentVolumeClaim:
+            claimName: pmtiles
