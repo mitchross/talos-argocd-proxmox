@@ -18,6 +18,13 @@ configs:
   cm:
     url: "https://argocd.vanillax.me"
     kustomize.buildOptions: "--enable-helm"
+    # Resource tracking — annotation+label survives operator reconciles.
+    # Default 'annotation' alone gets stripped by CNPG/cert-manager/ESO/KEDA,
+    # causing perma-OutOfSync flap on managed CRs even when Healthy.
+    # 'annotation+label' writes app.kubernetes.io/instance (durable) AND keeps
+    # the informational tracking-id annotation. See mink:
+    # argocd-cnpg-permanent-outofsync-tracking-method-fix.md
+    application.resourceTrackingMethod: "annotation+label"
     # Use server-side diff to match ServerSideApply - prevents false "in-sync" detection
     # Without this, client-side diff + server-side apply disagree on changes, causing
     # configmaps and other resources to silently not get applied
