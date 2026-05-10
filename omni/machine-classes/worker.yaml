@@ -25,10 +25,6 @@ spec:
     providerdata: |
       cores: 32
       sockets: 1
-      # Phase 1 right-size: 96G -> 64G. Capacity baseline 2026-05-04 showed
-      # worker observed P95 ~21 GiB and max ~27.5 GiB per node, well under
-      # the prior 93.8 GiB allocatable.
-      #
       # Phase 2 capacity bump 2026-05-10: cores 16 -> 32. Cluster CPU
       # requests sat at 91-97% per worker (actual usage 27-39%) — request-
       # bound, not capacity-bound. radar-ng worker rollout (3 replicas at
@@ -38,7 +34,16 @@ spec:
       # NOTE: existing VMs are NOT auto-resized by the Proxmox provider.
       # Cold-resize each worker in Proxmox (qm shutdown + qm set --cores
       # 32 + qm start) one at a time after omnictl apply.
-      memory: 65536
+      #
+      # Phase 1 right-size attempt (96G -> 64G) was REVERTED on 2026-05-10:
+      # observed Proxmox-level memory at ~96% on worker-48ddwn (mostly
+      # evictable page cache, not pressure) but k8s-tracked working set
+      # already sits at 47% (~45 GiB) on the same node. Dropping VM
+      # allocation to 64 GiB would leave ~19 GiB for cache + buffers, too
+      # tight given current pod spread. Holding at 96 GiB matches what
+      # existing VMs already have provisioned — no risky downsize during
+      # the cores-bump.
+      memory: 98304
       disk_size: 800
       network_bridge: vmbr1
       storage_selector: name == "ssdpool"
