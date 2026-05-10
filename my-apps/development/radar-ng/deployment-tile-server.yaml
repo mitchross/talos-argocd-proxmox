@@ -26,6 +26,13 @@ spec:
     metadata:
       labels:
         app: tile-server
+      annotations:
+        # Bump to force pod template change when only env-var changes are
+        # made — ArgoCD's SSA was masking the FORECAST_TTL_S addition due
+        # to an old kubectl-rollout field-manager owning the env array.
+        # Annotation diffs can't be silently squashed; this guarantees a
+        # ReplicaSet roll on each gitops bump.
+        config-rev: "2026-05-10-forecast-ttl-300"
     spec:
       # Spread replicas across nodes so a single node failure can't take
       # the API offline. ScheduleAnyway lets the second pod schedule even
