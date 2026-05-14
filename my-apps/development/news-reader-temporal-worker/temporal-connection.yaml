@@ -1,7 +1,27 @@
-# TemporalConnection — the Temporal Worker Controller's way of describing
-# "how to reach our Temporal server" as a reusable CR that TemporalWorkerDeployment
-# references by name. Self-hosted (no mTLS) since our frontend is a plain
-# in-cluster Service on port 7233.
+# TemporalConnection — Temporal Worker Controller CRD.
+#
+# Describes "how to reach our Temporal server" as a reusable resource that
+# any TemporalWorkerDeployment in this namespace can reference by name.
+# Pure config — applying or re-applying it never restarts anything.
+#
+# Why it's a separate object from TemporalWorkerDeployment:
+#   - Many worker deployments in the same namespace can share one
+#     connection. If you ever flip to mTLS or change the frontend
+#     hostport, you edit this file once instead of N.
+#   - Some Temporal Cloud setups put the API key here too, and the rest
+#     of the cluster references it without seeing the secret.
+#
+# Field reference:
+#   spec.hostPort           — gRPC endpoint of the Temporal frontend. For
+#                             in-cluster self-hosted it's the headless
+#                             ClusterIP Service of the chart's frontend.
+#   spec.mutualTLSSecretRef — Optional. Points at a Kubernetes Secret that
+#                             contains tls.crt + tls.key (+ ca.crt for
+#                             server cert verification). Required for
+#                             Temporal Cloud and recommended for any
+#                             multi-tenant homelab.
+#   spec.apiKey             — Optional. References a Secret carrying a
+#                             Temporal Cloud API key. Unused here.
 #
 # This resource is always safe to apply — it describes a target, not a workload.
 apiVersion: temporal.io/v1alpha1
