@@ -51,8 +51,8 @@ spec:
     spec:
       containers:
         - name: worker
-          # Versioned tag — Renovate auto-PRs bumps when the build at
-          # gitea.vanillax.me/vanillax/news-reader-temporal-worker pushes
+          # Versioned tag — Renovate auto-PRs bumps when the monorepo build at
+          # gitea.vanillax.me/vanillax/news-reader (path: temporal/) pushes
           # a new registry.vanillax.me/news-reader-temporal-worker:vX.Y.Z.
           # The Temporal Worker Controller turns each tag bump into a
           # new build_id + progressive worker rollout. Do not pin to
@@ -61,7 +61,9 @@ spec:
           imagePullPolicy: Always
           # Controller injects TEMPORAL_ADDRESS, TEMPORAL_NAMESPACE,
           # TEMPORAL_DEPLOYMENT_NAME, TEMPORAL_WORKER_BUILD_ID automatically
-          # — do not set them here.
+          # — do not set them here. App config (e.g. REDDIT_FRONTEND) lives
+          # in the worker code at gitea.vanillax.me/vanillax/news-reader
+          # temporal/app/worker.py — not in this manifest.
           resources:
             requests:
               cpu: 50m
