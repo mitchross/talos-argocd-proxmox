@@ -1,4 +1,8 @@
-# TemporalConnection — Temporal Worker Controller CRD.
+# Connection — Temporal Worker Controller CRD.
+#
+# (Renamed from TemporalConnection. The v1.7.0 controller deprecated the
+# `Temporal*` kinds; its `deprecated-tc` handler only logs and does NOT
+# reconcile spec changes. Must be `kind: Connection` to be live.)
 #
 # Describes "how to reach our Temporal server" as a reusable resource that
 # any TemporalWorkerDeployment in this namespace can reference by name.
@@ -25,7 +29,7 @@
 #
 # This resource is always safe to apply — it describes a target, not a workload.
 apiVersion: temporal.io/v1alpha1
-kind: TemporalConnection
+kind: Connection
 metadata:
   name: cluster-temporal
   namespace: news-reader-temporal-worker

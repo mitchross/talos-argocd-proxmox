@@ -2,8 +2,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - namespace.yaml
-  - temporal-connection.yaml         # CR describing how to reach our Temporal frontend
-  - temporal-worker-deployment.yaml  # TemporalWorkerDeployment — replaces classic Deployment
+  - temporal-connection.yaml         # Connection CR — how to reach our Temporal frontend
+  - temporal-worker-deployment.yaml  # WorkerDeployment CR — replaces classic Deployment
 
 # NOTE: the old classic `apps/v1 Deployment` and its KEDA ScaledObject
 # were retired when we cut over to Temporal Worker Versioning. If you

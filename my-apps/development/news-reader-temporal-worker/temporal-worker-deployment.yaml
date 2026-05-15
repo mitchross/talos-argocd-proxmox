@@ -1,7 +1,13 @@
-# TemporalWorkerDeployment — Temporal Worker Controller CRD
+# WorkerDeployment — Temporal Worker Controller CRD
 # (infrastructure/controllers/temporal-worker-controller/). Replaces the
 # classic `apps/v1 Deployment` with a CR that automates Temporal Worker
 # Versioning for safe blue/green rollouts of workflow worker code.
+#
+# NOTE: renamed from TemporalWorkerDeployment. The v1.7.0 controller
+# deprecated the `Temporal*` kinds — its `deprecated-twd` handler is a
+# NO-OP (logs a warning, does not reconcile spec changes). An image bump
+# on the old kind applies to the CR but never rolls. Must be
+# `kind: WorkerDeployment` to be reconciled. radar-ng migrated the same way.
 #
 # Concept refresher (full walkthrough lives in the news-reader repo at
 # gitea.vanillax.me/vanillax/news-reader temporal/README.md):
@@ -44,7 +50,7 @@
 #   )
 # The two env vars come from the controller — see env-injection note below.
 apiVersion: temporal.io/v1alpha1
-kind: TemporalWorkerDeployment
+kind: WorkerDeployment
 metadata:
   name: news-digest                           # → also the Temporal "deployment name"
   namespace: news-reader-temporal-worker
