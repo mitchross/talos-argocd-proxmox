@@ -157,7 +157,11 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # Renovate >=41 requires Node >=22 and dropped Node 20. On Node 20,
+          # `npx renovate` silently resolves to an old renovate major that
+          # still uses `fileMatch`, so it rejects this repo's modern
+          # `managerFilePatterns` config and fails EVERY renovate PR.
+          node-version: '22'
 
       - name: Validate Renovate config
         run: |
