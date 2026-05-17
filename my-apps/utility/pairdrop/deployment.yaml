@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: pairdrop
-        image: ghcr.io/linuxserver/pairdrop:latest@sha256:2519cbc3e95ee602cf43f1c5d82334145ab47bf7c77b141bfd30c501a40fcc3a
+        image: ghcr.io/linuxserver/pairdrop:latest@sha256:336b214cd16a2ff2176d1ea2d673abec71964073d98180b8ae70933bc6fcc50f
         imagePullPolicy: IfNotPresent
         env:
         - name: TZ
