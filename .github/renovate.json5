@@ -185,7 +185,17 @@
     },
     {
       description: 'PostHog MONOLITH (posthog/posthog): do NOT auto-bump. Requires ClickHouse-side config changes per release (named collections, satellite clusters, sharded_events bootstrap, etc.) that our self-hosted config drifts from. 2026-04-19: the `9b518de` auto-merge broke migrate_clickhouse for a full day because upstream 0227_warpstream migration required a `warpstream_calculated_events` named collection our CH config lacked. 2026-05-09: a sidecar auto-merge re-fired the migrate hook and surfaced an even older config drift — `posthog.events` Distributed table pointing at a never-created `sharded_events` shard table. Manually bump after checking PostHog/posthog/docker/clickhouse/config.d/default.xml for any new named_collections / remote_servers / storage_policies our config.d/default.xml is missing AND verifying our clickhouse-init.yaml stub covers any new sharded_* tables introduced by the target release.',
-      matchPackageNames: ['ghcr.io/posthog/posthog'],
+      // The monolith is pulled from Docker Hub as `posthog/posthog`, so
+      // Renovate's docker datasource packageName is `posthog/posthog`
+      // (and the fully-qualified `docker.io/posthog/posthog`). The old
+      // single `ghcr.io/posthog/posthog` entry never matched, so this
+      // disable rule was dead and #1290 (a ~5wk master jump) slipped
+      // through to a manual merge on 2026-05-17. Match all forms.
+      matchPackageNames: [
+        'posthog/posthog',
+        'docker.io/posthog/posthog',
+        'ghcr.io/posthog/posthog',
+      ],
       matchFileNames: ['my-apps/development/posthog/**'],
       enabled: false,
     },
