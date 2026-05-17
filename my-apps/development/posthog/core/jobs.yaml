@@ -91,7 +91,7 @@ spec:
         # See docs/plans/2026-04-21-posthog-upstream-drift.md for the plan
         # to track what PostHog self-hosted actually supports and bump
         # deliberately (not via Renovate auto-merge on `latest`).
-        image: posthog/posthog:latest@sha256:334b0b6a604d0cde5f48af199bac141b26f8867ed2f6fd77435cf859a9537d76
+        image: posthog/posthog:latest@sha256:a8ddf1d75946a9d115c853eb35cf183b30c0b8ccd7d6487fc5558964e78df0c2
         command:
         - /bin/sh
         - -c
