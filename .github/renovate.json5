@@ -226,36 +226,17 @@
       allowedVersions: '/^\\d+\\.\\d+\\.\\d+$/',
     },
     {
-      // Gitea registry caps tag pagination at n=1000 but Renovate's docker
-      // datasource hardcodes ?n=10000 — every lookup hits PAGINATION_NUMBER_INVALID
-      // and returns no-result. Route registry.vanillax.me images through a
-      // customDatasource (defined below) that asks for n=1000 instead. The
-      // kubernetes manager still extracts the deps from the YAML; the
-      // packageRule below switches the datasource at lookup time isn't
-      // possible (datasource isn't overridable in packageRules), so a
-      // customManager picks them up under custom.gitea-vanillax and the
-      // companion `enabled: false` rule mutes the kubernetes-manager copy.
-      description: 'in-cluster registry images: only consider semver vX.Y.Z tags. Build flows in each repo (radar-ng/.gitea/workflows, news-reader/.gitea/workflows, etc.) auto-bump patch on every master/main push and tag the registry; Renovate sees it within an hour and PRs the bump here. Excludes :latest, :git-<sha>, :buildcache.',
-      matchDatasources: ['custom.gitea-vanillax'],
-      versioning: 'semver-coerced',
-      allowedVersions: '/^v\\d+\\.\\d+\\.\\d+$/',
-    },
-    {
-      description: 'in-cluster registry images: auto-merge minor+patch within the v\\d+.\\d+.\\d+ stream.',
-      matchDatasources: ['custom.gitea-vanillax'],
-      matchUpdateTypes: ['patch', 'minor'],
-      automerge: true,
-      automergeType: 'pr',
-    },
-    {
-      description: 'Mute the kubernetes-manager copy of registry.vanillax.me deps so we only get one PR per bump (the customManager + custom.gitea-vanillax datasource defined below is the canonical path).',
-      matchManagers: ['kubernetes'],
+      // registry.vanillax.me is a LAN-only Gitea container registry the
+      // hosted Mend GitHub App cannot reach. The self-hosted in-cluster
+      // Renovate CronJob owns these deps via a `force` config + the
+      // custom.gitea-vanillax datasource (see
+      // my-apps/development/renovate/configmap.yaml). Here we just make the
+      // GitHub App ignore every registry.vanillax.me ref, in any manager,
+      // so it never emits no-result dashboard noise for a registry it
+      // cannot resolve. The self-hosted instance re-enables them via
+      // force.packageRules (force is applied last, so it wins there).
+      description: 'Ignore all registry.vanillax.me image refs in the hosted GitHub App (LAN-only registry it cannot reach). Self-hosted in-cluster Renovate owns these via force config + custom.gitea-vanillax — see my-apps/development/renovate/configmap.yaml.',
       matchPackageNames: ['/^registry\\.vanillax\\.me//'],
-      enabled: false,
-    },
-    {
-      description: 'act_runner-nogpu publishes only a single floating :v1 tag (Gitea Actions runner image) — no semver bumping path. Disable so the dashboard does not warn about an unresolvable lookup.',
-      matchPackageNames: ['registry.vanillax.me/act_runner-nogpu'],
       enabled: false,
     },
     {
@@ -290,41 +271,14 @@
     // gpu-operator chart, not by us, so nothing to extract anyway.
     'infrastructure/controllers/nvidia-gpu-operator/cluster-policy.yaml',
   ],
-  customDatasources: {
-    'gitea-vanillax': {
-      // Gitea container registry caps tag pagination at n=1000 (Renovate's
-      // built-in docker datasource asks for n=10000 → PAGINATION_NUMBER_INVALID).
-      // Hit n=1000 directly; Renovate walks the Link: rel=next header for the
-      // rare case a single image has >1000 tags.
-      defaultRegistryUrlTemplate: 'https://registry.vanillax.me/v2/{{packageName}}/tags/list?n=1000',
-      format: 'json',
-      // Gitea returns {"name": "...", "tags": ["v1", "v2", ...]}.
-      // Renovate's customDatasource expects {"releases": [{"version": "..."}]}.
-      // JSONata's `tags.{...}` returns an OBJECT (not array) when `tags` has
-      // a single element — fails Zod with "Expected array, received object"
-      // and surfaces in the Dependency Dashboard as "Failed to look up ...
-      // no-result" (hit on registry.vanillax.me/act_runner-nogpu, single :v1
-      // tag). The `[ ... ]` array constructor coerces single-value results
-      // into a 1-element array while leaving multi-tag results unchanged.
-      transformTemplates: [
-        '{ "releases": [tags.{ "version": $ }] }',
-      ],
-    },
-  },
+  // NOTE: the registry.vanillax.me custom datasource + custom manager that
+  // used to live here moved to the self-hosted in-cluster Renovate's global
+  // config (my-apps/development/renovate/configmap.yaml, under `force`).
+  // The hosted GitHub App cannot reach that LAN-only registry, so keeping
+  // the plumbing here only produced no-result dashboard noise. The
+  // customManagers below are public-datasource only and run in both
+  // instances (the self-hosted one disables them via force.packageRules).
   customManagers: [
-    {
-      description: 'in-cluster registry (registry.vanillax.me) images — route through custom.gitea-vanillax to bypass Gitea/Renovate pagination mismatch (n=1000 vs n=10000). Capture just the image path as packageName so the customDatasource URL template (https://registry.vanillax.me/v2/{{packageName}}/...) lands at the correct endpoint; rebuild the display name via depNameTemplate so dashboard/PR titles still show the full registry-qualified ref.',
-      customType: 'regex',
-      managerFilePatterns: [
-        '/^my-apps/.+\\.yaml$/',
-      ],
-      matchStrings: [
-        'image:\\s*registry\\.vanillax\\.me/(?<packageName>[\\w._-]+):(?<currentValue>v[\\w.-]+)',
-      ],
-      depNameTemplate: 'registry.vanillax.me/{{packageName}}',
-      datasourceTemplate: 'custom.gitea-vanillax',
-      versioningTemplate: 'semver-coerced',
-    },
     {
       description: 'Omni cluster template - Talos version',
       customType: 'regex',

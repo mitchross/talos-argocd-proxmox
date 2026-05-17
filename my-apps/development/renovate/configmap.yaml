@@ -4,9 +4,21 @@ metadata:
   name: renovate-config
   namespace: renovate
 data:
-  # Runtime config — tells self-hosted Renovate which repo to scan and how to
-  # auth. Per-repo update policies still live in the repo itself at
-  # .github/renovate.json5 and are read after clone.
+  # Global (bot) config for the self-hosted in-cluster Renovate.
+  #
+  # SCOPE SPLIT (see .github/renovate.json5 header note):
+  #   - The hosted Mend GitHub App owns every PUBLIC dependency via the
+  #     repo config at .github/renovate.json5.
+  #   - THIS instance owns only the LAN-only registry.vanillax.me images,
+  #     which the GitHub App physically cannot reach.
+  #
+  # Mechanism: the repo config is read by BOTH instances after clone, so
+  # per-instance scoping lives here under `force`. Renovate applies `force`
+  # last (after defaults < global < repo), and packageRules concatenate, so
+  # force.packageRules win every per-field conflict — including repo rules
+  # that set `enabled: true` (e.g. the "enable container digest updates"
+  # rule). force.customManagers/customDatasources also replace the repo's
+  # arrays here, so this instance extracts ONLY the gitea-vanillax deps.
   config.json: |
     {
       "platform": "github",
@@ -17,5 +29,56 @@ data:
       "gitAuthor": "Renovate Bot <renovate@vanillax.me>",
       "binarySource": "install",
       "persistRepoData": false,
-      "ignorePrAuthor": true
+      "ignorePrAuthor": true,
+      "force": {
+        "dependencyDashboard": false,
+        "customDatasources": {
+          "gitea-vanillax": {
+            "defaultRegistryUrlTemplate": "https://registry.vanillax.me/v2/{{packageName}}/tags/list?n=1000",
+            "format": "json",
+            "transformTemplates": ["{ \"releases\": [tags.{ \"version\": $ }] }"]
+          }
+        },
+        "customManagers": [
+          {
+            "description": "in-cluster registry (registry.vanillax.me) images — route through custom.gitea-vanillax to bypass the Gitea/Renovate pagination mismatch (n=1000 vs n=10000). Capture the image path as packageName so the customDatasource URL template lands at the correct endpoint; rebuild the display name via depNameTemplate.",
+            "customType": "regex",
+            "managerFilePatterns": ["/^my-apps/.+\\.yaml$/"],
+            "matchStrings": ["image:\\s*registry\\.vanillax\\.me/(?<packageName>[\\w._-]+):(?<currentValue>v[\\w.-]+)"],
+            "depNameTemplate": "registry.vanillax.me/{{packageName}}",
+            "datasourceTemplate": "custom.gitea-vanillax",
+            "versioningTemplate": "semver-coerced"
+          }
+        ],
+        "packageRules": [
+          {
+            "description": "Self-hosted scope: disable EVERY manager (incl. the custom.regex managers the repo config defines for Omni/K8sGPT, which the GitHub App owns). Only registry.vanillax.me deps, re-enabled below, belong to this instance.",
+            "matchManagers": ["helm-values", "kubernetes", "kustomize", "argocd", "terraform", "dockerfile", "custom.regex"],
+            "enabled": false
+          },
+          {
+            "description": "Re-enable in-cluster registry images (custom.gitea-vanillax datasource) — the only deps this self-hosted instance owns.",
+            "matchDatasources": ["custom.gitea-vanillax"],
+            "enabled": true
+          },
+          {
+            "description": "in-cluster registry images: only consider semver vX.Y.Z tags. Build flows in each repo auto-bump patch on every master/main push and tag the registry; Renovate sees it within an hour. Excludes :latest, :git-<sha>, :buildcache.",
+            "matchDatasources": ["custom.gitea-vanillax"],
+            "versioning": "semver-coerced",
+            "allowedVersions": "/^v\\d+\\.\\d+\\.\\d+$/"
+          },
+          {
+            "description": "in-cluster registry images: auto-merge minor+patch within the v\\d+.\\d+.\\d+ stream.",
+            "matchDatasources": ["custom.gitea-vanillax"],
+            "matchUpdateTypes": ["patch", "minor"],
+            "automerge": true,
+            "automergeType": "pr"
+          },
+          {
+            "description": "act_runner-nogpu publishes only a single floating :v1 tag (Gitea Actions runner image) — no semver bumping path. Disable so the dashboard does not warn about an unresolvable lookup.",
+            "matchPackageNames": ["registry.vanillax.me/act_runner-nogpu"],
+            "enabled": false
+          }
+        ]
+      }
     }
