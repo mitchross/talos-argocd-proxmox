@@ -13,7 +13,9 @@ talos:
   # --enable-talos-pre-release-versions flag is no longer required for
   # Talos itself now that we're on GA; leave it in place on the Omni
   # server if you still need it for other pre-release components.
-  version: v1.13.0
+  # v1.13.2 (2026-05-12): patch on the 1.13 GA line — no breaking changes,
+  # K8s stays v1.36.0 (etcd 3.6.11, kernel 6.18.29).
+  version: v1.13.2
 patches:
 - name: disable-default-cni
   inline:
