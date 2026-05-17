@@ -1,0 +1,103 @@
+# SwarmUI persistent storage.
+#
+# Layout rationale:
+#   - swarmui-data       : Settings.fds, Backends.fds, sessions, users, install
+#                          state. Small + precious -> Longhorn + daily backup.
+#   - swarmui-dlbackend  : SwarmUI auto-installs its own ComfyUI + Python/torch
+#                          venv here on first run. Large + fully reinstallable
+#                          -> Longhorn, NO backup label.
+#   - swarmui-output     : Generated images (user content) -> Longhorn + backup.
+#   - swarmui-models     : Reuses the EXISTING ComfyUI NFS share so no models
+#                          need re-downloading. SwarmUI replaces the standalone
+#                          comfyui app (scaled to replicas:0), so RWX RW mount
+#                          is safe — no concurrent writer.
+#
+# All Longhorn PVCs are RWO -> Deployment MUST use strategy.type: Recreate.
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: swarmui-data
+  namespace: swarmui
+  labels:
+    backup: "daily"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: longhorn
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: swarmui-dlbackend
+  namespace: swarmui
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 40Gi
+  storageClassName: longhorn
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: swarmui-output
+  namespace: swarmui
+  labels:
+    backup: "daily"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: longhorn
+---
+# Static PV pointing at the SAME TrueNAS share ComfyUI used (/mnt/ai-pool/comfyui).
+# Models live under <share>/ComfyUI/models — set SwarmUI's ModelRoot to
+# /comfyui-models/ComfyUI/models with SDModelFolder: checkpoints during the
+# one-time install wizard (see README).
+# Must use CSI driver (not legacy nfs:) for mountOptions like nconnect to work.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: swarmui-comfyui-models-nfs-pv
+spec:
+  capacity:
+    storage: 250Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-comfyui-10g
+  mountOptions:
+    - nfsvers=4.1
+    - nolock
+    - tcp
+    - noatime
+    - rsize=1048576
+    - wsize=1048576
+    - nconnect=16
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: swarmui-comfyui-models-nfs-pv
+    volumeAttributes:
+      server: "192.168.10.133"
+      share: "/mnt/ai-pool/comfyui"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: swarmui-comfyui-models
+  namespace: swarmui
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 250Gi
+  storageClassName: nfs-comfyui-10g
+  volumeName: swarmui-comfyui-models-nfs-pv

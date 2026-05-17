@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swarmui
+  namespace: swarmui
+spec:
+  # RWO Longhorn PVCs -> Recreate (RollingUpdate causes Multi-Attach deadlock).
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: swarmui
+  template:
+    metadata:
+      labels:
+        app: swarmui
+    spec:
+      # Same GPU pattern as the (now retired) comfyui app — SwarmUI self-starts
+      # its own ComfyUI which needs the whole card. GPU 1 is freed because
+      # comfyui is scaled to replicas:0.
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
+      runtimeClassName: nvidia
+      priorityClassName: gpu-workload-preemptible
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      - key: "gpu"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      # Run as root to match the file ownership ComfyUI wrote on the shared NFS
+      # models share (comfyui ran as root) and avoid Longhorn fsGroup friction.
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
+      containers:
+      - name: swarmui
+        # No official SwarmUI image upstream. jasonacox/swarmui is a clean,
+        # unmodified build of SwarmUI's own launchtools/StandardDockerfile.docker
+        # and the only community image that is both current and actively tracked.
+        # Entrypoint already runs: launch-linux.sh --launch_mode none --host 0.0.0.0
+        # renovate: datasource=docker depName=jasonacox/swarmui
+        image: jasonacox/swarmui:0.9.7@sha256:4ca43a2c9c98217e699577c92019bae7aa48ae9049f5e84b6c182c13abae2530
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 7801
+        env:
+        # RTX 3090 = Ampere = compute capability 8.6 (consistent with comfyui;
+        # harmless for the prebuilt cu129 torch wheels SwarmUI's ComfyUI pulls).
+        - name: TORCH_CUDA_ARCH_LIST
+          value: "8.6"
+        # NOTE: do NOT set NVIDIA_VISIBLE_DEVICES / CUDA_VISIBLE_DEVICES — they
+        # override the device-plugin CDI injection (see my-apps/ai/CLAUDE.md).
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "2"
+            nvidia.com/gpu: "1"
+          limits:
+            memory: "80Gi"
+            cpu: "16"
+            nvidia.com/gpu: "1"
+        volumeMounts:
+        - name: data
+          mountPath: /SwarmUI/Data
+        - name: dlbackend
+          mountPath: /SwarmUI/dlbackend
+        - name: output
+          mountPath: /SwarmUI/Output
+        - name: comfyui-models
+          mountPath: /comfyui-models
+        # First boot serves the install wizard at / quickly once .NET is up;
+        # the multi-GB ComfyUI/torch install happens AFTER the operator completes
+        # the wizard, with the app still serving. Generous startup window covers
+        # image pull + .NET cold start.
+        startupProbe:
+          tcpSocket:
+            port: 7801
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 7801
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 6
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 7801
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 10
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: swarmui-data
+      - name: dlbackend
+        persistentVolumeClaim:
+          claimName: swarmui-dlbackend
+      - name: output
+        persistentVolumeClaim:
+          claimName: swarmui-output
+      - name: comfyui-models
+        persistentVolumeClaim:
+          claimName: swarmui-comfyui-models
