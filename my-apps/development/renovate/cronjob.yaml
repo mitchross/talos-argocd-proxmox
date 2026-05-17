@@ -37,15 +37,17 @@ spec:
               image: ghcr.io/renovatebot/renovate:43.176.2
               imagePullPolicy: IfNotPresent
               env:
-                # Debug logging temporarily to diagnose why customManager
-                # `registry.vanillax.me/*` only extracts 1 of 6 expected
-                # matches (gitea-actions/deployment.yaml is picked up;
-                # radar-ng + news-reader-temporal-worker manifests are not).
-                # Regex tested-clean locally with Python re — Renovate
-                # extracts only act_runner-nogpu. Revert to `info` once
-                # the misextraction is understood + fixed.
+                # The "customManager only extracts 1 of N" symptom that put
+                # this at debug was NOT a regex bug — runs were aborting in
+                # the dependency-lookup phase on Docker Hub 429s
+                # (external-host-error) before extraction completed. The
+                # 2026-05-17 two-instance split removes all public/Docker Hub
+                # deps from this self-hosted instance (it now resolves only
+                # registry.vanillax.me via the configmap `force` block), so
+                # runs complete and all gitea-vanillax deps extract. Back to
+                # info.
                 - name: LOG_LEVEL
-                  value: debug
+                  value: info
                 - name: RENOVATE_CONFIG_FILE
                   value: /config/config.json
                 - name: RENOVATE_BASE_DIR
