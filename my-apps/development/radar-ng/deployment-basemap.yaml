@@ -40,7 +40,7 @@ spec:
         # `until` loop polls every 5s; the busybox image is tiny so the
         # extra startup latency is just the image pull (~2 MB).
         - name: wait-for-pmtiles
-          image: busybox:1.36
+          image: busybox:1.37
           command:
             - sh
             - -c
