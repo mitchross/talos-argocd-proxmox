@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: redis7
-        image: valkey/valkey:8.0-alpine
+        image: valkey/valkey:8.1-alpine
         command: [ "redis-server", "--maxmemory-policy", "allkeys-lru", "--maxmemory", "512mb" ]
         ports:
         - containerPort: 6379
