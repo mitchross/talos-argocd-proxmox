@@ -25,7 +25,7 @@ spec:
       containers:
         - name: worker
           # Pinned to pre-WarpStream SHA — see jobs.yaml header comment.
-          image: posthog/posthog:latest@sha256:a8ddf1d75946a9d115c853eb35cf183b30c0b8ccd7d6487fc5558964e78df0c2
+          image: posthog/posthog:latest@sha256:334b0b6a604d0cde5f48af199bac141b26f8867ed2f6fd77435cf859a9537d76
           command:
             - ./bin/docker-worker-celery
             - --with-scheduler
