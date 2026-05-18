@@ -5,6 +5,17 @@ metadata:
   namespace: perplexica
   labels:
     backup: "daily"
+  annotations:
+    # pvc-plumber/Kyverno injects spec.dataSourceRef on this bound PVC.
+    # With controller.diff.server.side=true, ArgoCD's SSA dry-run tries to
+    # null that immutable field and the API server rejects it, producing a
+    # ComparisonError that wedges the whole app's sync (observed stuck since
+    # 2026-05-03, 2000+ retries). The global _PersistentVolumeClaim
+    # ignoreDifferences rule can't help because the SSA dry-run runs BEFORE
+    # ignore masking. Forcing client-side diff for this one PVC sidesteps
+    # the dry-run; the global ignoreDifferences then masks the dataSource
+    # drift normally. See docs/volsync-storage-recovery.md.
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
 spec:
   accessModes:
     - ReadWriteOnce
