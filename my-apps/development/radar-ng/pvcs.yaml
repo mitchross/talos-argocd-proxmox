@@ -82,10 +82,17 @@ metadata:
   annotations:
     backup-exempt-reason: "Protomaps basemap extract; rebuildable by re-running basemap-bootstrap Job from a build.protomaps.com daily build"
 spec:
-  # Single basemap pod reads the file via mmap, so RWO is fine and avoids
-  # spinning up a Longhorn share-manager NFS pod just for one reader.
-  # Bootstrap Job + future refresh Job also run one-at-a-time, so RWO holds.
-  accessModes: [ReadWriteOnce]
+  # RWX (was RWO). The RWO assumption "Bootstrap Job + Deployment run
+  # one-at-a-time" was false in practice: the basemap Deployment runs 24/7
+  # holding the RWO volume, so basemap-bootstrap could NEVER attach while
+  # basemap was up -> permanent Multi-Attach error, Job stuck 10h+.
+  # go-pmtiles is distroless (no shell) so an idempotent single
+  # initContainer isn't possible without a custom image; RWX lets the
+  # one-shot, stable-named bootstrap Job and the reader Deployment coexist
+  # (Job writes once then Completes; basemap mmap-reads). Cost: one
+  # Longhorn share-manager pod for this PVC — acceptable to keep the app
+  # working and the refresh path usable.
+  accessModes: [ReadWriteMany]
   storageClassName: longhorn
   resources:
     requests:
