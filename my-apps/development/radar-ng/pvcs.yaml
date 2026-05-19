@@ -16,7 +16,7 @@ metadata:
   labels:
     backup-exempt: "true"
   annotations:
-    backup-exempt-reason: "PNG/MVT tiles generated from grids/; rebuildable by re-running tile generation"
+    storage.vanillax.dev/backup-exempt-reason: "PNG/MVT tiles generated from grids/; rebuildable by re-running tile generation"
 spec:
   accessModes: [ReadWriteMany]
   storageClassName: longhorn
@@ -32,7 +32,7 @@ metadata:
   labels:
     backup-exempt: "true"
   annotations:
-    backup-exempt-reason: "MRMS NetCDF grids; re-fetchable from upstream MRMS within retention window"
+    storage.vanillax.dev/backup-exempt-reason: "MRMS NetCDF grids; re-fetchable from upstream MRMS within retention window"
 spec:
   accessModes: [ReadWriteMany]
   storageClassName: longhorn
@@ -48,7 +48,7 @@ metadata:
   labels:
     backup-exempt: "true"
   annotations:
-    backup-exempt-reason: "Transient ingestion state (last-seen timestamps, partial frames); regenerates on next pull"
+    storage.vanillax.dev/backup-exempt-reason: "Transient ingestion state (last-seen timestamps, partial frames); regenerates on next pull"
 spec:
   accessModes: [ReadWriteMany]
   storageClassName: longhorn
@@ -64,7 +64,7 @@ metadata:
   labels:
     backup-exempt: "true"
   annotations:
-    backup-exempt-reason: "Open-Meteo numerical weather data cache; re-fetchable from open-meteo.com API"
+    storage.vanillax.dev/backup-exempt-reason: "Open-Meteo numerical weather data cache; re-fetchable from open-meteo.com API"
 spec:
   accessModes: [ReadWriteMany]
   storageClassName: longhorn
@@ -80,7 +80,7 @@ metadata:
   labels:
     backup-exempt: "true"
   annotations:
-    backup-exempt-reason: "Protomaps basemap extract; rebuildable by re-running basemap-bootstrap Job from a build.protomaps.com daily build"
+    storage.vanillax.dev/backup-exempt-reason: "Protomaps basemap extract; rebuildable by re-running basemap-bootstrap Job from a build.protomaps.com daily build"
 spec:
   # RWX (was RWO). The RWO assumption "Bootstrap Job + Deployment run
   # one-at-a-time" was false in practice: the basemap Deployment runs 24/7
