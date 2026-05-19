@@ -44,7 +44,7 @@ metadata:
     type: export
     backup-exempt: "true"
   annotations:
-    backup-exempt-reason: "Paperless export staging dir; content is rebuildable from /media which has backup=hourly"
+    storage.vanillax.dev/backup-exempt-reason: "Paperless export staging dir; content is rebuildable from /media which has backup=hourly"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -63,7 +63,7 @@ metadata:
     type: consume
     backup-exempt: "true"
   annotations:
-    backup-exempt-reason: "Paperless consume inbox; transient — files move to /media after ingestion"
+    storage.vanillax.dev/backup-exempt-reason: "Paperless consume inbox; transient — files move to /media after ingestion"
 spec:
   accessModes:
     - ReadWriteOnce
