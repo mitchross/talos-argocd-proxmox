@@ -23,7 +23,7 @@ metadata:
     app: project-zomboid
     backup-exempt: "true"
   annotations:
-    backup-exempt-reason: "SteamCMD-installed game files; rebuildable via the existing SteamCMD pre-warm path"
+    storage.vanillax.dev/backup-exempt-reason: "SteamCMD-installed game files; rebuildable via the existing SteamCMD pre-warm path"
 spec:
   accessModes:
     - ReadWriteOnce
