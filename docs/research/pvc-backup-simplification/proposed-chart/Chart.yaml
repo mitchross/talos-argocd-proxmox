@@ -1,0 +1,10 @@
+apiVersion: v2
+name: volsync-backup
+description: >-
+  Declarative per-PVC VolSync (Kopia) backup + restore wiring. Replaces the
+  pvc-plumber operator's reconciler-generated ExternalSecret /
+  ReplicationSource / ReplicationDestination. Inflated per-app via Kustomize
+  `helmCharts:` (ArgoCD has `kustomize.buildOptions: --enable-helm`).
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
