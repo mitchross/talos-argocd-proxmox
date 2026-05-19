@@ -117,6 +117,22 @@ jobs:
       - name: Check for dangerous Kyverno generate policy settings
         run: bash ./scripts/validate-kyverno-policies.sh
 
+  backup-exempt-contract:
+    name: Backup-Exempt Annotation Contract
+    # Catches the class of bug found 2026-05-19: a PVC labeled
+    # backup-exempt:"true" using the bare `backup-exempt-reason` key
+    # instead of the fully-qualified `storage.vanillax.dev/...` key.
+    # pvc-plumber's webhook is CREATE-only, so the violation is invisible
+    # until the PVC is recreated (DR/rebuild) and then admission DENIES it,
+    # leaving every dependent pod Pending. Fail at PR time, not during DR.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate backup-exempt annotation keys
+        run: bash ./scripts/validate-backup-exempt-keys.sh
+
   otel-collector-validate:
     name: OpenTelemetry Collector Config Validation
     # Catches the class of bug that caused the 2026-04-20 9-hour

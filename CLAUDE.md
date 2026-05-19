@@ -94,6 +94,7 @@ docs/                   # Documentation
 - Follow GitOps workflow for all changes
 - Store secrets in 1Password, reference via ExternalSecret
 - Add `backup: "hourly"` or `backup: "daily"` labels to critical PVCs for automatic pvc-plumber backup
+- When marking a PVC `backup-exempt: "true"`, the reason annotation key **must be fully qualified**: `storage.vanillax.dev/backup-exempt-reason`. The bare `backup-exempt-reason` is silently ignored by the operator and the PVC is **denied on CREATE** — invisible until recreate/DR. CI job `backup-exempt-contract` enforces this
 - Use `storageClassName: longhorn` for PVCs that need backups (volumesnapshot required)
 - Use NFS CSI driver (`csi: driver: nfs.csi.k8s.io`) for static NFS PVs — **legacy `nfs:` silently ignores mountOptions**
 - Add new infrastructure component paths to `infrastructure/controllers/argocd/apps/appsets/infrastructure-appset.yaml` explicitly (not glob-discovered)
