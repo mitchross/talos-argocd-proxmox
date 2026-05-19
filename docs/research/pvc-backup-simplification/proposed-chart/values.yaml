@@ -1,0 +1,86 @@
+# volsync-backup chart values — per-app backup wiring.
+#
+# One chart release == one backed-up PVC. An app with two backed-up PVCs
+# inflates the chart twice (two helmCharts entries with different
+# releaseName + values).
+
+# --- Identity (REQUIRED, no defaults) ---------------------------------------
+# pvc:       name of the PVC being backed up (e.g. "storage")
+# namespace: the app namespace (e.g. "open-webui")
+pvc: ""
+namespace: ""
+
+# --- Schedule ---------------------------------------------------------------
+# frequency: "hourly" | "daily"  (matches the legacy `backup:` label values)
+# schedule:  optional explicit 5-field cron OVERRIDE. If empty, a deterministic
+#            minute is derived from adler32(namespace/pvc) % 60 so backups are
+#            spread across the hour (parity with pvc-plumber's sha256%60 — the
+#            *spread* is preserved; exact minute differs from the operator, so
+#            first post-migration run time shifts. Acceptable; documented in
+#            migration-plan.md).
+frequency: daily
+schedule: ""
+
+retain:
+  hourly: 24
+  daily: 7
+  weekly: 4
+  monthly: 2
+
+# --- Tier (mixed risk posture; see compare-and-contrast) --------------------
+# strict       : cluster-local data is source-of-truth. Stamps
+#                restore-policy=strict so an OPTIONAL residual validating
+#                webhook (Path B) can fail-closed select it. Pure-author mode
+#                ignores this label — it is forward-compat only.
+# best-effort  : disposable / NAS-backed / reproducible. No gate; binds empty
+#                if no snapshot (the author's exact model).
+tier: strict
+
+# --- Kopia repository (continuity-critical) ---------------------------------
+# repositoryName MUST stay `volsync-<pvc>` so the 26 existing Kopia lineages
+# created by pvc-plumber remain restorable. Changing this orphans all history.
+repositoryPrefix: volsync-
+
+s3:
+  endpoint: "192.168.10.133:30293"   # RustFS, plaintext HTTP (in-cluster)
+  bucket: "volsync-kopia"            # single shared Kopia repo bucket
+  disableTLS: true
+
+# 1Password item + property mapping (identical to pvc-plumber's externalsecret
+# so secret material has a single source of truth).
+externalSecret:
+  storeName: 1password               # ClusterSecretStore
+  itemKey: rustfs                     # 1Password item in homelab-prod
+  refreshInterval: 1m
+  properties:
+    password: kopia_password
+    accessKey: k8s-admin-access-key
+    secretKey: k8s-admin-secret-key
+
+kopia:
+  compression: zstd-fastest
+  parallelism: 2
+  cacheCapacity: 2Gi
+  copyMethod: Snapshot
+  storageClassName: longhorn
+  volumeSnapshotClassName: longhorn-snapclass
+  moverSecurityContext:
+    runAsUser: 568
+    runAsGroup: 568
+    fsGroup: 568
+
+# --- Optional: let the chart own the PVC (closest to mirceanton) ------------
+# create=true  : chart renders the data PVC WITH a static dataSourceRef ->
+#                ReplicationDestination (volume populator restores-or-empty).
+#                App removes its own pvc.yaml.
+# create=false : app keeps pvc.yaml and adds the static dataSourceRef itself
+#                (printed in NOTES.txt). Chart renders only ES/RS/RD.
+pvc_create: false
+pvc_spec:
+  accessModes: ["ReadWriteOnce"]
+  storage: 10Gi
+  storageClassName: longhorn
+
+# Protect the data PVC from ArgoCD prune (parity with the author's
+# `prune: disabled`). Applied only when pvc_create=true.
+protectFromPrune: true
