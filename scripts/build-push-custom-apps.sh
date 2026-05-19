@@ -31,6 +31,7 @@ RUNTIME="${RUNTIME:-docker}"  # override with RUNTIME=podman if preferred
 declare -A APPS=(
   [news-reader]="my-apps/development/news-reader/app;my-apps/development/news-reader/app/Dockerfile"
   [temporal-worker]="my-apps/development/temporal-worker;my-apps/development/temporal-worker/Dockerfile"
+  [basemap-bootstrap]="my-apps/development/radar-ng/basemap-bootstrap-image;my-apps/development/radar-ng/basemap-bootstrap-image/Dockerfile"
 )
 
 build_push() {
@@ -77,8 +78,15 @@ echo ""
 echo "════════════════════════════════════════════════════════"
 echo "  All pushes complete."
 echo ""
-echo "  Restart the pods so kubelet pulls the new image:"
+echo "  Pick up the new image:"
 for t in "${targets[@]}"; do
-  echo "    kubectl rollout restart -n $t deploy/$t"
+  if [[ "$t" == "basemap-bootstrap" ]]; then
+    # Job, not a Deployment: delete it so Argo recreates with the new
+    # image, then bounce the consumer once the extract Completes.
+    echo "    kubectl -n radar-ng delete job basemap-bootstrap   # Argo recreates"
+    echo "    kubectl -n radar-ng rollout restart deploy/basemap  # after it Completes"
+  else
+    echo "    kubectl rollout restart -n $t deploy/$t"
+  fi
 done
 echo "════════════════════════════════════════════════════════"
