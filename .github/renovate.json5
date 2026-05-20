@@ -262,6 +262,20 @@
       registryUrls: ['https://cloudnative-pg.github.io/charts'],
       enabled: false,
     },
+    {
+      // argo-cd is the self-managing app: when its sync wedges, the entire
+      // app-of-apps freezes behind a stale manifest snapshot. Renovate PR
+      // #1259 (v9.5.9 chart bump) wedged the cluster for 33+ hours on
+      // 2026-05-01. PR #1259 had no friction. Force every argo-cd chart bump
+      // (minor + patch + major) to wait for explicit reviewer approval via
+      // the dependency dashboard before a PR is even opened.
+      description: 'argo-cd chart bumps require manual review — wedge-prone, see incident 2026-05-01 (PR #1259, v9.5.9). Bound-retry sweep added 2026-05-19 lessens blast radius but does not remove it.',
+      matchDatasources: ['helm'],
+      matchPackageNames: ['argo-cd'],
+      registryUrls: ['https://argoproj.github.io/argo-helm'],
+      dependencyDashboardApproval: true,
+      automerge: false,
+    },
   ],
   ignorePaths: [
     '**/charts/**',
