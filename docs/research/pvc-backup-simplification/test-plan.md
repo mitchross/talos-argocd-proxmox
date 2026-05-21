@@ -122,39 +122,114 @@ values differ from pvc-plumber's sha256 — only distribution matters.
 
 ## T7 — Cluster MAP fail-closed on unreachable backend (Phase-0 GATE)
 
-Goal: prove the MAP injects the `wait-for-rustfs` init container into
-mover Jobs and that the init container fails the Job when RustFS is
-unreachable.
+Split into two sub-tests because the backup-side and restore-side
+matter for *different* reasons. **T7b is the single most important
+verification in Phase 0** — it is the end-to-end proof of the
+walkthrough claim "a PVC never silently binds empty over a real
+backup." Every link in that chain (`dataSourceRef → populator →
+volsync-dst- Job → MAP → wait-for-rustfs → mover → bind`) must hold;
+T7b exercises all of them at once.
+
+### T7 prerequisites (run once, before T7a/T7b)
 
 ```bash
-# Pre: talos-patch.yaml applied; MAP+Binding deployed.
 kubectl api-resources | grep mutatingadmissionpolic            # must show v1beta1
 kubectl get mutatingadmissionpolicy volsync-mover-backend-availability
 kubectl get mutatingadmissionpolicybinding volsync-mover-backend-availability
-
-# 1. Verify INJECTION when backend is up — trigger any backup, confirm pod
-#    has both `jitter` and `wait-for-rustfs` initContainers and both succeed.
 kubectl create ns vb-test
-# (apply chart for a small test PVC, trigger backup via task volsync:backup)
-kubectl get pods -n vb-test -l app.kubernetes.io/created-by=volsync \
-  -o jsonpath='{.items[*].spec.initContainers[*].name}'        # expect: jitter wait-for-rustfs
-
-# 2. Verify FAIL-CLOSED when backend is "down" — repoint MAP image command
-#    temporarily to probe an unroutable host (e.g. 10.255.255.1:1) and trigger
-#    a backup. Confirm Job goes into BackoffLimit failure.
-#    (Then revert MAP back to 192.168.10.133:30293.)
 ```
 
-PASS: both initContainers injected; (1) succeeds when RustFS reachable;
-(2) fails Job with clear log line when unreachable; Job retries with
-exponential backoff. FAIL: triage the MAP — CEL expression, JSONPatch
-shape, feature-gate enablement.
+Also capture VolSync mover Job's retry shape so you know the ceiling
+the `wait-for-rustfs` 1h timeout fits inside (see cluster/README.md
+"Bootstrap-chaos sizing notes"):
+
+```bash
+# After triggering ANY mover Job (T7a does this), capture:
+kubectl get job <volsync-dst-or-src-name> -n vb-test \
+  -o jsonpath='{"backoffLimit="}{.spec.backoffLimit}{"  activeDeadlineSeconds="}{.spec.activeDeadlineSeconds}{"\n"}'
+```
+
+Record those values in `dr-drill` notes. If `activeDeadlineSeconds` is
+set and is less than 3600, the MAP's 1h init timeout is effectively
+capped to it — tune accordingly.
+
+### T7a — Backup-side: MAP injection sanity
+
+Goal: confirm the MAP correctly matches backup mover Jobs and that
+both init containers run.
+
+```bash
+# In vb-test: apply chart for a small test PVC, trigger immediate backup
+task volsync:backup PVC=t7test NS=vb-test
+# While the volsync-src-* pod is alive:
+kubectl get pods -n vb-test -l app.kubernetes.io/created-by=volsync \
+  -o jsonpath='{.items[*].spec.initContainers[*].name}'
+# Expect: "jitter wait-for-rustfs"
+# Both init containers should reach Completed; the mover container then runs.
+```
+
+PASS: both initContainers present and Completed; mover succeeds; snapshot
+appears in the Kopia repo. FAIL: MAP not matching → check CEL match
+conditions, label `app.kubernetes.io/created-by=volsync` on the Job.
+
+### T7b — Restore-side: PVC stays Pending while backend unreachable (LOAD-BEARING)
+
+Goal: prove the populator → RD Job → MAP chain holds end to end.
+This is the data-safety claim the whole migration rests on.
+
+```bash
+# Pre: a Kopia repo lineage exists for test PVC 't7test' from T7a above.
+# Now we deliberately black-hole RustFS for the restore side.
+
+# Step 1: temporarily edit the MAP's wait-for-rustfs command to probe an
+#         unroutable host (e.g. 10.255.255.1:1) instead of the real RustFS.
+#         (Or: actually drop RustFS — but that takes down ALL of Phase 0.
+#         Pointing the probe at a black-holed host is the safer test.)
+
+# Step 2: chart-render the same PVC in a SECOND scratch ns (vb-test-restore)
+#         with the same dataSourceRef -> t7test-dst (RD pointing at the
+#         same Kopia repo from T7a). This forces the populator to trigger
+#         a restore.
+
+# Step 3: observe. Expected sequence:
+kubectl get pvc t7test -n vb-test-restore -w
+# Expect: STATUS stays Pending indefinitely.
+kubectl get pods -n vb-test-restore -l app.kubernetes.io/created-by=volsync
+# Expect: a volsync-dst-* pod, stuck in Init.
+kubectl logs -n vb-test-restore <pod> -c wait-for-rustfs
+# Expect: 'waiting for rustfs s3 (10.255.255.1:1) — Ns elapsed' every 30s.
+
+# Step 4: revert the MAP probe to real RustFS (192.168.10.133:30293).
+# Within seconds, the init container should pass, mover should run,
+# PVC should bind with restored data.
+kubectl get pvc t7test -n vb-test-restore
+# Expect: STATUS = Bound, with actual content from the Kopia snapshot.
+```
+
+PASS: PVC stays Pending throughout the "unreachable" window; binds with
+real data after probe revert; **no empty bind happens at any point**.
+This is THE proof that the operator-free design is safe.
+
+FAIL modes (any of these means STOP and triage before Phase 1):
+- PVC binds empty while probe was unreachable → MAP isn't matching the
+  `volsync-dst-` Job (check CEL `matchConditions`) OR the populator
+  doesn't actually gate binding on Job completion (check VolSync version).
+- Init container exits 1 before the deliberate revert → 1h timeout
+  triggered; bump higher OR investigate why probe never recovered.
+- volsync-dst-* Job hits backoffLimit and goes Failed → restore is now
+  permanently stuck; check Job spec (T7 prereqs) and consider lowering
+  init timeout to leave more retries, or tuning Job backoffLimit via an
+  additional patch.
 
 ---
 
 ## Execution order
 
-**Phase 0 (cluster prep):** T7 (gate) → T1 → T5.
+**Phase 0 (cluster prep):** T7a (sanity) → **T7b (the proof)** → T1 → T5.
 **Phase 1+ (per-app):** T3 for every migrated PVC; T3-R5 explicitly for
 the first SQLite app in Phase 3.
 **Anytime:** T2 (alignment check), T4 (drop-the-2h-guard decision), T6.
+
+Phase 1 does not start without T7b passing. If T7b fails, the operator-
+free design is unsafe on this cluster as configured and the migration
+either pauses for triage or falls back to Path B (residual webhook).
