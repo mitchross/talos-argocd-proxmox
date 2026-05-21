@@ -177,49 +177,84 @@ conditions, label `app.kubernetes.io/created-by=volsync` on the Job.
 Goal: prove the populator → RD Job → MAP chain holds end to end.
 This is the data-safety claim the whole migration rests on.
 
+**Black-hole mechanism: scoped CiliumNetworkPolicy, NOT MAP mutation.**
+Editing the deployed MAP's probe target would gate every backup-labeled
+PVC's mover cluster-wide during the test window (all 26 existing
+pvc-plumber lineages would have their scheduled backups blocked). The
+CNP approach black-holes RustFS *only* from pods inside the test
+namespace, leaves the deployed MAP untouched, and tests the real
+production probe target rather than a modified one.
+
 ```bash
 # Pre: a Kopia repo lineage exists for test PVC 't7test' from T7a above.
-# Now we deliberately black-hole RustFS for the restore side.
+kubectl create ns vb-test-restore
 
-# Step 1: temporarily edit the MAP's wait-for-rustfs command to probe an
-#         unroutable host (e.g. 10.255.255.1:1) instead of the real RustFS.
-#         (Or: actually drop RustFS — but that takes down ALL of Phase 0.
-#         Pointing the probe at a black-holed host is the safer test.)
+# Step 1: black-hole RustFS for volsync mover pods in vb-test-restore.
+#         Cilium's egressDeny is the right primitive — standard K8s NP
+#         can only allow-list, which would require enumerating every
+#         other egress (DNS, cluster CIDR, ...) just to subtract one IP.
+cat <<'EOF' | kubectl apply -f -
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: blackhole-rustfs-for-t7b
+  namespace: vb-test-restore
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/created-by: volsync
+  egressDeny:
+    - toCIDR:
+        - 192.168.10.133/32
+      toPorts:
+        - ports:
+            - port: "30293"
+              protocol: TCP
+EOF
 
-# Step 2: chart-render the same PVC in a SECOND scratch ns (vb-test-restore)
-#         with the same dataSourceRef -> t7test-dst (RD pointing at the
-#         same Kopia repo from T7a). This forces the populator to trigger
-#         a restore.
+# Step 2: chart-render the same PVC in vb-test-restore, with the same
+#         dataSourceRef -> t7test-dst pointing at the same Kopia repo
+#         from T7a. The populator triggers a restore Job.
 
-# Step 3: observe. Expected sequence:
-kubectl get pvc t7test -n vb-test-restore -w
-# Expect: STATUS stays Pending indefinitely.
+# Step 3: observe — the deployed MAP injects wait-for-rustfs, the probe
+#         fails (CNP blocks the TCP), init loops with logs every 30s.
+kubectl get pvc t7test -n vb-test-restore -w                    # STATUS stays Pending
 kubectl get pods -n vb-test-restore -l app.kubernetes.io/created-by=volsync
-# Expect: a volsync-dst-* pod, stuck in Init.
+# Expect: volsync-dst-* pod stuck in Init.
 kubectl logs -n vb-test-restore <pod> -c wait-for-rustfs
-# Expect: 'waiting for rustfs s3 (10.255.255.1:1) — Ns elapsed' every 30s.
+# Expect: 'waiting for rustfs s3 (192.168.10.133:30293) — Ns elapsed' every 30s.
 
-# Step 4: revert the MAP probe to real RustFS (192.168.10.133:30293).
-# Within seconds, the init container should pass, mover should run,
-# PVC should bind with restored data.
-kubectl get pvc t7test -n vb-test-restore
-# Expect: STATUS = Bound, with actual content from the Kopia snapshot.
+# Step 4: remove the black-hole. The next probe iteration (≤5s later)
+#         passes; init exits 0; mover restores from the Kopia repo;
+#         PVC binds with real data.
+kubectl delete ciliumnetworkpolicy blackhole-rustfs-for-t7b -n vb-test-restore
+kubectl get pvc t7test -n vb-test-restore                       # STATUS = Bound
+# Verify content actually came from Kopia (not an empty bind):
+#   exec into a pod that mounts the PVC and check for known file/data
+#   that was in t7test's snapshot from T7a.
 ```
 
-PASS: PVC stays Pending throughout the "unreachable" window; binds with
-real data after probe revert; **no empty bind happens at any point**.
-This is THE proof that the operator-free design is safe.
+PASS: PVC stays Pending throughout the CNP window; binds with real data
+after CNP removed; **no empty bind happens at any point**. This is THE
+proof that the operator-free design is safe.
 
 FAIL modes (any of these means STOP and triage before Phase 1):
-- PVC binds empty while probe was unreachable → MAP isn't matching the
+- PVC binds empty while CNP active → MAP isn't matching the
   `volsync-dst-` Job (check CEL `matchConditions`) OR the populator
   doesn't actually gate binding on Job completion (check VolSync version).
-- Init container exits 1 before the deliberate revert → 1h timeout
-  triggered; bump higher OR investigate why probe never recovered.
-- volsync-dst-* Job hits backoffLimit and goes Failed → restore is now
-  permanently stuck; check Job spec (T7 prereqs) and consider lowering
-  init timeout to leave more retries, or tuning Job backoffLimit via an
-  additional patch.
+- Init container exits 1 before you delete the CNP → 1h timeout triggered;
+  bump higher OR investigate. If your bootstrap-window estimate from the
+  cluster/README.md sizing notes shows realistic cold-start <1h, the
+  timeout is fine and a real CNP-active window of >1h is the realistic
+  failure mode the timeout is designed to surface.
+- volsync-dst-* Job hits `backoffLimit` and goes Failed before you can
+  test the recovery path → restore would be permanently stuck on a real
+  outage. Check Job spec (T7 prereqs above) and either lower init
+  timeout to leave more retries, or patch the Job's backoffLimit via an
+  additional MAP/admission rule.
+- Cluster doesn't have Cilium (it does, but if you're testing in a
+  scratch cluster) → use a host-level iptables block on the test node
+  instead, or run the test from a node that doesn't route to RustFS.
 
 ---
 
