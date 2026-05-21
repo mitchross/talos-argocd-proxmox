@@ -12,8 +12,18 @@
 {{- printf "%s%s" .Values.repositoryPrefix (include "vb.pvc" .) -}}
 {{- end -}}
 
-{{- define "vb.resName" -}}
-{{- printf "%s-backup" (include "vb.pvc" .) -}}
+{{/* Object names — match mirceanton/home-ops components/volsync convention:
+       RS metadata.name = <pvc>       (his replication-source.yaml)
+       RD metadata.name = <pvc>-dst   (his replication-destination.yaml)
+     Distinct from pvc-plumber's <pvc>-backup so chart-rendered RS does
+     not collide with operator-rendered RS during per-PVC cutover.
+     Kopia repo identity volsync-<pvc> stays unchanged (see vb.repoName). */}}
+{{- define "vb.rsName" -}}
+{{- include "vb.pvc" . -}}
+{{- end -}}
+
+{{- define "vb.rdName" -}}
+{{- printf "%s-dst" (include "vb.pvc" .) -}}
 {{- end -}}
 
 {{/* Deterministic spread: adler32(ns/pvc) % 60 -> minute. */}}

@@ -27,5 +27,5 @@ spec:
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
-    name: {{ include "vb.resName" . }}
+    name: {{ include "vb.rdName" . }}
 {{- end }}
