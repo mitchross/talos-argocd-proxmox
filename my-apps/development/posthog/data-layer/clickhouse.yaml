@@ -7,14 +7,15 @@ metadata:
     app: posthog-clickhouse
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: clickhouse
-    backup: "daily"
+    backup-exempt: "true"
   annotations:
-    # TEMPORARY (2026-05-01): wiping posthog data + starting fresh.
-    # Without this, kyverno would auto-restore from kopia on PVC recreate
-    # and we'd just get the broken state back. Remove this annotation
-    # once posthog has been recreated and is running on fresh data.
-    volsync.backup/skip-restore: "true"
-    volsync.backup/skip-restore-reason: "posthog corruption wipe 2026-05-01 — remove once data verified"
+    # 100Gi ClickHouse data PVC is intentionally backup-exempt.
+    # Data is regenerable from PostHog ingest, and the long Kopia upload
+    # window (~30+ min @ S3) consistently collided with RustFS IAM flap
+    # events on 2026-05-19/20, making the backup unreliable in practice.
+    # PostHog Postgres + Redis ARE backed up; ClickHouse is rebuilt by
+    # re-running clickhouse-init + replaying ingest if needed.
+    storage.vanillax.dev/backup-exempt-reason: "regenerable from PostHog ingest; 100Gi too large for current Kopia/RustFS S3 path"
 spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: longhorn
@@ -167,33 +168,3 @@ spec:
   selector:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: clickhouse
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: clickhouse-data-clickhouse-0-backup
-  namespace: posthog
-  labels:
-    app.kubernetes.io/managed-by: kyverno
-    volsync.backup/pvc: clickhouse-data-clickhouse-0
-spec:
-  sourcePVC: clickhouse-data-clickhouse-0
-  trigger:
-    schedule: "32 2 * * *"
-  kopia:
-    repository: volsync-clickhouse-data-clickhouse-0
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568

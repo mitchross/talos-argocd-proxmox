@@ -6,7 +6,7 @@ metadata:
   labels:
     backup-exempt: "true"
   annotations:
-    backup-exempt-reason: "Sentence-transformer model cache; downloads on demand from HuggingFace"
+    storage.vanillax.dev/backup-exempt-reason: "Sentence-transformer model cache; downloads on demand from HuggingFace"
 spec:
   accessModes:
     - ReadWriteOnce

@@ -16,7 +16,7 @@ kopia + JobMutator removed).
         --overrides='{"spec":{"containers":[{"name":"v","image":"amazon/aws-cli:latest","command":["sh","-c"],"args":["aws --endpoint-url http://192.168.10.133:30293 s3api head-bucket --bucket volsync-kopia"],"envFrom":[{"secretRef":{"name":"cnpg-s3-credentials"}}]}]}}'
       ```
 - [ ] **1Password item `rustfs`** has the three required properties:
-      `kopia_password`, `k8s-admin-access-key`, `k8s-admin-secret-key`.
+      `kopia_password`, `pvc-plumber-access-key`, `pvc-plumber-secret-key`.
       Same item, no schema change — just confirming it's there.
 - [ ] **JobMutator emergency-disabled** in the live cluster (was
       patched in via `objectSelector: { matchLabels: { pvc-plumber.io/emergency-disabled: "2026-05-08" }}`
@@ -40,8 +40,8 @@ kopia + JobMutator removed).
    AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY env from
    `pvc-plumber-kopia` Secret (already mounted, just two new keys).
 2. Extend `infrastructure/controllers/pvc-plumber/externalsecret.yaml` to
-   pull `k8s-admin-access-key` → AWS_ACCESS_KEY_ID and
-   `k8s-admin-secret-key` → AWS_SECRET_ACCESS_KEY in addition to the
+   pull `pvc-plumber-access-key` → AWS_ACCESS_KEY_ID and
+   `pvc-plumber-secret-key` → AWS_SECRET_ACCESS_KEY in addition to the
    kopia password.
 3. Delete the `mutate-job.pvc-plumber.io` block from
    `infrastructure/controllers/pvc-plumber/webhooks.yaml`. The emergency
@@ -83,6 +83,20 @@ kopia + JobMutator removed).
      - immich/library         (300Gi)
      - project-nomad/nomad-storage   (120Gi)
      - posthog/clickhouse-data-clickhouse-0 (100Gi)
+
+   After the triggered runs finish, clear the manual trigger field so
+   normal cron schedules resume:
+   ```
+   ./scripts/trigger-fresh-volsync-baselines.sh --clear-manual
+   ```
+   Verify scheduled sources have `nextSyncTime` again:
+   ```
+   kubectl get replicationsource -A -o json | \
+     jq -r '.items[] | [.metadata.namespace,.metadata.name,
+       (.spec.trigger.manual // ""),(.status.nextSyncTime // ""),
+       (.status.conditions[-1].reason // "")] | @tsv'
+   ```
+   No row should retain a non-empty `trigger.manual` after cleanup.
 
 3. **Spot-check the RustFS bucket** is filling up:
    ```

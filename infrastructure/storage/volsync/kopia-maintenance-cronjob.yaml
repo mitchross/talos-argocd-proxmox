@@ -5,16 +5,19 @@
 # CronJob runs with a stable synthetic identity ("maintenance@cluster") and
 # claims ownership idempotently on every run.
 #
-# Schedule: 03:37 daily (off the top of the hour to avoid generated hourly
-# backups). Quick maintenance runs every day; Kopia internally schedules full
-# maintenance weekly based on repo policy below.
+# Schedule: every 6 hours at :37 (bumped from daily 03:37 on 2026-05-21 after
+# RustFS alpha started wedging under accumulating index-blob load — 1400+ blobs
+# between daily runs meant every kopia connect had to read all of them, which
+# overwhelmed RustFS within ~5 min of clients coming online). Quarter-day cadence
+# compacts more aggressively and keeps per-connect S3 ops sustainable. :37 is
+# still off the top of the hour to avoid colliding with generated hourly backups.
 #
 # Backend: S3 (kopia v3.1.0 alignment with the pvc-plumber operator). Pre-v3.0
 # the repo lived on an NFS share and this CronJob mounted it via a legacy
 # `nfs:` volume + `kopia repository connect filesystem`. v3.0 cut over to S3 —
 # mover Jobs need no shared volume, JobMutator is gone, and this maintenance
 # Job connects via `kopia repository connect s3` against the same bucket the
-# operator uses (RustFS at 192.168.10.133:30293, bucket `volsync-kopia`).
+# operator uses (RustFS at 192.168.10.133:30292, bucket `volsync-kopia`).
 #
 # Sourcing the password + S3 creds: `Secret/pvc-plumber-kopia` is rendered by
 # the ExternalSecret in the pvc-plumber directory (see
@@ -35,9 +38,10 @@ metadata:
     app.kubernetes.io/name: kopia-maintenance
     app.kubernetes.io/component: backup-maintenance
 spec:
-  # Daily at 03:37 UTC — intentionally off the top of the hour so it does not
-  # start at the same minute as generated hourly VolSync backup jobs.
-  schedule: "37 3 * * *"
+  # Every 6 hours at :37 UTC — bumped from daily 03:37 on 2026-05-21. Reasoning
+  # in the header comment. Still off the top of the hour to avoid colliding with
+  # generated hourly VolSync backup jobs.
+  schedule: "37 */6 * * *"
   timeZone: "Etc/UTC"
   concurrencyPolicy: Forbid         # Kopia maintenance holds a repo lock — no overlap
   startingDeadlineSeconds: 3600     # Skip run if missed by >1h (don't backfill forever)
@@ -72,7 +76,7 @@ spec:
             # deployment.yaml. Bare host:port (kopia rejects fully-qualified
             # URLs); KOPIA_S3_DISABLE_TLS=true selects HTTP.
             - name: KOPIA_S3_ENDPOINT
-              value: "192.168.10.133:30293"
+              value: "192.168.10.133:30292"
             - name: KOPIA_S3_BUCKET
               value: "volsync-kopia"
             - name: KOPIA_S3_DISABLE_TLS

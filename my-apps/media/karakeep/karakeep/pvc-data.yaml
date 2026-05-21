@@ -6,7 +6,10 @@ metadata:
   labels:
     app: karakeep
     type: data-storage
-    backup: "hourly"
+    # backup: "hourly" removed 2026-05-21 — that label was pvc-plumber's
+    # signal. Chart-managed backup wiring now lives in
+    # my-apps/media/karakeep/kustomization.yaml under helmCharts.
+    restore-policy: "strict"
 spec:
   accessModes:
   - ReadWriteOnce
@@ -14,6 +17,13 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  # dataSourceRef is added dynamically by Kyverno if a backup exists
+  # Static dataSourceRef → ReplicationDestination/data-pvc-dst. On PVC
+  # re-creation (DR / namespace recreate), VolSync's volume populator
+  # reads the latest snapshot from kopia repo volsync-data-pvc and binds
+  # this PVC with restored data. No-op while the PVC is already Bound.
+  dataSourceRef:
+    apiGroup: volsync.backube
+    kind: ReplicationDestination
+    name: data-pvc-dst
 
 

@@ -45,7 +45,7 @@ Applications deploy in strict order to prevent race conditions:
 | **5** | OTEL + Monitoring AppSet | OpenTelemetry Operator plus `monitoring/*` |
 | **6** | My-Apps AppSet | Discovers `my-apps/*/*` |
 
-**FAIL-CLOSED**: If pvc-plumber operator's validating webhook is down (failurePolicy: Fail), backup-labeled PVC creation is denied via Kubernetes admission. Apps retry via ArgoCD backoff. This prevents data loss during disaster recovery.
+**FAIL-CLOSED**: The cluster-wide `volsync-mover-backend-availability` MutatingAdmissionPolicy (at `infrastructure/storage/volsync-backup-cluster/`) injects a `wait-for-rustfs` init container into every VolSync mover Job. The init container TCP-probes RustFS (192.168.10.133:30292) up to 1h; if RustFS is unreachable, the Job fails and Kubernetes backoff retries. Mover Jobs cannot proceed against a black-holed backend, so a fresh PVC's first backup never captures an empty volume into the kopia repo. Replaced the pvc-plumber PVC-admission webhook safety, with strictly smaller blast radius (Job-level, not cluster-wide PVC creation).
 
 **Databases** use a separate AppSet with `selfHeal: false` so `skip-reconcile` annotations stick during DR recovery. The infrastructure AppSet uses `selfHeal: true` which would strip manual annotations.
 
@@ -93,7 +93,8 @@ docs/                   # Documentation
 - On **external** HTTPRoutes: add `labels: external-dns: "true"`, annotation `external-dns.alpha.kubernetes.io/target: vanillax.me`, and `sectionName: https` on the parentRef — **all three are required or DNS/routing silently fails**
 - Follow GitOps workflow for all changes
 - Store secrets in 1Password, reference via ExternalSecret
-- Add `backup: "hourly"` or `backup: "daily"` labels to critical PVCs for automatic pvc-plumber backup
+- Add backups to a new PVC via the **volsync-backup chart** at `infrastructure/storage/volsync-backup/` — see `.claude/commands/add-backup.md` for the exact pattern (PVC gets `restore-policy: "strict"` + static `dataSourceRef`; sibling kustomization.yaml gets a `helmCharts:` entry). The legacy `backup: "hourly|daily"` label is no longer the trigger; pvc-plumber was decommissioned 2026-05-21
+- When marking a PVC `backup-exempt: "true"`, the reason annotation key **must be fully qualified**: `storage.vanillax.dev/backup-exempt-reason`. The bare `backup-exempt-reason` is silently ignored by the operator and the PVC is **denied on CREATE** — invisible until recreate/DR. CI job `backup-exempt-contract` enforces this
 - Use `storageClassName: longhorn` for PVCs that need backups (volumesnapshot required)
 - Use NFS CSI driver (`csi: driver: nfs.csi.k8s.io`) for static NFS PVs — **legacy `nfs:` silently ignores mountOptions**
 - Add new infrastructure component paths to `infrastructure/controllers/argocd/apps/appsets/infrastructure-appset.yaml` explicitly (not glob-discovered)
@@ -102,7 +103,7 @@ docs/                   # Documentation
 - Use sync waves when adding infrastructure components
 - Add ArgoCD hook annotations to all Kubernetes Jobs — `argocd.argoproj.io/hook: Sync` + `argocd.argoproj.io/hook-delete-policy: BeforeHookCreation`. K8s Jobs are immutable after creation; without these, image tag bumps from Renovate cause "field is immutable" sync failures. For standalone Jobs, add annotations directly. For Helm-rendered Jobs, use Kustomize patches targeting `kind: Job`
 - Check `helm show values <chart> | grep -A20 certManager` when adding any Helm chart with webhooks — if a `certManager.enabled` option exists, **set it to `true`**. Helm hook Jobs for webhook certs break under ArgoCD (SA deleted before Job runs = stuck forever = API server death)
-- Verify pvc-plumber generated backup resources after creating PVCs with backup labels
+- Verify chart-rendered ExternalSecret + ReplicationSource + ReplicationDestination after adding a backup helmCharts entry (no longer operator-driven)
 - For abandoned CNPG backup lineages, update `infrastructure/storage/rustfs-lifecycle/postgres-backups-lifecycle-cm.yaml`; keep the full bucket lifecycle policy there because PUT replaces the whole RustFS lifecycle config
 - Use `strategy: type: Recreate` on Deployments with RWO PVCs — **RollingUpdate causes Multi-Attach deadlock**
 
@@ -114,16 +115,16 @@ docs/                   # Documentation
 - Commit secrets to Git
 - Bypass GitOps workflow for configuration changes
 - Deploy without considering sync wave order
-- Add backup labels to CNPG database PVCs (they use Barman to S3, not pvc-plumber/VolSync)
+- Add the volsync-backup chart to CNPG database PVCs (they use Barman to S3, not VolSync)
 - Add active CNPG `serverName` prefixes to RustFS lifecycle expiration rules; only abandoned lineages belong there
 - Add backup labels to system namespace PVCs (kube-system, volsync-system, argocd, longhorn-system)
-- Manually create or delete ReplicationSource/ReplicationDestination (pvc-plumber manages these)
+- Manually create or delete ReplicationSource/ReplicationDestination outside the volsync-backup chart (the chart renders them per-PVC via helmCharts)
 - Use legacy `nfs:` block for NFS PVs (mountOptions silently ignored — use CSI)
 - Use `RollingUpdate` strategy on Deployments with RWO PVCs (causes Multi-Attach deadlock)
 - Create external HTTPRoutes without the three required pieces: `external-dns: "true"` label, `external-dns.alpha.kubernetes.io/target: vanillax.me` annotation, and `sectionName: https` — **DNS won't be created and Cloudflare tunnel routing fails silently**
 - Use `Replace=true,Force=true` sync-options on Jobs — causes duplicate Job execution bug ([#24005](https://github.com/argoproj/argo-cd/issues/24005)); use ArgoCD hooks instead
 - Auto-merge major Helm chart version bumps for critical infrastructure (kube-prometheus-stack, longhorn, cilium) — **a kube-prometheus-stack v82→v83 auto-merge caused a full cluster outage on 2026-04-08 via Kyverno webhook deadlock**. Pin Renovate to minor/patch only for these charts.
-- Remove infrastructure namespaces from pvc-plumber webhook exclusions in `infrastructure/controllers/pvc-plumber/webhooks.yaml` — longhorn-system, argocd, volsync-system, etc. MUST stay in the `NotIn` list or a pvc-plumber crash causes full cluster deadlock on backup-labeled PVC creates.
+- Modify the `volsync-mover-backend-availability` MutatingAdmissionPolicy without verifying the CEL expression renders cleanly (`kubectl apply --dry-run=server -k infrastructure/storage/volsync-backup-cluster/`). The MAP's `failurePolicy: Fail` is scoped to mover Jobs only — not cluster-wide PVC creates — so a broken policy can't deadlock app deployment, but it can silently stop all backups.
 
 ## Nested CLAUDE.md Files
 
@@ -155,7 +156,8 @@ Detailed instructions load automatically when working in these directories:
 | **GPU workload** | `my-apps/ai/comfyui/` |
 | **Complex app with storage** | `my-apps/media/immich/` |
 | **PVC with automatic backup** | `my-apps/home/project-zomboid/pvc.yaml` (backup on `zomboid-data`, unlabeled `zomboid-server-files`) |
-| **pvc-plumber operator manifests** | `infrastructure/controllers/pvc-plumber/` |
+| **volsync-backup chart (per-app backup wiring)** | `infrastructure/storage/volsync-backup/` |
+| **MAP safety interlock (cluster-wide)** | `infrastructure/storage/volsync-backup-cluster/` |
 | **VolSync configuration** | `infrastructure/storage/volsync/` |
 | **RustFS lifecycle policy** | `infrastructure/storage/rustfs-lifecycle/` |
 | **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
@@ -175,7 +177,7 @@ Detailed instructions load automatically when working in these directories:
 - **[docs/network-policy.md](docs/network-policy.md)** - Cilium network policies
 - **[docs/argocd.md](docs/argocd.md)** - ArgoCD documentation
 - **[docs/argocd-entrypoints.md](docs/argocd-entrypoints.md)** - ArgoCD root entrypoints, waves, and AppSet/custom-entrypoint decisions
-- **[scripts/emergency-webhook-cleanup.sh](scripts/emergency-webhook-cleanup.sh)** - Emergency recovery from pvc-plumber webhook deadlock (or any future webhook with failurePolicy: Fail in volsync-system/argocd/longhorn-system path)
+- **pvc-plumber decommissioned 2026-05-21.** Migration design under `docs/research/pvc-backup-simplification/`. `scripts/emergency-webhook-cleanup.sh` retained as historical reference for any future `failurePolicy: Fail` webhook deadlock pattern.
 
 ## Mink capture
 

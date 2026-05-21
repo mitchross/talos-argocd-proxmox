@@ -17,3 +17,35 @@ configMapGenerator:
   - name: paperless-config
     envs:
       - paperless-config.env
+
+# Chart-managed VolSync backup wiring — replaces pvc-plumber.
+# See docs/research/pvc-backup-simplification/ for the migration design.
+helmGlobals:
+  chartHome: ../../../infrastructure/storage/
+helmCharts:
+- name: volsync-backup
+  releaseName: paperless-ngx-data-backup
+  namespace: paperless-ngx
+  valuesInline:
+    pvc: data
+    namespace: paperless-ngx
+    frequency: hourly
+    tier: strict
+    pvc_create: false
+    pvc_spec:
+      accessModes: ["ReadWriteOnce"]
+      storage: 10Gi
+      storageClassName: longhorn
+- name: volsync-backup
+  releaseName: paperless-ngx-media-backup
+  namespace: paperless-ngx
+  valuesInline:
+    pvc: media
+    namespace: paperless-ngx
+    frequency: hourly
+    tier: strict
+    pvc_create: false
+    pvc_spec:
+      accessModes: ["ReadWriteOnce"]
+      storage: 20Gi
+      storageClassName: longhorn
