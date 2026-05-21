@@ -15,3 +15,22 @@ configMapGenerator:
   - name: perplexica-config-seed
     files:
       - config.json
+
+# Chart-managed VolSync backup wiring — replaces pvc-plumber.
+# See docs/research/pvc-backup-simplification/ for the migration design.
+helmGlobals:
+  chartHome: ../../../infrastructure/storage/
+helmCharts:
+- name: volsync-backup
+  releaseName: perplexica-perplexica-data-backup
+  namespace: perplexica
+  valuesInline:
+    pvc: perplexica-data
+    namespace: perplexica
+    frequency: daily
+    tier: strict
+    pvc_create: false
+    pvc_spec:
+      accessModes: ["ReadWriteOnce"]
+      storage: 10Gi
+      storageClassName: longhorn

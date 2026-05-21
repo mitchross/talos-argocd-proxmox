@@ -10,3 +10,22 @@ resources:
   - httproute.yaml
 
 namespace: nginx-example
+
+# Chart-managed VolSync backup wiring — replaces pvc-plumber.
+# See docs/research/pvc-backup-simplification/ for the migration design.
+helmGlobals:
+  chartHome: ../../../infrastructure/storage/
+helmCharts:
+- name: volsync-backup
+  releaseName: nginx-storage-backup
+  namespace: nginx
+  valuesInline:
+    pvc: storage
+    namespace: nginx
+    frequency: daily
+    tier: strict
+    pvc_create: false
+    pvc_spec:
+      accessModes: ["ReadWriteOnce"]
+      storage: 5Gi
+      storageClassName: longhorn

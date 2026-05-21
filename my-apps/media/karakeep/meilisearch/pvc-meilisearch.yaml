@@ -7,6 +7,7 @@ metadata:
     app: karakeep
     type: meilisearch-storage
     # backup: "hourly" removed 2026-05-21 — chart-managed now.
+    restore-policy: "strict"
 spec:
   accessModes:
   - ReadWriteOnce

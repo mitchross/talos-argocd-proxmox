@@ -186,7 +186,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "http://pvc-plumber.volsync-system.svc.cluster.local/readyz",
+        "url": "http://volsync.volsync-system.svc.cluster.local:8060/metrics",
         "options": {
           "response": {
             "response": {

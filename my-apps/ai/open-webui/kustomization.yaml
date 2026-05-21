@@ -31,3 +31,22 @@ configMapGenerator:
 - name: mcp-kiwix-config
   files:
   - config.json=mcp-kiwix-config.json
+
+# Chart-managed VolSync backup wiring — replaces pvc-plumber.
+# See docs/research/pvc-backup-simplification/ for the migration design.
+helmGlobals:
+  chartHome: ../../../infrastructure/storage/
+helmCharts:
+- name: volsync-backup
+  releaseName: open-webui-storage-backup
+  namespace: open-webui
+  valuesInline:
+    pvc: storage
+    namespace: open-webui
+    frequency: daily
+    tier: strict
+    pvc_create: false
+    pvc_spec:
+      accessModes: ["ReadWriteOnce"]
+      storage: 10Gi
+      storageClassName: longhorn

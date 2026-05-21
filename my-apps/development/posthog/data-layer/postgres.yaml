@@ -93,6 +93,7 @@ metadata:
   labels:
     app: posthog-db
     backup: "daily"
+    restore-policy: "strict"
   annotations:
     # TEMPORARY (2026-05-01): wiping posthog data + starting fresh.
     # Remove once posthog is back up on fresh data.
@@ -105,3 +106,13 @@ spec:
   resources:
     requests:
       storage: 20Gi
+  # Static dataSourceRef → ReplicationDestination/postgres-data-dst.
+  # On PVC re-creation (DR / namespace recreate), VolSync's volume
+  # populator reads the latest snapshot from kopia repo
+  # volsync-postgres-data and binds this PVC with restored data. No-op
+  # while the PVC is already Bound. Chart-managed wiring lives in
+  # the sibling kustomization.yaml helmCharts: section.
+  dataSourceRef:
+    apiGroup: volsync.backube
+    kind: ReplicationDestination
+    name: postgres-data-dst
