@@ -35,7 +35,21 @@ loki:
   limits_config:
     allow_structured_metadata: true
     volume_enabled: true
-    retention_period: 30d
+    # Homelab retention: 24h. With ~165k objects sitting in the loki S3 bucket
+    # under the prior 30d retention (and compactor.retention_enabled=false default,
+    # meaning chunks were NEVER actually deleted), the chunk count was overwhelming
+    # RustFS alpha. 24h + enabled compactor retention below = sustainable object
+    # churn for a homelab. Bump if you ever need longer log lookback.
+    retention_period: 24h
+  # Enable the compactor's retention-driven deletion. Without retention_enabled
+  # and a delete_request_store, the retention_period above is a SOFT mark only —
+  # Loki marks chunks expired but never actually issues S3 deletes, so the
+  # bucket grows forever. This block makes the compactor actually prune.
+  compactor:
+    retention_enabled: true
+    retention_delete_delay: 2h
+    compaction_interval: 10m
+    delete_request_store: s3
 deploymentMode: SimpleScalable
 backend:
   replicas: 2
