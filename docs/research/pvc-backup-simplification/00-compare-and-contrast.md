@@ -1,11 +1,18 @@
 # Compare & contrast — pvc-plumber vs author-spec (operator-free VolSync)
 
-Status: analysis (study). Date: 2026-05-19. Branch: exploratory.
-Inputs folded in: the author's (mirceanton) YouTube reply; the codebase map
-(2026-05-19); the resolved stateless question.
+Status: analysis (decision-locked). Date: 2026-05-21. Branch: exploratory.
+Inputs folded in: author's YouTube reply; codebase map (2026-05-19);
+stateless question resolved; **author's Discord follow-up** (MAP init
+container on mover Jobs; he uses VolSync for SQLite and "never ran into"
+the corruption-on-restore burn); author's actual repo manifests pulled
+(`mirceanton/home-ops` components, MAP, Taskfile, DR scripts, Talos patch).
 
-Companion: `path-b-shrink-operator.md` (the middle option),
-`migration-plan.md`, `test-plan.md`.
+**Direction is locked**: full migration to author-spec + MAP-based
+backend-availability init container (Option C below). pvc-plumber gone.
+See `proposal/` for the concrete artifacts; `migration-plan.md` for phasing.
+
+Companion: `path-b-shrink-operator.md` (rejected alternative),
+`migration-plan.md`, `test-plan.md`, `proposal/README.md`.
 
 ---
 
@@ -96,27 +103,71 @@ prune/retention removes it**. So real-world severity is "bad snapshot added
 what legitimises a **best-effort tier** (loss recoverable-until-prune ⇒
 accepting author-spec is reasonable, not reckless).
 
-## 6. Scorecard
+## 6. Option C — MAP-based init container on the mover Job (CHOSEN)
 
-| Dimension | Author-spec | pvc-plumber | Migration target (this branch) |
+Surfaced by the author on Discord after he saw the Path B sketch. He
+already runs a `MutatingAdmissionPolicy` in his repo
+(`apps/storage-system/volsync/app/mutating-admission-policy.yaml`) that
+injects a jitter init container into VolSync mover Jobs. Same shape, swap
+the init container: probe RustFS reachability; exit non-zero on failure;
+Kubernetes Job backoff retries with exponential delay until the backend
+comes back. Concrete manifest in `proposal/cluster/`.
+
+Coverage vs the failure classes in §2:
+
+- **Hard-unreachable**: covered. The init container fails fast → Job
+  fails → backoff. For *restore* (RD) movers this means the populator
+  never completes → PVC `Pending`. For *backup* (RS) movers this means no
+  empty fresh-init gets captured. Same fail-closed-on-unreachable
+  semantics as pvc-plumber's webhook used to give, but at the Job level.
+- **Soft authoritative-no-snapshot**: still not covered, same as
+  everywhere — accepted future-burn (§5, the append-only severity nuance
+  makes this recoverable until prune).
+
+Why it beats Path B *and* the alerting-watcher idea:
+
+| Property | pvc-plumber | Path B residual webhook | Alerting watcher | **Option C (MAP)** |
+|---|---|---|---|---|
+| Operator pod | yes (SPOF binary) | yes (smaller) | small CronJob | **none** |
+| Blast radius if "down" | **cluster-wide PVC deny** | tier-scoped PVC deny | nothing (zero side effects) | **scoped to one Job** |
+| Hard-unreachable fail-closed | yes (admission deny) | yes (admission deny) | no (post-hoc only) | yes (Job fail+backoff) |
+| Failure visibility | loudest (admission deny) | loud (admission deny) | dashboard | clear (Job backoff + init log) |
+| Beta-API dependency | none | none | none | **MAP feature gate (4-line Talos patch)** |
+
+The one cost is the MAP/`v1beta1` Talos patch — the only beta-API
+dependency the migration takes on, and it's the same one the author
+already uses. Worth it to delete the operator entirely.
+
+## 7. Scorecard (decision-locked)
+
+| Dimension | Author-spec alone | pvc-plumber (old) | **This migration: author-spec + Option C + chart** |
 |---|---|---|---|
-| Empty-over-good, hard-unreachable | Fail-closed (accidental, T2) | Fail-closed (deny) | Author-spec + T2 gate |
-| Empty-over-good, soft-no-snapshot | Fail-open | **Also fail-open** (§3) | Same as both — accept / tier |
-| Failure visibility | Silent `Pending` | Loud deny | Silent unless residual webhook (Path B) |
-| Per-app effort | ~2 lines | 1 label | ~6 lines helmCharts values |
-| Operator in path | none | reconciler + 2 webhooks + cache | none (chart) |
-| Blast radius if backup infra down | none | cluster-wide | none (or tier-scoped, Path B) |
-| Templating | declarative (Flux) | imperative (operator) | declarative (Helm/Kustomize) |
+| Empty-over-good, hard-unreachable | Fail-closed (accidental, T2) | Fail-closed (deny) | **Fail-closed (MAP Job-fail), independent of T2** |
+| Empty-over-good, soft-no-snapshot | Fail-open | **Also fail-open** (§3) | Fail-open — accepted future-burn |
+| Failure visibility | Silent `Pending` | Loud deny | Job backoff + init log + status |
+| Per-app effort | ~2 lines | 1 label | ~10 lines helmCharts values + PVC ref |
+| Operator in path | none | reconciler + 2 webhooks + cache | **none** |
+| Blast radius if backup infra down | none | cluster-wide | scoped to per-Job failure |
+| Templating | declarative (Flux postBuild) | imperative (operator) | declarative (Helm-via-Kustomize, `--enable-helm` already on) |
 | Cleanup | Flux prune | reconciler | ArgoCD prune |
-| Restore-vs-fresh | static dataSourceRef | mutating webhook | static dataSourceRef |
-| Beta APIs / apiserver patches | yes (jitter) | no | no (deterministic schedule kept) |
+| Restore-vs-fresh | static dataSourceRef | mutating webhook | **static dataSourceRef** |
+| Beta APIs / apiserver patches | yes (jitter MAP) | no | **yes (MAP feature gate, 4-line Talos patch)** |
+| SQLite-on-VolSync corruption (your original burn) | author "never ran into" | what motivated pvc-plumber | T3 sub-test reproduces under new pattern or refutes |
 
-## 7. Conclusion feeding the migration
+## 8. Conclusion
 
-A near-full migration to author-spec is **defensible on data-safety
-grounds** *iff* T2 passes on the Kopia fork, because pvc-plumber's only
-unique data-safety branch (hard-unreachable) is then redundant. The genuine
-loss is **failure visibility**, not data. Two ways to buy visibility back
-without the operator are listed in `migration-plan.md` (a tiny residual
-validate-only webhook = Path B, or an alerting-only watcher). The 50/50
-Taskfile-ergonomics question is independent and also in the plan.
+The full-migration direction is **defensible on data safety, strictly
+better on blast radius, and ergonomically closer to author**. The one
+trade you take on is the MAP beta-API dependency; the one risk you
+explicitly accept is the soft-no-snapshot class (mitigated by Kopia
+append-only + `restoreAsOf`). T2 was the gate when MAP wasn't on the
+table; with Option C it becomes an *alignment check* rather than a gate
+— the MAP fail-closes the mover regardless of populator behaviour.
+
+Open decisions from earlier are all resolved:
+
+- **D1** (Taskfile manual DR ergonomics): port them. Done in `proposal/ops/`.
+- **D2** (visibility buy-back): Option C MAP. Done in `proposal/cluster/`.
+- **D3** (chart owns PVC vs app keeps it): app keeps it during migration
+  (smaller per-app diff, easier rollback). Flip to chart-owned for new
+  apps post-migration if it feels right.

@@ -10,7 +10,7 @@
 apiVersion: volsync.backube/v1alpha1
 kind: ReplicationDestination
 metadata:
-  name: {{ include "vb.resName" . }}
+  name: {{ include "vb.rdName" . }}
   namespace: {{ include "vb.namespace" . }}
   labels:
     {{- include "vb.commonLabels" . | nindent 4 }}
