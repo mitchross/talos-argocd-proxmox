@@ -37,6 +37,34 @@ is accepted future-burn territory, mitigated by Kopia's append-only +
    Verify with: `kubectl api-resources | grep mutatingadmissionpolicies`.
 2. Then apply the MAP/Binding (kubectl apply -k . or via ArgoCD).
 3. Verify with `kubectl get mutatingadmissionpolicy,mutatingadmissionpolicybinding`.
-4. Sanity test with T7 in `../../test-plan.md`.
+4. Sanity test with T7 in `../../test-plan.md` — both T7a (backup-side
+   injection sanity) and **T7b (restore-side, the load-bearing safety
+   proof — PVC stays Pending while RustFS unreachable, then populates
+   when it returns)**. T7b is *the* Phase-0 proof that the chain
+   `dataSourceRef → populator → volsync-dst- Job → MAP → wait-for-rustfs
+   → mover → bind` holds end to end.
 
 Only then begin per-PVC chart cutover per `../../migration-plan.md`.
+
+## Bootstrap-chaos sizing notes
+
+The `wait-for-rustfs` init container is configured with a 1-hour timeout
+(was 10 minutes in an earlier draft — bumped after noting that a real
+cold-start can easily exceed 10 min: 1P Connect at wave 0 → ESO
+materialising the per-PVC `volsync-<pvc>` Secret → RustFS pod scheduling
+on Longhorn → VolSync mover container actually starting). If the Job
+fails inside that window, the Job's `backoffLimit` (default 6) will burn
+retries in a fresh-cluster scenario and you can end up with a
+permanently-failed restore Job that doesn't self-heal.
+
+Things to verify live in T7b before relying on the current values:
+
+- `kubectl get job <volsync-dst-...> -o jsonpath='{.spec.backoffLimit}'`
+  (how many retries before Permanent Failed)
+- `kubectl get job <volsync-dst-...> -o jsonpath='{.spec.activeDeadlineSeconds}'`
+  (if VolSync sets a Job-level deadline — could cap wait-for-rustfs
+  effectively shorter than 1h regardless of init timeout)
+
+Tune the 1h init timeout downward only if you have evidence the
+bootstrap chain is faster than that on this cluster. Upward only if T7b
+shows the 1h ceiling getting hit during deliberate cold-start tests.
