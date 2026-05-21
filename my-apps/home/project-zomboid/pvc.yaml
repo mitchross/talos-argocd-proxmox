@@ -6,6 +6,7 @@ metadata:
   labels:
     app: project-zomboid
     backup: "daily"
+    restore-policy: "strict"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -13,6 +14,17 @@ spec:
     requests:
       storage: 20Gi
   storageClassName: longhorn
+  # Static dataSourceRef → ReplicationDestination/zomboid-data-dst.
+  # On PVC re-creation (DR / namespace recreate), VolSync's volume
+  # populator reads the latest snapshot from kopia repo
+  # volsync-zomboid-data and binds this PVC with restored data. No-op
+  # while the PVC is already Bound. Chart-managed wiring lives in
+  # the sibling kustomization.yaml helmCharts: section.
+  dataSourceRef:
+    apiGroup: volsync.backube
+    kind: ReplicationDestination
+    name: zomboid-data-dst
+
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim

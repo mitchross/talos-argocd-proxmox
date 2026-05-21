@@ -51,8 +51,11 @@ kubectl get pods -n longhorn-system && kubectl get pvc -A
 kubectl get nodes -l feature.node.kubernetes.io/pci-0300_10de.present=true
 kubectl get gateway -A && kubectl get httproute -A
 kubectl get replicationsource -A && kubectl get replicationdestination -A
-kubectl get pods -n volsync-system -l app.kubernetes.io/name=pvc-plumber
-kubectl logs -n volsync-system -l app.kubernetes.io/name=pvc-plumber --tail=50
+kubectl get mutatingadmissionpolicy,mutatingadmissionpolicybinding volsync-mover-backend-availability
+kubectl get pods -n volsync-system -l app.kubernetes.io/name=volsync
+kubectl logs -n volsync-system -l app.kubernetes.io/name=volsync --tail=50
+# Per-mover-Job init container that gates on RustFS reachability:
+kubectl get pods -A -l app.kubernetes.io/created-by=volsync -o=jsonpath='{range .items[*]}{.metadata.namespace}/{.metadata.name}{"  init: "}{.spec.initContainers[*].name}{"\n"}{end}'
 ```
 
 ## Infrastructure AppSet Rules

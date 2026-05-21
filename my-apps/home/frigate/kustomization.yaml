@@ -22,3 +22,22 @@ configMapGenerator:
   - name: mosquitto-configmap
     files:
       - mqtt/mosquitto.conf
+
+# Chart-managed VolSync backup wiring — replaces pvc-plumber.
+# See docs/research/pvc-backup-simplification/ for the migration design.
+helmGlobals:
+  chartHome: ../../../infrastructure/storage/
+helmCharts:
+- name: volsync-backup
+  releaseName: frigate-frigate-config-backup
+  namespace: frigate
+  valuesInline:
+    pvc: frigate-config
+    namespace: frigate
+    frequency: daily
+    tier: strict
+    pvc_create: false
+    pvc_spec:
+      accessModes: ["ReadWriteOnce"]
+      storage: 10Gi
+      storageClassName: longhorn

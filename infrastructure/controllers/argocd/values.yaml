@@ -27,13 +27,18 @@ configs:
     controller.diff.server.side: "true"
   cm:
     url: "https://argocd.vanillax.me"
-    # --load-restrictor LoadRestrictionsNone is required for the
-    # operator-free VolSync chart at docs/research/pvc-backup-simplification/
-    # proposal/volsync-backup/ to be referenced from per-app kustomizations
-    # via helmGlobals.chartHome with a relative path that escapes the
-    # kustomization root (e.g. ../../../docs/research/...). Without it,
-    # kustomize's security check rejects "file is not in or below" the
-    # kustomization root and ArgoCD can't render the helmCharts entry.
+    # --load-restrictor LoadRestrictionsNone allows per-app kustomizations
+    # to reference the shared volsync-backup Helm chart at
+    # infrastructure/storage/volsync-backup/ via helmGlobals.chartHome
+    # with a relative path that escapes the kustomization root.
+    #
+    # Trade-off accepted: this disables kustomize's "files must be at or
+    # below kustomization root" check GLOBALLY for every ArgoCD-managed
+    # app, not just the ones that need it. Long-term cleaner path: publish
+    # the volsync-backup chart to an OCI registry (e.g. registry.vanillax.me)
+    # so per-app kustomizations reference it via `helmCharts.repo: oci://...`,
+    # at which point this load-restrictor relaxation can be removed.
+    # See: docs/research/pvc-backup-simplification/CLEANUP-IN-PROGRESS.md
     kustomize.buildOptions: "--enable-helm --load-restrictor LoadRestrictionsNone"
     # Resource tracking — annotation+label survives operator reconciles.
     # Default 'annotation' alone gets stripped by CNPG/cert-manager/ESO/KEDA,

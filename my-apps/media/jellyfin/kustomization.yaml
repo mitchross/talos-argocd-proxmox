@@ -16,3 +16,22 @@ resources:
   - jellyfin-media-pvc.yaml
   - deployment.yaml
   - httproute.yaml
+
+# Chart-managed VolSync backup wiring — replaces pvc-plumber.
+# See docs/research/pvc-backup-simplification/ for the migration design.
+helmGlobals:
+  chartHome: ../../../infrastructure/storage/
+helmCharts:
+- name: volsync-backup
+  releaseName: jellyfin-config-backup
+  namespace: jellyfin
+  valuesInline:
+    pvc: config
+    namespace: jellyfin
+    frequency: daily
+    tier: strict
+    pvc_create: false
+    pvc_spec:
+      accessModes: ["ReadWriteOnce"]
+      storage: 5Gi
+      storageClassName: longhorn

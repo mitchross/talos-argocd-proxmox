@@ -34,7 +34,7 @@ configMapGenerator:
 # moverSecurityContext intentionally aligned to karakeep app's UID 1001
 # (was 568 under pvc-plumber — fsGroup chown was masking the mismatch).
 helmGlobals:
-  chartHome: ../../../docs/research/pvc-backup-simplification/proposal/
+  chartHome: ../../../infrastructure/storage/
 helmCharts:
 - name: volsync-backup
   releaseName: karakeep-data-pvc-backup

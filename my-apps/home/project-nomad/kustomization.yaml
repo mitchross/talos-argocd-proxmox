@@ -52,3 +52,74 @@ configMapGenerator:
   - name: project-nomad-config
     envs:
       - project-nomad-config.env
+
+# Chart-managed VolSync backup wiring — replaces pvc-plumber.
+# See docs/research/pvc-backup-simplification/ for the migration design.
+helmGlobals:
+  chartHome: ../../../infrastructure/storage/
+helmCharts:
+- name: volsync-backup
+  releaseName: project-nomad-flatnotes-data-backup
+  namespace: project-nomad
+  valuesInline:
+    pvc: flatnotes-data
+    namespace: project-nomad
+    frequency: daily
+    tier: strict
+    pvc_create: false
+    pvc_spec:
+      accessModes: ["ReadWriteOnce"]
+      storage: 5Gi
+      storageClassName: longhorn
+- name: volsync-backup
+  releaseName: project-nomad-kolibri-data-backup
+  namespace: project-nomad
+  valuesInline:
+    pvc: kolibri-data
+    namespace: project-nomad
+    frequency: daily
+    tier: strict
+    pvc_create: false
+    pvc_spec:
+      accessModes: ["ReadWriteOnce"]
+      storage: 20Gi
+      storageClassName: longhorn
+- name: volsync-backup
+  releaseName: project-nomad-mysql-data-backup
+  namespace: project-nomad
+  valuesInline:
+    pvc: mysql-data
+    namespace: project-nomad
+    frequency: daily
+    tier: strict
+    pvc_create: false
+    pvc_spec:
+      accessModes: ["ReadWriteOnce"]
+      storage: 20Gi
+      storageClassName: longhorn
+- name: volsync-backup
+  releaseName: project-nomad-nomad-storage-backup
+  namespace: project-nomad
+  valuesInline:
+    pvc: nomad-storage
+    namespace: project-nomad
+    frequency: daily
+    tier: strict
+    pvc_create: false
+    pvc_spec:
+      accessModes: ["ReadWriteOnce"]
+      storage: 120Gi
+      storageClassName: longhorn
+- name: volsync-backup
+  releaseName: project-nomad-qdrant-data-backup
+  namespace: project-nomad
+  valuesInline:
+    pvc: qdrant-data
+    namespace: project-nomad
+    frequency: daily
+    tier: strict
+    pvc_create: false
+    pvc_spec:
+      accessModes: ["ReadWriteOnce"]
+      storage: 20Gi
+      storageClassName: longhorn

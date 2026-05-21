@@ -16,3 +16,22 @@ configMapGenerator:
     files:
       - settings.yaml
       - services.yaml
+
+# Chart-managed VolSync backup wiring — replaces pvc-plumber.
+# See docs/research/pvc-backup-simplification/ for the migration design.
+helmGlobals:
+  chartHome: ../../../infrastructure/storage/
+helmCharts:
+- name: volsync-backup
+  releaseName: homepage-dashboard-config-backup
+  namespace: homepage-dashboard
+  valuesInline:
+    pvc: config
+    namespace: homepage-dashboard
+    frequency: daily
+    tier: strict
+    pvc_create: false
+    pvc_spec:
+      accessModes: ["ReadWriteOnce"]
+      storage: 5Gi
+      storageClassName: longhorn

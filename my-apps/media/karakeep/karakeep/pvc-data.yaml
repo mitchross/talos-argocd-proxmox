@@ -9,6 +9,7 @@ metadata:
     # backup: "hourly" removed 2026-05-21 — that label was pvc-plumber's
     # signal. Chart-managed backup wiring now lives in
     # my-apps/media/karakeep/kustomization.yaml under helmCharts.
+    restore-policy: "strict"
 spec:
   accessModes:
   - ReadWriteOnce
