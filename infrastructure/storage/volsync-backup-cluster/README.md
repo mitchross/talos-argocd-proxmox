@@ -1,13 +1,17 @@
-# Cluster-scoped pieces
+# Cluster-scoped pieces — operator-free VolSync safety interlock
+
+ArgoCD-managed under `infrastructure/controllers/argocd/apps/core-dependencies/volsync-backup-cluster-app.yaml`
+at sync wave 2 (same as pvc-plumber — both coexist safely during the
+full migration off pvc-plumber; the MAP targets Jobs while pvc-plumber
+webhooks target PVCs, no admission conflict).
 
 | File | What | Applied via |
 |---|---|---|
-| `mutating-admission-policy.yaml` | MAP + Binding that injects a `wait-for-rustfs` init container into every VolSync mover Job. Fail-closed on hard-unreachable backend. Uses `admissionregistration.k8s.io/v1` (MAP is GA on K8s 1.34+). | ArgoCD (Kustomize) — eventually `infrastructure/storage/volsync-backup-cluster/`. |
-| `talos-patch.yaml` | **NOT NEEDED on K8s 1.34+** (MAP is GA). Kept as historical reference for pre-1.34 clusters: enables the `MutatingAdmissionPolicy=true` feature gate + `admissionregistration.k8s.io/v1beta1=true` runtime-config. | Omni (only if you actually need it). |
+| `mutating-admission-policy.yaml` | MAP + Binding that injects a `wait-for-rustfs` init container into every VolSync mover Job. Fail-closed on hard-unreachable backend. Uses `admissionregistration.k8s.io/v1` (MAP is GA on K8s 1.34+). | ArgoCD (Kustomize). |
+| `talos-patch.yaml` | **NOT APPLIED on this cluster.** Retained as documentation only — captures the apiserver dependency for pre-1.34 clusters. K8s 1.36+ has MAP at `admissionregistration.k8s.io/v1` GA by default. Deliberately not listed in `kustomization.yaml`. | Omni (only if needed). |
 
-This cluster is K8s 1.36 — MAP v1 is enabled by default, no Talos patch
-required. Verified with `kubectl api-resources --api-group=admissionregistration.k8s.io`
-showing `mutatingadmissionpolicies` at `admissionregistration.k8s.io/v1`.
+Verified 2026-05-21 via `kubectl api-resources --api-group=admissionregistration.k8s.io`:
+`mutatingadmissionpolicies` at `admissionregistration.k8s.io/v1`.
 
 ## What this buys back
 
@@ -35,20 +39,19 @@ is accepted future-burn territory, mitigated by Kopia's append-only +
 
 ## Sequencing during cutover
 
-1. Verify MAP is already available (K8s 1.34+):
+ArgoCD owns sync; the standalone Application lands the MAP at wave 2.
+
+1. Verify MAP is available (K8s 1.34+):
    `kubectl api-resources --api-group=admissionregistration.k8s.io` should
    show `mutatingadmissionpolicies` at `admissionregistration.k8s.io/v1`.
-   If not, apply `talos-patch.yaml` via Omni first (rolling control-plane reboot).
-2. Apply the MAP/Binding (kubectl apply -k . or via ArgoCD).
-3. Verify with `kubectl get mutatingadmissionpolicy,mutatingadmissionpolicybinding`.
-4. Sanity test with T7 in `../../test-plan.md` — both T7a (backup-side
-   injection sanity) and **T7b (restore-side, the load-bearing safety
-   proof — PVC stays Pending while RustFS unreachable, then populates
-   when it returns)**. T7b is *the* Phase-0 proof that the chain
-   `dataSourceRef → populator → volsync-dst- Job → MAP → wait-for-rustfs
-   → mover → bind` holds end to end.
+2. Confirm the MAP+Binding are synced:
+   `kubectl get mutatingadmissionpolicy,mutatingadmissionpolicybinding`.
+3. Sanity test with T7 in `docs/research/pvc-backup-simplification/test-plan.md`
+   — T7a (backup-side injection sanity) and **T7b (restore-side, the
+   load-bearing safety proof)**.
 
-Only then begin per-PVC chart cutover per `../../migration-plan.md`.
+Only then begin per-PVC chart cutover per
+`docs/research/pvc-backup-simplification/migration-plan.md`.
 
 ## Bootstrap-chaos sizing notes
 

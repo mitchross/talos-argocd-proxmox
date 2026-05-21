@@ -1,10 +1,19 @@
 # Talos machine-config patch — enables MutatingAdmissionPolicy + the v1beta1
 # admissionregistration API.
 #
-# NOT NEEDED ON K8s 1.34+ (this cluster is 1.36). MAP is GA at
-# admissionregistration.k8s.io/v1 by default. Kept here as historical
-# reference for pre-1.34 clusters where the feature was still beta.
-# Verified 2026-05-21 with `kubectl api-resources --api-group=admissionregistration.k8s.io`.
+# NOT APPLIED on this cluster (K8s 1.36). Retained as DOCUMENTATION only —
+# captures the apiserver dependency that the MAP in this directory relies
+# on. Future operators reading mutating-admission-policy.yaml and wondering
+# "what makes this work" should find this file.
+#
+# This cluster has MAP at admissionregistration.k8s.io/v1 GA by default.
+# No feature-gate enablement was required. Verified 2026-05-21 via
+# `kubectl api-resources --api-group=admissionregistration.k8s.io`.
+#
+# Pre-1.34 clusters would need this patch applied via Omni before the MAP
+# can be installed. The kustomization.yaml in this directory deliberately
+# DOES NOT list this file as a resource (it is a Talos machine-config
+# patch applied through Omni, not a Kubernetes object).
 #
 # Source: mirceanton/home-ops talos/patches/mutating-admission.yaml (verbatim).
 #
