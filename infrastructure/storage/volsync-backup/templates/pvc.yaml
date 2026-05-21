@@ -1,0 +1,31 @@
+{{- if .Values.pvc_create }}
+# Chart owns the data PVC (closest to mirceanton). Static dataSourceRef ->
+# ReplicationDestination = the volume populator. This replaces pvc-plumber's
+# mutating webhook entirely: the ref is declared, not injected at admission.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "vb.pvc" . }}
+  namespace: {{ include "vb.namespace" . }}
+  labels:
+    {{- include "vb.commonLabels" . | nindent 4 }}
+    backup: {{ .Values.frequency | quote }}
+    restore-policy: {{ .Values.tier | quote }}
+  {{- if .Values.protectFromPrune }}
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+  {{- end }}
+spec:
+  accessModes:
+    {{- range .Values.pvc_spec.accessModes }}
+    - {{ . }}
+    {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.pvc_spec.storage }}
+  storageClassName: {{ .Values.pvc_spec.storageClassName }}
+  dataSourceRef:
+    apiGroup: volsync.backube
+    kind: ReplicationDestination
+    name: {{ include "vb.rdName" . }}
+{{- end }}

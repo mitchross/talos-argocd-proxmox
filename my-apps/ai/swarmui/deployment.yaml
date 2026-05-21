@@ -37,6 +37,13 @@ spec:
         runAsUser: 0
         runAsGroup: 0
         fsGroup: 0
+        # Without this, kubelet recursively chowns the entire shared NFS
+        # models volume (60k+ files) to fsGroup on EVERY pod start — observed
+        # 6+ min stuck in ContainerCreating ("processed 60092 files",
+        # VolumePermissionChangeInProgress). OnRootMismatch chowns only when
+        # the top-level dir's owner is wrong, so after the first start the
+        # 60k-file walk is skipped entirely. Same pattern as llama-cpp.
+        fsGroupChangePolicy: OnRootMismatch
       containers:
       - name: swarmui
         # No official SwarmUI image upstream. jasonacox/swarmui is a clean,

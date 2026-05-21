@@ -6,7 +6,8 @@ metadata:
   labels:
     app: karakeep
     type: meilisearch-storage
-    backup: "hourly"
+    # backup: "hourly" removed 2026-05-21 — chart-managed now.
+    restore-policy: "strict"
 spec:
   accessModes:
   - ReadWriteOnce
@@ -14,4 +15,7 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  # dataSourceRef is added dynamically by Kyverno if a backup exists
+  dataSourceRef:
+    apiGroup: volsync.backube
+    kind: ReplicationDestination
+    name: meilisearch-pvc-dst

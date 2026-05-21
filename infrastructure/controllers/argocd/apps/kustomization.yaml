@@ -12,7 +12,13 @@ resources:
   - core-dependencies/longhorn-app.yaml
   - core-dependencies/snapshot-controller-app.yaml
   - core-dependencies/volsync-app.yaml
-  - core-dependencies/pvc-plumber-app.yaml
+  # pvc-plumber decommissioned 2026-05-21 — replaced by the operator-free
+  # volsync-backup-cluster (MutatingAdmissionPolicy injecting wait-for-rustfs
+  # into mover Jobs). Webhooks + Application + Deployment + RBAC deleted from
+  # the cluster, directory removed from git in the same commit. See
+  # docs/research/pvc-backup-simplification/ for the migration design.
+  # - core-dependencies/pvc-plumber-app.yaml
+  - core-dependencies/volsync-backup-cluster-app.yaml
 
   # Custom entrypoints: standalone apps kept out of AppSets for ordering or render reasons.
   - custom-entrypoints/cnpg-barman-plugin-app.yaml

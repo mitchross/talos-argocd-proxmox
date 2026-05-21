@@ -35,7 +35,12 @@ spec:
           serviceAccountName: registry-gc
           containers:
             - name: gc
-              image: bitnami/kubectl:1.31
+              # bitnami/kubectl:1.31 was deleted from Docker Hub in Bitnami's
+              # 2025+ catalog purge (legacy tags removed / moved to
+              # bitnamilegacy/) -> ImagePullBackOff every weekly run. Switched
+              # to the official Kubernetes-hosted image (registry.k8s.io won't
+              # vanish like Docker Hub Bitnami), SHA-pinned per repo policy.
+              image: registry.k8s.io/kubectl:v1.31.9@sha256:388d91dc51f9d25933c9bfc098cca4171089abed48bf6daa5ce6f07a19e99462
               command: [/bin/bash, -euo, pipefail, -c]
               args:
                 - |

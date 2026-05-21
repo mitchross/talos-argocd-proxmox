@@ -166,7 +166,7 @@ spec:
       barmanObjectStore:
         serverName: <db>-database-v(N-1)   # N-1 = the lineage with good data
         destinationPath: s3://postgres-backups/cnpg/<db>
-        endpointURL: http://192.168.10.133:30293
+        endpointURL: http://192.168.10.133:30292
         s3Credentials: { ... same as backup ... }
         wal: { compression: gzip }
 ```

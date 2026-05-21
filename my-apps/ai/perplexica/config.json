@@ -24,8 +24,8 @@
         { "name": "Qwen 3.6 (longctx, 128K) — recommended", "key": "qwen3.6-longctx - qwen3.6-35b-a3b-longctx" },
         { "name": "Qwen 3.6 (think)",              "key": "qwen3.6 - qwen3.6-35b-a3b" },
         { "name": "Qwen 3.6 (nothink, fast)",      "key": "qwen3.6-nothink - qwen3.6-35b-a3b-nothink" },
-        { "name": "Gemma 4 (think)",               "key": "gemma4 - gemma4-26b" },
-        { "name": "Gemma 4 (nothink)",             "key": "gemma4-nothink - gemma4-26b-nothink" },
+        { "name": "Gemma 4 31B dense (think)",     "key": "gemma4-31b - gemma4-31b" },
+        { "name": "Gemma 4 31B dense (nothink)",   "key": "gemma4-31b-nothink - gemma4-31b-nothink" },
         { "name": "Qwen 3.5 Uncensored (think)",   "key": "uncensored - qwen3.5-uncensored" },
         { "name": "Qwen 3.5 Uncensored (nothink)", "key": "nothink-uncensored - qwen3.5-uncensored-nothink" }
       ],

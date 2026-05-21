@@ -6,3 +6,22 @@ resources:
   - deployment.yaml
   - service.yaml
   - http-route.yaml
+
+# Chart-managed VolSync backup wiring — replaces pvc-plumber.
+# See docs/research/pvc-backup-simplification/ for the migration design.
+helmGlobals:
+  chartHome: ../../../infrastructure/storage/
+helmCharts:
+- name: volsync-backup
+  releaseName: tubesync-config-pvc-backup
+  namespace: tubesync
+  valuesInline:
+    pvc: config-pvc
+    namespace: tubesync
+    frequency: daily
+    tier: strict
+    pvc_create: false
+    pvc_spec:
+      accessModes: ["ReadWriteOnce"]
+      storage: 10Gi
+      storageClassName: longhorn

@@ -5,6 +5,17 @@ metadata:
   namespace: perplexica
   labels:
     backup: "daily"
+    restore-policy: "strict"
+  annotations:
+    # With controller.diff.server.side=true, ArgoCD's SSA dry-run tries to
+    # null that immutable field and the API server rejects it, producing a
+    # ComparisonError that wedges the whole app's sync (observed stuck since
+    # 2026-05-03, 2000+ retries). The global _PersistentVolumeClaim
+    # ignoreDifferences rule can't help because the SSA dry-run runs BEFORE
+    # ignore masking. Forcing client-side diff for this one PVC sidesteps
+    # the dry-run; the global ignoreDifferences then masks the dataSource
+    # drift normally. See docs/volsync-storage-recovery.md.
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
 spec:
   accessModes:
     - ReadWriteOnce
@@ -12,3 +23,13 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
+  # Static dataSourceRef → ReplicationDestination/perplexica-data-dst.
+  # On PVC re-creation (DR / namespace recreate), VolSync's volume
+  # populator reads the latest snapshot from kopia repo
+  # volsync-perplexica-data and binds this PVC with restored data. No-op
+  # while the PVC is already Bound. Chart-managed wiring lives in
+  # the sibling kustomization.yaml helmCharts: section.
+  dataSourceRef:
+    apiGroup: volsync.backube
+    kind: ReplicationDestination
+    name: perplexica-data-dst

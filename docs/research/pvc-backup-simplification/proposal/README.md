@@ -1,4 +1,20 @@
-# Proposal — full migration off pvc-plumber to declarative VolSync (author-spec + MAP)
+# Proposal — full migration off pvc-plumber to declarative VolSync (author-spec + MAP) — HISTORICAL
+
+> **ARCHIVED 2026-05-21.** This proposal has been implemented. The chart graduated to
+> `infrastructure/storage/volsync-backup/`. The cluster MAP graduated to
+> `infrastructure/storage/volsync-backup-cluster/`. pvc-plumber operator
+> is decommissioned. For the live source-of-truth, see those graduated
+> locations and `.claude/commands/add-backup.md` for the per-app workflow.
+>
+> See `../CLEANUP-IN-PROGRESS.md` (now historical) for the 2026-05-21
+> migration session log, including the inventory of 27 apps that needed
+> per-app cutover after the operator was decommissioned.
+>
+> The `ops/` directory below (Taskfile + DR scripts) still applies and
+> has not yet graduated to a permanent home in `scripts/` — that's a
+> follow-up.
+
+Original status (kept verbatim for historical context):
 
 Status: PROPOSAL on exploratory branch (`claude/analyze-k8s-backup-transcript-eRrS2`). Not for merge. No PR.
 Date: 2026-05-21.
