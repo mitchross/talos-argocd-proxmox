@@ -29,8 +29,46 @@ Deprecated fields:
 | --- | --- |
 | `k8s-admin-access-key` | `rustfs-workload-access-key` |
 | `k8s-admin-secret-key` | `rustfs-workload-secret-key` |
+| `pvc-plumber-access-key` | `rustfs-workload-access-key` (renamed 2026-05-21 with pvc-plumber decommission) |
+| `pvc-plumber-secret-key` | `rustfs-workload-secret-key` (renamed 2026-05-21 with pvc-plumber decommission) |
 
 Delete the deprecated fields only after all ExternalSecrets are synced to the replacement field names.
+
+## Workload key IAM policy
+
+The single workload key (named `homelab-workload` in the RustFS console) is
+configured with a broad allow policy:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:*"],
+      "Resource": ["arn:aws:s3:::*"]
+    }
+  ]
+}
+```
+
+Decision (homelab single-tenant, 2026-05-21): scope is intentionally broad.
+Per-bucket IAM scoping would duplicate Kubernetes RBAC's namespace separation
+without adding meaningful protection in a single-operator homelab — a
+compromised cluster would mean a compromised key either way. Broad policy
+also means new buckets work immediately without a forgotten-IAM failure mode
+when adding a new logging/metrics/backup destination. Workload key remains
+distinct from `root-access-key` so cluster cannot invoke RustFS admin
+operations (bucket create/delete, user mgmt — those use root via console).
+
+When to tighten:
+- If multiple operators/people gain cluster access and homelab becomes shared.
+- If a specific app starts misbehaving with the bucket — scope ITS key, not
+  the shared one.
+- If running an audit/compliance exercise that requires least-privilege docs.
+
+Captured in mink:
+`rustfs-workload-key-policy-full-s3-on-all-buckets-homelab-single-tenant-decision.md`
 
 ## Update 1Password
 
@@ -66,32 +104,57 @@ These GitOps-managed ExternalSecrets read `rustfs-workload-access-key` and `rust
 
 | ExternalSecret | Kubernetes Secret |
 | --- | --- |
-| `volsync-system/pvc-plumber-kopia` | `pvc-plumber-kopia` |
 | `cloudnative-pg/cnpg-s3-credentials` | `cnpg-s3-credentials` |
+| `kopia-ui/kopia-ui-secrets` | `kopia-ui-secret` (only consumes `kopia_password`, not the workload key) |
 | `loki-stack/loki-s3-credentials` | `loki-s3-credentials` |
 | `monitoring/tempo-s3-credentials` | `tempo-s3-credentials` |
 | `posthog/posthog-secrets` | `posthog-secrets` |
 | `rustfs-lifecycle/rustfs-admin-credentials` | `rustfs-admin-credentials` |
+| Each chart-rendered `<ns>/volsync-<pvc>` per backed-up PVC | `volsync-<pvc>` |
+
+The `volsync-system/pvc-plumber-kopia` ExternalSecret was removed
+2026-05-21 along with the pvc-plumber operator decommission. Per-PVC
+ExternalSecrets are now rendered by the `volsync-backup` Helm chart
+at `infrastructure/storage/volsync-backup/` rather than the operator.
 
 Force ESO refresh after changing 1Password:
 
 ```bash
 TS="$(date +%s)"
-kubectl annotate externalsecret -n volsync-system pvc-plumber-kopia force-sync="$TS" --overwrite
 kubectl annotate externalsecret -n cloudnative-pg cnpg-s3-credentials force-sync="$TS" --overwrite
+kubectl annotate externalsecret -n kopia-ui kopia-ui-secrets force-sync="$TS" --overwrite
 kubectl annotate externalsecret -n loki-stack loki-s3-credentials force-sync="$TS" --overwrite
 kubectl annotate externalsecret -n monitoring tempo-s3-credentials force-sync="$TS" --overwrite
 kubectl annotate externalsecret -n posthog posthog-secrets force-sync="$TS" --overwrite
 kubectl annotate externalsecret -n rustfs-lifecycle rustfs-admin-credentials force-sync="$TS" --overwrite
+
+# Also force every chart-rendered per-PVC ES:
+kubectl get externalsecret -A -l app.kubernetes.io/managed-by=volsync-backup-chart \
+  -o jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}{end}' | \
+  while read ns name; do
+    [ -z "$ns" ] && continue
+    kubectl annotate externalsecret -n "$ns" "$name" force-sync="$TS" --overwrite
+  done
 ```
 
 Restart consumers that load S3 credentials from environment variables:
 
 ```bash
-kubectl rollout restart deploy/pvc-plumber -n volsync-system
-kubectl rollout restart deploy/loki-read statefulset/loki-backend statefulset/loki-write -n loki-stack
+# CNPG re-reads cnpg-s3-credentials automatically via the operator's
+# Secret-watcher — no restart needed for postgres clusters.
+kubectl rollout restart deploy/kopia-ui -n kopia-ui
+kubectl rollout restart statefulset/loki-backend statefulset/loki-write -n loki-stack
+kubectl rollout restart deploy/loki-read -n loki-stack
 kubectl rollout restart statefulset/tempo -n monitoring
-kubectl rollout restart deploy/capture deploy/plugins deploy/ingestion-general deploy/ingestion-sessionreplay deploy/recording-api deploy/replay-capture deploy/temporal-django-worker deploy/web deploy/worker -n posthog
+kubectl rollout restart deploy/db deploy/feature-flags deploy/plugins deploy/web deploy/worker \
+                       deploy/ingestion-general deploy/ingestion-sessionreplay \
+                       deploy/recording-api deploy/replay-capture \
+                       deploy/temporal-django-worker deploy/property-defs-rs \
+                       -n posthog
 ```
 
-VolSync mover jobs, CNPG backups, and RustFS lifecycle jobs pick up the new Secret on their next run.
+VolSync mover Jobs read the per-PVC Secret at Job creation time, so the
+NEXT scheduled (or manually triggered) backup run picks up the new
+credentials automatically — no restart of VolSync itself needed.
+RustFS lifecycle Job is spawned by its CronJob — next scheduled run
+uses the refreshed Secret.
