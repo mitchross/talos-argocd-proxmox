@@ -13,6 +13,7 @@ resources:
   - core-dependencies/snapshot-controller-app.yaml
   - core-dependencies/volsync-app.yaml
   - core-dependencies/pvc-plumber-app.yaml
+  - core-dependencies/volsync-backup-cluster-app.yaml
 
   # Custom entrypoints: standalone apps kept out of AppSets for ordering or render reasons.
   - custom-entrypoints/cnpg-barman-plugin-app.yaml
