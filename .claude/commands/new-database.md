@@ -25,7 +25,7 @@ Create a new CNPG (CloudNativePG) database for `$ARGUMENTS`.
        barmanObjectStore:
          serverName: <app>-database
          destinationPath: s3://postgres-backups/cnpg/<app>
-         endpointURL: http://192.168.10.133:30293
+         endpointURL: http://192.168.10.133:30292
          s3Credentials:
            accessKeyId:
              name: cnpg-s3-credentials

@@ -44,12 +44,12 @@ repositoryPrefix: volsync-
 s3:
   # RustFS S3 API endpoint. Port 30293 per docs/rustfs-credential-runbook.md
   # (the authoritative source on main) and the live pvc-plumber-managed
-  # ES (KOPIA_S3_ENDPOINT: 192.168.10.133:30293) that has produced 7
+  # ES (KOPIA_S3_ENDPOINT: 192.168.10.133:30292) that has produced 7
   # successful backups. The 1Password rustfs item's `endpoint`/`S3_ENDPOINT`
   # fields display 30292 — stale, mislabeled, or pointing at a non-S3
   # service exposed on the same TrueNAS RustFS app. Trust the runbook
   # and live behavior, not the 1P field.
-  endpoint: "192.168.10.133:30293"
+  endpoint: "192.168.10.133:30292"
   bucket: "volsync-kopia"            # single shared Kopia repo bucket
   disableTLS: true
 
@@ -65,8 +65,8 @@ externalSecret:
   refreshInterval: 1m
   properties:
     password: kopia_password
-    accessKey: pvc-plumber-access-key
-    secretKey: pvc-plumber-secret-key
+    accessKey: rustfs-workload-access-key
+    secretKey: rustfs-workload-secret-key
 
 kopia:
   compression: zstd-fastest

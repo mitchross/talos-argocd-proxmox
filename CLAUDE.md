@@ -45,7 +45,7 @@ Applications deploy in strict order to prevent race conditions:
 | **5** | OTEL + Monitoring AppSet | OpenTelemetry Operator plus `monitoring/*` |
 | **6** | My-Apps AppSet | Discovers `my-apps/*/*` |
 
-**FAIL-CLOSED**: The cluster-wide `volsync-mover-backend-availability` MutatingAdmissionPolicy (at `infrastructure/storage/volsync-backup-cluster/`) injects a `wait-for-rustfs` init container into every VolSync mover Job. The init container TCP-probes RustFS (192.168.10.133:30293) up to 1h; if RustFS is unreachable, the Job fails and Kubernetes backoff retries. Mover Jobs cannot proceed against a black-holed backend, so a fresh PVC's first backup never captures an empty volume into the kopia repo. Replaced the pvc-plumber PVC-admission webhook safety, with strictly smaller blast radius (Job-level, not cluster-wide PVC creation).
+**FAIL-CLOSED**: The cluster-wide `volsync-mover-backend-availability` MutatingAdmissionPolicy (at `infrastructure/storage/volsync-backup-cluster/`) injects a `wait-for-rustfs` init container into every VolSync mover Job. The init container TCP-probes RustFS (192.168.10.133:30292) up to 1h; if RustFS is unreachable, the Job fails and Kubernetes backoff retries. Mover Jobs cannot proceed against a black-holed backend, so a fresh PVC's first backup never captures an empty volume into the kopia repo. Replaced the pvc-plumber PVC-admission webhook safety, with strictly smaller blast radius (Job-level, not cluster-wide PVC creation).
 
 **Databases** use a separate AppSet with `selfHeal: false` so `skip-reconcile` annotations stick during DR recovery. The infrastructure AppSet uses `selfHeal: true` which would strip manual annotations.
 

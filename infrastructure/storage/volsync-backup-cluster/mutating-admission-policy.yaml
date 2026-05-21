@@ -88,7 +88,7 @@ spec:
                 imagePullPolicy: "IfNotPresent",
                 command: [
                   "sh", "-c",
-                  "TIMEOUT=3600; START=$(date +%s); LAST_LOG=0; until nc -zw5 192.168.10.133 30293; do NOW=$(date +%s); if [ $((NOW-START)) -gt $TIMEOUT ]; then echo 'RustFS S3 unreachable >1h, failing Job for backoff retry'; exit 1; fi; if [ $((NOW-LAST_LOG)) -ge 30 ]; then echo \"waiting for rustfs s3 (192.168.10.133:30293) — $((NOW-START))s elapsed\"; LAST_LOG=$NOW; fi; sleep 5; done; echo 'RustFS reachable, proceeding to mover'"
+                  "TIMEOUT=3600; START=$(date +%s); LAST_LOG=0; until nc -zw5 192.168.10.133 30292; do NOW=$(date +%s); if [ $((NOW-START)) -gt $TIMEOUT ]; then echo 'RustFS S3 unreachable >1h, failing Job for backoff retry'; exit 1; fi; if [ $((NOW-LAST_LOG)) -ge 30 ]; then echo \"waiting for rustfs s3 (192.168.10.133:30292) — $((NOW-START))s elapsed\"; LAST_LOG=$NOW; fi; sleep 5; done; echo 'RustFS reachable, proceeding to mover'"
                 ]
               }
             }
