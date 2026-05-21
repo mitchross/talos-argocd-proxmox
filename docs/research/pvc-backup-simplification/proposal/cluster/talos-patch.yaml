@@ -1,0 +1,24 @@
+# Talos machine-config patch — enables MutatingAdmissionPolicy + the v1beta1
+# admissionregistration API. Required for proposal/cluster/mutating-admission-
+# policy.yaml to be accepted by the apiserver.
+#
+# Source: mirceanton/home-ops talos/patches/mutating-admission.yaml (verbatim).
+#
+# WHERE TO APPLY: this repo's Talos config lives under omni/cluster-template/.
+# Merge the snippet below into the cluster-template-level config patch (the
+# one already used for sysctls/udev rules — see infrastructure/storage/
+# CLAUDE.md "Fix applied in Talos machine config" section for the pattern).
+# Apply via Omni (the cluster is Omni-managed); a rolling control-plane
+# update will pick it up.
+#
+# This is the ONLY new beta-API dependency the migration takes on. CLAUDE.md
+# previously called out "No beta APIs / apiserver patches" as a property of
+# author-spec vs current — that property is consciously traded here for the
+# MAP-based fail-closed gate that lets us delete pvc-plumber entirely.
+
+---
+cluster:
+  apiServer:
+    extraArgs:
+      feature-gates: MutatingAdmissionPolicy=true
+      runtime-config: admissionregistration.k8s.io/v1beta1=true

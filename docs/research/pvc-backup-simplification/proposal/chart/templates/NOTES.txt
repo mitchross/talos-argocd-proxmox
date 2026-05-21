@@ -1,0 +1,28 @@
+volsync-backup wired for {{ include "vb.namespace" . }}/{{ include "vb.pvc" . }}
+
+  repo (Kopia)         : {{ include "vb.repoName" . }}   (s3://{{ .Values.s3.bucket }}/{{ include "vb.repoName" . }})
+  schedule             : {{ include "vb.schedule" . }}
+  frequency / tier     : {{ .Values.frequency }} / {{ .Values.tier }}
+  ReplicationSource    : {{ include "vb.rsName" . }}              (mirceanton: ${APP})
+  ReplicationDest      : {{ include "vb.rdName" . }}              (mirceanton: ${APP}-dst)
+  per-PVC mover secret : {{ include "vb.repoName" . }}
+
+{{ if not .Values.pvc_create -}}
+ACTION REQUIRED — chart does NOT own the PVC (pvc_create=false).
+Add this to your app's PVC spec so the volume populator restores-or-empties:
+
+  metadata:
+    labels:
+      backup: "{{ .Values.frequency }}"
+      restore-policy: "{{ .Values.tier }}"
+  spec:
+    dataSourceRef:
+      apiGroup: volsync.backube
+      kind: ReplicationDestination
+      name: {{ include "vb.rdName" . }}
+
+Drop any legacy comment about Kyverno/pvc-plumber injecting dataSourceRef —
+it is now declared in Git, not injected at admission.
+{{- else -}}
+Chart owns the PVC. Remove the app's own pvc.yaml from its kustomization.
+{{- end }}

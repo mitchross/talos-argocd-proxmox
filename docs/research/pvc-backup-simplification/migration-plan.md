@@ -1,153 +1,166 @@
-# Migration plan — pvc-plumber → declarative VolSync (author-spec)
+# Migration plan — full pvc-plumber decommission to author-spec + MAP
 
-Status: PROPOSAL on exploratory branch. Not for merge. No PR.
-Date: 2026-05-19. Read `00-compare-and-contrast.md` and `test-plan.md` first.
+Status: PROPOSAL on exploratory branch (`claude/analyze-k8s-backup-transcript-eRrS2`). Not for merge. No PR.
+Date: 2026-05-21. Read `00-compare-and-contrast.md` first, then `proposal/README.md`.
 
-Goal: get as close to mirceanton's operator-free model as ArgoCD allows,
-keeping the things that genuinely earn their keep, and **never silently
-losing data during the migration itself.**
+**Direction is locked**: full migration to mirceanton-style declarative
+VolSync (per-app Helm chart) + a single cluster-scoped MAP that fail-closes
+mover Jobs on hard-unreachable backend. pvc-plumber operator goes away
+entirely. The soft "authoritative no-snapshot" failure class is consciously
+accepted as future-burn (Kopia append-only + `restoreAsOf` recoverability
+mitigates it).
 
 ---
 
 ## MUST-HAVES (non-negotiable; violating any aborts the migration)
 
-1. **Kopia repo-name continuity.** Every chart-rendered RS/RD/ES MUST use
+1. **Kopia repo-name continuity.** Every chart-rendered ES/RS/RD MUST use
    `volsync-<pvc>` (chart `repositoryPrefix: volsync-`). The 26 existing
    lineages are addressed by that name. A prefix change orphans all backup
    history — unrecoverable. Verified per-app in T3.
-2. **T2 gate before any strict-tier PVC migrates.** Do not point a
-   source-of-truth PVC at the declarative populator until the unreachable-
-   backend behaviour (Pending vs binds-empty) is empirically confirmed on
-   the perfectra1n Kopia fork. The author's "stays Pending" is Restic +
-   untested. This is the single gating test.
-3. **No flag-day.** pvc-plumber and the chart MUST coexist during cutover.
-   Migrate **one low-stakes best-effort app first**, prove backup+restore,
-   then proceed. pvc-plumber stays fully deployed until the last app is off
-   it.
-4. **Avoid double-management.** A PVC must never be simultaneously
+2. **Cluster MAP + Talos patch deployed BEFORE per-app migration.**
+   `proposal/cluster/talos-patch.yaml` (Omni rolling apply) then
+   `proposal/cluster/mutating-admission-policy.yaml` (kubectl/Argo).
+   Verified by T7. Without the MAP the migration is operating under
+   author-spec's accidental fail-closed (Restic-side, untested on Kopia
+   here) — acceptable for best-effort tier, NOT acceptable for strict.
+3. **Avoid double-management.** A PVC must never be simultaneously
    reconciled by pvc-plumber AND chart-managed (two RS on one PVC = racing
-   snapshots / retention fights). Cutover per-PVC is: chart-render →
-   verify → *then* drop the `backup:` label so pvc-plumber's reconciler
-   `cleanup()` releases it (it reaps by `volsync.backup/pvc=` label —
-   confirm the chart's RS/RD survive cleanup, see RISK R1).
-5. **CNPG untouched.** Database PVCs are Barman→S3, never in scope. No
+   snapshots / retention fights). The chart uses *different* object names
+   from pvc-plumber (RS = `<pvc>` vs pvc-plumber's `<pvc>-backup`; RD =
+   `<pvc>-dst` vs `<pvc>-backup`) so both can transiently exist without
+   colliding by name — but they'd still race on the same Kopia repo
+   identity. Cutover per-PVC (see Phase 2/3): apply chart resources with
+   schedule paused → confirm → drop `backup:` label so pvc-plumber's
+   reconciler `cleanup()` releases its RS/RD/ES → enable chart RS schedule.
+4. **CNPG untouched.** Database PVCs are Barman→S3, never in scope. No
    `backup:`/chart wiring on them. (CLAUDE.md rule.)
-6. **System-namespace exclusions stay.** If any residual webhook is kept
-   (Path B), its `namespaceSelector NotIn` list (kube-system, argocd,
-   longhorn-system, volsync-system, …) is preserved verbatim.
+5. **System-namespace exclusions: not needed.** The MAP scopes itself to
+   Jobs whose name starts `volsync-src-`/`volsync-dst-` AND labelled
+   `app.kubernetes.io/created-by=volsync` — not by namespace. The
+   cluster-wide PVC-admission blast radius pattern that pvc-plumber's
+   webhook had structurally cannot recur here.
+
+---
+
+## RESOLVED OPEN DECISIONS
+
+| Decision | Resolution | Where |
+|---|---|---|
+| **D1** Taskfile manual DR ergonomics | **Port them** (suspend/resume Argo, throwaway kopia pod, manual RD trigger, `restoreAsOf` point-in-time) | `proposal/ops/` |
+| **D2** Failure visibility buy-back | **MAP-based init container** on mover Jobs (Option C in compare §6) | `proposal/cluster/` |
+| **D3** Chart owns PVC vs app keeps it | **App keeps `pvc.yaml`** during migration (smaller diff, easier rollback). Flip to chart-owned for new apps post-migration if desired. | `proposal/chart/values.yaml` `pvc_create: false` default |
 
 ---
 
 ## RISKS / OPEN PROBLEMS
 
-- **R1 (blocker until tested):** pvc-plumber's reconciler `cleanup()` reaps
-  ES/RS/RD by label `volsync.backup/pvc=<pvc>`. The chart uses the *same*
-  label for continuity/observability — so dropping the `backup:` label
-  could make pvc-plumber **delete the chart's resources**. Mitigation
-  options to test in T5: (a) chart uses a *different* owner label and only
-  keeps `volsync.backup/pvc` off; (b) scale pvc-plumber's reconciler to 0
-  before relabeling; (c) decommission pvc-plumber entirely *before*
-  relabeling (riskier — see phasing). **Unresolved; T5 decides.**
-- **R2:** exact per-PVC secret schema for the perfectra1n Kopia mover
-  (KOPIA_REPOSITORY vs discrete KOPIA_S3_*). T1 resolves; chart has both +
-  a VALIDATE marker.
-- **R3:** schedule minutes shift (adler32 vs operator's sha256). Spread
-  preserved, individual times change → first post-migration run at a new
-  minute. Cosmetic; documented; pin via `schedule:` for anything sensitive.
-- **R4:** losing admission-time *visibility* (see compare §3). Not data
-  loss, but a silently-Pending PVC is operationally worse than a loud deny.
-  Decision D2 below.
+- **R1 (blocker — T5):** pvc-plumber's reconciler `cleanup()` reaps ES/RS/RD
+  by label `volsync.backup/pvc=<pvc>`. The chart uses the same label. If
+  the chart-rendered resources also carry that label, pvc-plumber may
+  delete them when the source `backup:` label is dropped. Mitigation
+  options: (a) chart uses a *different* owner label and drops
+  `volsync.backup/pvc`; (b) scale pvc-plumber reconciler to 0 before
+  relabeling; (c) decommission pvc-plumber Deployment *before* the last
+  per-app relabel (the chart resources are then safe — but the webhook
+  needs to come down first or those PVC creates would be denied). T5
+  selects.
+- **R2:** exact per-PVC Kopia mover Secret schema (KOPIA_REPOSITORY vs
+  discrete KOPIA_S3_*). T1 resolves; chart includes both and is marked
+  VALIDATE-AGAINST-LIVE.
+- **R3:** schedule minutes shift (chart uses adler32 vs operator's sha256).
+  Spread preserved, individual times change → first post-migration run at a
+  new minute. Cosmetic; pin via `schedule:` for anything sensitive.
+- **R4:** the MAP backend probe is hardcoded to `192.168.10.133:30293`
+  (RustFS endpoint). If RustFS moves, the MAP needs updating in lockstep.
+  No templating — accept it (it's one place, the IP changes rarely).
+- **R5 — original-burn reproducibility:** author reports "I use volsync to
+  back up SQLite and never ran into" the corruption-on-restore burn that
+  motivated pvc-plumber. T3 includes a sub-test on a previously-burned
+  SQLite app (Karakeep, an *arr) under the new pattern. If it reproduces,
+  the migration model has a real failure we did not anticipate and Phase 3
+  pauses. If not, the burn was Kyverno/timing-specific and the new pattern
+  is genuinely safer in shape, not just simpler.
 
 ---
 
 ## PHASING
 
-### Phase 0 — Validate (no cluster changes that touch data)
-- Run T1 (dump live ES/secret schema), reconcile chart templates.
-- Run **T2** (the gate) in a scratch namespace.
-- Run T5 (cleanup-label interaction) in a scratch namespace.
-- Exit criteria: T1 reconciled, T2 = Pending-on-unreachable, T5 has a safe
-  relabel procedure. **If T2 fails (binds empty), STOP** — author-spec is
-  not safe for strict tier on this fork; fall back to Path B only.
+### Phase 0 — Cluster preparation (no per-app changes)
+1. Apply `proposal/cluster/talos-patch.yaml` via Omni (rolling control-plane
+   reboot enables MAP feature gate). Verify with `kubectl api-resources |
+   grep mutatingadmissionpolic`.
+2. Apply `proposal/cluster/` via kubectl or move to ArgoCD-managed.
+   Verify MAP+Binding exist with `kubectl get mutatingadmissionpolicy,
+   mutatingadmissionpolicybinding`.
+3. Run **T7** (MAP fail-closed on unreachable RustFS) in `vb-test` ns.
+4. Run **T1** (per-PVC Kopia mover Secret schema). Reconcile chart if needed.
+5. Run **T5** (cleanup-label interaction with pvc-plumber). Decide R1.
+
+Exit criteria: T7 = MAP correctly fails Jobs; T1 = chart Secret keys match
+live; T5 = safe relabel procedure known.
+
+T2 is no longer the gate — the MAP fail-closes mover Jobs independent of
+populator behaviour. T2 remains as an *alignment check* (good to know) but
+not a Phase blocker.
 
 ### Phase 1 — Pilot (one best-effort app)
-- Pick a disposable, NAS-backed or reproducible app (a `backup-exempt`-
-  adjacent candidate that currently has `backup:`; NOT Sonarr/DB-bearing).
-- Add `helmCharts:` entry, `restore-policy: best-effort`, keep pvc-plumber
-  managing nothing for it yet.
-- Verify: ES renders, RS runs on schedule, a manual RD restore round-trips
-  (T3 per-app drill). Then relabel-off pvc-plumber per T5 procedure.
-- Bake for 1 week. Confirm scheduled snapshots land in the same Kopia
-  lineage (continuity proof).
+- Pick a disposable, reproducible app currently labeled `backup:`. **Not**
+  SQLite-bearing yet (that comes in Phase 3 R5 sub-test).
+- Apply chart `helmCharts:` entry. Initially set chart RS `schedule:` to
+  pause (`spec.trigger.manual` only, no schedule field) so it doesn't race
+  pvc-plumber's RS.
+- Manually trigger one backup via `task volsync:backup`. Verify lands in
+  the **same Kopia lineage** (continuity proof). Verify restore round-trips
+  via `task volsync:restore`.
+- Drop `backup:` label per T5 procedure (pvc-plumber cleans its `<pvc>-backup`
+  RS/RD/ES; chart's `<pvc>` / `<pvc>-dst` survive).
+- Enable schedule on chart RS. Bake for 1 week, verify scheduled snapshots.
 
 ### Phase 2 — Best-effort fleet
-- Migrate remaining best-effort-classifiable PVCs in small batches
-  (≤5/batch), each through T3. These are the ones for which author-spec's
-  fail-open is an accepted, recoverable-until-prune risk (compare §5).
+- Migrate remaining best-effort-classifiable PVCs in small batches (≤5/batch)
+  through the same cutover sequence as Phase 1. T3 per app.
 
-### Phase 3 — Strict tier
-- Only after T2 has held in practice through Phases 1–2.
-- Migrate source-of-truth PVCs (Sonarr/*arr, embedded-SQLite, anything
-  where empty-over-good is unacceptable). Each: T3 drill + an explicit
-  **DR rehearsal** (delete PVC, confirm populator restores real data, app
-  comes up with history intact).
-- Apply Decision D2 (visibility) before/with this phase.
+### Phase 3 — Strict tier + the burn sub-test
+- Pick one previously-burned SQLite app first (R5 sub-test). Full restore
+  drill: delete PVC → populator restores → app comes up with DB intact.
+  If corruption reproduces, **STOP** and triage; if not, proceed.
+- Migrate remaining source-of-truth PVCs (\*arr, embedded-SQLite,
+  user-content apps). Each: T3 + explicit DR rehearsal.
 
 ### Phase 4 — Decommission pvc-plumber
-- Only when `kubectl get pvc -A -l backup` returns nothing pvc-plumber
-  still owns and every app is chart-managed.
-- Order (reverse of deploy waves): delete webhooks FIRST (removes the
-  cluster-wide SPOF), then Deployment/RBAC/cert/ES, then update
-  `pvc-plumber-app.yaml` discovery. Keep `infrastructure/controllers/
-  pvc-plumber/` in git one release for rollback, then remove.
-- Update docs: `docs/volsync-storage-recovery.md`, `pvc-plumber-*.md`,
-  `.claude/commands/add-backup.md`, root + `my-apps/` CLAUDE.md backup
-  sections, `infrastructure/CLAUDE.md` debug commands.
+- Pre-condition: `kubectl get pvc -A -l backup` returns nothing pvc-plumber
+  still owns; every backup-labeled PVC has been chart-migrated.
+- Order:
+  1. Delete the **MutatingWebhookConfiguration + ValidatingWebhookConfigurations** first (`infrastructure/controllers/pvc-plumber/webhooks.yaml`). This removes the cluster-wide SPOF immediately. Apps can still create labeled PVCs (the chart no longer needs the label for restore-vs-fresh; it uses static `dataSourceRef`).
+  2. Delete the Deployment / RBAC / cert / per-operator ExternalSecret.
+  3. Remove `pvc-plumber-app.yaml` from `infrastructure/controllers/argocd/apps/`. Argo will prune.
+  4. Keep `infrastructure/controllers/pvc-plumber/` in git for one release for rollback. Then delete.
+- Doc sweep: rewrite `docs/volsync-storage-recovery.md`, archive
+  `docs/pvc-plumber-*.md` (link from a deprecation note), update
+  `.claude/commands/add-backup.md` to the chart workflow, update root +
+  `my-apps/` + `infrastructure/` CLAUDE.md backup sections, drop the
+  pvc-plumber debug commands from `infrastructure/CLAUDE.md`.
 
-### Rollback (any phase)
-Per-PVC: re-add `backup:` label, remove `helmCharts:` entry + static
-`dataSourceRef`; pvc-plumber reconciler re-adopts (it is stateless — it
-re-derives from the label). Because the Kopia repo name is unchanged,
-**no backup history is lost on rollback.** This reversibility is *why* the
-repo-name MUST-HAVE is non-negotiable.
-
----
-
-## OPEN DECISIONS (yours, not baked in)
-
-- **D1 — Taskfile/manual DR ergonomics (your stated 50/50).**
-  - *Port them* (recommended if Phase 3 proceeds): mirceanton's
-    `volsync-*` scripts become Kopia/Argo equivalents (suspend auto-sync,
-    throwaway kopia pod, manual RD trigger, point-in-time). Adds the one
-    place his setup is ergonomically ahead; pure UX, operator-agnostic;
-    valuable in *every* path.
-  - *Leave automated*: rely on the declarative RD + populator only; DR is
-    "delete PVC, let populator restore." Less to maintain; no
-    point-in-time / pre-app-start manual gate.
-  - Recommendation: **port them**, because Phase 3 strict-tier DR wants a
-    human-gated "restore *this* point before the app starts" lever that the
-    automated populator alone doesn't give. But this is a genuine judgement
-    call — flagged, not decided.
-- **D2 — Buy back failure *visibility* (compare §3, R4)?** Options:
-  (a) nothing — accept silent Pending (closest to author);
-  (b) **alerting-only** watcher: a small CronJob/PrometheusRule that fires
-      when a `restore-policy: strict` PVC is Pending > N min (visibility,
-      zero admission risk, no SPOF) — recommended middle;
-  (c) **Path B** residual validate-only webhook on strict tier only (loud
-      deny, reintroduces a *scoped* SPOF). Full design in
-      `path-b-shrink-operator.md`.
-- **D3 — chart owns PVC (`pvc_create: true`, closest to author) vs app
-  keeps `pvc.yaml` + static ref (`false`, smaller per-app diff)?** Default
-  in plan: `false` for migration (minimal blast radius), revisit to `true`
-  for new apps post-migration.
+### Rollback (any phase before Phase 4)
+Per-PVC: remove `helmCharts:` entry + static `dataSourceRef`; re-add
+`backup:` label; pvc-plumber reconciler re-adopts (stateless — re-derives
+from the label). Because the Kopia repo name is unchanged, **no backup
+history is lost on rollback.** Reversibility is *why* the repo-name
+MUST-HAVE is non-negotiable. Post-Phase 4 rollback requires re-applying
+pvc-plumber from git history.
 
 ---
 
-## DEFINITION OF DONE (for this branch — it's a study deliverable)
+## DEFINITION OF DONE (this branch — study deliverable)
 - [x] Declarative chart that reproduces ES/RS/RD with repo-name continuity.
+- [x] MAP + Talos patch for backend-availability fail-closed.
 - [x] Worked per-app example (open-webui) showing exact before/after.
-- [x] Compare/contrast with the author-reply analysis folded in.
-- [x] Test plan with the explicit migration gate (T2).
-- [x] Phased plan + must-haves + risks + rollback.
-- [ ] D1/D2/D3 chosen by operator.
-- [ ] T1/T2/T5 executed against a live cluster (cannot be done from here).
+- [x] DR Taskfile + ported scripts (snapshots, backup, restore w/ `restoreAsOf`).
+- [x] Compare/contrast finalised with author Discord follow-up + MAP option.
+- [x] Migration plan finalised with all decisions resolved.
+- [x] Test plan covering T1/T2/T3/T4/T5/T7 + R5 burn sub-test.
+- [ ] T1/T5/T7 executed against live cluster (cannot be done from here).
+- [ ] Phase 0 cluster prep merged into `infrastructure/storage/` (post-branch).
+- [ ] Per-app migrations executed (Phases 1–3, post-branch).
+- [ ] pvc-plumber decommissioned (Phase 4, post-branch).
