@@ -1,0 +1,87 @@
+---
+# Fail-closed gate for VolSync mover Jobs. Injects an init container that
+# probes the RustFS S3 endpoint before the mover runs. If the endpoint is
+# unreachable, the init container waits up to TIMEOUT then exits non-zero,
+# which fails the Job; Kubernetes Job backoff retries with exponential
+# delay, and once RustFS is back the next attempt's init container passes
+# and the mover proceeds.
+#
+# This is the residual safety the migration buys back from pvc-plumber:
+#   - pvc-plumber had a webhook on PVC CREATE that probed Kopia and DENIED.
+#   - This MAP probes RustFS on Job CREATE and FAILS the Job to retry.
+# Same fail-closed semantics on hard-unreachable backend, but:
+#   - lives in the apiserver (no operator, no pod, no SPOF binary),
+#   - scoped to mover Jobs only (not PVC creates, so no PVC-admission
+#     blast radius — backup-labeled PVCs always get created; only the
+#     mover Job for them is gated),
+#   - reuses author's jitter MAP shape (apps/storage-system/volsync/app/
+#     mutating-admission-policy.yaml in mirceanton/home-ops). Sibling
+#     policy, same matcher style, different init container.
+#
+# Coverage note (compare-and-contrast §3): this CANNOT distinguish the
+# soft "authoritative no-snapshot" class (RustFS reachable, repo silently
+# mispointed). That's the accepted future-burn the migration consciously
+# takes on, since the append-only Kopia repo makes such a mistake
+# recoverable via restoreAsOf until prune.
+#
+# REQUIRES: MutatingAdmissionPolicy feature gate enabled on apiserver.
+# See talos-patch.yaml.
+
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: volsync-mover-backend-availability
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [batch]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [jobs]
+  matchConditions:
+    # Cover BOTH backup (src) and restore (dst) mover Jobs — author's
+    # jitter MAP only matches src; we additionally need dst so a restore
+    # during a DR window also waits for RustFS.
+    - name: is-volsync-mover-job
+      expression: >-
+        object.metadata.name.startsWith("volsync-src-") ||
+        object.metadata.name.startsWith("volsync-dst-")
+    - name: has-volsync-created-by-label
+      expression: >-
+        object.metadata.?labels["app.kubernetes.io/created-by"].orValue("") == "volsync"
+  failurePolicy: Fail
+  reinvocationPolicy: IfNeeded
+  mutations:
+    - patchType: JSONPatch
+      jsonPatch:
+        # Two-step JSONPatch: ensure initContainers array exists, then
+        # append. Matches author's jitter MAP shape exactly so the two
+        # policies compose predictably (jitter applies first per
+        # author's match, this one applies to both src+dst).
+        expression: >-
+          [
+            JSONPatch{
+              op: "add", path: "/spec/template/spec/initContainers",
+              value: []
+            },
+            JSONPatch{
+              op: "add", path: "/spec/template/spec/initContainers/-",
+              value: Object.spec.template.spec.initContainers{
+                name: "wait-for-rustfs",
+                image: "ghcr.io/home-operations/busybox:1.37.0@sha256:026ed7273270ec08f6902b4ae8334c23b473e5394bec3bbbdbfe580c710d50bc",
+                imagePullPolicy: "IfNotPresent",
+                command: [
+                  "sh", "-c",
+                  "TIMEOUT=600; START=$(date +%s); until nc -zw5 192.168.10.133 30293; do NOW=$(date +%s); if [ $((NOW-START)) -gt $TIMEOUT ]; then echo 'RustFS S3 unreachable >10min, failing Job for backoff retry'; exit 1; fi; echo 'waiting for rustfs s3 (192.168.10.133:30293)...'; sleep 5; done; echo 'RustFS reachable, proceeding to mover'"
+                ]
+              }
+            }
+          ]
+
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: volsync-mover-backend-availability
+spec:
+  policyName: volsync-mover-backend-availability

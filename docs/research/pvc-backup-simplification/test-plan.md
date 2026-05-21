@@ -1,57 +1,51 @@
-# Test plan — declarative VolSync migration
+# Test plan — full pvc-plumber decommission to author-spec + MAP
 
 Status: PROPOSAL. These run against a live cluster (cannot execute from the
-exploratory branch). T2 is the **migration gate** — nothing strict-tier
-moves until it passes.
+exploratory branch). **T7 is the new Phase-0 gate** (was T2). With the MAP
+in place the populator's hard-unreachable behaviour matters less — the MAP
+fail-closes the mover Job regardless.
 
-Conventions: use a scratch namespace `vb-test` and a throwaway PVC; never
-test against a real app's data PVC. All `kubectl` from a workstation with
-cluster access.
+Conventions: scratch namespace `vb-test` and throwaway PVCs only; never
+test against real app data. RustFS endpoint = `192.168.10.133:30293` per
+`infrastructure/controllers/pvc-plumber/deployment.yaml`.
 
 ---
 
-## T1 — Secret/repo schema reconciliation (resolves R2)
+## T1 — Per-PVC Kopia mover Secret schema (resolves R2)
 
-Goal: confirm the chart's `volsync-<pvc>` secret keys match what the
+Goal: confirm the chart's `volsync-<pvc>` Secret keys match what the
 perfectra1n Kopia mover actually consumes.
 
 ```bash
-# Pick any currently backed-up PVC
-kubectl get replicationsource -A -l volsync.backup/pvc
+kubectl get replicationsource -A -l volsync.backup/pvc | head
 ns=<ns>; pvc=<pvc>
 kubectl get externalsecret volsync-$pvc -n $ns -o yaml
 kubectl get secret        volsync-$pvc -n $ns -o yaml -o jsonpath='{.data}' | jq 'keys'
 kubectl get replicationsource ${pvc}-backup -n $ns -o yaml | yq '.spec.kopia'
 ```
 
-PASS: chart `templates/externalsecret.yaml` rendered keys ⊇ the live secret
-keys, and `spec.kopia.repository` references a secret of that name/shape.
-FAIL action: adjust the template's `target.template.data` block; re-run.
+PASS: chart `templates/externalsecret.yaml` rendered keys ⊇ live Secret
+keys, and `spec.kopia.repository` references a Secret of that name/shape.
+FAIL: adjust the template's `target.template.data` block; re-run.
 
-## T2 — THE GATE: unreachable backend behaviour (resolves MUST-HAVE #2)
+## T2 — Populator behaviour on hard-unreachable backend (alignment check, not gate)
 
-Goal: prove the Kopia RD/populator fails *closed* (PVC stays Pending) when
-the S3 backend is unreachable — i.e. the author's Restic claim holds on this
-fork.
+Goal: confirm whether the Kopia populator stays Pending (author's Restic
+claim) or binds empty when the backend is unreachable. **Now informational**
+— Option C MAP fail-closes the mover Job before this matters. Worth running
+once to know the baseline.
 
 ```bash
 kubectl create ns vb-test
 # Render chart for a fake pvc 'gatetest' pointing at a BOGUS endpoint
 #   s3.endpoint=10.255.255.1:1   (black-holed)
-# Apply ONLY the RD + ES + a PVC with dataSourceRef -> gatetest-backup
-kubectl get pvc gatetest -n vb-test -w        # observe
+# Apply ONLY ES + RD + a PVC with dataSourceRef -> gatetest-dst
+kubectl get pvc gatetest -n vb-test -w
 kubectl describe pvc gatetest -n vb-test
-kubectl get pods -n vb-test                   # mover pod state
+kubectl get pods -n vb-test
 ```
 
-PASS: PVC stays `Pending` indefinitely; mover pod keeps erroring/retrying;
-**it never binds empty**. Then point endpoint back at real RustFS with an
-EMPTY repo path → confirm it *does* bind empty (genuine-fresh still works).
-FAIL: PVC binds empty while backend unreachable → **author-spec is unsafe
-for strict tier on this fork. STOP migration. Strict tier must use Path B
-(residual webhook). Best-effort tier may still proceed (accepted risk).**
-
-Record exact mover logs + timing in `dr-drill` notes.
+Result documented either way; doesn't gate the migration.
 
 ## T3 — Per-app backup+restore round-trip (run for every migrated PVC)
 
@@ -59,16 +53,33 @@ Record exact mover logs + timing in `dr-drill` notes.
 # After chart-rendering app X (still pvc-plumber-free for X):
 kubectl get replicationsource,replicationdestination,externalsecret -n <ns> \
   -l volsync.backup/pvc=<pvc>
-# Force a backup
-kubectl patch replicationsource <pvc>-backup -n <ns> --type merge \
+# Force a backup (RS name = <pvc>, per chart vb.rsName)
+kubectl patch replicationsource <pvc> -n <ns> --type merge \
   -p '{"spec":{"trigger":{"manual":"t3-'$(date +%s)'"}}}'
-# Watch it complete, then verify the snapshot landed in the SAME lineage
-#   (continuity proof — repo name unchanged vs pvc-plumber era)
+# Confirm snapshot lands in the SAME Kopia lineage (continuity proof —
+# repo name volsync-<pvc> unchanged vs pvc-plumber era)
+task volsync:snapshots PVC=<pvc> NS=<ns>
 # Then: delete the PVC, let the populator restore, confirm app data intact.
 ```
 
-PASS: snapshot appended to `volsync-<pvc>` (not a new lineage); restore
-brings back real data; app starts with history.
+PASS: snapshot appended to `volsync-<pvc>`; restore brings back real data;
+app starts with history.
+
+### T3-R5 — Burn sub-test (Phase 3 gate)
+
+Specifically reproduce-or-refute the original SQLite-corruption-on-restore
+burn that motivated pvc-plumber. Author reports "I use volsync to back up
+SQLite and never ran into" the issue.
+
+Run T3 against a previously-burned SQLite-bearing app (Karakeep, an *arr —
+something you remember corrupting). Two outcomes:
+
+- **PASS** (no corruption): the burn was Kyverno/timing-specific, not a
+  VolSync-inherent issue. Strict tier migration safe to proceed.
+- **FAIL** (reproduces): the migration model has a real failure mode we
+  did not anticipate. STOP Phase 3 and triage — possibly an init-container
+  ordering issue, or the populator restoring concurrently with app
+  startup, or a checkpoint/WAL race. Re-evaluate.
 
 ## T4 — Is the Bound+2h guard still needed? (informs dropping it)
 
@@ -82,35 +93,68 @@ guarded).
 ```
 
 PASS: PVC only binds after populator restore; earliest RS run sees populated
-data. → 2h guard is unnecessary, document its removal.
-FAIL: there is a window where RS could capture empty → keep an equivalent
-guard (e.g. RS `trigger.schedule` only, no immediate manual; or a startup
-gate). Do NOT drop the guard on assumption.
+data → 2h guard unnecessary. FAIL: keep an equivalent guard (RS
+`trigger.schedule` only, no immediate manual). Do not drop on assumption.
 
-## T5 — Cleanup-label interaction (resolves R1, blocker)
+## T5 — Cleanup-label interaction (resolves R1)
 
 Goal: confirm relabeling a PVC off `backup:` does NOT make pvc-plumber's
-reconciler delete the chart-rendered RS/RD/ES.
+reconciler delete chart-rendered RS/RD/ES.
 
 ```bash
-# In vb-test: chart-render a fake PVC WHILE pvc-plumber is running.
-# Add then remove the `backup:` label; watch the chart's resources.
+# In vb-test: apply chart for fake PVC WHILE pvc-plumber is running.
+# Note chart RS name = <pvc>, RD name = <pvc>-dst — different from
+# pvc-plumber's <pvc>-backup, so they coexist by name.
+# Add then remove the `backup:` label on the source PVC; watch chart resources.
 kubectl get rs,rd,externalsecret -n vb-test -l volsync.backup/pvc=<pvc> -w
 ```
 
-PASS: chart resources survive relabel. FAIL: pick a mitigation from
-migration-plan R1 (separate owner label / scale reconciler to 0 / decom
-pvc-plumber first) and re-test.
+PASS: chart resources survive relabel. FAIL: chart drops
+`volsync.backup/pvc` label and uses its own owner label
+(`app.kubernetes.io/managed-by=volsync-backup-chart`); re-test. Worst case:
+scale pvc-plumber reconciler to 0 during cutover window.
 
 ## T6 — Schedule-spread parity (cosmetic, R3)
 
 Render the chart for 20 representative ns/pvc pairs; confirm computed
-minutes are well-distributed across 0–59 (no thundering herd). Exact values
-differ from pvc-plumber — only distribution matters.
+minutes (adler32(ns/pvc) % 60) are well-distributed across 0–59. Exact
+values differ from pvc-plumber's sha256 — only distribution matters.
+
+## T7 — Cluster MAP fail-closed on unreachable backend (Phase-0 GATE)
+
+Goal: prove the MAP injects the `wait-for-rustfs` init container into
+mover Jobs and that the init container fails the Job when RustFS is
+unreachable.
+
+```bash
+# Pre: talos-patch.yaml applied; MAP+Binding deployed.
+kubectl api-resources | grep mutatingadmissionpolic            # must show v1beta1
+kubectl get mutatingadmissionpolicy volsync-mover-backend-availability
+kubectl get mutatingadmissionpolicybinding volsync-mover-backend-availability
+
+# 1. Verify INJECTION when backend is up — trigger any backup, confirm pod
+#    has both `jitter` and `wait-for-rustfs` initContainers and both succeed.
+kubectl create ns vb-test
+# (apply chart for a small test PVC, trigger backup via task volsync:backup)
+kubectl get pods -n vb-test -l app.kubernetes.io/created-by=volsync \
+  -o jsonpath='{.items[*].spec.initContainers[*].name}'        # expect: jitter wait-for-rustfs
+
+# 2. Verify FAIL-CLOSED when backend is "down" — repoint MAP image command
+#    temporarily to probe an unroutable host (e.g. 10.255.255.1:1) and trigger
+#    a backup. Confirm Job goes into BackoffLimit failure.
+#    (Then revert MAP back to 192.168.10.133:30293.)
+```
+
+PASS: both initContainers injected; (1) succeeds when RustFS reachable;
+(2) fails Job with clear log line when unreachable; Job retries with
+exponential backoff. FAIL: triage the MAP — CEL expression, JSONPatch
+shape, feature-gate enablement.
 
 ---
 
 ## Execution order
 
-T1 → T2 (**gate**) → T5 → T4 → then per-app T3 through phasing → T6 anytime.
-If T2 fails: best-effort tier may still migrate; strict tier requires Path B.
+**Phase 0 (cluster prep):** T7 (gate) → T1 → T5.
+**Phase 1+ (per-app):** T3 for every migrated PVC; T3-R5 explicitly for
+the first SQLite app in Phase 3.
+**Anytime:** T2 (alignment check), T4 (drop-the-2h-guard decision), T6.
