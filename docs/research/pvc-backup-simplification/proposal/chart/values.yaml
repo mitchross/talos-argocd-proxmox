@@ -42,13 +42,14 @@ tier: strict
 repositoryPrefix: volsync-
 
 s3:
-  # RustFS S3 API port. NOT 30293 — that's the console (which speaks an
-  # S3-shaped error response but doesn't share the access-key database
-  # with the real API, hence the "Access Key Id does not exist" failure
-  # mode seen on live pvc-plumber-managed RSes pointing at 30293).
-  # Verified via TrueNAS app port mapping (tcp://192.168.10.133:30292)
-  # and the 1Password rustfs item's `endpoint` field, both 2026-05-21.
-  endpoint: "192.168.10.133:30292"
+  # RustFS S3 API endpoint. Port 30293 per docs/rustfs-credential-runbook.md
+  # (the authoritative source on main) and the live pvc-plumber-managed
+  # ES (KOPIA_S3_ENDPOINT: 192.168.10.133:30293) that has produced 7
+  # successful backups. The 1Password rustfs item's `endpoint`/`S3_ENDPOINT`
+  # fields display 30292 — stale, mislabeled, or pointing at a non-S3
+  # service exposed on the same TrueNAS RustFS app. Trust the runbook
+  # and live behavior, not the 1P field.
+  endpoint: "192.168.10.133:30293"
   bucket: "volsync-kopia"            # single shared Kopia repo bucket
   disableTLS: true
 
