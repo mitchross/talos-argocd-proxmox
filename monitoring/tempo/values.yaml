@@ -11,7 +11,7 @@ tempo:
       backend: s3
       s3:
         bucket: tempo
-        endpoint: 192.168.10.133:30293
+        endpoint: 192.168.10.133:30292
         insecure: true
         forcepathstyle: true
   retention: 72h

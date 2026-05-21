@@ -9,7 +9,7 @@ loki:
       ruler: loki
       admin: loki
     s3:
-      endpoint: http://192.168.10.133:30293
+      endpoint: http://192.168.10.133:30292
       region: us-east-1
       s3ForcePathStyle: true
       insecure: true

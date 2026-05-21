@@ -17,18 +17,18 @@ Required fields:
 | --- | --- |
 | `root-access-key` | TrueNAS RustFS app/root access key. Do not use for Kubernetes clients. |
 | `root-secret-key` | TrueNAS RustFS app/root secret key. Do not use for Kubernetes clients. |
-| `pvc-plumber-access-key` | RustFS console-created workload access key for Kubernetes S3 clients. |
-| `pvc-plumber-secret-key` | RustFS console-created workload secret key for Kubernetes S3 clients. |
+| `rustfs-workload-access-key` | RustFS console-created workload access key for Kubernetes S3 clients. |
+| `rustfs-workload-secret-key` | RustFS console-created workload secret key for Kubernetes S3 clients. |
 | `kopia_password` | Kopia repository encryption password. |
-| `endpoint` | RustFS S3 endpoint, currently `http://192.168.10.133:30293`. |
-| `S3_ENDPOINT` | RustFS S3 endpoint, currently `http://192.168.10.133:30293`. |
+| `endpoint` | RustFS S3 endpoint, currently `http://192.168.10.133:30292`. |
+| `S3_ENDPOINT` | RustFS S3 endpoint, currently `http://192.168.10.133:30292`. |
 
 Deprecated fields:
 
 | Field | Replacement |
 | --- | --- |
-| `k8s-admin-access-key` | `pvc-plumber-access-key` |
-| `k8s-admin-secret-key` | `pvc-plumber-secret-key` |
+| `k8s-admin-access-key` | `rustfs-workload-access-key` |
+| `k8s-admin-secret-key` | `rustfs-workload-secret-key` |
 
 Delete the deprecated fields only after all ExternalSecrets are synced to the replacement field names.
 
@@ -39,8 +39,8 @@ Use these commands when rotating the RustFS workload key. Replace the placeholde
 ```bash
 op item edit rustfs \
   --vault homelab-prod \
-  'pvc-plumber-access-key[text]=PASTE_RUSTFS_WORKLOAD_ACCESS_KEY_HERE' \
-  'pvc-plumber-secret-key[concealed]=PASTE_RUSTFS_WORKLOAD_SECRET_KEY_HERE'
+  'rustfs-workload-access-key[text]=PASTE_RUSTFS_WORKLOAD_ACCESS_KEY_HERE' \
+  'rustfs-workload-secret-key[concealed]=PASTE_RUSTFS_WORKLOAD_SECRET_KEY_HERE'
 ```
 
 Optional root/app fields, if the 1Password item does not already have them:
@@ -57,12 +57,12 @@ Verify field presence without revealing concealed values:
 ```bash
 op item get rustfs \
   --vault homelab-prod \
-  --fields pvc-plumber-access-key,pvc-plumber-secret-key,kopia_password,endpoint,S3_ENDPOINT
+  --fields rustfs-workload-access-key,rustfs-workload-secret-key,kopia_password,endpoint,S3_ENDPOINT
 ```
 
 ## ESO Consumers
 
-These GitOps-managed ExternalSecrets read `pvc-plumber-access-key` and `pvc-plumber-secret-key`:
+These GitOps-managed ExternalSecrets read `rustfs-workload-access-key` and `rustfs-workload-secret-key`:
 
 | ExternalSecret | Kubernetes Secret |
 | --- | --- |

@@ -17,7 +17,7 @@
 # `nfs:` volume + `kopia repository connect filesystem`. v3.0 cut over to S3 —
 # mover Jobs need no shared volume, JobMutator is gone, and this maintenance
 # Job connects via `kopia repository connect s3` against the same bucket the
-# operator uses (RustFS at 192.168.10.133:30293, bucket `volsync-kopia`).
+# operator uses (RustFS at 192.168.10.133:30292, bucket `volsync-kopia`).
 #
 # Sourcing the password + S3 creds: `Secret/pvc-plumber-kopia` is rendered by
 # the ExternalSecret in the pvc-plumber directory (see
@@ -76,7 +76,7 @@ spec:
             # deployment.yaml. Bare host:port (kopia rejects fully-qualified
             # URLs); KOPIA_S3_DISABLE_TLS=true selects HTTP.
             - name: KOPIA_S3_ENDPOINT
-              value: "192.168.10.133:30293"
+              value: "192.168.10.133:30292"
             - name: KOPIA_S3_BUCKET
               value: "volsync-kopia"
             - name: KOPIA_S3_DISABLE_TLS
