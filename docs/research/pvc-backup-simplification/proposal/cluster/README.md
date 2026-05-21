@@ -1,11 +1,13 @@
 # Cluster-scoped pieces
 
-Two things deploy once for the whole cluster (not per-app):
-
 | File | What | Applied via |
 |---|---|---|
-| `mutating-admission-policy.yaml` | MAP + Binding that injects a `wait-for-rustfs` init container into every VolSync mover Job. Fail-closed on hard-unreachable backend. | ArgoCD (Kustomize) — eventually `infrastructure/storage/volsync-backup-cluster/`. |
-| `talos-patch.yaml` | 4-line Talos apiserver patch enabling `MutatingAdmissionPolicy=true` feature gate + `admissionregistration.k8s.io/v1beta1=true` runtime-config. Required for the MAP above to be accepted. | Omni (merge into `omni/cluster-template/cluster-template.yaml`, rolling apply). |
+| `mutating-admission-policy.yaml` | MAP + Binding that injects a `wait-for-rustfs` init container into every VolSync mover Job. Fail-closed on hard-unreachable backend. Uses `admissionregistration.k8s.io/v1` (MAP is GA on K8s 1.34+). | ArgoCD (Kustomize) — eventually `infrastructure/storage/volsync-backup-cluster/`. |
+| `talos-patch.yaml` | **NOT NEEDED on K8s 1.34+** (MAP is GA). Kept as historical reference for pre-1.34 clusters: enables the `MutatingAdmissionPolicy=true` feature gate + `admissionregistration.k8s.io/v1beta1=true` runtime-config. | Omni (only if you actually need it). |
+
+This cluster is K8s 1.36 — MAP v1 is enabled by default, no Talos patch
+required. Verified with `kubectl api-resources --api-group=admissionregistration.k8s.io`
+showing `mutatingadmissionpolicies` at `admissionregistration.k8s.io/v1`.
 
 ## What this buys back
 
@@ -33,9 +35,11 @@ is accepted future-burn territory, mitigated by Kopia's append-only +
 
 ## Sequencing during cutover
 
-1. Apply the Talos patch via Omni first (rolling reboot of control plane).
-   Verify with: `kubectl api-resources | grep mutatingadmissionpolicies`.
-2. Then apply the MAP/Binding (kubectl apply -k . or via ArgoCD).
+1. Verify MAP is already available (K8s 1.34+):
+   `kubectl api-resources --api-group=admissionregistration.k8s.io` should
+   show `mutatingadmissionpolicies` at `admissionregistration.k8s.io/v1`.
+   If not, apply `talos-patch.yaml` via Omni first (rolling control-plane reboot).
+2. Apply the MAP/Binding (kubectl apply -k . or via ArgoCD).
 3. Verify with `kubectl get mutatingadmissionpolicy,mutatingadmissionpolicybinding`.
 4. Sanity test with T7 in `../../test-plan.md` — both T7a (backup-side
    injection sanity) and **T7b (restore-side, the load-bearing safety

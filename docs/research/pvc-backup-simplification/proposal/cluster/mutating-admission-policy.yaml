@@ -27,7 +27,7 @@
 # REQUIRES: MutatingAdmissionPolicy feature gate enabled on apiserver.
 # See talos-patch.yaml.
 
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingAdmissionPolicy
 metadata:
   name: volsync-mover-backend-availability
@@ -95,7 +95,7 @@ spec:
           ]
 
 ---
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingAdmissionPolicyBinding
 metadata:
   name: volsync-mover-backend-availability
