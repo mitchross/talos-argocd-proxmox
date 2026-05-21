@@ -72,7 +72,19 @@ spec:
                 imagePullPolicy: "IfNotPresent",
                 command: [
                   "sh", "-c",
-                  "TIMEOUT=600; START=$(date +%s); until nc -zw5 192.168.10.133 30293; do NOW=$(date +%s); if [ $((NOW-START)) -gt $TIMEOUT ]; then echo 'RustFS S3 unreachable >10min, failing Job for backoff retry'; exit 1; fi; echo 'waiting for rustfs s3 (192.168.10.133:30293)...'; sleep 5; done; echo 'RustFS reachable, proceeding to mover'"
+                  # Generous timeout (1h): on a cold cluster bootstrap the
+                  # chain 1P Connect -> ESO -> volsync-<pvc> Secret -> RustFS
+                  # pod up -> Longhorn ready can realistically take 15-30
+                  # min. Failing the Job too early burns the mover Job's
+                  # backoffLimit (default 6) and a fresh-cluster restore
+                  # Job ends up permanently Failed instead of patiently
+                  # waiting. 1h is well beyond any realistic bootstrap
+                  # but still bounded so a genuinely broken backend
+                  # produces a Failed Job (visibility signal) instead of
+                  # an init container stuck forever. Throttled log every
+                  # 30s so kubectl logs stays readable. Verify the actual
+                  # cold-start time in T7b and tune if needed.
+                  "TIMEOUT=3600; START=$(date +%s); LAST_LOG=0; until nc -zw5 192.168.10.133 30293; do NOW=$(date +%s); if [ $((NOW-START)) -gt $TIMEOUT ]; then echo 'RustFS S3 unreachable >1h, failing Job for backoff retry'; exit 1; fi; if [ $((NOW-LAST_LOG)) -ge 30 ]; then echo \"waiting for rustfs s3 (192.168.10.133:30293) — $((NOW-START))s elapsed\"; LAST_LOG=$NOW; fi; sleep 5; done; echo 'RustFS reachable, proceeding to mover'"
                 ]
               }
             }
