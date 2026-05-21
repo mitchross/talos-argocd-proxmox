@@ -102,3 +102,15 @@ spec:
               protocol: TCP
             - port: "9812"
               protocol: TCP
+
+    # ============================================
+    # ALLOW: IoT VLAN Egress (Tapo Smart Plugs)
+    # ============================================
+    - toCIDR:
+        - 192.168.101.0/24
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
