@@ -27,19 +27,10 @@ configs:
     controller.diff.server.side: "true"
   cm:
     url: "https://argocd.vanillax.me"
-    # --load-restrictor LoadRestrictionsNone allows per-app kustomizations
-    # to reference the shared volsync-backup Helm chart at
-    # infrastructure/storage/volsync-backup/ via helmGlobals.chartHome
-    # with a relative path that escapes the kustomization root.
-    #
-    # Trade-off accepted: this disables kustomize's "files must be at or
-    # below kustomization root" check GLOBALLY for every ArgoCD-managed
-    # app, not just the ones that need it. Long-term cleaner path: publish
-    # the volsync-backup chart to an OCI registry (e.g. registry.vanillax.me)
-    # so per-app kustomizations reference it via `helmCharts.repo: oci://...`,
-    # at which point this load-restrictor relaxation can be removed.
-    # See: docs/research/pvc-backup-simplification/CLEANUP-IN-PROGRESS.md
-    kustomize.buildOptions: "--enable-helm --load-restrictor LoadRestrictionsNone"
+    # Keep Helm inflation enabled for upstream charts. Kustomize's default
+    # load restrictor remains active; no app should reference files outside
+    # its own kustomization root.
+    kustomize.buildOptions: "--enable-helm"
     # Resource tracking — annotation+label survives operator reconciles.
     # Default 'annotation' alone gets stripped by CNPG/cert-manager/ESO/KEDA,
     # causing perma-OutOfSync flap on managed CRs even when Healthy.

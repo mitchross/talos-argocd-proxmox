@@ -52,6 +52,15 @@ spec:
             maxDuration: 10m
       ignoreDifferences:
       # HTTPRoute, ExternalSecret, and PVC restore diff noise is ignored globally.
+      # App-level PVC ignores are still required because
+      # RespectIgnoreDifferences=true only strips app ignore rules during sync;
+      # otherwise immutable restore fields keep retrying forever on Bound PVCs.
+      - group: ""
+        kind: PersistentVolumeClaim
+        jsonPointers:
+        - /spec/dataSource
+        - /spec/dataSourceRef
+        - /spec/volumeName
       # imagePullPolicy may differ from Git due to previous Kyverno admission mutation
       - group: apps
         kind: StatefulSet

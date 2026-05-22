@@ -7,8 +7,8 @@ metadata:
     app: karakeep
     type: data-storage
     # backup: "hourly" removed 2026-05-21 — that label was pvc-plumber's
-    # signal. Chart-managed backup wiring now lives in
-    # my-apps/media/karakeep/kustomization.yaml under helmCharts.
+    # signal. VolSync ReplicationSource/ReplicationDestination resources
+    # are defined below in this file.
     restore-policy: "strict"
 spec:
   accessModes:
@@ -19,11 +19,73 @@ spec:
   storageClassName: longhorn
   # Static dataSourceRef → ReplicationDestination/data-pvc-dst. On PVC
   # re-creation (DR / namespace recreate), VolSync's volume populator
-  # reads the latest snapshot from kopia repo volsync-data-pvc and binds
+  # reads the latest snapshot from the shared kopia repo and binds
   # this PVC with restored data. No-op while the PVC is already Bound.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
     name: data-pvc-dst
 
-
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: data-pvc
+  namespace: karakeep
+  labels:
+    app.kubernetes.io/managed-by: argocd
+    volsync.backup/pvc: data-pvc
+spec:
+  sourcePVC: data-pvc
+  trigger:
+    schedule: "32 * * * *"
+  kopia:
+    repository: volsync-kopia-repository
+    username: data-pvc
+    hostname: karakeep
+    compression: zstd-fastest
+    parallelism: 2
+    retain:
+      hourly: 24
+      daily: 7
+      weekly: 4
+      monthly: 2
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    volumeSnapshotClassName: longhorn-snapclass
+    cacheCapacity: 2Gi
+    moverSecurityContext:
+      runAsUser: 1001
+      runAsGroup: 1001
+      fsGroup: 1001
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: data-pvc-dst
+  namespace: karakeep
+  labels:
+    app.kubernetes.io/managed-by: argocd
+    volsync.backup/pvc: data-pvc
+spec:
+  trigger:
+    manual: restore-once
+  kopia:
+    repository: volsync-kopia-repository
+    username: data-pvc
+    hostname: karakeep
+    sourceIdentity:
+      sourceName: data-pvc
+      sourceNamespace: karakeep
+      sourcePVCName: data-pvc
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    volumeSnapshotClassName: longhorn-snapclass
+    cacheCapacity: 2Gi
+    accessModes:
+      - ReadWriteOnce
+    capacity: 10Gi
+    moverSecurityContext:
+      runAsUser: 1001
+      runAsGroup: 1001
+      fsGroup: 1001

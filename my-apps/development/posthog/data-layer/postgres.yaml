@@ -71,6 +71,7 @@ spec:
         persistentVolumeClaim:
           claimName: postgres-data
 ---
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -84,6 +85,7 @@ spec:
   selector:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: db
+---
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -108,11 +110,75 @@ spec:
       storage: 20Gi
   # Static dataSourceRef → ReplicationDestination/postgres-data-dst.
   # On PVC re-creation (DR / namespace recreate), VolSync's volume
-  # populator reads the latest snapshot from kopia repo
-  # volsync-postgres-data and binds this PVC with restored data. No-op
-  # while the PVC is already Bound. Chart-managed wiring lives in
-  # the sibling kustomization.yaml helmCharts: section.
+  # populator reads the latest snapshot from the shared kopia repo
+  # volsync-kopia-repository and binds this PVC with restored data. No-op
+  # while the PVC is already Bound. VolSync ReplicationSource/
+  # ReplicationDestination resources are defined below in this file.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
     name: postgres-data-dst
+
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: postgres-data
+  namespace: posthog
+  labels:
+    app.kubernetes.io/managed-by: argocd
+    volsync.backup/pvc: postgres-data
+spec:
+  sourcePVC: postgres-data
+  trigger:
+    schedule: "54 2 * * *"
+  kopia:
+    repository: volsync-kopia-repository
+    username: postgres-data
+    hostname: posthog
+    compression: zstd-fastest
+    parallelism: 2
+    retain:
+      hourly: 24
+      daily: 7
+      weekly: 4
+      monthly: 2
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    volumeSnapshotClassName: longhorn-snapclass
+    cacheCapacity: 2Gi
+    moverSecurityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: postgres-data-dst
+  namespace: posthog
+  labels:
+    app.kubernetes.io/managed-by: argocd
+    volsync.backup/pvc: postgres-data
+spec:
+  trigger:
+    manual: restore-once
+  kopia:
+    repository: volsync-kopia-repository
+    username: postgres-data
+    hostname: posthog
+    sourceIdentity:
+      sourceName: postgres-data
+      sourceNamespace: posthog
+      sourcePVCName: postgres-data
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    volumeSnapshotClassName: longhorn-snapclass
+    cacheCapacity: 2Gi
+    accessModes:
+      - ReadWriteOnce
+    capacity: 20Gi
+    moverSecurityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568

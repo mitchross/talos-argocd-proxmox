@@ -19,3 +19,67 @@ spec:
     apiGroup: volsync.backube
     kind: ReplicationDestination
     name: meilisearch-pvc-dst
+
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: meilisearch-pvc
+  namespace: karakeep
+  labels:
+    app.kubernetes.io/managed-by: argocd
+    volsync.backup/pvc: meilisearch-pvc
+spec:
+  sourcePVC: meilisearch-pvc
+  trigger:
+    schedule: "20 * * * *"
+  kopia:
+    repository: volsync-kopia-repository
+    username: meilisearch-pvc
+    hostname: karakeep
+    compression: zstd-fastest
+    parallelism: 2
+    retain:
+      hourly: 24
+      daily: 7
+      weekly: 4
+      monthly: 2
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    volumeSnapshotClassName: longhorn-snapclass
+    cacheCapacity: 2Gi
+    moverSecurityContext:
+      runAsUser: 1001
+      runAsGroup: 1001
+      fsGroup: 1001
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: meilisearch-pvc-dst
+  namespace: karakeep
+  labels:
+    app.kubernetes.io/managed-by: argocd
+    volsync.backup/pvc: meilisearch-pvc
+spec:
+  trigger:
+    manual: restore-once
+  kopia:
+    repository: volsync-kopia-repository
+    username: meilisearch-pvc
+    hostname: karakeep
+    sourceIdentity:
+      sourceName: meilisearch-pvc
+      sourceNamespace: karakeep
+      sourcePVCName: meilisearch-pvc
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    volumeSnapshotClassName: longhorn-snapclass
+    cacheCapacity: 2Gi
+    accessModes:
+      - ReadWriteOnce
+    capacity: 10Gi
+    moverSecurityContext:
+      runAsUser: 1001
+      runAsGroup: 1001
+      fsGroup: 1001

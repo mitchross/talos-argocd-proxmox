@@ -10,22 +10,3 @@ resources:
   - httproute.yaml
 
 namespace: fizzy
-
-# Chart-managed VolSync backup wiring — replaces pvc-plumber.
-# See docs/research/pvc-backup-simplification/ for the migration design.
-helmGlobals:
-  chartHome: ../../../infrastructure/storage/
-helmCharts:
-- name: volsync-backup
-  releaseName: fizzy-data-backup
-  namespace: fizzy
-  valuesInline:
-    pvc: data
-    namespace: fizzy
-    frequency: daily
-    tier: strict
-    pvc_create: false
-    pvc_spec:
-      accessModes: ["ReadWriteOnce"]
-      storage: 10Gi
-      storageClassName: longhorn

@@ -6,9 +6,10 @@ metadata:
   labels:
     app.kubernetes.io/name: container-registry
     app.kubernetes.io/component: infrastructure
-    backup: "daily"
   annotations:
     # Longhorn backup settings - Critical tier for infrastructure
+    # Intentionally not managed by the VolSync chart: this PVC lives in
+    # kube-system, and system-namespace PVCs must stay out of the restore path.
     longhorn.io/recurring-job-source: enabled
     longhorn.io/recurring-job-group: critical
 spec:
@@ -20,4 +21,3 @@ spec:
       # Bumped 10Gi -> 50Gi 2026-05-04 after registry filled. Longhorn
       # online-expanded the PV; kustomize manifest now matches live.
       storage: 50Gi
-  # dataSourceRef is added dynamically by Kyverno if a backup exists
