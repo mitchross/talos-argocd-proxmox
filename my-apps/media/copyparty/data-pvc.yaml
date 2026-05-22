@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: copyparty-data
   namespace: copyparty
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     app: copyparty
     backup: "daily"

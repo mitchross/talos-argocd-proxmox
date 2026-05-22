@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: data
   namespace: fizzy
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     app.kubernetes.io/name: fizzy
     app.kubernetes.io/component: kanban

@@ -4,6 +4,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: config
   namespace: homepage-dashboard
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     app: homepage
     type: config

@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: zomboid-data
   namespace: project-zomboid
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     app: project-zomboid
     backup: "daily"

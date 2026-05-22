@@ -8,6 +8,7 @@ metadata:
     component: master
     restore-policy: "strict"
   annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
     # Longhorn backup settings - Critical tier for database
     longhorn.io/recurring-job-source: enabled
     longhorn.io/recurring-job-group: critical

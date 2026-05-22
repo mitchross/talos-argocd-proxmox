@@ -26,6 +26,9 @@ patches:
       path: /metadata/labels/restore-policy
       value: strict
     - op: add
+      path: /metadata/annotations/argocd.argoproj.io~1compare-options
+      value: ServerSideDiff=false
+    - op: add
       path: /spec/dataSourceRef
       value:
         apiGroup: volsync.backube

@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: storage
   namespace: nginx-example
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     app.kubernetes.io/name: nginx
     app.kubernetes.io/component: development

@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: config
   namespace: copyparty
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     app: copyparty
     type: config
