@@ -31,7 +31,8 @@ data:
       "persistRepoData": false,
       "ignorePrAuthor": true,
       "force": {
-        "dependencyDashboard": false,
+        "dependencyDashboard": true,
+        "dependencyDashboardTitle": "Dependency Dashboard — self-hosted (LAN registry)",
         "customDatasources": {
           "gitea-vanillax": {
             "defaultRegistryUrlTemplate": "https://registry.vanillax.me/v2/{{packageName}}/tags/list?n=1000",
