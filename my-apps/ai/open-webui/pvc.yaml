@@ -9,7 +9,6 @@ metadata:
   labels:
     app.kubernetes.io/name: open-webui
     app.kubernetes.io/component: ai-interface
-    backup: "daily"
     restore-policy: "strict"
 spec:
   accessModes:

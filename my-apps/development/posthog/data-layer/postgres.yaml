@@ -94,7 +94,6 @@ metadata:
   namespace: posthog
   labels:
     app: posthog-db
-    backup: "daily"
     restore-policy: "strict"
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false

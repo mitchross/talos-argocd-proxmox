@@ -8,7 +8,6 @@ metadata:
   labels:
     app.kubernetes.io/name: nginx
     app.kubernetes.io/component: development
-    backup: "daily"
     restore-policy: "strict"
 spec:
   storageClassName: longhorn

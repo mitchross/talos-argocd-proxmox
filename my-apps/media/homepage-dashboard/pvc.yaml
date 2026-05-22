@@ -9,7 +9,6 @@ metadata:
   labels:
     app: homepage
     type: config
-    backup: "daily"
     restore-policy: "strict"
 spec:
   accessModes:

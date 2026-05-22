@@ -7,7 +7,6 @@ metadata:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     app: copyparty
-    backup: "daily"
     restore-policy: "strict"
 spec:
   accessModes: 
