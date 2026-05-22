@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: meilisearch-pvc
   namespace: karakeep
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     app: karakeep
     type: meilisearch-storage

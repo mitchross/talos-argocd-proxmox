@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: data
   namespace: paperless-ngx
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     app: paperless-ngx
     type: data
@@ -32,6 +34,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: media
   namespace: paperless-ngx
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     app: paperless-ngx
     type: media

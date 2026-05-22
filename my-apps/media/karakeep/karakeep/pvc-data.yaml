@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: data-pvc
   namespace: karakeep
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     app: karakeep
     type: data-storage

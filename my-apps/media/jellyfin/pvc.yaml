@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: config
   namespace: jellyfin
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     app: jellyfin
     type: config

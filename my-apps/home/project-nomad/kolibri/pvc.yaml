@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: kolibri-data
   namespace: project-nomad
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     app: project-nomad
     type: kolibri

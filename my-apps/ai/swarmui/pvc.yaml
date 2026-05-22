@@ -20,6 +20,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: swarmui-data
   namespace: swarmui
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     backup: "daily"
     restore-policy: "strict"
@@ -61,6 +63,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: swarmui-output
   namespace: swarmui
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     backup: "daily"
     restore-policy: "strict"

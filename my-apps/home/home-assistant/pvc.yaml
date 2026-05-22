@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: config
   namespace: home-assistant
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     app.kubernetes.io/name: home-assistant
     app.kubernetes.io/component: home-automation
