@@ -169,12 +169,26 @@ spec:
               # prefixed path. Source of truth:
               #   ClusterExternalSecret/volsync-kopia-repository ->
               #   KOPIA_REPOSITORY = s3://volsync-kopia/cluster
+              #
+              # Pure parameter expansion (no sed/awk subshells) so a bucket-
+              # root or scheme-less URL fails on its own line instead of
+              # silently degrading into "" / "/".
               KOPIA_REPOSITORY="$(cat "$CREDS_DIR/KOPIA_REPOSITORY")"
-              KOPIA_PREFIX="$(echo "$KOPIA_REPOSITORY" | sed -E 's|^s3://[^/]+/||; s|/*$|/|')"
-              if [ -z "$KOPIA_PREFIX" ] || [ "$KOPIA_PREFIX" = "/" ]; then
-                echo "ERROR: refusing to connect to bucket root. KOPIA_REPOSITORY=$KOPIA_REPOSITORY parsed to empty prefix."
+              repo_no_scheme="${KOPIA_REPOSITORY#s3://}"
+              repo_bucket="${repo_no_scheme%%/*}"
+              KOPIA_PREFIX="${repo_no_scheme#*/}"
+
+              if [ "$repo_bucket" = "$repo_no_scheme" ] || [ -z "$KOPIA_PREFIX" ]; then
+                echo "ERROR: refusing to connect to bucket root. KOPIA_REPOSITORY has no prefix."
                 exit 1
               fi
+
+              if [ "$repo_bucket" != "$KOPIA_S3_BUCKET" ]; then
+                echo "ERROR: KOPIA_REPOSITORY bucket does not match KOPIA_S3_BUCKET."
+                exit 1
+              fi
+
+              KOPIA_PREFIX="${KOPIA_PREFIX%/}/"
               echo "Connecting to s3://$KOPIA_S3_BUCKET/$KOPIA_PREFIX"
 
               echo "=== Connecting to Kopia repository (S3) ==="
