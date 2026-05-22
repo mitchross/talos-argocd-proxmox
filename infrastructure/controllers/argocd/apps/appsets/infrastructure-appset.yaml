@@ -79,3 +79,10 @@ spec:
             duration: 10s
             factor: 2
             maxDuration: 10m
+      ignoreDifferences:
+      - group: ""
+        kind: PersistentVolumeClaim
+        jsonPointers:
+        - /spec/dataSource
+        - /spec/dataSourceRef
+        - /spec/volumeName

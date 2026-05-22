@@ -12,35 +12,3 @@ resources:
 
 commonLabels:
   app: swarmui
-
-# Chart-managed VolSync backup wiring — replaces pvc-plumber.
-# See docs/research/pvc-backup-simplification/ for the migration design.
-helmGlobals:
-  chartHome: ../../../infrastructure/storage/
-helmCharts:
-- name: volsync-backup
-  releaseName: swarmui-swarmui-data-backup
-  namespace: swarmui
-  valuesInline:
-    pvc: swarmui-data
-    namespace: swarmui
-    frequency: daily
-    tier: strict
-    pvc_create: false
-    pvc_spec:
-      accessModes: ["ReadWriteOnce"]
-      storage: 5Gi
-      storageClassName: longhorn
-- name: volsync-backup
-  releaseName: swarmui-swarmui-output-backup
-  namespace: swarmui
-  valuesInline:
-    pvc: swarmui-output
-    namespace: swarmui
-    frequency: daily
-    tier: strict
-    pvc_create: false
-    pvc_spec:
-      accessModes: ["ReadWriteOnce"]
-      storage: 50Gi
-      storageClassName: longhorn

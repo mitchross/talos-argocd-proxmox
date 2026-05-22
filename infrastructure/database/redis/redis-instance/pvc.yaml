@@ -6,7 +6,7 @@ metadata:
   labels:
     app: redis
     component: master
-    backup: "hourly"
+    restore-policy: "strict"
   annotations:
     # Longhorn backup settings - Critical tier for database
     longhorn.io/recurring-job-source: enabled
@@ -18,4 +18,71 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  # dataSourceRef is added dynamically by Kyverno if a backup exists
+  dataSourceRef:
+    apiGroup: volsync.backube
+    kind: ReplicationDestination
+    name: redis-master-0-dst
+
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: redis-master-0
+  namespace: redis-instance
+  labels:
+    app.kubernetes.io/managed-by: argocd
+    volsync.backup/pvc: redis-master-0
+spec:
+  sourcePVC: redis-master-0
+  trigger:
+    schedule: "30 * * * *"
+  kopia:
+    repository: volsync-kopia-repository
+    username: redis-master-0
+    hostname: redis-instance
+    compression: zstd-fastest
+    parallelism: 2
+    retain:
+      hourly: 24
+      daily: 7
+      weekly: 4
+      monthly: 2
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    volumeSnapshotClassName: longhorn-snapclass
+    cacheCapacity: 2Gi
+    moverSecurityContext:
+      runAsUser: 1001
+      runAsGroup: 1001
+      fsGroup: 1001
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: redis-master-0-dst
+  namespace: redis-instance
+  labels:
+    app.kubernetes.io/managed-by: argocd
+    volsync.backup/pvc: redis-master-0
+spec:
+  trigger:
+    manual: restore-once
+  kopia:
+    repository: volsync-kopia-repository
+    username: redis-master-0
+    hostname: redis-instance
+    sourceIdentity:
+      sourceName: redis-master-0
+      sourceNamespace: redis-instance
+      sourcePVCName: redis-master-0
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    volumeSnapshotClassName: longhorn-snapclass
+    cacheCapacity: 2Gi
+    accessModes:
+      - ReadWriteOnce
+    capacity: 10Gi
+    moverSecurityContext:
+      runAsUser: 1001
+      runAsGroup: 1001
+      fsGroup: 1001

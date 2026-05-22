@@ -93,6 +93,12 @@ spec:
       # the SSA-native ownership-based diff strategy. Unlike jsonPointers it
       # does NOT cause SSA strip on apply.
       ignoreDifferences:
+      - group: ""
+        kind: PersistentVolumeClaim
+        jsonPointers:
+        - /spec/dataSource
+        - /spec/dataSourceRef
+        - /spec/volumeName
       - group: postgresql.cnpg.io
         kind: Cluster
         managedFieldsManagers:

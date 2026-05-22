@@ -18,3 +18,16 @@ patches:
   target:
     kind: Deployment
     name: gitea
+- target:
+    kind: PersistentVolumeClaim
+    name: gitea-shared-storage
+  patch: |
+    - op: add
+      path: /metadata/labels/restore-policy
+      value: strict
+    - op: add
+      path: /spec/dataSourceRef
+      value:
+        apiGroup: volsync.backube
+        kind: ReplicationDestination
+        name: gitea-shared-storage-dst

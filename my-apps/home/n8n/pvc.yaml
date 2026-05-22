@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: n8n
     app.kubernetes.io/component: workflow-automation
-    backup: "hourly"
+    restore-policy: "strict"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -14,4 +14,71 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  # dataSourceRef is added dynamically by Kyverno if a backup exists
+  dataSourceRef:
+    apiGroup: volsync.backube
+    kind: ReplicationDestination
+    name: data-dst
+
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationSource
+metadata:
+  name: data
+  namespace: n8n
+  labels:
+    app.kubernetes.io/managed-by: argocd
+    volsync.backup/pvc: data
+spec:
+  sourcePVC: data
+  trigger:
+    schedule: "14 * * * *"
+  kopia:
+    repository: volsync-kopia-repository
+    username: data
+    hostname: n8n
+    compression: zstd-fastest
+    parallelism: 2
+    retain:
+      hourly: 24
+      daily: 7
+      weekly: 4
+      monthly: 2
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    volumeSnapshotClassName: longhorn-snapclass
+    cacheCapacity: 2Gi
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+---
+apiVersion: volsync.backube/v1alpha1
+kind: ReplicationDestination
+metadata:
+  name: data-dst
+  namespace: n8n
+  labels:
+    app.kubernetes.io/managed-by: argocd
+    volsync.backup/pvc: data
+spec:
+  trigger:
+    manual: restore-once
+  kopia:
+    repository: volsync-kopia-repository
+    username: data
+    hostname: n8n
+    sourceIdentity:
+      sourceName: data
+      sourceNamespace: n8n
+      sourcePVCName: data
+    copyMethod: Snapshot
+    storageClassName: longhorn
+    volumeSnapshotClassName: longhorn-snapclass
+    cacheCapacity: 2Gi
+    accessModes:
+      - ReadWriteOnce
+    capacity: 10Gi
+    moverSecurityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
