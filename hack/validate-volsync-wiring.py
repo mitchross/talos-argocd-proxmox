@@ -328,6 +328,21 @@ def inventory_rows(idx: dict[str, Any]) -> list[dict[str, Any]]:
     return rows
 
 
+SSDIFF_OFF_TOKEN = "ServerSideDiff=false"
+COMPARE_OPTIONS_KEY = "argocd.argoproj.io/compare-options"
+
+
+def pvc_has_ssdiff_shim(pvc: dict[str, Any]) -> bool:
+    """True if the rendered PVC carries the `ServerSideDiff=false` shim that
+    keeps Argo CD's server-side diff dry-run from rejecting an immutable
+    dataSourceRef on a Bound PVC. The annotation may live directly on the PVC
+    (set in the source YAML or by a Kustomize JSONPatch) and is preserved by
+    the AppSet-level `ignoreApplicationDifferences` shim for compare-options.
+    See docs/argocd.md "Server-Side Diff & Apply Strategy"."""
+    value = annotations(pvc).get(COMPARE_OPTIONS_KEY, "")
+    return SSDIFF_OFF_TOKEN in value
+
+
 def validate(idx: dict[str, Any], rows: list[dict[str, Any]]) -> list[str]:
     failures: list[str] = []
     cluster_secret_names = idx["secrets"].get("*cluster*", set())
@@ -343,6 +358,17 @@ def validate(idx: dict[str, Any], rows: list[dict[str, Any]]) -> list[str]:
 
         if ds.get("apiGroup") != VOLSYNC_GROUP:
             failures.append(f"{ns}/{pvc_name}: dataSourceRef apiGroup is {ds.get('apiGroup')}, expected {VOLSYNC_GROUP}")
+        if not pvc_has_ssdiff_shim(pvc):
+            failures.append(
+                f"{ns}/{pvc_name}: PVC with static dataSourceRef is missing "
+                f"{COMPARE_OPTIONS_KEY}: ServerSideDiff=false. Without it, "
+                f"Argo CD's global server-side diff dry-runs SSA and the "
+                f"apiserver rejects the change to immutable dataSourceRef, "
+                f"wedging the whole app's sync. Add the annotation directly "
+                f"to the PVC manifest (single-YAML apps) or via a Kustomize "
+                f"JSONPatch (chart-rendered PVCs like gitea). See "
+                f"docs/argocd.md 'Server-Side Diff & Apply Strategy'."
+            )
         if not rd:
             failures.append(f"{ns}/{pvc_name}: missing ReplicationDestination {rd_name}")
         if not rs:
