@@ -2,8 +2,13 @@ persistence:
   enabled: true
   size: 10Gi
   storageClass: longhorn
+  # Placeholder label so the chart renders a non-empty metadata.labels
+  # map. kustomization.yaml's JSONPatch then adds `restore-policy: strict`
+  # and the static `dataSourceRef` under this map; an empty `labels:`
+  # collapses to null and the add-op fails with "doc is missing path
+  # /metadata/labels/...". Do not remove without rewriting the patch.
   labels:
-    backup: "daily"
+    app.kubernetes.io/managed-by: argocd
 
 service:
   http:

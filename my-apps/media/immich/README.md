@@ -36,9 +36,10 @@ runtimeClass if you move it to a GPU worker).
 | DB (metadata, embeddings)   | Immich CNPG cluster (Longhorn PVC) | 20Gi           |
 | DB WAL + base backups       | RustFS S3 (`cnpg` bucket, Barman) | rolling, ~daily |
 
-> ⚠️ **Do NOT add `backup: "daily"` labels to the CNPG PVC.** CNPG uses
-> Barman to S3 for DR, not Kyverno/VolSync. Mixing both layers is a known
-> footgun — see `infrastructure/database/CLAUDE.md`.
+> ⚠️ **Do NOT wire VolSync `ReplicationSource`/`ReplicationDestination`
+> against the CNPG PVC.** CNPG uses Barman to S3 for DR, not VolSync.
+> Mixing both layers is a known footgun — see
+> `infrastructure/database/CLAUDE.md`.
 
 The `library` PVC is not currently VolSync-backed. It's large and the
 contents are regenerable from originals + DB (see `docs/cnpg-disaster-recovery.md`

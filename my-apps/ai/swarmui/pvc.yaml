@@ -23,7 +23,6 @@ metadata:
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
-    backup: "daily"
     restore-policy: "strict"
 spec:
   accessModes:
@@ -66,7 +65,6 @@ metadata:
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
-    backup: "daily"
     restore-policy: "strict"
 spec:
   accessModes:

@@ -4,7 +4,6 @@ metadata:
   name: perplexica-data
   namespace: perplexica
   labels:
-    backup: "daily"
     restore-policy: "strict"
   annotations:
     # With controller.diff.server.side=true, ArgoCD's SSA dry-run tries to

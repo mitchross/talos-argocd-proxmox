@@ -8,7 +8,6 @@ metadata:
   labels:
     app: jellyfin
     type: config
-    backup: "daily"
     restore-policy: "strict"
 spec:
   storageClassName: longhorn

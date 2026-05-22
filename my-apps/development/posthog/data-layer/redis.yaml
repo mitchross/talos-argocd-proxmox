@@ -74,7 +74,6 @@ metadata:
   namespace: posthog
   labels:
     app: posthog-redis
-    backup: "daily"
     restore-policy: "strict"
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false

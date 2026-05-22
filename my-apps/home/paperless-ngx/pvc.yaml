@@ -8,7 +8,6 @@ metadata:
   labels:
     app: paperless-ngx
     type: data
-    backup: "hourly"
     restore-policy: "strict"
 spec:
   accessModes:
@@ -39,7 +38,6 @@ metadata:
   labels:
     app: paperless-ngx
     type: media
-    backup: "hourly"
     restore-policy: "strict"
 spec:
   accessModes:

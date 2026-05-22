@@ -16,9 +16,11 @@ is a .NET frontend/orchestrator over ComfyUI. It **replaces the standalone
 - **Models are reused, not re-downloaded.** `swarmui-comfyui-models` is a static
   NFS PV pointing at the *same* TrueNAS share the old comfyui used
   (`192.168.10.133:/mnt/ai-pool/comfyui`), mounted at `/comfyui-models`.
-- **Storage.** `Data` + `Output` are Longhorn with `backup: "daily"`;
-  `dlbackend` (SwarmUI's auto-installed ComfyUI + torch venv) is Longhorn with
-  **no** backup label because it is fully reinstallable.
+- **Storage.** `Data` + `Output` are Longhorn with explicit inline
+  VolSync `ReplicationSource`/`ReplicationDestination` + static
+  `dataSourceRef` in `pvc.yaml` (see `my-apps/CLAUDE.md`). `dlbackend`
+  (SwarmUI's auto-installed ComfyUI + torch venv) is Longhorn with **no**
+  backup wiring because it is fully reinstallable.
 
 ## One-time bootstrap (required, ~10–15 min)
 

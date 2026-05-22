@@ -46,7 +46,7 @@ different backup needs:
 
 | PVC                     | Size | Mount                          | Contains                                   | Backup? |
 |-------------------------|------|--------------------------------|--------------------------------------------|---------|
-| `zomboid-data`          | 20Gi | `/project-zomboid-config`       | `Server/*.ini`, `Server/*.lua`, world saves, player DB, logs | ✅ `backup: "daily"` label — VolSync snapshots via Kyverno |
+| `zomboid-data`          | 20Gi | `/project-zomboid-config`       | `Server/*.ini`, `Server/*.lua`, world saves, player DB, logs | ✅ explicit inline VolSync RS/RD + static `dataSourceRef` (see `pvc.yaml`) |
 | `zomboid-server-files`  | 60Gi | `/project-zomboid`              | SteamCMD game install (~7GB + staging), workshop mods       | ❌ re-downloaded from Steam on demand |
 
 The 60Gi install PVC is deliberately **not** backed up — it's pure Steam
@@ -55,8 +55,10 @@ boot. Backing it up would waste 60Gi of VolSync storage for data that's
 trivially reproducible.
 
 The 20Gi data PVC is the **only** thing that matters for DR: world saves,
-player inventories, admin config. The `backup: "daily"` label tells
-Kyverno to generate VolSync `ReplicationSource` + friends automatically.
+player inventories, admin config. `pvc.yaml` inlines the
+`ReplicationSource` + `ReplicationDestination` and points the PVC's
+`dataSourceRef` at the RD, so a rebuild restores from the shared Kopia
+repo (`s3://volsync-kopia/cluster`) before the pod starts.
 
 > ⚠️ **Never wipe `zomboid-data` without explicit confirmation** — that's
 > irreversible loss of world saves. If you need a clean start, rename /
@@ -168,7 +170,7 @@ usual culprit.
 | File                     | Purpose                                                    |
 |--------------------------|------------------------------------------------------------|
 | `namespace.yaml`         | `project-zomboid` namespace                                |
-| `pvc.yaml`               | Two PVCs (see above) — `zomboid-data` has `backup: "daily"` |
+| `pvc.yaml`               | Two PVCs (see above) — `zomboid-data` inlines RS/RD + static `dataSourceRef`; `zomboid-server-files` is `backup-exempt: "true"` |
 | `deployment.yaml`        | Single pod, two init containers, graceful-shutdown `preStop` |
 | `service.yaml`           | LoadBalancer, UDP + TCP ports                              |
 | `pdb.yaml`               | PodDisruptionBudget — don't evict this unceremoniously     |
@@ -196,15 +198,22 @@ usual culprit.
 
 ## Backups & recovery
 
-Daily VolSync backup of `zomboid-data` is handled automatically by
-Kyverno (the `backup: "daily"` label triggers it). On cluster rebuild or
-namespace recreate:
+Daily VolSync backup of `zomboid-data` is declared explicitly in
+`pvc.yaml`: that single file inlines the `PersistentVolumeClaim`, the
+`ReplicationSource` (schedule `59 2 * * *`), and the `ReplicationDestination`.
+The PVC carries a static `dataSourceRef` pointing at the RD, so:
 
-1. PVC Plumber checks if a backup exists for the PVC claim.
-2. Kyverno injects `dataSourceRef` pointing at the VolSync
-   `ReplicationDestination`.
-3. The new PVC restores from backup before the pod starts.
-4. World saves and config come back intact. `server-files` PVC is empty,
+1. On rebuild Argo CD applies the manifest.
+2. The new PVC is created with `dataSourceRef` → `ReplicationDestination/zomboid-data-dst`.
+3. VolSync's volume populator runs the RD's mover (gated by the cluster-wide
+   `MutatingAdmissionPolicy/volsync-mover-backend-availability`, which
+   blocks until RustFS at `192.168.10.133:30292` is reachable).
+4. The PVC binds with restored data; the pod starts; world saves and
+   config come back intact. `server-files` PVC is empty,
    `UPDATE_ON_START=true` re-downloads Zomboid from Steam (~10 min).
+
+See `docs/volsync-storage-recovery.md` for the architectural overview and
+`docs/cluster-dr-nuke-restore-runbook.md` for the full cluster-rebuild
+sequence.
 
 See `docs/volsync-storage-recovery.md` for the full flow.

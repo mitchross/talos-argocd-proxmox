@@ -8,7 +8,6 @@ metadata:
   labels:
     app: project-nomad
     type: flatnotes
-    backup: "daily"
     restore-policy: "strict"
 spec:
   accessModes:

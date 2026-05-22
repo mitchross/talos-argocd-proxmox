@@ -8,7 +8,6 @@ metadata:
   labels:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: library
-    backup: "daily"
     restore-policy: "strict"
 spec:
   accessModes:

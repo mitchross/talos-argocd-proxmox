@@ -7,7 +7,6 @@ metadata:
     app: posthog-kafka
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: kafka
-    backup: "daily"
     restore-policy: "strict"
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false

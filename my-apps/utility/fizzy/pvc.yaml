@@ -8,7 +8,6 @@ metadata:
   labels:
     app.kubernetes.io/name: fizzy
     app.kubernetes.io/component: kanban
-    backup: "daily"
     restore-policy: "strict"
 spec:
   accessModes:

@@ -9,7 +9,6 @@ metadata:
     app.kubernetes.io/name: home-assistant
     app.kubernetes.io/component: home-automation
     app.kubernetes.io/part-of: smart-home
-    backup: "hourly"
     restore-policy: "strict"
 spec:
   accessModes:
