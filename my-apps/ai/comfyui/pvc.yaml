@@ -31,6 +31,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: comfyui-storage
   namespace: comfyui
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "NFS-backed ComfyUI model and workspace cache; non-snapshottable, rebuildable from upstream model registries"
 spec:
   accessModes:
     - ReadWriteMany

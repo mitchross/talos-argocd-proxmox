@@ -29,6 +29,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: jellyfin-media
   namespace: jellyfin
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "SMB-mount PVC for Jellyfin library; non-snapshottable, underlying media lives on NAS"
 spec:
   accessModes:
     - ReadWriteMany
