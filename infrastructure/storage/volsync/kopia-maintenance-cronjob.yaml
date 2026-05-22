@@ -19,15 +19,19 @@
 # Job connects via `kopia repository connect s3` against the same bucket the
 # operator uses (RustFS at 192.168.10.133:30292, bucket `volsync-kopia`).
 #
-# Sourcing the password + S3 creds: `Secret/pvc-plumber-kopia` is rendered by
-# the ExternalSecret in the pvc-plumber directory (see
-# infrastructure/controllers/pvc-plumber/externalsecret.yaml). Its three keys
-# (KOPIA_PASSWORD, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) are mounted as
-# files at /var/secret/pvc-plumber-kopia and read at runtime — same lazy-
-# credentials pattern the v3.1.0 operator uses (CHANGELOG [3.1.0]). This
-# CronJob doesn't strictly need the lazy pattern (a once-a-day Job doesn't race
-# ArgoCD startup the way the operator pod did), but mirroring the operator's
-# mount layout keeps the Secret-shape contract single-sourced.
+# Sourcing the password + S3 creds: `Secret/volsync-kopia-repository` is the
+# shared Kopia repo Secret produced in this namespace by the
+# ClusterExternalSecret `volsync-kopia-repository`
+# (infrastructure/storage/volsync-backup-cluster/clusterexternalsecret.yaml).
+# The selector volsync.backube/privileged-movers=true is set on this namespace
+# in namespace.yaml. The Secret carries KOPIA_PASSWORD, AWS_ACCESS_KEY_ID,
+# AWS_SECRET_ACCESS_KEY (plus KOPIA_REPOSITORY/KOPIA_S3_* that this CronJob
+# overrides with env). Mounted as files at /var/secret/kopia-repo and read at
+# runtime — same lazy-credentials pattern the pre-c401822a operator used.
+#
+# Pre-c401822a: this mounted Secret/pvc-plumber-kopia at /var/secret/pvc-plumber-kopia.
+# That Secret was deleted when pvc-plumber was decommissioned (Track B Phase 4,
+# d0d92b20); the mount path moved here on 2026-05-22.
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -130,21 +134,21 @@ spec:
             - |
               set -eu
               # Read credentials lazily from the mounted Secret directory.
-              # The operator deployment uses the same mount path; keeping
-              # this CronJob in sync means a single
-              #   kubectl describe secret pvc-plumber-kopia -n volsync-system
-              # is the source of truth for what the maintenance pipeline
-              # expects.
-              CREDS_DIR=/var/secret/pvc-plumber-kopia
+              # The shared Secret is produced in this namespace by the
+              # ClusterExternalSecret/volsync-kopia-repository (selector:
+              # volsync.backube/privileged-movers=true on the namespace).
+              # Source of truth:
+              #   kubectl describe secret volsync-kopia-repository -n volsync-system
+              CREDS_DIR=/var/secret/kopia-repo
               if [ ! -s "$CREDS_DIR/KOPIA_PASSWORD" ] || \
                  [ ! -s "$CREDS_DIR/AWS_ACCESS_KEY_ID" ] || \
                  [ ! -s "$CREDS_DIR/AWS_SECRET_ACCESS_KEY" ]; then
-                echo "ERROR: Secret/pvc-plumber-kopia not fully populated."
+                echo "ERROR: Secret/volsync-kopia-repository not fully populated."
                 echo "  Expected files in $CREDS_DIR:"
                 echo "    - KOPIA_PASSWORD"
                 echo "    - AWS_ACCESS_KEY_ID"
                 echo "    - AWS_SECRET_ACCESS_KEY"
-                echo "  Confirm ESO has rendered the Secret."
+                echo "  Confirm ClusterES + ESO have rendered the Secret in volsync-system."
                 exit 1
               fi
               KOPIA_PASSWORD="$(cat "$CREDS_DIR/KOPIA_PASSWORD")"
@@ -203,17 +207,20 @@ spec:
               echo "=== Done ==="
             volumeMounts:
             - name: kopia-credentials
-              mountPath: /var/secret/pvc-plumber-kopia
+              mountPath: /var/secret/kopia-repo
               readOnly: true
             - name: kopia-tmp
               mountPath: /tmp/kopia
           volumes:
-          # Lazy-credentials mount — same pattern as the operator Deployment
-          # in ../../controllers/pvc-plumber/. The pvc-plumber-kopia Secret's
-          # three keys are exposed as files at /var/secret/pvc-plumber-kopia.
+          # Lazy-credentials mount — pulls the shared Secret produced by the
+          # ClusterExternalSecret/volsync-kopia-repository (which targets every
+          # namespace labeled volsync.backube/privileged-movers=true; see
+          # namespace.yaml in this directory). Files exposed at /var/secret/
+          # kopia-repo include KOPIA_PASSWORD, AWS_ACCESS_KEY_ID, and
+          # AWS_SECRET_ACCESS_KEY — the only three this Job reads.
           - name: kopia-credentials
             secret:
-              secretName: pvc-plumber-kopia
+              secretName: volsync-kopia-repository
               # 0440 = readable by the kopia container's UID/GID (568) and
               # the runtime's group; nothing else.
               defaultMode: 0440

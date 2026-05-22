@@ -6,3 +6,7 @@ metadata:
     argocd.argoproj.io/sync-wave: "1"
   labels:
     pod-security.kubernetes.io/enforce: privileged
+    # ClusterExternalSecret/volsync-kopia-repository targets namespaces with
+    # this label and produces the shared kopia-repo Secret. The kopia-maintenance
+    # CronJob in this namespace mounts that Secret.
+    volsync.backube/privileged-movers: "true"
