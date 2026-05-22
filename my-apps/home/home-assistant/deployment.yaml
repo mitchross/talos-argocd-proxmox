@@ -56,6 +56,8 @@ spec:
               cp /config-source/automations.yaml /config/automations.yaml
               cp /config-source/scripts.yaml /config/scripts.yaml
               cp /config-source/scenes.yaml /config/scenes.yaml
+              cp /config-source/customize.yaml /config/customize.yaml
+              cp /config-source/lovelace-homelab-power.yaml /config/lovelace-homelab-power.yaml
               # Ensure themes directory exists
               mkdir -p /config/themes
               echo "Config files copied to PVC"
