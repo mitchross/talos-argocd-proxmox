@@ -1,0 +1,109 @@
+# YAML-mode dashboard surfaced in the sidebar as "Homelab Power".
+# Wired via lovelace.dashboards.homelab-power in configuration.yaml.
+title: Homelab Power
+views:
+  - title: Overview
+    icon: mdi:server-network
+    path: overview
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: |
+              # Homelab Power & Cost
+              Real-time draw and cost across the GPU PSU, NAS PSU, Proxmox host
+              and TrueNAS host. Rate: **$0.21/kWh** (Michigan residential).
+              All switch entities are locked read-only — see the
+              `Homelab plug power-off lockout` automation.
+
+          - type: glance
+            title: Right Now
+            state_color: false
+            entities:
+              - entity: sensor.homelab_total_power
+                name: Total
+              - entity: sensor.gpu_psu_smart_plug_current_consumption
+                name: GPU PSU
+              - entity: sensor.nas_psu_smart_plug_current_consumption
+                name: NAS PSU
+              - entity: sensor.proxmox_server_smart_plug_current_consumption
+                name: Proxmox
+              - entity: sensor.truenas_server_smart_plug_current_consumption
+                name: TrueNAS
+
+          - type: glance
+            title: Today
+            state_color: false
+            entities:
+              - entity: sensor.homelab_total_energy_today
+                name: kWh
+              - entity: sensor.homelab_cost_today
+                name: Cost
+              - entity: sensor.gpu_psu_cost_today
+                name: GPU
+              - entity: sensor.nas_psu_cost_today
+                name: NAS
+              - entity: sensor.proxmox_server_cost_today
+                name: Proxmox
+              - entity: sensor.truenas_server_cost_today
+                name: TrueNAS
+
+      - type: history-graph
+        title: Power draw (24h)
+        hours_to_show: 24
+        refresh_interval: 30
+        entities:
+          - entity: sensor.gpu_psu_smart_plug_current_consumption
+            name: GPU PSU
+          - entity: sensor.nas_psu_smart_plug_current_consumption
+            name: NAS PSU
+          - entity: sensor.proxmox_server_smart_plug_current_consumption
+            name: Proxmox
+          - entity: sensor.truenas_server_smart_plug_current_consumption
+            name: TrueNAS
+          - entity: sensor.homelab_total_power
+            name: Total
+
+      - type: statistics-graph
+        title: Energy used (7d)
+        chart_type: bar
+        period: day
+        stat_types:
+          - state
+        entities:
+          - sensor.gpu_psu_smart_plug_today_energy
+          - sensor.nas_psu_smart_plug_today_energy
+          - sensor.proxmox_server_smart_plug_today_energy
+          - sensor.truenas_server_smart_plug_today_energy
+
+      - type: entities
+        title: Per-plug detail
+        entities:
+          - type: section
+            label: GPU PSU
+          - entity: sensor.gpu_psu_smart_plug_current_consumption
+          - entity: sensor.gpu_psu_smart_plug_today_energy
+          - entity: sensor.gpu_psu_smart_plug_voltage
+          - entity: sensor.gpu_psu_smart_plug_current
+          - entity: sensor.gpu_psu_cost_today
+          - type: section
+            label: NAS PSU
+          - entity: sensor.nas_psu_smart_plug_current_consumption
+          - entity: sensor.nas_psu_smart_plug_today_energy
+          - entity: sensor.nas_psu_smart_plug_voltage
+          - entity: sensor.nas_psu_smart_plug_current
+          - entity: sensor.nas_psu_cost_today
+          - type: section
+            label: Proxmox Server
+          - entity: sensor.proxmox_server_smart_plug_current_consumption
+          - entity: sensor.proxmox_server_smart_plug_today_energy
+          - entity: sensor.proxmox_server_smart_plug_voltage
+          - entity: sensor.proxmox_server_smart_plug_current
+          - entity: sensor.proxmox_server_cost_today
+          - type: section
+            label: TrueNAS Server
+          - entity: sensor.truenas_server_smart_plug_current_consumption
+          - entity: sensor.truenas_server_smart_plug_today_energy
+          - entity: sensor.truenas_server_smart_plug_voltage
+          - entity: sensor.truenas_server_smart_plug_current
+          - entity: sensor.truenas_server_cost_today

@@ -1,0 +1,60 @@
+# Per-entity overrides for Tapo homelab plugs.
+#
+# - Friendly names flow into the `friendly_name` Prometheus label so Grafana
+#   legends read "GPU PSU" instead of "gpu_psu_smart_plug_current_consumption".
+# - `hidden: true` on the switch entity removes the on/off control from the
+#   default Lovelace view. The automation in automations.yaml ("Homelab plug
+#   power-off lockout") is the actual enforcement — even if the switch is
+#   toggled via API or the Tapo app it gets restored within seconds.
+
+# ---------- GPU external PSU ----------
+sensor.gpu_psu_smart_plug_current_consumption:
+  friendly_name: GPU PSU Power
+sensor.gpu_psu_smart_plug_today_energy:
+  friendly_name: GPU PSU Energy Today
+sensor.gpu_psu_smart_plug_voltage:
+  friendly_name: GPU PSU Voltage
+sensor.gpu_psu_smart_plug_current:
+  friendly_name: GPU PSU Current
+switch.gpu_psu_smart_plug:
+  friendly_name: GPU PSU (read-only)
+  hidden: true
+
+# ---------- NAS external HDD PSU ----------
+sensor.nas_psu_smart_plug_current_consumption:
+  friendly_name: NAS PSU Power
+sensor.nas_psu_smart_plug_today_energy:
+  friendly_name: NAS PSU Energy Today
+sensor.nas_psu_smart_plug_voltage:
+  friendly_name: NAS PSU Voltage
+sensor.nas_psu_smart_plug_current:
+  friendly_name: NAS PSU Current
+switch.nas_psu_smart_plug:
+  friendly_name: NAS PSU (read-only)
+  hidden: true
+
+# ---------- Proxmox host ----------
+sensor.proxmox_server_smart_plug_current_consumption:
+  friendly_name: Proxmox Server Power
+sensor.proxmox_server_smart_plug_today_energy:
+  friendly_name: Proxmox Server Energy Today
+sensor.proxmox_server_smart_plug_voltage:
+  friendly_name: Proxmox Server Voltage
+sensor.proxmox_server_smart_plug_current:
+  friendly_name: Proxmox Server Current
+switch.proxmox_server_smart_plug:
+  friendly_name: Proxmox Server (read-only)
+  hidden: true
+
+# ---------- TrueNAS host ----------
+sensor.truenas_server_smart_plug_current_consumption:
+  friendly_name: TrueNAS Server Power
+sensor.truenas_server_smart_plug_today_energy:
+  friendly_name: TrueNAS Server Energy Today
+sensor.truenas_server_smart_plug_voltage:
+  friendly_name: TrueNAS Server Voltage
+sensor.truenas_server_smart_plug_current:
+  friendly_name: TrueNAS Server Current
+switch.truenas_server_smart_plug:
+  friendly_name: TrueNAS Server (read-only)
+  hidden: true

@@ -29,6 +29,8 @@ configMapGenerator:
   - automations.yaml
   - scripts.yaml
   - scenes.yaml
+  - customize.yaml
+  - lovelace-homelab-power.yaml
   options:
     # Better ConfigMap handling
     disableNameSuffixHash: true

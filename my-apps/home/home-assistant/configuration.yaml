@@ -1,14 +1,22 @@
 # Loads default set of integrations. Do not remove.
 default_config:
+
+# Apply per-entity overrides (friendly names, hide flags for homelab switches).
+homeassistant:
+  customize: !include customize.yaml
+
 # Load frontend themes from the themes folder
 frontend:
   themes: !include_dir_merge_named themes
+
 # Text to speech
 tts:
   - platform: google_translate
+
 automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
+
 # HTTP configuration for reverse proxy
 http:
   use_x_forwarded_for: true
@@ -18,24 +26,122 @@ http:
     - 192.168.0.0/16
     - 192.168.10.32/27 # Cilium IP Pool
     - 192.168.10.50 # Gateway IP
+
 # Enable the recorder (database)
 recorder:
   db_url: sqlite:////config/home-assistant_v2.db
-# Prometheus metrics endpoint for Grafana
+
+# Prometheus metrics endpoint for Grafana.
+#
+# Scoped to homelab Tapo plugs only — household plugs (dryer/office/tv) and the
+# unused homelab-smart-plug are deliberately excluded so the homelab cost
+# dashboard isn't polluted with non-server load.
 prometheus:
   requires_auth: false
   filter:
     include_entity_globs:
-      - sensor.*_current_consumption
-      - sensor.*_today_energy
-      - sensor.*_current
-      - sensor.*_power
-      - sensor.*_voltage
-      - sensor.*energy*
-# Enable energy monitoring
+      - sensor.gpu_psu_smart_plug_*
+      - sensor.nas_psu_smart_plug_*
+      - sensor.proxmox_server_smart_plug_*
+      - sensor.truenas_server_smart_plug_*
+      - sensor.homelab_total_*
+      - sensor.homelab_cost_*
+      - sensor.*_cost_today
+    exclude_entity_globs:
+      - sensor.homelab_smart_plug_* # not in use — keep out of homelab dashboards
+      - sensor.dryer_smart_plug_*
+      - sensor.office_smart_plug_*
+      - sensor.office2_smart_plug_*
+      - sensor.tv_smart_plug_*
+
+# Enable energy monitoring (dashboard configured in UI; sensors below feed it).
 energy:
+
 # Enable the person integration
 person:
+
+# YAML-defined extra dashboard for homelab power (default Lovelace dashboard
+# stays in storage mode so the UI editor keeps working).
+lovelace:
+  dashboards:
+    homelab-power:
+      mode: yaml
+      title: Homelab Power
+      icon: mdi:server-network
+      show_in_sidebar: true
+      filename: lovelace-homelab-power.yaml
+
+# Template sensors:
+#   * homelab_total_power           — instantaneous draw of all 4 homelab plugs (W)
+#   * homelab_total_energy_today    — kWh used today across all 4 (resets at midnight)
+#   * homelab_cost_today            — total_energy_today * MICHIGAN_RATE (USD)
+#   * <plug>_cost_today             — per-plug breakdown so Grafana can rank cost
+#
+# Michigan residential rate is hard-coded at 0.21 USD/kWh. Update both the
+# total and per-plug expressions if your utility rate changes.
+template:
+  - sensor:
+      - name: "Homelab Total Power"
+        unique_id: homelab_total_power
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        availability: >
+          {{ states('sensor.gpu_psu_smart_plug_current_consumption') not in ['unknown','unavailable']
+             or states('sensor.nas_psu_smart_plug_current_consumption') not in ['unknown','unavailable']
+             or states('sensor.proxmox_server_smart_plug_current_consumption') not in ['unknown','unavailable']
+             or states('sensor.truenas_server_smart_plug_current_consumption') not in ['unknown','unavailable'] }}
+        state: >
+          {{ (states('sensor.gpu_psu_smart_plug_current_consumption') | float(0)
+            + states('sensor.nas_psu_smart_plug_current_consumption') | float(0)
+            + states('sensor.proxmox_server_smart_plug_current_consumption') | float(0)
+            + states('sensor.truenas_server_smart_plug_current_consumption') | float(0)) | round(1) }}
+
+      - name: "Homelab Total Energy Today"
+        unique_id: homelab_total_energy_today
+        unit_of_measurement: "kWh"
+        device_class: energy
+        state_class: total_increasing
+        state: >
+          {{ (states('sensor.gpu_psu_smart_plug_today_energy') | float(0)
+            + states('sensor.nas_psu_smart_plug_today_energy') | float(0)
+            + states('sensor.proxmox_server_smart_plug_today_energy') | float(0)
+            + states('sensor.truenas_server_smart_plug_today_energy') | float(0)) | round(3) }}
+
+      - name: "Homelab Cost Today"
+        unique_id: homelab_cost_today
+        unit_of_measurement: "USD"
+        state_class: total_increasing
+        state: >
+          {{ ((states('sensor.gpu_psu_smart_plug_today_energy') | float(0)
+            + states('sensor.nas_psu_smart_plug_today_energy') | float(0)
+            + states('sensor.proxmox_server_smart_plug_today_energy') | float(0)
+            + states('sensor.truenas_server_smart_plug_today_energy') | float(0)) * 0.21) | round(2) }}
+
+      - name: "GPU PSU Cost Today"
+        unique_id: gpu_psu_cost_today
+        unit_of_measurement: "USD"
+        state_class: total_increasing
+        state: "{{ (states('sensor.gpu_psu_smart_plug_today_energy') | float(0) * 0.21) | round(2) }}"
+
+      - name: "NAS PSU Cost Today"
+        unique_id: nas_psu_cost_today
+        unit_of_measurement: "USD"
+        state_class: total_increasing
+        state: "{{ (states('sensor.nas_psu_smart_plug_today_energy') | float(0) * 0.21) | round(2) }}"
+
+      - name: "Proxmox Server Cost Today"
+        unique_id: proxmox_server_cost_today
+        unit_of_measurement: "USD"
+        state_class: total_increasing
+        state: "{{ (states('sensor.proxmox_server_smart_plug_today_energy') | float(0) * 0.21) | round(2) }}"
+
+      - name: "TrueNAS Server Cost Today"
+        unique_id: truenas_server_cost_today
+        unit_of_measurement: "USD"
+        state_class: total_increasing
+        state: "{{ (states('sensor.truenas_server_smart_plug_today_energy') | float(0) * 0.21) | round(2) }}"
+
 # # Expose Camera Stream Source Integration
 # # Allows exposing camera stream URLs via API for go2rtc/Frigate integration
 # expose_camera_stream_source:
