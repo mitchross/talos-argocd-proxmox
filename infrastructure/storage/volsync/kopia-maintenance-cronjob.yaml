@@ -142,12 +142,14 @@ spec:
               CREDS_DIR=/var/secret/kopia-repo
               if [ ! -s "$CREDS_DIR/KOPIA_PASSWORD" ] || \
                  [ ! -s "$CREDS_DIR/AWS_ACCESS_KEY_ID" ] || \
-                 [ ! -s "$CREDS_DIR/AWS_SECRET_ACCESS_KEY" ]; then
+                 [ ! -s "$CREDS_DIR/AWS_SECRET_ACCESS_KEY" ] || \
+                 [ ! -s "$CREDS_DIR/KOPIA_REPOSITORY" ]; then
                 echo "ERROR: Secret/volsync-kopia-repository not fully populated."
                 echo "  Expected files in $CREDS_DIR:"
                 echo "    - KOPIA_PASSWORD"
                 echo "    - AWS_ACCESS_KEY_ID"
                 echo "    - AWS_SECRET_ACCESS_KEY"
+                echo "    - KOPIA_REPOSITORY (sets the bucket prefix)"
                 echo "  Confirm ClusterES + ESO have rendered the Secret in volsync-system."
                 exit 1
               fi
@@ -155,6 +157,25 @@ spec:
               AWS_ACCESS_KEY_ID="$(cat "$CREDS_DIR/AWS_ACCESS_KEY_ID")"
               AWS_SECRET_ACCESS_KEY="$(cat "$CREDS_DIR/AWS_SECRET_ACCESS_KEY")"
               export KOPIA_PASSWORD AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+
+              # The Secret's KOPIA_REPOSITORY is the canonical
+              # s3://<bucket>/<prefix> URL VolSync movers use. The
+              # `kopia repository connect s3` subcommand does NOT consume the
+              # URL — it takes --bucket and --prefix separately. Parse the
+              # prefix here so this Job stays at the same path in the bucket
+              # as every backup written by every RS in the cluster. Without
+              # --prefix, kopia connects to the bucket ROOT and reports
+              # "repository not initialized" because the repo lives at the
+              # prefixed path. Source of truth:
+              #   ClusterExternalSecret/volsync-kopia-repository ->
+              #   KOPIA_REPOSITORY = s3://volsync-kopia/cluster
+              KOPIA_REPOSITORY="$(cat "$CREDS_DIR/KOPIA_REPOSITORY")"
+              KOPIA_PREFIX="$(echo "$KOPIA_REPOSITORY" | sed -E 's|^s3://[^/]+/||; s|/*$|/|')"
+              if [ -z "$KOPIA_PREFIX" ] || [ "$KOPIA_PREFIX" = "/" ]; then
+                echo "ERROR: refusing to connect to bucket root. KOPIA_REPOSITORY=$KOPIA_REPOSITORY parsed to empty prefix."
+                exit 1
+              fi
+              echo "Connecting to s3://$KOPIA_S3_BUCKET/$KOPIA_PREFIX"
 
               echo "=== Connecting to Kopia repository (S3) ==="
               # Kopia 0.20+ ignores KOPIA_OVERRIDE_HOSTNAME env — only the
@@ -173,6 +194,7 @@ spec:
               kopia repository connect s3 \
                 --endpoint="$KOPIA_S3_ENDPOINT" \
                 --bucket="$KOPIA_S3_BUCKET" \
+                --prefix="$KOPIA_PREFIX" \
                 --disable-tls \
                 --password="$KOPIA_PASSWORD" \
                 --override-hostname=cluster \
