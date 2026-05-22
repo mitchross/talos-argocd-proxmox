@@ -102,10 +102,15 @@ spec:
           resources:
             requests:
               cpu: 250m
-              memory: 256Mi
+              # Idle steady-state is ~56Mi but three generations of pods
+              # OOMKilled (exit 137) at the 1Gi limit across 2026-05-20→22,
+              # so the burst path needs more headroom than the prior cap
+              # provided. Bumping requests to 512Mi gives the scheduler a
+              # truthful floor and the 2Gi limit absorbs render/tile bursts.
+              memory: 512Mi
             limits:
               cpu: "1"
-              memory: 1Gi
+              memory: 2Gi
       volumes:
         - name: tiles
           persistentVolumeClaim:
