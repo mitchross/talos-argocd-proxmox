@@ -30,6 +30,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: media-pvc
   namespace: tubesync
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "SMB-backed YouTube archive (TubeArchivist); non-snapshottable, rebuildable via tubesync re-fetch"
 spec:
   accessModes:
   - ReadWriteMany

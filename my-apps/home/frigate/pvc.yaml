@@ -32,9 +32,12 @@ kind: PersistentVolumeClaim
 metadata:
   name: frigate-media
   namespace: frigate
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "SMB-backed Frigate recordings (NAS); non-snapshottable, retention managed by Frigate config and NAS"
   labels:
     app: frigate
     type: storage
+    backup-exempt: "true"
 spec:
   accessModes:
     - ReadWriteMany

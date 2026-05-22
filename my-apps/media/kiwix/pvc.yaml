@@ -3,6 +3,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: kiwix-data
   namespace: kiwix
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "SMB-backed offline-Wikipedia archive; non-snapshottable, rebuildable from kiwix.org ZIM downloads"
 spec:
   accessModes:
     - ReadWriteMany

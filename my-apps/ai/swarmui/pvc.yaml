@@ -48,6 +48,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: swarmui-dlbackend
   namespace: swarmui
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "SwarmUI auto-installs ComfyUI + Python/torch venv here on first run; fully rebuildable from upstream, intentionally not backed up"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -122,6 +126,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: swarmui-comfyui-models
   namespace: swarmui
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "Shared NFS-backed ComfyUI model cache (same NAS share as comfyui app); non-snapshottable, rebuildable"
 spec:
   accessModes:
     - ReadWriteMany

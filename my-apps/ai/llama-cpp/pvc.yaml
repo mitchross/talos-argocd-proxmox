@@ -31,6 +31,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: llama-cpp-models-pvc
   namespace: llama-cpp
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "NFS-backed LLM model cache (GGUF files); non-snapshottable, rebuildable via huggingface-cli"
 spec:
   accessModes:
     - ReadWriteMany

@@ -3,9 +3,12 @@ kind: PersistentVolumeClaim
 metadata:
   name: nfs-photos
   namespace: immich
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "Static NFS PV (immich external photo library); non-snapshottable, redundancy handled at NAS level"
   labels:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: external-library
+    backup-exempt: "true"
 spec:
   accessModes:
     - ReadOnlyMany
