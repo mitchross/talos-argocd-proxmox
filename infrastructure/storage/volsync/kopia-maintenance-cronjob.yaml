@@ -237,9 +237,6 @@ spec:
               # unsafe GC belongs in a manual break-glass operation only.
               kopia maintenance run
 
-              echo "=== Post-maintenance index blob count ==="
-              kopia repository status --json | grep -i blob || true
-
               echo "=== Done ==="
             volumeMounts:
             - name: kopia-credentials
@@ -252,8 +249,10 @@ spec:
           # ClusterExternalSecret/volsync-kopia-repository (which targets every
           # namespace labeled volsync.backube/privileged-movers=true; see
           # namespace.yaml in this directory). Files exposed at /var/secret/
-          # kopia-repo include KOPIA_PASSWORD, AWS_ACCESS_KEY_ID, and
-          # AWS_SECRET_ACCESS_KEY — the only three this Job reads.
+          # kopia-repo includes KOPIA_PASSWORD, AWS_ACCESS_KEY_ID,
+          # AWS_SECRET_ACCESS_KEY, and KOPIA_REPOSITORY. Do not log repository
+          # status JSON from this Job: Kopia masks the secret key but includes
+          # the access key ID in plain text.
           - name: kopia-credentials
             secret:
               secretName: volsync-kopia-repository
