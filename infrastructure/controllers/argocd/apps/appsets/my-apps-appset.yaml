@@ -6,6 +6,13 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "6"
 spec:
+  # TEMPORARY VolSync migration escape hatch:
+  # preserve per-Application compare-options annotations while Bound PVCs still
+  # carry old immutable dataSourceRef values. Remove after affected PVCs are
+  # recreated/restored and the ServerSideDiff=false annotations are removed.
+  ignoreApplicationDifferences:
+  - jsonPointers:
+    - /metadata/annotations/argocd.argoproj.io~1compare-options
   generators:
   - git:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git

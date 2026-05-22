@@ -11,6 +11,11 @@ spec:
   ignoreApplicationDifferences:
   - jsonPointers:
     - /metadata/annotations/argocd.argoproj.io~1skip-reconcile
+    # TEMPORARY VolSync migration escape hatch for redis-instance:
+    # preserve a manual ServerSideDiff=false annotation while its Bound PVC
+    # still carries an old immutable dataSourceRef value. Remove after the PVC
+    # is recreated/restored and the annotation is removed.
+    - /metadata/annotations/argocd.argoproj.io~1compare-options
   generators:
   - git:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git

@@ -314,12 +314,18 @@ Temporary staged fix in this working tree:
   `argocd.argoproj.io/compare-options: ServerSideDiff=false`.
 - Gitea's chart-rendered `gitea-shared-storage` PVC gets the same annotation via
   the existing Kustomize patch in `my-apps/development/gitea/kustomization.yaml`.
+- The ApplicationSet templates preserve manually-applied Application-level
+  compare-options annotations during this migration. In this Argo CD version,
+  the PVC-level annotation alone does not stop the global server-side diff
+  dry-run; affected live Applications also need temporary
+  `argocd.argoproj.io/compare-options: ServerSideDiff=false`.
 
 This is intentionally not enforced by `hack/validate-volsync-wiring.py` as a
 permanent design rule. Once every affected live PVC has been recreated with the
 desired `dataSourceRef` from Git, or after a clean nuke/rebuild creates fresh
-PVCs from Git, remove these annotations and verify Argo still converges with
-global server-side diff enabled.
+PVCs from Git, remove the PVC/Application annotations and the ApplicationSet
+preservation rule, then verify Argo still converges with global server-side diff
+enabled.
 
 This is a correctness blocker because Argo cannot reliably converge the app
 state while the PVC exists. It remains a live-cluster blocker until the staged
