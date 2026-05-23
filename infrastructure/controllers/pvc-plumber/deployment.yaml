@@ -65,7 +65,7 @@ spec:
           # Pinned to the immutable digest published by the operator
           # repo's release.yaml workflow on 2026-05-23. The tag value is
           # informational only — the digest is what kubelet pulls.
-          image: ghcr.io/mitchross/pvc-plumber:4.0.0-audit-rc1@sha256:b3f47a442ef3f9a1cf18a04417a98be7e6cbc64bf9f9103e8a8c72ba17944a98
+          image: ghcr.io/mitchross/pvc-plumber:4.0.0-audit-rc2@sha256:fce98c921c6c3437fb31b3f4a5e77c48ee7aff2983dc66626bd44db2d1e4c5fb
           imagePullPolicy: IfNotPresent
           command: ["/pvc-plumber"]
           args:
