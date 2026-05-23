@@ -1,0 +1,167 @@
+# pvc-plumber v4 — audit-mode Deployment (Phase 3 of
+# docs/pvc-plumber-v4-prd.md).
+#
+# Single replica. Leader election forced off by the binary in audit mode.
+# Read-only RBAC (rbac.yaml). No webhook server — main.go only constructs
+# the webhook server when PVC_PLUMBER_MODE is permissive or higher
+# (controller-runtime's webhook server is added to the manager's runnables
+# only when GetWebhookServer() is called, which audit-mode main.go skips).
+# Therefore no TLS cert volume, no init container, no /tmp/k8s-webhook-server.
+#
+# ⚠ IMAGE SHA IS PLACEHOLDER. The image tag below pins to an all-zero
+# digest so kustomize render succeeds without an actually-pulled image. The
+# Argo Application file (../argocd/apps/core-dependencies/pvc-plumber-app.yaml)
+# intentionally has automated sync disabled. Before enabling sync:
+#
+#   1. Push pvc-plumber commits a36bf71 + 028f376 to origin/main.
+#   2. Build + push image `ghcr.io/mitchross/pvc-plumber:v4.0.0-audit-rc1`.
+#   3. Replace the @sha256:000…000 below with the real digest.
+#   4. Enable Argo automation in pvc-plumber-app.yaml (see that file).
+#   5. Argo will sync; the audit-mode pod starts and emits the banner:
+#      "pvc-plumber starting in audit mode: no cluster writes will be performed"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pvc-plumber
+  namespace: pvc-plumber
+  labels:
+    app.kubernetes.io/name: pvc-plumber
+    app.kubernetes.io/component: backup-restore-operator
+    pvc-plumber.io/mode: audit
+spec:
+  replicas: 1
+  # No RWO PVC, so Recreate vs RollingUpdate doesn't matter, but pinning
+  # to Recreate keeps the rollout pattern consistent with every other
+  # operator-style Deployment in the repo.
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pvc-plumber
+      app.kubernetes.io/component: backup-restore-operator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pvc-plumber
+        app.kubernetes.io/component: backup-restore-operator
+        pvc-plumber.io/mode: audit
+    spec:
+      serviceAccountName: pvc-plumber
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: operator
+          # TBD: replace the placeholder digest before enabling Argo
+          # automation. The all-zero SHA prevents accidental image pulls
+          # of a stale or wrong image — pod will stay in ImagePullBackOff
+          # until a real digest is filled in.
+          image: ghcr.io/mitchross/pvc-plumber:v4.0.0-audit-rc1@sha256:0000000000000000000000000000000000000000000000000000000000000000
+          imagePullPolicy: IfNotPresent
+          command: ["/pvc-plumber"]
+          args:
+            # Required to enable the controller-runtime manager (the v3.x
+            # rollout gate; legacy HTTP path is still present in the
+            # binary). Audit gating lives BELOW this flag — see env vars.
+            - --leader-elect=false
+            - --metrics-bind-address=:8081
+            - --health-probe-bind-address=:8082
+          env:
+            # ⚠ Phase 3 contract: audit ONLY. Permissive/enforce/strict
+            # deployments live in later phases.
+            - name: PVC_PLUMBER_MODE
+              value: "audit"
+            # Enable the operator code path (manager + reconciler).
+            # Without this, the binary stays in legacy HTTP-only mode.
+            - name: OPERATOR_MODE
+              value: "true"
+            # Tighten log level for the audit rollout; v4 emits a lot of
+            # "would-write" entries that are useful for observability but
+            # noisy at DEBUG.
+            - name: LOG_LEVEL
+              value: "info"
+            # Backend pinning is not used in audit mode (the binary's
+            # Phase 2.5 code path does not call kopia or S3), but the
+            # legacy HTTP server still initializes the backend on startup.
+            # Point at S3 (matches v3.1 production) so initialization
+            # succeeds; the cache pre-warm will run but its result is
+            # only consumed when audit graduates to permissive (Phase 6).
+            - name: BACKEND_TYPE
+              value: "s3"
+            - name: KOPIA_S3_ENDPOINT
+              value: "192.168.10.133:30292"
+            - name: KOPIA_S3_BUCKET
+              value: "volsync-kopia"
+            - name: KOPIA_S3_DISABLE_TLS
+              value: "true"
+            # Pod metadata for log correlation.
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - name: metrics
+              containerPort: 8081
+              protocol: TCP
+            - name: probes
+              containerPort: 8082
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: probes
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: probes
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            # /tmp is needed by Go's default temp directory and by
+            # readOnlyRootFilesystem deployments generally. Keep it
+            # ephemeral; the operator has no persistent state.
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
+      # Schedule on any node — operator is cheap, no GPU/special hardware.
+      tolerations:
+        - key: node.kubernetes.io/not-ready
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 30
+        - key: node.kubernetes.io/unreachable
+          operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 30

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pvc-plumber
+  labels:
+    app.kubernetes.io/name: pvc-plumber
+    app.kubernetes.io/component: backup-restore-operator
+    app.kubernetes.io/managed-by: argocd
+    # Pod Security Admission: restricted. The audit-mode pod runs as
+    # non-root, drops all capabilities, and uses a RuntimeDefault seccomp
+    # profile — see deployment.yaml.
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    # NOTE: deliberately NOT setting volsync.backube/privileged-movers:
+    # this namespace doesn't host backed-up PVCs — the operator itself
+    # has no persistent state.

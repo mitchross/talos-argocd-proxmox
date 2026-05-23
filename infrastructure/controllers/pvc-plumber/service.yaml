@@ -1,0 +1,29 @@
+# Service for Prometheus scraping of controller-runtime metrics + probes.
+#
+# Deliberately NOT exposing port 9443 (webhook server) — the audit-mode
+# binary does not start the webhook server (see deployment.yaml). Even if
+# a future Deployment misconfiguration accidentally started it, omitting
+# the port here means nothing on the cluster can route admission traffic
+# to this pod.
+apiVersion: v1
+kind: Service
+metadata:
+  name: pvc-plumber-metrics
+  namespace: pvc-plumber
+  labels:
+    app.kubernetes.io/name: pvc-plumber
+    app.kubernetes.io/component: backup-restore-operator
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: pvc-plumber
+    app.kubernetes.io/component: backup-restore-operator
+  ports:
+    - name: metrics
+      port: 8081
+      targetPort: metrics
+      protocol: TCP
+    - name: probes
+      port: 8082
+      targetPort: probes
+      protocol: TCP

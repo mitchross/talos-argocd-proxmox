@@ -1,0 +1,63 @@
+# pvc-plumber v4 — audit-mode Argo Application (Phase 3 of
+# docs/pvc-plumber-v4-prd.md).
+#
+# Sync wave 2: same level as volsync-backup-cluster (MAP + ClusterES).
+# The two co-exist safely — pvc-plumber observes in audit mode; the MAP
+# gates VolSync mover Jobs at the apiserver. No admission conflict.
+#
+# ⚠ AUTOMATED SYNC IS DISABLED below. The Deployment image reference
+# uses a placeholder all-zero SHA digest. Before enabling automation:
+#
+#   1. Build and push ghcr.io/mitchross/pvc-plumber:v4.0.0-audit-rc1
+#   2. Update the @sha256: digest in
+#      infrastructure/controllers/pvc-plumber/deployment.yaml
+#   3. Uncomment the `automated:` block in this file
+#   4. Commit + push to main; Argo sync engages
+#
+# See infrastructure/controllers/pvc-plumber/README.md for the full flow.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: pvc-plumber
+  namespace: argocd
+  annotations:
+    # Wave 2 — after VolSync operator (Wave 1), same level as the MAP
+    # + ClusterES at infrastructure/storage/volsync-backup-cluster/.
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/manifest-generate-paths: infrastructure/controllers/pvc-plumber
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: infrastructure
+  source:
+    repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+    targetRevision: main
+    path: infrastructure/controllers/pvc-plumber
+  destination:
+    server: https://kubernetes.default.svc
+    # destination.namespace is nominal (argocd) — the manifests under
+    # `path:` create their own pvc-plumber Namespace. ArgoCD uses
+    # destination.namespace only for resources without an explicit
+    # metadata.namespace field, of which we have none.
+    namespace: argocd
+  syncPolicy:
+    # ⚠ AUTOMATED SYNC INTENTIONALLY OMITTED.
+    # Manual sync only until the operator image SHA digest in
+    # deployment.yaml is replaced with the real value built from
+    # pvc-plumber commits a36bf71 + 028f376.
+    #
+    # To enable, uncomment the `automated:` block:
+    # automated:
+    #   prune: true
+    #   selfHeal: true
+    #   allowEmpty: false
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: -1
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
