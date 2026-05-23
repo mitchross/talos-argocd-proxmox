@@ -8,17 +8,20 @@
 # only when GetWebhookServer() is called, which audit-mode main.go skips).
 # Therefore no TLS cert volume, no init container, no /tmp/k8s-webhook-server.
 #
-# ⚠ IMAGE SHA IS PLACEHOLDER. The image tag below pins to an all-zero
-# digest so kustomize render succeeds without an actually-pulled image. The
-# Argo Application file (../argocd/apps/core-dependencies/pvc-plumber-app.yaml)
-# intentionally has automated sync disabled. Before enabling sync:
+# Image: pinned to v4.0.0-audit-rc1 (git tag) → docker tag 4.0.0-audit-rc1
+# (docker/metadata-action strips the leading `v`). The SHA-pin is the
+# real release digest published by .github/workflows/release.yaml in the
+# operator repo on 2026-05-23. Built from mitchross/pvc-plumber commit
+# fffcf31 (chore(v4): fix lint for audit-mode foundation), which itself
+# rolls up Phase 2 (a36bf71) and Phase 2.5 (028f376) — the v4 pure
+# packages and the audit-mode runtime guard.
 #
-#   1. Push pvc-plumber commits a36bf71 + 028f376 to origin/main.
-#   2. Build + push image `ghcr.io/mitchross/pvc-plumber:v4.0.0-audit-rc1`.
-#   3. Replace the @sha256:000…000 below with the real digest.
-#   4. Enable Argo automation in pvc-plumber-app.yaml (see that file).
-#   5. Argo will sync; the audit-mode pod starts and emits the banner:
-#      "pvc-plumber starting in audit mode: no cluster writes will be performed"
+# The Argo Application at ../argocd/apps/core-dependencies/pvc-plumber-app.yaml
+# still has automated sync DISABLED. The image pin alone does not trigger
+# a deployment — a manual sync (or uncommenting automation in a follow-up
+# commit) is required. Once Argo syncs, the audit-mode pod starts and
+# logs the banner:
+#   "pvc-plumber starting in audit mode: no cluster writes will be performed"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -59,11 +62,10 @@ spec:
           type: RuntimeDefault
       containers:
         - name: operator
-          # TBD: replace the placeholder digest before enabling Argo
-          # automation. The all-zero SHA prevents accidental image pulls
-          # of a stale or wrong image — pod will stay in ImagePullBackOff
-          # until a real digest is filled in.
-          image: ghcr.io/mitchross/pvc-plumber:v4.0.0-audit-rc1@sha256:0000000000000000000000000000000000000000000000000000000000000000
+          # Pinned to the immutable digest published by the operator
+          # repo's release.yaml workflow on 2026-05-23. The tag value is
+          # informational only — the digest is what kubelet pulls.
+          image: ghcr.io/mitchross/pvc-plumber:4.0.0-audit-rc1@sha256:b3f47a442ef3f9a1cf18a04417a98be7e6cbc64bf9f9103e8a8c72ba17944a98
           imagePullPolicy: IfNotPresent
           command: ["/pvc-plumber"]
           args:
