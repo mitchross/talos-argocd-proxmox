@@ -12,12 +12,14 @@ resources:
   - core-dependencies/longhorn-app.yaml
   - core-dependencies/snapshot-controller-app.yaml
   - core-dependencies/volsync-app.yaml
-  # pvc-plumber decommissioned 2026-05-21 — replaced by the operator-free
-  # volsync-backup-cluster (MutatingAdmissionPolicy injecting wait-for-rustfs
-  # into mover Jobs). Webhooks + Application + Deployment + RBAC deleted from
-  # the cluster, directory removed from git in the same commit. See
-  # docs/research/pvc-backup-simplification/ for the migration design.
-  # - core-dependencies/pvc-plumber-app.yaml
+  # pvc-plumber: decommissioned 2026-05-21, re-introduced 2026-05-22 in
+  # audit-mode-only form (Phase 3 of docs/pvc-plumber-v4-prd.md). The Argo
+  # Application's syncPolicy.automated is INTENTIONALLY DISABLED until the
+  # operator image SHA in deployment.yaml is replaced with a real digest;
+  # see infrastructure/controllers/pvc-plumber/README.md for the
+  # build-and-publish flow. Co-exists with volsync-backup-cluster at the
+  # same sync wave — the MAP gates mover Jobs; pvc-plumber observes PVCs.
+  - core-dependencies/pvc-plumber-app.yaml
   - core-dependencies/volsync-backup-cluster-app.yaml
 
   # Custom entrypoints: standalone apps kept out of AppSets for ordering or render reasons.

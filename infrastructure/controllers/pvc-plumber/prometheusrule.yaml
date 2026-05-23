@@ -1,0 +1,62 @@
+# Minimal PrometheusRule for the pvc-plumber audit-mode pod.
+#
+# Phase 3 scope: only alerts that have real, exposed metrics today. The
+# audit-mode in-memory counters (WouldWriteTotals, WouldWriteByKind) are
+# NOT exported as Prometheus metrics yet — they're plumbed via slog only.
+# Adding alerts for non-existent metrics would be noise.
+#
+# When Phase 5+ wires the counters to a Prometheus collector, this file
+# gains:
+#   - pvc_plumber_cache_age_seconds (alert on > 5m stale)
+#   - pvc_plumber_admission_denied_total (rate-of-denies anomaly)
+#   - pvc_plumber_source_gated_total (long-stuck PVCs)
+#
+# Today: just pod-down via the kube-state-metrics / kubelet up{} signal.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pvc-plumber
+  namespace: pvc-plumber
+  labels:
+    app.kubernetes.io/name: pvc-plumber
+    app.kubernetes.io/component: backup-restore-operator
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: pvc-plumber.rules
+      rules:
+        - alert: PvcPlumberPodDown
+          expr: |
+            kube_deployment_status_replicas_available{namespace="pvc-plumber",deployment="pvc-plumber"} == 0
+          for: 10m
+          labels:
+            severity: warning
+            component: pvc-plumber
+          annotations:
+            summary: "pvc-plumber audit-mode pod is not Available"
+            description: |
+              The pvc-plumber Deployment in namespace `pvc-plumber` has zero
+              Available replicas for at least 10 minutes. In audit mode this
+              does NOT impact cluster writes (the binary never writes), but
+              parity reporting and the "would-write" log feed are stopped.
+
+              Likely causes:
+                - Image SHA placeholder not yet replaced (Phase 3 rollout)
+                - ImagePullBackOff
+                - CrashLoopBackOff (check `kubectl logs -n pvc-plumber`)
+              Verify with:
+                kubectl get pods,deployment -n pvc-plumber
+                kubectl describe pod -n pvc-plumber -l app.kubernetes.io/name=pvc-plumber
+        - alert: PvcPlumberCrashLooping
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="pvc-plumber",container="operator"}[15m]) > 0
+          for: 15m
+          labels:
+            severity: warning
+            component: pvc-plumber
+          annotations:
+            summary: "pvc-plumber operator container is restarting"
+            description: |
+              The pvc-plumber operator container has restarted within the
+              last 15 minutes. Check `kubectl logs --previous` for the
+              crash cause.

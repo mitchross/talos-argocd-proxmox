@@ -1,0 +1,27 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: pvc-plumber
+  namespace: pvc-plumber
+  labels:
+    app.kubernetes.io/name: pvc-plumber
+    app.kubernetes.io/component: backup-restore-operator
+    # Required so kube-prometheus-stack's Prometheus instance picks this
+    # ServiceMonitor up — the stack's serviceMonitorSelector filters on
+    # `release: kube-prometheus-stack`.
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pvc-plumber
+      app.kubernetes.io/component: backup-restore-operator
+  namespaceSelector:
+    matchNames:
+      - pvc-plumber
+  endpoints:
+    - port: metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      path: /metrics
+      scheme: http
+      honorLabels: true
