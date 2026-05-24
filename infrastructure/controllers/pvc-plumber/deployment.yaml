@@ -1,27 +1,37 @@
-# pvc-plumber v4 — audit-mode Deployment (Phase 3 of
-# docs/pvc-plumber-v4-prd.md).
+# pvc-plumber v4 — audit-mode Deployment, rc4 image (Phase 6 of
+# docs/pvc-plumber-v4-prd.md, cutover sequence per
+# docs/pvc-plumber-v4-cutover.md §9).
 #
 # Single replica. Leader election forced off by the binary in audit mode.
-# Read-only RBAC (rbac.yaml). No webhook server — main.go only constructs
-# the webhook server when PVC_PLUMBER_MODE is permissive or higher
-# (controller-runtime's webhook server is added to the manager's runnables
-# only when GetWebhookServer() is called, which audit-mode main.go skips).
-# Therefore no TLS cert volume, no init container, no /tmp/k8s-webhook-server.
+# Read-only RBAC (rbac.yaml). No webhook server — Patch 6.7-wire gates
+# webhook registration on `!runsV4Reconciler(mode)`, and audit + permissive
+# both route to v4, so the webhook server is never started under any v4
+# mode. Therefore no TLS cert volume, no init container, no
+# /tmp/k8s-webhook-server.
 #
-# Image: pinned to v4.0.0-audit-rc3 (git tag) → docker tag 4.0.0-audit-rc3
-# (docker/metadata-action strips the leading `v`). The SHA-pin is the
-# real release digest published by .github/workflows/release.yaml in the
-# operator repo on 2026-05-23. Built from mitchross/pvc-plumber commit
-# 23649de (feat(v4): wire audit mode to v4 reconciler and /audit endpoint),
-# which rolls up Patch 1 (parity model) through Patch 5 (main.go wiring).
-# rc3 is the first image where the V4AuditReconciler actually runs and the
-# /audit HTTP endpoint is served on cfg.Port (8080).
+# Image: pinned to v4.0.0-permissive-rc4 (git tag) → docker tag
+# 4.0.0-permissive-rc4 (docker/metadata-action@v5 strips the leading
+# `v`). The SHA-pin is the real release digest published by
+# .github/workflows/release.yaml on 2026-05-24. Built from
+# mitchross/pvc-plumber commit 82f37a3 (feat(v4): require explicit
+# defaults for permissive VolSync management), rolling up Patches 6.1
+# through 6.8a — the full v4 audit + permissive code path with bounded
+# executor, GVK allow-list, ownership re-checks, and the
+# RequireV4WriteDefaults startup gate.
+#
+# rc4 is a CAPABILITY BUMP — the binary now contains permissive +
+# bounded-executor code — but this Deployment INTENTIONALLY pins
+# PVC_PLUMBER_MODE=audit. Permissive deployment is a separate later
+# change requiring explicit user authorization (see cutover doc §9
+# Step B). The six PVC_PLUMBER_DEFAULT_* env vars are set here as
+# forward-prep: audit mode does not require them (the executor
+# short-circuits) but having them present means flipping to permissive
+# is a one-line env change in a future PR, not a multi-field shuffle.
 #
 # The Argo Application at ../argocd/apps/core-dependencies/pvc-plumber-app.yaml
-# still has automated sync DISABLED. The image pin alone does not trigger
-# a deployment — a manual sync (or uncommenting automation in a follow-up
-# commit) is required. Once Argo syncs, the audit-mode pod starts and
-# logs the banner:
+# still has automated sync DISABLED. The image pin alone does not
+# trigger a deployment — a manual sync is required. Once Argo syncs,
+# the audit-mode rc4 pod starts and logs the banner:
 #   "pvc-plumber starting in audit mode: no cluster writes will be performed"
 ---
 apiVersion: apps/v1
@@ -64,9 +74,10 @@ spec:
       containers:
         - name: operator
           # Pinned to the immutable digest published by the operator
-          # repo's release.yaml workflow on 2026-05-23. The tag value is
-          # informational only — the digest is what kubelet pulls.
-          image: ghcr.io/mitchross/pvc-plumber:4.0.0-audit-rc3@sha256:86b5bd9c0b27135f046a0af9d0ed7c8ba988b571a3851506e8278cae11adf5e9
+          # repo's release.yaml workflow on 2026-05-24 (Release run
+          # 26368701294). The tag value is informational only — the
+          # digest is what kubelet pulls.
+          image: ghcr.io/mitchross/pvc-plumber:4.0.0-permissive-rc4@sha256:2323333e6eb79f184806ced6f9f70f45aa144ab742d5d8a6a88d3915c63e08b9
           imagePullPolicy: IfNotPresent
           command: ["/pvc-plumber"]
           args:
@@ -90,12 +101,13 @@ spec:
             # noisy at DEBUG.
             - name: LOG_LEVEL
               value: "info"
-            # Backend pinning is not used in audit mode (the binary's
-            # Phase 2.5 code path does not call kopia or S3), but the
-            # legacy HTTP server still initializes the backend on startup.
-            # Point at S3 (matches v3.1 production) so initialization
-            # succeeds; the cache pre-warm will run but its result is
-            # only consumed when audit graduates to permissive (Phase 6).
+            # Backend env vars are INERT under any v4-routed mode.
+            # Patch 6.7-wire's needsBackend(mode) returns false for
+            # audit and permissive, so cmd/operator/main.go skips
+            # buildBackend and the legacy HTTP server entirely. These
+            # values stay in the manifest only to ease a future rollback
+            # to a hypothetical v3 chart-era binary; remove once that
+            # rollback path is no longer a real option.
             - name: BACKEND_TYPE
               value: "s3"
             - name: KOPIA_S3_ENDPOINT
@@ -104,6 +116,29 @@ spec:
               value: "volsync-kopia"
             - name: KOPIA_S3_DISABLE_TLS
               value: "true"
+            # v4 builder/executor defaults — consumed by the v4
+            # reconciler when it renders RS/RD specs (Patch 6.5+
+            # builder.Inputs.Default*). Required when
+            # PVC_PLUMBER_MODE=permissive (RequireV4WriteDefaults in
+            # cmd/operator/main.go errors at startup if any are unset
+            # or if UID/GID/FSGroup are zero); optional in audit mode
+            # but pre-staged here so flipping to permissive becomes a
+            # one-line env change rather than a multi-field shuffle.
+            # Values match the talos cluster's 568:568:568 +
+            # longhorn-snapclass + longhorn convention used by every
+            # current inline RS/RD pattern in my-apps/**.
+            - name: PVC_PLUMBER_DEFAULT_SNAPSHOT_CLASS
+              value: "longhorn-snapclass"
+            - name: PVC_PLUMBER_DEFAULT_CACHE_CAPACITY
+              value: "2Gi"
+            - name: PVC_PLUMBER_DEFAULT_STORAGE_CLASS
+              value: "longhorn"
+            - name: PVC_PLUMBER_DEFAULT_UID
+              value: "568"
+            - name: PVC_PLUMBER_DEFAULT_GID
+              value: "568"
+            - name: PVC_PLUMBER_DEFAULT_FSGROUP
+              value: "568"
             # Pod metadata for log correlation.
             - name: POD_NAME
               valueFrom:
