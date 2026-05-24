@@ -9,6 +9,18 @@ metadata:
     app.kubernetes.io/name: nginx
     app.kubernetes.io/component: development
     restore-policy: "strict"
+    # v4 canary #1 (Phase 6 — see docs/pvc-plumber-v4-cutover.md):
+    # nginx-example/storage is the safest first ownership cutover —
+    # the PVC is orphaned (no Deployment volume references it; backup
+    # pipeline runs against an unused volume), the inline mover already
+    # used 568:568:568 matching the operator default, and the app is
+    # in the development category. The two-gate write fuse below
+    # (enabled + manage-volsync) is what authorizes pvc-plumber to
+    # take ownership of the RS/RD chain after Argo prunes the inline
+    # documents below this PVC.
+    pvc-plumber.io/enabled: "true"
+    pvc-plumber.io/tier: "daily"
+    pvc-plumber.io/manage-volsync: "true"
 spec:
   storageClassName: longhorn
   accessModes:
@@ -20,73 +32,11 @@ spec:
   # On PVC re-creation (DR / namespace recreate), VolSync's volume
   # populator reads the latest snapshot from the shared kopia repo
   # volsync-kopia-repository and binds this PVC with restored data. No-op
-  # while the PVC is already Bound. VolSync ReplicationSource/
-  # ReplicationDestination resources are defined below in this file.
+  # while the PVC is already Bound. The RD itself is now operator-
+  # managed — pvc-plumber will (re)create nginx-example/storage-dst
+  # with managed-by=pvc-plumber once Argo prunes the inline RD that
+  # used to live in this file.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
     name: storage-dst
-
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: storage
-  namespace: nginx-example
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: storage
-spec:
-  sourcePVC: storage
-  trigger:
-    schedule: "18 2 * * *"
-  kopia:
-    repository: volsync-kopia-repository
-    username: storage
-    hostname: nginx-example
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: storage-dst
-  namespace: nginx-example
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: storage
-spec:
-  trigger:
-    manual: restore-once
-  kopia:
-    repository: volsync-kopia-repository
-    username: storage
-    hostname: nginx-example
-    sourceIdentity:
-      sourceName: storage
-      sourceNamespace: nginx-example
-      sourcePVCName: storage
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes:
-      - ReadWriteOnce
-    capacity: 5Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
