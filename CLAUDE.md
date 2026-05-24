@@ -178,6 +178,8 @@ Detailed instructions load automatically when working in these directories:
 - **[docs/argocd.md](docs/argocd.md)** - ArgoCD documentation
 - **[docs/argocd-entrypoints.md](docs/argocd-entrypoints.md)** - ArgoCD root entrypoints, waves, and AppSet/custom-entrypoint decisions
 - **[docs/pvc-plumber-v4-prd.md](docs/pvc-plumber-v4-prd.md)** — pvc-plumber v4 PRD (locked design, phased rollout, label/annotation contract, migration rules). **Authoritative for any pvc-plumber work.**
+- **[docs/pvc-plumber-v4-cutover.md](docs/pvc-plumber-v4-cutover.md)** — Day-of cutover runbook: label model, two-gate write contract, ownership rules, generated VolSync shape, required permissive env vars, per-PVC checklist, karakeep canary scope, rollback. **Operational source of truth for v4 migrations.**
+- **[docs/pvc-plumber-v4-roadmap.md](docs/pvc-plumber-v4-roadmap.md)** — Post-PRD working backlog: items identified during execution that are gated behind specific Phase 6 / canary milestones. Includes the post-canary visual explainer deliverable.
 - **pvc-plumber decommissioned 2026-05-21; v4 re-adoption in planning.** Historical decommission analysis under `docs/research/pvc-backup-simplification/`. `scripts/emergency-webhook-cleanup.sh` retained as historical reference for any future `failurePolicy: Fail` webhook deadlock pattern.
 
 ## Mink capture
