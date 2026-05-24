@@ -85,8 +85,13 @@ jobs:
           # Filter known kubeconform false positives:
           # - Gitea Helm-rendered Service gitea-http: targetPort triggers a
           #   oneOf ambiguity in the Kubernetes Service schema.
-          # - VolSync ReplicationSource: Datree's CRD catalog schema is stale
-          #   for our installed VolSync and rejects valid spec.kopia configs.
+          # - VolSync ReplicationSource and ReplicationDestination:
+          #   Datree's CRD catalog schema is stale for our installed
+          #   VolSync and rejects valid spec.kopia configs on both kinds.
+          #   Both must be skipped — the previous filter skipped only
+          #   ReplicationSource, which let the 28 inline RD resources
+          #   in my-apps/** fail kubeconform with "additionalProperties
+          #   'kopia' not allowed" on every Cluster CI run.
           # Split multi-doc YAML into per-document files, skip those documents.
           csplit -z -f /tmp/doc- /tmp/all-manifests.yaml '/^---$/' '{*}' > /dev/null
           : > /tmp/filtered-manifests.yaml
@@ -94,7 +99,8 @@ jobs:
             if grep -q 'kind: Service' "$f" && grep -q 'name: gitea-http' "$f"; then
               continue
             fi
-            if grep -q 'apiVersion: volsync.backube/v1alpha1' "$f" && grep -q 'kind: ReplicationSource' "$f"; then
+            if grep -q 'apiVersion: volsync.backube/v1alpha1' "$f" \
+               && { grep -q 'kind: ReplicationSource' "$f" || grep -q 'kind: ReplicationDestination' "$f"; }; then
               continue
             fi
             cat "$f" >> /tmp/filtered-manifests.yaml
