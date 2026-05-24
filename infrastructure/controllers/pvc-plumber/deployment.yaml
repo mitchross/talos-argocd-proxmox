@@ -88,10 +88,17 @@ spec:
             - --metrics-bind-address=:8081
             - --health-probe-bind-address=:8082
           env:
-            # ⚠ Phase 3 contract: audit ONLY. Permissive/enforce/strict
-            # deployments live in later phases.
+            # Phase 6 permissive dry-run: the binary is in permissive
+            # mode but the cluster has zero write-eligible PVCs (no PVC
+            # currently carries BOTH pvc-plumber.io/enabled="true" AND
+            # pvc-plumber.io/manage-volsync="true"). Verdict for every
+            # PVC remains skipped-not-opted-in, skipped-exempt, or
+            # already-matches; planned_ops stays empty, executor never
+            # fires. Karakeep canary is the next gate after this dry
+            # run is verified — see docs/pvc-plumber-v4-cutover.md §10.
+            # Enforce/strict are still rejected at startup (Phase 8).
             - name: PVC_PLUMBER_MODE
-              value: "audit"
+              value: "permissive"
             # Enable the operator code path (manager + reconciler).
             # Without this, the binary stays in legacy HTTP-only mode.
             - name: OPERATOR_MODE
