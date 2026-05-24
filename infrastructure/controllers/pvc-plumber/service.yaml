@@ -27,3 +27,12 @@ spec:
       port: 8082
       targetPort: probes
       protocol: TCP
+    # rc3+: route in-cluster /audit consumers to the audit HTTP server
+    # bound to cfg.Port inside the pod. NOT scraped by Prometheus —
+    # the ServiceMonitor still targets the `metrics` port for
+    # /metrics. Reachable as
+    # `pvc-plumber-metrics.pvc-plumber.svc.cluster.local:8080/audit`.
+    - name: audit-http
+      port: 8080
+      targetPort: audit-http
+      protocol: TCP
