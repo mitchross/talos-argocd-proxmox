@@ -35,7 +35,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
-          cache: pip
+          # cache: pip removed — repo has no requirements.txt/pyproject.toml,
+          # so setup-python@v5 fails before MkDocs runs. Deps are installed
+          # inline by the next step (mkdocs-material + pymdown-extensions);
+          # a one-job CI run installing two small wheels is cheap enough that
+          # we don't need pip caching here.
 
       - name: Install MkDocs Material
         run: |
