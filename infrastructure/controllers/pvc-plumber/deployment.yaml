@@ -8,13 +8,14 @@
 # only when GetWebhookServer() is called, which audit-mode main.go skips).
 # Therefore no TLS cert volume, no init container, no /tmp/k8s-webhook-server.
 #
-# Image: pinned to v4.0.0-audit-rc1 (git tag) → docker tag 4.0.0-audit-rc1
+# Image: pinned to v4.0.0-audit-rc3 (git tag) → docker tag 4.0.0-audit-rc3
 # (docker/metadata-action strips the leading `v`). The SHA-pin is the
 # real release digest published by .github/workflows/release.yaml in the
 # operator repo on 2026-05-23. Built from mitchross/pvc-plumber commit
-# fffcf31 (chore(v4): fix lint for audit-mode foundation), which itself
-# rolls up Phase 2 (a36bf71) and Phase 2.5 (028f376) — the v4 pure
-# packages and the audit-mode runtime guard.
+# 23649de (feat(v4): wire audit mode to v4 reconciler and /audit endpoint),
+# which rolls up Patch 1 (parity model) through Patch 5 (main.go wiring).
+# rc3 is the first image where the V4AuditReconciler actually runs and the
+# /audit HTTP endpoint is served on cfg.Port (8080).
 #
 # The Argo Application at ../argocd/apps/core-dependencies/pvc-plumber-app.yaml
 # still has automated sync DISABLED. The image pin alone does not trigger
@@ -65,7 +66,7 @@ spec:
           # Pinned to the immutable digest published by the operator
           # repo's release.yaml workflow on 2026-05-23. The tag value is
           # informational only — the digest is what kubelet pulls.
-          image: ghcr.io/mitchross/pvc-plumber:4.0.0-audit-rc2@sha256:fce98c921c6c3437fb31b3f4a5e77c48ee7aff2983dc66626bd44db2d1e4c5fb
+          image: ghcr.io/mitchross/pvc-plumber:4.0.0-audit-rc3@sha256:86b5bd9c0b27135f046a0af9d0ed7c8ba988b571a3851506e8278cae11adf5e9
           imagePullPolicy: IfNotPresent
           command: ["/pvc-plumber"]
           args:
@@ -118,6 +119,15 @@ spec:
               protocol: TCP
             - name: probes
               containerPort: 8082
+              protocol: TCP
+            # rc3+: audit HTTP server bound to cfg.Port (defaults to 8080,
+            # PORT env intentionally unset). Serves /audit (parity report
+            # JSON), plus inline /healthz and /readyz for symmetry with
+            # the legacy port. Kubelet probes intentionally still target
+            # `probes` (controller-runtime manager) — this port is for
+            # clients that consume the parity report.
+            - name: audit-http
+              containerPort: 8080
               protocol: TCP
           readinessProbe:
             httpGet:
