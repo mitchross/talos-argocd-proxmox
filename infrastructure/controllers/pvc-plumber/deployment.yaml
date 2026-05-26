@@ -1,4 +1,4 @@
-# pvc-plumber v4 — audit-mode Deployment, rc4 image (Phase 6 of
+# pvc-plumber v4 — audit-mode Deployment, rc5 image (Phase 6 of
 # docs/pvc-plumber-v4-prd.md, cutover sequence per
 # docs/pvc-plumber-v4-cutover.md §9).
 #
@@ -9,30 +9,43 @@
 # mode. Therefore no TLS cert volume, no init container, no
 # /tmp/k8s-webhook-server.
 #
-# Image: pinned to v4.0.0-permissive-rc4 (git tag) → docker tag
-# 4.0.0-permissive-rc4 (docker/metadata-action@v5 strips the leading
+# Image: pinned to v4.0.0-permissive-rc5 (git tag) → docker tag
+# 4.0.0-permissive-rc5 (docker/metadata-action@v5 strips the leading
 # `v`). The SHA-pin is the real release digest published by
-# .github/workflows/release.yaml on 2026-05-24. Built from
-# mitchross/pvc-plumber commit 82f37a3 (feat(v4): require explicit
-# defaults for permissive VolSync management), rolling up Patches 6.1
-# through 6.8a — the full v4 audit + permissive code path with bounded
-# executor, GVK allow-list, ownership re-checks, and the
-# RequireV4WriteDefaults startup gate.
+# .github/workflows/release.yaml on 2026-05-26. Built from
+# mitchross/pvc-plumber commit f19595b (build(image): bundle
+# pvc-plumber-adopt CLI into container image), rolling up Patches 7.1
+# through 7.4 — read-only adoption planner (internal/v4/adopt PlanFor),
+# metadata-only PVC adopt writer (Apply/Undo via server-side apply),
+# cmd/adopt CLI wiring, and the Dockerfile change that bundles the
+# resulting /pvc-plumber-adopt binary next to /pvc-plumber in this
+# container. Operator-side behavior is byte-identical to rc4 — no
+# commits since rc4 touched cmd/operator, internal/controller, or
+# internal/v4/executor; the delta is the bundled CLI only.
 #
-# rc4 is a CAPABILITY BUMP — the binary now contains permissive +
-# bounded-executor code — but this Deployment INTENTIONALLY pins
-# PVC_PLUMBER_MODE=audit. Permissive deployment is a separate later
-# change requiring explicit user authorization (see cutover doc §9
-# Step B). The six PVC_PLUMBER_DEFAULT_* env vars are set here as
-# forward-prep: audit mode does not require them (the executor
-# short-circuits) but having them present means flipping to permissive
-# is a one-line env change in a future PR, not a multi-field shuffle.
+# rc5 is a TOOLING BUMP — the image now also carries
+# /pvc-plumber-adopt, a CLI that lets operators run `plan` (read-only
+# adoption inspection), `apply` (write v4 gate labels via SSA), or
+# `undo` (release labels via SSA empty payload). The CLI is NOT the
+# default ENTRYPOINT; /pvc-plumber remains the entrypoint. Operators
+# invoke the CLI explicitly via `kubectl exec` or `kubectl run
+# --command --`. The six PVC_PLUMBER_DEFAULT_* env vars below remain
+# set as forward-prep for permissive cutover.
+#
+# Apply and Undo remain RBAC-BLOCKED in this deployment. The operator
+# pod's ServiceAccount carries only the `pvc-plumber:audit-reader`
+# ClusterRole (rbac.yaml) — get/list/watch on PVCs, no patch/update.
+# Any `pvc-plumber-adopt apply` or `pvc-plumber-adopt undo` run from
+# inside this pod will fail at the apiserver with HTTP 403. This is
+# load-bearing safety: rc5 ships the binary but does not authorize
+# its write paths. Granting PVC patch/update to this ServiceAccount
+# is a separate later patch, gated by explicit user approval.
 #
 # The Argo Application at ../argocd/apps/core-dependencies/pvc-plumber-app.yaml
 # still has automated sync DISABLED. The image pin alone does not
 # trigger a deployment — a manual sync is required. Once Argo syncs,
-# the audit-mode rc4 pod starts and logs the banner:
-#   "pvc-plumber starting in audit mode: no cluster writes will be performed"
+# the rc5 pod starts and logs the banner appropriate to its
+# PVC_PLUMBER_MODE env value (see below).
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -74,10 +87,11 @@ spec:
       containers:
         - name: operator
           # Pinned to the immutable digest published by the operator
-          # repo's release.yaml workflow on 2026-05-24 (Release run
-          # 26368701294). The tag value is informational only — the
-          # digest is what kubelet pulls.
-          image: ghcr.io/mitchross/pvc-plumber:4.0.0-permissive-rc4@sha256:2323333e6eb79f184806ced6f9f70f45aa144ab742d5d8a6a88d3915c63e08b9
+          # repo's release.yaml workflow on 2026-05-26 (Release run
+          # 26469473856). The tag value is informational only — the
+          # digest is what kubelet pulls. This is the multi-arch
+          # manifest list digest (linux/amd64 + linux/arm64).
+          image: ghcr.io/mitchross/pvc-plumber:4.0.0-permissive-rc5@sha256:8a90594257e178d90834a3269e4e0bdb15186739a93e9f42ca8a1c5c70046093
           imagePullPolicy: IfNotPresent
           command: ["/pvc-plumber"]
           args:
