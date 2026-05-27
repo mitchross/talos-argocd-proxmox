@@ -24,6 +24,7 @@ resources:
   - namespace.yaml
   - serviceaccount.yaml
   - rbac.yaml
+  - rbac-adopt.yaml
   - deployment.yaml
   - service.yaml
   - servicemonitor.yaml
