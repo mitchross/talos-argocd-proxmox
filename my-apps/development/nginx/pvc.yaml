@@ -8,6 +8,9 @@ metadata:
   labels:
     app.kubernetes.io/name: nginx
     app.kubernetes.io/component: development
+    pvc-plumber.io/enabled: "true"
+    pvc-plumber.io/manage-volsync: "true"
+    pvc-plumber.io/tier: "daily"
     restore-policy: "strict"
 spec:
   storageClassName: longhorn
@@ -26,67 +29,3 @@ spec:
     apiGroup: volsync.backube
     kind: ReplicationDestination
     name: storage-dst
-
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: storage
-  namespace: nginx-example
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: storage
-spec:
-  sourcePVC: storage
-  trigger:
-    schedule: "18 2 * * *"
-  kopia:
-    repository: volsync-kopia-repository
-    username: storage
-    hostname: nginx-example
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: storage-dst
-  namespace: nginx-example
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: storage
-spec:
-  trigger:
-    manual: restore-once
-  kopia:
-    repository: volsync-kopia-repository
-    username: storage
-    hostname: nginx-example
-    sourceIdentity:
-      sourceName: storage
-      sourceNamespace: nginx-example
-      sourcePVCName: storage
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes:
-      - ReadWriteOnce
-    capacity: 5Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
