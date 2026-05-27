@@ -27,6 +27,20 @@ spec:
       annotations:
         argocd.argoproj.io/manifest-generate-paths: '{{path}}'
         argocd.argoproj.io/sync-wave: "6"
+        # TEMPORARY pvc-plumber v4 migration mode:
+        # Disables server-side diff for every my-apps-* Application while
+        # any backed-up PVC in my-apps still has a legacy immutable
+        # spec.dataSourceRef (e.g. *-backup) that diverges from Git
+        # (*-dst). Argo v3.4.2's uncached compare path runs an SSA
+        # dry-run that the API server rejects ("spec is immutable"),
+        # producing a ComparisonError. App-level compare-options is
+        # evaluated before any per-resource SSA dry-run dispatch, so
+        # this fully bypasses the failing path. Client-side diff still
+        # runs, and existing ignoreDifferences on PVC dataSourceRef/
+        # dataSource/volumeName continue to mask the legitimate
+        # immutable-spec drift. Remove after all v4-migrated PVCs are
+        # DR-recreated and live dataSourceRef matches Git.
+        argocd.argoproj.io/compare-options: ServerSideDiff=false
     spec:
       project: my-apps
       revisionHistoryLimit: 3
