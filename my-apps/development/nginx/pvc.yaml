@@ -5,6 +5,7 @@ metadata:
   namespace: nginx-example
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
   labels:
     app.kubernetes.io/name: nginx
     app.kubernetes.io/component: development
