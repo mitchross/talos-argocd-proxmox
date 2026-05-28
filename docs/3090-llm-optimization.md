@@ -9,10 +9,13 @@
 
 ## TL;DR
 
-- **Keep both 3090s in the cluster, split** — GPU0 = llama-cpp model bank
-  (native swap), GPU1 = ComfyUI/SwarmUI. **Pool both on-demand** (layer-split)
-  only for the occasional 256K research / full-context coding burst. Do **not**
-  redistribute a card to the gaming PC.
+- **Daily driver = Qwen3.6-35B-A3B (nothink), single card.** Aliased
+  `daily`/`default`; everything points at it, swap to WhiteRabbitNeo/coder on
+  demand in the UI. Already the best self-hostable research model in May 2026.
+- **Single card is the steady state, NOT dual.** GPU0 = daily driver + swaps,
+  GPU1 = ComfyUI. **Pool both on-demand** (layer-split) only for the occasional
+  256K research / full-context coding burst. Keep both 3090s in the box; do
+  **not** redistribute a card to the gaming PC.
 - **Why not single-card + CPU offload:** the node is a **Xeon E5 v4 (Broadwell)
   DL360 Gen9, DDR4-2400, no AVX-512, PCIe 3.0, under Proxmox**. MoE expert
   offload is memory-bandwidth-bound and would land ~8–12 TPS on this CPU. The
@@ -78,6 +81,51 @@ both, on-demand ── pool layer-split for 256K research / full-context coding
   (faster-whisper = CTranslate2, many ComfyUI nodes), and a single cluster 3090
   would be stuck on the slow Broadwell offload path. Only revisit if the LLM
   workload moves off this node.
+
+## Daily driver + single-vs-dual (decision)
+
+**Daily driver = Qwen3.6-35B-A3B (nothink), single card.** Everything in the
+cluster points at it; swap to WhiteRabbitNeo (or any preset) on demand in the UI.
+
+- Aliased `daily` / `default` on the `qwen3.6-nothink` preset — point any tool at
+  model `default` and it gets the daily driver. Re-point the whole cluster later
+  by moving those two aliases to another preset (one edit).
+- **nothink** is the universal choice (tool-safe JSON, fast); interactive chat
+  that wants reasoning requests `qwen3.6` (think).
+- **Single card is the steady state**: GPU0 = daily driver + on-demand swaps
+  (WhiteRabbitNeo, coder, etc.), GPU1 = ComfyUI. llama.cpp single-card is the
+  MoE sweet spot (115–133 TPS) — no dual needed for daily use, and WRN/coder
+  also fit one 3090.
+- **Dual = on-demand booster only**: pool both cards (scale ComfyUI→0) *just* for
+  the occasional 256K Perplexica/full-repo-coding burst. Not full-time dual TP,
+  not vLLM, unless a fast resident-256K coding endpoint later proves worth pinning
+  both cards (see "vLLM vs llama.cpp").
+
+## llama.cpp image bump (CUDA-13 caution)
+
+Current: `ghcr.io/ggml-org/llama.cpp:server-cuda12-b9070`. Latest build is
+**b9384**, BUT the Docker tag scheme moved to **`server-cuda13` (CUDA 13)** around
+b93xx, and `server-cuda` now requires **CUDA ≥12.9**
+([#21429](https://github.com/ggml-org/llama.cpp/issues/21429)). Bumping a
+`Recreate` + auto-synced always-on service onto a CUDA it can't run = hard down.
+
+**Before bumping, read the node's driver** (Talos NVIDIA extension
+`nonfree-kmod-nvidia-production`, set at the Omni image level — not in this repo):
+
+```
+talosctl read /proc/driver/nvidia/version
+# or: kubectl exec <llama-cpp pod> -n llama-cpp -- nvidia-smi   # see "CUDA Version"
+```
+
+| Driver | Max CUDA | Tag |
+|--------|----------|-----|
+| 580.x+ | 13.0 | `server-cuda13-b9384` |
+| 575–579.x | 12.9 | latest `server-cuda` / `server-cuda12` build available |
+| < 575 | ≤12.8 | stay `server-cuda12-bXXXX` (cuda12 line ended ~b93xx) |
+
+**Renovate caveat:** if this image is/gets Renovate-tracked, constrain it to the
+CUDA variant the driver supports — otherwise Renovate will bump onto `cuda13` and
+break the pod. Pin the `server-cudaXX-` prefix in the Renovate rule.
 
 ## Model bank (per job)
 
@@ -303,6 +351,34 @@ forces a llama-cpp rollout automatically.
 - **Perplexica** already defaults to the `longctx` preset (label corrected to
   256K).
 - **KV cache is already symmetric q8/q8** — the #20866 trap was never introduced.
+
+## Hand-off: local PR session checklist
+
+To be run by Claude Code on a machine that can reach the NFS share. Goal:
+download models, apply the model-dependent edits, open a PR.
+
+1. **Download GGUFs** to `192.168.10.133:/mnt/ai-pool/llama-cpp` (verify exact
+   current HF repo + filename per model):
+   - [ ] `Qwen3-Coder-30B-A3B-Instruct` (UD-Q4_K_XL) → `coder` preset
+   - [ ] `WhiteRabbitNeo v2.5` (Qwen-based, 14B or 32B Q4) → `whiterabbitneo` preset
+   - [ ] `Qwen3-4B/8B` (FC) → `tool-fast` preset
+   - [ ] (optional) `Gemma 4 26B-A4B MXFP4` — small, tiny-KV multimodal
+   - **Skip MTP** — no net speedup on Ampere + A3B under llama.cpp.
+2. **Confirm each preset's `model =` path matches the downloaded filename** in
+   `my-apps/ai/llama-cpp/presets.ini` (the `[STAGED]` sections).
+3. **llama.cpp image bump:** read the driver (`talosctl read
+   /proc/driver/nvidia/version`), then set the tag per the CUDA-13 matrix above
+   in `my-apps/ai/llama-cpp/deployment.yaml`.
+4. **(Optional, biggest Perplexica win)** verify Vane's embedding-provider schema,
+   then wire `embeddingModels` to `embeddings.project-nomad.svc.cluster.local:8080/v1`
+   (`nomic-embed-text-v1.5`) in `my-apps/ai/perplexica/config.json`.
+5. **(Optional)** bump `--models-max` 1→2-3 once a small model is present AND the
+   co-resident VRAM budget is verified (don't OOM the card).
+6. Editing `presets.ini` auto-rolls llama-cpp (hash-suffixed configMap). Open the PR.
+
+Already merged on `claude/3090-cluster-optimization-cybYD` (no models needed):
+staged presets, symmetric-KV guard, daily-driver `default` alias, Perplexica
+resource bump + longctx label fix, `ai/CLAUDE.md` refresh, this doc.
 
 ## References
 
