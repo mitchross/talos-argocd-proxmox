@@ -6,10 +6,32 @@ This cluster uses **llama-cpp** (NOT ollama) for all local AI inference.
 - Endpoint: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080`
 - OpenAI-compatible API at `/v1`
 - Primary model: **Qwen3.6-35B-A3B** (Unsloth UD-Q4_K_XL, multimodal via `mmproj-BF16.gguf`)
-- Fallbacks: Gemma 4 26B-A4B (multimodal) + Qwen 3.5 Uncensored
-- Full preset list (model IDs clients send in the `model` field): `my-apps/ai/llama-cpp/configmap.yaml`
+- Fallbacks: Gemma 4 26B-A4B / 31B (multimodal)
+- Staged (need GGUF on NFS): **Qwen3-Coder-30B-A3B** (coding agent),
+  **WhiteRabbitNeo v2.5** (authorized security learning, isolated preset),
+  **Qwen3-4B/8B FC** (fast n8n tool-calling)
+- Creative-only toy: Qwen 3.5 Uncensored — **keep abliterated models OUT of
+  Perplexica / RAG / tool-calling** (abliteration degrades accuracy)
+- Full preset list (model IDs clients send in the `model` field): `my-apps/ai/llama-cpp/presets.ini`
+- **Models swap natively** via `llama-server --models-preset` — no external
+  `llama-swap` needed. `--models-max 1` = one resident at a time.
 
 Always use llama-cpp when configuring AI backends for in-cluster tools.
+
+### Gotchas (see `docs/3090-llm-optimization.md` for full rationale)
+- **KV cache must be SYMMETRIC** — `q8_0/q8_0` or `q4_0/q4_0`, never mixed.
+  Asymmetric KV falls to CPU, 44x slower ([llama.cpp #20866]). Overrides the
+  Qwen3-Coder docs' q8-K/q4-V suggestion.
+- **Context limit = `min(model max, VRAM-affordable KV)`.** Qwen3.6 model max is
+  256K; a single 3090 only *affords* ~64K of KV after weights. Pool both 3090s
+  (48GB) for resident 256K. CPU expert-offload is a last resort on this
+  Broadwell/DDR4 node (memory-bandwidth-bound, ~8-12 TPS).
+- **Local = unlimited token *volume* (free), not an infinite *window* per request.**
+- **MTP GGUF** of the 35B = 1.4-2.2x free decode; download + repoint when convenient.
+- **TurboQuant `turbo3` KV** (≈5x smaller) is coming to mainline llama.cpp
+  (PR #21089) — adopt it then for cheap big context.
+
+[llama.cpp #20866]: https://github.com/ggml-org/llama.cpp/issues/20866
 
 ## GPU Topology
 
