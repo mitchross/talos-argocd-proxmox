@@ -36,7 +36,7 @@ spec:
           command: ["/app/llama-server"]
           args:
             - "--models-max"
-            - "1"
+            - "1"               # Pure swap (one model resident at a time). Safe with the all-large bank. Bump to 2-3 ONLY after small models (e.g. Qwen3-4B) are on NFS AND the co-resident VRAM budget is verified — three ~20GB models would OOM a 24GB card. See docs/3090-llm-optimization.md.
             - "--models-preset"
             - "/config/presets.ini"
             - "-c"
@@ -50,10 +50,14 @@ spec:
             - "on"
             - "--no-mmap"       # Prevent page fault stalls - load model fully into memory
             # context-shift enabled: allows graceful degradation when Perplexica search payloads exceed context
+            # KV cache MUST be symmetric (K and V the same quant type). Mixing
+            # q8_0/q4_0 forces the KV cache onto the CPU — 44x slower — per
+            # llama.cpp #20866. This overrides the Qwen3-Coder docs (which
+            # suggest q8 K + q4 V). Use q8_0/q8_0 (here) or q4_0/q4_0; never mix.
             - "--cache-type-k"
             - "q8_0"            # Quantize KV cache ~50% savings vs f16, negligible quality loss
             - "--cache-type-v"
-            - "q8_0"            # q8_0 not q4_0: MoE models sensitive to V cache quantization, q4_0 adds ~0.2 perplexity
+            - "q8_0"            # MUST match cache-type-k (symmetric) — see #20866 note above
             - "-t"
             - "4"               # Low thread count for fully GPU-offloaded model (auto-detect picks too many in K8s)
             - "-b"
