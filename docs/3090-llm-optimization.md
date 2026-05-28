@@ -123,9 +123,20 @@ talosctl read /proc/driver/nvidia/version
 | 575–579.x | 12.9 | latest `server-cuda` / `server-cuda12` build available |
 | < 575 | ≤12.8 | stay `server-cuda12-bXXXX` (cuda12 line ended ~b93xx) |
 
-**Renovate caveat:** if this image is/gets Renovate-tracked, constrain it to the
-CUDA variant the driver supports — otherwise Renovate will bump onto `cuda13` and
-break the pod. Pin the `server-cudaXX-` prefix in the Renovate rule.
+**Renovate is why it's stuck.** `.github/renovate.json5` pins llama.cpp to the
+CUDA-12 tag line:
+```json5
+matchPackageNames: ['ghcr.io/ggml-org/llama.cpp'],
+versioning: 'regex:^server-cuda12-b(?<major>\\d+)$',
+```
+Upstream stopped publishing `server-cuda12` tags (~b93xx → moved to
+`server-cuda13`), so this regex matches nothing newer — Renovate can no longer
+generate bump PRs, which is why it's frozen at b9070. **The fix is two edits made
+together**, only after confirming the driver is CUDA-13-capable (580.x+):
+1. `deployment.yaml` image → `server-cuda13-b9384`
+2. `renovate.json5` regex → `^server-cuda13-b(?<major>\\d+)$`
+Doing one without the other = no bumps or a broken pod. If the driver is < 580,
+leave both on cuda12.
 
 ## Model bank (per job)
 
@@ -366,9 +377,12 @@ download models, apply the model-dependent edits, open a PR.
    - **Skip MTP** — no net speedup on Ampere + A3B under llama.cpp.
 2. **Confirm each preset's `model =` path matches the downloaded filename** in
    `my-apps/ai/llama-cpp/presets.ini` (the `[STAGED]` sections).
-3. **llama.cpp image bump:** read the driver (`talosctl read
-   /proc/driver/nvidia/version`), then set the tag per the CUDA-13 matrix above
-   in `my-apps/ai/llama-cpp/deployment.yaml`.
+3. **llama.cpp image bump (currently frozen by Renovate):** read the driver
+   (`talosctl read /proc/driver/nvidia/version`). If 580.x+ (CUDA 13), make BOTH
+   edits together: tag → `server-cuda13-b9384` in
+   `my-apps/ai/llama-cpp/deployment.yaml`, AND the regex in
+   `.github/renovate.json5` → `^server-cuda13-b(?<major>\d+)$`. If < 580, leave
+   both on cuda12. See the "llama.cpp image bump" section for why.
 4. **(Optional, biggest Perplexica win)** verify Vane's embedding-provider schema,
    then wire `embeddingModels` to `embeddings.project-nomad.svc.cluster.local:8080/v1`
    (`nomic-embed-text-v1.5`) in `my-apps/ai/perplexica/config.json`.
