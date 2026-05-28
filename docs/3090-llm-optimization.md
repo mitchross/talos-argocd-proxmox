@@ -25,6 +25,11 @@
   measurably degrades benchmarks; it stays out of Perplexica / RAG / tool-calling.
   Offensive-security capability comes from a *domain-tuned* model
   (WhiteRabbitNeo), not a lobotomized general one.
+- **Engine: stay on llama.cpp.** Same-hardware benchmarks show vLLM is ~7× slower
+  on a single 3090 for this MoE (weights starve the card → eager mode), and our
+  whole library is GGUF. vLLM only wins at **TP=2** (dual-card pooled), which is
+  the one optional endpoint where it's worth it. `ik_llama.cpp` is the more
+  relevant single-card speedup to try.
 
 ## Context: is the limit the model or the VRAM?
 
@@ -131,13 +136,17 @@ Current live flags (see `my-apps/ai/llama-cpp/deployment.yaml`):
   co-resident VRAM budget is verified — three ~20GB models co-resident would OOM
   a single 24GB card. The bump is what enables an always-on small-model bank
   alongside on-demand heavies.
-- **MTP (multi-token prediction): recommended download.** An MTP-enabled GGUF of
-  Qwen3.6-35B-A3B gives **1.4–2.2× decode** with no accuracy change (club-3090's
-  single-card recipes all use the MTP GGUFs). Biggest *free* speedup and it needs
-  no hardware — especially valuable given the slow CPU. **Action:** download the
-  MTP GGUF to NFS, then point the `qwen3.6*` presets' `model =` at it. Not done
-  here because it requires the file to be present (changing the primary model
-  path to a missing file would break the default model).
+- **MTP / speculative decoding: do NOT assume a speedup on this hardware.**
+  The general claim is 1.4–2.2×, but the *only public same-hardware benchmark*
+  (Qwen3.6-35B-A3B on a single RTX 3090, llama.cpp post-PR#19493,
+  [thc1006](https://github.com/thc1006/qwen3.6-speculative-decoding-rtx3090) /
+  [writeup](https://hackmd.io/@thc1006/SJly6IE6Wx)) found **no variant achieves a
+  net speedup on Ampere + A3B MoE** under llama.cpp — the MoE is already
+  memory-bound and the draft overhead cancels the win. MTP-3 *does* pay off, but
+  only under **vLLM TP=2** (149 → 264 code TPS, dual-card). So: skip the MTP GGUF
+  for the single-card llama.cpp path; only revisit it if you build the dual-card
+  vLLM endpoint (see "vLLM vs llama.cpp" below). This corrects an earlier note in
+  this doc that listed MTP as a free single-card win.
 - **`GGML_CUDA_ENABLE_UNIFIED_MEMORY=1` stays for now.** It's the safety net that
   lets the single-card `longctx` preset spill at 256K instead of OOMing. Remove
   it **only** once the dual-card pooled path is the longctx backend (so a failed
@@ -156,13 +165,56 @@ at temp 0."* **Not in mainline llama.cpp yet** (forks only; PR #21089 pending).
 from ~14GB to ~6GB — making big context cheap even single-card. Our image is
 stock `ghcr.io/ggml-org/llama.cpp` so wait for mainline rather than a fork.
 
+## vLLM vs llama.cpp — verdict for this cluster
+
+**Keep llama.cpp as the primary engine.** vLLM is *not* better for this setup,
+and there's now same-hardware data
+([tfriedel/qwen3.6-rtx3090-lab](https://github.com/tfriedel/qwen3.6-rtx3090-lab))
+to back it:
+
+- **Single card (our GPU0 = LLM bank): llama.cpp wins ~7×.** Qwen3.6-35B-A3B on
+  one 3090 → **llama.cpp/IQ4_XS ≈ 115–133 TPS** vs **vLLM/AWQ-INT4 ≈ 18.6 TPS**.
+  vLLM's AWQ weights eat 21.56GB of the 24GB card, leaving ~0.7GB → forces
+  `--enforce-eager` (no CUDA graphs) → kernel-launch overhead dominates, 22% GPU
+  util. llama.cpp's GGUF (~17GB) leaves 5GB headroom → 96% SM util. The lab calls
+  vLLM tp1 *"an anti-pattern."* Our split topology is single-card-per-purpose, so
+  this is the deciding fact.
+- **GGUF is our entire library** (Unsloth UD quants, the uncensored HauhauCS
+  finetune, WhiteRabbitNeo). vLLM wants AWQ/GPTQ/FP8; we'd have to re-acquire or
+  re-quantize everything, and niche uncensored/security finetunes frequently have
+  **no AWQ build at all**.
+- **Cliffs:** vLLM single-card hits the long-context/RAG/multi-turn cliffs
+  (club-3090 `docs/CLIFFS.md`) we care about; llama.cpp is immune.
+- **Ampere friction:** no NVLink → TP all-reduce traverses host memory; FP8 e4m3
+  unsupported on sm_86. Both nick vLLM specifically.
+- **Swapping is no longer the argument.** vLLM added
+  [Sleep Mode](https://blog.vllm.ai/2025/10/26/sleep-mode.html) (18–200× faster
+  model switches), so "vLLM can't swap" is outdated — but the 7× single-card
+  throughput gap means swapping doesn't rescue the case.
+
+**The one place vLLM wins: the dual-card pooled endpoint.** At **TP=2** vLLM/AWQ
+hits **149 TPS @ 200K (vision+tools)**, and **179 narr / 264 code TPS with MTP-3**
+— genuinely faster than llama.cpp dual layer-split. So *if* we build the on-demand
+big-context endpoint (below) for the coding agent / heavy research, **vLLM TP=2 is
+the better engine for that one endpoint** — at the cost of an AWQ build of that
+model and pinning both cards (no ComfyUI during the burst). TP=4 is pointless here
+(bandwidth-bound all-reduce, no NVLink; only unlocks ~500K context).
+
+**More relevant single-card upgrade than vLLM: `ik_llama.cpp`** — club-3090's
+fastest single-card path (~18–20% faster decode, leaner VRAM, IQK quants +
+Hadamard KV), keeps GGUF + swapping. It has a recipe for our exact 35B-A3B model.
+Evaluate this before vLLM for the default engine.
+
 ## Dual-card on-demand (deferred work)
 
 Not yet implemented — requires hardware testing. To run 256K **resident, no
 offload, no spill**:
 
-1. A second llama-cpp Deployment requesting `nvidia.com/gpu: 2` (whole-card
-   layer-split), serving the `longctx` + `coder` presets at full 256K.
+1. A second Deployment requesting `nvidia.com/gpu: 2` (whole-card), serving the
+   `longctx` + `coder` workload at full context. **Engine choice for this
+   endpoint:** llama.cpp layer-split (keeps GGUF, simple) *or* **vLLM TP=2** —
+   the one place vLLM wins (149–264 TPS @ 200K, vision+tools), at the cost of an
+   AWQ build of that model and pinning both cards. See "vLLM vs llama.cpp".
 2. A scale toggle: scale ComfyUI/SwarmUI → 0 to free GPU1, scale the 2-GPU
    llama-cpp up for the research/coding burst, reverse after. (Pattern already
    used by `my-apps/ai/llmfit/` dual-GPU jobs.)
@@ -178,7 +230,8 @@ Staged presets are inert until their GGUF exists on the share. Verify the exact
 current HF repo/filename (Unsloth / bartowski / mradermacher), download to NFS,
 then confirm the `model =` path in `presets.ini` matches:
 
-- [ ] **MTP Qwen3.6-35B-A3B** GGUF → repoint the `qwen3.6*` presets (decode speedup)
+- [ ] ~~MTP Qwen3.6-35B-A3B GGUF~~ — **skip for single-card llama.cpp** (no net
+      speedup on Ampere + A3B per same-hw benchmark; only helps under vLLM TP=2)
 - [ ] **Qwen3-Coder-30B-A3B-Instruct** GGUF (UD-Q4_K_XL) → `coder` preset
 - [ ] **WhiteRabbitNeo v2.5** (Qwen-based) GGUF → `whiterabbitneo` preset
 - [ ] **Qwen3-4B/8B (FC)** GGUF → `tool-fast` preset

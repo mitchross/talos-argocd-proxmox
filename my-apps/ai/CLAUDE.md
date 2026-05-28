@@ -27,7 +27,12 @@ Always use llama-cpp when configuring AI backends for in-cluster tools.
   (48GB) for resident 256K. CPU expert-offload is a last resort on this
   Broadwell/DDR4 node (memory-bandwidth-bound, ~8-12 TPS).
 - **Local = unlimited token *volume* (free), not an infinite *window* per request.**
-- **MTP GGUF** of the 35B = 1.4-2.2x free decode; download + repoint when convenient.
+- **Engine: llama.cpp, not vLLM.** Same-hw benchmarks: vLLM ≈7x slower on a
+  single 3090 for this MoE (AWQ weights starve the card → eager mode); our library
+  is all GGUF. vLLM only wins at TP=2 (dual-card pooled) — the one optional
+  big-context endpoint. `ik_llama.cpp` is the more relevant single-card speedup.
+- **MTP/spec-decode gives NO net speedup** on Ampere + 35B-A3B under llama.cpp
+  (same-hw benchmark) — only helps under vLLM TP=2. Don't bother on single-card.
 - **TurboQuant `turbo3` KV** (≈5x smaller) is coming to mainline llama.cpp
   (PR #21089) — adopt it then for cheap big context.
 
