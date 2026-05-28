@@ -25,6 +25,7 @@ resources:
   - serviceaccount.yaml
   - rbac.yaml
   - rbac-adopt.yaml
+  - rbac-volsync-writer.yaml
   - deployment.yaml
   - service.yaml
   - servicemonitor.yaml

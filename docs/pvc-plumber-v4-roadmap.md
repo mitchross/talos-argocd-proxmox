@@ -10,6 +10,20 @@ lives in [`pvc-plumber-v4-inventory.md`](pvc-plumber-v4-inventory.md).
 Each item carries an explicit start gate. **Do not begin work on an item until
 its gate condition is met,** unless the user explicitly redirects.
 
+## Completed
+
+- **Patch 7.7 — operator volsync-writer RBAC + managed-namespace contract.**
+  ClusterRole `pvc-plumber:volsync-writer` (`volsync.backube/replicationsources`
+  and `replicationdestinations`: get/list/watch/create/patch/delete; no update,
+  no status subresource writes, no PVC mutation, no Secret access, no Argo
+  access). One per-namespace RoleBinding required per managed namespace; first
+  managed namespace is `nginx-example`. Six-step preflight checklist in
+  [`pvc-plumber-v4-cutover.md`](pvc-plumber-v4-cutover.md) gates inline RS/RD
+  removal from Git. Driving incident: `nginx-example/storage`, 2026-05-27 —
+  inline RS/RD were removed before operator-writer RBAC was in place, Argo
+  selfHeal pruned them, operator could not recreate, PVC left without a
+  backup chain.
+
 ## Open items
 
 ### 1. Phase 6.9 / 7 — Visual explainer + interactive lifecycle guide
