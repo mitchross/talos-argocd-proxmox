@@ -1,4 +1,4 @@
-# pvc-plumber v4 — Deployment, rc6 image (Phase 6 of
+# pvc-plumber v4 — Deployment, rc7 image (Phase 6 of
 # docs/pvc-plumber-v4-prd.md, cutover sequence per
 # docs/pvc-plumber-v4-cutover.md §9).
 #
@@ -9,24 +9,27 @@
 # under any v4 mode. Therefore no TLS cert volume, no init container,
 # no /tmp/k8s-webhook-server.
 #
-# Image: pinned to v4.0.0-permissive-rc6 (git tag) → docker tag
-# 4.0.0-permissive-rc6 (docker/metadata-action@v5 strips the leading
+# Image: pinned to v4.0.0-permissive-rc7 (git tag) → docker tag
+# 4.0.0-permissive-rc7 (docker/metadata-action@v5 strips the leading
 # `v`). The SHA-pin is the release digest published by
-# .github/workflows/release.yaml on 2026-05-28. Built from
-# mitchross/pvc-plumber commit 5611c8da (fix(v4): move backup identity
-# from label to annotation), the single-commit fix for the 2026-05-28
-# nginx-example/storage canary incident.
+# .github/workflows/release.yaml on 2026-05-28 (Release run
+# 26606509577). Built from mitchross/pvc-plumber commit 3c40a1f
+# (fix(v4): reconcile when VolSync children disappear).
 #
-# rc6 is a TARGETED BUG FIX over rc5. The v4 builder previously emitted
-# `pvc-plumber.io/backup-identity=<namespace>/<pvc>` as a LABEL on
-# generated RS/RD. K8s rejects label values containing '/', so every
-# operator-driven RS/RD Create failed with `metadata.labels: Invalid
-# value: "nginx-example/storage"` once Patch 7.7's namespace write RBAC
-# unblocked the previous `forbidden` error. rc6 moves the compound
-# identity to AnnotationBackupIdentity on the child, keeps the
-# per-component labels (source-namespace, source-pvc, tier) that are
-# individually valid, and adds K8s label-value validation as a
-# regression test invariant. Full incident write-up at
+# rc7 fixes the reconcile-TRIGGER gap that rc6's label fix exposed. rc6
+# made operator-driven RS/RD Creates valid, but the v4 reconciler still
+# watched PersistentVolumeClaims ONLY — so when Argo pruned the inline
+# RS/RD of nginx-example/storage the PVC itself never changed, no event
+# fired, the operator never reconciled, and the PVC sat with no backup
+# chain for ~15h while /audit served a stale "already-matches" snapshot.
+# rc7 adds a ReplicationSource/ReplicationDestination watch that re-
+# enqueues the owning PVC on child create/delete/spec-change (delete is
+# the load-bearing event), a periodic self-heal requeue for write-
+# eligible PVCs, a partial inline-argo needs-human-review guard (never
+# create a child that would fight Argo over a single name), and per-
+# entry /audit staleness so a stalled reconciler can't look fresh. The
+# two-gate write fuse (enabled + manage-volsync) and inline-argo
+# observe-only semantics are unchanged. Full incident write-up at
 # docs/pvc-plumber-v4-nginx-canary-incident.md.
 #
 # Operator-side write RBAC for VolSync RS/RD is provided by
@@ -34,7 +37,11 @@
 # pvc-plumber:volsync-writer plus per-namespace RoleBindings. The
 # operator's `pvc-plumber:audit-reader` ClusterRoleBinding remains
 # read-only cluster-wide; writes happen only in namespaces with an
-# explicit volsync-writer RoleBinding. The adopt CLI uses a separate
+# explicit volsync-writer RoleBinding. rc7's new RS/RD watch performs a
+# cluster-wide LIST+WATCH on replicationsources/replicationdestinations,
+# authorized by audit-reader's cluster-wide get/list/watch (verified
+# 2026-05-28); writes stay namespace-scoped via volsync-writer. The
+# adopt CLI uses a separate
 # `pvc-plumber-adopt` ServiceAccount with its own canary-scoped RBAC
 # (rbac-adopt.yaml).
 #
@@ -82,11 +89,12 @@ spec:
       containers:
         - name: operator
           # Pinned to the immutable digest published by the operator
-          # repo's release.yaml workflow on 2026-05-26 (Release run
-          # 26469473856). The tag value is informational only — the
+          # repo's release.yaml workflow on 2026-05-28 (Release run
+          # 26606509577). The tag value is informational only — the
           # digest is what kubelet pulls. This is the multi-arch
-          # manifest list digest (linux/amd64 + linux/arm64).
-          image: ghcr.io/mitchross/pvc-plumber:4.0.0-permissive-rc6@sha256:49f43df81fd43fd190f7c0308ebae7b3384bc2d501f68f0a4a5e05762147dd38
+          # manifest list digest (linux/amd64 + linux/arm64), verified
+          # via `crane manifest` at release time.
+          image: ghcr.io/mitchross/pvc-plumber:4.0.0-permissive-rc7@sha256:091f21b1b07c4373569d38d4c8d066ceea325fdaa2e996f5ad89b0b5d02d525c
           imagePullPolicy: IfNotPresent
           command: ["/pvc-plumber"]
           args:
