@@ -1,51 +1,46 @@
-# pvc-plumber v4 — audit-mode Deployment, rc5 image (Phase 6 of
+# pvc-plumber v4 — Deployment, rc6 image (Phase 6 of
 # docs/pvc-plumber-v4-prd.md, cutover sequence per
 # docs/pvc-plumber-v4-cutover.md §9).
 #
-# Single replica. Leader election forced off by the binary in audit mode.
-# Read-only RBAC (rbac.yaml). No webhook server — Patch 6.7-wire gates
-# webhook registration on `!runsV4Reconciler(mode)`, and audit + permissive
-# both route to v4, so the webhook server is never started under any v4
-# mode. Therefore no TLS cert volume, no init container, no
-# /tmp/k8s-webhook-server.
+# Single replica. Leader election forced off by the binary in audit
+# and permissive modes. No webhook server — Patch 6.7-wire gates
+# webhook registration on `!runsV4Reconciler(mode)`, and audit +
+# permissive both route to v4, so the webhook server is never started
+# under any v4 mode. Therefore no TLS cert volume, no init container,
+# no /tmp/k8s-webhook-server.
 #
-# Image: pinned to v4.0.0-permissive-rc5 (git tag) → docker tag
-# 4.0.0-permissive-rc5 (docker/metadata-action@v5 strips the leading
-# `v`). The SHA-pin is the real release digest published by
-# .github/workflows/release.yaml on 2026-05-26. Built from
-# mitchross/pvc-plumber commit f19595b (build(image): bundle
-# pvc-plumber-adopt CLI into container image), rolling up Patches 7.1
-# through 7.4 — read-only adoption planner (internal/v4/adopt PlanFor),
-# metadata-only PVC adopt writer (Apply/Undo via server-side apply),
-# cmd/adopt CLI wiring, and the Dockerfile change that bundles the
-# resulting /pvc-plumber-adopt binary next to /pvc-plumber in this
-# container. Operator-side behavior is byte-identical to rc4 — no
-# commits since rc4 touched cmd/operator, internal/controller, or
-# internal/v4/executor; the delta is the bundled CLI only.
+# Image: pinned to v4.0.0-permissive-rc6 (git tag) → docker tag
+# 4.0.0-permissive-rc6 (docker/metadata-action@v5 strips the leading
+# `v`). The SHA-pin is the release digest published by
+# .github/workflows/release.yaml on 2026-05-28. Built from
+# mitchross/pvc-plumber commit 5611c8da (fix(v4): move backup identity
+# from label to annotation), the single-commit fix for the 2026-05-28
+# nginx-example/storage canary incident.
 #
-# rc5 is a TOOLING BUMP — the image now also carries
-# /pvc-plumber-adopt, a CLI that lets operators run `plan` (read-only
-# adoption inspection), `apply` (write v4 gate labels via SSA), or
-# `undo` (release labels via SSA empty payload). The CLI is NOT the
-# default ENTRYPOINT; /pvc-plumber remains the entrypoint. Operators
-# invoke the CLI explicitly via `kubectl exec` or `kubectl run
-# --command --`. The six PVC_PLUMBER_DEFAULT_* env vars below remain
-# set as forward-prep for permissive cutover.
+# rc6 is a TARGETED BUG FIX over rc5. The v4 builder previously emitted
+# `pvc-plumber.io/backup-identity=<namespace>/<pvc>` as a LABEL on
+# generated RS/RD. K8s rejects label values containing '/', so every
+# operator-driven RS/RD Create failed with `metadata.labels: Invalid
+# value: "nginx-example/storage"` once Patch 7.7's namespace write RBAC
+# unblocked the previous `forbidden` error. rc6 moves the compound
+# identity to AnnotationBackupIdentity on the child, keeps the
+# per-component labels (source-namespace, source-pvc, tier) that are
+# individually valid, and adds K8s label-value validation as a
+# regression test invariant. Full incident write-up at
+# docs/pvc-plumber-v4-nginx-canary-incident.md.
 #
-# Apply and Undo remain RBAC-BLOCKED in this deployment. The operator
-# pod's ServiceAccount carries only the `pvc-plumber:audit-reader`
-# ClusterRole (rbac.yaml) — get/list/watch on PVCs, no patch/update.
-# Any `pvc-plumber-adopt apply` or `pvc-plumber-adopt undo` run from
-# inside this pod will fail at the apiserver with HTTP 403. This is
-# load-bearing safety: rc5 ships the binary but does not authorize
-# its write paths. Granting PVC patch/update to this ServiceAccount
-# is a separate later patch, gated by explicit user approval.
+# Operator-side write RBAC for VolSync RS/RD is provided by
+# rbac-volsync-writer.yaml (Patch 7.7): ClusterRole
+# pvc-plumber:volsync-writer plus per-namespace RoleBindings. The
+# operator's `pvc-plumber:audit-reader` ClusterRoleBinding remains
+# read-only cluster-wide; writes happen only in namespaces with an
+# explicit volsync-writer RoleBinding. The adopt CLI uses a separate
+# `pvc-plumber-adopt` ServiceAccount with its own canary-scoped RBAC
+# (rbac-adopt.yaml).
 #
 # The Argo Application at ../argocd/apps/core-dependencies/pvc-plumber-app.yaml
-# still has automated sync DISABLED. The image pin alone does not
-# trigger a deployment — a manual sync is required. Once Argo syncs,
-# the rc5 pod starts and logs the banner appropriate to its
-# PVC_PLUMBER_MODE env value (see below).
+# has automated sync DISABLED. The image pin alone does not trigger
+# a deployment — a manual sync is required.
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -91,7 +86,7 @@ spec:
           # 26469473856). The tag value is informational only — the
           # digest is what kubelet pulls. This is the multi-arch
           # manifest list digest (linux/amd64 + linux/arm64).
-          image: ghcr.io/mitchross/pvc-plumber:4.0.0-permissive-rc5@sha256:8a90594257e178d90834a3269e4e0bdb15186739a93e9f42ca8a1c5c70046093
+          image: ghcr.io/mitchross/pvc-plumber:4.0.0-permissive-rc6@sha256:49f43df81fd43fd190f7c0308ebae7b3384bc2d501f68f0a4a5e05762147dd38
           imagePullPolicy: IfNotPresent
           command: ["/pvc-plumber"]
           args:
