@@ -117,6 +117,36 @@ models is a swap, no external `llama-swap` needed.
   degradation (math/reasoning most sensitive). The existing `uncensored` preset
   stays as a creative toy only.
 
+## Best self-hostable model (May 2026) — no swap needed
+
+For a 24GB card doing research / RAG / agentic / tool-calling,
+**Qwen3.6-35B-A3B** (Unsloth Dynamic Q4, ~20.9GB, Apache-2.0, vision, 262K
+native) is the most capable self-hostable model as of late May 2026. We're
+already on it.
+
+- **Qwen 3.7** — API-only (Alibaba Cloud), no open weights. Not an upgrade path.
+- **Gemma 4 26B-A4B** — lighter / strong multimodal, but loses to Qwen on
+  research + tool-calling. Kept as fallback.
+- **Kimi K2.6 / Qwen3-235B etc.** — stronger but far beyond 24/48GB.
+- **Quant** — UD-Q4_K_XL is already the best-quality practical Q4; no change.
+
+The "update to the best model" task resolves to: **stay put, and invest in
+retrieval (Perplexica embeddings) + resident context (dual-card)** instead.
+
+## Engine decision: llama.cpp today
+
+Committed: **llama.cpp is the engine.** It's ~7× faster than vLLM on a single
+3090 for this MoE, our library is all GGUF, it swaps models natively in seconds,
+and it's the simplest fit for **Talos** (immutable OS, everything is a k8s
+manifest — one container + GGUFs on the NFS PVC, no host-level anything). vLLM
+stays a *documented optional* dual-card endpoint only (see below); not pursued
+today.
+
+**Talos note:** there's no SSH-ing GGUFs onto a node. Get models onto the NFS
+share either from a workstation that can mount it, or via a one-shot k8s
+**download Job** (`huggingface-cli download` → NFS PVC, ArgoCD `Sync` hook).
+The Job is the Talos-native pattern.
+
 ## Serving / KV settings
 
 Current live flags (see `my-apps/ai/llama-cpp/deployment.yaml`):
@@ -164,6 +194,31 @@ at temp 0."* **Not in mainline llama.cpp yet** (forks only; PR #21089 pending).
 **Track PR #21089**; when it lands, `--cache-type-k turbo3` drops the 256K KV
 from ~14GB to ~6GB — making big context cheap even single-card. Our image is
 stock `ghcr.io/ggml-org/llama.cpp` so wait for mainline rather than a fork.
+
+## Getting the most out of Perplexica (Vane)
+
+The model is **not** the bottleneck — Qwen3.6-35B-A3B is already the best
+self-hostable research model (see "Best model" below). For RAG, retrieval
+quality beats model size. Levers, in impact order:
+
+1. **Real 256K context (dual-card).** Perplexica already selects the
+   `qwen3.6-longctx` (256K) preset, but on a single 3090 only ~64K of that is
+   *affordable*. The v1.12.2 embedding filter keeps prompts under the ceiling, so
+   this isn't breaking — but research depth is capped. Pooling both 3090s makes
+   the full 256K resident (see dual-card work below).
+2. **Faster / better embeddings (the retrieval lever).** Vane runs
+   `@xenova/transformers` **in-process on CPU** for result reranking — slow over
+   50+ scraped results and the main latency source. Two improvements:
+   - **Resources bumped** to 4 CPU / 4Gi (done) so the rerank isn't starved.
+   - **Point Vane at an external embedding endpoint** instead of in-process
+     xenova. The cluster already runs a nomic-embed service
+     (`embeddings.project-nomad.svc.cluster.local:8080/v1`,
+     `nomic-ai/nomic-embed-text-v1.5`). Wiring Vane's `embeddingModels` to it
+     offloads rerank to a real service. **Verify Vane's embedding-provider config
+     schema before editing `config.json`** (don't guess — a bad schema breaks the
+     seed merge). This is the biggest retrieval-quality + speed win.
+3. **More sources / search depth.** Tune SearXNG engines + Vane's result count /
+   optimization mode (speed vs balanced vs quality) for deeper research.
 
 ## vLLM vs llama.cpp — verdict for this cluster
 

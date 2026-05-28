@@ -82,8 +82,13 @@ spec:
           # so a single "quality" search could push the prompt past 2M tokens
           # and explode llama-cpp's 64K ctx window. v1.12.2 adds embedding-
           # based result filtering + chunked context management that keeps
-          # prompts bounded. Our ctx-size stays at 64K (see llama-cpp
-          # configmap for why).
+          # prompts bounded.
+          #
+          # Backend model: this app selects the `qwen3.6-longctx` preset
+          # (256K ctx) — see config.json. Usable context is VRAM-bound to
+          # ~64K on a single 3090; the model's full 256K only becomes
+          # resident when both 3090s are pooled (docs/3090-llm-optimization.md).
+          # The embedding result-filter keeps prompts under that ceiling.
           image: itzcrazykns1337/vane:slim-v1.12.2@sha256:d2878cf9c91962aa3fc053b59bc9b89adcbdcaeb7ee36b54906e853464b2c190
           ports:
             - name: http
@@ -126,15 +131,23 @@ spec:
           # runs @xenova/transformers in-process for the embedding-based
           # result filter. Chromium alone wants 300-500MiB resident; add
           # Node + embedding inference for N chunks and 512Mi gets wiped
-          # out fast. 2Gi / 2 CPU is the floor that keeps searches
-          # completing without the event loop starving the liveness probe.
+          # out fast.
+          #
+          # Bumped from 2 CPU / 2Gi: the in-process embedding rerank over
+          # 50+ scraped results is CPU-bound and is the main retrieval-quality
+          # bottleneck (model size is not — we're already on the best model).
+          # The GPU node has 12 cores / 128Gi, so give the rerank real CPU and
+          # headroom for Chromium rather than starving the event loop (which
+          # previously tripped the liveness probe mid-search). For a bigger
+          # win, point Vane's embeddings at an external endpoint instead of
+          # in-process xenova — see docs/3090-llm-optimization.md.
           resources:
             requests:
-              cpu: 200m
-              memory: 512Mi
+              cpu: 500m
+              memory: 1Gi
             limits:
-              cpu: "2"
-              memory: 2Gi
+              cpu: "4"
+              memory: 4Gi
       volumes:
         - name: data
           persistentVolumeClaim:
