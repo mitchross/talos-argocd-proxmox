@@ -80,7 +80,11 @@ metadata:
     volsync.backup/pvc: data-pvc
 spec:
   trigger:
-    manual: restore-once
+    # Bumped 2026-05-29 (Option R Step 1): forces VolSync to pull the
+    # LATEST kopia snapshot into a fresh latestImage before the data-pvc
+    # immutable-dataSourceRef repair. Was "restore-once" (stale latestImage
+    # from 2026-05-21). Changing the value re-runs the restore-once mover.
+    manual: restore-2026-05-29-data-pvc-refresh
   kopia:
     repository: volsync-kopia-repository
     username: data-pvc
