@@ -94,11 +94,15 @@
       enabled: true,
     },
     {
-      description: 'Handle llama.cpp upstream versioning (CUDA 12 build)',
+      description: 'Handle llama.cpp upstream versioning (CUDA 13 build)',
       matchPackageNames: [
         'ghcr.io/ggml-org/llama.cpp',
       ],
-      versioning: 'regex:^server-cuda12-b(?<major>\\d+)$',
+      // Driver on the GPU node is 595.71.05 / CUDA 13.2 (>=580), so track the
+      // CUDA-13 server tag line. Upstream stopped publishing server-cuda12
+      // tags ~b93xx, which is why the old cuda12 pin froze at b9070. See
+      // docs/3090-llm-optimization.md "llama.cpp image bump (CUDA-13 caution)".
+      versioning: 'regex:^server-cuda13-b(?<major>\\d+)$',
     },
     {
       description: 'Ignore NVIDIA CUDA updates (breaking changes)',
