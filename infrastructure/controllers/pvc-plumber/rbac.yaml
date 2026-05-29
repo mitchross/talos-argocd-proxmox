@@ -1,12 +1,18 @@
-# RBAC for pvc-plumber v4 in audit mode (Phase 3 of
-# docs/pvc-plumber-v4-prd.md).
+# RBAC for pvc-plumber v4 — cluster-wide read-only audit-reader role
+# (used in all modes; operator currently runs PERMISSIVE, Phase 6 of
+# docs/pvc-plumber-v4-prd.md). Namespace-scoped write RBAC lives in
+# rbac-volsync-writer.yaml.
 #
-# Strictly read-only. The audit-mode binary has its writes gated by the
-# internal/v4/auditclient wrapper; this ClusterRole is the second line of
-# defense so the apiserver itself rejects any write that escapes the
-# wrapper. When Phase 5+ flips the operator to permissive/enforce, an
-# additional ClusterRole `pvc-plumber:writer` (not yet authored) will be
-# bound separately — this audit-mode role stays read-only forever.
+# Strictly read-only. This ClusterRole also authorizes rc7's cluster-wide
+# RS/RD LIST+WATCH (the new child watch that closes the reconcile-trigger
+# gap). Permissive-mode WRITES are NOT granted here — they come from the
+# separate `pvc-plumber:volsync-writer` ClusterRole (rbac-volsync-writer.yaml,
+# Patch 7.7), bound per managed namespace. This audit-reader role stays
+# read-only forever.
+#
+# (The label `pvc-plumber.io/mode: audit` on the objects below is legacy
+# metadata and does not affect runtime mode, which is set by the
+# PVC_PLUMBER_MODE env var on the Deployment.)
 #
 # Verb table (post Phase-3 tightening — three speculative rules removed):
 #

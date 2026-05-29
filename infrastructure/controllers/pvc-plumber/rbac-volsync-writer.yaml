@@ -52,9 +52,11 @@ rules:
     verbs: ["get", "list", "watch", "create", "patch", "delete"]
 
 ---
-# Managed namespace: nginx-example (canary; first migrated PVC).
-# When adding the next managed namespace, append another RoleBinding
-# stanza below with the same shape.
+# Managed namespace: nginx-example (canary; first migrated PVC — migration
+# complete, operator-managed RS/RD live, first backup succeeded 2026-05-29).
+# When adding the next managed namespace (recommended next:
+# homepage-dashboard), append another RoleBinding stanza below with the
+# same shape — RBAC lands FIRST, inline RS/RD removal last.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:

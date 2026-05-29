@@ -1,20 +1,24 @@
-# pvc-plumber v4 — audit-mode kustomization.
+# pvc-plumber v4 — permissive-mode kustomization (rc7 live).
 #
-# Phase 3 of docs/pvc-plumber-v4-prd.md. Deployed by the Argo Application at
+# Phase 6 of docs/pvc-plumber-v4-prd.md. Deployed by the Argo Application at
 # ../argocd/apps/core-dependencies/pvc-plumber-app.yaml (sync wave 2).
 #
 # Resources in deliberate order:
 #   1. Namespace (must exist first; pod-security restricted)
-#   2. ServiceAccount + RBAC (least-privilege read-only)
-#   3. Deployment (single replica, audit env, no webhook server)
+#   2. ServiceAccount + RBAC:
+#        - rbac.yaml          : cluster-wide read-only audit-reader CRB
+#        - rbac-adopt.yaml    : adopt-CLI SA + canary-scoped RBAC
+#        - rbac-volsync-writer.yaml : namespace-scoped RS/RD write RBAC
+#                               (Patch 7.7; per managed namespace)
+#   3. Deployment (single replica, permissive env, no webhook server)
 #   4. Service + ServiceMonitor (controller-runtime metrics)
 #   5. PrometheusRule (minimal pod-down alerts)
 #
 # NOT included:
-#   - MutatingWebhookConfiguration  (no admission gate in audit)
+#   - MutatingWebhookConfiguration  (no admission gate under any v4 mode)
 #   - ValidatingWebhookConfiguration
 #   - cert-manager Certificate or webhook TLS Secret
-#   - PodDisruptionBudget (single-replica audit)
+#   - PodDisruptionBudget (single-replica operator)
 #
 # These come back in later phases (Phase 8 — webhook deployment), tracked
 # in the PRD.

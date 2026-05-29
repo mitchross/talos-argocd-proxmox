@@ -2,10 +2,10 @@
 # docs/pvc-plumber-v4-prd.md, cutover sequence per
 # docs/pvc-plumber-v4-cutover.md §9).
 #
-# Single replica. Leader election forced off by the binary in audit
-# and permissive modes. No webhook server — Patch 6.7-wire gates
-# webhook registration on `!runsV4Reconciler(mode)`, and audit +
-# permissive both route to v4, so the webhook server is never started
+# Single replica. Leader election forced off by the binary in permissive
+# (and audit) modes. No webhook server — Patch 6.7-wire gates
+# webhook registration on `!runsV4Reconciler(mode)`, and permissive +
+# audit both route to v4, so the webhook server is never started
 # under any v4 mode. Therefore no TLS cert volume, no init container,
 # no /tmp/k8s-webhook-server.
 #
@@ -57,6 +57,10 @@ metadata:
   labels:
     app.kubernetes.io/name: pvc-plumber
     app.kubernetes.io/component: backup-restore-operator
+    # LEGACY LABEL — runtime mode is PERMISSIVE, set by PVC_PLUMBER_MODE env
+    # below. This label value is stale; updating it is a gated fix (the pod-
+    # template copy at .spec.template.metadata.labels rolls the pod on sync).
+    # Tracked in docs/pvc-plumber-v4-migration-readiness.md §7.
     pvc-plumber.io/mode: audit
 spec:
   replicas: 1
@@ -75,6 +79,9 @@ spec:
       labels:
         app.kubernetes.io/name: pvc-plumber
         app.kubernetes.io/component: backup-restore-operator
+        # LEGACY LABEL — runtime mode is PERMISSIVE (PVC_PLUMBER_MODE env).
+        # Changing this value rolls the pod, so it is left as-is until a
+        # deliberate sync; tracked in migration-readiness §7.
         pvc-plumber.io/mode: audit
     spec:
       serviceAccountName: pvc-plumber
@@ -100,19 +107,23 @@ spec:
           args:
             # Required to enable the controller-runtime manager (the v3.x
             # rollout gate; legacy HTTP path is still present in the
-            # binary). Audit gating lives BELOW this flag — see env vars.
+            # binary). Mode gating (currently permissive) lives BELOW this
+            # flag — see env vars.
             - --leader-elect=false
             - --metrics-bind-address=:8081
             - --health-probe-bind-address=:8082
           env:
-            # Phase 6 permissive dry-run: the binary is in permissive
-            # mode but the cluster has zero write-eligible PVCs (no PVC
-            # currently carries BOTH pvc-plumber.io/enabled="true" AND
-            # pvc-plumber.io/manage-volsync="true"). Verdict for every
-            # PVC remains skipped-not-opted-in, skipped-exempt, or
-            # already-matches; planned_ops stays empty, executor never
-            # fires. Karakeep canary is the next gate after this dry
-            # run is verified — see docs/pvc-plumber-v4-cutover.md §10.
+            # Phase 6 permissive: the operator is live and managing one
+            # PVC. nginx-example/storage carries BOTH
+            # pvc-plumber.io/enabled="true" AND
+            # pvc-plumber.io/manage-volsync="true", so the operator created
+            # and now manages ReplicationSource/storage +
+            # ReplicationDestination/storage-dst (managed-by=pvc-plumber);
+            # the first operator-managed backup succeeded 2026-05-29. The
+            # nginx canary is functionally complete. Recommended next
+            # migration candidate is homepage-dashboard/config; Karakeep is
+            # DEFERRED (destructive, explicit-auth only). Migration order +
+            # status: docs/pvc-plumber-v4-migration-readiness.md.
             # Enforce/strict are still rejected at startup (Phase 8).
             - name: PVC_PLUMBER_MODE
               value: "permissive"
@@ -120,8 +131,8 @@ spec:
             # Without this, the binary stays in legacy HTTP-only mode.
             - name: OPERATOR_MODE
               value: "true"
-            # Tighten log level for the audit rollout; v4 emits a lot of
-            # "would-write" entries that are useful for observability but
+            # Tighten log level for the permissive rollout; v4 emits a lot
+            # of reconcile/op entries that are useful for observability but
             # noisy at DEBUG.
             - name: LOG_LEVEL
               value: "info"

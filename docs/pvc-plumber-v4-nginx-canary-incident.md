@@ -1,9 +1,15 @@
 # pvc-plumber v4 nginx-example/storage canary incident
 
-**Date:** 2026-05-27 → 2026-05-28
+**Date:** 2026-05-27 → 2026-05-29
 **Canary scope:** single PVC, `nginx-example/storage`
-**Outcome:** stabilized on inline-Argo-owned VolSync resources; v4 operator-managed handoff
-deferred to rc6.
+**Outcome:** Initially stabilized on inline-Argo RS/RD pending operator fixes. rc6 fixed the
+invalid-label-value bug (compound identity moved to an annotation) and rc7 added the RS/RD
+watch + self-heal requeue + hardening. The operator-managed handoff was then **COMPLETED under
+rc7**: inline RS/RD were removed from Git (`50a84cc9`), the operator recreated `RS/storage` +
+`RD/storage-dst` as `managed-by=pvc-plumber`, and the first operator-managed backup completed
+**Successful** (`lastSyncTime 2026-05-29T04:04:29Z`). **Canary functionally complete.** See
+[`pvc-plumber-v4-migration-readiness.md`](pvc-plumber-v4-migration-readiness.md) for the proven
+migration recipe and next candidates.
 
 > Companion to [`pvc-plumber-v4-cutover.md`](pvc-plumber-v4-cutover.md) (runbook),
 > [`pvc-plumber-v4-prd.md`](pvc-plumber-v4-prd.md) (design contract), and
@@ -156,7 +162,11 @@ slash is not in the allowed character set.
 
 ---
 
-## Current safe state
+## State at stabilization (2026-05-28, historical)
+
+> This table records the post-stabilization **inline-Argo** state that held after the
+> `6d85c630` rollback and before rc6/rc7 landed. Superseded by the **Current state** block
+> below once the rc7 handoff completed on 2026-05-29.
 
 | Aspect | State |
 |---|---|
@@ -173,54 +183,83 @@ slash is not in the allowed character set.
 
 ---
 
-## What not to do next
+## Current state (2026-05-29)
 
-- **Do not** migrate Karakeep yet.
-- **Do not** migrate any additional PVCs.
-- **Do not** remove any more inline RS/RD from Git.
-- **Do not** rely on “one manual command” as the solution path. Manual commands
-  belong in CI gates, runbooks, or operator code — not in tribal knowledge.
-- **Do not** scale this pattern across the repo until pvc-plumber rc6 fixes the
-  invalid-label-value bug and the fix is validated end-to-end on this same canary.
-- **Do not** remove the v4 labels from `nginx-example/storage` unless intentionally
-  rolling the PVC completely back out of v4 candidacy. Today the labels are
-  inert (operator observes `inline-argo` and writes nothing) and serve as the
-  durable record that this PVC is still a candidate for the eventual
-  operator-managed path.
+> The rc7 handoff completed. Inline Argo RS/RD were removed from Git (`50a84cc9`) and the
+> operator recreated them under its own ownership. This is the authoritative current state.
+
+| Aspect | State |
+|---|---|
+| `ReplicationSource/storage` | recreated by operator; `app.kubernetes.io/managed-by=pvc-plumber`; same kopia identity `storage@nginx-example` |
+| `ReplicationDestination/storage-dst` | recreated by operator; `app.kubernetes.io/managed-by=pvc-plumber` |
+| Cluster-wide `managed-by=pvc-plumber` RS/RD | **2** (`RS/storage` + `RD/storage-dst`) |
+| pvc-plumber `/audit` for `nginx-example/storage` | `action=already-matches`, `owner_classification=managed-by-pvc-plumber`, `stale=false` |
+| First operator-managed backup | **Successful** — `latestMoverStatus=Successful`, `lastSyncTime 2026-05-29T04:04:29Z` |
+| Optional follow-up | 2026-05-30T02:58Z cron-recurrence check is a read-only confirmation, **not** a blocker |
 
 ---
 
-## Next durable fix — pvc-plumber rc6 TODO
+## What to do next
 
-> This belongs in the **pvc-plumber repo**, not this repo. Captured here so the
-> next-session operator has the full context. Do not edit pvc-plumber code from
+> **The gate is met.** The condition that previously blocked scaling this pattern — "pvc-plumber
+> rc6 fixes the invalid-label-value bug and the fix is validated end-to-end on this same canary" —
+> **has been satisfied**: rc6 shipped the fix (compound identity → annotation) and rc7 validated it
+> end-to-end on `nginx-example/storage` (`managed-by=pvc-plumber`, first backup Successful 2026-05-29).
+
+- Additional PVCs **may now be migrated**, one at a time, per the proven recipe in
+  [`pvc-plumber-v4-migration-readiness.md`](pvc-plumber-v4-migration-readiness.md):
+  **RBAC first, inline RS/RD removal last.** Recommended next candidate:
+  **`homepage-dashboard/config`**.
+- **Do not** migrate Karakeep yet — it remains **deferred** (destructive, explicit-auth-only).
+- **Do not** remove any inline RS/RD from a PVC before its `RoleBinding/pvc-plumber:volsync-writer`
+  exists in that namespace (preflight check #1).
+- **Do not** rely on “one manual command” as the solution path. Manual commands
+  belong in CI gates, runbooks, or operator code — not in tribal knowledge.
+- **Do not** remove the v4 labels from `nginx-example/storage` — the PVC is now on the
+  operator-managed path and its RS/RD are `managed-by=pvc-plumber`.
+
+---
+
+## Next durable fix — pvc-plumber rc6 TODO — DONE
+
+> **DONE (2026-05-29).** rc6 shipped the renderer/identity fix (compound identity moved to an
+> annotation); rc7 added the RS/RD watch (child create/delete/spec-change re-enqueues the owning
+> PVC) + self-heal requeue + a partial-inline-Argo needs-human-review guard + per-entry `/audit`
+> staleness (`age_seconds`/`stale`). The `nginx-example/storage` handoff was re-run under rc7 and
+> **succeeded**: operator recreated `RS/storage` + `RD/storage-dst` as `managed-by=pvc-plumber` and
+> the first operator-managed backup was **Successful** (`lastSyncTime 2026-05-29T04:04:29Z`).
+> Original task list preserved below for history.
+
+> This belonged in the **pvc-plumber repo**, not this repo. Captured here so the
+> next-session operator had the full context. Do not edit pvc-plumber code from
 > this repo.
 
 **Patch target:** pvc-plumber rc6.
 
 **Required:**
 
-1. **Renderer fix** in `internal/controller/v4_reconciler.go` (or wherever the
+1. **DONE (rc6):** **Renderer fix** in `internal/controller/v4_reconciler.go` (or wherever the
    RS/RD builder lives): no Kubernetes label value emitted by the v4 builder may
    contain `/` or any other character outside the K8s label-value regex
    `(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?`.
-2. **Identity placement**: move `backup_identity = <namespace>/<pvc>` from a
+2. **DONE (rc6):** **Identity placement**: move `backup_identity = <namespace>/<pvc>` from a
    label to an **annotation** (`pvc-plumber.io/backup-identity`). Replace the
    compound label with separate, individually valid labels:
    `pvc-plumber.io/source-namespace`, `pvc-plumber.io/source-pvc`.
-3. **Unit tests**:
+3. **DONE (rc6):** **Unit tests**:
    - Assert every label emitted by the v4 builder matches the K8s label-value
      regex for at least one cherry-picked adversarial input
      (namespace=`nginx-example`, pvc=`storage`).
    - Regression test: `namespace=nginx-example, pvc=storage,
      backup_identity=nginx-example/storage` round-trips through the builder
      and produces RS/RD that pass `kubectl apply --validate=true --dry-run=server`.
-4. **Release rc6** (image bundle in pvc-plumber repo).
-5. **Bump pvc-plumber image pin** in this repo's
-   `infrastructure/controllers/pvc-plumber/deployment.yaml` to rc6 (single line
-   image SHA bump).
-6. **Re-run nginx-example/storage handoff** from the current stabilized
-   inline-Argo state — using the corrected migration order above.
+4. **DONE:** **Release rc6** (image bundle in pvc-plumber repo). rc7 followed with the RS/RD
+   watch + self-heal requeue + hardening.
+5. **DONE:** **Bump pvc-plumber image pin** in this repo to the permissive rc7 build
+   (`4.0.0-permissive-rc7@sha256:091f21b…`).
+6. **DONE:** **Re-run nginx-example/storage handoff** from the stabilized inline-Argo state under
+   rc7 — inline RS/RD removed (`50a84cc9`), operator recreated `managed-by=pvc-plumber` RS/RD,
+   first backup **Successful** 2026-05-29.
 
 ---
 
@@ -247,10 +286,11 @@ slash is not in the allowed character set.
   ideally do a client-side dry-run apply against the API server before
   reporting `action: would-create` as "good to go". That belongs in rc7 or
   later; rc6 is scoped narrowly to the label fix.
-- **Final v4 cutover docs and the visual explainer must wait** until the rc6
-  canary succeeds end-to-end on this same `nginx-example/storage` PVC, with
-  RS/RD ending up as `managed-by: pvc-plumber` and a first backup actually
-  running. Anything documented before that point will be wrong.
+- **Gate now OPEN.** The final v4 cutover docs and the visual explainer previously had to wait
+  until the canary succeeded end-to-end on this same `nginx-example/storage` PVC, with RS/RD ending
+  up as `managed-by: pvc-plumber` and a first backup actually running. **That gate has been met
+  under rc7**: the canary is complete (`managed-by=pvc-plumber` RS/RD, first backup **Successful**
+  2026-05-29). The explainer / cutover-finalization gate is now open.
 
 ---
 

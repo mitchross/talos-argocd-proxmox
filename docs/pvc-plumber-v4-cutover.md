@@ -1,7 +1,8 @@
 # pvc-plumber v4 cutover runbook
 
 > Operational checklist for migrating apps from inline VolSync RS/RD
-> to operator-managed RS/RD under the v4 audit-then-permissive rollout.
+> to operator-managed RS/RD under the v4 permissive rollout (operator
+> live in permissive; one PVC migrated).
 > This file is the day-of operations guide. Design contract lives in the
 > [PRD](pvc-plumber-v4-prd.md); the post-PRD working backlog is in the
 > [roadmap](pvc-plumber-v4-roadmap.md); per-app status is in the
@@ -33,14 +34,22 @@
 what you read here, the runbook is wrong and must be updated before
 anything else.
 
-**Implemented today** (after Patches 6.5 → 6.8a, all on `pvc-plumber` `main`):
+**Live Talos cluster (this repo) right now**: pvc-plumber **rc7**, running
+in **permissive** mode. Pod is Ready, restarts 0. The operator can write
+operator-owned RS/RD in managed namespaces today.
 
-- audit mode runs the v4 reconciler with bounded planner output and
-  zero cluster writes; the `auditclient` wrapper around the embedded
-  controller-runtime client is a second independent layer enforcing this.
-- permissive mode code path exists and routes to the v4 reconciler
-  (Patch 6.7-wire). enforce / strict are rejected at startup
-  (Phase 8).
+**Implemented today** (rc7 on `pvc-plumber` `main`):
+
+- permissive mode runs the v4 reconciler and the bounded executor applies
+  the planner's ops (Create/Update/Delete) for write-eligible PVCs.
+- rc6 fixed the invalid-label-value bug that previously broke the
+  reconcile path.
+- rc7 added the **ReplicationSource/ReplicationDestination watch** plus a
+  child→PVC reverse-map, a self-heal requeue, a partial-inline-argo
+  `needs-human-review` guard, and `/audit` `age_seconds` + `stale` per
+  entry. This closes the rc6 reconcile-trigger gap: a pruned or deleted
+  operator-owned (managed) RS/RD is now recreated automatically within
+  ~5s, no manual PVC poke required (proven on nginx).
 - bounded executor enforces a hard GVK allow-list
   (`volsync.backube/v1alpha1/ReplicationSource` and `…/ReplicationDestination`
   only) plus an ownership re-check on Update/Delete.
@@ -48,16 +57,24 @@ anything else.
   (audit + permissive).
 - permissive-mode startup requires six explicit defaults — empty
   snapshot class, ambiguous cache capacity, or `0`/root UID/GID/FSGroup
-  will refuse to start (Patch 6.8a).
+  will refuse to start.
 - backups continue through the cluster-wide
   `volsync-mover-backend-availability` MutatingAdmissionPolicy
   (RustFS-availability gate scoped to mover Jobs) — that policy is the
   fail-closed substrate; pvc-plumber sits on top of it.
 
-**Canary-ready once rc4 image is published and Talos is bumped**:
+**First canary — COMPLETE**:
 
-- karakeep destructive canary on one PVC. Hard stop after that one PVC
-  per repo policy. No other app may run permissive in the same rollout.
+- `nginx-example/storage` migrated under rc7. Inline RS/RD removed from
+  Git (commit `50a84cc9`); the operator recreated `RS/storage` and
+  `RD/storage-dst` as `managed-by: pvc-plumber`; first operator-managed
+  backup **Successful** at `2026-05-29T04:04:29Z`.
+- Karakeep is **deferred** (destructive, separately-authorized, one-PVC,
+  uses a non-568 mover so v4 would change its identity). It is **not**
+  the first or next canary.
+- Recommended next routine migration: `homepage-dashboard/config`
+  (single 5Gi, daily, mover 568, no dataSourceRef drift). See
+  [`docs/pvc-plumber-v4-migration-readiness.md`](pvc-plumber-v4-migration-readiness.md).
 
 **Future Phase 8+** (NOT implemented today; do not infer from this runbook):
 
@@ -68,11 +85,6 @@ anything else.
 - automated batch app migration.
 - in-binary adoption / relabeling of existing inline-Argo RS/RD.
 - cluster-wide nuke + restore drill validation.
-
-**Live Talos cluster (this repo) right now**: audit mode, image pinned to
-rc3 digest. Permissive cutover is gated on rc4 publishing AND the Talos
-manifest update AND an intentional verification step BEFORE the canary.
-See the rc4 sequence at the end of this doc.
 
 ---
 
@@ -497,9 +509,12 @@ once the resource is created.
 ## Per-PVC cutover checklist
 
 This is the operational core of the runbook. **Run one PVC at a time**
-until the karakeep canary is complete and the user explicitly authorizes
-batch migration. Per current repo policy, karakeep is the only authorized
-destructive scope.
+and get explicit user authorization before each migration; batch
+migration is not authorized. The first canary (`nginx-example/storage`)
+is complete under rc7. The recommended next routine migration is
+`homepage-dashboard/config`. Karakeep remains a deferred, separately
+authorized destructive canary (see below) — it is not the first or next
+migration.
 
 Substitute `<ns>` and `<pvc>` throughout. Substitute the captured
 expected RS name `<rs>` = `<pvc>` and RD name `<rd>` = `<pvc>-dst`.
@@ -507,6 +522,12 @@ expected RS name `<rs>` = `<pvc>` and RD name `<rd>` = `<pvc>-dst`.
 ### Preflight
 
 Capture state to disk in case rollback is needed.
+
+**rc7 note**: the RS/RD watch makes the operator recreate of a pruned or
+deleted **managed** child automatic in <5s after Argo prunes the inline
+resource — no manual PVC poke is needed (proven on nginx). The preflight
+below still captures state for rollback, but you should not have to
+manually trigger a reconcile.
 
 ```sh
 mkdir -p /tmp/v4-cutover/<ns>-<pvc> && cd /tmp/v4-cutover/<ns>-<pvc>
@@ -531,6 +552,20 @@ mkdir -p /tmp/v4-cutover/<ns>-<pvc> && cd /tmp/v4-cutover/<ns>-<pvc>
       ```
       Expected: `action: "already-matches"`, `owner_classification: "inline-argo"`,
       `label_source: "legacy"`, `planned_ops` absent, `execution_result` absent.
+- [ ] Confirm the `/audit` entry's `stale` field is `false` (rc7 added
+      `age_seconds` + `stale` per entry):
+      ```sh
+      jq '.stale' audit.before.json
+      # expect: false
+      ```
+      A `stale: true` entry means the operator's view of the PVC is
+      behind; let it reconcile before proceeding.
+- [ ] If the PVC has live `dataSourceRef` drift (Argo reports it
+      OutOfSync on the `dataSourceRef` field), add
+      `argocd.argoproj.io/sync-options: ServerSideApply=false` to the PVC
+      in addition to the existing `ServerSideDiff=false` compare-option.
+      This is the proven `nginx` mitigation for the dataSourceRef
+      reconcile loop.
 - [ ] Capture last successful backup time:
       ```sh
       kubectl -n <ns> get rs <pvc> -o jsonpath='{.status.lastSyncTime}'
@@ -668,10 +703,19 @@ after the user authorizes (see karakeep policy below).
 
 ---
 
-## Karakeep canary checklist
+## Karakeep canary checklist (DEFERRED)
 
-This is the first PVC to migrate after rc4 lands. Hard rules per repo
-policy (memory: `feedback_commit_authorization` + canary scope):
+Karakeep is a **deferred, separately-authorized destructive canary** — it
+is **NOT** the first or next migration. The first canary
+(`nginx-example/storage`) is already complete under rc7. Karakeep runs
+**hourly** and uses a **non-568 mover**, so a v4 cutover would change its
+backup identity; that is why it is held back for explicit, isolated
+handling. Migrating karakeep requires **explicit user authorization**, is
+**one PVC only**, and carries the destructive hard-stops below.
+
+The checklist steps remain valid for when karakeep is eventually
+migrated. Hard rules per repo policy (memory:
+`feedback_commit_authorization` + canary scope):
 
 - **One PVC only.** Likely target: `karakeep / data` (verify against
   the live cluster before the PR).
@@ -711,25 +755,36 @@ This is the well-trodden path: the PR is merged, the operator created
 its own RS/RD, but something is wrong (app misbehaving, backup not
 ticking, /audit verdict unexpected).
 
-- [ ] Flip pvc-plumber to audit mode (or remove `manage-volsync` from
-      the target PVC only). The fast option:
+**rc7 caveat — out-of-band delete does not stick.** Under rc7 the RS/RD
+watch recreates a manually-deleted **managed** RS/RD within ~5s, so
+`kubectl delete` of the operator-owned resource is **not** a rollback
+step — the operator just recreates it. Rollback is pure GitOps: disarm
+the operator first, then let Argo recreate the inline resources. This is
+the path proven on `nginx` and documented in
+[`docs/pvc-plumber-v4-migration-readiness.md`](pvc-plumber-v4-migration-readiness.md) §6.
+
+- [ ] **Disarm the operator first** so it stops owning the child. Either
+      restore the inline RS/RD documents in Git (preferred — covered by
+      the next step) or flip the PVC's write fuse off so the executor
+      makes no further writes for this PVC:
       ```sh
       kubectl -n <ns> label pvc <pvc> pvc-plumber.io/manage-volsync-
       ```
-      Verdict immediately becomes `write-gate-missing` and the executor
-      makes no further writes for this PVC. (This is per-PVC; other
-      apps under permissive continue normally.)
-- [ ] Revert the cutover PR (or push a new commit that re-adds the
-      inline RS/RD documents and the legacy `backup:` label).
-- [ ] Sync the target app's ArgoCD Application.
-- [ ] After Argo recreates the inline RS/RD with `managed-by: argocd`,
-      delete the operator-owned RS/RD by hand:
-      ```sh
-      kubectl -n <ns> delete rs <pvc> -l app.kubernetes.io/managed-by=pvc-plumber
-      kubectl -n <ns> delete rd <pvc>-dst -l app.kubernetes.io/managed-by=pvc-plumber
-      ```
-      The label selector is the safety: it refuses to delete an
-      Argo-owned resource even if you typo the name.
+      With the fuse off the verdict becomes `write-gate-missing` and the
+      operator will not recreate the child. (Per-PVC; other apps under
+      permissive continue normally.)
+- [ ] Revert the cutover PR (or push a new commit that re-adds the inline
+      `ReplicationSource` + `ReplicationDestination` documents into the
+      app's `pvc.yaml` from the prior commit, and restores the legacy
+      `backup:` label).
+- [ ] Commit + sync the target app's ArgoCD Application. Argo recreates
+      the inline RS/RD with `managed-by: argocd`. Because the operator is
+      disarmed (or because the resource now carries `managed-by: argocd`,
+      which the planner classifies `inline-argo-observed`), it will not
+      fight Argo for ownership.
+- [ ] **Do not** `kubectl delete` the operator-owned RS/RD out of band —
+      under rc7 the watch recreates it within ~5s unless the fuse is off
+      or Git already owns the inline resource. Let GitOps converge.
 - [ ] **Do not delete backup history** in the kopia repo. The PVC's
       backup lineage in the shared `volsync-kopia-repository` is keyed
       by `<namespace>/<pvc>` and is independent of which controller is
@@ -737,17 +792,23 @@ ticking, /audit verdict unexpected).
 - [ ] Verify with `/audit`: action should return to `already-matches`
       with `owner_classification: inline-argo`.
 
-### Cluster-level rollback (rc4 itself is bad)
+### Cluster-level rollback (the running RC itself is bad)
 
-If rc4 produces a problem that's not specific to one PVC — startup
-failures, audit-mode behavior change, etc. — revert the Talos
-manifest's `pvc-plumber` image digest back to rc3. The Talos repo
-holds the digest as an Argo-managed manifest; revert that one file via
-a normal PR.
+If the live RC produces a problem that's not specific to one PVC —
+startup failures, a regression in the reconcile/watch path, etc. —
+revert `deployment.yaml`'s `pvc-plumber` image digest back to the
+previous known-good RC (currently **rc6** / its prior digest) via a
+normal PR. The image digest is an Argo-managed manifest; revert that one
+file.
 
-Audit-mode pods do nothing destructive even on a bad rc, so the
-rollback's blast radius is just "the operator pod goes back to the rc3
-behavior set." No PVC, RS, RD, or Secret is rewritten by the rollback.
+The operator runs **PERMISSIVE**, so it *can* write RS/RD — this is not
+an audit-mode no-write rollback. The blast radius is bounded by the
+executor's safety layers, not by the mode: the GVK allow-list
+(RS/RD only), the ownership re-check before every Update/Delete, the
+two-gate write fuse on the PVC, and namespace-scoped RBAC. A rollback
+therefore only changes which RC's executor logic is running against
+**operator-owned RS/RD in managed namespaces**. No PVC, Secret, or
+inline-Argo RS/RD is rewritten by the rollback.
 
 ---
 
@@ -825,6 +886,11 @@ operational reference; the explainer is the audience-facing artifact.
 
 ## Change log
 
+- 2026-05-29 — Cluster is rc7 / permissive. rc6 fixed the invalid-label
+  bug; rc7 added the RS/RD watch closing the reconcile-trigger gap.
+  `nginx-example/storage` canary complete (operator-managed, backup
+  Successful `2026-05-29T04:04:29Z`). Karakeep deferred. Next routine
+  candidate: `homepage-dashboard/config`.
 - 2026-05-24 — Initial cutover runbook (Patch 6.8b). Reflects Phase 6
   audit + permissive code paths as of pvc-plumber commit `82f37a3`
   (Patch 6.8a, "require explicit defaults for permissive VolSync
