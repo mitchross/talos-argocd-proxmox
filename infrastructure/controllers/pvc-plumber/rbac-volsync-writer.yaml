@@ -74,3 +74,27 @@ subjects:
   - kind: ServiceAccount
     name: pvc-plumber
     namespace: pvc-plumber
+
+---
+# Managed namespace: homepage-dashboard (candidate #1; single 5Gi config
+# PVC, daily, mover 568, no dataSourceRef drift). RBAC lands FIRST; the
+# inline RS/RD removal from my-apps/media/homepage-dashboard/pvc.yaml is a
+# separate, separately-authorized commit (Commit 2). Until that lands the
+# PVC carries no v4 fuse labels, so the operator only observes it.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pvc-plumber:volsync-writer
+  namespace: homepage-dashboard
+  labels:
+    app.kubernetes.io/name: pvc-plumber
+    app.kubernetes.io/component: backup-restore-operator
+    pvc-plumber.io/managed-namespace: "true"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pvc-plumber:volsync-writer
+subjects:
+  - kind: ServiceAccount
+    name: pvc-plumber
+    namespace: pvc-plumber
