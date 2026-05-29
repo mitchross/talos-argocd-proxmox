@@ -45,9 +45,23 @@ configs:
     # Default ArgoCD polling interval (180s) with modest jitter
     timeout.reconciliation: "180s"
     timeout.reconciliation.jitter: "60s"
-    # Force cache invalidation periodically so manual Sync actually re-fetches from git
-    # Use "Hard Refresh" button in UI for immediate re-fetch; this is the periodic fallback
-    timeout.hard.reconciliation: "0"
+    # Periodic HARD refresh. Unlike timeout.reconciliation (soft refresh, which
+    # compares cached manifests + cached cluster live-state), a hard refresh
+    # INVALIDATES BOTH the manifest cache AND the controller's cluster live-state
+    # cache before re-comparing. This is the scheduled equivalent of the UI
+    # "Hard Refresh" button.
+    #
+    # Why this is non-zero: 2026-05-29 the controller reported my-apps-llama-cpp
+    # Synced+Healthy while the live Deployment was still the old image and pointed
+    # at a dangling ConfigMap hash. server-side diff (controller.diff.server.side)
+    # had compared the new desired spec against a STALE live-state cache, saw "no
+    # change", and skipped the Deployment apply — selfHeal can't help because the
+    # controller perceives no drift. A manual hard refresh fixed it instantly.
+    # "0" (disabled) let that stale state persist indefinitely (cluster cache is
+    # watch-based with no resync-duration knob in this version). 1h bounds the
+    # worst-case staleness window to one hour. Raise toward 2h-4h if the hourly
+    # all-apps manifest regeneration pressures the repo-servers.
+    timeout.hard.reconciliation: "1h"
     # Global diff noise cleanup for resources normalized by their controllers.
     # Keep these system-level so AppSets only carry app-specific rules.
     resource.customizations.ignoreDifferences.gateway.networking.k8s.io_HTTPRoute: |
