@@ -49,14 +49,7 @@ metadata:
 spec:
   sourcePVC: data-pvc
   trigger:
-    # One-shot quiesced backup (Option R, 2026-05-29): karakeep-web is scaled
-    # to 0 so data-pvc is quiesced. Swapping schedule->manual forces a single
-    # backup that captures the final pre-deletion state into kopia, which the
-    # RD (data-pvc-dst) is then refreshed from. MUST be reverted to
-    # `schedule: "32 * * * *"` at Step 6 (web scale-up) to restore periodic
-    # backups. VolSync runs one sync, sets status.lastManualSync to this
-    # value, then pauses.
-    manual: backup-2026-05-29-quiesced
+    schedule: "32 * * * *"
   kopia:
     repository: volsync-kopia-repository
     username: data-pvc
