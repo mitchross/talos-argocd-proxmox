@@ -87,11 +87,14 @@ metadata:
     volsync.backup/pvc: data-pvc
 spec:
   trigger:
-    # Bumped 2026-05-29 (Option R Step 1): forces VolSync to pull the
-    # LATEST kopia snapshot into a fresh latestImage before the data-pvc
-    # immutable-dataSourceRef repair. Was "restore-once" (stale latestImage
-    # from 2026-05-21). Changing the value re-runs the restore-once mover.
-    manual: restore-2026-05-29-data-pvc-refresh
+    # Bumped 2026-05-29 (Option R): forces VolSync to pull the LATEST kopia
+    # snapshot into a fresh latestImage before the data-pvc immutable-
+    # dataSourceRef repair. Re-bumped to -quiesced after the one-shot RS
+    # backup (lastManualSync=backup-2026-05-29-quiesced, 22:23:08Z) so this
+    # restore image reflects the QUIESCED volume (web scaled to 0), not the
+    # earlier pre-quiesce 21:33 snapshot. Changing the value re-runs the
+    # restore-once mover.
+    manual: restore-2026-05-29-data-pvc-quiesced
   kopia:
     repository: volsync-kopia-repository
     username: data-pvc
