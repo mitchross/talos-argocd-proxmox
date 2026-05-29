@@ -98,3 +98,30 @@ subjects:
   - kind: ServiceAccount
     name: pvc-plumber
     namespace: pvc-plumber
+
+---
+# Managed namespace: karakeep (higher-risk migration; two 10Gi PVCs
+# data-pvc + meilisearch-pvc, hourly cadence, inline mover 1001 that v4
+# normalizes to 568). RBAC lands FIRST (Gate 1). The Karakeep app is in a
+# pre-existing ComparisonError (data-pvc immutable dataSourceRef drift:
+# live data-pvc-backup vs Git data-pvc-dst) that must be cleared (Gate 2)
+# BEFORE any inline RS/RD removal (Gate 3). Until then the PVCs carry no v4
+# fuse labels, so the operator only observes them — this RoleBinding grants
+# write access but triggers no writes on its own.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pvc-plumber:volsync-writer
+  namespace: karakeep
+  labels:
+    app.kubernetes.io/name: pvc-plumber
+    app.kubernetes.io/component: backup-restore-operator
+    pvc-plumber.io/managed-namespace: "true"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pvc-plumber:volsync-writer
+subjects:
+  - kind: ServiceAccount
+    name: pvc-plumber
+    namespace: pvc-plumber
