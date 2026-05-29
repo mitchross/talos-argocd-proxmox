@@ -30,8 +30,9 @@ spec:
   # operator creates and repairs ReplicationSource/storage +
   # ReplicationDestination/storage-dst — and recreates either within
   # seconds if it is deleted — via its RS/RD watch. The inline
-  # Argo-owned RS/RD were handed off on 2026-05-28 after the rc7 watch
-  # was verified live. See docs/pvc-plumber-v4-cutover.md.
+  # Argo-owned RS/RD were handed off in the 2026-05-28/29 cutover after
+  # the rc7 watch was verified live; the first operator-managed backup
+  # succeeded 2026-05-29T04:04:29Z. See docs/pvc-plumber-v4-cutover.md.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination

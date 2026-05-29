@@ -24,14 +24,23 @@ its gate condition is met,** unless the user explicitly redirects.
   selfHeal pruned them, operator could not recreate, PVC left without a
   backup chain.
 
+- **rc6 — invalid-label-value fix (backup-identity moved to annotation;
+  operator RS/RD creates now valid).**
+
+- **rc7 — RS/RD watch + child→PVC reverse-map + self-heal requeue + /audit
+  staleness (`age_seconds`/`stale`); nginx-example/storage canary completed
+  operator-managed, first backup Successful 2026-05-29.**
+
 ## Open items
 
 ### 1. Phase 6.9 / 7 — Visual explainer + interactive lifecycle guide
 
-**Gate to start:** Phase 6 code complete AND karakeep destructive canary
-complete (one PVC, hard stop). If both are done and the operator is in a
-known-good state, this becomes the next priority. Acceptable to start during
-downtime if no code/cluster work is pending.
+**Gate to start:** Phase 6 code complete AND the gating canary complete. The
+gating/first canary was `nginx-example/storage` (NOT karakeep — karakeep is
+deferred and was never the gate). `nginx-example/storage` completed under rc7
+operator-managed, first backup Successful 2026-05-29, so **the gate is MET**.
+With the operator in a known-good state, this can become the next priority.
+Acceptable to start during downtime if no code/cluster work is pending.
 
 **Why this matters:** the v4 design is small in surface but conceptually
 dense (two-label fuse, ownership rules, audit/permissive distinction,

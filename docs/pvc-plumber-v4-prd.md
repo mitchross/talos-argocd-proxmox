@@ -9,6 +9,8 @@
 | Author / operator | Mitch (single-operator homelab). |
 | First written | 2026-05-22. |
 
+> **Execution status (2026-05-29, not part of the locked design):** Phases 1–6 effectively complete — inventory generated, operator code at rc7, deployed in PERMISSIVE mode, first app (nginx-example/storage) migrated to operator-managed RS/RD with a Successful backup. Live status tracked in docs/pvc-plumber-v4-migration-readiness.md.
+
 ## 1. Problem and goal
 
 The cluster has been through three backup architectures in twelve months:
@@ -296,6 +298,9 @@ Twelve phases. Each phase is independently mergeable, individually rollback-safe
 | 4 | Parity verification | Compare `/audit` against orphan cluster RS/RD and inline RS/RD. Document mismatches in tracker. | Very low | ≥95% PVC parity; per-app exceptions documented. |
 | 5 | Operator: source-gating + naming strategy + metrics | Source-state machine. Naming strategy option (default matches current inline: bare RS, `-dst` RD). Prometheus metrics per §15. | Low (still audit-only) | Tests green; `/audit` output uses correct names. |
 | 6 | Operator: switch to permissive mode + adopt orphans | Permissive mode default. Adoption code path: relabel unmanaged orphan RS/RD with `managed-by: pvc-plumber`. Inline-Argo resources remain audit-only per rule 2. | Medium (first cluster write) | 27 orphan apps adopted. Inline apps unchanged. Backups continue. |
+
+> **SUPERSEDED IN PRACTICE (2026-05-29):** the 27-orphan adoption figure is stale (inventory found 0 orphan-cluster RS/RD), and the live Phase 6 implementation uses a NO-adoption model — inline RS/RD are removed from Git first and the operator recreates managed RS/RD. See docs/pvc-plumber-v4-cutover.md (Ownership section) and docs/pvc-plumber-v4-migration-readiness.md.
+
 | 7 | Migrate inline-RS/RD apps to operator ownership, app-by-app | Per app: add `pvc-plumber.io/enabled` + tier; remove inline RS/RD from `pvc.yaml`. Verify audit said "would recreate identical". Verify backup post-cutover. | Medium per-app | Zero inline RS/RD in `my-apps/**`. All protected PVCs carry `pvc-plumber.io/enabled`. |
 | 8 | Webhook deployment in permissive mode | `ValidatingWebhookConfiguration` + `MutatingWebhookConfiguration`. `objectSelector: matchLabels: pvc-plumber.io/enabled: "true"` exclusively (rule 3). 9-namespace system exclusion in `namespaceSelector`. 2 replicas + PDB. cert-manager Certificate for TLS. | Medium-high (SPOF re-entry point) | Webhook fires on test-namespace PVC; deny path tested but disabled by mode. **Pre-merge gate: explicit user GO.** |
 | 9 | Failure-matrix drills | Run all 18 §10 cases against a dev namespace. Restore-honesty: sentinel data → backup → delete PVC → recreate → read sentinel → check ownership. | Low (dev scope) | `docs/pvc-plumber-v4-failure-matrix-results.md` committed with all 18 cases green. |

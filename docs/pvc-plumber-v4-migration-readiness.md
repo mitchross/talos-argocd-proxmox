@@ -98,15 +98,21 @@ Order is load-bearing — **RBAC first, inline removal last**. Reversing strands
 4. **Do not strip the v4 labels** unless they cause a confirmed issue — they are inert while inline RS/RD are Argo-owned (operator observes, no ops).
 RS/RD are orchestration CRs, not data; churn does not touch the PVC or the kopia repo (lineage is keyed by namespace/pvc identity).
 
-## 7. Stale docs to fix (tracked TODO — not yet applied)
-These predate rc6/rc7 and are now misleading. **Pure-doc** fixes are safe; the deployment.yaml label fix rolls the pod (needs a sync), so it is gated.
-- `docs/pvc-plumber-v4-nginx-canary-incident.md` — terminal state wrong: says "deferred to rc6 / stabilized on inline-Argo." Reality: rc7 shipped the watch fix and the canary is **complete / operator-managed / backup Successful**. *(pure doc)*
-- `docs/pvc-plumber-v4-cutover.md` — Status section pinned to rc3/audit; preflight assumes an rc6-era manual reconcile poke (rc7 makes prune→recreate automatic in <5s); karakeep mislabeled as "first canary" (nginx was); per-PVC rollback uses out-of-band `kubectl` (should be GitOps). *(pure doc)*
-- `docs/pvc-plumber-v4-inventory.md` — does not record nginx-example/storage as migrated/operator-managed. *(pure doc)*
-- `docs/pvc-plumber-v4-roadmap.md` — visual-explainer gate names karakeep; the gating canary (nginx) is done. *(pure doc)*
-- `infrastructure/controllers/pvc-plumber/README.md` — says "audit mode only / NOT YET SYNCED"; operator is permissive rc7, synced. *(pure doc)*
-- `infrastructure/controllers/pvc-plumber/deployment.yaml` — `pvc-plumber.io/mode: audit` label (×3) contradicts permissive mode. **Gated: editing this rolls the operator pod on sync — apply with a deliberate sync, not as a doc-only change.**
-- root `CLAUDE.md` — "pvc-plumber decommissioned / re-adoption in planning / inline RS/RD is the only correct pattern" is stale: rc7 is live in permissive and one PVC is operator-managed. *(pure doc, but high-traffic — change carefully)*
+## 7. Stale docs — status
+These predated rc6/rc7. The **pure-doc / comment-only** fixes were applied in the `docs(pvc-plumber): consolidate rc7 canary state and next migration plan` commit (2026-05-29). The only remaining item is the gated deployment.yaml label, which rolls the pod and must wait for a deliberate sync.
+
+**✅ Fixed (this commit, pure doc / comment-only):**
+- `docs/pvc-plumber-v4-nginx-canary-incident.md` — terminal state corrected: rc7 shipped the watch fix and the canary is **complete / operator-managed / backup Successful**; "Current safe state" relabeled historical with a current-state block added.
+- `docs/pvc-plumber-v4-cutover.md` — Status section updated to rc7/permissive; karakeep reframed as deferred (nginx was the first canary); per-PVC rollback points to the GitOps procedure; change-log entry added.
+- `docs/pvc-plumber-v4-inventory.md` — staleness banner added noting nginx-example/storage is now operator-managed and the snapshot predates rc5–rc7.
+- `docs/pvc-plumber-v4-roadmap.md` — visual-explainer gate corrected (nginx, not karakeep); rc6/rc7 added to Completed.
+- `docs/pvc-plumber-v4-prd.md` — execution cross-notes added under the Status row and the Phase-6 "27 orphans" row (locked design body unchanged).
+- `infrastructure/controllers/pvc-plumber/README.md` — rewritten for permissive rc7 (synced, RBAC, blast-radius bounds, nginx canary, next candidate).
+- `infrastructure/controllers/pvc-plumber/{kustomization,rbac,rbac-volsync-writer,deployment}.yaml` — header/inline comments updated audit→permissive; deployment.yaml "zero write-eligible PVCs / Karakeep next gate" comment corrected.
+- root `CLAUDE.md` — "re-adoption in planning / inline RS/RD is the only correct pattern" corrected: rc7 live in permissive, one PVC operator-managed; inline RS/RD still correct for not-yet-migrated PVCs.
+
+**⏳ Gated (NOT applied — rolls the pod):**
+- `infrastructure/controllers/pvc-plumber/deployment.yaml` — `pvc-plumber.io/mode: audit` LABEL (×2: Deployment metadata line ~60 + pod template line ~78) contradicts permissive mode. The runtime mode is set by the `PVC_PLUMBER_MODE` env var, so this is cosmetic, but editing the pod-template copy rolls the operator pod on sync. Apply with a deliberate sync, not as a doc-only change. (Legacy-label clarifying comments were added inline in this commit.)
 - `docs/pvc-plumber-v4-prd.md` — Phase-6 "adopt 27 orphans" language contradicts the no-adoption-in-Phase-6 contract in the cutover doc; cross-note rather than rewrite (PRD is a locked design contract).
 
 ---
@@ -133,8 +139,9 @@ homepage-dashboard to infrastructure/controllers/pvc-plumber/rbac-volsync-writer
 pvc-plumber Argo app, verify the RoleBinding exists.
 
 Step 2 (labels + annotations + inline removal, one commit): edit my-apps/media/homepage-dashboard/pvc.yaml:
-add PVC labels pvc-plumber.io/enabled="true", manage-volsync="true", tier="daily"; add annotations
-compare-options: ServerSideDiff=false and sync-options: ServerSideApply=false; remove the inline
+add PVC labels pvc-plumber.io/enabled="true", manage-volsync="true", tier="daily"; the
+compare-options: ServerSideDiff=false annotation is ALREADY present — ADD only
+sync-options: ServerSideApply=false; remove the inline
 ReplicationSource/config and ReplicationDestination/config-dst documents (keep PVC + dataSourceRef).
 kustomize build to validate. Commit "chore(homepage-dashboard): hand off config VolSync to pvc-plumber rc7".
 Push, wait CI green, sync only my-apps-homepage-dashboard (hard-refresh if stale-Synced).
