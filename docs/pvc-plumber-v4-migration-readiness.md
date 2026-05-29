@@ -1,0 +1,148 @@
+# pvc-plumber v4 — Fleet Migration Readiness
+
+> Generated 2026-05-29 from a read-only fleet review (live cluster + Git) after the
+> nginx-example/storage canary completed under rc7. **Tracking/planning document — no
+> PVC has been migrated based on this doc.** Migrating any production PVC requires
+> explicit per-PVC authorization.
+
+## 1. Current system status
+
+| Item | State |
+|---|---|
+| Operator image | `ghcr.io/mitchross/pvc-plumber:4.0.0-permissive-rc7@sha256:091f21b1b07c4373569d38d4c8d066ceea325fdaa2e996f5ad89b0b5d02d525c` |
+| Mode | **permissive** (writes_allowed=true), pod Ready, restartCount 0 |
+| rc7 fix | RS/RD watch + child→PVC reverse-map + periodic self-heal requeue + partial-inline-argo guard + `/audit` staleness. Closes the rc6 reconcile-trigger gap (the 2026-05-28 15h backup gap). |
+| Watch proof | Synthetic `pvc-plumber-watch-smoke`: managed RS *and* RD deleted → recreated in <5s, no PVC poke. |
+| nginx-example/storage canary | **Functionally complete.** Inline Argo RS/RD removed from Git (`50a84cc9`), Argo pruned them, rc7 recreated `RS/storage` + `RD/storage-dst` as `managed-by=pvc-plumber`, and the operator-managed RS produced a **Successful** initial backup (`lastSyncTime=2026-05-29T04:04:29Z`, kopia EXIT_CODE 0). `/audit`: `already-matches` / `managed-by-pvc-plumber` / `stale=false`. |
+| Remaining canary caveat | The first **cron-driven** recurrence (`nextSyncTime=2026-05-30T02:58:00Z`) has not yet fired — only the create-time initial sync has. Backup *mechanism* is proven; recurrence is a redundant confirmation. |
+
+### Known caveats / fleet-wide gaps
+- **RBAC is the universal blocker.** The per-namespace `RoleBinding pvc-plumber:volsync-writer` exists **only in `nginx-example`**. Every other candidate namespace needs it created **before** any inline RS/RD removal — otherwise Argo prunes the chain and the operator cannot recreate it (the exact 15h-gap failure mode).
+- All 18–19 candidate namespaces already have `volsync.backube/privileged-movers: "true"` and a materialized `volsync-kopia-repository` Secret. Those two prerequisites are met fleet-wide.
+- No candidate PVC carries the v4 fuse labels yet — migration requires **adding** `pvc-plumber.io/enabled=true` + `manage-volsync=true` + `tier` to the PVC.
+- Only **`n8n`** is currently in Argo `ComparisonError` (immutable-dataSourceRef SSA wedge). Other apps with live `dataSourceRef` drift (e.g. copyparty, tubesync) are still `Synced/Healthy` because the my-apps AppSet `ignoreDifferences` masks the PVC dataSource fields. The proven mitigation (from nginx) is to add `argocd.argoproj.io/sync-options: ServerSideApply=false` to the PVC.
+- **Cadence change:** v4 rewrites every RS schedule to a deterministic per-PVC minute in the **2 AM daily** window. PVCs currently on an **hourly** inline cadence (home-assistant, n8n, karakeep ×2, paperless-ngx ×2) would drop to **once-daily** on handoff — a real frequency reduction to confirm before migrating those.
+- **mover UID change:** v4 normalizes `moverSecurityContext` to `568/568/568`. PVCs whose inline mover runs as a different UID (n8n `1000`, gitea `1000`, karakeep ×2 `1001`) get a **real ownership change** — verify the mover can still read the volume before migrating those.
+
+## 2. PVC readiness table
+
+24 candidate PVCs (excludes the completed nginx-example/storage, CNPG/Barman DB PVCs, and infra redis). Every row is `owner=inline-argo`, `privileged-movers=true`, kopia Secret present, **RBAC RoleBinding missing**, **v4 labels absent in Git**. Columns below capture the discriminating factors.
+
+| Rank | App / namespace | PVC | Size | Cadence | Mover | Live dsr drift? | Argo | Shape handoff | Risk | Next action |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | homepage-dashboard | config | 5Gi | daily | 568 | **no** (config-dst) | Synced | no-op (sched minute only) | **low** | RBAC → labels → handoff |
+| 2 | copyparty | copyparty-data | 20Gi | daily | 568 | yes (…-backup) | Synced | no-op | low | RBAC → labels(+SSA=false) → handoff |
+| 3 | tubesync | config-pvc | 10Gi | daily | 568 | yes (…-backup) | Synced | no-op | low | RBAC → labels(+SSA=false) → handoff |
+| 4 | jellyfin | config | 5Gi | daily | 568 | yes (null) | Synced | no-op | low | RBAC → labels(+SSA=false) → handoff |
+| 5 | fizzy | data | 10Gi | daily | 568 | **no** (data-dst) | Synced | no-op | low-med | board data = the product; rebuildable-ish |
+| 6 | swarmui | swarmui-data | 5Gi | daily | 568 | — | Synced | no-op | med | multi-PVC ns (data+output+exempt model cache) |
+| 7 | swarmui | swarmui-output | 50Gi | daily | 568 | — | Synced | no-op | med | user-generated images |
+| 8 | open-webui | storage | 10Gi | daily | 568 | — | Synced | no-op | med | chat history |
+| 9 | perplexica | perplexica-data | 10Gi | daily | 568 | — | Synced | no-op | med | has its own SSDiff=false note |
+| 10 | frigate | frigate-config | 10Gi | daily | 568 | **no** | Synced | no-op | med | NVR config/db (media exempt) |
+| 11 | project-zomboid | zomboid-data | 20Gi | daily | 568 | — | Synced | no-op | med | game saves |
+| 12 | project-nomad | flatnotes-data | 5Gi | daily | 568 | no | Synced | no-op | med | multi-PVC bundle |
+| 13 | project-nomad | qdrant-data | 20Gi | daily | 568 | no | Synced | no-op | med | re-embeddable |
+| 14 | posthog | redis7-data | 10Gi | daily | 568 | — | Synced | no-op | med | cache/queue |
+| 15 | posthog | redpanda-data-kafka-0 | 20Gi | daily | 568 | — | Synced | no-op | med | queue |
+| 16 | home-assistant | config | 10Gi | **hourly** | 568 | — | Synced | cadence↓ | high | hourly→daily reduction; high-value |
+| 17 | n8n | data | 10Gi | **hourly** | **1000** | — | **ComparisonError** | mover+cadence change | high | fix Argo wedge + mover UID first |
+| 18 | gitea | gitea-shared-storage | 10Gi | daily | **1000** | — | Synced | mover change | high | **Helm extraDeploy special case** (not a pvc.yaml) |
+| 19 | paperless-ngx | data | 10Gi | **hourly** | 568 | — | Synced | cadence↓ | high | multi-PVC, hourly, docs |
+| 20 | paperless-ngx | media | 20Gi | **hourly** | 568 | — | Synced | cadence↓ | high | scanned originals (irreplaceable) |
+| 21 | project-nomad | nomad-storage | 120Gi | daily | 568 | no | Synced | no-op | high | large |
+| 22 | project-nomad | mysql-data | 20Gi | daily | 568 | no | Synced | no-op | high | self-hosted MySQL (not CNPG) |
+| 23 | posthog | postgres-data | 20Gi | daily | 568 | — | Synced | no-op | high | self-hosted PG (not CNPG) |
+| 24 | immich | library | 300Gi | daily | 568 | — | Synced | no-op | high | irreplaceable photos; largest volume — migrate last |
+| — | karakeep | data-pvc / meilisearch-pvc | 10Gi ×2 | **hourly** | **1001** | — | Synced | mover+cadence | **deferred** | DESTRUCTIVE canary per cutover doc; explicit auth only |
+
+## 3. Recommended next 3 candidates
+
+**#1 — `homepage-dashboard/config`** (safest overall). Single 5Gi PVC, daily, mover 568, **no dataSourceRef drift** (live = Git = `config-dst`) so the Argo prune fires with zero SSA-wedge risk, and the data is dashboard config that's fully rebuildable from Git. Shape handoff is a no-op apart from the cosmetic schedule-minute rewrite. Prereq: `volsync-writer` RoleBinding in `homepage-dashboard`.
+
+**#2 — `copyparty/copyparty-data`**. Single 20Gi PVC, daily, mover 568, file-share scratch/uploads (rebuildable). Has live dsr drift (`…-backup`) but the app is `Synced/Healthy`; add `sync-options: ServerSideApply=false` to the PVC (nginx recipe) as insurance. (This was reviewer E's #1; ranked #2 here only because homepage has the additional no-drift advantage.)
+
+**#3 — `tubesync/config-pvc`** (or `jellyfin/config`). Single config PVC (sibling media volumes are backup-exempt / not opted in — leave them untouched), daily, 568, rebuildable. dsr drift present → use the SSA=false annotation.
+
+### Why NOT Karakeep yet
+Karakeep is framed in `docs/pvc-plumber-v4-cutover.md` as a **separate destructive canary (data loss accepted)**, runs **hourly**, and uses a **non-568 mover (1001)** that v4 would change. Safer single-PVC, 568, daily, already-shape-matching candidates exist (above). Karakeep should run only on explicit user authorization, one PVC, with the destructive-canary hard-stops — not as the routine "next" migration.
+
+## 4. Per-PVC migration checklist (proven nginx recipe)
+
+Order is load-bearing — **RBAC first, inline removal last**. Reversing strands the PVC with no backup chain.
+
+1. **RBAC first.** Add a `RoleBinding pvc-plumber:volsync-writer` stanza for the target namespace to `infrastructure/controllers/pvc-plumber/rbac-volsync-writer.yaml`. Commit → **sync the `pvc-plumber` Argo app** → verify `kubectl get rolebinding pvc-plumber:volsync-writer -n <ns>`.
+2. **v4 labels + Argo annotations on the PVC.** Add to the PVC: labels `pvc-plumber.io/enabled: "true"`, `pvc-plumber.io/manage-volsync: "true"`, `pvc-plumber.io/tier: "daily"`; annotations `argocd.argoproj.io/compare-options: ServerSideDiff=false` **and** `argocd.argoproj.io/sync-options: ServerSideApply=false`. (Can be the same commit as step 3.)
+3. **Remove the inline RS/RD** documents from the app's `pvc.yaml` (keep the PVC + its `dataSourceRef`). Update any "defined below in this file" comment.
+4. Commit → wait for **Cluster CI green** → **sync the app's Argo Application** (hard-refresh first if it shows a stale `Synced`).
+5. **Confirm /audit** before removal showed `owner=inline-argo` / `already-matches` (operator observing), and **after** removal flips to `owner=managed-by-pvc-plumber` / `already-matches` within ~60s.
+6. **Verify rc7 recreate** within 60s: `RS/<pvc>` + `RD/<pvc>-dst` exist, both `app.kubernetes.io/managed-by=pvc-plumber`, no label value contains `/`, `backup-identity` is an **annotation**, shape correct (repo/user/host/sc/vsc/cache/568/RD-capacity).
+7. **Verify backup ran**: operator RS `latestMoverStatus.result=Successful` (initial sync on create) + `nextSyncTime` set.
+8. **Verify PVC invariants**: UID unchanged, Bound, `dataSourceRef.name` unchanged, v4 labels present.
+
+## 5. Hard-stop conditions (abort + roll back)
+- Argo `ComparisonError` that does not self-clear after refresh.
+- Missing `volsync-writer` RoleBinding in the target namespace.
+- Missing `volsync-kopia-repository` Secret.
+- `/audit` stale (`stale=true`) or not reflecting live state.
+- Operator logs show `forbidden` / `create-failed` / invalid-label / `panic` / crashloop.
+- RS/RD not recreated within **60s** of the prune.
+- Recreated RS/RD not `managed-by=pvc-plumber`.
+- PVC UID / spec / `dataSourceRef` changes.
+- VolSync backup fails (`latestMoverStatus.result != Successful`).
+
+## 6. Rollback (pure GitOps, data-safe)
+1. Restore the inline RS/RD documents into the app's `pvc.yaml` from the prior commit (`git show <pre-handoff>:<path>`).
+2. Commit + push; sync the app.
+3. Argo recreates the `managed-by=argocd` RS/RD; verify the inline chain is back and a backup runs.
+4. **Do not strip the v4 labels** unless they cause a confirmed issue — they are inert while inline RS/RD are Argo-owned (operator observes, no ops).
+RS/RD are orchestration CRs, not data; churn does not touch the PVC or the kopia repo (lineage is keyed by namespace/pvc identity).
+
+## 7. Stale docs to fix (tracked TODO — not yet applied)
+These predate rc6/rc7 and are now misleading. **Pure-doc** fixes are safe; the deployment.yaml label fix rolls the pod (needs a sync), so it is gated.
+- `docs/pvc-plumber-v4-nginx-canary-incident.md` — terminal state wrong: says "deferred to rc6 / stabilized on inline-Argo." Reality: rc7 shipped the watch fix and the canary is **complete / operator-managed / backup Successful**. *(pure doc)*
+- `docs/pvc-plumber-v4-cutover.md` — Status section pinned to rc3/audit; preflight assumes an rc6-era manual reconcile poke (rc7 makes prune→recreate automatic in <5s); karakeep mislabeled as "first canary" (nginx was); per-PVC rollback uses out-of-band `kubectl` (should be GitOps). *(pure doc)*
+- `docs/pvc-plumber-v4-inventory.md` — does not record nginx-example/storage as migrated/operator-managed. *(pure doc)*
+- `docs/pvc-plumber-v4-roadmap.md` — visual-explainer gate names karakeep; the gating canary (nginx) is done. *(pure doc)*
+- `infrastructure/controllers/pvc-plumber/README.md` — says "audit mode only / NOT YET SYNCED"; operator is permissive rc7, synced. *(pure doc)*
+- `infrastructure/controllers/pvc-plumber/deployment.yaml` — `pvc-plumber.io/mode: audit` label (×3) contradicts permissive mode. **Gated: editing this rolls the operator pod on sync — apply with a deliberate sync, not as a doc-only change.**
+- root `CLAUDE.md` — "pvc-plumber decommissioned / re-adoption in planning / inline RS/RD is the only correct pattern" is stale: rc7 is live in permissive and one PVC is operator-managed. *(pure doc, but high-traffic — change carefully)*
+- `docs/pvc-plumber-v4-prd.md` — Phase-6 "adopt 27 orphans" language contradicts the no-adoption-in-Phase-6 contract in the cutover doc; cross-note rather than rewrite (PRD is a locked design contract).
+
+---
+
+## Appendix — Ready-to-run prompt for the NEXT migration (DO NOT auto-execute)
+
+Target: **`homepage-dashboard/config`** · file `my-apps/media/homepage-dashboard/pvc.yaml` · RS `config` / RD `config-dst` · 5Gi · daily · mover 568 · no dsr drift.
+
+```
+Migrate homepage-dashboard/config to pvc-plumber rc7 operator management.
+
+Scope: Talos repo + the homepage-dashboard namespace only. Do not touch any other app/PVC.
+Do not touch Karakeep. No /pvc-plumber-adopt. No manual RS/RD. No manual PVC patch/label/annotate.
+
+Preconditions to verify (read-only): pvc-plumber rc7 pod Ready/restarts 0; my-apps-homepage-dashboard
+Synced/Healthy, no ComparisonError; live RS/storage... (config) + RD config-dst both managed-by=argocd;
+PVC config Bound, dataSourceRef.name=config-dst (no drift), no v4 labels yet; namespace has
+privileged-movers=true + volsync-kopia-repository Secret; RoleBinding pvc-plumber:volsync-writer
+is ABSENT (will be added). Capture PVC UID.
+
+Step 1 (RBAC first): add a RoleBinding pvc-plumber:volsync-writer stanza for namespace
+homepage-dashboard to infrastructure/controllers/pvc-plumber/rbac-volsync-writer.yaml. Commit
+"chore(pvc-plumber): grant volsync-writer in homepage-dashboard". Push, wait CI green, sync the
+pvc-plumber Argo app, verify the RoleBinding exists.
+
+Step 2 (labels + annotations + inline removal, one commit): edit my-apps/media/homepage-dashboard/pvc.yaml:
+add PVC labels pvc-plumber.io/enabled="true", manage-volsync="true", tier="daily"; add annotations
+compare-options: ServerSideDiff=false and sync-options: ServerSideApply=false; remove the inline
+ReplicationSource/config and ReplicationDestination/config-dst documents (keep PVC + dataSourceRef).
+kustomize build to validate. Commit "chore(homepage-dashboard): hand off config VolSync to pvc-plumber rc7".
+Push, wait CI green, sync only my-apps-homepage-dashboard (hard-refresh if stale-Synced).
+
+Step 3 (verify within 60s): RS/config + RD/config-dst recreated as managed-by=pvc-plumber, no '/'
+in labels, backup-identity annotation, shape correct, RD capacity 5Gi; PVC UID unchanged/Bound/
+dataSourceRef unchanged/v4 labels present; /audit owner=managed-by-pvc-plumber, already-matches,
+stale=false; operator RS latestMoverStatus.result=Successful; operator logs clean; Argo Synced/Healthy.
+
+Hard-stop + rollback per docs/pvc-plumber-v4-migration-readiness.md §5/§6. Stop after report.
+```
