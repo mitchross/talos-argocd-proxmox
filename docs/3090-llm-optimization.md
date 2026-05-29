@@ -103,8 +103,10 @@ cluster points at it; swap to WhiteRabbitNeo (or any preset) on demand in the UI
 
 ## llama.cpp image bump (CUDA-13 caution)
 
-Current: `ghcr.io/ggml-org/llama.cpp:server-cuda12-b9070`. Latest build is
-**b9384**, BUT the Docker tag scheme moved to **`server-cuda13` (CUDA 13)** around
+Current: `ghcr.io/ggml-org/llama.cpp:server-cuda12-b9070`. Latest published
+`server-cuda13` build is **b9354** (verified on ghcr 2026-05-28; the earlier
+`b9384` named here never existed upstream), BUT the Docker tag scheme moved to
+**`server-cuda13` (CUDA 13)** around
 b93xx, and `server-cuda` now requires **CUDA ≥12.9**
 ([#21429](https://github.com/ggml-org/llama.cpp/issues/21429)). Bumping a
 `Recreate` + auto-synced always-on service onto a CUDA it can't run = hard down.
@@ -119,7 +121,7 @@ talosctl read /proc/driver/nvidia/version
 
 | Driver | Max CUDA | Tag |
 |--------|----------|-----|
-| 580.x+ | 13.0 | `server-cuda13-b9384` |
+| 580.x+ | 13.0 | `server-cuda13-b9354` (newest verified) |
 | 575–579.x | 12.9 | latest `server-cuda` / `server-cuda12` build available |
 | < 575 | ≤12.8 | stay `server-cuda12-bXXXX` (cuda12 line ended ~b93xx) |
 
@@ -133,10 +135,12 @@ Upstream stopped publishing `server-cuda12` tags (~b93xx → moved to
 `server-cuda13`), so this regex matches nothing newer — Renovate can no longer
 generate bump PRs, which is why it's frozen at b9070. **The fix is two edits made
 together**, only after confirming the driver is CUDA-13-capable (580.x+):
-1. `deployment.yaml` image → `server-cuda13-b9384`
+1. `deployment.yaml` image → `server-cuda13-b9354`
 2. `renovate.json5` regex → `^server-cuda13-b(?<major>\\d+)$`
 Doing one without the other = no bumps or a broken pod. If the driver is < 580,
-leave both on cuda12.
+leave both on cuda12. **Always verify the exact tag resolves on ghcr before
+bumping** — `b9384` was a documented guess that 404'd; `b9354` is the real
+newest cuda13 server build.
 
 ## Model bank (per job)
 
@@ -379,7 +383,7 @@ download models, apply the model-dependent edits, open a PR.
    `my-apps/ai/llama-cpp/presets.ini` (the `[STAGED]` sections).
 3. **llama.cpp image bump (currently frozen by Renovate):** read the driver
    (`talosctl read /proc/driver/nvidia/version`). If 580.x+ (CUDA 13), make BOTH
-   edits together: tag → `server-cuda13-b9384` in
+   edits together: tag → `server-cuda13-b9354` in
    `my-apps/ai/llama-cpp/deployment.yaml`, AND the regex in
    `.github/renovate.json5` → `^server-cuda13-b(?<major>\d+)$`. If < 580, leave
    both on cuda12. See the "llama.cpp image bump" section for why.
