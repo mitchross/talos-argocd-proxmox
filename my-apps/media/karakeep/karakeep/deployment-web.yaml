@@ -3,7 +3,11 @@ kind: Deployment
 metadata:
   name: karakeep-web
 spec:
-  replicas: 1
+  # Temporarily 0 (2026-05-29, Option R Step 3): quiesce the sole consumer
+  # of data-pvc so the volume detaches and writes stop before the
+  # immutable-dataSourceRef repair (delete + restore-recreate). Restored to
+  # 1 in Step 6 after the repaired PVC is Bound.
+  replicas: 0
   strategy:
     type: Recreate
   selector:
