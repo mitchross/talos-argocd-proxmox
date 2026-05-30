@@ -54,11 +54,7 @@ metadata:
 spec:
   sourcePVC: config-pvc
   trigger:
-    # Option-R repair (2026-05-30): switched from schedule "13 2 * * *" to a
-    # one-shot manual backup while the workload is scaled to 0, to capture a
-    # quiesced config-pvc before the PVC delete/recreate. Restored to the
-    # "13 2 * * *" schedule in Phase 7.
-    manual: backup-2026-05-30-quiesced
+    schedule: "13 2 * * *"
   kopia:
     repository: volsync-kopia-repository
     username: config-pvc
