@@ -125,3 +125,27 @@ subjects:
   - kind: ServiceAccount
     name: pvc-plumber
     namespace: pvc-plumber
+
+---
+# Managed namespace: fizzy (drift-free candidate; single 10Gi data PVC,
+# daily, mover already 568, no dataSourceRef drift — clean no-op handoff).
+# RBAC lands FIRST (Gate 1); the inline RS/RD removal from
+# my-apps/utility/fizzy/pvc.yaml is the separate handoff commit. Until then
+# the PVC carries no v4 fuse labels, so the operator only observes it.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pvc-plumber:volsync-writer
+  namespace: fizzy
+  labels:
+    app.kubernetes.io/name: pvc-plumber
+    app.kubernetes.io/component: backup-restore-operator
+    pvc-plumber.io/managed-namespace: "true"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pvc-plumber:volsync-writer
+subjects:
+  - kind: ServiceAccount
+    name: pvc-plumber
+    namespace: pvc-plumber
