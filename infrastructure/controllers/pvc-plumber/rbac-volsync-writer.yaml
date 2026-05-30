@@ -1,41 +1,46 @@
-# pvc-plumber operator runtime VolSync writer RBAC (Patch 7.7).
+# pvc-plumber operator runtime VolSync writer RBAC (Patch 7.7 → DRY refactor).
 #
-# The v4 reconciler in permissive mode creates and deletes
-# ReplicationSource / ReplicationDestination objects when it observes
-# PVCs carrying both v4 fuses (pvc-plumber.io/enabled=true AND
-# pvc-plumber.io/manage-volsync=true). The cluster-wide read-only
-# audit-reader CRB (rbac.yaml) is the second line of defense for
-# audit mode; for permissive mode the operator additionally needs
-# namespace-scoped writes on RS/RD in every managed namespace.
+# The v4 reconciler in permissive mode creates / updates / deletes
+# ReplicationSource / ReplicationDestination objects for PVCs carrying BOTH
+# v4 fuse labels (pvc-plumber.io/enabled=true AND
+# pvc-plumber.io/manage-volsync=true).
 #
-# Contract:
-#   * One ClusterRole defines the verb/resource matrix.
-#   * One RoleBinding per managed namespace binds that ClusterRole
-#     to the pvc-plumber operator SA (pvc-plumber:pvc-plumber).
-#   * No cluster-wide write binding — every namespace is opt-in by
-#     declaration in this file.
-#   * Verbs are strictly RS/RD; the operator stays unable to touch
-#     PVCs, Secrets, ExternalSecrets, Argo Applications, or anything
-#     else even when bound to a namespace.
+# DRY MODEL (since pvc-plumber v4.0.1):
+#   * One ClusterRole defines the verb/resource matrix (RS/RD only).
+#   * ONE ClusterRoleBinding grants it cluster-wide to the operator SA.
+#   * There are NO per-namespace RoleBindings anymore. Adding a managed
+#     namespace no longer requires an RBAC change — it requires the
+#     namespace opt-in label pvc-plumber.io/managed-namespace="true" plus
+#     the PVC fuse labels.
 #
-# Why no `update` verb:
-#   the v4 reconciler issues server-side Apply (SSA) patches for
-#   reconciliation, never PUT/Update. `patch` covers SSA. If a future
-#   code path requires Update, this ClusterRole must be amended in
-#   the same commit that introduces the Update call.
+# WHY THIS IS SAFE — the namespace write gate is the boundary, NOT RBAC:
+#   pvc-plumber v4.0.1 (commit da40246) enforces a software gate in the
+#   planner: even though this RBAC grants RS/RD writes cluster-wide, the
+#   operator writes ONLY when the target namespace carries
+#   pvc-plumber.io/managed-namespace="true" AND the PVC carries both fuse
+#   labels. A PVC opted in inside an UNMANAGED namespace yields
+#   action=skipped-namespace-not-managed with zero ops (no create/update/
+#   delete, including the tier=disabled teardown). Executor safety is
+#   unchanged: writes are RS/RD only (hard GVK allow-list); update/delete
+#   require app.kubernetes.io/managed-by=pvc-plumber on the live object; no
+#   PVC/Secret/ExternalSecret/Argo writes ever.
 #
-# Why no status subresource:
-#   the operator never writes RS/RD status; VolSync owns it. Reading
-#   status is already covered by the audit-reader ClusterRole's
-#   get/list/watch on the resource type. No additional grant needed.
+#   *** DO NOT deploy this ClusterRoleBinding with a pvc-plumber image
+#   older than v4.0.1. *** Pre-v4.0.1 has no namespace gate, so cluster-wide
+#   RBAC would let any PVC with both fuse labels in ANY namespace trigger
+#   RS/RD creation. Rollback rule: if the operator misbehaves under this
+#   RBAC, revert THIS RBAC commit first (restoring per-namespace
+#   RoleBindings), and only then consider an image rollback — never run
+#   cluster-wide RBAC without the gate live.
 #
-# Adding a new managed namespace = appending one RoleBinding stanza
-# below. Removing a namespace = deleting its stanza; the operator
-# immediately loses write access there with no other state to clean
-# up.
+# Why no `update` verb beyond patch:
+#   the v4 reconciler issues server-side Apply (SSA) patches; `patch`
+#   covers SSA. No PUT/Update is used. No status subresource is written
+#   (VolSync owns RS/RD status).
 #
-# Preflight checklist that gates inline RS/RD removal from any PVC's
-# Git manifest lives in docs/pvc-plumber-v4-cutover.md.
+# Managed namespaces today carry the pvc-plumber.io/managed-namespace label
+# on their own namespace.yaml manifests: nginx-example, homepage-dashboard,
+# karakeep. Preflight + cutover contract: docs/pvc-plumber-v4-cutover.md.
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -52,95 +57,16 @@ rules:
     verbs: ["get", "list", "watch", "create", "patch", "delete"]
 
 ---
-# Managed namespace: nginx-example (canary; first migrated PVC — migration
-# complete, operator-managed RS/RD live, first backup succeeded 2026-05-29).
-# When adding the next managed namespace (recommended next:
-# homepage-dashboard), append another RoleBinding stanza below with the
-# same shape — RBAC lands FIRST, inline RS/RD removal last.
+# Single cluster-wide binding (DRY). Replaces the former per-namespace
+# RoleBindings (nginx-example, homepage-dashboard, karakeep, fizzy). The
+# v4.0.1 namespace gate — not this binding — decides where writes happen.
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
   name: pvc-plumber:volsync-writer
-  namespace: nginx-example
   labels:
     app.kubernetes.io/name: pvc-plumber
     app.kubernetes.io/component: backup-restore-operator
-    pvc-plumber.io/managed-namespace: "true"
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: pvc-plumber:volsync-writer
-subjects:
-  - kind: ServiceAccount
-    name: pvc-plumber
-    namespace: pvc-plumber
-
----
-# Managed namespace: homepage-dashboard (candidate #1; single 5Gi config
-# PVC, daily, mover 568, no dataSourceRef drift). RBAC lands FIRST; the
-# inline RS/RD removal from my-apps/media/homepage-dashboard/pvc.yaml is a
-# separate, separately-authorized commit (Commit 2). Until that lands the
-# PVC carries no v4 fuse labels, so the operator only observes it.
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: pvc-plumber:volsync-writer
-  namespace: homepage-dashboard
-  labels:
-    app.kubernetes.io/name: pvc-plumber
-    app.kubernetes.io/component: backup-restore-operator
-    pvc-plumber.io/managed-namespace: "true"
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: pvc-plumber:volsync-writer
-subjects:
-  - kind: ServiceAccount
-    name: pvc-plumber
-    namespace: pvc-plumber
-
----
-# Managed namespace: karakeep (higher-risk migration; two 10Gi PVCs
-# data-pvc + meilisearch-pvc, hourly cadence, inline mover 1001 that v4
-# normalizes to 568). RBAC lands FIRST (Gate 1). The Karakeep app is in a
-# pre-existing ComparisonError (data-pvc immutable dataSourceRef drift:
-# live data-pvc-backup vs Git data-pvc-dst) that must be cleared (Gate 2)
-# BEFORE any inline RS/RD removal (Gate 3). Until then the PVCs carry no v4
-# fuse labels, so the operator only observes them — this RoleBinding grants
-# write access but triggers no writes on its own.
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: pvc-plumber:volsync-writer
-  namespace: karakeep
-  labels:
-    app.kubernetes.io/name: pvc-plumber
-    app.kubernetes.io/component: backup-restore-operator
-    pvc-plumber.io/managed-namespace: "true"
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: pvc-plumber:volsync-writer
-subjects:
-  - kind: ServiceAccount
-    name: pvc-plumber
-    namespace: pvc-plumber
-
----
-# Managed namespace: fizzy (drift-free candidate; single 10Gi data PVC,
-# daily, mover already 568, no dataSourceRef drift — clean no-op handoff).
-# RBAC lands FIRST (Gate 1); the inline RS/RD removal from
-# my-apps/utility/fizzy/pvc.yaml is the separate handoff commit. Until then
-# the PVC carries no v4 fuse labels, so the operator only observes it.
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: pvc-plumber:volsync-writer
-  namespace: fizzy
-  labels:
-    app.kubernetes.io/name: pvc-plumber
-    app.kubernetes.io/component: backup-restore-operator
-    pvc-plumber.io/managed-namespace: "true"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
