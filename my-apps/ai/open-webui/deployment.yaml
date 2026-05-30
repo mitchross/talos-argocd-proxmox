@@ -6,9 +6,7 @@ metadata:
 spec:
   strategy:
     type: Recreate
-  # Option-R reset batch (2026-05-30): scaled to 0 to quiesce storage before
-  # PVC delete/recreate. Restored to 1 in the bring-up phase.
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app: open-webui

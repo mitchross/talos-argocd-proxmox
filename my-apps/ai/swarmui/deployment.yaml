@@ -7,9 +7,7 @@ spec:
   # RWO Longhorn PVCs -> Recreate (RollingUpdate causes Multi-Attach deadlock).
   strategy:
     type: Recreate
-  # Option-R reset batch (2026-05-30): scaled to 0 to quiesce swarmui-data +
-  # swarmui-output before PVC delete/recreate. Restored to 1 in bring-up.
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app: swarmui
