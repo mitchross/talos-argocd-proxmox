@@ -184,7 +184,7 @@ metadata:
     volsync.backup/pvc: swarmui-data
 spec:
   trigger:
-    manual: restore-once
+    manual: restore-2026-05-30-quiesced
   kopia:
     repository: volsync-kopia-repository
     username: swarmui-data
@@ -250,7 +250,7 @@ metadata:
     volsync.backup/pvc: swarmui-output
 spec:
   trigger:
-    manual: restore-once
+    manual: restore-2026-05-30-quiesced
   kopia:
     repository: volsync-kopia-repository
     username: swarmui-output
