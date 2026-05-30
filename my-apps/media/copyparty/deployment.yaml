@@ -6,9 +6,7 @@ metadata:
   labels:
     app: copyparty
 spec:
-  # Option-R repair (2026-05-30): scaled to 0 to quiesce copyparty-data before
-  # the quiesced backup + PVC delete/recreate. Restored to 1 in Phase 8.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
