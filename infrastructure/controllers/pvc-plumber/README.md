@@ -1,4 +1,4 @@
-# pvc-plumber v4 — permissive-mode deployment (rc7 live)
+# pvc-plumber v4 — permissive-mode deployment (v4.0.0 final/stable live)
 
 Phase 6 of [`docs/pvc-plumber-v4-prd.md`](../../../docs/pvc-plumber-v4-prd.md).
 Live status + migration tracking: [`docs/pvc-plumber-v4-migration-readiness.md`](../../../docs/pvc-plumber-v4-migration-readiness.md).
@@ -11,16 +11,18 @@ PVCs that carry both write-fuse labels — in namespaces that have a
 `volsync-writer` RoleBinding. It never mutates PVCs, Secrets, or
 ExternalSecrets.
 
-## Status: LIVE (synced) — rc7, permissive
+## Status: LIVE (synced) — v4.0.0 final/stable, permissive
 
 Image is pinned to the immutable release digest:
 
 ```
-ghcr.io/mitchross/pvc-plumber:4.0.0-permissive-rc7@sha256:091f21b1b07c4373569d38d4c8d066ceea325fdaa2e996f5ad89b0b5d02d525c
+ghcr.io/mitchross/pvc-plumber:4.0.0@sha256:93df441fc50a4bc90ce2f88544977ca7d96b72d0383d9cfa27f2efa5ae5726dd
 ```
 
-(multi-arch manifest list, Release run 26606509577, built from operator
-commit `3c40a1f`). Pod Ready, `restartCount=0`.
+(multi-arch manifest list, Release run 26666301194, built from operator
+commit `3c40a1f`). **v4.0.0 is the final non-RC release — it promotes
+`v4.0.0-permissive-rc7` with no code change** (both tags = `3c40a1f`; prior
+pin `4.0.0-permissive-rc7@sha256:091f21b1…`). Pod Ready, `restartCount=0`.
 
 The Argo Application at
 [`../argocd/apps/core-dependencies/pvc-plumber-app.yaml`](../argocd/apps/core-dependencies/pvc-plumber-app.yaml)

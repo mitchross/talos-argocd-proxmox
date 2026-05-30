@@ -10,9 +10,10 @@
 
 | Item | State |
 |---|---|
-| Operator image | `ghcr.io/mitchross/pvc-plumber:4.0.0-permissive-rc7@sha256:091f21b1b07c4373569d38d4c8d066ceea325fdaa2e996f5ad89b0b5d02d525c` |
+| Operator image | `ghcr.io/mitchross/pvc-plumber:4.0.0@sha256:93df441fc50a4bc90ce2f88544977ca7d96b72d0383d9cfa27f2efa5ae5726dd` |
+| Release | **v4.0.0 (final/stable)** — promotes `v4.0.0-permissive-rc7` with no code change (both tags = commit `3c40a1f`). Live since 2026-05-29. |
 | Mode | **permissive** (writes_allowed=true), pod Ready, restartCount 0 |
-| rc7 fix | RS/RD watch + child→PVC reverse-map + periodic self-heal requeue + partial-inline-argo guard + `/audit` staleness. Closes the rc6 reconcile-trigger gap (the 2026-05-28 15h backup gap). |
+| Shipped fixes (rc6→rc7, now in v4.0.0) | RS/RD watch + child→PVC reverse-map + periodic self-heal requeue + partial-inline-argo guard + `/audit` staleness. Closes the rc6 reconcile-trigger gap (the 2026-05-28 15h backup gap). |
 | Watch proof | Synthetic `pvc-plumber-watch-smoke`: managed RS *and* RD deleted → recreated in <5s, no PVC poke. |
 | nginx-example/storage canary | **Functionally complete.** Inline Argo RS/RD removed from Git (`50a84cc9`), Argo pruned them, rc7 recreated `RS/storage` + `RD/storage-dst` as `managed-by=pvc-plumber`, and the operator-managed RS produced a **Successful** initial backup (`lastSyncTime=2026-05-29T04:04:29Z`, kopia EXIT_CODE 0). `/audit`: `already-matches` / `managed-by-pvc-plumber` / `stale=false`. |
 | nginx canary caveat | The first **cron-driven** recurrence (`nextSyncTime=2026-05-30T02:58:00Z`) is an optional, read-only follow-up — the create-time initial sync already proved the mechanism. |
