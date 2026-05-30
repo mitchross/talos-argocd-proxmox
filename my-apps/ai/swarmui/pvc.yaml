@@ -151,7 +151,9 @@ metadata:
 spec:
   sourcePVC: swarmui-data
   trigger:
-    schedule: "31 2 * * *"
+    # Option-R reset batch (2026-05-30): one-shot quiesced backup; restored to
+    # schedule "31 2 * * *" in bring-up.
+    manual: backup-2026-05-30-quiesced
   kopia:
     repository: volsync-kopia-repository
     username: swarmui-data
@@ -215,7 +217,9 @@ metadata:
 spec:
   sourcePVC: swarmui-output
   trigger:
-    schedule: "46 2 * * *"
+    # Option-R reset batch (2026-05-30): one-shot quiesced backup; restored to
+    # schedule "46 2 * * *" in bring-up.
+    manual: backup-2026-05-30-quiesced
   kopia:
     repository: volsync-kopia-repository
     username: swarmui-output
