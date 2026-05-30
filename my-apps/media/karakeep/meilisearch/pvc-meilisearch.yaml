@@ -5,11 +5,18 @@ metadata:
   namespace: karakeep
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
   labels:
     app: karakeep
     type: meilisearch-storage
-    # backup: "hourly" removed 2026-05-21 — chart-managed now.
     restore-policy: "strict"
+    # Gate 3 handoff (2026-05-29): v4 write fuse opts this PVC into
+    # pvc-plumber v4.0.0 operator management at tier=hourly. Operator
+    # creates/repairs RS/meilisearch-pvc + RD/meilisearch-pvc-dst as
+    # managed-by=pvc-plumber; mover normalizes to 568:568:568 (was 1001).
+    pvc-plumber.io/enabled: "true"
+    pvc-plumber.io/manage-volsync: "true"
+    pvc-plumber.io/tier: "hourly"
 spec:
   accessModes:
   - ReadWriteOnce
@@ -17,71 +24,13 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
+  # Static dataSourceRef → ReplicationDestination/meilisearch-pvc-dst. The
+  # RS/RD are operator-managed by pvc-plumber v4.0.0 (Gate 3, 2026-05-29):
+  # this PVC carries the v4 write fuse, so the operator creates and repairs
+  # ReplicationSource/meilisearch-pvc + ReplicationDestination/
+  # meilisearch-pvc-dst (and recreates either within seconds if deleted)
+  # via its RS/RD watch. No-op while the PVC is already Bound.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
     name: meilisearch-pvc-dst
-
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: meilisearch-pvc
-  namespace: karakeep
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: meilisearch-pvc
-spec:
-  sourcePVC: meilisearch-pvc
-  trigger:
-    schedule: "20 * * * *"
-  kopia:
-    repository: volsync-kopia-repository
-    username: meilisearch-pvc
-    hostname: karakeep
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 1001
-      runAsGroup: 1001
-      fsGroup: 1001
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: meilisearch-pvc-dst
-  namespace: karakeep
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: meilisearch-pvc
-spec:
-  trigger:
-    manual: restore-once
-  kopia:
-    repository: volsync-kopia-repository
-    username: meilisearch-pvc
-    hostname: karakeep
-    sourceIdentity:
-      sourceName: meilisearch-pvc
-      sourceNamespace: karakeep
-      sourcePVCName: meilisearch-pvc
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes:
-      - ReadWriteOnce
-    capacity: 10Gi
-    moverSecurityContext:
-      runAsUser: 1001
-      runAsGroup: 1001
-      fsGroup: 1001

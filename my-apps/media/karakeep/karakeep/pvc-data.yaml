@@ -11,16 +11,21 @@ metadata:
     # ServerSideApply=true, so every compare runs an SSA dry-run that the
     # apiserver rejects on the immutable field → app-wide ComparisonError.
     # Disabling SSA for THIS PVC lets Argo compare via client-side + the
-    # AppSet ignoreDifferences mask on /spec/dataSourceRef. Not the
-    # migration; inline RS/RD below stay Argo-owned until Gate 3.
+    # AppSet ignoreDifferences mask on /spec/dataSourceRef (the dsr was
+    # repaired to data-pvc-dst on 2026-05-29). Retained through the Gate 3
+    # handoff as belt-and-suspenders for the immutable dataSourceRef.
     argocd.argoproj.io/sync-options: ServerSideApply=false
   labels:
     app: karakeep
     type: data-storage
-    # backup: "hourly" removed 2026-05-21 — that label was pvc-plumber's
-    # signal. VolSync ReplicationSource/ReplicationDestination resources
-    # are defined below in this file.
     restore-policy: "strict"
+    # Gate 3 handoff (2026-05-29): the v4 write fuse opts this PVC into
+    # pvc-plumber v4.0.0 operator management at tier=hourly (preserves the
+    # prior inline hourly cadence). The operator creates/repairs RS/data-pvc
+    # + RD/data-pvc-dst as managed-by=pvc-plumber.
+    pvc-plumber.io/enabled: "true"
+    pvc-plumber.io/manage-volsync: "true"
+    pvc-plumber.io/tier: "hourly"
 spec:
   accessModes:
   - ReadWriteOnce
@@ -29,81 +34,16 @@ spec:
       storage: 10Gi
   storageClassName: longhorn
   # Static dataSourceRef → ReplicationDestination/data-pvc-dst. On PVC
-  # re-creation (DR / namespace recreate), VolSync's volume populator
-  # reads the latest snapshot from the shared kopia repo and binds
-  # this PVC with restored data. No-op while the PVC is already Bound.
+  # re-creation (DR / namespace recreate), VolSync's volume populator reads
+  # the latest snapshot from the shared kopia repo and binds this PVC with
+  # restored data. No-op while the PVC is already Bound. The RS/RD targeted
+  # here are operator-managed by pvc-plumber v4.0.0 (Gate 3, 2026-05-29):
+  # this PVC carries the v4 write fuse, so the operator creates and repairs
+  # ReplicationSource/data-pvc + ReplicationDestination/data-pvc-dst (and
+  # recreates either within seconds if deleted) via its RS/RD watch. The
+  # operator-generated mover runs as 568:568:568 (was 1001 inline); fsGroup
+  # handles snapshot-clone read access. See docs/pvc-plumber-v4-cutover.md.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
     name: data-pvc-dst
-
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: data-pvc
-  namespace: karakeep
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: data-pvc
-spec:
-  sourcePVC: data-pvc
-  trigger:
-    schedule: "32 * * * *"
-  kopia:
-    repository: volsync-kopia-repository
-    username: data-pvc
-    hostname: karakeep
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 1001
-      runAsGroup: 1001
-      fsGroup: 1001
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: data-pvc-dst
-  namespace: karakeep
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: data-pvc
-spec:
-  trigger:
-    # Bumped 2026-05-29 (Option R): forces VolSync to pull the LATEST kopia
-    # snapshot into a fresh latestImage before the data-pvc immutable-
-    # dataSourceRef repair. Re-bumped to -quiesced after the one-shot RS
-    # backup (lastManualSync=backup-2026-05-29-quiesced, 22:23:08Z) so this
-    # restore image reflects the QUIESCED volume (web scaled to 0), not the
-    # earlier pre-quiesce 21:33 snapshot. Changing the value re-runs the
-    # restore-once mover.
-    manual: restore-2026-05-29-data-pvc-quiesced
-  kopia:
-    repository: volsync-kopia-repository
-    username: data-pvc
-    hostname: karakeep
-    sourceIdentity:
-      sourceName: data-pvc
-      sourceNamespace: karakeep
-      sourcePVCName: data-pvc
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes:
-      - ReadWriteOnce
-    capacity: 10Gi
-    moverSecurityContext:
-      runAsUser: 1001
-      runAsGroup: 1001
-      fsGroup: 1001
