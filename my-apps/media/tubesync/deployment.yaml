@@ -6,11 +6,7 @@ metadata:
   labels:
     app: tubesync
 spec:
-  # Temporarily 0 (2026-05-30, Option-R repair): quiesce the config-pvc
-  # consumer so the volume detaches before the immutable-dataSourceRef
-  # repair (delete + restore-recreate). Restored to 1 after the repaired
-  # PVC is Bound.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
