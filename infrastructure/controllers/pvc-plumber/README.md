@@ -118,11 +118,14 @@ operator-managed backup succeeded **2026-05-29T04:04:29Z**. The canary is
 functionally complete. The `2026-05-30T02:58Z` cron-recurrence check is an
 optional, read-only follow-up — not a blocker.
 
-## Next migration candidate
+## Migrated apps + next candidate
 
-`homepage-dashboard/config` — single 5Gi PVC, daily, mover 568/568/568, no
-dataSourceRef drift. Karakeep is **deferred** (destructive, explicit
-per-PVC authorization only). Migration plan + ready-to-run prompt:
+Operator-managed so far: **`nginx-example/storage`** (canary),
+**`homepage-dashboard/config`** (low-risk), and **`karakeep/data-pvc` +
+`karakeep/meilisearch-pvc`** (high-risk: hourly, mover normalized 1001→568,
+data-pvc immutable-dsr repaired via Option R — both backups Successful,
+2026-05-30). Next recommended candidate: **`copyparty/copyparty-data`**.
+Migration matrix + ready-to-run prompts:
 [`docs/pvc-plumber-v4-migration-readiness.md`](../../../docs/pvc-plumber-v4-migration-readiness.md).
 
 ## Verifying without deployment

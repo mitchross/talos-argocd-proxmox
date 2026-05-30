@@ -18,20 +18,22 @@
 | nginx-example/storage canary | **Functionally complete.** Inline Argo RS/RD removed from Git (`50a84cc9`), Argo pruned them, rc7 recreated `RS/storage` + `RD/storage-dst` as `managed-by=pvc-plumber`, and the operator-managed RS produced a **Successful** initial backup (`lastSyncTime=2026-05-29T04:04:29Z`, kopia EXIT_CODE 0). `/audit`: `already-matches` / `managed-by-pvc-plumber` / `stale=false`. |
 | nginx canary caveat | The first **cron-driven** recurrence (`nextSyncTime=2026-05-30T02:58:00Z`) is an optional, read-only follow-up — the create-time initial sync already proved the mechanism. |
 | homepage-dashboard/config migration | **Complete (2026-05-29).** Commit 1 RBAC RoleBinding `df0d47a4`; Commit 2 handoff `48d342f8` (single-file: added v4 fuse + `ServerSideApply=false`, removed inline RS/RD). Argo pruned the inline `argocd`-owned RS/RD; rc7's RS/RD watch recreated `RS/config` + `RD/config-dst` as `managed-by=pvc-plumber` in <20s. Schedule rewritten `9 2 * * *` → `36 2 * * *` (deterministic). Initial backup **Successful**: `lastSyncTime=2026-05-29T18:42:44Z`, `latestMoverStatus.result=Successful`, `nextSyncTime=2026-05-30T02:36:00Z`. PVC UID unchanged (`078aff64-…`), Bound, `dataSourceRef=config-dst`. `/audit`: `label_source=v4` / `already-matches` / `managed-by-pvc-plumber` / `stale=false`. |
-| **Managed namespaces** (volsync-writer RoleBinding present) | `nginx-example`, `homepage-dashboard` |
-| **Operator-managed PVCs** (`managed-by=pvc-plumber` RS/RD) | `nginx-example/storage`, `homepage-dashboard/config` |
+| karakeep migration (Gate 3) | **Complete (2026-05-30).** Both PVCs handed off in one commit (`93b2b5cb`): RBAC pre-existed (`df0d47a4`); added v4 fuse `tier=hourly` + `ServerSideApply=false`, removed inline RS/RD. Operator recreated all four (`RS/data-pvc`+`RD/data-pvc-dst`, `RS/meilisearch-pvc`+`RD/meilisearch-pvc-dst`) as `managed-by=pvc-plumber`. **Hourly cadence preserved** via `tier=hourly` (deterministic `data-pvc 10 * * * *`, `meilisearch 0 * * * *`). **Mover UID 1001→568 normalization proven safe** — both initial backups **Successful** (`meilisearch-pvc 2026-05-30T03:26:12Z`, `data-pvc 2026-05-30T03:27:20Z`) reading the 1001-owned data via snapshot-clone fsGroup. PVC UIDs unchanged (`data-pvc 90070779-…`, `meilisearch-pvc 24bdda38-…`). `/audit`: both `already-matches`/`managed-by-pvc-plumber`/`v4`/`stale=false`. Preceded by the data-pvc immutable-dsr repair (Option R). |
+| karakeep cleanup TODO | Old retained PV **`pvc-4cb90a74-e7df-4fc3-a967-1ab8603ffdd4`** (`Released`/`Retain`, the pre-repair data-pvc volume) **must NOT be deleted until explicitly approved** — it is the data-pvc repair rollback net. |
+| **Managed namespaces** (volsync-writer RoleBinding present) | `nginx-example`, `homepage-dashboard`, `karakeep` |
+| **Operator-managed PVCs** (`managed-by=pvc-plumber` RS/RD) | `nginx-example/storage`, `homepage-dashboard/config`, `karakeep/data-pvc`, `karakeep/meilisearch-pvc` |
 
 ### Known caveats / fleet-wide gaps
-- **RBAC is the universal blocker.** The per-namespace `RoleBinding pvc-plumber:volsync-writer` exists **only in `nginx-example` and `homepage-dashboard`** (the two migrated namespaces). Every other candidate namespace needs it created **before** any inline RS/RD removal — otherwise Argo prunes the chain and the operator cannot recreate it (the exact 15h-gap failure mode).
+- **RBAC is the universal blocker.** The per-namespace `RoleBinding pvc-plumber:volsync-writer` exists **only in `nginx-example`, `homepage-dashboard`, and `karakeep`** (the three migrated namespaces). Every other candidate namespace needs it created **before** any inline RS/RD removal — otherwise Argo prunes the chain and the operator cannot recreate it (the exact 15h-gap failure mode).
 - All 18–19 candidate namespaces already have `volsync.backube/privileged-movers: "true"` and a materialized `volsync-kopia-repository` Secret. Those two prerequisites are met fleet-wide.
 - No candidate PVC carries the v4 fuse labels yet — migration requires **adding** `pvc-plumber.io/enabled=true` + `manage-volsync=true` + `tier` to the PVC.
 - Only **`n8n`** is currently in Argo `ComparisonError` (immutable-dataSourceRef SSA wedge). Other apps with live `dataSourceRef` drift (e.g. copyparty, tubesync) are still `Synced/Healthy` because the my-apps AppSet `ignoreDifferences` masks the PVC dataSource fields. The proven mitigation (from nginx) is to add `argocd.argoproj.io/sync-options: ServerSideApply=false` to the PVC.
-- **Cadence change:** v4 rewrites every RS schedule to a deterministic per-PVC minute in the **2 AM daily** window. PVCs currently on an **hourly** inline cadence (home-assistant, n8n, karakeep ×2, paperless-ngx ×2) would drop to **once-daily** on handoff — a real frequency reduction to confirm before migrating those.
-- **mover UID change:** v4 normalizes `moverSecurityContext` to `568/568/568`. PVCs whose inline mover runs as a different UID (n8n `1000`, gitea `1000`, karakeep ×2 `1001`) get a **real ownership change** — verify the mover can still read the volume before migrating those.
+- **Cadence is set by `tier`, not forced to daily.** v4 rewrites each RS schedule to a deterministic per-PVC minute **within the chosen tier's window** (`tier=hourly` → `MM * * * *`, `tier=daily` → `MM 2 * * *`, etc.). Karakeep ×2 migrated at **`tier=hourly`** and kept their hourly cadence (proven: `data-pvc 10 * * * *`, `meilisearch 0 * * * *`). The remaining hourly apps (home-assistant, n8n, paperless-ngx ×2) should likewise use `tier=hourly` to preserve cadence — only a wrong tier choice (hourly→daily) would reduce frequency.
+- **mover UID change — proven safe.** v4 normalizes `moverSecurityContext` to `568/568/568`. Karakeep ×2 (inline `1001`) migrated and **backed up successfully** as 568 — the snapshot-clone `fsGroup` makes the 1001-owned data group-readable to the 568 mover. Remaining non-568 inline movers (n8n `1000`, gitea `1000`) get the same ownership change; the Karakeep result indicates this is low-risk, but still confirm the first backup succeeds per app.
 
 ## 2. PVC readiness table
 
-**23 remaining** candidate PVCs (excludes the completed `nginx-example/storage` and `homepage-dashboard/config`, CNPG/Barman DB PVCs, and infra redis). Except where noted, every row is `owner=inline-argo`, `privileged-movers=true`, kopia Secret present, **RBAC RoleBinding missing**, **v4 labels absent in Git**. Columns below capture the discriminating factors.
+**21 remaining** candidate PVCs (excludes the completed `nginx-example/storage`, `homepage-dashboard/config`, and `karakeep/{data-pvc,meilisearch-pvc}`, CNPG/Barman DB PVCs, and infra redis). Except where noted, every row is `owner=inline-argo`, `privileged-movers=true`, kopia Secret present, **RBAC RoleBinding missing**, **v4 labels absent in Git**. Columns below capture the discriminating factors.
 
 | Rank | App / namespace | PVC | Size | Cadence | Mover | Live dsr drift? | Argo | Shape handoff | Risk | Next action |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -59,7 +61,7 @@
 | 22 | project-nomad | mysql-data | 20Gi | daily | 568 | no | Synced | no-op | high | self-hosted MySQL (not CNPG) |
 | 23 | posthog | postgres-data | 20Gi | daily | 568 | — | Synced | no-op | high | self-hosted PG (not CNPG) |
 | 24 | immich | library | 300Gi | daily | 568 | — | Synced | no-op | high | irreplaceable photos; largest volume — migrate last |
-| — | karakeep | data-pvc / meilisearch-pvc | 10Gi ×2 | **hourly** | **1001** | — | Synced | mover+cadence | **deferred** | DESTRUCTIVE canary per cutover doc; explicit auth only |
+| ✅ | karakeep | data-pvc / meilisearch-pvc | 10Gi ×2 | **hourly** | 568 (was 1001) | no | Synced | **DONE** | — | **MIGRATED 2026-05-30** (`93b2b5cb`); operator-managed at tier=hourly, both backups Successful, mover 1001→568 proven safe, data-pvc dsr repaired first (Option R) |
 
 ## 3. Recommended next 3 candidates
 
@@ -71,8 +73,8 @@
 
 **#3 — `fizzy/data`**. Single 10Gi PVC, daily, mover 568, **no dsr drift** (`data-dst`) — same zero-SSA-wedge profile as homepage. Board data is the product but rebuildable-ish; slightly higher value than the config volumes above. Prereq: `volsync-writer` RoleBinding in `fizzy`.
 
-### Why NOT Karakeep yet
-Karakeep is framed in `docs/pvc-plumber-v4-cutover.md` as a **separate destructive canary (data loss accepted)**, runs **hourly**, and uses a **non-568 mover (1001)** that v4 would change. Safer single-PVC, 568, daily, already-shape-matching candidates exist (above). Karakeep should run only on explicit user authorization, one PVC, with the destructive-canary hard-stops — not as the routine "next" migration.
+### Karakeep — MIGRATED (2026-05-30)
+Karakeep was the highest-risk migration (two PVCs, hourly, non-568 mover, plus a data-pvc immutable-`dataSourceRef` defect). It is now **complete and operator-managed** (commit `93b2b5cb`): both PVCs at `tier=hourly` (cadence preserved), mover normalized 1001→568 with both initial backups **Successful**, after the data-pvc immutable-dsr repair (Option R: refresh RD → PV `Retain` → quiesce → one-shot backup → delete/recreate). It validated the destructive repair + handoff path end-to-end. **Cleanup pending:** the old retained PV `pvc-4cb90a74-e7df-4fc3-a967-1ab8603ffdd4` (`Released`/`Retain`) must NOT be deleted until explicitly approved.
 
 ## 4. Per-PVC migration checklist (proven nginx recipe)
 
