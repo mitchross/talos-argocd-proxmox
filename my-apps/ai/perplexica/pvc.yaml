@@ -45,7 +45,9 @@ metadata:
 spec:
   sourcePVC: perplexica-data
   trigger:
-    schedule: "49 2 * * *"
+    # Option-R reset batch (2026-05-30): one-shot quiesced backup; restored to
+    # schedule "49 2 * * *" in bring-up.
+    manual: backup-2026-05-30-quiesced
   kopia:
     repository: volsync-kopia-repository
     username: perplexica-data

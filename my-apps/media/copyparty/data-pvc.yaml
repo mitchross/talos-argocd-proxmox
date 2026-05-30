@@ -81,7 +81,7 @@ spec:
     # copyparty-data immutable-dataSourceRef repair (the standing latestImage
     # was stale from 2026-05-21). Re-bumped to -quiesced after the quiesced
     # backup in Phase 5.
-    manual: restore-2026-05-30-pre-repair
+    manual: restore-2026-05-30-quiesced
   kopia:
     repository: volsync-kopia-repository
     username: copyparty-data
