@@ -21,14 +21,8 @@ spec:
   # ReplicationDestination resources are defined below in this file.
   dataSourceRef:
     apiGroup: volsync.backube
-    # TEMPORARY (Option-R, 2026-05-30): aligned to the live immutable value
-    # config-pvc-backup so Argo can compute a clean diff and sync (the
-    # SSA=false attempt did not clear the wedge). Restored to config-pvc-dst
-    # in Phase 5, immediately before the PVC delete/recreate, so the
-    # recreated PVC gets the correct -dst dataSourceRef. The RD below stays
-    # named config-pvc-dst (the restore target).
     kind: ReplicationDestination
-    name: config-pvc-backup
+    name: config-pvc-dst
 ---
 ---
 apiVersion: v1
