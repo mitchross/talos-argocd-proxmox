@@ -31,6 +31,16 @@ its gate condition is met,** unless the user explicitly redirects.
   staleness (`age_seconds`/`stale`); nginx-example/storage canary completed
   operator-managed, first backup Successful 2026-05-29.**
 
+- **v4.0.0 (final/stable) — 2026-05-29.** Promotes `v4.0.0-permissive-rc7`
+  to the final non-RC release with no code change (both tags = commit
+  `3c40a1f`). Image
+  `ghcr.io/mitchross/pvc-plumber:4.0.0@sha256:93df441fc50a4bc90ce2f88544977ca7d96b72d0383d9cfa27f2efa5ae5726dd`
+  live in the cluster (permissive mode). Proven by the nginx-example/storage
+  and homepage-dashboard/config operator-managed migrations; the Karakeep
+  `data-pvc` immutable-dataSourceRef repair additionally validated the
+  VolSync quiesced-backup → restore-recreate path (Karakeep itself remains
+  inline-Argo pending a separate Gate 3 handoff).
+
 ## Open items
 
 ### 1. Phase 6.9 / 7 — Visual explainer + interactive lifecycle guide
