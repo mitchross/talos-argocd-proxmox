@@ -4,7 +4,9 @@ metadata:
   name: jellyfin
   namespace: jellyfin
 spec:
-  replicas: 1
+  # Option-R reset batch (2026-05-30): scaled to 0 to quiesce config before
+  # PVC delete/recreate. Restored to 1 in the bring-up phase.
+  replicas: 0
   strategy:
     type: Recreate
   selector:
