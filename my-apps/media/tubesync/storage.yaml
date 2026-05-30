@@ -96,10 +96,11 @@ metadata:
 spec:
   trigger:
     # Option-R repair (2026-05-30): bumped to force VolSync to pull the
-    # latest kopia snapshot into a fresh latestImage before the data-pvc
+    # latest kopia snapshot into a fresh latestImage before the config-pvc
     # immutable-dataSourceRef repair (live=config-pvc-backup vs Git
-    # config-pvc-dst). Re-bumped to -quiesced after the quiesced backup.
-    manual: restore-2026-05-30-pre-repair
+    # config-pvc-dst). Re-bumped to -quiesced after the quiesced backup so the
+    # restore target reflects the scaled-down (consistent) config-pvc.
+    manual: restore-2026-05-30-quiesced
   kopia:
     repository: volsync-kopia-repository
     username: config-pvc
