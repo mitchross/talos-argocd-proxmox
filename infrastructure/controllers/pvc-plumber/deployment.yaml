@@ -1,4 +1,4 @@
-# pvc-plumber v4 — Deployment, v4.0.0 (final/stable) image (Phase 6 of
+# pvc-plumber v4 — Deployment, v4.0.1 (final/stable) image (Phase 6 of
 # docs/pvc-plumber-v4-prd.md, cutover sequence per
 # docs/pvc-plumber-v4-cutover.md §9).
 #
@@ -9,13 +9,27 @@
 # under any v4 mode. Therefore no TLS cert volume, no init container,
 # no /tmp/k8s-webhook-server.
 #
-# Image: pinned to v4.0.0 (git tag) → docker tag 4.0.0
-# (docker/metadata-action@v5 strips the leading `v`). v4.0.0 is the FINAL
-# non-RC release; it promotes v4.0.0-permissive-rc7 with NO code change —
-# both tags point at commit 3c40a1f. The SHA-pin is the v4.0.0 release
-# digest published by .github/workflows/release.yaml on 2026-05-29 (Release
-# run 26666301194). Built from mitchross/pvc-plumber commit 3c40a1f
-# (fix(v4): reconcile when VolSync children disappear).
+# Image: pinned to v4.0.1 (git tag) → docker tag 4.0.1
+# (docker/metadata-action@v5 strips the leading `v`). v4.0.1 is a FINAL
+# non-RC patch on v4.0.0 that adds the NAMESPACE WRITE GATE: even with both
+# PVC fuse labels, the operator will not create/update/delete RS/RD in a
+# namespace that lacks pvc-plumber.io/managed-namespace="true" (action
+# skipped-namespace-not-managed, zero ops; also blocks tier=disabled
+# teardown). This is the software boundary that makes a DRY cluster-wide
+# RS/RD write ClusterRoleBinding safe.
+#
+# RBAC REFACTOR STILL PENDING: this manifest still uses per-namespace
+# RoleBindings (rbac-volsync-writer.yaml). The flip to a single
+# ClusterRoleBinding happens ONLY AFTER this v4.0.1 gate is live and
+# verified — never have cluster-wide RBAC without the gate. The three
+# managed namespaces (nginx-example, homepage-dashboard, karakeep) carry
+# the pvc-plumber.io/managed-namespace label as of the Phase-1 commit.
+#
+# The SHA-pin is the v4.0.1 release digest published by
+# .github/workflows/release.yaml on 2026-05-30 (Release run 26676186207).
+# Built from mitchross/pvc-plumber commit da40246
+# (fix(v4): require managed namespace before VolSync writes), which sits on
+# top of v4.0.0 / commit 3c40a1f.
 #
 # The fix history below describes what shipped through rc6→rc7 and is now
 # part of v4.0.0 final:
@@ -100,13 +114,14 @@ spec:
       containers:
         - name: operator
           # Pinned to the immutable digest published by the operator
-          # repo's release.yaml workflow on 2026-05-29 (Release run
-          # 26666301194, tag v4.0.0). The tag value is informational only —
+          # repo's release.yaml workflow on 2026-05-30 (Release run
+          # 26676186207, tag v4.0.1). The tag value is informational only —
           # the digest is what kubelet pulls. This is the multi-arch
           # manifest list digest (linux/amd64 + linux/arm64), verified
-          # via `crane` at release time. (Prior pin: 4.0.0-permissive-rc7
-          # @sha256:091f21b1…; same code, commit 3c40a1f.)
-          image: ghcr.io/mitchross/pvc-plumber:4.0.0@sha256:93df441fc50a4bc90ce2f88544977ca7d96b72d0383d9cfa27f2efa5ae5726dd
+          # via `crane` at release time. (Prior pin: 4.0.0
+          # @sha256:93df441…, commit 3c40a1f; v4.0.1 = commit da40246 adds
+          # the namespace write gate.)
+          image: ghcr.io/mitchross/pvc-plumber:4.0.1@sha256:721d770330a535871cae33313d7cd336116697d2a6f9e5d91fc8cd3d21a26305
           imagePullPolicy: IfNotPresent
           command: ["/pvc-plumber"]
           args:
