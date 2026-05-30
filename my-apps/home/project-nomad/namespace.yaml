@@ -4,3 +4,8 @@ metadata:
   name: project-nomad
   labels:
     volsync.backube/privileged-movers: 'true'
+    # pvc-plumber v4.0.1 namespace write gate: opts this namespace in to
+    # operator-managed VolSync writes for its v4-fuse-labeled PVCs
+    # (flatnotes-data, mysql-data, nomad-storage, qdrant-data). Required
+    # alongside the PVC fuse labels.
+    pvc-plumber.io/managed-namespace: "true"

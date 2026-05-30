@@ -5,10 +5,16 @@ metadata:
   namespace: project-nomad
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
   labels:
     app: project-nomad
     type: storage
     restore-policy: "strict"
+    # pvc-plumber v4.0.1 DRY handoff (2026-05-30): operator-managed at
+    # tier=daily; ns project-nomad carries managed-namespace=true. Mover 568.
+    pvc-plumber.io/enabled: "true"
+    pvc-plumber.io/manage-volsync: "true"
+    pvc-plumber.io/tier: "daily"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -16,77 +22,12 @@ spec:
     requests:
       storage: 120Gi
   storageClassName: longhorn
-  # Static dataSourceRef → ReplicationDestination/nomad-storage-dst.
-  # On PVC re-creation (DR / namespace recreate), VolSync's volume
-  # populator reads the latest snapshot from the shared kopia repo
-  # volsync-kopia-repository and binds this PVC with restored data. No-op
-  # while the PVC is already Bound. VolSync ReplicationSource/
-  # ReplicationDestination resources are defined below in this file.
+  # Static dataSourceRef → ReplicationDestination/nomad-storage-dst. No-op
+  # while the PVC is already Bound. RS/RD are operator-managed by
+  # pvc-plumber v4.0.1 (DRY handoff, 2026-05-30): the operator creates and
+  # repairs ReplicationSource/nomad-storage + ReplicationDestination/
+  # nomad-storage-dst as managed-by=pvc-plumber via its RS/RD watch.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
     name: nomad-storage-dst
-
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: nomad-storage
-  namespace: project-nomad
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: nomad-storage
-spec:
-  sourcePVC: nomad-storage
-  trigger:
-    schedule: "16 2 * * *"
-  kopia:
-    repository: volsync-kopia-repository
-    username: nomad-storage
-    hostname: project-nomad
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: nomad-storage-dst
-  namespace: project-nomad
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: nomad-storage
-spec:
-  trigger:
-    manual: restore-once
-  kopia:
-    repository: volsync-kopia-repository
-    username: nomad-storage
-    hostname: project-nomad
-    sourceIdentity:
-      sourceName: nomad-storage
-      sourceNamespace: project-nomad
-      sourcePVCName: nomad-storage
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes:
-      - ReadWriteOnce
-    capacity: 120Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
