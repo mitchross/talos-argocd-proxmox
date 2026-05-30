@@ -5,20 +5,28 @@ metadata:
   namespace: tubesync
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
   labels:
     restore-policy: "strict"
+    # pvc-plumber v4.0.1 DRY handoff (2026-05-30): operator-managed at
+    # tier=daily; ns tubesync carries managed-namespace=true. Mover 568.
+    # Migrated via Option-R immutable-dataSourceRef repair (live was
+    # config-pvc-backup; recreated from quiesced snapshot …160611 with the
+    # correct config-pvc-dst dataSourceRef). Old PV pvc-3f4378d9 retained.
+    pvc-plumber.io/enabled: "true"
+    pvc-plumber.io/manage-volsync: "true"
+    pvc-plumber.io/tier: "daily"
 spec:
   accessModes: [ "ReadWriteOnce" ]
   storageClassName: longhorn
   resources:
     requests:
       storage: 10Gi
-  # Static dataSourceRef → ReplicationDestination/config-pvc-dst.
-  # On PVC re-creation (DR / namespace recreate), VolSync's volume
-  # populator reads the latest snapshot from the shared kopia repo
-  # volsync-kopia-repository and binds this PVC with restored data. No-op
-  # while the PVC is already Bound. VolSync ReplicationSource/
-  # ReplicationDestination resources are defined below in this file.
+  # Static dataSourceRef → ReplicationDestination/config-pvc-dst. No-op while
+  # the PVC is already Bound. RS/RD are operator-managed by pvc-plumber v4.0.1
+  # (DRY handoff, 2026-05-30): the operator creates and repairs
+  # ReplicationSource/config-pvc + ReplicationDestination/config-pvc-dst as
+  # managed-by=pvc-plumber via its RS/RD watch.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
@@ -42,71 +50,9 @@ spec:
     requests:
       storage: 1Ti
 
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: config-pvc
-  namespace: tubesync
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: config-pvc
-spec:
-  sourcePVC: config-pvc
-  trigger:
-    schedule: "13 2 * * *"
-  kopia:
-    repository: volsync-kopia-repository
-    username: config-pvc
-    hostname: tubesync
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: config-pvc-dst
-  namespace: tubesync
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: config-pvc
-spec:
-  trigger:
-    # Option-R repair (2026-05-30): bumped to force VolSync to pull the
-    # latest kopia snapshot into a fresh latestImage before the config-pvc
-    # immutable-dataSourceRef repair (live=config-pvc-backup vs Git
-    # config-pvc-dst). Re-bumped to -quiesced after the quiesced backup so the
-    # restore target reflects the scaled-down (consistent) config-pvc.
-    manual: restore-2026-05-30-quiesced
-  kopia:
-    repository: volsync-kopia-repository
-    username: config-pvc
-    hostname: tubesync
-    sourceIdentity:
-      sourceName: config-pvc
-      sourceNamespace: tubesync
-      sourcePVCName: config-pvc
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes:
-      - ReadWriteOnce
-    capacity: 10Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
+# NOTE: inline ReplicationSource/config-pvc + ReplicationDestination/
+# config-pvc-dst were REMOVED on 2026-05-30 as part of the pvc-plumber v4.0.1
+# DRY handoff. pvc-plumber now owns the RS/RD lifecycle for config-pvc (fused
+# above via pvc-plumber.io/* labels; ns gated by managed-namespace=true). The
+# operator recreates them as app.kubernetes.io/managed-by=pvc-plumber. Do not
+# re-add inline RS/RD here — drift must be reconciled through the operator.
