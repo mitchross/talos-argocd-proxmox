@@ -5,11 +5,6 @@ metadata:
   namespace: copyparty
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
-    # Option-R repair (2026-05-30): SSA=false attempt to unlock sync of the
-    # drifted immutable dataSourceRef (live copyparty-data-backup vs Git
-    # copyparty-data-dst). If this alone does not clear the wedge, fall back to
-    # temporary Git alignment per the tubesync-proven sequence.
-    argocd.argoproj.io/sync-options: ServerSideApply=false
   labels:
     app: copyparty
     restore-policy: "strict"
@@ -28,8 +23,13 @@ spec:
   # ReplicationDestination resources are defined below in this file.
   dataSourceRef:
     apiGroup: volsync.backube
+    # TEMPORARY (Option-R, 2026-05-30): aligned to the live immutable value
+    # copyparty-data-backup so Argo computes a clean diff and syncs (SSA=false
+    # alone wedged on the immutable field). Restored to copyparty-data-dst in
+    # Phase 6, immediately before the PVC delete/recreate. The RD below stays
+    # named copyparty-data-dst (the restore target).
     kind: ReplicationDestination
-    name: copyparty-data-dst
+    name: copyparty-data-backup
 
 ---
 apiVersion: volsync.backube/v1alpha1
