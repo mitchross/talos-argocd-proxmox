@@ -5,6 +5,11 @@ metadata:
   namespace: copyparty
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
+    # Option-R repair (2026-05-30): SSA=false attempt to unlock sync of the
+    # drifted immutable dataSourceRef (live copyparty-data-backup vs Git
+    # copyparty-data-dst). If this alone does not clear the wedge, fall back to
+    # temporary Git alignment per the tubesync-proven sequence.
+    argocd.argoproj.io/sync-options: ServerSideApply=false
   labels:
     app: copyparty
     restore-policy: "strict"
