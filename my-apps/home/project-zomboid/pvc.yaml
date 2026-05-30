@@ -90,7 +90,7 @@ metadata:
     volsync.backup/pvc: zomboid-data
 spec:
   trigger:
-    manual: restore-once
+    manual: restore-2026-05-30-quiesced
   kopia:
     repository: volsync-kopia-repository
     username: zomboid-data

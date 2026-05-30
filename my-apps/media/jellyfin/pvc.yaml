@@ -72,7 +72,7 @@ metadata:
     volsync.backup/pvc: config
 spec:
   trigger:
-    manual: restore-once
+    manual: restore-2026-05-30-quiesced
   kopia:
     repository: volsync-kopia-repository
     username: config
