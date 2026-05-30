@@ -5,3 +5,7 @@ metadata:
   name: nginx-example
   labels:
     volsync.backube/privileged-movers: "true"
+    # pvc-plumber v4.0.1 namespace write gate: opts this namespace in to
+    # operator-managed VolSync writes. Required (alongside the PVC fuse
+    # labels) before the operator will create/update/delete RS/RD here.
+    pvc-plumber.io/managed-namespace: "true"
