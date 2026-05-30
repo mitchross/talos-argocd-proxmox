@@ -37,7 +37,7 @@ OpenWebUI were repointed off `longctx`/`think` onto `nothink` (PR #1312).
 | `qwen3.6-longctx` | (same GGUF) | 35B / 3B | 256K | deep research — **dual-card only** |
 | `coder` | Qwen3-Coder-30B-A3B UD-Q4_K_XL | 30B MoE / 3.3B active | 64K | local coding agent (OpenCode/Cline/Aider) |
 | `tool-fast` | Qwen3-4B-Instruct-2507 UD-Q4_K_XL | 4B dense | 32K | high-volume n8n / triage tool calls |
-| `whiterabbitneo` | WhiteRabbitNeo-2.5-Qwen2.5-Coder-7B Q8_0 | 7B dense | 64K | authorized security learning (isolated) |
+| `whiterabbitneo` | WhiteRabbitNeo-2.5-Qwen2.5-Coder-7B Q8_0 (→ **swap to V3-7B**) | 7B dense | 64K | authorized security learning (isolated) |
 | `gemma4` / `gemma4-nothink` | gemma-4-26B-A4B UD-Q4_K_XL | 26B MoE / 3.8B active | 128K | multimodal fallback / bulk vision captioning |
 | `gemma4-31b` / `-nothink` | gemma-4-31B UD-Q4_K_XL | 31B dense | 64K | top-quality second opinion (slow) |
 | `uncensored` / `nothink-uncensored` | Qwen3.5-35B-A3B-Uncensored-HauhauCS Q4_K_M | 35B MoE / 3B | 32K | creative / RP toy **only** |
@@ -105,18 +105,30 @@ coding, tool calls, and vision.
   `--models-max` is raised to 2 *after* verifying the VRAM budget (a 35B + 4B fit;
   two 35B presets do not). Currently `--models-max 1`.
 
-## WhiteRabbitNeo 2.5 — `whiterabbitneo` (isolated security model)
-- **What:** official WhiteRabbitNeo v2.5, built on **Qwen2.5-Coder-7B**, trained on
-  ~1.7M offensive+defensive security samples. Q8_0 (~8.1GB, near-lossless on a 7B).
+## WhiteRabbitNeo — `whiterabbitneo` (isolated security model)
+- **What:** WhiteRabbitNeo, built on **Qwen2.5-Coder-7B**, trained on offensive +
+  defensive security data. Domain-tuned, chosen over an abliterated general model
+  because abliteration degrades accuracy and a security-trained model is both more
+  accurate AND more willing on this domain.
+- **⚠️ Version — use V3, not 2.5:** the currently-deployed file is
+  `WhiteRabbitNeo-2.5-Qwen-2.5-Coder-7B-Q8_0.gguf`, but the **latest open release is
+  [WhiteRabbitNeo-V3-7B](https://huggingface.co/WhiteRabbitNeo/WhiteRabbitNeo-V3-7B)**
+  (GGUF: [bartowski](https://huggingface.co/bartowski/WhiteRabbitNeo_WhiteRabbitNeo-V3-7B-GGUF)).
+  **TODO: swap v2.5 → V3-7B** (download to NFS, repoint the `model =` path).
+  - WhiteRabbitNeo's open line is **Qwen2.5-Coder-class** (v2.5 confirmed
+    Qwen2.5-Coder-7B; V3 is the newest open 7B release in the same lineage). There
+    is **no Qwen3-based WhiteRabbitNeo** — so "it's Qwen2.5" is the model family,
+    not a sign you're running something stale *within* WRN. 7B is the only current
+    open size.
+  - Larger 13B/33B exist only on **older v1/v1.5** bases — stale, skip them.
+  - The recommended self-hosted target is **V3-7B**; v2.5 still works fine in the
+    meantime (it's isolated/occasional-use), so this is a low-priority swap.
+  - The 30B-MoE "Deep Hat V2" successor is **proprietary** (Kindo), not self-hostable.
 - **For:** authorized security **learning on systems you own or are authorized to
-  test** — explaining attack chains, PoC/CTF code, red/blue concepts. A
-  *domain-tuned* model, chosen over an abliterated general model because
-  abliteration degrades accuracy and a security-trained model is both more accurate
-  AND more willing on this domain.
-- **Isolation by design:** its aliases are security-specific and it is **NOT** in
-  Perplexica's model list — its tuning must never become the backend for
-  research/RAG, where it would skew results. Swap to it deliberately in the UI; swap
-  back when done.
+  test** — attack-chain explanation, PoC/CTF code, red/blue concepts.
+- **Isolation by design:** security-specific aliases, and it is **NOT** in
+  Perplexica's model list — its tuning must never back research/RAG. Swap to it
+  deliberately in the UI; swap back when done.
 
 ## Gemma 4 — multimodal fallback (4 presets)
 - **`gemma4` / `gemma4-nothink`** (26B-A4B MoE, ~3.8B active, ~17GB + mmproj, 128K
@@ -179,3 +191,44 @@ coding, tool calls, and vision.
   add a `[id - alias]` section in `presets.ini` with a UNIQUE alias set
   (llama-server rejects the whole file on any duplicate), confirm the `model =`
   path, commit. The hash-suffixed configMap auto-rolls llama-cpp.
+
+---
+
+## Further reading — club-3090 (and what we learned from it)
+
+[`noonghunna/club-3090`](https://github.com/noonghunna/club-3090) is a community
+recipe repo for serving LLMs on RTX 3090/4090/5090 (multi-engine: vLLM,
+llama.cpp, ik_llama; model-agnostic — ships Qwen3.6-27B/35B and Gemma 4 26B/31B
+configs). Our hardware (2× RTX 3090) matches it directly, so its findings drove a
+lot of the decisions here and in [`3090-llm-optimization.md`](3090-llm-optimization.md).
+
+**The docs worth reading there:**
+- [`docs/CLIFFS.md`](https://github.com/noonghunna/club-3090/blob/master/docs/CLIFFS.md) — the three memory "cliffs" (FA2 softmax_lse padding; DeltaNet GDN OOM >50–60K; recurrent-state prefix-cache blowup). **All three are vLLM-specific; llama.cpp is immune** — a big reason we stay on llama.cpp for RAG/agentic.
+- [`docs/KV_MATH.md`](https://github.com/noonghunna/club-3090/blob/master/docs/KV_MATH.md) — KV-cache memory math. Rule of thumb: each halving of bytes/element ~doubles affordable context. q4_0 KV ≈ 0.28× fp16; **TQ3/TurboQuant ≈ 0.21×**.
+- [`docs/SINGLE_CARD.md`](https://github.com/noonghunna/club-3090/blob/master/docs/SINGLE_CARD.md) / [`DUAL_CARD.md`](https://github.com/noonghunna/club-3090/blob/master/docs/DUAL_CARD.md) — single-3090 flag recipes (`-ub`, `-ngl`, `-ckv`) and the TP=2 path.
+- [`docs/QUANTIZATION.md`](https://github.com/noonghunna/club-3090/blob/master/docs/QUANTIZATION.md), [`COMPARISONS.md`](https://github.com/noonghunna/club-3090/blob/master/docs/COMPARISONS.md), [`HARDWARE.md`](https://github.com/noonghunna/club-3090/blob/master/docs/HARDWARE.md), [`BENCHMARKS.md`](https://github.com/noonghunna/club-3090/blob/master/BENCHMARKS.md).
+- Model recipes for our exact models: [`models/qwen3.6-35b-a3b/`](https://github.com/noonghunna/club-3090/tree/master/models/qwen3.6-35b-a3b) (ik-llama + vllm), [`gemma-4-26b-a4b/`](https://github.com/noonghunna/club-3090/tree/master/models/gemma-4-26b-a4b).
+
+**Interesting findings (with sources) that shaped our setup:**
+- **Single-card: llama.cpp ≫ vLLM for this MoE.** Same-hardware benchmark
+  ([tfriedel/qwen3.6-rtx3090-lab](https://github.com/tfriedel/qwen3.6-rtx3090-lab)):
+  Qwen3.6-35B-A3B on one 3090 → llama.cpp/IQ4_XS **115–133 TPS** vs vLLM/AWQ-INT4
+  **18.6 TPS** (~7×; AWQ weights starve the card → `--enforce-eager`). vLLM tp1 is
+  "an anti-pattern." vLLM only wins at **TP=2** (149 TPS @ 200K; 264 code TPS w/ MTP-3).
+- **MTP/speculative decoding gives NO net speedup on Ampere + A3B under llama.cpp**
+  ([thc1006 bench](https://github.com/thc1006/qwen3.6-speculative-decoding-rtx3090) /
+  [writeup](https://hackmd.io/@thc1006/SJly6IE6Wx)) — the MoE is already
+  memory-bound. It only helps under vLLM TP=2. (We skipped the MTP GGUF for this reason.)
+- **`ik_llama.cpp` is the fastest single-card path** (~18–20% faster decode, leaner
+  VRAM via IQK quants + Hadamard KV) — the relevant upgrade to try before vLLM.
+- **TurboQuant (`turbo3` KV, ≈5× smaller)** is the coming KV win
+  ([llama.cpp #20969](https://github.com/ggml-org/llama.cpp/discussions/20969)) —
+  not in mainline yet (PR #21089). club-3090 calls it the "TQ3/Genesis" path.
+- **Asymmetric KV trap** ([llama.cpp #20866](https://github.com/ggml-org/llama.cpp/issues/20866)):
+  `q8`-K + `q4`-V forces the KV cache to CPU, 44× slower. Keep KV symmetric.
+- **Docker tag scheme moved cuda12 → cuda13** (CUDA 13;
+  [#21429](https://github.com/ggml-org/llama.cpp/issues/21429)) — why the renovate
+  regex was frozen and we bumped to `server-cuda13-b9354`.
+
+Full topology / KV / engine analysis lives in
+[`docs/3090-llm-optimization.md`](3090-llm-optimization.md).
