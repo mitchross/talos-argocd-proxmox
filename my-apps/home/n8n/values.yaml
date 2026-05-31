@@ -4,10 +4,7 @@ image:
   tag: "latest"
 
 main:
-  # Option-R repair (2026-05-31): scaled to 0 to quiesce the data PVC (SQLite
-  # at-rest) before the quiesced backup + PVC delete/recreate. Restored to 1
-  # in the bring-up phase.
-  replicaCount: 0
+  replicaCount: 1
 
   service:
     type: ClusterIP
