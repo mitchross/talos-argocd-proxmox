@@ -7,29 +7,25 @@ metadata:
     app: posthog-kafka
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: kafka
-    restore-policy: "strict"
+    # PostHog data is disposable/rebuildable in this homelab — backup-exempt.
+    # Not in the pvc-plumber migration queue; no VolSync RS/RD (removed below).
+    backup-exempt: "true"
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
-    # TEMPORARY (2026-05-01): wiping posthog data + starting fresh.
-    # Remove once posthog is back up on fresh data.
+    storage.vanillax.dev/backup-exempt-reason: "PostHog data is disposable/rebuildable in this homelab; do not VolSync/pvc-plumber migrate. Redpanda runs --unsafe-bypass-fsync with ~1h retention + auto_create_topics — log is ephemeral/rebuildable."
+    # Retained skip-restore (now a no-op since RS/RD are removed): never restore.
     volsync.backup/skip-restore: "true"
-    volsync.backup/skip-restore-reason: "posthog corruption wipe 2026-05-01 — remove once data verified"
 spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: longhorn
   resources:
     requests:
       storage: 20Gi
-  # Static dataSourceRef → ReplicationDestination/redpanda-data-kafka-0-dst.
-  # On PVC re-creation (DR / namespace recreate), VolSync's volume
-  # populator reads the latest snapshot from the shared kopia repo
-  # volsync-kopia-repository and binds this PVC with restored data. No-op
-  # while the PVC is already Bound. VolSync ReplicationSource/
-  # ReplicationDestination resources are defined below in this file.
-  dataSourceRef:
-    apiGroup: volsync.backube
-    kind: ReplicationDestination
-    name: redpanda-data-kafka-0-dst
+  # PostHog data is disposable/rebuildable (backup-exempt above) — intentionally
+  # NO dataSourceRef and NO VolSync ReplicationSource/ReplicationDestination.
+  # Inline RS/redpanda-data-kafka-0 + RD/redpanda-data-kafka-0-dst were REMOVED
+  # 2026-05-31 to stop backups. dataSourceRef omitted to match the live PVC
+  # (empty); the Redpanda log is ephemeral by design. Do not re-add RS/RD.
 ---
 ---
 apiVersion: apps/v1
@@ -136,66 +132,7 @@ spec:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: kafka
 
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: redpanda-data-kafka-0
-  namespace: posthog
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: redpanda-data-kafka-0
-spec:
-  sourcePVC: redpanda-data-kafka-0
-  trigger:
-    schedule: "42 2 * * *"
-  kopia:
-    repository: volsync-kopia-repository
-    username: redpanda-data-kafka-0
-    hostname: posthog
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: redpanda-data-kafka-0-dst
-  namespace: posthog
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: redpanda-data-kafka-0
-spec:
-  trigger:
-    manual: restore-once
-  kopia:
-    repository: volsync-kopia-repository
-    username: redpanda-data-kafka-0
-    hostname: posthog
-    sourceIdentity:
-      sourceName: redpanda-data-kafka-0
-      sourceNamespace: posthog
-      sourcePVCName: redpanda-data-kafka-0
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes:
-      - ReadWriteOnce
-    capacity: 20Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
+# NOTE: inline ReplicationSource/redpanda-data-kafka-0 +
+# ReplicationDestination/redpanda-data-kafka-0-dst were REMOVED 2026-05-31.
+# PostHog data is disposable/rebuildable (PVC is backup-exempt) — no VolSync
+# backups. Do not re-add RS/RD here.

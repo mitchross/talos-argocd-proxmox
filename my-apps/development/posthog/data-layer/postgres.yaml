@@ -94,13 +94,14 @@ metadata:
   namespace: posthog
   labels:
     app: posthog-db
-    restore-policy: "strict"
+    # PostHog data is disposable/rebuildable in this homelab — backup-exempt.
+    # Not in the pvc-plumber migration queue; no VolSync RS/RD (removed below).
+    backup-exempt: "true"
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
-    # TEMPORARY (2026-05-01): wiping posthog data + starting fresh.
-    # Remove once posthog is back up on fresh data.
+    storage.vanillax.dev/backup-exempt-reason: "PostHog data is disposable/rebuildable in this homelab; do not VolSync/pvc-plumber migrate. If Postgres preservation is ever needed, use native pg_dump, not generic volume-snapshot restore."
+    # Retained skip-restore (now a no-op since RS/RD are removed): never restore.
     volsync.backup/skip-restore: "true"
-    volsync.backup/skip-restore-reason: "posthog corruption wipe 2026-05-01 — remove once data verified"
 spec:
   accessModes:
   - ReadWriteOnce
@@ -108,77 +109,9 @@ spec:
   resources:
     requests:
       storage: 20Gi
-  # Static dataSourceRef → ReplicationDestination/postgres-data-dst.
-  # On PVC re-creation (DR / namespace recreate), VolSync's volume
-  # populator reads the latest snapshot from the shared kopia repo
-  # volsync-kopia-repository and binds this PVC with restored data. No-op
-  # while the PVC is already Bound. VolSync ReplicationSource/
-  # ReplicationDestination resources are defined below in this file.
-  dataSourceRef:
-    apiGroup: volsync.backube
-    kind: ReplicationDestination
-    name: postgres-data-dst
-
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: postgres-data
-  namespace: posthog
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: postgres-data
-spec:
-  sourcePVC: postgres-data
-  trigger:
-    schedule: "54 2 * * *"
-  kopia:
-    repository: volsync-kopia-repository
-    username: postgres-data
-    hostname: posthog
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: postgres-data-dst
-  namespace: posthog
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: postgres-data
-spec:
-  trigger:
-    manual: restore-once
-  kopia:
-    repository: volsync-kopia-repository
-    username: postgres-data
-    hostname: posthog
-    sourceIdentity:
-      sourceName: postgres-data
-      sourceNamespace: posthog
-      sourcePVCName: postgres-data
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes:
-      - ReadWriteOnce
-    capacity: 20Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
+  # PostHog data is disposable/rebuildable (backup-exempt above) — intentionally
+  # NO dataSourceRef and NO VolSync ReplicationSource/ReplicationDestination.
+  # Inline RS/postgres-data + RD/postgres-data-dst were REMOVED 2026-05-31 to
+  # stop backups. dataSourceRef omitted to match the live PVC (empty) — on
+  # recreate the PVC comes up empty (acceptable; data is disposable). Do not
+  # re-add RS/RD; use native pg_dump if preservation is ever required.

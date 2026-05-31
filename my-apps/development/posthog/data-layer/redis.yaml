@@ -74,13 +74,14 @@ metadata:
   namespace: posthog
   labels:
     app: posthog-redis
-    restore-policy: "strict"
+    # PostHog data is disposable/rebuildable in this homelab — backup-exempt.
+    # Not in the pvc-plumber migration queue; no VolSync RS/RD (removed below).
+    backup-exempt: "true"
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
-    # TEMPORARY (2026-05-01): wiping posthog data + starting fresh.
-    # Remove once posthog is back up on fresh data.
+    storage.vanillax.dev/backup-exempt-reason: "PostHog data is disposable/rebuildable in this homelab; do not VolSync/pvc-plumber migrate. Valkey cache (allkeys-lru, no RDB/AOF) — nothing to preserve."
+    # Retained skip-restore (now a no-op since RS/RD are removed): never restore.
     volsync.backup/skip-restore: "true"
-    volsync.backup/skip-restore-reason: "posthog corruption wipe 2026-05-01 — remove once data verified"
 spec:
   accessModes:
   - ReadWriteOnce
@@ -88,77 +89,9 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  # Static dataSourceRef → ReplicationDestination/redis7-data-dst.
-  # On PVC re-creation (DR / namespace recreate), VolSync's volume
-  # populator reads the latest snapshot from the shared kopia repo
-  # volsync-kopia-repository and binds this PVC with restored data. No-op
-  # while the PVC is already Bound. VolSync ReplicationSource/
-  # ReplicationDestination resources are defined below in this file.
-  dataSourceRef:
-    apiGroup: volsync.backube
-    kind: ReplicationDestination
-    name: redis7-data-dst
-
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: redis7-data
-  namespace: posthog
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: redis7-data
-spec:
-  sourcePVC: redis7-data
-  trigger:
-    schedule: "57 2 * * *"
-  kopia:
-    repository: volsync-kopia-repository
-    username: redis7-data
-    hostname: posthog
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: redis7-data-dst
-  namespace: posthog
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: redis7-data
-spec:
-  trigger:
-    manual: restore-once
-  kopia:
-    repository: volsync-kopia-repository
-    username: redis7-data
-    hostname: posthog
-    sourceIdentity:
-      sourceName: redis7-data
-      sourceNamespace: posthog
-      sourcePVCName: redis7-data
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes:
-      - ReadWriteOnce
-    capacity: 10Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
+  # PostHog data is disposable/rebuildable (backup-exempt above) — intentionally
+  # NO dataSourceRef and NO VolSync ReplicationSource/ReplicationDestination.
+  # Inline RS/redis7-data + RD/redis7-data-dst were REMOVED 2026-05-31 to stop
+  # backups. dataSourceRef omitted to match the live PVC (empty); Valkey is a
+  # pure LRU cache (no persistence) so there is nothing to restore. Do not
+  # re-add RS/RD.
