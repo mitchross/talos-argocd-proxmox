@@ -28,9 +28,14 @@ patches:
     - op: add
       path: /metadata/annotations/argocd.argoproj.io~1compare-options
       value: ServerSideDiff=false
+    # TEMPORARY (Option-R, 2026-05-31): dsr aligned to the live immutable value
+    # gitea-shared-storage-backup (a dangling/nonexistent RD the PVC was created
+    # with) so Argo's sync SSA dry-run has no immutable change and the app stays
+    # syncable. RESTORED to gitea-shared-storage-dst in Phase 6, before the PVC
+    # delete/recreate. The RD in values.yaml extraDeploy stays named -dst.
     - op: add
       path: /spec/dataSourceRef
       value:
         apiGroup: volsync.backube
         kind: ReplicationDestination
-        name: gitea-shared-storage-dst
+        name: gitea-shared-storage-backup
