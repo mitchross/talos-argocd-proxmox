@@ -31,6 +31,25 @@ spec:
                 app.kubernetes.io/name: immich
                 app.kubernetes.io/component: machine-learning
             topologyKey: kubernetes.io/hostname
+      initContainers:
+      # After the 2026-05-31 disposable library reset the volume is empty;
+      # immich's system-integrity folder check fails without its .immich marker
+      # files (the CNPG DB still has asset records, so immich does folder CHECKS
+      # not fresh-init). Idempotently ensure the media subdirs + markers so
+      # immich-server starts. Self-heals future empty recreates / DR.
+      - name: init-library-markers
+        image: alpine:latest@sha256:5b10f432ef3da1b8d4c7eb6c487f2f5a8f096bc91145e68878dd4a5019afde11
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            for d in thumbs upload backups library profile encoded-video; do
+              mkdir -p "/library/$d" && touch "/library/$d/.immich"
+            done
+            echo "immich /library folder markers ensured"
+        volumeMounts:
+        - name: library
+          mountPath: /library
       containers:
       - name: immich-server
         image: ghcr.io/immich-app/immich-server:v2.7.5@sha256:c15bff75068effb03f4355997d03dc7e0fc58720c2b54ad6f7f10d1bc57efaa5
