@@ -5,3 +5,6 @@ metadata:
   labels:
     app.kubernetes.io/name: immich
     volsync.backube/privileged-movers: "true"
+    # pvc-plumber v4.0.1 namespace write-gate (2026-05-31): opts immich in so the
+    # operator may create/repair RS/RD for the fused library PVC.
+    pvc-plumber.io/managed-namespace: "true"
