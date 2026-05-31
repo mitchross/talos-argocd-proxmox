@@ -9,11 +9,11 @@ metadata:
     app.kubernetes.io/part-of: smart-home
     app.kubernetes.io/version: stable
 spec:
-  # Option-R repair PAUSED 2026-05-31: scaled back to 1 to restore service after
-  # a cluster-wide Longhorn ReplicaSchedulingFailure (GPU node nfwh89 down since
-  # 02:44Z) blocked the quiesced-backup clone. Migration is paused at Phase 4;
-  # resume once Longhorn is healthy. config PVC was never deleted — data intact.
-  replicas: 1
+  # Option-R repair RESUMED 2026-05-31 (Longhorn recovered: faulted=0,
+  # rebuilding=0, clones schedule again). Scaled to 0 to quiesce config (SQLite
+  # at-rest) for the quiesced backup + PVC delete/recreate. Restored to 1 in
+  # the bring-up phase.
+  replicas: 0
   strategy:
     type: Recreate
   selector:
