@@ -76,7 +76,7 @@ spec:
     # Option-R repair (2026-05-31): bumped from restore-once to refresh the RD
     # latestImage (standing image was stale 2026-05-21) before the config-PVC
     # dsr repair. Re-bumped to -quiesced after the quiesced backup.
-    manual: restore-2026-05-31-pre-repair
+    manual: restore-2026-05-31-quiesced
   kopia:
     repository: volsync-kopia-repository
     username: config
