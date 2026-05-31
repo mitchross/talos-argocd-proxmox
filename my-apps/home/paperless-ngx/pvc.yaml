@@ -22,10 +22,15 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  # dataSourceRef intentionally OMITTED (final disposable reset 2026-05-31):
-  # the PVC is recreated EMPTY (data is disposable in this homelab — user
-  # accepted nuke). pvc-plumber takes over RS/RD at handoff; no restore on
-  # recreate by design.
+  # dataSourceRef → ReplicationDestination/data-dst (added 2026-05-31 during the
+  # paperless-data restore drill). The empty reset originally omitted this to
+  # avoid auto-restoring the nuked data; now that the app has rebuilt real data
+  # AND pvc-plumber backs it up, the dsr closes the DR gap — on recreate the
+  # VolSync volume populator restores the latest backup. No-op while Bound.
+  dataSourceRef:
+    apiGroup: volsync.backube
+    kind: ReplicationDestination
+    name: data-dst
 ---
 ---
 apiVersion: v1
