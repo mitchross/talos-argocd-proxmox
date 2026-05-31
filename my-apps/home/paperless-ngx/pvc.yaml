@@ -16,16 +16,10 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  # Static dataSourceRef → ReplicationDestination/data-dst.
-  # On PVC re-creation (DR / namespace recreate), VolSync's volume
-  # populator reads the latest snapshot from the shared kopia repo
-  # volsync-kopia-repository and binds this PVC with restored data. No-op
-  # while the PVC is already Bound. VolSync ReplicationSource/
-  # ReplicationDestination resources are defined below in this file.
-  dataSourceRef:
-    apiGroup: volsync.backube
-    kind: ReplicationDestination
-    name: data-dst
+  # dataSourceRef intentionally OMITTED (final disposable reset 2026-05-31):
+  # the PVC is recreated EMPTY (data is disposable in this homelab — user
+  # accepted nuke). pvc-plumber takes over RS/RD at handoff; no restore on
+  # recreate by design.
 ---
 ---
 apiVersion: v1
@@ -46,16 +40,9 @@ spec:
     requests:
       storage: 20Gi
   storageClassName: longhorn
-  # Static dataSourceRef → ReplicationDestination/media-dst.
-  # On PVC re-creation (DR / namespace recreate), VolSync's volume
-  # populator reads the latest snapshot from the shared kopia repo
-  # volsync-kopia-repository and binds this PVC with restored data. No-op
-  # while the PVC is already Bound. VolSync ReplicationSource/
-  # ReplicationDestination resources are defined below in this file.
-  dataSourceRef:
-    apiGroup: volsync.backube
-    kind: ReplicationDestination
-    name: media-dst
+  # dataSourceRef intentionally OMITTED (final disposable reset 2026-05-31):
+  # media is recreated EMPTY (scanned originals nuked per user instruction).
+  # pvc-plumber takes over RS/RD at handoff; no restore on recreate by design.
 ---
 ---
 apiVersion: v1
