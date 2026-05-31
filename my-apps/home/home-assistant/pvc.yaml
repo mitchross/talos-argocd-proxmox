@@ -10,6 +10,14 @@ metadata:
     app.kubernetes.io/component: home-automation
     app.kubernetes.io/part-of: smart-home
     restore-policy: "strict"
+    # pvc-plumber v4.0.1 DRY handoff (2026-05-31): operator-managed at
+    # tier=hourly (preserves the 46 * * * * cadence); ns home-assistant carries
+    # managed-namespace=true. Mover 568 (already, no UID change). Migrated via
+    # Option-R reset (dangling config-backup dsr → config-dst; recreated from
+    # quiesced snapshot). Old PV pvc-52fd99ba retained.
+    pvc-plumber.io/enabled: "true"
+    pvc-plumber.io/manage-volsync: "true"
+    pvc-plumber.io/tier: "hourly"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -18,76 +26,14 @@ spec:
       storage: 10Gi
   storageClassName: longhorn
   # Static dataSourceRef → ReplicationDestination/config-dst. No-op while the PVC
-  # is already Bound; on recreate (Phase 7) the VolSync populator restores from
-  # the latest config-dst snapshot (quiesced) in the shared kopia repo.
+  # is already Bound. RS/RD are operator-managed by pvc-plumber v4.0.1 (DRY
+  # handoff, 2026-05-31): the operator creates/repairs ReplicationSource/config
+  # + ReplicationDestination/config-dst as managed-by=pvc-plumber.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
     name: config-dst
 
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: config
-  namespace: home-assistant
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: config
-spec:
-  sourcePVC: config
-  trigger:
-    schedule: "46 * * * *"
-  kopia:
-    repository: volsync-kopia-repository
-    username: config
-    hostname: home-assistant
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: config-dst
-  namespace: home-assistant
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: config
-spec:
-  trigger:
-    # Option-R repair (2026-05-31): bumped from restore-once to refresh the RD
-    # latestImage (standing image was stale 2026-05-21) before the config-PVC
-    # dsr repair. Re-bumped to -quiesced after the quiesced backup.
-    manual: restore-2026-05-31-quiesced
-  kopia:
-    repository: volsync-kopia-repository
-    username: config
-    hostname: home-assistant
-    sourceIdentity:
-      sourceName: config
-      sourceNamespace: home-assistant
-      sourcePVCName: config
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes:
-      - ReadWriteOnce
-    capacity: 10Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
+# NOTE: inline ReplicationSource/config + ReplicationDestination/config-dst were
+# REMOVED on 2026-05-31 (pvc-plumber v4.0.1 DRY handoff). pvc-plumber now owns
+# the RS/RD lifecycle for config (tier=hourly, mover 568). Do not re-add here.
