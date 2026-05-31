@@ -13,7 +13,7 @@
 | Operator image | `ghcr.io/mitchross/pvc-plumber:4.0.1@sha256:721d770330a535871cae33313d7cd336116697d2a6f9e5d91fc8cd3d21a26305` |
 | Release | **v4.0.1** (commit `da40246`) — adds the namespace software write-gate (`pvc-plumber.io/managed-namespace: "true"`) + single cluster-wide `ClusterRoleBinding pvc-plumber:volsync-writer` (replaces per-ns RoleBindings, `a1916d61`). Supersedes v4.0.0. |
 | Mode | **permissive** (writes_allowed=true), pod Ready, restartCount 0 |
-| Shipped fixes (rc6→rc7, now in v4.0.0) | RS/RD watch + child→PVC reverse-map + periodic self-heal requeue + partial-inline-argo guard + `/audit` staleness. Closes the rc6 reconcile-trigger gap (the 2026-05-28 15h backup gap). |
+| Shipped fixes (rc6→rc7, now in v4.0.1) | RS/RD watch + child→PVC reverse-map + periodic self-heal requeue + partial-inline-argo guard + `/audit` staleness. Closes the rc6 reconcile-trigger gap (the 2026-05-28 15h backup gap). |
 | Watch proof | Synthetic `pvc-plumber-watch-smoke`: managed RS *and* RD deleted → recreated in <5s, no PVC poke. |
 | nginx-example/storage canary | **Functionally complete.** Inline Argo RS/RD removed from Git (`50a84cc9`), Argo pruned them, rc7 recreated `RS/storage` + `RD/storage-dst` as `managed-by=pvc-plumber`, and the operator-managed RS produced a **Successful** initial backup (`lastSyncTime=2026-05-29T04:04:29Z`, kopia EXIT_CODE 0). `/audit`: `already-matches` / `managed-by-pvc-plumber` / `stale=false`. |
 | nginx canary caveat | The first **cron-driven** recurrence (`nextSyncTime=2026-05-30T02:58:00Z`) is an optional, read-only follow-up — the create-time initial sync already proved the mechanism. |
@@ -26,17 +26,16 @@
 | **Operator-managed PVCs** (`managed-by=pvc-plumber` RS/RD) | nginx-example/storage, homepage-dashboard/config, karakeep/{data-pvc,meilisearch-pvc}, fizzy/data, frigate/frigate-config, project-nomad/{flatnotes-data,qdrant-data,nomad-storage,mysql-data}, tubesync/config-pvc, copyparty/copyparty-data, jellyfin/config, open-webui/storage, perplexica/perplexica-data, project-zomboid/zomboid-data, swarmui/{swarmui-data,swarmui-output} (**18**) |
 
 ### Known caveats / fleet-wide gaps
-- **RBAC is the universal blocker.** The per-namespace `RoleBinding pvc-plumber:volsync-writer` exists **only in `nginx-example`, `homepage-dashboard`, and `karakeep`** (the three migrated namespaces). Every other candidate namespace needs it created **before** any inline RS/RD removal — otherwise Argo prunes the chain and the operator cannot recreate it (the exact 15h-gap failure mode).
+- **RBAC is NOT a per-namespace gate (corrected 2026-05-31).** v4.0.1 uses a single **cluster-wide `ClusterRoleBinding pvc-plumber:volsync-writer`** (SA `pvc-plumber/pvc-plumber`, RS/RD verbs) that already covers every namespace. There are **no per-namespace `RoleBinding`s and none are needed** — verify `kubectl get clusterrolebinding pvc-plumber:volsync-writer`. The 13 migrated namespaces (incl. the 7-app reset batch) were all migrated with no per-ns RoleBinding step. The real per-namespace prerequisite is the **software write-gate** (`pvc-plumber.io/managed-namespace: "true"` on the namespace + fuse labels on the PVC); without it the operator emits `skipped-namespace-not-managed` / `skipped-not-opted-in`.
 - All 18–19 candidate namespaces already have `volsync.backube/privileged-movers: "true"` and a materialized `volsync-kopia-repository` Secret. Those two prerequisites are met fleet-wide.
 - No candidate PVC carries the v4 fuse labels yet — migration requires **adding** `pvc-plumber.io/enabled=true` + `manage-volsync=true` + `tier` to the PVC.
 - Only **`n8n`** is currently in Argo `ComparisonError` (immutable-dataSourceRef SSA wedge). Other apps with live `dataSourceRef` drift (e.g. copyparty) are still `Synced/Healthy` because the my-apps AppSet `ignoreDifferences` masks the PVC dataSource fields. **For a drift PVC that is merely going to be migrated (RS/RD handoff, PVC stays Bound), `ServerSideApply=false` is NOT needed and not recommended** — the bound PVC's spec is immutable, so any apply to it (incl. SSA=false) re-validates and can throw an isolated SyncError. The fuse-label handoff (labels + remove inline RS/RD) syncs fine because Argo only *applies* the labels/annotations, never the immutable `dataSourceRef`. SSA=false is only relevant when you must force ArgoCD to *apply a changed PVC field*, which the drift PVCs do not require until/unless their `dataSourceRef` is wrong (see Option-R below).
-- **RBAC is no longer per-namespace.** v4.0.1 (`a1916d61`) replaced the per-namespace `RoleBinding pvc-plumber:volsync-writer` model with a **single cluster-wide `ClusterRoleBinding pvc-plumber:volsync-writer`** (subject `ServiceAccount/pvc-plumber/pvc-plumber`, RS/RD verbs only). tubesync migrated with **no namespace RoleBinding step** — the CRB covers every namespace. The "RBAC first" step in §4 is now satisfied fleet-wide by that one CRB; verify `kubectl get clusterrolebinding pvc-plumber:volsync-writer` instead of a per-ns RoleBinding. The §1 "RBAC is the universal blocker" caveat is superseded.
 - **Cadence is set by `tier`, not forced to daily.** v4 rewrites each RS schedule to a deterministic per-PVC minute **within the chosen tier's window** (`tier=hourly` → `MM * * * *`, `tier=daily` → `MM 2 * * *`, etc.). Karakeep ×2 migrated at **`tier=hourly`** and kept their hourly cadence (proven: `data-pvc 10 * * * *`, `meilisearch 0 * * * *`). The remaining hourly apps (home-assistant, n8n, paperless-ngx ×2) should likewise use `tier=hourly` to preserve cadence — only a wrong tier choice (hourly→daily) would reduce frequency.
 - **mover UID change — proven safe.** v4 normalizes `moverSecurityContext` to `568/568/568`. Karakeep ×2 (inline `1001`) migrated and **backed up successfully** as 568 — the snapshot-clone `fsGroup` makes the 1001-owned data group-readable to the 568 mover. Remaining non-568 inline movers (n8n `1000`, gitea `1000`) get the same ownership change; the Karakeep result indicates this is low-risk, but still confirm the first backup succeeds per app.
 
 ## 2. PVC readiness table
 
-**21 remaining** candidate PVCs (excludes the completed `nginx-example/storage`, `homepage-dashboard/config`, and `karakeep/{data-pvc,meilisearch-pvc}`, CNPG/Barman DB PVCs, and infra redis). Except where noted, every row is `owner=inline-argo`, `privileged-movers=true`, kopia Secret present, **RBAC RoleBinding missing**, **v4 labels absent in Git**. Columns below capture the discriminating factors.
+**18 PVCs are now operator-managed** (see §1). The low-risk file/SQLite cohort is fully migrated. What remains is the **SAVE_FOR_END tier** — databases, high-value app state, and special cases — classified in §8 below. Every candidate already has `volsync.backube/privileged-movers: "true"` + a materialized `volsync-kopia-repository` Secret + cluster-wide RBAC (the CRB); migration only requires adding the namespace gate label + PVC fuse labels and removing inline RS/RD. The historical table rows below are kept for reference but are **superseded by the §8 classification** for anything not yet migrated.
 
 | Rank | App / namespace | PVC | Size | Cadence | Mover | Live dsr drift? | Argo | Shape handoff | Risk | Next action |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -66,15 +65,11 @@
 | 24 | immich | library | 300Gi | daily | 568 | — | Synced | no-op | high | irreplaceable photos; largest volume — migrate last |
 | ✅ | karakeep | data-pvc / meilisearch-pvc | 10Gi ×2 | **hourly** | 568 (was 1001) | no | Synced | **DONE** | — | **MIGRATED 2026-05-30** (`93b2b5cb`); operator-managed at tier=hourly, both backups Successful, mover 1001→568 proven safe, data-pvc dsr repaired first (Option R) |
 
-## 3. Recommended next 3 candidates
+## 3. Recommended next candidate
 
-> ~~#1 `homepage-dashboard/config`~~ — **MIGRATED 2026-05-29** (operator-managed, backup Successful). The next routine candidates below remain low-risk single-PVC handoffs. **Do not start any of these without explicit per-PVC authorization.**
+> The entire low-risk cohort is **MIGRATED** (homepage-dashboard, fizzy, frigate, project-nomad ×4, tubesync, and the 7-app reset batch: copyparty, jellyfin, open-webui, perplexica, project-zomboid, swarmui ×2). 18 PVCs operator-managed (§1).
 
-**#1 — `copyparty/copyparty-data`**. Single 20Gi PVC, daily, mover 568, file-share scratch/uploads (rebuildable). Has live dsr drift (`…-backup`) but the app is `Synced/Healthy`; add `sync-options: ServerSideApply=false` to the PVC (nginx/homepage recipe). Prereq: `volsync-writer` RoleBinding in `copyparty`.
-
-~~**#2 — `tubesync/config-pvc`**~~ — **MIGRATED 2026-05-30** (`5ed1e67b`; Option-R dsr repair + handoff). Next config-PVC candidate is **`jellyfin/config`** (single config PVC, daily, 568, rebuildable; live dsr drift `null` → needs Option-R repair like tubesync). No per-ns RoleBinding prereq anymore (cluster-wide CRB).
-
-**#3 — `fizzy/data`**. Single 10Gi PVC, daily, mover 568, **no dsr drift** (`data-dst`) — same zero-SSA-wedge profile as homepage. Board data is the product but rebuildable-ish; slightly higher value than the config volumes above. Prereq: `volsync-writer` RoleBinding in `fizzy`.
+The only remaining work is the **SAVE_FOR_END tier — see the §8 classification.** The recommended next single candidate is **`n8n/data`** (the smallest, lowest-risk Class-C canary; validates the non-568 mover-UID-preservation path). **Do not start any SAVE_FOR_END migration without explicit per-PVC authorization**, and observe the §8 NO-GO gates (heal Longhorn → fresh quiesced backup → RD refresh → recreate). No per-ns RoleBinding prereq (cluster-wide CRB).
 
 ### Karakeep — MIGRATED (2026-05-30)
 Karakeep was the highest-risk migration (two PVCs, hourly, non-568 mover, plus a data-pvc immutable-`dataSourceRef` defect). It is now **complete and operator-managed** (commit `93b2b5cb`): both PVCs at `tier=hourly` (cadence preserved), mover normalized 1001→568 with both initial backups **Successful**, after the data-pvc immutable-dsr repair (Option R: refresh RD → PV `Retain` → quiesce → one-shot backup → delete/recreate). It validated the destructive repair + handoff path end-to-end. **Cleanup pending:** the old retained PV `pvc-4cb90a74-e7df-4fc3-a967-1ab8603ffdd4` (`Released`/`Retain`) must NOT be deleted until explicitly approved.
@@ -99,9 +94,9 @@ Then proceed: **1** confirm readiness (RS last backup Successful, RD latestImage
 
 ## 4. Per-PVC migration checklist (proven nginx recipe)
 
-Order is load-bearing — **RBAC first, inline removal last**. Reversing strands the PVC with no backup chain.
+Order is load-bearing — **namespace gate + fuse labels first, inline removal last**. Reversing strands the PVC with no backup chain.
 
-1. **RBAC first.** Add a `RoleBinding pvc-plumber:volsync-writer` stanza for the target namespace to `infrastructure/controllers/pvc-plumber/rbac-volsync-writer.yaml`. Commit → **sync the `pvc-plumber` Argo app** → verify `kubectl get rolebinding pvc-plumber:volsync-writer -n <ns>`.
+1. **Namespace gate (RBAC is already satisfied cluster-wide — no RoleBinding step).** Confirm the cluster-wide `ClusterRoleBinding pvc-plumber:volsync-writer` exists (`kubectl get clusterrolebinding pvc-plumber:volsync-writer`; it covers all namespaces — there is **no per-namespace RoleBinding**). Then add the namespace software-gate label `pvc-plumber.io/managed-namespace: "true"` to the target namespace's manifest so the operator is allowed to write RS/RD there.
 2. **v4 labels + Argo annotations on the PVC.** Add to the PVC: labels `pvc-plumber.io/enabled: "true"`, `pvc-plumber.io/manage-volsync: "true"`, `pvc-plumber.io/tier: "daily"`; annotations `argocd.argoproj.io/compare-options: ServerSideDiff=false` **and** `argocd.argoproj.io/sync-options: ServerSideApply=false`. (Can be the same commit as step 3.)
 3. **Remove the inline RS/RD** documents from the app's `pvc.yaml` (keep the PVC + its `dataSourceRef`). Update any "defined below in this file" comment.
 4. Commit → wait for **Cluster CI green** → **sync the app's Argo Application** (hard-refresh first if it shows a stale `Synced`).
@@ -122,7 +117,7 @@ Do not rely on `git add <file>` alone to scope the commit here.
 
 ## 5. Hard-stop conditions (abort + roll back)
 - Argo `ComparisonError` that does not self-clear after refresh.
-- Missing `volsync-writer` RoleBinding in the target namespace.
+- Missing namespace gate label `pvc-plumber.io/managed-namespace: "true"` (operator emits `skipped-namespace-not-managed`), or missing cluster-wide `ClusterRoleBinding pvc-plumber:volsync-writer`.
 - Missing `volsync-kopia-repository` Secret.
 - `/audit` stale (`stale=true`) or not reflecting live state.
 - Operator logs show `forbidden` / `create-failed` / invalid-label / `panic` / crashloop.
@@ -155,6 +150,40 @@ These predated rc6/rc7. The **pure-doc / comment-only** fixes were applied in th
 - `infrastructure/controllers/pvc-plumber/deployment.yaml` — `pvc-plumber.io/mode: audit` LABEL (×2: Deployment metadata line ~60 + pod template line ~78) contradicts permissive mode. The runtime mode is set by the `PVC_PLUMBER_MODE` env var, so this is cosmetic, but editing the pod-template copy rolls the operator pod on sync. Apply with a deliberate sync, not as a doc-only change. (Legacy-label clarifying comments were added inline in this commit.)
 - `docs/pvc-plumber-v4-prd.md` — Phase-6 "adopt 27 orphans" language contradicts the no-adoption-in-Phase-6 contract in the cutover doc; cross-note rather than rewrite (PRD is a locked design contract).
 
+## 8. SAVE_FOR_END tier — classification (read-only plan, 2026-05-31)
+
+The remaining (non-migrated) PVCs are databases, high-value app state, and special cases. Classified via an 8-agent read-only fan-out + adversarial safety review. **Classes:** **A** = leave on app/DB-native backup, don't pvc-plumber-migrate now · **B** = app-consistent dump/quiesce BEFORE recreate+handoff · **C** = Option-R quiesced volume snapshot acceptable · **D** = defer / human decision.
+
+### Snapshot-safety rule (the key principle)
+A scaled-to-0 **quiesced** Longhorn snapshot is crash-safe **only for files, SQLite, and AOF-at-rest** (the engine closes its file cleanly on shutdown and replays/truncates on start). It is **NOT** app-consistent for a **live multi-file RDBMS** (Postgres — torn WAL/heap if SIGKILL'd before the shutdown checkpoint) or a **fsync-disabled stream log** (Redpanda with `--unsafe-bypass-fsync` — on-disk durability was never guaranteed). Those require a **native dump/export (Class B)** or are **disposable/exempt (Class A)**. Never snapshot a live DB engine and label it a safe backup.
+
+| ns / PVC | engine on PVC | mover | class | strategy |
+|----------|---------------|-------|-------|----------|
+| posthog/postgres-data | live Postgres 15 (self-hosted) | 568 | **A** (B if kept) | Disposable — PVC already carries `volsync.backup/skip-restore=true` (2026-05-01 wipe). If kept, `pg_dump`, never a raw PG_DATA snapshot. |
+| posthog/redis7-data | Valkey, **no persistence** (`save ""`, no AOF) | 568 | **A** | Pure cache — mark `backup-exempt`, never migrate. |
+| posthog/redpanda-data-kafka-0 | Redpanda `--unsafe-bypass-fsync`, ~1h retention | 568 | **A** | Ephemeral/rebuildable (auto-create topics) — `backup-exempt`. |
+| home-assistant/config | SQLite recorder + secrets/tokens/HACS | 568 | **C** | Option-R; high-value, run after the n8n canary; optional HA `.tar` first. |
+| n8n/data | SQLite-at-rest | **1000** | **C** | **Canary** (smallest). CLI export is partial → full snapshot is better fidelity. Preserve UID 1000. |
+| paperless-ngx/data | files (index/thumbs, rebuildable) | 568 | **C** | DB is external CNPG (native). Do `data` before `media`. |
+| paperless-ngx/media | files (**irreplaceable scanned originals**) | 568 | **C** | Optional `document_exporter` first; temp PV Retain. |
+| gitea/gitea-shared-storage | Git repos/LFS (files) | **1000** | **C** | DB is CNPG (native). **Helm special case** — RS/RD are `extraDeploy` in `values.yaml`, dsr injected via `kustomization.yaml` JSONPatch (edit those, not a plain `pvc.yaml`). |
+| immich/library | derived files (~6GiB actual / 300Gi prov.) | 568 | **C — last** | Originals on exempt NFS `nfs-photos`; DB is CNPG. **Flip `immich-server` RollingUpdate→Recreate first.** |
+| redis-instance/redis-master-0 | Redis AOF + RediSearch/ReJSON | **1001** | **C / D** | AOF replays on restart (torn tail truncated — may drop newest index writes; acceptable for a broker/cache). **Scope decision:** it lives under `infrastructure/database/` — confirm pvc-plumber should own database-namespace PVCs before touching; else defer. |
+| cloudnative-pg/* (8: gitea/immich/paperless/temporal × data+WAL) | CNPG PG_DATA/WAL | n/a | **A — NEVER** | Operator-owned; Barman→S3 (RustFS) continuous WAL + daily ScheduledBackup. Never label / never RS/RD / never recreate. Permanent exclusion. |
+
+### Per-tier NO-GO gates (all must hold before any SAVE_FOR_END recreate)
+1. Longhorn robustness **healthy** (not degraded/rebuilding) on the target volume.
+2. **RD `latestImage` refreshed after a fresh quiesced backup** — every RD is currently stale (~2026-05-21; `restore-once` never re-fired). Skipping the bump restores week-old data (the most pervasive landmine).
+3. dataSourceRef drift reconciled-from-Git verified (several live-point at *nonexistent* `-backup` RDs; recreate fixes it only because the Git `-dst` RD exists).
+4. PV reclaim is `Delete` — temp-patch to `Retain` for rollback margin, esp. immich/library + paperless/media.
+5. Preserve non-568 mover UIDs (n8n 1000, gitea 1000, redis 1001).
+6. immich: RollingUpdate→Recreate first. PostHog: if postgres-data kept, verify a clean shutdown log; note `skip-restore=true` suppresses restore.
+
+### Execution order (when authorized — explicit per-PVC only)
+n8n (canary) → home-assistant → gitea → paperless data → paperless media → redis-instance (if scope confirmed) → immich (last) → posthog (A/B only, throwaway). **CNPG: never.**
+
+**Recommendation:** the campaign can pause here — no remaining hard repairs are outstanding (all candidates stable, drift masked, backups current). Resume only on explicit authorization, starting with the n8n canary under the gates above. Full reasoning in Mink: `projects/talos-argocd-proxmox/saveforend-pvc-plumber-migration-classification-2026-05-30-read-only-plan.md`.
+
 ---
 
 ## Appendix — Ready-to-run prompt for the NEXT migration (DO NOT auto-execute)
@@ -162,34 +191,29 @@ These predated rc6/rc7. The **pure-doc / comment-only** fixes were applied in th
 Target: **`homepage-dashboard/config`** · file `my-apps/media/homepage-dashboard/pvc.yaml` · RS `config` / RD `config-dst` · 5Gi · daily · mover 568 · no dsr drift.
 
 ```
-Migrate homepage-dashboard/config to pvc-plumber rc7 operator management.
+> The original homepage-dashboard rc7 prompt here is **obsolete** (homepage-dashboard migrated 2026-05-29; operator is now `v4.0.1`; the per-namespace-RoleBinding "Step 1" no longer exists). Use the current-model template below for a SAVE_FOR_END candidate (start with the §8 canary, `n8n/data`).
 
-Scope: Talos repo + the homepage-dashboard namespace only. Do not touch any other app/PVC.
-Do not touch Karakeep. No /pvc-plumber-adopt. No manual RS/RD. No manual PVC patch/label/annotate.
+Migrate <ns>/<pvc> to pvc-plumber v4.0.1 operator management.
 
-Preconditions to verify (read-only): pvc-plumber rc7 pod Ready/restarts 0; my-apps-homepage-dashboard
-Synced/Healthy, no ComparisonError; live RS/storage... (config) + RD config-dst both managed-by=argocd;
-PVC config Bound, dataSourceRef.name=config-dst (no drift), no v4 labels yet; namespace has
-privileged-movers=true + volsync-kopia-repository Secret; RoleBinding pvc-plumber:volsync-writer
-is ABSENT (will be added). Capture PVC UID.
+Scope: Talos repo + the <ns> namespace only. Do not touch any other app/PVC. No /pvc-plumber-adopt.
+No manual RS/RD. No image/RBAC changes. GitOps only; verify branch before each commit; git commit --only.
 
-Step 1 (RBAC first): add a RoleBinding pvc-plumber:volsync-writer stanza for namespace
-homepage-dashboard to infrastructure/controllers/pvc-plumber/rbac-volsync-writer.yaml. Commit
-"chore(pvc-plumber): grant volsync-writer in homepage-dashboard". Push, wait CI green, sync the
-pvc-plumber Argo app, verify the RoleBinding exists.
+Preconditions (read-only): pvc-plumber v4.0.1 pod Ready; my-apps-<ns> Synced/Healthy; cluster-wide
+ClusterRoleBinding pvc-plumber:volsync-writer present (NO per-ns RoleBinding needed); namespace has
+privileged-movers=true + volsync-kopia-repository Secret; live RS/RD managed-by=argocd; capture PVC UID.
+For a Class-C migration that also has live dataSourceRef drift, run the Option-R sequence (§3 of the
+cutover doc / "Option-R" section above): heal Longhorn → fresh quiesced backup → refresh RD → restore
+final Git dsr → delete+recreate PVC → bring up → handoff.
 
-Step 2 (labels + annotations + inline removal, one commit): edit my-apps/media/homepage-dashboard/pvc.yaml:
-add PVC labels pvc-plumber.io/enabled="true", manage-volsync="true", tier="daily"; the
-compare-options: ServerSideDiff=false annotation is ALREADY present — ADD only
-sync-options: ServerSideApply=false; remove the inline
-ReplicationSource/config and ReplicationDestination/config-dst documents (keep PVC + dataSourceRef).
-kustomize build to validate. Commit "chore(homepage-dashboard): hand off config VolSync to pvc-plumber rc7".
-Push, wait CI green, sync only my-apps-homepage-dashboard (hard-refresh if stale-Synced).
+Handoff commit (the actual operator adoption): add namespace label pvc-plumber.io/managed-namespace="true";
+add PVC fuse labels pvc-plumber.io/enabled="true", manage-volsync="true", tier="daily|hourly" (match
+existing cadence — see the cadence caveat in §1); remove the inline ReplicationSource + ReplicationDestination
+docs (keep PVC + dataSourceRef). kustomize build to validate. Push, wait CI green, sync only my-apps-<ns>
+(hard-refresh first if stale-Synced). PRESERVE the existing mover UID (n8n 1000, gitea 1000, redis 1001).
 
-Step 3 (verify within 60s): RS/config + RD/config-dst recreated as managed-by=pvc-plumber, no '/'
-in labels, backup-identity annotation, shape correct, RD capacity 5Gi; PVC UID unchanged/Bound/
-dataSourceRef unchanged/v4 labels present; /audit owner=managed-by-pvc-plumber, already-matches,
+Verify within 60s: RS/<pvc> + RD/<pvc>-dst recreated as managed-by=pvc-plumber; PVC UID unchanged/Bound/
+dataSourceRef unchanged/fuse labels present; /audit owner=managed-by-pvc-plumber, already-matches, v4,
 stale=false; operator RS latestMoverStatus.result=Successful; operator logs clean; Argo Synced/Healthy.
 
-Hard-stop + rollback per docs/pvc-plumber-v4-migration-readiness.md §5/§6. Stop after report.
+Hard-stop + rollback per §5/§6. Honor the §8 NO-GO gates. Stop after report.
 ```

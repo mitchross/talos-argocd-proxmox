@@ -1,8 +1,14 @@
 # pvc-plumber v4 cutover runbook
 
 > Operational checklist for migrating apps from inline VolSync RS/RD
-> to operator-managed RS/RD under the v4 permissive rollout (operator
-> live in permissive; one PVC migrated).
+> to operator-managed RS/RD under the v4 permissive rollout. As of
+> 2026-05-31: operator **v4.0.1**, permissive; **18 PVCs operator-managed
+> across 13 namespaces**; RBAC is a single cluster-wide
+> `ClusterRoleBinding pvc-plumber:volsync-writer` (no per-namespace
+> RoleBindings). Remaining work = the SAVE_FOR_END tier (see
+> [migration-readiness §8](pvc-plumber-v4-migration-readiness.md)).
+> (Sections below that say "rc7" / "one PVC" are historical
+> implementation record; the current model is the banner above.)
 > This file is the day-of operations guide. Design contract lives in the
 > [PRD](pvc-plumber-v4-prd.md); the post-PRD working backlog is in the
 > [roadmap](pvc-plumber-v4-roadmap.md); per-app status is in the
@@ -187,14 +193,24 @@ alone never writes. Exempt never writes.
 
 ## Managed-namespace contract
 
+> **Updated 2026-05-31 — v4.0.1 RBAC model.** The per-namespace `RoleBinding`
+> model described in earlier revisions of this doc is **retired**. RBAC is now
+> a **single cluster-wide `ClusterRoleBinding pvc-plumber:volsync-writer`**
+> (commit `a1916d61`) that grants the operator SA RS/RD write across all
+> namespaces. There is **no per-namespace RoleBinding step** in a migration.
+> The per-namespace gate is now purely the **software write-gate** (the
+> namespace label), enforced in the operator's reconciler.
+
 The two-gate write fuse on the PVC is necessary but not sufficient. The
-operator ServiceAccount also needs namespace-scoped permission to create
-and delete the VolSync resources it intends to manage. A namespace is
+operator also has to be *allowed* to manage the namespace at all. A namespace is
 **pvc-plumber managed** iff all of the following are true:
 
-1. `RoleBinding/pvc-plumber:volsync-writer` exists in the namespace,
-   bound to ServiceAccount `pvc-plumber:pvc-plumber`. Declared in
-   [`infrastructure/controllers/pvc-plumber/rbac-volsync-writer.yaml`](../infrastructure/controllers/pvc-plumber/rbac-volsync-writer.yaml).
+1. **Namespace software write-gate:** the namespace carries
+   `pvc-plumber.io/managed-namespace: "true"`. The v4.0.1 reconciler checks this
+   label and emits `skipped-namespace-not-managed` for any v4-labeled PVC in a
+   namespace that lacks it — so the operator will **not** create/repair RS/RD
+   there until the label is added. (RBAC is already satisfied fleet-wide by the
+   cluster-wide CRB; the label is the real opt-in.)
 2. Namespace carries label `volsync.backube/privileged-movers: "true"`
    so the `ClusterExternalSecret/volsync-kopia-repository` fanout
    materializes `Secret/volsync-kopia-repository` locally.
@@ -202,57 +218,48 @@ and delete the VolSync resources it intends to manage. A namespace is
    fuses (`pvc-plumber.io/enabled=true` AND
    `pvc-plumber.io/manage-volsync=true`).
 
-Without (1), the v4 reconciler enters a `forbidden` error loop the
-moment it observes a v4-labeled PVC missing its RS/RD — exactly the
-state Argo's selfHeal will produce as soon as inline RS/RD are removed
-from Git. This is the failure mode that produced the
-`nginx-example/storage` incident on 2026-05-27: inline RS/RD were
-removed before operator-writer RBAC was in place, Argo pruned them,
-and the operator could not recreate them.
+Historical note: under the *old* per-namespace-RoleBinding model, removing
+inline RS/RD before the RoleBinding existed stranded the PVC (the
+`nginx-example/storage` incident, 2026-05-27). That specific failure mode is
+gone now that the cluster-wide CRB covers every namespace — but the ordering
+discipline below still matters because of the **software gate**: don't remove
+inline RS/RD before the namespace label + PVC fuses are in place, or Argo prunes
+the chain while the operator is still skipping the (not-yet-gated) PVC.
 
 ### Adding a new managed namespace
 
-Append a `RoleBinding` stanza to
-[`rbac-volsync-writer.yaml`](../infrastructure/controllers/pvc-plumber/rbac-volsync-writer.yaml):
+Add the gate label to the namespace's manifest in Git (no RoleBinding needed):
 
 ```yaml
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+apiVersion: v1
+kind: Namespace
 metadata:
-  name: pvc-plumber:volsync-writer
-  namespace: <new-namespace>
+  name: <new-namespace>
   labels:
-    app.kubernetes.io/name: pvc-plumber
-    app.kubernetes.io/component: backup-restore-operator
+    volsync.backube/privileged-movers: "true"
     pvc-plumber.io/managed-namespace: "true"
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: pvc-plumber:volsync-writer
-subjects:
-  - kind: ServiceAccount
-    name: pvc-plumber
-    namespace: pvc-plumber
 ```
 
-Commit. After Argo syncs the `pvc-plumber` Application, the binding
-exists and the operator can begin reconciling v4-labeled PVCs in that
-namespace.
+Commit + sync the app. The cluster-wide CRB already authorizes the operator;
+the label opts the namespace in, and the operator begins reconciling
+v4-labeled PVCs there.
 
 ### Discovery
 
-Every managed namespace's RoleBinding carries
-`pvc-plumber.io/managed-namespace: "true"`. To enumerate:
+Enumerate managed namespaces by the gate label:
 
 ```sh
-kubectl get rolebinding -A -l pvc-plumber.io/managed-namespace=true
+kubectl get ns -l pvc-plumber.io/managed-namespace=true
+# RBAC: a single cluster-wide binding (NOT per-namespace RoleBindings):
+kubectl get clusterrolebinding pvc-plumber:volsync-writer
 ```
 
 ### RBAC contract
 
 The `pvc-plumber:volsync-writer` ClusterRole grants the operator SA the
-following verbs only:
+following verbs only, bound cluster-wide via the single
+`ClusterRoleBinding pvc-plumber:volsync-writer` (subject
+ServiceAccount `pvc-plumber/pvc-plumber`):
 
 | Resource | Verbs |
 |---|---|
@@ -268,24 +275,26 @@ Explicitly **not** granted (default-deny):
   if a future code path requires Update, the ClusterRole must be
   amended in the same commit)
 - status subresource writes on RS/RD (VolSync owns status)
-- any cluster-wide write (only the per-namespace RoleBindings exist)
+- any resource other than RS/RD (the cluster-wide binding is scoped to
+  exactly the two VolSync kinds above — blast radius is the RS/RD lifecycle,
+  nothing else).
 
 ### Migration order — strict
 
 For every PVC being migrated to operator ownership:
 
-1. **RBAC first**: namespace appears in
-   [`rbac-volsync-writer.yaml`](../infrastructure/controllers/pvc-plumber/rbac-volsync-writer.yaml),
-   PR merged, Argo synced. Verify with check (1) of the preflight
-   checklist below.
-2. **Labels second**: v4 fuses applied to the PVC (via
-   `/pvc-plumber-adopt apply` for an in-flight PVC, or directly in
-   `pvc.yaml` for a fresh PVC).
-3. **Inline RS/RD removal third**: only after all preflight checks
-   pass.
+1. **Namespace gate first** (RBAC is already satisfied cluster-wide — no
+   RoleBinding step): add `pvc-plumber.io/managed-namespace: "true"` to the
+   namespace. Verify the cluster-wide CRB exists (preflight check (1) below).
+2. **PVC fuse labels second**: `pvc-plumber.io/enabled=true` +
+   `manage-volsync=true` + `tier` directly in `pvc.yaml` (the namespace label
+   and the PVC fuses can land in the same handoff commit).
+3. **Inline RS/RD removal third**: in that same handoff commit (or after),
+   only once the gate + fuses are present so the operator can immediately adopt.
 
-Reversing this order strands the PVC without a backup chain
-(nginx-example/storage incident, 2026-05-27).
+Reversing this order (removing inline RS/RD before the namespace gate + fuses)
+strands the PVC: Argo prunes the inline chain while the operator is still
+skipping the un-gated PVC.
 
 ---
 
@@ -584,19 +593,24 @@ mkdir -p /tmp/v4-cutover/<ns>-<pvc> && cd /tmp/v4-cutover/<ns>-<pvc>
       ```sh
       kubectl -n <ns> get secret volsync-kopia-repository
       ```
-- [ ] Verify the namespace is **pvc-plumber managed** (operator can
-      write RS/RD here). See the
+- [ ] Verify RBAC is in place — a **single cluster-wide** binding covers
+      all namespaces (no per-namespace RoleBinding):
+      ```sh
+      kubectl get clusterrolebinding pvc-plumber:volsync-writer -o name
+      ```
+      Expected: `clusterrolebinding.rbac.authorization.k8s.io/pvc-plumber:volsync-writer`.
+- [ ] Verify the namespace is **pvc-plumber managed** (the software
+      write-gate that actually opts the namespace in). See the
       [managed-namespace contract](#managed-namespace-contract) above.
       ```sh
-      kubectl get rolebinding pvc-plumber:volsync-writer -n <ns> -o name
+      kubectl get ns <ns> -o jsonpath='{.metadata.labels.pvc-plumber\.io/managed-namespace}'
       ```
-      Expected: `rolebinding.rbac.authorization.k8s.io/pvc-plumber:volsync-writer`.
-      If empty, the cutover **must not proceed**: removing inline RS/RD
-      from Git will leave Argo pruning them and the operator unable to
-      recreate them, stranding the PVC without a backup chain. Append a
-      RoleBinding for `<ns>` to
-      [`rbac-volsync-writer.yaml`](../infrastructure/controllers/pvc-plumber/rbac-volsync-writer.yaml)
-      in a separate PR first.
+      Expected: `true`. If empty, the cutover **must not proceed**:
+      removing inline RS/RD from Git will leave Argo pruning them while the
+      operator skips the un-gated PVC (`skipped-namespace-not-managed`),
+      stranding the PVC without a backup chain. Add the
+      `pvc-plumber.io/managed-namespace: "true"` label to the namespace
+      manifest in the same handoff commit (or earlier).
 - [ ] Verify the operator pod log has no recent `forbidden` errors for
       `<ns>` (sanity check that the binding above is effective):
       ```sh
@@ -805,7 +819,10 @@ The operator runs **PERMISSIVE**, so it *can* write RS/RD — this is not
 an audit-mode no-write rollback. The blast radius is bounded by the
 executor's safety layers, not by the mode: the GVK allow-list
 (RS/RD only), the ownership re-check before every Update/Delete, the
-two-gate write fuse on the PVC, and namespace-scoped RBAC. A rollback
+two-gate write fuse on the PVC, the namespace software write-gate
+(`pvc-plumber.io/managed-namespace`), and the cluster-wide
+`ClusterRoleBinding pvc-plumber:volsync-writer` (scoped to RS/RD verbs only).
+A rollback
 therefore only changes which RC's executor logic is running against
 **operator-owned RS/RD in managed namespaces**. No PVC, Secret, or
 inline-Argo RS/RD is rewritten by the rollback.
