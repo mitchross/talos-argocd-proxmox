@@ -6,7 +6,7 @@ metadata:
   labels:
     app: copyparty
 spec:
-  replicas: 1
+  replicas: 0  # TEMP: quiesced for pvc-plumber restore drill (2026-05-31); restore to 1 after PVC recreate
   strategy:
     type: Recreate
   selector:
