@@ -2,11 +2,12 @@
 
 > Operational checklist for migrating apps from inline VolSync RS/RD
 > to operator-managed RS/RD under the v4 permissive rollout. As of
-> 2026-05-31: operator **v4.0.1**, permissive; **18 PVCs operator-managed
-> across 13 namespaces**; RBAC is a single cluster-wide
-> `ClusterRoleBinding pvc-plumber:volsync-writer` (no per-namespace
-> RoleBindings). Remaining work = the SAVE_FOR_END tier (see
-> [migration-readiness §8](pvc-plumber-v4-migration-readiness.md)).
+> 2026-05-31: operator **v4.0.1**, permissive; **19 PVCs operator-managed
+> across 14 namespaces** (n8n/data was the first SAVE_FOR_END migration —
+> empty-dsr unlock + mover 1000→568 normalization, both validated); RBAC is a
+> single cluster-wide `ClusterRoleBinding pvc-plumber:volsync-writer` (no
+> per-namespace RoleBindings). Remaining work = the rest of the SAVE_FOR_END
+> tier (see [migration-readiness §8](pvc-plumber-v4-migration-readiness.md)).
 > (Sections below that say "rc7" / "one PVC" are historical
 > implementation record; the current model is the banner above.)
 > This file is the day-of operations guide. Design contract lives in the
