@@ -6,3 +6,6 @@ metadata:
     app.kubernetes.io/name: n8n
     app.kubernetes.io/component: workflow-automation
     volsync.backube/privileged-movers: "true"
+    # pvc-plumber v4.0.1 namespace write-gate (2026-05-31): opts n8n in so the
+    # operator may create/repair RS/RD for the fused data PVC.
+    pvc-plumber.io/managed-namespace: "true"
