@@ -1,6 +1,4 @@
-# Option-R repair (2026-05-31): scaled to 0 to quiesce gitea-shared-storage
-# before the quiesced backup + PVC delete/recreate. Restored to 1 in bring-up.
-replicaCount: 0
+replicaCount: 1
 
 persistence:
   enabled: true
@@ -83,9 +81,7 @@ extraDeploy:
     spec:
       sourcePVC: gitea-shared-storage
       trigger:
-        # Option-R repair (2026-05-31): one-shot quiesced backup while scaled to
-        # 0, before PVC delete/recreate. Restored to schedule "14 2 * * *" in bring-up.
-        manual: backup-2026-05-31-quiesced
+        schedule: "14 2 * * *"
       kopia:
         repository: volsync-kopia-repository
         username: gitea-shared-storage
