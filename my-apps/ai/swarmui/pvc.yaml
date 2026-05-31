@@ -24,6 +24,13 @@ metadata:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     restore-policy: "strict"
+    # pvc-plumber v4.0.1 DRY handoff (2026-05-30): operator-managed at
+    # tier=daily; ns swarmui carries managed-namespace=true. Mover 568.
+    # Migrated via Option-R reset (empty→swarmui-data-dst dsr; recreated from
+    # quiesced snapshot). Old PV pvc-47c2ae80 retained.
+    pvc-plumber.io/enabled: "true"
+    pvc-plumber.io/manage-volsync: "true"
+    pvc-plumber.io/tier: "daily"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -70,6 +77,13 @@ metadata:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     restore-policy: "strict"
+    # pvc-plumber v4.0.1 DRY handoff (2026-05-30): operator-managed at
+    # tier=daily; ns swarmui carries managed-namespace=true. Mover 568.
+    # Migrated via Option-R reset (empty→swarmui-output-dst dsr; recreated from
+    # quiesced snapshot). Old PV pvc-3dc7b545 retained.
+    pvc-plumber.io/enabled: "true"
+    pvc-plumber.io/manage-volsync: "true"
+    pvc-plumber.io/tier: "daily"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -139,134 +153,8 @@ spec:
   storageClassName: nfs-comfyui-10g
   volumeName: swarmui-comfyui-models-nfs-pv
 
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: swarmui-data
-  namespace: swarmui
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: swarmui-data
-spec:
-  sourcePVC: swarmui-data
-  trigger:
-    # Option-R reset batch (2026-05-30): one-shot quiesced backup; restored to
-    # schedule "31 2 * * *" in bring-up.
-    manual: backup-2026-05-30-quiesced
-  kopia:
-    repository: volsync-kopia-repository
-    username: swarmui-data
-    hostname: swarmui
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: swarmui-data-dst
-  namespace: swarmui
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: swarmui-data
-spec:
-  trigger:
-    manual: restore-2026-05-30-quiesced
-  kopia:
-    repository: volsync-kopia-repository
-    username: swarmui-data
-    hostname: swarmui
-    sourceIdentity:
-      sourceName: swarmui-data
-      sourceNamespace: swarmui
-      sourcePVCName: swarmui-data
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes:
-      - ReadWriteOnce
-    capacity: 5Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
-
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: swarmui-output
-  namespace: swarmui
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: swarmui-output
-spec:
-  sourcePVC: swarmui-output
-  trigger:
-    # Option-R reset batch (2026-05-30): one-shot quiesced backup; restored to
-    # schedule "46 2 * * *" in bring-up.
-    manual: backup-2026-05-30-quiesced
-  kopia:
-    repository: volsync-kopia-repository
-    username: swarmui-output
-    hostname: swarmui
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: swarmui-output-dst
-  namespace: swarmui
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: swarmui-output
-spec:
-  trigger:
-    manual: restore-2026-05-30-quiesced
-  kopia:
-    repository: volsync-kopia-repository
-    username: swarmui-output
-    hostname: swarmui
-    sourceIdentity:
-      sourceName: swarmui-output
-      sourceNamespace: swarmui
-      sourcePVCName: swarmui-output
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes:
-      - ReadWriteOnce
-    capacity: 50Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
+# NOTE: inline ReplicationSource/ReplicationDestination for swarmui-data
+# (swarmui-data-dst) and swarmui-output (swarmui-output-dst) were REMOVED on
+# 2026-05-30 (pvc-plumber v4.0.1 DRY handoff). pvc-plumber now owns the RS/RD
+# lifecycle for both fused PVCs. Do not re-add inline RS/RD here.
+# (swarmui-dlbackend + swarmui-comfyui-models remain backup-exempt by design.)

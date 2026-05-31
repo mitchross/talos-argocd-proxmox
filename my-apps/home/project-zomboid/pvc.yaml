@@ -8,6 +8,14 @@ metadata:
   labels:
     app: project-zomboid
     restore-policy: "strict"
+    # pvc-plumber v4.0.1 DRY handoff (2026-05-30): operator-managed at
+    # tier=daily; ns project-zomboid carries managed-namespace=true. Mover 568.
+    # Migrated via Option-R reset (backup→-dst dsr; recreated from quiesced
+    # snapshot). Old PV pvc-d71b929e retained. Sibling zomboid-server-files
+    # stays backup-exempt (not fused).
+    pvc-plumber.io/enabled: "true"
+    pvc-plumber.io/manage-volsync: "true"
+    pvc-plumber.io/tier: "daily"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -15,12 +23,11 @@ spec:
     requests:
       storage: 20Gi
   storageClassName: longhorn
-  # Static dataSourceRef → ReplicationDestination/zomboid-data-dst.
-  # On PVC re-creation (DR / namespace recreate), VolSync's volume
-  # populator reads the latest snapshot from the shared kopia repo
-  # volsync-kopia-repository and binds this PVC with restored data. No-op
-  # while the PVC is already Bound. VolSync ReplicationSource/
-  # ReplicationDestination resources are defined below in this file.
+  # Static dataSourceRef → ReplicationDestination/zomboid-data-dst. No-op while
+  # the PVC is already Bound. RS/RD are operator-managed by pvc-plumber v4.0.1
+  # (DRY handoff, 2026-05-30): the operator creates and repairs
+  # ReplicationSource/zomboid-data + ReplicationDestination/zomboid-data-dst as
+  # managed-by=pvc-plumber via its RS/RD watch.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
@@ -45,68 +52,7 @@ spec:
       storage: 60Gi
   storageClassName: longhorn
 
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: zomboid-data
-  namespace: project-zomboid
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: zomboid-data
-spec:
-  sourcePVC: zomboid-data
-  trigger:
-    # Option-R reset batch (2026-05-30): one-shot quiesced backup; restored to
-    # schedule "59 2 * * *" in bring-up.
-    manual: backup-2026-05-30-quiesced
-  kopia:
-    repository: volsync-kopia-repository
-    username: zomboid-data
-    hostname: project-zomboid
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: zomboid-data-dst
-  namespace: project-zomboid
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: zomboid-data
-spec:
-  trigger:
-    manual: restore-2026-05-30-quiesced
-  kopia:
-    repository: volsync-kopia-repository
-    username: zomboid-data
-    hostname: project-zomboid
-    sourceIdentity:
-      sourceName: zomboid-data
-      sourceNamespace: project-zomboid
-      sourcePVCName: zomboid-data
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes:
-      - ReadWriteOnce
-    capacity: 20Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
+# NOTE: inline ReplicationSource/zomboid-data + ReplicationDestination/
+# zomboid-data-dst were REMOVED on 2026-05-30 (pvc-plumber v4.0.1 DRY handoff).
+# pvc-plumber now owns the RS/RD lifecycle for zomboid-data. Do not re-add here.
+# (zomboid-server-files above remains backup-exempt — no RS/RD by design.)

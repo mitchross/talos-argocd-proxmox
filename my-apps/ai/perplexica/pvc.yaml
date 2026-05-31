@@ -5,6 +5,13 @@ metadata:
   namespace: perplexica
   labels:
     restore-policy: "strict"
+    # pvc-plumber v4.0.1 DRY handoff (2026-05-30): operator-managed at
+    # tier=daily; ns perplexica carries managed-namespace=true. Mover 568.
+    # Migrated via Option-R reset (backup→-dst dsr; recreated from quiesced
+    # snapshot). Old PV pvc-18d3d2c7 retained.
+    pvc-plumber.io/enabled: "true"
+    pvc-plumber.io/manage-volsync: "true"
+    pvc-plumber.io/tier: "daily"
   annotations:
     # With controller.diff.server.side=true, ArgoCD's SSA dry-run tries to
     # null that immutable field and the API server rejects it, producing a
@@ -22,79 +29,16 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  # Static dataSourceRef → ReplicationDestination/perplexica-data-dst.
-  # On PVC re-creation (DR / namespace recreate), VolSync's volume
-  # populator reads the latest snapshot from the shared kopia repo
-  # volsync-kopia-repository and binds this PVC with restored data. No-op
-  # while the PVC is already Bound. VolSync ReplicationSource/
-  # ReplicationDestination resources are defined below in this file.
+  # Static dataSourceRef → ReplicationDestination/perplexica-data-dst. No-op
+  # while the PVC is already Bound. RS/RD are operator-managed by pvc-plumber
+  # v4.0.1 (DRY handoff, 2026-05-30): the operator creates and repairs
+  # ReplicationSource/perplexica-data + ReplicationDestination/
+  # perplexica-data-dst as managed-by=pvc-plumber via its RS/RD watch.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
     name: perplexica-data-dst
 
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: perplexica-data
-  namespace: perplexica
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: perplexica-data
-spec:
-  sourcePVC: perplexica-data
-  trigger:
-    # Option-R reset batch (2026-05-30): one-shot quiesced backup; restored to
-    # schedule "49 2 * * *" in bring-up.
-    manual: backup-2026-05-30-quiesced
-  kopia:
-    repository: volsync-kopia-repository
-    username: perplexica-data
-    hostname: perplexica
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: perplexica-data-dst
-  namespace: perplexica
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: perplexica-data
-spec:
-  trigger:
-    manual: restore-2026-05-30-quiesced
-  kopia:
-    repository: volsync-kopia-repository
-    username: perplexica-data
-    hostname: perplexica
-    sourceIdentity:
-      sourceName: perplexica-data
-      sourceNamespace: perplexica
-      sourcePVCName: perplexica-data
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes:
-      - ReadWriteOnce
-    capacity: 10Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
+# NOTE: inline ReplicationSource/perplexica-data + ReplicationDestination/
+# perplexica-data-dst were REMOVED on 2026-05-30 (pvc-plumber v4.0.1 DRY
+# handoff). pvc-plumber now owns the RS/RD lifecycle. Do not re-add here.
