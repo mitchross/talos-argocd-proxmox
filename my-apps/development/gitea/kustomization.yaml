@@ -25,6 +25,18 @@ patches:
     - op: add
       path: /metadata/labels/restore-policy
       value: strict
+    # pvc-plumber v4.0.1 DRY handoff (2026-05-31): fuse the chart-generated PVC
+    # at tier=daily so the operator creates/manages RS/RD (extraDeploy RS/RD
+    # removed from values.yaml). Operator normalizes mover 1000->568.
+    - op: add
+      path: /metadata/labels/pvc-plumber.io~1enabled
+      value: "true"
+    - op: add
+      path: /metadata/labels/pvc-plumber.io~1manage-volsync
+      value: "true"
+    - op: add
+      path: /metadata/labels/pvc-plumber.io~1tier
+      value: daily
     - op: add
       path: /metadata/annotations/argocd.argoproj.io~1compare-options
       value: ServerSideDiff=false

@@ -69,68 +69,10 @@ valkey:
     persistence:
       enabled: false
 
-extraDeploy:
-  - apiVersion: volsync.backube/v1alpha1
-    kind: ReplicationSource
-    metadata:
-      name: gitea-shared-storage
-      namespace: gitea
-      labels:
-        app.kubernetes.io/managed-by: argocd
-        volsync.backup/pvc: gitea-shared-storage
-    spec:
-      sourcePVC: gitea-shared-storage
-      trigger:
-        schedule: "14 2 * * *"
-      kopia:
-        repository: volsync-kopia-repository
-        username: gitea-shared-storage
-        hostname: gitea
-        compression: zstd-fastest
-        parallelism: 2
-        retain:
-          hourly: 24
-          daily: 7
-          weekly: 4
-          monthly: 2
-        copyMethod: Snapshot
-        storageClassName: longhorn
-        volumeSnapshotClassName: longhorn-snapclass
-        cacheCapacity: 2Gi
-        moverSecurityContext:
-          runAsUser: 1000
-          runAsGroup: 1000
-          fsGroup: 1000
-  - apiVersion: volsync.backube/v1alpha1
-    kind: ReplicationDestination
-    metadata:
-      name: gitea-shared-storage-dst
-      namespace: gitea
-      labels:
-        app.kubernetes.io/managed-by: argocd
-        volsync.backup/pvc: gitea-shared-storage
-    spec:
-      trigger:
-        # Option-R repair (2026-05-31): bumped from restore-once to refresh the
-        # RD latestImage (stale 2026-05-22) before the dsr repair. Re-bumped to
-        # -quiesced after the quiesced backup.
-        manual: restore-2026-05-31-quiesced
-      kopia:
-        repository: volsync-kopia-repository
-        username: gitea-shared-storage
-        hostname: gitea
-        sourceIdentity:
-          sourceName: gitea-shared-storage
-          sourceNamespace: gitea
-          sourcePVCName: gitea-shared-storage
-        copyMethod: Snapshot
-        storageClassName: longhorn
-        volumeSnapshotClassName: longhorn-snapclass
-        cacheCapacity: 2Gi
-        accessModes:
-          - ReadWriteOnce
-        capacity: 10Gi
-        moverSecurityContext:
-          runAsUser: 1000
-          runAsGroup: 1000
-          fsGroup: 1000
+# extraDeploy RS/RD REMOVED 2026-05-31 (pvc-plumber v4.0.1 DRY handoff).
+# The inline ReplicationSource/gitea-shared-storage + ReplicationDestination/
+# gitea-shared-storage-dst that lived here are now operator-managed: pvc-plumber
+# recreates them (managed-by=pvc-plumber, tier=daily, mover normalized 1000->568)
+# because the chart-generated PVC carries the pvc-plumber.io/* fuse labels (added
+# via the kustomization.yaml JSONPatch) and the namespace is gated
+# managed-namespace=true. Do not re-add inline RS/RD here.
