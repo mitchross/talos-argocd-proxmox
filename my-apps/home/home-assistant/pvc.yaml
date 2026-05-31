@@ -40,11 +40,9 @@ metadata:
 spec:
   sourcePVC: config
   trigger:
-    # Migration paused 2026-05-31 (cluster Longhorn outage). RS returned to its
-    # normal hourly schedule so backups resume automatically once Longhorn is
-    # healthy. (dataSourceRef above remains temp-aligned to config-backup — the
-    # pre-existing drift, harmless/masked — pending migration resume.)
-    schedule: "46 * * * *"
+    # Option-R repair RESUMED 2026-05-31: one-shot quiesced backup while scaled
+    # to 0, before PVC delete/recreate. Restored to schedule "46 * * * *" in bring-up.
+    manual: backup-2026-05-31-quiesced
   kopia:
     repository: volsync-kopia-repository
     username: config
