@@ -8,91 +8,32 @@ metadata:
   labels:
     app: copyparty
     restore-policy: "strict"
+    # pvc-plumber v4.0.1 DRY handoff (2026-05-30): operator-managed at
+    # tier=daily; ns copyparty carries managed-namespace=true. Mover 568.
+    # Migrated via Option-R reset (immutable dsr copyparty-data-backup→-dst;
+    # recreated from quiesced snapshot). Old PV pvc-a157ad5f retained.
+    pvc-plumber.io/enabled: "true"
+    pvc-plumber.io/manage-volsync: "true"
+    pvc-plumber.io/tier: "daily"
 spec:
-  accessModes: 
+  accessModes:
     - ReadWriteOnce
   resources:
     requests: 
       storage: 20Gi
   storageClassName: longhorn
-  # Static dataSourceRef → ReplicationDestination/copyparty-data-dst.
-  # On PVC re-creation (DR / namespace recreate), VolSync's volume
-  # populator reads the latest snapshot from the shared kopia repo
-  # volsync-kopia-repository and binds this PVC with restored data. No-op
-  # while the PVC is already Bound. VolSync ReplicationSource/
-  # ReplicationDestination resources are defined below in this file.
+  # Static dataSourceRef → ReplicationDestination/copyparty-data-dst. No-op
+  # while the PVC is already Bound. RS/RD are operator-managed by pvc-plumber
+  # v4.0.1 (DRY handoff, 2026-05-30): the operator creates and repairs
+  # ReplicationSource/copyparty-data + ReplicationDestination/copyparty-data-dst
+  # as managed-by=pvc-plumber via its RS/RD watch.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
     name: copyparty-data-dst
 
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: copyparty-data
-  namespace: copyparty
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: copyparty-data
-spec:
-  sourcePVC: copyparty-data
-  trigger:
-    # Option-R repair (2026-05-30): one-shot quiesced backup while scaled to 0,
-    # before PVC delete/recreate. Restored to schedule "57 2 * * *" in Phase 8.
-    manual: backup-2026-05-30-quiesced
-  kopia:
-    repository: volsync-kopia-repository
-    username: copyparty-data
-    hostname: copyparty
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: copyparty-data-dst
-  namespace: copyparty
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: copyparty-data
-spec:
-  trigger:
-    # Option-R repair (2026-05-30): bumped from restore-once to force VolSync to
-    # pull the latest kopia snapshot into a fresh latestImage before the
-    # copyparty-data immutable-dataSourceRef repair (the standing latestImage
-    # was stale from 2026-05-21). Re-bumped to -quiesced after the quiesced
-    # backup in Phase 5.
-    manual: restore-2026-05-30-quiesced
-  kopia:
-    repository: volsync-kopia-repository
-    username: copyparty-data
-    hostname: copyparty
-    sourceIdentity:
-      sourceName: copyparty-data
-      sourceNamespace: copyparty
-      sourcePVCName: copyparty-data
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes:
-      - ReadWriteOnce
-    capacity: 20Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
+# NOTE: inline ReplicationSource/copyparty-data + ReplicationDestination/
+# copyparty-data-dst were REMOVED on 2026-05-30 as part of the pvc-plumber
+# v4.0.1 DRY handoff. pvc-plumber now owns the RS/RD lifecycle for
+# copyparty-data (fused above; ns gated by managed-namespace=true). Do not
+# re-add inline RS/RD here — drift must be reconciled through the operator.

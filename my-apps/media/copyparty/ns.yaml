@@ -4,3 +4,6 @@ metadata:
   name: copyparty
   labels:
     volsync.backube/privileged-movers: "true"
+    # pvc-plumber v4.0.1 namespace write-gate (2026-05-30): opts copyparty in so
+    # the operator may create/repair RS/RD for fused PVCs (copyparty-data).
+    pvc-plumber.io/managed-namespace: "true"
