@@ -9,11 +9,7 @@ metadata:
     app.kubernetes.io/part-of: smart-home
     app.kubernetes.io/version: stable
 spec:
-  # Option-R repair RESUMED 2026-05-31 (Longhorn recovered: faulted=0,
-  # rebuilding=0, clones schedule again). Scaled to 0 to quiesce config (SQLite
-  # at-rest) for the quiesced backup + PVC delete/recreate. Restored to 1 in
-  # the bring-up phase.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
