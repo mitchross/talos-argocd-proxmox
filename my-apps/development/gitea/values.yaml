@@ -1,3 +1,7 @@
+# Option-R repair (2026-05-31): scaled to 0 to quiesce gitea-shared-storage
+# before the quiesced backup + PVC delete/recreate. Restored to 1 in bring-up.
+replicaCount: 0
+
 persistence:
   enabled: true
   size: 10Gi
