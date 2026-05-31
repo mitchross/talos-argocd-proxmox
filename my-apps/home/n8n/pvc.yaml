@@ -16,12 +16,13 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  # TEMPORARY (Option-R, 2026-05-31): dataSourceRef removed to align Git with
-  # the live PVC (which has NO dataSourceRef) so Argo's sync SSA dry-run has no
-  # immutable-field change to make and the app unwedges. RESTORED to
-  # `dataSourceRef: ReplicationDestination/data-dst` in Phase 6, immediately
-  # before the PVC delete/recreate (the recreated PVC must get data-dst so the
-  # volume populator restores). The RD below stays named data-dst.
+  # Static dataSourceRef → ReplicationDestination/data-dst. No-op while the PVC
+  # is already Bound; on recreate (Phase 7 / DR) the VolSync populator restores
+  # from the latest data-dst snapshot in the shared kopia repo.
+  dataSourceRef:
+    apiGroup: volsync.backube
+    kind: ReplicationDestination
+    name: data-dst
 
 ---
 apiVersion: volsync.backube/v1alpha1
