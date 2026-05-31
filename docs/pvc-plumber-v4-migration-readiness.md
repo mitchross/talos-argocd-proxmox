@@ -164,9 +164,9 @@ A scaled-to-0 **quiesced** Longhorn snapshot is crash-safe **only for files, SQL
 
 | ns / PVC | engine on PVC | mover | class | strategy |
 |----------|---------------|-------|-------|----------|
-| posthog/postgres-data | live Postgres 15 (self-hosted) | 568 | **A** (B if kept) | Disposable — PVC already carries `volsync.backup/skip-restore=true` (2026-05-01 wipe). If kept, `pg_dump`, never a raw PG_DATA snapshot. |
-| posthog/redis7-data | Valkey, **no persistence** (`save ""`, no AOF) | 568 | **A** | Pure cache — mark `backup-exempt`, never migrate. |
-| posthog/redpanda-data-kafka-0 | Redpanda `--unsafe-bypass-fsync`, ~1h retention | 568 | **A** | Ephemeral/rebuildable (auto-create topics) — `backup-exempt`. |
+| posthog/postgres-data | live Postgres 15 (self-hosted) | n/a | **A — ✅ EXEMPT 2026-05-31** | Disposable. `backup-exempt=true` set, inline RS/RD removed, dsr removed (`969a8e35`). PVC retained/Bound (not deleted). **Not** in Option-R queue, **not** pvc-plumber-migrated. If preservation ever needed: native `pg_dump`, never a raw PG_DATA snapshot. |
+| posthog/redis7-data | Valkey, **no persistence** (`save ""`, no AOF) | n/a | **A — ✅ EXEMPT 2026-05-31** | Pure cache. `backup-exempt=true`, RS/RD removed (`969a8e35`). PVC retained/Bound. Never migrate. |
+| posthog/redpanda-data-kafka-0 | Redpanda `--unsafe-bypass-fsync`, ~1h retention | n/a | **A — ✅ EXEMPT 2026-05-31** | Ephemeral/rebuildable (auto-create topics). `backup-exempt=true`, RS/RD removed (`969a8e35`). PVC retained/Bound. Never migrate. |
 | home-assistant/config | SQLite recorder + secrets/tokens/HACS | 568 | **C** | Option-R; high-value, run after the n8n canary; optional HA `.tar` first. |
 | n8n/data | SQLite-at-rest | 1000→568 | **C — ✅ DONE 2026-05-31** | Migrated (`ce634e66`, tier=hourly `27 * * * *`). Empty→`data-dst` dsr repaired; restored from quiesced snapshot; first operator backup Successful. **Mover normalized 1000→568 (approved, validated).** Old PV `pvc-1608bca4` retained. |
 | paperless-ngx/data | files (index/thumbs, rebuildable) | 568 | **C** | DB is external CNPG (native). Do `data` before `media`. |
@@ -185,7 +185,9 @@ A scaled-to-0 **quiesced** Longhorn snapshot is crash-safe **only for files, SQL
 6. immich: RollingUpdate→Recreate first. PostHog: if postgres-data kept, verify a clean shutdown log; note `skip-restore=true` suppresses restore.
 
 ### Execution order (when authorized — explicit per-PVC only)
-~~n8n (canary)~~ ✅ DONE → **home-assistant (next)** → gitea → paperless data → paperless media → redis-instance (if scope confirmed) → immich (last) → posthog (A/B only, throwaway). **CNPG: never.**
+~~n8n (canary)~~ ✅ DONE → **home-assistant (next — paused, see below)** → gitea → paperless data → paperless media → redis-instance (if scope confirmed) → immich (last). ~~posthog~~ ✅ **EXEMPT 2026-05-31** (disposable; backup-exempt, RS/RD removed, never migrate — `969a8e35`). **CNPG: never.**
+
+> **home-assistant is PAUSED (2026-05-31):** its Option-R run hard-stopped at the quiesced-backup step during a cluster-wide Longhorn outage (GPU node `nfwh89` down → `ReplicaSchedulingFailure` on backup clones). HA was restored to service (config PVC intact, never deleted; on inline RS/RD, mover 568). Resume from Phase 0.5/1 only after Longhorn is healthy (0 faulted / 0 degraded, clones schedule cleanly).
 
 **Recommendation:** the campaign can pause here — no remaining hard repairs are outstanding (all candidates stable, drift masked, backups current). Resume only on explicit authorization, starting with the n8n canary under the gates above. Full reasoning in Mink: `projects/talos-argocd-proxmox/saveforend-pvc-plumber-migration-classification-2026-05-30-read-only-plan.md`.
 
