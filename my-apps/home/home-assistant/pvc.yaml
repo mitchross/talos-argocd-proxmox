@@ -17,16 +17,16 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  # Static dataSourceRef → ReplicationDestination/config-dst.
-  # On PVC re-creation (DR / namespace recreate), VolSync's volume
-  # populator reads the latest snapshot from the shared kopia repo
-  # volsync-kopia-repository and binds this PVC with restored data. No-op
-  # while the PVC is already Bound. VolSync ReplicationSource/
-  # ReplicationDestination resources are defined below in this file.
+  # TEMPORARY (Option-R, 2026-05-31): aligned to the live immutable value
+  # config-backup (a dangling/nonexistent RD name the PVC was created with) so
+  # Argo's sync SSA dry-run has no immutable-field change to make and the app
+  # stays syncable. RESTORED to config-dst in Phase 6, immediately before the
+  # PVC delete/recreate (the recreated PVC must get config-dst so the populator
+  # restores). The RD below stays named config-dst (the real restore target).
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
-    name: config-dst
+    name: config-backup
 
 ---
 apiVersion: volsync.backube/v1alpha1
