@@ -109,7 +109,10 @@ extraDeploy:
         volsync.backup/pvc: gitea-shared-storage
     spec:
       trigger:
-        manual: restore-once
+        # Option-R repair (2026-05-31): bumped from restore-once to refresh the
+        # RD latestImage (stale 2026-05-22) before the dsr repair. Re-bumped to
+        # -quiesced after the quiesced backup.
+        manual: restore-2026-05-31-pre-repair
       kopia:
         repository: volsync-kopia-repository
         username: gitea-shared-storage
