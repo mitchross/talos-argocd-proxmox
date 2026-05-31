@@ -7,9 +7,12 @@ metadata:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: server
 spec:
-  replicas: 1
+  # Final disposable reset (2026-05-31): scaled to 0 to quiesce library before
+  # empty PVC recreate + pvc-plumber handoff. Restored to 1 in bring-up.
+  replicas: 0
   strategy:
-    type: RollingUpdate
+    # RWO Longhorn library PVC -> Recreate (RollingUpdate risks Multi-Attach).
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: immich
