@@ -17,16 +17,13 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  # TEMPORARY (Option-R, 2026-05-31): aligned to the live immutable value
-  # config-backup (a dangling/nonexistent RD name the PVC was created with) so
-  # Argo's sync SSA dry-run has no immutable-field change to make and the app
-  # stays syncable. RESTORED to config-dst in Phase 6, immediately before the
-  # PVC delete/recreate (the recreated PVC must get config-dst so the populator
-  # restores). The RD below stays named config-dst (the real restore target).
+  # Static dataSourceRef → ReplicationDestination/config-dst. No-op while the PVC
+  # is already Bound; on recreate (Phase 7) the VolSync populator restores from
+  # the latest config-dst snapshot (quiesced) in the shared kopia repo.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
-    name: config-backup
+    name: config-dst
 
 ---
 apiVersion: volsync.backube/v1alpha1
