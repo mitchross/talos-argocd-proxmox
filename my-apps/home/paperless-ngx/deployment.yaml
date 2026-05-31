@@ -6,9 +6,7 @@ metadata:
 spec:
   strategy:
     type: Recreate
-  # Final disposable reset (2026-05-31): scaled to 0 to quiesce data+media before
-  # empty PVC recreate + pvc-plumber handoff. Restored to 1 in bring-up.
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app: paperless-ngx
