@@ -9,6 +9,12 @@ metadata:
     app: paperless-ngx
     type: data
     restore-policy: "strict"
+    # pvc-plumber v4.0.1 DRY handoff (2026-05-31): operator-managed at
+    # tier=hourly; ns gated managed-namespace=true. Mover 568. Disposable reset
+    # — recreated EMPTY (no dataSourceRef); operator backs up going forward.
+    pvc-plumber.io/enabled: "true"
+    pvc-plumber.io/manage-volsync: "true"
+    pvc-plumber.io/tier: "hourly"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -33,6 +39,12 @@ metadata:
     app: paperless-ngx
     type: media
     restore-policy: "strict"
+    # pvc-plumber v4.0.1 DRY handoff (2026-05-31): operator-managed at
+    # tier=hourly; ns gated managed-namespace=true. Mover 568. Disposable reset
+    # — recreated EMPTY (no dataSourceRef); operator backs up going forward.
+    pvc-plumber.io/enabled: "true"
+    pvc-plumber.io/manage-volsync: "true"
+    pvc-plumber.io/tier: "hourly"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -84,130 +96,7 @@ spec:
       storage: 10Gi
   storageClassName: longhorn
 
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: data
-  namespace: paperless-ngx
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: data
-spec:
-  sourcePVC: data
-  trigger:
-    schedule: "59 * * * *"
-  kopia:
-    repository: volsync-kopia-repository
-    username: data
-    hostname: paperless-ngx
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: data-dst
-  namespace: paperless-ngx
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: data
-spec:
-  trigger:
-    manual: restore-once
-  kopia:
-    repository: volsync-kopia-repository
-    username: data
-    hostname: paperless-ngx
-    sourceIdentity:
-      sourceName: data
-      sourceNamespace: paperless-ngx
-      sourcePVCName: data
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes:
-      - ReadWriteOnce
-    capacity: 10Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
-
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: media
-  namespace: paperless-ngx
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: media
-spec:
-  sourcePVC: media
-  trigger:
-    schedule: "13 * * * *"
-  kopia:
-    repository: volsync-kopia-repository
-    username: media
-    hostname: paperless-ngx
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: media-dst
-  namespace: paperless-ngx
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: media
-spec:
-  trigger:
-    manual: restore-once
-  kopia:
-    repository: volsync-kopia-repository
-    username: media
-    hostname: paperless-ngx
-    sourceIdentity:
-      sourceName: media
-      sourceNamespace: paperless-ngx
-      sourcePVCName: media
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes:
-      - ReadWriteOnce
-    capacity: 20Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
+# NOTE: inline ReplicationSource/ReplicationDestination for data (data-dst) and
+# media (media-dst) were REMOVED 2026-05-31 (pvc-plumber v4.0.1 DRY handoff).
+# pvc-plumber now owns the RS/RD lifecycle for both (tier=hourly, mover 568).
+# Do not re-add inline RS/RD here. (export/consume PVCs above stay backup-exempt.)

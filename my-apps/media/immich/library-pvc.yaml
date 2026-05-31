@@ -9,6 +9,12 @@ metadata:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: library
     restore-policy: "strict"
+    # pvc-plumber v4.0.1 DRY handoff (2026-05-31): operator-managed at
+    # tier=daily; ns gated managed-namespace=true. Mover 568. Disposable reset —
+    # recreated EMPTY (no dataSourceRef); operator backs up going forward.
+    pvc-plumber.io/enabled: "true"
+    pvc-plumber.io/manage-volsync: "true"
+    pvc-plumber.io/tier: "daily"
 spec:
   accessModes:
   - ReadWriteOnce
@@ -21,66 +27,6 @@ spec:
   # instruction; originals live on exempt nfs-photos). pvc-plumber takes over
   # RS/RD at handoff; no restore on recreate by design.
 
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: library
-  namespace: immich
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: library
-spec:
-  sourcePVC: library
-  trigger:
-    schedule: "44 2 * * *"
-  kopia:
-    repository: volsync-kopia-repository
-    username: library
-    hostname: immich
-    compression: zstd-fastest
-    parallelism: 2
-    retain:
-      hourly: 24
-      daily: 7
-      weekly: 4
-      monthly: 2
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: library-dst
-  namespace: immich
-  labels:
-    app.kubernetes.io/managed-by: argocd
-    volsync.backup/pvc: library
-spec:
-  trigger:
-    manual: restore-once
-  kopia:
-    repository: volsync-kopia-repository
-    username: library
-    hostname: immich
-    sourceIdentity:
-      sourceName: library
-      sourceNamespace: immich
-      sourcePVCName: library
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes:
-      - ReadWriteOnce
-    capacity: 300Gi
-    moverSecurityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
+# NOTE: inline ReplicationSource/library + ReplicationDestination/library-dst
+# were REMOVED 2026-05-31 (pvc-plumber v4.0.1 DRY handoff). pvc-plumber now owns
+# the RS/RD lifecycle for library (tier=daily, mover 568). Do not re-add here.
