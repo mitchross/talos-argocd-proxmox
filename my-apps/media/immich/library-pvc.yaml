@@ -16,16 +16,10 @@ spec:
     requests:
       storage: 300Gi
   storageClassName: longhorn
-  # Static dataSourceRef → ReplicationDestination/library-dst.
-  # On PVC re-creation (DR / namespace recreate), VolSync's volume
-  # populator reads the latest snapshot from the shared kopia repo
-  # volsync-kopia-repository and binds this PVC with restored data. No-op
-  # while the PVC is already Bound. VolSync ReplicationSource/
-  # ReplicationDestination resources are defined below in this file.
-  dataSourceRef:
-    apiGroup: volsync.backube
-    kind: ReplicationDestination
-    name: library-dst
+  # dataSourceRef intentionally OMITTED (final disposable reset 2026-05-31):
+  # library is recreated EMPTY (immich library derivatives nuked per user
+  # instruction; originals live on exempt nfs-photos). pvc-plumber takes over
+  # RS/RD at handoff; no restore on recreate by design.
 
 ---
 apiVersion: volsync.backube/v1alpha1
