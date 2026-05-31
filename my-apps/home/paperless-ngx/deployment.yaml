@@ -6,7 +6,7 @@ metadata:
 spec:
   strategy:
     type: Recreate
-  replicas: 0  # TEMP: quiesced for pvc-plumber restore drill (2026-05-31); restore to 1 after PVC recreate
+  replicas: 1
   selector:
     matchLabels:
       app: paperless-ngx
