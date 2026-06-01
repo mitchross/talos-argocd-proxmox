@@ -24,13 +24,26 @@
 # in the PRD.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+# BOOTSTRAP-CORE ONLY (Wave 2). The 2026-06-01 full-cluster nuke/rebuild drill
+# proved that bundling late/optional resources here deadlocks the whole wave
+# gate on a fresh cluster:
+#   - servicemonitor.yaml / prometheusrule.yaml need monitoring.coreos.com CRDs
+#     that don't exist until kube-prometheus-stack at Wave 5 → SyncFailed.
+#   - rbac-adopt.yaml hardcodes a Role/RoleBinding into the nginx-example
+#     namespace (a Wave-6 my-app) → SyncFailed ("namespaces nginx-example not
+#     found"), and the adopt-CLI is NOT part of the v4.0.1 restore path.
+# Those kept pvc-plumber OutOfSync and (originally) blocked root's wave gate.
+# Wave 2 now contains ONLY the bootstrap-critical operator core. The removed
+# files remain in-repo (unreferenced) — re-introduce monitoring via a separate
+# app gated AFTER Wave 5 if/when desired (post-bootstrap optional).
 resources:
   - namespace.yaml
   - serviceaccount.yaml
-  - rbac.yaml
-  - rbac-adopt.yaml
-  - rbac-volsync-writer.yaml
+  - rbac.yaml                  # cluster-wide read-only audit-reader CR + CRB
+  - rbac-volsync-writer.yaml   # cluster-wide RS/RD writer CR + CRB
   - deployment.yaml
   - service.yaml
-  - servicemonitor.yaml
-  - prometheusrule.yaml
+  # --- removed from Wave-2 bootstrap (see header) ---
+  # - rbac-adopt.yaml          # adopt-CLI SA + canary RBAC + nginx-example Role/RB (not in v4 restore path)
+  # - servicemonitor.yaml      # needs monitoring.coreos.com CRD (Wave 5) → post-bootstrap optional
+  # - prometheusrule.yaml      # needs monitoring.coreos.com CRD (Wave 5) → post-bootstrap optional
