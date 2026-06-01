@@ -60,7 +60,7 @@ unknown backup state), **source gating / `min-backup-age`**, **duplicate-identit
 amendment + the §10 failure-matrix drills pass.
 
 ### OPEN QUESTIONS (still unresolved)
-- Whether to build v5 strict mode at all, or keep permissive + the existing MAP backend-gate as "good enough".
+- Whether to build v5 strict mode at all, or keep permissive + the existing MAP backend-gate as "good enough". **NEW framing (2026-06-01): v5 is a fork — (A) a stricter VolSync layer vs (B) a Kopia-native operator (per community ADR-0001). Parked, decision deferred. See [pvc-plumber-v5-kopia-native-future.md](pvc-plumber-v5-kopia-native-future.md).**
 - `redis-instance` ownership: should pvc-plumber own database-namespace PVCs, or leave them inline?
 - Naming-strategy / backup-identity uniqueness (original §17 items 1–2) — moot unless v5 proceeds.
 
