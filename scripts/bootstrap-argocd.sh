@@ -92,17 +92,46 @@ echo ""
 echo "📦 Creating argocd namespace..."
 kubectl apply -f "$ROOT_DIR/infrastructure/controllers/argocd/ns.yaml"
 
+# Step 1.5: Ensure the argocd-redis auth secret exists.
+# values.yaml disables the chart's redis-secret-init hook (it assumes the
+# Secret already exists from a prior install). On a FRESH cluster that Secret
+# is absent, so redis crashes with `secret "argocd-redis" not found` and the
+# whole install wedges. Create it idempotently here so a destroy/recreate
+# bootstrap runs unattended. (Bit us on the 2026-06-01 nuke/recreate.)
+echo ""
+echo "🔑 Ensuring argocd-redis auth secret exists..."
+if ! kubectl get secret argocd-redis -n argocd > /dev/null 2>&1; then
+  kubectl create secret generic argocd-redis -n argocd \
+    --from-literal=auth="$(openssl rand -base64 32)"
+  echo "   ✅ created argocd-redis"
+else
+  echo "   ✅ argocd-redis already present"
+fi
+
 # Step 2: Install ArgoCD using Helm
 echo ""
 echo "⎈ Installing ArgoCD via Helm..."
-helm upgrade --install argocd argo-cd \
+if ! helm upgrade --install argocd argo-cd \
   --repo https://argoproj.github.io/argo-helm \
   --version 9.5.17 \
   --namespace argocd \
   --values "$ROOT_DIR/infrastructure/controllers/argocd/values.yaml" \
   --wait \
   --timeout 10m \
-  --set 'configs.secret.argocdServerAdminPassword=$2a$10$KjM2oz7Et5Ai9JLB4mry6.rfFF0IJfCWuaD2XJ/2sr6oQGcszf8cO'
+  --set 'configs.secret.argocdServerAdminPassword=$2a$10$KjM2oz7Et5Ai9JLB4mry6.rfFF0IJfCWuaD2XJ/2sr6oQGcszf8cO'; then
+  # On a RE-RUN over an already-running ArgoCD, helm can fail with a
+  # server-side-apply conflict on argocd-secret (.data.admin.passwordMtime is
+  # owned by argocd-server once the admin password is used). That's benign:
+  # ArgoCD self-management (root.yaml below) owns argocd-secret via
+  # ServerSideApply=true. Only abort if ArgoCD isn't actually running.
+  if kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=10s > /dev/null 2>&1; then
+    echo "⚠️  Helm reported a conflict, but argocd-server is already Available."
+    echo "    This is expected on a re-run — continuing to self-management (root.yaml)."
+  else
+    echo "❌ Helm install failed and argocd-server is not Available. Aborting."
+    exit 1
+  fi
+fi
 
 # Step 3: Wait for CRDs to be established
 echo ""
