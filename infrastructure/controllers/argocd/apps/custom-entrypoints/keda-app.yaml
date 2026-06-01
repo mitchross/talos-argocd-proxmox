@@ -34,14 +34,11 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
-      # INTERIM (2026-06-01 nuke drill): keda (Wave 4) ships ServiceMonitors whose
-      # monitoring.coreos.com CRDs don't exist until kube-prometheus-stack at Wave 5,
-      # so a fresh-cluster sync fails dry-run and deadlocks the wave gate. Skip
-      # dry-run on the missing CRD so the keda operator deploys now; the
-      # ServiceMonitors reconcile (selfHeal) once monitoring lands. Remove once the
-      # systemic early-prometheus-operator-CRDs app exists (Mink: "REVISIT:
-      # systemic nuke-bootstrap CRD ordering").
-      - SkipDryRunOnMissingResource=true
+      # NOTE: KEDA core renders ZERO monitoring.coreos.com resources (the chart's
+      # ServiceMonitors are disabled in values.yaml; the SMs live in the separate
+      # post-monitoring keda-observability app). So this bootstrap-critical app
+      # syncs cleanly on a fresh cluster WITHOUT Prometheus Operator CRDs — no
+      # SkipDryRunOnMissingResource needed here (removed 2026-06-01).
       - RespectIgnoreDifferences=true
       - Replace=false
     retry:
