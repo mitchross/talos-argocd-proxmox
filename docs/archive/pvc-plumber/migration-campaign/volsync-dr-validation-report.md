@@ -1,3 +1,8 @@
+> [!WARNING]
+> Historical document.
+> This file is preserved for context only and is not the current runbook.
+> Start with: [pvc-plumber-start-here](../../../pvc-plumber-start-here.md) or [docs index](../../../index.md).
+
 # VolSync/Kopia DR Validation Report
 
 Generated: 2026-05-22

@@ -1,3 +1,8 @@
+> [!WARNING]
+> Historical document.
+> This file is preserved for context only and is not the current runbook.
+> Start with: [pvc-plumber-start-here](../../../pvc-plumber-start-here.md) or [docs index](../../../index.md).
+
 # pvc-plumber, explained for homelabbers
 
 If you've got a Kubernetes cluster at home and you've ever wondered "OK but how do I actually back up my Karakeep bookmarks / Immich photos / Home Assistant config without writing a CronJob from scratch every time," this is the doc that explains how pvc-plumber gets you there. No prior controller-runtime knowledge needed.
