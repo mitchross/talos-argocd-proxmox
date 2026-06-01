@@ -838,6 +838,42 @@ distinguishes a real restore from an empty provision. The restored volume comes 
 
 ---
 
+## Rollback PV cleanup plan (NOT yet executed)
+
+> **Status: PLAN ONLY.** Seven `Released`/`Retain` PVs are retained as rollback safety nets from the
+> migration/Option-R/empty-reset work. **Do not delete any of them without explicit per-PV approval.**
+
+These are the *old* PVs left behind when a PVC was deleted+recreated; reclaim policy `Retain` kept the
+underlying Longhorn volume so the pre-migration data is recoverable if a migration went wrong.
+
+| Old PV | App / PVC | Tier | Reclaim priority |
+|---|---|---|---|
+| `pvc-47c2ae80` | swarmui/swarmui-data | reset-batch | **first** (low value) |
+| `pvc-a157ad5f` | copyparty/copyparty-data | reset-batch | **first** (restore drill PASSED — extra safe) |
+| `pvc-be2c62e1` | open-webui/storage | reset-batch | **first** (low value) |
+| `pvc-d71b929e` | project-zomboid/zomboid-data | reset-batch | **first** (low value) |
+| `pvc-4cb90a74` | karakeep/data-pvc | Option-R | keep longer |
+| `pvc-52fd99ba` | home-assistant/config | Option-R | keep longer (recorder DB corrupt-on-restore history) |
+| `pvc-5f52c07b` | gitea/gitea-shared-storage | Option-R | keep longer (git repos) |
+
+**Recommended order:** reclaim the four **reset-batch** PVs first (lower value, and copyparty's live
+PVC has a *passing* restore drill), keep the three **Option-R** PVs (karakeep / home-assistant / gitea)
+longer if you want maximum rollback margin.
+
+**Per-PV preflight before deleting (all must hold):**
+1. Map old PV → its app/PVC (the table above; confirm `claimRef`).
+2. The **replacement** live PVC is `Bound` and healthy, and its app is `Synced/Healthy`.
+3. The replacement PVC has a **recent Successful** operator backup (`RS.status.latestMoverStatus.result=Successful`).
+4. (Ideally) a restore drill has passed for that app, or you accept restore-from-backup as the only net.
+5. **Explicit user approval for that specific PV.**
+
+Deleting a `Released` PV with reclaim `Retain` deletes the Kubernetes PV object; the Longhorn volume is
+then eligible for deletion too. This is irreversible — the pre-migration data is gone. That is why every
+one is gated on approval. (Note: the empty-reset trio — paperless/data+media, immich/library — kept
+**no** rollback PV by design, reclaim was `Delete`; there is nothing to clean up for those.)
+
+---
+
 ## Troubleshooting
 
 ### PVC stuck Pending? Start here.
