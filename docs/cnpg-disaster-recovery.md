@@ -22,9 +22,11 @@ CNPG databases live in two layers:
 | **Postgres data** | inside the CNPG `Cluster` CR | Barman Cloud → RustFS S3 | `spec.bootstrap.recovery` + `externalClusters` |
 | **App state** | outside (ExternalSecret, ScheduledBackup) | committed to Git as declarative state | ArgoCD sync |
 
-**Barman ≠ PVC backups.** The PVC/Kopia system (Kyverno + VolSync + pvc-plumber)
-handles *file-level* PVC backups to NFS. CNPG has its own SQL-aware backup
-path: Barman Cloud → RustFS S3. The two never touch each other. See
+**Barman ≠ PVC backups.** The PVC/Kopia system (pvc-plumber v4 operator + VolSync,
+writing to RustFS S3) handles *file-level* PVC backups. (Kyverno was removed from
+this path in 2026-05 and is no longer involved — see `docs/pvc-plumber-v4-prd.md`.)
+CNPG has its own SQL-aware backup path: Barman Cloud → RustFS S3. The two never
+touch each other. See
 [docs/volsync-storage-recovery.md](volsync-storage-recovery.md) for why both exist.
 
 ### How recovery works (the 30-second version)
