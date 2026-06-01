@@ -16,7 +16,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
 
 # Expected Cilium version — must match infrastructure/networking/cilium/kustomization.yaml
-EXPECTED_CILIUM_VERSION="1.19.3"
+EXPECTED_CILIUM_VERSION="1.19.4"
 
 if command -v cilium > /dev/null 2>&1; then
   CILIUM_CMD="cilium"
@@ -97,7 +97,7 @@ echo ""
 echo "⎈ Installing ArgoCD via Helm..."
 helm upgrade --install argocd argo-cd \
   --repo https://argoproj.github.io/argo-helm \
-  --version 9.5.14 \
+  --version 9.5.17 \
   --namespace argocd \
   --values "$ROOT_DIR/infrastructure/controllers/argocd/values.yaml" \
   --wait \
