@@ -57,9 +57,15 @@ spec:
     requests:
       storage: 20Gi
   storageClassName: longhorn
-  # dataSourceRef intentionally OMITTED (final disposable reset 2026-05-31):
-  # media is recreated EMPTY (scanned originals nuked per user instruction).
-  # pvc-plumber takes over RS/RD at handoff; no restore on recreate by design.
+  # dataSourceRef → ReplicationDestination/media-dst (added 2026-05-31 during the
+  # paperless-media DR-completion drill). The empty reset originally omitted this;
+  # media now holds document originals/archives that pvc-plumber backs up, so the
+  # dsr closes the DR gap — on recreate the VolSync volume populator restores the
+  # latest backup. No-op while Bound. (Matches paperless/data, copyparty, etc.)
+  dataSourceRef:
+    apiGroup: volsync.backube
+    kind: ReplicationDestination
+    name: media-dst
 ---
 ---
 apiVersion: v1
