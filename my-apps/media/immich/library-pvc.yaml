@@ -22,10 +22,18 @@ spec:
     requests:
       storage: 300Gi
   storageClassName: longhorn
-  # dataSourceRef intentionally OMITTED (final disposable reset 2026-05-31):
-  # library is recreated EMPTY (immich library derivatives nuked per user
-  # instruction; originals live on exempt nfs-photos). pvc-plumber takes over
-  # RS/RD at handoff; no restore on recreate by design.
+  # dataSourceRef → ReplicationDestination/library-dst (added 2026-05-31 during the
+  # immich-library DR-completion drill). The empty reset originally omitted this;
+  # library now holds the current (post-reset) working set that pvc-plumber backs
+  # up, so the dsr closes the last optional DR gap — on recreate the VolSync volume
+  # populator restores the latest backup. No-op while Bound. (Matches paperless,
+  # copyparty, etc.) NOTE: originals remain on exempt NFS nfs-photos; the immich
+  # CNPG DB still references pre-reset assets, so this restores the CURRENT library
+  # state only — it does NOT fix the prior DB-to-asset mismatch (accepted).
+  dataSourceRef:
+    apiGroup: volsync.backube
+    kind: ReplicationDestination
+    name: library-dst
 
 # NOTE: inline ReplicationSource/library + ReplicationDestination/library-dst
 # were REMOVED 2026-05-31 (pvc-plumber v4.0.1 DRY handoff). pvc-plumber now owns
