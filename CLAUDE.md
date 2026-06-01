@@ -172,6 +172,14 @@ Detailed instructions load automatically when working in these directories:
 
 ## Additional Documentation
 
+### 🚰 pvc-plumber — visual docs (START HERE, in order)
+1. **[docs/pvc-plumber-start-here.md](docs/pvc-plumber-start-here.md)** — visual intro (what/why, architecture, v4-vs-v5, what it does NOT do).
+2. **[docs/pvc-plumber-dynamic-workflow.md](docs/pvc-plumber-dynamic-workflow.md)** — how the operator thinks (decision trees, ownership classes, `/audit` actions, reusable agent algorithm).
+3. **[docs/talos-argocd-pvc-plumber-integration.md](docs/talos-argocd-pvc-plumber-integration.md)** — how THIS repo uses it (repo map, add-a-PVC checklist, label reference, what-not-to-do).
+4. **[docs/volsync-storage-recovery.md](docs/volsync-storage-recovery.md)** — restore lifecycle + drill runbook (DR source of truth).
+5. **[docs/pvc-plumber-cheatsheet.md](docs/pvc-plumber-cheatsheet.md)** — one-page poster.
+6. **[docs/storage-architecture-future.md](docs/storage-architecture-future.md)** — Longhorn-vs-restore-DR future idea.
+
 - **[docs/volsync-storage-recovery.md](docs/volsync-storage-recovery.md)** - PVC backup/restore single source of truth (architecture, sync waves, admission flow, scenarios, troubleshooting)
 - **[docs/cnpg-disaster-recovery.md](docs/cnpg-disaster-recovery.md)** - CNPG database DR procedures (separate system: Barman → S3)
 - **[docs/network-topology.md](docs/network-topology.md)** - Network architecture details
