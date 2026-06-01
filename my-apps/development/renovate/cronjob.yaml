@@ -6,9 +6,9 @@ metadata:
   labels:
     app.kubernetes.io/name: renovate
 spec:
-  # Poll frequently so Dependency Dashboard checkbox edits behave close to the
-  # hosted GitHub App. concurrencyPolicy=Forbid prevents overlapping scans.
-  schedule: "*/5 * * * *"
+  # Poll hourly for LAN-registry image updates. Offset from the top of the hour
+  # to avoid the common CronJob burst. concurrencyPolicy=Forbid prevents overlap.
+  schedule: "17 * * * *"
   timeZone: "Etc/UTC"
   concurrencyPolicy: Forbid
   startingDeadlineSeconds: 600
