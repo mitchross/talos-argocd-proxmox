@@ -736,8 +736,19 @@ The operator's PVC reconciler creates an `ExternalSecret` that produces a Secret
 ## Restore drill runbook (validating DR-completeness)
 
 A backup that has never been restored is a hypothesis, not a recovery plan. This runbook
-proves a managed PVC actually restores end-to-end. Validated on copyparty (2026-05-31),
-paperless/data (2026-05-31), and paperless/media (2026-05-31).
+proves a managed PVC actually restores end-to-end. Validated byte-identical (sentinel sha256
+match, old PVC uid embedded) on four PVCs:
+
+| PVC | dsr at drill time | Double-recreate? | Note |
+|---|---|---|---|
+| `copyparty/copyparty-data` | already had dsr | n/a | baseline restore proof |
+| `paperless-ngx/data` | **dsr added** | **YES** | first empty-reset drill; deleted before render cache caught up |
+| `paperless-ngx/media` | **dsr added** | no | mitigation held (waited for reconciled rev) |
+| `immich/library` | **dsr added** | no | dual-consumer quiesce + folder markers (see below) |
+
+**The double-recreate is avoidable** — paperless/media and immich both confirmed that *waiting for
+`application.status.sync.revision == dsr commit` before deleting the PVC prevents it*. Only
+paperless/data (the first, deleted too eagerly) needed the second recreate.
 
 ### DR-completeness depends on `dataSourceRef`
 
@@ -747,9 +758,21 @@ populator restores **only if the PVC carries `dataSourceRef → ReplicationDesti
 - **PVC with dsr → restores** from the RD's `latestImage` on recreate. **DR_COMPLETE.**
 - **PVC with NO dsr → recreates EMPTY.** This is the empty-reset state (paperless/data+media,
   immich/library were reset this way). To make such a PVC DR-complete, **add the dsr to Git**.
+- **If empty-on-recreate is genuinely intended** (truly disposable data), that's fine — but mark it
+  **EMPTY_BY_DESIGN** explicitly in the PVC comment so it isn't mistaken for an un-closed DR gap.
 
-As of 2026-05-31, 23/24 operator-managed PVCs are DR_COMPLETE; only `immich/library` remains
-no-dsr (optional — derivatives regenerable from exempt NFS).
+As of 2026-06-01, **24/24 operator-managed PVCs are DR_COMPLETE** (the empty-reset trio each had a
+dsr added + a passing drill). No managed PVC currently recreates empty.
+
+### Multi-consumer PVCs (immich lesson)
+
+If **more than one workload mounts the target PVC** (immich: both `immich-server` *and*
+`immich-machine-learning` mount `library` RWO, co-located by podAffinity), **all of them must be
+scaled to 0** before the PVC will release — a single un-scaled consumer holds the `pvc-protection`
+finalizer and the delete hangs in `Terminating`. Cross-verify the sentinel from **every** consumer
+pod before the backup, to confirm they share the same mount. App-specific startup invariants must
+survive the empty/restored volume too — immich needs an `init-library-markers` initContainer that
+recreates the `.immich` folder-check markers, or `immich-server` crashloops on the restored library.
 
 ### Adding a `dataSourceRef` to a previously-no-dsr PVC — the stale-render race
 
