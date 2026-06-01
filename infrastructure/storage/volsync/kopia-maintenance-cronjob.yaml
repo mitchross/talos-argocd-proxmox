@@ -73,7 +73,7 @@ spec:
             # SHA-pinned per .claude/rules/always-pin-sha. Must be compatible
             # with VolSync mover's Kopia version (VolSync 0.18.x ships kopia
             # ~0.20). Renovate tracks tag + digest in lockstep.
-            image: kopia/kopia:0.22.3@sha256:4dcc208c1b191770bf4d0854f8deec06b4a16b35be4b63abdcfa9755cee7960e
+            image: kopia/kopia:0.23.0@sha256:bd6a449c263465c388339c0637dcd25562e99dcdde286c9d51ade81e138bbf2c
             imagePullPolicy: IfNotPresent
             env:
             # Same S3 endpoint + bucket as the pvc-plumber operator's
