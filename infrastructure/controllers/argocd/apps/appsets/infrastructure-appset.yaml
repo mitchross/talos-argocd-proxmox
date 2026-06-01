@@ -11,7 +11,10 @@ spec:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
       revision: main
       directories:
-      - path: infrastructure/controllers/cert-manager
+      # cert-manager moved to a standalone Wave-1 core-dependency app
+      # (core-dependencies/cert-manager-app.yaml) — the Wave-4 appset placement
+      # caused a circular deadlock with cnpg-barman-plugin (Wave 3). Do NOT
+      # re-add it here or it will be double-managed.
       - path: infrastructure/controllers/external-dns
       - path: infrastructure/controllers/gpu-priority-classes
       - path: infrastructure/controllers/node-feature-discovery
