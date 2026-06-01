@@ -17,6 +17,16 @@ Backups are declared **per PVC** as inlined VolSync resources:
 2. A `ReplicationSource` schedules the backup against the shared kopia repo.
 3. A `ReplicationDestination` defines the restore target the populator uses.
 
+> **DR-completeness — the `dataSourceRef` is mandatory.** A managed PVC with **no**
+> `dataSourceRef` recreates **EMPTY** (the populator never engages) — it is backed up
+> but cannot be restored on recreate. Always include `dataSourceRef → <pvc>-dst`.
+> If you ever need to *add* a dsr to an already-Bound no-dsr PVC, follow the
+> **"Restore drill runbook"** in [`docs/volsync-storage-recovery.md`](../../docs/volsync-storage-recovery.md):
+> commit the dsr, then **hard-refresh and wait until `application.status.sync.revision == dsr commit`
+> before deleting the PVC** (else Argo's stale render recreates it empty — be ready for a
+> double-recreate), and **manually restore RS/RD triggers** afterward (pvc-plumber does not
+> revert manual trigger drift).
+
 The shared kopia repo Secret `volsync-kopia-repository` is fanned out to every
 namespace labeled `volsync.backube/privileged-movers: "true"` by
 `ClusterExternalSecret/volsync-kopia-repository` at
