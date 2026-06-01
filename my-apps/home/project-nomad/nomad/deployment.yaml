@@ -21,7 +21,7 @@ spec:
     spec:
       initContainers:
         - name: init-storage
-          image: busybox:1.37
+          image: busybox:1.38
           command: ["sh", "-c", "mkdir -p /app/storage/logs"]
           volumeMounts:
             - name: nomad-storage
