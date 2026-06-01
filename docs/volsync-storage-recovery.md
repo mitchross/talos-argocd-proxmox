@@ -733,6 +733,88 @@ The operator's PVC reconciler creates an `ExternalSecret` that produces a Secret
 
 ---
 
+## Restore drill runbook (validating DR-completeness)
+
+A backup that has never been restored is a hypothesis, not a recovery plan. This runbook
+proves a managed PVC actually restores end-to-end. Validated on copyparty (2026-05-31),
+paperless/data (2026-05-31), and paperless/media (2026-05-31).
+
+### DR-completeness depends on `dataSourceRef`
+
+On PVC delete/recreate, Argo recreates the PVC from **Git**, and the VolSync volume
+populator restores **only if the PVC carries `dataSourceRef → ReplicationDestination/<pvc>-dst`**.
+
+- **PVC with dsr → restores** from the RD's `latestImage` on recreate. **DR_COMPLETE.**
+- **PVC with NO dsr → recreates EMPTY.** This is the empty-reset state (paperless/data+media,
+  immich/library were reset this way). To make such a PVC DR-complete, **add the dsr to Git**.
+
+As of 2026-05-31, 23/24 operator-managed PVCs are DR_COMPLETE; only `immich/library` remains
+no-dsr (optional — derivatives regenerable from exempt NFS).
+
+### Adding a `dataSourceRef` to a previously-no-dsr PVC — the stale-render race
+
+This is the dangerous part. Two gotchas, both observed live:
+
+1. **manifest-generate-paths stale-render race.** After committing the dsr, if you delete the
+   PVC too soon, Argo's `selfHeal` recreates it from the **cached pre-dsr manifest** → the PVC
+   comes back **EMPTY, no dsr** (paperless/data hit this — a forced double-recreate).
+   **Mitigation:** after the dsr commit, `argocd refresh=hard` and **wait until
+   `application.status.sync.revision == <dsr commit SHA>`** AND `kubectl kustomize <app>` shows
+   the dsr, *before* deleting the PVC. paperless/media followed this and needed **no double-recreate**.
+   If the first recreate still binds empty: hard-refresh again, re-verify the rev, delete the empty
+   PVC again, re-sync. Be ready for the double-recreate.
+
+2. **Bound-PVC ComparisonError (if dsr added before quiesce).** Adding the dsr to Git while the
+   old PVC is still Bound makes Argo's SSA dry-run try to set the immutable `dataSourceRef` on a
+   Bound PVC → `ComparisonError ... PersistentVolumeClaim is invalid: spec: Forbidden`. This is
+   **expected and harmless** once the dsr commit is confirmed reconciled — it clears the moment the
+   PVC is deleted (a fresh create has no immutable violation). Scale-down via GitOps still succeeds
+   through the ComparisonError.
+
+### The drill, step by step
+
+```
+0. Preflight: pod ready/0-restarts; /audit already-matches/managed-by-pvc-plumber/stale=false;
+   PVC Bound; RS/RD managed-by=pvc-plumber; last backup Successful; RD latestImage present;
+   Longhorn faulted=0/rebuilding=0; rollback PV (if any) intact.
+1. (no-dsr PVCs only) Add dataSourceRef → <pvc>-dst to Git PVC. Commit, push.
+   Hard-refresh; WAIT until app sync.revision == dsr commit; verify kustomize renders the dsr.
+2. Sentinel: write a small file with timestamp + OLD PVC uid + random token; record sha256.
+3. Manual backup: patch RS spec.trigger -> {"manual":"<val>","schedule":null}. Wait result=Successful,
+   lastSync AFTER sentinel. (Kopia log shows the small "N hashed (… B)" new file.)
+4. RD refresh: patch RD spec.trigger.manual -> new value. Wait latestImage advances + VolumeSnapshot
+   readyToUse=true.
+5. Quiesce: scale the workload to 0 via GitOps (commit replicas:0, sync). PVC stays Bound, detaches.
+6. Delete the PVC (reclaim=Delete nukes the live volume — backup is the net). Sync. Watch it rebind
+   WITH dsr=<pvc>-dst and actualSize > 0 (restored, not empty). New uid != old uid.
+7. Scale back up via GitOps (commit replicas:1). Verify sentinel byte-identical (sha256 match, OLD
+   uid embedded), real data present, write test passes.
+8. Cleanup: restore canonical RS/RD triggers (see below); remove sentinel.
+```
+
+### Two cleanup obligations that are NOT automatic
+
+- **RS/RD trigger drift — pvc-plumber will NOT revert it.** The operator watches *PVCs*, not
+  RS/RD, so your manual `trigger` patches persist. **You must restore them**: RS →
+  `{"schedule":"<MM> * * * *"}` (clear `manual`), RD → `{"manual":"restore-once"}`. Leaving the RS
+  on `manual` silently **disables scheduled backups**. Verify `RS.status.nextSyncTime` reappears.
+
+- **Scale-back-up may need a clean hard-refresh-to-clear before sync (ArgoCD stale cluster-state
+  cache).** Observed on paperless/media: the `replicas:0→1` sync reported `Succeeded` but the
+  Deployment stayed at 0 (server-side diff no-opped against a stale live view). Fix: issue
+  `argocd refresh=hard`, **wait for the refresh annotation to clear and the Deployment to show
+  OutOfSync**, *then* sync. See [docs/argocd.md] stale-sync notes. (Syncing while the hard-refresh
+  is still in flight races the cache and no-ops.)
+
+### What "restored" proves vs not
+
+The sentinel's embedded **old** PVC uid is the proof the bytes came from backup (a fresh/empty
+recreate could never contain the old uid). A non-empty Longhorn `actualSize` on the new volume
+distinguishes a real restore from an empty provision. The restored volume comes up `degraded`
+(initial replica rebuild) and self-heals — do **not** touch replica counts.
+
+---
+
 ## Troubleshooting
 
 ### PVC stuck Pending? Start here.
