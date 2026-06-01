@@ -51,18 +51,24 @@ webhooks:
       cpu: 250m
       memory: 256Mi
 
-# Run the built-in Prometheus ServiceMonitor so we can later dashboard
-# "how many times did KEDA scale up temporal-worker and for which queue".
+# Metrics endpoints/services stay ON, but the ServiceMonitor CRs are DISABLED
+# here. ServiceMonitor is a monitoring.coreos.com CRD that does not exist until
+# kube-prometheus-stack at Wave 5 — bundling it in this Wave-4 bootstrap-critical
+# app coupled cluster restore to Prometheus Operator and deadlocked the
+# 2026-06-01 nuke/rebuild. Observability is OPTIONAL and must not be a bootstrap
+# dependency. The KEDA ServiceMonitors now live in the separate post-monitoring
+# app `keda-observability` (infrastructure/controllers/keda-observability).
+# Do NOT re-enable these here.
 prometheus:
   metricServer:
     enabled: true
     serviceMonitor:
-      enabled: true
+      enabled: false
   operator:
     enabled: true
     serviceMonitor:
-      enabled: true
+      enabled: false
   webhooks:
     enabled: true
     serviceMonitor:
-      enabled: true
+      enabled: false

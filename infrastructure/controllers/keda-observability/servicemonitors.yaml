@@ -1,0 +1,62 @@
+# KEDA ServiceMonitors — OPTIONAL observability, split out of the KEDA core app.
+#
+# These were previously rendered by the keda Helm chart (Wave 4) via
+# prometheus.*.serviceMonitor.enabled=true, which coupled KEDA's bootstrap to
+# the monitoring.coreos.com CRDs (kube-prometheus-stack, Wave 5) and deadlocked
+# the 2026-06-01 full-cluster nuke/rebuild. They now live here and sync AFTER
+# monitoring exists (see keda-observability-app.yaml, wave 6). Specs mirror the
+# chart output (port `metrics`, path `/metrics`); KEDA core still exposes the
+# metrics services (prometheus.*.enabled=true) so these scrape them.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: keda-operator
+  namespace: keda
+  labels:
+    app.kubernetes.io/name: keda-operator
+    app.kubernetes.io/part-of: keda-operator
+    app.kubernetes.io/component: operator
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: keda-operator
+  endpoints:
+    - port: metrics
+      path: /metrics
+      scheme: http
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: keda-operator-metrics-apiserver
+  namespace: keda
+  labels:
+    app.kubernetes.io/name: keda-operator
+    app.kubernetes.io/part-of: keda-operator
+    app.kubernetes.io/component: operator
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: keda-operator-metrics-apiserver
+  endpoints:
+    - port: metrics
+      path: /metrics
+      scheme: http
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: keda-admission-webhooks
+  namespace: keda
+  labels:
+    app.kubernetes.io/name: keda-admission-webhooks
+    app.kubernetes.io/part-of: keda-operator
+    app.kubernetes.io/component: operator
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: keda-admission-webhooks
+  endpoints:
+    - port: metrics
+      path: /metrics
+      scheme: http
