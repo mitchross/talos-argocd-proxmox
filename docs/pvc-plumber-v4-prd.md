@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | **Locked. Phase 0 (documentation alignment) complete.** Phase 1 (inventory) is the next gate before any operator code or cluster changes. |
+| Status | **v4.0.1 SHIPPED (permissive); migration + DR-completeness campaign COMPLETE (24/24 DR_COMPLETE, 2026-06-01).** See **§0 CANONICAL STATUS** for shipped-vs-design. The locked design's strict/webhook half (§6–§10, phases 8–12) is FUTURE v5, not built. |
 | Decision lock | pvc-plumber is the intended long-term platform abstraction for label-driven, fail-closed, GitOps-friendly PVC backup and restore. The 2026-05-21 decommission is reversed by this PRD. |
 | Operator repo | <https://github.com/mitchross/pvc-plumber> (current head: `v3.1.0-1-g6f63d54`, 2026-05-08). |
 | GitOps repo | This repository (`talos-argocd-proxmox`). |
@@ -10,6 +10,68 @@
 | First written | 2026-05-22. |
 
 > **Execution status (2026-05-29, not part of the locked design):** Phases 1–6 effectively complete — inventory generated, operator code at rc7, deployed in PERMISSIVE mode, first app (nginx-example/storage) migrated to operator-managed RS/RD with a Successful backup. Live status tracked in docs/pvc-plumber-v4-migration-readiness.md.
+
+---
+
+## 0. CANONICAL STATUS (2026-06-01) — shipped reality vs original design
+
+> This section is the **source of truth for what is actually live**. The locked design
+> below (§1–§19) is preserved as the original PRD record; where the two differ, this
+> section wins. Added after the migration + DR-completeness campaign closed.
+
+### SHIPPED — pvc-plumber v4.0.1 (live, permissive mode)
+- Operator image `4.0.1@sha256:721d770…`, deployed at **Wave 2**, **permissive** mode, healthy (0 restarts).
+- **Label/RBAC model as built (differs from the §3/§8/§16 webhook-centric design):**
+  - Namespace **software write-gate**: `pvc-plumber.io/managed-namespace: "true"`.
+  - PVC **fuse labels**: `pvc-plumber.io/enabled`, `pvc-plumber.io/manage-volsync`, `pvc-plumber.io/tier`.
+  - A single **cluster-wide `ClusterRoleBinding pvc-plumber:volsync-writer`** (RS/RD verbs) — **no per-namespace RoleBindings**.
+  - The controller **watches PersistentVolumeClaims** and reconciles RS/RD; it forces mover `568/568/568`.
+- Generated RS (`<pvc>`) + RD (`<pvc>-dst`) carry `app.kubernetes.io/managed-by: pvc-plumber`.
+- `/audit` HTTP endpoint live (port 8080) — reports `action`, `owner_classification`, `label_source`, `stale` per PVC.
+- A scheduled `kopia-maintenance` CronJob (volsync-system, every 6h) handles repo maintenance.
+
+### PROVEN — restore-drill behavior (end-to-end, byte-identical)
+Four delete→recreate→VolSync-populator-restore drills passed (sentinel sha256 match, old-uid embedded):
+- `copyparty/copyparty-data` (had dsr) — baseline restore proof.
+- `paperless-ngx/data` (empty-reset; **dsr added**) — hit the stale-render race → needed a double-recreate.
+- `paperless-ngx/media` (empty-reset; **dsr added**) — no double-recreate (mitigation held).
+- `immich/library` (empty-reset; **dsr added**) — no double-recreate; both consumers quiesced; marker initContainer OK.
+Runbook: `docs/volsync-storage-recovery.md` → "Restore drill runbook".
+
+### MIGRATION CAMPAIGN STATUS — COMPLETE for normal app PVCs
+- **24 operator-managed PVCs across 18 namespaces.** **24/24 are DR_COMPLETE** (Git `dataSourceRef → matching managed RD`).
+- **PostHog** (4 PVCs) — `backup-exempt`/disposable; never migrate.
+- **CNPG** (8 PVCs) — never generic-migrated; native Barman→S3 (RustFS). Permanent exclusion.
+- **redis-instance/redis-master-0** — DEFERRED (Bitnami StatefulSet + database-namespace scope question).
+- No remaining normal app-PVC migration work.
+
+### DEPRECATED — Kyverno path (fully removed)
+Kyverno is **not** in the backup path: no live Kyverno install, zero ClusterPolicies/Policies, zero policy
+manifests in Git (verified 2026-06-01). The label→RS/RD generation Kyverno once did is now the operator's
+reconciler. Remaining Kyverno mentions are historical (research/plans/presentation docs + the 2026-04-08
+webhook-deadlock incident note). Per §2 this was always a non-goal for v4.
+
+### FUTURE — v5 "strict restore" architecture (NOT shipped; do not overclaim)
+The locked design's webhook/decision-engine vision (§6–§10, §14 phases 8–12) is **not built**. v4.0.1 ships the
+*reconciler + permissive* half only. A future **v5** would add: admission **mutating/validating webhooks**,
+the **cache-first backup-truth engine** with stale detection, **`enforce`/`strict` modes** (fail-closed on
+unknown backup state), **source gating / `min-backup-age`**, **duplicate-identity** enforcement, full
+**metrics/events**, and **whole-cluster-nuke restore protection**. These remain design-only until a v5 PRD
+amendment + the §10 failure-matrix drills pass.
+
+### OPEN QUESTIONS (still unresolved)
+- Whether to build v5 strict mode at all, or keep permissive + the existing MAP backend-gate as "good enough".
+- `redis-instance` ownership: should pvc-plumber own database-namespace PVCs, or leave them inline?
+- Naming-strategy / backup-identity uniqueness (original §17 items 1–2) — moot unless v5 proceeds.
+
+### OPS FOLLOW-UPS (tracked, not done in this PRD)
+1. **Kopia maintenance** — repeated "too many index blobs" warnings; plan in `docs/kopia-maintenance-plan.md` (not yet run).
+2. **Rollback PV cleanup** — 7 retained `Released/Retain` PVs; plan in `docs/volsync-storage-recovery.md` (not yet executed).
+3. **Longhorn / storage policy review** — tiered local-restore vs replicated-critical; `docs/storage-architecture-future.md`.
+4. **redis-instance final decision** (above).
+5. **vb-test/vbtest1** — disposable Longhorn test volume, lingering `degraded`; clean up.
+
+---
 
 ## 1. Problem and goal
 
