@@ -13,6 +13,7 @@ This cluster uses **llama-cpp** (NOT ollama) for all local AI inference.
 - Creative-only toy: Qwen 3.5 Uncensored — **keep abliterated models OUT of
   Perplexica / RAG / tool-calling** (abliteration degrades accuracy)
 - Full preset list (model IDs clients send in the `model` field): `my-apps/ai/llama-cpp/presets.ini`
+- **What each model is / when to use it: [`docs/ai-model-catalog.md`](../../docs/ai-model-catalog.md)**
 - **Models swap natively** via `llama-server --models-preset` — no external
   `llama-swap` needed. `--models-max 1` = one resident at a time.
 
