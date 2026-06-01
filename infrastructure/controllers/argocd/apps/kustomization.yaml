@@ -9,6 +9,7 @@ resources:
   - bootstrap/external-secrets.yaml
 
   # Core dependencies: storage and restore services required by later waves.
+  - core-dependencies/cert-manager-app.yaml   # Wave 1 — moved out of the Wave-4 infra-appset (cnpg-barman-plugin Wave 3 needs it)
   - core-dependencies/longhorn-app.yaml
   - core-dependencies/snapshot-controller-app.yaml
   - core-dependencies/volsync-app.yaml
