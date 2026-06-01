@@ -1,3 +1,8 @@
+> [!WARNING]
+> Historical document.
+> This file is preserved for context only and is not the current runbook.
+> Start with: [pvc-plumber-start-here](../../../pvc-plumber-start-here.md) or [docs index](../../../index.md).
+
 # pvc-plumber v3.0.0 cutover runbook
 
 The 2026-05-08 incident post-mortem is in

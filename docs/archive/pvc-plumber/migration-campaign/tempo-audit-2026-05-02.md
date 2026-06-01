@@ -1,3 +1,8 @@
+> [!WARNING]
+> Historical document.
+> This file is preserved for context only and is not the current runbook.
+> Start with: [pvc-plumber-start-here](../../../pvc-plumber-start-here.md) or [docs index](../../../index.md).
+
 # Tempo audit — 2026-05-02
 
 Holistic read-only review of the `talos-argocd-proxmox` repo and live cluster, conducted via a `claude-tempo` ensemble of six parallel specialist agents. No file edits, no `kubectl` mutations.

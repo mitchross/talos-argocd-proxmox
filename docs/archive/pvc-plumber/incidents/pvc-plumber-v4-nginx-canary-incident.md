@@ -1,3 +1,8 @@
+> [!NOTE]
+> Historical incident record.
+> Useful for understanding why the current design exists, but not current operating guidance.
+> Start with: [pvc-plumber-start-here](../../../pvc-plumber-start-here.md) or [docs index](../../../index.md).
+
 # pvc-plumber v4 nginx-example/storage canary incident
 
 **Date:** 2026-05-27 → 2026-05-29

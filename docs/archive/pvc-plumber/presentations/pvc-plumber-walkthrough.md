@@ -1,3 +1,8 @@
+> [!WARNING]
+> Historical document.
+> This file is preserved for context only and is not the current runbook.
+> Start with: [pvc-plumber-start-here](../../../pvc-plumber-start-here.md) or [docs index](../../../index.md).
+
 # pvc-plumber: How It Works (Plain English Walkthrough)
 
 **Purpose**: a narrative explanation of what the cluster's PVC backup/restore system does, why it's shaped this way, and what changed when Kyverno was removed.
