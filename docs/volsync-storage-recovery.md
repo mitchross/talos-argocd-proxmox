@@ -750,6 +750,41 @@ match, old PVC uid embedded) on four PVCs:
 `application.status.sync.revision == dsr commit` before deleting the PVC prevents it*. Only
 paperless/data (the first, deleted too eagerly) needed the second recreate.
 
+### Restore lifecycle at a glance
+
+```mermaid
+sequenceDiagram
+    participant U as User/Argo
+    participant K as Kubernetes
+    participant V as VolSync populator
+    participant R as RD (-dst)
+    participant P as pvc-plumber
+    U->>K: delete PVC
+    U->>K: recreate PVC (from Git, WITH dataSourceRef)
+    K->>V: PVC has dataSourceRef → populate
+    V->>R: read latestImage (VolumeSnapshot)
+    R-->>V: restored data
+    V->>K: PVC Bound (data restored)
+    K->>U: app pod starts
+    P->>K: verify / re-own RS + RD (managed-by=pvc-plumber)
+    Note over P,R: next scheduled backup resumes
+```
+
+**Drill pattern (what the runbook does):** create sentinel (embed OLD uid + sha256) → manual RS backup
+→ RD refresh (new `latestImage`) → scale app to 0 → delete + recreate PVC → verify sentinel
+byte-identical (old uid proves restore-from-backup) → scale up → restore canonical RS/RD triggers.
+
+**Proven on real apps:**
+
+| App / PVC | What it proved |
+|---|---|
+| `copyparty/copyparty-data` | normal restore proof (PVC already had dsr) |
+| `paperless-ngx/data` | empty-reset **forward chain** (add dsr → backup → restore); hit the stale-render race |
+| `paperless-ngx/media` | clear DR-gap closure; **no** double-recreate (waited for reconciled rev) |
+| `immich/library` | **multi-consumer** PVC (server + ML both mount it); folder-marker initContainer |
+| `home-assistant/config` (earlier) | config/.storage restored; **recorder SQLite history did NOT survive** (corrupt-on-restore) |
+| `gitea/gitea-shared-storage` (earlier) | Helm **`extraDeploy`** RS/RD pattern; repos restored; DB stayed native CNPG |
+
 ### DR-completeness depends on `dataSourceRef`
 
 On PVC delete/recreate, Argo recreates the PVC from **Git**, and the VolSync volume
