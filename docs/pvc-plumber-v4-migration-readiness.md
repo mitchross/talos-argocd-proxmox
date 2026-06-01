@@ -147,9 +147,9 @@ RS/RD are orchestration CRs, not data; churn does not touch the PVC or the kopia
 These predated rc6/rc7. The **pure-doc / comment-only** fixes were applied in the `docs(pvc-plumber): consolidate rc7 canary state and next migration plan` commit (2026-05-29). The only remaining item is the gated deployment.yaml label, which rolls the pod and must wait for a deliberate sync.
 
 **✅ Fixed (this commit, pure doc / comment-only):**
-- `docs/pvc-plumber-v4-nginx-canary-incident.md` — terminal state corrected: rc7 shipped the watch fix and the canary is **complete / operator-managed / backup Successful**; "Current safe state" relabeled historical with a current-state block added.
+- `docs/archive/pvc-plumber/incidents/pvc-plumber-v4-nginx-canary-incident.md` — terminal state corrected: rc7 shipped the watch fix and the canary is **complete / operator-managed / backup Successful**; "Current safe state" relabeled historical with a current-state block added.
 - `docs/pvc-plumber-v4-cutover.md` — Status section updated to rc7/permissive; karakeep reframed as deferred (nginx was the first canary); per-PVC rollback points to the GitOps procedure; change-log entry added.
-- `docs/pvc-plumber-v4-inventory.md` — staleness banner added noting nginx-example/storage is now operator-managed and the snapshot predates rc5–rc7.
+- `docs/archive/pvc-plumber/inventories/pvc-plumber-v4-inventory.md` — staleness banner added noting nginx-example/storage is now operator-managed and the snapshot predates rc5–rc7.
 - `docs/pvc-plumber-v4-roadmap.md` — visual-explainer gate corrected (nginx, not karakeep); rc6/rc7 added to Completed.
 - `docs/pvc-plumber-v4-prd.md` — execution cross-notes added under the Status row and the Phase-6 "27 orphans" row (locked design body unchanged).
 - `infrastructure/controllers/pvc-plumber/README.md` — rewritten for permissive rc7 (synced, RBAC, blast-radius bounds, nginx canary, next candidate).

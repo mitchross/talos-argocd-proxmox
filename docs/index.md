@@ -10,13 +10,23 @@ needed.
 > This site is the rendered version of `docs/` from that repo. Pages link
 > back to source files (✏️ edit icon, top right) for one-click PRs.
 
+> [!IMPORTANT]
+> **Current pvc-plumber state (2026-06-01):**
+> - v4.0.1 live (permissive controller — **not** an admission gate)
+> - 24 PVCs / 18 namespaces managed
+> - 24/24 DR_COMPLETE
+> - Kyverno **not** in the backup path
+> - CNPG native / Barman → S3
+> - PostHog backup-exempt · redis-instance backup-exempt
+> - migration campaign **closed** — no remaining candidates
+
 ## Stack
 
 - **OS**: Talos Linux on Proxmox VMs, provisioned via Omni / Sidero
 - **CNI**: Cilium with Gateway API + LoadBalancer
 - **GitOps**: ArgoCD (self-managing) + ApplicationSets for auto-discovery
-- **Storage**: Longhorn (RWO block) + TrueNAS NFS (Kopia repository)
-- **Backup**: VolSync + Kopia + custom [pvc-plumber](https://github.com/mitchross/pvc-plumber) admission gate
+- **Storage**: Longhorn (RWO block) + TrueNAS/RustFS (Kopia repository on S3)
+- **Backup**: VolSync + Kopia, wired by [pvc-plumber](https://github.com/mitchross/pvc-plumber) v4 (a permissive PVC-watching controller)
 - **Database**: CloudNativePG (Postgres) with Barman backups to RustFS S3
 - **Secrets**: 1Password Connect + External Secrets Operator
 - **Observability**: kube-prometheus-stack, Loki, Tempo, OpenTelemetry, Grafana
@@ -24,41 +34,48 @@ needed.
 
 ## Documentation
 
-### Storage & disaster recovery
+### 🚀 Start here (pvc-plumber)
 
-- **[PVC backup/restore (VolSync)](volsync-storage-recovery.md)** — the
-  zero-touch system: add a label, get backup, encryption, dedup, and
-  automatic restore-on-create. Designed for cluster rebuilds.
-- **[Database DR (CloudNativePG)](cnpg-disaster-recovery.md)** — separate
-  system: Barman → S3, lineage versioning (`-v1` / `-v2`), recovery
-  overlay flag, runbook for in-place restore.
+1. **[pvc-plumber-start-here](pvc-plumber-start-here.md)** — visual intro: what it is, the architecture, what it does NOT do, v4-vs-v5.
+2. **[pvc-plumber-cheatsheet](pvc-plumber-cheatsheet.md)** — one-page poster.
+3. **[pvc-plumber-dynamic-workflow](pvc-plumber-dynamic-workflow.md)** — how the operator thinks (decision trees, `/audit` actions).
+4. **[talos-argocd-pvc-plumber-integration](talos-argocd-pvc-plumber-integration.md)** — how this repo uses it (add-a-PVC checklist, labels).
 
-### GitOps architecture
+### 🛠️ Operate the platform
 
-- **[ArgoCD & sync waves](argocd.md)** — App-of-Apps pattern, sync wave
-  strategy, ServerSideDiff, Lua health checks for non-standard CRDs.
-- **[Root entrypoints](argocd-entrypoints.md)** — how the root Application
-  bootstraps ApplicationSets and where each lives in the wave order.
+- **[volsync-storage-recovery](volsync-storage-recovery.md)** — PVC backup/restore single source of truth + restore-drill runbook.
+- **[kopia-maintenance-plan](kopia-maintenance-plan.md)** — repository maintenance (healthy; manual full not needed).
+- **[storage-architecture-future](storage-architecture-future.md)** — Longhorn-vs-restore-DR tiering (future idea).
+- **[pvc-plumber-v4-cutover](pvc-plumber-v4-cutover.md)** — day-of cutover runbook (label model, ownership, rollback).
+- **[pvc-plumber-v4-migration-readiness](pvc-plumber-v4-migration-readiness.md)** — per-PVC migration status (campaign closed).
+- **[cluster-dr-nuke-restore-runbook](cluster-dr-nuke-restore-runbook.md)** — full cluster rebuild/restore runbook.
 
-### Networking
+### 📐 Design / PRD
 
-- **[Network topology](network-topology.md)** — single-network 10 G design,
-  Cilium config, MetalLB scope, Cloudflare tunnel for external access.
-- **[Cilium network policies](network-policy.md)** — namespace-level
-  default-deny patterns, cluster-mesh-ready policy structure.
+- **[pvc-plumber-v4-prd](pvc-plumber-v4-prd.md)** — locked design + **§0 canonical status** (shipped vs design).
+- **[pvc-plumber-v4-roadmap](pvc-plumber-v4-roadmap.md)** — post-PRD backlog.
+- **[pvc-plumber-v5-kopia-native-future](pvc-plumber-v5-kopia-native-future.md)** — v5 fork (VolSync-strict vs Kopia-native) — **parked, not built.**
+- **[multicluster-prd](multicluster-prd.md)** — multicluster design.
 
-### Observability
+### 🗃️ Other domains
 
-- **[radar-ng cookbook](radar-ng-observability.md)** — the per-app
-  observability layer (collectors, retention, storage backends).
-- **[Tempo audit (2026-05-02)](tempo-audit-2026-05-02.md)** — historical
-  audit of the Tempo deployment. Linked here for archival; current Tempo
-  config has moved on.
+- **Databases**: [cnpg-disaster-recovery](cnpg-disaster-recovery.md) · [cnpg-explained](cnpg-explained.md)
+- **GitOps / ArgoCD**: [argocd](argocd.md) · [argocd-entrypoints](argocd-entrypoints.md)
+- **Networking**: [network-topology](network-topology.md) · [network-policy](network-policy.md)
+- **Storage credentials**: [rustfs-credential-runbook](rustfs-credential-runbook.md)
+- **Observability**: [radar-ng-observability](radar-ng-observability.md)
+- **AI / GPU**: [ai-model-catalog](ai-model-catalog.md) · [3090-llm-optimization](3090-llm-optimization.md)
+
+### 🗄️ Archive (historical only)
+
+Historical migration, incident, design, and presentation docs live under
+**[`archive/`](archive/README.md)** — preserved for context, **not** current runbooks.
+Older research and plans remain under `research/` and `plans/` (also historical).
 
 ## How to read these docs
 
 - The **storage doc** progresses from plain English → simple flow diagrams
-  → admission swimlane → operations → known limitations. Stop wherever
+  → restore lifecycle → operations → known limitations. Stop wherever
   the depth matches what you came for.
 - The **CNPG DR doc** is runbook-shaped: read top-to-bottom only when
   doing recovery; the rest of the time use the table of contents.

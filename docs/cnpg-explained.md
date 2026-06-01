@@ -2,7 +2,7 @@
 
 Companion to [`docs/cnpg-disaster-recovery.md`](cnpg-disaster-recovery.md) (the technical runbook). This doc is the conversational version — what's actually happening, why it works, and **what's a Git change vs. a kubectl command vs. a feature flag**.
 
-If you've already read [`docs/pvc-plumber-explained.md`](pvc-plumber-explained.md), you already know the homelabber-doc style. Read this one when:
+If you've already read [`docs/pvc-plumber-explained.md`](archive/pvc-plumber/presentations/pvc-plumber-explained.md), you already know the homelabber-doc style. Read this one when:
 
 - You're standing up your first Postgres cluster on Kubernetes
 - You're staring at a CNPG `Cluster` CR and wondering "where's the backup config and why are there two overlays"
@@ -304,4 +304,4 @@ Yes — CNPG supports `bootstrap.recovery` with a different `metadata.name`. The
 - [docs/cnpg-disaster-recovery.md](cnpg-disaster-recovery.md) — the technical runbook (this doc's reference)
 - [docs/plans/cnpg-plugin-migration.md](plans/cnpg-plugin-migration.md) — why this cluster uses the Barman Cloud Plugin instead of the deprecated `spec.backup.barmanObjectStore`
 - [docs/volsync-storage-recovery.md](volsync-storage-recovery.md) — the OTHER backup system (PVC-level, kopia, NEVER use on CNPG PVCs)
-- [docs/pvc-plumber-explained.md](pvc-plumber-explained.md) — pvc-plumber walkthrough for comparison
+- [docs/pvc-plumber-explained.md](archive/pvc-plumber/presentations/pvc-plumber-explained.md) — pvc-plumber walkthrough for comparison

@@ -5,7 +5,7 @@ locked design contract; this file is the working backlog for follow-ups that
 were identified during execution but should not block the phased rollout.
 Day-of cutover operations live in
 [`pvc-plumber-v4-cutover.md`](pvc-plumber-v4-cutover.md); per-app status
-lives in [`pvc-plumber-v4-inventory.md`](pvc-plumber-v4-inventory.md).
+lives in [`pvc-plumber-v4-inventory.md`](archive/pvc-plumber/inventories/pvc-plumber-v4-inventory.md).
 
 Each item carries an explicit start gate. **Do not begin work on an item until
 its gate condition is met,** unless the user explicitly redirects.
