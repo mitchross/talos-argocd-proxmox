@@ -10,6 +10,17 @@ lives in [`pvc-plumber-v4-inventory.md`](pvc-plumber-v4-inventory.md).
 Each item carries an explicit start gate. **Do not begin work on an item until
 its gate condition is met,** unless the user explicitly redirects.
 
+## 🚰 New here? Read these first (visual docs)
+
+1. [pvc-plumber-start-here.md](pvc-plumber-start-here.md) — visual intro.
+2. [pvc-plumber-dynamic-workflow.md](pvc-plumber-dynamic-workflow.md) — how the operator thinks.
+3. [talos-argocd-pvc-plumber-integration.md](talos-argocd-pvc-plumber-integration.md) — how this repo uses it.
+4. [volsync-storage-recovery.md](volsync-storage-recovery.md) — restore lifecycle + drill runbook.
+5. [pvc-plumber-v4-prd.md](pvc-plumber-v4-prd.md) — §0 canonical status + locked design.
+6. [storage-architecture-future.md](storage-architecture-future.md) — storage tiering future idea.
+
+Quick reference: [pvc-plumber-cheatsheet.md](pvc-plumber-cheatsheet.md).
+
 ## Completed
 
 - **Patch 7.7 — operator volsync-writer RBAC + managed-namespace contract.**
