@@ -56,8 +56,8 @@ ArgoCD deploys applications in strict order to prevent dependency issues:
 | Wave | Component | Purpose |
 |------|-----------|---------|
 | **0** | Foundation | Cilium (CNI), ArgoCD, 1Password Connect, External Secrets, AppProjects |
-| **1** | Storage + backup operator | Longhorn, VolumeSnapshot Controller, VolSync, pvc-plumber v2 operator |
-| **2** | pvc-plumber webhook configs | FAIL-CLOSED PVC admission gate registers after the operator pod is healthy |
+| **1** | Storage + backup operator | Longhorn, VolumeSnapshot Controller, VolSync |
+| **2** | pvc-plumber v4 (permissive) + VolSync MAP + ClusterES | pvc-plumber v4.0.1 reconciler (namespace gate + PVC fuse labels; **no admission webhook**) + mover-backend MAP + shared Kopia repo Secret fanout |
 | **3** | CNPG Barman Plugin | Database backup plugin before DB clusters |
 | **4** | Infrastructure AppSet + custom entrypoints | Cert-Manager, External-DNS, GPU Operators, Gateway, KEDA, Temporal Worker Controller |
 | **4** | Database AppSet | CloudNativePG operators & instances (`selfHeal: false` for DR) |
@@ -234,8 +234,8 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 ArgoCD takes over and manages everything from Git:
 
 1. **Wave 0**: Cilium, 1Password Connect, External Secrets deploy in parallel
-2. **Wave 1**: Longhorn, Snapshot Controller, VolSync, and the pvc-plumber v2 operator deploy after networking + secrets are ready
-3. **Wave 2**: pvc-plumber webhook configurations register (FAIL-CLOSED admission gate for backup-labeled PVCs in app namespaces)
+2. **Wave 1**: Longhorn, Snapshot Controller, VolSync deploy after networking + secrets are ready
+3. **Wave 2**: pvc-plumber v4 (permissive reconciler — namespace gate + PVC fuse labels, **no admission webhook**), the VolSync mover-backend MAP, and the shared Kopia repo `ClusterExternalSecret`
 4. **Wave 3**: CNPG Barman Plugin deploys (DB backup plugin readiness before DB clusters)
 5. **Wave 4**: Infrastructure AppSet plus custom standalone entrypoints deploy cert-manager, GPU operators, gateway, KEDA, Temporal Worker Controller, etc.
 6. **Wave 4**: Database AppSet deploys CloudNativePG operators and instances

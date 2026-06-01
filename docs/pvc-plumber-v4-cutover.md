@@ -13,7 +13,7 @@
 > This file is the day-of operations guide. Design contract lives in the
 > [PRD](pvc-plumber-v4-prd.md); the post-PRD working backlog is in the
 > [roadmap](pvc-plumber-v4-roadmap.md); per-app status is in the
-> [inventory](pvc-plumber-v4-inventory.md). Audit-the-cluster reference is
+> [inventory](archive/pvc-plumber/inventories/pvc-plumber-v4-inventory.md). Audit-the-cluster reference is
 > [`volsync-storage-recovery.md`](volsync-storage-recovery.md).
 
 ## Quick links
@@ -544,7 +544,7 @@ mkdir -p /tmp/v4-cutover/<ns>-<pvc> && cd /tmp/v4-cutover/<ns>-<pvc>
 ```
 
 - [ ] Identify the target namespace + PVC. Confirm it appears in
-      [`docs/pvc-plumber-v4-inventory.md`](pvc-plumber-v4-inventory.md)
+      [`docs/pvc-plumber-v4-inventory.md`](archive/pvc-plumber/inventories/pvc-plumber-v4-inventory.md)
       as a Phase 7 cutover candidate.
 - [ ] Capture PVC YAML:
       ```sh
@@ -882,7 +882,7 @@ operational reference; the explainer is the audience-facing artifact.
   contract. The runbook implements the design; the PRD is the design.
 - [`pvc-plumber-v4-roadmap.md`](pvc-plumber-v4-roadmap.md) — backlog
   items gated on rollout milestones.
-- [`pvc-plumber-v4-inventory.md`](pvc-plumber-v4-inventory.md) — per-app
+- [`pvc-plumber-v4-inventory.md`](archive/pvc-plumber/inventories/pvc-plumber-v4-inventory.md) — per-app
   status. The single place that tracks which apps are migrated.
 - [`volsync-storage-recovery.md`](volsync-storage-recovery.md) — PVC
   backup/restore reference (the existing system that v4 sits on top of).
