@@ -28,6 +28,21 @@ This raised a broader question: **should Longhorn remain the default CSI for
 everything, or should most homelab apps use simpler local storage + VolSync
 restore-from-backup?**
 
+> **Update 2026-06-01 — restore-based DR is now empirically proven, but that does
+> not make it equivalent to live availability.** Four end-to-end restore drills
+> passed byte-identical (copyparty, paperless/data, paperless/media,
+> immich/library): delete the PVC → Argo recreates it with `dataSourceRef` → the
+> VolSync populator restores from the managed `ReplicationDestination`. All 24
+> operator-managed PVCs are now DR_COMPLETE. **This validates the "restore-based
+> DR" half of the tiered model below** — the recovery path works and is testable.
+> **Caveat that keeps this a FUTURE idea, not a decision:** restore-based DR
+> restores *data*, but during the restore window the app is **down** (PVC delete
+> → populator restore → pod restart). Longhorn's replicated tier buys *live
+> availability* (a node/replica can fail without the app going down) — a
+> genuinely different property. So the tiering question is really "which apps
+> need live availability vs. which only need recoverable data," and the drills
+> only answer the second half. Decide per-app in the review below; do not act yet.
+
 ## Core principle: CSI layer and backup layer are separate responsibilities
 
 | Layer | Responsibility |
