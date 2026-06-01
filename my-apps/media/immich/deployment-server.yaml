@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: server
 spec:
-  replicas: 1
+  replicas: 0  # TEMP: quiesced for immich-library restore drill (2026-05-31); restore to 1 after PVC recreate
   strategy:
     # RWO Longhorn library PVC -> Recreate (RollingUpdate risks Multi-Attach).
     type: Recreate
