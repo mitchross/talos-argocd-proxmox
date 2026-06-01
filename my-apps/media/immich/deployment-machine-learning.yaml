@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: machine-learning
 spec:
-  replicas: 1
+  replicas: 0  # TEMP: quiesced for immich-library restore drill (2026-05-31); restore to 1 after PVC recreate
   strategy:
     type: RollingUpdate
   selector:
