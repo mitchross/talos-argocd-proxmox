@@ -14,6 +14,32 @@ not the moment to discover that step 6 silently fails when step 4 was skipped.
 
 ---
 
+## Bootstrap guardrails (learned in the 2026-06-01 full-nuke drill)
+
+The App-of-Apps wave gate won't advance a wave until its apps are **Healthy**, so any
+"early-wave app depends on a later-wave thing" becomes a hard deadlock that freezes the rebuild.
+Hard rules (each one is a real bug this drill found and fixed):
+
+- **No bootstrap-critical app may render `monitoring.coreos.com` resources in its core path.**
+  `ServiceMonitor`/`PodMonitor`/`PrometheusRule`/`Probe`/`AlertmanagerConfig`/dashboards must live in a
+  **separate optional app that syncs AFTER kube-prometheus-stack (Wave 5)**. Those CRDs don't exist
+  until Wave 5; an earlier app shipping them fails dry-run ("one or more synchronization tasks are not
+  valid") and deadlocks the gate. *If deleting Prometheus breaks restore, the repo is wrong.* We
+  deliberately do **NOT** install Prometheus Operator CRDs early. Fixed: pvc-plumber (Wave-2 core
+  split), keda (`keda-observability` app at Wave 6 — commit `92c48f18`).
+- **cert-manager is Wave 1**, not Wave 4 — anything mounting a cert-manager TLS secret (e.g.
+  cnpg-barman-plugin, Wave 3) needs it early. (commit `d2471e71`)
+- **No early-wave app may reference a not-yet-existing namespace** (e.g. a Role/RoleBinding hardcoded
+  into a Wave-6 app's namespace). Removed from pvc-plumber Wave-2. (commit `01968bd4`)
+- **pvc-plumber is manual-sync by design** (holds the cluster-wide volsync-writer CRB) — a human/agent
+  must Sync it once after a nuke; the whole fleet is gated behind it until then.
+- **`SkipDryRunOnMissingResource`** is only a temporary mid-rebuild escape hatch, or a permanent option
+  on an **observability-only** app — never the long-term fix for a core app.
+- **Restore depends on the external RustFS access key** (1Password item `rustfs`,
+  `rustfs-workload-access-key`/`-secret-key`) being valid on the TrueNAS RustFS box; the cluster side
+  pulls it via ClusterExternalSecret. Movers failing "Access Key Id … does not exist" = reconcile the
+  key on RustFS, not a cluster/GitOps problem.
+
 ## Pre-Nuke Gates (block until ALL satisfied)
 
 Run the validator first. If any gate fails, **do not nuke**.

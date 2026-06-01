@@ -35,6 +35,18 @@ This is the review map for everything directly rendered by the root Application 
 | `appsets/monitoring-appset.yaml` | ApplicationSet | 5 | Discovers `monitoring/*` after core infra | N/A |
 | `appsets/my-apps-appset.yaml` | ApplicationSet | 6 | Discovers `my-apps/*/*` after storage, policy, and monitoring foundations | N/A |
 
+## Bootstrap guardrail — observability is not a core dependency
+
+**No bootstrap-critical app may render `monitoring.coreos.com` resources (ServiceMonitor, PodMonitor,
+PrometheusRule, Probe, AlertmanagerConfig) in its core kustomization.** Those CRDs don't exist until
+kube-prometheus-stack (Wave 5); an earlier-wave app shipping them fails dry-run and deadlocks the
+App-of-Apps wave gate (proven by the 2026-06-01 nuke drill). Put observability CRs in a **separate
+optional app that syncs after Wave 5** (e.g. `keda-observability` at Wave 6; pvc-plumber's were
+removed from its Wave-2 core). We deliberately do **not** install Prometheus Operator CRDs early —
+`SkipDryRunOnMissingResource` is only an escape hatch / observability-app option, never a core fix.
+`cert-manager` is at **Wave 1** (not 4) so cert-dependent apps (cnpg-barman-plugin, Wave 3) can start.
+Full detail: `docs/cluster-dr-nuke-restore-runbook.md` → "Bootstrap guardrails".
+
 ## Notes
 
 - `project-nomad` is intentionally managed by `appsets/my-apps-appset.yaml` as a single bundled app at `my-apps/home/project-nomad`. Its child folders are resources inside that app, not generated Argo CD Applications.
