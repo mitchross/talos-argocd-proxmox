@@ -1,7 +1,7 @@
 > [!WARNING]
 > Historical document.
 > This file is preserved for context only and is not the current runbook.
-> Start with: [pvc-plumber-start-here](../../../pvc-plumber-start-here.md) or [docs index](../../../index.md).
+> Start with: [docs index](../../../index.md) and [pvc-plumber start here](../../../pvc-plumber-start-here.md).
 
 # Tempo audit — 2026-05-02
 
@@ -166,14 +166,14 @@ Hard rules enforced: no `apply/delete/patch/edit/scale`, no `argocd app sync/ref
 | **Why** | Kyverno's webhook will inject defaults; ArgoCD detects the diff → perpetual OutOfSync risk per the CLAUDE.md kyverno warning. |
 | **Fix** | Add the canonical 4-key spec stanza explicitly: `mutateExistingOnPolicyUpdate: false`, `background: false`, `emitWarning: false`, `validationFailureAction: Audit`. |
 
-#### M10. `docs/argocd.md` standalone-app table missing 3 apps
+#### M10. `docs/domains/argocd/argocd.md` standalone-app table missing 3 apps
 
 | | |
 |---|---|
-| **Evidence** | `docs/argocd.md:47-58` lists 10 standalone apps. Current standalones also include `keda-app` (Wave 4), `temporal-worker-controller-app` (Wave 4), `cnpg-barman-plugin-app` (Wave 3). |
+| **Evidence** | `docs/domains/argocd/argocd.md:47-58` lists 10 standalone apps. Current standalones also include `keda-app` (Wave 4), `temporal-worker-controller-app` (Wave 4), `cnpg-barman-plugin-app` (Wave 3). |
 | **Fix** | Add three rows; reference each app file's "why standalone" comment. |
 
-#### M11. `docs/network-topology.md` worker IPs may be stale
+#### M11. `docs/domains/networking/topology.md` worker IPs may be stale
 
 | | |
 |---|---|
@@ -276,7 +276,7 @@ Worker `talos-prod-cluster-workers-smgrbs` died around 13:07 UTC 2026-05-02. Kub
 ## Mink notes
 
 This audit also persisted findings to the user's mink wiki vault at `~/.mink/wiki/`. Index note:
-[`projects/talos-argocd-proxmox/audit-summary-2026-05-02-claude-tempo-holistic-read-only-review.md`](../../../.mink/wiki/projects/talos-argocd-proxmox/audit-summary-2026-05-02-claude-tempo-holistic-read-only-review.md)
+`~/.mink/wiki/projects/talos-argocd-proxmox/audit-summary-2026-05-02-claude-tempo-holistic-read-only-review.md`
 
 13 notes total: 1 audit-summary index, 1 incident report, 5 architectural/gotcha references, 6 follow-up work items.
 

@@ -157,4 +157,4 @@ flowchart LR
 3. **[volsync-storage-recovery.md](volsync-storage-recovery.md)** — *restore lifecycle + drill runbook* (the DR source of truth).
 4. **[pvc-plumber-cheatsheet.md](pvc-plumber-cheatsheet.md)** — *one-page poster*.
 5. **[pvc-plumber-v4-prd.md](pvc-plumber-v4-prd.md)** — *§0 canonical status* + the locked design.
-6. **[storage-architecture-future.md](storage-architecture-future.md)** — *Longhorn-vs-restore-DR future idea*.
+6. **[storage-architecture-future.md](domains/storage/architecture-future.md)** — *Longhorn-vs-restore-DR future idea*.

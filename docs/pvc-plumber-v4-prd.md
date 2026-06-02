@@ -65,9 +65,9 @@ amendment + the §10 failure-matrix drills pass.
 - Naming-strategy / backup-identity uniqueness (original §17 items 1–2) — moot unless v5 proceeds.
 
 ### OPS FOLLOW-UPS (tracked, not done in this PRD)
-1. **Kopia maintenance** — repeated "too many index blobs" warnings; plan in `docs/kopia-maintenance-plan.md` (not yet run).
+1. **Kopia maintenance** — repeated "too many index blobs" warnings; plan in `docs/domains/storage/kopia-maintenance-plan.md` (not yet run).
 2. **Rollback PV cleanup** — 7 retained `Released/Retain` PVs; plan in `docs/volsync-storage-recovery.md` (not yet executed).
-3. **Longhorn / storage policy review** — tiered local-restore vs replicated-critical; `docs/storage-architecture-future.md`.
+3. **Longhorn / storage policy review** — tiered local-restore vs replicated-critical; `docs/domains/storage/architecture-future.md`.
 4. **redis-instance final decision** (above).
 5. **vb-test/vbtest1** — disposable Longhorn test volume, lingering `degraded`; clean up.
 
@@ -436,8 +436,8 @@ Webhook TLS via cert-manager `Certificate`. Webhook configs use `cert-manager.io
 - Decommission history: `docs/research/pvc-backup-simplification/`
 - Add-backup workflow (transitional): `.claude/commands/add-backup.md`
 - VolSync DR runbook: `docs/volsync-storage-recovery.md`
-- CNPG DR (separate system): `docs/cnpg-disaster-recovery.md`
-- RustFS credential conventions: `docs/rustfs-credential-runbook.md`
+- CNPG DR (separate system): `docs/domains/cnpg/disaster-recovery.md`
+- RustFS credential conventions: `docs/domains/rustfs/credential-runbook.md`
 
 ## 19. Change log
 

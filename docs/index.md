@@ -44,8 +44,8 @@ needed.
 ### 🛠️ Operate the platform
 
 - **[volsync-storage-recovery](volsync-storage-recovery.md)** — PVC backup/restore single source of truth + restore-drill runbook.
-- **[kopia-maintenance-plan](kopia-maintenance-plan.md)** — repository maintenance (healthy; manual full not needed).
-- **[storage-architecture-future](storage-architecture-future.md)** — Longhorn-vs-restore-DR tiering (future idea).
+- **[kopia-maintenance-plan](domains/storage/kopia-maintenance-plan.md)** — repository maintenance (healthy; manual full not needed).
+- **[storage-architecture-future](domains/storage/architecture-future.md)** — Longhorn-vs-restore-DR tiering (future idea).
 - **[pvc-plumber-v4-cutover](pvc-plumber-v4-cutover.md)** — day-of cutover runbook (label model, ownership, rollback).
 - **[pvc-plumber-v4-migration-readiness](pvc-plumber-v4-migration-readiness.md)** — per-PVC migration status (campaign closed).
 - **[cluster-dr-nuke-restore-runbook](cluster-dr-nuke-restore-runbook.md)** — full cluster rebuild/restore runbook.
@@ -55,16 +55,17 @@ needed.
 - **[pvc-plumber-v4-prd](pvc-plumber-v4-prd.md)** — locked design + **§0 canonical status** (shipped vs design).
 - **[pvc-plumber-v4-roadmap](pvc-plumber-v4-roadmap.md)** — post-PRD backlog.
 - **[pvc-plumber-v5-kopia-native-future](pvc-plumber-v5-kopia-native-future.md)** — v5 fork (VolSync-strict vs Kopia-native) — **parked, not built.**
-- **[multicluster-prd](multicluster-prd.md)** — multicluster design.
+- **[multicluster-prd](domains/multicluster/prd.md)** — multicluster design.
 
 ### 🗃️ Other domains
 
-- **Databases**: [cnpg-disaster-recovery](cnpg-disaster-recovery.md) · [cnpg-explained](cnpg-explained.md)
-- **GitOps / ArgoCD**: [argocd](argocd.md) · [argocd-entrypoints](argocd-entrypoints.md)
-- **Networking**: [network-topology](network-topology.md) · [network-policy](network-policy.md)
-- **Storage credentials**: [rustfs-credential-runbook](rustfs-credential-runbook.md)
-- **Observability**: [radar-ng-observability](radar-ng-observability.md)
-- **AI / GPU**: [ai-model-catalog](ai-model-catalog.md) · [3090-llm-optimization](3090-llm-optimization.md)
+- **Databases**: [cnpg-disaster-recovery](domains/cnpg/disaster-recovery.md) · [cnpg-explained](domains/cnpg/explained.md)
+- **GitOps / ArgoCD**: [argocd](domains/argocd/argocd.md) · [argocd-entrypoints](domains/argocd/entrypoints.md)
+- **Networking**: [network-topology](domains/networking/topology.md) · [network-policy](domains/networking/policy.md)
+- **Storage**: [rustfs-credential-runbook](domains/rustfs/credential-runbook.md) · [kopia-maintenance-plan](domains/storage/kopia-maintenance-plan.md) · [storage-architecture-future](domains/storage/architecture-future.md)
+- **Multicluster**: [prd](domains/multicluster/prd.md) · [handoff notes](domains/multicluster/handoff-notes.md)
+- **Observability**: [radar-ng-observability](domains/observability/radar-ng.md)
+- **AI / GPU**: [ai-model-catalog](domains/ai-gpu/model-catalog.md) · [3090-llm-optimization](domains/ai-gpu/3090-llm-optimization.md)
 
 ### 🗄️ Archive (historical only)
 

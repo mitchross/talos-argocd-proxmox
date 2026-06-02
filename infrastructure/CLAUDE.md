@@ -1,7 +1,7 @@
 # Infrastructure Guidelines
 
 > **Required reading before modifying ArgoCD configuration or sync waves:**
-> - `docs/argocd.md` — Sync wave strategy, Lua health checks, server-side diff, why ApplyOutOfSyncOnly breaks ConfigMaps
+> - `docs/domains/argocd/argocd.md` — Sync wave strategy, Lua health checks, server-side diff, why ApplyOutOfSyncOnly breaks ConfigMaps
 
 ## Essential Commands
 

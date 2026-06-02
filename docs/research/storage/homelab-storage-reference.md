@@ -4,7 +4,7 @@ This document answers a practical question:
 
 > What is the simplest declarative, set-and-forget, low-brain storage and restore model for a homelab Kubernetes cluster?
 
-For supporting ecosystem research on whether this problem is already solved elsewhere, see [Conditional PVC Restore Ecosystem Research](conditional-restore-ecosystem-research.md).
+For supporting ecosystem research on whether this problem is already solved elsewhere, see [Conditional PVC Restore Ecosystem Research](conditional-restore-ecosystem.md).
 
 It is written for two common setups:
 

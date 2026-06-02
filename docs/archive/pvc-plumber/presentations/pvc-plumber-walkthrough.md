@@ -1,13 +1,13 @@
 > [!WARNING]
 > Historical document.
 > This file is preserved for context only and is not the current runbook.
-> Start with: [pvc-plumber-start-here](../../../pvc-plumber-start-here.md) or [docs index](../../../index.md).
+> Start with: [docs index](../../../index.md) and [pvc-plumber start here](../../../pvc-plumber-start-here.md).
 
 # pvc-plumber: How It Works (Plain English Walkthrough)
 
 **Purpose**: a narrative explanation of what the cluster's PVC backup/restore system does, why it's shaped this way, and what changed when Kyverno was removed.
 
-For the operational reference (tables, troubleshooting, recovery scenarios) see [`volsync-storage-recovery.md`](./volsync-storage-recovery.md). For the architecture decisions and migration history see [`plans/pvc-plumber-operator-design.md`](./plans/pvc-plumber-operator-design.md). For future direction see [`plans/pvc-plumber-v3-roadmap.md`](./plans/pvc-plumber-v3-roadmap.md). For the deep technical internals (webhook code, reconciler logic, Go implementation) see [the pvc-plumber repo docs](https://github.com/mitchross/pvc-plumber/blob/main/docs/).
+For the operational reference (tables, troubleshooting, recovery scenarios) see [`volsync-storage-recovery.md`](../../../volsync-storage-recovery.md). For the architecture decisions and migration history see [`plans/pvc-plumber-operator-design.md`](../../../plans/pvc-plumber-operator-design.md). For future direction see [`plans/pvc-plumber-v3-roadmap.md`](../../../plans/pvc-plumber-v3-roadmap.md). For the deep technical internals (webhook code, reconciler logic, Go implementation) see [the pvc-plumber repo docs](https://github.com/mitchross/pvc-plumber/blob/main/docs/).
 
 ---
 

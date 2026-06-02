@@ -4,7 +4,7 @@ The single source of truth for **PVC backup and restore** in this cluster.
 
 > **Scope:** application PVCs (Longhorn → Kopia → NFS).
 > **Out of scope:** CloudNativePG database backups (Barman → S3).
-> See [`cnpg-disaster-recovery.md`](cnpg-disaster-recovery.md) — different tool,
+> See [`cnpg-disaster-recovery.md`](domains/cnpg/disaster-recovery.md) — different tool,
 > different storage, different runbook. The two systems never touch each other.
 
 > **How to read this doc:** it gets more technical as you scroll. The first
@@ -236,7 +236,7 @@ The whole behaviour, as a flat lookup table:
 | You really want to start fresh on a labeled PVC, even though a backup exists | Annotate the PVC `volsync.backup/skip-restore: "true"` *and* `volsync.backup/skip-restore-reason: "<why>"`. The pvc-plumber webhook bypasses the restore but still sets up backups going forward. A 24 h Prometheus alert fires until you remove the annotation. |
 | Someone forgets the reason annotation | PVC creation is denied. The reason is mandatory specifically because a stale `skip-restore=true` in Git would silently disable restore forever. |
 | You add a backup label to a PVC in `kube-system`, `volsync-system`, or `argocd` | The webhooks skip those namespaces by design. No backup, no restore. |
-| You add a backup label to a CNPG database PVC | Don't. Postgres needs SQL-aware backups (Barman → S3), not filesystem snapshots. CNPG manages its own PVCs and uses a [completely separate runbook](cnpg-disaster-recovery.md). |
+| You add a backup label to a CNPG database PVC | Don't. Postgres needs SQL-aware backups (Barman → S3), not filesystem snapshots. CNPG manages its own PVCs and uses a [completely separate runbook](domains/cnpg/disaster-recovery.md). |
 
 The rest of this document is *how* this works.
 
@@ -861,7 +861,7 @@ This is the dangerous part. Two gotchas, both observed live:
   cache).** Observed on paperless/media: the `replicas:0→1` sync reported `Succeeded` but the
   Deployment stayed at 0 (server-side diff no-opped against a stale live view). Fix: issue
   `argocd refresh=hard`, **wait for the refresh annotation to clear and the Deployment to show
-  OutOfSync**, *then* sync. See [docs/argocd.md] stale-sync notes. (Syncing while the hard-refresh
+  OutOfSync**, *then* sync. See [docs/domains/argocd/argocd.md] stale-sync notes. (Syncing while the hard-refresh
   is still in flight races the cache and no-ops.)
 
 ### What "restored" proves vs not
@@ -1048,7 +1048,7 @@ declaration time.
 
 For database recovery — including the `serverName -v1/-v2/-vN` lineage
 model and the recovery-overlay feature flag — see
-**[`cnpg-disaster-recovery.md`](cnpg-disaster-recovery.md)**.
+**[`cnpg-disaster-recovery.md`](domains/cnpg/disaster-recovery.md)**.
 
 The RustFS bucket lifecycle policy for **abandoned database backup
 prefixes** lives at `infrastructure/storage/rustfs-lifecycle/`. That
@@ -1211,4 +1211,4 @@ system you want. The pattern is sound; the *operational maturity* is
 | ServiceMonitors (incl. pvc-plumber scrape) | `monitoring/prometheus-stack/custom-servicemonitors.yaml` |
 | pvc-plumber operator design | `docs/plans/pvc-plumber-operator-design.md` |
 | pvc-plumber v3 roadmap | `docs/plans/pvc-plumber-v3-roadmap.md` |
-| Database disaster recovery (separate system) | `docs/cnpg-disaster-recovery.md` |
+| Database disaster recovery (separate system) | `docs/domains/cnpg/disaster-recovery.md` |

@@ -1,12 +1,12 @@
 > [!WARNING]
 > Historical document.
 > This file is preserved for context only and is not the current runbook.
-> Start with: [pvc-plumber-start-here](../../../pvc-plumber-start-here.md) or [docs index](../../../index.md).
+> Start with: [docs index](../../../index.md) and [pvc-plumber start here](../../../pvc-plumber-start-here.md).
 
 # pvc-plumber v3.0.0 cutover runbook
 
 The 2026-05-08 incident post-mortem is in
-[`docs/research/volsync-fork-vs-upstream-2026-05-08.md`](research/volsync-fork-vs-upstream-2026-05-08.md).
+[`docs/research/volsync-fork-vs-upstream-2026-05-08.md`](../../../research/volsync-fork-vs-upstream-2026-05-08.md).
 This doc is the operational checklist for migrating the cluster from v2.1.1
 (NFS-backed kopia + JobMutator-induced drift loop) to v3.0.0 (S3-backed
 kopia + JobMutator removed).
@@ -156,7 +156,7 @@ Once at least one RS for `karakeep/data-pvc-backup` has reported
 
 If the data is intact: the v3 restore-on-create killer feature is
 proven. Document the test in
-[`docs/volsync-storage-recovery.md`](volsync-storage-recovery.md) and
+[`docs/volsync-storage-recovery.md`](../../../volsync-storage-recovery.md) and
 celebrate.
 
 ## Rollback

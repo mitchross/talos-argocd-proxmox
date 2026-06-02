@@ -47,7 +47,7 @@ Backups continue firing on schedule via VolSync controller as long as no one tou
 
 ### False positives (verified safe — do NOT re-flag)
 
-- `my-apps/development/posthog/externalsecret.yaml` references `pvc-plumber-access-key` — that's the 1Password workload-credential property name per `docs/rustfs-credential-runbook.md`. Correct.
+- `my-apps/development/posthog/externalsecret.yaml` references `pvc-plumber-access-key` — that's the 1Password workload-credential property name per `docs/domains/rustfs/credential-runbook.md`. Correct.
 - `infrastructure/database/redis/redis-instance/pvc.yaml` has `backup:` label — Redis, not CNPG postgres, no Barman. Backup label is valid.
 - Comment-only refs in `keda-app.yaml`, `volsync-backup-cluster-app.yaml`, karakeep's kustomization + pvc-data.yaml — historical context, fine.
 

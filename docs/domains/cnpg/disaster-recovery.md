@@ -27,7 +27,7 @@ writing to RustFS S3) handles *file-level* PVC backups. (Kyverno was removed fro
 this path in 2026-05 and is no longer involved — see `docs/pvc-plumber-v4-prd.md`.)
 CNPG has its own SQL-aware backup path: Barman Cloud → RustFS S3. The two never
 touch each other. See
-[docs/volsync-storage-recovery.md](volsync-storage-recovery.md) for why both exist.
+[docs/volsync-storage-recovery.md](../../volsync-storage-recovery.md) for why both exist.
 
 ### How recovery works (the 30-second version)
 

@@ -1,7 +1,7 @@
 > [!WARNING]
 > Historical document.
 > This file is preserved for context only and is not the current runbook.
-> Start with: [pvc-plumber-start-here](../../../pvc-plumber-start-here.md) or [docs index](../../../index.md).
+> Start with: [docs index](../../../index.md) and [pvc-plumber start here](../../../pvc-plumber-start-here.md).
 
 # pvc-plumber, explained for homelabbers
 
@@ -404,7 +404,7 @@ The webhook is `failurePolicy: Fail`. New backup-labeled PVCs will be denied at 
 
 ### What about CNPG databases (Postgres, etc.)?
 
-Different system. CNPG uses Barman Cloud (built into CloudNativePG) to back up Postgres directly to RustFS via the `cnpg-barman-plugin` and per-cluster `ObjectStore` resources. **Don't add the `backup` label to CNPG PVCs** — they're already protected via Barman, and labeling them would create duplicate (and broken) backup machinery. See [docs/cnpg-disaster-recovery.md](cnpg-disaster-recovery.md).
+Different system. CNPG uses Barman Cloud (built into CloudNativePG) to back up Postgres directly to RustFS via the `cnpg-barman-plugin` and per-cluster `ObjectStore` resources. **Don't add the `backup` label to CNPG PVCs** — they're already protected via Barman, and labeling them would create duplicate (and broken) backup machinery. See [docs/domains/cnpg/disaster-recovery.md](../../../domains/cnpg/disaster-recovery.md).
 
 ### How do I see what kopia has?
 
@@ -430,7 +430,7 @@ Or browse the bucket directly via the RustFS console at `http://192.168.10.133:3
 
 - [docs/pvc-plumber-walkthrough.md](pvc-plumber-walkthrough.md) — the original walkthrough (more code-focused than this one)
 - [docs/pvc-plumber-presentation.md](pvc-plumber-presentation.md) — YouTube talk outline
-- [docs/pvc-plumber-v3-cutover.md](pvc-plumber-v3-cutover.md) — the v3.0.0 cutover runbook
-- [docs/volsync-storage-recovery.md](volsync-storage-recovery.md) — the volsync side of the story
-- [docs/research/argocd-eso-sync-race-2026-05-08.md](research/argocd-eso-sync-race-2026-05-08.md) — the technical post-mortem on the race
-- [docs/research/volsync-fork-vs-upstream-2026-05-08.md](research/volsync-fork-vs-upstream-2026-05-08.md) — why we run the perfectra1n VolSync fork
+- [docs/pvc-plumber-v3-cutover.md](../migration-campaign/pvc-plumber-v3-cutover.md) — the v3.0.0 cutover runbook
+- [docs/volsync-storage-recovery.md](../../../volsync-storage-recovery.md) — the volsync side of the story
+- [docs/research/argocd-eso-sync-race-2026-05-08.md](../../../research/argocd-eso-sync-race-2026-05-08.md) — the technical post-mortem on the race
+- [docs/research/volsync-fork-vs-upstream-2026-05-08.md](../../../research/volsync-fork-vs-upstream-2026-05-08.md) — why we run the perfectra1n VolSync fork

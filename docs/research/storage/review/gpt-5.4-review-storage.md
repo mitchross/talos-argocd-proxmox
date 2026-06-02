@@ -80,7 +80,7 @@ Key repo references:
 - `docs/backup-restore.md`
 - `docs/pvc-plumber-full-flow.md`
 - `infrastructure/database/CLAUDE.md`
-- `docs/network-topology.md`
+- `docs/domains/networking/topology.md`
 - `monitoring/README.md`
 
 ### Current PVC backup flow

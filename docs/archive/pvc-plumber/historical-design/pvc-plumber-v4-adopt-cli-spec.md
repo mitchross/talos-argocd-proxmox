@@ -1,7 +1,7 @@
 > [!WARNING]
 > Historical document.
 > This file is preserved for context only and is not the current runbook.
-> Start with: [pvc-plumber-start-here](../../../pvc-plumber-start-here.md) or [docs index](../../../index.md).
+> Start with: [docs index](../../../index.md) and [pvc-plumber start here](../../../pvc-plumber-start-here.md).
 
 # pvc-plumber v4 `adopt` CLI spec
 
@@ -9,8 +9,8 @@
 > existing Bound PVCs into pvc-plumber v4 management without depending on
 > Argo to apply the labels. Spec only — no code, no Git changes, no
 > cluster changes. Once approved, implementation slots into the
-> [v4 PRD](pvc-plumber-v4-prd.md) Phase 6 / Phase 8 boundary and lands in
-> the [cutover runbook](pvc-plumber-v4-cutover.md) as the supported
+> [v4 PRD](../../../pvc-plumber-v4-prd.md) Phase 6 / Phase 8 boundary and lands in
+> the [cutover runbook](../../../pvc-plumber-v4-cutover.md) as the supported
 > migration path for drift-affected PVCs.
 
 ## Quick links
@@ -47,7 +47,7 @@ That model breaks for any PVC where Argo cannot compute a diff — which
 turns out to be every Bound PVC in this cluster.
 
 The nginx-example/storage canary (2026-05-22 → 2026-05-23,
-documented in [`pvc-plumber-v4-nginx-canary-lessons.md`](../../.mink/wiki/projects/talos-argocd-proxmox/pvc-plumber-v4-nginx-canary-lessons.md))
+documented in `~/.mink/wiki/projects/talos-argocd-proxmox/pvc-plumber-v4-nginx-canary-lessons.md`)
 proved two things:
 
 1. **Universal `dataSourceRef` drift**. Every Bound PVC across the
@@ -359,7 +359,7 @@ metadata:
 
 The cutover sequence has nine steps and is the canonical "Phase 6 with
 adopt" runbook. It supersedes the
-[current Phase 6 per-PVC cutover checklist](pvc-plumber-v4-cutover.md#per-pvc-cutover-checklist)
+[current Phase 6 per-PVC cutover checklist](../../../pvc-plumber-v4-cutover.md#per-pvc-cutover-checklist)
 for drift-affected PVCs (which is all of them).
 
 ### Step-by-step
@@ -856,8 +856,8 @@ has its own go-ahead.
 
 ## Cross-references
 
-- [`docs/pvc-plumber-v4-prd.md`](pvc-plumber-v4-prd.md) — locked v4 design contract.
-- [`docs/pvc-plumber-v4-cutover.md`](pvc-plumber-v4-cutover.md) — current Phase 6 runbook. This spec adds a new section for "drift-affected PVC adopt-mediated cutover."
-- [`docs/pvc-plumber-v4-roadmap.md`](pvc-plumber-v4-roadmap.md) — track adopt CLI work as a Phase 6.x deliverable.
-- [`~/.mink/wiki/projects/talos-argocd-proxmox/pvc-plumber-v4-nginx-canary-lessons.md`](../../.mink/wiki/projects/talos-argocd-proxmox/pvc-plumber-v4-nginx-canary-lessons.md) — the failure that motivated this spec.
-- [`docs/volsync-storage-recovery.md`](volsync-storage-recovery.md) — backup/restore single source of truth.
+- [`docs/pvc-plumber-v4-prd.md`](../../../pvc-plumber-v4-prd.md) — locked v4 design contract.
+- [`docs/pvc-plumber-v4-cutover.md`](../../../pvc-plumber-v4-cutover.md) — current Phase 6 runbook. This spec adds a new section for "drift-affected PVC adopt-mediated cutover."
+- [`docs/pvc-plumber-v4-roadmap.md`](../../../pvc-plumber-v4-roadmap.md) — track adopt CLI work as a Phase 6.x deliverable.
+- `~/.mink/wiki/projects/talos-argocd-proxmox/pvc-plumber-v4-nginx-canary-lessons.md` — the failure that motivated this spec.
+- [`docs/volsync-storage-recovery.md`](../../../volsync-storage-recovery.md) — backup/restore single source of truth.

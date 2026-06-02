@@ -254,6 +254,6 @@ delete only the `ReplicationSource`.
 - **Cluster-wide ClusterES + MAP safety interlock**: `infrastructure/storage/volsync-backup-cluster/`
 - **VolSync operator**: `infrastructure/storage/volsync/`
 - **RustFS lifecycle policy**: `infrastructure/storage/rustfs-lifecycle/`
-- **Credential conventions**: `docs/rustfs-credential-runbook.md`
+- **Credential conventions**: `docs/domains/rustfs/credential-runbook.md`
 - **Migration history (decommissioned chart)**: `docs/research/pvc-backup-simplification/`
 - **pvc-plumber v4 PRD (planned re-adoption)**: `docs/pvc-plumber-v4-prd.md`

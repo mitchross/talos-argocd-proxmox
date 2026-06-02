@@ -4,7 +4,7 @@
 > as the live, proven backup stack. This doc parks a design fork surfaced by reviewing community
 > **ADR-0001 (A Kopia-Native Backup Operator for Kubernetes)** against the real pain from the v4
 > migration + DR-completeness campaign. It is a *design reference*, not a plan to execute.
-> Companion: [storage-architecture-future.md](storage-architecture-future.md), [pvc-plumber-v4-prd.md](pvc-plumber-v4-prd.md) §0.
+> Companion: [storage-architecture-future.md](domains/storage/architecture-future.md), [pvc-plumber-v4-prd.md](pvc-plumber-v4-prd.md) §0.
 
 ## One-line summary
 

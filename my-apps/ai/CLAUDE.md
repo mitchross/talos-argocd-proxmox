@@ -13,13 +13,13 @@ This cluster uses **llama-cpp** (NOT ollama) for all local AI inference.
 - Creative-only toy: Qwen 3.5 Uncensored — **keep abliterated models OUT of
   Perplexica / RAG / tool-calling** (abliteration degrades accuracy)
 - Full preset list (model IDs clients send in the `model` field): `my-apps/ai/llama-cpp/presets.ini`
-- **What each model is / when to use it: [`docs/ai-model-catalog.md`](../../docs/ai-model-catalog.md)**
+- **What each model is / when to use it: [`docs/domains/ai-gpu/model-catalog.md`](../../docs/domains/ai-gpu/model-catalog.md)**
 - **Models swap natively** via `llama-server --models-preset` — no external
   `llama-swap` needed. `--models-max 1` = one resident at a time.
 
 Always use llama-cpp when configuring AI backends for in-cluster tools.
 
-### Gotchas (see `docs/3090-llm-optimization.md` for full rationale)
+### Gotchas (see `docs/domains/ai-gpu/3090-llm-optimization.md` for full rationale)
 - **KV cache must be SYMMETRIC** — `q8_0/q8_0` or `q4_0/q4_0`, never mixed.
   Asymmetric KV falls to CPU, 44x slower ([llama.cpp #20866]). Overrides the
   Qwen3-Coder docs' q8-K/q4-V suggestion.

@@ -170,7 +170,7 @@ ignores `KOPIA_OVERRIDE_HOSTNAME` env var — the CronJob passes
 Native `spec.backup.barmanObjectStore` is removed in CNPG 1.30. Plugin is
 already installed at `infrastructure/database/cnpg-barman-plugin/`
 (v0.12.0) but currently unused. Migration docs:
-- `docs/cnpg-disaster-recovery.md` § Future Improvements Tier 4
+- `docs/domains/cnpg/disaster-recovery.md` § Future Improvements Tier 4
 - Rough plan: for each cluster, switch `spec.backup` → `spec.plugins[]`
   referencing an `ObjectStore` CR, one-cluster-at-a-time.
 

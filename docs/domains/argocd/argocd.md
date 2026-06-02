@@ -54,7 +54,7 @@ We use four ApplicationSets to categorize workloads:
 3. **Monitoring** (`apps/appsets/monitoring-appset.yaml`): Observability stack (Prometheus, Grafana).
 4. **My Apps** (`apps/appsets/my-apps-appset.yaml`): User workloads. `project-nomad` is intentionally generated as one bundled app at `my-apps/home/project-nomad`.
 
-For the full entrypoint list, see [argocd-entrypoints.md](argocd-entrypoints.md).
+For the full entrypoint list, see [argocd-entrypoints.md](entrypoints.md).
 
 ### AppProjects
 

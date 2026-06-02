@@ -287,8 +287,8 @@ All PVC backups use **Kopia on NFS** via VolSync, automated by the **pvc-plumber
 - **Encryption**: Kopia password from 1Password (`rustfs` item)
 - **Restore**: Automatic on PVC recreation — the operator's mutating webhook calls Kopia live, and on `decision=restore` injects `dataSourceRef` so VolSync populates the PVC before the app gets a Bound volume. Validating webhook is fail-closed: denies admission if Kopia truth is unknown
 - **Database backups**: CNPG uses Barman to RustFS S3; abandoned database backup prefixes are cleaned by the GitOps-managed `rustfs-lifecycle` controller
-- **Details**: See [docs/volsync-storage-recovery.md](docs/volsync-storage-recovery.md) and [docs/cnpg-disaster-recovery.md](docs/cnpg-disaster-recovery.md)
-- **AI-guided database recovery**: Copy/paste prompts are in [LLM Recovery Prompt Templates](docs/cnpg-disaster-recovery.md#llm-recovery-prompt-templates)
+- **Details**: See [docs/volsync-storage-recovery.md](docs/volsync-storage-recovery.md) and [docs/domains/cnpg/disaster-recovery.md](docs/domains/cnpg/disaster-recovery.md)
+- **AI-guided database recovery**: Copy/paste prompts are in [LLM Recovery Prompt Templates](docs/domains/cnpg/disaster-recovery.md#llm-recovery-prompt-templates)
 
 ## Cluster Upgrades & Talos 1.13 Notes
 
@@ -367,7 +367,7 @@ After the RustFS wipe in April 2026, every CNPG database was re-bootstrapped
 from scratch via `initdb` (v1 of each overlay). Any database DR
 runbook older than 2026-04-18 references the old WAL chain and will not
 work. Current procedure is in
-[docs/cnpg-disaster-recovery.md](docs/cnpg-disaster-recovery.md) — that
+[docs/domains/cnpg/disaster-recovery.md](docs/domains/cnpg/disaster-recovery.md) — that
 doc was rewritten against the new clean-slate pattern, so treat it as
 authoritative over anything in `docs/research/storage/`.
 
@@ -415,10 +415,10 @@ kubectl delete applications --all -n argocd
 
 - **[CLAUDE.md](CLAUDE.md)** - Full development guide and patterns for this repository
 - **[docs/volsync-storage-recovery.md](docs/volsync-storage-recovery.md)** - PVC backup/restore (architecture, admission flow, scenarios, troubleshooting)
-- **[docs/argocd.md](docs/argocd.md)** - ArgoCD GitOps patterns
-- **[docs/argocd-entrypoints.md](docs/argocd-entrypoints.md)** - Root entrypoints, waves, and AppSet/custom-entrypoint decisions
-- **[docs/network-topology.md](docs/network-topology.md)** - Network architecture
-- **[docs/network-policy.md](docs/network-policy.md)** - Cilium network policies
+- **[docs/domains/argocd/argocd.md](docs/domains/argocd/argocd.md)** - ArgoCD GitOps patterns
+- **[docs/domains/argocd/entrypoints.md](docs/domains/argocd/entrypoints.md)** - Root entrypoints, waves, and AppSet/custom-entrypoint decisions
+- **[docs/domains/networking/topology.md](docs/domains/networking/topology.md)** - Network architecture
+- **[docs/domains/networking/policy.md](docs/domains/networking/policy.md)** - Cilium network policies
 - **[omni/](omni/)** - Omni deployment configs, machine classes, and cluster templates
   - **[omni/omni/README.md](omni/omni/README.md)** - Omni instance setup guide
   - **[omni/docs/](omni/docs/)** - Architecture, operations, prerequisites, troubleshooting
