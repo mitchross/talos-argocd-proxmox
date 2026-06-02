@@ -55,15 +55,6 @@ spec:
       - CreateNamespace=false
       - ServerSideApply=true
       - RespectIgnoreDifferences=true
-      # Bootstrap-safety: pvc-plumber (Wave 2) ships a ServiceMonitor +
-      # PrometheusRule whose monitoring.coreos.com CRDs don't exist until
-      # kube-prometheus-stack at Wave 5. On a fresh cluster nuke the sync
-      # otherwise fails dry-run ("one or more synchronization tasks are not
-      # valid") and deadlocks the whole wave gate. Skipping dry-run on the
-      # missing CRD lets the core operator (Deployment/RBAC/CRB) sync now;
-      # the SM/PR reconcile once monitoring lands. (Found by the 2026-06-01
-      # full-cluster nuke/rebuild drill.)
-      - SkipDryRunOnMissingResource=true
     retry:
       limit: -1
       backoff:
