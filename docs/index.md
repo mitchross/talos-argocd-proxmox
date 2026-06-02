@@ -50,6 +50,13 @@ needed.
 - **[pvc-plumber-v4-migration-readiness](pvc-plumber-v4-migration-readiness.md)** — per-PVC migration status (campaign closed).
 - **[cluster-dr-nuke-restore-runbook](cluster-dr-nuke-restore-runbook.md)** — full cluster rebuild/restore runbook.
 
+### Bootstrap rules from the full nuke
+
+- CRDs first, controllers/apps second, CRs third.
+- Observability is optional. Core apps must bootstrap without Prometheus.
+- Do not install Prometheus Operator CRDs early to satisfy bootstrap apps.
+- `kube-prometheus-stack` remains the sole owner of `monitoring.coreos.com` CRDs.
+
 ### 📐 Design / PRD
 
 - **[pvc-plumber-v4-prd](pvc-plumber-v4-prd.md)** — locked design + **§0 canonical status** (shipped vs design).
@@ -75,19 +82,15 @@ Older research and plans remain under `research/` and `plans/` (also historical)
 
 ## How to read these docs
 
-- The **storage doc** progresses from plain English → simple flow diagrams
-  → restore lifecycle → operations → known limitations. Stop wherever
-  the depth matches what you came for.
-- The **CNPG DR doc** is runbook-shaped: read top-to-bottom only when
-  doing recovery; the rest of the time use the table of contents.
-- Diagrams are Mermaid; they render natively here and on GitHub.
+- Start with the pvc-plumber visual docs for the current operator model.
+- Use the storage recovery page for application PVC operations.
+- Use the CNPG DR page only for CNPG recovery.
+- Use the nuke runbook only for full rebuild planning.
+- Treat `archive/`, `research/`, and `plans/` as historical context.
 
 ## Adopting any of this
 
-This is one operator's homelab, not a product. The patterns are portable
+This is one operator's homelab, not a product. The patterns are portable,
 but the specific image tags, hostnames, and 1Password item names are not.
-The [VolSync storage doc](volsync-storage-recovery.md#adapting-this-to-your-cluster)
-has a minimum-viable-adoption section; the
-[Known limitations](volsync-storage-recovery.md#known-limitations-and-non-goals)
-section owns the trade-offs explicitly. Read both before lifting any of
-this into your own cluster.
+Start with [VolSync storage recovery](volsync-storage-recovery.md) and
+[Talos ArgoCD pvc-plumber integration](talos-argocd-pvc-plumber-integration.md).
