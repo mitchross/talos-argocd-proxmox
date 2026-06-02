@@ -4,12 +4,12 @@
 |---|---|
 | Status | **v4.0.1 SHIPPED (permissive); migration + DR-completeness campaign COMPLETE (24/24 DR_COMPLETE, 2026-06-01).** See **§0 CANONICAL STATUS** for shipped-vs-design. The locked design's strict/webhook half (§6–§10, phases 8–12) is FUTURE v5, not built. |
 | Decision lock | pvc-plumber is the intended long-term platform abstraction for label-driven, fail-closed, GitOps-friendly PVC backup and restore. The 2026-05-21 decommission is reversed by this PRD. |
-| Operator repo | <https://github.com/mitchross/pvc-plumber> (current head: `v3.1.0-1-g6f63d54`, 2026-05-08). |
+| Operator repo | <https://github.com/mitchross/pvc-plumber> (`v4.0.1` shipped/proven). |
 | GitOps repo | This repository (`talos-argocd-proxmox`). |
 | Author / operator | Mitch (single-operator homelab). |
 | First written | 2026-05-22. |
 
-> **Execution status (2026-05-29, not part of the locked design):** Phases 1–6 effectively complete — inventory generated, operator code at rc7, deployed in PERMISSIVE mode, first app (nginx-example/storage) migrated to operator-managed RS/RD with a Successful backup. Live status tracked in docs/pvc-plumber-v4-migration-readiness.md.
+> **Execution status (2026-06-01, not part of the locked design):** v4.0.1 is shipped and proven in permissive mode. The migration and DR-completeness campaign is complete: 24 operator-managed PVCs across 18 namespaces, 24/24 DR_COMPLETE before the full cluster nuke.
 
 ---
 
@@ -42,7 +42,7 @@ Runbook: `docs/volsync-storage-recovery.md` → "Restore drill runbook".
 - **24 operator-managed PVCs across 18 namespaces.** **24/24 are DR_COMPLETE** (Git `dataSourceRef → matching managed RD`).
 - **PostHog** (4 PVCs) — `backup-exempt`/disposable; never migrate.
 - **CNPG** (8 PVCs) — never generic-migrated; native Barman→S3 (RustFS). Permanent exclusion.
-- **redis-instance/redis-master-0** — DEFERRED (Bitnami StatefulSet + database-namespace scope question).
+- **redis-instance/redis-master-0** — `backup-exempt`/disposable; never migrate.
 - No remaining normal app-PVC migration work.
 
 ### DEPRECATED — Kyverno path (fully removed)
@@ -61,25 +61,26 @@ amendment + the §10 failure-matrix drills pass.
 
 ### OPEN QUESTIONS (still unresolved)
 - Whether to build v5 strict mode at all, or keep permissive + the existing MAP backend-gate as "good enough". **NEW framing (2026-06-01): v5 is a fork — (A) a stricter VolSync layer vs (B) a Kopia-native operator (per community ADR-0001). Parked, decision deferred. See [pvc-plumber-v5-kopia-native-future.md](pvc-plumber-v5-kopia-native-future.md).**
-- `redis-instance` ownership: should pvc-plumber own database-namespace PVCs, or leave them inline?
 - Naming-strategy / backup-identity uniqueness (original §17 items 1–2) — moot unless v5 proceeds.
 
 ### OPS FOLLOW-UPS (tracked, not done in this PRD)
-1. **Kopia maintenance** — repeated "too many index blobs" warnings; plan in `docs/domains/storage/kopia-maintenance-plan.md` (not yet run).
+1. **Kopia maintenance** — healthy scheduled maintenance; manual full maintenance is not required. See `docs/domains/storage/kopia-maintenance-plan.md`.
 2. **Rollback PV cleanup** — 7 retained `Released/Retain` PVs; plan in `docs/volsync-storage-recovery.md` (not yet executed).
 3. **Longhorn / storage policy review** — tiered local-restore vs replicated-critical; `docs/domains/storage/architecture-future.md`.
-4. **redis-instance final decision** (above).
-5. **vb-test/vbtest1** — disposable Longhorn test volume, lingering `degraded`; clean up.
+4. **Longhorn health** — keep `0` faulted / `0` degraded / `0` rebuilding as the pre-nuke baseline.
 
 ---
 
 ## 1. Problem and goal
 
+> [!NOTE]
+> Sections 1-19 preserve the original locked design record. Current shipped behavior is defined by section 0 above.
+
 The cluster has been through three backup architectures in twelve months:
 
 1. **pvc-plumber operator + Kyverno** (pre-2026-04). Reverse-mapped PVCs from labels and rendered RS/RD via Kyverno generators.
 2. **Helm chart per app** (2026-04 → 2026-05-21). 26 apps were bulk-migrated to a `helmCharts:` entry inflating an in-repo `volsync-backup` chart.
-3. **Inline RS/RD per PVC + `ClusterExternalSecret` + `MutatingAdmissionPolicy`** (2026-05-21 onward, current). Chart killed in commit `c401822a`. Each PVC carries its own RS+RD as additional documents.
+3. **Inline RS/RD per PVC + `ClusterExternalSecret` + `MutatingAdmissionPolicy`** (2026-05-21 transitional snapshot). Chart killed in commit `c401822a`. Each PVC carried its own RS+RD as additional documents.
 
 The current state is **defensible but not the destination**:
 
@@ -291,7 +292,7 @@ Must be covered by unit tests in the decision engine and by integration tests in
 
 ## 11. Naming and labeling of generated resources
 
-To match the current inline pattern in this repo and minimize migration churn:
+To match the transitional inline pattern in this repo and minimize migration churn:
 
 - ReplicationSource: `metadata.name = <pvc-name>` (bare).
 - ReplicationDestination: `metadata.name = <pvc-name>-dst`.
@@ -429,7 +430,7 @@ Webhook TLS via cert-manager `Certificate`. Webhook configs use `cert-manager.io
 ## 18. References
 
 - Operator repo: <https://github.com/mitchross/pvc-plumber>
-- Current inline pattern (canonical): `my-apps/ai/open-webui/pvc.yaml`
+- Transitional inline pattern used during migration: `my-apps/ai/open-webui/pvc.yaml`
 - Application guidelines: `my-apps/CLAUDE.md`
 - MAP + ClusterES: `infrastructure/storage/volsync-backup-cluster/`
 - VolSync operator: `infrastructure/storage/volsync/`

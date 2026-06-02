@@ -97,13 +97,15 @@ flowchart LR
     PP -->|does NOT| X3[replace Longhorn/CSI ❌]
     PP -->|does NOT| X4[back up CNPG databases ❌]
     PP -->|does NOT| X5[manage PostHog disposable data ❌]
-    PP -->|does NOT| X6["v5 strict admission ❌ (not built)"]
+    PP -->|does NOT| X6[manage Redis disposable data ❌]
+    PP -->|does NOT| X7["v5 strict admission ❌ (not built)"]
 ```
 
 - **Does not move bytes** — that's VolSync + Kopia.
 - **Does not replace VolSync or Longhorn** — it sits *on top* of them.
 - **Does not back up CNPG databases** — those use Barman → S3 (native, SQL-aware). Never generic-migrate them.
 - **Does not manage PostHog** — those PVCs are `backup-exempt` (disposable/rebuildable).
+- **Does not manage Redis** — Redis PVCs are `backup-exempt` (disposable/rebuildable).
 - **Does not do v5 "strict" admission yet** — no fail-closed webhook, no backup-truth cache. That's a *future* design, **not shipped** (see [v4 vs v5](#-v4-shipped-vs-v5-future)).
 
 ---
