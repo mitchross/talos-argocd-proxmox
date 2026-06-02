@@ -1,8 +1,8 @@
-# Kopia / VolSync repository maintenance — plan (NOT yet executed)
+# Kopia / VolSync Repository Maintenance
 
-> **Status: PLAN ONLY.** Investigated read-only on 2026-06-01 after restore drills
-> repeatedly logged `Found too many index blobs (~1400)`. **Nothing has been run.**
-> Do not run maintenance while backup/restore migrations are in progress.
+> **Status: VERIFIED HEALTHY.** Investigated read-only on 2026-06-01 after restore drills
+> repeatedly logged `Found too many index blobs (~1400)`. Scheduled maintenance is healthy.
+> Manual full maintenance is not required.
 
 ## Headline finding
 

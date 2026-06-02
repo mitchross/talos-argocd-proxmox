@@ -2,52 +2,23 @@ Create a new CNPG (CloudNativePG) database for `$ARGUMENTS`.
 
 ## Steps
 
-1. Create directory: `infrastructure/database/cloudnative-pg/<app-name>/`
-
-2. Create `cluster.yaml`:
-   ```yaml
-   apiVersion: postgresql.cnpg.io/v1
-   kind: Cluster
-   metadata:
-     name: <app>-database
-     namespace: cloudnative-pg
-   spec:
-     instances: 1
-     imageName: ghcr.io/cloudnative-pg/postgresql:16.2
-     bootstrap:
-       initdb:
-         database: <app>
-         owner: <app>
-     storage:
-       size: 20Gi
-       storageClass: longhorn
-     backup:
-       barmanObjectStore:
-         serverName: <app>-database
-         destinationPath: s3://postgres-backups/cnpg/<app>
-         endpointURL: http://192.168.10.133:30292
-         s3Credentials:
-           accessKeyId:
-             name: cnpg-s3-credentials
-             key: AWS_ACCESS_KEY_ID
-           secretAccessKey:
-             name: cnpg-s3-credentials
-             key: AWS_SECRET_ACCESS_KEY
-       retentionPolicy: "14d"
-   ```
-
-3. Create `kustomization.yaml` listing all resources
-
-4. Database AppSet auto-discovers via `infrastructure/database/*/*` glob — no need to add paths to `infrastructure-appset.yaml`
+1. Create `infrastructure/database/cloudnative-pg/<app-name>/`.
+2. Copy the current CNPG cluster and plugin pattern from an existing
+   application such as `infrastructure/database/cloudnative-pg/immich/`.
+3. Create `kustomization.yaml` listing every resource.
+4. Confirm the database AppSet discovers the directory through
+   `infrastructure/database/*/*`.
+5. Validate the native Barman/S3 configuration and credentials.
 
 ## Critical Rules
 
-- DO NOT add `backup: "hourly"|"daily"` labels to CNPG PVCs (Barman handles database backups via S3; the pvc-plumber operator must not double-manage them)
-- `serverName` must be bumped after each DR recovery (e.g. `-v2`, `-v3`)
-- Recovery cannot go through ArgoCD (SSA + CNPG webhook conflict)
-- See `docs/domains/cnpg/disaster-recovery.md` for DR procedures
+- CNPG uses native Barman/S3. Do not generic-migrate CNPG PVCs to pvc-plumber.
+- Do not add pvc-plumber fuse labels or generic VolSync RS/RD resources to CNPG PVCs.
+- Keep the CNPG Barman plugin dependency after cert-manager: cert-manager is Wave `1`, plugin is Wave `3`.
+- Bump `serverName` after DR recovery when the CNPG runbook requires a new lineage.
+- Follow [`docs/domains/cnpg/disaster-recovery.md`](../../docs/domains/cnpg/disaster-recovery.md) for recovery.
 
 ## Reference
 
 - Existing database: `infrastructure/database/cloudnative-pg/immich/`
-- DR procedures: `docs/domains/cnpg/disaster-recovery.md`
+- DR procedures: [`docs/domains/cnpg/disaster-recovery.md`](../../docs/domains/cnpg/disaster-recovery.md)
