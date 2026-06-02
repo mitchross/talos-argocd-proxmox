@@ -42,7 +42,7 @@ In words, for every PVC it asks:
 7. **Are both children missing? Is there a partial split** (one managed, one inline)?
 8. **(For DR-completeness, your job not the operator's)** Does the PVC have a `dataSourceRef → <pvc>-dst`?
    Would it **restore** on recreate, or come back **empty**?
-9. **Is this a thing it must never touch?** CNPG / PostHog / Redis-deferred → excluded.
+9. **Is this a thing it must never touch?** CNPG / PostHog / Redis disposable data → excluded.
 
 ---
 
@@ -64,7 +64,7 @@ flowchart TD
 | Class | Meaning | Operator action |
 |---|---|---|
 | `managed-by-pvc-plumber` | operator owns RS + RD | reconcile to desired (or `already-matches`) |
-| `inline-argo` | Git-rendered RS/RD (e.g. deferred redis) | **audit-only — never patch** |
+| `inline-argo` | Historical Git-rendered RS/RD | **audit-only — never patch** |
 | `none` | no RS/RD exist | create them (if opted in) |
 | partial / mixed | one managed, one inline | `needs-human-review` |
 | `skipped-not-opted-in` | namespace managed, PVC not labeled | nothing |
@@ -141,7 +141,7 @@ flowchart TD
     D -->|already-matches + dsr + Successful| NOP[no-op ✅]
     D -->|opted-in, no dsr, useful backup| MIG[plan: add dsr + drill]
     D -->|disposable| EXM[mark backup-exempt / EMPTY_BY_DESIGN]
-    D -->|CNPG / PostHog / Redis-deferred| NAT[native / exempt / leave — never generic-migrate]
+    D -->|CNPG / PostHog / Redis| NAT[native / exempt / leave — never generic-migrate]
     D -->|ambiguous / needs-human-review| STOP[🛑 stop, ask a human]
 ```
 
@@ -155,4 +155,4 @@ flowchart TD
 7. **Stop on any uncertainty** — `needs-human-review`, partial ownership, or a backup that isn't Successful.
 
 > 🧷 **Hard exclusions baked into the algorithm:** never generic-migrate **CNPG** (Barman owns those),
-> never back up **PostHog** (disposable/exempt), and leave **redis-instance** as decided (deferred).
+> never back up **PostHog** or **Redis** (disposable/exempt).

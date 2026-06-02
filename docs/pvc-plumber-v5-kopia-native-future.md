@@ -83,7 +83,7 @@ flowchart LR
 ```mermaid
 flowchart LR
     S1[1. Keep v4 stable] --> S2[2. Finish cleanup\nKyverno/vb-test/Kopia/rollback/Longhorn]
-    S2 --> S3[3. Namespace + full-cluster rebuild drill]
+    S2 --> S3[3. Record full-cluster rebuild findings]
     S3 --> S4[4. v5 PRD with BOTH options A + B]
     S4 --> S5["5. Separate experimental repo\nkopia-lab-operator"]
     S5 --> S6["6. MVP: Repository + BackupConfig + Backup\n(+ maybe BackupSchedule) + status w/ snapshot ID"]
@@ -92,8 +92,8 @@ flowchart LR
 ```
 
 > Cleanup status (2026-06-01): Kyverno CRDs ✅ removed, vb-test ✅ removed, Kopia maintenance ✅ verified
-> healthy, rollback-PV + Longhorn reviews ✅ planned (read-only). The rebuild drill (step 3) is the next
-> natural acceptance test.
+> healthy, rollback-PV + Longhorn reviews ✅ planned (read-only). The full-cluster rebuild happened
+> on 2026-06-01 and its bootstrap findings are recorded in the nuke runbook.
 
 ## The key decision (parked)
 

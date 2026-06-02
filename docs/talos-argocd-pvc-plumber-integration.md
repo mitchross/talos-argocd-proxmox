@@ -76,8 +76,8 @@ flowchart TD
     Q1 -->|yes| CNPG[[Barman → S3\nNEVER pvc-plumber]]
     Q1 -->|no| Q2{PostHog /\ndisposable?}
     Q2 -->|yes| EX[[backup-exempt]]
-    Q2 -->|no| Q3{Cache / broker\nRedis-ish?}
-    Q3 -->|yes| DEC[[decision required\n(exempt vs migrate)]]
+    Q2 -->|no| Q3{Redis / cache /\nbroker?}
+    Q3 -->|yes| DEC[[backup-exempt\n(disposable)]]
     Q3 -->|no| Q4{NFS / static\nexternal media?}
     Q4 -->|yes| EXT[[usually exempt /\nbacked separately]]
     Q4 -->|no| Q5{Regenerable cache\nthat's fine empty?}
@@ -90,7 +90,7 @@ flowchart TD
 | Normal app data (config, docs, uploads, SQLite) | **pvc-plumber managed** + dsr |
 | CNPG database PVC | **Barman → S3** — never pvc-plumber |
 | PostHog (clickhouse/postgres/redis/kafka) | **backup-exempt** (disposable/rebuildable) |
-| Redis / cache / broker | **decision required** — exempt vs migrate (redis-instance is *deferred*) |
+| Redis / cache / broker | **backup-exempt** — Redis is disposable |
 | NFS / static media (immich originals, tubesync media) | usually **exempt** or backed separately |
 | Pure regenerable cache | **EMPTY_BY_DESIGN** acceptable (no dsr) |
 

@@ -4,7 +4,7 @@
 
 ## 📍 Current state (2026-06-01)
 `v4.0.1` permissive · **24 PVCs / 18 namespaces** managed · **24/24 DR_COMPLETE** ·
-25/25 backups Successful · 4 restore drills passed · Kyverno removed · Longhorn 0 faulted/0 degraded.
+24/24 DR_COMPLETE · 4 restore drills passed · Kyverno removed · Longhorn 0 faulted/0 degraded/0 rebuilding.
 
 ## 🏷️ The 3 labels that matter
 ```
@@ -50,11 +50,10 @@ recreates it empty). pvc-plumber does **not** revert your manual trigger patches
 ## 🚫 Never-migrate list
 - **CNPG** databases → Barman → S3 (native).
 - **PostHog** PVCs → `backup-exempt` (disposable).
-- **redis-instance/redis-master-0** → deferred (decide: exempt vs migrate).
+- **redis-instance/redis-master-0** → `backup-exempt` (disposable).
 
 ## ⏭️ Next ops tasks
 1. Kopia maintenance — healthy; full not needed (`docs/domains/storage/kopia-maintenance-plan.md`).
 2. Rollback PV cleanup — 7 retained; reclaim reset-batch first, per-PV approval.
 3. Longhorn replica/storage policy review (`docs/domains/storage/architecture-future.md`).
-4. redis-instance final decision.
-5. (future) pvc-plumber v5 strict-mode plan — **not shipped**.
+4. (future) pvc-plumber v5 strict-mode plan — **not shipped**.
