@@ -45,9 +45,9 @@ Create a new CNPG (CloudNativePG) database for `$ARGUMENTS`.
 - DO NOT add `backup: "hourly"|"daily"` labels to CNPG PVCs (Barman handles database backups via S3; the pvc-plumber operator must not double-manage them)
 - `serverName` must be bumped after each DR recovery (e.g. `-v2`, `-v3`)
 - Recovery cannot go through ArgoCD (SSA + CNPG webhook conflict)
-- See `docs/cnpg-disaster-recovery.md` for DR procedures
+- See `docs/domains/cnpg/disaster-recovery.md` for DR procedures
 
 ## Reference
 
 - Existing database: `infrastructure/database/cloudnative-pg/immich/`
-- DR procedures: `docs/cnpg-disaster-recovery.md`
+- DR procedures: `docs/domains/cnpg/disaster-recovery.md`

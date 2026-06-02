@@ -6,7 +6,7 @@
 > on this document yet. Current live model is unchanged: Longhorn is the default
 > CSI; backups are VolSync→Kopia→S3 (RustFS) wired per-PVC and increasingly
 > managed by pvc-plumber v4. See
-> [pvc-plumber-v4-migration-readiness.md](pvc-plumber-v4-migration-readiness.md).
+> [pvc-plumber-v4-migration-readiness.md](../../pvc-plumber-v4-migration-readiness.md).
 
 ## Motivating incident (2026-05-31)
 

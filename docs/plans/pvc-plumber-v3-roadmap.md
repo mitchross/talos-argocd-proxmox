@@ -242,6 +242,6 @@ Never let class selection be "whatever the controller saw first."
 - v2 design doc: [`pvc-plumber-operator-design.md`](./pvc-plumber-operator-design.md)
 - v2 operator PR: [mitchross/pvc-plumber#3](https://github.com/mitchross/pvc-plumber/pull/3)
 - v2 cluster manifests PR: [mitchross/talos-argocd-proxmox#1270](https://github.com/mitchross/talos-argocd-proxmox/pull/1270)
-- 2026-04-08 Kyverno webhook deadlock incident: [`infrastructure/controllers/kyverno/CLAUDE.md`](../../infrastructure/controllers/kyverno/CLAUDE.md) § "Critical: Webhook Deadlock Prevention"
+- 2026-04-08 Kyverno webhook deadlock incident: `infrastructure/controllers/kyverno/CLAUDE.md` (historical; removed) § "Critical: Webhook Deadlock Prevention"
 - VolSync Volume Populator: <https://volsync.readthedocs.io/en/v0.8.0/usage/volume-populator/>
 - ValidatingAdmissionPolicy: <https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy>

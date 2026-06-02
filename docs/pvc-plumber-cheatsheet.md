@@ -53,8 +53,8 @@ recreates it empty). pvc-plumber does **not** revert your manual trigger patches
 - **redis-instance/redis-master-0** → deferred (decide: exempt vs migrate).
 
 ## ⏭️ Next ops tasks
-1. Kopia maintenance — healthy; full not needed (`docs/kopia-maintenance-plan.md`).
+1. Kopia maintenance — healthy; full not needed (`docs/domains/storage/kopia-maintenance-plan.md`).
 2. Rollback PV cleanup — 7 retained; reclaim reset-batch first, per-PV approval.
-3. Longhorn replica/storage policy review (`docs/storage-architecture-future.md`).
+3. Longhorn replica/storage policy review (`docs/domains/storage/architecture-future.md`).
 4. redis-instance final decision.
 5. (future) pvc-plumber v5 strict-mode plan — **not shipped**.

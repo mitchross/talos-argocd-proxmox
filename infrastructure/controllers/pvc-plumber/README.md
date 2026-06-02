@@ -56,7 +56,7 @@ Deployment; a deliberate manual sync is required.
   (`age_seconds` + `stale`).
 
 Full incident write-up:
-[`docs/pvc-plumber-v4-nginx-canary-incident.md`](../../../docs/pvc-plumber-v4-nginx-canary-incident.md).
+[`docs/pvc-plumber-v4-nginx-canary-incident.md`](../../../docs/archive/pvc-plumber/incidents/pvc-plumber-v4-nginx-canary-incident.md).
 
 ## Permissive-mode bounds (blast radius)
 
@@ -159,7 +159,7 @@ Confirm what's rendered:
   checklist, rollback)
 - [`docs/pvc-plumber-v4-migration-readiness.md`](../../../docs/pvc-plumber-v4-migration-readiness.md) —
   live status, fleet readiness matrix, next-candidate plan
-- [`docs/pvc-plumber-v4-nginx-canary-incident.md`](../../../docs/pvc-plumber-v4-nginx-canary-incident.md) —
+- [`docs/pvc-plumber-v4-nginx-canary-incident.md`](../../../docs/archive/pvc-plumber/incidents/pvc-plumber-v4-nginx-canary-incident.md) —
   rc5/rc6 incident + rc7 resolution
 - [`infrastructure/storage/volsync-backup-cluster/`](../../storage/volsync-backup-cluster/) —
   the MAP that coexists with pvc-plumber at Wave 2

@@ -17,7 +17,7 @@ its gate condition is met,** unless the user explicitly redirects.
 3. [talos-argocd-pvc-plumber-integration.md](talos-argocd-pvc-plumber-integration.md) — how this repo uses it.
 4. [volsync-storage-recovery.md](volsync-storage-recovery.md) — restore lifecycle + drill runbook.
 5. [pvc-plumber-v4-prd.md](pvc-plumber-v4-prd.md) — §0 canonical status + locked design.
-6. [storage-architecture-future.md](storage-architecture-future.md) — storage tiering future idea.
+6. [storage-architecture-future.md](domains/storage/architecture-future.md) — storage tiering future idea.
 
 Quick reference: [pvc-plumber-cheatsheet.md](pvc-plumber-cheatsheet.md).
 

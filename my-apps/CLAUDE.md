@@ -205,7 +205,7 @@ metadata:
     # ServerSideDiff dry-runs SSA; the apiserver rejects any change to
     # the immutable dataSourceRef on a Bound PVC and wedges sync. The
     # global Argo `ignoreDifferences` then masks the dataSource drift
-    # normally. See docs/argocd.md "Server-Side Diff & Apply Strategy".
+    # normally. See docs/domains/argocd/argocd.md "Server-Side Diff & Apply Strategy".
     argocd.argoproj.io/compare-options: ServerSideDiff=false
 spec:
   storageClassName: longhorn   # Required — needs volumesnapshot support

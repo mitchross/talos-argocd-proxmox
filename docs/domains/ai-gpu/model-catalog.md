@@ -1,9 +1,9 @@
 # AI Model Catalog — llama-cpp Preset Bank
 
 > What each model in the cluster is, what it's for, and when to use it. Companion
-> to [`docs/3090-llm-optimization.md`](3090-llm-optimization.md) (topology, KV
+> to [`3090-llm-optimization.md`](3090-llm-optimization.md) (topology, KV
 > math, engine choice). Source of truth for the presets themselves:
-> [`my-apps/ai/llama-cpp/presets.ini`](../my-apps/ai/llama-cpp/presets.ini).
+> [`my-apps/ai/llama-cpp/presets.ini`](../../../my-apps/ai/llama-cpp/presets.ini).
 >
 > Last updated: 2026-05-30.
 
@@ -231,4 +231,4 @@ lot of the decisions here and in [`3090-llm-optimization.md`](3090-llm-optimizat
   regex was frozen and we bumped to `server-cuda13-b9354`.
 
 Full topology / KV / engine analysis lives in
-[`docs/3090-llm-optimization.md`](3090-llm-optimization.md).
+[`docs/domains/ai-gpu/3090-llm-optimization.md`](3090-llm-optimization.md).

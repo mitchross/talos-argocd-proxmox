@@ -416,7 +416,7 @@ RustFS data is unchanged; the cluster can be poked indefinitely.
 
 ## What This Runbook DOES NOT Cover
 
-- **CNPG database DR** — see `docs/cnpg-disaster-recovery.md`. CNPG uses
+- **CNPG database DR** — see `docs/domains/cnpg/disaster-recovery.md`. CNPG uses
   Barman to S3, not VolSync.
 - **NFS-static-PV data** (immich photos, llama-cpp models) — these live on
   TrueNAS and survive the nuke; the PVs just need to be reapplied with

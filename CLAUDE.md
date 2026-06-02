@@ -190,15 +190,15 @@ Detailed instructions load automatically when working in these directories:
 > - **Do NOT treat old migration incidents (nginx-canary, v3 cutover) as current operating flow.**
 
 - **[docs/volsync-storage-recovery.md](docs/volsync-storage-recovery.md)** - PVC backup/restore single source of truth (architecture, sync waves, admission flow, scenarios, troubleshooting)
-- **[docs/cnpg-disaster-recovery.md](docs/cnpg-disaster-recovery.md)** - CNPG database DR procedures (separate system: Barman → S3)
-- **[docs/network-topology.md](docs/network-topology.md)** - Network architecture details
-- **[docs/network-policy.md](docs/network-policy.md)** - Cilium network policies
-- **[docs/argocd.md](docs/argocd.md)** - ArgoCD documentation
-- **[docs/argocd-entrypoints.md](docs/argocd-entrypoints.md)** - ArgoCD root entrypoints, waves, and AppSet/custom-entrypoint decisions
+- **[docs/domains/cnpg/disaster-recovery.md](docs/domains/cnpg/disaster-recovery.md)** - CNPG database DR procedures (separate system: Barman → S3)
+- **[docs/domains/networking/topology.md](docs/domains/networking/topology.md)** - Network architecture details
+- **[docs/domains/networking/policy.md](docs/domains/networking/policy.md)** - Cilium network policies
+- **[docs/domains/argocd/argocd.md](docs/domains/argocd/argocd.md)** - ArgoCD documentation
+- **[docs/domains/argocd/entrypoints.md](docs/domains/argocd/entrypoints.md)** - ArgoCD root entrypoints, waves, and AppSet/custom-entrypoint decisions
 - **[docs/pvc-plumber-v4-prd.md](docs/pvc-plumber-v4-prd.md)** — pvc-plumber v4 PRD (locked design, phased rollout, label/annotation contract, migration rules). **Authoritative for any pvc-plumber work.**
 - **[docs/pvc-plumber-v4-cutover.md](docs/pvc-plumber-v4-cutover.md)** — Day-of cutover runbook: label model, two-gate write contract, ownership rules, generated VolSync shape, required permissive env vars, per-PVC checklist, karakeep canary scope, rollback. **Operational source of truth for v4 migrations.**
 - **[docs/pvc-plumber-v4-roadmap.md](docs/pvc-plumber-v4-roadmap.md)** — Post-PRD working backlog: items identified during execution that are gated behind specific Phase 6 / canary milestones. Includes the post-canary visual explainer deliverable.
-- **[docs/storage-architecture-future.md](docs/storage-architecture-future.md)** — **FUTURE IDEA (not implemented):** tiered storage — local CSI (OpenEBS/ZFS LocalPV) + VolSync restore-based DR as the default, Longhorn only for live-availability-critical apps, native backups for DBs. Separates the CSI layer (provision/mount) from the backup layer (VolSync/pvc-plumber). Revisit after the pvc-plumber v4 campaign stabilizes; do not act on it now.
+- **[docs/domains/storage/architecture-future.md](docs/domains/storage/architecture-future.md)** — **FUTURE IDEA (not implemented):** tiered storage — local CSI (OpenEBS/ZFS LocalPV) + VolSync restore-based DR as the default, Longhorn only for live-availability-critical apps, native backups for DBs. Separates the CSI layer (provision/mount) from the backup layer (VolSync/pvc-plumber). Revisit after the pvc-plumber v4 campaign stabilizes; do not act on it now.
 - **pvc-plumber was decommissioned 2026-05-21; v4 re-adopted and now live (`v4.0.1`, permissive mode; 24 PVCs operator-managed across 18 namespaces — SAVE_FOR_END migrations n8n/home-assistant/gitea done; paperless-ngx/{data,media} + immich/library reset-EMPTY-then-migrated 2026-05-31; posthog backup-exempt; redis-instance/redis-master-0 **backup-exempt 2026-06-01** (was deferred — paperless Celery broker, disposable; inline RS/RD removed, dsr removed, ComparisonError cleared); CNPG never-migrate).** Current migration status + remaining SAVE_FOR_END classification: `docs/pvc-plumber-v4-migration-readiness.md`. Historical decommission analysis under `docs/research/pvc-backup-simplification/`. `scripts/emergency-webhook-cleanup.sh` retained as historical reference for any future `failurePolicy: Fail` webhook deadlock pattern.
 
 ## Mink capture

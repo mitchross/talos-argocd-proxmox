@@ -1,8 +1,8 @@
 # Networking Guidelines
 
 > **Required reading before modifying network policies or debugging connectivity:**
-> - `docs/network-topology.md` — Physical network layout, IP assignments, 10G switch topology
-> - `docs/network-policy.md` — Cilium CiliumClusterwideNetworkPolicy, threat model, what's blocked vs allowed
+> - `docs/domains/networking/topology.md` — Physical network layout, IP assignments, 10G switch topology
+> - `docs/domains/networking/policy.md` — Cilium CiliumClusterwideNetworkPolicy, threat model, what's blocked vs allowed
 
 ## Gateway API Routing
 

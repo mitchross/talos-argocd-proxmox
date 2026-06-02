@@ -1,7 +1,7 @@
 # Database Guidelines (CNPG CloudNativePG)
 
 > **Required reading before performing DR or modifying database backups:**
-> - [`docs/cnpg-disaster-recovery.md`](../../docs/cnpg-disaster-recovery.md) — canonical DR runbook, overlay pattern, troubleshooting
+> - [`docs/domains/cnpg/disaster-recovery.md`](../../docs/domains/cnpg/disaster-recovery.md) — canonical DR runbook, overlay pattern, troubleshooting
 
 Databases use **CloudNativePG** with Barman backups to RustFS S3 — a **separate backup path** from the PVC/VolSync system.
 
@@ -77,7 +77,7 @@ volume faulted; restored from `gitea-database-v1` (last good Barman base
 
 ## Disaster recovery (bump lineage + flip to recovery)
 
-See the full runbook in [`docs/cnpg-disaster-recovery.md`](../../docs/cnpg-disaster-recovery.md#runbook-restore-from-barman-recovery). Short version:
+See the full runbook in [`docs/domains/cnpg/disaster-recovery.md`](../../docs/domains/cnpg/disaster-recovery.md#runbook-restore-from-barman-recovery). Short version:
 
 1. Bump `base/cluster.yaml` `serverName` to next `-vN`.
 2. Set `overlays/recovery/bootstrap-patch.yaml` `externalClusters.serverName` to the now-prior `-v(N-1)`.
@@ -118,4 +118,4 @@ See the full runbook in [`docs/cnpg-disaster-recovery.md`](../../docs/cnpg-disas
 ## Monitoring
 
 Use `kubectl cnpg status <cluster>` CLI plugin for best single-view health.
-See [`docs/cnpg-disaster-recovery.md` § Monitoring & Tools](../../docs/cnpg-disaster-recovery.md#monitoring--tools) for Grafana dashboards, Headlamp, K8sGPT, and a copy-paste state-check script.
+See [`docs/domains/cnpg/disaster-recovery.md` § Monitoring & Tools](../../docs/domains/cnpg/disaster-recovery.md#monitoring--tools) for Grafana dashboards, Headlamp, K8sGPT, and a copy-paste state-check script.

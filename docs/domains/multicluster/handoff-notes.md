@@ -1,7 +1,7 @@
 # Multi-Cluster PRD — Handoff Notes & TODO
 
 > **Status: TODO / for later.** This is the companion handoff brief for
-> [`docs/multicluster-prd.md`](multicluster-prd.md) (the Talos + OpenShift SNO
+> [`prd.md`](prd.md) (the Talos + OpenShift SNO
 > heterogeneous fleet PRD). The PRD body is the spec; this file captures the
 > *reviewer's caveats and the intended working style* so whoever picks this up
 > later (likely a fresh Claude Code session) starts with the right posture.
@@ -12,7 +12,7 @@
 
 ## Recommended opening prompt (forces reconcile-first behavior)
 
-> "Read `docs/multicluster-prd.md`, then read the current repo and tell me where
+> "Read `docs/domains/multicluster/prd.md`, then read the current repo and tell me where
 > the repo differs from the PRD's assumptions before doing anything. Then propose
 > a Phase 1 plan and ask me any open questions."
 
@@ -70,7 +70,7 @@ barrel ahead.
 - [ ] Run the recommended opening prompt against a fresh session.
 - [ ] Reconcile PRD §5 open questions against the live repo (ArgoCD CR field,
       pvc-plumber v4 design, AppSet syntax, Cilium gateway name).
-- [ ] Have the agent open a PR updating `docs/multicluster-prd.md` to match the
+- [ ] Have the agent open a PR updating `docs/domains/multicluster/prd.md` to match the
       reconciled reality.
 - [ ] Treat Phase 4 (Talos migration) as gated on a verified before/after
       rendered-Application dry diff on a branch.

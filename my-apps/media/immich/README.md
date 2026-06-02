@@ -42,7 +42,7 @@ runtimeClass if you move it to a GPU worker).
 > `infrastructure/database/CLAUDE.md`.
 
 The `library` PVC is not currently VolSync-backed. It's large and the
-contents are regenerable from originals + DB (see `docs/cnpg-disaster-recovery.md`
+contents are regenerable from originals + DB (see `docs/domains/cnpg/disaster-recovery.md`
 for the full recovery flow). Enable later if re-generating thumbnails for
 1.27 TiB of photos on every rebuild starts to feel slow.
 
@@ -183,7 +183,7 @@ Accelerate:
 
 ## Recovery / DR
 
-See [`docs/cnpg-disaster-recovery.md`](../../../docs/cnpg-disaster-recovery.md)
+See [`docs/domains/cnpg/disaster-recovery.md`](../../../docs/domains/cnpg/disaster-recovery.md)
 for the authoritative DR procedure (rewritten against the April 2026
 CNPG clean-slate baseline). Summary:
 

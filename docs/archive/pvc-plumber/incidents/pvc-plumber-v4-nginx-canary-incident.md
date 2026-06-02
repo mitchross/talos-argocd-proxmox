@@ -1,7 +1,7 @@
 > [!NOTE]
 > Historical incident record.
 > Useful for understanding why the current design exists, but not current operating guidance.
-> Start with: [pvc-plumber-start-here](../../../pvc-plumber-start-here.md) or [docs index](../../../index.md).
+> Start with: [docs index](../../../index.md) and [pvc-plumber start here](../../../pvc-plumber-start-here.md).
 
 # pvc-plumber v4 nginx-example/storage canary incident
 
@@ -13,12 +13,12 @@ watch + self-heal requeue + hardening. The operator-managed handoff was then **C
 rc7**: inline RS/RD were removed from Git (`50a84cc9`), the operator recreated `RS/storage` +
 `RD/storage-dst` as `managed-by=pvc-plumber`, and the first operator-managed backup completed
 **Successful** (`lastSyncTime 2026-05-29T04:04:29Z`). **Canary functionally complete.** See
-[`pvc-plumber-v4-migration-readiness.md`](pvc-plumber-v4-migration-readiness.md) for the proven
+[`pvc-plumber-v4-migration-readiness.md`](../../../pvc-plumber-v4-migration-readiness.md) for the proven
 migration recipe and next candidates.
 
-> Companion to [`pvc-plumber-v4-cutover.md`](pvc-plumber-v4-cutover.md) (runbook),
-> [`pvc-plumber-v4-prd.md`](pvc-plumber-v4-prd.md) (design contract), and
-> [`pvc-plumber-v4-roadmap.md`](pvc-plumber-v4-roadmap.md) (backlog). This file is the
+> Companion to [`pvc-plumber-v4-cutover.md`](../../../pvc-plumber-v4-cutover.md) (runbook),
+> [`pvc-plumber-v4-prd.md`](../../../pvc-plumber-v4-prd.md) (design contract), and
+> [`pvc-plumber-v4-roadmap.md`](../../../pvc-plumber-v4-roadmap.md) (backlog). This file is the
 > single source of truth for what happened during the nginx-example/storage canary,
 > what was learned, and what must land before another PVC is migrated.
 
@@ -56,7 +56,7 @@ planned operations.
 | 2026-05-27 23:55:04 | Argo selfHeal auto-synced `my-apps-nginx` (`autoHealAttemptsCount=3`) and pruned both inline `ReplicationSource/storage` and `ReplicationDestination/storage-dst`. Cluster RS+RD total dropped 56 → 54. PVC reconfigured (rv 62113009 → 62481753) but UID, phase, immutable spec preserved. |
 | 2026-05-27 23:55:06 | pvc-plumber v4 reconciler observed the v4-labeled PVC with missing RS/RD; attempted to create both; **denied by RBAC**: `replicationsources.volsync.backube is forbidden: User "system:serviceaccount:pvc-plumber:pvc-plumber" cannot create resource ... in the namespace "nginx-example"`. (Same error for RD.) Operator entered controller-runtime exponential-backoff retry loop. |
 | 2026-05-27 | AppSet-level compare-options workaround: `9d996aea chore(argocd): disable server-side diff for my-apps migration` added `argocd.argoproj.io/compare-options: ServerSideDiff=false` to the `my-apps` AppSet template. `ignoreApplicationDifferences` on the AppSet preserved manual per-app annotations against AppSet regeneration, so a one-time `kubectl annotate` on `my-apps-nginx` was used to bootstrap the annotation on just that one Application. ComparisonError cleared cluster-wide. |
-| 2026-05-28 02:48 | Patch 7.7 landed: `8953fefd chore(pvc-plumber): add operator volsync-writer RBAC for managed namespaces`. New `ClusterRole/pvc-plumber:volsync-writer` (verbs `get,list,watch,create,patch,delete` on `volsync.backube/replicationsources` + `replicationdestinations` only; no `update`, no status subresource, no PVC/Secret/Argo/wildcard). First `RoleBinding/pvc-plumber:volsync-writer` in `nginx-example`. Managed-namespace contract codified in [cutover doc](pvc-plumber-v4-cutover.md). |
+| 2026-05-28 02:48 | Patch 7.7 landed: `8953fefd chore(pvc-plumber): add operator volsync-writer RBAC for managed namespaces`. New `ClusterRole/pvc-plumber:volsync-writer` (verbs `get,list,watch,create,patch,delete` on `volsync.backube/replicationsources` + `replicationdestinations` only; no `update`, no status subresource, no PVC/Secret/Argo/wildcard). First `RoleBinding/pvc-plumber:volsync-writer` in `nginx-example`. Managed-namespace contract codified in [cutover doc](../../../pvc-plumber-v4-cutover.md). |
 | 2026-05-28 02:57 | Manual Argo sync of `pvc-plumber` Application at `8953fefd`. ClusterRole + RoleBinding created. |
 | 2026-05-28 03:03 | Inert PVC poke (`kubectl annotate pvc storage -n nginx-example pvc-plumber.io/poke-rev=8953fefd`) — adds one annotation, no spec/label change — re-enqueued the operator's reconcile work-item immediately. |
 | 2026-05-28 03:03:18 | Operator reconciled. **RBAC denial gone.** New error class: `ReplicationSource.volsync.backube "storage" is invalid: metadata.labels: Invalid value: "nginx-example/storage": a valid label must be ... (regex: '(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?')`. (Same error for RD `storage-dst`.) The operator was writing the compound `backup_identity` string into a label value, which K8s rejects because `/` is not legal in label values. |
@@ -74,7 +74,7 @@ planned operations.
 - **Dry-run apply** correctly previewed the three PVC labels and the would-apply SSA patch with field manager `pvc-plumber-adopt`.
 - **Live label apply** wrote the three v4 labels cleanly via SSA — no UID change, no spec mutation, no other label touched.
 - **App-level `compare-options: ServerSideDiff=false`** (commit `9d996aea`) bypassed the immutable-PVC-spec compare failure entirely. AppSet's `ignoreApplicationDifferences` clause meant a single one-time annotate on `my-apps-nginx` was sufficient and stuck across AppSet regenerations.
-- **Managed-namespace RBAC pattern** (Patch 7.7, commit `8953fefd`) is now codified: one ClusterRole, per-namespace RoleBindings, opt-in by appending one stanza. Documented in [cutover doc](pvc-plumber-v4-cutover.md#managed-namespace-contract).
+- **Managed-namespace RBAC pattern** (Patch 7.7, commit `8953fefd`) is now codified: one ClusterRole, per-namespace RoleBindings, opt-in by appending one stanza. Documented in [cutover doc](../../../pvc-plumber-v4-cutover.md#managed-namespace-contract).
 - **Restoring inline RS/RD** (commit `6d85c630`) stabilized the backup chain via GitOps. No manual `kubectl create` of RS/RD was used.
 - **pvc-plumber correctly observes Argo-owned inline RS/RD** and writes nothing — the v4 ownership contract held under live load. The label-value bug is **not reached** when the planner emits no create.
 
@@ -93,7 +93,7 @@ state.
 1. **Operator code/image** must be proven to render valid RS/RD (passing K8s
    admission). This is a *unit test* requirement, not a cluster check.
 2. **Operator namespace-scoped write RBAC** must exist (preflight check #1
-   of the [cutover checklist](pvc-plumber-v4-cutover.md#per-pvc-cutover-checklist)).
+   of the [cutover checklist](../../../pvc-plumber-v4-cutover.md#per-pvc-cutover-checklist)).
 3. **PVC v4 labels** applied via `/pvc-plumber-adopt apply` (or directly in
    `pvc.yaml`).
 4. **Dry-run** verified: `/audit` reports `action: already-matches` and
@@ -212,7 +212,7 @@ slash is not in the allowed character set.
 > end-to-end on `nginx-example/storage` (`managed-by=pvc-plumber`, first backup Successful 2026-05-29).
 
 - Additional PVCs **may now be migrated**, one at a time, per the proven recipe in
-  [`pvc-plumber-v4-migration-readiness.md`](pvc-plumber-v4-migration-readiness.md):
+  [`pvc-plumber-v4-migration-readiness.md`](../../../pvc-plumber-v4-migration-readiness.md):
   **RBAC first, inline RS/RD removal last.** Recommended next candidate:
   **`homepage-dashboard/config`**.
 - **Do not** migrate Karakeep yet — it remains **deferred** (destructive, explicit-auth-only).
@@ -282,7 +282,7 @@ slash is not in the allowed character set.
   observes, never writes. This means rollback is always available, even
   mid-migration.
 - **Managed-namespace RBAC must be a hard preflight.** Codified in
-  Patch 7.7 and in the [cutover doc preflight checklist](pvc-plumber-v4-cutover.md#preflight).
+  Patch 7.7 and in the [cutover doc preflight checklist](../../../pvc-plumber-v4-cutover.md#preflight).
   No future PVC may have inline RS/RD removed from Git until check #1
   (`kubectl get rolebinding pvc-plumber:volsync-writer -n <ns>`) returns a
   RoleBinding.
@@ -301,12 +301,12 @@ slash is not in the allowed character set.
 
 ## References
 
-- [`pvc-plumber-v4-cutover.md`](pvc-plumber-v4-cutover.md) — operational runbook,
+- [`pvc-plumber-v4-cutover.md`](../../../pvc-plumber-v4-cutover.md) — operational runbook,
   managed-namespace contract, preflight checklist
-- [`pvc-plumber-v4-prd.md`](pvc-plumber-v4-prd.md) — locked design contract
-- [`pvc-plumber-v4-roadmap.md`](pvc-plumber-v4-roadmap.md) — post-PRD backlog,
+- [`pvc-plumber-v4-prd.md`](../../../pvc-plumber-v4-prd.md) — locked design contract
+- [`pvc-plumber-v4-roadmap.md`](../../../pvc-plumber-v4-roadmap.md) — post-PRD backlog,
   Patch 7.7 completion entry
-- [`pvc-plumber-v4-adopt-cli-spec.md`](pvc-plumber-v4-adopt-cli-spec.md) — adopt
+- [`pvc-plumber-v4-adopt-cli-spec.md`](../historical-design/pvc-plumber-v4-adopt-cli-spec.md) — adopt
   CLI surface
 
 ### Important commits
