@@ -10,11 +10,16 @@ spec:
       owner: gitea
       secret:
         name: gitea-app-secret
-      # No recoveryTarget → restore to latest-WAL available on S3.
-      # Our pre-nuke PITR target (2026-04-16T23:59:59Z) was unreachable —
-      # Barman WAL archiving appears to have stopped archiving before
-      # that timestamp for all DBs. Restoring to latest-WAL gets us
-      # whatever data was archived, which is still better than nothing.
+      # PITR to just before the 2026-06-02 full-cluster nuke (which hit at
+      # ~12:46 UTC on 2026-06-01). We MUST stop WAL replay before the nuke:
+      # the empty post-nuke cluster ran on the same v2 lineage and archived
+      # its own (low-segment, fresh-timeline) WAL there, so "latest-WAL"
+      # could replay post-nuke garbage. 12:40 is after the last good base
+      # backup (2026-06-01T04:00:01) and before the nuke → latest clean state.
+      # If CNPG FATALs "recovery ended before target reached", the pre-nuke
+      # WAL didn't reach 12:40 — fall back to an earlier targetTime.
+      recoveryTarget:
+        targetTime: "2026-06-01T12:40:00Z"
   # Plugin-shape externalClusters (replaces the deprecated in-tree
   # barmanObjectStore field on externalClusters[]; removed in CNPG 1.30.0).
   # Reuses the prod ObjectStore CR (base/objectstore.yaml) — the only thing
@@ -30,8 +35,9 @@ spec:
           # endpoint). Only serverName changes between live writes and
           # recovery reads.
           barmanObjectName: gitea-objectstore
-          # Previous lineage to recover FROM. DO NOT change without
-          # bumping recovery target lineage. See cnpg-plugin-migration.md
-          # §9.1. Keep this at N-1 when bumping base/cluster.yaml to vN.
-          # E.g. last DR (2026-05-02): base → v2, this → v1.
-          serverName: gitea-database-v1
+          # Recover FROM v2 — the lineage holding the GOOD pre-nuke base
+          # backups (daily through 2026-06-01T04:00:01). base/cluster.yaml
+          # writes forward to v3. (v1 is empty/superseded; the old "recover
+          # from v1" config was stale and would have restored an empty DB.)
+          # Keep this at N-1 relative to base when bumping for the next DR.
+          serverName: gitea-database-v2

@@ -52,11 +52,12 @@ spec:
       parameters:
         # Name of the sibling ObjectStore CR (see base/objectstore.yaml).
         barmanObjectName: gitea-objectstore
-        # Preserved from previous spec.backup.barmanObjectStore.serverName —
-        # see cnpg-plugin-migration.md §9.1. v2 lineage opened 2026-05-02
-        # after the GPU worker node deletion left gitea-database-1-wal
-        # Longhorn volume faulted; the prior v1 lineage on RustFS has clean
-        # Barman backups through 2026-05-02T17:09:43Z and remains readable
-        # via the recovery overlay's externalClusters block.
+        # v3 lineage opened 2026-06-02 after the full-cluster nuke. The rebuild
+        # brought gitea-database up empty on overlays/initdb while still pointed
+        # at v2, so the empty cluster ran on the v2 lineage that holds the GOOD
+        # pre-nuke base backups (daily through 2026-06-01T04:00:01). This
+        # recovery restores FROM v2 (PITR to just before the 12:46 nuke) and
+        # writes forward to a CLEAN v3 so post-restore backups never append to
+        # the v2 source. (v1 is empty/superseded.)
         # DO NOT change this value without bumping lineage in lockstep.
-        serverName: gitea-database-v2
+        serverName: gitea-database-v3
