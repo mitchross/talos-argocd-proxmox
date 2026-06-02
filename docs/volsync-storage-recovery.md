@@ -5,7 +5,7 @@ This is the current storage recovery reference for application PVCs managed by p
 ## Current State
 
 - pvc-plumber `v4.0.1` is the shipped and proven operator.
-- `24` operator-managed PVCs across `18` namespaces reached `DR_COMPLETE` before the full cluster nuke.
+- `24` operator-managed PVCs across `18` namespaces reached `DR_COMPLETE`; the full cluster nuke on `2026-06-02` then restored all 24 and re-verified them (`24/24` backups `Successful`, `/audit` `stale=false`). See the [cluster DR nuke restore runbook](cluster-dr-nuke-restore-runbook.md) acceptance result.
 - Redis and PostHog are backup-exempt and disposable.
 - CNPG uses its native Barman/S3 path. Do not generic-migrate CNPG PVCs.
 - Kyverno is not part of the backup path.

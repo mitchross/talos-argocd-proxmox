@@ -33,6 +33,19 @@ The rebuild proved and corrected these ordering problems:
 
 An early Prometheus Operator CRD application was considered and explicitly rejected. Do not resurrect it.
 
+## Acceptance Result (2026-06-02) — PASS
+
+The full nuke/rebuild/restore was executed end-to-end and **passed**. pvc-plumber `v4.0.1` survived a full Omni/Talos cluster destroy+recreate and restored every protected PVC from Git + VolSync/Kopia.
+
+- **24/24 operator-managed PVCs** (18 namespaces) recreated, `Bound`, with `dataSourceRef → <pvc>-dst`, and RS+RD `managed-by=pvc-plumber`.
+- **24/24 post-restore backups `result=Successful`.** The final 3 (`immich/library`, `project-nomad/qdrant-data`, `swarmui/swarmui-output`) initially wedged on a degraded VolSync snapshot-clone (`OfflineRebuildingInProgress`) and were recovered by the clone-bounce procedure (pause RS → delete wedged mover + ephemeral `volsync-*-src` clone → Longhorn GCs the degraded volume → unpause → manual sync → restore cron). Real app PVCs/UIDs were never touched. See [VolSync storage recovery](volsync-storage-recovery.md).
+- `/audit`: `already-matches=24`, `managed-by-pvc-plumber=24`, `would-adopt/create/update/delete=0`, `write-gate-missing=0`, `stale=false`.
+- CNPG native clusters (gitea/immich/paperless/temporal) healthy `1/1` (Barman/S3, never generic-migrated). Redis + PostHog backup-exempt and unmanaged.
+- Longhorn healthy (4/4 nodes schedulable), RustFS external on TrueNAS survived, `root` Synced/Healthy.
+- **No early empty backup overwrote good data** — every backup ran after its restore.
+
+This proves the contract end-to-end: Git/Argo recreate apps → PVCs recreate with `dataSourceRef` → VolSync populator restores from the matching RD → pvc-plumber recreates/verifies RS/RD ownership → apps return on restored data → backups resume.
+
 ## Verified Pre-Nuke State
 
 Before the rebuild:
