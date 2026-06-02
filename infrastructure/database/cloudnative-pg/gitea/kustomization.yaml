@@ -20,13 +20,11 @@ commonLabels:
 commonAnnotations:
   argocd.argoproj.io/sync-wave: "-5"
 resources:
-  # - overlays/recovery      # swap to this for DR (restore from Barman)
-  - overlays/initdb          # ← ACTIVE: steady-state. v2 lineage opened
-                             # 2026-05-02 via Barman recovery from v1; live
-                             # cluster has been healthy on v2 for days, so
-                             # the recovery overlay is now stale config
-                             # leftover. Flipping back ahead of the CNPG
-                             # in-tree → plugin migration so steady-state
-                             # git matches steady-state cluster.
+  - overlays/recovery        # ← ACTIVE (DR 2026-06-02): restore from v2 (PITR
+                             # to just before the 12:46 nuke), write forward to
+                             # v3. The nuke rebuild brought gitea up empty on
+                             # initdb; this recovers the pre-nuke data. Flip
+                             # back to overlays/initdb once recovered + healthy.
+  # - overlays/initdb        # steady-state (fresh DB or already-running)
   - externalsecret.yaml
   - scheduled-backup.yaml
