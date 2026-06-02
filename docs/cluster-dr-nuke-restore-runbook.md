@@ -26,7 +26,15 @@ Hard rules (each one is a real bug this drill found and fixed):
   until Wave 5; an earlier app shipping them fails dry-run ("one or more synchronization tasks are not
   valid") and deadlocks the gate. *If deleting Prometheus breaks restore, the repo is wrong.* We
   deliberately do **NOT** install Prometheus Operator CRDs early. Fixed: pvc-plumber (Wave-2 core
-  split), keda (`keda-observability` app at Wave 6 — commit `92c48f18`).
+  split), keda (`keda-observability` app at Wave 6 — commit `92c48f18`), opentelemetry-operator
+  (`opentelemetry-operator-observability` app at Wave 6 — the operator is Wave 5, the *same* wave as
+  kube-prometheus-stack, so its chart ServiceMonitor raced the CRD install; now split out).
+- **CNPG `enablePodMonitor: true` is an ACCEPTED runtime soft-coupling, not an Argo blocker.** The CNPG
+  clusters (gitea/immich/paperless/temporal, Wave 4) set `enablePodMonitor: true`. The PodMonitor is
+  created by the **CNPG operator at reconcile time** (not rendered into Git, not part of an Argo sync),
+  so on a fresh nuke the operator may log transient PodMonitor-create failures until kube-prometheus-stack
+  installs the `monitoring.coreos.com` CRDs at Wave 5. This self-heals and never gates the Argo wave
+  gate — leave it as-is. (Confirmed by the 2026-06-01 post-nuke observability audit.)
 - **cert-manager is Wave 1**, not Wave 4 — anything mounting a cert-manager TLS secret (e.g.
   cnpg-barman-plugin, Wave 3) needs it early. (commit `d2471e71`)
 - **No early-wave app may reference a not-yet-existing namespace** (e.g. a Role/RoleBinding hardcoded
