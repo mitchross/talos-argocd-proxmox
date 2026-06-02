@@ -29,6 +29,7 @@ resources:
   - custom-entrypoints/keda-observability-app.yaml   # Wave 6 — KEDA ServiceMonitors, after monitoring (split from keda core)
   - custom-entrypoints/temporal-worker-controller-app.yaml
   - custom-entrypoints/opentelemetry-operator-app.yaml
+  - custom-entrypoints/opentelemetry-operator-observability-app.yaml   # Wave 6 — OTel operator ServiceMonitor, after monitoring (split from otel core)
 
   # ApplicationSet entrypoints: broad discovery after core dependencies are in place.
   - appsets/infrastructure-appset.yaml
