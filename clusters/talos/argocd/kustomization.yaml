@@ -1,0 +1,38 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - projects.yaml
+  # Bootstrap entrypoints: Argo CD itself plus cluster services required by later waves.
+  - bootstrap/argocd.yaml
+  - bootstrap/cilium-app.yaml
+  - bootstrap/1passwordconnect.yaml
+  - bootstrap/external-secrets.yaml
+
+  # Core dependencies: storage and restore services required by later waves.
+  - core-dependencies/cert-manager-app.yaml   # Wave 1 — moved out of the Wave-4 infra-appset (cnpg-barman-plugin Wave 3 needs it)
+  - core-dependencies/longhorn-app.yaml
+  - core-dependencies/snapshot-controller-app.yaml
+  - core-dependencies/volsync-app.yaml
+  # pvc-plumber: decommissioned 2026-05-21, re-introduced 2026-05-22 in
+  # audit-mode-only form (Phase 3 of docs/pvc-plumber-v4-prd.md). The Argo
+  # Application's syncPolicy.automated is INTENTIONALLY DISABLED until the
+  # operator image SHA in deployment.yaml is replaced with a real digest;
+  # see manifests/infra/pvc-plumber/deploy-targets/talos/README.md for the
+  # build-and-publish flow. Co-exists with volsync-backup-cluster at the
+  # same sync wave — the MAP gates mover Jobs; pvc-plumber observes PVCs.
+  - core-dependencies/pvc-plumber-app.yaml
+  - core-dependencies/volsync-backup-cluster-app.yaml
+
+  # Custom entrypoints: standalone apps kept out of AppSets for ordering or render reasons.
+  - custom-entrypoints/cnpg-barman-plugin-app.yaml
+  - custom-entrypoints/keda-app.yaml
+  - custom-entrypoints/keda-observability-app.yaml   # Wave 6 — KEDA ServiceMonitors, after monitoring (split from keda core)
+  - custom-entrypoints/temporal-worker-controller-app.yaml
+  - custom-entrypoints/opentelemetry-operator-app.yaml
+  - custom-entrypoints/opentelemetry-operator-observability-app.yaml   # Wave 6 — OTel operator ServiceMonitor, after monitoring (split from otel core)
+
+  # ApplicationSet entrypoints: broad discovery after core dependencies are in place.
+  - appsets/infrastructure-appset.yaml
+  - appsets/database-appset.yaml
+  - appsets/monitoring-appset.yaml
+  - appsets/my-apps-appset.yaml

@@ -56,7 +56,7 @@ When you do a disaster recovery, you're using **Barman** to restore Postgres dat
 **Five pieces:**
 
 1. **The CNPG operator** — runs in `cloudnative-pg` namespace, watches Cluster CRs, creates the Postgres pods + PVCs.
-2. **The Cluster CR** — declares "I want a Postgres cluster called X with these resources, this version, this backup config." Lives in `infrastructure/database/cloudnative-pg/<app>/`.
+2. **The Cluster CR** — declares "I want a Postgres cluster called X with these resources, this version, this backup config." Lives in `manifests/database/cloudnative-pg/<app>/deploy-targets/talos/`.
 3. **The Barman plugin** — sidecar that pushes WAL + base backups to S3 continuously. Configured via `spec.plugins[]` on the Cluster.
 4. **The ObjectStore CR** — sibling to the Cluster CR. Holds the S3 endpoint + credentials. The plugin references it by name.
 5. **The ScheduledBackup CR** — tells Barman "take a base backup every day at this time." Without this, you only have WAL (PITR works but full restore is slow).
@@ -83,7 +83,7 @@ Result: at any moment, you can restore the database to **any point in time** wit
 This is the part that confuses people on day one. Each database directory looks like this:
 
 ```
-infrastructure/database/cloudnative-pg/temporal/
+manifests/database/cloudnative-pg/temporal/deploy-targets/talos/
 ├── kustomization.yaml        ← the FEATURE FLAG (one line)
 ├── externalsecret.yaml        ← creds, never touched during DR
 ├── scheduled-backup.yaml      ← schedule, never touched during DR
@@ -279,7 +279,7 @@ So: CNPG PVCs are explicitly **NOT** labeled `backup: hourly|daily`. pvc-plumber
 
 ### How do I add a new CNPG database?
 
-Copy an existing DB directory (e.g. `gitea/`) to `<newapp>/`, rename names + owner + image + initdb SQL. Set `base/cluster.yaml` `serverName` to `<newapp>-database-v1`. Set `overlays/recovery/bootstrap-patch.yaml` `externalClusters.serverName` to the same `-v1` (placeholder until first DR). Commit + push. The Database AppSet auto-discovers `infrastructure/database/*/*` — no appset edits needed.
+Copy an existing DB deploy target (e.g. `gitea/deploy-targets/talos/`) to `<newapp>/deploy-targets/talos/`, rename names + owner + image + initdb SQL. Set `base/cluster.yaml` `serverName` to `<newapp>-database-v1`. Set `overlays/recovery/bootstrap-patch.yaml` `externalClusters.serverName` to the same `-v1` (placeholder until first DR). Add `.argocd/config.json`, commit, and push. The Database AppSet auto-discovers `manifests/database/*/*/deploy-targets/talos/.argocd/config.json` — no appset edits needed.
 
 ### What if I just want a fresh DB (no recovery)?
 
@@ -295,7 +295,7 @@ Yes — CNPG supports `bootstrap.recovery` with a different `metadata.name`. The
 
 ### What about the lifecycle pruning of old `-vN` lineages on RustFS?
 
-`infrastructure/storage/rustfs-lifecycle/postgres-backups-lifecycle-cm.yaml` carries an explicit lifecycle policy that prunes WAL+base from abandoned lineages after a configurable window. Bumping a lineage in Git for the runbook does NOT immediately prune the prior lineage — it's still there as your safety net for the next-next DR event. The pruning happens on the lifecycle CronJob's schedule.
+`manifests/infra/rustfs-lifecycle/deploy-targets/talos/lifecycle.json` carries an explicit lifecycle policy that prunes WAL+base from abandoned lineages after a configurable window. Bumping a lineage in Git for the runbook does NOT immediately prune the prior lineage — it's still there as your safety net for the next-next DR event. The pruning happens on the lifecycle Job's schedule.
 
 ---
 

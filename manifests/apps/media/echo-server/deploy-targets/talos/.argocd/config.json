@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-media-echo-server",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "echo-server",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/media/echo-server/deploy-targets/talos"
+}

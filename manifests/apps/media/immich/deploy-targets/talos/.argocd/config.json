@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-media-immich",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "immich",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/media/immich/deploy-targets/talos"
+}

@@ -1,0 +1,39 @@
+connect:
+  api:
+    enabled: true
+    resources:
+      requests:
+        memory: "150Mi"
+        cpu: "100m"
+      limits:
+        memory: "300Mi"
+        cpu: "200m"
+  sync:
+    enabled: true 
+    resources:
+      requests:
+        memory: "150Mi"
+        cpu: "100m"
+      limits:
+        memory: "300Mi"
+        cpu: "200m"
+  
+  # This is the correct parameter for the credentials secret name
+  credentialsName: "1password-credentials"    # Instead of credentialsSecret
+  credentialsKey: "1password-credentials.json"
+
+operator:
+  create: true
+  # This is the correct parameter for the operator token
+  token:
+    name: "1password-operator-token"    # This sets the secret name for the operator token
+    key: "token"                        # The key within the secret
+  resources:
+    requests:
+      memory: "150Mi"
+      cpu: "100m"
+    limits:
+      memory: "300Mi"
+      cpu: "200m"
+  autoRestart: true
+  pollingInterval: 300

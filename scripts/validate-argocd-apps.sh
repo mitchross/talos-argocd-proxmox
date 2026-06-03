@@ -1,238 +1,193 @@
 #!/usr/bin/env bash
-# validate-argocd-apps.sh — Catches duplicate Application names,
-# sync wave gaps, and AppSet/standalone path overlaps.
+# validate-argocd-apps.sh — local ArgoCD app-of-apps validation.
 #
-# Run from repo root: ./scripts/validate-argocd-apps.sh
+# Run from repo root:
+#   ./scripts/validate-argocd-apps.sh          # validates talos and openshift
+#   ./scripts/validate-argocd-apps.sh talos
+#   ./scripts/validate-argocd-apps.sh openshift
 
 set -euo pipefail
 
-APPS_DIR="infrastructure/controllers/argocd/apps"
 ERRORS=0
 
-app_yaml_files() {
-  find "$APPS_DIR" -type f -name "*.yaml" | sort
+clusters=("$@")
+if [ ${#clusters[@]} -eq 0 ]; then
+  clusters=(talos openshift)
+fi
+
+fail() {
+  echo "  ERROR: $*"
+  ERRORS=$((ERRORS + 1))
+}
+
+yaml_kind_files() {
+  local apps_dir="$1"
+  find "$apps_dir" -type f \( -name "*.yaml" -o -name "*.yml" \) | sort
 }
 
 application_files() {
-  app_yaml_files | while IFS= read -r f; do
+  local apps_dir="$1"
+  yaml_kind_files "$apps_dir" | while IFS= read -r f; do
     grep -q "^kind: Application$" "$f" 2>/dev/null && printf '%s\n' "$f"
   done
 }
 
-appset_files() {
-  find "$APPS_DIR" -type f -name "*-appset.yaml" | sort
+metadata_files() {
+  local cluster="$1"
+  find manifests -path "*/deploy-targets/$cluster/.argocd/config.json" -type f | sort
+}
+
+json_field() {
+  local file="$1"
+  local field="$2"
+  python3 - "$file" "$field" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as fh:
+    data = json.load(fh)
+print(data.get(sys.argv[2], ""))
+PY
+}
+
+standalone_name() {
+  sed -n '/^metadata:/,/^spec:/p' "$1" | sed -n 's/^  name: *//p' | head -1 | tr -d "'\""
+}
+
+standalone_path() {
+  sed -n '/^  source:/,/^  destination:/p' "$1" | sed -n 's/^    path: *//p' | head -1 | tr -d "'\""
+}
+
+validate_cluster() {
+  local cluster="$1"
+  local apps_dir="clusters/$cluster/argocd"
+  local bootstrap_dir="clusters/$cluster/bootstrap"
+  local self_managed_dir="manifests/infra/argocd/deploy-targets/$cluster"
+
+  echo "=== ArgoCD Application Validation: $cluster ==="
+  echo ""
+
+  if [ ! -d "$apps_dir" ]; then
+    fail "missing $apps_dir"
+    echo ""
+    return
+  fi
+
+  echo "--- Check 1: Duplicate Application names ---"
+  declare -A seen=()
+
+  while IFS= read -r f; do
+    name="$(standalone_name "$f")"
+    [ -n "$name" ] || continue
+    if [ -n "${seen[$name]:-}" ]; then
+      fail "'$name' appears in both ${seen[$name]} and $f"
+    else
+      seen[$name]="$f"
+    fi
+  done < <(application_files "$apps_dir")
+
+  while IFS= read -r f; do
+    name="$(json_field "$f" applicationName)"
+    [ -n "$name" ] || fail "$f missing applicationName"
+    if [ -n "${seen[$name]:-}" ]; then
+      fail "'$name' appears in both ${seen[$name]} and $f"
+    else
+      seen[$name]="$f"
+    fi
+  done < <(metadata_files "$cluster")
+
+  [ $ERRORS -eq 0 ] && echo "  OK: No duplicate Application names found"
+  echo ""
+
+  echo "--- Check 2: Sync wave continuity ---"
+  waves=()
+  while IFS= read -r f; do
+    wave="$(grep "sync-wave:" "$f" 2>/dev/null | head -1 | sed 's/.*sync-wave: *//' | tr -d '"' | xargs || true)"
+    [ -n "$wave" ] && waves+=("$wave")
+  done < <(yaml_kind_files "$apps_dir")
+  while IFS= read -r f; do
+    wave="$(json_field "$f" syncWave)"
+    [ -n "$wave" ] && waves+=("$wave")
+  done < <(metadata_files "$cluster")
+
+  if [ ${#waves[@]} -gt 0 ]; then
+    mapfile -t sorted_waves < <(printf '%s\n' "${waves[@]}" | sort -n | uniq)
+    echo "  Waves found: ${sorted_waves[*]}"
+  else
+    fail "no sync waves found"
+  fi
+  echo ""
+
+  echo "--- Check 3: kustomization.yaml lists Argo entrypoint files ---"
+  local kustomization="$apps_dir/kustomization.yaml"
+  if [ ! -f "$kustomization" ]; then
+    fail "missing $kustomization"
+  else
+    while IFS= read -r f; do
+      relpath="${f#"$apps_dir"/}"
+      [ "$relpath" = "kustomization.yaml" ] && continue
+      grep -q "kind: Application\|kind: ApplicationSet\|kind: AppProject" "$f" 2>/dev/null || continue
+      if ! grep -q -- "$relpath" "$kustomization" 2>/dev/null; then
+        fail "$relpath exists but is not listed in $kustomization"
+      fi
+    done < <(yaml_kind_files "$apps_dir")
+  fi
+  echo ""
+
+  echo "--- Check 4: Source paths exist ---"
+  while IFS= read -r f; do
+    path="$(standalone_path "$f")"
+    [ -z "$path" ] && continue
+    if [ ! -f "$path/kustomization.yaml" ]; then
+      fail "$f points at '$path' but no kustomization.yaml exists there"
+    fi
+  done < <(application_files "$apps_dir")
+
+  while IFS= read -r f; do
+    path="$(json_field "$f" sourcePath)"
+    if [ -z "$path" ]; then
+      fail "$f missing sourcePath"
+    elif [ ! -f "$path/kustomization.yaml" ]; then
+      fail "$f sourcePath '$path' has no kustomization.yaml"
+    fi
+  done < <(metadata_files "$cluster")
+  echo ""
+
+  echo "--- Check 5: ArgoCD chart version alignment ---"
+  script_version="$(grep 'ARGOCD_CHART_VERSION=' scripts/bootstrap-argocd.sh | head -1 | cut -d= -f2 | tr -d '"')"
+  bootstrap_version="$(grep -A5 'name: argo-cd' "$bootstrap_dir/kustomization.yaml" | sed -n 's/.*version: *//p' | head -1 | sed 's/#.*//' | tr -d '"' | xargs)"
+  self_version="$(grep -A5 'name: argo-cd' "$self_managed_dir/kustomization.yaml" | sed -n 's/.*version: *//p' | head -1 | sed 's/#.*//' | tr -d '"' | xargs)"
+  if [ -z "$script_version" ] || [ "$script_version" != "$bootstrap_version" ] || [ "$script_version" != "$self_version" ]; then
+    fail "$cluster ArgoCD chart versions differ: script=$script_version bootstrap=$bootstrap_version self-managed=$self_version"
+  else
+    echo "  OK: script, bootstrap, and self-managed chart versions match ($script_version)"
+  fi
+  echo ""
+
+  if [ "$cluster" = "talos" ]; then
+    echo "--- Check 6: Project Nomad remains one bundled app ---"
+    project_nomad_path="manifests/apps/home/project-nomad/deploy-targets/talos"
+    if [ ! -f "$project_nomad_path/kustomization.yaml" ]; then
+      fail "missing $project_nomad_path/kustomization.yaml"
+    else
+      nested_nomad_kustomizations=$(find "$project_nomad_path" -mindepth 2 -name kustomization.yaml -print | wc -l | xargs)
+      if [ "$nested_nomad_kustomizations" -gt 0 ]; then
+        fail "Project Nomad has nested kustomization.yaml files; it should remain one bundled app"
+      else
+        echo "  OK: Project Nomad is managed as one bundled Application"
+      fi
+    fi
+    echo ""
+  fi
 }
 
 echo "=== ArgoCD Application Validation ==="
 echo ""
 
-# ─────────────────────────────────────────────
-# 1. Check for duplicate Application names
-#    (standalone apps vs AppSet-generated apps)
-# ─────────────────────────────────────────────
-echo "--- Check 1: Duplicate Application Names ---"
-
-# Extract standalone Application names
-standalone_names=()
-standalone_paths=()
-while IFS= read -r f; do
-  name=$(grep -A1 "^  name:" "$f" 2>/dev/null | head -1 | sed 's/.*name: //' | tr -d "'\"" | xargs || true)
-  path=$(grep "path:" "$f" 2>/dev/null | grep -v "repoURL\|targetRevision\|manifest" | head -1 | sed 's/.*path: //' | tr -d "'\"" | xargs || true)
-  if [ -n "$name" ] && [ -n "$path" ]; then
-    standalone_names+=("$name")
-    standalone_paths+=("$path")
-  fi
-done < <(application_files)
-
-# Extract AppSet generator paths and their template name patterns
-while IFS= read -r appset; do
-  appset_name=$(basename "$appset")
-
-  # Extract paths from git directory generators
-  while IFS= read -r appset_path; do
-    appset_path=$(echo "$appset_path" | sed 's/.*path: //' | tr -d "'\"" | xargs)
-    [ -z "$appset_path" ] && continue
-
-    # The generated Application name is {{path.basename}}
-    generated_name=$(basename "$appset_path")
-
-    # Check if this name conflicts with a standalone Application
-    for i in "${!standalone_names[@]}"; do
-      if [ "${standalone_names[$i]}" = "$generated_name" ]; then
-        echo "  ERROR: '$generated_name' is defined as both:"
-        echo "         - Standalone Application (in apps/ directory)"
-        echo "         - Generated by $appset_name (path: $appset_path)"
-        echo "         The AppSet will overwrite the standalone app's sync wave!"
-        echo ""
-        ERRORS=$((ERRORS + 1))
-      fi
-    done
-  done < <(grep "path:" "$appset" | grep -v "repoURL\|targetRevision\|manifest\|exclude\|template" | grep "infrastructure/\|monitoring/\|my-apps/" || true)
-done < <(appset_files)
-
-[ $ERRORS -eq 0 ] && echo "  OK: No duplicate Application names found"
-echo ""
-
-# ─────────────────────────────────────────────
-# 2. Check sync wave continuity
-#    (no unexpected gaps in the wave sequence)
-# ─────────────────────────────────────────────
-echo "--- Check 2: Sync Wave Continuity ---"
-
-waves=()
-while IFS= read -r f; do
-  wave=$(grep "sync-wave:" "$f" 2>/dev/null | head -1 | sed 's/.*sync-wave: *//' | tr -d '"' | xargs || true)
-  if [ -n "$wave" ]; then
-    waves+=("$wave")
-  fi
-done < <(app_yaml_files)
-
-# Sort and deduplicate
-mapfile -t sorted_waves < <(printf '%s\n' "${waves[@]}" | sort -n | uniq)
-echo "  Waves found: ${sorted_waves[*]}"
-
-# Check for gaps > 1 between consecutive waves
-prev=""
-for w in "${sorted_waves[@]}"; do
-  if [ -n "$prev" ]; then
-    gap=$((w - prev))
-    if [ $gap -gt 1 ]; then
-      echo "  WARNING: Gap between wave $prev and $w (missing wave(s): $(seq $((prev + 1)) $((w - 1)) | tr '\n' ',' | sed 's/,$//'))"
-    fi
-  fi
-  prev=$w
+for cluster in "${clusters[@]}"; do
+  validate_cluster "$cluster"
 done
-echo ""
 
-# ─────────────────────────────────────────────
-# 3. Check kustomization.yaml lists all files
-# ─────────────────────────────────────────────
-echo "--- Check 3: All YAML files listed in kustomization.yaml ---"
-
-kustomization="$APPS_DIR/kustomization.yaml"
-if [ -f "$kustomization" ]; then
-  while IFS= read -r f; do
-    relpath="${f#"$APPS_DIR"/}"
-    [ "$relpath" = "kustomization.yaml" ] && continue
-    # Skip non-Application files (Helm values, etc.)
-    grep -q "kind: Application\|kind: ApplicationSet\|kind: AppProject" "$f" 2>/dev/null || continue
-    if ! grep -q "$relpath" "$kustomization" 2>/dev/null; then
-      echo "  ERROR: $relpath exists but is NOT listed in kustomization.yaml"
-      echo "         This file will NEVER be deployed by ArgoCD!"
-      ERRORS=$((ERRORS + 1))
-    fi
-  done < <(app_yaml_files)
-  echo "  OK: All YAML files are listed in kustomization.yaml"
-fi
-echo ""
-
-# ─────────────────────────────────────────────
-# 4. Check internal resource waves don't
-#    contradict their Application wave
-# ─────────────────────────────────────────────
-echo "--- Check 4: Internal sync-wave consistency ---"
-
-while IFS= read -r f; do
-  app_name=$(grep "name:" "$f" | head -1 | sed 's/.*name: //' | tr -d "'\"" | xargs)
-  app_wave=$(grep "sync-wave:" "$f" 2>/dev/null | head -1 | sed 's/.*sync-wave: *//' | tr -d '"' | xargs || true)
-  app_path=$(grep "path:" "$f" 2>/dev/null | grep -v "repoURL\|targetRevision" | head -1 | sed 's/.*path: //' | tr -d "'\"" | xargs || true)
-
-  [ -z "$app_path" ] && continue
-  [ ! -d "$app_path" ] && continue
-
-  # Check namespace.yaml for mismatched wave
-  ns_file="$app_path/namespace.yaml"
-  if [ -f "$ns_file" ]; then
-    ns_wave=$(grep "sync-wave:" "$ns_file" 2>/dev/null | head -1 | sed 's/.*sync-wave: *//' | tr -d '"' | xargs || true)
-    if [ -n "$ns_wave" ] && [ "$ns_wave" != "$app_wave" ]; then
-      echo "  WARNING: $app_name Application is wave $app_wave, but $ns_file has sync-wave: $ns_wave"
-      echo "           The Application wave controls deployment order. Namespace annotation is misleading."
-    fi
-  fi
-done < <(application_files)
-echo ""
-
-# ─────────────────────────────────────────────
-# 5. Check bootstrap Argo CD chart matches self-managed chart
-# ─────────────────────────────────────────────
-echo "--- Check 5: Bootstrap ArgoCD chart version ---"
-
-bootstrap_script="scripts/bootstrap-argocd.sh"
-argocd_kustomization="infrastructure/controllers/argocd/kustomization.yaml"
-if [ -f "$bootstrap_script" ] && [ -f "$argocd_kustomization" ]; then
-  bootstrap_version=$(grep -A4 "helm upgrade --install argocd argo-cd" "$bootstrap_script" | grep -- "--version" | head -1 | sed 's/.*--version //' | sed 's/[\\'\''"]//g' | xargs || true)
-  gitops_version=$(grep -A5 "name: argo-cd" "$argocd_kustomization" | grep "version:" | head -1 | sed 's/.*version: //' | sed 's/#.*//' | tr -d "'\"" | xargs || true)
-
-  if [ -z "$bootstrap_version" ] || [ -z "$gitops_version" ]; then
-    echo "  ERROR: Could not determine bootstrap/self-managed ArgoCD chart versions"
-    ERRORS=$((ERRORS + 1))
-  elif [ "$bootstrap_version" != "$gitops_version" ]; then
-    echo "  ERROR: Bootstrap installs ArgoCD chart $bootstrap_version but GitOps manages $gitops_version"
-    echo "         Fresh bootstrap will immediately perform an ArgoCD chart upgrade."
-    ERRORS=$((ERRORS + 1))
-  else
-    echo "  OK: Bootstrap and self-managed ArgoCD chart versions match ($gitops_version)"
-  fi
-fi
-echo ""
-
-# ─────────────────────────────────────────────
-# 6. Check AppSet exclude patterns do not miss the parent app
-# ─────────────────────────────────────────────
-echo "--- Check 6: ApplicationSet exclude patterns ---"
-
-while IFS= read -r appset; do
-  appset_name=$(basename "$appset")
-
-  while IFS= read -r excluded_path; do
-    excluded_path=$(echo "$excluded_path" | sed 's/.*path: //' | tr -d "'\"" | xargs)
-    [ -z "$excluded_path" ] && continue
-
-    if [[ "$excluded_path" == */\* ]]; then
-      parent_path="${excluded_path%/*}"
-      if [ -f "$parent_path/kustomization.yaml" ]; then
-        echo "  ERROR: $appset_name excludes '$excluded_path' but '$parent_path' is itself an app directory"
-        echo "         Use '$parent_path' if the parent Application should be excluded."
-        ERRORS=$((ERRORS + 1))
-      fi
-    fi
-  done < <(grep -B1 "exclude: true" "$appset" | grep "path:" || true)
-done < <(appset_files)
-
-[ $ERRORS -eq 0 ] && echo "  OK: AppSet exclude patterns do not miss parent app directories"
-echo ""
-
-# ─────────────────────────────────────────────
-# 7. Check Project Nomad remains a single bundled app
-# ─────────────────────────────────────────────
-echo "--- Check 7: Project Nomad AppSet ownership ---"
-
-my_apps_appset="$APPS_DIR/appsets/my-apps-appset.yaml"
-project_nomad_path="my-apps/home/project-nomad"
-if [ -f "$my_apps_appset" ] && [ -f "$project_nomad_path/kustomization.yaml" ]; then
-  nested_nomad_kustomizations=$(find "$project_nomad_path" -mindepth 2 -name kustomization.yaml -print | wc -l | xargs)
-
-  if ! grep -q "path: my-apps/\*/\*" "$my_apps_appset"; then
-    echo "  ERROR: my-apps AppSet no longer discovers my-apps/*/*"
-    echo "         Project Nomad will not be generated unless it has a dedicated entrypoint."
-    ERRORS=$((ERRORS + 1))
-  elif grep -B1 "exclude: true" "$my_apps_appset" | grep -q "$project_nomad_path"; then
-    echo "  ERROR: Project Nomad is excluded from the my-apps AppSet"
-    echo "         It is intended to be one bundled app at $project_nomad_path."
-    ERRORS=$((ERRORS + 1))
-  elif [ "$nested_nomad_kustomizations" -gt 0 ]; then
-    echo "  ERROR: Project Nomad has nested kustomization.yaml files"
-    echo "         The my-apps/*/* generator treats $project_nomad_path as the app boundary."
-    ERRORS=$((ERRORS + 1))
-  else
-    echo "  OK: Project Nomad is managed as one bundled my-apps Application"
-  fi
-fi
-echo ""
-
-# ─────────────────────────────────────────────
-# Summary
-# ─────────────────────────────────────────────
 echo "=== Summary ==="
 if [ $ERRORS -gt 0 ]; then
   echo "  FAILED: $ERRORS error(s) found"

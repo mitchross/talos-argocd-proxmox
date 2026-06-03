@@ -1,0 +1,56 @@
+# Critical: Longhorn must be deployed after Cilium (wave 1)
+# Storage layer depends on networking being fully operational
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: longhorn
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/manifest-generate-paths: manifests/infra/longhorn/deploy-targets/talos
+  labels:
+    app.kubernetes.io/part-of: infrastructure
+spec:
+  project: talos-infrastructure
+  source:
+    repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+    targetRevision: main
+    path: manifests/infra/longhorn/deploy-targets/talos
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: longhorn-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
+    - RespectIgnoreDifferences=true
+    retry:
+      # Bounded retry — see root.yaml. Unbounded -1 plus a misbehaving
+      # PreSync hook can wedge the entire app-of-apps behind a stale
+      # manifest snapshot (incidents 2026-04-20, 2026-05-01). selfHeal: true
+      # kicks a fresh sync against current git on the next reconcile.
+      limit: 10
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 5m
+  # Longhorn health checks ensure storage is ready before
+  # other applications that need PVCs can be deployed
+  ignoreDifferences:
+  - group: ""
+    kind: ConfigMap
+    jsonPointers:
+    - /data
+  - group: ""
+    kind: Secret
+    jsonPointers:
+    - /data
+  # Longhorn controller mutates Setting values into versioned format
+  - group: longhorn.io
+    kind: Setting
+    jsonPointers:
+    - /value

@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-infra-csi-driver-smb",
+  "cluster": "talos",
+  "project": "talos-infrastructure",
+  "namespace": "csi-driver-smb",
+  "part": "infra",
+  "syncWave": "4",
+  "sourcePath": "manifests/infra/csi-driver-smb/deploy-targets/talos"
+}

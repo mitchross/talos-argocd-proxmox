@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-infra-gateway",
+  "cluster": "talos",
+  "project": "talos-infrastructure",
+  "namespace": "gateway",
+  "part": "infra",
+  "syncWave": "4",
+  "sourcePath": "manifests/infra/gateway/deploy-targets/talos"
+}

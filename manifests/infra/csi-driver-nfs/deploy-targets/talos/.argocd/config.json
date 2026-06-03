@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-infra-csi-driver-nfs",
+  "cluster": "talos",
+  "project": "talos-infrastructure",
+  "namespace": "csi-driver-nfs",
+  "part": "infra",
+  "syncWave": "4",
+  "sourcePath": "manifests/infra/csi-driver-nfs/deploy-targets/talos"
+}

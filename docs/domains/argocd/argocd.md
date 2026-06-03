@@ -16,17 +16,17 @@ Do not install Prometheus Operator CRDs early just to satisfy bootstrap apps. Se
 
 ## Entry Point Layers
 
-ArgoCD starts from the manually seeded root application:
+Talos Argo CD starts from the manually seeded root application:
 
 ```text
-infrastructure/controllers/argocd/bootstrap/root-application.yaml
+clusters/talos/bootstrap/root.yaml
 ```
 
 The root application renders three layers:
 
 1. `core-dependencies`: foundational controllers and storage dependencies.
 2. `custom-entrypoints`: repository-specific applications with explicit wave ordering.
-3. `applicationsets`: infrastructure, database, monitoring, and workload generators.
+3. `appsets`: infrastructure, database, monitoring, and workload generators.
 
 See [ArgoCD entrypoints](entrypoints.md) for the concrete files.
 

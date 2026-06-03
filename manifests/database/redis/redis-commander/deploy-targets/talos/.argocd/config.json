@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-database-redis-redis-commander",
+  "cluster": "talos",
+  "project": "talos-infrastructure",
+  "namespace": "redis-commander",
+  "part": "database",
+  "syncWave": "4",
+  "sourcePath": "manifests/database/redis/redis-commander/deploy-targets/talos"
+}

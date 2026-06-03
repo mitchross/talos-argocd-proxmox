@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-infra-container-registry",
+  "cluster": "talos",
+  "project": "talos-infrastructure",
+  "namespace": "container-registry",
+  "part": "infra",
+  "syncWave": "4",
+  "sourcePath": "manifests/infra/container-registry/deploy-targets/talos"
+}

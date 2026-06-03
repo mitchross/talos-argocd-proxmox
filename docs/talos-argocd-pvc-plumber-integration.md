@@ -9,18 +9,18 @@
 
 ```mermaid
 flowchart TD
-    subgraph Infra["infrastructure/"]
-        PP["controllers/pvc-plumber/\n(operator: deployment, RBAC, CRB)"]
-        VS["storage/volsync/\n(VolSync chart + kopia-maintenance CronJob)"]
-        VBC["storage/volsync-backup-cluster/\n(ClusterExternalSecret + mover-backend MAP)"]
-        CNPG["database/cloudnative-pg/\n(Barman → S3, NOT pvc-plumber)"]
+    subgraph Infra["manifests/infra/"]
+        PP["pvc-plumber/deploy-targets/talos/\n(operator: deployment, RBAC, CRB)"]
+        VS["volsync/deploy-targets/talos/\n(VolSync chart + kopia-maintenance CronJob)"]
+        VBC["volsync-backup-cluster/deploy-targets/talos/\n(ClusterExternalSecret + mover-backend MAP)"]
+        CNPG["../database/cloudnative-pg/*/deploy-targets/talos/\n(Barman → S3, NOT pvc-plumber)"]
     end
-    subgraph Apps["my-apps/"]
-        APV["<category>/<app>/pvc.yaml\n(PVC + fuse labels + dataSourceRef)"]
-        ANS["<app>/namespace.yaml\n(managed-namespace label)"]
-        POSTHOG["development/posthog/\n(backup-exempt PVCs)"]
+    subgraph Apps["manifests/apps/"]
+        APV["<category>/<app>/deploy-targets/talos/pvc.yaml\n(PVC + fuse labels + dataSourceRef)"]
+        ANS["<app>/deploy-targets/talos/namespace.yaml\n(managed-namespace label)"]
+        POSTHOG["development/posthog/deploy-targets/talos/\n(backup-exempt PVCs)"]
     end
-    subgraph Argo["infrastructure/controllers/argocd/apps/"]
+    subgraph Argo["clusters/talos/argocd/"]
         ENT["core-dependencies/pvc-plumber-app.yaml (Wave 2)"]
         AS["appsets/my-apps-appset.yaml"]
     end
@@ -30,13 +30,13 @@ flowchart TD
 
 | Thing | Path |
 |---|---|
-| **pvc-plumber operator** | `infrastructure/controllers/pvc-plumber/` (Deployment, `rbac-volsync-writer.yaml` = the cluster-wide CRB) |
-| **VolSync + Kopia maintenance** | `infrastructure/storage/volsync/` |
-| **Shared repo Secret + mover gate** | `infrastructure/storage/volsync-backup-cluster/` (`ClusterExternalSecret`, mover-backend MAP) |
-| **App PVCs** | `my-apps/<category>/<app>/pvc.yaml` |
-| **Argo entrypoint** | `infrastructure/controllers/argocd/apps/core-dependencies/pvc-plumber-app.yaml` (Wave 2) |
-| **CNPG databases** | `infrastructure/database/cloudnative-pg/` (Barman → S3 — never pvc-plumber) |
-| **PostHog exemption** | `my-apps/development/posthog/` (`backup-exempt` PVCs) |
+| **pvc-plumber operator** | `manifests/infra/pvc-plumber/deploy-targets/talos/` (Deployment, `rbac-volsync-writer.yaml` = the cluster-wide CRB) |
+| **VolSync + Kopia maintenance** | `manifests/infra/volsync/deploy-targets/talos/` |
+| **Shared repo Secret + mover gate** | `manifests/infra/volsync-backup-cluster/deploy-targets/talos/` (`ClusterExternalSecret`, mover-backend MAP) |
+| **App PVCs** | `manifests/apps/<category>/<app>/deploy-targets/talos/pvc.yaml` |
+| **Argo entrypoint** | `clusters/talos/argocd/core-dependencies/pvc-plumber-app.yaml` (Wave 2) |
+| **CNPG databases** | `manifests/database/cloudnative-pg/*/deploy-targets/talos/` (Barman → S3 — never pvc-plumber) |
+| **PostHog exemption** | `manifests/apps/development/posthog/deploy-targets/talos/` (`backup-exempt` PVCs) |
 | **Docs** | `docs/` |
 
 ---
@@ -63,8 +63,10 @@ flowchart LR
 7. **Verify** the first operator backup is `Successful` (or `nextSyncTime` is set).
 8. **Restore drill** if the data matters — see [volsync-storage-recovery.md](volsync-storage-recovery.md).
 
-> Canonical example to copy: `my-apps/ai/open-webui/pvc.yaml`. Helm-chart PVCs inject the dsr/labels via
-> Kustomize `patches:` (see `my-apps/development/gitea/`).
+> Canonical example to copy:
+> `manifests/apps/ai/open-webui/deploy-targets/talos/pvc.yaml`.
+> Helm-chart PVCs inject the dsr/labels via Kustomize `patches:` (see
+> `manifests/apps/development/gitea/deploy-targets/talos/`).
 
 ---
 

@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-home-project-zomboid",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "project-zomboid",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/home/project-zomboid/deploy-targets/talos"
+}

@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-home-wyze-bridge",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "wyze-bridge",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/home/wyze-bridge/deploy-targets/talos"
+}

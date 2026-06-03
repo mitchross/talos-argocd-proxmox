@@ -119,14 +119,12 @@ Use the normal Omni, Proxmox, and infrastructure-as-code path. Confirm nodes are
 Install the bootstrap CNI path, seed 1Password credentials, run:
 
 ```bash
-./scripts/bootstrap-argocd.sh
+./scripts/bootstrap-argocd.sh talos
 ```
 
-Then apply the root application:
-
-```bash
-kubectl apply -f infrastructure/controllers/argocd/root.yaml
-```
+The script installs upstream Helm Argo CD with
+`clusters/talos/bootstrap/values.yaml` and applies
+`clusters/talos/bootstrap/root.yaml` after the Application CRD exists.
 
 ### 3. Watch Wave 0
 

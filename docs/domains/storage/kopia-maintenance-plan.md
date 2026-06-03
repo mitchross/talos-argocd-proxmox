@@ -7,7 +7,7 @@
 ## Headline finding
 
 **Maintenance is already automated, healthy, and was specifically tuned for this warning.**
-A GitOps-managed CronJob `kopia-maintenance` (`infrastructure/storage/volsync/kopia-maintenance-cronjob.yaml`)
+A GitOps-managed CronJob `kopia-maintenance` (`manifests/infra/volsync/deploy-targets/talos/kopia-maintenance-cronjob.yaml`)
 runs every 6 h. The "too many index blobs" message is a **known, benign steady-state warning** — the
 CronJob's header documents that the 6 h cadence was introduced on 2026-05-21 precisely to keep this
 sustainable on RustFS. **No new maintenance job is required.** A one-off **full** maintenance is *optional*.

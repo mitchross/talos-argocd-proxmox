@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-utility-it-tools",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "it-tools",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/utility/it-tools/deploy-targets/talos"
+}

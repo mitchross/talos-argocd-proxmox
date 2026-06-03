@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - projects.yaml
+  - bootstrap/argocd.yaml
+  - bootstrap/1passwordconnect.yaml
+  - bootstrap/external-secrets.yaml
+  - core-dependencies/cert-manager-app.yaml
+  - core-dependencies/lvm-storage-app.yaml
+  - appsets/infrastructure-appset.yaml
+  - appsets/apps-appset.yaml

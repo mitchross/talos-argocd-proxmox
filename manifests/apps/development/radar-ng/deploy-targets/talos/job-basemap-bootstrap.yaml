@@ -1,0 +1,90 @@
+# One-shot Job that populates the `pmtiles` PVC with a Protomaps basemap
+# extract (CONUS bbox) for the radar-ng weather-radar background map. The
+# basemap Deployment's init container blocks pod start until
+# /data/basemap.pmtiles exists, so this Job and the Deployment can deploy
+# together — order doesn't matter, the Deployment just waits.
+#
+# Self-healing source (DO NOT reintroduce a pinned date):
+#   build.protomaps.com serves date-stamped planet builds with ~6-day
+#   retention and no `latest` alias. A hardcoded YYYYMMDD rots in ~6 days
+#   and the rot is invisible until the Job is recreated (cluster DR /
+#   namespace rebuild) — then it 404s at the worst possible time. The
+#   custom image (manifests/apps/development/radar-ng/basemap-bootstrap-image/)
+#   resolves the newest build that actually exists at run time, so nothing
+#   here ever needs a date bump. Build/push via
+#   scripts/build-push-custom-apps.sh basemap-bootstrap.
+#
+# Refresh strategy:
+#   - Stable name `basemap-bootstrap`. Once Complete, Argo won't recreate.
+#   - Changing BBOX (wider/narrower map) changes the pod spec → Argo
+#     recreates the Job automatically → re-extract.
+#   - To force a re-extract WITHOUT a bbox change (e.g. pull a fresher
+#     planet), bump the `refresh` label below. Then pick up the new file:
+#     `kubectl -n radar-ng rollout restart deploy basemap`.
+#
+# Why a Job and not a Temporal workflow:
+#   - One-time bootstrap (re-run only on bbox change or explicit refresh).
+#   - Job is the K8s-native pattern for "run this script once on the cluster."
+#
+# BBOX = CONUS (lower 48 + a tile of Canada/Mexico padding).
+# Widen to e.g. -180,15,-50,75 for full North America (PVC may need to grow).
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: basemap-bootstrap
+  namespace: radar-ng
+  labels:
+    app: basemap
+    bbox: "conus"
+    # Bump to force a re-extract without changing the bbox. Argo sees the
+    # spec change → recreates the Job → newest planet is re-resolved.
+    refresh: "1"
+spec:
+  ttlSecondsAfterFinished: 86400  # 1d after Complete, k8s GCs the Pod
+  backoffLimit: 5
+  template:
+    metadata:
+      labels:
+        app: basemap
+        job: basemap-bootstrap
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000  # so the non-root container can write to the PVC
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: extract
+          # Self-healing wrapper: resolves the newest available Protomaps
+          # build at run time and runs `pmtiles extract`. Source/Dockerfile:
+          # manifests/apps/development/radar-ng/basemap-bootstrap-image/
+          image: registry.vanillax.me/basemap-bootstrap:latest
+          # Always: the :latest wrapper is self-built; on Job recreate we
+          # want the current image, not a stale node-cached layer.
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          env:
+            # extract bbox: minLon,minLat,maxLon,maxLat (CONUS)
+            - name: BBOX
+              value: "-125,24,-66,50"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          volumeMounts:
+            - name: pmtiles
+              mountPath: /data
+      volumes:
+        - name: pmtiles
+          persistentVolumeClaim:
+            claimName: pmtiles

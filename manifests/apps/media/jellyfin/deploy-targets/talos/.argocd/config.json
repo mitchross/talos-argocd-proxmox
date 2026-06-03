@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-media-jellyfin",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "jellyfin",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/media/jellyfin/deploy-targets/talos"
+}

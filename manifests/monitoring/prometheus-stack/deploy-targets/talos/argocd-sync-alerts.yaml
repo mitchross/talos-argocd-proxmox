@@ -1,0 +1,177 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: argocd-sync-alerts
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack
+    app.kubernetes.io/instance: kube-prometheus-stack
+    app.kubernetes.io/managed-by: Helm
+    prometheus: kube-prometheus-stack-prometheus
+    role: alert-rules
+spec:
+  # ArgoCD-layer alerting. The cluster had ZERO PrometheusRules for ArgoCD even
+  # though all components are scraped (ServiceMonitors exist). Generic Deployment
+  # rollout health (KubeDeploymentGenerationMismatch / KubeDeploymentReplicasMismatch
+  # / KubeDeploymentRolloutStuck) is ALREADY shipped by kube-prometheus-stack — do
+  # NOT duplicate it here. These rules cover the ArgoCD control-plane gap only.
+  #
+  # HONEST LIMITATION — the exact incident that motivated this file (2026-05-29:
+  # app reported Synced+Healthy while the live Deployment ran a stale image because
+  # server-side diff compared against a stale cluster-state cache) is NOT directly
+  # alertable: ArgoCD reported green AND kube-state-metrics saw a self-consistent
+  # (old-but-rolled-out) Deployment object. Nothing exported "wrong". That specific
+  # masquerade is mitigated structurally by the periodic hard reconciliation
+  # re-enabled in manifests/infra/argocd/deploy-targets/talos/values.yaml
+  # (timeout.hard.reconciliation: 1h), which busts the stale cache on a schedule.
+  # The closest observable systemic proxy is ArgoCDControllerReconcileStalled below.
+  # The remaining rules catch the broad, genuinely-detectable failure classes.
+  groups:
+    - name: argocd.controlplane
+      rules:
+        # Any ArgoCD component scrape target down (controller, repo-server, server,
+        # applicationset, notifications). If the controller is down, NOTHING syncs.
+        - alert: ArgoCDComponentDown
+          expr: up{namespace="argocd"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            component: argocd
+            category: gitops
+          annotations:
+            summary: "ArgoCD component down: {{ $labels.job }} ({{ $labels.pod }})"
+            description: |
+              An ArgoCD component metrics target in namespace argocd has been
+              unreachable for 5m ({{ $labels.job }} / {{ $labels.pod }}). While
+              the application-controller is down, no application is reconciled
+              or synced — git changes silently do not roll out.
+
+              Actions:
+              1. kubectl get pods -n argocd
+              2. kubectl logs -n argocd -l app.kubernetes.io/name=argocd-application-controller
+              3. kubectl describe pod -n argocd <pod>
+
+        # The application-controller is up but has stopped reconciling ANY app.
+        # This is the closest observable proxy to the stale-cache class: a wedged
+        # controller keeps reporting the last-known (possibly stale) status while
+        # doing no real work. Healthy steady-state always shows a non-zero rate
+        # because of the periodic soft reconcile (timeout.reconciliation: 180s).
+        - alert: ArgoCDControllerReconcileStalled
+          expr: sum(rate(argocd_app_reconcile_count[15m])) == 0
+          for: 15m
+          labels:
+            severity: critical
+            component: argocd
+            category: gitops
+          annotations:
+            summary: "ArgoCD application-controller has stopped reconciling"
+            description: |
+              The ArgoCD application-controller has reconciled zero applications
+              over the last 15m despite the 180s soft-reconcile loop. The
+              controller is likely wedged (stuck workqueue, lost leader election,
+              or a desynced cluster cache). Reported app statuses are stale and
+              cannot be trusted.
+
+              Actions:
+              1. kubectl rollout restart statefulset/argocd-application-controller -n argocd
+                 (a restart forces a fresh cluster-cache List — the same effect as
+                  a hard refresh, cluster-wide)
+              2. kubectl logs -n argocd argocd-application-controller-0 --tail=200
+              3. Check leader election / workqueue depth in ArgoCD metrics.
+
+    - name: argocd.appstate
+      rules:
+        # Drift ArgoCD CAN see but is not auto-correcting. Scoped to apps with
+        # automated sync ENABLED — databases and other DR apps intentionally run
+        # autosync_enabled="false" and may sit OutOfSync legitimately during
+        # recovery, so they are excluded to avoid permanent false alerts.
+        - alert: ArgoCDAppOutOfSync
+          expr: argocd_app_info{sync_status="OutOfSync", autosync_enabled="true"} == 1
+          for: 15m
+          labels:
+            severity: warning
+            component: argocd
+            category: gitops
+          annotations:
+            summary: "ArgoCD app OutOfSync (auto-sync on): {{ $labels.name }}"
+            description: |
+              Application {{ $labels.name }} (project {{ $labels.project }},
+              dest ns {{ $labels.dest_namespace }}) has automated sync enabled but
+              has been OutOfSync for 15m. Auto-sync/selfHeal is failing to converge
+              — usually a sync error, an immutable-field conflict, or a hook stuck.
+
+              Actions:
+              1. kubectl describe application {{ $labels.name }} -n argocd
+              2. Check .status.operationState.message for the sync error.
+              3. Try a hard refresh:
+                 kubectl annotate application {{ $labels.name }} -n argocd \
+                   argocd.argoproj.io/refresh=hard --overwrite
+
+        # Real resource health failure (CrashLoop, failed Job, unhealthy CR, etc.).
+        - alert: ArgoCDAppDegraded
+          expr: argocd_app_info{health_status="Degraded"} == 1
+          for: 15m
+          labels:
+            severity: critical
+            component: argocd
+            category: gitops
+          annotations:
+            summary: "ArgoCD app Degraded: {{ $labels.name }}"
+            description: |
+              Application {{ $labels.name }} (project {{ $labels.project }}) has
+              reported Degraded health for 15m. One or more managed resources are
+              unhealthy.
+
+              Actions:
+              1. kubectl get application {{ $labels.name }} -n argocd -o json \
+                 | jq '.status.resources[] | select(.health.status=="Degraded")'
+              2. Inspect the degraded workload in dest ns {{ $labels.dest_namespace }}.
+
+        # Rollout that never settles. A healthy deploy passes through Progressing
+        # briefly; 30m of Progressing means a stuck rollout (image pull, probe
+        # failures, Multi-Attach on an RWO PVC, etc.). NOTE: this would have fired
+        # for the 2026-05-29 incident only AFTER the hard refresh kicked the roll —
+        # before that, the app sat Healthy, which is the masquerade these alerts
+        # cannot see (see file header).
+        - alert: ArgoCDAppStuckProgressing
+          expr: argocd_app_info{health_status="Progressing"} == 1
+          for: 30m
+          labels:
+            severity: warning
+            component: argocd
+            category: gitops
+          annotations:
+            summary: "ArgoCD app stuck Progressing: {{ $labels.name }}"
+            description: |
+              Application {{ $labels.name }} (project {{ $labels.project }}) has
+              been Progressing for 30m without reaching Healthy. The rollout is
+              likely stuck.
+
+              Actions:
+              1. kubectl get pods -n {{ $labels.dest_namespace }}
+              2. kubectl rollout status deploy -n {{ $labels.dest_namespace }} <name>
+              3. Check events for ImagePullBackOff / probe failures / Multi-Attach.
+
+        # Repeated failed sync operations (retry backoff burning down). The
+        # automated retry policy is limit:10 backoff up to 10m — sustained Failed
+        # syncs mean it is not self-resolving.
+        - alert: ArgoCDAppSyncFailing
+          expr: increase(argocd_app_sync_total{phase=~"Failed|Error"}[15m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            component: argocd
+            category: gitops
+          annotations:
+            summary: "ArgoCD sync failing: {{ $labels.name }}"
+            description: |
+              Application {{ $labels.name }} (project {{ $labels.project }}) has
+              recorded one or more Failed/Error sync operations in the last 15m and
+              is still not converging. Auto-sync retry (limit 10, backoff ≤10m) is
+              not resolving it.
+
+              Actions:
+              1. kubectl get application {{ $labels.name }} -n argocd \
+                 -o jsonpath='{.status.operationState.message}'
+              2. kubectl logs -n argocd argocd-application-controller-0 --tail=200 \
+                 | grep {{ $labels.name }}

@@ -1,0 +1,275 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: volsync-alerts
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack
+    app.kubernetes.io/instance: kube-prometheus-stack
+    app.kubernetes.io/managed-by: Helm
+    prometheus: kube-prometheus-stack-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: volsync.backup
+      rules:
+        # VolSync Controller Health
+        - alert: VolSyncControllerDown
+          expr: absent(up{job=~".*volsync.*"} == 1)
+          for: 5m
+          labels:
+            severity: critical
+            component: volsync
+            category: backup
+          annotations:
+            summary: "VolSync controller is down"
+            description: |
+              VolSync controller has been unavailable for more than 5 minutes.
+              This means backups and restores cannot be processed.
+
+              Troubleshooting:
+              1. Check VolSync deployment: kubectl get deploy -n volsync-system
+              2. Check pod logs: kubectl logs -n volsync-system -l app.kubernetes.io/name=volsync
+              3. Check events: kubectl get events -n volsync-system --sort-by='.lastTimestamp'
+            runbook_url: "https://volsync.readthedocs.io/en/stable/usage/index.html"
+
+        # Volume Out of Sync
+        - alert: VolSyncVolumeOutOfSync
+          expr: volsync_volume_out_of_sync == 1
+          for: 5m
+          labels:
+            severity: critical
+            component: volsync
+            category: backup
+          annotations:
+            summary: "VolSync volume out of sync: {{ $labels.obj_namespace }}/{{ $labels.obj_name }}"
+            description: |
+              ReplicationSource {{ $labels.obj_namespace }}/{{ $labels.obj_name }} is out of sync.
+              This means the last backup attempt failed or never completed.
+
+              Troubleshooting:
+              1. Check ReplicationSource status: kubectl get replicationsource {{ $labels.obj_name }} -n {{ $labels.obj_namespace }} -o yaml
+              2. Check mover pod logs: kubectl logs -n {{ $labels.obj_namespace }} -l volsync.backube/replicationsource={{ $labels.obj_name }}
+              3. Check secret exists: kubectl get secret volsync-{{ $labels.obj_name }} -n {{ $labels.obj_namespace }}
+              4. Verify NFS connectivity
+            runbook_url: "https://volsync.readthedocs.io/en/stable/usage/index.html"
+
+        # Missed Scheduled Backup
+        - alert: VolSyncMissedScheduledBackup
+          expr: |
+            (
+              time() - volsync_missed_intervals_total > 0
+            ) and (
+              increase(volsync_missed_intervals_total[1h]) > 0
+            )
+          for: 10m
+          labels:
+            severity: warning
+            component: volsync
+            category: backup
+          annotations:
+            summary: "VolSync missed scheduled backup: {{ $labels.obj_namespace }}/{{ $labels.obj_name }}"
+            description: |
+              ReplicationSource {{ $labels.obj_namespace }}/{{ $labels.obj_name }} has missed scheduled backup intervals.
+
+              This could indicate:
+              - Previous backup still running (long backup time)
+              - Resource constraints preventing mover pod scheduling
+              - PVC access issues
+
+              Actions:
+              1. Check for running mover pods: kubectl get pods -n {{ $labels.obj_namespace }} -l volsync.backube/replicationsource={{ $labels.obj_name }}
+              2. Check ReplicationSource status
+              3. Review backup duration trends
+            runbook_url: "https://volsync.readthedocs.io/en/stable/usage/index.html"
+
+        # Sync Duration Too Long
+        - alert: VolSyncDurationTooLong
+          expr: volsync_sync_duration_seconds > 3600
+          for: 5m
+          labels:
+            severity: warning
+            component: volsync
+            category: backup
+          annotations:
+            summary: "VolSync backup taking too long: {{ $labels.obj_namespace }}/{{ $labels.obj_name }}"
+            description: |
+              ReplicationSource {{ $labels.obj_namespace }}/{{ $labels.obj_name }} backup is taking more than 1 hour.
+              Duration: {{ $value | humanizeDuration }}
+
+              This could indicate:
+              - Large amount of changed data
+              - Slow network to NFS backend
+              - Resource constraints
+
+              Actions:
+              1. Check mover pod resource usage
+              2. Review NFS performance
+              3. Consider adjusting parallelism or compression settings
+            runbook_url: "https://volsync.readthedocs.io/en/stable/usage/index.html"
+
+    - name: volsync.restore
+      rules:
+        # Stale skip-restore escape hatch
+        # The volsync.backup/skip-restore=true annotation tells the pvc-plumber
+        # operator's mutating webhook NOT to inject dataSourceRef on PVC
+        # creation — used to "nuke and start fresh" without clearing Kopia.
+        # Once the rebuild succeeds, the operator must remove the annotation;
+        # if they forget, the next delete/recreate of this PVC will silently
+        # skip restore again. A Bound PVC carrying skip-restore for >24h is
+        # a primed footgun. kube-state-metrics exposes the annotation via
+        # metricAnnotationsAllowList in manifests/monitoring/prometheus-stack/values.yaml.
+        - alert: ProtectedPVCSkipRestoreStale
+          expr: |
+            (
+              kube_persistentvolumeclaim_annotations{
+                annotation_volsync_backup_skip_restore="true"
+              } == 1
+            ) and on (persistentvolumeclaim, namespace) (
+              kube_persistentvolumeclaim_status_phase{phase="Bound"} == 1
+            )
+          for: 24h
+          labels:
+            severity: warning
+            component: volsync
+            category: restore
+          annotations:
+            summary: "Stale skip-restore annotation on PVC: {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}"
+            description: |
+              PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}
+              has carried volsync.backup/skip-restore=true for more than 24h
+              while Bound. The escape hatch was meant for one-shot rebuilds
+              and should have been removed once the new data settled. Until
+              it is removed, any future delete/recreate of this PVC will
+              silently skip restore and reinitialize empty.
+
+              Actions:
+              1. Confirm the rebuild is complete and data has been verified.
+              2. Remove the volsync.backup/skip-restore and
+                 volsync.backup/skip-restore-reason annotations from Git.
+              3. ArgoCD sync to apply.
+
+        # Protected PVC Pending Too Long
+        - alert: ProtectedPVCPendingTooLong
+          expr: |
+            (
+              kube_persistentvolumeclaim_status_phase{phase="Pending"} == 1
+            ) and on (persistentvolumeclaim, namespace) (
+              kube_persistentvolumeclaim_labels{label_backup=~"hourly|daily"} == 1
+            )
+          for: 15m
+          labels:
+            severity: warning
+            component: volsync
+            category: restore
+          annotations:
+            summary: "Protected PVC pending too long: {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}"
+            description: |
+              Backup-labeled PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}
+              has been pending for more than 15 minutes.
+
+              This may be a VolSync restore waiting on its mover job, a storage
+              provisioning problem, or a missing generated ReplicationDestination.
+
+              Troubleshooting:
+              1. Check the PVC: kubectl get pvc {{ $labels.persistentvolumeclaim }} -n {{ $labels.namespace }} -o yaml
+              2. Check ReplicationDestination: kubectl get replicationdestination -n {{ $labels.namespace }}
+              3. Check mover pod: kubectl get pods -n {{ $labels.namespace }} -l volsync.backube/replicationdestination
+              4. Check pvc-plumber decision logs and VolSync events
+            runbook_url: "https://volsync.readthedocs.io/en/stable/usage/index.html"
+
+    - name: volsync.health
+      rules:
+        # Kopia Repository Maintenance (if using KopiaMaintenance)
+        - alert: VolSyncKopiaMaintenanceFailed
+          expr: |
+            kube_job_status_failed{job_name=~"kopia-maint.*"} > 0
+          for: 5m
+          labels:
+            severity: warning
+            component: volsync
+            category: maintenance
+          annotations:
+            summary: "Kopia maintenance job failed: {{ $labels.job_name }}"
+            description: |
+              Kopia maintenance job {{ $labels.job_name }} has failed.
+              This may lead to repository bloat over time.
+
+              Actions:
+              1. Check job logs: kubectl logs -n {{ $labels.namespace }} job/{{ $labels.job_name }}
+              2. Verify NFS connectivity
+              3. Consider running manual maintenance
+            runbook_url: "https://kopia.io/docs/advanced/maintenance/"
+
+        # NOTE: The volsync-orphan-reaper CronJob (and its
+        # VolSyncOrphanReaperFailed alert) was removed when the pvc-plumber v2
+        # operator took over. The operator's PVC reconciler cleanup() reaps
+        # orphaned ES/RS/RD by `volsync.backup/pvc=<pvcname>` label whenever
+        # a backup-labeled PVC is deleted or its label removed — no separate
+        # CronJob, no Kyverno ClusterCleanupPolicy, no failure mode to alert
+        # on at this layer. If the operator itself stops reconciling, the
+        # broader pvc-plumber availability alerts (operator pod down, leader
+        # election lost, etc.) cover that case.
+
+    - name: pvc-plumber.health
+      rules:
+        - alert: PVCPlumberDown
+          expr: |
+            absent(up{namespace="volsync-system", service="pvc-plumber"})
+            or min(up{namespace="volsync-system", service="pvc-plumber"}) == 0
+          for: 2m
+          labels:
+            severity: critical
+            component: pvc-plumber
+            category: backup
+          annotations:
+            summary: "PVC Plumber is down"
+            description: |
+              pvc-plumber is unavailable in volsync-system.
+              Backup-labeled PVC admission is fail-closed, so new protected PVCs
+              will be denied until the restore decision service is healthy.
+
+              Actions:
+              1. Check pods: kubectl get pods -n volsync-system -l app.kubernetes.io/name=pvc-plumber
+              2. Check logs: kubectl logs -n volsync-system -l app.kubernetes.io/name=pvc-plumber
+              3. Check readiness: kubectl get endpoints -n volsync-system pvc-plumber
+
+        - alert: PVCPlumberUnknownDecisions
+          expr: increase(pvc_plumber_backup_check_total{decision="unknown"}[5m]) > 0
+          for: 0m
+          labels:
+            severity: critical
+            component: pvc-plumber
+            category: backup
+          annotations:
+            summary: "PVC Plumber returned unknown backup decisions"
+            description: |
+              pvc-plumber returned one or more unknown backup decisions in the
+              last 5 minutes. The pvc-plumber operator's validating webhook
+              denies those PVC creations (failurePolicy: Fail) — apps will
+              retry via ArgoCD backoff until the backend recovers, instead
+              of initializing empty volumes over restorable data.
+
+              Actions:
+              1. Check pvc-plumber logs for backend errors.
+              2. Verify Kopia repository access from pvc-plumber pods.
+              3. Retry the ArgoCD sync after the backend issue is resolved.
+
+        - alert: PVCPlumberBackupCheckErrors
+          expr: increase(pvc_plumber_requests_errors_total[5m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            component: pvc-plumber
+            category: backup
+          annotations:
+            summary: "PVC Plumber backup check errors"
+            description: |
+              pvc-plumber has returned backup check errors for at least 5 minutes.
+              New protected PVCs may be denied until the backend can make
+              authoritative restore/fresh decisions.
+
+              Actions:
+              1. Check pvc-plumber logs.
+              2. Check NFS repository mount health.
+              3. Check Kopia repository connectivity and credentials.

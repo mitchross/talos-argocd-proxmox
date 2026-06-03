@@ -29,9 +29,9 @@ RUNTIME="${RUNTIME:-docker}"  # override with RUNTIME=podman if preferred
 
 # Map: app-name => "<context-relative-path>;<dockerfile-relative-path>"
 declare -A APPS=(
-  [news-reader]="my-apps/development/news-reader/app;my-apps/development/news-reader/app/Dockerfile"
-  [temporal-worker]="my-apps/development/temporal-worker;my-apps/development/temporal-worker/Dockerfile"
-  [basemap-bootstrap]="my-apps/development/radar-ng/basemap-bootstrap-image;my-apps/development/radar-ng/basemap-bootstrap-image/Dockerfile"
+  [news-reader]="manifests/apps/development/news-reader/deploy-targets/talos/app;manifests/apps/development/news-reader/deploy-targets/talos/app/Dockerfile"
+  [temporal-worker]="manifests/apps/development/temporal-worker/deploy-targets/talos;manifests/apps/development/temporal-worker/deploy-targets/talos/Dockerfile"
+  [basemap-bootstrap]="manifests/apps/development/radar-ng/deploy-targets/talos/basemap-bootstrap-image;manifests/apps/development/radar-ng/deploy-targets/talos/basemap-bootstrap-image/Dockerfile"
 )
 
 build_push() {

@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+patches:
+  - target:
+      kind: HTTPRoute
+      name: echo-server-route
+    patch: |-
+      - op: replace
+        path: /spec/parentRefs/0/name
+        value: openshift-gateway
+      - op: replace
+        path: /spec/parentRefs/0/namespace
+        value: openshift-ingress
+      - op: replace
+        path: /spec/hostnames/0
+        value: echo.apps.sno-ai-lab.vanillax.xyz
+  - target:
+      kind: Deployment
+      name: echo-server
+    patch: |-
+      - op: remove
+        path: /spec/template/spec/securityContext/runAsUser
+      - op: remove
+        path: /spec/template/spec/securityContext/runAsGroup
+      - op: remove
+        path: /spec/template/spec/securityContext/fsGroup

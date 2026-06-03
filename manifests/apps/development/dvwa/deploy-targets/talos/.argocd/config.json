@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-development-dvwa",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "dvwa",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/development/dvwa/deploy-targets/talos"
+}

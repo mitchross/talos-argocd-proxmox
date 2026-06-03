@@ -1,0 +1,47 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/manifest-generate-paths: manifests/infra/argocd/deploy-targets/talos
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  project: talos-infrastructure
+  source:
+    repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+    targetRevision: main
+    path: manifests/infra/argocd/deploy-targets/talos
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
+    - RespectIgnoreDifferences=true
+    retry:
+      # Bounded retry — same rationale as root.yaml. The argo-cd self-
+      # managed app installs a chart with PreSync hooks (e.g.
+      # `argocd-redis-secret-init` Job). If a hook completes-then-deletes
+      # but the controller's operationState mis-tracks it, an unbounded
+      # `limit: -1` retries forever and wedges the entire app-of-apps
+      # tree behind a stale manifest snapshot. With `limit: 10`, the op
+      # fails cleanly after ~10×3m = ~30 min and `selfHeal: true` kicks a
+      # fresh sync against current git. (Bit us 2026-05-01 when Renovate
+      # PR #1259 bumped argo-cd to v9.5.9.)
+      limit: 10
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+  - group: apps
+    kind: Deployment
+    jsonPointers:
+    - /spec/replicas

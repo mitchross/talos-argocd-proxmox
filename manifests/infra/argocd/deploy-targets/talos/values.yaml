@@ -1,0 +1,283 @@
+# Global settings for the Argo CD chart
+global:
+  # Ingress is disabled; external access is managed via HTTPRoute
+  ingress:
+    enabled: false
+# ConfigMaps and feature flags
+configs:
+  params:
+    server.insecure: "true"
+    # Performance: increase parallel status checks (default 20, ~1 per 20 apps)
+    controller.status.processors: "50"
+    # Performance: increase concurrent sync operations (default 10)
+    controller.operation.processors: "25"
+    # Performance: limit concurrent manifest generations to prevent OOM
+    reposerver.parallelism.limit: "5"
+    # Performance: increase repo-server timeout for large Helm charts like prometheus-stack
+    controller.repo.server.timeout.seconds: "300"
+    # Server-Side Diff — controller asks the API server for a dry-run apply
+    # result and compares predicted-live vs actual-live. CRD defaults get
+    # applied to both sides, eliminating drift on operator-defaulted fields
+    # (CNPG enablePDB/failoverDelay/etc., cert-manager, KEDA, …). Required
+    # to be in argocd-cmd-params-cm (this block); the argocd-cm key
+    # `resource.server-side-diff` is a no-op for the controller.
+    # Combine with per-app annotation
+    #   argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
+    # to also pipe through mutating admission webhooks (CNPG ships one).
+    controller.diff.server.side: "true"
+  cm:
+    url: "https://argocd.vanillax.me"
+    # Keep Helm inflation enabled for upstream charts. Kustomize's default
+    # load restrictor remains active; no app should reference files outside
+    # its own kustomization root.
+    kustomize.buildOptions: "--enable-helm"
+    # Resource tracking — annotation+label survives operator reconciles.
+    # Default 'annotation' alone gets stripped by CNPG/cert-manager/ESO/KEDA,
+    # causing perma-OutOfSync flap on managed CRs even when Healthy.
+    # 'annotation+label' writes app.kubernetes.io/instance (durable) AND keeps
+    # the informational tracking-id annotation. See mink:
+    # argocd-cnpg-permanent-outofsync-tracking-method-fix.md
+    application.resourceTrackingMethod: "annotation+label"
+    # NOTE: The legacy `resource.server-side-diff: "true"` key was a no-op —
+    # the controller reads its diff mode from argocd-cmd-params-cm key
+    # `controller.diff.server.side` (set in configs.params above), exposed
+    # via env var ARGOCD_APPLICATION_CONTROLLER_SERVER_SIDE_DIFF.
+    # Default ArgoCD polling interval (180s) with modest jitter
+    timeout.reconciliation: "180s"
+    timeout.reconciliation.jitter: "60s"
+    # Periodic HARD refresh. Unlike timeout.reconciliation (soft refresh, which
+    # compares cached manifests + cached cluster live-state), a hard refresh
+    # INVALIDATES BOTH the manifest cache AND the controller's cluster live-state
+    # cache before re-comparing. This is the scheduled equivalent of the UI
+    # "Hard Refresh" button.
+    #
+    # Why this is non-zero: 2026-05-29 the controller reported my-apps-llama-cpp
+    # Synced+Healthy while the live Deployment was still the old image and pointed
+    # at a dangling ConfigMap hash. server-side diff (controller.diff.server.side)
+    # had compared the new desired spec against a STALE live-state cache, saw "no
+    # change", and skipped the Deployment apply — selfHeal can't help because the
+    # controller perceives no drift. A manual hard refresh fixed it instantly.
+    # "0" (disabled) let that stale state persist indefinitely (cluster cache is
+    # watch-based with no resync-duration knob in this version). 1h bounds the
+    # worst-case staleness window to one hour. Raise toward 2h-4h if the hourly
+    # all-apps manifest regeneration pressures the repo-servers.
+    timeout.hard.reconciliation: "1h"
+    # Global diff noise cleanup for resources normalized by their controllers.
+    # Keep these system-level so AppSets only carry app-specific rules.
+    resource.customizations.ignoreDifferences.gateway.networking.k8s.io_HTTPRoute: |
+      jqPathExpressions:
+      - '.spec.parentRefs[]? | select(.group == null or .kind == null)'
+      - .spec.rules[].backendRefs[].group
+      - .spec.rules[].backendRefs[].kind
+      - .spec.rules[].backendRefs[].weight
+      jsonPointers:
+      - /spec/parentRefs
+    resource.customizations.ignoreDifferences.external-secrets.io_ExternalSecret: |
+      jqPathExpressions:
+      - .metadata.generation
+      - .metadata.finalizers
+      - .spec.data[].remoteRef.conversionStrategy
+      - .spec.data[].remoteRef.decodingStrategy
+      - .spec.data[].remoteRef.metadataPolicy
+      - .spec.data[].remoteRef.nullBytePolicy
+      - .spec.target.deletionPolicy
+    resource.customizations.ignoreDifferences._PersistentVolumeClaim: |
+      jqPathExpressions:
+      - .spec.dataSourceRef
+      - .spec.dataSource
+      - .spec.volumeName
+      - .spec.resources.requests.storage
+    # CRDs — K8s API server adds conversion and generation fields
+    # NOTE: .status ignored globally by ArgoCD 3.0+ (PR #22230)
+    resource.customizations.ignoreDifferences.apiextensions.k8s.io_CustomResourceDefinition: |
+      jqPathExpressions:
+      - .metadata.generation
+      - .spec.conversion
+    # OpenTelemetry operator mutates collector after creation
+    resource.customizations.ignoreDifferences.opentelemetry.io_OpenTelemetryCollector: |
+      jqPathExpressions:
+      - .metadata.generation
+      - .metadata.annotations
+    # Secrets managed by cert-manager/webhooks — caBundle and cert data change
+    resource.customizations.ignoreDifferences.all: |
+      managedFieldsManagers:
+      - kube-controller-manager
+      - kube-scheduler
+    # Enable Application health check for app-of-apps sync waves
+    # This was removed in ArgoCD 1.8 but is needed for sync waves to work properly
+    resource.customizations.health.argoproj.io_Application: |
+      hs = {}
+      hs.status = "Progressing"
+      hs.message = ""
+      if obj.status ~= nil then
+        if obj.status.health ~= nil then
+          hs.status = obj.status.health.status
+          if obj.status.health.message ~= nil then
+            hs.message = obj.status.health.message
+          end
+        end
+      end
+      return hs
+    # Custom health checks for VolSync resources
+    resource.customizations.health.volsync.backube_ReplicationSource: |
+      hs = {}
+      if obj.status ~= nil then
+        if obj.status.lastSyncTime ~= nil then
+          hs.status = "Healthy"
+          hs.message = "Last sync: " .. obj.status.lastSyncTime
+          return hs
+        end
+      end
+      hs.status = "Progressing"
+      hs.message = "Waiting for first sync"
+      return hs
+    resource.customizations.health.volsync.backube_ReplicationDestination: |
+      hs = {}
+      if obj.status ~= nil and obj.status.latestImage ~= nil then
+        hs.status = "Healthy"
+        hs.message = "Ready for restore"
+        return hs
+      end
+      hs.status = "Progressing"
+      hs.message = "Initializing"
+      return hs
+# Argo CD server settings
+server:
+  replicas: 2
+  ingress:
+    enabled: false
+  env:
+    - name: ARGOCD_GRPC_MAX_SIZE_MB
+      value: "200"
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
+  # VPA-optimized resources (2026-02-28)
+  # VPA target: cpu 23m, memory 175Mi — server below lowerBound for memory
+  # Previous: memory 256Mi → 512Mi (VPA lowerBound exceeded)
+  resources:
+    requests:
+      cpu: 50m
+      memory: 512Mi  # Increased from 256Mi (was below VPA lowerBound)
+    limits:
+      cpu: 500m
+      memory: 1Gi
+# ApplicationSet controller settings
+applicationSet:
+  enabled: true
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
+  # VPA-optimized resources (2026-02-24)
+  # VPA target: cpu 49m, memory 100Mi
+  # Previous: cpu 250m (5x over-provisioned), memory 256Mi
+  # ApplicationSet is lightweight (watches directories, creates apps)
+  resources:
+    requests:
+      cpu: 100m  # 2x VPA target for safety margin
+      memory: 128Mi
+    limits:
+      cpu: 500m  # Reduced from 1000m (VPA upperBound: 755m)
+      memory: 512Mi  # Reduced from 1Gi
+# High Availability setup
+ha:
+  enabled: true
+  redis:
+    # VPA-optimized resources (2026-02-24)
+    # VPA target: cpu 23m, memory 100Mi
+    # Previous: cpu 100m (4x over-provisioned), memory 128Mi
+    # Redis is used for HA state/caching, low utilization in this setup
+    resources:
+      requests:
+        cpu: 50m   # 2x VPA target for safety margin
+        memory: 128Mi  # Keep at 128Mi (close to VPA target)
+      limits:
+        cpu: 500m  # Keep for burst capacity
+        memory: 512Mi  # Keep for cache growth
+# Argo CD controller settings
+controller:
+  env:
+    # Performance: increase K8s API client throughput
+    - name: ARGOCD_K8S_CLIENT_QPS
+      value: "50"
+    - name: ARGOCD_K8S_CLIENT_BURST
+      value: "100"
+    # Performance: split large app trees across Redis keys
+    - name: ARGOCD_APPLICATION_TREE_SHARD_SIZE
+      value: "100"
+  metrics:
+    enabled: true
+    applicationLabels:
+      enabled: true
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
+  # VPA-optimized resources (2026-02-28)
+  # VPA target: cpu 2048m, memory 3.5Gi — memory below lowerBound
+  # Previous: memory 1536Mi → 4Gi (VPA lowerBound exceeded)
+  resources:
+    requests:
+      cpu: 2000m
+      memory: 4Gi   # Increased from 1536Mi (was below VPA lowerBound)
+    limits:
+      cpu: 4000m
+      memory: 6Gi   # Increased from 4Gi to accommodate memory growth
+# Argo CD repo-server settings
+repoServer:
+  replicas: 2
+  env:
+    - name: ARGOCD_EXEC_TIMEOUT
+      value: "3m"
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
+  # VPA-optimized resources (2026-02-24)
+  # VPA target: cpu 2975m, memory 523Mi
+  # Previous: cpu 1000m (UNDER-PROVISIONED 3x), memory 1Gi (OVER-PROVISIONED 2x)
+  # Repo-server does heavy lifting: Helm template rendering, Kustomize builds
+  # CPU-bound (manifest generation) but low memory (template processing)
+  resources:
+    requests:
+      cpu: 3000m   # Match VPA target (was 1000m, tripled)
+      memory: 768Mi  # Reduced from 1Gi (VPA target only 523Mi)
+    limits:
+      cpu: 4000m   # Keep at 4000m (VPA upperBound: 28+ cores during Prometheus chart)
+      memory: 4Gi  # Keep at 4Gi (VPA upperBound: 3.95Gi for large Helm charts)
+# Dex is disabled; external authentication (e.g. SSO) is used
+dex:
+  enabled: false
+notifications:
+  enabled: true
+  secret:
+    create: true
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
+# HPA disabled — VPA handles resource optimization for this cluster.
+# Running both causes oscillation: VPA changes requests, HPA recalculates
+# utilization percentages, leading to unnecessary scale events.
+hpa:
+  enabled: false
+# Disable the redis-secret-init PreSync hook. The Job creates the redis
+# auth secret on first install; once created, it persists in the cluster
+# and the chart re-runs the Job on every sync as a hook. On chart
+# upgrades the Job's hook-delete-policy can race with Argo's
+# operationState tracking and wedge the sync indefinitely. The actual
+# `argocd-redis` Secret already exists (Argo Redis HA is Healthy), so
+# disabling the bootstrapper is safe and idempotent. Bit us on 2026-05-01
+# when Renovate PR #1259 bumped argo-cd to v9.5.9.
+redisSecretInit:
+  enabled: false

@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-utility-vert",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "vert",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/utility/vert/deploy-targets/talos"
+}
