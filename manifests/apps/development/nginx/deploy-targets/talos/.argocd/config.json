@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-development-nginx",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "nginx",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/development/nginx/deploy-targets/talos"
+}

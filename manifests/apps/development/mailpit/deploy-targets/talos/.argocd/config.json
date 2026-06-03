@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-development-mailpit",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "mailpit",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/development/mailpit/deploy-targets/talos"
+}

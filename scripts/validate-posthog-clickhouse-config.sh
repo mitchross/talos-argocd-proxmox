@@ -4,8 +4,8 @@
 
 set -euo pipefail
 
-CONFIG_FILE="my-apps/development/posthog/config/clickhouse/config.d/default.xml"
-DEPLOYMENT_FILE="my-apps/development/posthog/data-layer/clickhouse.yaml"
+CONFIG_FILE="manifests/apps/development/posthog/deploy-targets/talos/config/clickhouse/config.d/default.xml"
+DEPLOYMENT_FILE="manifests/apps/development/posthog/deploy-targets/talos/data-layer/clickhouse.yaml"
 CLICKHOUSE_LOCAL_FQDN="clickhouse.clickhouse-headless.posthog.svc.cluster.local"
 ERRORS=0
 

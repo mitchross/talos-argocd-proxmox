@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-infra-metrics-server",
+  "cluster": "talos",
+  "project": "talos-infrastructure",
+  "namespace": "metrics-server",
+  "part": "infra",
+  "syncWave": "4",
+  "sourcePath": "manifests/infra/metrics-server/deploy-targets/talos"
+}

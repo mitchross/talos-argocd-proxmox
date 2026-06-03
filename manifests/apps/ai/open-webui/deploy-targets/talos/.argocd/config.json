@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-ai-open-webui",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "open-webui",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/ai/open-webui/deploy-targets/talos"
+}

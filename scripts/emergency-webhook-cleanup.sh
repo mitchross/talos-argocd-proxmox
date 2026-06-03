@@ -5,7 +5,7 @@
 # storage, Argo apps stuck Progressing forever.
 #
 # pvc-plumber will recreate its webhook configurations from the
-# infrastructure/controllers/pvc-plumber/webhooks.yaml manifest as soon as
+# manifests/infra/pvc-plumber/webhooks.yaml manifest as soon as
 # ArgoCD next syncs the application.
 #
 # History: this script originally existed to recover from the 2026-04-08

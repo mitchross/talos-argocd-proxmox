@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: comfyui
+  namespace: comfyui
+spec:
+  strategy:
+    type: Recreate
+  # Retired: replaced by manifests/apps/ai/swarmui (SwarmUI self-starts its own
+  # ComfyUI on GPU 1 — there is no spare GPU for both). Kept at replicas:0
+  # (not deleted) so the manifest + NFS models stay available for a quick
+  # revert. Must be the committed value: ArgoCD selfHeal reverts a manual scale.
+  replicas: 0
+  selector:
+    matchLabels:
+      app: comfyui
+  template:
+    metadata:
+      labels:
+        app: comfyui
+    spec:
+      # Node selector for GPU nodes
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
+      runtimeClassName: nvidia
+      priorityClassName: gpu-workload-preemptible
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      - key: "gpu"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      # Copy Git-managed pre-start script from ConfigMap to PVC
+      # (entrypoint does chmod +x, so ConfigMap subPath mount won't work — read-only)
+      initContainers:
+      - name: copy-pre-start
+        image: alpine
+        command: ["cp", "/opt/pre-start/pre-start.sh", "/root/user-scripts/pre-start.sh"]
+        volumeMounts:
+        - name: comfyui-storage
+          mountPath: /root
+        - name: pre-start-script
+          mountPath: /opt/pre-start
+      containers:
+      - name: comfyui
+        # Image from https://github.com/YanWenKun/ComfyUI-Docker/tree/main/cu130-megapak-pt211
+        # renovate: datasource=docker depName=yanwk/comfyui-boot
+        image: yanwk/comfyui-boot:cu130-megapak-pt211-20260413@sha256:2ce375d97094e7dc211ca0849eff0ae82934c6850bf027ea392c2a4f2899b793
+        imagePullPolicy: IfNotPresent
+        workingDir: /root
+        ports:
+        - containerPort: 8188
+        env:
+        # Entrypoint already passes --listen --port 8188 --enable-manager --enable-manager-legacy-ui
+        - name: CLI_ARGS
+          value: ""
+        # RTX 3090 = Ampere architecture = compute capability 8.6
+        - name: TORCH_CUDA_ARCH_LIST
+          value: "8.6"
+        # CMAKE build options for CUDA extensions
+        - name: CMAKE_ARGS
+          value: "-DBUILD_opencv_world=ON -DWITH_CUDA=ON -DCUDA_FAST_MATH=ON -DWITH_CUBLAS=ON"
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: comfyui-secrets
+              key: HF_TOKEN
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "2"
+            nvidia.com/gpu: "1"
+          limits:
+            memory: "80Gi"
+            cpu: "16"
+            nvidia.com/gpu: "1"
+        volumeMounts:
+        - name: comfyui-storage
+          mountPath: /root
+        - name: manager-config
+          mountPath: /root/ComfyUI/user/__manager/config.ini
+          subPath: config.ini
+        - name: custom-nodes
+          mountPath: /opt/custom-nodes
+          readOnly: true
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8188
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8188
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 10
+      volumes:
+      - name: comfyui-storage
+        persistentVolumeClaim:
+          claimName: comfyui-storage
+      - name: manager-config
+        configMap:
+          name: comfyui-manager-config
+      - name: pre-start-script
+        configMap:
+          name: comfyui-pre-start
+          defaultMode: 0755
+      - name: custom-nodes
+        configMap:
+          name: comfyui-custom-nodes

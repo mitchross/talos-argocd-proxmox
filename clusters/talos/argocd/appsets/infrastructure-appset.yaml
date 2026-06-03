@@ -1,0 +1,93 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: talos-infrastructure
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - git:
+      repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+      revision: main
+      files:
+      # cert-manager moved to a standalone Wave-1 core-dependency app
+      # (core-dependencies/cert-manager-app.yaml) — the Wave-4 appset placement
+      # caused a circular deadlock with cnpg-barman-plugin (Wave 3). Do NOT
+      # re-add it here or it will be double-managed.
+      - path: manifests/infra/external-dns/deploy-targets/talos/.argocd/config.json
+      - path: manifests/infra/gpu-priority-classes/deploy-targets/talos/.argocd/config.json
+      - path: manifests/infra/node-feature-discovery/deploy-targets/talos/.argocd/config.json
+      # nvidia-device-plugin removed on Talos 1.13 — gpu-operator Helm chart
+      # (in nvidia-gpu-operator) now owns the device plugin on top of the
+      # CDI-based driver/toolkit shipped by Talos system extensions.
+      - path: manifests/infra/nvidia-gpu-operator/deploy-targets/talos/.argocd/config.json
+      - path: manifests/infra/metrics-server/deploy-targets/talos/.argocd/config.json
+      # NOTE: keda and temporal-worker-controller are NOT listed here.
+      # They have dedicated standalone Applications at Wave 4
+      # (keda-app.yaml, temporal-worker-controller-app.yaml) because
+      # adding them via this AppSet hit a repo-server render-cache loop
+      # where Argo kept reverting the new generator paths (see git log
+      # around 2026-04-20). Standalone Applications dodge that entirely.
+      # NOTE: opentelemetry-operator is NOT listed here
+      # It has a dedicated standalone Application at Wave 5 (opentelemetry-operator-app.yaml)
+      # to ensure cert-manager (Wave 4) is ready for webhook certificates
+      - path: manifests/infra/cloudflared/deploy-targets/talos/.argocd/config.json
+      - path: manifests/infra/gateway/deploy-targets/talos/.argocd/config.json
+      - path: manifests/infra/container-registry/deploy-targets/talos/.argocd/config.json
+      - path: manifests/infra/csi-driver-nfs/deploy-targets/talos/.argocd/config.json
+      - path: manifests/infra/csi-driver-smb/deploy-targets/talos/.argocd/config.json
+      - path: manifests/infra/local-storage/deploy-targets/talos/.argocd/config.json
+      # NOTE: longhorn, snapshot-controller, volsync are NOT listed here
+      # They have dedicated standalone Applications at Wave 1 (longhorn-app.yaml,
+      # snapshot-controller-app.yaml, volsync-app.yaml) to ensure storage is
+      # healthy before PVC Plumber (Wave 2).
+      - path: manifests/infra/kopia-ui/deploy-targets/talos/.argocd/config.json
+      - path: manifests/infra/rustfs-lifecycle/deploy-targets/talos/.argocd/config.json
+  template:
+    metadata:
+      name: "{{.applicationName}}"
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: "{{.sourcePath}}"
+        argocd.argoproj.io/sync-wave: "{{.syncWave}}"
+      labels:
+        app.kubernetes.io/part-of: infrastructure
+    spec:
+      project: "{{.project}}"
+      revisionHistoryLimit: 3
+      source:
+        repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+        targetRevision: main
+        path: "{{.sourcePath}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{.namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true
+        - RespectIgnoreDifferences=true
+        - Replace=false
+        retry:
+          # Bounded retry — see root.yaml. Unbounded -1 plus a misbehaving
+          # PreSync hook can wedge the entire app-of-apps behind a stale
+          # manifest snapshot (incidents 2026-04-20, 2026-05-01). selfHeal: true
+          # kicks a fresh sync against current git on the next reconcile.
+          limit: 10
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 10m
+      ignoreDifferences:
+      - group: ""
+        kind: PersistentVolumeClaim
+        jsonPointers:
+        - /spec/dataSource
+        - /spec/dataSourceRef
+        - /spec/volumeName

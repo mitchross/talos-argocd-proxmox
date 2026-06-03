@@ -357,14 +357,14 @@ Twelve phases. Each phase is independently mergeable, individually rollback-safe
 | 0 | Docs alignment (this patch) | CLAUDE.md + add-backup.md + this PRD. No code, no manifests, no cluster change. | Zero | No live doc instructs the use of the deleted chart. PRD in repo. |
 | 1 | Inventory (mandatory, locked) | `hack/render-pvc-inventory.py` (read-only). Produces a CSV/table with every column listed in §3 rule 1. | Very low | Single table covers every protected PVC. Orphan-vs-inline classification accurate. |
 | 2 | Operator: decision engine + parser + modes + tests | Operator-repo code only. Pure decision engine, label / annotation parser, mode enum, failure-matrix unit tests. **No webhook, no reconciler writes.** Audit-only `/audit` HTTP endpoint. | Low (no cluster touch) | `go test ./...` green; binary runs with `mode: audit`; `/audit` returns parity table on a real PVC list piped in. |
-| 3 | talos repo: pvc-plumber Wave-2 App in audit mode | New `infrastructure/controllers/pvc-plumber/` directory. Deployment, RBAC (least-privilege), Service, ServiceMonitor, PrometheusRule. **No webhook configurations.** Argo Application entrypoint. | Low | Operator running healthy. `/audit` serves parity for live PVCs. Zero generated resources. Zero PVC denials. |
+| 3 | talos repo: pvc-plumber Wave-2 App in audit mode | `manifests/infra/pvc-plumber/deploy-targets/talos/` plus `clusters/talos/argocd/core-dependencies/pvc-plumber-app.yaml`. Deployment, RBAC (least-privilege), Service, ServiceMonitor, PrometheusRule. **No webhook configurations.** Argo Application entrypoint. | Low | Operator running healthy. `/audit` serves parity for live PVCs. Zero generated resources. Zero PVC denials. |
 | 4 | Parity verification | Compare `/audit` against orphan cluster RS/RD and inline RS/RD. Document mismatches in tracker. | Very low | ≥95% PVC parity; per-app exceptions documented. |
 | 5 | Operator: source-gating + naming strategy + metrics | Source-state machine. Naming strategy option (default matches current inline: bare RS, `-dst` RD). Prometheus metrics per §15. | Low (still audit-only) | Tests green; `/audit` output uses correct names. |
 | 6 | Operator: switch to permissive mode + adopt orphans | Permissive mode default. Adoption code path: relabel unmanaged orphan RS/RD with `managed-by: pvc-plumber`. Inline-Argo resources remain audit-only per rule 2. | Medium (first cluster write) | 27 orphan apps adopted. Inline apps unchanged. Backups continue. |
 
 > **SUPERSEDED IN PRACTICE (2026-05-29):** the 27-orphan adoption figure is stale (inventory found 0 orphan-cluster RS/RD), and the live Phase 6 implementation uses a NO-adoption model — inline RS/RD are removed from Git first and the operator recreates managed RS/RD. See docs/pvc-plumber-v4-cutover.md (Ownership section) and docs/pvc-plumber-v4-migration-readiness.md.
 
-| 7 | Migrate inline-RS/RD apps to operator ownership, app-by-app | Per app: add `pvc-plumber.io/enabled` + tier; remove inline RS/RD from `pvc.yaml`. Verify audit said "would recreate identical". Verify backup post-cutover. | Medium per-app | Zero inline RS/RD in `my-apps/**`. All protected PVCs carry `pvc-plumber.io/enabled`. |
+| 7 | Migrate inline-RS/RD apps to operator ownership, app-by-app | Per app: add `pvc-plumber.io/enabled` + tier; remove inline RS/RD from `pvc.yaml`. Verify audit said "would recreate identical". Verify backup post-cutover. | Medium per-app | Zero inline RS/RD in `manifests/apps/**`. All protected PVCs carry `pvc-plumber.io/enabled`. |
 | 8 | Webhook deployment in permissive mode | `ValidatingWebhookConfiguration` + `MutatingWebhookConfiguration`. `objectSelector: matchLabels: pvc-plumber.io/enabled: "true"` exclusively (rule 3). 9-namespace system exclusion in `namespaceSelector`. 2 replicas + PDB. cert-manager Certificate for TLS. | Medium-high (SPOF re-entry point) | Webhook fires on test-namespace PVC; deny path tested but disabled by mode. **Pre-merge gate: explicit user GO.** |
 | 9 | Failure-matrix drills | Run all 18 §10 cases against a dev namespace. Restore-honesty: sentinel data → backup → delete PVC → recreate → read sentinel → check ownership. | Low (dev scope) | `docs/pvc-plumber-v4-failure-matrix-results.md` committed with all 18 cases green. |
 | 10 | Enforce mode for one canary namespace | Promote one well-behaved app (e.g., `nginx` or `open-webui`) to `mode: enforce` via per-PVC annotation. 48h observation. | Low | Zero unexpected denials. Canary survives restart drill. |
@@ -430,10 +430,10 @@ Webhook TLS via cert-manager `Certificate`. Webhook configs use `cert-manager.io
 ## 18. References
 
 - Operator repo: <https://github.com/mitchross/pvc-plumber>
-- Transitional inline pattern used during migration: `my-apps/ai/open-webui/pvc.yaml`
-- Application guidelines: `my-apps/CLAUDE.md`
-- MAP + ClusterES: `infrastructure/storage/volsync-backup-cluster/`
-- VolSync operator: `infrastructure/storage/volsync/`
+- Transitional inline pattern used during migration: `manifests/apps/ai/open-webui/deploy-targets/talos/pvc.yaml`
+- Application guidelines: `manifests/apps/CLAUDE.md`
+- MAP + ClusterES: `manifests/infra/volsync-backup-cluster/deploy-targets/talos/`
+- VolSync operator: `manifests/infra/volsync/deploy-targets/talos/`
 - Decommission history: `docs/research/pvc-backup-simplification/`
 - Add-backup workflow (transitional): `.claude/commands/add-backup.md`
 - VolSync DR runbook: `docs/volsync-storage-recovery.md`

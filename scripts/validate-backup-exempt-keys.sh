@@ -32,7 +32,7 @@ while IFS= read -r hit; do
   echo "       $hit"
   fail=1
 done < <(grep -rn --include='*.yaml' -E '^[[:space:]]+backup-exempt-reason:' \
-           my-apps/ infrastructure/ 2>/dev/null || true)
+           manifests/apps/ manifests/infra/ manifests/database/ 2>/dev/null || true)
 
 # 2. Every file that marks a PVC backup-exempt must carry the FQ reason key.
 #    (File-level check: PVCs share files; this catches a labeled PVC whose
@@ -44,7 +44,7 @@ while IFS= read -r f; do
     fail=1
   fi
 done < <(grep -rln --include='*.yaml' -E '^[[:space:]]+backup-exempt:[[:space:]]*"true"' \
-           my-apps/ infrastructure/ 2>/dev/null || true)
+           manifests/apps/ manifests/infra/ manifests/database/ 2>/dev/null || true)
 
 if [ "$fail" -ne 0 ]; then
   echo

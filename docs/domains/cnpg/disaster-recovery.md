@@ -63,7 +63,7 @@ Each database directory has a base + two overlays. The root `kustomization.yaml`
 picks the active overlay — **this is the DR feature flag.**
 
 ```
-infrastructure/database/cloudnative-pg/<db>/
+manifests/database/cloudnative-pg/<db>/deploy-targets/talos/
 ├── kustomization.yaml              ← FEATURE FLAG. Change this one line to switch modes.
 ├── externalsecret.yaml             ← shared, never edited during DR
 ├── scheduled-backup.yaml           ← shared, never edited during DR
@@ -187,7 +187,7 @@ resources:
 **3. Commit and push.**
 
 ```bash
-git add infrastructure/database/cloudnative-pg/<db>/
+git add manifests/database/cloudnative-pg/<db>/deploy-targets/talos/
 git commit -m "dr(<db>): flip to recovery — restore from vN-1, write to vN"
 git push
 ```
@@ -296,7 +296,7 @@ done
   The CNPG Helm chart ships with Grafana dashboards — check for panels under
   "CloudNativePG" folder. Covers backup timing, WAL archiving, Cluster state.
   If missing, import from https://github.com/cloudnative-pg/grafana-dashboards.
-- **K8sGPT** (in `monitoring/k8sgpt/`) — detects CNPG Cluster anomalies and
+- **K8sGPT** (in `manifests/monitoring/k8sgpt/deploy-targets/talos/`) — detects CNPG Cluster anomalies and
   surfaces them in its dashboard.
 - **Headlamp** (https://headlamp.vanillax.me) — generic K8s UI, can view CNPG
   Cluster CRDs, pods, events. Good for "why is this DB stuck?"
@@ -331,7 +331,7 @@ effort-vs-payoff.
 
 - **Import the official CNPG Grafana dashboards.** Upstream publishes
   ready-made JSON at https://github.com/cloudnative-pg/grafana-dashboards.
-  Drop into `monitoring/prometheus-stack/` as ConfigMaps with the Grafana
+  Drop into `manifests/monitoring/prometheus-stack/deploy-targets/talos/` as ConfigMaps with the Grafana
   sidecar label so they auto-import. Covers: backup age per cluster, WAL
   archiving lag, connection count, checkpoint stats. One-time commit, forever-on
   visibility.
@@ -385,7 +385,7 @@ Separate deprecation work, not a DR feature — tracked here for visibility.
 
 CNPG is removing native `spec.backup.barmanObjectStore` in 1.30.0. We
 already have the Barman Cloud Plugin installed at
-`infrastructure/database/cnpg-barman-plugin/` but no DB uses it yet. Before
+`manifests/database/cnpg-barman-plugin/deploy-targets/talos/` but no DB uses it yet. Before
 upgrading CNPG past 1.29:
 
 1. Each DB's `base/cluster.yaml` moves from `spec.backup.barmanObjectStore`
@@ -440,7 +440,7 @@ The restored DB is empty (or has a subset of data). Common causes:
 
 ArgoCD's `ignoreDifferences` on `.spec.bootstrap` + `RespectIgnoreDifferences=true`
 will **strip** the bootstrap field during apply. We removed that from the
-database AppSet (commit 61d4aef0) — verify `infrastructure/controllers/argocd/apps/appsets/database-appset.yaml`
+database AppSet (commit 61d4aef0) — verify `clusters/talos/argocd/appsets/database-appset.yaml`
 does NOT have `.spec.bootstrap` in its `jqPathExpressions`. If it does, ArgoCD
 is silently dropping your recovery config.
 
@@ -503,7 +503,7 @@ If post-DR scheduled backups wrote EMPTY base backups to the wrong `serverName`
 ### Native `spec.backup.barmanObjectStore` will be removed in CNPG 1.30.0
 
 We currently use the native (in-Cluster) Barman config. The upstream
-replacement is the **Barman Cloud Plugin** (`infrastructure/database/cnpg-barman-plugin/`,
+replacement is the **Barman Cloud Plugin** (`manifests/database/cnpg-barman-plugin/deploy-targets/talos/`,
 already installed as `cnpg-barman-plugin-app.yaml`). Migration is required
 before CNPG 1.30.0.
 

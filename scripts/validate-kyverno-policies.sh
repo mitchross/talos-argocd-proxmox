@@ -10,7 +10,7 @@ set -euo pipefail
 
 ERRORS=0
 
-for file in $(grep -rl 'kind: ClusterPolicy\|kind: Policy' infrastructure/controllers/kyverno/ --include='*.yaml' 2>/dev/null); do
+for file in $(grep -rl 'kind: ClusterPolicy\|kind: Policy' manifests/infra/kyverno/ --include='*.yaml' 2>/dev/null); do
   grep -q 'generate:' "$file" || continue
 
   if grep -q 'background: true' "$file"; then
@@ -40,7 +40,7 @@ done
 
 if [ "$ERRORS" -gt 0 ]; then
   echo "Found ${ERRORS} dangerous Kyverno policy setting(s)."
-  echo "See: infrastructure/controllers/kyverno/CLAUDE.md"
+  echo "See: manifests/infra/kyverno/CLAUDE.md"
   exit 1
 fi
 

@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/manifest-generate-paths: manifests/infra/argocd/deploy-targets/openshift
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: openshift-infrastructure
+  source:
+    repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+    targetRevision: main
+    path: manifests/infra/argocd/deploy-targets/openshift
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

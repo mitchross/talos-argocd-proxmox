@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-media-homepage-dashboard",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "homepage-dashboard",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/media/homepage-dashboard/deploy-targets/talos"
+}

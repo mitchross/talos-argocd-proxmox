@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-infra-external-dns",
+  "cluster": "talos",
+  "project": "talos-infrastructure",
+  "namespace": "external-dns",
+  "part": "infra",
+  "syncWave": "4",
+  "sourcePath": "manifests/infra/external-dns/deploy-targets/talos"
+}

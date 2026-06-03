@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-development-headlamp",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "headlamp",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/development/headlamp/deploy-targets/talos"
+}

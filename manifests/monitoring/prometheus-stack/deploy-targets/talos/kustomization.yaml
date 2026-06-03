@@ -1,0 +1,90 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: prometheus-stack
+resources:
+  - ns.yaml
+  - alertmanager-http-route.yaml
+  - grafana-http-route.yaml
+  - prometheus-http-route.yaml
+  - custom-alerts.yaml
+  - custom-servicemonitors.yaml
+  - longhorn-backup-alerts.yaml
+  - longhorn-pvc-backup-audit.yaml # Replaces deleted Kyverno audit ClusterPolicy
+  - volsync-alerts.yaml # VolSync backup/restore alerts
+  - argocd-sync-alerts.yaml # ArgoCD control-plane + app-state alerts (stale-sync incident 2026-05-29)
+  - dcgm-exporter.yaml # DCGM GPU monitoring
+  - gpu-alerts.yaml # GPU alerting rules
+  - gpu-dashboard.yaml # Grafana dashboard
+  - etcd-dashboard.yaml # etcd cluster dashboard (Grafana 3070; pairs with kube-etcd scrape job)
+  - network-policy.yaml # Allow Grafana to access Prometheus
+  - frigate-dashboard.yaml # Frigate Grafana dashboard
+  - loki-logs-dashboard.yaml # Custom Loki logs dashboard (uses OTEL labels)
+  - solar-dashboard.yaml # Epever Solar MPPT dashboard
+  - tapo-power-dashboard.yaml # Tapo smart plug power monitoring (all plugs)
+  - homelab-power-dashboard.yaml # Homelab cost dashboard ($0.21/kWh, 4 homelab plugs only)
+  - radar-ng-dashboard.yaml # radar-ng backend dashboard (logs + tile-server metrics)
+  - radar-ng-mobile-dashboard.yaml # radar-ng mobile app dashboard (Tempo spans + Loki errors)
+# Strategic merge patches to handle resource conflicts
+patchesStrategicMerge:
+  - alertmanager-config.yaml
+
+# Per-CRD sync-options — kube-prometheus-stack ships several CRDs whose
+# OpenAPI schemas are large enough that ArgoCD's default client-side apply
+# tries to write a `kubectl.kubernetes.io/last-applied-configuration`
+# annotation that exceeds Kubernetes' 256KB metadata.annotations cap. The
+# 6 CRDs annotated below have all hit this in practice; we force per-CRD
+# ServerSideApply + Replace to skip the client-side annotation entirely.
+# See manifests/database/cloudnative-pg/cloudnative-pg-operator/
+# kustomization.yaml for the same defensive pattern on CNPG's CRDs.
+# Incident: 2026-05-07 ArgoCD sync failure post-Kyverno-removal merge.
+patches:
+  - target:
+      kind: CustomResourceDefinition
+      name: scrapeconfigs.monitoring.coreos.com
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: ServerSideApply=true,Replace=true
+  - target:
+      kind: CustomResourceDefinition
+      name: thanosrulers.monitoring.coreos.com
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: ServerSideApply=true,Replace=true
+  - target:
+      kind: CustomResourceDefinition
+      name: alertmanagerconfigs.monitoring.coreos.com
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: ServerSideApply=true,Replace=true
+  - target:
+      kind: CustomResourceDefinition
+      name: alertmanagers.monitoring.coreos.com
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: ServerSideApply=true,Replace=true
+  - target:
+      kind: CustomResourceDefinition
+      name: prometheusagents.monitoring.coreos.com
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: ServerSideApply=true,Replace=true
+  - target:
+      kind: CustomResourceDefinition
+      name: prometheuses.monitoring.coreos.com
+    patch: |-
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-options
+        value: ServerSideApply=true,Replace=true
+helmCharts:
+  - name: kube-prometheus-stack
+    repo: https://prometheus-community.github.io/helm-charts
+    version: 84.5.0
+    releaseName: kube-prometheus-stack
+    namespace: prometheus-stack
+    valuesFile: values.yaml
+    includeCRDs: true # This is the key setting!

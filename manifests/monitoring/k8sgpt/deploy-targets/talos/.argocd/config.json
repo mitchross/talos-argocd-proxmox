@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-monitoring-k8sgpt",
+  "cluster": "talos",
+  "project": "talos-monitoring",
+  "namespace": "k8sgpt",
+  "part": "monitoring",
+  "syncWave": "5",
+  "sourcePath": "manifests/monitoring/k8sgpt/deploy-targets/talos"
+}

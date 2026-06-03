@@ -1,0 +1,109 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: gpu-operator
+resources:
+- namespace.yaml
+- external-secret.yaml
+- time-slicing-config.yaml
+- powerlimit-daemonset.yaml    # Caps each GPU at 220W (default 420W on RTX 3090) — see file header
+# cluster-policy.yaml intentionally not included — the Helm chart generates its
+# own ClusterPolicy from valuesInline below. Keeping both would cause a conflict.
+# hook-sa.yaml removed — the upstream chart hook-SA namespace bug that this
+# workaround addressed was fixed in gpu-operator v26.3.x (the chart now
+# renders upgrade-crd-hook-sa in the correct release namespace, so our
+# duplicate SA caused a kustomize generator collision).
+
+# Talos 1.13 ships the NVIDIA driver + nvidia-container-toolkit via system
+# extensions and emits CDI specs to /run/cdi automatically. The gpu-operator
+# Helm chart manages only the device plugin, GFD, and validator on top of that.
+helmCharts:
+- name: gpu-operator
+  repo: https://helm.ngc.nvidia.com/nvidia
+  # renovate: datasource=helm depName=gpu-operator registryUrl=https://helm.ngc.nvidia.com/nvidia
+  version: v26.3.2
+  releaseName: gpu-operator
+  namespace: gpu-operator
+  includeCRDs: true
+  valuesInline:
+    operator:
+      # `operator.defaultRuntime` was deprecated in gpu-operator v26.3 —
+      # containerd is the only supported runtime anyway, so we don't set it.
+      runtimeClass: nvidia
+    # Talos system extensions own the driver + toolkit on the node.
+    driver:
+      enabled: false
+    toolkit:
+      enabled: false
+    # Talos 1.13 writes CDI specs to /run/cdi. CDI is enabled by default in
+    # gpu-operator v26.3+ (the explicit `cdi.default` field was deprecated),
+    # so we just opt in here — no `default: true` needed.
+    cdi:
+      enabled: true
+    # We already run siderolabs/node-feature-discovery cluster-wide.
+    nfd:
+      enabled: false
+    # Talos-specific host paths. The -production variant of the nvidia
+    # kmod extension (siderolabs/nonfree-kmod-nvidia-production) places
+    # driver userspace libraries at /usr/local/lib (and /usr/local/lib64),
+    # NOT at /usr/local/glibc/usr/lib — that older path is for the base
+    # non-production extension. Using the wrong path makes the operator's
+    # driver-validation init container try to mkdir a missing directory
+    # on Talos' read-only root filesystem and fail with CreateContainerError.
+    #
+    # CDI integration (Talos 1.13 auto-writes /run/cdi/nvidia.yaml) handles
+    # the actual GPU device injection at container create time; this path
+    # is only used by the operator's validator pods.
+    hostPaths:
+      driverInstallDir: /usr/local/lib
+    devicePlugin:
+      enabled: true
+      config:
+        name: time-slicing-config
+        default: config.yaml
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      - key: gpu
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+    gfd:
+      enabled: true
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      - key: gpu
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+    # DCGM exporter runs as a standalone DaemonSet in manifests/monitoring/prometheus-stack.
+    # Keep the operator's copy disabled to avoid two exporters scraping the same
+    # GPUs and ServiceMonitor label collisions.
+    dcgm:
+      enabled: false
+    dcgmExporter:
+      enabled: false
+    migManager:
+      enabled: false
+    validator:
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      - key: gpu
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+    nodeStatusExporter:
+      enabled: true
+    daemonsets:
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      - key: gpu
+        operator: Equal
+        value: "true"
+        effect: NoSchedule

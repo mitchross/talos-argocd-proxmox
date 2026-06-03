@@ -1,0 +1,10 @@
+# KEDA observability overlay — optional, post-monitoring.
+# Deployed by clusters/talos/argocd/custom-entrypoints/keda-observability-app.yaml
+# at a wave AFTER kube-prometheus-stack so the monitoring.coreos.com CRDs exist.
+# Bootstrap-critical KEDA lives in manifests/infra/keda and renders
+# ZERO monitoring CRs.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: keda
+resources:
+  - servicemonitors.yaml

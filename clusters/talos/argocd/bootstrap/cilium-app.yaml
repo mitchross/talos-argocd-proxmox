@@ -1,0 +1,71 @@
+# Critical: Cilium must be deployed first (wave 0)
+# All other components depend on networking being ready
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cilium
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/manifest-generate-paths: manifests/infra/cilium/deploy-targets/talos
+  labels:
+    app.kubernetes.io/part-of: infrastructure
+spec:
+  project: talos-infrastructure
+  source:
+    repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+    targetRevision: main
+    path: manifests/infra/cilium/deploy-targets/talos
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
+    - RespectIgnoreDifferences=true
+    retry:
+      # Bounded retry — see root.yaml. Unbounded -1 plus a misbehaving
+      # PreSync hook can wedge the entire app-of-apps behind a stale
+      # manifest snapshot (incidents 2026-04-20, 2026-05-01). limit: 10 means
+      # the op fails cleanly after ~10×5m = ~50 min ceiling; selfHeal: true
+      # kicks a fresh sync against current git on the next reconcile.
+      limit: 10
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+  # Wait for Cilium to be healthy before proceeding
+  # This prevents race conditions with dependent services
+  ignoreDifferences:
+  - group: ""
+    kind: ConfigMap
+    name: hubble-ca-cert
+    jsonPointers:
+    - /data
+  # Ignore auto-generated Cilium CA certificates to prevent reconciliation loops
+  # These secrets contain dynamically generated certs that Cilium manages internally
+  - kind: Secret
+    name: cilium-ca
+    namespace: kube-system
+    jsonPointers:
+      - /data/ca.crt
+      - /data/ca.key
+  - kind: Secret
+    name: hubble-server-certs
+    namespace: kube-system
+    jsonPointers:
+      - /data/ca.crt
+      - /data/tls.crt
+      - /data/tls.key
+  - kind: Secret
+    name: hubble-relay-client-certs
+    namespace: kube-system
+    jsonPointers:
+      - /data/ca.crt
+      - /data/tls.crt
+      - /data/tls.key

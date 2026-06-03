@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-media-karakeep",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "karakeep",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/media/karakeep/deploy-targets/talos"
+}

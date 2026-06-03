@@ -3,7 +3,7 @@
 > What each model in the cluster is, what it's for, and when to use it. Companion
 > to [`3090-llm-optimization.md`](3090-llm-optimization.md) (topology, KV
 > math, engine choice). Source of truth for the presets themselves:
-> [`my-apps/ai/llama-cpp/presets.ini`](../../../my-apps/ai/llama-cpp/presets.ini).
+> [`manifests/apps/ai/llama-cpp/deploy-targets/talos/presets.ini`](../../../manifests/apps/ai/llama-cpp/deploy-targets/talos/presets.ini).
 >
 > Last updated: 2026-05-30.
 

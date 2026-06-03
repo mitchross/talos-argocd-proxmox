@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-privacy-searxng",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "searxng",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/privacy/searxng/deploy-targets/talos"
+}

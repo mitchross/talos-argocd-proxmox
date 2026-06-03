@@ -113,9 +113,10 @@ These GitOps-managed ExternalSecrets read `rustfs-workload-access-key` and `rust
 | Each chart-rendered `<ns>/volsync-<pvc>` per backed-up PVC | `volsync-<pvc>` |
 
 The `volsync-system/pvc-plumber-kopia` ExternalSecret was removed
-2026-05-21 along with the pvc-plumber operator decommission. Per-PVC
-ExternalSecrets are now rendered by the `volsync-backup` Helm chart
-at `infrastructure/storage/volsync-backup/` rather than the operator.
+2026-05-21 along with the pvc-plumber operator decommission. The shared
+`volsync-kopia-repository` Secret is now materialized by
+`manifests/infra/volsync-backup-cluster/deploy-targets/talos/` rather than
+by the operator.
 
 Force ESO refresh after changing 1Password:
 
@@ -128,8 +129,8 @@ kubectl annotate externalsecret -n monitoring tempo-s3-credentials force-sync="$
 kubectl annotate externalsecret -n posthog posthog-secrets force-sync="$TS" --overwrite
 kubectl annotate externalsecret -n rustfs-lifecycle rustfs-admin-credentials force-sync="$TS" --overwrite
 
-# Also force every chart-rendered per-PVC ES:
-kubectl get externalsecret -A -l app.kubernetes.io/managed-by=volsync-backup-chart \
+# Also force every shared VolSync repository ES:
+kubectl get externalsecret -A --field-selector metadata.name=volsync-kopia-repository \
   -o jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}{end}' | \
   while read ns name; do
     [ -z "$ns" ] && continue

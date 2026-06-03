@@ -1,0 +1,30 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: openshift-gateway
+  namespace: openshift-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: cloudflare-cluster-issuer
+spec:
+  gatewayClassName: openshift-default
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: "*.apps.sno-ai-lab.vanillax.xyz"
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: "*.apps.sno-ai-lab.vanillax.xyz"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: cert-openshift-apps
+            kind: Secret
+            group: ""
+      allowedRoutes:
+        namespaces:
+          from: All

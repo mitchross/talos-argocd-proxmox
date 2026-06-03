@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-media-redlib",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "redlib",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/media/redlib/deploy-targets/talos"
+}

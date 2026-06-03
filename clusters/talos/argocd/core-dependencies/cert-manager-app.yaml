@@ -1,0 +1,59 @@
+# cert-manager — pulled forward to Wave 1 (foundational cert provider).
+#
+# Was previously discovered by the Wave-4 infrastructure-appset, but the
+# 2026-06-01 full-cluster nuke/rebuild drill exposed a circular ordering
+# deadlock: cnpg-barman-plugin (Wave 3) ships Certificates/Issuer and its
+# Deployment mounts cert-manager-issued TLS secrets, so it can't go Healthy
+# without cert-manager — which lived at Wave 4, gated BEHIND it. cert-manager
+# has no cluster deps beyond Wave-0 (ESO + 1Password for the cloudflare DNS01
+# secret), so it belongs early. Now every cert consumer (cnpg-barman-plugin
+# Wave 3, future webhook TLS) is satisfied.
+#
+# Removed from infrastructure-appset path list in the same change.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/manifest-generate-paths: manifests/infra/cert-manager/deploy-targets/talos
+  labels:
+    app.kubernetes.io/part-of: infrastructure
+spec:
+  project: talos-infrastructure
+  source:
+    repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+    targetRevision: main
+    path: manifests/infra/cert-manager/deploy-targets/talos
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
+    - RespectIgnoreDifferences=true
+    # The Helm chart installs the cert-manager CRDs and the same render carries
+    # a ClusterIssuer CR — skip dry-run on the not-yet-known CRD so the first
+    # bootstrap sync doesn't fail validation.
+    - SkipDryRunOnMissingResource=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 5m
+  ignoreDifferences:
+  - group: ""
+    kind: ConfigMap
+    jsonPointers:
+    - /data
+  - group: ""
+    kind: Secret
+    jsonPointers:
+    - /data

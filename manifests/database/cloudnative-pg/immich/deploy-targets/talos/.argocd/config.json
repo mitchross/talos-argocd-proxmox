@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-database-cloudnative-pg-immich",
+  "cluster": "talos",
+  "project": "talos-infrastructure",
+  "namespace": "immich",
+  "part": "database",
+  "syncWave": "4",
+  "sourcePath": "manifests/database/cloudnative-pg/immich/deploy-targets/talos"
+}

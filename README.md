@@ -2,19 +2,52 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/mitchross/talos-argocd-proxmox)
 
-> Production-grade GitOps Kubernetes cluster on Talos OS with self-managing ArgoCD, Cilium, and zero-touch PVC backup/restore
+> Talos-first GitOps Kubernetes with optional per-cluster expansion targets.
 
-A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux for K8s), ArgoCD, and Cilium, running on Proxmox. Managed via **[Omni](https://github.com/siderolabs/omni)** (Sidero's Talos management platform) with the **[Proxmox Infrastructure Provider](https://github.com/siderolabs/omni-infra-provider-proxmox)** for automated node provisioning.
+This repo is a production homelab GitOps reference. Talos on Proxmox remains
+the default path: one cluster, one local upstream Helm Argo CD, Cilium, Gateway
+API, Longhorn, monitoring, apps, and PVC backup/restore.
+
+The repo is also structured so additional clusters can be added without turning
+Talos into a hub. OpenShift is the first optional expansion target. Each cluster
+gets its own local Argo CD instance and manages only `https://kubernetes.default.svc`.
+There is no hub/spoke registration and no `argocd cluster add`.
 
 ## Key Features
 
-- **Self-Managing ArgoCD** - ArgoCD manages its own installation, upgrades, and ApplicationSets from Git
-- **Directory = Application** - Apps discovered automatically by directory path, no manual Application manifests
-- **Sync Wave Ordering** - Strict deployment ordering prevents race conditions
-- **Zero-Touch Backups** - Add a label to a PVC, get automatic Kopia backups to NFS with disaster recovery
-- **Gateway API** - Modern ingress via Cilium Gateway API (not legacy Ingress)
-- **GPU Support** - Full NVIDIA GPU support via Talos system extensions and GPU Operator
-- **Zero SSH** - All node management via Omni UI or Talos API
+- **Talos by default** - a single-cluster user can bootstrap Talos and stop there.
+- **One Argo CD per cluster** - Talos, OpenShift, and future GKE/AKS targets each run local upstream Helm Argo CD.
+- **Kustomize deploy targets** - shared or portable workloads use `base/` plus `deploy-targets/<cluster>/`.
+- **Metadata-driven AppSets** - Argo CD discovers deploy targets through `.argocd/config.json`, not fragile path basenames.
+- **Sync wave ordering** - strict deployment order prevents controller, storage, secret, and app races.
+- **Gateway API** - Talos uses Cilium Gateway API; OpenShift uses OpenShift-specific Gateway API manifests.
+- **Zero-touch Talos backups** - add a label to a PVC and get automatic Kopia backups with disaster recovery.
+- **GPU support on Talos** - NVIDIA GPU support via Talos system extensions and GPU Operator.
+
+## Layout
+
+```text
+clusters/
+  talos/
+    bootstrap/       # hand-run upstream Helm Argo CD bootstrap inputs
+    argocd/          # Talos root app-of-apps tree
+  openshift/
+    bootstrap/       # hand-run upstream Helm Argo CD bootstrap inputs
+    argocd/          # OpenShift root app-of-apps tree
+
+manifests/
+  infra/             # controllers, networking, storage, platform services
+  database/          # database operators and instances
+  manifests/monitoring/        # Talos monitoring stack
+  apps/              # user-facing applications
+
+components/
+  talos/
+  openshift/
+```
+
+Existing Talos-only workloads live under `deploy-targets/talos`. Only workloads
+intended to run on more than one cluster need a shared `base/`.
 
 ## Repositories & Resources
 
@@ -22,59 +55,81 @@ A GitOps-driven Kubernetes cluster using **Talos OS** (secure, immutable Linux f
 |----------|-------------|
 | [Omni](https://github.com/siderolabs/omni) | Talos cluster management platform |
 | [Proxmox Infra Provider](https://github.com/siderolabs/omni-infra-provider-proxmox) | Proxmox infrastructure provider for Omni |
-| [Starter Repo](https://github.com/mitchross/sidero-omni-talos-proxmox-starter) | Full config & automation for Sidero Omni + Talos + Proxmox |
+| [Starter Repo](https://github.com/mitchross/sidero-omni-talos-proxmox-starter) | Full config and automation for Sidero Omni + Talos + Proxmox |
 | [Reference Guide](https://www.virtualizationhowto.com/2025/08/how-to-install-talos-omni-on-prem-for-effortless-kubernetes-management/) | VirtualizationHowTo guide for Talos Omni on-prem setup |
 
 ## Architecture
 
 ```mermaid
 graph TD;
-    subgraph "Bootstrap Process (Manual)"
-        User(["User"]) -- "kubectl apply -k" --> Kustomization["infrastructure/argocd/kustomization.yaml"];
-        Kustomization -- "Deploys" --> ArgoCD["ArgoCD<br/>(from Helm Chart)"];
-        Kustomization -- "Deploys" --> RootApp["Root Application<br/>(root.yaml)"];
+    subgraph "Talos Cluster"
+        TalosUser(["operator"]) --> TalosBootstrap["scripts/bootstrap-argocd.sh talos"];
+        TalosBootstrap --> TalosArgo["Argo CD in argocd namespace"];
+        TalosArgo --> TalosRoot["clusters/talos/bootstrap/root.yaml"];
+        TalosRoot --> TalosTree["clusters/talos/argocd"];
+        TalosTree --> TalosTargets["manifests/**/deploy-targets/talos"];
     end
 
-    subgraph "GitOps Self-Management Loop (Automatic)"
-        ArgoCD -- "1. Syncs" --> RootApp;
-        RootApp -- "2. Points to<br/>.../argocd/apps/" --> ArgoConfigDir["ArgoCD Config<br/>(Projects & AppSets)"];
-        ArgoCD -- "3. Deploys" --> AppSets["ApplicationSets"];
-        AppSets -- "4. Scans Repo for<br/>Application Directories" --> AppManifests["Application Manifests<br/>(e.g., my-apps/nginx/)"];
-        ArgoCD -- "5. Deploys" --> ClusterResources["Cluster Resources<br/>(Nginx, Prometheus, etc.)"];
+    subgraph "OpenShift Cluster"
+        OsUser(["operator"]) --> OsBootstrap["scripts/bootstrap-argocd.sh openshift"];
+        OsBootstrap --> OsArgo["Argo CD in argocd namespace"];
+        OsArgo --> OsRoot["clusters/openshift/bootstrap/root.yaml"];
+        OsRoot --> OsTree["clusters/openshift/argocd"];
+        OsTree --> OsTargets["manifests/**/deploy-targets/openshift"];
     end
-
-    style User fill:#a2d5c6,stroke:#333
-    style Kustomization fill:#5bc0de,stroke:#333
-    style RootApp fill:#f0ad4e,stroke:#333
-    style ArgoCD fill:#d9534f,stroke:#333
 ```
 
-### Sync Wave Architecture
+## Sync Waves
 
-ArgoCD deploys applications in strict order to prevent dependency issues:
+Talos:
 
 | Wave | Component | Purpose |
 |------|-----------|---------|
-| **0** | Foundation | Cilium (CNI), ArgoCD, 1Password Connect, External Secrets, AppProjects |
+| **0** | Foundation | Cilium, Argo CD, 1Password Connect, External Secrets, AppProjects |
 | **1** | Core controllers | cert-manager, Longhorn, VolumeSnapshot Controller, VolSync |
-| **2** | pvc-plumber v4 core + VolSync backup cluster | pvc-plumber v4.0.1 reconciler (namespace gate + PVC fuse labels; **no admission webhook**) + shared Kopia credentials |
-| **3** | CNPG Barman Plugin | Database backup plugin before DB clusters |
-| **4** | Infrastructure AppSet + custom entrypoints | External-DNS, GPU Operators, Gateway, KEDA core, Temporal Worker Controller |
-| **4** | Database AppSet | CloudNativePG operators & instances (`selfHeal: false` for DR) |
-| **5** | OTEL + Monitoring AppSet | OpenTelemetry Operator, Prometheus, Grafana, Loki |
-| **6** | Observability overlays + My-Apps AppSet | KEDA/OTEL ServiceMonitors and `my-apps/*/*` user applications |
+| **2** | Backup plumbing | pvc-plumber v4 core and VolSync backup cluster wiring |
+| **3** | CNPG Barman Plugin | Database backup plugin before database clusters |
+| **4** | Infrastructure + database | Infra AppSet, database AppSet, KEDA, Temporal Worker Controller |
+| **5** | OTEL + monitoring | OpenTelemetry Operator, Prometheus, Grafana, Loki, Tempo |
+| **6** | Overlays + apps | KEDA/OTEL ServiceMonitors and Talos app deploy targets |
+
+OpenShift:
+
+| Wave | Component | Purpose |
+|------|-----------|---------|
+| **0** | Foundation | Argo CD, 1Password Connect, External Secrets, AppProjects |
+| **1** | Core controllers | cert-manager and OpenShift LVM storage |
+| **4** | Infrastructure | OpenShift Gateway API deploy target |
+| **6** | Apps | Any app with an OpenShift deploy target; echo-server currently proves the path |
 
 ## Prerequisites
 
-1. **Omni deployed and accessible** - See [Omni Setup Guide](omni/omni/README.md)
-2. **Sidero Proxmox Provider configured** - See [proxmox provider config](omni/proxmox-provider/)
-3. **Cluster created in Omni** - Talos cluster provisioned and healthy
-4. **kubectl access** - Download kubeconfig from Omni UI
-5. **Local tools installed**: `kubectl`, `kustomize`, Cilium CLI (`cilium` or `cilium-cli`), `1password` CLI (`op`)
+Talos default path:
 
-## Bootstrap Process
+1. **Omni deployed and accessible** - see [Omni Setup Guide](omni/omni/README.md).
+2. **Sidero Proxmox Provider configured** - see [proxmox provider config](omni/proxmox-provider/).
+3. **Cluster created in Omni** - Talos cluster provisioned and healthy.
+4. **Local tools installed** - `kubectl`, `kustomize`, Helm, Cilium CLI (`cilium` or `cilium-cli`), and `op`.
 
-Once your cluster is provisioned via Omni, follow these steps to install the GitOps stack.
+OpenShift optional path:
+
+1. **OpenShift cluster access** - `kubectl` or `oc` points at the target OpenShift cluster.
+2. **Gateway API available** - verify the GatewayClass name before live sync. This repo currently assumes `openshift-default`.
+3. **OLM available** - required for the starter LVM Storage Operator Subscription.
+4. **Local tools installed** - `kubectl`, `kustomize`, Helm, and `op`.
+
+OpenShift storage policy:
+
+- Use OpenShift local LVM storage for small PVCs.
+- Use NFS for AI/shared/large-but-portable data after the OpenShift NFS implementation is chosen.
+- Do not add OpenShift deploy targets for large stateful apps until storage, SCC, and backup behavior are explicit.
+
+See [OpenShift Storage And App Migration Strategy](docs/domains/multicluster/openshift-storage-and-app-migration.md).
+
+## Talos Bootstrap
+
+Once your Talos cluster is provisioned via Omni, follow these steps to install
+the GitOps stack.
 
 ### Step 0: Get Cluster Access (kubectl)
 
@@ -135,11 +190,11 @@ cilium-cli install \
     --set gatewayAPI.enableAppProtocol=true
 ```
 
-  > **Important — version must match:** The `cilium install` CLI version must match the Helm chart version in `infrastructure/networking/cilium/kustomization.yaml` (currently **1.19.4**). Use `cilium install --version 1.19.4` to pin it. If versions differ, ArgoCD upgrades Cilium at Wave 0 and regenerates some Hubble certs but not others, causing TLS handshake failures (`x509: certificate signed by unknown authority`) that block all sync waves.
+  > **Important - version must match:** The `cilium install` CLI version must match the Helm chart version in `manifests/infra/cilium/deploy-targets/talos/kustomization.yaml` (currently **1.19.4**). Use `cilium install --version 1.19.4` to pin it. If versions differ, ArgoCD upgrades Cilium at Wave 0 and regenerates some Hubble certs but not others, causing TLS handshake failures (`x509: certificate signed by unknown authority`) that block all sync waves.
 >
-> **Important — Hubble is disabled at bootstrap on purpose:** The CLI install only provides basic CNI networking. ArgoCD enables Hubble at Wave 0 via the full `values.yaml` (which has `hubble.enabled: true`). This ensures ArgoCD is the sole owner of Hubble TLS certificates — no cert mismatch between CLI install and ArgoCD's Helm render. The `ignoreDifferences` in `cilium-app.yaml` then preserves those certs on subsequent syncs.
+> **Important - Hubble is disabled at bootstrap on purpose:** The CLI install only provides basic CNI networking. ArgoCD enables Hubble at Wave 0 via the full `values.yaml` (which has `hubble.enabled: true`). This ensures ArgoCD is the sole owner of Hubble TLS certificates, with no cert mismatch between CLI install and ArgoCD's Helm render. The `ignoreDifferences` in `cilium-app.yaml` then preserves those certs on subsequent syncs.
 >
-> **Important — cluster name must match:** `cluster.name` must match `infrastructure/networking/cilium/values.yaml` for Hubble certificate SANs. If `cilium install` is run without `--set cluster.name=talos-prod-cluster`, certificates are generated for `default` or `kind-kind`, causing TLS failures.
+> **Important - cluster name must match:** `cluster.name` must match `manifests/infra/cilium/deploy-targets/talos/values.yaml` for Hubble certificate SANs. If `cilium install` is run without `--set cluster.name=talos-prod-cluster`, certificates are generated for `default` or `kind-kind`, causing TLS failures.
 
 ### Step 2: Install Gateway API CRDs
 
@@ -185,27 +240,26 @@ kubectl create secret generic 1passwordconnect \
 **Option A: Bootstrap Script (Recommended)**
 
 ```bash
-./scripts/bootstrap-argocd.sh
+./scripts/bootstrap-argocd.sh talos
 ```
 
 **Option B: Manual Steps**
 
 ```bash
-kubectl apply -f infrastructure/controllers/argocd/ns.yaml
+kubectl apply -f clusters/talos/bootstrap/ns.yaml
 
 helm upgrade --install argocd argo-cd \
   --repo https://argoproj.github.io/argo-helm \
-  --version 9.4.15 \
+  --version 9.5.17 \
   --namespace argocd \
-  --values infrastructure/controllers/argocd/values.yaml \
+  --values clusters/talos/bootstrap/values.yaml \
   --wait \
   --timeout 10m
 
 kubectl wait --for condition=established --timeout=60s crd/applications.argoproj.io
 kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
 
-kubectl apply -f infrastructure/controllers/argocd/http-route.yaml
-kubectl apply -f infrastructure/controllers/argocd/root.yaml
+kubectl apply -f clusters/talos/bootstrap/root.yaml
 ```
 
 ### Step 5: Verify
@@ -229,20 +283,91 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 # Admin password is pre-configured via bootstrap Helm values
 ```
 
+## OpenShift Bootstrap
+
+OpenShift uses the same model: hand-run upstream Helm Argo CD, then let that
+cluster's local Argo CD manage only itself. It does not use the OpenShift GitOps
+Operator.
+
+### Step 0: Get Cluster Access
+
+```bash
+oc login <api-url>
+kubectl get nodes
+kubectl config current-context
+```
+
+### Step 1: Verify Platform Assumptions
+
+```bash
+kubectl get gatewayclass
+kubectl api-resources | grep -E 'gateway.networking.k8s.io|operators.coreos.com|lvm.topolvm.io'
+```
+
+The starter OpenShift Gateway deploy target assumes GatewayClass
+`openshift-default`; update `manifests/infra/gateway/deploy-targets/openshift/gateway.yaml`
+if your cluster exposes a different class.
+
+The starter LVM storage deploy target assumes the Red Hat `lvms-operator`
+Subscription and `lvm.topolvm.io/v1alpha1` `LVMCluster` schema. Verify those
+against the live cluster before syncing.
+
+### Step 2: Pre-Seed 1Password Secrets
+
+Use the same 1Password secret pre-seed commands from the Talos section against
+the OpenShift kube context.
+
+### Step 3: Bootstrap Argo CD
+
+```bash
+./scripts/bootstrap-argocd.sh openshift
+```
+
+Manual equivalent:
+
+```bash
+kubectl apply -f clusters/openshift/bootstrap/ns.yaml
+
+helm upgrade --install argocd argo-cd \
+  --repo https://argoproj.github.io/argo-helm \
+  --version 9.5.17 \
+  --namespace argocd \
+  --values clusters/openshift/bootstrap/values.yaml \
+  --wait \
+  --timeout 10m
+
+kubectl wait --for condition=established --timeout=60s crd/applications.argoproj.io
+kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
+
+kubectl apply -f clusters/openshift/bootstrap/root.yaml
+```
+
 ## What Happens After Bootstrap
 
-ArgoCD takes over and manages everything from Git:
+Argo CD takes over and manages everything from Git. Talos syncs the full
+homelab stack through one-shot-migrated Talos deploy targets. OpenShift syncs
+any app that has an OpenShift deploy target; echo-server currently proves the
+cross-cluster overlay path.
 
-1. **Wave 0**: Cilium, 1Password Connect, External Secrets deploy in parallel
-2. **Wave 1**: cert-manager, Longhorn, Snapshot Controller, and VolSync deploy after networking + secrets are ready
-3. **Wave 2**: pvc-plumber v4 core (permissive reconciler — namespace gate + PVC fuse labels, **no admission webhook**) and VolSync backup-cluster wiring deploy without a Prometheus dependency
-4. **Wave 3**: CNPG Barman Plugin deploys (DB backup plugin readiness before DB clusters)
-5. **Wave 4**: Infrastructure AppSet plus custom standalone entrypoints deploy GPU operators, gateway, KEDA core, Temporal Worker Controller, etc.
-6. **Wave 4**: Database AppSet deploys CloudNativePG operators and instances
-7. **Wave 5**: OpenTelemetry Operator and Monitoring AppSet deploy Prometheus, Grafana, Loki
-8. **Wave 6**: KEDA and OpenTelemetry observability overlays plus My-Apps AppSet deploy
+New deploy targets are discovered by `.argocd/config.json` files:
 
-New applications are discovered automatically by directory structure - add a directory with a `kustomization.yaml` and push to Git.
+```text
+manifests/apps/<category>/<app>/deploy-targets/<cluster>/.argocd/config.json
+manifests/infra/<component>/deploy-targets/<cluster>/.argocd/config.json
+```
+
+The JSON points Argo CD at the deploy target path, so deep Kustomize overlays
+do not depend on basename guessing.
+
+## Local Validation
+
+```bash
+./scripts/validate-argocd-apps.sh
+kustomize build --enable-helm clusters/talos/bootstrap >/tmp/talos-bootstrap.yaml
+kustomize build --enable-helm clusters/openshift/bootstrap >/tmp/openshift-bootstrap.yaml
+kustomize build clusters/talos/argocd >/tmp/talos-argocd.yaml
+kustomize build clusters/openshift/argocd >/tmp/openshift-argocd.yaml
+```
 
 ## Cluster Access (Omni Service Account)
 
@@ -338,10 +463,10 @@ Plan: `docs/superpowers/plans/2026-04-19-talos-1.13-oss-nvidia-migration.md`
 Key files touched by the migration:
 - `omni/cluster-template/cluster-template.yaml` — swap extension from
   `nonfree-kmod-nvidia-production` to the OSS equivalent.
-- `infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml` —
+- `manifests/infra/nvidia-gpu-operator/deploy-targets/talos/kustomization.yaml` —
   align with Talos 1.13 beta OSS guide, especially
   `hostPaths.driverInstallDir`.
-- `infrastructure/controllers/nvidia-gpu-operator/cluster-policy.yaml` —
+- `manifests/infra/nvidia-gpu-operator/deploy-targets/talos/cluster-policy.yaml` —
   keep dormant reference aligned with OSS assumptions.
 
 Because there's only **one** GPU worker, this is a maintenance-window
