@@ -20,11 +20,16 @@ commonLabels:
 commonAnnotations:
   argocd.argoproj.io/sync-wave: "-5"
 resources:
-  - overlays/recovery        # ← ACTIVE (DR 2026-06-02): restore from v2 (PITR
-                             # to just before the 12:46 nuke), write forward to
-                             # v3. The nuke rebuild brought gitea up empty on
-                             # initdb; this recovers the pre-nuke data. Flip
-                             # back to overlays/initdb once recovered + healthy.
-  # - overlays/initdb        # steady-state (fresh DB or already-running)
+  # - overlays/recovery      # DR restore from Barman. ABANDONED 2026-06-02: the
+                             # v2 base backups are unreadable — RustFS cannot
+                             # serve MULTIPART objects ("encrypted object
+                             # metadata is incomplete"; single-PUT objects are
+                             # fine). All barman data.tar.gz are multipart, so
+                             # no CNPG lineage is restorable until RustFS is
+                             # fixed. Re-enable only after that.
+  - overlays/initdb          # ← ACTIVE: fresh empty DB on the clean v3 lineage.
+                             # gitea repos live on the restored gitea-shared-
+                             # storage PVC; only DB metadata (users/issues)
+                             # starts fresh. Create a new admin on first login.
   - externalsecret.yaml
   - scheduled-backup.yaml
