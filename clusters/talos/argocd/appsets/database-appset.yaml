@@ -28,7 +28,7 @@ spec:
     metadata:
       name: "{{.applicationName}}"
       annotations:
-        argocd.argoproj.io/manifest-generate-paths: "{{.sourcePath}}"
+        argocd.argoproj.io/manifest-generate-paths: ".;/manifests/database"
         argocd.argoproj.io/sync-wave: "{{.syncWave}}"
         # Server-Side Diff + IncludeMutationWebhook closes the CNPG drift gap.
         # CNPG operator uses k8s API Update (not Apply) and owns zero fields

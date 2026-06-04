@@ -18,7 +18,7 @@ spec:
     metadata:
       name: "{{.applicationName}}"
       annotations:
-        argocd.argoproj.io/manifest-generate-paths: "{{.sourcePath}}"
+        argocd.argoproj.io/manifest-generate-paths: ".;/manifests/monitoring"
         argocd.argoproj.io/sync-wave: "{{.syncWave}}"
     spec:
       project: "{{.project}}"

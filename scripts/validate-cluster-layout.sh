@@ -54,6 +54,14 @@ while IFS= read -r path; do
   fail "escaped inline patch string remains: $path"
 done < <(rg -l 'patch:\s*".*\\n' clusters --glob 'kustomization.yaml' || true)
 
+while IFS= read -r path; do
+  fail "manifest-generate-paths must not use a source-relative clusters/ path: $path"
+done < <(rg -l 'manifest-generate-paths:[[:space:]]+clusters/' clusters --glob '*.yaml' || true)
+
+while IFS= read -r path; do
+  fail "manifest-generate-paths must include consumed shared bases: $path"
+done < <(rg -l -F 'manifest-generate-paths: "{{.sourcePath}}"' clusters --glob '*.yaml' || true)
+
 while IFS= read -r base; do
   relative_app="${base#manifests/apps/}"
   relative_app="${relative_app%/base}"

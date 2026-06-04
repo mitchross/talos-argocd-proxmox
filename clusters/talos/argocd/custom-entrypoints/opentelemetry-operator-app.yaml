@@ -8,7 +8,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "5"
-    argocd.argoproj.io/manifest-generate-paths: clusters/talos/infra/opentelemetry-operator
+    argocd.argoproj.io/manifest-generate-paths: ".;/manifests/infra"
   labels:
     app.kubernetes.io/part-of: infrastructure
 spec:

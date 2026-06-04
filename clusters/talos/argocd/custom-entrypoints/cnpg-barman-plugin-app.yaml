@@ -17,7 +17,7 @@ metadata:
   annotations:
     # Wave 3 (before database AppSet at Wave 4) so Clusters can reference it
     argocd.argoproj.io/sync-wave: "3"
-    argocd.argoproj.io/manifest-generate-paths: clusters/talos/database/cnpg-barman-plugin
+    argocd.argoproj.io/manifest-generate-paths: ".;/manifests/database"
   labels:
     app.kubernetes.io/part-of: infrastructure
 spec:

@@ -13,7 +13,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "6"
-    argocd.argoproj.io/manifest-generate-paths: clusters/talos/infra/keda-observability
+    argocd.argoproj.io/manifest-generate-paths: ".;/manifests/infra"
   labels:
     app.kubernetes.io/part-of: infrastructure
 spec:
