@@ -52,7 +52,9 @@ done < <(rg -l 'clusters/talos|\.\./talos' clusters/openshift --glob 'kustomizat
 
 while IFS= read -r path; do
   fail "escaped inline patch string remains: $path"
-done < <(rg -l 'patch:\s*".*\\n' clusters --glob 'kustomization.yaml' || true)
+done < <(
+  rg -l 'patch:\s*".*\\n' clusters manifests --glob 'kustomization.yaml' || true
+)
 
 while IFS= read -r path; do
   fail "multiline inline patch remains: $path"
