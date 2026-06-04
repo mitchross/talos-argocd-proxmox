@@ -55,6 +55,20 @@ while IFS= read -r path; do
 done < <(rg -l 'patch:\s*".*\\n' clusters --glob 'kustomization.yaml' || true)
 
 while IFS= read -r path; do
+  fail "multiline inline patch remains: $path"
+done < <(
+  rg -l '^[[:space:]]+patch:[[:space:]]+\|[-+]?$' \
+    clusters manifests --glob 'kustomization.yaml' || true
+)
+
+while IFS= read -r path; do
+  fail "deprecated Kustomize patch field remains: $path"
+done < <(
+  rg -l '^[[:space:]]*(patchesStrategicMerge|patchesJson6902|bases):' \
+    clusters manifests --glob 'kustomization.yaml' || true
+)
+
+while IFS= read -r path; do
   fail "manifest-generate-paths must not use a source-relative clusters/ path: $path"
 done < <(rg -l 'manifest-generate-paths:[[:space:]]+clusters/' clusters --glob '*.yaml' || true)
 

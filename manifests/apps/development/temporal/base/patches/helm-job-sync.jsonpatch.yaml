@@ -1,0 +1,9 @@
+- op: add
+  path: /metadata/annotations/argocd.argoproj.io~1hook
+  value: Sync
+- op: add
+  path: /metadata/annotations/argocd.argoproj.io~1sync-wave
+  value: "-1"
+- op: add
+  path: /metadata/annotations/argocd.argoproj.io~1hook-delete-policy
+  value: BeforeHookCreation

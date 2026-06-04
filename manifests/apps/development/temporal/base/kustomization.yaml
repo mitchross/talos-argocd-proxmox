@@ -35,16 +35,7 @@ patches:
   # The schema job must run in an earlier Sync wave than the server
   # Deployments, otherwise a Temporal image bump can roll pods before SQL
   # schema migrations have completed.
-  - target:
+  - path: patches/helm-job-sync.jsonpatch.yaml
+    target:
       kind: Job
       labelSelector: helm.sh/chart
-    patch: |
-      - op: add
-        path: /metadata/annotations/argocd.argoproj.io~1hook
-        value: Sync
-      - op: add
-        path: /metadata/annotations/argocd.argoproj.io~1sync-wave
-        value: "-1"
-      - op: add
-        path: /metadata/annotations/argocd.argoproj.io~1hook-delete-policy
-        value: BeforeHookCreation

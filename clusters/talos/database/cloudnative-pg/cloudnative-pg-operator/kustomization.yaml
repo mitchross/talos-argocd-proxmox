@@ -19,20 +19,8 @@ resources:
 # failing with "metadata.annotations: Too long". Per-resource
 # sync-options annotation forces SSA reliably.
 patches:
-  - target:
-      kind: CustomResourceDefinition
-      name: clusters.postgresql.cnpg.io
-    patch: |-
-      - op: add
-        path: /metadata/annotations/argocd.argoproj.io~1sync-options
-        value: ServerSideApply=true,Replace=true
-  - target:
-      kind: CustomResourceDefinition
-      name: poolers.postgresql.cnpg.io
-    patch: |-
-      - op: add
-        path: /metadata/annotations/argocd.argoproj.io~1sync-options
-        value: ServerSideApply=true,Replace=true
+  - path: patches/crd-clusters-sync-options.yaml
+  - path: patches/crd-poolers-sync-options.yaml
 helmCharts:
   - name: cloudnative-pg
     repo: https://cloudnative-pg.github.io/charts
