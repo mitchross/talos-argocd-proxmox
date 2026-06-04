@@ -9,9 +9,13 @@
 # hitting the same endpoint and send `model: default` regardless of which model
 # is loaded (every entry sets `--served-model-name default <name>`).
 #
-# This file = the DAILY DRIVER (Qwen3.6-35B-A3B). It is the only one at
-# replicas: 1. See deployment-{coder,gemma4,gemma4-31b,tool-fast}.yaml for the
-# rest (all replicas: 0). Repo IDs are the verified AWQ builds for Ampere.
+# This file = the DAILY DRIVER (Qwen3.6-35B-A3B), and it tracks the club-3090
+# VALIDATED recipe verbatim:
+#   models/qwen3.6-35b-a3b/vllm/compose/dual/autoround-int4/fp8.yml
+#   ("vLLM STABLE v0.22.0 — validated 2026-05-30", AutoRound INT4 + FP8 KV =>
+#    full 262K context WITH vision at TP=2 on 2x RTX 3090).
+# The only additions beyond that recipe are cluster requirements:
+#   --served-model-name (so apps hit `default`) and OpenAI tool-call parsing.
 # ============================================================================
 apiVersion: apps/v1
 kind: Deployment
@@ -53,27 +57,31 @@ spec:
       containers:
         - name: vllm
           # renovate: datasource=docker depName=vllm/vllm-openai
-          image: vllm/vllm-openai:v0.22.0
+          image: vllm/vllm-openai:v0.22.0     # club-3090 pins this exact tag ("immutable — validated 2026-05-30")
           imagePullPolicy: IfNotPresent
           args:
             - "--model"
-            - "QuantTrio/Qwen3.6-35B-A3B-AWQ"        # primary multimodal MoE (35B/3B active). AWQ = the Ampere path (FP8 is Hopper/Ada-only).
-            - "--served-model-name"
-            - "default"                                # stable alias every app points at...
-            - "qwen3.6"                                # ...plus the explicit name
+            - "Intel/Qwen3.6-35B-A3B-int4-AutoRound"   # the validated vLLM build. Fallback if auto_round misbehaves on Ampere: QuantTrio/Qwen3.6-35B-A3B-AWQ + --quantization awq (text-only).
+            - "--quantization"
+            - "auto_round"
+            - "--served-model-name"                    # cluster addition: stable alias every app points at...
+            - "default"
+            - "qwen3.6"                                 # ...plus the explicit name
             - "--tensor-parallel-size"
-            - "2"                                       # pool BOTH 3090s. Qwen3.6 attention heads divide by 2.
+            - "2"                                       # pool BOTH 3090s
+            - "--max-model-len"
+            - "262144"                                  # full 256K — affordable because of fp8 KV below
+            - "--kv-cache-dtype"
+            - "fp8_e5m2"                                # the lever that makes 256K KV fit at TP=2 on 2x24GB
             - "--gpu-memory-utilization"
             - "0.90"
-            - "--max-model-len"
-            - "32768"                                   # native; extend toward 256K via --hf-overrides rope_scaling (YaRN) once verified — KV headroom is large at TP=2.
+            - "--limit-mm-per-prompt"
+            - '{"image":2,"audio":0}'                   # multimodal: this build has the vision tower
             - "--enable-prefix-caching"
-            - "--enable-auto-tool-choice"
+            - "--enable-chunked-prefill"
+            - "--enable-auto-tool-choice"               # cluster addition (not in the base recipe)
             - "--tool-call-parser"
-            - "hermes"                                  # Qwen3 tool-call format. (nothink: clients pass chat_template_kwargs enable_thinking:false.)
-            # No NVLink + Proxmox PCIe passthrough => no GPU P2P. Without these two
-            # the TP custom all-reduce hangs at startup; NCCL falls back to /dev/shm.
-            - "--disable-custom-all-reduce"
+            - "hermes"                                  # Qwen3 tool-call format. nothink: clients pass chat_template_kwargs enable_thinking:false.
             - "--host"
             - "0.0.0.0"
             - "--port"
@@ -81,8 +89,15 @@ spec:
           env:
             - name: HF_HOME
               value: /data                              # cache weights on the NFS PVC (no re-download per boot)
+            # --- club-3090 recipe env (TP on PCIe passthrough, no NVLink/P2P) ---
+            - name: VLLM_WORKER_MULTIPROC_METHOD
+              value: "spawn"
             - name: NCCL_P2P_DISABLE
-              value: "1"                                # see --disable-custom-all-reduce note
+              value: "1"                                # no GPU P2P => NCCL over /dev/shm; vLLM auto-disables custom all-reduce
+            - name: PYTORCH_CUDA_ALLOC_CONF
+              value: "expandable_segments:True"         # reduces fragmentation OOM at long context
+            - name: VLLM_NO_USAGE_STATS
+              value: "1"
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: "compute,utility"
             # Only needed for gated repos; optional so a missing token never blocks boot.
