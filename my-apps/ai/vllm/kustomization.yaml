@@ -5,15 +5,8 @@ namespace: vllm
 
 resources:
   - namespace.yaml
-  - externalsecret.yaml
   - pvc.yaml
+  - deployment.yaml       # PRIMARY: Qwen3.6-27B-AWQ-INT4 (replicas: 1)
+  - deployment-bf16.yaml  # Qwen3.6-27B-AWQ-BF16-INT4 (replicas: 0)
   - service.yaml
   - httproute.yaml
-  # vLLM "preset bank": one Deployment per model, all share `app: vllm-server`
-  # so vllm-service follows whichever is scaled up. Only qwen3.6 runs by default.
-  - deployment-qwen3.6.yaml     # DAILY DRIVER (replicas: 1)
-  - deployment-qwen3.6-27b.yaml # replicas: 0  (dense 27B, GDN — max-num-seqs 2)
-  - deployment-coder.yaml       # replicas: 0
-  - deployment-gemma4.yaml      # replicas: 0
-  - deployment-gemma4-31b.yaml  # replicas: 0
-  - deployment-tool-fast.yaml   # replicas: 0

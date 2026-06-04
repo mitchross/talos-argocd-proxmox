@@ -1,14 +1,15 @@
-# Coding agent — Qwen3-Coder-30B-A3B (MoE, 262K native). replicas: 0 (scale to 1
-# to switch; scale the daily driver to 0 first). See deployment-qwen3.6.yaml for
-# the shared-Service / TP=2 / P2P rationale.
+# Higher-quality tier — Qwen3.6-27B-AWQ-BF16-INT4 (25GB mixed BF16+INT4).
+# replicas: 0. To use it: scale this to 1 and deployment.yaml (int4) to 0, commit.
+# Shares app: vllm-server, so vllm-service follows it. Identical engine config to
+# deployment.yaml — see that file for the GDN / TP=2 / max-num-seqs rationale.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: vllm-coder
+  name: vllm-qwen36-27b-bf16
   namespace: vllm
   labels:
     app: vllm-server
-    vllm-model: coder
+    vllm-model: bf16
 spec:
   strategy:
     type: Recreate
@@ -16,13 +17,13 @@ spec:
   selector:
     matchLabels:
       app: vllm-server
-      vllm-model: coder
+      vllm-model: bf16
   revisionHistoryLimit: 1
   template:
     metadata:
       labels:
         app: vllm-server
-        vllm-model: coder
+        vllm-model: bf16
     spec:
       restartPolicy: Always
       runtimeClassName: nvidia
@@ -31,8 +32,12 @@ spec:
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
       tolerations:
-        - { key: "nvidia.com/gpu", operator: "Exists", effect: "NoSchedule" }
-        - { key: "gpu", operator: "Equal", value: "true", effect: "NoSchedule" }
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
+      securityContext:
+        fsGroup: 10001
+        fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: vllm
           # renovate: datasource=docker depName=vllm/vllm-openai
@@ -40,20 +45,22 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - "--model"
-            - "QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ"
+            - "/models/Qwen3.6-27B-AWQ-BF16-INT4"
             - "--served-model-name"
+            - "qwen3.6-27b-bf16"
             - "default"
-            - "coder"
             - "--tensor-parallel-size"
             - "2"
-            - "--max-model-len"
-            - "262144"                      # native 262K (fp8 KV makes it affordable)
-            - "--kv-cache-dtype"
-            - "fp8_e5m2"
             - "--gpu-memory-utilization"
             - "0.90"
-            - "--enable-prefix-caching"
-            - "--enable-chunked-prefill"
+            - "--max-model-len"
+            - "65536"
+            - "--max-num-seqs"
+            - "2"                                       # GDN recurrent-state cap (see deployment.yaml)
+            - "--limit-mm-per-prompt"
+            - '{"image":4}'
+            - "--distributed-executor-backend"
+            - "mp"
             - "--enable-auto-tool-choice"
             - "--tool-call-parser"
             - "hermes"
@@ -62,22 +69,19 @@ spec:
             - "--port"
             - "8000"
           env:
-            - { name: HF_HOME, value: /data }
+            - { name: NVIDIA_DRIVER_CAPABILITIES, value: "compute,utility" }
+            - { name: HF_HUB_OFFLINE, value: "1" }
+            - { name: TRANSFORMERS_OFFLINE, value: "1" }
             - { name: VLLM_WORKER_MULTIPROC_METHOD, value: "spawn" }
             - { name: NCCL_P2P_DISABLE, value: "1" }
             - { name: PYTORCH_CUDA_ALLOC_CONF, value: "expandable_segments:True" }
-            - { name: VLLM_NO_USAGE_STATS, value: "1" }
-            - { name: NVIDIA_DRIVER_CAPABILITIES, value: "compute,utility" }
-            - name: HF_TOKEN
-              valueFrom:
-                secretKeyRef: { name: vllm-secrets, key: HF_TOKEN, optional: true }
           ports:
             - { name: http, containerPort: 8000, protocol: TCP }
           startupProbe:
             httpGet: { path: /health, port: http }
-            initialDelaySeconds: 60
+            initialDelaySeconds: 30
             periodSeconds: 15
-            failureThreshold: 240
+            failureThreshold: 120
           readinessProbe:
             httpGet: { path: /health, port: http }
             periodSeconds: 15
@@ -87,13 +91,13 @@ spec:
             periodSeconds: 30
             failureThreshold: 6
           resources:
-            requests: { cpu: "4", memory: 16Gi, nvidia.com/gpu: "2", ephemeral-storage: "10Gi" }
-            limits: { cpu: "16", memory: 48Gi, nvidia.com/gpu: "2", ephemeral-storage: "30Gi" }
+            requests: { cpu: "8", memory: 48Gi, nvidia.com/gpu: "2", ephemeral-storage: "5Gi" }
+            limits: { cpu: "32", memory: 64Gi, nvidia.com/gpu: "2", ephemeral-storage: "20Gi" }
           volumeMounts:
-            - { name: models-cache, mountPath: /data }
+            - { name: models-storage, mountPath: /models, readOnly: true }
             - { name: dshm, mountPath: /dev/shm }
       volumes:
-        - name: models-cache
+        - name: models-storage
           persistentVolumeClaim: { claimName: vllm-models-pvc }
         - name: dshm
-          emptyDir: { medium: Memory, sizeLimit: 10Gi }
+          emptyDir: { medium: Memory, sizeLimit: 16Gi }

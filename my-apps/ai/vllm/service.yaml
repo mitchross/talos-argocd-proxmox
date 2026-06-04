@@ -4,13 +4,13 @@ metadata:
   name: vllm-service
   namespace: vllm
 spec:
-  # Selects every bank Deployment (all share app: vllm-server). Only one is
-  # scaled up at a time, so endpoints resolve to the single active model pod.
+  # Selects both model Deployments (int4 + bf16 share app: vllm-server). Only one
+  # runs at a time, so endpoints resolve to the single active model pod.
   selector:
     app: vllm-server
   ports:
     - name: http          # named port REQUIRED for HTTPRoute
       protocol: TCP
-      port: 8000
-      targetPort: http
+      port: 8080          # mirror llama-cpp-service
+      targetPort: http    # -> container port 8000 (vLLM default)
   type: ClusterIP

@@ -1,22 +1,23 @@
-# Static NFS PV for the vLLM HuggingFace model cache (AWQ safetensors).
-# Same pattern + tuned 10G mount options as llama-cpp (my-apps/ai/llama-cpp/pvc.yaml):
-# CSI driver (NOT legacy nfs:) so nconnect/rsize/wsize actually apply.
-# Longhorn is intentionally avoided on the GPU node (its replicas/manager are
-# kept off that node — see my-apps/ai/CLAUDE.md), so model storage uses NFS,
-# exactly like llama-cpp and comfyui.
+# Static, READ-ONLY NFS PV for the two pre-staged AWQ model dirs.
+# Mirrors the immich static-RO pattern (infrastructure/storage/csi-driver-nfs/
+# storage-class.yaml): storageClassName "" + ReadOnlyMany + `ro` mount option +
+# CSI driver (NOT legacy nfs:, so nconnect/rsize/wsize actually apply).
 #
-# ONE-TIME NAS PREP: create + export the dataset/dir `/mnt/ai-pool/vllm` on the
-# TrueNAS box (192.168.10.133), same as the existing /mnt/ai-pool/{llama-cpp,comfyui}
-# shares. The PV below mounts that path; vLLM writes its HF cache into it.
+# The share already contains the models — do NOT use the NFS CSI *dynamic*
+# provisioner (it creates per-PVC subdirs and won't see existing files).
+#   /mnt/ai-pool/vllm/Qwen3.6-27B-AWQ-INT4        (20GB, primary)
+#   /mnt/ai-pool/vllm/Qwen3.6-27B-AWQ-BF16-INT4   (25GB, higher quality)
+# Pod mounts the share root at /models, read-only. No credentials needed
+# (AUTH_SYS, other-readable, public weights).
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: vllm-models-nfs-pv
+  name: nfs-vllm-models
 spec:
   capacity:
-    storage: 400Gi
+    storage: 1Ti
   accessModes:
-    - ReadWriteMany
+    - ReadOnlyMany
   persistentVolumeReclaimPolicy: Retain
   storageClassName: ""
   mountOptions:
@@ -27,9 +28,10 @@ spec:
     - rsize=1048576
     - wsize=1048576
     - nconnect=16
+    - ro
   csi:
     driver: nfs.csi.k8s.io
-    volumeHandle: vllm-models-nfs-pv
+    volumeHandle: nfs-vllm-models
     volumeAttributes:
       server: "192.168.10.133"
       share: "/mnt/ai-pool/vllm"
@@ -42,14 +44,14 @@ metadata:
   labels:
     backup-exempt: "true"
   annotations:
-    # Fully-qualified key — the bare `backup-exempt-reason` is silently ignored
-    # and the PVC is denied on CREATE (CI guard `backup-exempt-contract`).
-    storage.vanillax.dev/backup-exempt-reason: "NFS-backed vLLM model cache (AWQ safetensors); non-snapshottable, rebuildable via huggingface download"
+    # Fully-qualified key — bare `backup-exempt-reason` is silently ignored and
+    # the PVC is denied on CREATE (CI guard `backup-exempt-contract`).
+    storage.vanillax.dev/backup-exempt-reason: "NFS-backed vLLM model store (AWQ safetensors); read-only, non-snapshottable, rebuildable via hf download"
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadOnlyMany
   resources:
     requests:
-      storage: 400Gi
+      storage: 1Ti
   storageClassName: ""
-  volumeName: vllm-models-nfs-pv
+  volumeName: nfs-vllm-models
