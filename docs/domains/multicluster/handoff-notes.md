@@ -50,11 +50,35 @@ feat/one-shot-multicluster-kustomize
 
 ## Implementation Status
 
-The branch implementation is complete through app discovery, manifest path
-correction, portable infrastructure sharing, patch externalization,
-profile-driven bootstrap, and OpenShift GatewayClass ownership. Full local
-acceptance and final branch review remain pending. No live cluster mutation
-has been performed.
+The branch implementation and local acceptance completed on June 4, 2026. It
+includes app discovery, manifest path correction, portable infrastructure
+sharing, patch externalization, profile-driven bootstrap, OpenShift
+GatewayClass ownership, and final bootstrap profile isolation. No live cluster
+mutation was performed.
+
+Implementation commits:
+
+- `0313c64b` directory-derived app discovery
+- `5b4bbca2` corrected manifest-generation paths
+- `1d23d748` shared portable infrastructure bases
+- `b939f7eb` externalized Kustomize patches
+- `872326f2` profile-driven bootstrap and OpenShift GatewayClass
+- `96bd15c3` shared-manifest patch-style guardrail
+- `49c34706` operator documentation
+- `0d3d2c61` bootstrap profile isolation and stronger preflight
+
+## Local Acceptance
+
+- 88/88 app renders are byte-identical to the pre-migration baseline.
+- The 88-row generated Application contract is unchanged.
+- All repository-local validators and shellcheck pass.
+- All 155 cluster kustomizations render successfully.
+- OpenShift bootstrap dry-run succeeds without any Talos cluster files.
+- No app metadata, escaped or multiline inline patches, deprecated patch
+  fields, invalid manifest-generation paths, or `targetRevision: HEAD` values
+  remain.
+- The render pass emits 27 existing `commonLabels` deprecation warnings; that
+  cleanup is separate from this migration.
 
 ## OpenShift Readiness Boundary
 
