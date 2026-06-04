@@ -13,16 +13,24 @@ helm install upstream Argo CD -> apply root Application -> local Argo CD self-ma
 Use the repo-level script from the repository root:
 
 ```bash
-./scripts/bootstrap-argocd.sh openshift
+./scripts/bootstrap-cluster.sh openshift
 ```
 
-Before running it, verify:
+The profile wrapper:
 
 - `kubectl` or `oc` points at the intended OpenShift cluster.
-- 1Password Connect and External Secrets token secrets are pre-seeded.
-- Gateway API is available.
-- The OpenShift GatewayClass name matches `clusters/openshift/infra/gateway/gateway.yaml`.
-- The LVM Storage Operator channel and `LVMCluster` schema match the live cluster.
+- verifies OpenShift-managed Gateway API CRDs;
+- rejects a conflicting Service Mesh Operator v2 subscription;
+- never installs Cilium or upstream Gateway API CRDs;
+- verifies the three pre-seeded 1Password secrets;
+- calls `scripts/bootstrap-argocd.sh openshift` after prerequisites pass.
+
+Git owns GatewayClass `openshift-default` with controller
+`openshift.io/gateway-controller/v1`. The LVM Storage Operator channel and
+`LVMCluster` schema still require live verification.
+
+Direct `scripts/bootstrap-argocd.sh openshift` invocation is the focused
+Argo-only step and assumes every platform prerequisite is already complete.
 
 Manual equivalent:
 

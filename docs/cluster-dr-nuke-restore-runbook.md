@@ -116,15 +116,24 @@ Use the normal Omni, Proxmox, and infrastructure-as-code path. Confirm nodes are
 
 ### 2. Seed Networking And ArgoCD
 
-Install the bootstrap CNI path, seed 1Password credentials, run:
+Use the profile-driven bootstrap:
 
 ```bash
-./scripts/bootstrap-argocd.sh talos
+./scripts/bootstrap-cluster.sh talos
 ```
 
-The script installs upstream Helm Argo CD with
+On a fresh Talos cluster, the first invocation installs or verifies pinned
+Cilium and installs pinned upstream Gateway API CRDs. It may then stop at the
+pre-seeded secret gate. Seed the three required 1Password secrets and rerun the
+same command.
+
+After prerequisites and the secret gate pass, the wrapper calls the focused
+Argo-only script. That script installs upstream Helm Argo CD with
 `clusters/talos/bootstrap/values.yaml` and applies
 `clusters/talos/bootstrap/root.yaml` after the Application CRD exists.
+
+Use `./scripts/bootstrap-argocd.sh talos` directly only when networking,
+Gateway API CRDs, and the secret gate are already complete.
 
 ### 3. Watch Wave 0
 

@@ -37,6 +37,23 @@ TrueNAS shares and datasets.
 
 Verify network reachability and OpenShift SCC compatibility before live sync.
 
+### Portable Platform Services
+
+The byte-identical `1passwordconnect`, `cert-manager`, and `external-secrets`
+definitions are shared bases under `manifests/infra`. OpenShift retains
+cluster-owned entrypoints that consume those bases.
+
+## Gateway API
+
+OpenShift uses the platform Ingress Operator Gateway API implementation. Git
+declares GatewayClass `openshift-default` with controller
+`openshift.io/gateway-controller/v1`, then declares the shared Gateway in
+`openshift-ingress`.
+
+The OpenShift bootstrap profile verifies the platform-owned Gateway API CRDs
+and rejects a conflicting Service Mesh Operator v2 subscription. It never
+installs Cilium or upstream Gateway API CRDs.
+
 ## Backup Boundary
 
 Talos currently owns the app PVC backup implementation:
@@ -81,4 +98,5 @@ Verify these against the intended OpenShift cluster:
 - TopoLVM provisioner name `topolvm.io`;
 - device-class parameter `topolvm.io/device-class: vg1`;
 - NFS and SMB CSI chart SCC requirements;
-- GatewayClass name `openshift-default`.
+- GatewayClass controller behavior for Git-owned `openshift-default`;
+- absence of a conflicting Service Mesh Operator v2 subscription.

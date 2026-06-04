@@ -81,6 +81,8 @@ The following baseline was verified locally on June 4, 2026:
 - `clusters/talos/monitoring/prometheus-stack/patches/crd-alertmanagers-sync-options.yaml`
 - `clusters/talos/monitoring/prometheus-stack/patches/crd-prometheusagents-sync-options.yaml`
 - `clusters/talos/monitoring/prometheus-stack/patches/crd-prometheuses-sync-options.yaml`
+- `manifests/apps/development/temporal/base/patches/delete-temporal-server-serviceaccount.yaml`
+- `manifests/apps/development/gitea/base/patches/gitea-config-secret.yaml`
 
 ### Modify
 
@@ -101,6 +103,8 @@ The following baseline was verified locally on June 4, 2026:
 - `clusters/talos/database/cloudnative-pg/cloudnative-pg-operator/kustomization.yaml`
 - `clusters/talos/database/cnpg-barman-plugin/kustomization.yaml`
 - `clusters/talos/monitoring/prometheus-stack/kustomization.yaml`
+- `manifests/apps/development/temporal/base/kustomization.yaml`
+- `manifests/apps/development/gitea/base/kustomization.yaml`
 - `clusters/openshift/infra/gateway/kustomization.yaml`
 - `clusters/openshift/infra/gateway/gateway.yaml`
 - `clusters/openshift/infra/gateway/httproute-argocd.yaml`
@@ -1195,9 +1199,11 @@ test "$(find clusters/openshift/apps -mindepth 3 -maxdepth 3 \
 test "$(find clusters/talos/apps clusters/openshift/apps \
   -path '*/.argocd/config.json' -type f | wc -l)" -eq 0
 
-! rg -n '^[[:space:]]+patch:[[:space:]]+\|[-+]?$' clusters --glob 'kustomization.yaml'
+! rg -n 'patch:[[:space:]]*".*\\n' clusters manifests --glob 'kustomization.yaml'
+! rg -n '^[[:space:]]+patch:[[:space:]]+\|[-+]?$' \
+  clusters manifests --glob 'kustomization.yaml'
 ! rg -n '^[[:space:]]*(patchesStrategicMerge|patchesJson6902|bases):' \
-  clusters --glob 'kustomization.yaml'
+  clusters manifests --glob 'kustomization.yaml'
 ! rg -n 'manifest-generate-paths:[[:space:]]+clusters/' clusters --glob '*.yaml'
 ! rg -n 'targetRevision:[[:space:]]+HEAD' clusters --glob '*.yaml'
 

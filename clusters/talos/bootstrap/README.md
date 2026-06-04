@@ -6,15 +6,23 @@ the Talos cluster.
 Use the repo-level script from the repository root:
 
 ```bash
-./scripts/bootstrap-argocd.sh talos
+./scripts/bootstrap-cluster.sh talos
 ```
 
-The script expects Talos prerequisites to be complete first:
+The profile wrapper:
 
 - Omni service-account kubeconfig points at the Talos cluster.
-- Cilium is installed at the version pinned in `clusters/talos/infra/cilium`.
-- Gateway API CRDs are installed.
-- 1Password Connect and External Secrets token secrets are pre-seeded.
+- installs or verifies Cilium at the version pinned in
+  `clusters/talos/infra/cilium`;
+- installs pinned upstream Gateway API CRDs;
+- verifies the three pre-seeded 1Password secrets;
+- calls `scripts/bootstrap-argocd.sh talos` after prerequisites pass.
+
+On a fresh Talos cluster, the first invocation may complete networking and then
+stop at the secret gate. Pre-seed the secrets and rerun the same command.
+
+Direct `scripts/bootstrap-argocd.sh talos` invocation is the focused Argo-only
+step and assumes every platform prerequisite is already complete.
 
 Manual equivalent:
 
