@@ -3,25 +3,33 @@
 ## LLM Backend
 
 This cluster uses **vLLM** for all local AI inference (NOT ollama, NOT llama-cpp
-— llama-cpp is retired to `replicas: 0`, see "Strategy" below).
-- Endpoint: `http://vllm-service.vllm.svc.cluster.local:8000`
-- OpenAI-compatible API at `/v1` (chat/completions, models, …)
-- Primary model: **Qwen2.5-Coder-32B-Instruct-AWQ**, served at
-  `--tensor-parallel-size 2` across BOTH 3090s. Swap the model via the `--model`
-  arg in `my-apps/ai/vllm/deployment.yaml`. vLLM needs **AWQ/GPTQ/FP8** weights —
-  it does NOT use GGUF efficiently.
-- Client-facing model names (the `model` field clients send): `qwen2.5-coder-32b`
-  and the alias `default` (set via `--served-model-name`).
+— llama-cpp is retired to `replicas: 0`). vLLM pools BOTH RTX 3090s at
+`--tensor-parallel-size 2` (~48 GB).
+- Endpoint: `http://vllm-service.vllm.svc.cluster.local:8000` (OpenAI API at `/v1`).
+- Apps send `model: default` — it always resolves to whichever bank model is
+  currently running (every entry sets `--served-model-name default <name>`).
+- vLLM needs **AWQ/GPTQ/FP8** weights — never GGUF. On Ampere (sm_86) use **AWQ**
+  (FP8 is Hopper/Ada-only; Intel AutoRound INT4 is blocked on Ampere).
 
-Always point in-cluster AI backends at the vLLM endpoint above.
+### The vLLM preset bank (swap on demand)
 
-### Strategy: vLLM-first on both GPUs
+`my-apps/ai/vllm/` defines **one Deployment per model**, all sharing
+`app: vllm-server` so `vllm-service` routes to whichever is scaled up. The node
+has only two cards and each model claims both at TP=2, so **exactly one runs at a
+time**. Switch by setting one to `replicas: 1` and the rest to `0`, then commit
+(ArgoCD selfHeal reverts a bare `kubectl scale`).
 
-We run **one** vLLM server pooling both RTX 3090s (TP=2 ≈ 48GB) instead of the
-old one-model-per-card llama.cpp / ComfyUI split — this is the dual-card pooled
-endpoint that wins for big-context coding/research. `llama-cpp` and `swarmui`
-are at `replicas: 0` (kept for a fast revert) because the node has only two
-cards and vLLM claims both.
+| Model (`model:` field) | HF repo (AWQ) | replicas | Use |
+|---|---|---|---|
+| `qwen3.6` / `default` ⭐ | `QuantTrio/Qwen3.6-35B-A3B-AWQ` | 1 | daily driver — chat/tools/RAG/vision |
+| `coder` | `QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ` | 0 | coding agent |
+| `gemma4` | `cyankiwi/gemma-4-26B-A4B-it-AWQ-4bit` | 0 | multimodal fallback (`--tool-call-parser gemma4`; see vLLM #40247 image note) |
+| `gemma4-31b` | `cyankiwi/gemma-4-31B-it-AWQ-4bit` | 0 | top-quality dense (slow) |
+| `tool-fast` | `cyankiwi/Qwen3-4B-Instruct-2507-AWQ-4bit` | 0 | fast triage / tool calls |
+
+Add a model: copy a `deployment-*.yaml`, change name/labels/`--model`/
+`--served-model-name`, and list it in `kustomization.yaml`. `llama-cpp` and
+`swarmui` are at `replicas: 0` (kept for revert) because vLLM claims both cards.
 
 ## GPU Topology
 

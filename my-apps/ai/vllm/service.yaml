@@ -4,6 +4,8 @@ metadata:
   name: vllm-service
   namespace: vllm
 spec:
+  # Selects every bank Deployment (all share app: vllm-server). Only one is
+  # scaled up at a time, so endpoints resolve to the single active model pod.
   selector:
     app: vllm-server
   ports:
