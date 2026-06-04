@@ -2,6 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Status:** Implemented and locally accepted on June 4, 2026. Live OpenShift
+schema and controller verification remains an operator action.
+
 **Goal:** Finish the cluster-centric multicluster migration so Talos and OpenShift independently bootstrap local Argo CD instances, discover all 44 app overlays per cluster without redundant metadata files, share genuinely portable infrastructure bases, and keep Kustomize patches readable.
 
 **Architecture:** `manifests/` holds shared reusable definitions and `clusters/<cluster>/` remains the deployable overlay boundary. Talos and OpenShift each run one local upstream Helm Argo CD that deploys only to `https://kubernetes.default.svc`. App ApplicationSets derive metadata from directory paths; explicit infrastructure, database, monitoring, and standalone entrypoints retain their existing ordering controls.

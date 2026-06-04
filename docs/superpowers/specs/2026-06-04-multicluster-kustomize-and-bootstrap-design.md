@@ -1,6 +1,6 @@
 # Multicluster Kustomize and Bootstrap Design
 
-**Status:** Approved design
+**Status:** Implemented and locally accepted
 **Date:** 2026-06-04
 **Platforms:** Talos, OpenShift/OKD, future Kubernetes targets
 **Orchestration:** One local upstream Helm Argo CD per cluster
@@ -383,6 +383,19 @@ deleted if names or generator results change. Before rollout, compare the
 current and proposed generated Application sets exactly.
 
 No design or local validation step mutates a live cluster.
+
+The June 4, 2026 local acceptance proved:
+
+- all 88 app renders are byte-identical to the pre-migration baseline;
+- the derived Application contract is unchanged for all 88 apps;
+- all repository-local validators and shellcheck pass;
+- all 155 cluster kustomizations render successfully;
+- no app metadata, escaped or multiline inline patches, deprecated patch
+  fields, invalid manifest-generation paths, or `targetRevision: HEAD` values
+  remain.
+
+The 155-render pass emits 27 existing `commonLabels` deprecation warnings.
+Migrating those labels is separate cleanup and does not block this design.
 
 Required local checks include:
 
