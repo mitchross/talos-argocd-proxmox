@@ -139,6 +139,35 @@ their current values are fully derivable and contain no exceptions.
 The equivalent OpenShift ApplicationSet fixes `project: openshift-apps` and
 discovers only `clusters/openshift/apps/*/*`.
 
+### Manifest Generation Paths
+
+Argo CD interprets a `manifest-generate-paths` value without a leading `/` as
+relative to the Application source path. Current annotations such as
+`clusters/talos/infra/cilium` are therefore not valid repository-root paths.
+They also omit shared bases consumed outside the cluster overlay.
+
+Use:
+
+- `.` for a cluster-local source path;
+- an absolute `/manifests/...` path for every consumed shared base;
+- semicolons between multiple paths.
+
+For generated app Applications:
+
+```yaml
+argocd.argoproj.io/manifest-generate-paths: >-
+  .;/manifests/apps/{{index .path.segments 3}}/{{.path.basename}}/base
+```
+
+Explicit infrastructure, database, and monitoring ApplicationSets may use a
+broader shared-domain path such as `.;/manifests/infra` when their per-entry
+shared dependency is not encoded in metadata. Standalone Applications use `.`
+plus the exact shared base paths they consume.
+
+This keeps monorepo cache invalidation correct: an overlay change refreshes
+only its Application, while a shared-base change refreshes every Application
+that consumes that base.
+
 ### Explicit Discovery
 
 Infrastructure, database, monitoring, bootstrap dependencies, and custom
@@ -191,6 +220,19 @@ Rules:
   same storage intent.
 - An OpenShift overlay must never reference `clusters/talos`.
 - A Talos overlay must never reference `clusters/openshift`.
+
+The current Talos and OpenShift definitions for `1passwordconnect`,
+`cert-manager`, and `external-secrets` are byte-identical. They are the first
+portable infrastructure candidates to hoist into:
+
+```text
+manifests/infra/<component>/base
+```
+
+Their cluster-owned entrypoints remain at
+`clusters/<cluster>/infra/<component>/kustomization.yaml`, each referencing the
+shared base. Gateway, Argo CD values, storage, Cilium, and other
+platform-specific infrastructure remain cluster-owned.
 
 ### Components
 
@@ -251,13 +293,18 @@ Target operator interface:
 ```bash
 ./scripts/bootstrap-cluster.sh talos
 ./scripts/bootstrap-cluster.sh openshift
-./scripts/bootstrap-cluster.sh gke
 ```
 
-`bootstrap-cluster.sh` is the one-shot operator entrypoint. It performs
-profile-specific prerequisites and then calls the focused
-`scripts/bootstrap-argocd.sh <cluster>` step to install upstream Argo CD and
-apply the local root Application.
+`bootstrap-cluster.sh` is the single repeatable operator entrypoint. It
+performs profile-specific prerequisites, verifies the pre-seeded secret gate,
+and then calls the focused `scripts/bootstrap-argocd.sh <cluster>` step to
+install upstream Argo CD and apply the local root Application.
+
+On an already prepared cluster, one invocation completes the workflow. On a
+fresh Talos cluster, the first invocation may install Cilium and Gateway API
+CRDs, then stop before Argo CD if the required 1Password secrets have not been
+pre-seeded yet. After the operator pre-seeds those secrets, rerunning the same
+command continues safely. The wrapper does not read secrets from 1Password.
 
 The profile selects:
 
@@ -276,6 +323,7 @@ Expected profile behavior:
 | Install upstream Gateway API CRDs | Yes | No |
 | GatewayClass ownership | Cilium-owned | GitOps `openshift-default` |
 | Check for OSSM v2 conflict | No | Yes |
+| Verify pre-seeded secret gate before Argo CD | Yes | Yes |
 | Install upstream Helm Argo CD | Talos values | OpenShift values |
 | Apply local root | Talos root | OpenShift root |
 
@@ -286,7 +334,10 @@ the OpenShift profile.
 
 The current `scripts/bootstrap-argocd.sh <cluster>` remains the focused Argo CD
 bootstrap step. The new wrapper preserves the cluster-owned bootstrap inputs
-and provides the complete one-shot workflow.
+and provides one repeatable workflow for initial bootstrap and recovery.
+Future platforms such as GKE add another profile without changing the
+cluster-local Argo CD or cluster-owned overlay contracts; GKE is not
+implemented by this migration.
 
 ## Storage and Backup Contract
 
@@ -317,10 +368,14 @@ The work is still executed in a safe order:
 2. Change app ApplicationSets to directory generators while preserving names,
    projects, paths, namespaces, sync waves, and destinations.
 3. Remove app `.argocd/config.json` files.
-4. Externalize remaining inline patches without changing rendered output.
-5. Add the profile-driven bootstrap behavior and OpenShift GatewayClass
+4. Correct `manifest-generate-paths` semantics and include consumed shared
+   bases.
+5. Hoist the three byte-identical portable infrastructure stacks into shared
+   bases and externalize remaining inline patches without changing rendered
+   output.
+6. Add the profile-driven bootstrap behavior and OpenShift GatewayClass
    ownership.
-6. Update README, runbooks, PRD, and Mink notes to match the resulting system.
+7. Update README, runbooks, PRD, and Mink notes to match the resulting system.
 
 ## Safety and Validation
 
@@ -357,6 +412,10 @@ Additional implementation validation must prove:
 - OpenShift app renders contain no unintended Talos backup policy;
 - no app `.argocd/config.json` files remain;
 - no new escaped or multiline inline patch strings remain;
+- no `manifest-generate-paths` annotation uses a mistaken repository-relative
+  `clusters/...` value;
+- shared-base consumers include their `/manifests/...` path in
+  `manifest-generate-paths`;
 - OpenShift GatewayClass schema and controller behavior are verified before
   live sync;
 - the intended OpenShift cluster has no conflicting OSSM v2 subscription.
@@ -367,7 +426,15 @@ Additional implementation validation must prove:
 - OpenShift GitOps Operator.
 - Matrix or cluster generators.
 - Installing Cilium on OpenShift.
+- Implementing a GKE profile in this migration.
 - Reorganizing the cluster trees beneath an additional `overlays/` directory.
 - A broad neutral-base or component-driven rewrite.
 - Automatic cross-cluster failover.
 - Claiming every stateful app is production-ready on OpenShift.
+
+## Primary References
+
+- [Argo CD Git directory generator](https://argo-cd.readthedocs.io/en/release-3.4/operator-manual/applicationset/Generators-Git/)
+- [Argo CD manifest paths annotation](https://argo-cd.readthedocs.io/en/latest/operator-manual/high_availability/#manifest-paths-annotation)
+- [Kubernetes Kustomize composition and patches](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/)
+- [OKD 4.20 Gateway API with the Ingress Operator](https://docs.okd.io/4.20/networking/ingress_load_balancing/configuring_ingress_cluster_traffic/ingress-gateway-api.html)

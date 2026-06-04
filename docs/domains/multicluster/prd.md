@@ -46,6 +46,7 @@ docs/superpowers/specs/2026-06-04-multicluster-kustomize-and-bootstrap-design.md
 - No Matrix or cluster generators.
 - No OpenShift GitOps Operator.
 - No Cilium or Longhorn installation on OpenShift.
+- No GKE profile implementation in this migration.
 - No broad neutral-base or component-driven rewrite.
 - No automatic cross-cluster failover.
 - No claim that every stateful app is production-ready on OpenShift.
@@ -137,9 +138,19 @@ The app ApplicationSets use fixed projects:
 - `talos-apps`
 - `openshift-apps`
 
+Argo CD manifest cache hints must use `.` for the Application source path and
+absolute `/manifests/...` paths for consumed shared bases. Multiple paths are
+semicolon-separated. Repository-root-looking values such as
+`clusters/talos/...` without a leading `/` are invalid because Argo interprets
+them relative to the Application source path.
+
 Infrastructure, database, monitoring, bootstrap dependencies, and standalone
 entrypoints retain explicit discovery and Applications where allowlists,
 ordering, or namespace exceptions matter.
+
+The byte-identical `1passwordconnect`, `cert-manager`, and `external-secrets`
+definitions become shared infrastructure bases under `manifests/infra`. Their
+cluster-owned entrypoints remain under `clusters/<cluster>/infra`.
 
 ## Gateway API Contract
 
@@ -195,13 +206,18 @@ than Cilium:
 ```bash
 ./scripts/bootstrap-cluster.sh talos
 ./scripts/bootstrap-cluster.sh openshift
-./scripts/bootstrap-cluster.sh gke
 ```
 
-`bootstrap-cluster.sh` is the one-shot operator entrypoint. It performs
-profile-specific prerequisites and then calls
-`scripts/bootstrap-argocd.sh <cluster>` for the focused upstream Argo CD and
-local-root bootstrap.
+`bootstrap-cluster.sh` is the single repeatable operator entrypoint. It
+performs profile-specific prerequisites, verifies the pre-seeded secret gate,
+and then calls `scripts/bootstrap-argocd.sh <cluster>` for the focused upstream
+Argo CD and local-root bootstrap.
+
+On an already prepared cluster, one invocation completes the workflow. On a
+fresh Talos cluster, the first invocation may install Cilium and Gateway API
+CRDs, then stop before Argo CD until the operator pre-seeds the required
+1Password secrets. Rerunning the same command continues safely. The wrapper
+does not read secrets from 1Password.
 
 The profile selects the cluster bootstrap directory, prerequisites, networking
 behavior, Gateway API behavior, Argo CD Helm values, root Application, and
@@ -215,12 +231,17 @@ Expected defaults:
 | Install upstream Gateway API CRDs | Yes | No |
 | GatewayClass ownership | Cilium-owned | GitOps `openshift-default` |
 | Check OSSM v2 conflict | No | Yes |
+| Verify pre-seeded secret gate before Argo CD | Yes | Yes |
 | Install upstream Helm Argo CD | Talos values | OpenShift values |
 | Apply root | Talos root | OpenShift root |
 
 An optional `--cilium=auto|install|skip` override supports recovery cases. The
 default `auto` behavior installs or verifies Cilium on Talos and skips Cilium
 on OpenShift. Installing Cilium is invalid for the OpenShift profile.
+
+Future platforms such as GKE add another profile without changing the
+cluster-local Argo CD or cluster-owned overlay contracts. GKE is not
+implemented by this migration.
 
 ## One-Shot Migration Requirement
 
@@ -232,9 +253,11 @@ The implementation must:
 1. Preserve all generated Application names and destinations.
 2. Switch app discovery to directory generators.
 3. Remove app `.argocd/config.json` boilerplate.
-4. Externalize remaining inline patches without changing rendered behavior.
-5. Add profile-driven bootstrap behavior and OpenShift GatewayClass ownership.
-6. Update README, runbooks, validation, planning docs, and Mink decisions.
+4. Correct Argo CD manifest-generation path annotations.
+5. Hoist byte-identical portable infrastructure into shared bases.
+6. Externalize remaining inline patches without changing rendered behavior.
+7. Add profile-driven bootstrap behavior and OpenShift GatewayClass ownership.
+8. Update README, runbooks, validation, planning docs, and Mink decisions.
 
 ## Schema Assumptions To Verify Live
 
@@ -274,7 +297,8 @@ Implementation validation must additionally prove:
 - all app destinations remain local;
 - all app projects remain fixed;
 - app `.argocd/config.json` files are gone;
-- no new escaped or multiline inline patch strings remain.
+- no new escaped or multiline inline patch strings remain;
+- manifest-generation paths are valid and include consumed shared bases.
 
 Live verification requires an explicit operator decision before any
 `kubectl apply`, `oc apply`, or Helm mutation.
