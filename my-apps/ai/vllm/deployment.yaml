@@ -6,16 +6,10 @@ metadata:
   labels:
     app: vllm-server
 spec:
-  # ─────────────────────────────────────────────────────────────────────────
-  # replicas: 0 ON PURPOSE. vLLM at TP=2 claims BOTH 3090s, but steady state is
-  # GPU0=llama-cpp, GPU1=comfyui. Running vLLM is a deliberate "burst" mode:
-  #   1) kubectl scale deploy/llama-cpp-server -n llama-cpp --replicas=0
-  #   2) kubectl scale deploy/comfyui          -n comfyui   --replicas=0   (if running)
-  #   3) kubectl scale deploy/vllm-server       -n vllm      --replicas=1
-  # Reverse to go back. Left at 0 so a git push doesn't strand a Pending pod
-  # fighting for GPUs that llama-cpp/comfyui already hold. selfHeal will keep it 0.
-  # ─────────────────────────────────────────────────────────────────────────
-  replicas: 0
+  # vLLM is the active in-cluster LLM backend (TP=2 across both 3090s).
+  # llama-cpp is scaled to 0 (frees GPU0); comfyui already 0 (GPU1 idle).
+  # To revert: set this to 0 and llama-cpp-server back to 1 (one commit).
+  replicas: 1
   strategy:
     type: Recreate            # whole-card GPU workload; never two pods on the cards at once
   revisionHistoryLimit: 1

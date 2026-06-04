@@ -8,7 +8,9 @@ metadata:
 spec:
   strategy:
     type: Recreate
-  replicas: 1
+  # Scaled to 0: vLLM is now the active LLM backend and needs BOTH 3090s (TP=2).
+  # To revert to llama-cpp as daily driver: set this back to 1 and vllm-server to 0.
+  replicas: 0
   selector:
     matchLabels:
       app: llama-cpp-server
