@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: 1passwordconnect
+
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "0"
+
+helmCharts:
+- name: connect
+  repo: https://1password.github.io/connect-helm-charts
+  version: 2.4.1
+  releaseName: 1password-connect
+  valuesFile: values.yaml
+  includeCRDs: true
