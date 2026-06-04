@@ -14,7 +14,7 @@ metadata:
   name: vllm-models-nfs-pv
 spec:
   capacity:
-    storage: 200Gi
+    storage: 400Gi
   accessModes:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
@@ -50,6 +50,6 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 200Gi
+      storage: 400Gi
   storageClassName: ""
   volumeName: vllm-models-nfs-pv

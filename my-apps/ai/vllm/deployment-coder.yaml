@@ -1,0 +1,94 @@
+# Coding agent — Qwen3-Coder-30B-A3B (MoE, 262K native). replicas: 0 (scale to 1
+# to switch; scale the daily driver to 0 first). See deployment-qwen3.6.yaml for
+# the shared-Service / TP=2 / P2P rationale.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-coder
+  namespace: vllm
+  labels:
+    app: vllm-server
+    vllm-model: coder
+spec:
+  strategy:
+    type: Recreate
+  replicas: 0
+  selector:
+    matchLabels:
+      app: vllm-server
+      vllm-model: coder
+  revisionHistoryLimit: 1
+  template:
+    metadata:
+      labels:
+        app: vllm-server
+        vllm-model: coder
+    spec:
+      restartPolicy: Always
+      runtimeClassName: nvidia
+      priorityClassName: gpu-workload-high
+      terminationGracePeriodSeconds: 120
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
+      tolerations:
+        - { key: "nvidia.com/gpu", operator: "Exists", effect: "NoSchedule" }
+        - { key: "gpu", operator: "Equal", value: "true", effect: "NoSchedule" }
+      containers:
+        - name: vllm
+          # renovate: datasource=docker depName=vllm/vllm-openai
+          image: vllm/vllm-openai:v0.22.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--model"
+            - "QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ"
+            - "--served-model-name"
+            - "default"
+            - "coder"
+            - "--tensor-parallel-size"
+            - "2"
+            - "--gpu-memory-utilization"
+            - "0.90"
+            - "--max-model-len"
+            - "32768"                       # native 262K; extend via YaRN once verified
+            - "--enable-prefix-caching"
+            - "--enable-auto-tool-choice"
+            - "--tool-call-parser"
+            - "hermes"
+            - "--disable-custom-all-reduce"
+            - "--host"
+            - "0.0.0.0"
+            - "--port"
+            - "8000"
+          env:
+            - { name: HF_HOME, value: /data }
+            - { name: NCCL_P2P_DISABLE, value: "1" }
+            - { name: NVIDIA_DRIVER_CAPABILITIES, value: "compute,utility" }
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef: { name: vllm-secrets, key: HF_TOKEN, optional: true }
+          ports:
+            - { name: http, containerPort: 8000, protocol: TCP }
+          startupProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 240
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 15
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 30
+            failureThreshold: 6
+          resources:
+            requests: { cpu: "4", memory: 16Gi, nvidia.com/gpu: "2", ephemeral-storage: "10Gi" }
+            limits: { cpu: "16", memory: 48Gi, nvidia.com/gpu: "2", ephemeral-storage: "30Gi" }
+          volumeMounts:
+            - { name: models-cache, mountPath: /data }
+            - { name: dshm, mountPath: /dev/shm }
+      volumes:
+        - name: models-cache
+          persistentVolumeClaim: { claimName: vllm-models-pvc }
+        - name: dshm
+          emptyDir: { medium: Memory, sizeLimit: 10Gi }
