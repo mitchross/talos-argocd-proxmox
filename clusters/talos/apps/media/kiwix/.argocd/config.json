@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-media-kiwix",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "kiwix",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "clusters/talos/apps/media/kiwix"
+}

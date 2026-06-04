@@ -1,0 +1,47 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: gitea
+resources:
+- namespace.yaml
+- externalsecret.yaml
+helmCharts:
+- name: gitea
+  repo: https://dl.gitea.com/charts/
+  version: 12.5.3
+  releaseName: gitea
+  namespace: gitea
+  valuesFile: values.yaml
+
+patches:
+- path: fix-permissions-patch.yaml
+  target:
+    kind: Deployment
+    name: gitea
+- target:
+    kind: PersistentVolumeClaim
+    name: gitea-shared-storage
+  patch: |
+    - op: add
+      path: /metadata/labels/restore-policy
+      value: strict
+    # pvc-plumber v4.0.1 DRY handoff (2026-05-31): fuse the chart-generated PVC
+    # at tier=daily so the operator creates/manages RS/RD (extraDeploy RS/RD
+    # removed from values.yaml). Operator normalizes mover 1000->568.
+    - op: add
+      path: /metadata/labels/pvc-plumber.io~1enabled
+      value: "true"
+    - op: add
+      path: /metadata/labels/pvc-plumber.io~1manage-volsync
+      value: "true"
+    - op: add
+      path: /metadata/labels/pvc-plumber.io~1tier
+      value: daily
+    - op: add
+      path: /metadata/annotations/argocd.argoproj.io~1compare-options
+      value: ServerSideDiff=false
+    - op: add
+      path: /spec/dataSourceRef
+      value:
+        apiGroup: volsync.backube
+        kind: ReplicationDestination
+        name: gitea-shared-storage-dst

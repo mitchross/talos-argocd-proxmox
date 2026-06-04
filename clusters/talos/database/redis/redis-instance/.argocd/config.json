@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-database-redis-redis-instance",
+  "cluster": "talos",
+  "project": "talos-infrastructure",
+  "namespace": "redis-instance",
+  "part": "database",
+  "syncWave": "4",
+  "sourcePath": "clusters/talos/database/redis/redis-instance"
+}

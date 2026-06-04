@@ -212,7 +212,7 @@ The Job is the Talos-native pattern.
 
 ## Serving / KV settings
 
-Current live flags (see `manifests/apps/ai/llama-cpp/deploy-targets/talos/deployment.yaml`):
+Current live flags (see `manifests/apps/ai/llama-cpp/base/deployment.yaml`):
 `-ngl 99`, `-fa on`, `--cache-type-k q8_0 --cache-type-v q8_0`, `-b 4096`,
 `-ub 512`, `--parallel 1`, `--models-max 1`, `GGML_CUDA_ENABLE_UNIFIED_MEMORY=1`.
 
@@ -335,7 +335,7 @@ offload, no spill**:
    AWQ build of that model and pinning both cards. See "vLLM vs llama.cpp".
 2. A scale toggle: scale ComfyUI/SwarmUI → 0 to free GPU1, scale the 2-GPU
    llama-cpp up for the research/coding burst, reverse after. (Pattern already
-   used by `manifests/apps/ai/llmfit/deploy-targets/talos/` dual-GPU jobs.)
+   used by `clusters/talos/apps/ai/llmfit/` dual-GPU jobs.)
 3. On that 2-GPU deployment: drop `GGML_CUDA_ENABLE_UNIFIED_MEMORY`, keep KV
    symmetric q8/q8, optionally raise `-ub 1024`.
 4. **Proxmox/DL360 checks:** NUMA-pin the VM to one socket with both 3090s on
@@ -360,7 +360,7 @@ forces a llama-cpp rollout automatically.
 
 ## Already done (no action needed)
 
-- **Project NOMAD** (`manifests/apps/home/project-nomad/deploy-targets/talos/`) is fully deployed and already
+- **Project NOMAD** (`clusters/talos/apps/home/project-nomad/`) is fully deployed and already
   uses llama-cpp as its `LLM_HOST`, with its own nomic embeddings + Qdrant +
   Kiwix. Optionally point its chat at a smaller/faster model for snappier RAG.
 - **Perplexica** already defaults to the `longctx` preset (label corrected to
@@ -380,16 +380,16 @@ download models, apply the model-dependent edits, open a PR.
    - [ ] (optional) `Gemma 4 26B-A4B MXFP4` — small, tiny-KV multimodal
    - **Skip MTP** — no net speedup on Ampere + A3B under llama.cpp.
 2. **Confirm each preset's `model =` path matches the downloaded filename** in
-   `manifests/apps/ai/llama-cpp/deploy-targets/talos/presets.ini` (the `[STAGED]` sections).
+   `manifests/apps/ai/llama-cpp/base/presets.ini` (the `[STAGED]` sections).
 3. **llama.cpp image bump (currently frozen by Renovate):** read the driver
    (`talosctl read /proc/driver/nvidia/version`). If 580.x+ (CUDA 13), make BOTH
    edits together: tag → `server-cuda13-b9354` in
-   `manifests/apps/ai/llama-cpp/deploy-targets/talos/deployment.yaml`, AND the regex in
+   `manifests/apps/ai/llama-cpp/base/deployment.yaml`, AND the regex in
    `.github/renovate.json5` → `^server-cuda13-b(?<major>\d+)$`. If < 580, leave
    both on cuda12. See the "llama.cpp image bump" section for why.
 4. **(Optional, biggest Perplexica win)** verify Vane's embedding-provider schema,
    then wire `embeddingModels` to `embeddings.project-nomad.svc.cluster.local:8080/v1`
-   (`nomic-embed-text-v1.5`) in `manifests/apps/ai/perplexica/deploy-targets/talos/config.json`.
+   (`nomic-embed-text-v1.5`) in `manifests/apps/ai/perplexica/base/config.json`.
 5. **(Optional)** bump `--models-max` 1→2-3 once a small model is present AND the
    co-resident VRAM budget is verified (don't OOM the card).
 6. Editing `presets.ini` auto-rolls llama-cpp (hash-suffixed configMap). Open the PR.

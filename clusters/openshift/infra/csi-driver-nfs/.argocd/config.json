@@ -1,0 +1,9 @@
+{
+  "applicationName": "openshift-infra-csi-driver-nfs",
+  "cluster": "openshift",
+  "project": "openshift-infrastructure",
+  "namespace": "csi-driver-nfs",
+  "part": "infra",
+  "syncWave": "4",
+  "sourcePath": "clusters/openshift/infra/csi-driver-nfs"
+}

@@ -45,7 +45,7 @@ graph LR
 
 ## The Solution: CiliumClusterwideNetworkPolicy
 
-Located at: `manifests/infra/cilium/deploy-targets/talos/policies/block-lan-access.yaml`
+Located at: `clusters/talos/infra/cilium/policies/block-lan-access.yaml`
 
 ### What Gets Blocked
 

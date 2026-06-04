@@ -1,0 +1,33 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: home-assistant
+  namespace: home-assistant
+  labels:
+    app.kubernetes.io/name: home-assistant
+    app.kubernetes.io/component: home-automation
+    app.kubernetes.io/part-of: smart-home
+  annotations:
+    gateway.networking.k8s.io/timeout: 300s
+spec:
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: openshift-gateway
+    namespace: openshift-ingress
+  hostnames:
+  - homeassistant.apps.sno-ai-lab.vanillax.xyz
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/"
+    backendRefs:
+    - group: ''
+      kind: Service
+      name: home-assistant
+      port: 8123
+      weight: 1
+    timeouts:
+      request: 60s
+      backendRequest: 30s

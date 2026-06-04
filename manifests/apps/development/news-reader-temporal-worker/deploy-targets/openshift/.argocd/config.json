@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-development-news-reader-temporal-worker",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "news-reader-temporal-worker",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/development/news-reader-temporal-worker/deploy-targets/openshift"
-}

@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: frigate
+resources:
+- "../../../../../manifests/apps/home/frigate/base"
+- httproute.yaml
+patches:
+- path: patches/deployment-mosquitto.jsonpatch.yaml
+  target:
+    version: v1
+    kind: Deployment
+    name: mosquitto
+    group: apps
+    namespace: frigate
+- path: patches/remove-talos-backup-namespace-frigate.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-frigate-config.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-frigate-media.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-mosquitto-storage-pvc.yaml

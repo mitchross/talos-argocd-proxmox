@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-apps-development-gitea-actions",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "gitea-actions",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/development/gitea-actions/deploy-targets/talos"
-}

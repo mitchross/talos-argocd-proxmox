@@ -1,0 +1,9 @@
+{
+  "applicationName": "openshift-apps-home-paperless-ngx",
+  "cluster": "openshift",
+  "project": "openshift-apps",
+  "namespace": "paperless-ngx",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "clusters/openshift/apps/home/paperless-ngx"
+}

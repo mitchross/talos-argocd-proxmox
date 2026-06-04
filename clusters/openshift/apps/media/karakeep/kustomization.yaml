@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: karakeep
+resources:
+- "../../../../../manifests/apps/media/karakeep/base"
+- karakeep/httproute.yaml
+patches:
+- path: patches/deployment-karakeep-meilisearch.jsonpatch.yaml
+  target:
+    version: v1
+    kind: Deployment
+    name: karakeep-meilisearch
+    group: apps
+    namespace: karakeep
+- path: patches/deployment-karakeep-web.jsonpatch.yaml
+  target:
+    version: v1
+    kind: Deployment
+    name: karakeep-web
+    group: apps
+    namespace: karakeep
+- path: patches/remove-talos-backup-namespace-karakeep.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-data-pvc.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-meilisearch-pvc.yaml

@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-infra-rustfs-lifecycle",
-  "cluster": "talos",
-  "project": "talos-infrastructure",
-  "namespace": "rustfs-lifecycle",
-  "part": "infra",
-  "syncWave": "4",
-  "sourcePath": "manifests/infra/rustfs-lifecycle/deploy-targets/talos"
-}

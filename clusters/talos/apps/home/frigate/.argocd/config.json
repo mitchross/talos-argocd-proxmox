@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-home-frigate",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "frigate",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "clusters/talos/apps/home/frigate"
+}

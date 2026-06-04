@@ -1,0 +1,50 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: project-nomad
+
+resources:
+  - namespace.yaml
+  - externalsecret.yaml
+  # Core — Nomad app
+  - nomad/deployment.yaml
+  - nomad/service.yaml
+  - nomad/pvc.yaml
+  # MySQL
+  - mysql/deployment.yaml
+  - mysql/service.yaml
+  - mysql/pvc.yaml
+  # Redis
+  - redis/deployment.yaml
+  - redis/service.yaml
+  # Qdrant (vector DB for RAG)
+  - qdrant/deployment.yaml
+  - qdrant/service.yaml
+  - qdrant/pvc.yaml
+  # Embeddings (HuggingFace TEI — nomic-embed-text for RAG)
+  - embeddings/deployment.yaml
+  - embeddings/service.yaml
+  - embeddings/pvc.yaml
+  # Kiwix (offline Wikipedia)
+  - kiwix/deployment.yaml
+  - kiwix/service.yaml
+  # Kolibri (Khan Academy) — disabled, upstream image (treehouses/kolibri:0.12.8) is broken (Python 2.7)
+  # - kolibri/deployment.yaml
+  # - kolibri/service.yaml
+  # - kolibri/pvc.yaml
+  # - kolibri/httproute.yaml
+  # ProtoMaps (offline maps)
+  - protomaps/deployment.yaml
+  - protomaps/service.yaml
+  - protomaps/pvc.yaml
+  # CyberChef (data tools — stateless)
+  - cyberchef/deployment.yaml
+  - cyberchef/service.yaml
+  # FlatNotes (note-taking)
+  - flatnotes/deployment.yaml
+  - flatnotes/service.yaml
+  - flatnotes/pvc.yaml
+
+configMapGenerator:
+  - name: project-nomad-config
+    envs:
+      - project-nomad-config.env

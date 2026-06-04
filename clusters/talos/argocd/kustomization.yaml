@@ -17,7 +17,7 @@ resources:
   # audit-mode-only form (Phase 3 of docs/pvc-plumber-v4-prd.md). The Argo
   # Application's syncPolicy.automated is INTENTIONALLY DISABLED until the
   # operator image SHA in deployment.yaml is replaced with a real digest;
-  # see manifests/infra/pvc-plumber/deploy-targets/talos/README.md for the
+  # see clusters/talos/infra/pvc-plumber/README.md for the
   # build-and-publish flow. Co-exists with volsync-backup-cluster at the
   # same sync wave — the MAP gates mover Jobs; pvc-plumber observes PVCs.
   - core-dependencies/pvc-plumber-app.yaml

@@ -1,0 +1,9 @@
+{
+  "applicationName": "openshift-apps-ai-open-webui",
+  "cluster": "openshift",
+  "project": "openshift-apps",
+  "namespace": "open-webui",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "clusters/openshift/apps/ai/open-webui"
+}

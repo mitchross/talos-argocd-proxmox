@@ -7,7 +7,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
-    argocd.argoproj.io/manifest-generate-paths: manifests/infra/longhorn/deploy-targets/talos
+    argocd.argoproj.io/manifest-generate-paths: clusters/talos/infra/longhorn
   labels:
     app.kubernetes.io/part-of: infrastructure
 spec:
@@ -15,7 +15,7 @@ spec:
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
     targetRevision: main
-    path: manifests/infra/longhorn/deploy-targets/talos
+    path: clusters/talos/infra/longhorn
   destination:
     server: https://kubernetes.default.svc
     namespace: longhorn-system

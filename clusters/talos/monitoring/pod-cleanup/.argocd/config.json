@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-monitoring-pod-cleanup",
+  "cluster": "talos",
+  "project": "talos-monitoring",
+  "namespace": "pod-cleanup",
+  "part": "monitoring",
+  "syncWave": "5",
+  "sourcePath": "clusters/talos/monitoring/pod-cleanup"
+}

@@ -10,11 +10,11 @@
 #
 #   1. Build and push ghcr.io/mitchross/pvc-plumber:v4.0.0-audit-rc1
 #   2. Update the @sha256: digest in
-#      manifests/infra/pvc-plumber/deploy-targets/talos/deployment.yaml
+#      clusters/talos/infra/pvc-plumber/deployment.yaml
 #   3. Uncomment the `automated:` block in this file
 #   4. Commit + push to main; Argo sync engages
 #
-# See manifests/infra/pvc-plumber/deploy-targets/talos/README.md for the full flow.
+# See clusters/talos/infra/pvc-plumber/README.md for the full flow.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -22,9 +22,9 @@ metadata:
   namespace: argocd
   annotations:
     # Wave 2 — after VolSync operator (Wave 1), same level as the MAP
-    # + ClusterES at manifests/infra/volsync-backup-cluster/deploy-targets/talos/.
+    # + ClusterES at clusters/talos/infra/volsync-backup-cluster/.
     argocd.argoproj.io/sync-wave: "2"
-    argocd.argoproj.io/manifest-generate-paths: manifests/infra/pvc-plumber/deploy-targets/talos
+    argocd.argoproj.io/manifest-generate-paths: clusters/talos/infra/pvc-plumber
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -32,7 +32,7 @@ spec:
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
     targetRevision: main
-    path: manifests/infra/pvc-plumber/deploy-targets/talos
+    path: clusters/talos/infra/pvc-plumber
   destination:
     server: https://kubernetes.default.svc
     # destination.namespace is nominal (argocd) — the manifests under

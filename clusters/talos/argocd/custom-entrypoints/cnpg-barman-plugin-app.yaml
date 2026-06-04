@@ -17,7 +17,7 @@ metadata:
   annotations:
     # Wave 3 (before database AppSet at Wave 4) so Clusters can reference it
     argocd.argoproj.io/sync-wave: "3"
-    argocd.argoproj.io/manifest-generate-paths: manifests/database/cnpg-barman-plugin/deploy-targets/talos
+    argocd.argoproj.io/manifest-generate-paths: clusters/talos/database/cnpg-barman-plugin
   labels:
     app.kubernetes.io/part-of: infrastructure
 spec:
@@ -25,7 +25,7 @@ spec:
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
     targetRevision: main
-    path: manifests/database/cnpg-barman-plugin/deploy-targets/talos
+    path: clusters/talos/database/cnpg-barman-plugin
   destination:
     server: https://kubernetes.default.svc
     # Must equal the CNPG operator's namespace (plugin discovery requirement).

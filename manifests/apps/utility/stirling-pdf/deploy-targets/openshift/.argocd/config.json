@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-utility-stirling-pdf",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "stirling-pdf",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/utility/stirling-pdf/deploy-targets/openshift"
-}

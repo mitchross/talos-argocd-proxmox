@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: gitea
+resources:
+- "../../../../../manifests/apps/development/gitea/base"
+- httproute.yaml
+patches:
+- path: patches/deployment-gitea.jsonpatch.yaml
+  target:
+    version: v1
+    kind: Deployment
+    name: gitea
+    group: apps
+    namespace: gitea
+- path: patches/statefulset-gitea-valkey-primary.jsonpatch.yaml
+  target:
+    version: v1
+    kind: StatefulSet
+    name: gitea-valkey-primary
+    group: apps
+    namespace: gitea
+- path: patches/remove-talos-backup-namespace-gitea.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-gitea-shared-storage.yaml

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tubesync
+  labels:
+    pvc-plumber.io/managed-namespace:
+    volsync.backube/privileged-movers:

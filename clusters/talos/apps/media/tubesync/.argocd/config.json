@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-media-tubesync",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "tubesync",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "clusters/talos/apps/media/tubesync"
+}

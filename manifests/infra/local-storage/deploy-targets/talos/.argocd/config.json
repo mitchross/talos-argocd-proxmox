@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-infra-local-storage",
-  "cluster": "talos",
-  "project": "talos-infrastructure",
-  "namespace": "local-storage",
-  "part": "infra",
-  "syncWave": "4",
-  "sourcePath": "manifests/infra/local-storage/deploy-targets/talos"
-}

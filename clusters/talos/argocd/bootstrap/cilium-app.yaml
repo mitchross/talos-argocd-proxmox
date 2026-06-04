@@ -7,7 +7,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "0"
-    argocd.argoproj.io/manifest-generate-paths: manifests/infra/cilium/deploy-targets/talos
+    argocd.argoproj.io/manifest-generate-paths: clusters/talos/infra/cilium
   labels:
     app.kubernetes.io/part-of: infrastructure
 spec:
@@ -15,7 +15,7 @@ spec:
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
     targetRevision: main
-    path: manifests/infra/cilium/deploy-targets/talos
+    path: clusters/talos/infra/cilium
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system

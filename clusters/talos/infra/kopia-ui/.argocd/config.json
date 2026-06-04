@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-infra-kopia-ui",
+  "cluster": "talos",
+  "project": "talos-infrastructure",
+  "namespace": "kopia-ui",
+  "part": "infra",
+  "syncWave": "4",
+  "sourcePath": "clusters/talos/infra/kopia-ui"
+}

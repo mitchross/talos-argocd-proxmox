@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-media-karakeep",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "karakeep",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/media/karakeep/deploy-targets/openshift"
-}

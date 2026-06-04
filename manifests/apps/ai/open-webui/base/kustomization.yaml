@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- namespace.yaml
+- deployment.yaml
+# - mcpo-deployment.yaml
+- mcp-config.yaml
+- mcp-kiwix.yaml
+- service.yaml
+- pvc.yaml
+- function-loader-job.yaml
+namespace: open-webui
+
+configMapGenerator:
+- name: har-analyzer-function
+  files:
+  - har-analyzer-function.py
+  options:
+    disableNameSuffixHash: true
+- name: open-webui-configmap
+  envs:
+  - open-webui-configmap.env
+# Hash-suffixed mcp-config.json for the multi-tool MCP server (mcpo-multi
+# Deployment in mcp-config.yaml). Renaming `config.json` → `mcp-config.json`
+# would require changing the Deployment's volume mount + container args, so
+# we keep the in-cluster filename `config.json` via the renamed key.
+- name: mcp-config
+  files:
+  - config.json=mcp-config.json
+- name: mcp-kiwix-config
+  files:
+  - config.json=mcp-kiwix-config.json

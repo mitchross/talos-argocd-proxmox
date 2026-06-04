@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: swarmui
+resources:
+- "../../../../../manifests/apps/ai/swarmui/base"
+- httproute.yaml
+patches:
+- path: patches/deployment-swarmui.jsonpatch.yaml
+  target:
+    version: v1
+    kind: Deployment
+    name: swarmui
+    group: apps
+    namespace: swarmui
+- path: patches/remove-talos-backup-namespace-swarmui.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-swarmui-comfyui-models.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-swarmui-data.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-swarmui-dlbackend.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-swarmui-output.yaml

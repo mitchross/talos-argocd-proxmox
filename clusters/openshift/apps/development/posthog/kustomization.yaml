@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: posthog
+resources:
+- "../../../../../manifests/apps/development/posthog/base"
+- httproute.yaml
+patches:
+- path: patches/deployment-kafka.jsonpatch.yaml
+  target:
+    version: v1
+    kind: Deployment
+    name: kafka
+    group: apps
+    namespace: posthog
+- path: patches/remove-talos-backup-namespace-posthog.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-clickhouse-data-clickhouse-0.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-postgres-data.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-redis7-data.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-redpanda-data-kafka-0.yaml

@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-apps-development-kafka",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "kafka",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/development/kafka/deploy-targets/talos"
-}

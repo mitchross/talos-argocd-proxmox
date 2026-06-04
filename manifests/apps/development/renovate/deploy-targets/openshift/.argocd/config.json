@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-development-renovate",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "renovate",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/development/renovate/deploy-targets/openshift"
-}

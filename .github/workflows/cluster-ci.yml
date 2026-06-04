@@ -3,22 +3,18 @@ name: Cluster CI
 on:
   pull_request:
     paths:
-      - infrastructure/**
-      - monitoring/**
-      - my-apps/**
+      - clusters/**
+      - manifests/**
       - scripts/**
-      - scripts/validate-argocd-apps.sh
       - .github/workflows/cluster-ci.yml
       - .github/renovate.json5
   push:
     branches:
       - main
     paths:
-      - infrastructure/**
-      - monitoring/**
-      - my-apps/**
+      - clusters/**
+      - manifests/**
       - scripts/**
-      - scripts/validate-argocd-apps.sh
       - .github/workflows/cluster-ci.yml
       - .github/renovate.json5
 
@@ -34,7 +30,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Validate ArgoCD app topology
-        run: bash ./scripts/validate-argocd-apps.sh
+        run: |
+          bash ./scripts/validate-cluster-layout.sh
+          bash ./scripts/validate-argocd-apps.sh
 
   render-and-schema:
     name: Kustomize Render and Schema Validation
@@ -53,6 +51,9 @@ jobs:
         with:
           version: v3.16.2
 
+      - name: Validate OpenShift app portability
+        run: bash ./scripts/validate-openshift-app-renders.sh
+
       - name: Install kubeconform
         run: |
           set -euo pipefail
@@ -65,7 +66,7 @@ jobs:
       - name: Render all kustomizations
         run: |
           set -euo pipefail
-          mapfile -t dirs < <(find infrastructure monitoring my-apps -type f -name kustomization.yaml -exec dirname {} \; | sort -u)
+          mapfile -t dirs < <(find clusters -type f -name kustomization.yaml -exec dirname {} \; | sort -u)
 
           if [ "${#dirs[@]}" -eq 0 ]; then
             echo "No kustomization directories found."
@@ -90,7 +91,7 @@ jobs:
           #   VolSync and rejects valid spec.kopia configs on both kinds.
           #   Both must be skipped — the previous filter skipped only
           #   ReplicationSource, which let the 28 inline RD resources
-          #   in my-apps/** fail kubeconform with "additionalProperties
+          #   in clusters/talos/apps/** fail kubeconform with "additionalProperties
           #   'kopia' not allowed" on every Cluster CI run.
           # Split multi-doc YAML into per-document files, skip those documents.
           csplit -z -f /tmp/doc- /tmp/all-manifests.yaml '/^---$/' '{*}' > /dev/null

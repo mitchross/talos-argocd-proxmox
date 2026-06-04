@@ -21,7 +21,7 @@ Before running it, verify:
 - `kubectl` or `oc` points at the intended OpenShift cluster.
 - 1Password Connect and External Secrets token secrets are pre-seeded.
 - Gateway API is available.
-- The OpenShift GatewayClass name matches `manifests/infra/gateway/deploy-targets/openshift/gateway.yaml`.
+- The OpenShift GatewayClass name matches `clusters/openshift/infra/gateway/gateway.yaml`.
 - The LVM Storage Operator channel and `LVMCluster` schema match the live cluster.
 
 Manual equivalent:

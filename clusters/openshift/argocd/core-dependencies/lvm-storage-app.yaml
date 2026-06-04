@@ -5,7 +5,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
-    argocd.argoproj.io/manifest-generate-paths: manifests/infra/lvm-storage/deploy-targets/openshift
+    argocd.argoproj.io/manifest-generate-paths: clusters/openshift/infra/lvm-storage
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -13,7 +13,7 @@ spec:
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
     targetRevision: main
-    path: manifests/infra/lvm-storage/deploy-targets/openshift
+    path: clusters/openshift/infra/lvm-storage
   destination:
     server: https://kubernetes.default.svc
     namespace: openshift-storage

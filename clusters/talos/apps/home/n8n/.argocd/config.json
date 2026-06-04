@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-home-n8n",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "n8n",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "clusters/talos/apps/home/n8n"
+}

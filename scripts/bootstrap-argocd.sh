@@ -32,7 +32,7 @@ ARGOCD_VALUES_FILE="$BOOTSTRAP_DIR/values.yaml"
 ARGOCD_ROOT_FILE="$BOOTSTRAP_DIR/root.yaml"
 ARGOCD_CHART_VERSION="9.5.17"
 
-# Expected Cilium version must match manifests/infra/cilium/deploy-targets/talos/kustomization.yaml.
+# Expected Cilium version must match clusters/talos/infra/cilium/kustomization.yaml.
 EXPECTED_CILIUM_VERSION="1.19.4"
 
 echo "🚀 Bootstrapping ArgoCD for $CLUSTER with sync waves..."

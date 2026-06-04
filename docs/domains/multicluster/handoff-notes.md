@@ -2,84 +2,60 @@
 
 ## Current Direction
 
-The current branch implements the one-shot multicluster Kustomize deploy-target
-migration.
-
-The old OpenShift GitOps Operator plan is superseded. The repo now follows the
-same bootstrap style on Talos and OpenShift:
+The branch uses a cluster-centric Kustomize layout:
 
 ```text
-hand-run upstream Helm Argo CD -> apply cluster root Application -> local Argo CD self-manages
+manifests/**/base -> clusters/talos/**
+manifests/**/base -> clusters/openshift/**
 ```
 
-There is one Argo CD per cluster. There is no hub/spoke setup and no
-`argocd cluster add`.
+Talos and OpenShift each run an independent upstream Helm Argo CD. Each Argo CD
+scans only its own cluster folder. There is no hub/spoke model, remote cluster
+registration, OpenShift GitOps Operator, or OpenShift dependency on Talos files.
 
 ## Branch
-
-Work is on:
 
 ```text
 feat/one-shot-multicluster-kustomize
 ```
 
-## Key Files
-
-- `README.md` - top-level Talos-first and OpenShift-optional bootstrap guide.
-- `docs/domains/multicluster/prd.md` - current PRD.
-- `docs/plans/2026-06-03-one-shot-multicluster-kustomize-migration.md` - planning note for the one-shot migration.
-- `docs/domains/multicluster/openshift-storage-and-app-migration.md` - OpenShift storage and app eligibility notes.
-- `clusters/talos/bootstrap/` - Talos hand-run Argo CD bootstrap inputs.
-- `clusters/talos/argocd/` - Talos app-of-apps tree.
-- `clusters/openshift/bootstrap/` - OpenShift hand-run Argo CD bootstrap inputs.
-- `clusters/openshift/argocd/` - OpenShift app-of-apps tree.
-- `manifests/**/deploy-targets/<cluster>/.argocd/config.json` - AppSet metadata.
-
 ## Important Decisions
 
-- Talos remains the default/reference cluster.
-- OpenShift is additive and optional.
-- OpenShift does not install Cilium or Longhorn.
-- OpenShift uses upstream Helm Argo CD, not the OpenShift GitOps Operator.
-- AppSets use `.argocd/config.json` files rather than `path.basename`.
-- The metadata file lives under `.argocd/` to avoid colliding with app-owned `config.json` files.
-- `targetRevision` is `main`.
-- OpenShift AppProjects are `openshift-infrastructure` and `openshift-apps`.
-- All current applications are migrated one-shot into `manifests/apps/**/deploy-targets/talos`.
-- OpenShift deploys every existing app through `deploy-targets/openshift/.argocd/config.json`.
-- `echo-server` is the clean shared-base cross-cluster example, not the limit of the migration.
-- All apps have first-pass OpenShift deploy targets for catalog-level testing.
-- Large stateful apps are not production-ready on OpenShift until each has an explicit storage, SCC, and backup plan.
-- Use OpenShift local LVM for small PVCs and NFS for AI/shared/large-but-portable data.
+- Talos remains the default and full-fidelity cluster.
+- `clusters/<cluster>` contains every deployable Argo CD entrypoint.
+- `manifests/**/base` contains shared sources only.
+- All 44 apps have Talos and OpenShift overlays.
+- Existing activation state is preserved; intentionally disabled DVWA and
+  Project Nomad Kolibri resources remain disabled.
+- AppSet metadata lives at `clusters/<cluster>/**/.argocd/config.json`.
+- Routes are complete per-cluster files.
+- Portable local PVCs use `vanillax-local-rwo`.
+- Talos implements portable local storage with Longhorn.
+- OpenShift implements portable local storage with LVM Storage.
+- NFS and SMB CSI are shared bases consumed by both clusters.
+- Talos backup/restore policy is removed from OpenShift app renders.
+- OpenShift does not install Cilium, Longhorn, VolSync, or pvc-plumber.
+- `targetRevision` remains `main`.
+- OpenShift AppProjects remain `openshift-infrastructure` and `openshift-apps`.
 
-## Live Schema Assumptions Still Needing Verification
+## OpenShift Readiness Boundary
 
-These render locally but must be confirmed before syncing OpenShift:
-
-- GatewayClass name: currently assumed `openshift-default`.
-- LVM Storage Operator channel: currently `stable-4.20`.
-- `LVMCluster` API: currently `lvm.topolvm.io/v1alpha1`.
-- cert-manager Gateway shim behavior for the OpenShift Gateway.
-- SCC compatibility for copied upstream Helm charts such as 1Password Connect, External Secrets, and cert-manager.
+All apps render through OpenShift overlays, but render success is not the same
+as production readiness. Before live sync, verify the OpenShift GatewayClass,
+LVM schema and portable StorageClass, CSI driver SCC behavior, application SCC
+behavior, external storage reachability, and backup expectations.
 
 ## Validation Commands
 
 ```bash
+./scripts/validate-cluster-layout.sh
 ./scripts/validate-argocd-apps.sh
-kustomize build --enable-helm clusters/talos/bootstrap
-kustomize build --enable-helm clusters/openshift/bootstrap
-kustomize build clusters/talos/argocd
-kustomize build clusters/openshift/argocd
-```
 
-Render every deploy target:
-
-```bash
-find manifests -path '*/deploy-targets/*/kustomization.yaml' -print \
+find clusters -type f -name kustomization.yaml -print \
   | while read -r file; do
       kustomize build --enable-helm "$(dirname "$file")" >/dev/null
     done
 ```
 
 Do not run live `kubectl apply`, `oc apply`, or Helm mutation commands during
-review unless the operator explicitly asks for a live bootstrap.
+review unless the operator explicitly requests a live bootstrap.

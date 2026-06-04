@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-media-homepage-dashboard",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "homepage-dashboard",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/media/homepage-dashboard/deploy-targets/openshift"
-}

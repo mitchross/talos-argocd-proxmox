@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - pvcs.yaml
+  - services.yaml
+  - deployment-tile-server.yaml
+  - hpa-tile-server.yaml
+  - pdb-tile-server.yaml
+  - deployment-basemap.yaml
+  # One-shot Job: extracts a CONUS bbox from the latest Protomaps daily
+  # build and writes /data/basemap.pmtiles on the pmtiles PVC. The
+  # basemap Deployment's init container blocks pod start until the file
+  # exists, so order doesn't matter.
+  - job-basemap-bootstrap.yaml
+  - deployment-open-meteo.yaml
+  - servicemonitor.yaml
+  # Temporal worker pool — replaces the six ingest deployments +
+  # tile-cleanup cronjob + open-meteo sync cronjobs. Two workers, one
+  # task queue: the main worker handles all radar-ng-owned activities;
+  # the open-meteo worker (FROM ghcr.io/open-meteo/open-meteo) handles
+  # the openmeteo-api subprocess. Schedules are seeded one-time via
+  # `python -m temporal.schedules.seed` after rollout.
+  - configmap-temporal-config.yaml
+  - temporal-connection.yaml
+  - temporal-worker-deployment.yaml
+  - open-meteo-worker-deployment.yaml
+
+namespace: radar-ng

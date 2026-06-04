@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: paperless-ngx
+resources:
+- "../../../../../manifests/apps/home/paperless-ngx/base"
+- httproute.yaml
+patches:
+- path: patches/remove-talos-backup-namespace-paperless-ngx.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-data.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-media.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-paperless-consume-pvc.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-paperless-export-pvc.yaml

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: protomaps-data
+  namespace: project-nomad
+  labels:
+    backup-exempt:
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason:

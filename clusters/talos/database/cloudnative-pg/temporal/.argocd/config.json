@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-database-cloudnative-pg-temporal",
+  "cluster": "talos",
+  "project": "talos-infrastructure",
+  "namespace": "temporal",
+  "part": "database",
+  "syncWave": "4",
+  "sourcePath": "clusters/talos/database/cloudnative-pg/temporal"
+}

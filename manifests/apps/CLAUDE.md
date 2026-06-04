@@ -4,31 +4,50 @@
 
 ### Minimal Application (No storage/secrets)
 
-```bash
-# 1. Create directory structure
-mkdir -p manifests/apps/category/app-name/deploy-targets/talos/.argocd
+Create the shared workload under:
 
-# 2. Create required files
-cat > manifests/apps/category/app-name/deploy-targets/talos/namespace.yaml <<EOF
+```text
+manifests/apps/category/app-name/base/
+```
+
+```yaml
+# manifests/apps/category/app-name/base/namespace.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
   name: app-name
-EOF
+```
 
-cat > manifests/apps/category/app-name/deploy-targets/talos/kustomization.yaml <<EOF
+```yaml
+# manifests/apps/category/app-name/base/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: app-name
-
 resources:
 - namespace.yaml
 - deployment.yaml
 - service.yaml
-EOF
+```
 
-# 3. Add deploy-target metadata
-cat > manifests/apps/category/app-name/deploy-targets/talos/.argocd/config.json <<EOF
+Create one overlay and metadata file per cluster:
+
+```text
+clusters/talos/apps/category/app-name/
+clusters/openshift/apps/category/app-name/
+```
+
+```yaml
+# clusters/talos/apps/category/app-name/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: app-name
+resources:
+- ../../../../../manifests/apps/category/app-name/base
+- httproute.yaml
+```
+
+```jsonc
+// clusters/talos/apps/category/app-name/.argocd/config.json
 {
   "applicationName": "talos-apps-category-app-name",
   "cluster": "talos",
@@ -36,15 +55,13 @@ cat > manifests/apps/category/app-name/deploy-targets/talos/.argocd/config.json 
   "namespace": "app-name",
   "part": "apps",
   "syncWave": "6",
-  "sourcePath": "manifests/apps/category/app-name/deploy-targets/talos"
+  "sourcePath": "clusters/talos/apps/category/app-name"
 }
-EOF
-
-# 4. Git commit - ArgoCD discovers automatically
-git add manifests/apps/category/app-name
-git commit -m "Add app-name application"
-git push
 ```
+
+Repeat the overlay and metadata for OpenShift using project `openshift-apps`
+and source path `clusters/openshift/apps/category/app-name`. Each cluster owns
+its own HTTPRoute. OpenShift must never reference `clusters/talos`.
 
 ### Application with Web Access
 
@@ -58,7 +75,7 @@ spec:
       port: 8080
       targetPort: 8080
 
-# httproute.yaml - EXTERNAL (public via Cloudflare tunnel)
+# clusters/talos/apps/category/app-name/httproute.yaml - EXTERNAL
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -81,7 +98,7 @@ spec:
     - name: app-service
       port: 8080
 
-# httproute.yaml - INTERNAL (local network only, no Cloudflare)
+# clusters/talos/apps/category/app-name/httproute.yaml - INTERNAL
 # apiVersion: gateway.networking.k8s.io/v1
 # kind: HTTPRoute
 # metadata:
@@ -185,7 +202,7 @@ operator, no Helm chart — the YAML is the truth.
 The shared repo Secret `volsync-kopia-repository` is produced in every
 namespace labeled `volsync.backube/privileged-movers: "true"` by
 `ClusterExternalSecret/volsync-kopia-repository` (see
-`manifests/infra/volsync-backup-cluster/`). Add that label on the
+`clusters/talos/infra/volsync-backup-cluster/`). Add that label on the
 namespace.
 
 A `wait-for-rustfs` init container is auto-injected on every mover Job by
@@ -221,7 +238,7 @@ metadata:
     # normally. See docs/domains/argocd/argocd.md "Server-Side Diff & Apply Strategy".
     argocd.argoproj.io/compare-options: ServerSideDiff=false
 spec:
-  storageClassName: longhorn   # Required — needs volumesnapshot support
+  storageClassName: vanillax-local-rwo
   accessModes:
   - ReadWriteOnce
   resources:
@@ -252,7 +269,7 @@ spec:
     parallelism: 2
     retain: { hourly: 24, daily: 7, weekly: 4, monthly: 2 }
     copyMethod: Snapshot
-    storageClassName: longhorn
+    storageClassName: vanillax-local-rwo
     volumeSnapshotClassName: longhorn-snapclass
     cacheCapacity: 2Gi
     moverSecurityContext: { runAsUser: 568, runAsGroup: 568, fsGroup: 568 }
@@ -274,7 +291,7 @@ spec:
       sourceNamespace: app-name
       sourcePVCName: app-data
     copyMethod: Snapshot
-    storageClassName: longhorn
+    storageClassName: vanillax-local-rwo
     volumeSnapshotClassName: longhorn-snapclass
     cacheCapacity: 2Gi
     accessModes: [ReadWriteOnce]

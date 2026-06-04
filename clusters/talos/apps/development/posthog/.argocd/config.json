@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-development-posthog",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "posthog",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "clusters/talos/apps/development/posthog"
+}

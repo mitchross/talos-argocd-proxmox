@@ -17,7 +17,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
-    argocd.argoproj.io/manifest-generate-paths: manifests/infra/cert-manager/deploy-targets/talos
+    argocd.argoproj.io/manifest-generate-paths: clusters/talos/infra/cert-manager
   labels:
     app.kubernetes.io/part-of: infrastructure
 spec:
@@ -25,7 +25,7 @@ spec:
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
     targetRevision: main
-    path: manifests/infra/cert-manager/deploy-targets/talos
+    path: clusters/talos/infra/cert-manager
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager

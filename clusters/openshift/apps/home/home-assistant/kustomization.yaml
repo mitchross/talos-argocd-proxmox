@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: home-assistant
+resources:
+- "../../../../../manifests/apps/home/home-assistant/base"
+- httproute.yaml
+patches:
+- path: patches/deployment-home-assistant.jsonpatch.yaml
+  target:
+    version: v1
+    kind: Deployment
+    name: home-assistant
+    group: apps
+    namespace: home-assistant
+- path: patches/remove-talos-backup-namespace-home-assistant.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-config.yaml

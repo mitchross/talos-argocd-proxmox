@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-ml-cache
+  namespace: immich
+  labels:
+    backup-exempt:
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason:

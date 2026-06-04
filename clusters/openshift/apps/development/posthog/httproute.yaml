@@ -1,0 +1,131 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: posthog-ui-internal
+  namespace: posthog
+spec:
+  parentRefs:
+  - name: openshift-gateway
+    namespace: openshift-ingress
+    sectionName: https
+  hostnames:
+  - posthog.apps.sno-ai-lab.vanillax.xyz
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/e"
+    - path:
+        type: PathPrefix
+        value: "/i/v0"
+    - path:
+        type: PathPrefix
+        value: "/capture"
+    - path:
+        type: PathPrefix
+        value: "/batch"
+    backendRefs:
+    - name: capture
+      port: 3000
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/s"
+    backendRefs:
+    - name: replay-capture
+      port: 3000
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/decide"
+    - path:
+        type: PathPrefix
+        value: "/flags"
+    backendRefs:
+    - name: feature-flags
+      port: 3001
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/public/webhooks"
+    - path:
+        type: PathPrefix
+        value: "/public/m"
+    backendRefs:
+    - name: plugins
+      port: 6738
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/"
+    backendRefs:
+    - name: web
+      port: 8000
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: posthog-ingest-external
+  namespace: posthog
+  labels:
+    external-dns: 'true'
+  annotations:
+    external-dns.alpha.kubernetes.io/target: apps.sno-ai-lab.vanillax.xyz
+spec:
+  parentRefs:
+  - name: openshift-gateway
+    namespace: openshift-ingress
+    sectionName: https
+  hostnames:
+  - ingest-posthog.apps.sno-ai-lab.vanillax.xyz
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/e"
+    - path:
+        type: PathPrefix
+        value: "/i/v0"
+    - path:
+        type: PathPrefix
+        value: "/capture"
+    - path:
+        type: PathPrefix
+        value: "/batch"
+    backendRefs:
+    - name: capture
+      port: 3000
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/s"
+    backendRefs:
+    - name: replay-capture
+      port: 3000
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/decide"
+    - path:
+        type: PathPrefix
+        value: "/flags"
+    backendRefs:
+    - name: feature-flags
+      port: 3001
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/public/webhooks"
+    - path:
+        type: PathPrefix
+        value: "/public/m"
+    backendRefs:
+    - name: plugins
+      port: 6738
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/"
+    backendRefs:
+    - name: web
+      port: 8000

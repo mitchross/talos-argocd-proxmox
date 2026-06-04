@@ -1,0 +1,24 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: jellyfin
+  namespace: jellyfin
+spec:
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: openshift-gateway
+    namespace: openshift-ingress
+  hostnames:
+  - jellyfin.apps.sno-ai-lab.vanillax.xyz
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/"
+    backendRefs:
+    - group: ''
+      kind: Service
+      name: jellyfin
+      port: 8096
+      weight: 1

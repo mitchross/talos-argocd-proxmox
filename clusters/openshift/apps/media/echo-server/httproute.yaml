@@ -1,0 +1,25 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: echo-server-route
+  namespace: echo-server
+spec:
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: openshift-gateway
+    namespace: openshift-ingress
+    sectionName: https
+  hostnames:
+  - echo.apps.sno-ai-lab.vanillax.xyz
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/"
+    backendRefs:
+    - group: ''
+      kind: Service
+      name: echo-server
+      port: 8080
+      weight: 1

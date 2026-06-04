@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-home-project-nomad",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "project-nomad",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "clusters/talos/apps/home/project-nomad"
+}

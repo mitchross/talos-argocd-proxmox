@@ -1,0 +1,9 @@
+{
+  "applicationName": "openshift-apps-ai-swarmui",
+  "cluster": "openshift",
+  "project": "openshift-apps",
+  "namespace": "swarmui",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "clusters/openshift/apps/ai/swarmui"
+}

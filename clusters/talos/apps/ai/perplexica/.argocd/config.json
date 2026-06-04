@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-ai-perplexica",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "perplexica",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "clusters/talos/apps/ai/perplexica"
+}

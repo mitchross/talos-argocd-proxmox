@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: perplexica
+  labels:
+    pvc-plumber.io/managed-namespace:
+    volsync.backube/privileged-movers:

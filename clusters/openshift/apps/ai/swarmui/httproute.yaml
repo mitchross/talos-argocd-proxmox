@@ -1,0 +1,27 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: swarmui-route
+  namespace: swarmui
+spec:
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: openshift-gateway
+    namespace: openshift-ingress
+  hostnames:
+  - swarmui.apps.sno-ai-lab.vanillax.xyz
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/"
+    timeouts:
+      request: 30m
+      backendRequest: 30m
+    backendRefs:
+    - group: ''
+      kind: Service
+      name: swarmui-service
+      port: 7801
+      weight: 1
