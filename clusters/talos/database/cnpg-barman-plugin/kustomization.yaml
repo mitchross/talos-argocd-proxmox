@@ -56,12 +56,7 @@ patches:
   # Strip it — we're co-located in cloudnative-pg now (see header). Without
   # this strip, kustomize would still emit the Namespace (cluster-scoped
   # kinds are not affected by the `namespace:` directive above).
-  - patch: |
-      $patch: delete
-      apiVersion: v1
-      kind: Namespace
-      metadata:
-        name: cnpg-system
+  - path: patches/delete-cnpg-system-namespace.yaml
     target:
       kind: Namespace
       name: cnpg-system

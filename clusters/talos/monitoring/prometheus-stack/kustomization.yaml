@@ -24,10 +24,6 @@ resources:
   - homelab-power-dashboard.yaml # Homelab cost dashboard ($0.21/kWh, 4 homelab plugs only)
   - radar-ng-dashboard.yaml # radar-ng backend dashboard (logs + tile-server metrics)
   - radar-ng-mobile-dashboard.yaml # radar-ng mobile app dashboard (Tempo spans + Loki errors)
-# Strategic merge patches to handle resource conflicts
-patchesStrategicMerge:
-  - alertmanager-config.yaml
-
 # Per-CRD sync-options — kube-prometheus-stack ships several CRDs whose
 # OpenAPI schemas are large enough that ArgoCD's default client-side apply
 # tries to write a `kubectl.kubernetes.io/last-applied-configuration`
@@ -38,48 +34,13 @@ patchesStrategicMerge:
 # kustomization.yaml for the same defensive pattern on CNPG's CRDs.
 # Incident: 2026-05-07 ArgoCD sync failure post-Kyverno-removal merge.
 patches:
-  - target:
-      kind: CustomResourceDefinition
-      name: scrapeconfigs.monitoring.coreos.com
-    patch: |-
-      - op: add
-        path: /metadata/annotations/argocd.argoproj.io~1sync-options
-        value: ServerSideApply=true,Replace=true
-  - target:
-      kind: CustomResourceDefinition
-      name: thanosrulers.monitoring.coreos.com
-    patch: |-
-      - op: add
-        path: /metadata/annotations/argocd.argoproj.io~1sync-options
-        value: ServerSideApply=true,Replace=true
-  - target:
-      kind: CustomResourceDefinition
-      name: alertmanagerconfigs.monitoring.coreos.com
-    patch: |-
-      - op: add
-        path: /metadata/annotations/argocd.argoproj.io~1sync-options
-        value: ServerSideApply=true,Replace=true
-  - target:
-      kind: CustomResourceDefinition
-      name: alertmanagers.monitoring.coreos.com
-    patch: |-
-      - op: add
-        path: /metadata/annotations/argocd.argoproj.io~1sync-options
-        value: ServerSideApply=true,Replace=true
-  - target:
-      kind: CustomResourceDefinition
-      name: prometheusagents.monitoring.coreos.com
-    patch: |-
-      - op: add
-        path: /metadata/annotations/argocd.argoproj.io~1sync-options
-        value: ServerSideApply=true,Replace=true
-  - target:
-      kind: CustomResourceDefinition
-      name: prometheuses.monitoring.coreos.com
-    patch: |-
-      - op: add
-        path: /metadata/annotations/argocd.argoproj.io~1sync-options
-        value: ServerSideApply=true,Replace=true
+  - path: patches/alertmanager-config.yaml
+  - path: patches/crd-scrapeconfigs-sync-options.yaml
+  - path: patches/crd-thanosrulers-sync-options.yaml
+  - path: patches/crd-alertmanagerconfigs-sync-options.yaml
+  - path: patches/crd-alertmanagers-sync-options.yaml
+  - path: patches/crd-prometheusagents-sync-options.yaml
+  - path: patches/crd-prometheuses-sync-options.yaml
 helmCharts:
   - name: kube-prometheus-stack
     repo: https://prometheus-community.github.io/helm-charts
