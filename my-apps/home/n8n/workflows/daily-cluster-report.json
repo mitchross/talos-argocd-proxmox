@@ -214,7 +214,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1/chat/completions",
+        "url": "http://vllm-service.vllm.svc.cluster.local:8080/v1/chat/completions",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ model: 'qwen3.6-nothink - qwen3.6-35b-a3b-nothink', messages: [ { role: 'system', content: 'You are a Kubernetes cluster health reporter. Summarize the following metrics into a concise daily report. Highlight any issues, warnings, or anomalies. Use these sections: **Nodes** (readiness, CPU, memory, disk), **Pods** (restarts, failures), **Storage** (Longhorn usage), **ArgoCD Apps** (sync/health status), **Backups** (PVC Plumber health). Keep it brief and actionable. Use markdown formatting.' }, { role: 'user', content: $json.metricsPayload } ], max_tokens: 2048, temperature: 0.3 }) }}",
