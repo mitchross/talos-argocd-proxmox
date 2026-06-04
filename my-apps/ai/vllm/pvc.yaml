@@ -1,0 +1,51 @@
+# Static PV — mounts the TrueNAS ai-pool/vllm NFS share root directly via the NFS CSI
+# driver (NOT legacy nfs:, so mountOptions like nconnect are honored). Read-only:
+# the vLLM pod only loads model weights; downloads happen from the desktop over SMB.
+# Mirrors the llama-cpp static-PV pattern but ReadOnlyMany + empty storageClassName
+# (self-contained static binding, no separate StorageClass object needed).
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vllm-nfs-pv
+spec:
+  capacity:
+    storage: 1Ti
+  accessModes:
+    - ReadOnlyMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=4.1
+    - nolock
+    - tcp
+    - noatime
+    - rsize=1048576
+    - wsize=1048576
+    - nconnect=16
+    - ro
+  csi:
+    driver: nfs.csi.k8s.io
+    volumeHandle: vllm-nfs-pv
+    volumeAttributes:
+      server: "192.168.10.133"
+      share: "/mnt/ai-pool/vllm"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vllm-models-pvc
+  namespace: vllm
+  labels:
+    backup-exempt: "true"
+  annotations:
+    # MUST be the fully-qualified key — bare `backup-exempt-reason` is silently
+    # ignored and the PVC is denied on CREATE (CI guard `backup-exempt-contract`).
+    storage.vanillax.dev/backup-exempt-reason: "NFS-backed vLLM model cache (AWQ/compressed-tensors safetensors); non-snapshottable, rebuildable via `hf download`"
+spec:
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 1Ti
+  storageClassName: ""
+  volumeName: vllm-nfs-pv

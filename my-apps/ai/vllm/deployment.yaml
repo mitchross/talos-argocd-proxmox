@@ -1,0 +1,126 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-server
+  namespace: vllm
+  labels:
+    app: vllm-server
+spec:
+  # ─────────────────────────────────────────────────────────────────────────
+  # replicas: 0 ON PURPOSE. vLLM at TP=2 claims BOTH 3090s, but steady state is
+  # GPU0=llama-cpp, GPU1=comfyui. Running vLLM is a deliberate "burst" mode:
+  #   1) kubectl scale deploy/llama-cpp-server -n llama-cpp --replicas=0
+  #   2) kubectl scale deploy/comfyui          -n comfyui   --replicas=0   (if running)
+  #   3) kubectl scale deploy/vllm-server       -n vllm      --replicas=1
+  # Reverse to go back. Left at 0 so a git push doesn't strand a Pending pod
+  # fighting for GPUs that llama-cpp/comfyui already hold. selfHeal will keep it 0.
+  # ─────────────────────────────────────────────────────────────────────────
+  replicas: 0
+  strategy:
+    type: Recreate            # whole-card GPU workload; never two pods on the cards at once
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: vllm-server
+  template:
+    metadata:
+      labels:
+        app: vllm-server
+    spec:
+      restartPolicy: Always
+      runtimeClassName: nvidia
+      priorityClassName: gpu-workload-high
+      terminationGracePeriodSeconds: 120
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
+      securityContext:
+        fsGroup: 10001
+        fsGroupChangePolicy: "OnRootMismatch"
+      containers:
+        - name: vllm-server
+          # TODO: pin to a tag that supports the Qwen3.6 / Qwen3-VL architecture.
+          # `latest` is a placeholder — Renovate/this repo prefer pinned tags.
+          image: vllm/vllm-openai:latest
+          imagePullPolicy: IfNotPresent
+          # The image entrypoint is the OpenAI API server; args configure it.
+          args:
+            - "--model"
+            - "/models/Qwen3.6-27B-AWQ-INT4"          # primary; INT4 (20GB). BF16-INT4 also fits via TP=2.
+            - "--served-model-name"
+            - "qwen3.6-27b"
+            - "--tensor-parallel-size"
+            - "2"                                      # pool both 3090s (48GB). Needs 2 WHOLE cards.
+            - "--distributed-executor-backend"
+            - "mp"                                     # single-node multiprocessing; no Ray
+            - "--gpu-memory-utilization"
+            - "0.90"
+            - "--max-model-len"
+            - "65536"                                  # 48GB pooled affords large KV; tune vs club-3090 CLIFFS.md
+            - "--max-num-seqs"
+            - "16"
+            - "--limit-mm-per-prompt"
+            - "image=4"                                # model is vision-capable (image-text-to-text)
+            - "--host"
+            - "0.0.0.0"
+            - "--port"
+            - "8000"
+          env:
+            # GPU selection is handled by the device plugin + CDI (whole-card, time-slicing OFF).
+            # Do NOT set NVIDIA_VISIBLE_DEVICES / CUDA_VISIBLE_DEVICES — they override CDI injection.
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "compute,utility"
+            - name: HF_HUB_OFFLINE          # models are local on NFS; never call the Hub at runtime
+              value: "1"
+            - name: TRANSFORMERS_OFFLINE
+              value: "1"
+            - name: VLLM_NO_USAGE_STATS     # no phone-home
+              value: "1"
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          startupProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 360        # TP load of a 27B can take minutes
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              nvidia.com/gpu: "2"
+              cpu: "8"
+              memory: 48Gi
+            limits:
+              nvidia.com/gpu: "2"
+              cpu: "32"
+              memory: 64Gi
+          volumeMounts:
+            - name: models
+              mountPath: /models
+              readOnly: true
+            - name: dshm
+              mountPath: /dev/shm        # TP workers IPC over shared memory — size it generously
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: vllm-models-pvc
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Gi
