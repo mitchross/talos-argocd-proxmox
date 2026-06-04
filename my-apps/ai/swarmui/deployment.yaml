@@ -7,7 +7,10 @@ spec:
   # RWO Longhorn PVCs -> Recreate (RollingUpdate causes Multi-Attach deadlock).
   strategy:
     type: Recreate
-  replicas: 1
+  # Scaled to 0: vLLM (my-apps/ai/vllm) now owns BOTH 3090s at TP=2, leaving no
+  # card for SwarmUI's ComfyUI backend. Kept at 0 (not deleted) for a fast
+  # revert. ArgoCD selfHeal reverts a manual `kubectl scale` — change it here.
+  replicas: 0
   selector:
     matchLabels:
       app: swarmui
