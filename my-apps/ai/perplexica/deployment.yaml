@@ -98,7 +98,7 @@ spec:
             - name: SEARXNG_API_URL
               value: "http://searxng.searxng.svc.cluster.local:8080"
             - name: OPENAI_BASE_URL
-              value: "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
+              value: "http://vllm-service.vllm.svc.cluster.local:8080/v1"
             - name: OPENAI_API_KEY
               value: "sk-no-key-required"
           volumeMounts:
