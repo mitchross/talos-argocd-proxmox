@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-service
+  namespace: vllm
+spec:
+  selector:
+    app: vllm-server
+  ports:
+    - name: http              # CRITICAL — HTTPRoute matches by port name; fails silently without it
+      protocol: TCP
+      port: 8080              # cluster-facing port (matches the llama-cpp convention)
+      targetPort: http        # → container port 8000
+  type: ClusterIP
