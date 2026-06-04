@@ -9,6 +9,12 @@ Small local PVCs use the portable `vanillax-local-rwo` contract. Talos backs
 that contract with Longhorn; OpenShift backs it with LVM Storage. Large or
 shared datasets continue to use explicit NFS, SMB, or static PV definitions.
 
+> **Live status:** The OpenShift LVM implementation is intended but not
+> currently available on `sno-ai-lab`. The June 4, 2026 read-only audit found
+> an unresolved `lvms-operator` Subscription and no LVM CRD, TopoLVM API, or
+> StorageClass. Do not describe `vanillax-local-rwo` as implemented on the
+> live OpenShift cluster yet.
+
 ## Implemented Storage Paths
 
 ### Portable Local RWO
@@ -54,6 +60,11 @@ The OpenShift bootstrap profile verifies the platform-owned Gateway API CRDs
 and rejects a conflicting Service Mesh Operator v2 subscription. It never
 installs Cilium or upstream Gateway API CRDs.
 
+The live platform-None cluster has no observed LoadBalancer provider, and the
+current `*.apps.sno-ai-lab.vanillax.xyz` app route domain collides with the
+default OpenShift ingress wildcard. Resolve Gateway service publishing and use
+a dedicated Gateway API subdomain before live sync.
+
 ## Backup Boundary
 
 Talos currently owns the app PVC backup implementation:
@@ -90,13 +101,17 @@ complete.
 Catalog migration does not override existing activation state. DVWA and Project
 Nomad's Kolibri resources remain intentionally disabled in both clusters.
 
-## Live Schema Assumptions
+## Live Schema Status
 
-Verify these against the intended OpenShift cluster:
+Verified against the intended OpenShift cluster:
 
-- `LVMCluster` API and `stable-4.20` Subscription channel;
-- TopoLVM provisioner name `topolvm.io`;
-- device-class parameter `topolvm.io/device-class: vg1`;
-- NFS and SMB CSI chart SCC requirements;
-- GatewayClass controller behavior for Git-owned `openshift-default`;
-- absence of a conflicting Service Mesh Operator v2 subscription.
+- OpenShift is `4.22.0-rc.5`, channel `stable-4.22`.
+- Gateway API CRDs are installed; no conflicting Service Mesh Operator v2
+  subscription was found.
+- GatewayClass controller behavior has not been activated or tested.
+- The existing `lvms-operator` Subscription is unresolved; `stable-4.20`,
+  `LVMCluster`, TopoLVM, device class `vg1`, and
+  `vanillax-local-rwo` are not live-proven.
+
+Still verify NFS/SMB CSI SCC requirements, application SCC behavior, external
+storage reachability, and the eventual Gateway LoadBalancer path.

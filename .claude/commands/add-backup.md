@@ -7,7 +7,9 @@ bytes. Do not add inline RS/RD documents for normal application PVCs.
 ## Steps
 
 1. Identify the normal application PVCs that need protection.
-2. Confirm each PVC uses `storageClassName: longhorn`.
+2. Confirm each shared app PVC uses `storageClassName: vanillax-local-rwo`.
+   Talos maps that portable class to Longhorn. This backup workflow is Talos
+   policy and is removed by OpenShift overlays.
 3. Add the namespace software gate:
 
    ```yaml
@@ -50,7 +52,7 @@ Do not generic-migrate:
 - Redis PVCs. Redis is backup-exempt and disposable.
 - PostHog PVCs. PostHog is backup-exempt and disposable.
 - System namespace PVCs.
-- Non-Longhorn PVCs that cannot use the expected snapshot path.
+- PVCs that do not resolve to the Talos Longhorn snapshot path.
 
 For intentionally disposable PVCs, use `backup-exempt: "true"` and the
 fully-qualified `storage.vanillax.dev/backup-exempt-reason` annotation.

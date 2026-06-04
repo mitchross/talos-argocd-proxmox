@@ -20,6 +20,15 @@ needed.
 > - PostHog backup-exempt · redis-instance backup-exempt
 > - migration campaign **closed** — no remaining candidates
 
+> [!WARNING]
+> **Current multicluster/OpenShift state (2026-06-04):**
+> - structural migration locally accepted on `feat/one-shot-multicluster-kustomize`
+> - isolated live-test repo: `mitchross/talos-argocd-proxmox-multicluster-test`
+> - live OpenShift `sno-ai-lab` is **not ready for bootstrap**
+> - unresolved LVM Storage, Gateway LoadBalancer publishing, and route DNS
+> - read [multicluster handoff notes](domains/multicluster/handoff-notes.md)
+>   before OpenShift or multicluster work
+
 ## Stack
 
 - **OS**: Talos Linux on Proxmox VMs, provisioned via Omni / Sidero
@@ -70,7 +79,7 @@ needed.
 - **GitOps / ArgoCD**: [argocd](domains/argocd/argocd.md) · [argocd-entrypoints](domains/argocd/entrypoints.md)
 - **Networking**: [network-topology](domains/networking/topology.md) · [network-policy](domains/networking/policy.md)
 - **Storage**: [rustfs-credential-runbook](domains/rustfs/credential-runbook.md) · [kopia-maintenance-plan](domains/storage/kopia-maintenance-plan.md) · [storage-architecture-future](domains/storage/architecture-future.md)
-- **Multicluster**: [prd](domains/multicluster/prd.md) · [handoff notes](domains/multicluster/handoff-notes.md)
+- **Multicluster**: [handoff notes](domains/multicluster/handoff-notes.md) · [prd](domains/multicluster/prd.md) · [OpenShift storage/apps](domains/multicluster/openshift-storage-and-app-migration.md)
 - **Observability**: [radar-ng-observability](domains/observability/radar-ng.md)
 - **AI / GPU**: [ai-model-catalog](domains/ai-gpu/model-catalog.md) · [3090-llm-optimization](domains/ai-gpu/3090-llm-optimization.md)
 

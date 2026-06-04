@@ -26,6 +26,11 @@ The detailed design is:
 docs/superpowers/specs/2026-06-04-multicluster-kustomize-and-bootstrap-design.md
 ```
 
+The structural implementation is locally accepted. Live OpenShift bootstrap is
+currently blocked. Read `docs/domains/multicluster/handoff-notes.md` for the
+verified June 4, 2026 cluster state before treating any OpenShift assumption
+below as operational.
+
 ## Goals
 
 - Keep Talos the complete default reference cluster.
@@ -163,14 +168,17 @@ Talos:
 - Talos bootstrap installs upstream Gateway API CRDs.
 - Talos owns `*.vanillax.me` routes.
 
-OpenShift/OKD 4.20:
+OpenShift/OKD documented Gateway API contract:
 
 - The Ingress Operator owns Gateway API CRDs and implementation lifecycle.
 - OpenShift bootstrap must not install upstream Gateway API CRDs.
 - The OpenShift Gateway infrastructure entrypoint declares GatewayClass
   `openshift-default` with controller `openshift.io/gateway-controller/v1`.
 - The shared Gateway lives in `openshift-ingress`.
-- OpenShift owns `*.apps.sno-ai-lab.vanillax.xyz` routes.
+- The repo currently configures
+  `*.apps.sno-ai-lab.vanillax.xyz` routes, but the live cluster already uses
+  that wildcard for its default HostNetwork ingress. A dedicated Gateway API
+  subdomain must be selected before live bootstrap.
 - The OpenShift bootstrap profile verifies there is no active OSSM v2
   subscription that conflicts with the Ingress Operator-managed OSSM v3
   Gateway implementation.
@@ -259,16 +267,30 @@ The implementation must:
 7. Add profile-driven bootstrap behavior and OpenShift GatewayClass ownership.
 8. Update README, runbooks, validation, planning docs, and Mink decisions.
 
-## Schema Assumptions To Verify Live
+## Live Verification Status
 
-Local rendering cannot prove:
+Read-only checks against the intended `sno-ai-lab` cluster on June 4, 2026
+proved:
 
-- OpenShift 4.20 GatewayClass and controller behavior.
-- Absence of a conflicting OSSM v2 subscription.
-- LVM Storage Operator Subscription channel and `LVMCluster` schema.
-- The generated LVM device class and TopoLVM StorageClass behavior.
-- OpenShift SCC compatibility for NFS, SMB, applications, and Helm charts.
-- External storage network reachability.
+- the cluster is OpenShift `4.22.0-rc.5`, not 4.20;
+- Gateway API CRDs bundle `v1.4.1` is installed;
+- no GatewayClass/Gateway/HTTPRoute exists and no OSSM v2 subscription was
+  found;
+- the LVM subscription is unresolved, with no LVM CRD, TopoLVM API, or
+  StorageClass;
+- the platform-None cluster has no observed bare-metal LoadBalancer provider;
+- the current Gateway/API app domain collides with default OpenShift ingress
+  DNS;
+- required bootstrap secrets and Argo CD are absent.
+
+Local rendering still cannot prove:
+
+- GatewayClass/controller provisioning behavior on OpenShift `4.22.0-rc.5`;
+- the supported 4.22 LVM Storage package, channel, namespace, and
+  `LVMCluster` schema;
+- the generated LVM device class and portable StorageClass behavior;
+- OpenShift SCC compatibility for NFS, SMB, applications, and Helm charts;
+- external storage network reachability;
 - cert-manager Gateway shim behavior on the intended OpenShift cluster.
 
 ## Validation
