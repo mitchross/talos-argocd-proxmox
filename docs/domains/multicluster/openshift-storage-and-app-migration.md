@@ -2,13 +2,14 @@
 
 ## Plain-English Summary
 
-Talos remains the full homelab app cluster. OpenShift is additive and should not
-blindly receive every stateful workload just because the folder layout can support
-it.
+Talos remains the full homelab app cluster. OpenShift is additive, but it now
+receives the full app catalog as first-pass deploy targets so the entire shape
+can be tested through OpenShift Argo CD.
 
 All existing apps move into the new repo layout in one shot under Talos deploy
-targets. OpenShift deploy targets are added intentionally, app by app or class by
-class, based on storage fit.
+targets. OpenShift deploy targets also exist for every app, but production
+readiness is still app-by-app based on storage fit, SCC behavior, and backup
+expectations.
 
 ## Storage Classes By Use
 
@@ -40,12 +41,14 @@ OpenShift needs an explicit NFS implementation decision before broad adoption:
 - reuse the existing CSI NFS chart pattern as an OpenShift deploy target, or
 - use static NFS PVs for the first few workloads.
 
-That decision should be made before migrating AI or other large-data apps.
+That decision should be made before expecting AI or other large-data apps to be
+healthy on OpenShift.
 
-## Do Not Migrate Yet
+## Present But Not Production-Ready Yet
 
-Large stateful Talos apps should not receive OpenShift deploy targets until each
-has a storage decision and SCC/security review.
+Large stateful Talos apps have OpenShift deploy targets for catalog testing, but
+should not be treated as ready until each has a storage decision and SCC/security
+review.
 
 Examples to gate before OpenShift deployment:
 
@@ -57,29 +60,23 @@ Examples to gate before OpenShift deployment:
 
 ## Migration Rule
 
-An app is OpenShift-eligible only after its deploy target states:
+An app is OpenShift-testable when it has:
 
-- storage class or NFS/PV strategy
+- an OpenShift deploy target
 - hostname under `*.apps.sno-ai-lab.vanillax.xyz`
 - Gateway parentRef
-- SCC/securityContext adjustments
+- first-pass SCC/securityContext adjustments where generated
+
+An app is OpenShift-production-ready only after its deploy target or companion
+docs state:
+
+- storage class or NFS/PV strategy
+- SCC/securityContext expectation
 - backup/restore expectation, or explicit "not backed up yet"
-
-Until then, keep it Talos-only:
-
-```text
-manifests/apps/<category>/<app>/deploy-targets/talos/
-```
-
-Add OpenShift only when ready:
-
-```text
-manifests/apps/<category>/<app>/deploy-targets/openshift/
-```
 
 ## TODO
 
 - Decide whether OpenShift NFS should use the existing CSI NFS chart pattern or static PVs first.
 - Add an OpenShift NFS deploy target if CSI is chosen.
 - Inventory large PVC apps and tag each as local LVM, NFS, defer, or redesign.
-- Add OpenShift deploy targets only for apps whose storage and SCC plan is explicit.
+- Promote apps from OpenShift-testable to OpenShift-production-ready once storage, SCC, and backup behavior are explicit.

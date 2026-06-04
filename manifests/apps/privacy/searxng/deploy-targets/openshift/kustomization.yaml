@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../talos
+patches:
+- target:
+    version: v1
+    kind: PersistentVolumeClaim
+    name: redis-data
+    namespace: searxng
+  patch: "- op: replace\n  path: /spec/storageClassName\n  value: lvms-vg1"
+- target:
+    version: v1
+    kind: Deployment
+    name: redis
+    group: apps
+    namespace: searxng
+  patch: "- op: remove\n  path: /spec/template/spec/securityContext/fsGroup\n- op: remove\n  path: /spec/template/spec/containers/0/securityContext/runAsUser\n\
+    - op: remove\n  path: /spec/template/spec/containers/0/securityContext/runAsGroup"
+- target:
+    version: v1
+    kind: HTTPRoute
+    name: searxng
+    group: gateway.networking.k8s.io
+    namespace: searxng
+  patch: "- op: replace\n  path: /spec/parentRefs/0/name\n  value: openshift-gateway\n- op: replace\n  path: /spec/parentRefs/0/namespace\n\
+    \  value: openshift-ingress\n- op: replace\n  path: /spec/hostnames/0\n  value: search.apps.sno-ai-lab.vanillax.xyz"

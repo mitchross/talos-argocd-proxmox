@@ -1,0 +1,9 @@
+{
+  "applicationName": "openshift-apps-development-temporal",
+  "cluster": "openshift",
+  "project": "openshift-apps",
+  "namespace": "temporal",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/development/temporal/deploy-targets/openshift"
+}

@@ -1,0 +1,9 @@
+{
+  "applicationName": "openshift-apps-media-immich",
+  "cluster": "openshift",
+  "project": "openshift-apps",
+  "namespace": "immich",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/media/immich/deploy-targets/openshift"
+}

@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../talos
+patches:
+- target:
+    version: v1
+    kind: PersistentVolumeClaim
+    name: act-runner-docker-cache
+    namespace: gitea-actions
+  patch: "- op: replace\n  path: /spec/storageClassName\n  value: lvms-vg1"

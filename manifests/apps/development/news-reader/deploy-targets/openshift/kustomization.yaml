@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../talos
+patches:
+- target:
+    version: v1
+    kind: HTTPRoute
+    name: news-reader
+    group: gateway.networking.k8s.io
+    namespace: news-reader
+  patch: "- op: replace\n  path: /spec/parentRefs/0/name\n  value: openshift-gateway\n- op: replace\n  path: /spec/parentRefs/0/namespace\n\
+    \  value: openshift-ingress\n- op: replace\n  path: /spec/hostnames/0\n  value: news.apps.sno-ai-lab.vanillax.xyz\n- op:\
+    \ replace\n  path: /metadata/annotations/external-dns.alpha.kubernetes.io~1target\n  value: apps.sno-ai-lab.vanillax.xyz"

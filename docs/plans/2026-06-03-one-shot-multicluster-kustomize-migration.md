@@ -32,10 +32,10 @@ Material implementation choices:
 - Metadata includes explicit `sourcePath`; AppSets do not infer source paths from `.path.path`.
 - Database resources moved under `manifests/database/.../deploy-targets/talos`.
 - All existing applications are migrated one-shot into `manifests/apps/**/deploy-targets/talos`.
-- OpenShift deploys every app that has `deploy-targets/openshift/.argocd/config.json`.
-- `manifests/apps/media/echo-server` is the current cross-cluster smoke test, with `base/`, `deploy-targets/talos/`, and `deploy-targets/openshift/`.
+- Every existing app now has `deploy-targets/openshift/.argocd/config.json`.
+- `manifests/apps/media/echo-server` remains the clean shared-base example, with `base/`, `deploy-targets/talos/`, and `deploy-targets/openshift/`.
 - OpenShift starts with upstream Helm Argo CD, 1Password Connect, External Secrets, cert-manager, LVM storage starter manifests, Gateway API, and the OpenShift app AppSet.
-- OpenShift storage strategy is documented in `docs/domains/multicluster/openshift-storage-and-app-migration.md`: local LVM for small PVCs, NFS for AI/shared large data, and defer large stateful apps until storage/SCC/backup decisions are explicit.
+- OpenShift storage strategy is documented in `docs/domains/multicluster/openshift-storage-and-app-migration.md`: local LVM for small PVCs, NFS for AI/shared large data, and large stateful apps are present for testing but not production-ready until storage/SCC/backup decisions are explicit.
 - OpenShift live schema assumptions remain flagged for GatewayClass and LVM Storage Operator resources.
 
 ## Goal
@@ -428,7 +428,7 @@ patches:
 8. Move Talos infrastructure into `manifests/infra/*/deploy-targets/talos`.
 9. Move Talos monitoring into `manifests/monitoring/*/deploy-targets/talos`.
 10. Move Talos apps into `manifests/apps/*/*/deploy-targets/talos`.
-11. Add OpenShift deploy targets for 1Password Connect, External Secrets, cert-manager, Gateway API/Gateway, LVM storage, and one trivial stateless app.
+11. Add OpenShift deploy targets for 1Password Connect, External Secrets, cert-manager, Gateway API/Gateway, LVM storage, and all existing apps.
 12. Update bootstrap script to accept a cluster argument.
 13. Update README so Talos remains the default single-cluster path.
 14. Validate all Kustomize renders.

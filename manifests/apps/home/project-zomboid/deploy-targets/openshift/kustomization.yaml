@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../talos
+patches:
+- target:
+    version: v1
+    kind: PersistentVolumeClaim
+    name: zomboid-data
+    namespace: project-zomboid
+  patch: "- op: replace\n  path: /spec/storageClassName\n  value: lvms-vg1"
+- target:
+    version: v1
+    kind: PersistentVolumeClaim
+    name: zomboid-server-files
+    namespace: project-zomboid
+  patch: "- op: replace\n  path: /spec/storageClassName\n  value: lvms-vg1"

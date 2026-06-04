@@ -1,0 +1,9 @@
+{
+  "applicationName": "openshift-apps-media-jellyfin",
+  "cluster": "openshift",
+  "project": "openshift-apps",
+  "namespace": "jellyfin",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/media/jellyfin/deploy-targets/openshift"
+}

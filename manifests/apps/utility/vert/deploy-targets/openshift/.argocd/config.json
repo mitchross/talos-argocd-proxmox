@@ -1,0 +1,9 @@
+{
+  "applicationName": "openshift-apps-utility-vert",
+  "cluster": "openshift",
+  "project": "openshift-apps",
+  "namespace": "vert",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/utility/vert/deploy-targets/openshift"
+}

@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../talos
+patches:
+- target:
+    version: v1
+    kind: HTTPRoute
+    name: excalidraw
+    group: gateway.networking.k8s.io
+    namespace: excalidraw
+  patch: "- op: replace\n  path: /spec/parentRefs/0/name\n  value: openshift-gateway\n- op: replace\n  path: /spec/parentRefs/0/namespace\n\
+    \  value: openshift-ingress\n- op: replace\n  path: /spec/hostnames/0\n  value: excalidraw.apps.sno-ai-lab.vanillax.xyz\n\
+    - op: replace\n  path: /metadata/annotations/external-dns.alpha.kubernetes.io~1target\n  value: apps.sno-ai-lab.vanillax.xyz"

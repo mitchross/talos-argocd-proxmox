@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../talos
+patches:
+- target:
+    version: v1
+    kind: PersistentVolumeClaim
+    name: config
+    namespace: home-assistant
+  patch: "- op: replace\n  path: /spec/storageClassName\n  value: lvms-vg1"
+- target:
+    version: v1
+    kind: Deployment
+    name: home-assistant
+    group: apps
+    namespace: home-assistant
+  patch: "- op: remove\n  path: /spec/template/spec/securityContext/fsGroup\n- op: remove\n  path: /spec/template/spec/containers/0/securityContext/runAsUser\n\
+    - op: remove\n  path: /spec/template/spec/containers/1/securityContext/runAsUser\n- op: remove\n  path: /spec/template/spec/initContainers/0/securityContext/runAsUser\n\
+    - op: remove\n  path: /spec/template/spec/initContainers/1/securityContext/runAsUser"
+- target:
+    version: v1
+    kind: HTTPRoute
+    name: home-assistant
+    group: gateway.networking.k8s.io
+    namespace: home-assistant
+  patch: "- op: replace\n  path: /spec/parentRefs/0/name\n  value: openshift-gateway\n- op: replace\n  path: /spec/parentRefs/0/namespace\n\
+    \  value: openshift-ingress\n- op: replace\n  path: /spec/hostnames/0\n  value: homeassistant.apps.sno-ai-lab.vanillax.xyz"

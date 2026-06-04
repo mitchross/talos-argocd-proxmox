@@ -1,0 +1,9 @@
+{
+  "applicationName": "openshift-apps-development-mailpit",
+  "cluster": "openshift",
+  "project": "openshift-apps",
+  "namespace": "mailpit",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/development/mailpit/deploy-targets/openshift"
+}

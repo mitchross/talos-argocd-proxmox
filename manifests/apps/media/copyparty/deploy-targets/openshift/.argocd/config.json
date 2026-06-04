@@ -1,0 +1,9 @@
+{
+  "applicationName": "openshift-apps-media-copyparty",
+  "cluster": "openshift",
+  "project": "openshift-apps",
+  "namespace": "copyparty",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/media/copyparty/deploy-targets/openshift"
+}

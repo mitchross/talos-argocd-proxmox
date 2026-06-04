@@ -1,0 +1,9 @@
+{
+  "applicationName": "openshift-apps-utility-pairdrop",
+  "cluster": "openshift",
+  "project": "openshift-apps",
+  "namespace": "pairdrop",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/utility/pairdrop/deploy-targets/openshift"
+}
