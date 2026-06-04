@@ -45,22 +45,29 @@ spec:
             - "gemma4-31b"
             - "--tensor-parallel-size"
             - "2"
+            - "--max-model-len"
+            - "65536"                           # gemma-4-31b dense native ctx
+            - "--kv-cache-dtype"
+            - "fp8_e5m2"
             - "--gpu-memory-utilization"
             - "0.90"
-            - "--max-model-len"
-            - "32768"
+            - "--limit-mm-per-prompt"
+            - '{"image":2,"audio":0}'           # multimodal (vision)
             - "--enable-prefix-caching"
+            - "--enable-chunked-prefill"
             - "--enable-auto-tool-choice"
             - "--tool-call-parser"
             - "gemma4"
-            - "--disable-custom-all-reduce"
             - "--host"
             - "0.0.0.0"
             - "--port"
             - "8000"
           env:
             - { name: HF_HOME, value: /data }
+            - { name: VLLM_WORKER_MULTIPROC_METHOD, value: "spawn" }
             - { name: NCCL_P2P_DISABLE, value: "1" }
+            - { name: PYTORCH_CUDA_ALLOC_CONF, value: "expandable_segments:True" }
+            - { name: VLLM_NO_USAGE_STATS, value: "1" }
             - { name: NVIDIA_DRIVER_CAPABILITIES, value: "compute,utility" }
             - name: HF_TOKEN
               valueFrom:

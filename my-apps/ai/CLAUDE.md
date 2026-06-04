@@ -8,8 +8,10 @@ This cluster uses **vLLM** for all local AI inference (NOT ollama, NOT llama-cpp
 - Endpoint: `http://vllm-service.vllm.svc.cluster.local:8000` (OpenAI API at `/v1`).
 - Apps send `model: default` — it always resolves to whichever bank model is
   currently running (every entry sets `--served-model-name default <name>`).
-- vLLM needs **AWQ/GPTQ/FP8** weights — never GGUF. On Ampere (sm_86) use **AWQ**
-  (FP8 is Hopper/Ada-only; Intel AutoRound INT4 is blocked on Ampere).
+- vLLM needs **AWQ/GPTQ/AutoRound-INT4/FP8** weights — never GGUF. FP8 is
+  Hopper/Ada-only. The daily driver tracks club-3090's validated recipe:
+  **AutoRound INT4 + `--kv-cache-dtype fp8_e5m2`** (256K ctx + vision on 2x3090).
+  Gemma-4 uses **AWQ** instead (AutoRound INT4 is broken for Gemma-4 on Ampere).
 
 ### The vLLM preset bank (swap on demand)
 
@@ -21,15 +23,16 @@ time**. Switch by setting one to `replicas: 1` and the rest to `0`, then commit
 
 | Model (`model:` field) | HF repo (AWQ) | replicas | Use |
 |---|---|---|---|
-| `qwen3.6` / `default` ⭐ | `QuantTrio/Qwen3.6-35B-A3B-AWQ` | 1 | daily driver — chat/tools/RAG (text; vLLM AWQ is text-only) |
+| `qwen3.6` / `default` ⭐ | `Intel/Qwen3.6-35B-A3B-int4-AutoRound` | 1 | daily driver — chat/tools/RAG **+ vision**, 256K (club-3090 validated recipe) |
 | `coder` | `QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ` | 0 | coding agent |
 | `gemma4` | `cyankiwi/gemma-4-26B-A4B-it-AWQ-4bit` | 0 | multimodal fallback (`--tool-call-parser gemma4`; see vLLM #40247 image note) |
 | `gemma4-31b` | `cyankiwi/gemma-4-31B-it-AWQ-4bit` | 0 | top-quality dense (slow) |
 | `tool-fast` | `cyankiwi/Qwen3-4B-Instruct-2507-AWQ-4bit` | 0 | fast triage / tool calls |
 
-For **vision** use `gemma4` (multimodal). The Qwen daily driver is text-only
-under vLLM AWQ; to add Qwen-family vision, define a Qwen3-VL entry (e.g.
-`QuantTrio/Qwen3-VL-30B-A3B-Instruct-AWQ`).
+**Vision** works on the daily driver (the AutoRound build ships the vision tower,
+`--limit-mm-per-prompt image=2`) and on `gemma4`. If `auto_round` ever misbehaves
+on Ampere, the documented fallback is `QuantTrio/Qwen3.6-35B-A3B-AWQ` +
+`--quantization awq` (text-only).
 
 Add a model: copy a `deployment-*.yaml`, change name/labels/`--model`/
 `--served-model-name`, and list it in `kustomization.yaml`. `llama-cpp` and
