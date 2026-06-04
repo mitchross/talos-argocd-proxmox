@@ -21,11 +21,15 @@ time**. Switch by setting one to `replicas: 1` and the rest to `0`, then commit
 
 | Model (`model:` field) | HF repo (AWQ) | replicas | Use |
 |---|---|---|---|
-| `qwen3.6` / `default` ⭐ | `QuantTrio/Qwen3.6-35B-A3B-AWQ` | 1 | daily driver — chat/tools/RAG/vision |
+| `qwen3.6` / `default` ⭐ | `QuantTrio/Qwen3.6-35B-A3B-AWQ` | 1 | daily driver — chat/tools/RAG (text; vLLM AWQ is text-only) |
 | `coder` | `QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ` | 0 | coding agent |
 | `gemma4` | `cyankiwi/gemma-4-26B-A4B-it-AWQ-4bit` | 0 | multimodal fallback (`--tool-call-parser gemma4`; see vLLM #40247 image note) |
 | `gemma4-31b` | `cyankiwi/gemma-4-31B-it-AWQ-4bit` | 0 | top-quality dense (slow) |
 | `tool-fast` | `cyankiwi/Qwen3-4B-Instruct-2507-AWQ-4bit` | 0 | fast triage / tool calls |
+
+For **vision** use `gemma4` (multimodal). The Qwen daily driver is text-only
+under vLLM AWQ; to add Qwen-family vision, define a Qwen3-VL entry (e.g.
+`QuantTrio/Qwen3-VL-30B-A3B-Instruct-AWQ`).
 
 Add a model: copy a `deployment-*.yaml`, change name/labels/`--model`/
 `--served-model-name`, and list it in `kustomization.yaml`. `llama-cpp` and
