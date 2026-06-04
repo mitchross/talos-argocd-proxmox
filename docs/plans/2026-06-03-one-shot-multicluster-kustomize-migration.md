@@ -1,5 +1,10 @@
 # One-Shot Cluster-Centric Multicluster Migration
 
+> **Status:** Historical structural migration record. The authoritative design
+> for the remaining AppSet, Kustomize readability, Gateway API, and bootstrap
+> work is
+> `docs/superpowers/specs/2026-06-04-multicluster-kustomize-and-bootstrap-design.md`.
+
 ## Plain-English Summary
 
 The repository has two cluster folders. Talos deploys from `clusters/talos`.
