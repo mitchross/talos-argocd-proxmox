@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-apps-development-radar-ng",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "radar-ng",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/talos/apps/development/radar-ng"
-}

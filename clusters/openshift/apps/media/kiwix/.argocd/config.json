@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-media-kiwix",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "kiwix",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/openshift/apps/media/kiwix"
-}

@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-apps-utility-pairdrop",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "pairdrop",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/talos/apps/utility/pairdrop"
-}

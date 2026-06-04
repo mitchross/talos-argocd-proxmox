@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-development-gitea",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "gitea",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/openshift/apps/development/gitea"
-}

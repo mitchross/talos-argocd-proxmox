@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-apps-ai-comfyui",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "comfyui",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/talos/apps/ai/comfyui"
-}

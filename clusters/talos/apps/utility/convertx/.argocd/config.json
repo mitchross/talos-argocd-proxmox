@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-apps-utility-convertx",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "convertx",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/talos/apps/utility/convertx"
-}

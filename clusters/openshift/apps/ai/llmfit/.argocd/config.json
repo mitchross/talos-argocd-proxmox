@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-ai-llmfit",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "llmfit",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/openshift/apps/ai/llmfit"
-}

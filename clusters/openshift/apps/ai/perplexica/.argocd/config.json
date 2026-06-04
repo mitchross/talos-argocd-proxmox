@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-ai-perplexica",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "perplexica",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/openshift/apps/ai/perplexica"
-}

@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-home-n8n",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "n8n",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/openshift/apps/home/n8n"
-}

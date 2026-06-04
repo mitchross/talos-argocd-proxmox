@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-utility-it-tools",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "it-tools",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/openshift/apps/utility/it-tools"
-}

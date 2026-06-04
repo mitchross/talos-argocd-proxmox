@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-apps-development-renovate",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "renovate",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/talos/apps/development/renovate"
-}

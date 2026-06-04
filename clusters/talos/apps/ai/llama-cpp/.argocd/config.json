@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-apps-ai-llama-cpp",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "llama-cpp",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/talos/apps/ai/llama-cpp"
-}

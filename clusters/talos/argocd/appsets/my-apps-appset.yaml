@@ -19,16 +19,16 @@ spec:
   - git:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
       revision: main
-      files:
+      directories:
       # project-nomad is intentionally one bundled app at manifests/apps/home/project-nomad.
       # Its child folders are resources, not generated apps.
-      - path: clusters/talos/apps/*/*/.argocd/config.json
+      - path: clusters/talos/apps/*/*
   template:
     metadata:
-      name: "{{.applicationName}}"
+      name: "talos-apps-{{index .path.segments 3}}-{{.path.basename}}"
       annotations:
-        argocd.argoproj.io/manifest-generate-paths: "{{.sourcePath}}"
-        argocd.argoproj.io/sync-wave: "{{.syncWave}}"
+        argocd.argoproj.io/manifest-generate-paths: ".;/manifests/apps/{{index .path.segments 3}}/{{.path.basename}}/base"
+        argocd.argoproj.io/sync-wave: "6"
         # TEMPORARY pvc-plumber v4 migration mode:
         # Disables server-side diff for every my-apps-* Application while
         # any backed-up PVC in my-apps still has a legacy immutable
@@ -44,15 +44,15 @@ spec:
         # DR-recreated and live dataSourceRef matches Git.
         argocd.argoproj.io/compare-options: ServerSideDiff=false
     spec:
-      project: "{{.project}}"
+      project: talos-apps
       revisionHistoryLimit: 3
       source:
         repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
         targetRevision: main
-        path: "{{.sourcePath}}"
+        path: "{{.path.path}}"
       destination:
         server: https://kubernetes.default.svc
-        namespace: "{{.namespace}}"
+        namespace: "{{.path.basename}}"
       syncPolicy:
         automated:
           prune: true
@@ -95,4 +95,4 @@ spec:
 
       info:
       - name: 'Description'
-        value: "Application: {{.namespace}}"
+        value: "Application: {{.path.basename}}"

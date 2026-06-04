@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-apps-ai-llmfit",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "llmfit",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/talos/apps/ai/llmfit"
-}

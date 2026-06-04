@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-apps-utility-stirling-pdf",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "stirling-pdf",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/talos/apps/utility/stirling-pdf"
-}

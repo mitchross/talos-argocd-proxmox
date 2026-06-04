@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-home-frigate",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "frigate",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/openshift/apps/home/frigate"
-}

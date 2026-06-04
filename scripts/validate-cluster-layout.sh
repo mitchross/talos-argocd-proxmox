@@ -20,6 +20,13 @@ while IFS= read -r path; do
   fail "Argo metadata must live under clusters/<cluster>: $path"
 done < <(find manifests -path '*/.argocd/config.json' -print | sort)
 
+while IFS= read -r path; do
+  fail "app overlay metadata is derivable and must not remain: $path"
+done < <(
+  find clusters/talos/apps clusters/openshift/apps \
+    -path '*/.argocd/config.json' -type f -print | sort
+)
+
 for cluster in talos openshift; do
   while IFS= read -r metadata; do
     source_path="$(

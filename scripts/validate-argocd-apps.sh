@@ -34,7 +34,23 @@ application_files() {
 
 metadata_files() {
   local cluster="$1"
-  find "clusters/$cluster" -path "*/.argocd/config.json" -type f | sort
+  find "clusters/$cluster" -path "*/.argocd/config.json" -type f \
+    ! -path "clusters/$cluster/apps/*/*/.argocd/config.json" | sort
+}
+
+app_overlay_dirs() {
+  local cluster="$1"
+  find "clusters/$cluster/apps" -mindepth 3 -maxdepth 3 \
+    -type f -name kustomization.yaml -printf '%h\n' | sort
+}
+
+derived_app_name() {
+  local cluster="$1"
+  local dir="$2"
+  local relative="${dir#clusters/$cluster/apps/}"
+  local category="${relative%%/*}"
+  local app="${relative#*/}"
+  printf '%s-apps-%s-%s\n' "$cluster" "$category" "$app"
 }
 
 json_field() {
@@ -73,6 +89,15 @@ validate_cluster() {
     return
   fi
 
+  echo "--- Check 0: App overlay count ---"
+  app_count="$(app_overlay_dirs "$cluster" | wc -l | xargs)"
+  if [ "$app_count" -ne 44 ]; then
+    fail "expected 44 $cluster app overlays, found $app_count"
+  else
+    echo "  OK: Found 44 app overlays"
+  fi
+  echo ""
+
   echo "--- Check 1: Duplicate Application names ---"
   declare -A seen=()
 
@@ -96,6 +121,15 @@ validate_cluster() {
     fi
   done < <(metadata_files "$cluster")
 
+  while IFS= read -r dir; do
+    name="$(derived_app_name "$cluster" "$dir")"
+    if [ -n "${seen[$name]:-}" ]; then
+      fail "'$name' appears in both ${seen[$name]} and $dir"
+    else
+      seen[$name]="$dir"
+    fi
+  done < <(app_overlay_dirs "$cluster")
+
   [ $ERRORS -eq 0 ] && echo "  OK: No duplicate Application names found"
   echo ""
 
@@ -109,6 +143,9 @@ validate_cluster() {
     wave="$(json_field "$f" syncWave)"
     [ -n "$wave" ] && waves+=("$wave")
   done < <(metadata_files "$cluster")
+  while IFS= read -r dir; do
+    [ -n "$dir" ] && waves+=("6")
+  done < <(app_overlay_dirs "$cluster")
 
   if [ ${#waves[@]} -gt 0 ]; then
     mapfile -t sorted_waves < <(printf '%s\n' "${waves[@]}" | sort -n | uniq)
@@ -151,6 +188,11 @@ validate_cluster() {
       fail "$f sourcePath '$path' has no kustomization.yaml"
     fi
   done < <(metadata_files "$cluster")
+  while IFS= read -r dir; do
+    if [ ! -f "$dir/kustomization.yaml" ]; then
+      fail "derived app sourcePath '$dir' has no kustomization.yaml"
+    fi
+  done < <(app_overlay_dirs "$cluster")
   echo ""
 
   echo "--- Check 5: ArgoCD chart version alignment ---"

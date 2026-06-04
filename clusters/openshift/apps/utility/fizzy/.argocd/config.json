@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-utility-fizzy",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "fizzy",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/openshift/apps/utility/fizzy"
-}
