@@ -104,13 +104,14 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 3
           resources:
+            # GPU node has 16 vCPU — keep request schedulable and limit within the node.
             requests:
               nvidia.com/gpu: "2"
-              cpu: "8"
-              memory: 48Gi
+              cpu: "4"
+              memory: 24Gi
             limits:
               nvidia.com/gpu: "2"
-              cpu: "32"
+              cpu: "14"          # leave ~2 vCPU for kubelet/cilium/device-plugin/otel
               memory: 64Gi
           volumeMounts:
             - name: models
