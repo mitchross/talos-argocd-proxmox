@@ -40,6 +40,13 @@ if [ ! -f "$ARGOCD_NAMESPACE_FILE" ] || [ ! -f "$ARGOCD_VALUES_FILE" ] || [ ! -f
   exit 1
 fi
 
+for command in kubectl helm openssl; do
+  if ! command -v "$command" >/dev/null 2>&1; then
+    echo "❌ Required command not found: $command"
+    exit 1
+  fi
+done
+
 echo ""
 echo "📦 Creating argocd namespace..."
 kubectl apply -f "$ARGOCD_NAMESPACE_FILE"

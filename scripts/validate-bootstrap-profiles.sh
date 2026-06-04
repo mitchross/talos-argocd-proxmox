@@ -70,4 +70,22 @@ if run_dry unknown --dry-run >/dev/null 2>&1; then
   fail "unknown profile must fail"
 fi
 
+cat >"$FAKE_BIN/kubectl" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$*" == *"get crd"* ]]; then
+  exit 0
+fi
+if [[ "$*" == *"get subscriptions.operators.coreos.com"* ]]; then
+  printf 'openshift-operators\tservicemeshoperator\tstable-2.6\t\n'
+  exit 0
+fi
+exit 99
+EOF
+chmod +x "$FAKE_BIN/kubectl"
+
+openshift_v2_output="$(
+  PATH="$FAKE_BIN:$PATH" bash "$BOOTSTRAP_SCRIPT" openshift 2>&1 || true
+)"
+assert_contains "$openshift_v2_output" "Service Mesh Operator v2 conflicts"
+
 echo "PASSED: bootstrap profile dry-runs are non-mutating and platform-correct"
