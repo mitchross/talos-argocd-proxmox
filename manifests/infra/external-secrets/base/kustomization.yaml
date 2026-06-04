@@ -1,0 +1,40 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: external-secrets
+
+commonAnnotations:
+  argocd.argoproj.io/sync-wave: "1"
+
+resources:
+- external-secret.yaml
+- cluster-secret-store.yaml
+helmCharts:
+- name: external-secrets
+  repo: https://charts.external-secrets.io
+  version: 2.5.0
+  releaseName: external-secrets
+  valuesFile: values.yaml
+  includeCRDs: true
+# ESO 2.4.0 ships ~620KB CRDs (clustersecretstores.yaml, secretstores.yaml).
+# That blows past the 256KB annotation cap on `kubectl.kubernetes.io/last-applied-configuration`
+# any time ArgoCD falls back to client-side apply. Per ArgoCD docs and
+# argo-cd#11269 / #26279, the resource-level annotation
+# `argocd.argoproj.io/sync-options: ServerSideApply=true` forces SSA on these
+# CRDs even if Argo's per-resource manager state drifts. Belt-and-braces with
+# the app-level `ServerSideApply=true` syncOption — Argo CD migrations from
+# client-side → server-side ownership are documented as brittle.
+#
+# Field-manager migration was bootstrapped out of band on 2026-04-27 via
+# `kubectl get crd $X -o yaml | kubectl apply --server-side --force-conflicts
+# --field-manager=argocd-controller -f -` for the four pre-existing CRDs.
+# The new CRDs in 2.4.0 (pushsecrets, clusterpushsecrets, clustergenerators,
+# generatorstates) get created SSA-native on first apply.
+patches:
+- path: patches/crd-externalsecrets-ssa.yaml
+- path: patches/crd-clustersecretstores-ssa.yaml
+- path: patches/crd-secretstores-ssa.yaml
+- path: patches/crd-clusterexternalsecrets-ssa.yaml
+- path: patches/crd-pushsecrets-ssa.yaml
+- path: patches/crd-clusterpushsecrets-ssa.yaml
+- path: patches/crd-clustergenerators-ssa.yaml
+- path: patches/crd-generatorstates-ssa.yaml
