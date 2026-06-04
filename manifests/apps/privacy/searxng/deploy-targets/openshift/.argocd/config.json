@@ -1,0 +1,9 @@
+{
+  "applicationName": "openshift-apps-privacy-searxng",
+  "cluster": "openshift",
+  "project": "openshift-apps",
+  "namespace": "searxng",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/privacy/searxng/deploy-targets/openshift"
+}

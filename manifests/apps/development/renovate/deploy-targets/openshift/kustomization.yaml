@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../talos
+patches:
+- target:
+    version: v1
+    kind: CronJob
+    name: renovate
+    group: batch
+    namespace: renovate
+  patch: "- op: remove\n  path: /spec/jobTemplate/spec/template/spec/securityContext/runAsUser\n- op: remove\n  path: /spec/jobTemplate/spec/template/spec/securityContext/runAsGroup\n\
+    - op: remove\n  path: /spec/jobTemplate/spec/template/spec/securityContext/fsGroup"

@@ -38,7 +38,7 @@ clusters/
 manifests/
   infra/             # controllers, networking, storage, platform services
   database/          # database operators and instances
-  manifests/monitoring/        # Talos monitoring stack
+  monitoring/        # Talos monitoring stack
   apps/              # user-facing applications
 
 components/
@@ -46,8 +46,9 @@ components/
   openshift/
 ```
 
-Existing Talos-only workloads live under `deploy-targets/talos`. Only workloads
-intended to run on more than one cluster need a shared `base/`.
+Talos remains the canonical full-fidelity target under `deploy-targets/talos`.
+OpenShift app targets exist for the full catalog; only workloads that have been
+cleanly made portable need a shared `base/`.
 
 ## Repositories & Resources
 
@@ -100,7 +101,7 @@ OpenShift:
 | **0** | Foundation | Argo CD, 1Password Connect, External Secrets, AppProjects |
 | **1** | Core controllers | cert-manager and OpenShift LVM storage |
 | **4** | Infrastructure | OpenShift Gateway API deploy target |
-| **6** | Apps | Any app with an OpenShift deploy target; echo-server currently proves the path |
+| **6** | Apps | Full app catalog through OpenShift deploy targets |
 
 ## Prerequisites
 
@@ -122,7 +123,7 @@ OpenShift storage policy:
 
 - Use OpenShift local LVM storage for small PVCs.
 - Use NFS for AI/shared/large-but-portable data after the OpenShift NFS implementation is chosen.
-- Do not add OpenShift deploy targets for large stateful apps until storage, SCC, and backup behavior are explicit.
+- All apps have OpenShift deploy targets for catalog-level testing, but large stateful apps still need explicit storage, SCC, and backup review before being considered production-ready.
 
 See [OpenShift Storage And App Migration Strategy](docs/domains/multicluster/openshift-storage-and-app-migration.md).
 
@@ -346,8 +347,7 @@ kubectl apply -f clusters/openshift/bootstrap/root.yaml
 
 Argo CD takes over and manages everything from Git. Talos syncs the full
 homelab stack through one-shot-migrated Talos deploy targets. OpenShift syncs
-any app that has an OpenShift deploy target; echo-server currently proves the
-cross-cluster overlay path.
+the full app catalog through OpenShift deploy targets.
 
 New deploy targets are discovered by `.argocd/config.json` files:
 

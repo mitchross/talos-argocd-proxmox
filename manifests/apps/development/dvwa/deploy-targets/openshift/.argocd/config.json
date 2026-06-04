@@ -1,0 +1,9 @@
+{
+  "applicationName": "openshift-apps-development-dvwa",
+  "cluster": "openshift",
+  "project": "openshift-apps",
+  "namespace": "dvwa",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/development/dvwa/deploy-targets/openshift"
+}

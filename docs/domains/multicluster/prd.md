@@ -210,10 +210,10 @@ OpenShift deploy targets own:
 - OpenShift Gateway API manifests.
 - `*.apps.sno-ai-lab.vanillax.xyz` hostnames.
 - OpenShift Gateway parentRefs.
-- LVM storage starter manifests for small local PVCs.
-- NFS storage for AI/shared/large-but-portable data after the NFS implementation decision is made.
-- OpenShift-specific securityContext patches where needed.
-- Any application that has an OpenShift deploy target.
+- The full current app catalog as first-pass OpenShift deploy targets.
+- `longhorn` PVCs patched to the assumed local LVM StorageClass `lvms-vg1`.
+- Existing NFS/SMB/static storage references left explicit until an OpenShift NFS/SMB implementation is chosen.
+- OpenShift-specific Gateway and fixed UID/GID securityContext patches where generated.
 
 ## Application Migration Model
 
@@ -227,25 +227,28 @@ That is the migration scope. An app does not need to become cross-cluster on the
 same day to participate in the new layout.
 
 OpenShift app deployment is also one-shot from Argo CD's point of view: the
-OpenShift AppSet scans all OpenShift deploy-target metadata. Any app with this
-file is included automatically:
+OpenShift AppSet scans all OpenShift deploy-target metadata. Every existing app
+now has this file and is included automatically:
 
 ```text
 manifests/apps/<category>/<app>/deploy-targets/openshift/.argocd/config.json
 ```
 
-Do not add OpenShift deploy targets for large stateful apps until storage is
-explicit. Use local LVM storage for small OpenShift PVCs, NFS for AI/shared large
-data, and defer Longhorn-dependent or large-PVC apps until reviewed. See
+All apps are present for OpenShift catalog-level testing. Production readiness is
+still per app: use local LVM for small PVCs, choose NFS/SMB/static PV handling
+for large shared data, and review SCC/securityContext plus backup behavior before
+trusting large stateful apps. See
 `docs/domains/multicluster/openshift-storage-and-app-migration.md`.
 
-`manifests/apps/media/echo-server` is the current cross-cluster smoke test.
+Most OpenShift app targets are generated overlays over their Talos sibling:
 
-It has:
+```text
+manifests/apps/<category>/<app>/deploy-targets/openshift/
+```
 
-- `base/` for Deployment, Service, Namespace, and placeholder HTTPRoute.
-- `deploy-targets/talos/` for Cilium Gateway parentRef and `echo.vanillax.me`.
-- `deploy-targets/openshift/` for OpenShift Gateway parentRef and `echo.apps.sno-ai-lab.vanillax.xyz`.
+`manifests/apps/media/echo-server` remains the clean portable example with a
+shared `base/`; the rest are first-pass overlays so the whole catalog is visible
+to OpenShift Argo CD.
 
 ## Schema Assumptions To Verify Live
 
@@ -255,6 +258,8 @@ These render locally but require live OpenShift verification before sync:
 - LVM Storage Operator Subscription uses `channel: stable-4.20`.
 - `LVMCluster` uses `apiVersion: lvm.topolvm.io/v1alpha1`.
 - OpenShift Gateway controller behavior for cert-manager Gateway shim must be verified.
+- `lvms-vg1` is assumed to be the OpenShift local LVM StorageClass for PVCs migrated from `longhorn`.
+- Existing Talos NFS/SMB/static storage references need OpenShift storage implementation before affected apps become healthy.
 - Upstream Helm chart `openshift.enabled: true` is used for Argo CD; no `ArgoCD` CR or `spec.extraConfig` exists in this design because the OpenShift GitOps Operator path was rejected.
 
 ## Validation

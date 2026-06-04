@@ -1,0 +1,75 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../talos
+patches:
+- target:
+    version: v1
+    kind: PersistentVolumeClaim
+    name: grids
+    namespace: radar-ng
+  patch: "- op: replace\n  path: /spec/storageClassName\n  value: lvms-vg1"
+- target:
+    version: v1
+    kind: PersistentVolumeClaim
+    name: openmeteo-data
+    namespace: radar-ng
+  patch: "- op: replace\n  path: /spec/storageClassName\n  value: lvms-vg1"
+- target:
+    version: v1
+    kind: PersistentVolumeClaim
+    name: pmtiles
+    namespace: radar-ng
+  patch: "- op: replace\n  path: /spec/storageClassName\n  value: lvms-vg1"
+- target:
+    version: v1
+    kind: PersistentVolumeClaim
+    name: state
+    namespace: radar-ng
+  patch: "- op: replace\n  path: /spec/storageClassName\n  value: lvms-vg1"
+- target:
+    version: v1
+    kind: PersistentVolumeClaim
+    name: tiles
+    namespace: radar-ng
+  patch: "- op: replace\n  path: /spec/storageClassName\n  value: lvms-vg1"
+- target:
+    version: v1
+    kind: Deployment
+    name: basemap
+    group: apps
+    namespace: radar-ng
+  patch: "- op: remove\n  path: /spec/template/spec/securityContext/runAsUser\n- op: remove\n  path: /spec/template/spec/securityContext/runAsGroup\n\
+    - op: remove\n  path: /spec/template/spec/securityContext/fsGroup"
+- target:
+    version: v1
+    kind: Deployment
+    name: open-meteo
+    group: apps
+    namespace: radar-ng
+  patch: "- op: remove\n  path: /spec/template/spec/securityContext/runAsUser\n- op: remove\n  path: /spec/template/spec/securityContext/runAsGroup\n\
+    - op: remove\n  path: /spec/template/spec/securityContext/fsGroup"
+- target:
+    version: v1
+    kind: Deployment
+    name: tile-server
+    group: apps
+    namespace: radar-ng
+  patch: "- op: remove\n  path: /spec/template/spec/securityContext/runAsUser\n- op: remove\n  path: /spec/template/spec/securityContext/runAsGroup"
+- target:
+    version: v1
+    kind: Job
+    name: basemap-bootstrap
+    group: batch
+    namespace: radar-ng
+  patch: "- op: remove\n  path: /spec/template/spec/securityContext/runAsUser\n- op: remove\n  path: /spec/template/spec/securityContext/runAsGroup\n\
+    - op: remove\n  path: /spec/template/spec/securityContext/fsGroup"
+- target:
+    version: v1
+    kind: HTTPRoute
+    name: radar-ng-api
+    group: gateway.networking.k8s.io
+    namespace: radar-ng
+  patch: "- op: replace\n  path: /spec/parentRefs/0/name\n  value: openshift-gateway\n- op: replace\n  path: /spec/parentRefs/0/namespace\n\
+    \  value: openshift-ingress\n- op: replace\n  path: /spec/hostnames/0\n  value: radar-ng-api.apps.sno-ai-lab.vanillax.xyz\n\
+    - op: replace\n  path: /metadata/annotations/external-dns.alpha.kubernetes.io~1target\n  value: apps.sno-ai-lab.vanillax.xyz"

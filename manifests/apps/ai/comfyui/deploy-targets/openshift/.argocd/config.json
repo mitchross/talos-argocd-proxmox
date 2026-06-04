@@ -1,0 +1,9 @@
+{
+  "applicationName": "openshift-apps-ai-comfyui",
+  "cluster": "openshift",
+  "project": "openshift-apps",
+  "namespace": "comfyui",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "manifests/apps/ai/comfyui/deploy-targets/openshift"
+}

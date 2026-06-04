@@ -46,9 +46,10 @@ feat/one-shot-multicluster-kustomize
 - `targetRevision` is `main`.
 - OpenShift AppProjects are `openshift-infrastructure` and `openshift-apps`.
 - All current applications are migrated one-shot into `manifests/apps/**/deploy-targets/talos`.
-- OpenShift deploys every app that has `deploy-targets/openshift/.argocd/config.json`.
-- `echo-server` is the current cross-cluster smoke test, not the limit of the migration.
-- Large stateful apps should not get OpenShift deploy targets until each has an explicit storage plan.
+- OpenShift deploys every existing app through `deploy-targets/openshift/.argocd/config.json`.
+- `echo-server` is the clean shared-base cross-cluster example, not the limit of the migration.
+- All apps have first-pass OpenShift deploy targets for catalog-level testing.
+- Large stateful apps are not production-ready on OpenShift until each has an explicit storage, SCC, and backup plan.
 - Use OpenShift local LVM for small PVCs and NFS for AI/shared/large-but-portable data.
 
 ## Live Schema Assumptions Still Needing Verification
