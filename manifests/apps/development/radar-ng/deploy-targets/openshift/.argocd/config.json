@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-development-radar-ng",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "radar-ng",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/development/radar-ng/deploy-targets/openshift"
-}

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-media
+  namespace: jellyfin
+  labels:
+    backup-exempt:
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason:

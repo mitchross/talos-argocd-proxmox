@@ -1,0 +1,9 @@
+{
+  "applicationName": "openshift-apps-home-project-nomad",
+  "cluster": "openshift",
+  "project": "openshift-apps",
+  "namespace": "project-nomad",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "clusters/openshift/apps/home/project-nomad"
+}

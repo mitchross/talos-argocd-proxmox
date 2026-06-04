@@ -1,0 +1,9 @@
+{
+  "applicationName": "openshift-infra-csi-driver-smb",
+  "cluster": "openshift",
+  "project": "openshift-infrastructure",
+  "namespace": "csi-driver-smb",
+  "part": "infra",
+  "syncWave": "4",
+  "sourcePath": "clusters/openshift/infra/csi-driver-smb"
+}

@@ -1,0 +1,9 @@
+{
+  "applicationName": "openshift-apps-home-home-assistant",
+  "cluster": "openshift",
+  "project": "openshift-apps",
+  "namespace": "home-assistant",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "clusters/openshift/apps/home/home-assistant"
+}

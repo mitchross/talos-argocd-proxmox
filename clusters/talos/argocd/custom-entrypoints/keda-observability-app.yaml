@@ -13,7 +13,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "6"
-    argocd.argoproj.io/manifest-generate-paths: manifests/infra/keda-observability/deploy-targets/talos
+    argocd.argoproj.io/manifest-generate-paths: clusters/talos/infra/keda-observability
   labels:
     app.kubernetes.io/part-of: infrastructure
 spec:
@@ -21,7 +21,7 @@ spec:
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
     targetRevision: main
-    path: manifests/infra/keda-observability/deploy-targets/talos
+    path: clusters/talos/infra/keda-observability
   destination:
     server: https://kubernetes.default.svc
     namespace: keda

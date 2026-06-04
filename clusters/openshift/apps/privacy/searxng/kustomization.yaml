@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: searxng
+resources:
+- "../../../../../manifests/apps/privacy/searxng/base"
+- httproute.yaml
+patches:
+- path: patches/deployment-redis.jsonpatch.yaml
+  target:
+    version: v1
+    kind: Deployment
+    name: redis
+    group: apps
+    namespace: searxng
+- path: patches/remove-talos-backup-persistentvolumeclaim-redis-data.yaml

@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-apps-utility-fizzy",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "fizzy",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/utility/fizzy/deploy-targets/talos"
-}

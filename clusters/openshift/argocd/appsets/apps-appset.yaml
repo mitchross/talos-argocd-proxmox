@@ -13,7 +13,7 @@ spec:
         repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
         revision: main
         files:
-          - path: manifests/apps/*/*/deploy-targets/openshift/.argocd/config.json
+          - path: clusters/openshift/apps/*/*/.argocd/config.json
   template:
     metadata:
       name: "{{.applicationName}}"

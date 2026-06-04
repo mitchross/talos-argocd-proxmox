@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-utility-excalidraw",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "excalidraw",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/utility/excalidraw/deploy-targets/openshift"
-}

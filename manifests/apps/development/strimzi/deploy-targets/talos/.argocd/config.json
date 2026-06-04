@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-apps-development-strimzi",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "strimzi",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/development/strimzi/deploy-targets/talos"
-}

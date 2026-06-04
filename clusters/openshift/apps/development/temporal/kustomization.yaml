@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: temporal
+resources:
+- "../../../../../manifests/apps/development/temporal/base"
+- httproute.yaml
+patches:
+- path: patches/deployment-temporal-frontend.jsonpatch.yaml
+  target:
+    version: v1
+    kind: Deployment
+    name: temporal-frontend
+    group: apps
+- path: patches/deployment-temporal-history.jsonpatch.yaml
+  target:
+    version: v1
+    kind: Deployment
+    name: temporal-history
+    group: apps
+- path: patches/deployment-temporal-matching.jsonpatch.yaml
+  target:
+    version: v1
+    kind: Deployment
+    name: temporal-matching
+    group: apps
+- path: patches/deployment-temporal-worker.jsonpatch.yaml
+  target:
+    version: v1
+    kind: Deployment
+    name: temporal-worker
+    group: apps

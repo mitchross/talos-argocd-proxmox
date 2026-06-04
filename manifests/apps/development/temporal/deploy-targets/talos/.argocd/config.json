@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-apps-development-temporal",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "temporal",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/development/temporal/deploy-targets/talos"
-}

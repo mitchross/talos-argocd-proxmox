@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-ai-llama-cpp",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "llama-cpp",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/ai/llama-cpp/deploy-targets/openshift"
-}

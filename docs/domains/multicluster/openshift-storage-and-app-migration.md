@@ -2,81 +2,83 @@
 
 ## Plain-English Summary
 
-Talos remains the full homelab app cluster. OpenShift is additive, but it now
-receives the full app catalog as first-pass deploy targets so the entire shape
-can be tested through OpenShift Argo CD.
+OpenShift receives the same app catalog through its own overlays, but it does
+not inherit Talos infrastructure or backup behavior.
 
-All existing apps move into the new repo layout in one shot under Talos deploy
-targets. OpenShift deploy targets also exist for every app, but production
-readiness is still app-by-app based on storage fit, SCC behavior, and backup
-expectations.
+Small local PVCs use the portable `vanillax-local-rwo` contract. Talos backs
+that contract with Longhorn; OpenShift backs it with LVM Storage. Large or
+shared datasets continue to use explicit NFS, SMB, or static PV definitions.
 
-## Storage Classes By Use
+## Implemented Storage Paths
 
-### Local OpenShift Storage
+### Portable Local RWO
 
-Use OpenShift local storage, currently represented by the LVM Storage Operator
-starter manifests, for small OpenShift-native PVCs:
+Use `vanillax-local-rwo` for ordinary application state:
 
-- small app config/data volumes
-- controller scratch/state
-- low-capacity utility apps
-- workloads where SNO node locality is acceptable
+- Talos provisioner: `driver.longhorn.io`
+- OpenShift provisioner: `topolvm.io`
+- OpenShift device class: `vg1`
 
-This is expected to be fast and simple, but it is node-local. Treat it as local
-cluster storage, not cross-cluster shared storage.
+OpenShift local LVM is node-local storage. It is not equivalent to Longhorn
+replication and must not be described as node-failure resilient.
 
-### NFS Storage
+### NFS And SMB
 
-Use NFS for workloads that need larger shared data or model/media-style storage,
-matching the existing Talos pattern for AI and large file workloads:
+The NFS and SMB CSI definitions are shared bases:
 
-- AI model caches
-- shared datasets
-- media-like large files that are safe to mount from NFS
-- workloads where the data should live outside the OpenShift node
+```text
+manifests/infra/csi-driver-nfs/base
+manifests/infra/csi-driver-smb/base
+```
 
-OpenShift needs an explicit NFS implementation decision before broad adoption:
+Both clusters have overlays and Argo metadata for these drivers. Existing
+storage-class and static-PV names stay explicit because they identify real
+TrueNAS shares and datasets.
 
-- reuse the existing CSI NFS chart pattern as an OpenShift deploy target, or
-- use static NFS PVs for the first few workloads.
+Verify network reachability and OpenShift SCC compatibility before live sync.
 
-That decision should be made before expecting AI or other large-data apps to be
-healthy on OpenShift.
+## Backup Boundary
 
-## Present But Not Production-Ready Yet
+Talos currently owns the app PVC backup implementation:
 
-Large stateful Talos apps have OpenShift deploy targets for catalog testing, but
-should not be treated as ready until each has a storage decision and SCC/security
-review.
+- pvc-plumber labels
+- VolSync privileged-mover namespace policy
+- restore policy labels
+- restore `dataSourceRef`
 
-Examples to gate before OpenShift deployment:
+OpenShift overlays remove that policy. OpenShift app PVCs currently have no
+equivalent GitOps backup guarantee. Treat backup/restore as unresolved until an
+OpenShift-specific policy is selected and tested.
 
-- media libraries
-- image/video ML workloads with large model caches
-- database-backed apps with large PVCs
-- anything currently depending on Longhorn-specific behavior
-- anything with backup/restore assumptions tied to Talos PVC plumbing
+## App Readiness
 
-## Migration Rule
+An app is OpenShift-renderable when:
 
-An app is OpenShift-testable when it has:
+- it has an overlay under `clusters/openshift/apps`;
+- its route uses the OpenShift Gateway and domain;
+- Talos backup policy is absent from its OpenShift render;
+- required security-context fields are compatible or explicitly patched.
 
-- an OpenShift deploy target
-- hostname under `*.apps.sno-ai-lab.vanillax.xyz`
-- Gateway parentRef
-- first-pass SCC/securityContext adjustments where generated
+An app is OpenShift-production-ready only after verifying:
 
-An app is OpenShift-production-ready only after its deploy target or companion
-docs state:
+- storage capacity and access mode;
+- SCC behavior;
+- external storage reachability;
+- application callback/base URLs;
+- backup and restore expectations.
 
-- storage class or NFS/PV strategy
-- SCC/securityContext expectation
-- backup/restore expectation, or explicit "not backed up yet"
+Large stateful apps remain compatibility-test candidates until those checks are
+complete.
 
-## TODO
+Catalog migration does not override existing activation state. DVWA and Project
+Nomad's Kolibri resources remain intentionally disabled in both clusters.
 
-- Decide whether OpenShift NFS should use the existing CSI NFS chart pattern or static PVs first.
-- Add an OpenShift NFS deploy target if CSI is chosen.
-- Inventory large PVC apps and tag each as local LVM, NFS, defer, or redesign.
-- Promote apps from OpenShift-testable to OpenShift-production-ready once storage, SCC, and backup behavior are explicit.
+## Live Schema Assumptions
+
+Verify these against the intended OpenShift cluster:
+
+- `LVMCluster` API and `stable-4.20` Subscription channel;
+- TopoLVM provisioner name `topolvm.io`;
+- device-class parameter `topolvm.io/device-class: vg1`;
+- NFS and SMB CSI chart SCC requirements;
+- GatewayClass name `openshift-default`.

@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-infra-cloudflared",
+  "cluster": "talos",
+  "project": "talos-infrastructure",
+  "namespace": "cloudflared",
+  "part": "infra",
+  "syncWave": "4",
+  "sourcePath": "clusters/talos/infra/cloudflared"
+}

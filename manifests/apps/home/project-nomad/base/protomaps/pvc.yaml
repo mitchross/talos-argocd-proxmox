@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: protomaps-data
+  namespace: project-nomad
+  labels:
+    app: project-nomad
+    type: protomaps
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "Protomaps tile data; downloadable from upstream protomaps.com builds"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: vanillax-local-rwo

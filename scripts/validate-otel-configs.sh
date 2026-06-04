@@ -18,7 +18,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OTEL_DIR="${REPO_ROOT}/manifests/infra/opentelemetry-operator/deploy-targets/talos"
+OTEL_DIR="${REPO_ROOT}/clusters/talos/infra/opentelemetry-operator"
 OTEL_IMAGE="${OTEL_IMAGE:-otel/opentelemetry-collector-contrib:0.148.0}"
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT

@@ -5,7 +5,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "0"
-    argocd.argoproj.io/manifest-generate-paths: manifests/infra/argocd/deploy-targets/talos
+    argocd.argoproj.io/manifest-generate-paths: clusters/talos/infra/argocd
   finalizers:
   - resources-finalizer.argocd.argoproj.io
 spec:
@@ -13,7 +13,7 @@ spec:
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
     targetRevision: main
-    path: manifests/infra/argocd/deploy-targets/talos
+    path: clusters/talos/infra/argocd
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

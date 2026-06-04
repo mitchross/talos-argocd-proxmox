@@ -302,7 +302,7 @@ you're short on capacity, do D now and A on the next maintenance window.
   restic-only.
 - **The fork's chart and image versions don't track each other** (this
   cluster runs chart 0.18.5 with image v0.17.11 — see
-  `manifests/infra/volsync/deploy-targets/talos/values.yaml` comment). This is documented
+  `clusters/talos/infra/volsync/values.yaml` comment). This is documented
   internally but is a gotcha for any future Renovate auto-bump policy.
 - **Upstream is preparing a v0.16.0-rc.3 (released 2026-05-07).** The fork
   hasn't pulled an upstream merge since 2026-03-08. If a CVE lands in
@@ -337,7 +337,7 @@ and stop relying on admission-time mutation of mover Jobs.
 - [Kopia S3 backend docs](https://kopia.io/docs/reference/command-line/common/repository-create-s3/)
 - [Kopia repository sync-to s3](https://kopia.io/docs/reference/command-line/common/repository-sync-to-s3/)
 - Local files referenced:
-  - `/home/vanillax/programming/talos-argocd-proxmox/manifests/infra/volsync/deploy-targets/talos/values.yaml`
+  - `/home/vanillax/programming/talos-argocd-proxmox/clusters/talos/infra/volsync/values.yaml`
   - Historical pre-v4 pvc-plumber webhook notes; no webhook manifest is deployed from this repo now.
   - `/home/vanillax/programming/pvc-plumber/internal/webhook/job_mutate.go`
   - `/home/vanillax/programming/pvc-plumber/internal/controller/pvc_controller.go`

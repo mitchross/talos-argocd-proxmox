@@ -7,7 +7,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
-    argocd.argoproj.io/manifest-generate-paths: manifests/infra/snapshot-controller/deploy-targets/talos
+    argocd.argoproj.io/manifest-generate-paths: clusters/talos/infra/snapshot-controller
   labels:
     app.kubernetes.io/part-of: infrastructure
 spec:
@@ -15,7 +15,7 @@ spec:
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
     targetRevision: main
-    path: manifests/infra/snapshot-controller/deploy-targets/talos
+    path: clusters/talos/infra/snapshot-controller
   destination:
     server: https://kubernetes.default.svc
     namespace: snapshot-controller

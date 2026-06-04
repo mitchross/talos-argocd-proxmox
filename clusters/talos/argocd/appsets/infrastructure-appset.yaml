@@ -17,14 +17,14 @@ spec:
       # (core-dependencies/cert-manager-app.yaml) — the Wave-4 appset placement
       # caused a circular deadlock with cnpg-barman-plugin (Wave 3). Do NOT
       # re-add it here or it will be double-managed.
-      - path: manifests/infra/external-dns/deploy-targets/talos/.argocd/config.json
-      - path: manifests/infra/gpu-priority-classes/deploy-targets/talos/.argocd/config.json
-      - path: manifests/infra/node-feature-discovery/deploy-targets/talos/.argocd/config.json
+      - path: clusters/talos/infra/external-dns/.argocd/config.json
+      - path: clusters/talos/infra/gpu-priority-classes/.argocd/config.json
+      - path: clusters/talos/infra/node-feature-discovery/.argocd/config.json
       # nvidia-device-plugin removed on Talos 1.13 — gpu-operator Helm chart
       # (in nvidia-gpu-operator) now owns the device plugin on top of the
       # CDI-based driver/toolkit shipped by Talos system extensions.
-      - path: manifests/infra/nvidia-gpu-operator/deploy-targets/talos/.argocd/config.json
-      - path: manifests/infra/metrics-server/deploy-targets/talos/.argocd/config.json
+      - path: clusters/talos/infra/nvidia-gpu-operator/.argocd/config.json
+      - path: clusters/talos/infra/metrics-server/.argocd/config.json
       # NOTE: keda and temporal-worker-controller are NOT listed here.
       # They have dedicated standalone Applications at Wave 4
       # (keda-app.yaml, temporal-worker-controller-app.yaml) because
@@ -34,18 +34,18 @@ spec:
       # NOTE: opentelemetry-operator is NOT listed here
       # It has a dedicated standalone Application at Wave 5 (opentelemetry-operator-app.yaml)
       # to ensure cert-manager (Wave 4) is ready for webhook certificates
-      - path: manifests/infra/cloudflared/deploy-targets/talos/.argocd/config.json
-      - path: manifests/infra/gateway/deploy-targets/talos/.argocd/config.json
-      - path: manifests/infra/container-registry/deploy-targets/talos/.argocd/config.json
-      - path: manifests/infra/csi-driver-nfs/deploy-targets/talos/.argocd/config.json
-      - path: manifests/infra/csi-driver-smb/deploy-targets/talos/.argocd/config.json
-      - path: manifests/infra/local-storage/deploy-targets/talos/.argocd/config.json
+      - path: clusters/talos/infra/cloudflared/.argocd/config.json
+      - path: clusters/talos/infra/gateway/.argocd/config.json
+      - path: clusters/talos/infra/container-registry/.argocd/config.json
+      - path: clusters/talos/infra/csi-driver-nfs/.argocd/config.json
+      - path: clusters/talos/infra/csi-driver-smb/.argocd/config.json
+      - path: clusters/talos/infra/local-storage/.argocd/config.json
       # NOTE: longhorn, snapshot-controller, volsync are NOT listed here
       # They have dedicated standalone Applications at Wave 1 (longhorn-app.yaml,
       # snapshot-controller-app.yaml, volsync-app.yaml) to ensure storage is
       # healthy before PVC Plumber (Wave 2).
-      - path: manifests/infra/kopia-ui/deploy-targets/talos/.argocd/config.json
-      - path: manifests/infra/rustfs-lifecycle/deploy-targets/talos/.argocd/config.json
+      - path: clusters/talos/infra/kopia-ui/.argocd/config.json
+      - path: clusters/talos/infra/rustfs-lifecycle/.argocd/config.json
   template:
     metadata:
       name: "{{.applicationName}}"

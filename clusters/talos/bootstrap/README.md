@@ -12,7 +12,7 @@ Use the repo-level script from the repository root:
 The script expects Talos prerequisites to be complete first:
 
 - Omni service-account kubeconfig points at the Talos cluster.
-- Cilium is installed at the version pinned for the Talos deploy target.
+- Cilium is installed at the version pinned in `clusters/talos/infra/cilium`.
 - Gateway API CRDs are installed.
 - 1Password Connect and External Secrets token secrets are pre-seeded.
 

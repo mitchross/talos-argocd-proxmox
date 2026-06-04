@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-database-cloudnative-pg-paperless",
+  "cluster": "talos",
+  "project": "talos-infrastructure",
+  "namespace": "paperless",
+  "part": "database",
+  "syncWave": "4",
+  "sourcePath": "clusters/talos/database/cloudnative-pg/paperless"
+}

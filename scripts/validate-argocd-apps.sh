@@ -34,7 +34,7 @@ application_files() {
 
 metadata_files() {
   local cluster="$1"
-  find manifests -path "*/deploy-targets/$cluster/.argocd/config.json" -type f | sort
+  find "clusters/$cluster" -path "*/.argocd/config.json" -type f | sort
 }
 
 json_field() {
@@ -62,7 +62,7 @@ validate_cluster() {
   local cluster="$1"
   local apps_dir="clusters/$cluster/argocd"
   local bootstrap_dir="clusters/$cluster/bootstrap"
-  local self_managed_dir="manifests/infra/argocd/deploy-targets/$cluster"
+  local self_managed_dir="clusters/$cluster/infra/argocd"
 
   echo "=== ArgoCD Application Validation: $cluster ==="
   echo ""
@@ -166,7 +166,7 @@ validate_cluster() {
 
   if [ "$cluster" = "talos" ]; then
     echo "--- Check 6: Project Nomad remains one bundled app ---"
-    project_nomad_path="manifests/apps/home/project-nomad/deploy-targets/talos"
+    project_nomad_path="clusters/talos/apps/home/project-nomad"
     if [ ! -f "$project_nomad_path/kustomization.yaml" ]; then
       fail "missing $project_nomad_path/kustomization.yaml"
     else

@@ -15,29 +15,20 @@
   ],
   argocd: {
     managerFilePatterns: [
-      '/^infra/.+\\.yaml$/',
-      '/^infrastructure/.+\\.yaml$/',
-      '/^apps/.+\\.yaml$/',
-      '/^my-apps/.+\\.yaml$/',
-      '/^monitoring/.+\\.yaml$/',
+      '/^clusters/.+\\.yaml$/',
     ],
   },
   kubernetes: {
     managerFilePatterns: [
-      '/^infra/.+\\.yaml$/',
-      '/^infrastructure/.+\\.yaml$/',
-      '/^apps/.+\\.yaml$/',
-      '/^my-apps/.+\\.yaml$/',
-      '/^monitoring/.+\\.yaml$/',
+      '/^clusters/.+\\.yaml$/',
+      '/^manifests/.+\\.yaml$/',
       '/^iac/.+\\.yaml$/',
     ],
   },
   'helm-values': {
     managerFilePatterns: [
-      '/^infra/.+/values\\.yaml$/',
-      '/^apps/.+/values\\.yaml$/',
-      '/^monitoring/.+/values\\.yaml$/',
-      '/^my-apps/.+/values\\.yaml$/',
+      '/^clusters/.+/values\\.yaml$/',
+      '/^manifests/.+/values\\.yaml$/',
     ],
   },
   kustomize: {

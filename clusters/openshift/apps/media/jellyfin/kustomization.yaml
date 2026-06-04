@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- "../../../../../manifests/apps/media/jellyfin/base"
+- httproute.yaml
+patches:
+- path: patches/deployment-jellyfin.jsonpatch.yaml
+  target:
+    version: v1
+    kind: Deployment
+    name: jellyfin
+    group: apps
+    namespace: jellyfin
+- path: patches/remove-talos-backup-namespace-jellyfin.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-config.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-jellyfin-media.yaml

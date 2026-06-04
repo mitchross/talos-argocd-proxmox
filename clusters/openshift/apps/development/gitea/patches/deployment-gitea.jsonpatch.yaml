@@ -1,0 +1,6 @@
+- op: remove
+  path: "/spec/template/spec/securityContext/fsGroup"
+- op: remove
+  path: "/spec/template/spec/initContainers/0/securityContext/runAsUser"
+- op: remove
+  path: "/spec/template/spec/initContainers/3/securityContext/runAsUser"

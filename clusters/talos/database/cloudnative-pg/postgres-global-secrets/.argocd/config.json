@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-database-cloudnative-pg-postgres-global-secrets",
+  "cluster": "talos",
+  "project": "talos-infrastructure",
+  "namespace": "postgres-global-secrets",
+  "part": "database",
+  "syncWave": "4",
+  "sourcePath": "clusters/talos/database/cloudnative-pg/postgres-global-secrets"
+}

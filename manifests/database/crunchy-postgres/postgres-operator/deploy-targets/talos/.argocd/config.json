@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-database-crunchy-postgres-postgres-operator",
-  "cluster": "talos",
-  "project": "talos-infrastructure",
-  "namespace": "postgres-operator",
-  "part": "database",
-  "syncWave": "4",
-  "sourcePath": "manifests/database/crunchy-postgres/postgres-operator/deploy-targets/talos"
-}

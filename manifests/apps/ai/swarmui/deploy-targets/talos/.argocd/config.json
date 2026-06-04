@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-apps-ai-swarmui",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "swarmui",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/ai/swarmui/deploy-targets/talos"
-}

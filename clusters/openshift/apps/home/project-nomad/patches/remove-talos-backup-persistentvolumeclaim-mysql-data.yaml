@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-data
+  namespace: project-nomad
+  labels:
+    pvc-plumber.io/enabled:
+    pvc-plumber.io/manage-volsync:
+    pvc-plumber.io/tier:
+    restore-policy:
+  annotations:
+    argocd.argoproj.io/compare-options:
+spec:
+  dataSourceRef:

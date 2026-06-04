@@ -1,0 +1,29 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: dvwa-route
+  namespace: dvwa
+  labels:
+    external-dns: 'true'
+  annotations:
+    external-dns.alpha.kubernetes.io/target: vanillax.me
+spec:
+  parentRefs:
+  - group: gateway.networking.k8s.io
+    kind: Gateway
+    name: openshift-gateway
+    namespace: openshift-ingress
+    sectionName: https
+  hostnames:
+  - dvwa.apps.sno-ai-lab.vanillax.xyz
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/"
+    backendRefs:
+    - group: ''
+      kind: Service
+      name: dvwa
+      port: 80
+      weight: 1

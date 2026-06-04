@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-database-cloudnative-pg-cloudnative-pg-operator",
+  "cluster": "talos",
+  "project": "talos-infrastructure",
+  "namespace": "cloudnative-pg-operator",
+  "part": "database",
+  "syncWave": "4",
+  "sourcePath": "clusters/talos/database/cloudnative-pg/cloudnative-pg-operator"
+}

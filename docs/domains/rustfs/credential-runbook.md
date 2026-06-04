@@ -115,7 +115,7 @@ These GitOps-managed ExternalSecrets read `rustfs-workload-access-key` and `rust
 The `volsync-system/pvc-plumber-kopia` ExternalSecret was removed
 2026-05-21 along with the pvc-plumber operator decommission. The shared
 `volsync-kopia-repository` Secret is now materialized by
-`manifests/infra/volsync-backup-cluster/deploy-targets/talos/` rather than
+`clusters/talos/infra/volsync-backup-cluster/` rather than
 by the operator.
 
 Force ESO refresh after changing 1Password:

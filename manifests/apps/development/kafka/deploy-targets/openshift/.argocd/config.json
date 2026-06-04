@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-development-kafka",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "kafka",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/development/kafka/deploy-targets/openshift"
-}

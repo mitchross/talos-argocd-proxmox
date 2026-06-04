@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-infra-gpu-priority-classes",
+  "cluster": "talos",
+  "project": "talos-infrastructure",
+  "namespace": "gpu-priority-classes",
+  "part": "infra",
+  "syncWave": "4",
+  "sourcePath": "clusters/talos/infra/gpu-priority-classes"
+}

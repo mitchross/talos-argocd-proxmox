@@ -22,7 +22,7 @@ spec:
       files:
       # project-nomad is intentionally one bundled app at manifests/apps/home/project-nomad.
       # Its child folders are resources, not generated apps.
-      - path: manifests/apps/*/*/deploy-targets/talos/.argocd/config.json
+      - path: clusters/talos/apps/*/*/.argocd/config.json
   template:
     metadata:
       name: "{{.applicationName}}"

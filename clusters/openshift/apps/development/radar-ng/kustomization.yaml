@@ -1,0 +1,54 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: radar-ng
+resources:
+- "../../../../../manifests/apps/development/radar-ng/base"
+- httproute.yaml
+patches:
+- path: patches/deployment-basemap.jsonpatch.yaml
+  target:
+    version: v1
+    kind: Deployment
+    name: basemap
+    group: apps
+    namespace: radar-ng
+- path: patches/deployment-open-meteo.jsonpatch.yaml
+  target:
+    version: v1
+    kind: Deployment
+    name: open-meteo
+    group: apps
+    namespace: radar-ng
+- path: patches/deployment-tile-server.jsonpatch.yaml
+  target:
+    version: v1
+    kind: Deployment
+    name: tile-server
+    group: apps
+    namespace: radar-ng
+- path: patches/job-basemap-bootstrap.jsonpatch.yaml
+  target:
+    version: v1
+    kind: Job
+    name: basemap-bootstrap
+    group: batch
+    namespace: radar-ng
+- path: patches/workerdeployment-radar-ng-open-meteo-worker.jsonpatch.yaml
+  target:
+    version: v1alpha1
+    kind: WorkerDeployment
+    name: radar-ng-open-meteo-worker
+    group: temporal.io
+    namespace: radar-ng
+- path: patches/workerdeployment-radar-ng-worker.jsonpatch.yaml
+  target:
+    version: v1alpha1
+    kind: WorkerDeployment
+    name: radar-ng-worker
+    group: temporal.io
+    namespace: radar-ng
+- path: patches/remove-talos-backup-persistentvolumeclaim-grids.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-openmeteo-data.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-pmtiles.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-state.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-tiles.yaml

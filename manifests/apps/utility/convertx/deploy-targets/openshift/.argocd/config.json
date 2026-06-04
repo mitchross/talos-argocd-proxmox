@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-utility-convertx",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "convertx",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/utility/convertx/deploy-targets/openshift"
-}

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis7-data
+  namespace: posthog
+  labels:
+    backup-exempt:
+  annotations:
+    argocd.argoproj.io/compare-options:
+    storage.vanillax.dev/backup-exempt-reason:

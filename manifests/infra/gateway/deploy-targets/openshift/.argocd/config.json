@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-infra-gateway",
-  "cluster": "openshift",
-  "project": "openshift-infrastructure",
-  "namespace": "openshift-ingress",
-  "part": "infra",
-  "syncWave": "4",
-  "sourcePath": "manifests/infra/gateway/deploy-targets/openshift"
-}

@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-apps-home-paperless-ngx",
+  "cluster": "talos",
+  "project": "talos-apps",
+  "namespace": "paperless-ngx",
+  "part": "apps",
+  "syncWave": "6",
+  "sourcePath": "clusters/talos/apps/home/paperless-ngx"
+}

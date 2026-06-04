@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-media-redlib",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "redlib",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/media/redlib/deploy-targets/openshift"
-}

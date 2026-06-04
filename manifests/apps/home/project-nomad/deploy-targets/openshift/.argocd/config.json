@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-home-project-nomad",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "project-nomad",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/home/project-nomad/deploy-targets/openshift"
-}

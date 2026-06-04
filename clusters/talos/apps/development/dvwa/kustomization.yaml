@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: dvwa
+resources:
+- "../../../../../manifests/apps/development/dvwa/base"
+# DVWA is intentionally disabled in the shared base. Enable the route only
+# when deployment.yaml and service.yaml are enabled there.
+# - httproute.yaml

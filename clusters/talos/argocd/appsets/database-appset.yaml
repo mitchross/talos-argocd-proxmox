@@ -23,7 +23,7 @@ spec:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
       revision: main
       files:
-      - path: manifests/database/*/*/deploy-targets/talos/.argocd/config.json
+      - path: clusters/talos/database/*/*/.argocd/config.json
   template:
     metadata:
       name: "{{.applicationName}}"

@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: frigate-config
+  namespace: frigate
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
+  labels:
+    app: frigate
+    restore-policy: "strict"
+    # pvc-plumber v4.0.1 DRY handoff (2026-05-30): v4 write fuse opts this
+    # PVC into operator management at tier=daily. Namespace frigate carries
+    # pvc-plumber.io/managed-namespace=true; the operator creates/repairs
+    # RS/frigate-config + RD/frigate-config-dst as managed-by=pvc-plumber.
+    # Mover already 568 (no change). frigate-media stays backup-exempt.
+    pvc-plumber.io/enabled: "true"
+    pvc-plumber.io/manage-volsync: "true"
+    pvc-plumber.io/tier: "daily"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: vanillax-local-rwo
+  # Static dataSourceRef → ReplicationDestination/frigate-config-dst. On PVC
+  # re-creation (DR / namespace recreate), VolSync's volume populator reads
+  # the latest snapshot from the shared kopia repo and binds this PVC with
+  # restored data. No-op while the PVC is already Bound. The RS/RD are
+  # operator-managed by pvc-plumber v4.0.1 (DRY handoff, 2026-05-30): this
+  # PVC carries the v4 write fuse, so the operator creates and repairs
+  # ReplicationSource/frigate-config + ReplicationDestination/
+  # frigate-config-dst (and recreates either within seconds if deleted).
+  dataSourceRef:
+    apiGroup: volsync.backube
+    kind: ReplicationDestination
+    name: frigate-config-dst
+---
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: frigate-media
+  namespace: frigate
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "SMB-backed Frigate recordings (NAS); non-snapshottable, retention managed by Frigate config and NAS"
+  labels:
+    app: frigate
+    type: storage
+    backup-exempt: "true"
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Ti
+  storageClassName: frigate-smb

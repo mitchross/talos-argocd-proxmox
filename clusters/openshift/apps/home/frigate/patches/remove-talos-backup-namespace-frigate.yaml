@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: frigate
+  labels:
+    pvc-plumber.io/managed-namespace:
+    volsync.backube/privileged-movers:

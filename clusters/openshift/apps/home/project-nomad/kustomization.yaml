@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: project-nomad
+resources:
+- "../../../../../manifests/apps/home/project-nomad/base"
+- cyberchef/httproute.yaml
+- flatnotes/httproute.yaml
+- kiwix/httproute.yaml
+# Kolibri remains disabled in the shared base because its upstream image is broken.
+# - kolibri/httproute.yaml
+- nomad/httproute.yaml
+patches:
+- path: patches/remove-talos-backup-namespace-project-nomad.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-embeddings-model-cache.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-flatnotes-data.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-mysql-data.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-nomad-storage.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-protomaps-data.yaml
+- path: patches/remove-talos-backup-persistentvolumeclaim-qdrant-data.yaml

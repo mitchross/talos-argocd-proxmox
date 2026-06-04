@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-monitoring-prometheus-stack",
-  "cluster": "talos",
-  "project": "talos-monitoring",
-  "namespace": "prometheus-stack",
-  "part": "monitoring",
-  "syncWave": "5",
-  "sourcePath": "manifests/monitoring/prometheus-stack/deploy-targets/talos"
-}

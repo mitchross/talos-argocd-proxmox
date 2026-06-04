@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: comfyui
+resources:
+- "../../../../../manifests/apps/ai/comfyui/base"
+- httproute.yaml
+patches:
+- path: patches/remove-talos-backup-persistentvolumeclaim-comfyui-storage.yaml

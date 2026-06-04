@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: echo-server
+resources:
+- "../../../../../manifests/apps/media/echo-server/base"
+- httproute.yaml
+patches:
+- path: patches/deployment-echo-server.jsonpatch.yaml
+  target:
+    kind: Deployment
+    name: echo-server

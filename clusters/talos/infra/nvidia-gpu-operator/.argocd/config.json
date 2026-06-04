@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-infra-nvidia-gpu-operator",
+  "cluster": "talos",
+  "project": "talos-infrastructure",
+  "namespace": "nvidia-gpu-operator",
+  "part": "infra",
+  "syncWave": "4",
+  "sourcePath": "clusters/talos/infra/nvidia-gpu-operator"
+}

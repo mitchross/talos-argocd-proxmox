@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-home-project-zomboid",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "project-zomboid",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/home/project-zomboid/deploy-targets/openshift"
-}

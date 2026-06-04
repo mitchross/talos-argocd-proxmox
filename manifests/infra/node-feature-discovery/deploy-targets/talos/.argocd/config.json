@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-infra-node-feature-discovery",
-  "cluster": "talos",
-  "project": "talos-infrastructure",
-  "namespace": "node-feature-discovery",
-  "part": "infra",
-  "syncWave": "4",
-  "sourcePath": "manifests/infra/node-feature-discovery/deploy-targets/talos"
-}

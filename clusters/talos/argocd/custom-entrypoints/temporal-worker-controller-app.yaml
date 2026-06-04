@@ -7,7 +7,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "4"
-    argocd.argoproj.io/manifest-generate-paths: manifests/infra/temporal-worker-controller/deploy-targets/talos
+    argocd.argoproj.io/manifest-generate-paths: clusters/talos/infra/temporal-worker-controller
   labels:
     app.kubernetes.io/part-of: infrastructure
 spec:
@@ -16,7 +16,7 @@ spec:
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
     targetRevision: main
-    path: manifests/infra/temporal-worker-controller/deploy-targets/talos
+    path: clusters/talos/infra/temporal-worker-controller
   destination:
     server: https://kubernetes.default.svc
     namespace: temporal-worker-controller

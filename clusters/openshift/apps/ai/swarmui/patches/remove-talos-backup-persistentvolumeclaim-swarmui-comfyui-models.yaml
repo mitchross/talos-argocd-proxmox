@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: swarmui-comfyui-models
+  namespace: swarmui
+  labels:
+    backup-exempt:
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason:

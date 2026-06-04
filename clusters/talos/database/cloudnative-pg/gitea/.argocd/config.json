@@ -1,0 +1,9 @@
+{
+  "applicationName": "talos-database-cloudnative-pg-gitea",
+  "cluster": "talos",
+  "project": "talos-infrastructure",
+  "namespace": "gitea",
+  "part": "database",
+  "syncWave": "4",
+  "sourcePath": "clusters/talos/database/cloudnative-pg/gitea"
+}

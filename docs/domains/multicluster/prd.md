@@ -1,117 +1,196 @@
-# PRD: One-Shot Multicluster Kustomize Deploy-Target GitOps
+# PRD: Cluster-Centric Multicluster Kustomize GitOps
 
 ## Plain-English Summary
 
-This repo is Talos-first and multicluster-ready.
+This repository has two independent cluster folders: `clusters/talos` and
+`clusters/openshift`.
 
-A normal user can bootstrap one Talos cluster and stop there. Advanced users can
-add optional clusters such as OpenShift, GKE, or AKS by adding a cluster
-bootstrap tree plus Kustomize deploy targets.
+Each cluster has its own bootstrap inputs, local upstream Helm Argo CD, Argo CD
+entrypoint tree, infrastructure, databases or monitoring where applicable, and
+application overlays. Each cluster's Argo CD reads only its own cluster folder
+and manages only `https://kubernetes.default.svc`.
 
-Each cluster runs its own local upstream Helm Argo CD. Talos has one Argo CD.
-OpenShift has another Argo CD. Future clusters get their own Argo CD too. These
-instances do not manage each other. There is no hub/spoke model and no
-`argocd cluster add`.
+Shared workload definitions live under `manifests/**/base`. A cluster overlay
+references a shared base when the workload is the same. When a resource is
+platform-specific, such as an HTTPRoute, storage implementation, SCC adjustment,
+or Talos backup policy, that resource lives in the owning cluster folder.
 
-The repo uses `base/` plus `deploy-targets/<cluster>/` where portability matters.
-Existing Talos-only apps can stay as mechanical Talos deploy targets. Only apps
-that run on multiple clusters need a shared base.
+The result is normal Kustomize:
+
+```text
+shared base + Talos overlay
+shared base + OpenShift overlay
+```
+
+There is no OpenShift-to-Talos inheritance, no hub/spoke Argo CD, and no escaped
+inline patch strings.
 
 ## Goals
 
-- Keep Talos the default single-cluster reference path.
-- Add OpenShift as an optional expansion cluster.
-- Use one local upstream Helm Argo CD per cluster.
-- Keep all Argo state in Git.
-- Use Kustomize overlays/deploy targets for platform differences.
-- Discover deploy targets through explicit metadata, not path basename guessing.
-- Avoid OpenShift GitOps Operator for this repo's bootstrap model.
+- Keep Talos the default full homelab reference cluster.
+- Keep OpenShift additive and independently bootstrappable.
+- Run one local upstream Helm Argo CD per cluster.
+- Make `clusters/<cluster>` the only deployable Argo CD source tree.
+- Put genuinely shared app and infrastructure resources in `manifests/**/base`.
+- Keep cluster differences readable and explicit.
+- Preserve current Argo CD sync waves and application boundaries.
+- Make adding a future cluster a repeatable folder-and-overlay operation.
 
 ## Non-Goals
 
 - No hub/spoke Argo CD.
-- No remote-cluster registration.
-- No OpenShift GitOps Operator foundation.
-- No OpenShift Cilium or Longhorn install.
-- No requirement to make every Talos app portable immediately.
-- No cross-cluster failover or global traffic routing in this branch.
-
-## Architecture
-
-```text
-Talos      -> local upstream Helm Argo CD -> clusters/talos/argocd
-OpenShift  -> local upstream Helm Argo CD -> clusters/openshift/argocd
-Future GKE -> local upstream Helm Argo CD -> clusters/gke/argocd
-```
-
-Each Argo CD manages only:
-
-```text
-https://kubernetes.default.svc
-```
+- No remote cluster registration or `argocd cluster add`.
+- No OpenShift GitOps Operator.
+- No OpenShift Cilium or Longhorn installation.
+- No automatic cross-cluster failover.
+- No claim that every stateful app is production-ready on OpenShift.
 
 ## Repository Shape
 
 ```text
 clusters/
   talos/
-    bootstrap/
-      README.md
-      kustomization.yaml
-      ns.yaml
-      root.yaml
-      values.yaml
-    argocd/
-      kustomization.yaml
-      projects.yaml
-      bootstrap/
-      core-dependencies/
-      custom-entrypoints/
-      appsets/
+    bootstrap/                    # hand-run Argo CD seed
+    argocd/                       # root app, projects, AppSets, sync waves
+    apps/<category>/<app>/        # Talos app overlays and routes
+    infra/<component>/            # Talos infrastructure entrypoints
+    database/<engine>/<name>/     # Talos database entrypoints
+    monitoring/<component>/       # Talos monitoring entrypoints
 
   openshift/
-    bootstrap/
-      README.md
-      kustomization.yaml
-      ns.yaml
-      root.yaml
-      values.yaml
-    argocd/
-      kustomization.yaml
-      projects.yaml
-      bootstrap/
-      core-dependencies/
-      appsets/
+    bootstrap/                    # hand-run Argo CD seed
+    argocd/                       # root app, projects, AppSets, sync waves
+    apps/<category>/<app>/        # OpenShift app overlays and routes
+    infra/<component>/            # OpenShift infrastructure entrypoints
 
 manifests/
-  infra/
-    <component>/deploy-targets/<cluster>/
-  database/
-    <engine>/<instance>/deploy-targets/talos/
-  monitoring/
-    <component>/deploy-targets/talos/
-  apps/
-    <category>/<app>/
-      base/
-      deploy-targets/
-        talos/
-        openshift/
-
-components/
-  talos/
-  openshift/
+  apps/<category>/<app>/base/     # shared app resources
+  infra/<component>/base/         # shared infra only when truly portable
 ```
+
+## Kustomize Contract
+
+An application base contains shared Deployments, Services, PVCs, config, and
+other portable resources:
+
+```yaml
+# manifests/apps/media/echo-server/base/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+```
+
+Each cluster overlay consumes that base and owns its route or platform patches:
+
+```yaml
+# clusters/openshift/apps/media/echo-server/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: echo-server
+resources:
+  - ../../../../../manifests/apps/media/echo-server/base
+  - httproute.yaml
+patches:
+  - path: patches/deployment-echo-server.jsonpatch.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: echo-server
+```
+
+Rules:
+
+- A cluster overlay may reference `manifests/**/base`.
+- An OpenShift overlay must never reference `clusters/talos`.
+- HTTPRoutes are complete cluster-owned resources, not hostname replacement
+  patches.
+- JSON patches are external readable files and are reserved for precise field
+  removal where merge patches are unsafe.
+- Talos backup labels and restore `dataSourceRef` fields are stripped by
+  OpenShift overlays.
+- The migration preserves each app's current activation state. Intentionally
+  disabled resources such as DVWA and Project Nomad's Kolibri remain disabled.
+
+## Argo CD Contract
+
+AppSets discover metadata only inside their cluster:
+
+```text
+clusters/talos/apps/*/*/.argocd/config.json
+clusters/openshift/apps/*/*/.argocd/config.json
+clusters/talos/database/*/*/.argocd/config.json
+clusters/talos/monitoring/*/.argocd/config.json
+clusters/<cluster>/infra/*/.argocd/config.json
+```
+
+Each metadata file declares an explicit `sourcePath` under its owning cluster.
+All Argo CD sources use `targetRevision: main`.
+
+OpenShift AppProjects are:
+
+- `openshift-infrastructure`
+- `openshift-apps`
+
+## Storage Contract
+
+Portable local ReadWriteOnce PVCs use:
+
+```text
+vanillax-local-rwo
+```
+
+Implementations:
+
+- Talos: Longhorn `driver.longhorn.io`.
+- OpenShift: LVM Storage `topolvm.io`, device class `vg1`.
+
+NFS and SMB are shared infrastructure bases consumed by both clusters. Existing
+NFS, SMB, and static-PV class names remain explicit because they identify real
+external shares or datasets.
+
+Talos pvc-plumber, VolSync, restore labels, and restore `dataSourceRef` fields
+remain Talos-only policy. OpenShift app overlays remove them and currently do
+not claim equivalent app PVC backup coverage.
+
+This storage-class migration assumes the planned fresh Talos rebuild because a
+bound PVC's `storageClassName` is immutable.
+
+## Cluster Differences
+
+Talos owns:
+
+- Cilium and Cilium Gateway API.
+- `*.vanillax.me` routes.
+- Longhorn and the `vanillax-local-rwo` Longhorn StorageClass.
+- VolSync, pvc-plumber, snapshot controller, and backup policy.
+- CNPG databases, monitoring, GPU infrastructure, and the full app catalog.
+
+OpenShift owns:
+
+- OpenShift Gateway API resources.
+- `*.apps.sno-ai-lab.vanillax.xyz` routes.
+- LVM Storage and the `vanillax-local-rwo` TopoLVM StorageClass.
+- SCC-compatible security removals where currently required.
+- Shared NFS and SMB CSI drivers.
+- The full app catalog for compatibility testing.
+
+The full catalog means every app has a cluster overlay. It does not implicitly
+enable resources that were intentionally disabled before the migration.
 
 ## Bootstrap Contract
 
-Every cluster follows the same shape:
+Both clusters use the same operator flow:
 
-1. Get kube access.
+1. Obtain cluster access.
 2. Satisfy cluster-specific prerequisites.
 3. Pre-seed 1Password secrets.
-4. Helm install upstream Argo CD with cluster-specific values.
-5. Apply that cluster's root Application.
-6. Let that cluster's local Argo CD manage the cluster from Git.
+4. Run `./scripts/bootstrap-argocd.sh <cluster>`.
+5. Apply the cluster root Application.
+6. Let that cluster's local Argo CD reconcile only its cluster tree.
 
 Commands:
 
@@ -120,173 +199,39 @@ Commands:
 ./scripts/bootstrap-argocd.sh openshift
 ```
 
-Talos prerequisites:
-
-- Omni service-account kubeconfig.
-- Cilium installed first.
-- Gateway API CRDs installed.
-- 1Password secrets pre-seeded.
-
-OpenShift prerequisites:
-
-- `kubectl` or `oc` access to the cluster.
-- Gateway API available.
-- OLM available for the starter LVM Storage Operator subscription.
-- 1Password secrets pre-seeded.
-
-## ApplicationSet Metadata
-
-AppSets use Git `files` generators over:
-
-```text
-*/deploy-targets/<cluster>/.argocd/config.json
-```
-
-The metadata is stored under `.argocd/` to avoid collisions with application
-files named `config.json`, such as workload config seeds.
-
-Example:
-
-```json
-{
-  "applicationName": "openshift-apps-media-echo-server",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "echo-server",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "manifests/apps/media/echo-server/deploy-targets/openshift"
-}
-```
-
-AppSet template shape:
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: openshift-apps
-  namespace: argocd
-spec:
-  goTemplate: true
-  goTemplateOptions: ["missingkey=error"]
-  generators:
-    - git:
-        repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
-        revision: main
-        files:
-          - path: manifests/apps/*/*/deploy-targets/openshift/.argocd/config.json
-  template:
-    metadata:
-      name: "{{.applicationName}}"
-      annotations:
-        argocd.argoproj.io/manifest-generate-paths: "{{.sourcePath}}"
-        argocd.argoproj.io/sync-wave: "{{.syncWave}}"
-    spec:
-      project: "{{.project}}"
-      source:
-        repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
-        targetRevision: main
-        path: "{{.sourcePath}}"
-      destination:
-        server: https://kubernetes.default.svc
-        namespace: "{{.namespace}}"
-```
-
-## Cluster Differences
-
-Talos deploy targets own:
-
-- Cilium.
-- Cilium Gateway API parentRefs.
-- `*.vanillax.me` hostnames.
-- Longhorn.
-- VolSync and pvc-plumber.
-- Monitoring.
-- The full current app catalog.
-
-OpenShift deploy targets own:
-
-- OpenShift Gateway API manifests.
-- `*.apps.sno-ai-lab.vanillax.xyz` hostnames.
-- OpenShift Gateway parentRefs.
-- The full current app catalog as first-pass OpenShift deploy targets.
-- `longhorn` PVCs patched to the assumed local LVM StorageClass `lvms-vg1`.
-- Existing NFS/SMB/static storage references left explicit until an OpenShift NFS/SMB implementation is chosen.
-- OpenShift-specific Gateway and fixed UID/GID securityContext patches where generated.
-
-## Application Migration Model
-
-All existing applications are migrated in one shot to:
-
-```text
-manifests/apps/<category>/<app>/deploy-targets/talos/
-```
-
-That is the migration scope. An app does not need to become cross-cluster on the
-same day to participate in the new layout.
-
-OpenShift app deployment is also one-shot from Argo CD's point of view: the
-OpenShift AppSet scans all OpenShift deploy-target metadata. Every existing app
-now has this file and is included automatically:
-
-```text
-manifests/apps/<category>/<app>/deploy-targets/openshift/.argocd/config.json
-```
-
-All apps are present for OpenShift catalog-level testing. Production readiness is
-still per app: use local LVM for small PVCs, choose NFS/SMB/static PV handling
-for large shared data, and review SCC/securityContext plus backup behavior before
-trusting large stateful apps. See
-`docs/domains/multicluster/openshift-storage-and-app-migration.md`.
-
-Most OpenShift app targets are generated overlays over their Talos sibling:
-
-```text
-manifests/apps/<category>/<app>/deploy-targets/openshift/
-```
-
-`manifests/apps/media/echo-server` remains the clean portable example with a
-shared `base/`; the rest are first-pass overlays so the whole catalog is visible
-to OpenShift Argo CD.
-
 ## Schema Assumptions To Verify Live
 
-These render locally but require live OpenShift verification before sync:
+These render locally but require verification against the intended OpenShift
+cluster before live sync:
 
-- GatewayClass name is assumed to be `openshift-default`.
-- LVM Storage Operator Subscription uses `channel: stable-4.20`.
-- `LVMCluster` uses `apiVersion: lvm.topolvm.io/v1alpha1`.
-- OpenShift Gateway controller behavior for cert-manager Gateway shim must be verified.
-- `lvms-vg1` is assumed to be the OpenShift local LVM StorageClass for PVCs migrated from `longhorn`.
-- Existing Talos NFS/SMB/static storage references need OpenShift storage implementation before affected apps become healthy.
-- Upstream Helm chart `openshift.enabled: true` is used for Argo CD; no `ArgoCD` CR or `spec.extraConfig` exists in this design because the OpenShift GitOps Operator path was rejected.
+- GatewayClass name is `openshift-default`.
+- LVM Storage Operator Subscription channel is `stable-4.20`.
+- `LVMCluster` uses `lvm.topolvm.io/v1alpha1`.
+- The generated LVM device class is `vg1`.
+- The portable StorageClass provisioner is `topolvm.io` with parameter
+  `topolvm.io/device-class: vg1`.
+- OpenShift permits the upstream NFS and SMB CSI chart resources.
+- cert-manager Gateway shim behavior works with the OpenShift Gateway.
+- Remaining application images and Helm charts satisfy OpenShift SCC behavior.
 
 ## Validation
 
-Local:
+No validation command below mutates a live cluster:
 
 ```bash
+./scripts/validate-cluster-layout.sh
 ./scripts/validate-argocd-apps.sh
+
 kustomize build --enable-helm clusters/talos/bootstrap
 kustomize build --enable-helm clusters/openshift/bootstrap
 kustomize build clusters/talos/argocd
 kustomize build clusters/openshift/argocd
-```
 
-Render every deploy target:
-
-```bash
-find manifests -path '*/deploy-targets/*/kustomization.yaml' -print \
+find clusters -type f -name kustomization.yaml -print \
   | while read -r file; do
       kustomize build --enable-helm "$(dirname "$file")" >/dev/null
     done
 ```
 
-Live checks only when pointed at the intended context:
-
-```bash
-kubectl config current-context
-kubectl get gatewayclass,gateway,httproute -A
-kubectl get crd applications.argoproj.io applicationsets.argoproj.io
-```
+Live verification must begin with a context check and requires an explicit
+operator decision before any `kubectl apply`, `oc apply`, or Helm mutation.

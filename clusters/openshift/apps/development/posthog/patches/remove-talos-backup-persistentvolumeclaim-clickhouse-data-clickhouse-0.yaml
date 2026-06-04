@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: clickhouse-data-clickhouse-0
+  namespace: posthog
+  labels:
+    backup-exempt:
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason:
