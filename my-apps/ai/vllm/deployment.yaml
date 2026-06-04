@@ -49,9 +49,17 @@ spec:
           # The image entrypoint is the OpenAI API server; args configure it.
           args:
             - "--model"
-            - "/models/Qwen3.6-27B-AWQ-INT4"          # primary; INT4 (20GB). BF16-INT4 also fits via TP=2.
+            - "/models/Qwen3.6-27B-AWQ-BF16-INT4"     # default model (higher quality; fits TP=2 / 48GB)
+            # served-model-name is a LIST (nargs+): advertise the new canonical id AND every llama-cpp
+            # model id the existing tools already send — so repointing those tools is URL-only, no model
+            # field changes, nothing 404s. The next token MUST be a flag (--tensor-parallel-size) to end the list.
             - "--served-model-name"
-            - "qwen3.6-27b"
+            - "qwen3.6-27b"                                    # canonical
+            - "default"                                        # llama-cpp daily-driver alias
+            - "daily"
+            - "qwen3.6-nothink - qwen3.6-35b-a3b-nothink"      # what open-webui/k8sgpt/n8n send
+            - "qwen3.6 - qwen3.6-35b-a3b"                      # what comfyui/perplexica send
+            - "qwen3.6-longctx - qwen3.6-35b-a3b-longctx"      # perplexica research (note: capped to --max-model-len)
             - "--tensor-parallel-size"
             - "2"                                      # pool both 3090s (48GB). Needs 2 WHOLE cards.
             - "--distributed-executor-backend"
