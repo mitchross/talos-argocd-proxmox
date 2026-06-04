@@ -149,7 +149,7 @@ entrypoints retain explicit discovery and Applications where allowlists,
 ordering, or namespace exceptions matter.
 
 The byte-identical `1passwordconnect`, `cert-manager`, and `external-secrets`
-definitions become shared infrastructure bases under `manifests/infra`. Their
+definitions are shared infrastructure bases under `manifests/infra`. Their
 cluster-owned entrypoints remain under `clusters/<cluster>/infra`.
 
 ## Gateway API Contract
@@ -278,6 +278,8 @@ No validation command below mutates a live cluster:
 ```bash
 ./scripts/validate-cluster-layout.sh
 ./scripts/validate-argocd-apps.sh
+./scripts/validate-openshift-app-renders.sh
+./scripts/validate-bootstrap-profiles.sh
 
 kustomize build --enable-helm clusters/talos/bootstrap
 kustomize build --enable-helm clusters/openshift/bootstrap
@@ -297,7 +299,8 @@ Implementation validation must additionally prove:
 - all app destinations remain local;
 - all app projects remain fixed;
 - app `.argocd/config.json` files are gone;
-- no new escaped or multiline inline patch strings remain;
+- no escaped or multiline inline patch strings remain under `clusters` or
+  `manifests`;
 - manifest-generation paths are valid and include consumed shared bases.
 
 Live verification requires an explicit operator decision before any

@@ -18,7 +18,7 @@ There is no hub/spoke registration and no `argocd cluster add`.
 - **Talos by default** - a single-cluster user can bootstrap Talos and stop there.
 - **One Argo CD per cluster** - Talos, OpenShift, and future GKE/AKS targets each run local upstream Helm Argo CD.
 - **Cluster-centric Kustomize** - shared resources use `manifests/**/base`; deployable overlays live under `clusters/<cluster>`.
-- **Metadata-driven AppSets** - each Argo CD discovers only its own cluster tree through `.argocd/config.json`.
+- **Scoped AppSets** - app overlays are directory-discovered; explicit infrastructure, database, and monitoring entrypoints retain metadata where it carries real ordering or exception intent.
 - **Sync wave ordering** - strict deployment order prevents controller, storage, secret, and app races.
 - **Gateway API** - Talos uses Cilium Gateway API; OpenShift uses OpenShift-specific Gateway API manifests.
 - **Zero-touch Talos backups** - add a label to a PVC and get automatic Kopia backups with disaster recovery.
@@ -64,7 +64,7 @@ shared bases where the resource is genuinely common.
 ```mermaid
 graph TD;
     subgraph "Talos Cluster"
-        TalosUser(["operator"]) --> TalosBootstrap["scripts/bootstrap-argocd.sh talos"];
+        TalosUser(["operator"]) --> TalosBootstrap["scripts/bootstrap-cluster.sh talos"];
         TalosBootstrap --> TalosArgo["Argo CD in argocd namespace"];
         TalosArgo --> TalosRoot["clusters/talos/bootstrap/root.yaml"];
         TalosRoot --> TalosTree["clusters/talos/argocd"];
@@ -72,7 +72,7 @@ graph TD;
     end
 
     subgraph "OpenShift Cluster"
-        OsUser(["operator"]) --> OsBootstrap["scripts/bootstrap-argocd.sh openshift"];
+        OsUser(["operator"]) --> OsBootstrap["scripts/bootstrap-cluster.sh openshift"];
         OsBootstrap --> OsArgo["Argo CD in argocd namespace"];
         OsArgo --> OsRoot["clusters/openshift/bootstrap/root.yaml"];
         OsRoot --> OsTree["clusters/openshift/argocd"];
@@ -115,7 +115,7 @@ Talos default path:
 OpenShift optional path:
 
 1. **OpenShift cluster access** - `kubectl` or `oc` points at the target OpenShift cluster.
-2. **Gateway API available** - verify the GatewayClass name before live sync. This repo currently assumes `openshift-default`.
+2. **Gateway API available** - OpenShift/OKD owns the CRDs and implementation; Git declares `openshift-default`.
 3. **OLM available** - required for the starter LVM Storage Operator Subscription.
 4. **Local tools installed** - `kubectl`, `kustomize`, Helm, and `op`.
 
@@ -131,6 +131,17 @@ See [OpenShift Storage And App Migration Strategy](docs/domains/multicluster/ope
 
 Once your Talos cluster is provisioned via Omni, follow these steps to install
 the GitOps stack.
+
+The recommended repeatable operator entrypoint is:
+
+```bash
+./scripts/bootstrap-cluster.sh talos
+```
+
+It installs or verifies pinned Cilium, installs pinned upstream Gateway API
+CRDs, verifies the pre-seeded secret gate, and then runs the focused Argo CD
+bootstrap. On a fresh cluster it may stop after networking until Step 3 is
+complete; rerun the same command afterward.
 
 ### Step 0: Get Cluster Access (kubectl)
 
@@ -238,11 +249,14 @@ kubectl create secret generic 1passwordconnect \
 
 ### Step 4: Bootstrap ArgoCD
 
-**Option A: Bootstrap Script (Recommended)**
+**Option A: Cluster Profile Bootstrap (Recommended)**
 
 ```bash
-./scripts/bootstrap-argocd.sh talos
+./scripts/bootstrap-cluster.sh talos
 ```
+
+Use `./scripts/bootstrap-argocd.sh talos` only when platform prerequisites and
+the secret gate are already complete.
 
 **Option B: Manual Steps**
 
@@ -301,13 +315,16 @@ kubectl config current-context
 ### Step 1: Verify Platform Assumptions
 
 ```bash
-kubectl get gatewayclass
-kubectl api-resources | grep -E 'gateway.networking.k8s.io|operators.coreos.com|lvm.topolvm.io'
+kubectl get crd gatewayclasses.gateway.networking.k8s.io
+kubectl get crd gateways.gateway.networking.k8s.io
+kubectl get crd httproutes.gateway.networking.k8s.io
+kubectl get subscriptions.operators.coreos.com -A
 ```
 
-The OpenShift Gateway overlay assumes GatewayClass
-`openshift-default`; update `clusters/openshift/infra/gateway/gateway.yaml`
-if your cluster exposes a different class.
+Git owns GatewayClass `openshift-default` with controller
+`openshift.io/gateway-controller/v1`. Do not install upstream Gateway API CRDs
+or Cilium on OpenShift. Resolve any conflicting Service Mesh Operator v2
+subscription before bootstrap.
 
 The OpenShift LVM storage entrypoint assumes the Red Hat `lvms-operator`
 Subscription and `lvm.topolvm.io/v1alpha1` `LVMCluster` schema. Verify those
@@ -321,8 +338,11 @@ the OpenShift kube context.
 ### Step 3: Bootstrap Argo CD
 
 ```bash
-./scripts/bootstrap-argocd.sh openshift
+./scripts/bootstrap-cluster.sh openshift
 ```
+
+Use `./scripts/bootstrap-argocd.sh openshift` only when platform prerequisites
+and the secret gate are already complete.
 
 Manual equivalent:
 
@@ -348,21 +368,27 @@ kubectl apply -f clusters/openshift/bootstrap/root.yaml
 Argo CD takes over and manages everything from Git. Talos syncs only
 `clusters/talos`; OpenShift syncs only `clusters/openshift`.
 
-New entrypoints are discovered by `.argocd/config.json` files:
+App overlays are discovered directly from cluster-owned directories:
 
 ```text
-clusters/<cluster>/apps/<category>/<app>/.argocd/config.json
-clusters/<cluster>/infra/<component>/.argocd/config.json
+clusters/<cluster>/apps/<category>/<app>
 ```
 
-The JSON points Argo CD at a path inside the same cluster tree, so each cluster
-is independent and deep Kustomize overlays do not depend on basename guessing.
+Application names, namespaces, projects, sync wave `6`, and source paths are
+derived from that path. Explicit infrastructure, database, monitoring, and
+standalone entrypoints retain `.argocd/config.json` only where metadata carries
+real allowlist, ordering, or namespace intent.
+
+Portable `1passwordconnect`, `cert-manager`, and `external-secrets` definitions
+live under `manifests/infra`, with deployable entrypoints retained under each
+cluster tree.
 
 ## Local Validation
 
 ```bash
 ./scripts/validate-cluster-layout.sh
 ./scripts/validate-argocd-apps.sh
+./scripts/validate-bootstrap-profiles.sh
 kustomize build --enable-helm clusters/talos/bootstrap >/tmp/talos-bootstrap.yaml
 kustomize build --enable-helm clusters/openshift/bootstrap >/tmp/openshift-bootstrap.yaml
 kustomize build clusters/talos/argocd >/tmp/talos-argocd.yaml
@@ -533,7 +559,7 @@ Network
 # Remove finalizers and delete all applications
 kubectl get applications -n argocd -o name | xargs -I{} kubectl patch {} -n argocd --type json -p '[{"op": "remove","path": "/metadata/finalizers"}]'
 kubectl delete applications --all -n argocd
-./scripts/bootstrap-argocd.sh
+./scripts/bootstrap-cluster.sh talos
 ```
 
 ## Documentation

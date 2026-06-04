@@ -142,9 +142,9 @@ discovers only `clusters/openshift/apps/*/*`.
 ### Manifest Generation Paths
 
 Argo CD interprets a `manifest-generate-paths` value without a leading `/` as
-relative to the Application source path. Current annotations such as
-`clusters/talos/infra/cilium` are therefore not valid repository-root paths.
-They also omit shared bases consumed outside the cluster overlay.
+relative to the Application source path. Repository-root-looking annotations
+such as `clusters/talos/infra/cilium` are therefore invalid. Annotations must
+also include shared bases consumed outside the cluster overlay.
 
 Use:
 
@@ -221,9 +221,8 @@ Rules:
 - An OpenShift overlay must never reference `clusters/talos`.
 - A Talos overlay must never reference `clusters/openshift`.
 
-The current Talos and OpenShift definitions for `1passwordconnect`,
-`cert-manager`, and `external-secrets` are byte-identical. They are the first
-portable infrastructure candidates to hoist into:
+The Talos and OpenShift definitions for `1passwordconnect`, `cert-manager`, and
+`external-secrets` are byte-identical and are shared under:
 
 ```text
 manifests/infra/<component>/base
@@ -332,9 +331,9 @@ advanced use. The default is `auto`: Talos installs Cilium when absent and
 verifies it when present; OpenShift skips it. `--cilium=install` is invalid for
 the OpenShift profile.
 
-The current `scripts/bootstrap-argocd.sh <cluster>` remains the focused Argo CD
-bootstrap step. The new wrapper preserves the cluster-owned bootstrap inputs
-and provides one repeatable workflow for initial bootstrap and recovery.
+The `scripts/bootstrap-argocd.sh <cluster>` script remains the focused Argo CD
+bootstrap step. The profile wrapper preserves the cluster-owned bootstrap
+inputs and provides one repeatable workflow for initial bootstrap and recovery.
 Future platforms such as GKE add another profile without changing the
 cluster-local Argo CD or cluster-owned overlay contracts; GKE is not
 implemented by this migration.
@@ -390,6 +389,8 @@ Required local checks include:
 ```bash
 ./scripts/validate-cluster-layout.sh
 ./scripts/validate-argocd-apps.sh
+./scripts/validate-openshift-app-renders.sh
+./scripts/validate-bootstrap-profiles.sh
 
 kustomize build --enable-helm clusters/talos/bootstrap
 kustomize build --enable-helm clusters/openshift/bootstrap
@@ -411,7 +412,8 @@ Additional implementation validation must prove:
 - Talos app renders remain behaviorally unchanged;
 - OpenShift app renders contain no unintended Talos backup policy;
 - no app `.argocd/config.json` files remain;
-- no new escaped or multiline inline patch strings remain;
+- no escaped or multiline inline patch strings remain under `clusters` or
+  `manifests`;
 - no `manifest-generate-paths` annotation uses a mistaken repository-relative
   `clusters/...` value;
 - shared-base consumers include their `/manifests/...` path in
