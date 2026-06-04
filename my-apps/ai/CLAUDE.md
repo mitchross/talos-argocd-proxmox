@@ -2,54 +2,49 @@
 
 ## LLM Backend
 
-This cluster uses **llama-cpp** (NOT ollama) for all local AI inference.
-- Endpoint: `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080`
-- OpenAI-compatible API at `/v1`
-- Primary model: **Qwen3.6-35B-A3B** (Unsloth UD-Q4_K_XL, multimodal via `mmproj-BF16.gguf`)
-- Fallbacks: Gemma 4 26B-A4B / 31B (multimodal)
-- Staged (need GGUF on NFS): **Qwen3-Coder-30B-A3B** (coding agent),
-  **WhiteRabbitNeo v2.5** (authorized security learning, isolated preset),
-  **Qwen3-4B/8B FC** (fast n8n tool-calling)
-- Creative-only toy: Qwen 3.5 Uncensored — **keep abliterated models OUT of
-  Perplexica / RAG / tool-calling** (abliteration degrades accuracy)
-- Full preset list (model IDs clients send in the `model` field): `my-apps/ai/llama-cpp/presets.ini`
-- **What each model is / when to use it: [`docs/domains/ai-gpu/model-catalog.md`](../../docs/domains/ai-gpu/model-catalog.md)**
-- **Models swap natively** via `llama-server --models-preset` — no external
-  `llama-swap` needed. `--models-max 1` = one resident at a time.
+This cluster uses **vLLM** for all local AI inference (NOT ollama, NOT llama-cpp
+— llama-cpp is retired to `replicas: 0`, see "Strategy" below).
+- Endpoint: `http://vllm-service.vllm.svc.cluster.local:8000`
+- OpenAI-compatible API at `/v1` (chat/completions, models, …)
+- Primary model: **Qwen2.5-Coder-32B-Instruct-AWQ**, served at
+  `--tensor-parallel-size 2` across BOTH 3090s. Swap the model via the `--model`
+  arg in `my-apps/ai/vllm/deployment.yaml`. vLLM needs **AWQ/GPTQ/FP8** weights —
+  it does NOT use GGUF efficiently.
+- Client-facing model names (the `model` field clients send): `qwen2.5-coder-32b`
+  and the alias `default` (set via `--served-model-name`).
 
-Always use llama-cpp when configuring AI backends for in-cluster tools.
+Always point in-cluster AI backends at the vLLM endpoint above.
 
-### Gotchas (see `docs/domains/ai-gpu/3090-llm-optimization.md` for full rationale)
-- **KV cache must be SYMMETRIC** — `q8_0/q8_0` or `q4_0/q4_0`, never mixed.
-  Asymmetric KV falls to CPU, 44x slower ([llama.cpp #20866]). Overrides the
-  Qwen3-Coder docs' q8-K/q4-V suggestion.
-- **Context limit = `min(model max, VRAM-affordable KV)`.** Qwen3.6 model max is
-  256K; a single 3090 only *affords* ~64K of KV after weights. Pool both 3090s
-  (48GB) for resident 256K. CPU expert-offload is a last resort on this
-  Broadwell/DDR4 node (memory-bandwidth-bound, ~8-12 TPS).
-- **Local = unlimited token *volume* (free), not an infinite *window* per request.**
-- **Engine: llama.cpp, not vLLM.** Same-hw benchmarks: vLLM ≈7x slower on a
-  single 3090 for this MoE (AWQ weights starve the card → eager mode); our library
-  is all GGUF. vLLM only wins at TP=2 (dual-card pooled) — the one optional
-  big-context endpoint. `ik_llama.cpp` is the more relevant single-card speedup.
-- **MTP/spec-decode gives NO net speedup** on Ampere + 35B-A3B under llama.cpp
-  (same-hw benchmark) — only helps under vLLM TP=2. Don't bother on single-card.
-- **TurboQuant `turbo3` KV** (≈5x smaller) is coming to mainline llama.cpp
-  (PR #21089) — adopt it then for cheap big context.
+### Strategy: vLLM-first on both GPUs
 
-[llama.cpp #20866]: https://github.com/ggml-org/llama.cpp/issues/20866
+We run **one** vLLM server pooling both RTX 3090s (TP=2 ≈ 48GB) instead of the
+old one-model-per-card llama.cpp / ComfyUI split — this is the dual-card pooled
+endpoint that wins for big-context coding/research. `llama-cpp` and `swarmui`
+are at `replicas: 0` (kept for a fast revert) because the node has only two
+cards and vLLM claims both.
 
 ## GPU Topology
 
-Two RTX 3090s (24 GB each), dedicated split — one pod per card:
-- **GPU 0 → llama-cpp** (always-on, serves every AI-using app)
-- **GPU 1 → ComfyUI** (bursty, needs whole card for Wan 2.2 / Qwen-Image-Edit)
+Two RTX 3090s (24 GB each), **pooled** for one vLLM server:
+- **GPU 0 + GPU 1 → vLLM** (`--tensor-parallel-size 2`, ~48 GB usable)
 
-Time-slicing is DISABLED (`time-slicing-config.yaml` has no sharing block)
-so the node advertises `nvidia.com/gpu: 2` and whole-card allocation is
-enforced. Don't set `NVIDIA_VISIBLE_DEVICES` or `CUDA_VISIBLE_DEVICES`
-in pod env — they override the device-plugin's CDI injection and steer
-the workload onto the wrong card.
+`llama-cpp` (was GPU 0) and `swarmui` (was GPU 1) are at `replicas: 0`. To run a
+dual-GPU batch Job (e.g. `llmfit`) scale vLLM to 0 first — the node has exactly
+two cards.
+
+Time-slicing is DISABLED (`time-slicing-config.yaml` has no sharing block) so the
+node advertises `nvidia.com/gpu: 2`; a pod requesting `nvidia.com/gpu: 2` gets
+both whole cards. Don't set `NVIDIA_VISIBLE_DEVICES` or `CUDA_VISIBLE_DEVICES` in
+pod env — they override the device-plugin's CDI injection.
+
+### Dual-3090 TP=2 gotchas (vLLM)
+- **No NVLink + PCIe passthrough → no GPU peer-to-peer.** Set `NCCL_P2P_DISABLE=1`
+  **and** `--disable-custom-all-reduce`, or tensor-parallel startup hangs. NCCL
+  falls back to host shared memory.
+- **`/dev/shm` must be large** — mount an in-memory `emptyDir` (≥8–10Gi) at
+  `/dev/shm`; the 64 MB container default causes NCCL/IPC bus errors.
+- **AWQ/GPTQ/FP8 only**, never GGUF. Attention heads must divide by 2 (Qwen2.5 ok).
+- **Request `nvidia.com/gpu: 2`** so the device plugin injects both cards (cuda:0/1).
 
 ## GPU Workload Pattern
 

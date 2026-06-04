@@ -8,7 +8,11 @@ metadata:
 spec:
   strategy:
     type: Recreate
-  replicas: 1
+  # Scaled to 0: vLLM (my-apps/ai/vllm) now owns BOTH 3090s at TP=2, and the
+  # node only has 2 cards. Kept at 0 (not deleted) for a fast revert — set back
+  # to 1 and scale vllm-server + swarmui to 0 to return to the llama.cpp split.
+  # NOTE: ArgoCD selfHeal reverts a manual `kubectl scale`; change it here.
+  replicas: 0
   selector:
     matchLabels:
       app: llama-cpp-server
