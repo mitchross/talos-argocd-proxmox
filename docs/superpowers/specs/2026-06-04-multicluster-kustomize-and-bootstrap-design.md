@@ -1,8 +1,8 @@
 # Multicluster Kustomize and Bootstrap Design
 
-**Status:** Approved design  
-**Date:** 2026-06-04  
-**Platforms:** Talos, OpenShift/OKD, future Kubernetes targets  
+**Status:** Approved design
+**Date:** 2026-06-04
+**Platforms:** Talos, OpenShift/OKD, future Kubernetes targets
 **Orchestration:** One local upstream Helm Argo CD per cluster
 
 ## Plain-English Summary

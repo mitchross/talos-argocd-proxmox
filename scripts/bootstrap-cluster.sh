@@ -104,10 +104,10 @@ verify_openshift_gateway_api() {
   local subscriptions
   subscriptions="$(
     kubectl get subscriptions.operators.coreos.com -A \
-      -o jsonpath='{range .items[*]}{.metadata.namespace}{"\t"}{.spec.name}{"\t"}{.status.installedCSV}{"\n"}{end}'
+      -o jsonpath='{range .items[*]}{.metadata.namespace}{"\t"}{.spec.name}{"\t"}{.spec.channel}{"\t"}{.status.installedCSV}{"\n"}{end}'
   )"
 
-  if grep -Eiq 'servicemeshoperator.*(servicemeshoperator\.v2|v2\.)' <<<"$subscriptions"; then
+  if awk -F '\t' '$2 == "servicemeshoperator" { found = 1 } END { exit !found }' <<<"$subscriptions"; then
     die "OpenShift Service Mesh Operator v2 conflicts with the OpenShift Gateway API implementation"
   fi
 }
@@ -204,10 +204,14 @@ if [ "$PROFILE" = "openshift" ] && [ "$CILIUM_MODE" = "install" ]; then
   die "--cilium=install is invalid for the openshift profile"
 fi
 
-CILIUM_VERSION="$(read_cilium_version)"
-CILIUM_CLUSTER_NAME="$(read_cilium_cluster_name)"
-[ -n "$CILIUM_VERSION" ] || die "could not read Cilium version from $CILIUM_KUSTOMIZATION"
-[ -n "$CILIUM_CLUSTER_NAME" ] || die "could not read Cilium cluster name from $CILIUM_VALUES"
+CILIUM_VERSION=""
+CILIUM_CLUSTER_NAME=""
+if [ "$PROFILE" = "talos" ]; then
+  CILIUM_VERSION="$(read_cilium_version)"
+  CILIUM_CLUSTER_NAME="$(read_cilium_cluster_name)"
+  [ -n "$CILIUM_VERSION" ] || die "could not read Cilium version from $CILIUM_KUSTOMIZATION"
+  [ -n "$CILIUM_CLUSTER_NAME" ] || die "could not read Cilium cluster name from $CILIUM_VALUES"
+fi
 
 if [ "$DRY_RUN" = true ]; then
   print_dry_run
@@ -215,8 +219,13 @@ if [ "$DRY_RUN" = true ]; then
 fi
 
 require_command kubectl
+require_command helm
+require_command openssl
 
 if [ "$PROFILE" = "talos" ]; then
+  if [ "$CILIUM_MODE" != "skip" ]; then
+    select_cilium_command
+  fi
   case "$CILIUM_MODE" in
     auto)
       if kubectl get daemonset cilium -n kube-system >/dev/null 2>&1; then
