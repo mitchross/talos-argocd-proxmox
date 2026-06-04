@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-media-tubesync",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "tubesync",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/openshift/apps/media/tubesync"
-}

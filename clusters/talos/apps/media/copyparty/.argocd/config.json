@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-apps-media-copyparty",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "copyparty",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/talos/apps/media/copyparty"
-}

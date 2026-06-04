@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-apps-home-home-assistant",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "home-assistant",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/talos/apps/home/home-assistant"
-}

@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-apps-development-news-reader-temporal-worker",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "news-reader-temporal-worker",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/talos/apps/development/news-reader-temporal-worker"
-}

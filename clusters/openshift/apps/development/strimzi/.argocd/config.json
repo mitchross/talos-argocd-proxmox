@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-development-strimzi",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "strimzi",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/openshift/apps/development/strimzi"
-}

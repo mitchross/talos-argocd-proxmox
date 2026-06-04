@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-development-nginx",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "nginx",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/openshift/apps/development/nginx"
-}

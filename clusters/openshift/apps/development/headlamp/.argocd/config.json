@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-development-headlamp",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "headlamp",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/openshift/apps/development/headlamp"
-}

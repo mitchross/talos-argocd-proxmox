@@ -12,24 +12,24 @@ spec:
     - git:
         repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
         revision: main
-        files:
-          - path: clusters/openshift/apps/*/*/.argocd/config.json
+        directories:
+          - path: clusters/openshift/apps/*/*
   template:
     metadata:
-      name: "{{.applicationName}}"
+      name: "openshift-apps-{{index .path.segments 3}}-{{.path.basename}}"
       annotations:
-        argocd.argoproj.io/manifest-generate-paths: "{{.sourcePath}}"
-        argocd.argoproj.io/sync-wave: "{{.syncWave}}"
+        argocd.argoproj.io/manifest-generate-paths: ".;/manifests/apps/{{index .path.segments 3}}/{{.path.basename}}/base"
+        argocd.argoproj.io/sync-wave: "6"
     spec:
-      project: "{{.project}}"
+      project: openshift-apps
       revisionHistoryLimit: 3
       source:
         repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
         targetRevision: main
-        path: "{{.sourcePath}}"
+        path: "{{.path.path}}"
       destination:
         server: https://kubernetes.default.svc
-        namespace: "{{.namespace}}"
+        namespace: "{{.path.basename}}"
       syncPolicy:
         automated:
           prune: true

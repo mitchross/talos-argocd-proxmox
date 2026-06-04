@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-development-news-reader",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "news-reader",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/openshift/apps/development/news-reader"
-}

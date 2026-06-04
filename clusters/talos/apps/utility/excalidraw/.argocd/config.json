@@ -1,9 +1,0 @@
-{
-  "applicationName": "talos-apps-utility-excalidraw",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "excalidraw",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/talos/apps/utility/excalidraw"
-}

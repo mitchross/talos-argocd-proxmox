@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-media-echo-server",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "echo-server",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/openshift/apps/media/echo-server"
-}

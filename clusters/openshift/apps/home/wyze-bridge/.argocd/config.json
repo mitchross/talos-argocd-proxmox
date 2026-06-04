@@ -1,9 +1,0 @@
-{
-  "applicationName": "openshift-apps-home-wyze-bridge",
-  "cluster": "openshift",
-  "project": "openshift-apps",
-  "namespace": "wyze-bridge",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/openshift/apps/home/wyze-bridge"
-}
