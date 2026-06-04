@@ -5,7 +5,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "1"
-    argocd.argoproj.io/manifest-generate-paths: clusters/openshift/infra/cert-manager
+    argocd.argoproj.io/manifest-generate-paths: ".;/manifests/infra"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:

@@ -24,7 +24,7 @@ metadata:
     # Wave 2 — after VolSync operator (Wave 1), same level as the MAP
     # + ClusterES at clusters/talos/infra/volsync-backup-cluster/.
     argocd.argoproj.io/sync-wave: "2"
-    argocd.argoproj.io/manifest-generate-paths: clusters/talos/infra/pvc-plumber
+    argocd.argoproj.io/manifest-generate-paths: ".;/manifests/infra"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
