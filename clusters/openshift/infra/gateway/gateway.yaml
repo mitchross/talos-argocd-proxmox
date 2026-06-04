@@ -4,6 +4,7 @@ metadata:
   name: openshift-gateway
   namespace: openshift-ingress
   annotations:
+    argocd.argoproj.io/sync-wave: "0"
     cert-manager.io/cluster-issuer: cloudflare-cluster-issuer
 spec:
   gatewayClassName: openshift-default

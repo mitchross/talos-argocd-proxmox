@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Bootstrap ArgoCD Script
-# This script works around kustomize --enable-helm compatibility issues by
-# using Helm directly, then letting the local cluster's ArgoCD self-manage.
+# Focused Argo CD bootstrap step.
+# Prefer scripts/bootstrap-cluster.sh for the complete platform-aware workflow.
+# Direct invocation assumes networking, Gateway API, and secret prerequisites
+# are already complete.
 #
 # Usage:
 #   ./scripts/bootstrap-argocd.sh [talos|openshift]
 #
 # Prerequisites:
 #   1. kubectl access to the target cluster
-#   2. Cluster-specific platform prerequisites from README.md
+#   2. Platform prerequisites completed
 #   3. 1Password secrets pre-seeded in the target cluster
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -32,90 +33,11 @@ ARGOCD_VALUES_FILE="$BOOTSTRAP_DIR/values.yaml"
 ARGOCD_ROOT_FILE="$BOOTSTRAP_DIR/root.yaml"
 ARGOCD_CHART_VERSION="9.5.17"
 
-# Expected Cilium version must match clusters/talos/infra/cilium/kustomization.yaml.
-EXPECTED_CILIUM_VERSION="1.19.4"
-
 echo "🚀 Bootstrapping ArgoCD for $CLUSTER with sync waves..."
 
 if [ ! -f "$ARGOCD_NAMESPACE_FILE" ] || [ ! -f "$ARGOCD_VALUES_FILE" ] || [ ! -f "$ARGOCD_ROOT_FILE" ]; then
   echo "❌ Missing bootstrap files under $BOOTSTRAP_DIR"
   exit 1
-fi
-
-if [ "$CLUSTER" = "talos" ]; then
-  if command -v cilium > /dev/null 2>&1; then
-    CILIUM_CMD="cilium"
-  elif command -v cilium-cli > /dev/null 2>&1; then
-    CILIUM_CMD="cilium-cli"
-  else
-    CILIUM_CMD=""
-  fi
-
-  echo ""
-  echo "🔍 Pre-flight: Checking Cilium..."
-
-  if [ -z "$CILIUM_CMD" ]; then
-    echo "❌ Cilium CLI not found. Install either 'cilium' or 'cilium-cli' first: https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/"
-    exit 1
-  fi
-
-  if ! "$CILIUM_CMD" status --wait --wait-duration 30s &> /dev/null; then
-    echo "❌ Cilium is not healthy. Install Cilium first:"
-    echo ""
-    echo "   $CILIUM_CMD install \\"
-    echo "       --version $EXPECTED_CILIUM_VERSION \\"
-    echo "       --set cluster.name=talos-prod-cluster \\"
-    echo "       --set ipam.mode=kubernetes \\"
-    echo "       --set kubeProxyReplacement=true \\"
-    echo "       --set k8sServiceHost=localhost \\"
-    echo "       --set k8sServicePort=7445 \\"
-    echo "       --set hubble.enabled=false \\"
-    echo "       --set hubble.relay.enabled=false \\"
-    echo "       --set hubble.ui.enabled=false \\"
-    echo "       --set gatewayAPI.enabled=true"
-    echo ""
-    exit 1
-  fi
-
-  RUNNING_VERSION=$(kubectl get ds cilium -n kube-system -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null | sed -E 's/.*:v([0-9]+\.[0-9]+\.[0-9]+).*/\1/' || true)
-
-  if [ -n "$RUNNING_VERSION" ] && [ "$RUNNING_VERSION" != "$EXPECTED_CILIUM_VERSION" ]; then
-    echo "⚠️  WARNING: Cilium version mismatch!"
-    echo "   Running:  $RUNNING_VERSION"
-    echo "   Expected: $EXPECTED_CILIUM_VERSION (from Helm chart)"
-    echo ""
-    echo "   ArgoCD Wave 0 will upgrade Cilium $RUNNING_VERSION → $EXPECTED_CILIUM_VERSION"
-    echo "   This in-place upgrade can corrupt BPF state and break new pod networking."
-    echo ""
-    echo "   Recommended: Reinstall Cilium at the correct version first:"
-    echo "     $CILIUM_CMD uninstall"
-    echo "     $CILIUM_CMD install --version $EXPECTED_CILIUM_VERSION \\"
-    echo "         --set cluster.name=talos-prod-cluster \\"
-    echo "         --set ipam.mode=kubernetes \\"
-    echo "         --set kubeProxyReplacement=true \\"
-    echo "         --set k8sServiceHost=localhost \\"
-    echo "         --set k8sServicePort=7445 \\"
-    echo "         --set hubble.enabled=false \\"
-    echo "         --set hubble.relay.enabled=false \\"
-    echo "         --set hubble.ui.enabled=false \\"
-    echo "         --set gatewayAPI.enabled=true"
-    echo ""
-    read -p "   Continue anyway? (y/N) " -n 1 -r
-    echo ""
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-      exit 1
-    fi
-  else
-    echo "✅ Cilium $RUNNING_VERSION is healthy and matches Helm chart ($EXPECTED_CILIUM_VERSION)"
-  fi
-else
-  echo ""
-  echo "🔍 Pre-flight: OpenShift mode"
-  echo "   Skipping Talos Cilium checks. OpenShift networking is provided by the platform."
-  if ! kubectl api-resources | grep -q '^routes[[:space:]]'; then
-    echo "⚠️  Could not confirm OpenShift Route API from kubectl api-resources."
-    echo "    Continuing because this bootstrap uses upstream Helm ArgoCD plus Gateway API manifests."
-  fi
 fi
 
 echo ""

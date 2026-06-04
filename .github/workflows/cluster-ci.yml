@@ -33,6 +33,7 @@ jobs:
         run: |
           bash ./scripts/validate-cluster-layout.sh
           bash ./scripts/validate-argocd-apps.sh
+          bash ./scripts/validate-bootstrap-profiles.sh
 
   render-and-schema:
     name: Kustomize Render and Schema Validation
