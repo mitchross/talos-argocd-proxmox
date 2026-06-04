@@ -24,6 +24,7 @@ time**. Switch by setting one to `replicas: 1` and the rest to `0`, then commit
 | Model (`model:` field) | HF repo (AWQ) | replicas | Use |
 |---|---|---|---|
 | `qwen3.6` / `default` ⭐ | `Intel/Qwen3.6-35B-A3B-int4-AutoRound` | 1 | daily driver — chat/tools/RAG **+ vision**, 256K (club-3090 validated recipe) |
+| `qwen3.6-27b` | `cyankiwi/Qwen3.6-27B-AWQ-BF16-INT4` | 0 | dense 27B, flagship coding + vision. **GDN hybrid → `--max-num-seqs 2`** (recurrent-state cliff) |
 | `coder` | `QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ` | 0 | coding agent |
 | `gemma4` | `cyankiwi/gemma-4-26B-A4B-it-AWQ-4bit` | 0 | multimodal fallback (`--tool-call-parser gemma4`; see vLLM #40247 image note) |
 | `gemma4-31b` | `cyankiwi/gemma-4-31B-it-AWQ-4bit` | 0 | top-quality dense (slow) |
