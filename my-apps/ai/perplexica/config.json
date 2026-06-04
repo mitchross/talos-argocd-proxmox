@@ -14,20 +14,14 @@
     },
     {
       "id": "llama-cpp-cluster",
-      "name": "llama-cpp",
+      "name": "vLLM (Qwen3.6-27B)",
       "type": "openai",
       "config": {
         "apiKey": "sk-no-key-required",
-        "baseURL": "http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1"
+        "baseURL": "http://vllm-service.vllm.svc.cluster.local:8080/v1"
       },
       "chatModels": [
-        { "name": "Qwen 3.6 (nothink, fast) — recommended", "key": "qwen3.6-nothink - qwen3.6-35b-a3b-nothink" },
-        { "name": "Qwen 3.6 (think)",              "key": "qwen3.6 - qwen3.6-35b-a3b" },
-        { "name": "Gemma 4 31B dense (think)",     "key": "gemma4-31b - gemma4-31b" },
-        { "name": "Gemma 4 31B dense (nothink)",   "key": "gemma4-31b-nothink - gemma4-31b-nothink" },
-        { "name": "Qwen 3.5 Uncensored (think)",   "key": "uncensored - qwen3.5-uncensored" },
-        { "name": "Qwen 3.5 Uncensored (nothink)", "key": "nothink-uncensored - qwen3.5-uncensored-nothink" },
-        { "name": "Qwen 3.6 (longctx 256K) — DUAL-CARD ONLY, ~4x slower TTFT on single 3090", "key": "qwen3.6-longctx - qwen3.6-35b-a3b-longctx" }
+        { "name": "Qwen 3.6 27B (vLLM, TP=2)", "key": "qwen3.6-nothink - qwen3.6-35b-a3b-nothink" }
       ],
       "embeddingModels": []
     }
