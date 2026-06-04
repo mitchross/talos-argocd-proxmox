@@ -3,41 +3,39 @@
 ## LLM Backend
 
 This cluster uses **vLLM** for all local AI inference (NOT ollama, NOT llama-cpp
-— llama-cpp is retired to `replicas: 0`). vLLM pools BOTH RTX 3090s at
-`--tensor-parallel-size 2` (~48 GB).
-- Endpoint: `http://vllm-service.vllm.svc.cluster.local:8000` (OpenAI API at `/v1`).
-- Apps send `model: default` — it always resolves to whichever bank model is
-  currently running (every entry sets `--served-model-name default <name>`).
-- vLLM needs **AWQ/GPTQ/AutoRound-INT4/FP8** weights — never GGUF. FP8 is
-  Hopper/Ada-only. The daily driver tracks club-3090's validated recipe:
-  **AutoRound INT4 + `--kv-cache-dtype fp8_e5m2`** (256K ctx + vision on 2x3090).
-  Gemma-4 uses **AWQ** instead (AutoRound INT4 is broken for Gemma-4 on Ampere).
+— llama-cpp/comfyui/swarmui are retired to `replicas: 0`). vLLM pools BOTH RTX
+3090s at `--tensor-parallel-size 2` (~48 GB).
+- Endpoint: `http://vllm-service.vllm.svc.cluster.local:8080` (OpenAI API at
+  `/v1`; external `https://vllm.vanillax.me`). Apps send `model: default`.
+- vLLM needs **AWQ/GPTQ/compressed-tensors/AutoRound-INT4/FP8** weights — never
+  GGUF (that's llama-cpp). FP8 is Hopper/Ada-only.
 
-### The vLLM preset bank (swap on demand)
+### Models — pre-staged on NFS, served read-only
 
-`my-apps/ai/vllm/` defines **one Deployment per model**, all sharing
-`app: vllm-server` so `vllm-service` routes to whichever is scaled up. The node
-has only two cards and each model claims both at TP=2, so **exactly one runs at a
-time**. Switch by setting one to `replicas: 1` and the rest to `0`, then commit
-(ArgoCD selfHeal reverts a bare `kubectl scale`).
+`my-apps/ai/vllm/` serves the AWQ models staged on the TrueNAS share
+`192.168.10.133:/mnt/ai-pool/vllm`, mounted **read-only** at `/models` via a
+static CSI PV (the immich RO pattern — no HF download, no Hub token). One
+Deployment per model (both share `app: vllm-server`); each claims BOTH cards at
+TP=2, so **exactly one runs at a time**. Switch by scaling one to `replicas: 1`
+and the other to `0`, then commit (ArgoCD selfHeal reverts a bare `kubectl scale`).
 
-| Model (`model:` field) | HF repo (AWQ) | replicas | Use |
+| Deployment | `--model` (local path) | `model:` names | replicas |
 |---|---|---|---|
-| `qwen3.6` / `default` ⭐ | `Intel/Qwen3.6-35B-A3B-int4-AutoRound` | 1 | daily driver — chat/tools/RAG **+ vision**, 256K (club-3090 validated recipe) |
-| `qwen3.6-27b` | `cyankiwi/Qwen3.6-27B-AWQ-BF16-INT4` | 0 | dense 27B, flagship coding + vision. **GDN hybrid → `--max-num-seqs 2`** (recurrent-state cliff) |
-| `coder` | `QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ` | 0 | coding agent |
-| `gemma4` | `cyankiwi/gemma-4-26B-A4B-it-AWQ-4bit` | 0 | multimodal fallback (`--tool-call-parser gemma4`; see vLLM #40247 image note) |
-| `gemma4-31b` | `cyankiwi/gemma-4-31B-it-AWQ-4bit` | 0 | top-quality dense (slow) |
-| `tool-fast` | `cyankiwi/Qwen3-4B-Instruct-2507-AWQ-4bit` | 0 | fast triage / tool calls |
+| `deployment.yaml` ⭐ | `/models/Qwen3.6-27B-AWQ-INT4` | `qwen3.6-27b`, `default` | 1 |
+| `deployment-bf16.yaml` | `/models/Qwen3.6-27B-AWQ-BF16-INT4` | `qwen3.6-27b-bf16`, `default` | 0 |
 
-**Vision** works on the daily driver (the AutoRound build ships the vision tower,
-`--limit-mm-per-prompt image=2`) and on `gemma4`. If `auto_round` ever misbehaves
-on Ampere, the documented fallback is `QuantTrio/Qwen3.6-35B-A3B-AWQ` +
-`--quantization awq` (text-only).
+Both are **Qwen3.6-27B — dense, multimodal, Gated-DeltaNet hybrid.** GDN recurrent
+state scales with CONCURRENCY (not context), so `--max-num-seqs` is pinned LOW
+(**2**); raising it is the likeliest OOM. `--max-model-len 65536` stays clear of
+the DeltaNet big-context cliff. compressed-tensors AWQ → vLLM auto-detects the
+Marlin kernel (no `--quantization` flag). Tool-calling via
+`--enable-auto-tool-choice --tool-call-parser hermes`; vision via
+`--limit-mm-per-prompt image=4`.
 
-Add a model: copy a `deployment-*.yaml`, change name/labels/`--model`/
-`--served-model-name`, and list it in `kustomization.yaml`. `llama-cpp` and
-`swarmui` are at `replicas: 0` (kept for revert) because vLLM claims both cards.
+Add a model: stage it on the NFS share, copy a `deployment-*.yaml` (change
+`--model`/`--served-model-name`/labels), and list it in `kustomization.yaml`.
+`llama-cpp`, `comfyui` and `swarmui` are at `replicas: 0` because vLLM claims both
+cards.
 
 ## GPU Topology
 
@@ -55,11 +53,13 @@ pod env — they override the device-plugin's CDI injection.
 
 ### Dual-3090 TP=2 gotchas (vLLM)
 - **No NVLink + PCIe passthrough → no GPU peer-to-peer.** Set `NCCL_P2P_DISABLE=1`
-  **and** `--disable-custom-all-reduce`, or tensor-parallel startup hangs. NCCL
-  falls back to host shared memory.
-- **`/dev/shm` must be large** — mount an in-memory `emptyDir` (≥8–10Gi) at
+  **and** `VLLM_WORKER_MULTIPROC_METHOD=spawn`, or tensor-parallel startup hangs.
+  With P2P off, vLLM auto-disables its custom all-reduce; NCCL falls back to host
+  shared memory.
+- **`/dev/shm` must be large** — mount an in-memory `emptyDir` (≥16Gi for TP=2) at
   `/dev/shm`; the 64 MB container default causes NCCL/IPC bus errors.
-- **AWQ/GPTQ/FP8 only**, never GGUF. Attention heads must divide by 2 (Qwen2.5 ok).
+- **AWQ/GPTQ/compressed-tensors/FP8 only**, never GGUF. Attention heads must
+  divide by 2.
 - **Request `nvidia.com/gpu: 2`** so the device plugin injects both cards (cuda:0/1).
 
 ## GPU Workload Pattern

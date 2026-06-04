@@ -1,0 +1,145 @@
+# vLLM OpenAI server — PRIMARY model (Qwen3.6-27B-AWQ-INT4), TP=2 across both
+# 3090s, reading the model from the read-only NFS mount (no HF download).
+#
+# Mirrors my-apps/ai/llama-cpp conventions (runtimeClass, fsGroup, nodeSelector,
+# /dev/shm, single nvidia.com/gpu toleration). vLLM serves ONE model per process,
+# so the second NFS model lives in deployment-bf16.yaml at replicas: 0 — both
+# share `app: vllm-server`, so vllm-service routes to whichever is scaled up.
+# Switch quality tier by scaling one to 1 and the other to 0 (commit; ArgoCD
+# selfHeal reverts a bare `kubectl scale`). Clients send `model: default`.
+#
+# GPU note: needs BOTH whole 3090s (time-slicing is OFF cluster-wide). llama-cpp,
+# comfyui and swarmui are all already at replicas: 0 so the two cards are free.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-qwen36-27b
+  namespace: vllm
+  labels:
+    app: vllm-server
+    vllm-model: int4
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vllm-server
+      vllm-model: int4
+  revisionHistoryLimit: 1
+  template:
+    metadata:
+      labels:
+        app: vllm-server
+        vllm-model: int4
+    spec:
+      restartPolicy: Always
+      runtimeClassName: nvidia
+      priorityClassName: gpu-workload-high
+      terminationGracePeriodSeconds: 120
+      nodeSelector:
+        feature.node.kubernetes.io/pci-0300_10de.present: "true"
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
+      securityContext:
+        fsGroup: 10001
+        fsGroupChangePolicy: "OnRootMismatch"
+      containers:
+        - name: vllm
+          # renovate: datasource=docker depName=vllm/vllm-openai
+          image: vllm/vllm-openai:v0.22.0     # supports the Qwen3.6 arch; pinned by club-3090's 27B recipes
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--model"
+            - "/models/Qwen3.6-27B-AWQ-INT4"          # local NFS path — primary (20GB, vision-capable)
+            - "--served-model-name"
+            - "qwen3.6-27b"
+            - "default"                                # cluster apps point at `default`
+            - "--tensor-parallel-size"
+            - "2"                                       # pool BOTH 3090s
+            - "--gpu-memory-utilization"
+            - "0.90"
+            - "--max-model-len"
+            - "65536"                                   # brief's conservative 64K (well clear of the big-ctx GDN OOM cliff)
+            # ⚠️ DEVIATION FROM BRIEF (which said 16): Qwen3.6-27B is a Gated-DeltaNet
+            # hybrid — recurrent-state memory scales with CONCURRENCY, not context,
+            # and the club-3090 recipes this brief cites pin it to 1–2. 16 concurrent
+            # recurrent states is the most likely OOM. Start at 2; raise cautiously.
+            - "--max-num-seqs"
+            - "2"
+            - "--limit-mm-per-prompt"
+            - '{"image":4}'                             # vision-capable model
+            - "--distributed-executor-backend"
+            - "mp"                                      # single-node multiprocessing (no Ray)
+            - "--enable-auto-tool-choice"               # cluster needs OpenAI tool-calls (n8n/agents); also in club-3090's 27B recipe
+            - "--tool-call-parser"
+            - "hermes"
+            - "--host"
+            - "0.0.0.0"
+            - "--port"
+            - "8000"
+          env:
+            # GPU selection is via the device plugin — do NOT set
+            # NVIDIA_VISIBLE_DEVICES / CUDA_VISIBLE_DEVICES (overrides injection).
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: "compute,utility"
+            # Local models only — never reach the Hub at runtime.
+            - name: HF_HUB_OFFLINE
+              value: "1"
+            - name: TRANSFORMERS_OFFLINE
+              value: "1"
+            # TP=2 over PCIe (no NVLink/P2P): without these the cross-GPU
+            # all-reduce hangs at startup; NCCL falls back to /dev/shm.
+            - name: VLLM_WORKER_MULTIPROC_METHOD
+              value: "spawn"
+            - name: NCCL_P2P_DISABLE
+              value: "1"
+            - name: PYTORCH_CUDA_ALLOC_CONF
+              value: "expandable_segments:True"
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          startupProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 120                       # TP load + CUDA-graph capture (local read, no download)
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: "8"
+              memory: 48Gi
+              nvidia.com/gpu: "2"
+              ephemeral-storage: "5Gi"
+            limits:
+              cpu: "32"
+              memory: 64Gi
+              nvidia.com/gpu: "2"
+              ephemeral-storage: "20Gi"
+          volumeMounts:
+            - name: models-storage
+              mountPath: /models
+              readOnly: true
+            - name: dshm
+              mountPath: /dev/shm
+      volumes:
+        - name: models-storage
+          persistentVolumeClaim:
+            claimName: vllm-models-pvc
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Gi                             # TP workers IPC over /dev/shm; bigger than a 1-GPU deploy needs
