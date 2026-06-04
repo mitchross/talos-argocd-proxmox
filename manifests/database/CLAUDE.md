@@ -5,7 +5,8 @@
 
 Databases use **CloudNativePG** with Barman backups to RustFS S3 — a **separate backup path** from the PVC/VolSync system.
 
-- **PVC backups**: Kopia on NFS via VolSync (automated by Kyverno)
+- **Normal application PVC backups**: Kopia via VolSync, wired by pvc-plumber
+  v4.0.1 on Talos
 - **Database backups**: Barman to S3 (SQL-aware base backup + WAL archiving for PITR)
 
 See [`docs/volsync-storage-recovery.md`](../../docs/volsync-storage-recovery.md#why-two-backup-systems-pvcs-vs-databases) for why both exist.
@@ -73,7 +74,11 @@ volume faulted; restored from `gitea-database-v1` (last good Barman base
 2. Update names, owner, image, postInitApplicationSQL, resource sizes in `base/cluster.yaml` and `overlays/initdb/bootstrap-patch.yaml`.
 3. Set `base/cluster.yaml` `backup.barmanObjectStore.serverName` to `<newapp>-database-v1`.
 4. Set `overlays/recovery/bootstrap-patch.yaml` to reference `<newapp>-database-v1` as the prior lineage (placeholder until a real DR event bumps both).
-5. Commit + push. Database AppSet auto-discovers `manifests/database/*/*` — no appset edits needed.
+5. Add or update the Talos deploy target under
+   `clusters/talos/database/cloudnative-pg/<db>/`, including its
+   `.argocd/config.json`.
+6. Commit + push. The database AppSet discovers
+   `clusters/talos/database/*/*/.argocd/config.json`.
 
 ## Disaster recovery (bump lineage + flip to recovery)
 
@@ -105,7 +110,8 @@ See the full runbook in [`docs/domains/cnpg/disaster-recovery.md`](../../docs/do
   old DB won't re-run their migrations against the new empty one until restarted.
 - **Specify `database` + `owner` + `secret` in recovery bootstrap.** CNPG
   defaults to `database: app, owner: app` if omitted.
-- **Don't add CNPG PVCs to Kyverno backup labels.** They use Barman, not Kopia.
+- **Don't add CNPG PVCs to pvc-plumber/VolSync backup labels.** They use
+  Barman, not Kopia.
 
 ## Deprecation warnings
 

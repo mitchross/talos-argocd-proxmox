@@ -4,6 +4,8 @@
 > for the remaining AppSet, Kustomize readability, Gateway API, and bootstrap
 > work is
 > `docs/superpowers/specs/2026-06-04-multicluster-kustomize-and-bootstrap-design.md`.
+> Current live OpenShift readiness and blockers are canonical in
+> `docs/domains/multicluster/handoff-notes.md`.
 
 ## Plain-English Summary
 
@@ -46,8 +48,9 @@ manifests/
 - Made routes complete cluster-owned resources.
 - Removed OpenShift inheritance from Talos.
 - Replaced app `longhorn` references with `vanillax-local-rwo`.
-- Implemented `vanillax-local-rwo` through Longhorn on Talos and LVM Storage on
-  OpenShift.
+- Implemented the intended `vanillax-local-rwo` Git contract through Longhorn
+  on Talos and LVM Storage manifests on OpenShift. The live OpenShift LVM
+  implementation is not currently available.
 - Added shared NFS and SMB CSI bases with overlays for both clusters.
 - Externalized OpenShift security patches into readable files.
 - Removed Talos pvc-plumber, VolSync, restore labels, and restore

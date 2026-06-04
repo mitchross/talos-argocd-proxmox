@@ -304,21 +304,38 @@ OpenShift uses the same model: hand-run upstream Helm Argo CD, then let that
 cluster's local Argo CD manage only itself. It does not use the OpenShift GitOps
 Operator.
 
+> **Current `sno-ai-lab` status (June 4, 2026): do not bootstrap yet.**
+> Read [the canonical multicluster handoff](docs/domains/multicluster/handoff-notes.md)
+> first. The live `4.22.0-rc.5` cluster has no usable LVM Storage operator or
+> StorageClass, no bare-metal LoadBalancer provider for the Gateway API
+> service, a route-domain/DNS collision with the default OpenShift ingress,
+> and no pre-seeded bootstrap secrets. Repository-local validation passed, but
+> that does not make the live cluster ready.
+
 ### Step 0: Get Cluster Access
 
 ```bash
-oc login <api-url>
+export KUBECONFIG=/home/vanillax/Downloads/sno-ai-lab-kubeconfig
 kubectl get nodes
 kubectl config current-context
 ```
 
+Always use an explicit `KUBECONFIG` while testing OpenShift so commands cannot
+accidentally target Talos.
+
 ### Step 1: Verify Platform Assumptions
 
 ```bash
+kubectl get clusterversion version
 kubectl get crd gatewayclasses.gateway.networking.k8s.io
 kubectl get crd gateways.gateway.networking.k8s.io
 kubectl get crd httproutes.gateway.networking.k8s.io
+kubectl get gatewayclass,gateway -A
 kubectl get subscriptions.operators.coreos.com -A
+kubectl get subscription lvms-operator -n openshift-storage -o yaml
+kubectl get crd | grep -Ei 'lvm|topolvm'
+kubectl get storageclass
+kubectl get svc -A -o wide | grep LoadBalancer
 ```
 
 Git owns GatewayClass `openshift-default` with controller
@@ -329,6 +346,11 @@ subscription before bootstrap.
 The OpenShift LVM storage entrypoint assumes the Red Hat `lvms-operator`
 Subscription and `lvm.topolvm.io/v1alpha1` `LVMCluster` schema. Verify those
 against the live cluster before syncing.
+
+The current repo also assumes OpenShift Gateway API apps own
+`*.apps.sno-ai-lab.vanillax.xyz`. That collides with the live default
+OpenShift ingress wildcard on `192.168.10.10`. Resolve the dedicated Gateway
+subdomain and LoadBalancer IP before bootstrap.
 
 ### Step 2: Pre-Seed 1Password Secrets
 
@@ -343,6 +365,12 @@ the OpenShift kube context.
 
 Use `./scripts/bootstrap-argocd.sh openshift` only when platform prerequisites
 and the secret gate are already complete.
+
+For isolated live testing, clone
+`https://github.com/mitchross/talos-argocd-proxmox-multicluster-test` and use
+its `main` branch. Its Argo CD URLs point back to the isolated repository.
+Running this command from the original feature branch would still reconcile
+the original repository's `main` because `targetRevision: main` is deliberate.
 
 Manual equivalent:
 

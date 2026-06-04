@@ -5,6 +5,11 @@
 **Platforms:** Talos, OpenShift/OKD, future Kubernetes targets
 **Orchestration:** One local upstream Helm Argo CD per cluster
 
+> **Live validation update:** The structural design is implemented and locally
+> accepted, but the intended OpenShift `sno-ai-lab` target is not ready for
+> bootstrap. The verified blockers and isolated test-repository workflow are
+> canonical in `docs/domains/multicluster/handoff-notes.md`.
+
 ## Plain-English Summary
 
 This repository uses one shared Git source but does not use one shared Argo CD.
@@ -258,7 +263,7 @@ are cluster-specific.
 - Bootstrap installs the required upstream Gateway API CRDs.
 - Talos owns its Gateway and `*.vanillax.me` HTTPRoutes.
 
-### OpenShift/OKD 4.20
+### OpenShift/OKD Gateway API
 
 - The OpenShift/OKD Ingress Operator manages Gateway API CRDs and the platform
   implementation.
@@ -275,7 +280,10 @@ spec:
 ```
 
 - The shared OpenShift Gateway lives in `openshift-ingress`.
-- OpenShift owns `*.apps.sno-ai-lab.vanillax.xyz` HTTPRoutes.
+- The repo currently configures
+  `*.apps.sno-ai-lab.vanillax.xyz` HTTPRoutes. Live validation proved that
+  domain is already owned by the default OpenShift HostNetwork ingress, so a
+  dedicated Gateway API subdomain must replace it before live bootstrap.
 - The OpenShift bootstrap profile verifies that no active OSSM v2 subscription
   conflicts with the Ingress Operator-managed OSSM v3 Gateway implementation.
 - The Gateway infrastructure Application applies the GatewayClass before the

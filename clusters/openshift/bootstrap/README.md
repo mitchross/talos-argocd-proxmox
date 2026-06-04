@@ -10,6 +10,13 @@ It uses the same shape as Talos:
 helm install upstream Argo CD -> apply root Application -> local Argo CD self-manages
 ```
 
+> **Live `sno-ai-lab` bootstrap is blocked as of June 4, 2026.**
+> Read `docs/domains/multicluster/handoff-notes.md` before running any command
+> below. The live cluster has unresolved LVM Storage, no observed bare-metal
+> LoadBalancer provider, unresolved Gateway/API route DNS, and no pre-seeded
+> 1Password secrets. The profile wrapper does not currently detect every one
+> of those blockers before installing Argo CD.
+
 Use the repo-level script from the repository root:
 
 ```bash
@@ -28,6 +35,14 @@ The profile wrapper:
 Git owns GatewayClass `openshift-default` with controller
 `openshift.io/gateway-controller/v1`. The LVM Storage Operator channel and
 `LVMCluster` schema still require live verification.
+
+The original feature branch points Argo CD at the original repository's
+`main`. Use the isolated test repository's `main` branch for live OpenShift
+testing:
+
+```text
+https://github.com/mitchross/talos-argocd-proxmox-multicluster-test
+```
 
 Direct `scripts/bootstrap-argocd.sh openshift` invocation is the focused
 Argo-only step and assumes every platform prerequisite is already complete.

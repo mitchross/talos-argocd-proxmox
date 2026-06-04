@@ -29,7 +29,7 @@ resources:
 - service.yaml
 ```
 
-Create one overlay and metadata file per cluster:
+Create one deployable overlay per cluster:
 
 ```text
 clusters/talos/apps/category/app-name/
@@ -46,22 +46,12 @@ resources:
 - httproute.yaml
 ```
 
-```jsonc
-// clusters/talos/apps/category/app-name/.argocd/config.json
-{
-  "applicationName": "talos-apps-category-app-name",
-  "cluster": "talos",
-  "project": "talos-apps",
-  "namespace": "app-name",
-  "part": "apps",
-  "syncWave": "6",
-  "sourcePath": "clusters/talos/apps/category/app-name"
-}
-```
-
-Repeat the overlay and metadata for OpenShift using project `openshift-apps`
-and source path `clusters/openshift/apps/category/app-name`. Each cluster owns
-its own HTTPRoute. OpenShift must never reference `clusters/talos`.
+Repeat the overlay for OpenShift. The cluster-local app ApplicationSets
+directory-discover `clusters/<cluster>/apps/*/*`, derive the Application name,
+project, namespace, and source path, and deploy only to
+`https://kubernetes.default.svc`. Do not add app `.argocd/config.json` files.
+Each cluster owns its own complete HTTPRoute. OpenShift must never reference
+`clusters/talos`, and Talos must never reference `clusters/openshift`.
 
 ### Application with Web Access
 
@@ -75,7 +65,7 @@ spec:
       port: 8080
       targetPort: 8080
 
-# clusters/talos/apps/category/app-name/httproute.yaml - EXTERNAL
+# clusters/talos/apps/category/app-name/httproute.yaml - TALOS EXTERNAL
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -98,7 +88,7 @@ spec:
     - name: app-service
       port: 8080
 
-# clusters/talos/apps/category/app-name/httproute.yaml - INTERNAL
+# clusters/talos/apps/category/app-name/httproute.yaml - TALOS INTERNAL
 # apiVersion: gateway.networking.k8s.io/v1
 # kind: HTTPRoute
 # metadata:
@@ -116,6 +106,13 @@ spec:
 #     - name: app-service
 #       port: 8080
 ```
+
+OpenShift routes are separate complete files under
+`clusters/openshift/apps/...`. Do not copy Talos `gateway-external`,
+`gateway-internal`, Cloudflare tunnel targets, or `vanillax.me` assumptions
+into OpenShift. Before changing OpenShift route hostnames, read
+`docs/domains/multicluster/handoff-notes.md`; the live OpenShift Gateway DNS
+boundary is not yet resolved.
 
 ### Application with Secrets (1Password)
 
@@ -193,11 +190,19 @@ patches:
 
 ### Application with Persistent Storage + Backups
 
-Backups are declared **explicitly per PVC**: each backed-up PVC inlines its own
-`ReplicationSource` and `ReplicationDestination`, and its `dataSourceRef`
-points at that RD so PVC re-creation triggers the VolSync volume populator and
-restores from the shared Kopia repo. There is no Kyverno generator, no
-operator, no Helm chart — the YAML is the truth.
+Shared app bases use the portable local storage contract:
+
+```yaml
+spec:
+  storageClassName: vanillax-local-rwo
+```
+
+Talos maps `vanillax-local-rwo` to Longhorn. OpenShift intends to map it to
+LVM Storage, but OpenShift storage is not live-validated yet.
+
+Talos backups use pvc-plumber `v4.0.1`. pvc-plumber owns VolSync
+`ReplicationSource` and `ReplicationDestination` resources for opted-in PVCs.
+Do not add inline RS/RD documents for normal application PVCs.
 
 The shared repo Secret `volsync-kopia-repository` is produced in every
 namespace labeled `volsync.backube/privileged-movers: "true"` by
@@ -209,8 +214,9 @@ A `wait-for-rustfs` init container is auto-injected on every mover Job by
 `MutatingAdmissionPolicy/volsync-mover-backend-availability`. Backups fail
 fast (and Job-backoff-retry) if RustFS is unreachable.
 
-Reference: `manifests/apps/media/jellyfin/pvc.yaml` (single-PVC), `manifests/apps/home/paperless-ngx/pvc.yaml`
-(multi-PVC). Pattern:
+Reference:
+`manifests/apps/media/jellyfin/base/pvc.yaml` and
+`manifests/apps/home/paperless-ngx/base/pvc.yaml`. Pattern:
 
 ```yaml
 # namespace.yaml
@@ -219,10 +225,11 @@ kind: Namespace
 metadata:
   name: app-name
   labels:
+    pvc-plumber.io/managed-namespace: "true"       # Talos software write gate
     volsync.backube/privileged-movers: "true"   # REQUIRED — ClusterES selector
 
 ---
-# pvc.yaml — PVC + RS + RD inlined as one doc per PVC
+# pvc.yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -231,6 +238,9 @@ metadata:
   labels:
     app: app-name
     restore-policy: "strict"
+    pvc-plumber.io/enabled: "true"
+    pvc-plumber.io/manage-volsync: "true"
+    pvc-plumber.io/tier: "daily"
   annotations:
     # ServerSideDiff dry-runs SSA; the apiserver rejects any change to
     # the immutable dataSourceRef on a Bound PVC and wedges sync. The
@@ -251,59 +261,15 @@ spec:
     apiGroup: volsync.backube
     kind: ReplicationDestination
     name: app-data-dst
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: app-data
-  namespace: app-name
-spec:
-  sourcePVC: app-data
-  trigger:
-    schedule: "33 2 * * *"   # pick a unique minute — avoid thundering herd
-  kopia:
-    repository: volsync-kopia-repository
-    username: app-data            # convention: PVC name
-    hostname: app-name            # convention: namespace
-    compression: zstd-fastest
-    parallelism: 2
-    retain: { hourly: 24, daily: 7, weekly: 4, monthly: 2 }
-    copyMethod: Snapshot
-    storageClassName: vanillax-local-rwo
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext: { runAsUser: 568, runAsGroup: 568, fsGroup: 568 }
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: app-data-dst
-  namespace: app-name
-spec:
-  trigger:
-    manual: restore-once          # static; only fires when value changes
-  kopia:
-    repository: volsync-kopia-repository
-    username: app-data
-    hostname: app-name
-    sourceIdentity:
-      sourceName: app-data
-      sourceNamespace: app-name
-      sourcePVCName: app-data
-    copyMethod: Snapshot
-    storageClassName: vanillax-local-rwo
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes: [ReadWriteOnce]
-    capacity: 10Gi               # MUST equal PVC requests.storage
-    moverSecurityContext: { runAsUser: 568, runAsGroup: 568, fsGroup: 568 }
 ```
 
-Verify after applying:
+Verify the Talos operator-owned resources after syncing:
+
 ```
 kubectl get replicationsource,replicationdestination,pvc -n app-name
 kubectl get secret -n app-name volsync-kopia-repository   # produced by ClusterES
-bash hack/volsync-status.sh   # cluster-wide RS/RD status
+kubectl port-forward -n pvc-plumber svc/pvc-plumber-metrics 8080:8080
+curl -fsS http://127.0.0.1:8080/audit
 ```
 
 **When to back up a PVC**:
@@ -321,16 +287,12 @@ key — bare `backup-exempt-reason` is silently ignored by CI guard):
 - PVCs that will be frequently deleted/recreated
 - **CNPG database PVCs** — these use Barman to S3, not VolSync
 
-**Multi-PVC apps**: declare each PVC's triplet (PVC + RS + RD) explicitly in
-its own document. There is no per-app abstraction. See
-`manifests/apps/development/posthog/data-layer/{kafka,postgres,redis}.yaml` and
-`manifests/apps/home/project-nomad/*/pvc.yaml` for examples.
+OpenShift overlays currently remove Talos pvc-plumber, VolSync, restore labels,
+and `dataSourceRef` fields. Do not claim OpenShift backup coverage until an
+OpenShift-specific backup policy is selected and tested.
 
-**Helm-rendered PVCs**: the PVC manifest is owned by the chart; inject the
-`ServerSideDiff=false` annotation and the `dataSourceRef` via Kustomize
-`patches:` (see `manifests/apps/development/gitea/kustomization.yaml`), and put the
-sibling RS/RD as `extraDeploy:` entries in the chart's values file (see
-`manifests/apps/development/gitea/values.yaml`).
+For the complete Talos backup contract, use `.claude/commands/add-backup.md`
+and `docs/talos-argocd-pvc-plumber-integration.md`.
 
 ## Configuration Patterns
 
@@ -367,11 +329,11 @@ components:
 
 | Pattern | Location |
 |---------|----------|
-| **Minimal app** | `manifests/apps/development/nginx/` |
-| **GPU workload** | `manifests/apps/ai/comfyui/` |
-| **Complex app with storage** | `manifests/apps/media/immich/` |
-| **PVC with automatic backup** | `manifests/apps/home/project-zomboid/pvc.yaml` (see `zomboid-data`) |
+| **Minimal app** | `manifests/apps/development/nginx/base/` |
+| **GPU workload** | `manifests/apps/ai/comfyui/base/` |
+| **Complex app with storage** | `manifests/apps/media/immich/base/` |
+| **PVC with automatic backup** | `manifests/apps/home/project-zomboid/base/pvc.yaml` (see `zomboid-data`) |
 | **Helm + Kustomize** | `manifests/infra/1passwordconnect/` |
 | **Secret management** | Any app with `externalsecret.yaml` |
-| **Job with ArgoCD hooks** | `manifests/apps/development/posthog/core/jobs.yaml` |
-| **Helm Job patch** | `manifests/apps/development/temporal/kustomization.yaml` |
+| **Job with ArgoCD hooks** | `manifests/apps/development/posthog/base/core/jobs.yaml` |
+| **Helm Job patch** | `manifests/apps/development/temporal/base/kustomization.yaml` |
