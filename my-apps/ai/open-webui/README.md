@@ -49,7 +49,8 @@ Currently wired up (see `open-webui-configmap.env`):
 
 vLLM is served from `my-apps/ai/vllm/deployment.yaml`; the Open WebUI model ID
 must match one of that Deployment's `--served-model-name` values. The first
-served name, `qwen3.6-27b`, is the canonical UI default.
+served name, `qwen3.6-27b`, is the canonical UI default. vLLM deliberately
+advertises only that one name so Open WebUI's model selector stays clean.
 
 ## Performance tuning (env ConfigMap)
 
@@ -142,7 +143,7 @@ kubectl apply -k my-apps/ai/open-webui/
 
 **No models showing up in the UI**
 - Check `curl -s http://vllm-service.vllm.svc.cluster.local:8080/v1/models` from inside the cluster — what model name is advertised?
-- Compare against `DEFAULT_MODELS` in `open-webui-configmap.env`. It must match a vLLM `--served-model-name` exactly.
+- Compare against `DEFAULT_MODELS` in `open-webui-configmap.env`. It must match a vLLM `--served-model-name` value exactly.
 - If Open WebUI cached an empty model list while vLLM was crashlooping, restart `deploy/open-webui` after vLLM is healthy.
 
 **Tools tab is empty**
