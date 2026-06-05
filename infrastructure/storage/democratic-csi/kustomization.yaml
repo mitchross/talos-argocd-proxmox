@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: democratic-csi
+
+# Two Helm releases of the democratic-csi chart — one CSI driver per protocol.
+# iSCSI adds a dynamic RWO block class (truenas-iscsi); NFS adds a dynamic RWX
+# class (truenas-nfs), both backed by TrueNAS 192.168.10.133 over the 10G link.
+# ADDITIVE ONLY: Longhorn stays the default StorageClass; existing PVCs and the
+# static nfs-*/smb-* shares are untouched. Talos nodes ship siderolabs/iscsi-tools.
+helmCharts:
+  - name: democratic-csi
+    repo: https://democratic-csi.github.io/charts/
+    version: 0.15.1
+    releaseName: truenas-iscsi
+    namespace: democratic-csi
+    includeCRDs: false
+    valuesFile: values-iscsi.yaml
+  - name: democratic-csi
+    repo: https://democratic-csi.github.io/charts/
+    version: 0.15.1
+    releaseName: truenas-nfs
+    namespace: democratic-csi
+    includeCRDs: false
+    valuesFile: values-nfs.yaml
+
+resources:
+  - namespace.yaml
+  # Non-secret config templates (plain ConfigMaps, stable names — NOT
+  # configMapGenerator, which would hash-suffix and break the ESO templateFrom ref).
+  - configmap-iscsi.yaml
+  - configmap-nfs.yaml
+  - externalsecret-iscsi.yaml
+  - externalsecret-nfs.yaml
