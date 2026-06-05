@@ -40,9 +40,8 @@ spec:
           # `latest` is a placeholder — Renovate/this repo prefer pinned tags.
           image: vllm/vllm-openai:latest
           imagePullPolicy: IfNotPresent
-          # The image entrypoint is the OpenAI API server; args configure it.
+          # The image entrypoint runs `vllm serve`; the first arg is the positional model_tag.
           args:
-            - "--model"
             - "/models/Qwen3.6-27B-AWQ-BF16-INT4"     # default model (higher quality; fits TP=2 / 48GB)
             # served-model-name is a LIST (nargs+): advertise the new canonical id AND every llama-cpp
             # model id the existing tools already send — so repointing those tools is URL-only, no model
