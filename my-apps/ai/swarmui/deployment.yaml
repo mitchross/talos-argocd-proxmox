@@ -7,7 +7,7 @@ spec:
   # RWO Longhorn PVCs -> Recreate (RollingUpdate causes Multi-Attach deadlock).
   strategy:
     type: Recreate
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       app: swarmui
