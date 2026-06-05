@@ -24,7 +24,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: kopia
-          image: ghcr.io/home-operations/kopia:0.22.3
+          image: ghcr.io/home-operations/kopia:0.23.0
           args:
             - --without-password
           env:
