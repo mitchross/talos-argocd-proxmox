@@ -113,7 +113,7 @@ echo ""
 echo "⎈ Installing ArgoCD via Helm..."
 if ! helm upgrade --install argocd argo-cd \
   --repo https://argoproj.github.io/argo-helm \
-  --version 9.5.17 \
+  --version 9.5.19 \
   --namespace argocd \
   --values "$ROOT_DIR/infrastructure/controllers/argocd/values.yaml" \
   --wait \
