@@ -6,7 +6,7 @@ metadata:
   labels:
     external-dns: 'true'
   annotations:
-    external-dns.alpha.kubernetes.io/target: apps.sno-ai-lab.vanillax.xyz
+    external-dns.alpha.kubernetes.io/target: gateway.apps.sno-ai-lab.vanillax.xyz
 spec:
   parentRefs:
   - group: gateway.networking.k8s.io
@@ -15,7 +15,7 @@ spec:
     namespace: openshift-ingress
     sectionName: https
   hostnames:
-  - media-kiwix.apps.sno-ai-lab.vanillax.xyz
+  - media-kiwix.gateway.apps.sno-ai-lab.vanillax.xyz
   rules:
   - matches:
     - path:

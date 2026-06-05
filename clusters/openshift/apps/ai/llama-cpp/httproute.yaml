@@ -10,7 +10,7 @@ spec:
     name: openshift-gateway
     namespace: openshift-ingress
   hostnames:
-  - llama.apps.sno-ai-lab.vanillax.xyz
+  - llama.gateway.apps.sno-ai-lab.vanillax.xyz
   rules:
   - matches:
     - path:

@@ -99,7 +99,8 @@ OpenShift:
 | Wave | Component | Purpose |
 |------|-----------|---------|
 | **0** | Foundation | Argo CD, 1Password Connect, External Secrets, AppProjects |
-| **1** | Core controllers | cert-manager and OpenShift LVM storage |
+| **1** | Core controllers | cert-manager, OpenShift LVM storage, and MetalLB operator |
+| **2** | Load balancer config | MetalLB address pool and L2 advertisement |
 | **4** | Infrastructure | OpenShift Gateway API and shared storage overlays |
 | **6** | Apps | Full app catalog through OpenShift overlays |
 
@@ -116,8 +117,9 @@ OpenShift optional path:
 
 1. **OpenShift cluster access** - `kubectl` or `oc` points at the target OpenShift cluster.
 2. **Gateway API available** - OpenShift/OKD owns the CRDs and implementation; Git declares `openshift-default`.
-3. **OLM available** - required for the starter LVM Storage Operator Subscription.
-4. **Local tools installed** - `kubectl`, `kustomize`, Helm, and `op`.
+3. **OLM available** - required for the starter LVM Storage and MetalLB Operator Subscriptions.
+4. **Gateway DNS split** - keep default `*.apps.sno-ai-lab.vanillax.xyz` on the OpenShift router and use `*.gateway.apps.sno-ai-lab.vanillax.xyz` for GitOps-managed Gateway API apps.
+5. **Local tools installed** - `kubectl`, `kustomize`, Helm, and `op`.
 
 OpenShift storage policy:
 
@@ -307,10 +309,12 @@ Operator.
 > **Current `sno-ai-lab` status (June 4, 2026): do not bootstrap yet.**
 > Read [the canonical multicluster handoff](docs/domains/multicluster/handoff-notes.md)
 > first. The live `4.22.0-rc.5` cluster has no usable LVM Storage operator or
-> StorageClass, no bare-metal LoadBalancer provider for the Gateway API
-> service, a route-domain/DNS collision with the default OpenShift ingress,
-> and no pre-seeded bootstrap secrets. Repository-local validation passed, but
-> that does not make the live cluster ready.
+> StorageClass, no live-proven MetalLB/Gateway LoadBalancer publishing, and no
+> pre-seeded bootstrap secrets. Git now declares MetalLB and the dedicated
+> `*.gateway.apps.sno-ai-lab.vanillax.xyz` route domain, but the live cluster
+> still needs authoritative DNS, `.230` L2 advertisement, and operator-catalog
+> verification before bootstrap. A June 5, 2026 read-only PackageManifest check
+> did not find `lvms-operator` or `metallb-operator` in the live catalogs.
 
 ### Step 0: Get Cluster Access
 
@@ -333,9 +337,12 @@ kubectl get crd httproutes.gateway.networking.k8s.io
 kubectl get gatewayclass,gateway -A
 kubectl get subscriptions.operators.coreos.com -A
 kubectl get subscription lvms-operator -n openshift-storage -o yaml
+kubectl get subscription metallb-operator -n metallb-system -o yaml
 kubectl get crd | grep -Ei 'lvm|topolvm'
+kubectl get crd | grep -Ei 'metallb|gateway'
 kubectl get storageclass
 kubectl get svc -A -o wide | grep LoadBalancer
+dig @1.1.1.1 +short A test.gateway.apps.sno-ai-lab.vanillax.xyz
 ```
 
 Git owns GatewayClass `openshift-default` with controller
@@ -347,10 +354,17 @@ The OpenShift LVM storage entrypoint assumes the Red Hat `lvms-operator`
 Subscription and `lvm.topolvm.io/v1alpha1` `LVMCluster` schema. Verify those
 against the live cluster before syncing.
 
-The current repo also assumes OpenShift Gateway API apps own
-`*.apps.sno-ai-lab.vanillax.xyz`. That collides with the live default
-OpenShift ingress wildcard on `192.168.10.10`. Resolve the dedicated Gateway
-subdomain and LoadBalancer IP before bootstrap.
+The OpenShift bootstrap wrapper now verifies the `lvms-operator` and
+`metallb-operator` PackageManifests are visible before installing Argo CD.
+If either package is missing, fix OperatorHub/catalog availability or adjust
+the Git package/channel names before bootstrap.
+
+The repo keeps OpenShift's default `*.apps.sno-ai-lab.vanillax.xyz` wildcard
+reserved for console, OAuth, and ordinary Route traffic on `192.168.10.10`.
+GitOps-managed Gateway API apps use
+`*.gateway.apps.sno-ai-lab.vanillax.xyz`, backed by the MetalLB pool
+`192.168.10.230-192.168.10.240`. Prove authoritative DNS and `.230`
+reachability before bootstrap.
 
 ### Step 2: Pre-Seed 1Password Secrets
 

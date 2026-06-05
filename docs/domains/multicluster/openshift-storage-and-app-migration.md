@@ -60,10 +60,22 @@ The OpenShift bootstrap profile verifies the platform-owned Gateway API CRDs
 and rejects a conflicting Service Mesh Operator v2 subscription. It never
 installs Cilium or upstream Gateway API CRDs.
 
-The live platform-None cluster has no observed LoadBalancer provider, and the
-current `*.apps.sno-ai-lab.vanillax.xyz` app route domain collides with the
-default OpenShift ingress wildcard. Resolve Gateway service publishing and use
-a dedicated Gateway API subdomain before live sync.
+Default OpenShift Routes keep `*.apps.sno-ai-lab.vanillax.xyz` on the
+HostNetwork router for console, OAuth, and ordinary Route traffic. GitOps
+HTTPRoutes use `*.gateway.apps.sno-ai-lab.vanillax.xyz` through the shared
+Gateway in `openshift-ingress`.
+
+Git now declares MetalLB for the platform-None SNO LoadBalancer path:
+
+- operator namespace/subscription: `clusters/openshift/infra/metallb-operator`
+- address pool and L2 advertisement: `clusters/openshift/infra/metallb-config`
+- pool: `192.168.10.230-192.168.10.240`
+
+The old `openshift-sno-lab` reference repo used this same split-domain pattern:
+default `*.apps` on the OpenShift router IP and `*.gateway.apps` on MetalLB.
+Do not treat the new manifests as live-proven until the MetalLB channel
+resolves on `4.22.0-rc.5`, `.230` is reachable, and authoritative DNS resolves
+Gateway names to `.230`.
 
 ## Backup Boundary
 

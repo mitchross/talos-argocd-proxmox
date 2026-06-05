@@ -10,7 +10,7 @@ spec:
     name: openshift-gateway
     namespace: openshift-ingress
   hostnames:
-  - stirling.apps.sno-ai-lab.vanillax.xyz
+  - stirling.gateway.apps.sno-ai-lab.vanillax.xyz
   rules:
   - matches:
     - path:

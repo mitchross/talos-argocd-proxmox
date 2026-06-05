@@ -147,6 +147,30 @@ Verified cluster facts:
 - No active OSSM v2 subscription was found.
 - No `argocd` namespace or Argo CD CRDs exist.
 - Required pre-seeded 1Password namespaces/secrets do not exist.
+- June 5, 2026 PackageManifest recheck:
+  - `lvms-operator` is not present in the live catalogs.
+  - `metallb-operator` is not present in the live catalogs.
+  - the only PackageManifest matching broad storage/load-balancer search terms
+    was `apelocal-csi` from Certified Operators.
+
+Historical SNO context from `/home/vanillax/programming/openshift-sno-lab`
+confirms the intended Gateway split:
+
+- default OpenShift Routes used `*.apps.openshift-lab.vanillax.xyz` on the
+  node/router IP;
+- Gateway API apps used `*.gateway.apps.openshift-lab.vanillax.xyz`;
+- MetalLB advertised `192.168.10.230-192.168.10.240`;
+- the GatewayClass was `openshift-default` with controller
+  `openshift.io/gateway-controller/v1`;
+- the Gateway lived in `openshift-ingress`.
+
+This branch now mirrors that pattern for `sno-ai-lab`:
+
+- default OpenShift ingress stays on `*.apps.sno-ai-lab.vanillax.xyz`;
+- GitOps-managed Gateway apps use
+  `*.gateway.apps.sno-ai-lab.vanillax.xyz`;
+- MetalLB is declared as OpenShift core dependency manifests with pool
+  `192.168.10.230-192.168.10.240`.
 
 The OpenShift GatewayClass contract remains plausible: official OKD 4.20 and
 OpenShift 4.21 documentation require
@@ -172,6 +196,8 @@ of these live blockers before installing Argo CD.
   `ResolutionFailed`.
 - Failure message: no operators found in package `lvms-operator` in the
   referenced `redhat-operators` catalog.
+- June 5, 2026 read-only PackageManifest lookup also found no
+  `lvms-operator` package in the live catalogs.
 - There is no installed LVM CSV, no `LVMCluster` CRD, no TopoLVM API, no LVM
   pods, and no StorageClass.
 - Repo manifest pins channel `stable-4.20`; the live cluster is
@@ -183,7 +209,7 @@ of these live blockers before installing Argo CD.
 Until this is resolved, every OpenShift app PVC using
 `vanillax-local-rwo` will remain Pending.
 
-### 2. Gateway LoadBalancer Publishing Is Unavailable
+### 2. Gateway LoadBalancer Publishing Is Declared But Not Live-Proven
 
 - The OpenShift Gateway implementation provisions a `LoadBalancer` Service for
   each Gateway.
@@ -191,9 +217,17 @@ Until this is resolved, every OpenShift app PVC using
   MetalLB APIs, MetalLB subscription, or other observed load-balancer provider.
 - `192.168.10.230` is not currently reachable from the operator workstation;
   ARP resolution reports `FAILED`.
+- Git now declares the MetalLB operator and config:
+  - `clusters/openshift/infra/metallb-operator`
+  - `clusters/openshift/infra/metallb-config`
+  - pool `192.168.10.230-192.168.10.240`
+- June 5, 2026 read-only PackageManifest lookup found no `metallb-operator`
+  package in the live catalogs, so the current Git declaration would not
+  resolve on this cluster yet.
 
-Before Gateway sync, select and verify the bare-metal LoadBalancer/IP
-advertisement mechanism and reserve the intended Gateway address.
+Before Gateway sync is considered ready, verify the Red Hat MetalLB package and
+channel on OpenShift `4.22.0-rc.5`, then prove `.230` is advertised and
+reachable.
 
 ### 3. Route Domain And DNS Currently Collide With Default OpenShift Ingress
 
@@ -204,22 +238,20 @@ Cloudflare currently contains:
 *.gateway.apps.sno-ai-lab.vanillax.xyz -> 192.168.10.230
 ```
 
-Authoritative and local DNS tests both resolve
+Previous authoritative and local DNS tests both resolved
 `test.gateway.apps.sno-ai-lab.vanillax.xyz` to `192.168.10.10`, not `.230`.
 The broader `*.apps...` record currently captures the nested name.
 
-The repo also currently configures the OpenShift Gateway listener and all app
-HTTPRoutes under `*.apps.sno-ai-lab.vanillax.xyz`. Those names therefore point
-at the default OpenShift HostNetwork router on `.10`, not the future Gateway
-API LoadBalancer.
+The branch now configures the OpenShift Gateway listener, Argo CD URL, and app
+HTTPRoutes under `*.gateway.apps.sno-ai-lab.vanillax.xyz`. DNS still needs a
+fresh authoritative proof before bootstrap.
 
 Recommended direction:
 
 - Preserve `*.apps.sno-ai-lab.vanillax.xyz -> 192.168.10.10` for OpenShift
   console, OAuth, and ordinary Route traffic.
-- Give GitOps-managed Gateway API apps a distinct subdomain such as
+- Keep GitOps-managed Gateway API apps on
   `*.gateway.apps.sno-ai-lab.vanillax.xyz`.
-- Update the Gateway listener, Argo CD URLs, and app HTTPRoutes together.
 - Fix authoritative DNS behavior and verify the chosen Gateway IP before
   bootstrap.
 
@@ -243,10 +275,10 @@ Gateway publishing, and route-domain decisions above are resolved.
 
 1. Resolve LVM Storage for OpenShift `4.22.0-rc.5` and prove that
    `vanillax-local-rwo` can bind a test PVC.
-2. Choose and install/configure a bare-metal LoadBalancer implementation for
-   Gateway API, then prove the chosen external IP is reachable.
-3. Change the OpenShift Gateway/API app domain to the dedicated subdomain and
-   verify authoritative DNS resolution.
+2. Verify the Git-declared MetalLB operator/config works on OpenShift
+   `4.22.0-rc.5`, then prove `192.168.10.230` is reachable.
+3. Verify authoritative DNS resolves
+   `test.gateway.apps.sno-ai-lab.vanillax.xyz` to `192.168.10.230`.
 4. Re-run read-only preflight checks.
 5. Pre-seed the three 1Password secrets.
 6. Clone the isolated test repository and run
@@ -267,6 +299,7 @@ kubectl get node -o wide
 kubectl get clusteroperator ingress network -o wide
 kubectl get gatewayclass,gateway,httproute -A
 kubectl get subscriptions.operators.coreos.com -A
+kubectl get packagemanifests.packages.operators.coreos.com -n openshift-marketplace | grep -Ei 'metallb|lvm|lvms'
 kubectl get subscription lvms-operator -n openshift-storage -o yaml
 kubectl get crd | grep -Ei 'gateway|lvm|topolvm'
 kubectl get storageclass
@@ -275,7 +308,7 @@ kubectl get secret -n 1passwordconnect 1password-credentials
 kubectl get secret -n 1passwordconnect 1password-operator-token
 kubectl get secret -n external-secrets 1passwordconnect
 
-dig @1.1.1.1 +short A argocd.apps.sno-ai-lab.vanillax.xyz
+dig @1.1.1.1 +short A argocd.gateway.apps.sno-ai-lab.vanillax.xyz
 dig @1.1.1.1 +short A test.gateway.apps.sno-ai-lab.vanillax.xyz
 ```
 

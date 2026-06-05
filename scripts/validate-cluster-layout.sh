@@ -51,6 +51,13 @@ while IFS= read -r path; do
 done < <(rg -l 'clusters/talos|\.\./talos' clusters/openshift --glob 'kustomization.yaml' || true)
 
 while IFS= read -r path; do
+  fail "OpenShift Gateway API resources must use *.gateway.apps.sno-ai-lab.vanillax.xyz: $path"
+done < <(
+  rg -n 'apps\.sno-ai-lab\.vanillax\.xyz' clusters/openshift --glob '*.{yaml,yml}' \
+    | rg -v 'gateway\.apps\.sno-ai-lab\.vanillax\.xyz' || true
+)
+
+while IFS= read -r path; do
   fail "escaped inline patch string remains: $path"
 done < <(
   rg -l 'patch:\s*".*\\n' clusters manifests --glob 'kustomization.yaml' || true

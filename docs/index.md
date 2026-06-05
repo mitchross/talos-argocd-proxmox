@@ -25,7 +25,7 @@ needed.
 > - structural migration locally accepted on `feat/one-shot-multicluster-kustomize`
 > - isolated live-test repo: `mitchross/talos-argocd-proxmox-multicluster-test`
 > - live OpenShift `sno-ai-lab` is **not ready for bootstrap**
-> - unresolved LVM Storage, Gateway LoadBalancer publishing, and route DNS
+> - unresolved LVM Storage, unverified MetalLB/Gateway `.230`, and DNS proof
 > - read [multicluster handoff notes](domains/multicluster/handoff-notes.md)
 >   before OpenShift or multicluster work
 

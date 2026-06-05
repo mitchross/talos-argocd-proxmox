@@ -7,5 +7,7 @@ resources:
   - bootstrap/external-secrets.yaml
   - core-dependencies/cert-manager-app.yaml
   - core-dependencies/lvm-storage-app.yaml
+  - core-dependencies/metallb-operator-app.yaml
+  - core-dependencies/metallb-config-app.yaml
   - appsets/infrastructure-appset.yaml
   - appsets/apps-appset.yaml

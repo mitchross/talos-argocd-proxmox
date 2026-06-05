@@ -12,18 +12,18 @@ spec:
     - name: http
       protocol: HTTP
       port: 80
-      hostname: "*.apps.sno-ai-lab.vanillax.xyz"
+      hostname: "*.gateway.apps.sno-ai-lab.vanillax.xyz"
       allowedRoutes:
         namespaces:
           from: All
     - name: https
       protocol: HTTPS
       port: 443
-      hostname: "*.apps.sno-ai-lab.vanillax.xyz"
+      hostname: "*.gateway.apps.sno-ai-lab.vanillax.xyz"
       tls:
         mode: Terminate
         certificateRefs:
-          - name: cert-openshift-apps
+          - name: cert-openshift-gateway-apps
             kind: Secret
             group: ""
       allowedRoutes:
