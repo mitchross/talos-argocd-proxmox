@@ -22,7 +22,7 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: loader
-        image: ghcr.io/open-webui/open-webui:cuda@sha256:19d3ec8e516e49bea271e5b939c2ff9aefc2e7bd5b3deea248084a7e76d6eb37
+        image: ghcr.io/open-webui/open-webui:cuda@sha256:1c21667d3a50e698582c07e17aea38d1b02e28034ce50c67c842f0f28a1a8635
         command:
         - python3
         - -c
