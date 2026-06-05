@@ -62,6 +62,9 @@ spec:
             - "--enable-auto-tool-choice"              # Perplexica sends tool_choice=auto for research/search flows
             - "--tool-call-parser"
             - "qwen3_xml"
+            - "--reasoning-parser"
+            - "qwen3"                                  # split <think> out of content into reasoning_content
+                                                       # (keeps thinking quality; tools/UIs get a clean answer)
             - "--host"
             - "0.0.0.0"
             - "--port"
