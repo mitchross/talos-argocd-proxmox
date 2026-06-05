@@ -172,12 +172,14 @@ This branch now mirrors that pattern for `sno-ai-lab`:
 - MetalLB is declared as OpenShift core dependency manifests with pool
   `192.168.10.230-192.168.10.240`.
 
-The OpenShift GatewayClass contract remains plausible: official OKD 4.20 and
-OpenShift 4.21 documentation require
-`controllerName: openshift.io/gateway-controller/v1`. Creating that
-GatewayClass causes the Ingress Operator to install the Gateway API service
-mesh implementation. This behavior is still unverified on the live
-`4.22.0-rc.5` cluster.
+The OpenShift GatewayClass contract is documented by OKD/OpenShift 4.19+:
+creating a GatewayClass with
+`controllerName: openshift.io/gateway-controller/v1` makes the Ingress
+Operator install the Gateway API service mesh implementation in
+`openshift-ingress`. Do not copy the old `openshift-sno-lab` repo's manual
+`servicemeshoperator3` step into this repo. The current bootstrap guard that
+blocks OSSM v2 remains correct. The exact auto-install behavior still needs
+live verification on `4.22.0-rc.5`.
 
 Primary references:
 
@@ -200,8 +202,9 @@ of these live blockers before installing Argo CD.
   `lvms-operator` package in the live catalogs.
 - There is no installed LVM CSV, no `LVMCluster` CRD, no TopoLVM API, no LVM
   pods, and no StorageClass.
-- Repo manifest pins channel `stable-4.20`; the live cluster is
-  `4.22.0-rc.5` on `stable-4.22`.
+- Repo manifest now targets channel `stable-4.22` to match the live
+  `4.22.0-rc.5` cluster, but the live catalog still does not expose the
+  package.
 - Repo uses namespace `openshift-storage`; current Red Hat 4.20 documentation
   describes `openshift-lvm-storage` as the default namespace. Confirm the
   supported 4.22 operator/package/channel/namespace before changing Git.
