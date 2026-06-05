@@ -6,7 +6,7 @@ metadata:
   labels:
     external-dns: 'true'
   annotations:
-    external-dns.alpha.kubernetes.io/target: apps.sno-ai-lab.vanillax.xyz
+    external-dns.alpha.kubernetes.io/target: gateway.apps.sno-ai-lab.vanillax.xyz
 spec:
   parentRefs:
   - group: gateway.networking.k8s.io
@@ -15,7 +15,7 @@ spec:
     namespace: openshift-ingress
     sectionName: https
   hostnames:
-  - redlib.apps.sno-ai-lab.vanillax.xyz
+  - redlib.gateway.apps.sno-ai-lab.vanillax.xyz
   rules:
   - matches:
     - path:
@@ -36,7 +36,7 @@ metadata:
   labels:
     external-dns: 'true'
   annotations:
-    external-dns.alpha.kubernetes.io/target: apps.sno-ai-lab.vanillax.xyz
+    external-dns.alpha.kubernetes.io/target: gateway.apps.sno-ai-lab.vanillax.xyz
 spec:
   parentRefs:
   - group: gateway.networking.k8s.io
@@ -45,7 +45,7 @@ spec:
     namespace: openshift-ingress
     sectionName: https
   hostnames:
-  - libreddit.apps.sno-ai-lab.vanillax.xyz
+  - libreddit.gateway.apps.sno-ai-lab.vanillax.xyz
   rules:
   - matches:
     - path:

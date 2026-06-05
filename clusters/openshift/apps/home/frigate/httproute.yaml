@@ -9,7 +9,7 @@ spec:
     name: openshift-gateway
     namespace: openshift-ingress
   hostnames:
-  - frigate.apps.sno-ai-lab.vanillax.xyz
+  - frigate.gateway.apps.sno-ai-lab.vanillax.xyz
   rules:
   - matches:
     - path:

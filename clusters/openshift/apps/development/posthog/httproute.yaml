@@ -9,7 +9,7 @@ spec:
     namespace: openshift-ingress
     sectionName: https
   hostnames:
-  - posthog.apps.sno-ai-lab.vanillax.xyz
+  - posthog.gateway.apps.sno-ai-lab.vanillax.xyz
   rules:
   - matches:
     - path:
@@ -70,14 +70,14 @@ metadata:
   labels:
     external-dns: 'true'
   annotations:
-    external-dns.alpha.kubernetes.io/target: apps.sno-ai-lab.vanillax.xyz
+    external-dns.alpha.kubernetes.io/target: gateway.apps.sno-ai-lab.vanillax.xyz
 spec:
   parentRefs:
   - name: openshift-gateway
     namespace: openshift-ingress
     sectionName: https
   hostnames:
-  - ingest-posthog.apps.sno-ai-lab.vanillax.xyz
+  - ingest-posthog.gateway.apps.sno-ai-lab.vanillax.xyz
   rules:
   - matches:
     - path:

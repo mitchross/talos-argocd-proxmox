@@ -9,7 +9,7 @@ spec:
     namespace: openshift-ingress
     sectionName: https
   hostnames:
-  - photos.apps.sno-ai-lab.vanillax.xyz
+  - photos.gateway.apps.sno-ai-lab.vanillax.xyz
   rules:
   - backendRefs:
     - name: immich-server

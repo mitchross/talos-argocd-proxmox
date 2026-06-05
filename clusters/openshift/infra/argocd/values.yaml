@@ -29,7 +29,7 @@ configs:
     # to also pipe through mutating admission webhooks (CNPG ships one).
     controller.diff.server.side: "true"
   cm:
-    url: "https://argocd.apps.sno-ai-lab.vanillax.xyz"
+    url: "https://argocd.gateway.apps.sno-ai-lab.vanillax.xyz"
     # Keep Helm inflation enabled for upstream charts. Kustomize's default
     # load restrictor remains active; no app should reference files outside
     # its own kustomization root.

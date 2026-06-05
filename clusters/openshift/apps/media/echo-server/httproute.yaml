@@ -11,7 +11,7 @@ spec:
     namespace: openshift-ingress
     sectionName: https
   hostnames:
-  - echo.apps.sno-ai-lab.vanillax.xyz
+  - echo.gateway.apps.sno-ai-lab.vanillax.xyz
   rules:
   - matches:
     - path:

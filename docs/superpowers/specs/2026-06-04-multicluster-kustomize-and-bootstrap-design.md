@@ -280,10 +280,13 @@ spec:
 ```
 
 - The shared OpenShift Gateway lives in `openshift-ingress`.
-- The repo currently configures
-  `*.apps.sno-ai-lab.vanillax.xyz` HTTPRoutes. Live validation proved that
-  domain is already owned by the default OpenShift HostNetwork ingress, so a
-  dedicated Gateway API subdomain must replace it before live bootstrap.
+- Default OpenShift Routes keep `*.apps.sno-ai-lab.vanillax.xyz` on the
+  HostNetwork router.
+- GitOps-managed Gateway API apps use
+  `*.gateway.apps.sno-ai-lab.vanillax.xyz`, backed by the Git-declared MetalLB
+  pool `192.168.10.230-192.168.10.240`.
+- The historical `/home/vanillax/programming/openshift-sno-lab` repo used this
+  same split-domain pattern for SNO Gateway testing.
 - The OpenShift bootstrap profile verifies that no active OSSM v2 subscription
   conflicts with the Ingress Operator-managed OSSM v3 Gateway implementation.
 - The Gateway infrastructure Application applies the GatewayClass before the

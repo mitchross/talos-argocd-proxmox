@@ -10,7 +10,7 @@ spec:
     name: openshift-gateway
     namespace: openshift-ingress
   hostnames:
-  - comfyui.apps.sno-ai-lab.vanillax.xyz
+  - comfyui.gateway.apps.sno-ai-lab.vanillax.xyz
   rules:
   - matches:
     - path:

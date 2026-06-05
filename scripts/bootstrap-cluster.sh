@@ -112,6 +112,21 @@ verify_openshift_gateway_api() {
   fi
 }
 
+verify_openshift_package() {
+  local package="$1"
+
+  if ! kubectl get packagemanifests.packages.operators.coreos.com \
+    -n openshift-marketplace "$package" >/dev/null 2>&1; then
+    die "required OpenShift OLM PackageManifest is missing: $package"
+  fi
+}
+
+verify_openshift_operator_packages() {
+  echo "Verifying required OpenShift OLM PackageManifests..."
+  verify_openshift_package lvms-operator
+  verify_openshift_package metallb-operator
+}
+
 verify_secret_gate() {
   local missing=0
   local name
@@ -158,6 +173,9 @@ print_dry_run() {
     echo "Cilium: skipped for OpenShift"
     echo "Gateway API: verify platform CRDs"
     echo "OSSM v2: verify no conflicting subscription"
+    echo "OLM packages: verify lvms-operator and metallb-operator are visible"
+    echo "MetalLB: Git manages operator/config after Argo root sync (192.168.10.230-192.168.10.240)"
+    echo "Gateway DNS: use *.gateway.apps.sno-ai-lab.vanillax.xyz, not the default *.apps router wildcard"
   fi
 
   echo "Secret gate: verify 1passwordconnect/1password-credentials"
@@ -244,6 +262,7 @@ if [ "$PROFILE" = "talos" ]; then
   install_talos_gateway_api_crds
 else
   verify_openshift_gateway_api
+  verify_openshift_operator_packages
 fi
 
 verify_secret_gate

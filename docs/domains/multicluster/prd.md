@@ -175,10 +175,11 @@ OpenShift/OKD documented Gateway API contract:
 - The OpenShift Gateway infrastructure entrypoint declares GatewayClass
   `openshift-default` with controller `openshift.io/gateway-controller/v1`.
 - The shared Gateway lives in `openshift-ingress`.
-- The repo currently configures
-  `*.apps.sno-ai-lab.vanillax.xyz` routes, but the live cluster already uses
-  that wildcard for its default HostNetwork ingress. A dedicated Gateway API
-  subdomain must be selected before live bootstrap.
+- Default OpenShift Routes keep `*.apps.sno-ai-lab.vanillax.xyz` on the
+  HostNetwork router.
+- GitOps-managed Gateway API apps use
+  `*.gateway.apps.sno-ai-lab.vanillax.xyz`, backed by the OpenShift MetalLB
+  pool `192.168.10.230-192.168.10.240`.
 - The OpenShift bootstrap profile verifies there is no active OSSM v2
   subscription that conflicts with the Ingress Operator-managed OSSM v3
   Gateway implementation.
@@ -278,9 +279,13 @@ proved:
   found;
 - the LVM subscription is unresolved, with no LVM CRD, TopoLVM API, or
   StorageClass;
-- the platform-None cluster has no observed bare-metal LoadBalancer provider;
-- the current Gateway/API app domain collides with default OpenShift ingress
-  DNS;
+- the platform-None cluster has no observed live bare-metal LoadBalancer
+  provider yet, though Git now declares MetalLB;
+- the original Gateway/API app domain collided with default OpenShift ingress
+  DNS; Git now uses the dedicated Gateway subdomain, but authoritative DNS
+  and `.230` advertisement remain unverified;
+- June 5, 2026 PackageManifest recheck did not find `lvms-operator` or
+  `metallb-operator` in the live catalogs;
 - required bootstrap secrets and Argo CD are absent.
 
 Local rendering still cannot prove:
@@ -288,6 +293,7 @@ Local rendering still cannot prove:
 - GatewayClass/controller provisioning behavior on OpenShift `4.22.0-rc.5`;
 - the supported 4.22 LVM Storage package, channel, namespace, and
   `LVMCluster` schema;
+- the supported MetalLB package/channel on OpenShift `4.22.0-rc.5`;
 - the generated LVM device class and portable StorageClass behavior;
 - OpenShift SCC compatibility for NFS, SMB, applications, and Helm charts;
 - external storage network reachability;

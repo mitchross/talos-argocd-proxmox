@@ -10,7 +10,7 @@ spec:
     name: openshift-gateway
     namespace: openshift-ingress
   hostnames:
-  - pairdrop.apps.sno-ai-lab.vanillax.xyz
+  - pairdrop.gateway.apps.sno-ai-lab.vanillax.xyz
   rules:
   - matches:
     - path:

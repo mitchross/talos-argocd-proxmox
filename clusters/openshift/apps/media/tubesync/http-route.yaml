@@ -10,7 +10,7 @@ spec:
     name: openshift-gateway
     namespace: openshift-ingress
   hostnames:
-  - tube.apps.sno-ai-lab.vanillax.xyz
+  - tube.gateway.apps.sno-ai-lab.vanillax.xyz
   rules:
   - matches:
     - path:

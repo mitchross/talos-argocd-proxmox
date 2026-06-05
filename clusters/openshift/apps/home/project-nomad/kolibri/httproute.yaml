@@ -15,7 +15,7 @@ spec:
     namespace: openshift-ingress
     sectionName: https
   hostnames:
-  - kolibri.apps.sno-ai-lab.vanillax.xyz
+  - kolibri.gateway.apps.sno-ai-lab.vanillax.xyz
   rules:
   - matches:
     - path:
