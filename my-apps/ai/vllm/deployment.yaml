@@ -57,19 +57,29 @@ spec:
             - "mp"                                     # single-node multiprocessing; no Ray
             - "--disable-custom-all-reduce"            # 3090s have no NVLink/P2P → vLLM uses PYNCCL anyway; makes it explicit + silences the warning
             - "--gpu-memory-utilization"
-            - "0.90"
+            - "0.92"
             - "--max-model-len"
-            - "65536"                                  # 48GB pooled affords large KV; tune vs club-3090 CLIFFS.md
+            - "262144"                                 # full 262K native context; fits via fp8 KV + TP=2 paged cache
             - "--max-num-seqs"
-            - "16"
+            - "2"                                      # 262K = deep single-stream; low concurrency keeps the KV pool sane
             - "--limit-mm-per-prompt"
             - '{"image": 4}'                           # vision-capable; current vLLM requires JSON, not image=4
             - "--enable-auto-tool-choice"              # Perplexica sends tool_choice=auto for research/search flows
             - "--tool-call-parser"
-            - "qwen3_xml"
+            - "qwen3_coder"                            # author-recommended parser for Qwen3.6 (was qwen3_xml)
             - "--reasoning-parser"
             - "qwen3"                                  # split <think> out of content into reasoning_content
                                                        # (keeps thinking quality; tools/UIs get a clean answer)
+            - "--default-chat-template-kwargs"
+            - '{"enable_thinking": false}'             # default thinking OFF (fast/clean for tools); UIs can re-enable per-request
+            - "--kv-cache-dtype"
+            - "fp8_e5m2"                               # halves KV — required to fit 262K on 48GB (fp8_e5m2 avoids cudagraph bug #40880)
+            - "--enable-prefix-caching"                # reuse KV across shared system prompts (open-webui/k8sgpt/perplexica)
+            - "--enable-chunked-prefill"               # required to prefill 262K prompts without OOM/stall
+            - "--max-num-batched-tokens"
+            - "8192"                                   # chunked-prefill chunk size (262K prompt -> 32 chunks)
+            - "--override-generation-config"
+            - '{"temperature":0.7,"top_p":0.8,"top_k":20,"presence_penalty":1.5}'  # Qwen3.6 nothink sampling defaults
             - "--host"
             - "0.0.0.0"
             - "--port"
@@ -85,6 +95,18 @@ spec:
               value: "1"
             - name: VLLM_NO_USAGE_STATS     # no phone-home
               value: "1"
+            - name: VLLM_USE_FLASHINFER_SAMPLER   # faster top-p/top-k sampling on sm_86
+              value: "1"
+            - name: VLLM_WORKER_MULTIPROC_METHOD
+              value: "spawn"
+            - name: OMP_NUM_THREADS         # silences the 16->1 thread warning; matches club-3090 recipe
+              value: "1"
+            - name: NCCL_P2P_DISABLE        # 3090s have no NVLink/P2P
+              value: "1"
+            - name: NCCL_CUMEM_ENABLE
+              value: "0"
+            - name: PYTORCH_CUDA_ALLOC_CONF # cut fragmentation / OOM on 24GB activation peaks
+              value: "expandable_segments:True,max_split_size_mb:512"
           ports:
             - name: http
               containerPort: 8000
