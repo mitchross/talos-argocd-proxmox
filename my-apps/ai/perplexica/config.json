@@ -21,7 +21,7 @@
         "baseURL": "http://vllm-service.vllm.svc.cluster.local:8080/v1"
       },
       "chatModels": [
-        { "name": "Qwen 3.6 27B (vLLM, TP=2)", "key": "qwen3.6-nothink - qwen3.6-35b-a3b-nothink" }
+        { "name": "Qwen 3.6 27B (vLLM, TP=2)", "key": "qwen3.6-27b" }
       ],
       "embeddingModels": []
     }
