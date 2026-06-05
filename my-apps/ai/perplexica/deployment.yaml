@@ -84,11 +84,10 @@ spec:
           # based result filtering + chunked context management that keeps
           # prompts bounded.
           #
-          # Backend model: this app selects the `qwen3.6-longctx` preset
-          # (256K ctx) — see config.json. Usable context is VRAM-bound to
-          # ~64K on a single 3090; the model's full 256K only becomes
-          # resident when both 3090s are pooled (docs/3090-llm-optimization.md).
-          # The embedding result-filter keeps prompts under that ceiling.
+          # Backend model: this app selects the canonical vLLM `qwen3.6-27b`
+          # served-model-name from config.json. vLLM currently caps context at
+          # 64K via --max-model-len; the embedding result-filter keeps prompts
+          # under that ceiling.
           image: itzcrazykns1337/vane:slim-v1.12.2@sha256:d2878cf9c91962aa3fc053b59bc9b89adcbdcaeb7ee36b54906e853464b2c190
           ports:
             - name: http
