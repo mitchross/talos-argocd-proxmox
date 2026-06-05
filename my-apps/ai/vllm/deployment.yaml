@@ -41,7 +41,7 @@ spec:
       containers:
         - name: vllm-server
           # Digest-pinned (== `latest` at pin time, 2026-06). Renovate-trackable + immutable.
-          image: vllm/vllm-openai:v0.22.0@sha256:0fec7ec5f3e6bc168e54899935fb0557da908a4832a1dbc88e2debcf2f889416
+          image: vllm/vllm-openai:v0.22.1@sha256:953d3a06d5e64ab582985cd7401289d3abf2a2c14ef2158e9a84313daeec77d7
           imagePullPolicy: IfNotPresent
           # The image entrypoint runs `vllm serve`; the first arg is the positional model_tag.
           args:
