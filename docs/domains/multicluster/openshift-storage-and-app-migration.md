@@ -121,8 +121,9 @@ Verified against the intended OpenShift cluster:
 - Gateway API CRDs are installed; no conflicting Service Mesh Operator v2
   subscription was found.
 - GatewayClass controller behavior has not been activated or tested.
-- The existing `lvms-operator` Subscription is unresolved; `stable-4.20`,
-  `LVMCluster`, TopoLVM, device class `vg1`, and
+- The existing `lvms-operator` Subscription is unresolved. Git now targets
+  `stable-4.22` to match the live cluster, but the package is still absent
+  from the observed catalogs. `LVMCluster`, TopoLVM, device class `vg1`, and
   `vanillax-local-rwo` are not live-proven.
 
 Still verify NFS/SMB CSI SCC requirements, application SCC behavior, external
