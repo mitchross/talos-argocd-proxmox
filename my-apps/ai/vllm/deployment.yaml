@@ -55,6 +55,7 @@ spec:
             - "2"                                      # pool both 3090s (48GB). Needs 2 WHOLE cards.
             - "--distributed-executor-backend"
             - "mp"                                     # single-node multiprocessing; no Ray
+            - "--disable-custom-all-reduce"            # 3090s have no NVLink/P2P → vLLM uses PYNCCL anyway; makes it explicit + silences the warning
             - "--gpu-memory-utilization"
             - "0.90"
             - "--max-model-len"
