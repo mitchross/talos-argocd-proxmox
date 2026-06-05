@@ -21,6 +21,10 @@ spec:
       labels:
         app: vllm-server
     spec:
+      # Don't inject legacy Docker-link service env vars (VLLM_SERVICE_*, etc.).
+      # The Service is named `vllm-service`, so those collide with vLLM's own
+      # VLLM_* env scan and spam "Unknown vLLM environment variable" warnings.
+      enableServiceLinks: false
       restartPolicy: Always
       runtimeClassName: nvidia
       priorityClassName: gpu-workload-high
