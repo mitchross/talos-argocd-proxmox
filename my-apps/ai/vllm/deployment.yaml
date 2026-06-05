@@ -36,9 +36,8 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: vllm-server
-          # TODO: pin to a tag that supports the Qwen3.6 / Qwen3-VL architecture.
-          # `latest` is a placeholder — Renovate/this repo prefer pinned tags.
-          image: vllm/vllm-openai:latest
+          # Digest-pinned (== `latest` at pin time, 2026-06). Renovate-trackable + immutable.
+          image: vllm/vllm-openai:v0.22.0@sha256:0fec7ec5f3e6bc168e54899935fb0557da908a4832a1dbc88e2debcf2f889416
           imagePullPolicy: IfNotPresent
           # The image entrypoint runs `vllm serve`; the first arg is the positional model_tag.
           args:
