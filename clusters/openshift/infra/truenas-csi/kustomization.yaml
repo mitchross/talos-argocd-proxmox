@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Official iXsystems TrueNAS CSI driver (csi.truenas.io), vendored from
+# github.com/truenas/truenas-csi v1.0.4. Uses the TrueNAS WebSocket API, so it
+# works with TrueNAS 26 (which removed the REST API that democratic-csi needs).
+# driver.yaml + scc.yaml + csi-capabilities.yaml are upstream (placeholder
+# Secret removed, ConfigMap + image pinned). externalsecret/storageclasses are
+# local.
+resources:
+  - driver.yaml
+  - scc.yaml
+  - csi-capabilities.yaml
+  - externalsecret.yaml
+  - storageclasses.yaml

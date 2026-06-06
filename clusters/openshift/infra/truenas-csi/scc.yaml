@@ -1,0 +1,72 @@
+# SecurityContextConstraints for TrueNAS CSI Driver on OpenShift
+# These SCCs are required for the CSI driver to perform privileged operations
+# such as mounting filesystems and accessing block devices.
+
+---
+# SCC for CSI Node DaemonSet - requires privileged access for mount operations
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: truenas-csi-node-scc
+  labels:
+    app.kubernetes.io/name: truenas-csi
+    app.kubernetes.io/component: node
+    app.kubernetes.io/managed-by: truenas-csi-operator
+allowPrivilegedContainer: true
+allowHostIPC: true
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: true
+allowHostDirVolumePlugin: true
+allowedCapabilities:
+  - SYS_ADMIN
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: MustRunAs
+fsGroup:
+  type: RunAsAny
+supplementalGroups:
+  type: RunAsAny
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - hostPath
+  - persistentVolumeClaim
+  - projected
+  - secret
+users:
+  - system:serviceaccount:truenas-csi:truenas-csi-node-sa
+
+---
+# SCC for CSI Controller Deployment - allows CSI sidecars to run as root
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: truenas-csi-controller-scc
+  labels:
+    app.kubernetes.io/name: truenas-csi
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/managed-by: truenas-csi-operator
+allowPrivilegedContainer: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowHostDirVolumePlugin: false
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: MustRunAs
+fsGroup:
+  type: RunAsAny
+supplementalGroups:
+  type: RunAsAny
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - projected
+  - secret
+users:
+  - system:serviceaccount:truenas-csi:truenas-csi-controller-sa
