@@ -1,0 +1,76 @@
+# CSI Capabilities Manifest for Red Hat Certification
+# This file declares the capabilities supported by the TrueNAS CSI Driver
+# Required for CSI certification testing
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: truenas-csi-capabilities
+  namespace: truenas-csi
+  labels:
+    app.kubernetes.io/name: truenas-csi
+    app.kubernetes.io/component: certification
+data:
+  # Driver information
+  driver-name: "csi.truenas.io"
+  driver-version: "0.1.0"
+
+  # CSI Specification version
+  csi-version: "1.8.0"
+
+  # Supported storage protocols
+  protocols: |
+    - nfs
+    - iscsi
+
+  # Controller capabilities
+  controller-capabilities: |
+    - CREATE_DELETE_VOLUME
+    - CREATE_DELETE_SNAPSHOT
+    - CLONE_VOLUME
+    - EXPAND_VOLUME
+    - LIST_VOLUMES
+    - GET_CAPACITY
+
+  # Node capabilities
+  node-capabilities: |
+    - STAGE_UNSTAGE_VOLUME
+    - GET_VOLUME_STATS
+    - EXPAND_VOLUME
+
+  # Volume capabilities
+  volume-capabilities: |
+    # NFS volumes support ReadWriteMany
+    - accessModes:
+        - ReadWriteOnce
+        - ReadOnlyMany
+        - ReadWriteMany
+      fsTypes:
+        - nfs
+        - nfs4
+    # iSCSI volumes support block and filesystem
+    - accessModes:
+        - ReadWriteOnce
+        - ReadOnlyMany
+      fsTypes:
+        - ext4
+        - xfs
+      blockVolume: true
+
+  # Snapshot capabilities
+  snapshot-capabilities: |
+    - CREATE_DELETE_SNAPSHOT
+
+  # Features supported
+  features: |
+    - dynamic-provisioning
+    - volume-expansion
+    - volume-snapshots
+    - volume-cloning
+    - raw-block-volumes
+    - fsgroup-policy
+
+  # Features NOT supported (for documentation)
+  unsupported-features: |
+    - volume-topology
+    - volume-health-monitoring

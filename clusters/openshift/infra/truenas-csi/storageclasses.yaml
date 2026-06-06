@@ -1,0 +1,30 @@
+# Portable default RWO block class, backed by TrueNAS iSCSI (ZVOL) via the
+# official csi.truenas.io driver (WebSocket API — works with TrueNAS 26).
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: vanillax-local-rwo
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: csi.truenas.io
+parameters:
+  protocol: "iscsi"
+  compression: "LZ4"
+  volblocksize: "16K"
+  iscsi.blocksize: "4096"
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+---
+# Dynamic RWX NFS class backed by TrueNAS NFS shares.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: truenas-nfs-csi
+provisioner: csi.truenas.io
+parameters:
+  protocol: "nfs"
+  compression: "LZ4"
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
