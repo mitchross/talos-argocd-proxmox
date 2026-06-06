@@ -81,11 +81,15 @@ engines:
       disabled: true
     - name: duckduckgo
       disabled: false
-    # Bing gets rate-limited hard when called from a datacenter IP range
-    # and then SearXNG auto-suspends it for 180s (SearxEngineAccessDenied).
-    # Left enabled because when it works the results are good, but it
-    # is NOT relied on as a primary — the brave/startpage/qwant trio
-    # below is what keeps general search alive when bing is suspended.
+    # WHICH engines get blocked is egress-IP-dependent and shifts constantly, so
+    # we do NOT maintain a static disabled list — SearXNG auto-suspends any engine
+    # that 429/403/CAPTCHAs (search.suspended_times) and routes around it. Keep the
+    # full reputable set enabled for redundancy. Observed blocks vary by exit IP:
+    #   - datacenter egress: brave + qwant blocked; ddg/bing/startpage/mojeek OK
+    #   - Proton VPN egress: qwant + mojeek + startpage(1h CAPTCHA) blocked; brave/ddg/bing OK
+    # Proton (and most VPN ranges) are blocked HARDER by scrapers — if SearXNG is the
+    # only thing hurt by the VPN, split-tunnel its egress off Proton at the firewall,
+    # or move the worst offenders to keyed APIs (e.g. brave search API).
     - name: bing
       disabled: false
     - name: brave
@@ -107,11 +111,14 @@ engines:
 
 outgoing:
     # Bumped from 3s -> 6s because Vane/Perplexica fires 3 parallel
-    # research queries; brave/startpage/qwant can take 2-4s on a cold
-    # connection and were getting suspended as "too slow" under the
-    # 3s timeout. max_request_timeout stays the hard ceiling.
+    # research queries; startpage/mojeek can take 2-4s on a cold
+    # connection and were getting suspended as "too slow" under the 3s timeout.
     request_timeout: 6.0
-    max_request_timeout: 15.0
+    # max_request_timeout MUST stay below Perplexica's ~10s hardcoded client
+    # timeout. At 15s, a single slow engine made SearXNG return AFTER Perplexica
+    # already aborted ("SearXNG search timed out") → user got nothing. At 8s,
+    # SearXNG always returns within Perplexica's window with partial results.
+    max_request_timeout: 8.0
     pool_connections: 100
     pool_maxsize: 20
     enable_http2: true
