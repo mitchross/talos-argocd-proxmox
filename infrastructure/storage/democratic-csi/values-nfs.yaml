@@ -1,0 +1,33 @@
+# democratic-csi — TrueNAS NFS release (truenas-nfs)
+# Adds a DYNAMIC RWX NFS StorageClass `truenas-nfs` provisioned on TrueNAS
+# (192.168.10.133). Complements the existing STATIC nfs-*/smb-* shares (kept
+# for media/AI apps with pre-existing data). ADDITIVE; Longhorn stays default.
+
+csiDriver:
+  name: org.democratic-csi.nfs
+
+node:
+  driver:
+    localtimeHostPath: null
+
+driver:
+  existingConfigSecret: truenas-nfs-config
+  config:
+    driver: freenas-api-nfs
+
+storageClasses:
+  - name: truenas-nfs
+    defaultClass: false
+    reclaimPolicy: Delete
+    volumeBindingMode: Immediate
+    allowVolumeExpansion: true
+    parameters:
+      fsType: nfs
+    mountOptions:
+      - nfsvers=4.1
+      - noatime
+      - tcp
+
+volumeSnapshotClasses:
+  - name: truenas-nfs-snapshot
+    deletionPolicy: Delete

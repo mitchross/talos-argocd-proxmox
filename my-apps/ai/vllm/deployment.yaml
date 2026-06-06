@@ -41,7 +41,7 @@ spec:
       containers:
         - name: vllm-server
           # Digest-pinned (== `latest` at pin time, 2026-06). Renovate-trackable + immutable.
-          image: vllm/vllm-openai:v0.22.0@sha256:0fec7ec5f3e6bc168e54899935fb0557da908a4832a1dbc88e2debcf2f889416
+          image: vllm/vllm-openai:v0.22.1@sha256:953d3a06d5e64ab582985cd7401289d3abf2a2c14ef2158e9a84313daeec77d7
           imagePullPolicy: IfNotPresent
           # The image entrypoint runs `vllm serve`; the first arg is the positional model_tag.
           args:
@@ -73,7 +73,9 @@ spec:
             - "--default-chat-template-kwargs"
             - '{"enable_thinking": false}'             # default thinking OFF (fast/clean for tools); UIs can re-enable per-request
             - "--kv-cache-dtype"
-            - "fp8_e5m2"                               # halves KV — required to fit 262K on 48GB (fp8_e5m2 avoids cudagraph bug #40880)
+            - "fp8_e4m3"                               # halves KV — required to fit 262K on 48GB. MUST be e4m3 (scaled): this
+                                                       # compressed-tensors checkpoint ships calibrated fp8 KV scales, and vLLM
+                                                       # rejects fp8_e5m2 (unscaled) against fp8 checkpoints — server fails to boot.
             - "--enable-prefix-caching"                # reuse KV across shared system prompts (open-webui/k8sgpt/perplexica)
             - "--enable-chunked-prefill"               # required to prefill 262K prompts without OOM/stall
             - "--max-num-batched-tokens"

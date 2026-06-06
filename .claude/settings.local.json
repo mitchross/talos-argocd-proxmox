@@ -25,5 +25,8 @@
       "Bash(git push --force:*)",
       "Bash(git push --force-with-lease:*)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "claude-tempo"
+  ]
 }
