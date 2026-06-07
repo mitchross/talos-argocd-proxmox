@@ -36,6 +36,21 @@ jobs:
       - name: Validate ArgoCD app topology
         run: bash ./scripts/validate-argocd-apps.sh
 
+  truenas-csi-contract:
+    name: TrueNAS CSI Contract
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v2
+        with:
+          kustomize-version: 5.4.2
+
+      - name: Validate official TrueNAS CSI deployment
+        run: bash ./scripts/validate-truenas-csi.sh
+
   render-and-schema:
     name: Kustomize Render and Schema Validation
     runs-on: ubuntu-latest

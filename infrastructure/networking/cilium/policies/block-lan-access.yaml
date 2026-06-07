@@ -48,13 +48,15 @@ spec:
     # This prevents pods from accessing router admin/SSH
 
     # ============================================
-    # ALLOW: TrueNAS - NFS + SMB + RustFS Storage
-    # (NFS for Plex, SMB for Jellyfin, RustFS for VolSync backups)
+    # ALLOW: TrueNAS - API + NFS + SMB + RustFS Storage
+    # (WebSocket API for TrueNAS CSI, NFS/SMB, RustFS for VolSync backups)
     # ============================================
     - toCIDR:
         - 192.168.10.133/32
       toPorts:
         - ports:
+            - port: "443"
+              protocol: TCP
             - port: "2049"
               protocol: TCP
             - port: "111"

@@ -37,9 +37,9 @@ spec:
       - path: infrastructure/storage/container-registry
       - path: infrastructure/storage/csi-driver-nfs
       - path: infrastructure/storage/csi-driver-smb
-      # democratic-csi: dynamic TrueNAS RWO (truenas-iscsi) + RWX (truenas-nfs)
-      # classes. Additive — Longhorn stays default. apiKey from 1Password via ESO.
-      - path: infrastructure/storage/democratic-csi
+      # Official TrueNAS CSI: dynamic RWX NFS only for the initial canary.
+      # Longhorn stays default; static/pre-existing NFS stays on nfs.csi.k8s.io.
+      - path: infrastructure/storage/truenas-csi
       - path: infrastructure/storage/local-storage
       # NOTE: longhorn, snapshot-controller, volsync are NOT listed here
       # They have dedicated standalone Applications at Wave 1 (longhorn-app.yaml,

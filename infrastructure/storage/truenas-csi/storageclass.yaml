@@ -1,0 +1,22 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: truenas-nfs
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: csi.truenas.io
+parameters:
+  protocol: "nfs"
+  pool: "BigTank"
+  datasetPath: "k8s/nfs/v"
+  compression: "LZ4"
+  sync: "STANDARD"
+  nfs.networks: "192.168.10.0/24"
+  # TrueNAS CSI v1.0.4 supports map-all, not Democratic CSI's map-root.
+  # Keep this explicit so ownership semantics cannot change on driver upgrade.
+  nfs.mapAllUser: "root"
+  nfs.mapAllGroup: "wheel"
+  nfs.mountOptions: "hard,nfsvers=4.1,tcp,rsize=1048576,wsize=1048576,noatime,nconnect=16"
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
