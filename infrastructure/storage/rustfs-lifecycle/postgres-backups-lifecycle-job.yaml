@@ -30,7 +30,7 @@ spec:
       containers:
         - name: aws-cli
           # renovate: datasource=docker depName=public.ecr.aws/aws-cli/aws-cli
-          image: public.ecr.aws/aws-cli/aws-cli:2.34.62
+          image: public.ecr.aws/aws-cli/aws-cli:2.34.63
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
