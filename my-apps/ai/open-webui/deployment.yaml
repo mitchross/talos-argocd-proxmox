@@ -15,18 +15,21 @@ spec:
       labels:
         app: open-webui
     spec:
-      runtimeClassName: nvidia
-      nodeSelector:
-        feature.node.kubernetes.io/pci-0300_10de.present: "true"
-      tolerations:
-      - key: "gpu"
-        operator: "Equal"
-        value: "true"
-        effect: "NoSchedule"
+      # Open WebUI delegates LLM inference to vLLM; RAG embeddings run locally
+      # on CPU in-pod. Keep it off the GPU node so both 3090s stay vLLM-only.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: feature.node.kubernetes.io/pci-0300_10de.present
+                    operator: DoesNotExist
       containers:
       - name: open-webui
         # renovate: datasource=docker depName=ghcr.io/open-webui/open-webui
-        image: ghcr.io/open-webui/open-webui:cuda@sha256:1c21667d3a50e698582c07e17aea38d1b02e28034ce50c67c842f0f28a1a8635
+        # `main` and `cuda` are built from the same Open WebUI commit. This
+        # standard image keeps local Whisper on CPU without shipping CUDA.
+        image: ghcr.io/open-webui/open-webui:main@sha256:7f1b0a1a50cfbac23da3b16f96bc968fd757b26dc9e54e93813d61768ea9184e
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

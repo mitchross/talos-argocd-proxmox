@@ -12,17 +12,21 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
-      runtimeClassName: nvidia
-      nodeSelector:
-        feature.node.kubernetes.io/pci-0300_10de.present: "true"
-      tolerations:
-      - key: "gpu"
-        operator: "Equal"
-        value: "true"
-        effect: "NoSchedule"
+      # Pure-Python DB loader — no GPU. It mounts the same RWO `storage` PVC as
+      # the Open WebUI Deployment, so it MUST land on the same node or the
+      # ReadWriteOnce volume can't attach (Multi-Attach deadlock). Co-locate
+      # with the running Open WebUI pod via podAffinity.
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: open-webui
+              topologyKey: kubernetes.io/hostname
       containers:
       - name: loader
-        image: ghcr.io/open-webui/open-webui:cuda@sha256:1c21667d3a50e698582c07e17aea38d1b02e28034ce50c67c842f0f28a1a8635
+        # renovate: datasource=docker depName=ghcr.io/open-webui/open-webui
+        image: ghcr.io/open-webui/open-webui:main@sha256:7f1b0a1a50cfbac23da3b16f96bc968fd757b26dc9e54e93813d61768ea9184e
         command:
         - python3
         - -c
