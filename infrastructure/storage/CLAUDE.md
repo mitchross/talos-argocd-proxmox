@@ -5,10 +5,16 @@
 | Class | Use Case |
 |-------|----------|
 | `longhorn` | Distributed block storage (default) |
+| `truenas-nfs` | Official TrueNAS CSI dynamic NFS (canary-gated, non-default) |
 | `nfs-comfyui-10g` | NFS 10G for ComfyUI models |
 | `nfs-llama-cpp-10g` | NFS 10G for LLM models |
 | `smb-csi` | Windows shares |
 | `local-path` | Node-local fast storage |
+
+`truenas-nfs` provisions new datasets under `BigTank/k8s/nfs/v`. It does not
+replace static `nfs.csi.k8s.io` PVs for pre-existing data. TrueNAS CSI v1.0.4
+creates NFS shares with `mapall` semantics; run the documented ownership
+canary before adopting the class for a workload that runs as a non-root UID.
 
 ## Longhorn PVC Template
 

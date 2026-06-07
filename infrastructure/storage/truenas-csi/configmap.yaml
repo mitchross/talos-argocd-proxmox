@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: truenas-csi-config
+data:
+  # TrueNAS SCALE 26 JSON-RPC 2.0 WebSocket API.
+  truenasURL: "wss://192.168.10.133/api/current"
+  # TrueNAS currently uses a private/self-signed certificate on this endpoint.
+  truenasInsecure: "true"
+  defaultPool: "BigTank"
+  nfsServer: "192.168.10.133"
+  # Required by the shared upstream driver config even though this rollout does
+  # not create an iSCSI StorageClass or permit TCP 3260 through Cilium.
+  iscsiPortal: "192.168.10.133:3260"
+  iscsiIQNBase: "iqn.2000-01.io.truenas"
+

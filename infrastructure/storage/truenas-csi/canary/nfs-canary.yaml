@@ -1,0 +1,151 @@
+# Manual canary only. This file is intentionally excluded from the parent
+# kustomization so Argo CD never creates test PVCs automatically.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: truenas-csi-canary
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: truenas-nfs-canary
+  namespace: truenas-csi-canary
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: "Disposable TrueNAS CSI ownership and RWX validation volume"
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: truenas-nfs
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: truenas-nfs-root-writer
+  namespace: truenas-csi-canary
+  labels:
+    app.kubernetes.io/name: truenas-csi-canary
+    app.kubernetes.io/component: root-writer
+spec:
+  restartPolicy: Never
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: truenas-csi-canary
+          topologyKey: kubernetes.io/hostname
+  containers:
+    - name: writer
+      image: alpine:latest@sha256:5b10f432ef3da1b8d4c7eb6c487f2f5a8f096bc91145e68878dd4a5019afde11
+      command:
+        - /bin/sh
+        - -ec
+        - |
+          printf 'root-writer\n' > /data/root-writer.txt
+          stat -c 'root-writer ownership=%u:%g mode=%a' /data/root-writer.txt
+          sleep 3600
+      volumeMounts:
+        - name: data
+          mountPath: /data
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: truenas-nfs-canary
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: truenas-nfs-nonroot-writer
+  namespace: truenas-csi-canary
+  labels:
+    app.kubernetes.io/name: truenas-csi-canary
+    app.kubernetes.io/component: nonroot-writer
+spec:
+  restartPolicy: Never
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: truenas-csi-canary
+          topologyKey: kubernetes.io/hostname
+  containers:
+    - name: writer
+      image: alpine:latest@sha256:5b10f432ef3da1b8d4c7eb6c487f2f5a8f096bc91145e68878dd4a5019afde11
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+      command:
+        - /bin/sh
+        - -ec
+        - |
+          printf 'nonroot-writer\n' > /data/nonroot-writer.txt
+          owner="$(stat -c '%u:%g' /data/nonroot-writer.txt)"
+          printf 'nonroot-writer ownership=%s\n' "$owner"
+          test "$owner" = "1000:1000"
+          sleep 3600
+      volumeMounts:
+        - name: data
+          mountPath: /data
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: truenas-nfs-canary
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: truenas-nfs-reader
+  namespace: truenas-csi-canary
+  labels:
+    app.kubernetes.io/name: truenas-csi-canary
+    app.kubernetes.io/component: reader
+spec:
+  restartPolicy: Never
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: truenas-csi-canary
+          topologyKey: kubernetes.io/hostname
+  containers:
+    - name: reader
+      image: alpine:latest@sha256:5b10f432ef3da1b8d4c7eb6c487f2f5a8f096bc91145e68878dd4a5019afde11
+      command:
+        - /bin/sh
+        - -ec
+        - |
+          until test -f /data/root-writer.txt; do sleep 1; done
+          cat /data/root-writer.txt
+          for file in /data/*; do
+            test -f "$file" || continue
+            stat -c '%n ownership=%u:%g mode=%a' "$file"
+          done
+          sleep 3600
+      volumeMounts:
+        - name: data
+          mountPath: /data
+          readOnly: true
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: truenas-nfs-canary
