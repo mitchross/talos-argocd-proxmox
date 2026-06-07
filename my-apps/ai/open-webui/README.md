@@ -26,7 +26,10 @@ ComfyUI for image generation, Kiwix for offline RAG, and an MCP tool proxy
 
 Open WebUI itself is stateless UI + SQLite (on a PVC). The heavy lifting is
 elsewhere: vLLM holds the model in VRAM, ComfyUI owns the image-gen GPU,
-SearXNG handles search, MCPO exposes tool endpoints as OpenAPI.
+SearXNG handles search, and MCPO exposes tool endpoints as OpenAPI. RAG
+embeddings run **locally inside the Open WebUI pod** (built-in
+SentenceTransformer, CPU) — no external embedding dependency. Open WebUI runs
+on a CPU worker; local Whisper STT is CPU-backed.
 
 ## Model & backend
 
@@ -45,7 +48,8 @@ Currently wired up (see `open-webui-configmap.env`):
 | `CONTEXT_WINDOW`      | `65536` (64K) — keep aligned with vLLM `--max-model-len`. If this is smaller, Open WebUI silently trims history / RAG before sending. |
 | Sampling              | `TEMPERATURE=0.6`, `TOP_P=0.95`, `MIN_P=0.0` |
 | Image generation      | ComfyUI — Z-Image-Turbo (text→img, 9 steps), Qwen-Image-Edit-2511 (edit) |
-| Embeddings / STT      | Whisper `medium` (in-pod), OpenAI TTS voice `alloy`            |
+| Embeddings            | Built-in local SentenceTransformer (CPU, in-pod) — no external service |
+| STT / TTS             | Whisper `medium` on CPU (in-pod), OpenAI TTS voice `alloy` |
 
 vLLM is served from `my-apps/ai/vllm/deployment.yaml`; the Open WebUI model ID
 must match one of that Deployment's `--served-model-name` values. The first
@@ -76,7 +80,8 @@ Non-default env vars that matter, grouped by why they exist:
 | `RAG_TOP_K`                  | `10`   | Hybrid search retrieves more; model does the culling. |
 | `ENABLE_RAG_HYBRID_SEARCH`   | `True` | BM25 + embedding — better recall on technical content than pure vector. |
 | `RAG_SYSTEM_CONTEXT`         | `True` | Inject retrieved chunks into the system message (better for KV cache reuse than stuffing user msg). |
-| `USE_CUDA_DOCKER`            | `true` | RAG embeddings run on GPU. |
+| `RAG_EMBEDDING_BATCH_SIZE`   | `8` | Batch size for the built-in local embedder. |
+| `USE_CUDA_DOCKER`            | `false` | Open WebUI has no GPU; vLLM exclusively reserves both 3090s. Embeddings run on CPU in-pod (default `RAG_EMBEDDING_ENGINE`, no external service). |
 | `PDF_EXTRACT_IMAGES`         | `True` | Required for vision RAG over PDF diagrams. |
 
 ### UX
