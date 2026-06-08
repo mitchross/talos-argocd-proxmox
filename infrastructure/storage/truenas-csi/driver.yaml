@@ -313,14 +313,6 @@ spec:
         - name: device-dir
           hostPath:
             path: /dev
-        - name: iscsi-dir
-          hostPath:
-            path: /etc/iscsi
-            type: Directory
-        - name: iscsi-lib
-          hostPath:
-            path: /var/lib/iscsi
-            type: DirectoryOrCreate
         - name: host-root
           hostPath:
             path: /
