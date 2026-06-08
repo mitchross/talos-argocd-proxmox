@@ -1,4 +1,4 @@
-# Shared Longhorn RWX PVCs for the radar-ng backend.
+# Shared RWX PVCs for the radar-ng backend, on the truenas-csi NFS class.
 #
 # Access-mode rationale:
 #   - tiles/grids/state are written by multiple pods (ingestors, nowcast) and
@@ -6,7 +6,11 @@
 #   - openmeteo-data is written by the serve Deployment and its sync CronJobs,
 #     which can run concurrently with serve, so RWX.
 #
-# Longhorn RWX auto-provisions an NFS share-manager pod for each volume.
+# Moved off Longhorn RWX (which spins up an NFS share-manager pod per volume)
+# to the centralized truenas-csi `truenas-nfs` class — real NFS RWX, no
+# share-manager pods, TrueNAS-side snapshots. These volumes hold backup-exempt
+# rebuildable data, so the storageClassName change (immutable on a bound PVC)
+# is applied by deleting + recreating the PVCs; the data regenerates.
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -19,7 +23,7 @@ metadata:
     storage.vanillax.dev/backup-exempt-reason: "PNG/MVT tiles generated from grids/; rebuildable by re-running tile generation"
 spec:
   accessModes: [ReadWriteMany]
-  storageClassName: longhorn
+  storageClassName: truenas-nfs
   resources:
     requests:
       storage: 100Gi
@@ -35,7 +39,7 @@ metadata:
     storage.vanillax.dev/backup-exempt-reason: "MRMS NetCDF grids; re-fetchable from upstream MRMS within retention window"
 spec:
   accessModes: [ReadWriteMany]
-  storageClassName: longhorn
+  storageClassName: truenas-nfs
   resources:
     requests:
       storage: 20Gi
@@ -51,7 +55,7 @@ metadata:
     storage.vanillax.dev/backup-exempt-reason: "Transient ingestion state (last-seen timestamps, partial frames); regenerates on next pull"
 spec:
   accessModes: [ReadWriteMany]
-  storageClassName: longhorn
+  storageClassName: truenas-nfs
   resources:
     requests:
       storage: 5Gi
@@ -67,7 +71,7 @@ metadata:
     storage.vanillax.dev/backup-exempt-reason: "Open-Meteo numerical weather data cache; re-fetchable from open-meteo.com API"
 spec:
   accessModes: [ReadWriteMany]
-  storageClassName: longhorn
+  storageClassName: truenas-nfs
   resources:
     requests:
       storage: 30Gi
@@ -89,11 +93,11 @@ spec:
   # go-pmtiles is distroless (no shell) so an idempotent single
   # initContainer isn't possible without a custom image; RWX lets the
   # one-shot, stable-named bootstrap Job and the reader Deployment coexist
-  # (Job writes once then Completes; basemap mmap-reads). Cost: one
-  # Longhorn share-manager pod for this PVC — acceptable to keep the app
-  # working and the refresh path usable.
+  # (Job writes once then Completes; basemap mmap-reads). Now served by
+  # truenas-csi NFS RWX (no Longhorn share-manager pod) — TrueNAS exports the
+  # dataset directly.
   accessModes: [ReadWriteMany]
-  storageClassName: longhorn
+  storageClassName: truenas-nfs
   resources:
     requests:
       storage: 50Gi
