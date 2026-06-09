@@ -39,12 +39,37 @@ The full nuke/rebuild/restore was executed end-to-end and **passed**. pvc-plumbe
 
 - **24/24 operator-managed PVCs** (18 namespaces) recreated, `Bound`, with `dataSourceRef → <pvc>-dst`, and RS+RD `managed-by=pvc-plumber`.
 - **24/24 post-restore backups `result=Successful`.** The final 3 (`immich/library`, `project-nomad/qdrant-data`, `swarmui/swarmui-output`) initially wedged on a degraded VolSync snapshot-clone (`OfflineRebuildingInProgress`) and were recovered by the clone-bounce procedure (pause RS → delete wedged mover + ephemeral `volsync-*-src` clone → Longhorn GCs the degraded volume → unpause → manual sync → restore cron). Real app PVCs/UIDs were never touched. See [VolSync storage recovery](volsync-storage-recovery.md).
-- `/audit`: `already-matches=24`, `managed-by-pvc-plumber=24`, `would-adopt/create/update/delete=0`, `write-gate-missing=0`, `stale=false`.
+- `/audit`: `already-matches=24`, `managed-by-pvc-plumber=24`, `would-adopt/create/update/delete=0`, `write-gate-missing=0`, `stale=false`. *(This acceptance quoted only the managed-contract counters — see "Audit acceptance semantics" below; future acceptance runs must also quote `needs-human-review`.)*
 - CNPG native clusters (gitea/immich/paperless/temporal) healthy `1/1` (Barman/S3, never generic-migrated). Redis + PostHog backup-exempt and unmanaged.
 - Longhorn healthy (4/4 nodes schedulable), RustFS external on TrueNAS survived, `root` Synced/Healthy.
 - **No early empty backup overwrote good data** — every backup ran after its restore.
 
 This proves the contract end-to-end: Git/Argo recreate apps → PVCs recreate with `dataSourceRef` → VolSync populator restores from the matching RD → pvc-plumber recreates/verifies RS/RD ownership → apps return on restored data → backups resume.
+
+### Audit acceptance semantics
+
+"`/audit` clean" is two distinct claims; acceptance must state both:
+
+1. **Managed restore contract clean** — every operator-managed PVC is
+   `already-matches` with `managed-by=pvc-plumber`, and
+   `would-create/update/delete=0`, `write-gate-missing=0`, `stale=false`.
+   This is the DR-critical criterion: it proves managed PVCs restore on
+   recreate.
+2. **Global audit hygiene clean** — `needs-human-review=0` across ALL
+   PVCs the report covers, including unmanaged ones. A non-zero count is
+   not a restore failure, but it is unresolved operator findings (label
+   contract violations, ambiguous ownership) that mask real problems and
+   must be quoted, triaged, and either fixed or explained.
+
+History: the 2026-06-02 managed-PVC acceptance passed for 24/24. The
+2026-06-09 independent review then found 2 **unmanaged** monitoring PVCs
+(`prometheus-stack` Prometheus + Alertmanager) sitting in
+`needs-human-review` because their exemption reason used the bare
+`backup-exempt-reason` key instead of the fully-qualified
+`storage.vanillax.dev/backup-exempt-reason`. That was audit hygiene, not
+a managed restore failure — but it went unnoticed precisely because
+acceptance only quoted the managed-contract counters. Fixed in
+`monitoring/prometheus-stack/values.yaml` the same day.
 
 ## Verified Pre-Nuke State
 
@@ -73,7 +98,7 @@ Block the nuke until all external dependencies are verified:
 - [ ] Talos secrets and machine configs are available off-cluster.
 - [ ] Proxmox, Omni, and infrastructure-as-code inputs are available.
 
-Also record the Git revision to rebuild from and verify that the latest pvc-plumber audit is `24/24 DR_COMPLETE`.
+Also record the Git revision to rebuild from and verify that the latest pvc-plumber audit is fully `DR_COMPLETE` for every managed PVC **and** `needs-human-review=0` (see "Audit acceptance semantics" above — counts are dynamic; verify against the live `/audit`, not a remembered number).
 
 ## What Survives
 
