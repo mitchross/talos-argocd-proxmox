@@ -84,21 +84,58 @@ kubectl -n comfyui  get pods    # comfyui Running
 ## Phase 2 — Provision a raw block device per storage node
 
 V2 needs a **raw block device** — it cannot reuse the filesystem-backed
-`/var/lib/longhorn` (that stays V1). For each of the 4 storage VMs:
+`/var/lib/longhorn` (that stays V1). Do **not** create a Talos
+`UserVolumeConfig`/`VolumeConfig` for this disk and do not format it — Longhorn
+V2 claims the raw device directly, and Talos leaves unreferenced disks untouched
+(the install/system disk is pinned to `/dev/sda`). The new disk attaches as
+`scsi1` → `/dev/sdb` in the guest.
 
-1. In **Proxmox**, add a second virtual disk to the worker VM on `ssdpool`
-   (the GPU worker is on `ssdpool` too). Size to your V2 budget. Use a
-   distinct controller/slot so it is easy to identify.
-2. Do **not** create a Talos `UserVolumeConfig`/`VolumeConfig` for this disk and
-   do not format it — Longhorn V2 claims the raw device directly. Talos leaves
-   unreferenced disks untouched.
-3. Find a **stable** path (device names like `/dev/sdb` are not stable across
-   reboots — prefer `by-id`):
+### Preferred: declarative via the Omni Proxmox provider (`additional_disks`)
 
-   ```bash
-   talosctl -n <node-ip> ls -l /dev/disk/by-id/
-   talosctl -n <node-ip> get disks        # Talos disk inventory
-   ```
+The `siderolabs/omni-infra-provider-proxmox` provider supports
+`additional_disks` (verified in `internal/pkg/provider/data.go` — the older
+"single disk per VM" note in `omni/machine-classes/*.yaml` is stale). Add this to
+the `providerData` of `omni/machine-classes/worker.yaml` **and**
+`omni/machine-classes/gpu-worker.yaml`:
+
+```yaml
+      additional_disks:
+        - storage_selector: name == "ssdpool"
+          disk_size: 200          # V2 capacity budget, GB — set to taste
+          disk_ssd: true
+          disk_discard: true
+          disk_iothread: true
+          disk_cache: none
+          disk_aio: io_uring
+```
+
+Caveats:
+- **Applies at VM provisioning, not as a hot-add.** Editing the machine class
+  does not grow already-running VMs. Either reprovision each node rolling
+  through Omni (the VM is recreated empty — safe here: V1 is replica-2 + VolSync
+  backs up everything, replicas rebuild), or hot-add once in Proxmox
+  (`qm set <vmid> -scsi1 ssdpool:200,ssd=1,discard=on,iothread=1,cache=none,aio=io_uring`)
+  and keep the machine-class entry so future reprovisions stay consistent. Test
+  on one canary worker first.
+- **Confirm the pinned provider digest includes the feature.** The provider is
+  pinned by content digest in `omni/proxmox-provider/docker-compose.yml`; if the
+  pinned build predates `additional_disks` it is silently ignored — bump the
+  digest (lookup command is in that compose file) if so.
+
+### Alternative: add the disk manually in Proxmox
+
+Add a second virtual disk to each worker VM on `ssdpool` via the Proxmox UI /
+`qm set`. Functionally identical from the guest's side; just not declarative.
+
+### Then: find the stable device path for Longhorn registration
+
+`/dev/sdb` is **not** stable across reboots — register the V2 disk in Longhorn
+by its `by-id` path (Phase 3, step 3):
+
+```bash
+talosctl -n <node-ip> ls -l /dev/disk/by-id/
+talosctl -n <node-ip> get disks        # Talos disk inventory
+```
 
 ## Phase 3 — Maintenance window: enable the V2 engine
 
