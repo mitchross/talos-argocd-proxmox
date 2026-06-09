@@ -24,9 +24,12 @@ the disks exist from first boot. Order of operations:
    (Talos system + V1) and `scsi1` → `/dev/sdb` (raw, for V2).
 2. **Cluster template already carries the V2 prereqs** (hugepages + `nvme_tcp` +
    `vfio_pci` on workers + gpu-worker). They take effect on first boot.
-3. **Confirm the provider digest supports `additional_disks`.** Pinned by digest
-   in `omni/proxmox-provider/docker-compose.yml`; bump to current `:latest` if
-   the pinned build predates the feature (it is silently ignored otherwise).
+3. **Provider digest supports `additional_disks`** — confirmed for the pinned
+   `2026-05-23` digest in `omni/proxmox-provider/docker-compose.yml` (upstream
+   multi-disk config predates it; verified against `internal/pkg/provider/data.go`
+   and the provider's multi-disk docs). Per-disk `storage_selector` / `disk_ssd`
+   / `disk_discard` are honored. If you ever roll the pin *back* before mid-April
+   2026, re-verify — the field is silently ignored on builds that lack it.
 4. Provision the cluster. After Longhorn comes up, **register the `/dev/sdb`
    block disk on each storage node by its `by-id` path** (Phase 3 step 3) — this
    is the one post-bootstrap manual step.
