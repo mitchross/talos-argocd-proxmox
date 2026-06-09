@@ -94,6 +94,16 @@ jobs:
             echo "---" >> /tmp/all-manifests.yaml
           done
 
+      - name: Validate pvc-plumber restore contract (rendered)
+        # A managed PVC without dataSourceRef -> <pvc>-dst backs up fine
+        # but recreates EMPTY during DR. Runs against the rendered stream
+        # (not raw YAML) so Helm-rendered PVCs are covered — e.g.
+        # gitea/gitea-shared-storage, which a static grep cannot see.
+        run: |
+          set -euo pipefail
+          python3 -c "import yaml" 2>/dev/null || pip3 install --quiet pyyaml
+          bash ./scripts/validate-restore-contract.sh /tmp/all-manifests.yaml
+
       - name: Validate Kubernetes schemas
         run: |
           set -euo pipefail
@@ -140,12 +150,14 @@ jobs:
 
   backup-exempt-contract:
     name: Backup-Exempt Annotation Contract
-    # Catches the class of bug found 2026-05-19: a PVC labeled
-    # backup-exempt:"true" using the bare `backup-exempt-reason` key
-    # instead of the fully-qualified `storage.vanillax.dev/...` key.
-    # pvc-plumber's webhook is CREATE-only, so the violation is invisible
-    # until the PVC is recreated (DR/rebuild) and then admission DENIES it,
-    # leaving every dependent pod Pending. Fail at PR time, not during DR.
+    # Catches the class of bug found 2026-05-19 (and again 2026-06-09 in
+    # monitoring/ Helm values): a PVC labeled backup-exempt:"true" using
+    # the bare `backup-exempt-reason` key instead of the fully-qualified
+    # `storage.vanillax.dev/...` key. pvc-plumber v4 (permissive, no
+    # admission webhook) classifies that as ExemptMissingReason and parks
+    # the PVC in /audit as needs-human-review, where it masks real
+    # findings; any future strict mode would deny it at admission.
+    # Fail at PR time, not during DR.
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
