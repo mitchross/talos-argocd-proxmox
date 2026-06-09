@@ -11,10 +11,21 @@ needed.
 > back to source files (✏️ edit icon, top right) for one-click PRs.
 
 > [!IMPORTANT]
-> **Current pvc-plumber state (2026-06-01):**
-> - v4.0.1 live (permissive controller — **not** an admission gate)
-> - 24 PVCs / 18 namespaces managed
-> - 24/24 DR_COMPLETE
+> **Current pvc-plumber state:**
+> - v4.0.1 live (permissive controller — **not** an admission gate). The
+>   only admission-layer protection in the backup path is the separate
+>   `volsync-mover-backend-availability` MutatingAdmissionPolicy
+>   (`infrastructure/storage/volsync-backup-cluster/`, Wave 2), which
+>   gates mover Jobs on RustFS reachability.
+> - **Counts are dynamic — verify against the live `/audit`, not this page.**
+>   The dated acceptance result: 2026-06-02 full nuke/rebuild passed with
+>   24/24 managed PVCs restored (18 namespaces at the time).
+> - "`/audit` clean" means BOTH: managed contract clean (`already-matches`,
+>   `would-*=0`, `write-gate-missing=0`) **and** `needs-human-review=0`.
+>   See [audit acceptance semantics](cluster-dr-nuke-restore-runbook.md#audit-acceptance-semantics).
+> - Exemption contract: bare label `backup-exempt: "true"` **plus** the
+>   fully-qualified annotation `storage.vanillax.dev/backup-exempt-reason`
+>   (the bare reason key parks the PVC in `needs-human-review`).
 > - Kyverno **not** in the backup path
 > - CNPG native / Barman → S3
 > - PostHog backup-exempt · redis-instance backup-exempt
