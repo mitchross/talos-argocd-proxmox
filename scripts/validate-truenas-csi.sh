@@ -54,8 +54,10 @@ if [ -f "$DRIVER_DIR/kustomization.yaml" ]; then
     grep -qE '^reclaimPolicy: Retain$' "$rendered"
   check "TrueNAS CSI API key is supplied by External Secrets" \
     grep -qE '^kind: ExternalSecret$' "$rendered"
-  check "rendered Secret key matches the driver environment reference" \
-    grep -qE '^[[:space:]]+api-key:.*apiKey' "$rendered"
+  check "rendered Secret key is the driver env-var name (envFrom contract)" \
+    grep -qE '^[[:space:]]+TRUENAS_API_KEY:.*apiKey' "$rendered"
+  check "controller and node consume config via envFrom (no per-pod env copies)" \
+    bash -c "[ \"\$(grep -cE '^[[:space:]]+envFrom:$' '$rendered')\" -eq 2 ] && ! grep -qE 'key: truenasURL' '$rendered'"
   check "credential source is the dedicated TrueNAS CSI item" \
     grep -qE '^[[:space:]]+key: truenas-csi$' "$rendered"
   check "canary PVC is not part of the Argo CD application" \
