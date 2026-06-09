@@ -145,6 +145,21 @@ patches:
           - bind
           - rshared
           - rw
+# Longhorn V2 (SPDK) data engine prerequisites — applied to storage workers only
+# (control-plane has no Longhorn storage, so it is intentionally excluded).
+# 1024 x 2MiB hugepages = 2 GiB, matching Longhorn's dataEngineMemorySize default.
+# vfio_pci is SPDK's preferred userspace-IO module; nvme_tcp backs V2 over NVMe/TCP.
+# NOTE: takes effect only after `omnictl cluster template sync` + a rolling reboot.
+# The V2 engine itself stays OFF until enabled per docs/domains/storage/longhorn-v2-migration.md.
+- name: longhorn-v2-prereqs
+  inline:
+    machine:
+      sysctls:
+        vm.nr_hugepages: "1024"
+      kernel:
+        modules:
+        - name: nvme_tcp
+        - name: vfio_pci
 ---
 kind: Workers
 name: gpu-workers
@@ -190,3 +205,20 @@ patches:
           - bind
           - rshared
           - rw
+# Longhorn V2 (SPDK) data engine prerequisites on the GPU worker.
+# CAUTION (GPU node): this node runs the NVIDIA production driver and hosts
+# llama-cpp + ComfyUI. Two interactions to watch on the first reboot:
+#   1. vfio_pci is the same module used for PCI passthrough. Loading it does NOT
+#      bind the GPU (nvidia.ko owns it) unless a device is explicitly assigned to
+#      vfio, but verify `nvidia-smi` / GPU workloads still come up after reboot.
+#   2. 2 GiB hugepages are carved out of node RAM, competing with AI workloads.
+# Validate this node LAST in the rolling reboot. See longhorn-v2-migration.md.
+- name: longhorn-v2-prereqs
+  inline:
+    machine:
+      sysctls:
+        vm.nr_hugepages: "1024"
+      kernel:
+        modules:
+        - name: nvme_tcp
+        - name: vfio_pci

@@ -6,6 +6,7 @@ resources:
   #- httproute.yaml
   - volumesnapshotclass.yaml
   - node-failure-settings.yaml
+  - storageclass-v2.yaml
 helmCharts:
   - name: longhorn
     repo: https://charts.longhorn.io

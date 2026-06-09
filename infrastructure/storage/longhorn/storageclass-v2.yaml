@@ -1,0 +1,33 @@
+# Longhorn V2 (SPDK) data engine StorageClass.
+#
+# This class is INERT until the V2 data engine is enabled and at least one node
+# has a registered block-type disk — see docs/domains/storage/longhorn-v2-migration.md.
+# Until then it provisions nothing (PVCs that request it stay Pending), which is
+# why it is intentionally NOT marked default here.
+#
+# Cutover to make this the cluster default is the FINAL runbook step:
+#   1. set `persistence.defaultClass: false` in values.yaml (drops the default
+#      annotation from the V1 `longhorn` class), and
+#   2. uncomment the is-default-class annotation below.
+# Do NOT do (1)+(2) before V2 disks are registered, or every new PVC that omits
+# storageClassName will go Pending cluster-wide.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-v2
+  annotations:
+    # storageclass.kubernetes.io/is-default-class: "true"   # uncomment at cutover
+    longhorn.io/data-engine: v2
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+# Immediate (not WaitForFirstConsumer) mirrors the V1 longhorn class behavior.
+volumeBindingMode: Immediate
+parameters:
+  # V2 data engine selector — this is what routes the volume to SPDK.
+  dataEngine: "v2"
+  numberOfReplicas: "2"
+  staleReplicaTimeout: "2880"
+  fsType: "ext4"
+  # strict-local is NOT supported on V2 in 1.12.0; best-effort is.
+  dataLocality: "best-effort"
