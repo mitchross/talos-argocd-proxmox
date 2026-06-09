@@ -5,10 +5,43 @@
 > on the **V1** data engine today.
 >
 > **Scope decision (2026-06-09):** V2 on **all 4 storage nodes** (3 workers + 1
-> GPU worker), operator provisions the block disks, and `longhorn-v2` becomes
-> the **default** StorageClass at the end of the cutover.
+> GPU worker), and `longhorn-v2` becomes the **default** StorageClass.
+> **Rollout chosen: nuke & rebuild** (clean slate) — not an in-place migration.
+> Disk: the existing single ~800G worker disk is **split** into a system disk +
+> a dedicated raw V2 block device via the provider's `additional_disks` (same
+> total capacity), wired into the machine classes.
 
-## Why this is phased (read first)
+## Chosen path: nuke & rebuild (do this)
+
+Because the cluster is being rebuilt from scratch, most of the in-place hazards
+below evaporate — there are no attached volumes to block the engine-enable, and
+the disks exist from first boot. Order of operations:
+
+1. **Machine classes already carry the layout** (`omni/machine-classes/worker.yaml`
+   + `gpu-worker.yaml`): `disk_size` shrunk to the system disk (100G workers /
+   150G GPU) plus an `additional_disks` raw block device on `ssdpool` for V2
+   (700G / 650G). On a fresh provision these attach as `scsi0` → `/dev/sda`
+   (Talos system + V1) and `scsi1` → `/dev/sdb` (raw, for V2).
+2. **Cluster template already carries the V2 prereqs** (hugepages + `nvme_tcp` +
+   `vfio_pci` on workers + gpu-worker). They take effect on first boot.
+3. **Confirm the provider digest supports `additional_disks`.** Pinned by digest
+   in `omni/proxmox-provider/docker-compose.yml`; bump to current `:latest` if
+   the pinned build predates the feature (it is silently ignored otherwise).
+4. Provision the cluster. After Longhorn comes up, **register the `/dev/sdb`
+   block disk on each storage node by its `by-id` path** (Phase 3 step 3) — this
+   is the one post-bootstrap manual step.
+5. **Enable V2 from the start** — on a fresh cluster there are no attached
+   volumes, so set `v2DataEngine: true` (Phase 3 step 2) without a maintenance
+   window.
+6. **Canary-validate the VolSync/Kopia backup path on V2** (Phase 4) before
+   making it default.
+7. **Make `longhorn-v2` the default** (Phase 5). Keep V1 as default until the V2
+   disks are registered and the canary passes, so bootstrap PVCs don't hang.
+
+The phased detail below still applies for each step; the only thing the rebuild
+removes is the detach-everything maintenance window for the engine-enable.
+
+## Why the in-place path is phased (reference)
 
 Two facts force a manual, ordered rollout — they cannot be casual ArgoCD commits:
 
