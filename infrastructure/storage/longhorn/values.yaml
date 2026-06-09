@@ -25,13 +25,23 @@ defaultSettings:
   # Note: Use plain values, not JSON format - JSON causes "mismatched data engines" errors
   fastReplicaRebuildEnabled: "true"
   engineReplicaTimeout: "8"
-  # Reduced from 12 to 8 for homelab - still provides good performance with less CPU reservation
+  # Percentage of allocatable CPU reserved per instance-manager pod (NOT cores).
+  # Chart default is {"v1":"12","v2":"12"}; plain "8" applies to both engines.
+  # Reduced from 12 to 8 for homelab - still provides good performance with less CPU reservation.
+  # NOTE (V2): when the V2 data engine is enabled its instance managers busy-poll
+  # the cores pinned by `data-engine-cpu-mask` (default 0x3 = 2 cores). 8% may
+  # under-represent that as a k8s request; consider per-engine
+  # `{"v1":"8","v2":"<higher>"}` once V2 is live. See docs/domains/storage/longhorn-v2-migration.md.
   guaranteedInstanceManagerCPU: "8"
-  # Capacity baseline 2026-05-04 showed instance-manager + share-manager pods
-  # holding 11 GiB across the cluster with ZERO memory requests, breaking
-  # scheduler math. 1 GiB guaranteed per instance-manager covers the 1.2-2.1
-  # GiB observed per pod with reasonable headroom.
-  guaranteedInstanceManagerMemory: "1Gi"
+  # NOTE 2026-06-09: a previous `guaranteedInstanceManagerMemory: "1Gi"` was
+  # removed here — Longhorn has NO instance-manager memory-guarantee setting
+  # (only the CPU one above exists in the chart/setting schema), so the key was
+  # a silent no-op: it rendered into the longhorn-default-setting ConfigMap but
+  # longhorn-manager ignored it, and instance-manager pods never received the
+  # intended memory requests. The 2026-05-04 scheduler-math concern it tried to
+  # address (IM/share-manager pods with zero memory requests) is therefore still
+  # open and must be solved another way (node sizing / IM pod overhead), not via
+  # a Longhorn setting.
   # Performance: prefer local disk for reads when replica is on same node
   defaultDataLocality: "best-effort"
   # Cleanup: limit snapshot accumulation per volume

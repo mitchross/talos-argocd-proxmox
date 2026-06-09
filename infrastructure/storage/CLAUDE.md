@@ -4,7 +4,8 @@
 
 | Class | Use Case |
 |-------|----------|
-| `longhorn` | Distributed block storage (default) |
+| `longhorn` | Distributed block storage, V1 data engine (default) |
+| `longhorn-v2` | Longhorn V2 (SPDK) data engine — **inert until enabled**, see `docs/domains/storage/longhorn-v2-migration.md` |
 | `truenas-nfs` | Official TrueNAS CSI dynamic NFS (canary-gated, non-default) |
 | `nfs-comfyui-10g` | NFS 10G for ComfyUI models |
 | `nfs-llama-cpp-10g` | NFS 10G for LLM models |
