@@ -1,50 +1,63 @@
-# Longhorn 1.12.0 — V2 (SPDK) Data Engine Migration Runbook
+# Longhorn 1.12.0 — V2 (SPDK) Data Engine Rebuild Runbook
 
-> **Status:** prep landed in GitOps; engine-enable + default-class cutover are
-> manual, maintenance-window steps below. The cluster runs Longhorn **1.12.0**
-> on the **V1** data engine today.
+> **Status:** the rebuild target config is in GitOps. This cluster is **V2-only**.
+> `v2DataEngine: true` and `longhorn-v2` as the default StorageClass are baked
+> into Git — they apply when the **rebuilt** cluster bootstraps.
 >
-> **Scope decision (2026-06-09):** V2 on **all 4 storage nodes** (3 workers + 1
-> GPU worker), and `longhorn-v2` becomes the **default** StorageClass.
-> **Rollout chosen: nuke & rebuild** (clean slate) — not an in-place migration.
-> Disk: the existing single ~800G worker disk is **split** into a system disk +
-> a dedicated raw V2 block device via the provider's `additional_disks` (same
-> total capacity), wired into the machine classes.
+> **Scope decision (2026-06-09):** nuke & rebuild (clean slate), **V2-only** — no
+> V1 volumes to migrate, so V1 is not used (the chart-created `longhorn` class
+> stays as a non-default, near-empty escape hatch). V2 runs on **all 4 storage
+> nodes** (3 workers + 1 GPU). Each node's single ~800G disk is **split** (same
+> total) into a 64G OS disk + a dedicated ~736G raw V2 block device via the
+> provider's `additional_disks`.
+>
+> ⚠️ **Sync timing:** these changes (`v2DataEngine: true`, V2-default,
+> `defaultClass: false`, the disk split) must **not** sync onto the still-running
+> V1 cluster — they'd break new-PVC provisioning and churn the engine setting.
+> Land them only as the rebuilt cluster comes up (the disk split needs a
+> reprovision anyway — the provider does not hot-resize).
 
-## Chosen path: nuke & rebuild (do this)
+## Why V2-only (no V1)
 
-Because the cluster is being rebuilt from scratch, most of the in-place hazards
-below evaporate — there are no attached volumes to block the engine-enable, and
-the disks exist from first boot. Order of operations:
+V1 only mattered for an *in-place* migration: you cannot hot-convert V1 volumes
+to V2, so a live cutover runs both engines side-by-side while data moves. A nuke
+& rebuild deletes all volumes, so there is nothing to migrate — every PVC is
+created fresh on V2. In 1.12.0 V2 has parity for everything this repo uses
+(snapshots, backup/restore, DR, expansion, clone, encryption, RWX-migratable,
+recurring jobs). The **one** thing to prove is the repo's backup/DR plumbing
+(VolSync/Kopia + `driver.longhorn.io` VolumeSnapshotClass), which was built on
+V1 — see the backup canary below.
+
+## Rebuild order of operations (do this)
 
 1. **Machine classes already carry the layout** (`omni/machine-classes/worker.yaml`
-   + `gpu-worker.yaml`): `disk_size` shrunk to the system disk (100G workers /
-   150G GPU) plus an `additional_disks` raw block device on `ssdpool` for V2
-   (700G / 650G). On a fresh provision these attach as `scsi0` → `/dev/sda`
-   (Talos system + V1) and `scsi1` → `/dev/sdb` (raw, for V2).
-2. **Cluster template already carries the V2 prereqs** (hugepages + `nvme_tcp` +
-   `vfio_pci` on workers + gpu-worker). They take effect on first boot.
+   + `gpu-worker.yaml`): `disk_size: 64` (OS) plus an `additional_disks` raw block
+   device on `ssdpool` for V2 (`736`). On a fresh provision these attach as
+   `scsi0` → `/dev/sda` (Talos + images) and `scsi1` → `/dev/sdb` (raw, for V2).
+2. **Cluster template already carries the V2 prereqs** (hugepages → 2 GiB +
+   `nvme_tcp` + `vfio_pci` on workers + gpu-worker). They take effect on first
+   boot. `v2DataEngine: true` is in `values.yaml` and applies cleanly on a fresh
+   cluster (no attached volumes to block it).
 3. **Provider digest supports `additional_disks`** — confirmed for the pinned
    `2026-05-23` digest in `omni/proxmox-provider/docker-compose.yml` (upstream
    multi-disk config predates it; verified against `internal/pkg/provider/data.go`
    and the provider's multi-disk docs). Per-disk `storage_selector` / `disk_ssd`
    / `disk_discard` are honored. If you ever roll the pin *back* before mid-April
    2026, re-verify — the field is silently ignored on builds that lack it.
-4. Provision the cluster. After Longhorn comes up, **register the `/dev/sdb`
-   block disk on each storage node by its `by-id` path** (Phase 3 step 3) — this
-   is the one post-bootstrap manual step.
-5. **Enable V2 from the start** — on a fresh cluster there are no attached
-   volumes, so set `v2DataEngine: true` (Phase 3 step 2) without a maintenance
-   window.
-6. **Canary-validate the VolSync/Kopia backup path on V2** (Phase 4) before
-   making it default.
-7. **Make `longhorn-v2` the default** (Phase 5). Keep V1 as default until the V2
-   disks are registered and the canary passes, so bootstrap PVCs don't hang.
+4. Provision the cluster. **Register the `/dev/sdb` block disk on each storage
+   node by its `by-id` path** (Phase 3 step 3) as soon as Longhorn is healthy and
+   **before** the heavy app waves (monitoring/my-apps). This is the one
+   post-bootstrap manual step. It is **not** a Talos mount — the disk is left raw
+   and added as a Longhorn block-type disk. Until it's registered, default-class
+   PVCs sit `Pending` (no data loss — they bind once the disk appears).
+5. **Canary-validate the VolSync/Kopia backup path on V2** (Phase 4) before
+   trusting real data to it — this is the gate, not optional, since the backup
+   contract was V1-built.
 
-The phased detail below still applies for each step; the only thing the rebuild
-removes is the detach-everything maintenance window for the engine-enable.
+The phased detail below is retained for reference; on a V2-only rebuild the
+default is already V2 from bootstrap, so there is no separate "cutover" step.
 
-## Why the in-place path is phased (reference)
+## Why the (historical) in-place path was phased (reference)
 
 Two facts force a manual, ordered rollout — they cannot be casual ArgoCD commits:
 

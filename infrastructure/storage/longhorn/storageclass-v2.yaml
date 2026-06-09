@@ -1,22 +1,22 @@
-# Longhorn V2 (SPDK) data engine StorageClass.
+# Longhorn V2 (SPDK) data engine StorageClass — the cluster DEFAULT.
 #
-# This class is INERT until the V2 data engine is enabled and at least one node
-# has a registered block-type disk — see docs/domains/storage/longhorn-v2-migration.md.
-# Until then it provisions nothing (PVCs that request it stay Pending), which is
-# why it is intentionally NOT marked default here.
+# This cluster is V2-only (rebuilt fresh; no V1 volumes to migrate). V1's default
+# is dropped via `persistence.defaultClass: false` in values.yaml, and this class
+# carries the is-default-class annotation instead.
 #
-# Cutover to make this the cluster default is the FINAL runbook step:
-#   1. set `persistence.defaultClass: false` in values.yaml (drops the default
-#      annotation from the V1 `longhorn` class), and
-#   2. uncomment the is-default-class annotation below.
-# Do NOT do (1)+(2) before V2 disks are registered, or every new PVC that omits
-# storageClassName will go Pending cluster-wide.
+# It provisions nothing until the V2 engine is enabled (values.yaml `v2DataEngine`)
+# AND each node has a registered block-type disk (the /dev/sdb raw disk from the
+# machine classes — register by /dev/disk/by-id/). On a fresh bootstrap, register
+# the disks right after Longhorn is healthy and before the heavy app waves, or
+# default-class PVCs sit Pending until the disks appear (no data loss — they bind
+# once registered). See docs/domains/storage/longhorn-v2-migration.md.
+# ⚠️ Do NOT sync this onto the live V1 cluster — only the rebuilt cluster.
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: longhorn-v2
   annotations:
-    # storageclass.kubernetes.io/is-default-class: "true"   # uncomment at cutover
+    storageclass.kubernetes.io/is-default-class: "true"
     longhorn.io/data-engine: v2
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true

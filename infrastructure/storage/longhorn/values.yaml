@@ -28,10 +28,12 @@ defaultSettings:
   # Percentage of allocatable CPU reserved per instance-manager pod (NOT cores).
   # Chart default is {"v1":"12","v2":"12"}; plain "8" applies to both engines.
   # Reduced from 12 to 8 for homelab - still provides good performance with less CPU reservation.
-  # NOTE (V2): when the V2 data engine is enabled its instance managers busy-poll
-  # the cores pinned by `data-engine-cpu-mask` (default 0x3 = 2 cores). 8% may
-  # under-represent that as a k8s request; consider per-engine
-  # `{"v1":"8","v2":"<higher>"}` once V2 is live. See docs/domains/storage/longhorn-v2-migration.md.
+  # NOTE (V2): the V2 instance managers busy-poll the cores pinned by
+  # `data-engine-cpu-mask` (default 0x3 = 2 cores). Flat "8" = 8% of allocatable;
+  # on the 32-core workers that is ~2.5 cores, which covers the 2 pinned cores
+  # with margin, so a plain scalar is fine here (avoid per-engine JSON strings —
+  # they trip "mismatched data engines" parse errors). Revisit only if worker
+  # core counts shrink. See docs/domains/storage/longhorn-v2-migration.md.
   guaranteedInstanceManagerCPU: "8"
   # NOTE 2026-06-09: a previous `guaranteedInstanceManagerMemory: "1Gi"` was
   # removed here — Longhorn has NO instance-manager memory-guarantee setting
@@ -52,13 +54,26 @@ defaultSettings:
   # Allow detached volumes to rebuild replicas (fixes VolSync clone volumes
   # stuck in VolumeCloneCopyCompleteAwaitingHealthy with replica count > 1)
   offlineReplicaRebuilding: "true"
+  # V2 (SPDK) data engine — this cluster is V2-ONLY (rebuilt fresh; there are no
+  # V1 volumes to migrate). Safe to enable from bootstrap because a fresh cluster
+  # has no attached volumes blocking the setting. Requires the Talos prereqs
+  # (vm.nr_hugepages=1024 → 2 GiB, nvme_tcp + vfio_pci) already in the cluster
+  # template, and a registered block-type disk per node (the /dev/sdb raw disk
+  # from the machine classes — register by /dev/disk/by-id/ once Longhorn is up).
+  # See docs/domains/storage/longhorn-v2-migration.md.
+  # ⚠️ Do NOT sync this onto the live V1 cluster — only the rebuilt cluster.
+  v2DataEngine: true
 # -- Disables the pre-upgrade check job. This is recommended for GitOps tools
 # like ArgoCD to prevent sync failures.
 preUpgradeChecker:
   jobEnabled: false
 persistence:
-  # -- Specifies the default Longhorn StorageClass.
-  defaultClass: true
+  # -- V2-only cluster: the V1 `longhorn` StorageClass is no longer the default.
+  # `defaultClass: false` drops the default annotation from the chart-created V1
+  # class; `longhorn-v2` (storageclass-v2.yaml) carries the is-default-class
+  # annotation instead. The V1 class still exists as a non-default escape hatch
+  # but has near-zero capacity (the OS disk is only 64G), so don't rely on it.
+  defaultClass: false
   # -- Default number of replicas for volumes.
   # Set to 2 for node-failure resilience. With replica 1, a single node going
   # down makes all its volumes unavailable and causes stale attachment cascades.
