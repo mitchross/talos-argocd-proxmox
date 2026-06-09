@@ -40,47 +40,18 @@ spec:
           env:
             - name: CSI_ENDPOINT
               value: unix:///csi/csi.sock
-            - name: TRUENAS_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: truenas-csi-config
-                  key: truenasURL
-            - name: TRUENAS_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: truenas-api-credentials
-                  key: api-key
-            - name: TRUENAS_DEFAULT_POOL
-              valueFrom:
-                configMapKeyRef:
-                  name: truenas-csi-config
-                  key: defaultPool
-            - name: TRUENAS_NFS_SERVER
-              valueFrom:
-                configMapKeyRef:
-                  name: truenas-csi-config
-                  key: nfsServer
-            - name: TRUENAS_ISCSI_PORTAL
-              valueFrom:
-                configMapKeyRef:
-                  name: truenas-csi-config
-                  key: iscsiPortal
-            - name: TRUENAS_ISCSI_IQN_BASE
-              valueFrom:
-                configMapKeyRef:
-                  name: truenas-csi-config
-                  key: iscsiIQNBase
-                  optional: true
-            - name: TRUENAS_INSECURE_SKIP_VERIFY
-              valueFrom:
-                configMapKeyRef:
-                  name: truenas-csi-config
-                  key: truenasInsecure
-                  optional: true
             - name: NODE_ID
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+          # All TRUENAS_* config comes from envFrom — single source shared by
+          # the controller Deployment and node DaemonSet. The ConfigMap/Secret
+          # keys ARE the env-var names; add new driver vars there, not here.
+          envFrom:
+            - configMapRef:
+                name: truenas-csi-config
+            - secretRef:
+                name: truenas-api-credentials
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
@@ -206,47 +177,18 @@ spec:
           env:
             - name: CSI_ENDPOINT
               value: unix:///csi/csi.sock
-            - name: TRUENAS_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: truenas-csi-config
-                  key: truenasURL
-            - name: TRUENAS_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: truenas-api-credentials
-                  key: api-key
-            - name: TRUENAS_DEFAULT_POOL
-              valueFrom:
-                configMapKeyRef:
-                  name: truenas-csi-config
-                  key: defaultPool
-            - name: TRUENAS_NFS_SERVER
-              valueFrom:
-                configMapKeyRef:
-                  name: truenas-csi-config
-                  key: nfsServer
-            - name: TRUENAS_ISCSI_PORTAL
-              valueFrom:
-                configMapKeyRef:
-                  name: truenas-csi-config
-                  key: iscsiPortal
-            - name: TRUENAS_ISCSI_IQN_BASE
-              valueFrom:
-                configMapKeyRef:
-                  name: truenas-csi-config
-                  key: iscsiIQNBase
-                  optional: true
-            - name: TRUENAS_INSECURE_SKIP_VERIFY
-              valueFrom:
-                configMapKeyRef:
-                  name: truenas-csi-config
-                  key: truenasInsecure
-                  optional: true
             - name: NODE_ID
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+          # All TRUENAS_* config comes from envFrom — single source shared by
+          # the controller Deployment and node DaemonSet. The ConfigMap/Secret
+          # keys ARE the env-var names; add new driver vars there, not here.
+          envFrom:
+            - configMapRef:
+                name: truenas-csi-config
+            - secretRef:
+                name: truenas-api-credentials
           volumeMounts:
             - name: plugin-dir
               mountPath: /csi

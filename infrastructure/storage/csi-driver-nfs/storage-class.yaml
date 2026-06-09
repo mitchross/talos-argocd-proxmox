@@ -1,5 +1,10 @@
 # =============================================================================
 # 10G NFS Storage Classes (192.168.10.133) - via 10G switch
+#
+# CANONICAL 10G NFS tuning option set (nfsvers=4.1, nconnect=16,
+# rsize/wsize=1048576, noatime). Duplicated by necessity in
+# infrastructure/storage/truenas-csi/storageclass.yaml (different provisioner,
+# single-string format) — keep both in lockstep when tuning.
 # =============================================================================
 
 # ComfyUI NFS storage class (10G)

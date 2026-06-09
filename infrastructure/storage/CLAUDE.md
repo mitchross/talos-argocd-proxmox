@@ -4,8 +4,7 @@
 
 | Class | Use Case |
 |-------|----------|
-| `longhorn-v2` | Longhorn V2 (SPDK) data engine — **cluster default**. All distributed block storage lives here on the dedicated `/dev/sdb` raw disk. See `docs/domains/storage/longhorn-v2-migration.md` |
-| `longhorn` | V1 data engine — **non-default escape hatch only**. Near-zero capacity (OS disk is 64G); do not rely on it. This cluster is V2-only |
+| `longhorn` | Distributed block storage — **cluster default**, served by the **V2 (SPDK) data engine** on the dedicated `/dev/sdb` raw disk per node. The class NAME stayed `longhorn` on purpose so existing PVCs/templates keep working; it is routed to V2 via `persistence.dataEngine: v2` in the Helm values. V1 engine is disabled. See `docs/domains/storage/longhorn-v2-migration.md` |
 | `truenas-nfs` | Official TrueNAS CSI dynamic NFS (canary-gated, non-default) |
 | `nfs-comfyui-10g` | NFS 10G for ComfyUI models |
 | `nfs-llama-cpp-10g` | NFS 10G for LLM models |
@@ -31,7 +30,7 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: longhorn-v2  # Cluster default (V2/SPDK), can be omitted
+  storageClassName: longhorn  # Cluster default (V2/SPDK engine), can be omitted
 ```
 
 ## NFS Static PVs (CRITICAL: Use CSI, NOT legacy nfs:)
