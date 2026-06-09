@@ -30,6 +30,8 @@ The rebuild proved and corrected these ordering problems:
 - OpenTelemetry operator core no longer renders a ServiceMonitor. `opentelemetry-operator-observability` owns it at Wave `6`.
 - CNPG `enablePodMonitor: true` is accepted runtime soft-coupling. The CNPG operator may log transient errors before monitoring exists, but this is not an ArgoCD dry-run blocker.
 - RustFS/S3 external credential registration and Kopia repository authentication must be validated before a nuke.
+- Temporal's post-nuke bootstrap deadlock is **fixed and applied** (do not re-plan it): the `temporal-db-secret` ExternalSecret/shims carry sync-wave `-2`, the Helm-rendered schema Jobs are ArgoCD Sync hooks at wave `-1` (`my-apps/development/temporal/`). The hook Job can now mount its dependencies before it runs.
+- The `volsync-mover-backend-availability` **MutatingAdmissionPolicy** (Wave `2`, `infrastructure/storage/volsync-backup-cluster/`) is the backup-path admission gate: it injects a `wait-for-rustfs` init container into every VolSync mover Job, `failurePolicy: Fail`, scoped to mover Jobs only. It is **cluster infrastructure, separate from pvc-plumber** — the v4 operator ships no admission webhook. Failure mode to respect: a broken policy silently stops **all backups** (not deploys); dry-run it after every Kubernetes upgrade and watch `VolSyncMissedScheduledBackup`.
 
 An early Prometheus Operator CRD application was considered and explicitly rejected. Do not resurrect it.
 
