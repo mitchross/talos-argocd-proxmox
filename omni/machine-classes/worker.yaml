@@ -44,7 +44,15 @@ spec:
       # existing VMs already have provisioned — no risky downsize during
       # the cores-bump.
       memory: 98304
-      disk_size: 800
+      # Disk layout for the Longhorn V2 (SPDK) rebuild — same ~800G total as
+      # before, just SPLIT into two virtual disks instead of one. Talos owns the
+      # boot disk's partition table and V2 needs a whole *raw block device*, so
+      # carving "the rest of /dev/sda" for V2 in-place is fragile; two disks is
+      # the idiomatic Talos/Longhorn layout. Applied at provisioning (the
+      # provider does not hot-resize existing VMs) — fine for the nuke & rebuild.
+      #   scsi0 -> /dev/sda  : Talos system + container images + V1 longhorn
+      #   scsi1 -> /dev/sdb  : raw block device, claimed by Longhorn V2
+      disk_size: 100
       network_bridge: vmbr1
       storage_selector: name == "ssdpool"
       # Disk performance (SSD/NVMe optimization)
@@ -53,6 +61,17 @@ spec:
       disk_iothread: true
       disk_cache: none
       disk_aio: io_uring
+      # Dedicated raw block device for the Longhorn V2 data engine. Left
+      # unformatted (no Talos UserVolumeConfig) so Longhorn V2 claims it raw;
+      # register it by /dev/disk/by-id/ — see docs/domains/storage/longhorn-v2-migration.md.
+      additional_disks:
+        - storage_selector: name == "ssdpool"
+          disk_size: 700
+          disk_ssd: true
+          disk_discard: true
+          disk_iothread: true
+          disk_cache: none
+          disk_aio: io_uring
       # VM optimizations
       cpu_type: host
       machine_type: q35
