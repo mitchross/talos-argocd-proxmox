@@ -28,7 +28,7 @@ prometheus:
           labels:
             backup-exempt: "true"
           annotations:
-            backup-exempt-reason: "Prometheus metrics are re-scrapeable; monitoring data not worth backup pipeline overhead"
+            storage.vanillax.dev/backup-exempt-reason: "Prometheus metrics are re-scrapeable; monitoring data not worth backup pipeline overhead"
         spec:
           storageClassName: longhorn
           accessModes:
@@ -165,7 +165,7 @@ alertmanager:
           labels:
             backup-exempt: "true"
           annotations:
-            backup-exempt-reason: "Alertmanager silences are operator-set; trivially recreated"
+            storage.vanillax.dev/backup-exempt-reason: "Alertmanager silences are operator-set; trivially recreated"
         spec:
           storageClassName: longhorn
           accessModes:
@@ -207,10 +207,12 @@ grafana:
     # Intentionally backup-exempt. Grafana dashboards and datasource
     # configs are GitOps-managed; only user prefs / unsaved drafts live
     # in the PVC. Not worth backup pipeline overhead.
-    labels:
+    # NOTE: the grafana chart ignores `persistence.labels`; PVC labels
+    # must go under `extraPvcLabels` (verified against grafana-12.4.2).
+    extraPvcLabels:
       backup-exempt: "true"
     annotations:
-      backup-exempt-reason: "Dashboards/datasources are GitOps-managed; only user prefs in PVC"
+      storage.vanillax.dev/backup-exempt-reason: "Dashboards/datasources are GitOps-managed; only user prefs in PVC"
   # Resource allocation
   resources:
     requests:
