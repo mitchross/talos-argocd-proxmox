@@ -53,12 +53,19 @@ Before recreating a protected PVC:
 
 Do not use this generic path for CNPG, Redis, or PostHog.
 
+This exact sequence is automated for one dedicated test PVC by the
+[scheduled restore canary](restore-canary.md)
+(`scripts/restore-canary-drill.sh`), which continuously re-proves the
+delete → Git recreate → populator restore → byte-verify loop without
+touching production PVCs.
+
 ## External Dependency Check
 
 Before a destructive rebuild, verify RustFS/S3 reachability, the registered S3 access key, and Kopia repository authentication. A full cluster nuke proved that an unregistered external credential blocks recovery even when the Git state is correct.
 
 ## Related Docs
 
+- [scheduled restore canary](restore-canary.md)
 - [pvc-plumber start here](pvc-plumber-start-here.md)
 - [pvc-plumber cheatsheet](pvc-plumber-cheatsheet.md)
 - [pvc-plumber dynamic workflow](pvc-plumber-dynamic-workflow.md)

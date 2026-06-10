@@ -193,6 +193,7 @@ Detailed instructions load automatically when working in these directories:
 > - **Do NOT treat old migration incidents (nginx-canary, v3 cutover) as current operating flow.**
 
 - **[docs/volsync-storage-recovery.md](docs/volsync-storage-recovery.md)** - PVC backup/restore single source of truth
+- **[docs/restore-canary.md](docs/restore-canary.md)** - Scheduled restore canary: continuous restore proof (`my-apps/system/restore-canary/` + `scripts/restore-canary-drill.sh`); also documents the day-one populator-deadlock bootstrap for brand-new backed-up PVCs
 - **[docs/domains/cnpg/disaster-recovery.md](docs/domains/cnpg/disaster-recovery.md)** - CNPG database DR procedures (separate system: Barman → S3)
 - **[docs/domains/networking/topology.md](docs/domains/networking/topology.md)** - Network architecture details
 - **[docs/domains/networking/policy.md](docs/domains/networking/policy.md)** - Cilium network policies
