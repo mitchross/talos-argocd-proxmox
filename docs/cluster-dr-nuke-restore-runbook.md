@@ -73,6 +73,17 @@ a managed restore failure — but it went unnoticed precisely because
 acceptance only quoted the managed-contract counters. Fixed in
 `monitoring/prometheus-stack/values.yaml` the same day.
 
+### Continuous proof layer — scheduled restore canary
+
+The 2026-06-02 acceptance was a point-in-time proof. The
+[scheduled restore canary](restore-canary.md) (`my-apps/system/restore-canary/`
++ `scripts/restore-canary-drill.sh`) keeps re-proving the restore path
+between nukes: sentinel → forced backup → RD `latestImage` refresh → delete
+only the canary PVC → Git/Argo recreate with `dataSourceRef` → populator
+restore → byte-correct sha256 verification. Drill results land as
+`restore-canary.vanillax.dev/last-drill-*` annotations on the
+`restore-canary` namespace.
+
 ## Verified Pre-Nuke State
 
 Before the rebuild:
@@ -99,6 +110,9 @@ Block the nuke until all external dependencies are verified:
 - [ ] Kopia repository authentication works.
 - [ ] Talos secrets and machine configs are available off-cluster.
 - [ ] Proxmox, Omni, and infrastructure-as-code inputs are available.
+- [ ] The restore canary is green: `scripts/restore-canary-drill.sh` passes its
+      gates and the `restore-canary` namespace shows a recent
+      `last-drill-result=pass` (see [restore canary](restore-canary.md)).
 
 Also record the Git revision to rebuild from and verify that the latest pvc-plumber audit is fully `DR_COMPLETE` for every managed PVC **and** `needs-human-review=0` (see "Audit acceptance semantics" above — counts are dynamic; verify against the live `/audit`, not a remembered number).
 

@@ -163,24 +163,25 @@ patches:
 
 ### Application with Persistent Storage + Backups
 
-Backups are declared **explicitly per PVC**: each backed-up PVC inlines its own
-`ReplicationSource` and `ReplicationDestination`, and its `dataSourceRef`
-points at that RD so PVC re-creation triggers the VolSync volume populator and
-restores from the shared Kopia repo. There is no Kyverno generator, no
-operator, no Helm chart — the YAML is the truth.
+Backups are declared **per PVC via labels**; the **pvc-plumber v4 operator**
+(permissive mode, no admission webhook) owns the `ReplicationSource` /
+`ReplicationDestination` wiring. You declare intent on the namespace + PVC;
+the operator creates and repairs RS/RD; VolSync/Kopia move bytes. **Never
+create, edit, or delete RS/RD by hand for managed PVCs** — reconcile through
+the labels. Full workflow: `.claude/commands/add-backup.md`.
 
 The shared repo Secret `volsync-kopia-repository` is produced in every
 namespace labeled `volsync.backube/privileged-movers: "true"` by
 `ClusterExternalSecret/volsync-kopia-repository` (see
-`infrastructure/storage/volsync-backup-cluster/`). Add that label on the
-namespace.
+`infrastructure/storage/volsync-backup-cluster/`).
 
 A `wait-for-rustfs` init container is auto-injected on every mover Job by
 `MutatingAdmissionPolicy/volsync-mover-backend-availability`. Backups fail
 fast (and Job-backoff-retry) if RustFS is unreachable.
 
-Reference: `my-apps/media/jellyfin/pvc.yaml` (single-PVC), `my-apps/home/paperless-ngx/pvc.yaml`
-(multi-PVC). Pattern:
+Reference: `my-apps/development/nginx/` (plain PVC),
+`my-apps/system/restore-canary/` (tier=manual + drill),
+`my-apps/development/gitea/kustomization.yaml` (Helm-rendered PVC). Pattern:
 
 ```yaml
 # namespace.yaml
@@ -189,17 +190,21 @@ kind: Namespace
 metadata:
   name: app-name
   labels:
-    volsync.backube/privileged-movers: "true"   # REQUIRED — ClusterES selector
+    volsync.backube/privileged-movers: "true"   # REQUIRED — ClusterES secret fanout
+    pvc-plumber.io/managed-namespace: "true"    # REQUIRED — operator write gate
 
 ---
-# pvc.yaml — PVC + RS + RD inlined as one doc per PVC
+# pvc.yaml — labels + dataSourceRef only; the operator renders RS/RD
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: app-data
   namespace: app-name
   labels:
-    app: app-name
+    app.kubernetes.io/name: app-name
+    pvc-plumber.io/enabled: "true"          # opt-in fuse (1 of 2)
+    pvc-plumber.io/manage-volsync: "true"   # write fuse (2 of 2)
+    pvc-plumber.io/tier: "daily"            # hourly|daily|weekly|manual|disabled
     restore-policy: "strict"
   annotations:
     # ServerSideDiff dry-runs SSA; the apiserver rejects any change to
@@ -207,6 +212,7 @@ metadata:
     # global Argo `ignoreDifferences` then masks the dataSource drift
     # normally. See docs/domains/argocd/argocd.md "Server-Side Diff & Apply Strategy".
     argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
 spec:
   storageClassName: longhorn   # Required — needs volumesnapshot support
   accessModes:
@@ -214,66 +220,35 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  # Static dataSourceRef — VolSync's volume populator reads the latest
-  # snapshot from the shared kopia repo on PVC re-creation (DR / namespace
-  # recreate). No-op while the PVC is already Bound.
+  # Static dataSourceRef → <pvc-name>-dst. On PVC re-creation (DR /
+  # namespace recreate) the VolSync volume populator restores from the
+  # operator-managed RD's latestImage. No-op while the PVC is Bound.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
     name: app-data-dst
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationSource
-metadata:
-  name: app-data
-  namespace: app-name
-spec:
-  sourcePVC: app-data
-  trigger:
-    schedule: "33 2 * * *"   # pick a unique minute — avoid thundering herd
-  kopia:
-    repository: volsync-kopia-repository
-    username: app-data            # convention: PVC name
-    hostname: app-name            # convention: namespace
-    compression: zstd-fastest
-    parallelism: 2
-    retain: { hourly: 24, daily: 7, weekly: 4, monthly: 2 }
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    moverSecurityContext: { runAsUser: 568, runAsGroup: 568, fsGroup: 568 }
----
-apiVersion: volsync.backube/v1alpha1
-kind: ReplicationDestination
-metadata:
-  name: app-data-dst
-  namespace: app-name
-spec:
-  trigger:
-    manual: restore-once          # static; only fires when value changes
-  kopia:
-    repository: volsync-kopia-repository
-    username: app-data
-    hostname: app-name
-    sourceIdentity:
-      sourceName: app-data
-      sourceNamespace: app-name
-      sourcePVCName: app-data
-    copyMethod: Snapshot
-    storageClassName: longhorn
-    volumeSnapshotClassName: longhorn-snapclass
-    cacheCapacity: 2Gi
-    accessModes: [ReadWriteOnce]
-    capacity: 10Gi               # MUST equal PVC requests.storage
-    moverSecurityContext: { runAsUser: 568, runAsGroup: 568, fsGroup: 568 }
 ```
+
+The operator renders the RS (schedule minute derived from a hash of
+`namespace/pvc` — no thundering herd) and the RD
+(`trigger.manual: restore-once`), both labeled
+`app.kubernetes.io/managed-by: pvc-plumber`. `tier=manual` renders
+`trigger.manual: backup-on-demand` — trigger a backup by changing that
+string.
+
+> **Day-one bootstrap caveat**: a brand-new PVC shipping `dataSourceRef`
+> before any backup exists deadlocks `Pending` (the populator waits forever
+> for RD `latestImage`; verified against VolSync v0.17.11). Bootstrap
+> procedure: pre-create the PVC without `dataSourceRef`, seed the first
+> backup, let the first delete→recreate install it. See
+> `docs/restore-canary.md` "First-deploy bootstrap".
 
 Verify after applying:
 ```
 kubectl get replicationsource,replicationdestination,pvc -n app-name
 kubectl get secret -n app-name volsync-kopia-repository   # produced by ClusterES
-bash hack/volsync-status.sh   # cluster-wide RS/RD status
+kubectl get --raw "/api/v1/namespaces/pvc-plumber/services/pvc-plumber-metrics:audit-http/proxy/audit" \
+  | python3 -m json.tool | less   # entry should be action=already-matches
 ```
 
 **When to back up a PVC**:
@@ -291,16 +266,16 @@ key — bare `backup-exempt-reason` is silently ignored by CI guard):
 - PVCs that will be frequently deleted/recreated
 - **CNPG database PVCs** — these use Barman to S3, not VolSync
 
-**Multi-PVC apps**: declare each PVC's triplet (PVC + RS + RD) explicitly in
-its own document. There is no per-app abstraction. See
-`my-apps/development/posthog/data-layer/{kafka,postgres,redis}.yaml` and
-`my-apps/home/project-nomad/*/pvc.yaml` for examples.
+**Multi-PVC apps**: each PVC carries its own fuse labels + `dataSourceRef`;
+there is no per-app abstraction. Mix freely — e.g.
+`my-apps/home/project-zomboid/pvc.yaml` backs up `zomboid-data` and leaves
+`zomboid-server-files` unlabeled.
 
 **Helm-rendered PVCs**: the PVC manifest is owned by the chart; inject the
-`ServerSideDiff=false` annotation and the `dataSourceRef` via Kustomize
-`patches:` (see `my-apps/development/gitea/kustomization.yaml`), and put the
-sibling RS/RD as `extraDeploy:` entries in the chart's values file (see
-`my-apps/development/gitea/values.yaml`).
+fuse labels, the `ServerSideDiff=false` annotation, and the `dataSourceRef`
+via Kustomize `patches:` (see `my-apps/development/gitea/kustomization.yaml`).
+Do NOT add RS/RD as `extraDeploy:` chart values — the operator owns RS/RD
+(gitea's inline pair was removed in the 2026-05-31 DRY handoff).
 
 ## Configuration Patterns
 
@@ -341,6 +316,7 @@ components:
 | **GPU workload** | `my-apps/ai/comfyui/` |
 | **Complex app with storage** | `my-apps/media/immich/` |
 | **PVC with automatic backup** | `my-apps/home/project-zomboid/pvc.yaml` (see `zomboid-data`) |
+| **Restore canary (DR drill)** | `my-apps/system/restore-canary/` + `docs/restore-canary.md` |
 | **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
 | **Secret management** | Any app with `externalsecret.yaml` |
 | **Job with ArgoCD hooks** | `my-apps/development/posthog/core/jobs.yaml` |
