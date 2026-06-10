@@ -17,10 +17,11 @@
 #                           canary PVC, let Argo/Git recreate it with its
 #                           dataSourceRef, wait for the populator restore, and
 #                           verify the sentinel hash byte-for-byte.
-#   --bootstrap  (live only) first-ever drill: the live PVC is allowed to be
-#                           missing its dataSourceRef (day-one populator
-#                           deadlock workaround); the Git render at the
-#                           verified revision must contain it instead.
+#   --bootstrap  (seed/live) first-ever seed/drill: the live PVC is allowed
+#                           to be missing its dataSourceRef (the canary is
+#                           bootstrapped without it — see "First-deploy
+#                           bootstrap" in docs/restore-canary.md); the Git
+#                           render must contain it instead.
 #   --force-unlock          clear a stale drill-in-progress marker.
 #
 # CONTAINMENT: every write is pinned to namespace "restore-canary", PVC
@@ -69,8 +70,8 @@ for arg in "$@"; do
     *) echo "unknown argument: $arg (see --help)" >&2; exit 1 ;;
   esac
 done
-if [[ "$BOOTSTRAP" -eq 1 && "$MODE" != "live" ]]; then
-  echo "--bootstrap only makes sense with --live-run" >&2; exit 1
+if [[ "$BOOTSTRAP" -eq 1 && "$MODE" == "status" ]]; then
+  echo "--bootstrap only makes sense with --seed or --live-run" >&2; exit 1
 fi
 
 DESTRUCTIVE_STARTED=0

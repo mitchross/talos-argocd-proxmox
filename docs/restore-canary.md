@@ -110,30 +110,37 @@ hard-refresh app → wait for the refresh annotation to be consumed
 
 Never gate any step on Argo `Synced` alone.
 
-## First-deploy bootstrap (day-one populator deadlock)
+## First-deploy bootstrap (day-one latestImage gap)
 
-Verified against VolSync v0.17.11 source: the volume populator **waits
-forever** for `ReplicationDestination.status.latestImage` and never falls
-back to provisioning an empty volume. A brand-new PVC that ships the full
-backup contract (including `dataSourceRef`) before any backup exists
-deadlocks `Pending`:
+Two verified facts shape day-one behavior for ANY brand-new PVC adopting
+the full contract (not just the canary):
 
-```text
-bind needs latestImage ← restore needs a snapshot ← backup needs a Bound source
-```
+1. **Source-verified (VolSync v0.17.11)**: the volume populator binds a new
+   PVC only once the RD has `status.latestImage`; there is no fallback to
+   an empty volume in the populator itself.
+2. **Live-verified (2026-06-10, canary bootstrap)**: the Kopia mover
+   completes as a **successful no-op** when the repo identity has no
+   snapshots, so the RD's first `restore-once` sync produces an **empty**
+   `latestImage` within a couple of minutes.
 
-This affects ANY genuinely new app that adopts the full contract on day one,
-not just the canary. Bootstrap procedure (one-time per new PVC):
+Net effect: a day-one PVC with `dataSourceRef` does NOT deadlock — it sits
+`Pending` until the RD's first sync, then binds **empty**. The real hazard
+is silent: an empty `latestImage` binds exactly as happily as a real one,
+so a `dataSourceRef` alone is no guarantee of restored content (e.g. an RD
+that synced before credentials/identity were correct masks a real restore).
+This is why the drill **requires `latestImage` to advance past the fresh
+sentinel backup** before any delete.
+
+Canary bootstrap procedure used (one-time per new PVC; keeps the first bind
+instant and deterministic instead of consuming an unverified empty restore):
 
 1. Pre-create the namespace and the PVC **without** `dataSourceRef`
    (otherwise identical to Git). It binds empty; the operator wires RS/RD.
-   The RD's initial `restore-once` sync fails harmlessly until a backup
-   exists (expected transient mover errors).
 2. Push/let Argo adopt. The AppSet's `ignoreDifferences` +
    `RespectIgnoreDifferences=true` mean Argo never tries to add the
    immutable `dataSourceRef` to the Bound PVC.
-3. `scripts/restore-canary-drill.sh --seed` — sentinel + first Successful
-   backup + RD `latestImage`.
+3. `scripts/restore-canary-drill.sh --seed --bootstrap` — sentinel + first
+   Successful backup + RD `latestImage` advance.
 4. First drill runs with `--live-run --bootstrap`: the delete→Git-recreate
    installs the `dataSourceRef` on the new PVC. Steady state from then on.
 

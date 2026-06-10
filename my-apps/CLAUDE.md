@@ -236,11 +236,13 @@ The operator renders the RS (schedule minute derived from a hash of
 `trigger.manual: backup-on-demand` — trigger a backup by changing that
 string.
 
-> **Day-one bootstrap caveat**: a brand-new PVC shipping `dataSourceRef`
-> before any backup exists deadlocks `Pending` (the populator waits forever
-> for RD `latestImage`; verified against VolSync v0.17.11). Bootstrap
-> procedure: pre-create the PVC without `dataSourceRef`, seed the first
-> backup, let the first delete→recreate install it. See
+> **Day-one caveat**: a brand-new PVC shipping `dataSourceRef` sits
+> `Pending` until the RD's first sync, then binds **EMPTY** — the Kopia
+> mover no-ops successfully on an identity with no snapshots, so the
+> populator happily consumes an empty `latestImage` (verified live
+> 2026-06-10). A `dataSourceRef` alone is no guarantee of restored content.
+> Preferred bootstrap: pre-create the PVC without `dataSourceRef`, seed the
+> first backup, let the first delete→recreate install it. See
 > `docs/restore-canary.md` "First-deploy bootstrap".
 
 Verify after applying:

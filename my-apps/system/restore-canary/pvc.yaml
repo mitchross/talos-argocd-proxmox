@@ -7,14 +7,17 @@
 # never inspects/repairs the manual trigger value, only that no cron
 # schedule is present on a manual-tier RS.
 #
-# BOOTSTRAP CAVEAT (verified against VolSync v0.17.11 source): the VolSync
-# volume populator waits FOREVER for ReplicationDestination
-# status.latestImage and never falls back to an empty volume. A brand-new
-# PVC shipping this dataSourceRef before any backup exists therefore
-# deadlocks Pending (backup needs a Bound source <- bind needs latestImage
-# <- restore needs a backup). First-deploy procedure: pre-create the
-# namespace + this PVC WITHOUT the dataSourceRef, seed the first backup,
-# then let the first restore drill install the dataSourceRef via
+# DAY-ONE NOTE (VolSync v0.17.11 source + live verification 2026-06-10):
+# the volume populator binds a new PVC only once the RD has a
+# status.latestImage — but the kopia mover completes as a SUCCESSFUL NO-OP
+# when the repo identity has no snapshots, so the RD's first restore-once
+# sync yields an EMPTY latestImage and a brand-new PVC binds (empty) a few
+# minutes later. No permanent deadlock — but also NO content guarantee: an
+# empty latestImage binds as happily as a real one. The drill therefore
+# always requires latestImage to ADVANCE past the fresh sentinel backup
+# before any delete. This canary was bootstrapped by pre-creating the PVC
+# WITHOUT the dataSourceRef (instant deterministic bind), seeding the
+# first backup, then letting the first drill install the ref via
 # delete -> Git recreate. Full procedure: docs/restore-canary.md.
 apiVersion: v1
 kind: PersistentVolumeClaim
