@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/component: development
     pvc-plumber.io/enabled: "true"
     pvc-plumber.io/manage-volsync: "true"
-    pvc-plumber.io/tier: "daily"
+    pvc-plumber.io/tier: "hourly"
     restore-policy: "strict"
 spec:
   storageClassName: longhorn
