@@ -1,0 +1,14 @@
+# Restore canary — continuous DR restore proof. See docs/restore-canary.md.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: restore-canary
+  labels:
+    # ClusterExternalSecret selector: fans the shared Kopia repo Secret
+    # volsync-kopia-repository into this namespace (see
+    # infrastructure/storage/volsync-backup-cluster/clusterexternalsecret.yaml).
+    volsync.backube/privileged-movers: "true"
+    # pvc-plumber v4 namespace write gate: opts this namespace in to
+    # operator-managed VolSync RS/RD writes. Required alongside the PVC
+    # fuse labels before the operator will create/update/delete RS/RD here.
+    pvc-plumber.io/managed-namespace: "true"

@@ -1,0 +1,52 @@
+# The canary PVC. Deliberately tiny; holds only the drill sentinel file.
+#
+# tier=manual (not daily/hourly): v4.0.2 renders the ReplicationSource with
+# spec.trigger.manual=backup-on-demand — a backup fires only when that
+# string changes. The drill script bumps it to control backup timing
+# exactly, and there is zero idle mover churn between drills. The operator
+# never inspects/repairs the manual trigger value, only that no cron
+# schedule is present on a manual-tier RS.
+#
+# BOOTSTRAP CAVEAT (verified against VolSync v0.17.11 source): the VolSync
+# volume populator waits FOREVER for ReplicationDestination
+# status.latestImage and never falls back to an empty volume. A brand-new
+# PVC shipping this dataSourceRef before any backup exists therefore
+# deadlocks Pending (backup needs a Bound source <- bind needs latestImage
+# <- restore needs a backup). First-deploy procedure: pre-create the
+# namespace + this PVC WITHOUT the dataSourceRef, seed the first backup,
+# then let the first restore drill install the dataSourceRef via
+# delete -> Git recreate. Full procedure: docs/restore-canary.md.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: restore-canary-data
+  namespace: restore-canary
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
+  labels:
+    app.kubernetes.io/name: restore-canary
+    app.kubernetes.io/component: dr-canary
+    pvc-plumber.io/enabled: "true"
+    pvc-plumber.io/manage-volsync: "true"
+    pvc-plumber.io/tier: "manual"
+    restore-policy: "strict"
+spec:
+  storageClassName: longhorn
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  # Static dataSourceRef → ReplicationDestination/restore-canary-data-dst.
+  # On PVC re-creation (the drill, DR, namespace recreate), VolSync's
+  # volume populator consumes the RD's status.latestImage snapshot and
+  # binds this PVC with restored data. No-op while the PVC is Bound. The
+  # RS/RD targeted here are operator-managed by pvc-plumber: this PVC
+  # carries the v4 write fuse, so the operator creates and repairs
+  # ReplicationSource/restore-canary-data +
+  # ReplicationDestination/restore-canary-data-dst.
+  dataSourceRef:
+    apiGroup: volsync.backube
+    kind: ReplicationDestination
+    name: restore-canary-data-dst

@@ -1,0 +1,69 @@
+# Tiny sleeper that keeps the canary volume attached and serves as the
+# exec target for sentinel write/verify. Three jobs:
+#   1. Longhorn snapshots are most reliable on attached volumes — every
+#      other operator-managed PVC in the fleet is attached; the canary
+#      should not be the odd one out.
+#   2. `kubectl exec` target for the drill's sentinel write + hash verify.
+#   3. Proves the production restore shape: during a drill the replacement
+#      pod parks Pending while the PVC is deleted/recreated/restored, then
+#      schedules and mounts the restored volume.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: restore-canary
+  namespace: restore-canary
+  labels:
+    app.kubernetes.io/name: restore-canary
+    app.kubernetes.io/component: dr-canary
+spec:
+  replicas: 1
+  # RWO PVC — Recreate is mandatory (RollingUpdate Multi-Attach deadlock).
+  strategy:
+    type: Recreate
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: restore-canary
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: restore-canary
+        app.kubernetes.io/component: dr-canary
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        # Cluster storage convention (matches the VolSync mover security
+        # context and pvc-plumber builder defaults): 568:568:568. fsGroup
+        # makes /data group-writable for the sentinel.
+        runAsUser: 568
+        runAsGroup: 568
+        fsGroup: 568
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: sleeper
+          # Same digest-pinned image the volsync-mover-backend-availability
+          # MutatingAdmissionPolicy injects as wait-for-rustfs — already
+          # pulled on every node that runs movers.
+          image: ghcr.io/home-operations/busybox:1.38.0@sha256:7e2c04dd50ede647bf4a7a4c8dbd629dd4971cd139b9b88fb22bfc3c7a6c13df
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "while true; do sleep 3600; done"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: restore-canary-data
