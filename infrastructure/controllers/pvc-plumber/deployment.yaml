@@ -75,11 +75,10 @@ metadata:
   labels:
     app.kubernetes.io/name: pvc-plumber
     app.kubernetes.io/component: backup-restore-operator
-    # LEGACY LABEL — runtime mode is PERMISSIVE, set by PVC_PLUMBER_MODE env
-    # below. This label value is stale; updating it is a gated fix (the pod-
-    # template copy at .spec.template.metadata.labels rolls the pod on sync).
-    # Tracked in docs/pvc-plumber-v4-migration-readiness.md §7.
-    pvc-plumber.io/mode: audit
+    # Informational only — runtime mode is set by PVC_PLUMBER_MODE env
+    # below. Brought in line with the real mode during the v4.0.2 image
+    # roll (2026-06-10), closing migration-readiness §7.
+    pvc-plumber.io/mode: permissive
 spec:
   replicas: 1
   # No RWO PVC, so Recreate vs RollingUpdate doesn't matter, but pinning
@@ -97,10 +96,9 @@ spec:
       labels:
         app.kubernetes.io/name: pvc-plumber
         app.kubernetes.io/component: backup-restore-operator
-        # LEGACY LABEL — runtime mode is PERMISSIVE (PVC_PLUMBER_MODE env).
-        # Changing this value rolls the pod, so it is left as-is until a
-        # deliberate sync; tracked in migration-readiness §7.
-        pvc-plumber.io/mode: audit
+        # Informational only — runtime mode is PVC_PLUMBER_MODE env.
+        # Updated alongside the v4.0.2 image roll (pod restarts anyway).
+        pvc-plumber.io/mode: permissive
     spec:
       serviceAccountName: pvc-plumber
       automountServiceAccountToken: true
@@ -114,14 +112,16 @@ spec:
       containers:
         - name: operator
           # Pinned to the immutable digest published by the operator
-          # repo's release.yaml workflow on 2026-05-30 (Release run
-          # 26676186207, tag v4.0.1). The tag value is informational only —
-          # the digest is what kubelet pulls. This is the multi-arch
-          # manifest list digest (linux/amd64 + linux/arm64), verified
-          # via `crane` at release time. (Prior pin: 4.0.0
-          # @sha256:93df441…, commit 3c40a1f; v4.0.1 = commit da40246 adds
-          # the namespace write gate.)
-          image: ghcr.io/mitchross/pvc-plumber:4.0.1@sha256:721d770330a535871cae33313d7cd336116697d2a6f9e5d91fc8cd3d21a26305
+          # repo's release.yaml workflow on 2026-06-10 (tag v4.0.2,
+          # commit d2f7f02). The tag value is informational only — the
+          # digest is what kubelet pulls. This is the multi-arch manifest
+          # list digest (linux/amd64 + linux/arm64), read from ghcr's
+          # Docker-Content-Digest at release time. v4.0.2 = 2026-06-09
+          # review hardening: RS schedule-drift detection (rs_schedule in
+          # /audit), manual tier renders trigger.manual (was daily cron),
+          # default-tier + inert-v5-annotation disclosures. (Prior pin:
+          # 4.0.1 @sha256:721d770…, commit da40246.)
+          image: ghcr.io/mitchross/pvc-plumber:4.0.2@sha256:2539ae6e1f387ca9a734a0ba2bb176b696dd74e4a832d3b6bcd3ecea27f47b7d
           imagePullPolicy: IfNotPresent
           command: ["/pvc-plumber"]
           args:
