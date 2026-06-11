@@ -37,15 +37,20 @@ defaultSettings:
   # Chart default is {"v1":"12","v2":"12"}; plain "8" applies to both engines.
   # Reduced from 12 to 8 for homelab - still provides good performance with less CPU reservation.
   # NOTE (V2): the V2 instance managers busy-poll the cores pinned by
-  # `data-engine-cpu-mask` (default 0x3 = 2 cores). Flat "8" = 8% of allocatable,
-  # so the k8s request is ~2.5 cores on the 32-core workers (covers the 2 pinned
-  # cores) but only ~1.28 cores on the 16-core GPU worker — a KNOWN ~0.7-core
-  # under-request there. Accepted trade-off: raising the scalar to cover the GPU
-  # node (needs ~"13") would over-reserve ~1.6 extra cores on each 32-core
-  # worker in a requests-bound cluster. If V2 storage latency degrades on the
-  # GPU node under AI load, raise this or shrink data-engine-cpu-mask to 0x1.
+  # `v2-data-engine-cpu-mask`. Raised 0x3 (2 cores) -> 0xf (4 cores) on
+  # 2026-06-11 after the first V2 nuke-restore: 25 parallel restores wedged
+  # both SPDK targets in attach/detach teardown loops ("NVMe path still
+  # exists after delete"), and 2 reactor cores could not drain the churn.
+  # See the Setting CR in node-failure-settings.yaml (the authoritative
+  # copy — defaultSettings only seeds first install) and the V2 mass-restore
+  # wedge entry in docs/cluster-dr-nuke-restore-runbook.md.
+  # "13" ≈ 4.2 cores requested on the 32-core workers (covers the 4 pinned
+  # cores); on the 16-core GPU worker it is ~2.1 cores — a KNOWN under-request
+  # vs the 4 busy-polled cores there, accepted to avoid over-reserving the
+  # AI node. If V2 latency degrades on the GPU node under AI load, consider
+  # shrinking the mask instead.
   # Avoid per-engine JSON strings — they trip "mismatched data engines" errors.
-  guaranteedInstanceManagerCPU: "8"
+  guaranteedInstanceManagerCPU: "13"
   # NOTE 2026-06-09: a previous `guaranteedInstanceManagerMemory: "1Gi"` was
   # removed here — Longhorn has NO instance-manager memory-guarantee setting
   # (only the CPU one above exists in the chart/setting schema), so the key was
