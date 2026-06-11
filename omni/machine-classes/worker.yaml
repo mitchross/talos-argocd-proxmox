@@ -44,7 +44,19 @@ spec:
       # existing VMs already have provisioned — no risky downsize during
       # the cores-bump.
       memory: 98304
-      disk_size: 800
+      # Disk layout for the V2-only (SPDK) rebuild — same ~800G total as before,
+      # SPLIT into two virtual disks. ALL Longhorn capacity lives on the
+      # dedicated raw block device. Talos owns the boot disk's partition table
+      # and V2 needs a whole *raw block device*, so two disks is the idiomatic
+      # layout (carving "the rest of /dev/sda" in-place is fragile). Applied at
+      # provisioning (the provider does not hot-resize) — fine for the rebuild.
+      #   scsi0 -> /dev/sda  : Talos system + container images + pod ephemeral
+      #   scsi1 -> /dev/sdb  : raw block device, claimed by Longhorn V2
+      # OS disk sized 96G, NOT the 64G minimum: the EPHEMERAL partition must
+      # absorb committed pod ephemeral-storage LIMITS, not just requests —
+      # open-webui alone may legally use 40Gi (deployment limit), plus images
+      # (~15G) and Talos system (~10G). 64G was inside eviction range.
+      disk_size: 96
       network_bridge: vmbr1
       storage_selector: name == "ssdpool"
       # Disk performance (SSD/NVMe optimization)
@@ -53,6 +65,18 @@ spec:
       disk_iothread: true
       disk_cache: none
       disk_aio: io_uring
+      # Dedicated raw block device for the Longhorn V2 data engine. Left
+      # unformatted (no Talos UserVolumeConfig / no mount) so Longhorn V2 claims
+      # it raw; register it as a Longhorn block-type disk by /dev/disk/by-id/ —
+      # see docs/domains/storage/longhorn-v2-migration.md.
+      additional_disks:
+        - storage_selector: name == "ssdpool"
+          disk_size: 704
+          disk_ssd: true
+          disk_discard: true
+          disk_iothread: true
+          disk_cache: none
+          disk_aio: io_uring
       # VM optimizations
       cpu_type: host
       machine_type: q35
