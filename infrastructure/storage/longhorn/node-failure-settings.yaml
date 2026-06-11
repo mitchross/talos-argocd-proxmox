@@ -108,6 +108,27 @@ metadata:
 value: "true"
 
 ---
+# V2 (SPDK) reactor cores per node: default {"v2":"0x3"} (2 cores) -> 4 cores.
+# Added 2026-06-11 after the first V2 nuke-restore wedged: 25 concurrent
+# VolSync restores + ~40 app PVC attaches drove both SPDK targets into
+# stuck teardown loops ("NVMe path still exists after delete", engines
+# desire=running stuck stopped) that survived instance-manager restarts.
+# 2 busy-poll cores could not drain the attach/detach churn on 32-core
+# nodes — the setting's own upstream description warns single/low core
+# counts cause "timeout events and operational instability" under heavy IO.
+# Setting name is the consolidated `data-engine-cpu-mask` (engine-keyed
+# JSON; `v2-data-engine-cpu-mask` is a legacy constant that 1.12.0 does
+# not accept as a definition). DANGER-ZONE: on a LIVE cluster it only
+# applies once all V2 volumes are detached — in practice it lands at the
+# next nuke/rebuild bootstrap, which is exactly when it matters.
+apiVersion: longhorn.io/v1beta2
+kind: Setting
+metadata:
+  name: data-engine-cpu-mask
+  namespace: longhorn-system
+value: '{"v2":"0xf"}'
+
+---
 # Over-provisioning ceiling for replica scheduling.
 # values.yaml's defaultSettings only seeds on FIRST install — Longhorn
 # manages settings via this CRD post-install, so the chart value at 300

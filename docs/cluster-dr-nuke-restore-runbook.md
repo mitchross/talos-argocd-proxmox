@@ -228,6 +228,7 @@ Before declaring the rebuild complete:
 | VolSync/Kopia mover authentication failure | RustFS/S3 key not registered or Kopia auth invalid | Validate the external RustFS key and Kopia repository credentials |
 | CNPG PodMonitor reconciliation errors before monitoring | Accepted runtime soft-coupling | Allow monitoring CRDs to arrive at Wave `5`; do not add early CRDs |
 | pvc-plumber workload restores blocked after Wave `2` | Shared Kopia credentials missing or pvc-plumber app unhealthy | Verify the pvc-plumber Deployment and backup-cluster wiring (app auto-syncs since 2026-06-11) |
+| Longhorn V2 volumes wedged `attaching`/`detaching`; movers `Init:0/1`; engines `desire=running` stuck `stopped` | SPDK targets thrash under mass-restore concurrency (first seen 2026-06-11: 25 restores + ~40 app PVCs on Longhorn 1.12.0). Instance-manager logs show NVMe-oF `connect() refused`, keep-alive failures, and "NVMe path still exists after delete" teardown loops | First check `data-engine-cpu-mask` is `{"v2":"0xf"}` (in `node-failure-settings.yaml` since 2026-06-11 — applies at bootstrap). If wedged anyway: delete the sick instance-manager pod(s); if one sticks in `Terminating` (SPDK hung in kernel IO), reboot that node via Talos/Omni. pvc-plumber/VolSync/Kopia are NOT at fault — restores resume on their own once attach works. If it still reproduces with 4 reactor cores, file upstream against longhorn 1.12 V2 and reconsider restore concurrency |
 
 ## Related Docs
 
