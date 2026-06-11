@@ -56,14 +56,16 @@ The `serverName` values below live in each DB's `base/cluster.yaml` and
 
 | Database  | Current write target (base)  | Prior lineage (recovery source) |
 |-----------|------------------------------|---------------------------------|
-| gitea     | `gitea-database-v4`          | `gitea-database-v3`             |
-| immich    | `immich-database-v2`         | `immich-database-v1`            |
-| paperless | `paperless-database-v2`      | `paperless-database-v1`         |
-| temporal  | `temporal-database-v4`       | `temporal-database-v3`          |
+| gitea     | `gitea-database-v5`          | `gitea-database-v4`             |
+| immich    | `immich-database-v3`         | `immich-database-v2`            |
+| paperless | `paperless-database-v3`      | `paperless-database-v2`         |
+| temporal  | `temporal-database-v5`       | `temporal-database-v4`          |
 
-All four bumped on 2026-06-11 (second full-cluster nuke, Longhorn V2
-rebuild): fresh initdb on clean prefixes so WAL archiving passes the
-empty-archive check. The prior lineages exist on RustFS but are
+All four bumped TWICE on 2026-06-11: once for the Longhorn V2 rebuild
+nuke, and again for the same-day re-nuke (SPDK cpu-mask validation run)
+because the aborted first attempt dirtied the fresh prefixes (immich and
+paperless archived WALs before the SPDK wedge stalled the rebuild).
+Fresh initdb on clean prefixes keeps the WAL-archive empty check passing. The prior lineages exist on RustFS but are
 **unrestorable** until the RustFS multipart bug is fixed — all Barman base
 backups upload multipart and RustFS cannot serve multipart objects
 ("encrypted object metadata is incomplete"). DB DR via Barman is therefore

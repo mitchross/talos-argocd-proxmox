@@ -35,5 +35,7 @@ spec:
           #        bumped base/cluster.yaml to v3 AND flipped this serverName
           #        from v1 → v2 in lockstep).
           #   v3 — written 2026-05-08 → 2026-06-11; unrestorable today
-          #        (RustFS multipart bug), kept at N-1 by convention.
-          serverName: temporal-database-v3
+          #        (RustFS multipart bug).
+          #   v4 — short-lived lineage of the aborted first 2026-06-11
+          #        rebuild attempt; kept at N-1 by convention.
+          serverName: temporal-database-v4
