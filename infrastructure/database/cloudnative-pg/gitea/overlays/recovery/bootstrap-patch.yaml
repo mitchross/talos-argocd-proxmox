@@ -35,10 +35,10 @@ spec:
           # endpoint). Only serverName changes between live writes and
           # recovery reads.
           barmanObjectName: gitea-objectstore
-          # Recover FROM v3 — the lineage written 2026-06-02 → 2026-06-11
-          # (until the second nuke). base/cluster.yaml writes forward to v4.
-          # CAUTION: v3 base backups are multipart and therefore unreadable
-          # until the RustFS multipart bug is fixed — this overlay cannot
-          # actually restore today; it is kept at N-1 by convention.
+          # Recover FROM v4 — the short-lived lineage from the aborted first
+          # 2026-06-11 rebuild attempt. base/cluster.yaml writes forward to v5.
+          # CAUTION: all prior base backups are multipart and therefore
+          # unreadable until the RustFS multipart bug is fixed — this overlay
+          # cannot actually restore today; it is kept at N-1 by convention.
           # Keep this at N-1 relative to base when bumping for the next DR.
-          serverName: gitea-database-v3
+          serverName: gitea-database-v4

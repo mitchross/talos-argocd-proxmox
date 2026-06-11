@@ -68,7 +68,9 @@ spec:
         # see cnpg-plugin-migration.md §9.1.
         #   v1 — baseline after the 2026-04-19 RustFS wipe; written through the
         #        2026-06-11 nuke. Unrestorable (RustFS multipart bug) — abandoned.
-        #   v2 — opened 2026-06-11 (second full-cluster nuke, Longhorn V2
-        #        rebuild; fresh initdb on a clean prefix so WAL archiving works).
+        #   v2 — opened+dirtied 2026-06-11 by the aborted first rebuild attempt
+        #        (ContinuousArchiving went True before the re-nuke). Abandoned.
+        #   v3 — opened 2026-06-11 for the RE-nuke (SPDK cpu-mask validation
+        #        run); fresh initdb on a clean prefix so WAL archiving works.
         # DO NOT change this value without bumping lineage in lockstep.
-        serverName: paperless-database-v2
+        serverName: paperless-database-v3
