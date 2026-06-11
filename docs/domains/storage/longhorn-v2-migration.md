@@ -169,17 +169,47 @@ kubectl get settings.longhorn.io v2-data-engine -n longhorn-system -o jsonpath='
 kubectl get settings.longhorn.io v1-data-engine -n longhorn-system -o jsonpath='{.value}'  # "false"
 ```
 
-Then register the disk on **each** storage node (Longhorn owns the `Node` CR;
-add a `block`-type disk via UI or kubectl). UI: *Node → Edit Node and Disks →
-Add Disk → Type: **Block**, Path: `/dev/disk/by-id/<id>`*. Verify:
+Then register the raw `/dev/sdb` device on **each** storage node as a
+`block`-type Longhorn disk. This is manual on purpose — the Omni Proxmox
+provider can't stamp a stable disk serial (`additional_disks` has no
+`serial`/`wwn` field), so there's no predictable `by-id` path to bake into a
+declarative Talos annotation; a `by-path` would be topology-fragile. It's a
+one-time, 3-node action on a rebuild. UI path: *Node → Edit Node and Disks →
+Add Disk → Type: **Block**, Path: `/dev/disk/by-id/<id>`*.
+
+Paste-able alternative (no UI). For each storage node IP, discover the stable
+`by-id` of the V2 disk, then patch the Longhorn `Node` CR:
+
+```bash
+NODE_IP=192.168.10.x        # Talos node IP
+K8S_NODE=talos-...-workers-xxxxx   # its kubernetes node name (kubectl get nodes)
+
+# 1. Find the V2 disk: the ~704G (worker) / ~672G (GPU) device that is NOT the
+#    system disk. Confirm size + which /dev/sdX it is:
+talosctl -n "$NODE_IP" get disks
+# 2. Resolve that /dev/sdX (e.g. sdb) to its stable by-id symlink:
+talosctl -n "$NODE_IP" ls -l /dev/disk/by-id/ | grep -w sdb   # -> note the by-id name
+BYID=/dev/disk/by-id/<paste-the-by-id-here>
+
+# 3. Register it as a schedulable BLOCK disk (diskType: block = V2/SPDK):
+kubectl -n longhorn-system patch nodes.longhorn.io "$K8S_NODE" --type merge -p "{
+  \"spec\": { \"disks\": { \"v2-block-0\": {
+    \"path\": \"$BYID\", \"diskType\": \"block\",
+    \"allowScheduling\": true, \"storageReserved\": 0, \"tags\": []
+  } } } }"
+```
+
+Verify (all storage nodes show a schedulable block disk, V2 Ready):
 
 ```bash
 kubectl -n longhorn-system get nodes.longhorn.io -o wide
-# each storage node should show a schedulable block disk, V2 engine Ready
+kubectl -n longhorn-system get nodes.longhorn.io "$K8S_NODE" \
+  -o jsonpath='{.status.diskStatus.v2-block-0.conditions}'   # Schedulable=True
 ```
 
 Remember: `createDefaultDiskLabeledNodes: "true"` means **no disks exist until
-this step** — that is intentional (it keeps Longhorn off the OS partition).
+this step** — that is intentional (it keeps Longhorn off the OS partition), so
+until you finish all nodes, `longhorn`-class PVCs stay `Pending` (no data loss).
 
 ## Phase 4 — Canary-validate V2 (especially the backup path) — THE GATE
 
