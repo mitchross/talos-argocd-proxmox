@@ -16,6 +16,10 @@ parameters:
   # Keep this explicit so ownership semantics cannot change on driver upgrade.
   nfs.mapAllUser: "root"
   nfs.mapAllGroup: "wheel"
+  # 10G NFS tuning contract — keep in lockstep with the canonical option set in
+  # infrastructure/storage/csi-driver-nfs/storage-class.yaml and the static-PV
+  # template in infrastructure/storage/CLAUDE.md. If you change nconnect/rsize
+  # here, change them there too (drift = silent ~140MB/s regression).
   nfs.mountOptions: "hard,nfsvers=4.1,tcp,rsize=1048576,wsize=1048576,noatime,nconnect=16"
 reclaimPolicy: Retain
 volumeBindingMode: Immediate

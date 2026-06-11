@@ -6,6 +6,8 @@ resources:
   #- httproute.yaml
   - volumesnapshotclass.yaml
   - node-failure-settings.yaml
+  # V2 (SPDK) is served by the chart-created `longhorn` StorageClass via
+  # persistence.dataEngine: v2 in values.yaml — no separate longhorn-v2 class.
 helmCharts:
   - name: longhorn
     repo: https://charts.longhorn.io

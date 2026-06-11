@@ -2,6 +2,14 @@
 # to maintain a declarative GitOps workflow.
 # Settings applied manually via the UI will not be reflected here and can be
 # overwritten during a Helm upgrade.
+#
+# ⚠️⚠️ REBUILD-ONLY CONFIG — DO NOT SYNC ONTO THE LIVE V1 CLUSTER ⚠️⚠️
+# This file encodes the V2-only (SPDK) target state: V2 engine on, V1 engine
+# off, and the default `longhorn` StorageClass routed to dataEngine v2. On the
+# live V1 cluster these would (a) churn forever (engine settings can't apply
+# while volumes are attached) and (b) send every new default-class PVC to a V2
+# engine with no disks (Pending cluster-wide). Merge/sync only as the rebuilt
+# cluster bootstraps. See docs/domains/storage/longhorn-v2-migration.md.
 defaultSettings:
   # NOTE: Longhorn 1.10 consolidates settings for V1/V2 data engines. Use either
   # a single scalar or a JSON string with per-engine values like {"v1":"...","v2":"..."} when needed.
@@ -25,13 +33,28 @@ defaultSettings:
   # Note: Use plain values, not JSON format - JSON causes "mismatched data engines" errors
   fastReplicaRebuildEnabled: "true"
   engineReplicaTimeout: "8"
-  # Reduced from 12 to 8 for homelab - still provides good performance with less CPU reservation
+  # Percentage of allocatable CPU reserved per instance-manager pod (NOT cores).
+  # Chart default is {"v1":"12","v2":"12"}; plain "8" applies to both engines.
+  # Reduced from 12 to 8 for homelab - still provides good performance with less CPU reservation.
+  # NOTE (V2): the V2 instance managers busy-poll the cores pinned by
+  # `data-engine-cpu-mask` (default 0x3 = 2 cores). Flat "8" = 8% of allocatable,
+  # so the k8s request is ~2.5 cores on the 32-core workers (covers the 2 pinned
+  # cores) but only ~1.28 cores on the 16-core GPU worker — a KNOWN ~0.7-core
+  # under-request there. Accepted trade-off: raising the scalar to cover the GPU
+  # node (needs ~"13") would over-reserve ~1.6 extra cores on each 32-core
+  # worker in a requests-bound cluster. If V2 storage latency degrades on the
+  # GPU node under AI load, raise this or shrink data-engine-cpu-mask to 0x1.
+  # Avoid per-engine JSON strings — they trip "mismatched data engines" errors.
   guaranteedInstanceManagerCPU: "8"
-  # Capacity baseline 2026-05-04 showed instance-manager + share-manager pods
-  # holding 11 GiB across the cluster with ZERO memory requests, breaking
-  # scheduler math. 1 GiB guaranteed per instance-manager covers the 1.2-2.1
-  # GiB observed per pod with reasonable headroom.
-  guaranteedInstanceManagerMemory: "1Gi"
+  # NOTE 2026-06-09: a previous `guaranteedInstanceManagerMemory: "1Gi"` was
+  # removed here — Longhorn has NO instance-manager memory-guarantee setting
+  # (only the CPU one above exists in the chart/setting schema), so the key was
+  # a silent no-op: it rendered into the longhorn-default-setting ConfigMap but
+  # longhorn-manager ignored it, and instance-manager pods never received the
+  # intended memory requests. The 2026-05-04 scheduler-math concern it tried to
+  # address (IM/share-manager pods with zero memory requests) is therefore still
+  # open and must be solved another way (node sizing / IM pod overhead), not via
+  # a Longhorn setting.
   # Performance: prefer local disk for reads when replica is on same node
   defaultDataLocality: "best-effort"
   # Cleanup: limit snapshot accumulation per volume
@@ -42,13 +65,43 @@ defaultSettings:
   # Allow detached volumes to rebuild replicas (fixes VolSync clone volumes
   # stuck in VolumeCloneCopyCompleteAwaitingHealthy with replica count > 1)
   offlineReplicaRebuilding: "true"
+  # V2 (SPDK) data engine — this cluster is V2-ONLY (rebuilt fresh; there are no
+  # V1 volumes to migrate). Safe to enable from bootstrap because a fresh cluster
+  # has no attached volumes blocking the setting. Requires the Talos prereqs
+  # (vm.nr_hugepages=1024 → 2 GiB, nvme_tcp + vfio_pci) already in the cluster
+  # template, and a registered block-type disk per node (the /dev/sdb raw disk
+  # from the machine classes — register by /dev/disk/by-id/ once Longhorn is up).
+  # Values MUST be quoted strings — bare YAML bools/ints have caused
+  # strconv.Parse* failures in longhorn-manager before (see notes above).
+  v2DataEngine: "true"
+  # V1 engine OFF: nothing may route to V1 — its only capacity would be the
+  # small OS disk. With V1 disabled, a misrouted dataEngine:v1 PVC fails loudly
+  # at provision time instead of silently binding to the OS disk.
+  v1DataEngine: "false"
+  # Do NOT auto-create the default filesystem disk at /var/lib/longhorn on every
+  # node — that puts a Longhorn disk on the small OS partition. With this set
+  # (and no nodes carrying the create-default-disk label), the ONLY Longhorn
+  # disks are the explicitly registered /dev/sdb block devices.
+  createDefaultDiskLabeledNodes: "true"
 # -- Disables the pre-upgrade check job. This is recommended for GitOps tools
 # like ArgoCD to prevent sync failures.
 preUpgradeChecker:
   jobEnabled: false
 persistence:
-  # -- Specifies the default Longhorn StorageClass.
+  # -- V2-only cluster: the chart-created `longhorn` StorageClass IS the V2
+  # class and stays the cluster default. The class KEEPS the name `longhorn`
+  # deliberately — 40+ PVCs across my-apps/monitoring/infrastructure, the
+  # inline VolSync ReplicationSource/Destination configs, the pvc-plumber
+  # backup contract, and the CLAUDE.md / add-backup guidance all reference
+  # `storageClassName: longhorn` explicitly. Re-pointing the NAME at V2 moves
+  # all of them at once; renaming to `longhorn-v2` would have moved none of
+  # them (a default-class flip only affects PVCs that omit storageClassName).
   defaultClass: true
+  # -- Routes the `longhorn` class to the V2 (SPDK) engine. NOTE: the chart
+  # only renders the dataEngine parameter when disableRevisionCounter is
+  # truthy — it defaults to "true"; do not override it to false/empty or this
+  # silently reverts the class to V1.
+  dataEngine: v2
   # -- Default number of replicas for volumes.
   # Set to 2 for node-failure resilience. With replica 1, a single node going
   # down makes all its volumes unavailable and causes stale attachment cascades.
