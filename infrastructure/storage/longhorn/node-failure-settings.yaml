@@ -38,16 +38,22 @@ metadata:
 value: "block-if-contains-last-replica"
 
 ---
-# Increase storage reserved percentage to prevent "insufficient storage" errors
-# Current: 10% - This was too low and caused your volume creation failures
-# Recommended: 25% for production
-# Correct setting name: storage-reserved-percentage-for-default-disk (not storage-reserved-percentage-default)
+# Reserve NOTHING on default-created disks (V2 rebuild, 2026-06-11).
+# The old value (25%) was a V1-era fix for "insufficient storage" when the
+# default disk lived on the shared OS partition. On V2 every Longhorn disk is
+# a DEDICATED raw block device (/dev/sdb via the cluster template's
+# default-disks-config annotation) with nothing else on it — reserving 25%
+# would silently waste ~176Gi per 704G disk, because longhorn-manager
+# computes storageReserved from this percentage at disk-creation time when
+# the annotation says storageReserved: 0.
+# NOTE: this Setting CR is authoritative — values.yaml defaultSettings only
+# seeds on first install (see storage-over-provisioning-percentage below).
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
   name: storage-reserved-percentage-for-default-disk
   namespace: longhorn-system
-value: "25"
+value: "0"
 
 ---
 # Enable fast replica rebuild for quicker recovery
@@ -108,9 +114,10 @@ value: "true"
 # was being silently reverted to 200 by longhorn-manager's reconciliation.
 # Pinning it here means ArgoCD owns the value and it stays at 300.
 #
-# Per-node ceiling math: (disk_size - reserved_25%) * over_provisioning%
-# At 300%: ~1568 Gi/node ceiling vs ~1046 Gi at 200%.
-# Cluster physical usage is only ~25-40% per node, so 300% is safe headroom.
+# Per-node ceiling math: (disk_size - reserved) * over_provisioning%
+# V2 layout (2026-06-11): reserved=0 on the dedicated 704G (672G GPU) block
+# disks, so at 300% the ceiling is ~2100 Gi/node. Physical usage stays the
+# real constraint; 300% is scheduling headroom, not a promise of capacity.
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
