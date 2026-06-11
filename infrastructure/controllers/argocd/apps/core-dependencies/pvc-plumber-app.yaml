@@ -1,18 +1,16 @@
-# pvc-plumber v4 — audit-mode Argo Application (Phase 3 of
-# docs/pvc-plumber-v4-prd.md).
+# pvc-plumber v4 — Argo Application.
 #
 # Sync wave 2: same level as volsync-backup-cluster (MAP + ClusterES).
-# The two co-exist safely — pvc-plumber observes in audit mode; the MAP
+# The two co-exist safely — pvc-plumber reconciles permissively; the MAP
 # gates VolSync mover Jobs at the apiserver. No admission conflict.
 #
-# ⚠ AUTOMATED SYNC IS DISABLED below. The Deployment image reference
-# uses a placeholder all-zero SHA digest. Before enabling automation:
-#
-#   1. Build and push ghcr.io/mitchross/pvc-plumber:v4.0.0-audit-rc1
-#   2. Update the @sha256: digest in
-#      infrastructure/controllers/pvc-plumber/deployment.yaml
-#   3. Uncomment the `automated:` block in this file
-#   4. Commit + push to main; Argo sync engages
+# AUTOMATED SYNC ENABLED 2026-06-11. The original manual-sync gate existed
+# for the Phase 3 audit rollout (placeholder all-zero image digest); the
+# image has been a real SHA-pinned release since v4.0.1. The 2026-06-02
+# nuke runbook's "sync pvc-plumber manually once" step is obsolete —
+# rebuilds are now fully hands-off at wave 2. The operator's cluster-wide
+# VolSync writer privileges are gated by the SHA-pinned digest in
+# deployment.yaml (Renovate digest bumps still go through PR review).
 #
 # See infrastructure/controllers/pvc-plumber/README.md for the full flow.
 apiVersion: argoproj.io/v1alpha1
@@ -41,16 +39,10 @@ spec:
     # metadata.namespace field, of which we have none.
     namespace: argocd
   syncPolicy:
-    # ⚠ AUTOMATED SYNC INTENTIONALLY OMITTED.
-    # Manual sync only until the operator image SHA digest in
-    # deployment.yaml is replaced with the real value built from
-    # pvc-plumber commits a36bf71 + 028f376.
-    #
-    # To enable, uncomment the `automated:` block:
-    # automated:
-    #   prune: true
-    #   selfHeal: true
-    #   allowEmpty: false
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
     syncOptions:
       - CreateNamespace=false
       - ServerSideApply=true

@@ -179,7 +179,7 @@ Confirm cert-manager, Longhorn, snapshot-controller, and VolSync are healthy. Th
 
 ### 5. Sync pvc-plumber Wave 2
 
-pvc-plumber remains manual-sync by design because it owns cluster-wide VolSync writer privileges. Sync it once after a nuke, then confirm pvc-plumber core and VolSync backup-cluster wiring converge.
+pvc-plumber syncs automatically at Wave `2` (automated sync enabled 2026-06-11 — the old manual-sync gate existed only for the Phase 3 placeholder-digest rollout and is obsolete). Confirm pvc-plumber core and VolSync backup-cluster wiring converge; the operator's VolSync writer privileges are gated by the SHA-pinned image digest, which only changes through PR review.
 
 Do not add monitoring resources to make this step green. pvc-plumber core must bootstrap without Prometheus.
 
@@ -227,7 +227,7 @@ Before declaring the rebuild complete:
 | CNPG Barman plugin blocked before Wave `3` | cert-manager is not healthy at Wave `1` | Fix cert-manager; do not move it later |
 | VolSync/Kopia mover authentication failure | RustFS/S3 key not registered or Kopia auth invalid | Validate the external RustFS key and Kopia repository credentials |
 | CNPG PodMonitor reconciliation errors before monitoring | Accepted runtime soft-coupling | Allow monitoring CRDs to arrive at Wave `5`; do not add early CRDs |
-| pvc-plumber workload restores blocked after Wave `2` | pvc-plumber manual sync not approved or shared credentials missing | Sync pvc-plumber and verify backup-cluster wiring |
+| pvc-plumber workload restores blocked after Wave `2` | Shared Kopia credentials missing or pvc-plumber app unhealthy | Verify the pvc-plumber Deployment and backup-cluster wiring (app auto-syncs since 2026-06-11) |
 
 ## Related Docs
 
