@@ -113,6 +113,7 @@ Simple installation without Gateway API support:
 
 ```bash
 cilium install \
+    --version 1.19.4 \
     --set cluster.name=talos-prod-cluster \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
@@ -130,10 +131,12 @@ Full installation with Gateway API support:
 
 ```bash
 # First, install Gateway API CRDs
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.0.0/standard-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/standard-install.yaml
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
 
 # Then install Cilium
 cilium install \
+    --version 1.19.4 \
     --set cluster.name=talos-prod-cluster \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
@@ -154,10 +157,12 @@ Installation with Hubble for network observability:
 
 ```bash
 # Install Gateway API CRDs
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.0.0/standard-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/standard-install.yaml
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
 
 # Install Cilium with Hubble
 cilium install \
+    --version 1.19.4 \
     --set cluster.name=talos-prod-cluster \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
@@ -675,7 +680,7 @@ cilium version
 
 ```bash
 # Upgrade to specific version (must match chart version in infrastructure/networking/cilium/kustomization.yaml)
-cilium upgrade --version 1.19.3
+cilium upgrade --version 1.19.4
 
 # Or latest
 cilium upgrade
@@ -782,6 +787,7 @@ Enable service mesh features:
 
 ```bash
 cilium install \
+  --version 1.19.4 \
   --set cluster.name=talos-prod-cluster \
   --set kubeProxyReplacement=strict \
   --set ingressController.enabled=true \

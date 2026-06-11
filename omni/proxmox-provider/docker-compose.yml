@@ -13,8 +13,8 @@ services:
     #     | grep -i digest
     # then update the @sha256:... below and `docker compose up -d`.
     #
-    # Last bumped: 2026-05-23
-    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:latest@sha256:f15ab4601a8c89eac655f09d69d373c3c331b7ac18e667ffc50da02702df0669
+    # Last bumped: 2026-06-11
+    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:latest@sha256:96433a9747ffc2649b5be114bc6bd8034cc59972e21e73297c8b619940bcc5bf
     container_name: omni-infra-provider-proxmox
     env_file:
       - .env

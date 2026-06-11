@@ -42,9 +42,14 @@ A complete, production-ready starter kit for deploying self-hosted Sidero Omni w
 1. **Prerequisites** - See [docs/PREREQUISITES.md](docs/PREREQUISITES.md)
 2. **Deploy Omni** - Follow [omni/README.md](omni/README.md)
 3. **Setup Provider** - Follow [proxmox-provider/README.md](proxmox-provider/README.md)
-4. **Apply Machine Classes** - `omnictl apply -f machine-classes/`
-5. **Sync Cluster Template** - `omnictl cluster template sync -v -f cluster-template.yaml`
-6. **Create Clusters** - Use Omni UI to provision clusters using your machine classes
+4. **Apply Machine Classes** - `omnictl apply -f omni/machine-classes/`
+5. **Validate Template** - `omnictl cluster template validate -f omni/cluster-template/cluster-template.yaml`
+6. **Preview Provisioning** - `omnictl cluster template sync -f omni/cluster-template/cluster-template.yaml --dry-run`
+7. **Provision Cluster** - `omnictl cluster template sync -f omni/cluster-template/cluster-template.yaml`
+8. **Watch Provisioning** - `omnictl cluster template status -f omni/cluster-template/cluster-template.yaml --wait 30m`
+
+Run steps 4-8 from the repository root. Template sync creates the control
+plane and worker MachineSets; do not create MachineSets separately.
 
 ## Project Structure
 
@@ -137,9 +142,11 @@ See the complete guide: [docs/CILIUM_CNI.md](docs/CILIUM_CNI.md)
 **Quick Install**:
 ```bash
 # Disable kube-proxy in cluster config, then:
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.0.0/standard-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/standard-install.yaml
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
 
-cilium install \
+cilium-cli install \
+    --version 1.19.4 \
     --set cluster.name=talos-prod-cluster \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
@@ -161,7 +168,7 @@ currently in **beta**. Expect some limitations and potential bugs. Please
 report issues to the [upstream
 repository](https://github.com/siderolabs/omni-infra-provider-proxmox).
 
-### Concrete beta limitations (as of Talos 1.13 / Omni 1.7)
+### Concrete beta limitations (as of Talos 1.13 / Omni 1.8)
 
 These are things that hit me in practice — the generic "it's beta" line
 isn't enough to plan around.

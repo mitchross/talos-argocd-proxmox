@@ -6,8 +6,8 @@ set -euo pipefail
 # by using Helm directly, then letting ArgoCD self-manage
 #
 # Prerequisites:
-#   1. Cilium must be installed FIRST (provides CNI networking)
-#   2. Gateway API CRDs must be applied
+#   1. Gateway API CRDs must be applied
+#   2. Cilium must be installed (provides CNI networking)
 #   3. 1Password secrets must be pre-seeded
 #
 # See README.md for the full bootstrap sequence.
@@ -111,9 +111,10 @@ fi
 # Step 2: Install ArgoCD using Helm
 echo ""
 echo "⎈ Installing ArgoCD via Helm..."
+# shellcheck disable=SC2016 # The bcrypt hash must remain literal.
 if ! helm upgrade --install argocd argo-cd \
   --repo https://argoproj.github.io/argo-helm \
-  --version 9.5.19 \
+  --version 9.5.20 \
   --namespace argocd \
   --values "$ROOT_DIR/infrastructure/controllers/argocd/values.yaml" \
   --wait \
