@@ -153,25 +153,37 @@ done < <(application_files)
 echo ""
 
 # ─────────────────────────────────────────────
-# 5. Check bootstrap Argo CD chart matches self-managed chart
+# 5. Check documented/bootstrap Argo CD charts match self-managed chart
 # ─────────────────────────────────────────────
-echo "--- Check 5: Bootstrap ArgoCD chart version ---"
+echo "--- Check 5: ArgoCD chart version consistency ---"
 
 bootstrap_script="scripts/bootstrap-argocd.sh"
+readme="README.md"
 argocd_kustomization="infrastructure/controllers/argocd/kustomization.yaml"
-if [ -f "$bootstrap_script" ] && [ -f "$argocd_kustomization" ]; then
-  bootstrap_version=$(grep -A4 "helm upgrade --install argocd argo-cd" "$bootstrap_script" | grep -- "--version" | head -1 | sed 's/.*--version //' | sed 's/[\\'\''"]//g' | xargs || true)
+if [ -f "$bootstrap_script" ] && [ -f "$readme" ] && [ -f "$argocd_kustomization" ]; then
+  bootstrap_version=$(grep -A4 "helm upgrade --install argocd argo-cd" "$bootstrap_script" | grep -- "--version" | head -1 | grep -oE '[0-9]+(\.[0-9]+)+' || true)
+  readme_version=$(grep -A4 "helm upgrade --install argocd argo-cd" "$readme" | grep -- "--version" | head -1 | grep -oE '[0-9]+(\.[0-9]+)+' || true)
   gitops_version=$(grep -A5 "name: argo-cd" "$argocd_kustomization" | grep "version:" | head -1 | sed 's/.*version: //' | sed 's/#.*//' | tr -d "'\"" | xargs || true)
 
-  if [ -z "$bootstrap_version" ] || [ -z "$gitops_version" ]; then
-    echo "  ERROR: Could not determine bootstrap/self-managed ArgoCD chart versions"
-    ERRORS=$((ERRORS + 1))
-  elif [ "$bootstrap_version" != "$gitops_version" ]; then
-    echo "  ERROR: Bootstrap installs ArgoCD chart $bootstrap_version but GitOps manages $gitops_version"
-    echo "         Fresh bootstrap will immediately perform an ArgoCD chart upgrade."
+  if [ -z "$bootstrap_version" ] || [ -z "$readme_version" ] || [ -z "$gitops_version" ]; then
+    echo "  ERROR: Could not determine documented/bootstrap/self-managed ArgoCD chart versions"
     ERRORS=$((ERRORS + 1))
   else
-    echo "  OK: Bootstrap and self-managed ArgoCD chart versions match ($gitops_version)"
+    if [ "$bootstrap_version" != "$gitops_version" ]; then
+      echo "  ERROR: Bootstrap installs ArgoCD chart $bootstrap_version but GitOps manages $gitops_version"
+      echo "         Fresh bootstrap will immediately perform an ArgoCD chart upgrade."
+      ERRORS=$((ERRORS + 1))
+    fi
+
+    if [ "$readme_version" != "$gitops_version" ]; then
+      echo "  ERROR: README installs ArgoCD chart $readme_version but GitOps manages $gitops_version"
+      echo "         Manual bootstrap instructions are stale."
+      ERRORS=$((ERRORS + 1))
+    fi
+
+    if [ "$bootstrap_version" = "$gitops_version" ] && [ "$readme_version" = "$gitops_version" ]; then
+      echo "  OK: README, bootstrap, and self-managed ArgoCD chart versions match ($gitops_version)"
+    fi
   fi
 fi
 echo ""

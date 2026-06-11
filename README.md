@@ -68,9 +68,100 @@ ArgoCD deploys applications in strict order to prevent dependency issues:
 
 1. **Omni deployed and accessible** - See [Omni Setup Guide](omni/omni/README.md)
 2. **Sidero Proxmox Provider configured** - See [proxmox provider config](omni/proxmox-provider/)
-3. **Cluster created in Omni** - Talos cluster provisioned and healthy
-4. **kubectl access** - Download kubeconfig from Omni UI
-5. **Local tools installed**: `kubectl`, `kustomize`, Cilium CLI (`cilium` or `cilium-cli`), `1password` CLI (`op`)
+3. **Omni service account key available** - Stored in 1Password as described below
+4. **Local tools installed**: `omnictl`, `talosctl`, `kubectl`, `kustomize`, Cilium CLI (`cilium` or `cilium-cli`), and 1Password CLI (`op`)
+
+## Current Version Pins
+
+These are the repository targets as of June 11, 2026:
+
+| Component | Version | Source of truth |
+|-----------|---------|-----------------|
+| Omni server and `omnictl` | `v1.8.2` | `omni/omni/omni.env.example` |
+| Talos Linux | `v1.13.4` | `omni/cluster-template/cluster-template.yaml` |
+| Kubernetes | `v1.36.1` | `omni/cluster-template/cluster-template.yaml` |
+| Cilium | `1.19.4` | `infrastructure/networking/cilium/kustomization.yaml` |
+| Gateway API CRDs | `v1.4.1` | Bootstrap commands below |
+| Proxmox provider | `latest@sha256:96433a...` | `omni/proxmox-provider/docker-compose.yml` |
+
+Keep the Omni server and local `omnictl` on the same release. Older clients
+usually work, but can miss rollout fixes and newer API behavior.
+
+Gateway API `v1.4.1` is an intentional compatibility pin. Gateway API `v1.5.x`
+moved `TLSRoute` to `v1`, but Cilium 1.19 still expects `v1alpha2`; Cilium 1.20
+is the first Cilium minor with Gateway API 1.5.1 support.
+
+## Provision or Recreate the Cluster
+
+Omni and the Proxmox provider must already be running. From the repository
+root, authenticate and confirm the provider is connected:
+
+```bash
+eval "$(op signin)"
+
+export OMNI_ENDPOINT=https://omni.vanillax.me:443
+export OMNI_SERVICE_ACCOUNT_KEY="$(
+  op read 'op://homelab-prod/talos-prod-sa/OMNI_SERVICE_ACCOUNT_KEY'
+)"
+
+omnictl get infraproviderstatuses
+```
+
+Apply the three machine classes idempotently, then validate and preview the
+cluster template:
+
+```bash
+omnictl apply -f omni/machine-classes/
+omnictl get machineclasses
+
+omnictl cluster template validate \
+  -f omni/cluster-template/cluster-template.yaml
+
+omnictl cluster template sync \
+  -f omni/cluster-template/cluster-template.yaml \
+  --dry-run
+```
+
+Provision the cluster and wait for Omni to finish:
+
+```bash
+omnictl cluster template sync \
+  -f omni/cluster-template/cluster-template.yaml
+
+omnictl cluster template status \
+  -f omni/cluster-template/cluster-template.yaml \
+  --wait 30m
+
+omnictl get machinesets
+omnictl get machines
+```
+
+Do not create MachineSets separately. Template sync creates:
+
+- 3 control planes
+- 3 regular workers
+- 1 GPU worker
+- Talos `v1.13.4`
+- Kubernetes `v1.36.1`
+
+Generate Kubernetes and Talos access:
+
+```bash
+omnictl kubeconfig \
+  --cluster talos-prod-cluster \
+  --service-account \
+  --user talos-prod-sa \
+  --force
+
+omnictl talosconfig \
+  --cluster talos-prod-cluster \
+  --force
+
+kubectl get nodes -o wide
+```
+
+Nodes are expected to remain `NotReady` until Cilium is installed. Continue
+with the bootstrap process below; do not create replacement MachineSets.
 
 ## Bootstrap Process
 
@@ -111,7 +202,17 @@ kubectl get nodes
 
 </details>
 
-### Step 1: Install Cilium CNI
+### Step 1: Install Gateway API CRDs
+
+Install both channels before enabling Cilium Gateway API support. Cilium 1.19
+still watches the experimental `TLSRoute` API.
+
+```bash
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/standard-install.yaml
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
+```
+
+### Step 2: Install Cilium CNI
 
 Omni provisions Talos clusters without a CNI. Install Cilium to get networking functional:
 
@@ -135,22 +236,15 @@ cilium-cli install \
     --set gatewayAPI.enableAppProtocol=true
 ```
 
-  > **Important — version must match:** The `cilium install` CLI version must match the Helm chart version in `infrastructure/networking/cilium/kustomization.yaml` (currently **1.19.4**). Use `cilium install --version 1.19.4` to pin it. If versions differ, ArgoCD upgrades Cilium at Wave 0 and regenerates some Hubble certs but not others, causing TLS handshake failures (`x509: certificate signed by unknown authority`) that block all sync waves.
+  > **Important — version must match:** The CLI install version must match the Helm chart version in `infrastructure/networking/cilium/kustomization.yaml` (currently **1.19.4**). Use `--version 1.19.4` to pin it. If versions differ, ArgoCD upgrades Cilium at Wave 0 and regenerates some Hubble certs but not others, causing TLS handshake failures (`x509: certificate signed by unknown authority`) that block all sync waves.
 >
 > **Important — Hubble is disabled at bootstrap on purpose:** The CLI install only provides basic CNI networking. ArgoCD enables Hubble at Wave 0 via the full `values.yaml` (which has `hubble.enabled: true`). This ensures ArgoCD is the sole owner of Hubble TLS certificates — no cert mismatch between CLI install and ArgoCD's Helm render. The `ignoreDifferences` in `cilium-app.yaml` then preserves those certs on subsequent syncs.
 >
 > **Important — cluster name must match:** `cluster.name` must match `infrastructure/networking/cilium/values.yaml` for Hubble certificate SANs. If `cilium install` is run without `--set cluster.name=talos-prod-cluster`, certificates are generated for `default` or `kind-kind`, causing TLS failures.
 
-### Step 2: Install Gateway API CRDs
-
-```bash
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/standard-install.yaml
-kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
-```
-
 Verify Cilium:
 ```bash
-cilium status
+cilium-cli status
 kubectl get pods -n kube-system -l k8s-app=cilium
 ```
 
@@ -195,7 +289,7 @@ kubectl apply -f infrastructure/controllers/argocd/ns.yaml
 
 helm upgrade --install argocd argo-cd \
   --repo https://argoproj.github.io/argo-helm \
-  --version 9.4.15 \
+  --version 9.5.20 \
   --namespace argocd \
   --values infrastructure/controllers/argocd/values.yaml \
   --wait \
@@ -292,9 +386,33 @@ Normal application PVC backups use **VolSync + Kopia** with the RustFS/S3 reposi
 
 ## Cluster Upgrades & Talos 1.13 Notes
 
-The cluster is running Talos **1.13** (migrated from 1.12 in April 2026).
+The cluster is running Talos **1.13.4** (migrated from 1.12 in April 2026).
 A few things changed at 1.13 that you'll hit if you spin up or rebuild a
 cluster — read this before touching the cluster template.
+
+### Do not rebuild on Talos 1.13.2
+
+Talos 1.13.3 fixed containerd mount propagation and concurrent config-apply
+problems; 1.13.4 added another kube-scheduler integer-marshalling fix. This
+template sets scheduler integer arguments and should remain on 1.13.4 or a
+newer validated 1.13 patch.
+
+**Observed 1.13.2 failure:** some freshly provisioned nodes repeatedly failed
+to create pod sandboxes with errors such as `lstat /proc/.../ns/ipc: no such
+file or directory`, `can't find shim for sandbox`, and `ttrpc: closed`.
+Rebooting and reinstalling Cilium did not repair the affected nodes. Moving
+them to 1.13.4 restored containerd, control-plane pods, and Cilium.
+
+If Omni reports that all machines were processed while some nodes still show
+an old Talos version, upgrade Omni to at least 1.8.2. For an already-stuck
+rollout, reprovision one affected machine at a time with:
+
+```bash
+omnictl cluster machine delete <machine-id> --timeout 15m
+```
+
+Wait for the replacement to become `Ready` before deleting another machine.
+For control planes, this one-at-a-time rule preserves etcd quorum.
 
 ### `machine.install.disk` is now mandatory
 
@@ -348,13 +466,15 @@ Because there's only **one** GPU worker, this is a maintenance-window
 migration with explicit rollback — not a canary. `llama-cpp` is offline
 for the duration.
 
-### Upgrading Omni / omnictl to the 1.13 toolchain
+### Upgrading Omni / omnictl
 
-Omni 1.7 is required to provision/upgrade Talos 1.13 clusters. When
-upgrading:
+Use Omni and `omnictl` **1.8.2 or newer** with this Talos 1.13.4 template.
+Omni 1.8.2 fixes a rollout deadlock where a Talos upgrade and machine-config
+change both wait for the same one-machine control-plane slot. When upgrading:
 
 1. Take an Omni etcd snapshot (`omni/omni/README.md` → Backup/Recovery).
-2. Upgrade the Omni container to 1.7.x, restart. Verify the UI loads
+2. Upgrade the Omni container to 1.8.2 or newer, then restart. Verify the UI
+   loads
    and existing clusters still show healthy.
 3. Upgrade `omnictl` on your workstation to match the server version —
    mismatched versions fail with obscure gRPC errors.

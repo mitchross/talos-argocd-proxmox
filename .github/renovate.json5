@@ -298,6 +298,20 @@
   // instances (the self-hosted one disables them via force.packageRules).
   customManagers: [
     {
+      description: 'Keep documented and bootstrap Argo CD chart versions aligned with GitOps',
+      customType: 'regex',
+      managerFilePatterns: [
+        '/^README\\.md$/',
+        '/^scripts/bootstrap-argocd\\.sh$/',
+      ],
+      matchStrings: [
+        'helm upgrade --install argocd argo-cd[\\s\\S]*?--version\\s+(?<currentValue>[0-9.]+)',
+      ],
+      depNameTemplate: 'argo-cd',
+      datasourceTemplate: 'helm',
+      registryUrlTemplate: 'https://argoproj.github.io/argo-helm',
+    },
+    {
       description: 'Omni cluster template - Talos version',
       customType: 'regex',
       managerFilePatterns: [
