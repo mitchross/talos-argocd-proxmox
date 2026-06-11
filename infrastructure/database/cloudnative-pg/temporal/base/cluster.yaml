@@ -51,7 +51,9 @@ spec:
         #   v1 — abandoned 2026-05-03 (WAL-PVC-full deadlock). Lifecycle-pruned.
         #   v2 — opened 2026-05-03. Source of the 2026-05-08 GitOps DR drill.
         #   v3 — opened 2026-05-08 by GitOps DR drill (post-pvc-plumber-v3.1.0).
+        #   v4 — opened 2026-06-11 (second full-cluster nuke, Longhorn V2
+        #        rebuild; fresh initdb — v3 unrestorable, RustFS multipart bug).
         # DO NOT change this value without bumping lineage in lockstep.
         # The companion overlays/recovery/bootstrap-patch.yaml MUST be
         # updated in the SAME commit (read FROM v(N-1) → write TO vN).
-        serverName: temporal-database-v3
+        serverName: temporal-database-v4

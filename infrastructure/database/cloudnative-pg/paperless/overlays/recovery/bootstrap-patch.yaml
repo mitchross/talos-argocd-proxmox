@@ -33,6 +33,7 @@ spec:
           barmanObjectName: paperless-objectstore
           # Previous lineage to recover FROM. DO NOT change without
           # bumping recovery target lineage. See cnpg-plugin-migration.md
-          # §9.1. Bump to N-1 at DR time (paperless has had no actual DR
-          # yet; this matches the runtime serverName as a placeholder).
+          # §9.1. v1 is the pre-2026-06-11-nuke lineage (base writes to v2).
+          # CAUTION: v1 base backups are multipart and unreadable until the
+          # RustFS multipart bug is fixed — kept at N-1 by convention.
           serverName: paperless-database-v1

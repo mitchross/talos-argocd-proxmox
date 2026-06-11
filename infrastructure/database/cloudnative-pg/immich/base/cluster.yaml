@@ -57,7 +57,10 @@ spec:
         # Name of the sibling ObjectStore CR (see base/objectstore.yaml).
         barmanObjectName: immich-objectstore
         # Preserved from previous spec.backup.barmanObjectStore.serverName —
-        # see cnpg-plugin-migration.md §9.1. Clean-slate baseline after the
-        # 2026-04-19 RustFS wipe; no abandoned lineages for immich.
+        # see cnpg-plugin-migration.md §9.1.
+        #   v1 — baseline after the 2026-04-19 RustFS wipe; written through the
+        #        2026-06-11 nuke. Unrestorable (RustFS multipart bug) — abandoned.
+        #   v2 — opened 2026-06-11 (second full-cluster nuke, Longhorn V2
+        #        rebuild; fresh initdb on a clean prefix so WAL archiving works).
         # DO NOT change this value without bumping lineage in lockstep.
-        serverName: immich-database-v1
+        serverName: immich-database-v2

@@ -56,16 +56,21 @@ The `serverName` values below live in each DB's `base/cluster.yaml` and
 
 | Database  | Current write target (base)  | Prior lineage (recovery source) |
 |-----------|------------------------------|---------------------------------|
-| gitea     | `gitea-database-v2`          | `gitea-database-v1`             |
-| immich    | `immich-database-v1`         | `immich-database-v1`            |
-| paperless | `paperless-database-v1`      | `paperless-database-v1`         |
-| temporal  | `temporal-database-v1`       | `temporal-database-v1`          |
+| gitea     | `gitea-database-v4`          | `gitea-database-v3`             |
+| immich    | `immich-database-v2`         | `immich-database-v1`            |
+| paperless | `paperless-database-v2`      | `paperless-database-v1`         |
+| temporal  | `temporal-database-v4`       | `temporal-database-v3`          |
 
-All DBs reset to `-v1` baseline on 2026-04-19 after S3 was wiped — prior
-lineages (`-v2` through `-v7`) no longer exist on RustFS. gitea bumped to
-`-v2` on 2026-05-02 after a GPU worker node deletion left the WAL Longhorn
-volume faulted; restored from `gitea-database-v1` (last good Barman base
-2026-05-02T17:09:43Z).
+All four bumped on 2026-06-11 (second full-cluster nuke, Longhorn V2
+rebuild): fresh initdb on clean prefixes so WAL archiving passes the
+empty-archive check. The prior lineages exist on RustFS but are
+**unrestorable** until the RustFS multipart bug is fixed — all Barman base
+backups upload multipart and RustFS cannot serve multipart objects
+("encrypted object metadata is incomplete"). DB DR via Barman is therefore
+non-functional cluster-wide; treat DB data as disposable until RustFS is
+fixed or backups are rerouted. History: all DBs reset to `-v1` on
+2026-04-19 (S3 wipe); gitea `-v2` 2026-05-02 (GPU node loss, real Barman
+restore); gitea/temporal `-v3` opened around the 2026-06-02 first nuke.
 
 ## Normal operation (add a new CNPG DB)
 
