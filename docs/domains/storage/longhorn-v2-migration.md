@@ -169,13 +169,37 @@ kubectl get settings.longhorn.io v2-data-engine -n longhorn-system -o jsonpath='
 kubectl get settings.longhorn.io v1-data-engine -n longhorn-system -o jsonpath='{.value}'  # "false"
 ```
 
-Then register the raw `/dev/sdb` device on **each** storage node as a
-`block`-type Longhorn disk. This is manual on purpose — the Omni Proxmox
-provider can't stamp a stable disk serial (`additional_disks` has no
-`serial`/`wwn` field), so there's no predictable `by-id` path to bake into a
-declarative Talos annotation; a `by-path` would be topology-fragile. It's a
-one-time, 3-node action on a rebuild. UI path: *Node → Edit Node and Disks →
-Add Disk → Type: **Block**, Path: `/dev/disk/by-id/<id>`*.
+Registration of the raw `/dev/sdb` device is **fully declarative** (GitOps,
+no manual step). The earlier "manual on purpose" rationale was wrong: QEMU
+derives the disk serial from the drive name, so the `additional_disks` device
+(`scsi1`) has the **same stable by-id on every provider-built VM** —
+`/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1` (verified live
+2026-06-11 across all rebuilt workers). The cluster template's
+`longhorn-v2-default-disk` patch (workers + gpu-workers) stamps:
+
+- label `node.longhorn.io/create-default-disk: "config"`
+- annotation `node.longhorn.io/default-disks-config:
+  '[{"name":"v2-block-0","path":"/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1","allowScheduling":true,"diskType":"block","storageReserved":0}]'`
+
+and longhorn-manager (with `createDefaultDiskLabeledNodes: "true"`) registers
+the block disk itself when the node has no disks yet. Talos applies
+nodeLabels/nodeAnnotations hot — no reboot.
+
+Source-verified against longhorn-manager v1.12.0 (2026-06-11):
+
+- `types.CreateDisksFromAnnotation` explicitly supports `"diskType":"block"`
+  (the docs page omits it — code is authoritative).
+- `KubernetesNodeController.syncDefaultDisks` applies the config "even if the
+  node has been labeled after initial registration", as long as the Node CR
+  has **zero disks** — so a late template sync still registers the disks. If
+  a node somehow doesn't pick it up, delete its `nodes.longhorn.io` CR
+  (longhorn-manager recreates it and applies the config) — never on a node
+  that already holds replicas.
+- `storageReserved: 0` in the annotation means "recompute from the
+  `storage-reserved-percentage-for-default-disk` setting" (default 30 — would
+  reserve ~211G of each 704G disk). values.yaml pins
+  `storageReservedPercentageForDefaultDisk: "0"` because every disk here is a
+  dedicated raw device.
 
 Paste-able alternative (no UI). For each storage node IP, discover the stable
 `by-id` of the V2 disk, then patch the Longhorn `Node` CR:

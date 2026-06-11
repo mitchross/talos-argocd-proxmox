@@ -69,8 +69,11 @@ defaultSettings:
   # V1 volumes to migrate). Safe to enable from bootstrap because a fresh cluster
   # has no attached volumes blocking the setting. Requires the Talos prereqs
   # (vm.nr_hugepages=1024 → 2 GiB, nvme_tcp + vfio_pci) already in the cluster
-  # template, and a registered block-type disk per node (the /dev/sdb raw disk
-  # from the machine classes — register by /dev/disk/by-id/ once Longhorn is up).
+  # template. Block-disk registration is DECLARATIVE: the cluster template's
+  # longhorn-v2-default-disk patch stamps node.longhorn.io/create-default-disk
+  # + default-disks-config on storage nodes, and longhorn-manager registers the
+  # /dev/sdb raw disk (stable by-id scsi-0QEMU_QEMU_HARDDISK_drive-scsi1)
+  # itself — no manual Node CR edits.
   # Values MUST be quoted strings — bare YAML bools/ints have caused
   # strconv.Parse* failures in longhorn-manager before (see notes above).
   v2DataEngine: "true"
@@ -79,10 +82,19 @@ defaultSettings:
   # at provision time instead of silently binding to the OS disk.
   v1DataEngine: "false"
   # Do NOT auto-create the default filesystem disk at /var/lib/longhorn on every
-  # node — that puts a Longhorn disk on the small OS partition. With this set
-  # (and no nodes carrying the create-default-disk label), the ONLY Longhorn
-  # disks are the explicitly registered /dev/sdb block devices.
+  # node — that puts a Longhorn disk on the small OS partition. Only nodes
+  # carrying node.longhorn.io/create-default-disk=config (stamped by the
+  # cluster template on workers + gpu-workers) get a disk, and it is the
+  # /dev/sdb block device described by their default-disks-config annotation.
   createDefaultDiskLabeledNodes: "true"
+  # Reserve NOTHING on default-created disks. The annotation says
+  # storageReserved: 0, but longhorn-manager treats 0 as "recompute from this
+  # percentage setting" (CreateDisksFromAnnotation in types.go), and the chart
+  # default is 30 — which would silently reserve ~211G of each 704G V2 disk.
+  # 0 is correct here because every Longhorn disk in this cluster is a
+  # dedicated raw block device with nothing else on it (the 30% default
+  # exists to protect shared OS-disk setups).
+  storageReservedPercentageForDefaultDisk: "0"
 # -- Disables the pre-upgrade check job. This is recommended for GitOps tools
 # like ArgoCD to prevent sync failures.
 preUpgradeChecker:
