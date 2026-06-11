@@ -52,13 +52,13 @@ spec:
       parameters:
         # Name of the sibling ObjectStore CR (see base/objectstore.yaml).
         barmanObjectName: gitea-objectstore
-        # v3 lineage opened 2026-06-02. Restore from the pre-nuke v2 lineage was
-        # attempted but ABANDONED: RustFS cannot serve MULTIPART objects, and all
-        # barman base backups are multipart ("encrypted object metadata is
-        # incomplete"). gitea was therefore brought back as a FRESH initdb DB on
-        # a clean v3 lineage. NOTE: until RustFS's multipart bug is fixed, the
-        # new v3 base backups will also be unreadable on restore — gitea DB DR is
-        # effectively non-functional until then (repos themselves are safe on the
-        # restored gitea-shared-storage PVC).
+        # v4 lineage opened 2026-06-11 (second full-cluster nuke, Longhorn V2
+        # rebuild). Same story as v3: Barman restore remains ABANDONED — RustFS
+        # cannot serve MULTIPART objects ("encrypted object metadata is
+        # incomplete"), so the v3 lineage is unrestorable and gitea comes back
+        # as a FRESH initdb DB on a clean v4 prefix (a dirty prefix would fail
+        # the WAL-archive empty check). Repos themselves are safe on the
+        # restored gitea-shared-storage PVC. NOTE: until RustFS's multipart bug
+        # is fixed, v4 base backups will be equally unreadable on restore.
         # DO NOT change this value without bumping lineage in lockstep.
-        serverName: gitea-database-v3
+        serverName: gitea-database-v4

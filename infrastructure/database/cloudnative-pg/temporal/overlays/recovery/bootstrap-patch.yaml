@@ -34,4 +34,6 @@ spec:
           #   v2 — source for the 2026-05-08 GitOps DR drill (this commit
           #        bumped base/cluster.yaml to v3 AND flipped this serverName
           #        from v1 → v2 in lockstep).
-          serverName: temporal-database-v2
+          #   v3 — written 2026-05-08 → 2026-06-11; unrestorable today
+          #        (RustFS multipart bug), kept at N-1 by convention.
+          serverName: temporal-database-v3
