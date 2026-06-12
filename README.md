@@ -107,6 +107,31 @@ export OMNI_SERVICE_ACCOUNT_KEY="$(
 omnictl get infraproviderstatuses
 ```
 
+> **`OMNI_ENDPOINT` is mandatory when the service-account key is exported.**
+> With `OMNI_SERVICE_ACCOUNT_KEY` set, omnictl ignores the config-file
+> contexts entirely. Forgetting the endpoint fails with the cryptic
+> `delegating_resolver: invalid target address "": missing address`.
+
+### Nuke (full destroy)
+
+```bash
+omnictl cluster delete talos-prod-cluster
+
+# Wait for the provider to deprovision everything before recreating:
+omnictl get machines        # must drain to empty
+# Sanity-check the Proxmox UI: all talos-prod-cluster-* VMs disappear.
+```
+
+> **⚠ ORDERING — apply classes and sync the template BEFORE machines
+> provision (2026-06-11 incident).** Machine classes and the cluster
+> template are snapshots inside Omni: VMs are built from whatever Omni
+> stored at provision time, not from this repo. Provisioning before the
+> `omnictl apply`/`template sync` below produced workers with the old
+> single-disk layout and no V2 hugepages, a stale-Talos rolling upgrade
+> mid-bootstrap, and a forced worker reprovision. Always run the apply +
+> sync steps below (idempotent) before machines come up, and always sync
+> THIS file — not a `cluster-template-working.yaml` variant.
+
 Apply the three machine classes idempotently, then validate and preview the
 cluster template:
 
@@ -160,8 +185,61 @@ omnictl talosconfig \
 kubectl get nodes -o wide
 ```
 
-Nodes are expected to remain `NotReady` until Cilium is installed. Continue
-with the bootstrap process below; do not create replacement MachineSets.
+Nodes are expected to remain `NotReady` until Cilium is installed.
+
+Before continuing, verify the storage nodes were born with the V2 layout
+(catches the stale-Omni-config failure mode immediately instead of at
+Longhorn bootstrap):
+
+```bash
+# Talos v1.13.4 on FIRST boot (no pending rolling upgrade) + 2Gi hugepages:
+kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage,HP2MI:.status.allocatable.hugepages-2Mi'
+# expect: every node Talos (v1.13.4); workers + gpu-worker hugepages-2Mi = 2Gi
+
+# Disk split (96G/704G workers, 128G/672G GPU) — /dev/sdb is the raw V2 disk:
+talosctl -n <worker-ip> get disks   # expect sda + sdb
+
+# Longhorn declarative disk registration stamped by the template:
+kubectl get nodes -l node.longhorn.io/create-default-disk -o name   # expect the 4 storage nodes
+```
+
+Continue with the bootstrap process below; do not create replacement
+MachineSets. After ArgoCD's root app is applied there are **zero manual
+storage steps**: Longhorn block disks self-register from the node
+annotation (`v2-block-0`, `storageReserved: 0`), pvc-plumber auto-syncs at
+Wave 2, and VolSync restores run unattended.
+
+### V2 data-engine attach storm (2026-06-12 incident playbook)
+
+A full-cluster restore is the v2 (SPDK) engine's worst case: 25 parallel
+VolSync restores + ~90 apps attaching volumes + NVMe-TCP replication all at
+once. Under that load an instance-manager can hang/crash; the resulting
+replica-rebuild wave then feeds a self-sustaining storm:
+
+```
+rebuild traffic → SPDK stalls → NVMe-TCP keep-alive timeouts
+→ engine frontends die → volumes fault → MORE rebuilds → repeat
+```
+
+**Signature:** `DetachedUnexpectedly` events in longhorn-system,
+`keep alive timeout` / `no subsystem found for NVMe device` in
+instance-manager logs, restores stalled while nodes sit at low CPU.
+
+**Response (in order):**
+1. Rebuilds are already throttled to 1/node in Git
+   (`infrastructure/storage/longhorn/node-failure-settings.yaml`) — verify
+   the live Setting matches; the storm cannot self-sustain at 1.
+2. Per-volume wedges self-heal via auto-salvage; a mover stuck >15 min on
+   `MountVolume ... hasn't been attached yet` with a months-old
+   VolumeAttachment = stale CSI state — delete the mover pod (Job recreates
+   it, forcing a fresh attach).
+3. Pods crashlooping on `read-only file system` after the storm: the pod
+   must land on a DIFFERENT node (or the volume must fully detach) to drop
+   the stale ro mount — scale to 0, wait for the Longhorn volume to show
+   `detached`, scale back (CNPG: `cnpg.io/hibernation=on` → wait → `off`).
+4. If ONE node keeps emitting `no subsystem found for NVMe device` while
+   the others are quiet, its kernel NVMe-TCP state is poisoned: cordon it,
+   move crashlooping workloads off, **reboot it via Omni**, uncordon.
 
 ## Bootstrap Process
 
