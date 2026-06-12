@@ -226,9 +226,9 @@ Wave 2, and VolSync restores run unattended.
   show `detached`, scale back (CNPG: `cnpg.io/hibernation=on` → wait →
   `off`).
 - History: the Longhorn V2/SPDK engine was tried and retired here
-  (2026-06-12) — full forensics in
-  `docs/domains/storage/longhorn-v2-retirement.md`. Do not re-enable V2
-  without a fixed Longhorn release and a passed DR drill.
+  (2026-06-12, open Longhorn bugs #13315/#13314). Do not re-enable V2
+  without a fixed release and a passed DR drill — short version in
+  `docs/disaster-recovery.md`, forensics in git history.
 
 ## Bootstrap Process
 

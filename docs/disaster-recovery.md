@@ -13,7 +13,7 @@
 
 ## The DR model in one diagram
 
-```mermaid$
+```mermaid
 flowchart TB
     subgraph Dies["☠️ Dies with the cluster"]
         LV[Longhorn volumes]
@@ -39,11 +39,19 @@ vault are the pets. Everything between them is reconstructed automatically.
 | Date | Event | Result |
 |---|---|---|
 | 2026-06-02 | Planned full nuke (first acceptance) | **24/24 managed PVCs restored**, 24/24 post-restore backups Successful |
-| 2026-06-12 | **Unplanned**: Longhorn V2 engine meltdown mid-rebuild ([why V2 was retired](domains/storage/longhorn-v2-retirement.md)) | **25/25 restored** despite an instance-manager crash, a poisoned node, and a host reboot — the repo never lost a byte |
+| 2026-06-12 | **Unplanned**: Longhorn V2 engine meltdown mid-rebuild | **25/25 restored** despite an instance-manager crash, a poisoned node, and a host reboot — the repo never lost a byte |
 | 2026-06-13 | Planned rebuild onto Longhorn V1 | **24/24 restored unattended in ~75 minutes**, zero manual storage steps; operator at ~1m CPU; exemption contract honored |
 
 Two full-cluster deaths inside 36 hours, one of them about as hostile as
 storage failure gets — every protected volume came back both times.
+
+> **The V2 footnote:** Longhorn's V2/SPDK engine was briefly tried and
+> retired the same day — interrupted rebuilds under mass-restore load
+> permanently corrupt replica metadata (open upstream bugs
+> [#13315](https://github.com/longhorn/longhorn/issues/13315),
+> [#13314](https://github.com/longhorn/longhorn/issues/13314)). The cluster
+> runs V1, the upstream default. Don't revisit V2 without those fixed and a
+> passed DR drill; full forensics in git history.
 
 ---
 
@@ -150,5 +158,4 @@ Worked fixes for everything the hostile rebuild threw at us — stale CSI
 attachments, read-only filesystems, wedged clone PVCs, finalizer-stuck
 resources — live in the
 [common failure modes table](storage-architecture.md#common-failure-modes).
-The deeper forensics of the V2 engine retirement:
-[longhorn-v2-retirement.md](domains/storage/longhorn-v2-retirement.md).
+

@@ -24,6 +24,30 @@ this cluster — including the cluster itself ceasing to exist.
 
 ---
 
+## Quick start — yes, it's just labels
+
+```yaml
+metadata:
+  labels:
+    pvc-plumber.io/enabled: "true"          # ← back this volume up
+    pvc-plumber.io/manage-volsync: "true"
+    pvc-plumber.io/tier: "hourly"           # ← every hour
+spec:
+  dataSourceRef:                            # ← and restore it automatically
+    apiGroup: volsync.backube               #    whenever it's recreated
+    kind: ReplicationDestination
+    name: <pvc-name>-dst
+```
+
+That's it. Backups run on schedule; delete the PVC (or the whole cluster)
+and it comes back with its data. The rest of this page is why and how —
+or **[🎮 play with the interactive simulator](simulator.html)** and nuke a
+toy cluster yourself.
+*(One-time backend prerequisite: an S3 box + one secret —
+[backup repository setup](backup-repository-setup.md).)*
+
+---
+
 ## Why this exists
 
 **One sentence:** I can nuke the entire Kubernetes cluster, redeploy from
@@ -136,7 +160,11 @@ The pieces in plain English:
 - **Longhorn** — gives PVCs that can be snapshotted.
 - **pvc-plumber** — the Go operator that reads the labels and creates the
   backup/restore objects. It never touches your data.
-- **VolSync** — schedules the backup/restore Jobs that run a tool called Kopia.
+- **VolSync** — schedules the backup/restore Jobs that run a tool called
+  Kopia. It works from two instruction objects per volume:
+  a **ReplicationSource (RS)** — "back this up on this schedule" — and a
+  **ReplicationDestination (RD)** — "here's how to restore it."
+  Mnemonic: **D for Disaster recovery** — the RD is what saves you.
 - **Kopia** — encrypts, dedupes, and writes to S3 on RustFS.
 - **1Password + External Secrets** — delivers the repo password to every
   namespace that needs it.
@@ -224,7 +252,7 @@ The whole behaviour as a flat lookup table:
 
 ---
 
-## TL;DR — the magic labels
+## The magic labels (TL;DR)
 
 ```yaml
 # namespace.yaml
@@ -258,7 +286,7 @@ spec:
 ## Contents
 
 - [Why this exists](#why-this-exists) · [In plain English](#in-plain-english) · [The picture, simply](#the-picture-simply)
-- [If this, then that](#if-this-then-that) · [TL;DR — the magic labels](#tldr--the-magic-labels)
+- [If this, then that](#if-this-then-that) · [The magic labels (TL;DR)](#the-magic-labels-tldr)
 - [Architecture at a glance](#architecture-at-a-glance) · [The five scenarios](#the-five-scenarios) · [A worked example: karakeep](#a-worked-example-karakeep)
 - [Schedules & repository](#backup-schedules-retention-repository)
 - **Operations:** [enable](#enable-a-backup) · [exempt](#exempt-a-pvc-deliberate-non-backup) · [restore drill](#restore-drill-prove-it)
@@ -379,7 +407,7 @@ doesn't happen without them:
    **without** `dataSourceRef` first, add it after the first backup lands —
    a brand-new kopia identity restores "empty" successfully, which is not
    what you want a restore pointer aimed at. See
-   [operations](storage-architecture.md#add-a-backup-to-a-pvc).)*
+   [operations](#enable-a-backup).)*
 2. **Disaster recovery — cluster nuked, repo preserved.** Same Git, new
    cluster. Every labeled PVC carries its `dataSourceRef`; the populator
    restores each one from its latest snapshot before its app starts. The
@@ -487,15 +515,13 @@ points at. Delete either one and the operator recreates it within seconds.
 ```mermaid
 flowchart TD
     L["🏷️ labels added to PVC (once)"] --> W["🚰 operator creates RS + RD"]
-    W --> B["🕙 backup at :10 every hour<br/>snapshot → kopia → RustFS S3"]
-    B --> B
+    W --> B["🕙 backups every hour at :10<br/>snapshot → kopia → RustFS S3"]
     B --> N["💥 cluster destroyed"]
     N --> R["📂 Git recreates PVC<br/>dataSourceRef → data-pvc-dst"]
     R --> P["🚚 populator restores latest snapshot"]
     P --> S["🟢 karakeep starts — bookmarks intact"]
     S --> W2["🚰 operator re-creates RS + RD"]
-    W2 --> B2["🕙 backups resume at :10"]
-    B2 --> B2
+    W2 --> B2["🕙 backups resume, every hour at :10"]
 
     classDef calm fill:#dbeafe,stroke:#1e40af,color:#0c1f4a;
     classDef bad fill:#fee2e2,stroke:#991b1b,color:#450a0a;
@@ -559,7 +585,7 @@ database backups, in a different bucket, via a different pipeline.
 ### Enable a backup
 
 Three steps, all in Git (full annotated manifests in the
-[TL;DR](#tldr--the-magic-labels) above):
+[the magic labels](#the-magic-labels-tldr) above):
 
 1. **Namespace**: add the two gate labels (`managed-namespace`, `privileged-movers`).
 2. **PVC**: add the three fuse labels + the `dataSourceRef → <pvc>-dst`.
@@ -688,7 +714,8 @@ kubectl logs -n <ns> -l app.kubernetes.io/created-by=volsync --tail=100   # a mo
    operator that turns labels into RS/RD wiring.
 4. **An S3 (or filesystem) target for Kopia** that lives outside the
    cluster, and a way to deliver its password as a Secret (ESO + anything,
-   sealed-secrets, or a plain Secret).
+   sealed-secrets, or a plain Secret). The full one-time backend setup is
+   documented in [backup-repository-setup.md](backup-repository-setup.md).
 5. A GitOps engine helps (the restore-on-recreate flow leans on "Git
    recreates the PVC"), but `kubectl apply` works too.
 

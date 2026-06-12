@@ -7,13 +7,6 @@ edit_uri: edit/main/docs/
 
 docs_dir: docs
 
-# Skip internal-only directories from publication.
-exclude_docs: |
-  plans/
-  research/
-  superpowers/
-  archive/
-
 theme:
   name: material
   features:
@@ -81,10 +74,14 @@ plugins:
 
 nav:
   - Home: index.md
-  - Storage & recovery:
-      - PVC backup/restore (VolSync): volsync-storage-recovery.md
+  - Storage & backups:
+      - Architecture, operations & guide: storage-architecture.md
+      - Backup repository setup: backup-repository-setup.md
+      - Disaster recovery runbook: disaster-recovery.md
       - Database DR (CloudNativePG): domains/cnpg/disaster-recovery.md
       - Kopia maintenance: domains/storage/kopia-maintenance-plan.md
+      - Storage model (RWO/RWX & sizing): domains/storage/storage-model-rwo-rwx-and-sizing.md
+      - Future idea — tiered storage: domains/storage/architecture-future.md
   - GitOps:
       - ArgoCD architecture: domains/argocd/argocd.md
       - Root entrypoints & sync waves: domains/argocd/entrypoints.md

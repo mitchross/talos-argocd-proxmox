@@ -27,7 +27,7 @@ writing to RustFS S3) handles *file-level* PVC backups. (Kyverno was removed fro
 this path in 2026-05 and is no longer involved — see `docs/storage-architecture.md`.)
 CNPG has its own SQL-aware backup path: Barman Cloud → RustFS S3. The two never
 touch each other. See
-[docs/disaster-recovery.md](../../docs/disaster-recovery.md) for why both exist.
+[docs/disaster-recovery.md](../../disaster-recovery.md) for why both exist.
 
 ### How recovery works (the 30-second version)
 
