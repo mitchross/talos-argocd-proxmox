@@ -146,42 +146,17 @@ patches:
           - bind
           - rshared
           - rw
-# Longhorn V2 (SPDK) data engine prerequisites — applied to storage workers only
-# (control-plane has no Longhorn storage, so it is intentionally excluded).
-# 1024 x 2MiB hugepages = 2 GiB, matching Longhorn's dataEngineMemorySize default.
-# vfio_pci is SPDK's preferred userspace-IO module; nvme_tcp backs V2 over NVMe/TCP
-# (built into the Talos 6.18 kernel — listing it here is harmless and future-proof).
-# NOTE: takes effect only after `omnictl cluster template sync` + a rolling reboot
-# (or on first boot for a freshly provisioned cluster). The V2 engine itself is
-# enabled declaratively in infrastructure/storage/longhorn/values.yaml
-# (v2DataEngine: "true") — these kernel prereqs must be live BEFORE Longhorn
-# starts on the rebuilt cluster. See docs/domains/storage/longhorn-v2-migration.md.
-- name: longhorn-v2-prereqs
-  inline:
-    machine:
-      sysctls:
-        vm.nr_hugepages: "1024"
-      kernel:
-        modules:
-        - name: nvme_tcp
-        - name: vfio_pci
-# Declarative Longhorn V2 block-disk registration (GitOps, no manual step).
-# Longhorn's defaultSettings.createDefaultDiskLabeledNodes: "true" makes
-# longhorn-manager create disks ONLY on nodes carrying the
-# node.longhorn.io/create-default-disk label; "config" mode reads the disk
-# spec from the node annotation below. The by-id path is STABLE and IDENTICAL
-# on every provider-built VM: QEMU derives the serial from the drive name, so
-# scsi1 (the additional_disks raw V2 device from the machine class) is always
-# /dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1 (verified live
-# 2026-06-11 across all rebuilt workers). diskType "block" = V2/SPDK claims
-# the raw device. Talos applies nodeLabels/nodeAnnotations hot (no reboot).
-- name: longhorn-v2-default-disk
-  inline:
-    machine:
-      nodeLabels:
-        node.longhorn.io/create-default-disk: "config"
-      nodeAnnotations:
-        node.longhorn.io/default-disks-config: '[{"name":"v2-block-0","path":"/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1","allowScheduling":true,"diskType":"block","storageReserved":0}]'
+# REMOVED 2026-06-12: longhorn-v2-prereqs (hugepages + vfio_pci/nvme_tcp) and
+# longhorn-v2-default-disk (raw /dev/sdb block registration). The V2/SPDK
+# engine failed under full-DR restore load — open Longhorn 1.12 bugs #13315
+# (interrupted rebuild poisons replica metadata) and #13314 (re-crash after
+# auto-reattach) turned a mass restore into an unrecoverable fault loop
+# (2026-06-12 incident; see the attack-storm playbook in README.md). The
+# cluster returned to the V1 engine: data lives as files under
+# /var/lib/longhorn (bind-mounted from /var/local/longhorn by the
+# longhorn-storage patch above) on the single 800G disk — the exact layout
+# that ran this cluster stably before the V2 experiment. Reclaims the 2 GiB
+# hugepage carve-out per worker as bonus RAM.
 ---
 kind: Workers
 name: gpu-workers
@@ -231,30 +206,8 @@ patches:
           - bind
           - rshared
           - rw
-# Longhorn V2 (SPDK) data engine prerequisites on the GPU worker.
-# CAUTION (GPU node): this node runs the NVIDIA production driver and hosts
-# llama-cpp + ComfyUI. Two interactions to watch on the first reboot:
-#   1. vfio_pci is the same module used for PCI passthrough. Loading it does NOT
-#      bind the GPU (nvidia.ko owns it) unless a device is explicitly assigned to
-#      vfio, but verify `nvidia-smi` / GPU workloads still come up after reboot.
-#   2. 2 GiB hugepages are carved out of node RAM, competing with AI workloads.
-# Validate this node LAST in the rolling reboot. See longhorn-v2-migration.md.
-- name: longhorn-v2-prereqs
-  inline:
-    machine:
-      sysctls:
-        vm.nr_hugepages: "1024"
-      kernel:
-        modules:
-        - name: nvme_tcp
-        - name: vfio_pci
-# Declarative Longhorn V2 block-disk registration — same mechanism and same
-# stable by-id as the workers section (scsi1 from the machine class is always
-# drive-scsi1 regardless of disk size: 672G here vs 704G on workers).
-- name: longhorn-v2-default-disk
-  inline:
-    machine:
-      nodeLabels:
-        node.longhorn.io/create-default-disk: "config"
-      nodeAnnotations:
-        node.longhorn.io/default-disks-config: '[{"name":"v2-block-0","path":"/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1","allowScheduling":true,"diskType":"block","storageReserved":0}]'
+# REMOVED 2026-06-12: longhorn-v2-prereqs + longhorn-v2-default-disk (see the
+# workers section above for the full rationale — V2 engine retired after the
+# full-DR fault loop; V1 layout restored). GPU-node bonus: the 2 GiB hugepage
+# carve-out returns to AI workloads, and vfio_pci no longer loads alongside
+# the NVIDIA driver.

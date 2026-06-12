@@ -6,8 +6,9 @@ resources:
   #- httproute.yaml
   - volumesnapshotclass.yaml
   - node-failure-settings.yaml
-  # V2 (SPDK) is served by the chart-created `longhorn` StorageClass via
-  # persistence.dataEngine: v2 in values.yaml — no separate longhorn-v2 class.
+  # The chart-created `longhorn` StorageClass provisions V1-engine volumes
+  # (chart default; the dataEngine:v2 routing was removed 2026-06-12 when the
+  # V2/SPDK experiment was retired — see values.yaml header).
 helmCharts:
   - name: longhorn
     repo: https://charts.longhorn.io

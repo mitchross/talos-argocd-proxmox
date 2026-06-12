@@ -187,29 +187,38 @@ kubectl get nodes -o wide
 
 Nodes are expected to remain `NotReady` until Cilium is installed.
 
-Before continuing, verify the storage nodes were born with the V2 layout
-(catches the stale-Omni-config failure mode immediately instead of at
+Before continuing, verify the storage nodes were born with the expected
+layout (catches the stale-Omni-config failure mode immediately instead of at
 Longhorn bootstrap):
 
 ```bash
-# Talos v1.13.4 on FIRST boot (no pending rolling upgrade) + 2Gi hugepages:
-kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage,HP2MI:.status.allocatable.hugepages-2Mi'
-# expect: every node Talos (v1.13.4); workers + gpu-worker hugepages-2Mi = 2Gi
+# Talos v1.13.4 on FIRST boot (no pending rolling upgrade):
+kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage'
+# expect: every node Talos (v1.13.4)
 
-# Disk split (96G/704G workers, 128G/672G GPU) — /dev/sdb is the raw V2 disk:
-talosctl -n <worker-ip> get disks   # expect sda + sdb
+# Single 800G disk per storage node (V1 layout — the 2-disk V2 split was
+# retired 2026-06-12; if you see sda+sdb the Omni template/classes are STALE):
+talosctl -n <worker-ip> get disks   # expect sda only (~800G)
 
-# Longhorn declarative disk registration stamped by the template:
-kubectl get nodes -l node.longhorn.io/create-default-disk -o name   # expect the 4 storage nodes
+# After Longhorn starts: every storage node auto-creates its default V1
+# filesystem disk at /var/lib/longhorn (no labels/annotations involved):
+kubectl get nodes.longhorn.io -n longhorn-system   # expect 4 Ready storage nodes
 ```
 
 Continue with the bootstrap process below; do not create replacement
 MachineSets. After ArgoCD's root app is applied there are **zero manual
-storage steps**: Longhorn block disks self-register from the node
-annotation (`v2-block-0`, `storageReserved: 0`), pvc-plumber auto-syncs at
+storage steps**: Longhorn (V1 engine) auto-creates its filesystem disk at
+`/var/lib/longhorn` on every storage node, pvc-plumber auto-syncs at
 Wave 2, and VolSync restores run unattended.
 
 ### V2 data-engine attach storm (2026-06-12 incident playbook)
+
+> **STATUS: the V2 engine was RETIRED on 2026-06-12** because of this
+> incident (open Longhorn bugs #13315/#13314 — interrupted rebuilds poison
+> replica metadata; re-crash after auto-reattach). The cluster runs the V1
+> engine. This playbook is kept because (a) step 1's rebuild throttle still
+> applies to V1 mass restores, and (b) it is the evidence record for why
+> V2 must not be re-enabled without a fixed release + passed DR drill.
 
 A full-cluster restore is the v2 (SPDK) engine's worst case: 25 parallel
 VolSync restores + ~90 apps attaching volumes + NVMe-TCP replication all at

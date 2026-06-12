@@ -68,13 +68,15 @@ value: "true"
 ---
 # Concurrent replica rebuilds per node — INTENTIONALLY 1 (2026-06-12 incident).
 # During the post-nuke mass restore, 5 concurrent rebuilds per node saturated
-# the v2 (SPDK) data engine: NVMe-TCP keep-alive timeouts killed engine
-# frontends, faulting volumes faster than rebuilds drained them — a
+# the then-active v2 (SPDK) data engine: NVMe-TCP keep-alive timeouts killed
+# engine frontends, faulting volumes faster than rebuilds drained them — a
 # self-sustaining storm (restores stuck at 16/25 for 30+ min; nodes were at
-# ~22% CPU, so this is SPDK contention, not resources). Dropping to 1 broke
-# the loop within minutes. Cost: slower return to full redundancy after a
-# replica failure — acceptable here. Do not raise above 2 while on the v2
-# engine without re-testing a full-cluster DR.
+# ~22% CPU, so this was SPDK contention, not resources). Dropping to 1 broke
+# the loop within minutes. The V2 engine was retired the same day, but the
+# throttle STAYS at 1 on V1: mass-restore bootstraps overload any engine on
+# this hardware (4 consumer SSDs in one stripe behind all workers), and slow
+# redundancy recovery is an acceptable price. Raise to 2-3 only after a
+# passed DR drill shows headroom.
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:

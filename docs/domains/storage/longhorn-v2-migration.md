@@ -1,9 +1,38 @@
 # Longhorn 1.12.0 — V2 (SPDK) Data Engine Rebuild Runbook
 
-> **Status:** the rebuild target config is fully in GitOps. This cluster is
-> **V2-only**: `v2DataEngine: "true"`, `v1DataEngine: "false"`, and the default
-> `longhorn` StorageClass routed to the V2 engine via `persistence.dataEngine: v2`.
-> All of it applies when the **rebuilt** cluster bootstraps.
+> ## ⚠️ OUTCOME (2026-06-12): V2 RETIRED — cluster returned to V1
+>
+> The V2 rebuild below was executed 2026-06-11/12 and **failed in production
+> within hours**, during the post-nuke mass restore. The failure matched open
+> Longhorn 1.12 V2 bugs (both targeting 1.13.0):
+>
+> - [#13315](https://github.com/longhorn/longhorn/issues/13315) — interrupted
+>   rebuild permanently poisons replica metadata ("active chain parent … does
+>   not match head parent")
+> - [#13314](https://github.com/longhorn/longhorn/issues/13314) — volume can
+>   crash again after automatic reattachment
+>
+> Sequence: 25 parallel VolSync restores → SPDK instance-manager crash →
+> replica-rebuild wave → NVMe-TCP keep-alive timeouts → self-sustaining fault
+> loop → 10 freshly-restored volumes left with corrupted single-copy replica
+> chains → full Proxmox host reboot required to clear poisoned kernel NVMe
+> state. Forensics: README.md "V2 data-engine attach storm" playbook.
+> Hardware (consumer-SSD stripe, CPU oversubscription) amplified the load,
+> but the defects are upstream software.
+>
+> **The reversal (in Git 2026-06-12):** single 800G disk restored in the
+> machine classes, V2 patches removed from the cluster template, Helm values
+> back to the V1 engine (chart default). Migration is nuke +
+> restore-from-backup — engines cannot be flipped in place. **Do not
+> re-attempt V2** without (1) a Longhorn release with both bugs fixed,
+> (2) a passed restore-canary DR drill, and (3) ideally per-worker physical
+> disks. The rest of this document is the historical record of the V2 design.
+
+> **Status (historical):** the rebuild target config was fully in GitOps. The
+> cluster was **V2-only**: `v2DataEngine: "true"`, `v1DataEngine: "false"`, and
+> the default `longhorn` StorageClass routed to the V2 engine via
+> `persistence.dataEngine: v2`. All of it applied when the **rebuilt** cluster
+> bootstrapped.
 >
 > **Scope decision (2026-06-09):** nuke & rebuild (clean slate), **V2-only** — no
 > V1 volumes to migrate, so the V1 engine is disabled outright. V2 runs on

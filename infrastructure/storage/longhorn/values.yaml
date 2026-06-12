@@ -3,13 +3,17 @@
 # Settings applied manually via the UI will not be reflected here and can be
 # overwritten during a Helm upgrade.
 #
-# ⚠️⚠️ REBUILD-ONLY CONFIG — DO NOT SYNC ONTO THE LIVE V1 CLUSTER ⚠️⚠️
-# This file encodes the V2-only (SPDK) target state: V2 engine on, V1 engine
-# off, and the default `longhorn` StorageClass routed to dataEngine v2. On the
-# live V1 cluster these would (a) churn forever (engine settings can't apply
-# while volumes are attached) and (b) send every new default-class PVC to a V2
-# engine with no disks (Pending cluster-wide). Merge/sync only as the rebuilt
-# cluster bootstraps. See docs/domains/storage/longhorn-v2-migration.md.
+# V1 (default) data engine — restored 2026-06-12 after the V2/SPDK experiment
+# failed under full-DR restore load (open Longhorn 1.12 bugs #13315/#13314:
+# interrupted rebuilds permanently poison replica metadata; re-crash after
+# auto-reattach). V1 is upstream's default engine, still actively maintained,
+# and ran this cluster stably for months before the V2 rebuild. Data path is
+# the default /var/lib/longhorn (bind-mounted from /var/local/longhorn on the
+# single 800G disk by the cluster template's longhorn-storage patch). Engines
+# cannot be flipped on a live cluster with attached volumes — this config is
+# applied via nuke + rebuild with restore-from-backup (the proven DR flow).
+# History: docs/domains/storage/longhorn-v2-migration.md (+ its 2026-06-12
+# outcome note) and the V2 attack-storm playbook in README.md.
 defaultSettings:
   # NOTE: Longhorn 1.10 consolidates settings for V1/V2 data engines. Use either
   # a single scalar or a JSON string with per-engine values like {"v1":"...","v2":"..."} when needed.
@@ -34,23 +38,13 @@ defaultSettings:
   fastReplicaRebuildEnabled: "true"
   engineReplicaTimeout: "8"
   # Percentage of allocatable CPU reserved per instance-manager pod (NOT cores).
-  # Chart default is {"v1":"12","v2":"12"}; plain "8" applies to both engines.
-  # Reduced from 12 to 8 for homelab - still provides good performance with less CPU reservation.
-  # NOTE (V2): the V2 instance managers busy-poll the cores pinned by
-  # `v2-data-engine-cpu-mask`. Raised 0x3 (2 cores) -> 0xf (4 cores) on
-  # 2026-06-11 after the first V2 nuke-restore: 25 parallel restores wedged
-  # both SPDK targets in attach/detach teardown loops ("NVMe path still
-  # exists after delete"), and 2 reactor cores could not drain the churn.
-  # See the Setting CR in node-failure-settings.yaml (the authoritative
-  # copy — defaultSettings only seeds first install) and the V2 mass-restore
-  # wedge entry in docs/cluster-dr-nuke-restore-runbook.md.
-  # "13" ≈ 4.2 cores requested on the 32-core workers (covers the 4 pinned
-  # cores); on the 16-core GPU worker it is ~2.1 cores — a KNOWN under-request
-  # vs the 4 busy-polled cores there, accepted to avoid over-reserving the
-  # AI node. If V2 latency degrades on the GPU node under AI load, consider
-  # shrinking the mask instead.
+  # Chart default is 12; "8" is the proven homelab value from the V1 era.
+  # V1 instance managers do NOT busy-poll (that was V2/SPDK's reactor model,
+  # which burned ~4-5 cores per node at 100% even when idle — one of the
+  # reasons V2 was retired on 2026-06-12). 8% of a 32-core worker ≈ 2.5 cores
+  # reserved, plenty for V1's interrupt-driven engines.
   # Avoid per-engine JSON strings — they trip "mismatched data engines" errors.
-  guaranteedInstanceManagerCPU: "13"
+  guaranteedInstanceManagerCPU: "8"
   # NOTE 2026-06-09: a previous `guaranteedInstanceManagerMemory: "1Gi"` was
   # removed here — Longhorn has NO instance-manager memory-guarantee setting
   # (only the CPU one above exists in the chart/setting schema), so the key was
@@ -70,55 +64,28 @@ defaultSettings:
   # Allow detached volumes to rebuild replicas (fixes VolSync clone volumes
   # stuck in VolumeCloneCopyCompleteAwaitingHealthy with replica count > 1)
   offlineReplicaRebuilding: "true"
-  # V2 (SPDK) data engine — this cluster is V2-ONLY (rebuilt fresh; there are no
-  # V1 volumes to migrate). Safe to enable from bootstrap because a fresh cluster
-  # has no attached volumes blocking the setting. Requires the Talos prereqs
-  # (vm.nr_hugepages=1024 → 2 GiB, nvme_tcp + vfio_pci) already in the cluster
-  # template. Block-disk registration is DECLARATIVE: the cluster template's
-  # longhorn-v2-default-disk patch stamps node.longhorn.io/create-default-disk
-  # + default-disks-config on storage nodes, and longhorn-manager registers the
-  # /dev/sdb raw disk (stable by-id scsi-0QEMU_QEMU_HARDDISK_drive-scsi1)
-  # itself — no manual Node CR edits.
-  # Values MUST be quoted strings — bare YAML bools/ints have caused
-  # strconv.Parse* failures in longhorn-manager before (see notes above).
-  v2DataEngine: "true"
-  # V1 engine OFF: nothing may route to V1 — its only capacity would be the
-  # small OS disk. With V1 disabled, a misrouted dataEngine:v1 PVC fails loudly
-  # at provision time instead of silently binding to the OS disk.
-  v1DataEngine: "false"
-  # Do NOT auto-create the default filesystem disk at /var/lib/longhorn on every
-  # node — that puts a Longhorn disk on the small OS partition. Only nodes
-  # carrying node.longhorn.io/create-default-disk=config (stamped by the
-  # cluster template on workers + gpu-workers) get a disk, and it is the
-  # /dev/sdb block device described by their default-disks-config annotation.
-  createDefaultDiskLabeledNodes: "true"
-  # Reserve NOTHING on default-created disks. The annotation says
-  # storageReserved: 0, but longhorn-manager treats 0 as "recompute from this
-  # percentage setting" (CreateDisksFromAnnotation in types.go), and the chart
-  # default is 30 — which would silently reserve ~211G of each 704G V2 disk.
-  # 0 is correct here because every Longhorn disk in this cluster is a
-  # dedicated raw block device with nothing else on it (the 30% default
-  # exists to protect shared OS-disk setups).
-  storageReservedPercentageForDefaultDisk: "0"
+  # V1 data engine is the chart default — no v1DataEngine/v2DataEngine keys
+  # needed. REMOVED 2026-06-12: v2DataEngine "true" + v1DataEngine "false" +
+  # createDefaultDiskLabeledNodes + storageReservedPercentageForDefaultDisk
+  # (all V2-block-disk plumbing). With V1, Longhorn auto-creates its default
+  # filesystem disk at defaultDataPath (/var/lib/longhorn) on every node
+  # running longhorn-manager, and the chart's default 30% storage reservation
+  # is CORRECT again — the data path shares the 800G disk with Talos system +
+  # images + pod ephemeral, which is exactly the shared-OS-disk setup that
+  # reservation exists to protect.
 # -- Disables the pre-upgrade check job. This is recommended for GitOps tools
 # like ArgoCD to prevent sync failures.
 preUpgradeChecker:
   jobEnabled: false
 persistence:
-  # -- V2-only cluster: the chart-created `longhorn` StorageClass IS the V2
-  # class and stays the cluster default. The class KEEPS the name `longhorn`
-  # deliberately — 40+ PVCs across my-apps/monitoring/infrastructure, the
-  # inline VolSync ReplicationSource/Destination configs, the pvc-plumber
-  # backup contract, and the CLAUDE.md / add-backup guidance all reference
-  # `storageClassName: longhorn` explicitly. Re-pointing the NAME at V2 moves
-  # all of them at once; renaming to `longhorn-v2` would have moved none of
-  # them (a default-class flip only affects PVCs that omit storageClassName).
+  # -- The chart-created `longhorn` StorageClass, cluster default. The class
+  # KEEPS the name `longhorn` deliberately — 40+ PVCs across my-apps/
+  # monitoring/infrastructure, the inline VolSync ReplicationSource/
+  # Destination configs, the pvc-plumber backup contract, and the CLAUDE.md /
+  # add-backup guidance all reference `storageClassName: longhorn` explicitly.
+  # With no dataEngine override the class provisions V1 volumes (chart
+  # default) — the `dataEngine: v2` routing was removed 2026-06-12.
   defaultClass: true
-  # -- Routes the `longhorn` class to the V2 (SPDK) engine. NOTE: the chart
-  # only renders the dataEngine parameter when disableRevisionCounter is
-  # truthy — it defaults to "true"; do not override it to false/empty or this
-  # silently reverts the class to V1.
-  dataEngine: v2
   # -- Default number of replicas for volumes.
   # Set to 2 for node-failure resilience. With replica 1, a single node going
   # down makes all its volumes unavailable and causes stale attachment cascades.
