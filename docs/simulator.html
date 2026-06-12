@@ -52,6 +52,16 @@
   .log .t{color:var(--dim)} .log .ok{color:var(--green)} .log .warn{color:var(--yellow)}
   .log .err{color:var(--red)} .log .info{color:#93c5fd} .log .op{color:var(--purple)}
   .hidden{display:none}
+  .coach{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:50;
+    background:#161a26;border:1px solid var(--blue);border-radius:14px;padding:14px 18px;
+    max-width:580px;width:calc(100% - 40px);box-shadow:0 10px 40px #000a, 0 0 0 1px #3b82f633;
+    animation:coachIn .25s ease-out}
+  .coachTitle{font-size:12px;color:#93c5fd;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+  #coachText{font-size:14.5px;line-height:1.55;margin-bottom:12px}
+  #coachBtn{width:100%;font-weight:700}
+  @keyframes coachIn{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+  @keyframes pulseGlow{0%,100%{box-shadow:0 0 0 0 #3b82f688}50%{box-shadow:0 0 0 7px #3b82f600}}
+  .pulse{animation:pulseGlow 1.3s ease-out infinite;border-color:var(--blue)!important}
   .pipe{display:flex;align-items:stretch;gap:6px;flex-wrap:wrap;margin:6px 0 8px}
   .pstep{background:#13161f;border:1px solid var(--line);border-radius:8px;padding:6px 10px;
     font-size:12.5px;line-height:1.35;text-align:center;flex:1;min-width:110px;transition:.25s}
@@ -88,6 +98,8 @@ Try nuking <i>without</i> a backup, or taking S3 offline mid-backup, to see the 
   <button id="bNuke" class="danger">💥 Nuke the cluster</button>
   <button id="bRebuild" class="primary">📂 Rebuild from Git</button>
   <button id="bReset">↺ Reset</button>
+  <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--dim);margin-left:auto">
+    <input type="checkbox" id="stepMode" checked> 👣 tutorial mode</label>
 </div>
 
 <div class="stage" id="stage">
@@ -139,7 +151,7 @@ Try nuking <i>without</i> a backup, or taking S3 offline mid-backup, to see the 
     <div class="box" id="mover" style="padding:10px 14px">
       <h3>🔁 The handoff chain — who triggers whom</h3>
       <div class="pipe">
-        <span class="pstep" id="ps1">🏷️ PVC labels<br><small>your only input</small></span><span class="parrow">→</span>
+        <span class="pstep" id="ps1">📂 Git commit<br><small>PVC + labels via ArgoCD — your only input</small></span><span class="parrow">→</span>
         <span class="pstep" id="ps2">🚰 pvc-plumber<br><small>writes the backup &amp; restore configs</small></span><span class="parrow">→</span>
         <span class="pstep" id="ps3">🚚 VolSync<br><small>schedule due → creates a mover Job</small></span><span class="parrow">→</span>
         <span class="pstep" id="ps4">🛡️ API admission<br><small>MAP injects wait-for-rustfs</small></span><span class="parrow">→</span>
@@ -159,6 +171,11 @@ Try nuking <i>without</i> a backup, or taking S3 offline mid-backup, to see the 
   </div>
 </div>
 
+<div class="coach hidden" id="coach">
+  <div class="coachTitle">📖 What happens next</div>
+  <div id="coachText"></div>
+  <button id="coachBtn" class="primary">▶ OK — make it happen</button>
+</div>
 <div class="log" id="log"></div>
 <div class="legendrow">📝 = your app&#39;s data &nbsp;·&nbsp; 📸 = a kopia snapshot (latest wins on restore) &nbsp;·&nbsp;
 ReplicationSource does the <b>backups</b> · ReplicationDestination does the <b>restore</b> (think <b>D for Disaster recovery</b>) ·
@@ -176,7 +193,9 @@ function log(msg,cls){const d=$('log');const t=new Date().toLocaleTimeString();
   d.scrollTop=d.scrollHeight;}
 function center(el){const r=el.getBoundingClientRect(),s=$('stage').getBoundingClientRect();
   return {x:r.left-s.left+r.width/2, y:r.top-s.top+r.height/2};}
-function packet(fromEl,toEl,emoji,ms){return new Promise(res=>{
+async function packet(fromEl,toEl,emoji,ms,hint){
+  if(hint)await narrate(hint);
+  return new Promise(res=>{
   const p=document.createElement('div');p.className='packet';p.textContent=emoji;
   const a=center(fromEl),b=center(toEl);
   p.style.left=(a.x-8)+'px';p.style.top=(a.y-8)+'px';$('stage').appendChild(p);
@@ -184,11 +203,27 @@ function packet(fromEl,toEl,emoji,ms){return new Promise(res=>{
     {transform:`translate(${b.x-a.x}px,${b.y-a.y}px)`,opacity:1}],{duration:ms,easing:'ease-in-out'})
     .onfinish=()=>{p.remove();res();};});}
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let nextResolve=null, coachAnchor=null;
+function narrate(text,anchorId,btn){
+  if(!$('stepMode').checked) return sleep(900);
+  return new Promise(res=>{nextResolve=res;
+    if(anchorId&&$(anchorId)){coachAnchor=$(anchorId);coachAnchor.classList.add('pulse');}
+    $('coachText').innerHTML=text;
+    $('coachBtn').textContent='▶ '+(btn||'OK — make it happen');
+    $('coach').classList.remove('hidden');});}
+const proceed=(hint)=>narrate(hint||'Continue…',null,hint);
+$('coachBtn').onclick=()=>{$('coach').classList.add('hidden');
+  if(coachAnchor){coachAnchor.classList.remove('pulse');coachAnchor=null;}
+  const r=nextResolve;nextResolve=null;if(r)r();};
+function clearStep(){if(nextResolve){const r=nextResolve;nextResolve=null;r();}
+  $('coach').classList.add('hidden');if(coachAnchor){coachAnchor.classList.remove('pulse');coachAnchor=null;}}
 
 function pipeReset(){for(const i of[1,2,3,4,5])$('ps'+i).classList.remove('active','done');}
 async function pipeStep(n,msg,cls){
+  if(msg)await narrate(msg,'ps'+n);
   for(const i of[1,2,3,4,5]){$('ps'+i).classList.toggle('active',i===n);$('ps'+i).classList.toggle('done',i<n);}
-  if(msg)log(msg,cls||'op');await sleep(550);}
+  if(msg)log(msg,cls||'op');
+  if(!msg)await sleep(300);}
 
 function render(){
   $('gitApp').textContent=S.inGit?'✅ karakeep app manifests committed':'no app committed yet';
@@ -211,7 +246,7 @@ function render(){
   $('lhStatus').textContent=S.clusterUp?'provisioner ready · snapshots ok':'—';
   if(S.labeled&&S.appUp){$('rs').textContent='ReplicationSource · backs up hourly';$('rs').classList.add('own');
     $('rd').textContent='ReplicationDestination · restores (D = Disaster recovery)';$('rd').classList.add('own');
-    $('plumber').textContent='watching · /audit: already-matches';}
+    $('plumber').textContent='/audit: already-matches — protected & would restore';}
   else{$('rs').textContent='ReplicationSource (backup) —';$('rd').textContent='ReplicationDestination (restore) —';
     $('rs').classList.remove('own');$('rd').classList.remove('own');
     $('plumber').textContent=S.clusterUp?(S.appUp?'idle (PVC not opted in)':'watching (no PVCs)'):'—';}
@@ -222,6 +257,45 @@ function render(){
   $('bBackup').disabled=!S.labeled||!S.appUp||S.busy;
   $('bNuke').disabled=!S.clusterUp||S.busy;
   $('bRebuild').disabled=S.clusterUp||S.busy;
+  // guided mode: pulse the suggested next click when idle
+  for(const b of ['bDeploy','bAdd','bLabel','bBackup','bRemove','bNuke','bRebuild'])$(b).classList.remove('pulse');
+  if($('stepMode').checked && !S.busy){
+    let next=null;
+    if(!S.clusterUp) next='bRebuild';
+    else if(!S.inGit) next='bDeploy';
+    else if(!S.appUp) next='bDeploy';
+    else if(S.books===0) next='bAdd';
+    else if(!S.labeled) next='bLabel';
+    else if(S.snapshots.length===0) next='bBackup';
+    else if(S.snapshots.length===1 && S.appUp) next='bNuke';
+    if(next && !$(next).disabled)$(next).classList.add('pulse');
+  }
+}
+
+// the operator's actual decision tree, narrated (same questions /audit records)
+async function plumberThinks(exists){
+  const qs=[
+    ['① is the namespace gated? (pvc-plumber.io/managed-namespace)','✅ yes'],
+    ['② is the PVC marked backup-exempt?','no — proceed'],
+    ['③ are BOTH opt-in fuse labels present?','✅ enabled + manage-volsync'],
+    ['④ is the tier valid?','✅ hourly'],
+    ['⑤ do ReplicationSource + ReplicationDestination already exist?', exists?'✅ yes — and owned by me':'❌ no — nothing exists yet'],
+  ];
+  await narrate('🚰 pvc-plumber wakes up on the PVC event. Watch its status — it asks the <b>same five questions</b> for every PVC in the cluster (and records each verdict in /audit):','plumberBox');
+  for(const [q,a] of qs){
+    $('plumber').textContent=q;
+    log('🚰 '+q+' → '+a,'op');
+    await sleep($('stepMode').checked?900:600);
+  }
+  if(exists){
+    $('plumber').textContent='verdict: already-matches';
+    await narrate('All five answers check out and the objects already match the desired state. Verdict: <b>already-matches</b> — the operator does <b>nothing</b>. (Most reconciles end here. Boring is the point.)','plumberBox');
+    log('🚰 verdict: already-matches → no action needed','ok');
+  }else{
+    $('plumber').textContent='verdict: would-create → creating…';
+    await narrate('The PVC qualifies but no backup objects exist → verdict: <b>create</b>. The operator now writes the ReplicationSource (backup schedule) and ReplicationDestination (restore path — D for Disaster recovery), both stamped <code>managed-by=pvc-plumber</code> so it never touches anything it doesn&#39;t own.','plumberBox');
+    log('🚰 verdict: create → writing ReplicationSource + ReplicationDestination (managed-by=pvc-plumber)','ok');
+  }
 }
 
 // shared: bring the app up in the cluster (deploy or rebuild), incl. restore decision
@@ -232,9 +306,9 @@ async function appComesUp(viaRebuild){
   if(S.labeled){
     log('PVC carries dataSourceRef → volume populator engages before the app starts','op');
     log('🚰 wiring check: does the repo hold a snapshot for karakeep/data-pvc?','op');
-    await packet($('plumberBox'),$('s3'),'🔍',800);await sleep(200);
+    await packet($('plumberBox'),$('s3'),'🔍',1280,'The restore machinery asks the repository: <b>is there a snapshot for karakeep/data-pvc?</b> The 🔍 probe is about to fly to S3.');await sleep(200);
     if(S.snapshots.length){
-      await packet($('s3'),$('plumberBox'),'📸',650);
+      await packet($('s3'),$('plumberBox'),'📸',1040,'The repo found a snapshot. The 📸 answer comes back — this volume can be RESTORED.');
       log(`💾 repo answers: yes — latest snapshot holds ${S.snapshots[S.snapshots.length-1]} 📝 → RESTORE`,'ok');
       pipeReset();
       await pipeStep(2,'🚰 pvc-plumber re-created the RD (ReplicationDestination — D for Disaster recovery)');
@@ -242,16 +316,16 @@ async function appComesUp(viaRebuild){
       await pipeStep(4,'🛡️ API admission: MAP injects wait-for-rustfs into the restore Job too — same gate, both directions');
       await pipeStep(5);
       $('pvcStatus').textContent='populating from latest snapshot…';render();
-      await packet($('s3'),$('pvc'),'📦',1000);
+      await packet($('s3'),$('pvc'),'📦',1600,'The volume populator now pulls the snapshot into the brand-new PV — <b>before the app is allowed to start</b>.');
       S.books=S.snapshots[S.snapshots.length-1];
       log(`✅ restore complete — PVC Bound with ${S.books} 📝`,'ok');pipeReset();
       log('note the PV uid changed — this is NEW physical storage; the data came from the backup, not the old disks','t');
     }else{
-      await packet($('s3'),$('plumberBox'),'∅',650);
+      await packet($('s3'),$('plumberBox'),'∅',1040,'The repo has nothing for this identity. The ∅ answer comes back — this volume will start EMPTY.');
       log('💾 repo answers: no snapshots for this identity → PVC binds EMPTY — the day-one case','warn');
       log('real-world tip: ship a brand-new PVC WITHOUT the dataSourceRef first, let the first backup land, then add it — see the docs','t');
     }
-    log('🚰 pvc-plumber creates/verifies RS + RD (managed-by=pvc-plumber)','op');
+    await plumberThinks(false);
   }else{
     log(viaRebuild?'⚠️ PVC had no labels / no dataSourceRef in Git → it recreates EMPTY. The data is gone forever.':'PVC has no backup labels → binds empty, UNPROTECTED','warn');
   }
@@ -260,12 +334,12 @@ async function appComesUp(viaRebuild){
 
 $('bDeploy').onclick=async()=>{S.busy=true;S.inGit=true;render();
   log('📂 git commit: karakeep manifests added → ArgoCD syncs','info');
-  await packet($('git'),$('cluster'),'📜',800);
+  await packet($('git'),$('cluster'),'📜',1280,'You committed the app to Git. ArgoCD notices and syncs the manifests into the cluster.');
   await appComesUp(false);S.busy=false;render();};
 
 $('bRemove').onclick=async()=>{S.busy=true;S.inGit=false;render();
   log('📂 git rm: app deleted from Git → ArgoCD prunes the namespace','info');
-  await packet($('git'),$('cluster'),'✂️',800);
+  await packet($('git'),$('cluster'),'✂️',1280,'You deleted the app from Git. ArgoCD prunes everything it created — pod, PVC, the lot.');
   const had=S.books;S.appUp=false;S.books=0;S.uid='—';S.labeled=S.labeled; // labels live in Git history of the PVC manifest — gone with the app
   log(`pruned: pod, PVC, PV, RS/RD — gone (live data: ${had} 📝)`,'warn');
   log(`💾 but the repo keeps its ${S.snapshots.length} snapshot(s). Re-deploy the app and the data comes back.`,'info');
@@ -276,8 +350,7 @@ $('bAdd').onclick=()=>{S.books++;log(`the app wrote data — PVC now holds ${S.b
 $('bLabel').onclick=async()=>{S.busy=true;S.labeled=true;render();
   if(S.appUp){
     log('Git: PVC gains pvc-plumber labels + dataSourceRef → data-pvc-dst','info');
-    $('plumberBox').classList.add('flash');await sleep(700);
-    log('🚰 pvc-plumber saw the labels → created the ReplicationSource (RS = the backup schedule) + ReplicationDestination (RD = the restore path — D as in Disaster recovery)','op');
+    await plumberThinks(false);
     log("that's the entire setup. backups now run hourly.",'ok');
   }else{
     log('Git: the app\'s PVC manifest gains labels + dataSourceRef — committed BEFORE first deploy','info');
@@ -286,8 +359,8 @@ $('bLabel').onclick=async()=>{S.busy=true;S.labeled=true;render();
   S.busy=false;render();};
 
 $('bBackup').onclick=async()=>{S.busy=true;render();pipeReset();
-  await pipeStep(1,'🏷️ the PVC labels declared intent — that was your only manual act','info');
-  await pipeStep(2,'🚰 pvc-plumber long ago turned those labels into the RS (schedule) — nothing to do now, the wiring already exists');
+  await pipeStep(1,'📂 it all starts in Git: the PVC manifest with its labels, applied by ArgoCD. That commit was your only manual act — everything after this box is machinery.','info');
+  await pipeStep(2,'🚰 pvc-plumber already ran its five questions for this PVC (namespace gated? exempt? opted in? tier valid? objects exist?) and the verdict is <b>already-matches</b> — the wiring exists, so it has nothing to do. The schedule it wrote earlier is about to fire.');
   await pipeStep(3,'🚚 VolSync: the RS schedule is due → creates a mover Job');
   await pipeStep(4,'🛡️ API server admission: the MutatingAdmissionPolicy intercepts the Job → injects the wait-for-rustfs init container');
   await pipeStep(5);
@@ -297,8 +370,8 @@ $('bBackup').onclick=async()=>{S.busy=true;render();pipeReset();
     log('⛔ S3 unreachable → the injected gate REFUSES to run the mover. No garbage written. Retry with backoff.','err');
     pipeReset();S.busy=false;render();return;}
   $('moverStatus').textContent='kopia: snapshot → encrypt → dedup → upload';
-  await packet($('pvc'),$('mover'),'📦',700);
-  await packet($('mover'),$('s3'),'🔐',900);
+  await packet($('pvc'),$('mover'),'📦',1120,'Kopia takes a point-in-time snapshot of the volume and hands it to the mover.');
+  await packet($('mover'),$('s3'),'🔐',1440,'The mover encrypts + dedups the data and uploads it to the S3 repository.');
   S.snapshots.push(S.books);
   log(`✅ backup Successful — snapshot stored with ${S.books} 📝 (encrypted, deduped)`,'ok');
   $('moverStatus').textContent='idle — labels are the only thing a human touches; every arrow is automatic';pipeReset();S.busy=false;render();};
@@ -314,6 +387,7 @@ $('bNuke').onclick=async()=>{S.busy=true;render();
   $('cluster').classList.add('gone');$('mover').classList.add('gone');
   S.clusterUp=false;const lost=S.books;S.books=0;const oldUid=S.uid;S.uid='—';S.appUp=false;
   log(`cluster state destroyed: pods, PVCs, controllers — gone (live data: ${lost} 📝 wiped; PV ${oldUid} and replicas erased)`,'err');
+  await narrate('The cluster is gone — pods, volumes, controllers, all of it. But look right and left: <b>Git and the S3 repo are untouched</b>. Those are the pets.');
   log('📂 Git: untouched.  💾 S3 repo: untouched. These are the pets.','info');
   S.busy=false;render();};
 
@@ -323,18 +397,20 @@ $('bRebuild').onclick=async()=>{S.busy=true;render();
   $('cluster').classList.remove('gone');$('mover').classList.remove('gone');
   S.clusterUp=true;
   log('🐮 Longhorn + CSI come up first (sync wave 1) — provisioner and snapshot support ready','info');
+  await narrate('Sync waves bring infrastructure up in order: storage first, then the backup operator — all before any app PVC exists.');
   log('🚰 pvc-plumber comes up next (wave 2), MAP gate re-registers','op');
   await sleep(400);render();
-  if(S.inGit){await packet($('git'),$('cluster'),'📜',800);await appComesUp(true);}
+  if(S.inGit){await packet($('git'),$('cluster'),'📜',1280,'Git still holds the app manifests, so ArgoCD redeploys them into the fresh cluster.');await appComesUp(true);}
   else{log('Git holds no app manifests — nothing to recreate. (Deploy the app to continue.)','warn');}
   S.busy=false;render();};
 
-$('bReset').onclick=()=>{Object.assign(S,{inGit:false,appUp:false,books:0,labeled:false,snapshots:[],s3up:true,clusterUp:true,busy:false,uid:'—'});
+$('bReset').onclick=()=>{clearStep();Object.assign(S,{inGit:false,appUp:false,books:0,labeled:false,snapshots:[],s3up:true,clusterUp:true,busy:false,uid:'—'});
   $('cluster').classList.remove('gone');$('mover').classList.remove('gone');
   $('moverStatus').textContent='no job running';$('log').innerHTML='';boot();render();};
 
 function boot(){log('fresh cluster, empty Git. start by deploying the app.','info');
   log('suggested play: ➕ deploy → 📝 add data → 🏷️ labels → 🕙 backup → 🗑️ remove app → ➕ re-deploy (the oops flow) → then 💥 nuke → 📂 rebuild.','t');}
+$('stepMode').onchange=()=>render();
 boot();render();
 })();
 </script>
