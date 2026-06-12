@@ -62,5 +62,8 @@ spec:
         # dirtied by the aborted first attempt. Repos themselves are safe on
         # the restored gitea-shared-storage PVC. NOTE: until RustFS's multipart
         # bug is fixed, v5 base backups will be equally unreadable on restore.
+        # v6 opened 2026-06-12 after Gitea was rebuilt again. Reusing v5 made
+        # barman-cloud-check-wal-archive reject the new cluster because that
+        # archive was already non-empty.
         # DO NOT change this value without bumping lineage in lockstep.
-        serverName: gitea-database-v5
+        serverName: gitea-database-v6

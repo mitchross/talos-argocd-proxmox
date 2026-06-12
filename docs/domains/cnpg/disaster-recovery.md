@@ -126,6 +126,11 @@ New day-zero app, no data to restore:
 4. `git add / commit / push`.
 5. ArgoCD syncs, CNPG operator creates Cluster with `bootstrap.initdb`, Postgres comes up empty, scheduled backups start writing to `<db>-database-v1/` on S3.
 
+If this is a rebuild of a database whose S3 path already exists, do not reuse
+its previous `serverName`. Advance to a clean lineage and move the recovery
+overlay to the superseded lineage in the same commit. Otherwise Barman rejects
+WAL archiving with `Expected empty archive`.
+
 ---
 
 ## Runbook: restore from Barman (recovery)

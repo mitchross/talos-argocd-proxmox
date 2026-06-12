@@ -55,7 +55,9 @@ spec:
         #        rebuild; fresh initdb — v3 unrestorable, RustFS multipart bug).
         #   v5 — opened 2026-06-11 for the RE-nuke (SPDK cpu-mask validation
         #        run); v4 possibly dirtied by the aborted first attempt.
+        #   v6 — opened 2026-06-12 after another initdb rebuild. Reusing v5
+        #        failed Barman's required empty-archive check.
         # DO NOT change this value without bumping lineage in lockstep.
         # The companion overlays/recovery/bootstrap-patch.yaml MUST be
         # updated in the SAME commit (read FROM v(N-1) → write TO vN).
-        serverName: temporal-database-v5
+        serverName: temporal-database-v6

@@ -56,10 +56,10 @@ The `serverName` values below live in each DB's `base/cluster.yaml` and
 
 | Database  | Current write target (base)  | Prior lineage (recovery source) |
 |-----------|------------------------------|---------------------------------|
-| gitea     | `gitea-database-v5`          | `gitea-database-v4`             |
-| immich    | `immich-database-v3`         | `immich-database-v2`            |
-| paperless | `paperless-database-v3`      | `paperless-database-v2`         |
-| temporal  | `temporal-database-v5`       | `temporal-database-v4`          |
+| gitea     | `gitea-database-v6`          | `gitea-database-v5`             |
+| immich    | `immich-database-v4`         | `immich-database-v3`            |
+| paperless | `paperless-database-v4`      | `paperless-database-v3`         |
+| temporal  | `temporal-database-v6`       | `temporal-database-v5`          |
 
 All four bumped TWICE on 2026-06-11: once for the Longhorn V2 rebuild
 nuke, and again for the same-day re-nuke (SPDK cpu-mask validation run)

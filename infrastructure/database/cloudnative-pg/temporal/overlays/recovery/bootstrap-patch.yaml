@@ -37,5 +37,7 @@ spec:
           #   v3 — written 2026-05-08 → 2026-06-11; unrestorable today
           #        (RustFS multipart bug).
           #   v4 — short-lived lineage of the aborted first 2026-06-11
-          #        rebuild attempt; kept at N-1 by convention.
-          serverName: temporal-database-v4
+          #        rebuild attempt.
+          #   v5 — lineage superseded by the 2026-06-12 rebuild; kept at N-1
+          #        relative to the active v6 write target.
+          serverName: temporal-database-v5
