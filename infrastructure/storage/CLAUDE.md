@@ -4,7 +4,7 @@
 
 | Class | Use Case |
 |-------|----------|
-| `longhorn` | Distributed block storage — **cluster default**, served by the **V1 data engine** (chart default) with data as files under `/var/lib/longhorn` on each storage node's single 800G disk. **V2/SPDK was tried and retired 2026-06-12** — it failed under full-DR restore load (open Longhorn 1.12 bugs #13315/#13314); see `docs/domains/storage/longhorn-v2-retirement.md` outcome note and the README storm playbook. Do not re-enable V2 without a fixed Longhorn release + a passed DR drill. |
+| `longhorn` | Distributed block storage — **cluster default**, served by the **V1 data engine** (chart default) with data as files under `/var/lib/longhorn` on each storage node's single 800G disk. **V2/SPDK was tried and retired 2026-06-12** — it failed under full-DR restore load (open Longhorn 1.12 bugs #13315/#13314); forensics in git history; short version in `docs/disaster-recovery.md`. Do not re-enable V2 without a fixed Longhorn release + a passed DR drill. |
 | `truenas-nfs` | Official TrueNAS CSI dynamic NFS (canary-gated, non-default) |
 | `nfs-comfyui-10g` | NFS 10G for ComfyUI models |
 | `nfs-llama-cpp-10g` | NFS 10G for LLM models |

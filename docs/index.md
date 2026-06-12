@@ -20,7 +20,7 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
 - **OS**: Talos Linux on Proxmox VMs, provisioned via Omni / Sidero
 - **CNI**: Cilium with Gateway API + LoadBalancer
 - **GitOps**: ArgoCD (self-managing) + ApplicationSets for auto-discovery
-- **Storage**: Longhorn (V1 engine, 2× replicas) — [V2 was tried and retired](domains/storage/longhorn-v2-retirement.md)
+- **Storage**: Longhorn (V1 engine, 2× replicas)
 - **Backup**: VolSync + Kopia → RustFS S3, wired by [pvc-plumber](https://github.com/mitchross/pvc-plumber) from PVC labels
 - **Database**: CloudNativePG (Postgres) with Barman backups to S3
 - **Secrets**: 1Password Connect + External Secrets Operator
@@ -35,7 +35,11 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
    Why it exists, plain-English explanation, the label contract, every
    diagram, day-2 operations (add/exempt/verify/drill), troubleshooting,
    adapting it to your cluster, honest limitations. *Send people this link.*
-2. **[disaster-recovery.md](disaster-recovery.md)** — the full-cluster
+   Visual learner? **[🎮 the interactive simulator](simulator.html)** lets you
+   nuke a toy cluster and watch the restore.
+2. **[backup-repository-setup.md](backup-repository-setup.md)** — the one-time
+   backend setup: S3 box, bucket, credentials, fan-out, the fail-closed gate.
+3. **[disaster-recovery.md](disaster-recovery.md)** — the full-cluster
    destroy/rebuild runbook: pre-nuke checklist, calibrated restore-wave
    expectations, proof history, the restore canary.
 
@@ -44,7 +48,7 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
 - **Databases**: [CNPG disaster recovery](domains/cnpg/disaster-recovery.md) · [CNPG explained](domains/cnpg/explained.md)
 - **GitOps / ArgoCD**: [argocd](domains/argocd/argocd.md) · [entrypoints & waves](domains/argocd/entrypoints.md)
 - **Networking**: [topology](domains/networking/topology.md) · [policy](domains/networking/policy.md)
-- **Storage**: [Longhorn V2 retirement forensics](domains/storage/longhorn-v2-retirement.md) · [kopia maintenance](domains/storage/kopia-maintenance-plan.md) · [RWO/RWX model & sizing](domains/storage/storage-model-rwo-rwx-and-sizing.md) · [RustFS credentials](domains/rustfs/credential-runbook.md) · [future: tiered storage](domains/storage/architecture-future.md)
+- **Storage**: [kopia maintenance](domains/storage/kopia-maintenance-plan.md) · [RWO/RWX model & sizing](domains/storage/storage-model-rwo-rwx-and-sizing.md) · [RustFS credentials](domains/rustfs/credential-runbook.md) · [future: tiered storage](domains/storage/architecture-future.md)
 - **Multicluster**: [PRD](domains/multicluster/prd.md) · [handoff notes](domains/multicluster/handoff-notes.md)
 - **Observability**: [radar-ng](domains/observability/radar-ng.md)
 - **AI / GPU**: [model catalog](domains/ai-gpu/model-catalog.md) · [3090 LLM optimization](domains/ai-gpu/3090-llm-optimization.md)

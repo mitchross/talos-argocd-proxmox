@@ -49,7 +49,7 @@ optional app that syncs after Wave 5** (e.g. `keda-observability` at Wave 6; pvc
 removed from its Wave-2 core). We deliberately do **not** install Prometheus Operator CRDs early —
 `SkipDryRunOnMissingResource` is only an escape hatch / observability-app option, never a core fix.
 `cert-manager` is at **Wave 1** (not 4) so cert-dependent apps (cnpg-barman-plugin, Wave 3) can start.
-Full detail: [cluster DR nuke restore runbook](../../docs/disaster-recovery.md).
+Full detail: [cluster DR nuke restore runbook](../../disaster-recovery.md).
 
 ## Notes
 

@@ -53,5 +53,5 @@ The rebuild validated a design rule: deleting Prometheus must not prevent the co
 ## Related Docs
 
 - [ArgoCD entrypoints](entrypoints.md)
-- [cluster DR nuke restore runbook](../../docs/disaster-recovery.md)
+- [cluster DR nuke restore runbook](../../disaster-recovery.md)
 - [docs index](../../index.md)

@@ -8,7 +8,7 @@
 >
 > **2026-06 update — the case for this idea got stronger.** The Longhorn V2
 > experiment failed under full-DR restore load (see
-> [longhorn-v2-retirement.md](longhorn-v2-retirement.md)), and even on V1 a
+> [disaster-recovery.md](../../disaster-recovery.md)), and even on V1 a
 > mass restore saturates the shared homelab I/O path. Both incidents point
 > the same way this doc does: most PVCs don't need live distributed block
 > replication — they need a local volume plus the (now triple-proven)

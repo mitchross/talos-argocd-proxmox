@@ -179,14 +179,14 @@ Detailed instructions load automatically when working in these directories:
 2. **[docs/storage-architecture.md](docs/storage-architecture.md)** — the backup/restore architecture: label contract, who-does-what, restore-on-recreate, MAP fail-closed gate, operator decision tree.
 3. **[docs/storage-architecture.md](docs/storage-architecture.md)** — day-2 ops: add a backup, exempt a PVC, the 5 debug questions, `/audit` verdicts, failure-mode table, drill procedure.
 4. **[docs/disaster-recovery.md](docs/disaster-recovery.md)** — full-cluster destroy/rebuild runbook, pre-nuke checklist, restore-wave expectations, acceptance semantics, restore canary. **DR source of truth.**
-5. **[docs/domains/](docs/index.md#%EF%B8%8F-domains)** — per-domain docs (CNPG, ArgoCD, networking, storage deep-dives).
+5. **[docs/domains/](docs/index.md)** — per-domain docs (CNPG, ArgoCD, networking, storage deep-dives).
 
 > ⚠️ **Agent guardrails when reading docs:**
 > - **Do NOT resurrect Kyverno** — it was removed from the backup path (no policies, no CRDs, no webhooks).
 > - **Do NOT treat v5 / admission / strict-mode docs as shipped** — v4.0.1 is a permissive reconciler with no admission webhook.
 > - **Do NOT generic-migrate CNPG, PostHog, or Redis PVCs** — CNPG is Barman-native; PostHog and Redis are backup-exempt.
 > - **Do NOT make observability foundational** — core apps bootstrap without Prometheus; do not resurrect an early Prometheus Operator CRD app.
-> - **Do NOT re-enable the Longhorn V2 engine** — tried and retired 2026-06-12 (open bugs #13315/#13314); see `docs/domains/storage/longhorn-v2-retirement.md`.
+> - **Do NOT re-enable the Longhorn V2 engine** — tried and retired 2026-06-12 (open Longhorn bugs #13315/#13314: interrupted rebuilds corrupt replica metadata). Forensics in git history; the DR doc carries the short version.
 > - Historical campaign/incident docs were pruned 2026-06-13 (git history retains them) — do not hunt for `docs/archive/`, `docs/research/`, `docs/plans/`, or `pvc-plumber-v4-*`/`v5-*` files.
 
 - **[docs/domains/cnpg/disaster-recovery.md](docs/domains/cnpg/disaster-recovery.md)** - CNPG database DR procedures (separate system: Barman → S3)
