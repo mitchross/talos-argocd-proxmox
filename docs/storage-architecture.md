@@ -230,6 +230,28 @@ flowchart TD
 > `dataSourceRef` for a volume to be DR-complete. The operator's `/audit`
 > endpoint and a CI check both watch for this gap.
 
+**The handoff chain — who triggers whom.** The same five-stage relay runs
+for every backup, and (via the ReplicationDestination) every restore:
+
+```mermaid
+flowchart LR
+    G["📂 Git commit<br/>PVC + labels via ArgoCD<br/><i>your only input</i>"]
+    P["🚰 pvc-plumber<br/>writes the backup &<br/>restore configs"]
+    V["🚚 VolSync<br/>schedule due →<br/>creates a mover Job"]
+    M["🛡️ API admission<br/>MAP injects<br/>wait-for-rustfs"]
+    K["🔐 kopia mover<br/>moves the bytes ↔ S3"]
+    G --> P --> V --> M --> K
+
+    classDef git fill:#fef3c7,stroke:#92400e,color:#451a03;
+    classDef own fill:#dbeafe,stroke:#2563eb,color:#1e3a8a;
+    classDef data fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    classDef admit fill:#fee2e2,stroke:#b42318,color:#5f130d;
+    class G git; class P own; class V,K data; class M admit;
+```
+
+The Git commit is the only thing a human touches — every arrow after it is
+automatic. ([Watch it run, one click at a time, in the simulator.](simulator.html))
+
 ---
 
 ## If this, then that
