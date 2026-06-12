@@ -72,5 +72,7 @@ spec:
         #        (ContinuousArchiving went True before the re-nuke). Abandoned.
         #   v3 — opened 2026-06-11 for the RE-nuke (SPDK cpu-mask validation
         #        run); fresh initdb on a clean prefix so WAL archiving works.
+        #   v4 — opened 2026-06-12 after another initdb rebuild. Reusing v3
+        #        failed Barman's required empty-archive check.
         # DO NOT change this value without bumping lineage in lockstep.
-        serverName: paperless-database-v3
+        serverName: paperless-database-v4
