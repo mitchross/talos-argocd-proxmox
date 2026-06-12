@@ -243,7 +243,7 @@ string.
 > 2026-06-10). A `dataSourceRef` alone is no guarantee of restored content.
 > Preferred bootstrap: pre-create the PVC without `dataSourceRef`, seed the
 > first backup, let the first delete→recreate install it. See
-> `docs/restore-canary.md` "First-deploy bootstrap".
+> `docs/disaster-recovery.md` "First-deploy bootstrap".
 
 Verify after applying:
 ```
@@ -318,7 +318,7 @@ components:
 | **GPU workload** | `my-apps/ai/comfyui/` |
 | **Complex app with storage** | `my-apps/media/immich/` |
 | **PVC with automatic backup** | `my-apps/home/project-zomboid/pvc.yaml` (see `zomboid-data`) |
-| **Restore canary (DR drill)** | `my-apps/system/restore-canary/` + `docs/restore-canary.md` |
+| **Restore canary (DR drill)** | `my-apps/system/restore-canary/` + `docs/disaster-recovery.md` |
 | **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
 | **Secret management** | Any app with `externalsecret.yaml` |
 | **Job with ArgoCD hooks** | `my-apps/development/posthog/core/jobs.yaml` |

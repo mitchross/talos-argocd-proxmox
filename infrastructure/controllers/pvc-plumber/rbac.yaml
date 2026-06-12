@@ -1,6 +1,6 @@
 # RBAC for pvc-plumber v4 — cluster-wide read-only audit-reader role
 # (used in all modes; operator currently runs PERMISSIVE, Phase 6 of
-# docs/pvc-plumber-v4-prd.md). Namespace-scoped write RBAC lives in
+# docs/storage-architecture.md). Namespace-scoped write RBAC lives in
 # rbac-volsync-writer.yaml.
 #
 # Strictly read-only. This ClusterRole also authorizes rc7's cluster-wide

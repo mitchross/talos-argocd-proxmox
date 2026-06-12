@@ -1,12 +1,19 @@
 # Future storage architecture: tiered CSI + VolSync restore-based DR
 
-> **Status: FUTURE IDEA — not implemented, do not act on this now.** This is a
-> direction to revisit **after the current pvc-plumber v4 migration campaign
-> stabilizes**. No storage classes, app PVCs, or CSI drivers should change based
-> on this document yet. Current live model is unchanged: Longhorn is the default
-> CSI; backups are VolSync→Kopia→S3 (RustFS) wired per-PVC and increasingly
-> managed by pvc-plumber v4. See
-> [pvc-plumber-v4-migration-readiness.md](../../pvc-plumber-v4-migration-readiness.md).
+> **Status: FUTURE IDEA — not implemented, do not act on this now.** No
+> storage classes, app PVCs, or CSI drivers should change based on this
+> document yet. Current live model: Longhorn (V1 engine) is the default CSI;
+> backups are VolSync→Kopia→S3 (RustFS), fully managed by pvc-plumber from
+> PVC labels. See [storage-architecture.md](../../storage-architecture.md).
+>
+> **2026-06 update — the case for this idea got stronger.** The Longhorn V2
+> experiment failed under full-DR restore load (see
+> [longhorn-v2-retirement.md](longhorn-v2-retirement.md)), and even on V1 a
+> mass restore saturates the shared homelab I/O path. Both incidents point
+> the same way this doc does: most PVCs don't need live distributed block
+> replication — they need a local volume plus the (now triple-proven)
+> restore-based DR. Revisit when the appetite for another storage migration
+> returns.
 
 ## Motivating incident (2026-05-31)
 
@@ -149,6 +156,6 @@ Then define explicit storage classes by intent:
 - No CSI driver install/changes.
 - No storage class changes.
 - No app PVC migrations off Longhorn.
-- No change to the in-flight pvc-plumber v4 campaign (finish that first).
+- No change to the pvc-plumber label contract — it is CSI-agnostic by design.
 
 Revisit after the pvc-plumber migration campaign stabilizes.

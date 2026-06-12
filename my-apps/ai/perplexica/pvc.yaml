@@ -20,7 +20,7 @@ metadata:
     # ignoreDifferences rule can't help because the SSA dry-run runs BEFORE
     # ignore masking. Forcing client-side diff for this one PVC sidesteps
     # the dry-run; the global ignoreDifferences then masks the dataSource
-    # drift normally. See docs/volsync-storage-recovery.md.
+    # drift normally. See docs/disaster-recovery.md.
     argocd.argoproj.io/compare-options: ServerSideDiff=false
 spec:
   accessModes:

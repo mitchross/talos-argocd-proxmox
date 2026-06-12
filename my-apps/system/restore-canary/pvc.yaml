@@ -18,7 +18,7 @@
 # before any delete. This canary was bootstrapped by pre-creating the PVC
 # WITHOUT the dataSourceRef (instant deterministic bind), seeding the
 # first backup, then letting the first drill install the ref via
-# delete -> Git recreate. Full procedure: docs/restore-canary.md.
+# delete -> Git recreate. Full procedure: docs/disaster-recovery.md.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

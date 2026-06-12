@@ -14,7 +14,7 @@ resources:
   - core-dependencies/snapshot-controller-app.yaml
   - core-dependencies/volsync-app.yaml
   # pvc-plumber: decommissioned 2026-05-21, re-introduced 2026-05-22 in
-  # audit-mode-only form (Phase 3 of docs/pvc-plumber-v4-prd.md). The Argo
+  # audit-mode-only form (Phase 3 of docs/storage-architecture.md). The Argo
   # Application's syncPolicy.automated is INTENTIONALLY DISABLED until the
   # operator image SHA in deployment.yaml is replaced with a real digest;
   # see infrastructure/controllers/pvc-plumber/README.md for the

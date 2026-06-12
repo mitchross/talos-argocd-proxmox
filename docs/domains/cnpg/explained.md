@@ -303,5 +303,5 @@ Yes — CNPG supports `bootstrap.recovery` with a different `metadata.name`. The
 
 - [docs/domains/cnpg/disaster-recovery.md](disaster-recovery.md) — the technical runbook (this doc's reference)
 - [docs/plans/cnpg-plugin-migration.md](../../plans/cnpg-plugin-migration.md) — why this cluster uses the Barman Cloud Plugin instead of the deprecated `spec.backup.barmanObjectStore`
-- [docs/volsync-storage-recovery.md](../../volsync-storage-recovery.md) — the OTHER backup system (PVC-level, kopia, NEVER use on CNPG PVCs)
+- [docs/disaster-recovery.md](../../docs/disaster-recovery.md) — the OTHER backup system (PVC-level, kopia, NEVER use on CNPG PVCs)
 - [docs/pvc-plumber-explained.md](../../archive/pvc-plumber/presentations/pvc-plumber-explained.md) — pvc-plumber walkthrough for comparison

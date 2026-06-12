@@ -1,108 +1,58 @@
 # talos-argocd-proxmox
 
-A production-grade GitOps Kubernetes cluster running on **Talos OS** with
-**self-managing ArgoCD**. ArgoCD manages its own configuration and discovers
-applications by directory structure — no manual `Application` manifests
-needed.
+A production-grade GitOps Kubernetes cluster on **Talos Linux** with
+**self-managing ArgoCD**: applications are discovered from directory
+structure, storage is backed up declaratively via PVC labels, and the whole
+cluster can be destroyed and rebuilt **unattended** — restores included.
 
-> Source repository: [`mitchross/talos-argocd-proxmox`](https://github.com/mitchross/talos-argocd-proxmox)
->
-> This site is the rendered version of `docs/` from that repo. Pages link
-> back to source files (✏️ edit icon, top right) for one-click PRs.
+> Source: [`mitchross/talos-argocd-proxmox`](https://github.com/mitchross/talos-argocd-proxmox)
+> · This site renders `docs/` from that repo.
 
-> [!IMPORTANT]
-> **Current pvc-plumber state:**
-> - v4.0.1 live (permissive controller — **not** an admission gate). The
->   only admission-layer protection in the backup path is the separate
->   `volsync-mover-backend-availability` MutatingAdmissionPolicy
->   (`infrastructure/storage/volsync-backup-cluster/`, Wave 2), which
->   gates mover Jobs on RustFS reachability.
-> - **Counts are dynamic — verify against the live `/audit`, not this page.**
->   The dated acceptance result: 2026-06-02 full nuke/rebuild passed with
->   24/24 managed PVCs restored (18 namespaces at the time).
-> - "`/audit` clean" means BOTH: managed contract clean (`already-matches`,
->   `would-*=0`, `write-gate-missing=0`) **and** `needs-human-review=0`.
->   See [audit acceptance semantics](cluster-dr-nuke-restore-runbook.md#audit-acceptance-semantics).
-> - Exemption contract: bare label `backup-exempt: "true"` **plus** the
->   fully-qualified annotation `storage.vanillax.dev/backup-exempt-reason`
->   (the bare reason key parks the PVC in `needs-human-review`).
-> - Kyverno **not** in the backup path
-> - CNPG native / Barman → S3
-> - PostHog backup-exempt · redis-instance backup-exempt
-> - migration campaign **closed** — no remaining candidates
+> [!TIP]
+> **The headline claim, with receipts:** this cluster was fully destroyed and
+> rebuilt twice in 36 hours (2026-06-12/13 — once unplanned, once planned).
+> Both times, every protected volume restored automatically from the
+> off-cluster Kopia repository. The second rebuild took ~75 minutes with
+> **zero manual storage steps**. See [disaster-recovery.md](disaster-recovery.md#proof-history).
 
 ## Stack
 
 - **OS**: Talos Linux on Proxmox VMs, provisioned via Omni / Sidero
 - **CNI**: Cilium with Gateway API + LoadBalancer
 - **GitOps**: ArgoCD (self-managing) + ApplicationSets for auto-discovery
-- **Storage**: Longhorn (RWO block) + TrueNAS/RustFS (Kopia repository on S3)
-- **Backup**: VolSync + Kopia, wired by [pvc-plumber](https://github.com/mitchross/pvc-plumber) v4 (a permissive PVC-watching controller)
-- **Database**: CloudNativePG (Postgres) with Barman backups to RustFS S3
+- **Storage**: Longhorn (V1 engine, 2× replicas) — [V2 was tried and retired](domains/storage/longhorn-v2-retirement.md)
+- **Backup**: VolSync + Kopia → RustFS S3, wired by [pvc-plumber](https://github.com/mitchross/pvc-plumber) from PVC labels
+- **Database**: CloudNativePG (Postgres) with Barman backups to S3
 - **Secrets**: 1Password Connect + External Secrets Operator
-- **Observability**: kube-prometheus-stack, Loki, Tempo, OpenTelemetry, Grafana
-- **AI**: llama-cpp (Qwen3.6-35B-A3B multimodal) on dedicated GPU
+- **Observability**: kube-prometheus-stack, Loki, Tempo, OpenTelemetry
+- **AI**: llama-cpp (Qwen3.6-35B multimodal) + ComfyUI on dedicated GPUs
 
 ## Documentation
 
-### 🚀 Start here (pvc-plumber)
+### 🚰 Storage & backups (start here)
 
-1. **[pvc-plumber-start-here](pvc-plumber-start-here.md)** — visual intro: what it is, the architecture, what it does NOT do, v4-vs-v5.
-2. **[pvc-plumber-cheatsheet](pvc-plumber-cheatsheet.md)** — one-page poster.
-3. **[pvc-plumber-dynamic-workflow](pvc-plumber-dynamic-workflow.md)** — how the operator thinks (decision trees, `/audit` actions).
-4. **[talos-argocd-pvc-plumber-integration](talos-argocd-pvc-plumber-integration.md)** — how this repo uses it (add-a-PVC checklist, labels).
+1. **[storage-architecture.md](storage-architecture.md)** — **the one doc.**
+   Why it exists, plain-English explanation, the label contract, every
+   diagram, day-2 operations (add/exempt/verify/drill), troubleshooting,
+   adapting it to your cluster, honest limitations. *Send people this link.*
+2. **[disaster-recovery.md](disaster-recovery.md)** — the full-cluster
+   destroy/rebuild runbook: pre-nuke checklist, calibrated restore-wave
+   expectations, proof history, the restore canary.
 
-### 🛠️ Operate the platform
+### 🗃️ Domains
 
-- **[volsync-storage-recovery](volsync-storage-recovery.md)** — PVC backup/restore single source of truth + restore-drill runbook.
-- **[kopia-maintenance-plan](domains/storage/kopia-maintenance-plan.md)** — repository maintenance (healthy; manual full not needed).
-- **[storage-architecture-future](domains/storage/architecture-future.md)** — Longhorn-vs-restore-DR tiering (future idea).
-- **[storage-model-rwo-rwx-and-sizing](domains/storage/storage-model-rwo-rwx-and-sizing.md)** — RWO/RWX decision rule, truenas-csi vs static drivers, per-cluster class map, BigTank sizing.
-- **[pvc-plumber-v4-cutover](pvc-plumber-v4-cutover.md)** — day-of cutover runbook (label model, ownership, rollback).
-- **[pvc-plumber-v4-migration-readiness](pvc-plumber-v4-migration-readiness.md)** — per-PVC migration status (campaign closed).
-- **[cluster-dr-nuke-restore-runbook](cluster-dr-nuke-restore-runbook.md)** — full cluster rebuild/restore runbook.
-
-### Bootstrap rules from the full nuke
-
-- CRDs first, controllers/apps second, CRs third.
-- Observability is optional. Core apps must bootstrap without Prometheus.
-- Do not install Prometheus Operator CRDs early to satisfy bootstrap apps.
-- `kube-prometheus-stack` remains the sole owner of `monitoring.coreos.com` CRDs.
-
-### 📐 Design / PRD
-
-- **[pvc-plumber-v4-prd](pvc-plumber-v4-prd.md)** — locked design + **§0 canonical status** (shipped vs design).
-- **[pvc-plumber-v4-roadmap](pvc-plumber-v4-roadmap.md)** — post-PRD backlog.
-- **[pvc-plumber-v5-kopia-native-future](pvc-plumber-v5-kopia-native-future.md)** — v5 fork (VolSync-strict vs Kopia-native) — **parked, not built.**
-- **[multicluster-prd](domains/multicluster/prd.md)** — multicluster design.
-
-### 🗃️ Other domains
-
-- **Databases**: [cnpg-disaster-recovery](domains/cnpg/disaster-recovery.md) · [cnpg-explained](domains/cnpg/explained.md)
-- **GitOps / ArgoCD**: [argocd](domains/argocd/argocd.md) · [argocd-entrypoints](domains/argocd/entrypoints.md)
-- **Networking**: [network-topology](domains/networking/topology.md) · [network-policy](domains/networking/policy.md)
-- **Storage**: [rustfs-credential-runbook](domains/rustfs/credential-runbook.md) · [kopia-maintenance-plan](domains/storage/kopia-maintenance-plan.md) · [storage-architecture-future](domains/storage/architecture-future.md)
-- **Multicluster**: [prd](domains/multicluster/prd.md) · [handoff notes](domains/multicluster/handoff-notes.md)
-- **Observability**: [radar-ng-observability](domains/observability/radar-ng.md)
-- **AI / GPU**: [ai-model-catalog](domains/ai-gpu/model-catalog.md) · [3090-llm-optimization](domains/ai-gpu/3090-llm-optimization.md)
-
-### 🗄️ Archive (historical only)
-
-Historical migration, incident, design, and presentation docs live under
-**[`archive/`](archive/README.md)** — preserved for context, **not** current runbooks.
-Older research and plans remain under `research/` and `plans/` (also historical).
-
-## How to read these docs
-
-- Start with the pvc-plumber visual docs for the current operator model.
-- Use the storage recovery page for application PVC operations.
-- Use the CNPG DR page only for CNPG recovery.
-- Use the nuke runbook only for full rebuild planning.
-- Treat `archive/`, `research/`, and `plans/` as historical context.
+- **Databases**: [CNPG disaster recovery](domains/cnpg/disaster-recovery.md) · [CNPG explained](domains/cnpg/explained.md)
+- **GitOps / ArgoCD**: [argocd](domains/argocd/argocd.md) · [entrypoints & waves](domains/argocd/entrypoints.md)
+- **Networking**: [topology](domains/networking/topology.md) · [policy](domains/networking/policy.md)
+- **Storage**: [Longhorn V2 retirement forensics](domains/storage/longhorn-v2-retirement.md) · [kopia maintenance](domains/storage/kopia-maintenance-plan.md) · [RWO/RWX model & sizing](domains/storage/storage-model-rwo-rwx-and-sizing.md) · [RustFS credentials](domains/rustfs/credential-runbook.md) · [future: tiered storage](domains/storage/architecture-future.md)
+- **Multicluster**: [PRD](domains/multicluster/prd.md) · [handoff notes](domains/multicluster/handoff-notes.md)
+- **Observability**: [radar-ng](domains/observability/radar-ng.md)
+- **AI / GPU**: [model catalog](domains/ai-gpu/model-catalog.md) · [3090 LLM optimization](domains/ai-gpu/3090-llm-optimization.md)
 
 ## Adopting any of this
 
-This is one operator's homelab, not a product. The patterns are portable,
-but the specific image tags, hostnames, and 1Password item names are not.
-Start with [VolSync storage recovery](volsync-storage-recovery.md) and
-[Talos ArgoCD pvc-plumber integration](talos-argocd-pvc-plumber-integration.md).
+This is one operator's homelab, not a product. The patterns are portable —
+the label-driven backup contract, the off-cluster repository, the
+restore-canary idea, the sync-wave bootstrap — but the image tags, hostnames,
+and 1Password item names are not. Start with
+[storage-architecture.md](storage-architecture.md).

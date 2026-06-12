@@ -55,7 +55,7 @@ The core render must contain no `monitoring.coreos.com` resources.
 
 ## Related Docs
 
-- [`docs/pvc-plumber-start-here.md`](../../../docs/pvc-plumber-start-here.md)
-- [`docs/pvc-plumber-v4-prd.md`](../../../docs/pvc-plumber-v4-prd.md)
-- [`docs/pvc-plumber-v4-migration-readiness.md`](../../../docs/pvc-plumber-v4-migration-readiness.md)
-- [`docs/cluster-dr-nuke-restore-runbook.md`](../../../docs/cluster-dr-nuke-restore-runbook.md)
+- [`docs/storage-architecture.md`](../../../docs/storage-architecture.md)
+- [`docs/storage-architecture.md`](../../../docs/storage-architecture.md)
+- [`docs/storage-architecture.md`](../../../docs/storage-architecture.md)
+- [`docs/disaster-recovery.md`](../../../docs/disaster-recovery.md)

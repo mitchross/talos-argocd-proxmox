@@ -180,7 +180,7 @@ if errors:
         print(f"ERROR: {e}")
     print()
     print("FAIL: pvc-plumber restore contract violation "
-          "(see docs/volsync-storage-recovery.md and .claude/commands/add-backup.md).")
+          "(see docs/disaster-recovery.md and .claude/commands/add-backup.md).")
     sys.exit(1)
 
 print(f"OK: {checked} managed PVC(s) satisfy the restore contract "

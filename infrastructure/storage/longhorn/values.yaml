@@ -12,7 +12,7 @@
 # single 800G disk by the cluster template's longhorn-storage patch). Engines
 # cannot be flipped on a live cluster with attached volumes — this config is
 # applied via nuke + rebuild with restore-from-backup (the proven DR flow).
-# History: docs/domains/storage/longhorn-v2-migration.md (+ its 2026-06-12
+# History: docs/domains/storage/longhorn-v2-retirement.md (+ its 2026-06-12
 # outcome note) and the V2 attack-storm playbook in README.md.
 defaultSettings:
   # NOTE: Longhorn 1.10 consolidates settings for V1/V2 data engines. Use either

@@ -1,4 +1,4 @@
-# Restore canary — continuous DR restore proof. See docs/restore-canary.md.
+# Restore canary — continuous DR restore proof. See docs/disaster-recovery.md.
 apiVersion: v1
 kind: Namespace
 metadata:

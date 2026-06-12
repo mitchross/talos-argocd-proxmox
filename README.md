@@ -227,7 +227,7 @@ Wave 2, and VolSync restores run unattended.
   `off`).
 - History: the Longhorn V2/SPDK engine was tried and retired here
   (2026-06-12) — full forensics in
-  `docs/domains/storage/longhorn-v2-migration.md`. Do not re-enable V2
+  `docs/domains/storage/longhorn-v2-retirement.md`. Do not re-enable V2
   without a fixed Longhorn release and a passed DR drill.
 
 ## Bootstrap Process
@@ -449,7 +449,7 @@ Normal application PVC backups use **VolSync + Kopia** with the RustFS/S3 reposi
 - **No admission gate**: v4 has no admission webhook and no Kyverno dependency.
 - **No monitoring dependency**: pvc-plumber core bootstraps without Prometheus.
 - **Exclusions**: CNPG uses native Barman/S3. Redis and PostHog are backup-exempt and disposable.
-- **Details**: See [docs/volsync-storage-recovery.md](docs/volsync-storage-recovery.md) and [docs/domains/cnpg/disaster-recovery.md](docs/domains/cnpg/disaster-recovery.md).
+- **Details**: See [docs/disaster-recovery.md](docs/disaster-recovery.md) and [docs/domains/cnpg/disaster-recovery.md](docs/domains/cnpg/disaster-recovery.md).
 
 ## Cluster Upgrades & Talos 1.13 Notes
 
@@ -601,7 +601,7 @@ kubectl delete applications --all -n argocd
 ## Documentation
 
 - **[CLAUDE.md](CLAUDE.md)** - Full development guide and patterns for this repository
-- **[docs/volsync-storage-recovery.md](docs/volsync-storage-recovery.md)** - current application PVC backup/restore workflow
+- **[docs/disaster-recovery.md](docs/disaster-recovery.md)** - current application PVC backup/restore workflow
 - **[docs/domains/argocd/argocd.md](docs/domains/argocd/argocd.md)** - ArgoCD GitOps patterns
 - **[docs/domains/argocd/entrypoints.md](docs/domains/argocd/entrypoints.md)** - Root entrypoints, waves, and AppSet/custom-entrypoint decisions
 - **[docs/domains/networking/topology.md](docs/domains/networking/topology.md)** - Network architecture
