@@ -66,15 +66,21 @@ metadata:
 value: "true"
 
 ---
-# Allow concurrent replica rebuilds per node
-# Helps recover faster when multiple volumes are affected
-# Current: 5 (good default)
+# Concurrent replica rebuilds per node — INTENTIONALLY 1 (2026-06-12 incident).
+# During the post-nuke mass restore, 5 concurrent rebuilds per node saturated
+# the v2 (SPDK) data engine: NVMe-TCP keep-alive timeouts killed engine
+# frontends, faulting volumes faster than rebuilds drained them — a
+# self-sustaining storm (restores stuck at 16/25 for 30+ min; nodes were at
+# ~22% CPU, so this is SPDK contention, not resources). Dropping to 1 broke
+# the loop within minutes. Cost: slower return to full redundancy after a
+# replica failure — acceptable here. Do not raise above 2 while on the v2
+# engine without re-testing a full-cluster DR.
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
   name: concurrent-replica-rebuild-per-node-limit
   namespace: longhorn-system
-value: "5"
+value: "1"
 
 ---
 # Disable scheduling on cordoned nodes

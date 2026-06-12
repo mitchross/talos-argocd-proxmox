@@ -203,11 +203,15 @@ patches:
       nodeLabels:
         gpu-worker: "true"
         nvidia.com/gpu: "true"
-- name: gpu-network-dhcp
-  inline:
-    apiVersion: v1alpha1
-    kind: DHCPv4Config
-    name: ens18
+# REMOVED 2026-06-11: the gpu-network-dhcp DHCPv4Config pinned to "ens18"
+# broke the GPU worker on the V2 rebuild — adding the second disk
+# (additional_disks -> extra virtio-scsi controller) shifted PCIe
+# enumeration, the NIC stopped being ens18, the pinned config matched
+# nothing, and the node booted with NO IP (SideroLink down, unreachable —
+# unfixable remotely, required reprovision). Regular workers use Talos's
+# default DHCP-on-all-links and survive hardware reshuffles; the kubelet
+# nodeIP.validSubnets pin in patches/gpu-worker.yaml handles address
+# selection. Do not re-pin DHCP to an interface name.
 - file: patches/gpu-worker.yaml
 - name: kubelet-performance
   inline:
