@@ -126,9 +126,9 @@ omnictl get machines        # must drain to empty
 > provision (2026-06-11 incident).** Machine classes and the cluster
 > template are snapshots inside Omni: VMs are built from whatever Omni
 > stored at provision time, not from this repo. Provisioning before the
-> `omnictl apply`/`template sync` below produced workers with the old
-> single-disk layout and no V2 hugepages, a stale-Talos rolling upgrade
-> mid-bootstrap, and a forced worker reprovision. Always run the apply +
+> `omnictl apply`/`template sync` below produced workers with a stale disk
+> layout, a stale-Talos rolling upgrade mid-bootstrap, and a forced worker
+> reprovision. Always run the apply +
 > sync steps below (idempotent) before machines come up, and always sync
 > THIS file — not a `cluster-template-working.yaml` variant.
 
@@ -196,8 +196,8 @@ Longhorn bootstrap):
 kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage'
 # expect: every node Talos (v1.13.4)
 
-# Single 800G disk per storage node (V1 layout — the 2-disk V2 split was
-# retired 2026-06-12; if you see sda+sdb the Omni template/classes are STALE):
+# Single 800G disk per storage node — if you see sda+sdb the Omni
+# template/classes are STALE (old 2-disk layout):
 talosctl -n <worker-ip> get disks   # expect sda only (~800G)
 
 # After Longhorn starts: every storage node auto-creates its default V1
@@ -211,44 +211,24 @@ storage steps**: Longhorn (V1 engine) auto-creates its filesystem disk at
 `/var/lib/longhorn` on every storage node, pvc-plumber auto-syncs at
 Wave 2, and VolSync restores run unattended.
 
-### V2 data-engine attach storm (2026-06-12 incident playbook)
+### Mass-restore stability notes
 
-> **STATUS: the V2 engine was RETIRED on 2026-06-12** because of this
-> incident (open Longhorn bugs #13315/#13314 — interrupted rebuilds poison
-> replica metadata; re-crash after auto-reattach). The cluster runs the V1
-> engine. This playbook is kept because (a) step 1's rebuild throttle still
-> applies to V1 mass restores, and (b) it is the evidence record for why
-> V2 must not be re-enabled without a fixed release + passed DR drill.
-
-A full-cluster restore is the v2 (SPDK) engine's worst case: 25 parallel
-VolSync restores + ~90 apps attaching volumes + NVMe-TCP replication all at
-once. Under that load an instance-manager can hang/crash; the resulting
-replica-rebuild wave then feeds a self-sustaining storm:
-
-```
-rebuild traffic → SPDK stalls → NVMe-TCP keep-alive timeouts
-→ engine frontends die → volumes fault → MORE rebuilds → repeat
-```
-
-**Signature:** `DetachedUnexpectedly` events in longhorn-system,
-`keep alive timeout` / `no subsystem found for NVMe device` in
-instance-manager logs, restores stalled while nodes sit at low CPU.
-
-**Response (in order):**
-1. Rebuilds are already throttled to 1/node in Git
-   (`infrastructure/storage/longhorn/node-failure-settings.yaml`) — verify
-   the live Setting matches; the storm cannot self-sustain at 1.
-2. Per-volume wedges self-heal via auto-salvage; a mover stuck >15 min on
-   `MountVolume ... hasn't been attached yet` with a months-old
-   VolumeAttachment = stale CSI state — delete the mover pod (Job recreates
-   it, forcing a fresh attach).
-3. Pods crashlooping on `read-only file system` after the storm: the pod
-   must land on a DIFFERENT node (or the volume must fully detach) to drop
-   the stale ro mount — scale to 0, wait for the Longhorn volume to show
-   `detached`, scale back (CNPG: `cnpg.io/hibernation=on` → wait → `off`).
-4. If ONE node keeps emitting `no subsystem found for NVMe device` while
-   the others are quiet, its kernel NVMe-TCP state is poisoned: cordon it,
-   move crashlooping workloads off, **reboot it via Omni**, uncordon.
+- **Replica rebuilds are throttled to 1/node in Git**
+  (`infrastructure/storage/longhorn/node-failure-settings.yaml`) — verify
+  the live Setting matches during any mass restore. Full-cluster restores
+  overload any engine on this hardware; do not raise the limit mid-bootstrap.
+- A mover pod stuck >15 min on `MountVolume ... hasn't been attached yet`
+  with an old VolumeAttachment = stale CSI state — delete the mover pod
+  (its Job recreates it, forcing a fresh attach).
+- Pods crashlooping on `read-only file system` after a storage disruption:
+  the volume must FULLY detach (or the pod must land on a different node)
+  to drop the stale ro mount — scale to 0, wait for the Longhorn volume to
+  show `detached`, scale back (CNPG: `cnpg.io/hibernation=on` → wait →
+  `off`).
+- History: the Longhorn V2/SPDK engine was tried and retired here
+  (2026-06-12) — full forensics in
+  `docs/domains/storage/longhorn-v2-migration.md`. Do not re-enable V2
+  without a fixed Longhorn release and a passed DR drill.
 
 ## Bootstrap Process
 
