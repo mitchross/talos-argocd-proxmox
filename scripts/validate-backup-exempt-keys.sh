@@ -57,7 +57,7 @@ done < <(grep -rln --include='*.yaml' --include='*.yml' -E '^[[:space:]]+backup-
 
 if [ "$fail" -ne 0 ]; then
   echo
-  echo "FAIL: backup-exempt contract violation (see docs/volsync-storage-recovery.md)."
+  echo "FAIL: backup-exempt contract violation (see docs/disaster-recovery.md)."
   echo "Fix: label 'backup-exempt: \"true\"' requires annotation"
   echo "     '${FQ_KEY}: \"<why this PVC is safe to not back up>\"'"
   exit 1

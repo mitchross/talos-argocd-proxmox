@@ -57,6 +57,6 @@ fully-qualified `storage.vanillax.dev/backup-exempt-reason` annotation.
 
 ## References
 
-- [`docs/pvc-plumber-start-here.md`](../../docs/pvc-plumber-start-here.md)
-- [`docs/talos-argocd-pvc-plumber-integration.md`](../../docs/talos-argocd-pvc-plumber-integration.md)
-- [`docs/volsync-storage-recovery.md`](../../docs/volsync-storage-recovery.md)
+- [`docs/storage-architecture.md`](../../docs/storage-architecture.md)
+- [`docs/storage-architecture.md`](../../docs/storage-architecture.md)
+- [`docs/disaster-recovery.md`](../../docs/disaster-recovery.md)

@@ -1,6 +1,6 @@
 # pvc-plumber v4 — Deployment, v4.0.1 (final/stable) image (Phase 6 of
-# docs/pvc-plumber-v4-prd.md, cutover sequence per
-# docs/pvc-plumber-v4-cutover.md §9).
+# git history (v4 PRD, pruned 2026-06-13), cutover sequence per
+# git history (v4 cutover doc, pruned 2026-06-13) §9).
 #
 # Single replica. Leader election forced off by the binary in permissive
 # (and audit) modes. No webhook server — Patch 6.7-wire gates
@@ -48,7 +48,7 @@
 # entry /audit staleness so a stalled reconciler can't look fresh. The
 # two-gate write fuse (enabled + manage-volsync) and inline-argo
 # observe-only semantics are unchanged. Full incident write-up at
-# docs/pvc-plumber-v4-nginx-canary-incident.md.
+# git history (nginx-canary incident doc, pruned).
 #
 # Operator-side write RBAC for VolSync RS/RD is provided by
 # rbac-volsync-writer.yaml (Patch 7.7): ClusterRole
@@ -143,7 +143,7 @@ spec:
             # nginx canary is functionally complete. Recommended next
             # migration candidate is homepage-dashboard/config; Karakeep is
             # DEFERRED (destructive, explicit-auth only). Migration order +
-            # status: docs/pvc-plumber-v4-migration-readiness.md.
+            # status: git history (migration-readiness doc, pruned).
             # Enforce/strict are still rejected at startup (Phase 8).
             - name: PVC_PLUMBER_MODE
               value: "permissive"

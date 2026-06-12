@@ -212,8 +212,8 @@ The PVC carries a static `dataSourceRef` pointing at the RD, so:
    config come back intact. `server-files` PVC is empty,
    `UPDATE_ON_START=true` re-downloads Zomboid from Steam (~10 min).
 
-See `docs/volsync-storage-recovery.md` for the architectural overview and
-`docs/cluster-dr-nuke-restore-runbook.md` for the full cluster-rebuild
+See `docs/disaster-recovery.md` for the architectural overview and
+`docs/disaster-recovery.md` for the full cluster-rebuild
 sequence.
 
-See `docs/volsync-storage-recovery.md` for the full flow.
+See `docs/disaster-recovery.md` for the full flow.

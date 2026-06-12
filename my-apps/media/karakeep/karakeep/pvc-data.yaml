@@ -42,7 +42,7 @@ spec:
   # ReplicationSource/data-pvc + ReplicationDestination/data-pvc-dst (and
   # recreates either within seconds if deleted) via its RS/RD watch. The
   # operator-generated mover runs as 568:568:568 (was 1001 inline); fsGroup
-  # handles snapshot-clone read access. See docs/pvc-plumber-v4-cutover.md.
+  # handles snapshot-clone read access. See git history (v4 cutover doc, pruned 2026-06-13).
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination

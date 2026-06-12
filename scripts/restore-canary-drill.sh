@@ -7,7 +7,7 @@
 #    dataSourceRef, restored by the VolSync populator, and verified
 #    byte-correctly."
 #
-# This tests RESTORE, not merely backup. Full docs: docs/restore-canary.md.
+# This tests RESTORE, not merely backup. Full docs: docs/disaster-recovery.md.
 #
 # Modes:
 #   (no flag)    status   — read-only preflight gates + canary status. No writes.
@@ -20,7 +20,7 @@
 #   --bootstrap  (seed/live) first-ever seed/drill: the live PVC is allowed
 #                           to be missing its dataSourceRef (the canary is
 #                           bootstrapped without it — see "First-deploy
-#                           bootstrap" in docs/restore-canary.md); the Git
+#                           bootstrap" in docs/disaster-recovery.md); the Git
 #                           render must contain it instead.
 #   --force-unlock          clear a stale drill-in-progress marker.
 #
@@ -35,7 +35,7 @@
 # Known hazard handled (Argo stale cache): the app is hard-refreshed and its
 # reconciled revision is pinned to origin/main BEFORE any delete; recreation
 # uses an explicit SHA-pinned sync operation; live objects are verified, not
-# Argo app status. See docs/restore-canary.md.
+# Argo app status. See docs/disaster-recovery.md.
 #
 # Exit codes: 0 = all gates/drill passed; 1 = a gate or the drill failed.
 

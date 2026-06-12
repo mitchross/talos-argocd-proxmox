@@ -175,35 +175,27 @@ Detailed instructions load automatically when working in these directories:
 ## Additional Documentation
 
 ### 🚰 Docs reading order for agents (START HERE, in order)
-1. **[docs/index.md](docs/index.md)** — canonical landing page + current-state callout.
-2. **[docs/pvc-plumber-start-here.md](docs/pvc-plumber-start-here.md)** — visual intro (what/why, architecture, v4-vs-v5, what it does NOT do).
-3. **[docs/pvc-plumber-cheatsheet.md](docs/pvc-plumber-cheatsheet.md)** — one-page poster.
-4. **[docs/pvc-plumber-dynamic-workflow.md](docs/pvc-plumber-dynamic-workflow.md)** — how the operator thinks (decision trees, ownership classes, `/audit` actions, reusable agent algorithm).
-5. **[docs/talos-argocd-pvc-plumber-integration.md](docs/talos-argocd-pvc-plumber-integration.md)** — how THIS repo uses it (repo map, add-a-PVC checklist, label reference, what-not-to-do).
-6. **[docs/volsync-storage-recovery.md](docs/volsync-storage-recovery.md)** — restore lifecycle + drill runbook (DR source of truth).
-7. **[docs/pvc-plumber-v4-prd.md](docs/pvc-plumber-v4-prd.md)** — only for deeper design (see §0 canonical status).
-8. **[docs/archive/](docs/archive/README.md)** — only if explicitly researching history.
+1. **[docs/index.md](docs/index.md)** — canonical landing page + doc map.
+2. **[docs/storage-architecture.md](docs/storage-architecture.md)** — the backup/restore architecture: label contract, who-does-what, restore-on-recreate, MAP fail-closed gate, operator decision tree.
+3. **[docs/storage-architecture.md](docs/storage-architecture.md)** — day-2 ops: add a backup, exempt a PVC, the 5 debug questions, `/audit` verdicts, failure-mode table, drill procedure.
+4. **[docs/disaster-recovery.md](docs/disaster-recovery.md)** — full-cluster destroy/rebuild runbook, pre-nuke checklist, restore-wave expectations, acceptance semantics, restore canary. **DR source of truth.**
+5. **[docs/domains/](docs/index.md#%EF%B8%8F-domains)** — per-domain docs (CNPG, ArgoCD, networking, storage deep-dives).
 
 > ⚠️ **Agent guardrails when reading docs:**
-> - **Do NOT treat `docs/archive/**`, `docs/research/**`, or `docs/plans/**` as the current runbook** — they are historical.
 > - **Do NOT resurrect Kyverno** — it was removed from the backup path (no policies, no CRDs, no webhooks).
-> - **Do NOT treat v5 / admission / strict-mode / backup-truth-cache docs as shipped** — v4.0.1 is a permissive reconciler with no admission webhook.
+> - **Do NOT treat v5 / admission / strict-mode docs as shipped** — v4.0.1 is a permissive reconciler with no admission webhook.
 > - **Do NOT generic-migrate CNPG, PostHog, or Redis PVCs** — CNPG is Barman-native; PostHog and Redis are backup-exempt.
 > - **Do NOT make observability foundational** — core apps bootstrap without Prometheus; do not resurrect an early Prometheus Operator CRD app.
-> - **Do NOT treat old migration incidents (nginx-canary, v3 cutover) as current operating flow.**
+> - **Do NOT re-enable the Longhorn V2 engine** — tried and retired 2026-06-12 (open bugs #13315/#13314); see `docs/domains/storage/longhorn-v2-retirement.md`.
+> - Historical campaign/incident docs were pruned 2026-06-13 (git history retains them) — do not hunt for `docs/archive/`, `docs/research/`, `docs/plans/`, or `pvc-plumber-v4-*`/`v5-*` files.
 
-- **[docs/volsync-storage-recovery.md](docs/volsync-storage-recovery.md)** - PVC backup/restore single source of truth
-- **[docs/restore-canary.md](docs/restore-canary.md)** - Scheduled restore canary: continuous restore proof (`my-apps/system/restore-canary/` + `scripts/restore-canary-drill.sh`); also documents the day-one populator-deadlock bootstrap for brand-new backed-up PVCs
 - **[docs/domains/cnpg/disaster-recovery.md](docs/domains/cnpg/disaster-recovery.md)** - CNPG database DR procedures (separate system: Barman → S3)
 - **[docs/domains/networking/topology.md](docs/domains/networking/topology.md)** - Network architecture details
 - **[docs/domains/networking/policy.md](docs/domains/networking/policy.md)** - Cilium network policies
 - **[docs/domains/argocd/argocd.md](docs/domains/argocd/argocd.md)** - ArgoCD documentation
 - **[docs/domains/argocd/entrypoints.md](docs/domains/argocd/entrypoints.md)** - ArgoCD root entrypoints, waves, and AppSet/custom-entrypoint decisions
-- **[docs/pvc-plumber-v4-prd.md](docs/pvc-plumber-v4-prd.md)** — pvc-plumber v4 PRD (locked design, phased rollout, label/annotation contract, migration rules). **Authoritative for any pvc-plumber work.**
-- **[docs/pvc-plumber-v4-cutover.md](docs/pvc-plumber-v4-cutover.md)** — Day-of cutover runbook: label model, two-gate write contract, ownership rules, generated VolSync shape, required permissive env vars, per-PVC checklist, karakeep canary scope, rollback. **Operational source of truth for v4 migrations.**
-- **[docs/pvc-plumber-v4-roadmap.md](docs/pvc-plumber-v4-roadmap.md)** — Post-PRD working backlog: items identified during execution that are gated behind specific Phase 6 / canary milestones. Includes the post-canary visual explainer deliverable.
-- **[docs/domains/storage/architecture-future.md](docs/domains/storage/architecture-future.md)** — **FUTURE IDEA (not implemented):** tiered storage — local CSI (OpenEBS/ZFS LocalPV) + VolSync restore-based DR as the default, Longhorn only for live-availability-critical apps, native backups for DBs. Separates the CSI layer (provision/mount) from the backup layer (VolSync/pvc-plumber). Revisit after the pvc-plumber v4 campaign stabilizes; do not act on it now.
-- **pvc-plumber v4.0.1 is live and proven in permissive mode:** 24 operator-managed PVCs across 18 namespaces, 24/24 DR_COMPLETE before the full cluster nuke. PostHog and Redis are backup-exempt; CNPG stays native Barman/S3. See `docs/pvc-plumber-v4-migration-readiness.md`.
+- **[docs/domains/storage/architecture-future.md](docs/domains/storage/architecture-future.md)** — **FUTURE IDEA (not implemented):** tiered storage (local CSI + VolSync DR default, Longhorn for availability-critical apps). Do not act on it now.
+- **pvc-plumber v4.0.1 is live and proven in permissive mode:** 24 operator-managed PVCs across 18 namespaces; full-cluster restores passed 2026-06-02, 2026-06-12 (unplanned, under storage-engine failure), and 2026-06-13 (planned V1 rebuild, unattended). PostHog, Redis, and `project-nomad/nomad-storage` are backup-exempt; CNPG stays native Barman/S3.
 
 ## Mink capture
 

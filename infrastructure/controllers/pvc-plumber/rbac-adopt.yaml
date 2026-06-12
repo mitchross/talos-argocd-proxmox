@@ -1,6 +1,6 @@
 # pvc-plumber-adopt — canary-scoped RBAC for the adopt CLI.
 #
-# Patch 7.6 of docs/pvc-plumber-v4-adopt-cli-spec.md.
+# Patch 7.6 of git history (pvc-plumber-v4 docs, pruned 2026-06-13).
 #
 # This file is independent of rbac.yaml. The main pvc-plumber operator
 # ServiceAccount (pvc-plumber, in rbac.yaml) is NOT modified by this

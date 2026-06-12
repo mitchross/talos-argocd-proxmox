@@ -40,7 +40,7 @@
 #
 # Managed namespaces today carry the pvc-plumber.io/managed-namespace label
 # on their own namespace.yaml manifests: nginx-example, homepage-dashboard,
-# karakeep. Preflight + cutover contract: docs/pvc-plumber-v4-cutover.md.
+# karakeep. Preflight + cutover contract: git history (v4 cutover doc, pruned 2026-06-13).
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1

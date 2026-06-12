@@ -1,6 +1,6 @@
 # pvc-plumber v4 — permissive-mode kustomization (rc7 live).
 #
-# Phase 6 of docs/pvc-plumber-v4-prd.md. Deployed by the Argo Application at
+# Phase 6 of docs/storage-architecture.md. Deployed by the Argo Application at
 # ../argocd/apps/core-dependencies/pvc-plumber-app.yaml (sync wave 2).
 #
 # Resources in deliberate order:
