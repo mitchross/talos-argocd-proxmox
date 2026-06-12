@@ -1,9 +1,13 @@
 # GPU Worker Talos Configuration
-# Network topology:
-#   ens18 (net0/vmbr0) - Main LAN 192.168.10.x (DHCP) - 10G via switch to TrueNAS
-#   DHCP config moved to inline DHCPv4Config in cluster-template.yaml
-#
-# Storage traffic now goes through 10G switch (192.168.10.133)
+# Network topology (2026-06-11): single virtio NIC on vmbr1, Main LAN
+# 192.168.10.x (DHCP). The DL360 Gen9 host has ONE fiber uplink — there is
+# no dedicated TrueNAS/storage link anymore; LAN + storage (NFS/RustFS at
+# 192.168.10.133) share that uplink.
+# DHCP is Talos's DEFAULT on all physical links — do NOT pin a DHCPv4Config
+# to an interface name: PCIe enumeration shifts when VM hardware changes
+# (the 2026-06-11 second-disk addition moved the NIC off ens18 and the
+# pinned config left the node IP-less and unreachable; fix required a
+# reprovision). nodeIP.validSubnets below handles address selection instead.
 machine:
   kubelet:
     nodeIP:

@@ -77,7 +77,8 @@ spec:
           pcie: true
         - mapping: nvidia-gpu-2
           pcie: true
-      # Storage via 10G switch (192.168.10.133) - no dedicated NIC needed
+      # Single fiber uplink on the DL360 Gen9 host — LAN + storage traffic
+      # (NFS/RustFS at 192.168.10.133) share it; no dedicated storage NIC/link.
 
 # GPU Passthrough Setup:
 # With enhanced provider, VM is pre-configured for GPU. Just:

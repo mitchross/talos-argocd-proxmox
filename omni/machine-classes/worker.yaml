@@ -81,4 +81,5 @@ spec:
       cpu_type: host
       machine_type: q35
       balloon: false
-      # Storage via 10G switch (192.168.10.133) - no dedicated NIC needed
+      # Single fiber uplink on the DL360 Gen9 host — LAN + storage traffic
+      # (NFS/RustFS at 192.168.10.133) share it; no dedicated storage NIC/link.
