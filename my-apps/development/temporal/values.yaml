@@ -86,6 +86,20 @@ server:
         cpu: "2"
         memory: 2Gi
 
+# The chart ships "shims" — wrapper scripts in a `temporal-shims` ConfigMap —
+# purely for backward-compat with Temporal 1.29 images, and defaults both ON.
+# We run 1.31.x (see server.image.tag), so the shims are dead weight: the
+# schema Job mounts the shim ConfigMap, and on 1.30+ images the native
+# `temporal-sql-tool` binary is already on PATH. Leaving them on rendered a
+# `temporal-shims` ConfigMap at the default wave 0 that the wave -1 schema
+# hook could never mount → schema pod stuck `Init` forever → whole sync
+# deadlocked "waiting for completion of hook". Disabling both stops the
+# ConfigMap (and its mounts) from rendering at all — the dependency, and the
+# ordering problem, simply vanish. Upstream docs say set false for 1.30+.
+shims:
+  dockerize: false
+  elasticsearchTool: false
+
 schema:
   useHelmHooks: false
   backoffLimit: 20
