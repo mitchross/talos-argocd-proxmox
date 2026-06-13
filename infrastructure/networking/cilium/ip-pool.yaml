@@ -16,7 +16,8 @@ spec:
       # Reserve specific IPs for known services:
       # - 192.168.10.49: Gateway External
       # - 192.168.10.50: Gateway Internal
-      # - Remaining 30 IPs for other LoadBalancer services
+      # - 192.168.10.52: Gateway Internal Technitium
+      # - Remaining IPs for other LoadBalancer services
   allowFirstLastIPs: "No"
   serviceSelector:
     matchLabels: {}
