@@ -55,7 +55,7 @@ In the Technitium web console:
 5. Configure an HTTPS forwarder:
 
    ```text
-   https://cloudflare-dns.com/dns-query
+   https://cloudflare-dns.com/dns-query (1.1.1.1)
    ```
 
 6. Enable DNSSEC validation when the UI offers it.
@@ -63,7 +63,9 @@ In the Technitium web console:
 
 The Cloudflare DoH forwarder avoids Firewalla's interception of plain DNS
 traffic. Records stored locally in this zone override Cloudflare. Missing
-records are forwarded to Cloudflare.
+records are forwarded to Cloudflare. The parenthesized IP bootstraps the DoH
+hostname; without it, Technitium cannot resolve `cloudflare-dns.com` when
+recursion is disabled and returns `SERVFAIL`.
 
 Before continuing, verify public fallback directly through Technitium:
 
