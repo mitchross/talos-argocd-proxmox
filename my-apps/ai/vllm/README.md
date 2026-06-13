@@ -22,3 +22,33 @@ Reverse to restore the default split. Then: `curl -s https://vllm.vanillax.me/v1
 
 Full rationale + connection/creds/storage details: `~/nas-setup/VLLM-DEPLOY-BRIEF.md`
 (also `\\192.168.10.133\General\homelab-docs\VLLM-DEPLOY-BRIEF.md`).
+
+## OpenCode configuration
+
+The global OpenCode config is `~/.config/opencode/opencode.json` on macOS and
+Linux. The following is JSONC-compatible syntax but remains valid JSON:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "vllm/qwen3.6-27b",
+  "provider": {
+    "vllm": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Homelab vLLM",
+      "options": {
+        "baseURL": "https://vllm.vanillax.me/v1"
+      },
+      "models": {
+        "qwen3.6-27b": {
+          "name": "Qwen3.6 27B (vLLM)",
+          "limit": {
+            "context": 262144,
+            "output": 32768
+          }
+        }
+      }
+    }
+  }
+}
+```
