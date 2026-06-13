@@ -290,6 +290,112 @@ After all validation succeeds:
 Historical design/plan documents may still mention the test zone. Runtime
 manifests must not contain `.internal.vanillax.me` hostnames.
 
+## Production Cutover Pitfalls (learned 2026-06-13)
+
+The first cutover attempt reported success in Git and Argo CD while private
+resolution stayed broken. Four traps, all silent:
+
+### 1. Argo CD silently dropped the Gateway re-parenting
+
+`infrastructure/controllers/argocd/values.yaml` previously carried a **broad**
+HTTPRoute ignore rule:
+
+```yaml
+jqPathExpressions:
+- '.spec.parentRefs[]? | select(.group == null or .kind == null)'  # nukes whole entry
+jsonPointers:
+- /spec/parentRefs                                                 # nukes whole array
+```
+
+Combined with `RespectIgnoreDifferences=true` (set on every AppSet), Argo CD
+stripped the `gateway-internal -> gateway-internal-technitium` parent change
+from sync and still reported **Synced**. All 33 private routes stayed on the
+legacy `gateway-internal` (`192.168.10.50`).
+
+**Fix:** ignore ONLY the defaulted `group`/`kind` subfields, never the whole
+array or whole entries:
+
+```yaml
+jqPathExpressions:
+- .spec.parentRefs[].group
+- .spec.parentRefs[].kind
+```
+
+`name`/`namespace`/`sectionName` must stay diffable. Routes are mixed — some
+omit `group`/`kind` (e.g. `immich`, `posthog`, `container-registry`), so the
+old whole-entry `select(...)` blocked their migration even with the jsonPointer
+removed. **Sync the `argocd` Application first** (it owns `values.yaml`), then
+hard-refresh the Applications that own the routes.
+
+### 2. ExternalSecret pointed at the wrong 1Password item (stale live state)
+
+Git pointed `technitium-external-secret.yaml` `remoteRef.key` at the new item
+`external-dns-technitium-vanillax`, but the `external-dns` Application was
+`OutOfSync`, so the **live** ExternalSecret still pulled from the old item
+`external-dns-technitium`. The pod therefore signed RFC2136 updates with key
+name `externaldns-vanillax` but the **secret bytes of `externaldns-internal`**
+→ Technitium returned `dns: bad authentication` on both UPDATE and AXFR.
+
+**Fix:** sync the `external-dns` Application so ESO re-pulls the correct item.
+The K8s Secret name (`external-dns-technitium`) is reused intentionally; only the
+1Password *item* changed. No rename is required.
+
+### 3. TSIG secret rotation requires a pod restart
+
+The TSIG secret is injected as the env var
+`EXTERNAL_DNS_RFC2136_TSIG_SECRET` via `secretKeyRef` at pod start. Updating the
+K8s Secret does **not** hot-reload it. After ESO rewrites the Secret, restart
+the deployment:
+
+```bash
+kubectl -n external-dns rollout restart deploy/external-dns-technitium
+```
+
+### 4. The TSIG policy must live on the `vanillax.me` zone, not `internal.vanillax.me`
+
+The `externaldns-vanillax` key must be wired into the **`vanillax.me` Forwarder
+zone** (Conditional Forwarder), in BOTH:
+
+- **Dynamic Updates (RFC 2136)** security policy: key `externaldns-vanillax`,
+  domain `*.vanillax.me`, types `A, AAAA, CNAME, TXT`.
+- **Zone Transfer** TSIG key list: `externaldns-vanillax` (or AXFR keeps failing
+  `dns: bad authentication` even after UPDATE works).
+
+Configuring these on the old `internal.vanillax.me` zone has no effect on the
+new flow.
+
+### 5. Remove leftover Firewalla per-host overrides
+
+The zone-forward (`server-high=/vanillax.me/192.168.10.15`) is necessary but not
+sufficient. Stale per-host GUI overrides such as
+`address=/homeassistant.vanillax.me/192.168.10.50` shadow the new Technitium
+records and resolve private names to the **legacy** gateway. Confirm a clean
+answer:
+
+```bash
+dig @192.168.10.1 homeassistant.vanillax.me +short   # must be 192.168.10.52, not .50
+```
+
+## TLS Certificate Architecture
+
+Both gateways share **one** publicly-trusted wildcard certificate — no separate
+internal cert is needed or wanted:
+
+| Resource | Value |
+| --- | --- |
+| ClusterIssuer | `cloudflare-cluster-issuer` (ACME DNS-01 via Cloudflare) |
+| Certificate / Secret | `cert-vanillax` in namespace `gateway`, SAN `*.vanillax.me` |
+| `gateway-external` (`192.168.10.33`) | `certificateRefs: cert-vanillax` |
+| `gateway-internal-technitium` (`192.168.10.52`) | `certificateRefs: cert-vanillax` |
+
+Because public and private paths use the **same hostname** under `*.vanillax.me`,
+the same Let's Encrypt wildcard validates on both. TLS authenticates the **name**,
+not the IP, so a publicly-trusted cert served from a private `192.168.10.52`
+endpoint is fully valid with no browser warnings. A separate "internal" cert
+would either be a redundant copy of the same wildcard or an untrusted private-CA
+cert — avoid both. cert-manager renews `cert-vanillax` via DNS-01 against the
+public Cloudflare zone regardless of where the gateway is reachable.
+
 ## Rollback
 
 If Technitium or Firewalla validation fails:

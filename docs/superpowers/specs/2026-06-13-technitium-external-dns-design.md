@@ -1,5 +1,10 @@
 # Technitium ExternalDNS Design
 
+> ⚠️ **SUPERSEDED / HISTORICAL.** Describes the original `internal.vanillax.me`
+> *test* zone, now retired. Production uses split DNS on real `vanillax.me`
+> names. Current source of truth:
+> [`docs/domains/networking/technitium-vanillax-me-migration.md`](../../domains/networking/technitium-vanillax-me-migration.md).
+
 ## Goal
 
 Deploy a second ExternalDNS instance for the Talos cluster that manages only
