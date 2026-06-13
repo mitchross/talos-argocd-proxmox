@@ -327,6 +327,29 @@ old whole-entry `select(...)` blocked their migration even with the jsonPointer
 removed. **Sync the `argocd` Application first** (it owns `values.yaml`), then
 hard-refresh the Applications that own the routes.
 
+> ⚠️ **The narrowed ignore fixes DIFF DETECTION but not sync-APPLY.** With
+> `RespectIgnoreDifferences=true` (on every AppSet) plus an array-traversing jq
+> expression (`.spec.parentRefs[].group`), ArgoCD drops the **entire**
+> `parentRefs` array from the Server-Side-Apply patch at sync time. Result: the
+> route apps correctly flip to **OutOfSync** (good — the diff is seen), but a
+> normal sync reports *"successfully synced (all tasks run)"* **without moving
+> the route**. Observed live 2026-06-13: `gateway` synced "successfully" while
+> `argocd/argocd` stayed on the old gateway.
+>
+> What actually moved the routes was reconciling the live objects straight to
+> their git-desired parent (they then read as Synced, and nothing reverts them
+> because live == git):
+> ```bash
+> # for each HTTPRoute still on the legacy gateway:
+> kubectl -n <ns> patch httproute <name> --type=json \
+>   -p '[{"op":"replace","path":"/spec/parentRefs/0/name","value":"gateway-internal-technitium"}]'
+> ```
+> A manual ArgoCD sync triggered with an **empty** `{"sync":{}}` operation (which
+> does *not* inherit the AppSet's `RespectIgnoreDifferences`) also applies the
+> change — but the per-route patch is the surgical choice (it can't touch other
+> ignored fields like PVC restore refs). The self-managing `argocd/argocd` route
+> may need one re-patch if it races the controller's own apply; it then holds.
+
 ### 2. ExternalSecret pointed at the wrong 1Password item (stale live state)
 
 Git pointed `technitium-external-secret.yaml` `remoteRef.key` at the new item
