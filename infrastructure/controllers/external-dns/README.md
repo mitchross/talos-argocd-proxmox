@@ -46,13 +46,21 @@ The Gateway address is `192.168.10.52`. Firewalla remains the client DNS path
 and forwards `internal.vanillax.me` to Technitium; this repository does not
 change DHCP or client DNS settings.
 
+The initial test route is `argocd.internal.vanillax.me`, backed by the
+`argocd-server` Service. Argo CD keeps `https://argocd.vanillax.me` as its
+canonical configured URL so the established endpoint and authentication
+callbacks remain unchanged.
+
 ## Validation
 
 ```bash
 kubectl -n external-dns get pods
 kubectl -n external-dns logs deploy/external-dns-technitium -f
+kubectl -n argocd get httproute argocd-technitium
 dig @192.168.10.15 technitium.internal.vanillax.me +short
 dig @192.168.10.1 technitium.internal.vanillax.me +short
+dig @192.168.10.15 argocd.internal.vanillax.me +short
+dig @192.168.10.1 argocd.internal.vanillax.me +short
 dig @192.168.10.15 <test-host>.internal.vanillax.me +short
 dig @192.168.10.1 <test-host>.internal.vanillax.me +short
 ```
