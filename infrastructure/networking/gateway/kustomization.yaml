@@ -4,6 +4,7 @@ resources:
 - ns.yaml
 - gw-external.yaml
 - gw-internal.yaml
+- gateway-internal-technitium.yaml
 - httproute-argocd.yaml
 - httproute-argocd-webhook.yaml
 - httproute-longhorn.yaml

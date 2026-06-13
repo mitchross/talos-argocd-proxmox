@@ -1,0 +1,66 @@
+# Internal DNS records are written to Technitium over RFC2136.
+fullnameOverride: external-dns-technitium
+
+provider:
+  name: rfc2136
+
+sources:
+  - gateway-httproute
+
+domainFilters:
+  - internal.vanillax.me
+
+# Start without deletions until record creation and ownership are verified.
+policy: upsert-only
+registry: txt
+txtOwnerId: talos-prod-internal
+txtPrefix: "external-dns-"
+
+# Route and Gateway filters isolate this instance from public Cloudflare DNS.
+extraArgs:
+  - --label-filter=external-dns-scope=internal
+  - --gateway-label-filter=external-dns-gateway=gateway-internal-technitium
+  - --rfc2136-host=192.168.10.15
+  - --rfc2136-port=53
+  - --rfc2136-zone=internal.vanillax.me
+  - --rfc2136-tsig-keyname=externaldns-internal
+  - --rfc2136-tsig-secret=$(EXTERNAL_DNS_RFC2136_TSIG_SECRET)
+  - --rfc2136-tsig-secret-alg=hmac-sha256
+  - --rfc2136-tsig-axfr
+
+env:
+  - name: EXTERNAL_DNS_RFC2136_TSIG_SECRET
+    valueFrom:
+      secretKeyRef:
+        name: external-dns-technitium
+        key: tsig-secret
+
+logLevel: info
+logFormat: text
+interval: 1m
+triggerLoopOnEvent: true
+
+resources:
+  requests:
+    cpu: 128m
+    memory: 192Mi
+  limits:
+    cpu: 256m
+    memory: 384Mi
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+  seccompProfile:
+    type: RuntimeDefault
+
+podSecurityContext:
+  fsGroup: 65534
+  runAsNonRoot: true
+  runAsUser: 65534
+  seccompProfile:
+    type: RuntimeDefault

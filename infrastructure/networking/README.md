@@ -320,6 +320,7 @@ gatewayAPI:
   - `192.168.10.49` — `gateway-external`
   - `192.168.10.50` — `gateway-internal`
   - `192.168.10.51` — `project-zomboid` (UDP game server)
+  - `192.168.10.52` — `gateway-internal-technitium`
 - Managed by: Cilium L2 announcements (`cilium/l2-policy.yaml`)
 
 ### Adding a new LoadBalancer IP
@@ -341,7 +342,7 @@ custom).
    metadata:
      name: my-service
      annotations:
-       lbipam.cilium.io/ips: "192.168.10.52"   # pin this IP
+       lbipam.cilium.io/ips: "192.168.10.53"   # pin a currently free IP
    spec:
      type: LoadBalancer
      ports: [...]

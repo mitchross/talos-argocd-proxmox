@@ -1,0 +1,38 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: gateway-internal-technitium
+  namespace: gateway
+  labels:
+    external-dns-scope: internal
+    external-dns-gateway: gateway-internal-technitium
+  annotations:
+    cert-manager.io/cluster-issuer: cloudflare-cluster-issuer
+spec:
+  addresses:
+    - type: IPAddress
+      value: 192.168.10.52
+  gatewayClassName: cilium
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: "*.internal.vanillax.me"
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: "*.internal.vanillax.me"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: cert-internal-vanillax
+            kind: Secret
+            group: ""
+        options:
+          gateway.networking.k8s.io/alpn-protocols: "h2,http/1.1"
+      allowedRoutes:
+        namespaces:
+          from: All
