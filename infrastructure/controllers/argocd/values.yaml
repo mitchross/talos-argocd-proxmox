@@ -64,14 +64,21 @@ configs:
     timeout.hard.reconciliation: "1h"
     # Global diff noise cleanup for resources normalized by their controllers.
     # Keep these system-level so AppSets only carry app-specific rules.
+    #
+    # parentRefs: normalize ONLY the defaulted `group`/`kind` subfields that the
+    # API server fills in (gateway.networking.k8s.io / Gateway). Do NOT ignore the
+    # whole `/spec/parentRefs` array, and do NOT ignore whole parentRef entries
+    # via `select(.group == null or .kind == null)` — both silently swallow
+    # Gateway re-parenting (e.g. the gateway-internal -> gateway-internal-technitium
+    # split-DNS migration) while ArgoCD still reports Synced. `name`/`namespace`/
+    # `sectionName` MUST stay diffable so re-parenting actually syncs to live.
     resource.customizations.ignoreDifferences.gateway.networking.k8s.io_HTTPRoute: |
       jqPathExpressions:
-      - '.spec.parentRefs[]? | select(.group == null or .kind == null)'
+      - .spec.parentRefs[].group
+      - .spec.parentRefs[].kind
       - .spec.rules[].backendRefs[].group
       - .spec.rules[].backendRefs[].kind
       - .spec.rules[].backendRefs[].weight
-      jsonPointers:
-      - /spec/parentRefs
     resource.customizations.ignoreDifferences.external-secrets.io_ExternalSecret: |
       jqPathExpressions:
       - .metadata.generation
