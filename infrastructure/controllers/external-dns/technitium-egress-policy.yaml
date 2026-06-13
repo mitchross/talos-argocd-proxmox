@@ -1,0 +1,18 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-technitium-dns
+  namespace: external-dns
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/instance: external-dns-technitium
+  egress:
+    - toCIDR:
+        - 192.168.10.15/32
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: TCP
+            - port: "53"
+              protocol: UDP
