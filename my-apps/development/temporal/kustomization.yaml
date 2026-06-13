@@ -30,6 +30,21 @@ helmCharts:
     valuesFile: values.yaml
 
 patches:
+  # Helm-rendered ConfigMaps (notably `temporal-shims`, mounted by the
+  # schema Job) must be applied BEFORE the wave -1 schema Job hook below.
+  # Left at the default wave 0 they land AFTER the hook, so the schema pod
+  # hangs forever on `MountVolume.SetUp failed ... configmap "temporal-shims"
+  # not found` and the whole sync deadlocks "waiting for completion of hook".
+  # -2 matches `temporal-db-secret` (the schema Job's other dependency),
+  # which the ExternalSecret already pins to -2.
+  - target:
+      kind: ConfigMap
+      labelSelector: helm.sh/chart
+    patch: |
+      - op: add
+        path: /metadata/annotations/argocd.argoproj.io~1sync-wave
+        value: "-2"
+
   # Scoped to Helm-rendered Jobs only (they carry `helm.sh/chart`).
   # Without this scope, the patch stomps annotations on our own
   # `temporal-namespace-seed` Job and turns its PostSync hook into Sync.
