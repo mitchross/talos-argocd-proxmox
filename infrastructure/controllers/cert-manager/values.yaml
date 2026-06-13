@@ -15,7 +15,9 @@ config:
 extraArgs:
   # "--enable-gateway-api" has been moved to the 'config' block above
   - "--dns01-recursive-nameservers-only"
-  - "--dns01-recursive-nameservers=1.1.1.1:53,8.8.8.8:53,9.9.9.9:53"
+  # Firewalla intercepts plain DNS, including queries sent to public resolver
+  # IPs. DoH keeps split-horizon DNS from hiding public ACME TXT records.
+  - "--dns01-recursive-nameservers=https://cloudflare-dns.com/dns-query"
   - "--dns01-check-retry-period=10s"
   - "--max-concurrent-challenges=60"
   - "--enable-certificate-owner-ref=true"
