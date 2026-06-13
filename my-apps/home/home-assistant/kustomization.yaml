@@ -15,6 +15,7 @@ resources:
 - service.yaml
 - deployment.yaml
 - httproute.yaml
+- httproute-technitium.yaml
 commonLabels:
   app.kubernetes.io/managed-by: kustomize
   environment: production
