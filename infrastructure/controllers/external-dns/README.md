@@ -18,7 +18,9 @@ The internal instance uses RFC2136 with:
 - TXT prefix: `external-dns-`
 
 The TSIG value is populated by External Secrets through the existing
-`ClusterSecretStore/1password`; it must never be stored in Git.
+`ClusterSecretStore/1password`; it must never be stored in Git. The
+ExternalSecret trims the 1Password field and base64-encodes it because
+ExternalDNS requires the RFC2136 TSIG argument in base64 form.
 
 The `allow-technitium-dns` CiliumNetworkPolicy permits only the Technitium
 ExternalDNS pod to reach `192.168.10.15` on TCP/UDP port 53. This exception is
