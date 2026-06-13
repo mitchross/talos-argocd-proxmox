@@ -325,9 +325,9 @@ gatewayAPI:
 
 ### Adding a new LoadBalancer IP
 
-Most apps should use Gateway API (HTTPRoute on the existing
-`gateway-external` or `gateway-internal`) rather than claim a fresh LB IP —
-it's one IP per gateway, not per app. Reserve direct `LoadBalancer`
+Most apps should use Gateway API (HTTPRoute on `gateway-external` for public
+routes or `gateway-internal-technitium` for private routes) rather than claim
+a fresh LB IP — it's one IP per gateway, not per app. Reserve direct `LoadBalancer`
 Services for protocols Gateway API can't carry (UDP, TCP non-HTTP,
 custom).
 

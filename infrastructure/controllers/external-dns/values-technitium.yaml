@@ -8,22 +8,21 @@ sources:
   - gateway-httproute
 
 domainFilters:
-  - internal.vanillax.me
+  - vanillax.me
 
 # Start without deletions until record creation and ownership are verified.
 policy: upsert-only
 registry: txt
-txtOwnerId: talos-prod-internal
+txtOwnerId: talos-prod-technitium
 txtPrefix: "external-dns-"
 
 # Route and Gateway filters isolate this instance from public Cloudflare DNS.
 extraArgs:
-  - --label-filter=external-dns-scope=internal
   - --gateway-label-filter=external-dns-gateway=gateway-internal-technitium
   - --rfc2136-host=192.168.10.15
   - --rfc2136-port=53
-  - --rfc2136-zone=internal.vanillax.me
-  - --rfc2136-tsig-keyname=externaldns-internal
+  - --rfc2136-zone=vanillax.me
+  - --rfc2136-tsig-keyname=externaldns-vanillax
   - --rfc2136-tsig-secret=$(EXTERNAL_DNS_RFC2136_TSIG_SECRET)
   - --rfc2136-tsig-secret-alg=hmac-sha256
   - --rfc2136-tsig-axfr
