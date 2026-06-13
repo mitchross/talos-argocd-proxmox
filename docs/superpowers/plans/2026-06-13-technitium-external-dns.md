@@ -1,5 +1,12 @@
 # Technitium ExternalDNS Implementation Plan
 
+> ⚠️ **SUPERSEDED / HISTORICAL.** This plan describes the original
+> `internal.vanillax.me` *test* zone, which has been retired. Production uses
+> split DNS on real names under `vanillax.me` (no `internal.` prefix). For the
+> live design, cutover order, and known pitfalls see
+> [`docs/domains/networking/technitium-vanillax-me-migration.md`](../../domains/networking/technitium-vanillax-me-migration.md).
+> Kept only as a dated record of how the test instance was built.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add an isolated RFC2136 ExternalDNS instance and test Gateway for `internal.vanillax.me`.
