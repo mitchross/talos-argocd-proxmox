@@ -20,6 +20,10 @@ The internal instance uses RFC2136 with:
 The TSIG value is populated by External Secrets through the existing
 `ClusterSecretStore/1password`; it must never be stored in Git.
 
+The `allow-technitium-dns` CiliumNetworkPolicy permits only the Technitium
+ExternalDNS pod to reach `192.168.10.15` on TCP/UDP port 53. This exception is
+required because the cluster-wide LAN egress policy otherwise blocks the NUC.
+
 `policy=upsert-only` is intentional for the initial rollout. It allows record
 creation and updates without deleting existing records. Do not switch to
 `sync` until Technitium records and TXT ownership have been verified.
