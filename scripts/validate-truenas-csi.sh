@@ -8,7 +8,14 @@ cd "$ROOT"
 DRIVER_DIR="infrastructure/storage/truenas-csi"
 APPSET="infrastructure/controllers/argocd/apps/appsets/infrastructure-appset.yaml"
 POLICY="infrastructure/networking/cilium/policies/block-lan-access.yaml"
-EXPECTED_IMAGE="ghcr.io/truenas/truenas-csi:v1.0.4@sha256:05b99f5ced0bda9ea832ae28d91c5acd4a0f61d6e3aa52d2ef0daebfe156a2f4"
+# Match the CONTRACT, not a specific version: the official driver image must
+# be the official repo, pinned to a semver tag AND a sha256 digest. Renovate
+# owns the version+digest of this image, so hardcoding an exact value here
+# made every Renovate bump fail this check and deadlock auto-merge repo-wide
+# (the v1.0.4->v1.1.0 bump did exactly that). Asserting the format keeps the
+# real intent (official + version-and-digest-pinned, never :latest/unpinned)
+# while letting Renovate move the pin freely.
+EXPECTED_IMAGE_RE='^[[:space:]]+image: ghcr\.io/truenas/truenas-csi:v[0-9]+\.[0-9]+\.[0-9]+@sha256:[0-9a-f]{64}$'
 fail=0
 
 check() {
@@ -43,7 +50,7 @@ if [ -f "$DRIVER_DIR/kustomization.yaml" ]; then
   check "official CSI driver is registered" \
     grep -qE '^  name: csi\.truenas\.io$' "$rendered"
   check "official driver image is version and digest pinned" \
-    grep -qF "image: $EXPECTED_IMAGE" "$rendered"
+    grep -qE "$EXPECTED_IMAGE_RE" "$rendered"
   check "NFS StorageClass uses the official provisioner" \
     grep -qE '^provisioner: csi\.truenas\.io$' "$rendered"
   check "NFS datasets stay under the dedicated parent" \
