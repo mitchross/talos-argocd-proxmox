@@ -27,10 +27,12 @@ spec:
               value: "false"
             - name: INSTALL_BOOK_AND_ADVANCED_HTML_OPS
               value: "true"
-            # Stirling-PDF's init script appends this to its computed JVM flags.
+            # Stirling-PDF's init script builds JAVA_TOOL_OPTIONS from
+            # JAVA_BASE_OPTS (computed dynamically) + JAVA_CUSTOM_OPTS (user override).
+            # Setting JAVA_TOOL_OPTIONS directly gets overwritten by init-without-ocr.sh.
             # Default MaxMetaspaceSize (128m at 1Gi limit) is insufficient for
             # v2.12.0 with all features — causes CrashLoopBackOff from OOM Metaspace.
-            - name: JAVA_TOOL_OPTIONS
+            - name: JAVA_CUSTOM_OPTS
               value: "-XX:MaxMetaspaceSize=512m"
           resources:
             requests:
