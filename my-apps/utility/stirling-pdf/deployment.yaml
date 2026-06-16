@@ -27,6 +27,11 @@ spec:
               value: "false"
             - name: INSTALL_BOOK_AND_ADVANCED_HTML_OPS
               value: "true"
+            # Stirling-PDF's init script appends this to its computed JVM flags.
+            # Default MaxMetaspaceSize (128m at 1Gi limit) is insufficient for
+            # v2.12.0 with all features — causes CrashLoopBackOff from OOM Metaspace.
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxMetaspaceSize=512m"
           resources:
             requests:
               cpu: 100m

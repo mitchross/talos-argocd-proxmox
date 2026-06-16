@@ -78,6 +78,7 @@ nav:
       - Architecture, operations & guide: storage-architecture.md
       - Backup repository setup: backup-repository-setup.md
       - Disaster recovery runbook: disaster-recovery.md
+      - TrueNAS special-vdev stall runbook: truenas-special-vdev-stall-runbook.md
       - Database DR (CloudNativePG): domains/cnpg/disaster-recovery.md
       - Kopia maintenance: domains/storage/kopia-maintenance-plan.md
       - Storage model (RWO/RWX & sizing): domains/storage/storage-model-rwo-rwx-and-sizing.md
