@@ -10,7 +10,12 @@ This is a production-grade GitOps Kubernetes cluster running on **Talos OS** wit
 
 **Tech Stack**: Talos OS + ArgoCD + Cilium (Gateway API) + Longhorn + 1Password + GPU support
 
-**AI/LLM Backend**: This cluster uses **llama-cpp** (NOT ollama) for all local AI inference. The llama-cpp server runs at `http://llama-cpp-service.llama-cpp.svc.cluster.local:8080` with an OpenAI-compatible API at `/v1`. Primary model: **Qwen3.6-35B-A3B** (Unsloth UD-Q4_K_XL + `mmproj-BF16.gguf`) — multimodal, covers chat/coding/tool-calling and vision. **Gemma 4 26B-A4B** and **Qwen 3.5 Uncensored** are kept as additional presets. Full preset list + ctx/sampling is in `my-apps/ai/llama-cpp/configmap.yaml`. GPU topology: GPU 0 → llama-cpp, GPU 1 → ComfyUI (whole-card allocation, time-slicing disabled). Always use llama-cpp when configuring AI backends for in-cluster tools.
+**AI/LLM Backend**: Two OpenAI-compatible local backends, both NOT ollama:
+
+- **vLLM** (`http://vllm-service.vllm.svc.cluster.local:8080/v1`, served model `qwen3.6-27b` — Qwen3.6-27B dense AWQ, multimodal/vision) is the **default for app inference**. OpenWebUI, Perplexica, Project NOMAD, and Karakeep all point here. Use vLLM / `qwen3.6-27b` when wiring an in-cluster app to chat/vision inference.
+- **llama-cpp** (`http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`) serves the **Qwen3.6-35B-A3B** MoE (Unsloth UD-Q4_K_XL + `mmproj-BF16.gguf`) plus Gemma 4 and Qwen 3.5 Uncensored as selectable presets (aliases `qwen3.6` / `qwen3.6-nothink` / `qwen3.6-longctx` / `gemma4*` / `uncensored`; see `my-apps/ai/llama-cpp/presets.ini`). Kept for ComfyUI's vision→image workflow and manual/interactive multi-preset use.
+
+GPU topology: the GPU workloads are **mutually exclusive whole-card** (`type: Recreate`, time-slicing disabled — never two pods on the cards at once). They scale-swap: bringing one up means scaling the others to `replicas: 0`. Current state is vLLM `replicas: 1` with llama-cpp and ComfyUI at `0` (so the external `llama.vanillax.me` route reads "no healthy upstream" until llama-cpp is scaled back up). App→backend wiring is tabulated in `docs/domains/ai-gpu/model-catalog.md`.
 
 ## Core Architecture Pattern: GitOps Self-Management
 

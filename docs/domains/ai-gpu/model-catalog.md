@@ -168,16 +168,22 @@ coding, tool calls, and vision.
 
 ## Who points at what (cluster apps)
 
-| App | Model | Notes |
-|---|---|---|
-| Perplexica / Vane | `qwen3.6-nothink` (default) | longctx demoted to "dual-card only"; active model lives in browser `localStorage["chatModelKey"]` |
-| OpenWebUI | `DEFAULT_MODELS` + `TASK_MODEL` = `qwen3.6-nothink` | ⚠️ `VISION_MODELS` still `qwen3.6` (think) → image input reloads a separate instance; repoint to `qwen3.6-nothink` for zero thrash |
-| Project NOMAD | `AI_BENCHMARK_MODEL` = `qwen3.6` (think) | ⚠️ residual think reference; low impact (benchmark feature) |
-| n8n / Karakeep / K8sGPT | `nothink` / `default` | tool/JSON workloads |
+As of 2026-06 the chat/inference frontends were consolidated onto the **vLLM**
+backend (`vllm-service.vllm.svc.cluster.local:8080/v1`, served model
+`qwen3.6-27b` — the dense AWQ build). llama-cpp stays for ComfyUI's
+vision→image workflow and as the manual multi-preset playground.
 
-**Residual thrash cleanup (optional):** the two ⚠️ rows above still point at the
-`think` instance and will force a reload when exercised. Repoint both to
-`qwen3.6-nothink` for a single resident instance across all traffic.
+| App | Backend | Model | Notes |
+|---|---|---|---|
+| OpenWebUI | vLLM | `qwen3.6-27b` (`DEFAULT` / `VISION` / `TASK`) | unified — no preset thrash; RAG embeddings run CPU-local in-pod |
+| Perplexica / Vane | vLLM | `qwen3.6-27b` | active model id lives in browser `localStorage["chatModelKey"]` |
+| Project NOMAD | vLLM | `qwen3.6-27b` (`AI_BENCHMARK_MODEL`) | embeddings via separate `embeddings.project-nomad` (nomic-embed) |
+| Karakeep | vLLM | `qwen3.6-27b` (`INFERENCE_TEXT`/`IMAGE`) | ⚠️ `EMBEDDING_TEXT_MODEL=granite-embedding:278m` has **no** in-cluster backend — embeddings non-functional until an embeddings service exists |
+| ComfyUI | llama-cpp (`ln.svc:8080`) | vision GGUF | vision→image workflow stays on llama-cpp multimodal |
+
+The llama-cpp preset aliases (`qwen3.6`, `qwen3.6-nothink`, `qwen3.6-longctx`,
+`gemma4*`, `uncensored`) remain available for manual/interactive use against the
+llama-cpp endpoint, but app traffic no longer depends on them.
 
 ## Operating rules (don't break these)
 - **KV cache stays symmetric** `q8_0/q8_0` — never mix `q8/q4` (llama.cpp #20866 →
