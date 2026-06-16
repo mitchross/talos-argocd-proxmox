@@ -178,7 +178,7 @@ vision→image workflow and as the manual multi-preset playground.
 | OpenWebUI | vLLM | `qwen3.6-27b` (`DEFAULT` / `VISION` / `TASK`) | unified — no preset thrash; RAG embeddings run CPU-local in-pod |
 | Perplexica / Vane | vLLM | `qwen3.6-27b` | active model id lives in browser `localStorage["chatModelKey"]` |
 | Project NOMAD | vLLM | `qwen3.6-27b` (`AI_BENCHMARK_MODEL`) | embeddings via separate `embeddings.project-nomad` (nomic-embed) |
-| Karakeep | vLLM | `qwen3.6-27b` (`INFERENCE_TEXT`/`IMAGE`) | ⚠️ `EMBEDDING_TEXT_MODEL=granite-embedding:278m` has **no** in-cluster backend — embeddings non-functional until an embeddings service exists |
+| Karakeep | vLLM | `qwen3.6-27b` (`INFERENCE_TEXT`/`IMAGE`) | tagging/summarization only. Vector search is **off** (`EMBEDDING_ENABLE_AUTO_INDEXING` unset → `false`); the `EMBEDDING_TEXT_MODEL` line is inert. Full-text search via Meilisearch. Enabling semantic search needs one endpoint serving both chat + embeddings (Karakeep shares `OPENAI_BASE_URL`). |
 | ComfyUI | llama-cpp (`ln.svc:8080`) | vision GGUF | vision→image workflow stays on llama-cpp multimodal |
 
 The llama-cpp preset aliases (`qwen3.6`, `qwen3.6-nothink`, `qwen3.6-longctx`,
