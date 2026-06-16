@@ -63,7 +63,14 @@ spec:
             - "--max-num-seqs"
             - "2"                                      # 262K = deep single-stream; low concurrency keeps the KV pool sane
             - "--limit-mm-per-prompt"
-            - '{"image": 4}'                           # vision-capable; current vLLM requires JSON, not image=4
+            - '{"image": 16}'                          # vision-capable; JSON form required (not image=N).
+                                                       # Bumped 4->16: agents (pi/Open WebUI) accumulate screenshots
+                                                       # across a turn and Pi resends the whole convo, so a low cap
+                                                       # wedges chats with "At most N image(s) per prompt". 16 = ample
+                                                       # headroom; still bounded by the 262K context + max-num-seqs=2.
+                                                       # NOTE: vLLM profiles startup mem as limit x max-image-tokens,
+                                                       # which trims KV cache on this 0.92-util/262K box. If the pod
+                                                       # OOMs or KV cache shrinks at boot, drop back toward 8.
             - "--enable-auto-tool-choice"              # Perplexica sends tool_choice=auto for research/search flows
             - "--tool-call-parser"
             - "qwen3_coder"                            # author-recommended parser for Qwen3.6 (was qwen3_xml)
