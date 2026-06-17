@@ -80,6 +80,7 @@ nav:
       - Disaster recovery runbook: disaster-recovery.md
       - TrueNAS special-vdev stall runbook: truenas-special-vdev-stall-runbook.md
       - Database DR (CloudNativePG): domains/cnpg/disaster-recovery.md
+      - Managed PVC notes & v4 handoff ledger: domains/storage/managed-pvc-notes.md
       - Kopia maintenance: domains/storage/kopia-maintenance-plan.md
       - Storage model (RWO/RWX & sizing): domains/storage/storage-model-rwo-rwx-and-sizing.md
       - Future idea — tiered storage: domains/storage/architecture-future.md

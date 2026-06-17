@@ -20,19 +20,6 @@ spec:
   resources:
     requests:
       storage: 5Gi
-  # Static dataSourceRef → ReplicationDestination/storage-dst.
-  # On PVC re-creation (DR / namespace recreate), VolSync's volume
-  # populator reads the latest snapshot from the shared kopia repo
-  # volsync-kopia-repository and binds this PVC with restored data. No-op
-  # while the PVC is already Bound. The RS/RD targeted here are
-  # operator-managed by pvc-plumber (rc7+): this PVC carries the v4 write
-  # fuse (pvc-plumber.io/enabled + pvc-plumber.io/manage-volsync), so the
-  # operator creates and repairs ReplicationSource/storage +
-  # ReplicationDestination/storage-dst — and recreates either within
-  # seconds if it is deleted — via its RS/RD watch. The inline
-  # Argo-owned RS/RD were handed off in the 2026-05-28/29 cutover after
-  # the rc7 watch was verified live; the first operator-managed backup
-  # succeeded 2026-05-29T04:04:29Z. See git history (v4 cutover doc, pruned 2026-06-13).
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination

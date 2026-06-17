@@ -7,13 +7,10 @@ metadata:
     app: posthog-kafka
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: kafka
-    # PostHog data is disposable/rebuildable in this homelab — backup-exempt.
-    # Not in the pvc-plumber migration queue; no VolSync RS/RD (removed below).
     backup-exempt: "true"
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
     storage.vanillax.dev/backup-exempt-reason: "PostHog data is disposable/rebuildable in this homelab; do not VolSync/pvc-plumber migrate. Redpanda runs --unsafe-bypass-fsync with ~1h retention + auto_create_topics — log is ephemeral/rebuildable."
-    # Retained skip-restore (now a no-op since RS/RD are removed): never restore.
     volsync.backup/skip-restore: "true"
 spec:
   accessModes: ["ReadWriteOnce"]
@@ -21,11 +18,6 @@ spec:
   resources:
     requests:
       storage: 20Gi
-  # PostHog data is disposable/rebuildable (backup-exempt above) — intentionally
-  # NO dataSourceRef and NO VolSync ReplicationSource/ReplicationDestination.
-  # Inline RS/redpanda-data-kafka-0 + RD/redpanda-data-kafka-0-dst were REMOVED
-  # 2026-05-31 to stop backups. dataSourceRef omitted to match the live PVC
-  # (empty); the Redpanda log is ephemeral by design. Do not re-add RS/RD.
 ---
 ---
 apiVersion: apps/v1
@@ -131,8 +123,3 @@ spec:
   selector:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: kafka
-
-# NOTE: inline ReplicationSource/redpanda-data-kafka-0 +
-# ReplicationDestination/redpanda-data-kafka-0-dst were REMOVED 2026-05-31.
-# PostHog data is disposable/rebuildable (PVC is backup-exempt) — no VolSync
-# backups. Do not re-add RS/RD here.

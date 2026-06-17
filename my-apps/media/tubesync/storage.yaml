@@ -8,11 +8,6 @@ metadata:
     argocd.argoproj.io/sync-options: ServerSideApply=false
   labels:
     restore-policy: "strict"
-    # pvc-plumber v4.0.1 DRY handoff (2026-05-30): operator-managed at
-    # tier=daily; ns tubesync carries managed-namespace=true. Mover 568.
-    # Migrated via Option-R immutable-dataSourceRef repair (live was
-    # config-pvc-backup; recreated from quiesced snapshot …160611 with the
-    # correct config-pvc-dst dataSourceRef). Old PV pvc-3f4378d9 retained.
     pvc-plumber.io/enabled: "true"
     pvc-plumber.io/manage-volsync: "true"
     pvc-plumber.io/tier: "daily"
@@ -22,11 +17,6 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  # Static dataSourceRef → ReplicationDestination/config-pvc-dst. No-op while
-  # the PVC is already Bound. RS/RD are operator-managed by pvc-plumber v4.0.1
-  # (DRY handoff, 2026-05-30): the operator creates and repairs
-  # ReplicationSource/config-pvc + ReplicationDestination/config-pvc-dst as
-  # managed-by=pvc-plumber via its RS/RD watch.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
@@ -49,10 +39,3 @@ spec:
   resources:
     requests:
       storage: 1Ti
-
-# NOTE: inline ReplicationSource/config-pvc + ReplicationDestination/
-# config-pvc-dst were REMOVED on 2026-05-30 as part of the pvc-plumber v4.0.1
-# DRY handoff. pvc-plumber now owns the RS/RD lifecycle for config-pvc (fused
-# above via pvc-plumber.io/* labels; ns gated by managed-namespace=true). The
-# operator recreates them as app.kubernetes.io/managed-by=pvc-plumber. Do not
-# re-add inline RS/RD here — drift must be reconciled through the operator.

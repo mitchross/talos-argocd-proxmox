@@ -74,13 +74,10 @@ metadata:
   namespace: posthog
   labels:
     app: posthog-redis
-    # PostHog data is disposable/rebuildable in this homelab — backup-exempt.
-    # Not in the pvc-plumber migration queue; no VolSync RS/RD (removed below).
     backup-exempt: "true"
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
     storage.vanillax.dev/backup-exempt-reason: "PostHog data is disposable/rebuildable in this homelab; do not VolSync/pvc-plumber migrate. Valkey cache (allkeys-lru, no RDB/AOF) — nothing to preserve."
-    # Retained skip-restore (now a no-op since RS/RD are removed): never restore.
     volsync.backup/skip-restore: "true"
 spec:
   accessModes:
@@ -89,9 +86,3 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  # PostHog data is disposable/rebuildable (backup-exempt above) — intentionally
-  # NO dataSourceRef and NO VolSync ReplicationSource/ReplicationDestination.
-  # Inline RS/redis7-data + RD/redis7-data-dst were REMOVED 2026-05-31 to stop
-  # backups. dataSourceRef omitted to match the live PVC (empty); Valkey is a
-  # pure LRU cache (no persistence) so there is nothing to restore. Do not
-  # re-add RS/RD.

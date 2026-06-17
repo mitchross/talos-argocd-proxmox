@@ -10,10 +10,6 @@ metadata:
     app: karakeep
     type: meilisearch-storage
     restore-policy: "strict"
-    # Gate 3 handoff (2026-05-29): v4 write fuse opts this PVC into
-    # pvc-plumber v4.0.0 operator management at tier=hourly. Operator
-    # creates/repairs RS/meilisearch-pvc + RD/meilisearch-pvc-dst as
-    # managed-by=pvc-plumber; mover normalizes to 568:568:568 (was 1001).
     pvc-plumber.io/enabled: "true"
     pvc-plumber.io/manage-volsync: "true"
     pvc-plumber.io/tier: "hourly"
@@ -24,12 +20,6 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  # Static dataSourceRef → ReplicationDestination/meilisearch-pvc-dst. The
-  # RS/RD are operator-managed by pvc-plumber v4.0.0 (Gate 3, 2026-05-29):
-  # this PVC carries the v4 write fuse, so the operator creates and repairs
-  # ReplicationSource/meilisearch-pvc + ReplicationDestination/
-  # meilisearch-pvc-dst (and recreates either within seconds if deleted)
-  # via its RS/RD watch. No-op while the PVC is already Bound.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination

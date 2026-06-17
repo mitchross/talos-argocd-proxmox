@@ -9,10 +9,6 @@ metadata:
     app: jellyfin
     type: config
     restore-policy: "strict"
-    # pvc-plumber v4.0.1 DRY handoff (2026-05-30): operator-managed at
-    # tier=daily; ns jellyfin carries managed-namespace=true. Mover 568.
-    # Migrated via Option-R reset (empty→config-dst dsr; recreated from
-    # quiesced snapshot). Old PV pvc-045a3e7b retained.
     pvc-plumber.io/enabled: "true"
     pvc-plumber.io/manage-volsync: "true"
     pvc-plumber.io/tier: "daily"
@@ -23,16 +19,7 @@ spec:
   resources:
     requests:
       storage: 5Gi
-  # Static dataSourceRef → ReplicationDestination/config-dst. No-op while the
-  # PVC is already Bound. RS/RD are operator-managed by pvc-plumber v4.0.1
-  # (DRY handoff, 2026-05-30): the operator creates and repairs
-  # ReplicationSource/config + ReplicationDestination/config-dst as
-  # managed-by=pvc-plumber via its RS/RD watch.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
     name: config-dst
-
-# NOTE: inline ReplicationSource/config + ReplicationDestination/config-dst
-# were REMOVED on 2026-05-30 (pvc-plumber v4.0.1 DRY handoff). pvc-plumber now
-# owns the RS/RD lifecycle for config. Do not re-add inline RS/RD here.

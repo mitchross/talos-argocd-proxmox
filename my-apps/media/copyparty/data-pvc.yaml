@@ -8,10 +8,6 @@ metadata:
   labels:
     app: copyparty
     restore-policy: "strict"
-    # pvc-plumber v4.0.1 DRY handoff (2026-05-30): operator-managed at
-    # tier=daily; ns copyparty carries managed-namespace=true. Mover 568.
-    # Migrated via Option-R reset (immutable dsr copyparty-data-backup→-dst;
-    # recreated from quiesced snapshot). Old PV pvc-a157ad5f retained.
     pvc-plumber.io/enabled: "true"
     pvc-plumber.io/manage-volsync: "true"
     pvc-plumber.io/tier: "daily"
@@ -22,18 +18,7 @@ spec:
     requests: 
       storage: 20Gi
   storageClassName: longhorn
-  # Static dataSourceRef → ReplicationDestination/copyparty-data-dst. No-op
-  # while the PVC is already Bound. RS/RD are operator-managed by pvc-plumber
-  # v4.0.1 (DRY handoff, 2026-05-30): the operator creates and repairs
-  # ReplicationSource/copyparty-data + ReplicationDestination/copyparty-data-dst
-  # as managed-by=pvc-plumber via its RS/RD watch.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
     name: copyparty-data-dst
-
-# NOTE: inline ReplicationSource/copyparty-data + ReplicationDestination/
-# copyparty-data-dst were REMOVED on 2026-05-30 as part of the pvc-plumber
-# v4.0.1 DRY handoff. pvc-plumber now owns the RS/RD lifecycle for
-# copyparty-data (fused above; ns gated by managed-namespace=true). Do not
-# re-add inline RS/RD here — drift must be reconciled through the operator.

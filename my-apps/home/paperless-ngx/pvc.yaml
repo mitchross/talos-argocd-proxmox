@@ -9,9 +9,6 @@ metadata:
     app: paperless-ngx
     type: data
     restore-policy: "strict"
-    # pvc-plumber v4.0.1 DRY handoff (2026-05-31): operator-managed at
-    # tier=hourly; ns gated managed-namespace=true. Mover 568. Disposable reset
-    # — recreated EMPTY (no dataSourceRef); operator backs up going forward.
     pvc-plumber.io/enabled: "true"
     pvc-plumber.io/manage-volsync: "true"
     pvc-plumber.io/tier: "hourly"
@@ -22,11 +19,6 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  # dataSourceRef → ReplicationDestination/data-dst (added 2026-05-31 during the
-  # paperless-data restore drill). The empty reset originally omitted this to
-  # avoid auto-restoring the nuked data; now that the app has rebuilt real data
-  # AND pvc-plumber backs it up, the dsr closes the DR gap — on recreate the
-  # VolSync volume populator restores the latest backup. No-op while Bound.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
@@ -44,9 +36,6 @@ metadata:
     app: paperless-ngx
     type: media
     restore-policy: "strict"
-    # pvc-plumber v4.0.1 DRY handoff (2026-05-31): operator-managed at
-    # tier=hourly; ns gated managed-namespace=true. Mover 568. Disposable reset
-    # — recreated EMPTY (no dataSourceRef); operator backs up going forward.
     pvc-plumber.io/enabled: "true"
     pvc-plumber.io/manage-volsync: "true"
     pvc-plumber.io/tier: "hourly"
@@ -57,11 +46,6 @@ spec:
     requests:
       storage: 20Gi
   storageClassName: longhorn
-  # dataSourceRef → ReplicationDestination/media-dst (added 2026-05-31 during the
-  # paperless-media DR-completion drill). The empty reset originally omitted this;
-  # media now holds document originals/archives that pvc-plumber backs up, so the
-  # dsr closes the DR gap — on recreate the VolSync volume populator restores the
-  # latest backup. No-op while Bound. (Matches paperless/data, copyparty, etc.)
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
@@ -106,8 +90,3 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-
-# NOTE: inline ReplicationSource/ReplicationDestination for data (data-dst) and
-# media (media-dst) were REMOVED 2026-05-31 (pvc-plumber v4.0.1 DRY handoff).
-# pvc-plumber now owns the RS/RD lifecycle for both (tier=hourly, mover 568).
-# Do not re-add inline RS/RD here. (export/consume PVCs above stay backup-exempt.)
