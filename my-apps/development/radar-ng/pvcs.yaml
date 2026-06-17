@@ -70,8 +70,18 @@ metadata:
   annotations:
     storage.vanillax.dev/backup-exempt-reason: "Open-Meteo numerical weather data cache; re-fetchable from open-meteo.com API"
 spec:
-  accessModes: [ReadWriteMany]
-  storageClassName: truenas-nfs
+  # RWO on Longhorn (NOT NFS) — deliberate exception to the truenas-nfs default
+  # above. Open-Meteo's .om writer uses a POSIX file op (O_TMPFILE/fallocate-
+  # class) that NFS-on-ZFS rejects with errno 95 EOPNOTSUPP, so every sync write
+  # failed and the cached data froze -> all-null forecast (app showed 0°).
+  # Verified 2026-06-17: truenas-nfs RWX *and* Longhorn RWX (NFS-ganesha) both
+  # fail identically; only Longhorn RWO (direct ext4 block) writes .om files
+  # cleanly. RWO = single-node attach, so the open-meteo serve Deployment and
+  # the open-meteo-worker must co-locate — enforced by podAffinity on the worker
+  # (-> app=open-meteo). Data is rebuildable, so the immutable storageClass/
+  # accessMode change is applied by delete+recreate of this PVC.
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn
   resources:
     requests:
       storage: 30Gi
