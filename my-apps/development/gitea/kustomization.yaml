@@ -37,6 +37,8 @@ patches:
     - op: add
       path: /metadata/annotations/argocd.argoproj.io~1compare-options
       value: ServerSideDiff=false
+    # Static dataSourceRef → ReplicationDestination/gitea-shared-storage-dst.
+    # RS/RD are operator-managed by pvc-plumber.
     - op: add
       path: /spec/dataSourceRef
       value:

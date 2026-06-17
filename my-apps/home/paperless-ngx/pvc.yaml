@@ -19,6 +19,8 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
+  # Static dataSourceRef → ReplicationDestination/data-dst.
+  # RS/RD are operator-managed by pvc-plumber.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
@@ -46,6 +48,8 @@ spec:
     requests:
       storage: 20Gi
   storageClassName: longhorn
+  # Static dataSourceRef → ReplicationDestination/media-dst.
+  # RS/RD are operator-managed by pvc-plumber.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination

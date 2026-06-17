@@ -19,6 +19,8 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
+  # Static dataSourceRef → ReplicationDestination/frigate-config-dst.
+  # RS/RD are operator-managed by pvc-plumber.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
