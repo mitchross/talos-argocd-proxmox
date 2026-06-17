@@ -24,10 +24,6 @@ metadata:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     restore-policy: "strict"
-    # pvc-plumber v4.0.1 DRY handoff (2026-05-30): operator-managed at
-    # tier=daily; ns swarmui carries managed-namespace=true. Mover 568.
-    # Migrated via Option-R reset (empty→swarmui-data-dst dsr; recreated from
-    # quiesced snapshot). Old PV pvc-47c2ae80 retained.
     pvc-plumber.io/enabled: "true"
     pvc-plumber.io/manage-volsync: "true"
     pvc-plumber.io/tier: "daily"
@@ -38,12 +34,6 @@ spec:
     requests:
       storage: 5Gi
   storageClassName: longhorn
-  # Static dataSourceRef → ReplicationDestination/swarmui-data-dst.
-  # On PVC re-creation (DR / namespace recreate), VolSync's volume
-  # populator reads the latest snapshot from the shared kopia repo
-  # volsync-kopia-repository and binds this PVC with restored data. No-op
-  # while the PVC is already Bound. VolSync ReplicationSource/
-  # ReplicationDestination resources are defined below in this file.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
@@ -77,10 +67,6 @@ metadata:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
   labels:
     restore-policy: "strict"
-    # pvc-plumber v4.0.1 DRY handoff (2026-05-30): operator-managed at
-    # tier=daily; ns swarmui carries managed-namespace=true. Mover 568.
-    # Migrated via Option-R reset (empty→swarmui-output-dst dsr; recreated from
-    # quiesced snapshot). Old PV pvc-3dc7b545 retained.
     pvc-plumber.io/enabled: "true"
     pvc-plumber.io/manage-volsync: "true"
     pvc-plumber.io/tier: "daily"
@@ -91,12 +77,6 @@ spec:
     requests:
       storage: 50Gi
   storageClassName: longhorn
-  # Static dataSourceRef → ReplicationDestination/swarmui-output-dst.
-  # On PVC re-creation (DR / namespace recreate), VolSync's volume
-  # populator reads the latest snapshot from the shared kopia repo
-  # volsync-kopia-repository and binds this PVC with restored data. No-op
-  # while the PVC is already Bound. VolSync ReplicationSource/
-  # ReplicationDestination resources are defined below in this file.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
@@ -152,9 +132,3 @@ spec:
       storage: 250Gi
   storageClassName: nfs-comfyui-10g
   volumeName: swarmui-comfyui-models-nfs-pv
-
-# NOTE: inline ReplicationSource/ReplicationDestination for swarmui-data
-# (swarmui-data-dst) and swarmui-output (swarmui-output-dst) were REMOVED on
-# 2026-05-30 (pvc-plumber v4.0.1 DRY handoff). pvc-plumber now owns the RS/RD
-# lifecycle for both fused PVCs. Do not re-add inline RS/RD here.
-# (swarmui-dlbackend + swarmui-comfyui-models remain backup-exempt by design.)

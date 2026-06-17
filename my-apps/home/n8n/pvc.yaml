@@ -9,12 +9,6 @@ metadata:
     app.kubernetes.io/name: n8n
     app.kubernetes.io/component: workflow-automation
     restore-policy: "strict"
-    # pvc-plumber v4.0.1 DRY handoff (2026-05-31): operator-managed at
-    # tier=hourly (preserves the 14 * * * * cadence); ns n8n carries
-    # managed-namespace=true. Migrated via Option-R reset (empty→data-dst dsr;
-    # recreated from quiesced snapshot). MOVER UID NORMALIZED 1000→568 (operator
-    # default; explicitly approved 2026-05-31 — kopia preserves file uid/gid so
-    # restored data stays node:node/1000). Old PV pvc-1608bca4 retained.
     pvc-plumber.io/enabled: "true"
     pvc-plumber.io/manage-volsync: "true"
     pvc-plumber.io/tier: "hourly"
@@ -25,16 +19,7 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  # Static dataSourceRef → ReplicationDestination/data-dst. No-op while the PVC
-  # is already Bound; on recreate (Phase 7 / DR) the VolSync populator restores
-  # from the latest data-dst snapshot in the shared kopia repo.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
     name: data-dst
-
-# NOTE: inline ReplicationSource/data + ReplicationDestination/data-dst were
-# REMOVED on 2026-05-31 (pvc-plumber v4.0.1 DRY handoff). pvc-plumber now owns
-# the RS/RD lifecycle for data (fused above; ns gated by managed-namespace=true)
-# and regenerates them as managed-by=pvc-plumber with mover 568 (tier=hourly).
-# Do not re-add inline RS/RD here — drift must be reconciled through the operator.

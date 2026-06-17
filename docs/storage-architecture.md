@@ -624,6 +624,11 @@ Copy from a canonical example: `my-apps/ai/open-webui/pvc.yaml`. Helm-rendered
 PVCs get the labels + dataSourceRef injected via Kustomize `patches:`
 (see `my-apps/development/gitea/kustomization.yaml`).
 
+> 📓 PVC manifests are deliberately terse (labels + `dataSourceRef`, no inline
+> narrative). What each field means, the operator-owns-RS/RD rule, and the
+> closed v4 migration ledger (retained PV names, mover-UID normalization) are in
+> **[domains/storage/managed-pvc-notes.md](domains/storage/managed-pvc-notes.md)**.
+
 > ⚠️ **Day-one caveat:** a *brand-new* PVC shipping `dataSourceRef` binds
 > EMPTY on first deploy — the kopia identity has no snapshots yet, and the
 > populator happily consumes an empty restore image. Ship the PVC **without**

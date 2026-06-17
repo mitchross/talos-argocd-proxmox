@@ -10,13 +10,6 @@ metadata:
   labels:
     app: project-nomad
     type: storage
-    # Backup-exempted 2026-06-12 (was pvc-plumber tier=daily since the
-    # 2026-05-30 DRY handoff). The 120G volume is bulk project scratch the
-    # owner declared disposable; its src clone (a full 120G Longhorn copy
-    # per backup) was also the slowest mover in the cluster and wedged the
-    # post-nuke DR twice. dataSourceRef removed with the fuse labels — an
-    # exempt PVC has no RD, and a dangling ref would deadlock the PVC
-    # Pending forever on namespace recreate. Starts EMPTY after a rebuild.
     backup-exempt: "true"
 spec:
   accessModes:
