@@ -20,6 +20,8 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
+  # Static dataSourceRef → ReplicationDestination/meilisearch-pvc-dst.
+  # RS/RD are operator-managed by pvc-plumber.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination

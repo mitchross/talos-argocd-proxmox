@@ -18,11 +18,23 @@ Reference + history for the per-PVC backup wiring. Two purposes:
 
 ## Comment convention (why the PVC YAML looks bare)
 
-A managed PVC manifest carries three load-bearing pieces and **no migration
-narrative**. Each was previously explained by a multi-line comment block
-repeated across ~25 files; those blocks were removed (2026-06-17) because they
-restated documented patterns and logged one-time migration events. What each
-piece means, and where it's documented:
+A managed PVC manifest carries three load-bearing pieces, a **two-line
+`dataSourceRef` hint**, and **no migration narrative**. Each piece was
+previously buried in a multi-line comment block repeated across ~25 files;
+those blocks were trimmed (2026-06-17) to the minimal hint below — they had
+restated documented patterns and logged one-time migration events. The
+canonical hint (keep it terse and consistent on new managed PVCs):
+
+```yaml
+  # Static dataSourceRef → ReplicationDestination/<pvc>-dst.
+  # RS/RD are operator-managed by pvc-plumber.
+  dataSourceRef:
+    apiGroup: volsync.backube
+    kind: ReplicationDestination
+    name: <pvc>-dst
+```
+
+What each piece means, and where it's documented:
 
 | On the PVC | What it does | Canonical doc |
 |------------|--------------|---------------|

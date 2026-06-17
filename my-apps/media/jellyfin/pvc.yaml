@@ -19,6 +19,8 @@ spec:
   resources:
     requests:
       storage: 5Gi
+  # Static dataSourceRef → ReplicationDestination/config-dst.
+  # RS/RD are operator-managed by pvc-plumber.
   dataSourceRef:
     apiGroup: volsync.backube
     kind: ReplicationDestination
