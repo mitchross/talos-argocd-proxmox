@@ -16,15 +16,16 @@ resources:
   - job-basemap-bootstrap.yaml
   - deployment-open-meteo.yaml
   - servicemonitor.yaml
-  # Temporal worker pool — replaces the six ingest deployments +
-  # tile-cleanup cronjob + open-meteo sync cronjobs. Two workers, one
-  # task queue: the main worker handles all radar-ng-owned activities;
-  # the open-meteo worker (FROM ghcr.io/open-meteo/open-meteo) handles
-  # the openmeteo-api subprocess. Schedules are seeded one-time via
-  # `python -m temporal.schedules.seed` after rollout.
+  # Temporal worker pool. The main worker handles all radar-ng-owned
+  # activities. The open-meteo sync worker (FROM ghcr.io/open-meteo/open-meteo)
+  # is NO LONGER a standalone WorkerDeployment — it runs as a sidecar in the
+  # open-meteo serve pod (see deployment-open-meteo.yaml) so it can share the
+  # openmeteo-data RWO Longhorn volume on one node. The standalone
+  # WorkerDeployment couldn't co-locate because the Temporal WorkerController
+  # strips podAffinity from its pod template. Schedules are seeded one-time
+  # via `python -m temporal.schedules.seed` after rollout.
   - configmap-temporal-config.yaml
   - temporal-connection.yaml
   - temporal-worker-deployment.yaml
-  - open-meteo-worker-deployment.yaml
 
 namespace: radar-ng

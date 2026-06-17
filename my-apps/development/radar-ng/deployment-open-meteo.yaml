@@ -53,6 +53,41 @@ spec:
             limits:
               cpu: 2000m
               memory: 2Gi
+        # Sync worker co-located as a sidecar (was a standalone Temporal
+        # WorkerDeployment). It must share the openmeteo-data RWO Longhorn
+        # volume with the serve container, and RWO = single node. The
+        # Temporal WorkerController STRIPS podAffinity from its pod template,
+        # so a standalone worker could not be pinned to the serve pod's node —
+        # making it a sidecar guarantees co-location. Runs non-versioned
+        # (no TEMPORAL_DEPLOYMENT_NAME/BUILD_ID env → versioning off).
+        - name: sync-worker
+          image: registry.vanillax.me/radar-ng-open-meteo-worker:v1.1.1
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          env:
+            - name: TEMPORAL_ADDRESS
+              value: temporal-frontend.temporal.svc.cluster.local:7233
+            - name: TEMPORAL_NAMESPACE
+              value: default
+            - name: TEMPORAL_TASK_QUEUE
+              value: radar-ng-open-meteo
+            - name: OPENMETEO_BIN
+              value: /app/openmeteo-api
+            - name: OPENMETEO_DATA_DIR
+              value: /app/data
+          volumeMounts:
+            - name: openmeteo-data
+              mountPath: /app/data
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 4Gi
       volumes:
         - name: openmeteo-data
           persistentVolumeClaim:
