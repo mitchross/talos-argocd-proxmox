@@ -35,16 +35,6 @@ spec:
       labels:
         app: radar-ng-open-meteo-worker
     spec:
-      # openmeteo-data is Longhorn RWO (single-node attach — see pvcs.yaml).
-      # This worker writes the .om files the open-meteo serve pod reads, so it
-      # MUST land on the same node as that pod or it can't attach the volume.
-      affinity:
-        podAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  app: open-meteo
-              topologyKey: kubernetes.io/hostname
       # Upstream image runs as uid 999.
       securityContext:
         runAsNonRoot: true
