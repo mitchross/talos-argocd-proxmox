@@ -79,6 +79,13 @@ spec:
               value: "/tmp"
             - name: HF_HOME
               value: "/tmp/hf"
+            # runAsUser 1000 has no /etc/passwd entry in the image; torch._dynamo calls
+            # getpass.getuser() at import. Python checks USER/LOGNAME env BEFORE the passwd
+            # DB, so setting these avoids `KeyError: getpwuid(): uid not found: 1000`.
+            - name: USER
+              value: "bench"
+            - name: LOGNAME
+              value: "bench"
             - name: VLLM_NO_USAGE_STATS
               value: "1"
           command:
