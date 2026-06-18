@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: capture
-          image: ghcr.io/posthog/posthog/capture:master@sha256:b38568a9eb6484235f5c12eca9f431bdd7f265845cf276819924095746603e3d
+          image: ghcr.io/posthog/posthog/capture:master@sha256:540376bb5d1d7c9d4c792da566b132b8ea14f6de9d04d37f3b45c37ad1441652
           env:
             - name: ADDRESS
               value: "0.0.0.0:3000"
@@ -84,7 +84,7 @@ spec:
     spec:
       containers:
         - name: replay-capture
-          image: ghcr.io/posthog/posthog/capture:master@sha256:b38568a9eb6484235f5c12eca9f431bdd7f265845cf276819924095746603e3d
+          image: ghcr.io/posthog/posthog/capture:master@sha256:540376bb5d1d7c9d4c792da566b132b8ea14f6de9d04d37f3b45c37ad1441652
           envFrom:
             - configMapRef:
                 name: posthog-env
@@ -183,7 +183,7 @@ spec:
               mountPath: /share
       containers:
         - name: feature-flags
-          image: ghcr.io/posthog/posthog/feature-flags:master@sha256:f7119a7cf573101dd4fe9f1cc0520fcbe07ba4da4c9d32c912a9dad98ba5a6a1
+          image: ghcr.io/posthog/posthog/feature-flags:master@sha256:d1bd0ac84eb487026bdff86be3625d22c6caa16e601f23627025be306725587e
           env:
             - name: PGPASSWORD
               valueFrom:
