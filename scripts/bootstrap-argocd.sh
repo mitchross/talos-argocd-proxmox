@@ -114,7 +114,7 @@ echo "⎈ Installing ArgoCD via Helm..."
 # shellcheck disable=SC2016 # The bcrypt hash must remain literal.
 if ! helm upgrade --install argocd argo-cd \
   --repo https://argoproj.github.io/argo-helm \
-  --version 9.5.20 \
+  --version 9.5.21 \
   --namespace argocd \
   --values "$ROOT_DIR/infrastructure/controllers/argocd/values.yaml" \
   --wait \
