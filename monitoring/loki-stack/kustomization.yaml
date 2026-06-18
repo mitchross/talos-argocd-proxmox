@@ -13,7 +13,7 @@ resources:
 helmCharts:
   - name: loki
     repo: https://grafana-community.github.io/helm-charts
-    version: 17.3.1
+    version: 17.4.6
     releaseName: loki
     namespace: loki-stack
     valuesFile: values.yaml
