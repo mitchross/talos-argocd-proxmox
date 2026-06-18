@@ -1,0 +1,21 @@
+# Scrapes vLLM's native Prometheus metrics (exposed on the OpenAI port at /metrics)
+# into kube-prometheus-stack. Prometheus here uses empty serviceMonitor*Selectors,
+# so this is discovered automatically — no special release label required.
+# Metrics surface as vllm:* series (e.g. vllm:generation_tokens_total,
+# vllm:num_requests_waiting, vllm:gpu_cache_usage_perc, vllm:time_to_first_token_seconds_*).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: vllm
+  namespace: vllm
+  labels:
+    app: vllm-server
+spec:
+  selector:
+    matchLabels:
+      app: vllm-server        # matches Service metadata.labels (service.yaml)
+  endpoints:
+    - port: http              # named Service port 8080 → container 8000; /metrics is served here
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s

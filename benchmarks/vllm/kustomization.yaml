@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Standalone, manual-apply-only. This directory is OUTSIDE every ArgoCD
+# ApplicationSet scan path (AppSets only discover infrastructure/** and
+# my-apps/<category>/<app>/). It is NOT wired into GitOps on purpose — a
+# benchmark Job is immutable and would fight ArgoCD if auto-discovered.
+#
+#   kubectl apply  -k benchmarks/vllm
+#   kubectl delete -k benchmarks/vllm
+#
+# The `vllm` namespace already exists (owned by my-apps/ai/vllm); we only add the Job.
+namespace: vllm
+
+resources:
+  - job.yaml
