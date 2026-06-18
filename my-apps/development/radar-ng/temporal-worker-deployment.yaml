@@ -96,10 +96,17 @@ spec:
             # enough worker capacity to catch up MRMS + nowcast without
             # starving schedule seeding or API traffic. Keep CPU request
             # at 1 core so progressive rollouts can overlap old+new
-            # ReplicaSets without hitting cluster scheduling limits; the
-            # 4-core limit still lets active render work burst.
-            requests: { cpu: "1", memory: "3Gi" }
-            limits:   { cpu: "4", memory: "10Gi" }
+            # ReplicaSets without hitting cluster scheduling limits.
+            #
+            # 2026-06-18: bumped limit 4->12. After the TrueNAS special-vdev
+            # was removed (storage I/O restored), all 3 replicas sat pinned at
+            # exactly the 4-core limit for hours while MRMS frames still took
+            # ~3min and nowcast_run timed out — i.e. now CPU-bound on the
+            # pysteps nowcast + MRMS reproject, not I/O-bound. Nodes were only
+            # ~25% utilized (~24 cores free each), so open the ceiling wide to
+            # let render work burst and the 2-min MRMS/nowcast cadence catch up.
+            requests: { cpu: "2", memory: "3Gi" }
+            limits:   { cpu: "12", memory: "12Gi" }
       volumes:
         - name: tiles
           persistentVolumeClaim: { claimName: tiles }
