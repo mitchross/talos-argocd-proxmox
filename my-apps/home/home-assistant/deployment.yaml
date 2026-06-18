@@ -43,7 +43,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       initContainers:
         - name: copy-config
-          image: alpine:latest@sha256:a2d49ea686c2adfe3c992e47dc3b5e7fa6e6b5055609400dc2acaeb241c829f4
+          image: alpine:latest@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsNonRoot: false
@@ -67,7 +67,7 @@ spec:
             - name: config-files
               mountPath: /config-source
         - name: install-hacs
-          image: alpine:latest@sha256:a2d49ea686c2adfe3c992e47dc3b5e7fa6e6b5055609400dc2acaeb241c829f4
+          image: alpine:latest@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsNonRoot: false
