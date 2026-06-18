@@ -1,0 +1,193 @@
+# vLLM throughput benchmark — MANUAL apply only.
+#
+# This lives under repo-root benchmarks/ on purpose: it is OUTSIDE every ArgoCD
+# ApplicationSet scan path (the my-apps/*/* AppSet only discovers my-apps/<cat>/<app>/).
+# ArgoCD will never see or reconcile it, so there are intentionally NO
+# `argocd.argoproj.io/hook` annotations here (those only matter for ArgoCD-managed Jobs).
+#
+# It runs `vllm bench serve` against the in-cluster vLLM OpenAI server at several
+# concurrency levels, writes one JSON per level to /results, and prints a
+# consolidated summary table to the Job logs.
+#
+# Apply:   kubectl apply -k benchmarks/vllm
+# Logs:    kubectl logs -n vllm job/vllm-benchmark -f
+# Delete:  kubectl delete -k benchmarks/vllm
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vllm-benchmark
+  namespace: vllm
+  labels:
+    app: vllm-benchmark
+spec:
+  backoffLimit: 0              # a failed run should NOT silently re-run; inspect logs, fix, re-apply
+  activeDeadlineSeconds: 5400  # 90m hard cap so a wedged run can't linger
+  # No ttlSecondsAfterFinished: keep the finished pod so you can read logs, then `kubectl delete -k`.
+  template:
+    metadata:
+      labels:
+        app: vllm-benchmark
+    spec:
+      restartPolicy: Never
+      enableServiceLinks: false   # vLLM-style: don't inject VLLM_*/service-link env that the tool would warn on
+      # Keep this CPU-only client OFF the GPU node (reserved for LLM workloads — see my-apps/ai/CLAUDE.md).
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: feature.node.kubernetes.io/pci-0300_10de.present
+                    operator: DoesNotExist
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000             # makes the /results emptyDir group-writable for the non-root user
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: bench
+          image: vllm/vllm-openai:latest   # ephemeral client; pin to the server's digest for exact-parity runs
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false   # vllm writes transient files under $HOME/$TMPDIR
+            capabilities:
+              drop: ["ALL"]
+          env:
+            # ---- knobs (override with `kubectl set env` or edit before apply) ----
+            - name: VLLM_BASE_URL
+              value: "http://vllm-service.vllm.svc.cluster.local:8080"   # server root, NO trailing /v1
+            - name: MODEL
+              value: "qwen3.6-27b"                                       # --served-model-name on the live server
+            - name: TOKENIZER
+              value: "/models/Qwen3.6-27B-AWQ-BF16-INT4"                 # local tokenizer (mounted RO) → no HF Hub call
+            - name: NUM_PROMPTS
+              value: "128"
+            - name: INPUT_LEN
+              value: "512"
+            - name: OUTPUT_LEN
+              value: "256"
+            - name: CONCURRENCIES
+              value: "1 2 4 8 16"
+            # ---- offline / writable-home hygiene for the non-root client ----
+            - name: HF_HUB_OFFLINE
+              value: "1"
+            - name: TRANSFORMERS_OFFLINE
+              value: "1"
+            - name: HOME
+              value: "/tmp"
+            - name: HF_HOME
+              value: "/tmp/hf"
+            - name: VLLM_NO_USAGE_STATS
+              value: "1"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              mkdir -p /results /tmp/hf
+              echo "================================================================"
+              echo " vLLM benchmark"
+              echo "   base url   : ${VLLM_BASE_URL}"
+              echo "   model      : ${MODEL}"
+              echo "   tokenizer  : ${TOKENIZER}"
+              echo "   num_prompts: ${NUM_PROMPTS}  input_len: ${INPUT_LEN}  output_len: ${OUTPUT_LEN}"
+              echo "   concurrency: ${CONCURRENCIES}"
+              echo "================================================================"
+
+              for C in ${CONCURRENCIES}; do
+                echo
+                echo "########## max-concurrency = ${C} ##########"
+                # request-rate inf + max-concurrency = closed-loop: fire the next request
+                # the instant a slot frees, capped at C in flight. --ignore-eos forces the
+                # full OUTPUT_LEN tokens so token/sec is measured on a fixed work amount.
+                vllm bench serve \
+                  --backend openai-chat \
+                  --base-url "${VLLM_BASE_URL}" \
+                  --endpoint /v1/chat/completions \
+                  --model "${MODEL}" \
+                  --tokenizer "${TOKENIZER}" \
+                  --dataset-name random \
+                  --random-input-len "${INPUT_LEN}" \
+                  --random-output-len "${OUTPUT_LEN}" \
+                  --num-prompts "${NUM_PROMPTS}" \
+                  --request-rate inf \
+                  --max-concurrency "${C}" \
+                  --ignore-eos \
+                  --percentile-metrics ttft,tpot,itl,e2el \
+                  --metric-percentiles 95,99 \
+                  --save-result \
+                  --result-dir /results \
+                  --result-filename "vllm-bench-c${C}.json" \
+                || echo "!! concurrency ${C} run failed (continuing)"
+              done
+
+              echo
+              echo "================================================================"
+              echo " CONSOLIDATED SUMMARY  (units: req/s, tok/s, ms)"
+              echo "================================================================"
+              python3 - <<'PY'
+              import glob, json, os
+              rows = []
+              for f in sorted(glob.glob("/results/vllm-bench-c*.json"),
+                              key=lambda p: int(p.split("-c")[-1].split(".")[0])):
+                  try:
+                      d = json.load(open(f))
+                  except Exception as e:
+                      print("skip", f, e); continue
+                  rows.append(d)
+              hdr = ["conc", "done", "req/s", "out_tok/s", "tot_tok/s",
+                     "ttft_p50", "ttft_p95", "ttft_p99", "tpot_p50", "tpot_p95", "itl_p50"]
+              def g(d, *keys):
+                  for k in keys:
+                      if k in d and d[k] is not None:
+                          return d[k]
+                  return float("nan")
+              print("{:>5} {:>5} {:>7} {:>10} {:>10} {:>9} {:>9} {:>9} {:>9} {:>9} {:>9}".format(*hdr))
+              for d in rows:
+                  print("{:>5} {:>5} {:>7.2f} {:>10.1f} {:>10.1f} {:>9.1f} {:>9.1f} {:>9.1f} {:>9.1f} {:>9.1f} {:>9.1f}".format(
+                      int(g(d, "max_concurrency", "request_rate") or 0),
+                      int(g(d, "completed")),
+                      g(d, "request_throughput"),
+                      g(d, "output_throughput"),
+                      g(d, "total_token_throughput"),
+                      g(d, "median_ttft_ms", "mean_ttft_ms"),
+                      g(d, "p95_ttft_ms"),
+                      g(d, "p99_ttft_ms"),
+                      g(d, "median_tpot_ms", "mean_tpot_ms"),
+                      g(d, "p95_tpot_ms"),
+                      g(d, "median_itl_ms", "mean_itl_ms"),
+                  ))
+              print()
+              print("output_throughput = output (generated) tokens/sec")
+              print("total_token_throughput = (prompt + output) tokens/sec")
+              print("ttft = time to first token; tpot = per-output-token latency; itl = inter-token latency")
+              print()
+              print("NOTE: the live server runs with --max-num-seqs 2, so it decodes at most")
+              print("2 sequences at once. Expect out_tok/s to plateau after concurrency=2 and")
+              print("ttft to climb as extra requests queue (vllm:num_requests_waiting > 0).")
+              PY
+              echo
+              echo "Raw JSON files in /results:"
+              ls -la /results
+              echo "Done. Read logs, then: kubectl delete -k benchmarks/vllm"
+          volumeMounts:
+            - name: results
+              mountPath: /results
+            - name: models
+              mountPath: /models
+              readOnly: true
+          resources:
+            requests:
+              cpu: "1"
+              memory: 2Gi
+            limits:
+              cpu: "4"
+              memory: 4Gi
+      volumes:
+        - name: results
+          emptyDir: {}
+        - name: models
+          persistentVolumeClaim:
+            claimName: vllm-models-pvc   # existing ReadOnlyMany NFS PVC — safe to mount alongside the server
