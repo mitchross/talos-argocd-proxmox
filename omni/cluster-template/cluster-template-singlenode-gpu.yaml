@@ -1,0 +1,154 @@
+# Single-node GPU cluster — all-in-one Talos node (control plane + workloads +
+# GPU) on the second Proxmox host (192.168.10.14, 2950X / 128G).
+#
+#   omnictl cluster template sync -v -f cluster-template-singlenode-gpu.yaml
+#
+# This is a SEPARATE cluster from talos-prod-cluster (the multi-node DL360
+# cluster). It has its own template file, its own machine class
+# (single-node-talos-gpu), and its own provider instance (proxmox-threadripper).
+# There are NO Workers docs — the single control-plane node runs everything,
+# with scheduling enabled on the control plane (see allow-scheduling patch).
+---
+kind: Cluster
+name: talos-singlenode-gpu-prod
+labels:
+  cluster-id: "2"
+kubernetes:
+  version: v1.36.2
+talos:
+  # Match the prod cluster's pinned Talos line (v1.13 GA, current stable patch).
+  version: v1.13.4
+patches:
+- name: disable-default-cni
+  inline:
+    cluster:
+      network:
+        cni:
+          name: none
+      proxy:
+        disabled: true
+- name: dns-resolver
+  inline:
+    apiVersion: v1alpha1
+    kind: ResolverConfig
+    nameservers:
+    - address: 192.168.10.1
+# SINGLE-NODE: the lone control-plane node must also run workloads. Without this
+# the node keeps the node-role.kubernetes.io/control-plane NoSchedule taint and
+# nothing schedules. This is the defining single-node setting.
+- name: allow-scheduling-on-control-planes
+  inline:
+    cluster:
+      allowSchedulingOnControlPlanes: true
+# Talos 1.13 LifecycleService needs an explicit install.disk. The Proxmox
+# provider presents the VM system disk as virtio-scsi (scsi0) -> /dev/sda, same
+# as the prod machine classes — including the single-node-talos-gpu class whose
+# disk lives on the nvme0-vmstore LVM-Thin pool. So /dev/sda is correct here too.
+- name: install-disk
+  inline:
+    machine:
+      install:
+        disk: /dev/sda
+- file: patches/docker-hub-auth.yaml
+- name: node-performance
+  inline:
+    machine:
+      sysctls:
+        fs.inotify.max_user_watches: "1048576"
+        fs.inotify.max_user_instances: "8192"
+        fs.file-max: "2097152"
+        vm.swappiness: "10"
+        vm.max_map_count: "524288"
+        net.core.somaxconn: "65535"
+        net.core.rmem_max: "67108864"
+        net.core.wmem_max: "67108864"
+        net.ipv4.tcp_congestion_control: bbr
+        net.ipv4.tcp_fastopen: "3"
+        net.ipv4.tcp_rmem: 4096 87380 33554432
+        net.ipv4.tcp_wmem: 4096 65536 33554432
+        net.ipv4.tcp_slow_start_after_idle: "0"
+        net.ipv4.tcp_mtu_probing: "1"
+        net.ipv4.tcp_tw_reuse: "1"
+        net.core.netdev_max_backlog: "16384"
+        sunrpc.tcp_slot_table_entries: "128"
+        sunrpc.tcp_max_slot_table_entries: "65536"
+      # Generic 128MB readahead on all bdi devices (covers NFS too) — this is
+      # how NFS readahead is tuned without the nfsrahead extension.
+      udev:
+        rules:
+        - SUBSYSTEM=="bdi", ACTION=="add", ATTR{read_ahead_kb}="131072"
+---
+kind: ControlPlane
+machineClass:
+  name: single-node-talos-gpu
+  size: 1
+# Extension set = the GPU-worker set, NOT the regular-worker set.
+# CRITICAL: do NOT add siderolabs/nfs-utils. Its rpc-statd crash-loops alongside
+# the NVIDIA driver and corrupts containerd boltdb, taking the whole node down
+# (siderolabs/extensions#1021; DL360 GPU-worker incident). NFS still mounts fine
+# via the nfs.csi.k8s.io driver + NFSv4.1 — the prod GPU worker mounts model
+# volumes with no nfs-utils. iscsi-tools IS required (Longhorn V1 attaches via
+# iSCSI).
+systemExtensions:
+- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
+- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
+- siderolabs/nonfree-kmod-nvidia-production # renovate: datasource=docker depName=siderolabs/nonfree-kmod-nvidia-production
+- siderolabs/nvidia-container-toolkit-production # renovate: datasource=docker depName=siderolabs/nvidia-container-toolkit-production
+# qemu-guest-agent auto-installed by Proxmox provider (see machine-classes/single-node-talos-gpu.yaml)
+patches:
+- name: gpu-node-labels
+  inline:
+    machine:
+      nodeLabels:
+        gpu-worker: "true"
+        nvidia.com/gpu: "true"
+# nodeIP.validSubnets + nvidia kernel modules + bpf sysctl (no DHCP interface pin).
+- file: patches/single-node-gpu.yaml
+- name: kubelet-performance
+  inline:
+    machine:
+      kubelet:
+        extraConfig:
+          serializeImagePulls: false
+# Longhorn V1 data path: /var/lib/longhorn bind-mounted from /var/local/longhorn
+# on the single 450G disk (Talos system + images + pod ephemeral + Longhorn
+# replicas all share it). Same layout as the prod nodes.
+- name: longhorn-storage
+  inline:
+    machine:
+      kubelet:
+        extraMounts:
+        - destination: /var/lib/longhorn
+          type: bind
+          source: /var/local/longhorn
+          options:
+          - bind
+          - rshared
+          - rw
+# Control-plane performance tuning — single etcd member, but the metrics
+# listeners + bind-address:0.0.0.0 flips keep Prometheus node-discovery scraping
+# working (etcd :2381, controller-manager :10257, scheduler :10259).
+- name: control-plane-performance
+  inline:
+    cluster:
+      apiServer:
+        extraArgs:
+          max-requests-inflight: "800"
+          max-mutating-requests-inflight: "400"
+      etcd:
+        extraArgs:
+          quota-backend-bytes: "8589934592"
+          snapshot-count: "5000"
+          auto-compaction-mode: "periodic"
+          auto-compaction-retention: "5m"
+          listen-metrics-urls: "http://0.0.0.0:2381"
+      controllerManager:
+        extraArgs:
+          concurrent-deployment-syncs: "10"
+          concurrent-replicaset-syncs: "10"
+          concurrent-namespace-syncs: "20"
+          bind-address: "0.0.0.0"
+      scheduler:
+        extraArgs:
+          kube-api-qps: "100"
+          bind-address: "0.0.0.0"

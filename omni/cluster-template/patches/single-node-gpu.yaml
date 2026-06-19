@@ -1,0 +1,24 @@
+# Single-node GPU Talos config (cluster: talos-singlenode-gpu-prod)
+# Host: second Proxmox box at 192.168.10.14 (2950X / 128G), bridge vmbr0,
+# Main LAN 192.168.10.x (DHCP). This is the all-in-one node — control plane +
+# every workload + GPU — provisioned by the `single-node-talos-gpu` machine
+# class via the `proxmox-threadripper` provider instance.
+#
+# DHCP is Talos's DEFAULT on all physical links — do NOT pin a DHCPv4Config to
+# an interface name. PCIe enumeration shifts when VM hardware changes (GPU
+# passthrough / extra disks reorder NICs); a pinned config then leaves the node
+# IP-less and unreachable (required a reprovision on the DL360 GPU worker,
+# 2026-06-11). nodeIP.validSubnets below selects the address instead.
+machine:
+  kubelet:
+    nodeIP:
+      validSubnets:
+      - 192.168.10.0/24
+  kernel:
+    modules:
+    - name: nvidia
+    - name: nvidia_uvm
+    - name: nvidia_drm
+    - name: nvidia_modeset
+  sysctls:
+    net.core.bpf_jit_harden: 1
