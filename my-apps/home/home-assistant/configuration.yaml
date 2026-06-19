@@ -40,10 +40,10 @@ prometheus:
   requires_auth: false
   filter:
     include_entity_globs:
-      - sensor.gpu_psu_smart_plug_*
-      - sensor.nas_psu_smart_plug_*
-      - sensor.proxmox_server_smart_plug_*
-      - sensor.truenas_server_smart_plug_*
+      - sensor.gpu_psu_*
+      - sensor.nas_psu_*
+      - sensor.proxmox_server_*
+      - sensor.truenas_server_*
       - sensor.homelab_total_*
       - sensor.homelab_cost_*
       - sensor.*_cost_today
@@ -71,6 +71,63 @@ lovelace:
       show_in_sidebar: true
       filename: lovelace-homelab-power.yaml
 
+# Riemann-sum energy + daily utility meters.
+#
+# The TP-Link P115 plugs expose only instantaneous power (Current consumption,
+# W), Current (A) and Voltage (V) — there is NO cumulative energy sensor. We
+# integrate each plug's power into kWh (`integration` platform), then a
+# daily-cycle `utility_meter` yields "today's" energy that resets at midnight.
+# These feed the cost templates and the dashboard energy graphs.
+# NOTE: the integral starts at 0 when first created and builds up over time;
+# today's numbers are only accurate from the next local midnight onward.
+sensor:
+  - platform: integration
+    source: sensor.gpu_psu_current_consumption
+    name: "GPU PSU Energy"
+    unique_id: gpu_psu_energy
+    unit_prefix: k
+    round: 3
+    method: left
+  - platform: integration
+    source: sensor.nas_psu_current_consumption
+    name: "NAS PSU Energy"
+    unique_id: nas_psu_energy
+    unit_prefix: k
+    round: 3
+    method: left
+  - platform: integration
+    source: sensor.proxmox_server_current_consumption
+    name: "Proxmox Server Energy"
+    unique_id: proxmox_server_energy
+    unit_prefix: k
+    round: 3
+    method: left
+  - platform: integration
+    source: sensor.truenas_server_current_consumption
+    name: "TrueNAS Server Energy"
+    unique_id: truenas_server_energy
+    unit_prefix: k
+    round: 3
+    method: left
+
+utility_meter:
+  gpu_psu_energy_daily:
+    name: "GPU PSU Energy Today"
+    source: sensor.gpu_psu_energy
+    cycle: daily
+  nas_psu_energy_daily:
+    name: "NAS PSU Energy Today"
+    source: sensor.nas_psu_energy
+    cycle: daily
+  proxmox_server_energy_daily:
+    name: "Proxmox Server Energy Today"
+    source: sensor.proxmox_server_energy
+    cycle: daily
+  truenas_server_energy_daily:
+    name: "TrueNAS Server Energy Today"
+    source: sensor.truenas_server_energy
+    cycle: daily
+
 # Template sensors:
 #   * homelab_total_power           — instantaneous draw of all 4 homelab plugs (W)
 #   * homelab_total_energy_today    — kWh used today across all 4 (resets at midnight)
@@ -87,15 +144,15 @@ template:
         device_class: power
         state_class: measurement
         availability: >
-          {{ states('sensor.gpu_psu_smart_plug_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.nas_psu_smart_plug_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.proxmox_server_smart_plug_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.truenas_server_smart_plug_current_consumption') not in ['unknown','unavailable'] }}
+          {{ states('sensor.gpu_psu_current_consumption') not in ['unknown','unavailable']
+             or states('sensor.nas_psu_current_consumption') not in ['unknown','unavailable']
+             or states('sensor.proxmox_server_current_consumption') not in ['unknown','unavailable']
+             or states('sensor.truenas_server_current_consumption') not in ['unknown','unavailable'] }}
         state: >
-          {{ (states('sensor.gpu_psu_smart_plug_current_consumption') | float(0)
-            + states('sensor.nas_psu_smart_plug_current_consumption') | float(0)
-            + states('sensor.proxmox_server_smart_plug_current_consumption') | float(0)
-            + states('sensor.truenas_server_smart_plug_current_consumption') | float(0)) | round(1) }}
+          {{ (states('sensor.gpu_psu_current_consumption') | float(0)
+            + states('sensor.nas_psu_current_consumption') | float(0)
+            + states('sensor.proxmox_server_current_consumption') | float(0)
+            + states('sensor.truenas_server_current_consumption') | float(0)) | round(1) }}
 
       - name: "Homelab Total Energy Today"
         unique_id: homelab_total_energy_today
@@ -103,44 +160,44 @@ template:
         device_class: energy
         state_class: total_increasing
         state: >
-          {{ (states('sensor.gpu_psu_smart_plug_today_energy') | float(0)
-            + states('sensor.nas_psu_smart_plug_today_energy') | float(0)
-            + states('sensor.proxmox_server_smart_plug_today_energy') | float(0)
-            + states('sensor.truenas_server_smart_plug_today_energy') | float(0)) | round(3) }}
+          {{ (states('sensor.gpu_psu_energy_daily') | float(0)
+            + states('sensor.nas_psu_energy_daily') | float(0)
+            + states('sensor.proxmox_server_energy_daily') | float(0)
+            + states('sensor.truenas_server_energy_daily') | float(0)) | round(3) }}
 
       - name: "Homelab Cost Today"
         unique_id: homelab_cost_today
         unit_of_measurement: "USD"
         state_class: total_increasing
         state: >
-          {{ ((states('sensor.gpu_psu_smart_plug_today_energy') | float(0)
-            + states('sensor.nas_psu_smart_plug_today_energy') | float(0)
-            + states('sensor.proxmox_server_smart_plug_today_energy') | float(0)
-            + states('sensor.truenas_server_smart_plug_today_energy') | float(0)) * 0.21) | round(2) }}
+          {{ ((states('sensor.gpu_psu_energy_daily') | float(0)
+            + states('sensor.nas_psu_energy_daily') | float(0)
+            + states('sensor.proxmox_server_energy_daily') | float(0)
+            + states('sensor.truenas_server_energy_daily') | float(0)) * 0.21) | round(2) }}
 
       - name: "GPU PSU Cost Today"
         unique_id: gpu_psu_cost_today
         unit_of_measurement: "USD"
         state_class: total_increasing
-        state: "{{ (states('sensor.gpu_psu_smart_plug_today_energy') | float(0) * 0.21) | round(2) }}"
+        state: "{{ (states('sensor.gpu_psu_energy_daily') | float(0) * 0.21) | round(2) }}"
 
       - name: "NAS PSU Cost Today"
         unique_id: nas_psu_cost_today
         unit_of_measurement: "USD"
         state_class: total_increasing
-        state: "{{ (states('sensor.nas_psu_smart_plug_today_energy') | float(0) * 0.21) | round(2) }}"
+        state: "{{ (states('sensor.nas_psu_energy_daily') | float(0) * 0.21) | round(2) }}"
 
       - name: "Proxmox Server Cost Today"
         unique_id: proxmox_server_cost_today
         unit_of_measurement: "USD"
         state_class: total_increasing
-        state: "{{ (states('sensor.proxmox_server_smart_plug_today_energy') | float(0) * 0.21) | round(2) }}"
+        state: "{{ (states('sensor.proxmox_server_energy_daily') | float(0) * 0.21) | round(2) }}"
 
       - name: "TrueNAS Server Cost Today"
         unique_id: truenas_server_cost_today
         unit_of_measurement: "USD"
         state_class: total_increasing
-        state: "{{ (states('sensor.truenas_server_smart_plug_today_energy') | float(0) * 0.21) | round(2) }}"
+        state: "{{ (states('sensor.truenas_server_energy_daily') | float(0) * 0.21) | round(2) }}"
 
 # # Expose Camera Stream Source Integration
 # # Allows exposing camera stream URLs via API for go2rtc/Frigate integration
