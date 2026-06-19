@@ -76,17 +76,24 @@ spec:
       numa: true
       # hugepages: 1GB  # Requires host config: echo 256 > /proc/sys/vm/nr_hugepages
       balloon: false
-      # GPU passthrough using Proxmox Resource Mappings. Mapping `temp-gpu`
-      # created on the 192.168.10.14 host (Datacenter → Resource Mappings → PCI).
-      # Add a second entry here if the box has two GPUs.
+      # GPU passthrough using Proxmox Resource Mappings. Two NVIDIA RTX 3090s
+      # (10de:2204) are mapped on the 192.168.10.14 host (Datacenter → Resource
+      # Mappings → PCI):
+      #   gpu1 → 0000:43:00 (IOMMU group 35)
+      #   gpu2 → 0000:08:00 (IOMMU group 14)
+      # Both are passed through whole-card; the cluster runs GPU workloads as
+      # mutually-exclusive whole-card consumers (see CLAUDE.md GPU topology).
       pci_devices:
-        - mapping: temp-gpu
+        - mapping: gpu1
+          pcie: true
+        - mapping: gpu2
           pcie: true
 
 # GPU Passthrough Setup:
 # With enhanced provider, VM is pre-configured for GPU. Just:
-# 1. PCI Resource Mapping `temp-gpu` created on the 192.168.10.14 host
+# 1. PCI Resource Mappings `gpu1` + `gpu2` created on the 192.168.10.14 host
+#    (both RTX 3090 / 10de:2204; gpu1=0000:43:00 IOMMU 35, gpu2=0000:08:00 IOMMU 14)
 # 2. Shut down the VM in Proxmox
-# 3. Add GPU via Proxmox UI: Hardware → Add → PCI Device (All Functions + PCI-Express)
+# 3. Add GPUs via Proxmox UI: Hardware → Add → PCI Device (All Functions + PCI-Express)
 # 4. Start the VM
 # 5. GPU extensions are configured in the cluster template patches
