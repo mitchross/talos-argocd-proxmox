@@ -86,12 +86,14 @@ persistence:
   # default) — the `dataEngine: v2` routing was removed 2026-06-12.
   defaultClass: true
   # -- Default number of replicas for volumes.
-  # Set to 2 for node-failure resilience. With replica 1, a single node going
-  # down makes all its volumes unavailable and causes stale attachment cascades.
-  # With replica 2, Longhorn serves from the surviving replica on another node.
-  # Trade-off: doubles storage usage (~932GB -> ~1.86TB of ~2TB capacity).
-  # VolSync + Kopia still handles off-cluster backup to NFS.
-  defaultClassReplicaCount: 2
+  # SINGLE-NODE cluster (2950X Threadripper box, single-node-talos-gpu machine
+  # class): MUST be 1. With replica >1 on one node, Longhorn's default replica
+  # anti-affinity has nowhere to place the extra replicas, so every volume stays
+  # Degraded forever. Node-failure resilience is N/A with a single node anyway —
+  # off-cluster durability comes from VolSync + Kopia backups to NFS.
+  # (Was 2 for the multi-node DL360 cluster, where Longhorn served from a
+  # surviving replica on another node; restore that value if you scale back out.)
+  defaultClassReplicaCount: 1
   # -- Default filesystem type.
   defaultFsType: ext4
   defaultDataLocality: best-effort

@@ -20,7 +20,14 @@ spec:
   - ReadWriteOnce
   resources:
     requests:
-      storage: 300Gi
+      # Shrunk 300Gi -> 50Gi for the single-node 2950X rebuild (2026-06-19).
+      # The library volume holds only immich's working set (thumbnails/transcodes/
+      # new uploads) ~6Gi actual — originals live on the read-only nfs-photos
+      # external library. 50Gi keeps generous headroom while reclaiming ~250Gi of
+      # Longhorn scheduling budget on the single 512G EDILOCA disk. pvc-plumber
+      # backup contract + dataSourceRef restore are UNCHANGED (restore-into-larger
+      # works fine).
+      storage: 50Gi
   storageClassName: longhorn
   # dataSourceRef → ReplicationDestination/library-dst (added 2026-05-31 during the
   # immich-library DR-completion drill). The empty reset originally omitted this;
