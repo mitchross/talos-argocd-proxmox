@@ -88,7 +88,9 @@ spec:
   storageClassName: longhorn
   resources:
     requests:
-      storage: 10Gi
+      # Shrunk 10Gi -> 4Gi for the single-node rebuild (2026-06-19). Valkey cache
+      # (allkeys-lru, no RDB/AOF) — nothing persisted, 4Gi is plenty. Backup-exempt.
+      storage: 4Gi
   # PostHog data is disposable/rebuildable (backup-exempt above) — intentionally
   # NO dataSourceRef and NO VolSync ReplicationSource/ReplicationDestination.
   # Inline RS/redis7-data + RD/redis7-data-dst were REMOVED 2026-05-31 to stop

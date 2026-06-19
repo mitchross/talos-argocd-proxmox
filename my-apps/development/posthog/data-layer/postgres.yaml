@@ -108,7 +108,10 @@ spec:
   storageClassName: longhorn
   resources:
     requests:
-      storage: 20Gi
+      # Shrunk 20Gi -> 8Gi for the single-node rebuild (2026-06-19). PostHog's
+      # Postgres holds metadata/config (small); 8Gi is ample. Backup-exempt;
+      # starts empty on nuke.
+      storage: 8Gi
   # PostHog data is disposable/rebuildable (backup-exempt above) — intentionally
   # NO dataSourceRef and NO VolSync ReplicationSource/ReplicationDestination.
   # Inline RS/postgres-data + RD/postgres-data-dst were REMOVED 2026-05-31 to
