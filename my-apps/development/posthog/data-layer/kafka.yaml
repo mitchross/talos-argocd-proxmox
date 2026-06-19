@@ -20,7 +20,10 @@ spec:
   storageClassName: longhorn
   resources:
     requests:
-      storage: 20Gi
+      # Shrunk 20Gi -> 8Gi for the single-node rebuild (2026-06-19). Redpanda
+      # runs --unsafe-bypass-fsync with ~1h retention — the log is ephemeral, so
+      # 8Gi is plenty. Backup-exempt; starts empty on nuke.
+      storage: 8Gi
   # PostHog data is disposable/rebuildable (backup-exempt above) — intentionally
   # NO dataSourceRef and NO VolSync ReplicationSource/ReplicationDestination.
   # Inline RS/redpanda-data-kafka-0 + RD/redpanda-data-kafka-0-dst were REMOVED
