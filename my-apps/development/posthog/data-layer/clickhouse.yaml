@@ -21,7 +21,11 @@ spec:
   storageClassName: longhorn
   resources:
     requests:
-      storage: 100Gi
+      # Shrunk 100Gi -> 40Gi for the single-node 2950X rebuild (2026-06-19).
+      # Backup-exempt + rebuilt from ingest on nuke, so it starts empty; 40Gi is
+      # ample for homelab ClickHouse retention and reclaims Longhorn budget on the
+      # single 512G disk. Raise retention/size later if analytics volume grows.
+      storage: 40Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
