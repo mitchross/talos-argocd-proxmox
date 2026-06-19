@@ -76,16 +76,16 @@ spec:
       numa: true
       # hugepages: 1GB  # Requires host config: echo 256 > /proc/sys/vm/nr_hugepages
       balloon: false
-      # GPU passthrough using Proxmox Resource Mappings. Create the mapping on
-      # the 192.168.10.14 host first (Datacenter → Resource Mappings → PCI).
+      # GPU passthrough using Proxmox Resource Mappings. Mapping `temp-gpu`
+      # created on the 192.168.10.14 host (Datacenter → Resource Mappings → PCI).
       # Add a second entry here if the box has two GPUs.
       pci_devices:
-        - mapping: nvidia-gpu-1
+        - mapping: temp-gpu
           pcie: true
 
 # GPU Passthrough Setup:
 # With enhanced provider, VM is pre-configured for GPU. Just:
-# 1. Create the PCI Resource Mapping `nvidia-gpu-1` on the 192.168.10.14 host
+# 1. PCI Resource Mapping `temp-gpu` created on the 192.168.10.14 host
 # 2. Shut down the VM in Proxmox
 # 3. Add GPU via Proxmox UI: Hardware → Add → PCI Device (All Functions + PCI-Express)
 # 4. Start the VM

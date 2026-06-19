@@ -33,7 +33,10 @@ spec:
     size: 50Gi
     storageClass: longhorn
   walStorage:
-    size: 50Gi
+    # 50Gi -> 10Gi for single-node 2950X rebuild (2026-06-19). WAL is transient
+    # spool (max_wal_size < 1GB); 50Gi was never approached. Reclaims Longhorn
+    # scheduling budget on the single 512G disk.
+    size: 10Gi
     storageClass: longhorn
   managed:
     services:
