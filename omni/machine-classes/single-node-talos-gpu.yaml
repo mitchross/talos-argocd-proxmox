@@ -79,20 +79,26 @@ spec:
       # GPU passthrough using Proxmox Resource Mappings. Two NVIDIA RTX 3090s
       # (10de:2204) are mapped on the 192.168.10.14 host (Datacenter → Resource
       # Mappings → PCI):
-      #   gpu-1 → 0000:43:00 (IOMMU group 35)
-      #   gpu-2 → 0000:08:00 (IOMMU group 14)
+      #   gpu-1 → 0000:09:00 (IOMMU group 17)
+      #   gpu-2 → 0000:0a:00 (IOMMU group 18)
       # Both are passed through whole-card; the cluster runs GPU workloads as
       # mutually-exclusive whole-card consumers (see CLAUDE.md GPU topology).
-      # HOST PREREQUISITE (192.168.10.14, fixed 2026-06-19): the boot SSD (Intel
-      # 660P @ 42:00) and GPU gpu1 (43:00) are siblings under PCIe root complex
-      # 40. On guest GPU reset the kernel's DPC/AER handler contained the root
-      # port and took the boot disk down with it -> instant host hard-hang.
-      # Fixed by handing PCIe error handling to firmware via the host kernel
-      # cmdline `pcie_ports=compat pcie_aspm=off` (plus vfio-pci binding +
-      # `initcall_blacklist=sysfb_init video=efifb:off` for the headless console).
-      # See /root/CLAUDE-GPU-PASSTHROUGH-NOTE.md on the host. Validated: both
-      # 3090s pass through with the host staying up. Do NOT remove those cmdline
-      # args or the host will hard-lock again when this VM boots.
+      # HOST CONFIG (192.168.10.14, re-derived 2026-06-19 after a Proxmox
+      # reinstall): GPU passthrough is enabled via a grub.d drop-in
+      # `/etc/default/grub.d/99-gpu-passthrough.cfg`:
+      #   amd_iommu=on iommu=pt initcall_blacklist=sysfb_init
+      # plus vfio-pci binding by ID in `/etc/modprobe.d/gpu-passthrough.conf`
+      #   options vfio-pci ids=10de:2204,10de:1aef disable_vga=1
+      # Validated 2026-06-19: both 3090s + their HDMI audio bind to vfio-pci, the
+      # AMD-Vi IO_PAGE_FAULT storm is gone, host boots clean.
+      # NOTE on the old hard-lock: the earlier build hard-locked on guest GPU
+      # reset because the boot disk (Intel 660P @ 42:00) and a GPU (43:00) were
+      # SIBLINGS under root complex 40, so DPC containment took the boot disk
+      # down. That required `pcie_ports=compat pcie_aspm=off`. The current
+      # topology is different: the GPUs sit on die 0 (09:00 under 00:01.3,
+      # 0a:00 under 00:03.1) and the boot SSD on die 1 (ASMedia @ 41:00 under
+      # 40:01.3) — no longer siblings — so that failure mode is gone and
+      # pcie_ports=compat is not required. The dead Intel 660P NVMe was removed.
       pci_devices:
         - mapping: gpu-1
           pcie: true
@@ -102,7 +108,7 @@ spec:
 # GPU Passthrough Setup:
 # With enhanced provider, VM is pre-configured for GPU. Just:
 # 1. PCI Resource Mappings `gpu-1` + `gpu-2` created on the 192.168.10.14 host
-#    (both RTX 3090 / 10de:2204; gpu-1=0000:43:00 IOMMU 35, gpu-2=0000:08:00 IOMMU 14)
+#    (both RTX 3090 / 10de:2204; gpu-1=0000:09:00 IOMMU 17, gpu-2=0000:0a:00 IOMMU 18)
 # 2. Shut down the VM in Proxmox
 # 3. Add GPUs via Proxmox UI: Hardware → Add → PCI Device (All Functions + PCI-Express)
 # 4. Start the VM
