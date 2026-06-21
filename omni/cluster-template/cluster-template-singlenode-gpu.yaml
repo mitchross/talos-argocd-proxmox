@@ -102,6 +102,19 @@ patches:
       nodeLabels:
         gpu-worker: "true"
         nvidia.com/gpu: "true"
+# Longhorn 2-disk auto-discovery (fresh bootstrap only): this label+annotation make
+# Longhorn register BOTH disks — the ephemeral /var/lib/longhorn and the 2nd disk at
+# /var/mnt/longhorn-nvme1. Only honored when createDefaultDiskLabeledNodes=true (in
+# longhorn values.yaml) AND on a node with no disks yet. The 2nd disk is mounted by
+# the longhorn-nvme1-volume UserVolume below.
+- name: longhorn-node-disks
+  inline:
+    machine:
+      nodeLabels:
+        node.longhorn.io/create-default-disk: "config"
+      nodeAnnotations:
+        node.longhorn.io/default-disks-config: >-
+          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":[]},{"name":"nvme1","path":"/var/mnt/longhorn-nvme1","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":[]}]
 # nodeIP.validSubnets + nvidia kernel modules + bpf sysctl (no DHCP interface pin).
 - file: patches/single-node-gpu.yaml
 - name: kubelet-performance
@@ -132,6 +145,20 @@ patches:
           - bind
           - rshared
           - rw
+# Second Longhorn disk: format + mount the 2nd Proxmox disk (nvme1-vmstore -> the
+# non-system /dev/sdb) at /var/mnt/longhorn-nvme1. Talos auto-propagates user
+# volumes into the kubelet, so Longhorn uses this path (registered via the
+# longhorn-node-disks annotation above). diskSelector excludes the system disk.
+- name: longhorn-nvme1-volume
+  inline:
+    apiVersion: v1alpha1
+    kind: UserVolumeConfig
+    name: longhorn-nvme1
+    provisioning:
+      diskSelector:
+        match: "!system_disk && disk.transport == 'scsi' && disk.size >= 400u * GB"
+      minSize: 400GB
+      grow: true
 # Control-plane performance tuning — single etcd member, but the metrics
 # listeners + bind-address:0.0.0.0 flips keep Prometheus node-discovery scraping
 # working (etcd :2381, controller-manager :10257, scheduler :10259).

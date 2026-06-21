@@ -18,6 +18,14 @@ defaultSettings:
   # a single scalar or a JSON string with per-engine values like {"v1":"...","v2":"..."} when needed.
   defaultDataPath: "/var/lib/longhorn"
   storageMinimalAvailablePercentage: "10"
+  # Honor the node.longhorn.io/default-disks-config annotation set in the Talos
+  # cluster template, so Longhorn registers BOTH disks on fresh bootstrap. Without
+  # this, Longhorn ignores the annotation and only creates defaultDataPath.
+  createDefaultDiskLabeledNodes: "true"
+  # The annotation already sets storageReserved:0 per disk; Longhorn 1.12 also
+  # applies this global % to annotation-created default disks, so keep it 0 (the
+  # real physical guard is storageMinimalAvailablePercentage above).
+  storageReservedPercentageForDefaultDisk: "0"
   # 200% was the previous floor (replicaCount=2 doubles every PVC against the
   # scheduling limit). 2026-04-27 the cluster crossed 200% allocation on
   # `talos-prod-cluster-workers-smgrbs` (1077 Gi reserved vs 1046 Gi cap →
