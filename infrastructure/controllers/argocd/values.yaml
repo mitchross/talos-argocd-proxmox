@@ -150,7 +150,8 @@ configs:
       return hs
 # Argo CD server settings
 server:
-  replicas: 2
+  # single-node: 1 replica (2 was multi-node HA, pointless on one node)
+  replicas: 1
   ingress:
     enabled: false
   env:
@@ -238,7 +239,8 @@ controller:
       memory: 6Gi   # Increased from 4Gi to accommodate memory growth
 # Argo CD repo-server settings
 repoServer:
-  replicas: 2
+  # single-node: 1 replica (2 was multi-node HA)
+  replicas: 1
   env:
     - name: ARGOCD_EXEC_TIMEOUT
       value: "3m"
@@ -255,7 +257,7 @@ repoServer:
   # CPU-bound (manifest generation) but low memory (template processing)
   resources:
     requests:
-      cpu: 3000m   # Match VPA target (was 1000m, tripled)
+      cpu: 1000m   # single-node: low reservation; bursts to 4000m limit on big renders
       memory: 768Mi  # Reduced from 1Gi (VPA target only 523Mi)
     limits:
       cpu: 4000m   # Keep at 4000m (VPA upperBound: 28+ cores during Prometheus chart)
