@@ -35,9 +35,10 @@ spec:
       # full thread count as vCPUs. cpu_type: host exposes the native CPU.
       cores: 32
       sockets: 1
-      # 128 GiB host RAM. Leave headroom for the Proxmox host itself —
-      # 120 GiB to the guest, ~8 GiB reserved for the hypervisor.
-      memory: 122880
+      # 128 GiB host RAM. Keep substantial headroom for Proxmox, QEMU/VFIO,
+      # IOMMU mappings, and dual RTX 3090 passthrough. A 120 GiB guest caused
+      # host memory pressure and SSH/userspace stalls during GPU init.
+      memory: 98304
       # One disk holds Talos system + images + pod ephemeral + Longhorn V1
       # replica files (same single-partition V1 layout as the DL360 nodes — see
       # worker.yaml for the V2-engine post-mortem). Models live on NFS.
@@ -70,6 +71,11 @@ spec:
       # GPU passthrough optimizations
       cpu_type: host
       machine_type: q35
+      # Talos/Proxmox GPU passthrough needs UEFI, and the GPUs must remain
+      # secondary compute devices. Keep an emulated primary VGA adapter so OVMF
+      # does not run GOP against either 3090.
+      bios: ovmf
+      vga: std
       # numa=true keeps guest memory on the same NUMA node as its vCPUs / the
       # PCIe lanes owning the GPU. The 2950X is a 2-die (NUMA) part, so this
       # matters for GPU passthrough latency.
