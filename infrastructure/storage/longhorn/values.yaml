@@ -28,7 +28,13 @@ defaultSettings:
   # gives ~1568 Gi reservation budget per node, restoring Schedulable.
   # Rebalance/PVC-shrink/migrate-to-NFS are the long-term levers; this is
   # the band-aid that unsticks scheduling immediately.
-  storageOverProvisioningPercentage: "300"
+  # SINGLE-NODE (2026-06-21): the whole cluster's ~1.31 TiB of declared volumes
+  # sits on ONE 448 GiB disk → at 300% the reservation budget (~1344 GiB) was
+  # maxed and the next batch of volumes couldn't schedule a replica (faulted).
+  # Volumes are thin (~117 GiB physically used), so 600% is safe — physical free
+  # is the real guard (storageMinimalAvailablePercentage: 10). TrueNAS NFS
+  # offload is the long-term lever once bulk PVCs migrate off Longhorn.
+  storageOverProvisioningPercentage: "600"
   allowRecurringJobWhileVolumeDetached: "true"
   replicaAutoBalance: "best-effort"
   # Ensure new consolidated settings that can be per-engine stay simple scalars for V1-only clusters
