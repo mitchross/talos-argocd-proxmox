@@ -118,7 +118,7 @@ resources:
 
 # Hubble (Observability)
 hubble:
-  enabled: true
+  enabled: true 
   # Performance: increase event queue to prevent drops under load
   eventQueueSize: 16384
   relay:
