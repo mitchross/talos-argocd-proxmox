@@ -110,6 +110,13 @@ patches:
       kubelet:
         extraConfig:
           serializeImagePulls: false
+          # SINGLE-NODE: this one node runs the ENTIRE cluster (~208 pods). The
+          # kubelet default maxPods=110 caps it, leaving ~95 pods Pending with
+          # "Too many pods". Raise to 250 (Cilium gives each node a /24 pod CIDR
+          # = ~254 usable IPs, so 250 is the safe ceiling). If pod count ever
+          # approaches 250, widen the Cilium per-node pod CIDR (clusterPoolIPv4-
+          # MaskSize 24 -> 23 = 510 IPs) before raising maxPods further.
+          maxPods: 250
 # Longhorn V1 data path: /var/lib/longhorn bind-mounted from /var/local/longhorn
 # on the single 450G disk (Talos system + images + pod ephemeral + Longhorn
 # replicas all share it). Same layout as the prod nodes.
