@@ -10,12 +10,16 @@ spec:
       owner: gitea
       secret:
         name: gitea-app-secret
-      # Restore-to-LATEST (no recoveryTarget): v5 was cleanly superseded by the
-      # 2026-06-12 rebuild (which opened v6), so v5's WAL (files 003→010) is all
-      # from the v5 cluster — there is no post-nuke garbage to stop short of.
-      # The previous 2026-06-01 targetTime was STALE: it predates the v5 base
-      # backup (2026-06-12T16:45) and would FATAL "target before backup".
-      # Removed 2026-06-21.
+      # PITR to 2026-06-19 12:00 UTC. v6 holds the REAL gitea (sys ...755) that
+      # ran June 12-19 with data loaded — its backups jumped 29MB->38MB on June
+      # 12 evening when the repos were adopted, and stayed 38-39MB through June
+      # 19 (last clean base backup 20260619T040001). This session's nuke later
+      # started a fresh initdb on the SAME v6 serverName (the 20260621 backup,
+      # different system id) which polluted the WAL tail — so replay MUST stop
+      # before that. 06-19T12:00 is ~8h after the last good base backup, safely
+      # within the ...755 run. (v3 and v5 were both 29MB = pre-data/empty.)
+      recoveryTarget:
+        targetTime: "2026-06-19T12:00:00Z"
   # Plugin-shape externalClusters (replaces the deprecated in-tree
   # barmanObjectStore field on externalClusters[]; removed in CNPG 1.30.0).
   # Reuses the prod ObjectStore CR (base/objectstore.yaml) — the only thing
@@ -31,12 +35,13 @@ spec:
           # endpoint). Only serverName changes between live writes and
           # recovery reads.
           barmanObjectName: gitea-objectstore
-          # Recover FROM v3 — VERIFIED 2026-06-21 by comparing pg_control system
-          # ids: v3's latest base (20260610T040001) and its begin_wal share
-          # system id 7647132232567279645 = CONSISTENT (a stable cluster ran
-          # June 3-10, 8 daily backups). v5 was REJECTED: polluted WAL (base sys
-          # ...755 vs archived WAL sys ...732 from the 2026-06-12 rebuild churn)
-          # -> "could not locate required checkpoint record" FATAL. NOTE the
-          # backups ARE readable — the "multipart unreadable" RustFS caution is
-          # stale for gitea's small single-part objects. base writes forward to v7.
-          serverName: gitea-database-v3
+          # Recover FROM v6 — the lineage with the REAL gitea DATA. v6 base
+          # backups June 12(19:22)-19 are 38-39MB (sys ...755) vs the 29MB empty
+          # pre-data lineages (v3=June3-10, v5=June12 morning). VERIFIED 2026-06-21:
+          # v6 backup 20260619T040001 base + its begin_wal (0000000100000006-
+          # 000000E4) both = sys 7650550815038537755 -> consistent, RESTORABLE.
+          # The recoveryTarget above (06-19T12:00) stops replay before this
+          # session's fresh initdb polluted the v6 tail (20260621 backup, diff
+          # system). base/cluster.yaml writes forward to v7. (v3 restore gave 0
+          # repos because it predates the data load; v5 WAL was cross-system.)
+          serverName: gitea-database-v6
