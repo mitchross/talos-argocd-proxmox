@@ -91,6 +91,7 @@ omni/proxmox-provider/config.yaml
 
 # Kubernetes Configs
 kubeconfig*
+omni/configs/*.yaml
 # kubernetes/ # Might be too broad?
 
 # Lock Files (Potentially broad)
