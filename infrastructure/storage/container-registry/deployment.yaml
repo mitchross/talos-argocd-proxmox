@@ -24,10 +24,16 @@ spec:
           env:
             - name: REGISTRY_STORAGE_DELETE_ENABLED
               value: "true"
+          envFrom:
+            # Supplies REGISTRY_STORAGE_S3_ACCESSKEY / _SECRETKEY for the s3 driver.
+            - secretRef:
+                name: registry-s3-credentials
           volumeMounts:
-            - name: registry-data
-              mountPath: /var/lib/registry
+            # S3-backed config.yml (storage.s3 -> RustFS). PVC no longer mounted.
+            - name: registry-config
+              mountPath: /etc/distribution/config.yml
+              subPath: config.yml
       volumes:
-        - name: registry-data
-          persistentVolumeClaim:
-            claimName: registry
+        - name: registry-config
+          configMap:
+            name: registry-config

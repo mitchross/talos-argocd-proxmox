@@ -9,6 +9,7 @@ resources:
   - pvc.yaml
   - httproute.yaml
   - gc-cronjob.yaml
+  - externalsecret.yaml
 
 configMapGenerator:
   - name: registry-config
