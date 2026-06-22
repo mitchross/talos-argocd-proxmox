@@ -34,7 +34,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: renovate
-              image: ghcr.io/renovatebot/renovate:43.229.1
+              image: ghcr.io/renovatebot/renovate:43.235.1
               imagePullPolicy: IfNotPresent
               env:
                 # The "customManager only extracts 1 of N" symptom that put
