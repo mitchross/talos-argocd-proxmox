@@ -364,7 +364,7 @@ kubectl apply -f infrastructure/controllers/argocd/ns.yaml
 
 helm upgrade --install argocd argo-cd \
   --repo https://argoproj.github.io/argo-helm \
-  --version 9.5.21 \
+  --version 9.7.0 \
   --namespace argocd \
   --values infrastructure/controllers/argocd/values.yaml \
   --wait \
