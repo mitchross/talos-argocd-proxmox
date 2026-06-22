@@ -91,6 +91,15 @@ write:
 # This saves ~200Gi of Longhorn storage
 minio:
   enabled: false
+# Homelab right-sizing: chart defaults reserve chunksCache 8192Mi (req ~9830Mi)
+# and resultsCache 1024Mi (req ~1229Mi) — ~11Gi of memory *requests* to cache a
+# trickle of logs. Actual usage is <50Mi. Cap allocatedMemory low to free node
+# request pressure. allocatedMemory is the memcached -m value; the pod request
+# is round(allocatedMemory * 1.2).
+chunksCache:
+  allocatedMemory: 512
+resultsCache:
+  allocatedMemory: 256
 gateway:
   service:
     type: LoadBalancer
