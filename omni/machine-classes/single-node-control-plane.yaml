@@ -14,7 +14,7 @@ spec:
     providerdata: |
       cores: 4
       sockets: 1
-      memory: 24576
+      memory: 16384
       disk_size: 100
       storage_selector: name == "nvme0-vmstore"
       network_bridge: vmbr0

@@ -15,13 +15,15 @@ spec:
       labels:
         app: mcpo
     spec:
-      # MCPO is a pure-HTTP tool proxy (no GPU). Keep it off the GPU node so
-      # both 3090s stay exclusive to vLLM; it reaches Open WebUI via Service DNS.
+      # MCPO is a pure-HTTP tool proxy (no GPU). PREFER a non-GPU node so the
+      # 3090s stay exclusive to vLLM, but soft so it still schedules on the GPU
+      # node when it's the only worker. Reaches Open WebUI via Service DNS.
       affinity:
         nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
                   - key: feature.node.kubernetes.io/pci-0300_10de.present
                     operator: DoesNotExist
       containers:

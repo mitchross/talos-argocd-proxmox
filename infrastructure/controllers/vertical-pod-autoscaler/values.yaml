@@ -1,0 +1,34 @@
+# Passive VPA install: recommender only.
+#
+# The updater and admission controller are intentionally disabled so VPA cannot
+# evict, resize, or mutate any workload. Per-workload VPA objects use
+# updateMode: Off and only publish recommendations under status.
+
+admissionController:
+  enabled: false
+
+updater:
+  enabled: false
+
+recommender:
+  enabled: true
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: Exists

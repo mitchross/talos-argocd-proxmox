@@ -15,6 +15,17 @@ spec:
       labels:
         app: mcpo-multi
     spec:
+      # Pure-HTTP tool proxy (no GPU). PREFER a non-GPU node so the 3090s stay
+      # exclusive to vLLM, but soft so it still schedules on the GPU node when
+      # it's the only worker. NFD adds pci-0300_10de.present only to GPU nodes.
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: feature.node.kubernetes.io/pci-0300_10de.present
+                    operator: DoesNotExist
       containers:
       - name: mcpo-multi
         image: ghcr.io/open-webui/mcpo:main

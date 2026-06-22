@@ -1,0 +1,179 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vpa-recommendations-dashboard
+  namespace: prometheus-stack
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/name: grafana-dashboards
+data:
+  vpa-recommendations.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "graphTooltip": 1,
+      "schemaVersion": 39,
+      "title": "VPA Recommendations",
+      "uid": "vpa-recommendations",
+      "tags": ["kubernetes", "vpa", "capacity"],
+      "time": { "from": "now-6h", "to": "now" },
+      "refresh": "1m",
+      "templating": {
+        "list": [
+          {
+            "type": "datasource",
+            "name": "DS_PROM",
+            "label": "Prometheus",
+            "query": "prometheus",
+            "current": { "text": "Prometheus", "value": "Prometheus" }
+          },
+          {
+            "type": "query",
+            "name": "namespace",
+            "label": "Namespace",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+            "query": { "query": "label_values(kube_verticalpodautoscaler_spec_updatepolicy_updatemode, namespace)", "refId": "Namespace" },
+            "refresh": 1,
+            "multi": true,
+            "includeAll": true,
+            "current": { "text": "All", "value": "$__all" }
+          },
+          {
+            "type": "query",
+            "name": "target",
+            "label": "Target",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+            "query": { "query": "label_values(kube_verticalpodautoscaler_spec_updatepolicy_updatemode{namespace=~\"$namespace\"}, target_name)", "refId": "Target" },
+            "refresh": 1,
+            "multi": true,
+            "includeAll": true,
+            "current": { "text": "All", "value": "$__all" }
+          }
+        ]
+      },
+      "panels": [
+        { "type": "row", "id": 100, "title": "Passive VPA status", "gridPos": {"x":0,"y":0,"w":24,"h":1}, "collapsed": false },
+        {
+          "type": "stat",
+          "id": 1,
+          "title": "Passive VPAs",
+          "description": "VPAs with updateMode=Off. These publish recommendations only.",
+          "gridPos": {"x":0,"y":1,"w":6,"h":4},
+          "datasource": {"type":"prometheus","uid":"${DS_PROM}"},
+          "targets": [{"expr":"count(kube_verticalpodautoscaler_spec_updatepolicy_updatemode{namespace=~\"$namespace\",target_name=~\"$target\",update_mode=\"Off\"} == 1)","refId":"A"}],
+          "fieldConfig": {"defaults": {"unit":"short","thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]}}},
+          "options": {"reduceOptions":{"calcs":["lastNotNull"]},"colorMode":"background","graphMode":"none"}
+        },
+        {
+          "type": "stat",
+          "id": 2,
+          "title": "VPAs with recommendations",
+          "description": "Targets where the recommender has emitted CPU recommendations.",
+          "gridPos": {"x":6,"y":1,"w":6,"h":4},
+          "datasource": {"type":"prometheus","uid":"${DS_PROM}"},
+          "targets": [{"expr":"count(count by (namespace, verticalpodautoscaler) (kube_verticalpodautoscaler_status_recommendation_containerrecommendations_target_cpu{namespace=~\"$namespace\",target_name=~\"$target\"}))","refId":"A"}],
+          "fieldConfig": {"defaults": {"unit":"short","thresholds":{"mode":"absolute","steps":[{"color":"yellow","value":null},{"color":"green","value":1}]}}},
+          "options": {"reduceOptions":{"calcs":["lastNotNull"]},"colorMode":"background","graphMode":"none"}
+        },
+        {
+          "type": "stat",
+          "id": 3,
+          "title": "Max target CPU",
+          "gridPos": {"x":12,"y":1,"w":6,"h":4},
+          "datasource": {"type":"prometheus","uid":"${DS_PROM}"},
+          "targets": [{"expr":"max(kube_verticalpodautoscaler_status_recommendation_containerrecommendations_target_cpu{namespace=~\"$namespace\",target_name=~\"$target\"})","refId":"A"}],
+          "fieldConfig": {"defaults": {"unit":"cores","decimals":2,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":2},{"color":"red","value":8}]}}},
+          "options": {"reduceOptions":{"calcs":["lastNotNull"]},"colorMode":"value","graphMode":"area"}
+        },
+        {
+          "type": "stat",
+          "id": 4,
+          "title": "Max target memory",
+          "gridPos": {"x":18,"y":1,"w":6,"h":4},
+          "datasource": {"type":"prometheus","uid":"${DS_PROM}"},
+          "targets": [{"expr":"max(kube_verticalpodautoscaler_status_recommendation_containerrecommendations_target_memory{namespace=~\"$namespace\",target_name=~\"$target\"})","refId":"A"}],
+          "fieldConfig": {"defaults": {"unit":"bytes","thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":8589934592},{"color":"red","value":34359738368}]}}},
+          "options": {"reduceOptions":{"calcs":["lastNotNull"]},"colorMode":"value","graphMode":"area"}
+        },
+        { "type": "row", "id": 101, "title": "Recommendations", "gridPos": {"x":0,"y":5,"w":24,"h":1}, "collapsed": false },
+        {
+          "type": "table",
+          "id": 10,
+          "title": "CPU target recommendations",
+          "gridPos": {"x":0,"y":6,"w":12,"h":9},
+          "datasource": {"type":"prometheus","uid":"${DS_PROM}"},
+          "targets": [
+            {"refId":"TARGET","expr":"kube_verticalpodautoscaler_status_recommendation_containerrecommendations_target_cpu{namespace=~\"$namespace\",target_name=~\"$target\"}","format":"table","instant":true},
+            {"refId":"LOWER","expr":"kube_verticalpodautoscaler_status_recommendation_containerrecommendations_lowerbound_cpu{namespace=~\"$namespace\",target_name=~\"$target\"}","format":"table","instant":true},
+            {"refId":"UPPER","expr":"kube_verticalpodautoscaler_status_recommendation_containerrecommendations_upperbound_cpu{namespace=~\"$namespace\",target_name=~\"$target\"}","format":"table","instant":true},
+            {"refId":"UNCAPPED","expr":"kube_verticalpodautoscaler_status_recommendation_containerrecommendations_uncappedtarget_cpu{namespace=~\"$namespace\",target_name=~\"$target\"}","format":"table","instant":true}
+          ],
+          "transformations": [
+            {"id":"joinByField","options":{"byField":"container","mode":"outer"}},
+            {"id":"organize","options":{"excludeByName":{"Time":true,"Time 1":true,"Time 2":true,"Time 3":true,"Time 4":true,"__name__":true,"__name__ 1":true,"__name__ 2":true,"__name__ 3":true,"customresource_group":true,"customresource_group 1":true,"customresource_group 2":true,"customresource_group 3":true,"customresource_kind":true,"customresource_kind 1":true,"customresource_kind 2":true,"customresource_kind 3":true,"customresource_version":true,"customresource_version 1":true,"customresource_version 2":true,"customresource_version 3":true,"resource":true,"resource 1":true,"resource 2":true,"resource 3":true,"unit":true,"unit 1":true,"unit 2":true,"unit 3":true},"renameByName":{"namespace":"Namespace","target_kind":"Kind","target_name":"Target","verticalpodautoscaler":"VPA","container":"Container","Value #TARGET":"Target","Value #LOWER":"Lower","Value #UPPER":"Upper","Value #UNCAPPED":"Uncapped"}}}
+          ],
+          "fieldConfig": {"defaults": {"unit":"cores","decimals":3}},
+          "options": {"showHeader": true}
+        },
+        {
+          "type": "table",
+          "id": 11,
+          "title": "Memory target recommendations",
+          "gridPos": {"x":12,"y":6,"w":12,"h":9},
+          "datasource": {"type":"prometheus","uid":"${DS_PROM}"},
+          "targets": [
+            {"refId":"TARGET","expr":"kube_verticalpodautoscaler_status_recommendation_containerrecommendations_target_memory{namespace=~\"$namespace\",target_name=~\"$target\"}","format":"table","instant":true},
+            {"refId":"LOWER","expr":"kube_verticalpodautoscaler_status_recommendation_containerrecommendations_lowerbound_memory{namespace=~\"$namespace\",target_name=~\"$target\"}","format":"table","instant":true},
+            {"refId":"UPPER","expr":"kube_verticalpodautoscaler_status_recommendation_containerrecommendations_upperbound_memory{namespace=~\"$namespace\",target_name=~\"$target\"}","format":"table","instant":true},
+            {"refId":"UNCAPPED","expr":"kube_verticalpodautoscaler_status_recommendation_containerrecommendations_uncappedtarget_memory{namespace=~\"$namespace\",target_name=~\"$target\"}","format":"table","instant":true}
+          ],
+          "transformations": [
+            {"id":"joinByField","options":{"byField":"container","mode":"outer"}},
+            {"id":"organize","options":{"excludeByName":{"Time":true,"Time 1":true,"Time 2":true,"Time 3":true,"Time 4":true,"__name__":true,"__name__ 1":true,"__name__ 2":true,"__name__ 3":true,"customresource_group":true,"customresource_group 1":true,"customresource_group 2":true,"customresource_group 3":true,"customresource_kind":true,"customresource_kind 1":true,"customresource_kind 2":true,"customresource_kind 3":true,"customresource_version":true,"customresource_version 1":true,"customresource_version 2":true,"customresource_version 3":true,"resource":true,"resource 1":true,"resource 2":true,"resource 3":true,"unit":true,"unit 1":true,"unit 2":true,"unit 3":true},"renameByName":{"namespace":"Namespace","target_kind":"Kind","target_name":"Target","verticalpodautoscaler":"VPA","container":"Container","Value #TARGET":"Target","Value #LOWER":"Lower","Value #UPPER":"Upper","Value #UNCAPPED":"Uncapped"}}}
+          ],
+          "fieldConfig": {"defaults": {"unit":"bytes"}},
+          "options": {"showHeader": true}
+        },
+        {
+          "type": "timeseries",
+          "id": 20,
+          "title": "CPU target over time",
+          "gridPos": {"x":0,"y":15,"w":12,"h":8},
+          "datasource": {"type":"prometheus","uid":"${DS_PROM}"},
+          "targets": [{"expr":"kube_verticalpodautoscaler_status_recommendation_containerrecommendations_target_cpu{namespace=~\"$namespace\",target_name=~\"$target\"}","legendFormat":"{{namespace}}/{{target_name}} {{container}}","refId":"A"}],
+          "fieldConfig": {"defaults": {"unit":"cores","decimals":2}}
+        },
+        {
+          "type": "timeseries",
+          "id": 21,
+          "title": "Memory target over time",
+          "gridPos": {"x":12,"y":15,"w":12,"h":8},
+          "datasource": {"type":"prometheus","uid":"${DS_PROM}"},
+          "targets": [{"expr":"kube_verticalpodautoscaler_status_recommendation_containerrecommendations_target_memory{namespace=~\"$namespace\",target_name=~\"$target\"}","legendFormat":"{{namespace}}/{{target_name}} {{container}}","refId":"A"}],
+          "fieldConfig": {"defaults": {"unit":"bytes"}}
+        },
+        { "type": "row", "id": 102, "title": "Request pressure smell tests", "gridPos": {"x":0,"y":23,"w":24,"h":1}, "collapsed": false },
+        {
+          "type": "bargauge",
+          "id": 30,
+          "title": "Current CPU request / VPA CPU target",
+          "description": "Approximate workload smell test grouped by namespace and container. Use the recommendation tables as the source of truth before changing manifests.",
+          "gridPos": {"x":0,"y":24,"w":12,"h":8},
+          "datasource": {"type":"prometheus","uid":"${DS_PROM}"},
+          "targets": [{"expr":"sum by (namespace, container) (kube_pod_container_resource_requests{resource=\"cpu\",unit=\"core\",namespace=~\"$namespace\",container!=\"\"}) / on(namespace, container) group_right(target_name, target_kind, verticalpodautoscaler) kube_verticalpodautoscaler_status_recommendation_containerrecommendations_target_cpu{namespace=~\"$namespace\",target_name=~\"$target\"}","legendFormat":"{{namespace}}/{{target_name}} {{container}}","refId":"A"}],
+          "fieldConfig": {"defaults": {"unit":"short","decimals":2,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":1.5},{"color":"red","value":3}]}}},
+          "options": {"displayMode":"gradient","orientation":"horizontal","reduceOptions":{"calcs":["lastNotNull"]}}
+        },
+        {
+          "type": "bargauge",
+          "id": 31,
+          "title": "Current memory request / VPA memory target",
+          "description": "Approximate workload smell test grouped by namespace and container. Values above 1 mean the current request is higher than VPA target.",
+          "gridPos": {"x":12,"y":24,"w":12,"h":8},
+          "datasource": {"type":"prometheus","uid":"${DS_PROM}"},
+          "targets": [{"expr":"sum by (namespace, container) (kube_pod_container_resource_requests{resource=\"memory\",unit=\"byte\",namespace=~\"$namespace\",container!=\"\"}) / on(namespace, container) group_right(target_name, target_kind, verticalpodautoscaler) kube_verticalpodautoscaler_status_recommendation_containerrecommendations_target_memory{namespace=~\"$namespace\",target_name=~\"$target\"}","legendFormat":"{{namespace}}/{{target_name}} {{container}}","refId":"A"}],
+          "fieldConfig": {"defaults": {"unit":"short","decimals":2,"thresholds":{"mode":"absolute","steps":[{"color":"green","value":null},{"color":"yellow","value":1.5},{"color":"red","value":3}]}}},
+          "options": {"displayMode":"gradient","orientation":"horizontal","reduceOptions":{"calcs":["lastNotNull"]}}
+        }
+      ]
+    }

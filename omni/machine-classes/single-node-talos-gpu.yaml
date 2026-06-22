@@ -15,7 +15,7 @@ spec:
       cores: 32
       sockets: 1
       # GPU passthrough pins guest RAM; keep host headroom.
-      memory: 81920
+      memory: 98304
       disk_size: 450
       storage_selector: name == "nvme0-vmstore"
       network_bridge: vmbr0
