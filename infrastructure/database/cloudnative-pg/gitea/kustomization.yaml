@@ -20,12 +20,10 @@ commonLabels:
 commonAnnotations:
   argocd.argoproj.io/sync-wave: "-5"
 resources:
-  - overlays/recovery        # ← ACTIVE 2026-06-21: restore gitea DB FROM v5.
-                             # VERIFIED readable — v5 base backup (~31MB) + WAL
-                             # files 003-010 fully download AND gzip-decompress.
-                             # gitea's barman objects are small (~4MB, single-
-                             # part), so the cluster-wide RustFS multipart
-                             # caution does NOT apply here. Writes forward to v7.
+  - overlays/recovery        # ← ACTIVE: restore gitea DB FROM v6.
+                             # Writes forward to v8 because v7 is polluted and
+                             # fails barman-cloud-check-wal-archive with
+                             # "Expected empty archive".
   # - overlays/initdb        # fresh empty DB (1 admin, 0 repos). Was active
                              # while v5 was (wrongly) assumed unrestorable.
   - externalsecret.yaml
