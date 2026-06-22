@@ -145,7 +145,9 @@ spec:
             requests:
               nvidia.com/gpu: "2"
               cpu: "1"
-              memory: 24Gi
+              # Weights live in GPU VRAM; host RAM steady-state is ~1.2Gi.
+              # Request 8Gi (headroom for load spikes); 64Gi limit allows burst.
+              memory: 8Gi
             limits:
               nvidia.com/gpu: "2"
               cpu: "14"          # leave ~2 vCPU for kubelet/cilium/device-plugin/otel
