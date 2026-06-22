@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: stirling-pdf
-          image: ghcr.io/stirling-tools/stirling-pdf:latest@sha256:2bb9b67f3edbca7ecc80f6e851a02cd04a10d5ea1d69b3e80b1e1f615e97b7a2
+          image: ghcr.io/stirling-tools/stirling-pdf:latest@sha256:d5ff678ecacdb26b4b7892534540de64a04458b8aaa0a4f9daf2852221646f71
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
