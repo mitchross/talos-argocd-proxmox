@@ -1,8 +1,8 @@
 # Single-node GPU Talos config (cluster: talos-singlenode-gpu-prod)
 # Host: second Proxmox box at 192.168.10.14 (2950X / 128G), bridge vmbr0,
-# Main LAN 192.168.10.x (DHCP). This is the all-in-one node — control plane +
-# every workload + GPU — provisioned by the `single-node-talos-gpu` machine
-# class via the `proxmox-threadripper` provider instance.
+# Main LAN 192.168.10.x (DHCP). This is the dedicated GPU worker paired with
+# the `single-node-control-plane` VM, provisioned by the `single-node-talos-gpu`
+# machine class via the `proxmox-threadripper` provider instance.
 #
 # DHCP is Talos's DEFAULT on all physical links — do NOT pin a DHCPv4Config to
 # an interface name. PCIe enumeration shifts when VM hardware changes (GPU

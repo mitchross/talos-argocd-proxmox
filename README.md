@@ -73,14 +73,14 @@ ArgoCD deploys applications in strict order to prevent dependency issues:
 
 ## Current Version Pins
 
-These are the repository targets as of June 11, 2026:
+These are the repository targets as of June 22, 2026:
 
 | Component | Version | Source of truth |
 |-----------|---------|-----------------|
 | Omni server and `omnictl` | `v1.8.2` | `omni/omni/omni.env.example` |
-| Talos Linux | `v1.13.4` | `omni/cluster-template/cluster-template.yaml` |
-| Kubernetes | `v1.36.1` | `omni/cluster-template/cluster-template.yaml` |
-| Cilium | `1.19.4` | `infrastructure/networking/cilium/kustomization.yaml` |
+| Talos Linux | `v1.13.4` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
+| Kubernetes | `v1.36.2` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
+| Cilium | `1.19.5` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.4.1` | Bootstrap commands below |
 | Proxmox provider | `latest@sha256:96433a...` | `omni/proxmox-provider/docker-compose.yml` |
 
@@ -105,11 +105,11 @@ service-account key → (4) generate kube/talos access → (5) [bootstrap](#boot
 > | | Single-node GPU | Multi-node prod |
 > |---|---|---|
 > | Cluster | `talos-singlenode-gpu-prod` | `talos-prod-cluster` |
-> | Machine class | `omni/machine-classes/single-node-talos-gpu.yaml` | `omni/machine-classes/` |
+> | Machine class | `omni/machine-classes/single-node-control-plane.yaml` + `omni/machine-classes/single-node-talos-gpu.yaml` | `omni/machine-classes/` |
 > | Template | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` | `omni/cluster-template/cluster-template.yaml` |
-> | Topology | 1 node (CP + worker + GPU) | 3 CP + 3 workers + 1 GPU |
+> | Topology | 2 VMs (1 CP + 1 GPU worker) | 3 CP + 3 workers + 1 GPU |
 
-### 1. Apply the machine class
+### 1. Apply the machine classes
 
 Machine classes and the cluster template are snapshots inside Omni — VMs are
 built from whatever Omni stored at provision time, not from this repo. Always
@@ -119,6 +119,7 @@ disk layout, a mid-bootstrap Talos rolling upgrade, and a forced reprovision).
 Always sync THIS template — not a `cluster-template-working.yaml` variant.
 
 ```bash
+omnictl apply -f omni/machine-classes/single-node-control-plane.yaml
 omnictl apply -f omni/machine-classes/single-node-talos-gpu.yaml
 omnictl get machineclasses
 ```
@@ -258,7 +259,7 @@ export OMNI_ENDPOINT=https://omni.vanillax.me:443
 export OMNI_SERVICE_ACCOUNT_KEY="$(op read 'op://homelab-prod/talos-prod-sa/OMNI_SERVICE_ACCOUNT_KEY')"
 
 # Generate bearer-token kubeconfig (not OIDC)
-omnictl kubeconfig --cluster talos-prod-cluster --service-account --user talos-prod-sa --force
+omnictl kubeconfig --cluster talos-singlenode-gpu-prod --service-account --user talos-prod-sa --force
 
 # Verify access
 kubectl get nodes
@@ -270,7 +271,7 @@ kubectl get nodes
 ```fish
 set -x OMNI_ENDPOINT https://omni.vanillax.me:443
 set -x OMNI_SERVICE_ACCOUNT_KEY (op read 'op://homelab-prod/talos-prod-sa/OMNI_SERVICE_ACCOUNT_KEY')
-omnictl kubeconfig --cluster talos-prod-cluster --service-account --user talos-prod-sa --force
+omnictl kubeconfig --cluster talos-singlenode-gpu-prod --service-account --user talos-prod-sa --force
 kubectl get nodes
 ```
 
@@ -292,8 +293,8 @@ Omni provisions Talos clusters without a CNI. Install Cilium to get networking f
 
 ```bash
 cilium-cli install \
-    --version 1.19.4 \
-    --set cluster.name=talos-prod-cluster \
+    --version 1.19.5 \
+    --set cluster.name=talos-singlenode-gpu-prod \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
     --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
@@ -310,11 +311,11 @@ cilium-cli install \
     --set gatewayAPI.enableAppProtocol=true
 ```
 
-  > **Important — version must match:** The CLI install version must match the Helm chart version in `infrastructure/networking/cilium/kustomization.yaml` (currently **1.19.4**). Use `--version 1.19.4` to pin it. If versions differ, ArgoCD upgrades Cilium at Wave 0 and regenerates some Hubble certs but not others, causing TLS handshake failures (`x509: certificate signed by unknown authority`) that block all sync waves.
+  > **Important — version must match:** The CLI install version must match the Helm chart version in `infrastructure/networking/cilium/kustomization.yaml` (currently **1.19.5**). Use `--version 1.19.5` to pin it. If versions differ, ArgoCD upgrades Cilium at Wave 0 and regenerates some Hubble certs but not others, causing TLS handshake failures (`x509: certificate signed by unknown authority`) that block all sync waves.
 >
 > **Important — Hubble is disabled at bootstrap on purpose:** The CLI install only provides basic CNI networking. ArgoCD enables Hubble at Wave 0 via the full `values.yaml` (which has `hubble.enabled: true`). This ensures ArgoCD is the sole owner of Hubble TLS certificates — no cert mismatch between CLI install and ArgoCD's Helm render. The `ignoreDifferences` in `cilium-app.yaml` then preserves those certs on subsequent syncs.
 >
-> **Important — cluster name must match:** `cluster.name` must match `infrastructure/networking/cilium/values.yaml` for Hubble certificate SANs. If `cilium install` is run without `--set cluster.name=talos-prod-cluster`, certificates are generated for `default` or `kind-kind`, causing TLS failures.
+> **Important — cluster name must match:** `cluster.name` must match `infrastructure/networking/cilium/values.yaml` for Hubble certificate SANs. If `cilium install` is run without `--set cluster.name=talos-singlenode-gpu-prod`, certificates are generated for `default` or `kind-kind`, causing TLS failures.
 
 Verify Cilium:
 ```bash
@@ -421,7 +422,7 @@ omnictl serviceaccount create talos-prod-sa --use-user-role
 # 3. Generate a bearer-token kubeconfig (NOT OIDC)
 OMNI_ENDPOINT=https://omni.vanillax.me:443 \
 OMNI_SERVICE_ACCOUNT_KEY="<key-from-step-2>" \
-omnictl kubeconfig --cluster talos-prod-cluster --service-account --user talos-prod-sa --force
+omnictl kubeconfig --cluster talos-singlenode-gpu-prod --service-account --user talos-prod-sa --force
 
 # 4. Verify
 kubectl get nodes
@@ -494,7 +495,8 @@ versions cycle into the hundreds. The LoadBalancer never goes healthy,
 Kubernetes never bootstraps. **No error surfaces anywhere** — it silently
 fails inside `maintenanceUpgrade`.
 
-This repo ships the fix as a cluster-level config patch in
+This repo ships the fix as a cluster-level config patch in both
+`omni/cluster-template/cluster-template-singlenode-gpu.yaml` and
 `omni/cluster-template/cluster-template.yaml`:
 
 ```yaml
@@ -521,7 +523,8 @@ validator, and runtime-class management.
 Plan: `docs/superpowers/plans/2026-04-19-talos-1.13-oss-nvidia-migration.md`
 
 Key files touched by the migration:
-- `omni/cluster-template/cluster-template.yaml` — swap extension from
+- `omni/cluster-template/cluster-template-singlenode-gpu.yaml` and
+  `omni/cluster-template/cluster-template.yaml` — swap extension from
   `nonfree-kmod-nvidia-production` to the OSS equivalent.
 - `infrastructure/controllers/nvidia-gpu-operator/kustomization.yaml` —
   align with Talos 1.13 beta OSS guide, especially
