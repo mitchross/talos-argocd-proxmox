@@ -28,3 +28,4 @@ spec:
   # every VIP allocated but unreachable from the LAN.
   nodeSelector:
     matchLabels: {}
+    matchExpressions: []
