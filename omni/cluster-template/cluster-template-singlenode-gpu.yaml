@@ -155,8 +155,12 @@ patches:
     kind: UserVolumeConfig
     name: longhorn-nvme1
     provisioning:
+      # Match the lone non-system disk >=400GB (the nvme1-vmstore /dev/sdb). NO
+      # transport clause: Proxmox virtio-scsi reports a transport that did NOT match
+      # 'scsi', so the disk was never provisioned and Longhorn (all-or-nothing
+      # annotation) created ZERO disks. !system_disk already excludes /dev/sda.
       diskSelector:
-        match: "!system_disk && disk.transport == 'scsi' && disk.size >= 400u * GB"
+        match: "!system_disk && disk.size >= 400u * GB"
       minSize: 400GB
       grow: true
 # Control-plane performance tuning — single etcd member, but the metrics
