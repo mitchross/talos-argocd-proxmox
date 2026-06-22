@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: convertx
-          image: ghcr.io/c4illin/convertx:latest@sha256:3a4b39015e732149792569f8f3f6058c8a2863dc07276e6250939d42dde9abbd
+          image: ghcr.io/c4illin/convertx:latest@sha256:081d1638e8c6dfb6b5e69f47ff90e6f6037cdee29a2f25ddd44ddc6d2e52451d
           imagePullPolicy: IfNotPresent
           env:
             - name: TZ
