@@ -93,18 +93,70 @@ is the first Cilium minor with Gateway API 1.5.1 support.
 
 ## Provision or Recreate the Cluster
 
-Omni and the Proxmox provider must already be running. From the repository
-root, authenticate and confirm the provider is connected:
+Omni and the Proxmox provider must already be running, and your local `omnictl`
+must already be signed in to Omni. The order is:
+
+**(1) apply the machine class → (2) provision or destroy → (3) pull the
+service-account key → (4) generate kube/talos access → (5) [bootstrap](#bootstrap-process).**
+
+> **Two clusters live here.** The commands below use the **single-node GPU**
+> cluster. Swap the names/files for the multi-node prod cluster:
+>
+> | | Single-node GPU | Multi-node prod |
+> |---|---|---|
+> | Cluster | `talos-singlenode-gpu-prod` | `talos-prod-cluster` |
+> | Machine class | `omni/machine-classes/single-node-talos-gpu.yaml` | `omni/machine-classes/` |
+> | Template | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` | `omni/cluster-template/cluster-template.yaml` |
+> | Topology | 1 node (CP + worker + GPU) | 3 CP + 3 workers + 1 GPU |
+
+### 1. Apply the machine class
+
+Machine classes and the cluster template are snapshots inside Omni — VMs are
+built from whatever Omni stored at provision time, not from this repo. Always
+apply the class and sync the template BEFORE machines provision (2026-06-11
+incident: provisioning against stale snapshots produced workers with a stale
+disk layout, a mid-bootstrap Talos rolling upgrade, and a forced reprovision).
+Always sync THIS template — not a `cluster-template-working.yaml` variant.
+
+```bash
+omnictl apply -f omni/machine-classes/single-node-talos-gpu.yaml
+omnictl get machineclasses
+```
+
+### 2. Provision (or destroy) the cluster
+
+Template sync owns the MachineSets — do not create them separately.
+
+```bash
+# Optional preview before applying:
+omnictl cluster template validate -f omni/cluster-template/cluster-template-singlenode-gpu.yaml
+omnictl cluster template sync -v -f omni/cluster-template/cluster-template-singlenode-gpu.yaml --dry-run
+
+# Provision / update (idempotent):
+omnictl cluster template sync -v -f omni/cluster-template/cluster-template-singlenode-gpu.yaml
+
+# Watch until healthy:
+omnictl cluster template status -f omni/cluster-template/cluster-template-singlenode-gpu.yaml --wait 30m
+omnictl get machines        # confirm the node(s) reach Running
+```
+
+Full destroy:
+
+```bash
+omnictl cluster delete talos-singlenode-gpu-prod --destroy-disconnected-machines
+omnictl get machines        # must drain to empty
+# Sanity-check the Proxmox UI: the cluster's VMs disappear.
+```
+
+### 3. Authenticate and pull the service-account key
 
 ```bash
 eval "$(op signin)"
 
 export OMNI_ENDPOINT=https://omni.vanillax.me:443
-export OMNI_SERVICE_ACCOUNT_KEY="$(
-  op read 'op://homelab-prod/talos-prod-sa/OMNI_SERVICE_ACCOUNT_KEY'
-)"
+export OMNI_SERVICE_ACCOUNT_KEY="$(op read 'op://homelab-prod/talos-prod-sa/OMNI_SERVICE_ACCOUNT_KEY')"
 
-omnictl get infraproviderstatuses
+omnictl get infraproviderstatuses   # confirm the Proxmox provider is connected
 ```
 
 > **`OMNI_ENDPOINT` is mandatory when the service-account key is exported.**
@@ -112,82 +164,38 @@ omnictl get infraproviderstatuses
 > contexts entirely. Forgetting the endpoint fails with the cryptic
 > `delegating_resolver: invalid target address "": missing address`.
 
-### Nuke (full destroy)
+First time on a fresh Omni? Create the service account first — see
+[Cluster Access](#cluster-access-omni-service-account).
+
+### 4. Generate Kubernetes and Talos access
 
 ```bash
-omnictl cluster delete talos-prod-cluster
-
-# Wait for the provider to deprovision everything before recreating:
-omnictl get machines        # must drain to empty
-# Sanity-check the Proxmox UI: all talos-prod-cluster-* VMs disappear.
-```
-
-> **⚠ ORDERING — apply classes and sync the template BEFORE machines
-> provision (2026-06-11 incident).** Machine classes and the cluster
-> template are snapshots inside Omni: VMs are built from whatever Omni
-> stored at provision time, not from this repo. Provisioning before the
-> `omnictl apply`/`template sync` below produced workers with a stale disk
-> layout, a stale-Talos rolling upgrade mid-bootstrap, and a forced worker
-> reprovision. Always run the apply +
-> sync steps below (idempotent) before machines come up, and always sync
-> THIS file — not a `cluster-template-working.yaml` variant.
-
-Apply the three machine classes idempotently, then validate and preview the
-cluster template:
-
-```bash
-omnictl apply -f omni/machine-classes/
-omnictl get machineclasses
-
-omnictl cluster template validate \
-  -f omni/cluster-template/cluster-template.yaml
-
-omnictl cluster template sync \
-  -f omni/cluster-template/cluster-template.yaml \
-  --dry-run
-```
-
-Provision the cluster and wait for Omni to finish:
-
-```bash
-omnictl cluster template sync \
-  -f omni/cluster-template/cluster-template.yaml
-
-omnictl cluster template status \
-  -f omni/cluster-template/cluster-template.yaml \
-  --wait 30m
-
-omnictl get machinesets
-omnictl get machines
-```
-
-Do not create MachineSets separately. Template sync creates:
-
-- 3 control planes
-- 3 regular workers
-- 1 GPU worker
-- Talos `v1.13.4`
-- Kubernetes `v1.36.1`
-
-Generate Kubernetes and Talos access:
-
-```bash
-omnictl kubeconfig \
-  --cluster talos-prod-cluster \
-  --service-account \
-  --user talos-prod-sa \
-  --force
-
-omnictl talosconfig \
-  --cluster talos-prod-cluster \
-  --force
-
+omnictl kubeconfig --cluster talos-singlenode-gpu-prod --service-account --user talos-prod-sa --force
+omnictl talosconfig --cluster talos-singlenode-gpu-prod --force
 kubectl get nodes -o wide
 ```
 
-Nodes are expected to remain `NotReady` until Cilium is installed.
+> **Run `talosconfig` once per cluster — re-running stacks `-1`/`-2`/… contexts.**
+> `omnictl talosconfig` merges into `~/.talos/config` (`--merge` defaults to
+> **true**), and talos renames any *colliding* context with a `-N` suffix
+> instead of replacing it. `--force` does **not** prevent this — it only applies
+> when writing a standalone file (`--merge=false`). You only need talosconfig
+> once (or after a nuke/recreate, when the cluster CA rotates). To refresh
+> idempotently, drop the old context first:
+>
+> ```bash
+> talosctl config remove omni-prod-talos-singlenode-gpu-prod -y   # ignore "not found"
+> omnictl talosconfig --cluster talos-singlenode-gpu-prod
+> # already piled up -1..-N? collapse them:
+> talosctl config contexts                                        # inspect
+> talosctl config remove omni-prod-talos-singlenode-gpu-prod-1 -y # repeat per dup
+> ```
 
-Before continuing, verify the storage nodes were born with the expected
+Nodes are expected to remain `NotReady` until Cilium is installed — then
+continue with the **[Bootstrap Process](#bootstrap-process)** (secret seeding →
+Gateway CRDs → Cilium → ArgoCD).
+
+**Multi-node prod only** — verify the storage nodes were born with the expected
 layout (catches the stale-Omni-config failure mode immediately instead of at
 Longhorn bootstrap):
 
@@ -205,11 +213,10 @@ talosctl -n <worker-ip> get disks   # expect sda only (~800G)
 kubectl get nodes.longhorn.io -n longhorn-system   # expect 4 Ready storage nodes
 ```
 
-Continue with the bootstrap process below; do not create replacement
-MachineSets. After ArgoCD's root app is applied there are **zero manual
-storage steps**: Longhorn (V1 engine) auto-creates its filesystem disk at
-`/var/lib/longhorn` on every storage node, pvc-plumber auto-syncs at
-Wave 2, and VolSync restores run unattended.
+After ArgoCD's root app is applied there are **zero manual storage steps**:
+Longhorn (V1 engine) auto-creates its filesystem disk at `/var/lib/longhorn` on
+every storage node, pvc-plumber auto-syncs at Wave 2, and VolSync restores run
+unattended.
 
 ### Mass-restore stability notes
 
@@ -392,16 +399,9 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 ## What Happens After Bootstrap
 
-ArgoCD takes over and manages everything from Git:
-
-1. **Wave 0**: Cilium, 1Password Connect, External Secrets deploy in parallel
-2. **Wave 1**: cert-manager, Longhorn, Snapshot Controller, and VolSync deploy after networking + secrets are ready
-3. **Wave 2**: pvc-plumber v4 core (permissive reconciler — namespace gate + PVC fuse labels, **no admission webhook**) and VolSync backup-cluster wiring deploy without a Prometheus dependency
-4. **Wave 3**: CNPG Barman Plugin deploys (DB backup plugin readiness before DB clusters)
-5. **Wave 4**: Infrastructure AppSet plus custom standalone entrypoints deploy GPU operators, gateway, KEDA core, Temporal Worker Controller, etc.
-6. **Wave 4**: Database AppSet deploys CloudNativePG operators and instances
-7. **Wave 5**: OpenTelemetry Operator and Monitoring AppSet deploy Prometheus, Grafana, Loki
-8. **Wave 6**: KEDA and OpenTelemetry observability overlays plus My-Apps AppSet deploy
+ArgoCD takes over and deploys everything from Git in the strict order shown in
+the [Sync Wave Architecture](#sync-wave-architecture) table above — Wave 0
+(Cilium, secrets) through Wave 6 (user apps).
 
 New applications are discovered automatically by directory structure - add a directory with a `kustomization.yaml` and push to Git.
 
