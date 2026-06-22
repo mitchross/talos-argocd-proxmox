@@ -13,7 +13,7 @@ metadata:
 spec:
   # Replicas managed by HPA (hpa-tile-server.yaml). Floor of 3 keeps the
   # public API responsive while workers catch up tile generation.
-  replicas: 3
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:

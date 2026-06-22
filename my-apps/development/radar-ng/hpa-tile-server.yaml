@@ -13,7 +13,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: tile-server
-  minReplicas: 3
+  minReplicas: 1
   maxReplicas: 8
   metrics:
     - type: Resource
