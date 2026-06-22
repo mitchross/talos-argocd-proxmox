@@ -21,7 +21,7 @@ metadata:
   labels:
     app: radar-ng-worker
 spec:
-  replicas: 3
+  replicas: 1
   workerOptions:
     connectionRef:
       name: cluster-temporal
@@ -105,7 +105,7 @@ spec:
             # pysteps nowcast + MRMS reproject, not I/O-bound. Nodes were only
             # ~25% utilized (~24 cores free each), so open the ceiling wide to
             # let render work burst and the 2-min MRMS/nowcast cadence catch up.
-            requests: { cpu: "1", memory: "3Gi" }   # 3 replicas; request low, bursts to 12-core limit
+            requests: { cpu: "1", memory: "3Gi" }   # single-node: 1 replica; request low, bursts to 12-core limit
             limits:   { cpu: "12", memory: "12Gi" }
       volumes:
         - name: tiles

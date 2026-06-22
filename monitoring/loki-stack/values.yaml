@@ -52,7 +52,7 @@ loki:
     delete_request_store: s3
 deploymentMode: SimpleScalable
 backend:
-  replicas: 2
+  replicas: 1
   resources:
     requests:
       cpu: 50m
@@ -64,7 +64,7 @@ backend:
   - secretRef:
       name: loki-s3-credentials
 read:
-  replicas: 2
+  replicas: 1
   resources:
     requests:
       cpu: 50m
@@ -76,7 +76,7 @@ read:
   - secretRef:
       name: loki-s3-credentials
 write:
-  replicas: 3
+  replicas: 1
   resources:
     requests:
       cpu: 50m
