@@ -26,7 +26,9 @@ resources:
   # Custom entrypoints: standalone apps kept out of AppSets for ordering or render reasons.
   - custom-entrypoints/cnpg-barman-plugin-app.yaml
   - custom-entrypoints/keda-app.yaml
+  - custom-entrypoints/vertical-pod-autoscaler-app.yaml
   - custom-entrypoints/keda-observability-app.yaml   # Wave 6 — KEDA ServiceMonitors, after monitoring (split from keda core)
+  - custom-entrypoints/vpa-recommendations-app.yaml   # Wave 6 — passive VPA recommendation objects, after VPA CRDs
   - custom-entrypoints/temporal-worker-controller-app.yaml
   - custom-entrypoints/opentelemetry-operator-app.yaml
   - custom-entrypoints/opentelemetry-operator-observability-app.yaml   # Wave 6 — OTel operator ServiceMonitor, after monitoring (split from otel core)

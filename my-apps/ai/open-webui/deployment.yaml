@@ -16,12 +16,14 @@ spec:
         app: open-webui
     spec:
       # Open WebUI delegates LLM inference to vLLM; RAG embeddings run locally
-      # on CPU in-pod. Keep it off the GPU node so both 3090s stay vLLM-only.
+      # on CPU in-pod. PREFER a non-GPU node (keeps 3090s vLLM-only) but soft so
+      # it still schedules on the GPU node when it's the only worker available.
       affinity:
         nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
                   - key: feature.node.kubernetes.io/pci-0300_10de.present
                     operator: DoesNotExist
       containers:
