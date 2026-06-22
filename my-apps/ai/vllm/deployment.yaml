@@ -139,10 +139,12 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 3
           resources:
-            # GPU node has 16 vCPU — keep request schedulable and limit within the node.
+            # Inference runs on the GPU; CPU request is just a scheduling
+            # reservation. Keep it low (bursts to the 14-core limit) so the
+            # single 32-vCPU worker has headroom for the rest of the fleet.
             requests:
               nvidia.com/gpu: "2"
-              cpu: "4"
+              cpu: "1"
               memory: 24Gi
             limits:
               nvidia.com/gpu: "2"

@@ -155,8 +155,8 @@ spec:
               mountPath: /home/steam/steamcmd
           resources:
             requests:
-              memory: 8Gi
-              cpu: "2"
+              memory: 4Gi
+              cpu: "1"
             limits:
               memory: 20Gi
               cpu: "8"
