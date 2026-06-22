@@ -21,7 +21,7 @@ commonAnnotations:
   argocd.argoproj.io/sync-wave: "-5"
 resources:
   - overlays/recovery        # ← ACTIVE: restore gitea DB FROM v6.
-                             # Writes forward to v8 because v7 is polluted and
+                             # Writes forward to v9 because v7 is polluted and
                              # fails barman-cloud-check-wal-archive with
                              # "Expected empty archive".
   # - overlays/initdb        # fresh empty DB (1 admin, 0 repos). Was active

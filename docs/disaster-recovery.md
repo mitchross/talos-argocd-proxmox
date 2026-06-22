@@ -116,6 +116,80 @@ provision, or VMs are built from stale state and must be reprovisioned.
   an RD with no `latestImage` long after its mover completed, or `/audit`
   showing `needs-human-review`.
 
+## In-cluster registry and Gitea Actions
+
+`registry.vanillax.me` is an in-cluster registry backed by cluster storage.
+After a full nuke, the registry pod, Service, and HTTPRoute can all be healthy
+while the registry catalog is still empty. Any workload pinned to
+`registry.vanillax.me/...` will then fail with `ImagePullBackOff` until those
+images are rebuilt or repushed.
+
+Check the catalog from inside the registry pod:
+
+```bash
+kubectl exec -n kube-system deploy/registry -- \
+  wget -qO- http://127.0.0.1:5000/v2/_catalog
+```
+
+Restore Gitea first, then get the Gitea Actions runner online. The runner
+needs `Secret/gitea-actions/act-runner-token`; Git declares that as an
+ExternalSecret and 1Password stores the generated token:
+
+- vault: `homelab-prod`
+- item: `gitea-actions`
+- field: `act_runner_token`
+
+Generate or rotate the token from the restored Gitea pod:
+
+```bash
+kubectl exec -n gitea deploy/gitea -- gitea actions generate-runner-token
+```
+
+If 1Password is not updated yet, this manual patch gets the live runner moving:
+
+```bash
+TOKEN="$(kubectl exec -n gitea deploy/gitea -- \
+  gitea actions generate-runner-token | tail -n 1 | tr -d '\r\n')"
+kubectl create secret generic act-runner-token \
+  -n gitea-actions \
+  --from-literal=token="$TOKEN" \
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl rollout restart -n gitea-actions deploy/act-runner
+kubectl logs -n gitea-actions deploy/act-runner -c runner --tail=50
+```
+
+Expected runner log:
+
+```text
+runner: cluster-runner-1 ... declare successfully
+```
+
+For radar-ng, the recovery images are pinned in
+`my-apps/development/radar-ng/`. If the registry is empty and the runner is not
+usable yet, manually refill the exact pinned tags from local checkouts:
+
+```bash
+cd ~/programming/radar-ng/backend
+VERSION=v1.1.4 ./scripts/build-push.sh tile-server
+VERSION=v1.1.1 ./scripts/build-push.sh basemap open-meteo-worker
+VERSION=v1.1.7 ./scripts/build-push.sh temporal-worker
+
+cd ~/programming/talos-argocd-proxmox
+./scripts/build-push-custom-apps.sh basemap-bootstrap
+kubectl -n radar-ng delete job basemap-bootstrap
+kubectl -n radar-ng rollout restart deploy/tile-server deploy/basemap deploy/open-meteo
+kubectl -n radar-ng delete pod -l app=radar-ng-worker
+```
+
+On this single-worker cluster, `Insufficient cpu` during recovery usually means
+requested CPU is saturated, not that the Proxmox host is busy. Verify with:
+
+```bash
+kubectl describe node talos-singlenode-gpu-prod-gpu-workers-f7x5ct \
+  | sed -n '/Allocated resources:/,/Events:/p'
+kubectl top nodes
+```
+
 ## Post-restore acceptance
 
 State BOTH claims, with live numbers:
@@ -158,4 +232,3 @@ Worked fixes for everything the hostile rebuild threw at us — stale CSI
 attachments, read-only filesystems, wedged clone PVCs, finalizer-stuck
 resources — live in the
 [common failure modes table](storage-architecture.md#common-failure-modes).
-
