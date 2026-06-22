@@ -16,7 +16,14 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ROOT_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
 
 # Expected Cilium version — must match infrastructure/networking/cilium/kustomization.yaml
-EXPECTED_CILIUM_VERSION="1.19.4"
+EXPECTED_CILIUM_VERSION="$(awk '
+  $1 == "version:" { version = $2 }
+  END {
+    if (version == "") exit 1
+    print version
+  }
+' "$ROOT_DIR/infrastructure/networking/cilium/kustomization.yaml")"
+EXPECTED_CILIUM_CLUSTER_NAME="talos-singlenode-gpu-prod"
 
 if command -v cilium > /dev/null 2>&1; then
   CILIUM_CMD="cilium"
@@ -42,7 +49,7 @@ if ! "$CILIUM_CMD" status --wait --wait-duration 30s &> /dev/null; then
   echo ""
   echo "   $CILIUM_CMD install \\"
   echo "       --version $EXPECTED_CILIUM_VERSION \\"
-  echo "       --set cluster.name=talos-prod-cluster \\"
+  echo "       --set cluster.name=$EXPECTED_CILIUM_CLUSTER_NAME \\"
   echo "       --set ipam.mode=kubernetes \\"
   echo "       --set kubeProxyReplacement=true \\"
   echo "       --set k8sServiceHost=localhost \\"
@@ -68,7 +75,7 @@ if [ -n "$RUNNING_VERSION" ] && [ "$RUNNING_VERSION" != "$EXPECTED_CILIUM_VERSIO
   echo "   Recommended: Reinstall Cilium at the correct version first:"
   echo "     $CILIUM_CMD uninstall"
   echo "     $CILIUM_CMD install --version $EXPECTED_CILIUM_VERSION \\"
-  echo "         --set cluster.name=talos-prod-cluster \\"
+  echo "         --set cluster.name=$EXPECTED_CILIUM_CLUSTER_NAME \\"
   echo "         --set ipam.mode=kubernetes \\"
   echo "         --set kubeProxyReplacement=true \\"
   echo "         --set k8sServiceHost=localhost \\"
