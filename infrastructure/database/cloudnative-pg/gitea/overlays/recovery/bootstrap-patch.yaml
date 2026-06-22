@@ -10,14 +10,8 @@ spec:
       owner: gitea
       secret:
         name: gitea-app-secret
-      # PITR to 2026-06-19 12:00 UTC. v6 holds the REAL gitea (sys ...755) that
-      # ran June 12-19 with data loaded — its backups jumped 29MB->38MB on June
-      # 12 evening when the repos were adopted, and stayed 38-39MB through June
-      # 19 (last clean base backup 20260619T040001). This session's nuke later
-      # started a fresh initdb on the SAME v6 serverName (the 20260621 backup,
-      # different system id) which polluted the WAL tail — so replay MUST stop
-      # before that. 06-19T12:00 is ~8h after the last good base backup, safely
-      # within the ...755 run. (v3 and v5 were both 29MB = pre-data/empty.)
+      # PITR before this session's initdb polluted v6's WAL tail. Rationale +
+      # lineage forensics: Mink note "gitea-cnpg-dr-lineage".
       recoveryTarget:
         targetTime: "2026-06-19T12:00:00Z"
   # Plugin-shape externalClusters (replaces the deprecated in-tree
