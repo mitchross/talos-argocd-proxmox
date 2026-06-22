@@ -31,9 +31,12 @@ spec:
           # endpoint). Only serverName changes between live writes and
           # recovery reads.
           barmanObjectName: gitea-objectstore
-          # Recover FROM v5 — base backup 20260612T164515 (~31MB cluster) + WAL
-          # files 003-010. VERIFIED 2026-06-21: gitea's base backup AND WAL fully
-          # download and gzip-decompress cleanly. The cluster-wide "multipart
-          # unreadable" RustFS caution does NOT apply to gitea — its objects are
-          # small (~4MB, single-part). base/cluster.yaml writes forward to v7.
-          serverName: gitea-database-v5
+          # Recover FROM v3 — VERIFIED 2026-06-21 by comparing pg_control system
+          # ids: v3's latest base (20260610T040001) and its begin_wal share
+          # system id 7647132232567279645 = CONSISTENT (a stable cluster ran
+          # June 3-10, 8 daily backups). v5 was REJECTED: polluted WAL (base sys
+          # ...755 vs archived WAL sys ...732 from the 2026-06-12 rebuild churn)
+          # -> "could not locate required checkpoint record" FATAL. NOTE the
+          # backups ARE readable — the "multipart unreadable" RustFS caution is
+          # stale for gitea's small single-part objects. base writes forward to v7.
+          serverName: gitea-database-v3
