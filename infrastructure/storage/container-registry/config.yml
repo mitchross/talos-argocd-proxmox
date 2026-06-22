@@ -5,11 +5,21 @@ log:
 storage:
   cache:
     blobdescriptor: inmemory
-  filesystem:
-    rootdirectory: /var/lib/registry
+  delete:
+    enabled: true
+  # Blobs on RustFS S3 (durable, survives a cluster/storage nuke — unlike the
+  # old Longhorn-snapshot-on-PVC path). accesskey/secretkey injected via env
+  # (REGISTRY_STORAGE_S3_ACCESSKEY/SECRETKEY) from Secret registry-s3-credentials.
+  s3:
+    region: us-east-1
+    regionendpoint: http://192.168.10.133:30292
+    forcepathstyle: true
+    secure: false
+    bucket: gitea-packages
+    rootdirectory: /
 http:
   addr: :5000
   headers:
     X-Content-Type-Options: [nosniff]
 validation:
-  disabled: true 
+  disabled: true
