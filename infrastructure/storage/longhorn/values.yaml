@@ -117,3 +117,6 @@ persistence:
 # separate HTTPRoute resource.
 ingress:
   enabled: false
+# Single node: 1 UI replica (chart default 2 buys no HA on one node).
+longhornUI:
+  replicas: 1
