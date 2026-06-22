@@ -1,23 +1,6 @@
 ---
 # omnictl apply -f single-node-talos-gpu.yaml
-#
-# Single-node Talos GPU box on the SECOND Proxmox host (192.168.10.14):
-#   AMD Threadripper 2950X (16C/32T) + 128 GiB RAM + GPU passthrough.
-# This is a standalone all-in-one node — control plane + workloads on one VM —
-# provisioned by a DEDICATED provider instance (providerid: proxmox-threadripper)
-# pointed at the 192.168.10.14 host, separate from the DL360 `proxmox` provider.
-#
-# Proxmox Provider Config Options (Enhanced Build):
-#   cores, sockets, memory, disk_size: Basic VM specs
-#   storage_selector: CEL expression to select Proxmox storage
-#   disk_ssd, disk_discard, disk_iothread, disk_cache, disk_aio: Disk performance
-#   cpu_type: CPU type (host for GPU passthrough)
-#   machine_type: q35 for native PCIe passthrough
-#   numa, hugepages, balloon: GPU/HPC optimizations
-#   additional_nics: Extra NICs for storage networks
-#
-# Note: qemu-guest-agent is auto-installed by the provider
-#
+# Dedicated Threadripper GPU worker. See omni/docs/threadripper-gpu-cluster.md.
 metadata:
   namespace: default
   type: MachineClasses.omni.sidero.dev
@@ -25,59 +8,22 @@ metadata:
 spec:
   matchlabels: []
   autoprovision:
-    # Dedicated provider instance bound to the 192.168.10.14 Threadripper host.
     providerid: proxmox-threadripper
     kernelargs: []
     metavalues: []
     providerdata: |
-      # 2950X is 16 cores / 32 threads. As an all-in-one node it runs the
-      # control plane, every operator, and the GPU workloads, so give it the
-      # full thread count as vCPUs. cpu_type: host exposes the native CPU.
       cores: 32
       sockets: 1
-      # 128 GiB host RAM. PCI passthrough PINS the entire guest RAM (VFIO locks
-      # every guest page so the GPU can DMA anywhere), so guest memory must leave
-      # real host headroom. A 120 GiB guest left only ~8 GiB and starved the host
-      # (journald "Under memory pressure", SSH/userspace died ~2 min into GPU init).
-      # 100 GiB leaves ~28 GiB for Proxmox + QEMU + IOMMU mappings — safe. Do NOT
-      # raise this near 120 GiB.
-      memory: 102400
-      # One disk holds Talos system + images + pod ephemeral + Longhorn V1
-      # replica files (same single-partition V1 layout as the DL360 nodes — see
-      # worker.yaml for the V2-engine post-mortem). Models live on NFS.
-      # Sized to fit the 512 GB EDILOCA nvme0n1 with headroom for thin-pool
-      # metadata and Proxmox overhead. Bump only if you move to a bigger disk.
+      # GPU passthrough pins guest RAM; keep host headroom.
+      memory: 81920
       disk_size: 450
-      # storage_selector targets the Proxmox storage living on nvme0n1 (the
-      # healthy EDILOCA EN605, 9% wearout) — NOT local-lvm, which sits on the
-      # worn INTEL boot disk (nvme1n1, 74%).
-      #
-      # PREREQUISITE on the 192.168.10.14 host: nvme0n1 is currently raw/empty.
-      # Create an LVM-Thin pool on it named exactly `nvme0-vmstore`:
-      #   Proxmox UI → pve → Disks → LVM-Thin → Create:
-      #     Disk = /dev/nvme0n1, Name = nvme0-vmstore
-      #   (or CLI:  pvesh / lvcreate — `pvcreate /dev/nvme0n1` then create the
-      #    thinpool and `pvesm add lvmthin nvme0-vmstore --vgname ...`)
-      # If you name the pool differently, update the selector below to match.
       storage_selector: name == "nvme0-vmstore"
-      # NOTE: network_bridge is also host-specific. The 192.168.10.14 box shows
-      # `localnetwork (pve)` — confirm the actual bridge name (likely vmbr0) in
-      # Proxmox → pve → System → Network before provisioning. A wrong bridge
-      # silently gives the VM no network.
       network_bridge: vmbr0
-      # Disk performance (SSD/NVMe optimization)
       disk_ssd: true
       disk_discard: true
       disk_iothread: true
       disk_cache: none
       disk_aio: io_uring
-      # Second data disk on the nvme1-vmstore LVM-Thin pool (2nd 512G EDILOCA,
-      # added 2026-06-21). Shows up as /dev/sdb in Talos and becomes a 2nd
-      # Longhorn disk (Talos mount + node annotation in the cluster template).
-      # Independent pool (NOT striped with nvme0) so a single-disk failure only
-      # loses that disk's Longhorn replicas — all backed up. NOTE: the provider
-      # attaches additional_disks at VM CREATION, so an already-running VM does
-      # not get it from this change alone (add scsi1 once, or reprovision).
       additional_disks:
         - storage_selector: name == "nvme1-vmstore"
           disk_size: 450
@@ -86,54 +32,14 @@ spec:
           disk_iothread: true
           disk_cache: none
           disk_aio: io_uring
-      # GPU passthrough optimizations
       cpu_type: host
       machine_type: q35
-      # Talos/Proxmox GPU passthrough needs UEFI, and the GPUs must remain
-      # secondary compute devices. Keep an emulated primary VGA adapter so OVMF
-      # does not run GOP against either 3090.
       bios: ovmf
       vga: std
-      # numa=true keeps guest memory on the same NUMA node as its vCPUs / the
-      # PCIe lanes owning the GPU. The 2950X is a 2-die (NUMA) part, so this
-      # matters for GPU passthrough latency.
       numa: true
-      # hugepages: 1GB  # Requires host config: echo 256 > /proc/sys/vm/nr_hugepages
       balloon: false
-      # GPU passthrough using Proxmox Resource Mappings. Two NVIDIA RTX 3090s
-      # (10de:2204) are mapped on the 192.168.10.14 host (Datacenter → Resource
-      # Mappings → PCI):
-      #   gpu-1 → 0000:09:00 (IOMMU group 17)
-      #   gpu-2 → 0000:0a:00 (IOMMU group 18)
-      # Both are passed through whole-card; the cluster runs GPU workloads as
-      # mutually-exclusive whole-card consumers (see CLAUDE.md GPU topology).
-      # HOST CONFIG (192.168.10.14, re-derived 2026-06-19 after a Proxmox
-      # reinstall): GPU passthrough is enabled via a grub.d drop-in
-      # `/etc/default/grub.d/99-gpu-passthrough.cfg`:
-      #   amd_iommu=on iommu=pt initcall_blacklist=sysfb_init
-      # plus vfio-pci binding by ID in `/etc/modprobe.d/gpu-passthrough.conf`
-      #   options vfio-pci ids=10de:2204,10de:1aef disable_vga=1
-      # Validated 2026-06-19: both 3090s + their HDMI audio bind to vfio-pci, the
-      # AMD-Vi IO_PAGE_FAULT storm is gone, host boots clean.
-      # NOTE on the old hard-lock: the earlier build hard-locked on guest GPU
-      # reset because the boot disk (Intel 660P @ 42:00) and a GPU (43:00) were
-      # SIBLINGS under root complex 40, so DPC containment took the boot disk
-      # down. That required `pcie_ports=compat pcie_aspm=off`. The current
-      # topology is different: the GPUs sit on die 0 (09:00 under 00:01.3,
-      # 0a:00 under 00:03.1) and the boot SSD on die 1 (ASMedia @ 41:00 under
-      # 40:01.3) — no longer siblings — so that failure mode is gone and
-      # pcie_ports=compat is not required. The dead Intel 660P NVMe was removed.
       pci_devices:
         - mapping: gpu-1
           pcie: true
         - mapping: gpu-2
           pcie: true
-
-# GPU Passthrough Setup:
-# With enhanced provider, VM is pre-configured for GPU. Just:
-# 1. PCI Resource Mappings `gpu-1` + `gpu-2` created on the 192.168.10.14 host
-#    (both RTX 3090 / 10de:2204; gpu-1=0000:09:00 IOMMU 17, gpu-2=0000:0a:00 IOMMU 18)
-# 2. Shut down the VM in Proxmox
-# 3. Add GPUs via Proxmox UI: Hardware → Add → PCI Device (All Functions + PCI-Express)
-# 4. Start the VM
-# 5. GPU extensions are configured in the cluster template patches

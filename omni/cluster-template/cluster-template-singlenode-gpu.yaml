@@ -1,13 +1,7 @@
-# Single-node GPU cluster — all-in-one Talos node (control plane + workloads +
-# GPU) on the second Proxmox host (192.168.10.14, 2950X / 128G).
+# Threadripper GPU cluster: 1 control-plane VM + 1 GPU worker VM.
+# See omni/docs/threadripper-gpu-cluster.md for rebuild notes and sizing rationale.
 #
 #   omnictl cluster template sync -v -f cluster-template-singlenode-gpu.yaml
-#
-# This is a SEPARATE cluster from talos-prod-cluster (the multi-node DL360
-# cluster). It has its own template file, its own machine class
-# (single-node-talos-gpu), and its own provider instance (proxmox-threadripper).
-# There are NO Workers docs — the single control-plane node runs everything,
-# with scheduling enabled on the control plane (see allow-scheduling patch).
 ---
 kind: Cluster
 name: talos-singlenode-gpu-prod
@@ -16,7 +10,6 @@ labels:
 kubernetes:
   version: v1.36.2
 talos:
-  # Match the prod cluster's pinned Talos line (v1.13 GA, current stable patch).
   version: v1.13.4
 patches:
 - name: disable-default-cni
@@ -33,17 +26,6 @@ patches:
     kind: ResolverConfig
     nameservers:
     - address: 192.168.10.1
-# SINGLE-NODE: the lone control-plane node must also run workloads. Without this
-# the node keeps the node-role.kubernetes.io/control-plane NoSchedule taint and
-# nothing schedules. This is the defining single-node setting.
-- name: allow-scheduling-on-control-planes
-  inline:
-    cluster:
-      allowSchedulingOnControlPlanes: true
-# Talos 1.13 LifecycleService needs an explicit install.disk. The Proxmox
-# provider presents the VM system disk as virtio-scsi (scsi0) -> /dev/sda, same
-# as the prod machine classes — including the single-node-talos-gpu class whose
-# disk lives on the nvme0-vmstore LVM-Thin pool. So /dev/sda is correct here too.
 - name: install-disk
   inline:
     machine:
@@ -72,100 +54,20 @@ patches:
         net.core.netdev_max_backlog: "16384"
         sunrpc.tcp_slot_table_entries: "128"
         sunrpc.tcp_max_slot_table_entries: "65536"
-      # Generic 128MB readahead on all bdi devices (covers NFS too) — this is
-      # how NFS readahead is tuned without the nfsrahead extension.
       udev:
         rules:
         - SUBSYSTEM=="bdi", ACTION=="add", ATTR{read_ahead_kb}="131072"
 ---
 kind: ControlPlane
 machineClass:
-  name: single-node-talos-gpu
+  name: single-node-control-plane
   size: 1
-# Extension set = the GPU-worker set, NOT the regular-worker set.
-# CRITICAL: do NOT add siderolabs/nfs-utils. Its rpc-statd crash-loops alongside
-# the NVIDIA driver and corrupts containerd boltdb, taking the whole node down
-# (siderolabs/extensions#1021; DL360 GPU-worker incident). NFS still mounts fine
-# via the nfs.csi.k8s.io driver + NFSv4.1 — the prod GPU worker mounts model
-# volumes with no nfs-utils. iscsi-tools IS required (Longhorn V1 attaches via
-# iSCSI).
 systemExtensions:
 - siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
+- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
+- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
-- siderolabs/nonfree-kmod-nvidia-production # renovate: datasource=docker depName=siderolabs/nonfree-kmod-nvidia-production
-- siderolabs/nvidia-container-toolkit-production # renovate: datasource=docker depName=siderolabs/nvidia-container-toolkit-production
-# qemu-guest-agent auto-installed by Proxmox provider (see machine-classes/single-node-talos-gpu.yaml)
 patches:
-- name: gpu-node-labels
-  inline:
-    machine:
-      nodeLabels:
-        gpu-worker: "true"
-        nvidia.com/gpu: "true"
-# Longhorn 2-disk auto-discovery (fresh bootstrap only): this label+annotation make
-# Longhorn register BOTH disks — the ephemeral /var/lib/longhorn and the 2nd disk at
-# /var/mnt/longhorn-nvme1. Only honored when createDefaultDiskLabeledNodes=true (in
-# longhorn values.yaml) AND on a node with no disks yet. The 2nd disk is mounted by
-# the longhorn-nvme1-volume UserVolume below.
-- name: longhorn-node-disks
-  inline:
-    machine:
-      nodeLabels:
-        node.longhorn.io/create-default-disk: "config"
-      nodeAnnotations:
-        node.longhorn.io/default-disks-config: >-
-          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":[]},{"name":"nvme1","path":"/var/mnt/longhorn-nvme1","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":[]}]
-# nodeIP.validSubnets + nvidia kernel modules + bpf sysctl (no DHCP interface pin).
-- file: patches/single-node-gpu.yaml
-- name: kubelet-performance
-  inline:
-    machine:
-      kubelet:
-        extraConfig:
-          serializeImagePulls: false
-          # SINGLE-NODE: this one node runs the ENTIRE cluster (~208 pods). The
-          # kubelet default maxPods=110 caps it, leaving ~95 pods Pending with
-          # "Too many pods". Raise to 250 (Cilium gives each node a /24 pod CIDR
-          # = ~254 usable IPs, so 250 is the safe ceiling). If pod count ever
-          # approaches 250, widen the Cilium per-node pod CIDR (clusterPoolIPv4-
-          # MaskSize 24 -> 23 = 510 IPs) before raising maxPods further.
-          maxPods: 250
-# Longhorn V1 data path: /var/lib/longhorn bind-mounted from /var/local/longhorn
-# on the single 450G disk (Talos system + images + pod ephemeral + Longhorn
-# replicas all share it). Same layout as the prod nodes.
-- name: longhorn-storage
-  inline:
-    machine:
-      kubelet:
-        extraMounts:
-        - destination: /var/lib/longhorn
-          type: bind
-          source: /var/local/longhorn
-          options:
-          - bind
-          - rshared
-          - rw
-# Second Longhorn disk: format + mount the 2nd Proxmox disk (nvme1-vmstore -> the
-# non-system /dev/sdb) at /var/mnt/longhorn-nvme1. Talos auto-propagates user
-# volumes into the kubelet, so Longhorn uses this path (registered via the
-# longhorn-node-disks annotation above). diskSelector excludes the system disk.
-- name: longhorn-nvme1-volume
-  inline:
-    apiVersion: v1alpha1
-    kind: UserVolumeConfig
-    name: longhorn-nvme1
-    provisioning:
-      # Match the lone non-system disk >=400GB (the nvme1-vmstore /dev/sdb). NO
-      # transport clause: Proxmox virtio-scsi reports a transport that did NOT match
-      # 'scsi', so the disk was never provisioned and Longhorn (all-or-nothing
-      # annotation) created ZERO disks. !system_disk already excludes /dev/sda.
-      diskSelector:
-        match: "!system_disk && disk.size >= 400u * GB"
-      minSize: 400GB
-      grow: true
-# Control-plane performance tuning — single etcd member, but the metrics
-# listeners + bind-address:0.0.0.0 flips keep Prometheus node-discovery scraping
-# working (etcd :2381, controller-manager :10257, scheduler :10259).
 - name: control-plane-performance
   inline:
     cluster:
@@ -190,3 +92,60 @@ patches:
         extraArgs:
           kube-api-qps: "100"
           bind-address: "0.0.0.0"
+---
+kind: Workers
+name: gpu-workers
+machineClass:
+  name: single-node-talos-gpu
+  size: 1
+# Do not add nfs-utils to GPU nodes; use the CSI NFS path instead.
+systemExtensions:
+- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
+- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
+- siderolabs/nonfree-kmod-nvidia-production # renovate: datasource=docker depName=siderolabs/nonfree-kmod-nvidia-production
+- siderolabs/nvidia-container-toolkit-production # renovate: datasource=docker depName=siderolabs/nvidia-container-toolkit-production
+patches:
+- name: gpu-worker-labels
+  inline:
+    machine:
+      nodeLabels:
+        gpu-worker: "true"
+        nvidia.com/gpu: "true"
+- name: longhorn-node-disks
+  inline:
+    machine:
+      nodeLabels:
+        node.longhorn.io/create-default-disk: "config"
+      nodeAnnotations:
+        node.longhorn.io/default-disks-config: >-
+          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":[]},{"name":"nvme1","path":"/var/mnt/longhorn-nvme1","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":[]}]
+- file: patches/single-node-gpu.yaml
+- name: kubelet-performance
+  inline:
+    machine:
+      kubelet:
+        extraConfig:
+          serializeImagePulls: false
+          maxPods: 250
+- name: longhorn-storage
+  inline:
+    machine:
+      kubelet:
+        extraMounts:
+        - destination: /var/lib/longhorn
+          type: bind
+          source: /var/local/longhorn
+          options:
+          - bind
+          - rshared
+          - rw
+- name: longhorn-nvme1-volume
+  inline:
+    apiVersion: v1alpha1
+    kind: UserVolumeConfig
+    name: longhorn-nvme1
+    provisioning:
+      diskSelector:
+        match: "!system_disk && disk.size >= 400u * GB"
+      minSize: 400GB
+      grow: true
