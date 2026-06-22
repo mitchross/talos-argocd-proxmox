@@ -29,13 +29,5 @@ spec:
           # endpoint). Only serverName changes between live writes and
           # recovery reads.
           barmanObjectName: gitea-objectstore
-          # Recover FROM v6 — the lineage with the REAL gitea DATA. v6 base
-          # backups June 12(19:22)-19 are 38-39MB (sys ...755) vs the 29MB empty
-          # pre-data lineages (v3=June3-10, v5=June12 morning). VERIFIED 2026-06-21:
-          # v6 backup 20260619T040001 base + its begin_wal (0000000100000006-
-          # 000000E4) both = sys 7650550815038537755 -> consistent, RESTORABLE.
-          # The recoveryTarget above (06-19T12:00) stops replay before this
-          # session's fresh initdb polluted the v6 tail (20260621 backup, diff
-          # system). base/cluster.yaml writes forward to v7. (v3 restore gave 0
-          # repos because it predates the data load; v5 WAL was cross-system.)
+          # v6 holds the real gitea data (v3/v5 lineages were empty/polluted).
           serverName: gitea-database-v6
