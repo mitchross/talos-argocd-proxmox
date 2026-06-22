@@ -429,6 +429,22 @@ Remove the target (restore to latest-WAL-available) OR pick an earlier
 timestamp. Symptom: `full-recovery` pods CrashLoopBackOff with this FATAL in
 the Postgres log.
 
+### `barman-cloud-check-wal-archive`: `Expected empty archive`
+
+The new forward write lineage is already dirty. Do not reuse that
+`serverName`, and do not delete random RustFS objects unless you have already
+identified the exact abandoned prefix. The safe recovery is:
+
+1. Keep the recovery source pointed at the last known-good lineage.
+2. Bump `base/cluster.yaml` `spec.plugins[0].parameters.serverName` to the next
+   clean forward lineage.
+3. Hard-refresh Argo before deleting the Cluster/PVCs.
+4. Delete the live Cluster, recovery Jobs, and CNPG PVCs.
+5. Let Argo recreate the Cluster from the current render.
+
+2026-06-22 Gitea example: v6 held real data, v7 was polluted, v8 brought the
+restore online, and v9 became the steady clean write target.
+
 ### "relation does not exist" after a successful recovery
 
 The restored DB is empty (or has a subset of data). Common causes:
@@ -493,13 +509,16 @@ kubectl -n cloudnative-pg patch externalsecret <name> \
 
 ### Polluted S3 lineage after a failed DR attempt
 
-If post-DR scheduled backups wrote EMPTY base backups to the wrong `serverName`
-(happened in our session), the cleanest fix is:
+If post-DR scheduled backups wrote empty base backups to the wrong
+`serverName`, the cleanest fix is:
 
-1. Wipe the polluted `serverName` directory on RustFS (`postgres-backups/cnpg/<db>/<serverName>/`).
-2. Bump `base/cluster.yaml` `backup.barmanObjectStore.serverName` to the next
-   lineage (e.g. `-v4`).
-3. Let the next scheduled backup populate cleanly.
+1. Leave the known-good recovery source alone.
+2. Bump `base/cluster.yaml` `spec.plugins[0].parameters.serverName` to the next
+   clean forward lineage.
+3. Let the next scheduled backup populate the clean prefix.
+
+Only wipe an abandoned RustFS prefix after confirming no live Cluster points at
+it as a write target or recovery source.
 
 ---
 

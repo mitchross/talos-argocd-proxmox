@@ -70,7 +70,8 @@ spec:
         # archive was already non-empty.
         # v7 opened 2026-06-21 and was polluted before this rebuild completed,
         # so the 2026-06-22 restore failed barman-cloud-check-wal-archive with
-        # "Expected empty archive". v8 is the next clean forward write target
-        # while restoring FROM v6.
+        # "Expected empty archive". v8 was used for the successful restore
+        # bring-up from v6; v9 is the steady forward write target after that
+        # recovery proved good.
         # DO NOT change this value without bumping lineage in lockstep.
-        serverName: gitea-database-v8
+        serverName: gitea-database-v9

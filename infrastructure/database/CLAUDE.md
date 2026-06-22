@@ -56,23 +56,25 @@ The `serverName` values below live in each DB's `base/cluster.yaml` and
 
 | Database  | Current write target (base)  | Prior lineage (recovery source) |
 |-----------|------------------------------|---------------------------------|
-| gitea     | `gitea-database-v6`          | `gitea-database-v5`             |
+| gitea     | `gitea-database-v9`          | `gitea-database-v6`             |
 | immich    | `immich-database-v4`         | `immich-database-v3`            |
 | paperless | `paperless-database-v4`      | `paperless-database-v3`         |
 | temporal  | `temporal-database-v6`       | `temporal-database-v5`          |
 
-All four bumped TWICE on 2026-06-11: once for the Longhorn V2 rebuild
-nuke, and again for the same-day re-nuke (SPDK cpu-mask validation run)
-because the aborted first attempt dirtied the fresh prefixes (immich and
-paperless archived WALs before the SPDK wedge stalled the rebuild).
-Fresh initdb on clean prefixes keeps the WAL-archive empty check passing. The prior lineages exist on RustFS but are
-**unrestorable** until the RustFS multipart bug is fixed — all Barman base
-backups upload multipart and RustFS cannot serve multipart objects
-("encrypted object metadata is incomplete"). DB DR via Barman is therefore
-non-functional cluster-wide; treat DB data as disposable until RustFS is
-fixed or backups are rerouted. History: all DBs reset to `-v1` on
+All four bumped TWICE on 2026-06-11: once for the Longhorn V2 rebuild nuke,
+and again for the same-day re-nuke (SPDK cpu-mask validation run) because the
+aborted first attempt dirtied the fresh prefixes (immich and paperless archived
+WALs before the SPDK wedge stalled the rebuild). Fresh initdb on clean prefixes
+keeps the WAL-archive empty check passing. History: all DBs reset to `-v1` on
 2026-04-19 (S3 wipe); gitea `-v2` 2026-05-02 (GPU node loss, real Barman
 restore); gitea/temporal `-v3` opened around the 2026-06-02 first nuke.
+
+2026-06-22: Gitea proved the Barman path is usable again. v6 contained the real
+data; v7 was polluted by an aborted restore attempt and failed
+`barman-cloud-check-wal-archive` with `Expected empty archive`. v8 brought the
+successful restore online; v9 is the steady clean forward write target after
+that recovery. Until the next real Gitea DR event: **last restore read v6,
+current writes go to v9**.
 
 ## Normal operation (add a new CNPG DB)
 
@@ -113,6 +115,9 @@ See the full runbook in [`docs/domains/cnpg/disaster-recovery.md`](../../docs/do
 - **Specify `database` + `owner` + `secret` in recovery bootstrap.** CNPG
   defaults to `database: app, owner: app` if omitted.
 - **Don't add CNPG PVCs to Kyverno backup labels.** They use Barman, not Kopia.
+- **If Barman says `Expected empty archive`, do not reuse that forward
+  `serverName`.** Bump the write target to the next clean lineage and keep the
+  recovery source pointed at the last known-good lineage.
 
 ## Deprecation warnings
 
