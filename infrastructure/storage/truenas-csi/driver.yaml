@@ -30,7 +30,7 @@ spec:
       containers:
         - name: csi-controller
           # renovate: datasource=docker depName=ghcr.io/truenas/truenas-csi
-          image: ghcr.io/truenas/truenas-csi:v1.1.0@sha256:b716b192646bc47bd3b1fb447c265f01e5edbb0d277f8e0bc54b59e42419e874
+          image: ghcr.io/truenas/truenas-csi:v1.1.1@sha256:5696fe979b1c83fb03363bdd47fa21e19fe745daa6171082a9c476a1f26d8420
           imagePullPolicy: IfNotPresent
           args:
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -160,7 +160,7 @@ spec:
       containers:
         - name: csi-node
           # renovate: datasource=docker depName=ghcr.io/truenas/truenas-csi
-          image: ghcr.io/truenas/truenas-csi:v1.1.0@sha256:b716b192646bc47bd3b1fb447c265f01e5edbb0d277f8e0bc54b59e42419e874
+          image: ghcr.io/truenas/truenas-csi:v1.1.1@sha256:5696fe979b1c83fb03363bdd47fa21e19fe745daa6171082a9c476a1f26d8420
           imagePullPolicy: IfNotPresent
           # NFS-only on Talos: no iSCSI host integration. Talos has no iscsiadm
           # and no /etc/iscsi (would require the siderolabs/iscsi-tools system
