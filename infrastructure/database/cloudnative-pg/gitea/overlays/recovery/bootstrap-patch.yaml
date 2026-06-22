@@ -10,16 +10,12 @@ spec:
       owner: gitea
       secret:
         name: gitea-app-secret
-      # PITR to just before the 2026-06-02 full-cluster nuke (which hit at
-      # ~12:46 UTC on 2026-06-01). We MUST stop WAL replay before the nuke:
-      # the empty post-nuke cluster ran on the same v2 lineage and archived
-      # its own (low-segment, fresh-timeline) WAL there, so "latest-WAL"
-      # could replay post-nuke garbage. 12:40 is after the last good base
-      # backup (2026-06-01T04:00:01) and before the nuke → latest clean state.
-      # If CNPG FATALs "recovery ended before target reached", the pre-nuke
-      # WAL didn't reach 12:40 — fall back to an earlier targetTime.
-      recoveryTarget:
-        targetTime: "2026-06-01T12:40:00Z"
+      # Restore-to-LATEST (no recoveryTarget): v5 was cleanly superseded by the
+      # 2026-06-12 rebuild (which opened v6), so v5's WAL (files 003→010) is all
+      # from the v5 cluster — there is no post-nuke garbage to stop short of.
+      # The previous 2026-06-01 targetTime was STALE: it predates the v5 base
+      # backup (2026-06-12T16:45) and would FATAL "target before backup".
+      # Removed 2026-06-21.
   # Plugin-shape externalClusters (replaces the deprecated in-tree
   # barmanObjectStore field on externalClusters[]; removed in CNPG 1.30.0).
   # Reuses the prod ObjectStore CR (base/objectstore.yaml) — the only thing
@@ -35,10 +31,9 @@ spec:
           # endpoint). Only serverName changes between live writes and
           # recovery reads.
           barmanObjectName: gitea-objectstore
-          # Recover FROM v5 — the lineage superseded by the 2026-06-12 rebuild.
-          # base/cluster.yaml writes forward to v6.
-          # CAUTION: all prior base backups are multipart and therefore
-          # unreadable until the RustFS multipart bug is fixed — this overlay
-          # cannot actually restore today; it is kept at N-1 by convention.
-          # Keep this at N-1 relative to base when bumping for the next DR.
+          # Recover FROM v5 — base backup 20260612T164515 (~31MB cluster) + WAL
+          # files 003-010. VERIFIED 2026-06-21: gitea's base backup AND WAL fully
+          # download and gzip-decompress cleanly. The cluster-wide "multipart
+          # unreadable" RustFS caution does NOT apply to gitea — its objects are
+          # small (~4MB, single-part). base/cluster.yaml writes forward to v7.
           serverName: gitea-database-v5

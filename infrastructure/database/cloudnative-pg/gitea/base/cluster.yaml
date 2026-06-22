@@ -68,5 +68,8 @@ spec:
         # v6 opened 2026-06-12 after Gitea was rebuilt again. Reusing v5 made
         # barman-cloud-check-wal-archive reject the new cluster because that
         # archive was already non-empty.
+        # v7 opened 2026-06-21: restoring FROM v5 (verified readable) during the
+        # post-rebuild DR. v6 is abandoned — the initdb cluster archived its own
+        # WAL there, so reusing it would fail barman-cloud-check-wal-archive.
         # DO NOT change this value without bumping lineage in lockstep.
-        serverName: gitea-database-v6
+        serverName: gitea-database-v7
