@@ -23,8 +23,8 @@ spec:
   serviceSelector:
     matchLabels: {}
 
-  # Use worker nodes only for L2 announcements (high availability)
+  # Single-node cluster: the only node is a control-plane node, so it must be
+  # eligible to announce LoadBalancer IPs. Excluding control-plane nodes leaves
+  # every VIP allocated but unreachable from the LAN.
   nodeSelector:
-    matchExpressions:
-      - key: node-role.kubernetes.io/control-plane
-        operator: DoesNotExist
+    matchLabels: {}
