@@ -26,22 +26,10 @@ defaultSettings:
   # applies this global % to annotation-created default disks, so keep it 0 (the
   # real physical guard is storageMinimalAvailablePercentage above).
   storageReservedPercentageForDefaultDisk: "0"
-  # 200% was the previous floor (replicaCount=2 doubles every PVC against the
-  # scheduling limit). 2026-04-27 the cluster crossed 200% allocation on
-  # `talos-prod-cluster-workers-smgrbs` (1077 Gi reserved vs 1046 Gi cap →
-  # node went Unschedulable). Actual cluster fill is only 228 Gi / 4184 Gi
-  # physical (~5%) — every big PVC (immich/library 300G@5.8G used, posthog
-  # clickhouse 100G@23G, project-nomad nomad-storage 120G@2.4G) reserves
-  # full PVC size × replica count. Bumping the over-provisioning cap to 300%
-  # gives ~1568 Gi reservation budget per node, restoring Schedulable.
-  # Rebalance/PVC-shrink/migrate-to-NFS are the long-term levers; this is
-  # the band-aid that unsticks scheduling immediately.
-  # SINGLE-NODE (2026-06-21): the whole cluster's ~1.31 TiB of declared volumes
-  # sits on ONE 448 GiB disk → at 300% the reservation budget (~1344 GiB) was
-  # maxed and the next batch of volumes couldn't schedule a replica (faulted).
-  # Volumes are thin (~117 GiB physically used), so 600% is safe — physical free
-  # is the real guard (storageMinimalAvailablePercentage: 10). TrueNAS NFS
-  # offload is the long-term lever once bulk PVCs migrate off Longhorn.
+  # Single-node: ~1.3 TiB of declared volumes on one 448 GiB disk. Volumes are
+  # thin (~117 GiB physical), so 600% is safe — physical free is the real guard
+  # (storageMinimalAvailablePercentage: 10). Band-aid for thin disk headroom;
+  # durable fix is NFS offload of bulk PVCs. History pre-600%: git log.
   storageOverProvisioningPercentage: "600"
   allowRecurringJobWhileVolumeDetached: "true"
   replicaAutoBalance: "best-effort"

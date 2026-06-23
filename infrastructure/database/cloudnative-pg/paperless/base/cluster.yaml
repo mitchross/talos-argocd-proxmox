@@ -77,5 +77,9 @@ spec:
         #        run); fresh initdb on a clean prefix so WAL archiving works.
         #   v4 — opened 2026-06-12 after another initdb rebuild. Reusing v3
         #        failed Barman's required empty-archive check.
+        #   v5 — 2026-06-23: the 2026-06-22 single-node rebuild's fresh initdb
+        #        reused v4, whose prefix still held 2026-06-12 WAL → Barman
+        #        "Expected empty archive", ContinuousArchiving stuck False.
+        #        Bumped to a clean v5 prefix.
         # DO NOT change this value without bumping lineage in lockstep.
-        serverName: paperless-database-v4
+        serverName: paperless-database-v5

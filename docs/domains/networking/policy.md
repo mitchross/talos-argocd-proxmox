@@ -1,5 +1,11 @@
 # Network Security & LAN Isolation
 
+> ⚠️ **Topology note:** any "Storage backend (10G)" / dedicated-link references
+> here describe the pre-2026-06 multi-node layout — the cluster is now
+> single-node (see the staleness banner in `topology.md`). The CiliumClusterwide
+> policy itself is current; only the physical-link framing is stale. TrueNAS/
+> RustFS-S3 at `192.168.10.133` remains the live storage backend.
+
 This document details the Cilium network policy that isolates Kubernetes pods from the local network, preventing lateral movement attacks while allowing legitimate traffic.
 
 ## Overview

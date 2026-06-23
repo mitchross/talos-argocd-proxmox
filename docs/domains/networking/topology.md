@@ -1,5 +1,16 @@
 # Network Topology
 
+> ⚠️ **STALE — pre-2026-06 multi-node layout.** The diagram and IP table below
+> describe the old 3-control-plane / multi-worker cluster. The cluster is now
+> **single-node** (`talos-singlenode-gpu-prod`): one control-plane VM
+> (`192.168.10.184`) + one GPU worker VM (`192.168.10.103`), dual RTX 3090 on
+> the bare-metal X399/2950X host. TrueNAS/RustFS-S3 remains live at
+> `192.168.10.133` (backups verified flowing). The per-host 10G / dedicated-link
+> claims predate the DL360-era network change and have **not** been re-verified —
+> treat the physical-link details as unconfirmed. Verify live with
+> `kubectl get nodes -o wide`. TODO: redraw once the current physical topology is
+> confirmed end-to-end.
+
 ## Overview
 
 The cluster uses a single network with 10G switch infrastructure:

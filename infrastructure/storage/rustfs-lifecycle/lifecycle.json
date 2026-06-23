@@ -11,6 +11,12 @@
       "Status": "Enabled",
       "Filter": { "Prefix": "cnpg/temporal/temporal-database-v1/" },
       "Expiration": { "Days": 60 }
+    },
+    {
+      "ID": "expire-abandoned-paperless-v4-2026-06-23",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "cnpg/paperless/paperless-database-v4/" },
+      "Expiration": { "Days": 60 }
     }
   ]
 }

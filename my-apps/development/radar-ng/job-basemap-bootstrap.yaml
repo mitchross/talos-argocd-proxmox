@@ -32,6 +32,10 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
+  # No argocd hook annotations BY DESIGN: a Sync/PostSync hook re-runs the full
+  # CONUS extract on every sync. Run-once + refresh-label bump is correct here,
+  # and the image is :latest self-built (never Renovate-bumped) so the immutable-
+  # tag failure the hook rule guards against can't occur. See exemption note.
   name: basemap-bootstrap
   namespace: radar-ng
   labels:
