@@ -148,6 +148,26 @@ configs:
       hs.status = "Progressing"
       hs.message = "Initializing"
       return hs
+    # Surface ExternalSecret sync failures (default reports health=None, so a
+    # broken 1Password fetch stays invisible). Keys on the Ready condition.
+    resource.customizations.health.external-secrets.io_ExternalSecret: |
+      hs = {}
+      if obj.status ~= nil and obj.status.conditions ~= nil then
+        for _, c in ipairs(obj.status.conditions) do
+          if c.type == "Ready" then
+            if c.status == "True" then
+              hs.status = "Healthy"
+            else
+              hs.status = "Degraded"
+            end
+            hs.message = c.reason or c.message or ""
+            return hs
+          end
+        end
+      end
+      hs.status = "Progressing"
+      hs.message = "Waiting for first sync"
+      return hs
 # Argo CD server settings
 server:
   # single-node: 1 replica (2 was multi-node HA, pointless on one node)

@@ -58,7 +58,7 @@ The `serverName` values below live in each DB's `base/cluster.yaml` and
 |-----------|------------------------------|---------------------------------|
 | gitea     | `gitea-database-v9`          | `gitea-database-v6`             |
 | immich    | `immich-database-v4`         | `immich-database-v3`            |
-| paperless | `paperless-database-v4`      | `paperless-database-v3`         |
+| paperless | `paperless-database-v5`      | `paperless-database-v4`         |
 | temporal  | `temporal-database-v6`       | `temporal-database-v5`          |
 
 All four bumped TWICE on 2026-06-11: once for the Longhorn V2 rebuild nuke,
@@ -68,6 +68,12 @@ WALs before the SPDK wedge stalled the rebuild). Fresh initdb on clean prefixes
 keeps the WAL-archive empty check passing. History: all DBs reset to `-v1` on
 2026-04-19 (S3 wipe); gitea `-v2` 2026-05-02 (GPU node loss, real Barman
 restore); gitea/temporal `-v3` opened around the 2026-06-02 first nuke.
+
+2026-06-23: Paperless bumped `v4 → v5` (forward-write only, not a DR). The
+2026-06-22 single-node rebuild's fresh initdb reused `v4`, whose prefix still
+held 2026-06-12 WAL, so `barman-cloud-check-wal-archive` returned `Expected
+empty archive` and ContinuousArchiving stayed False. v5 is a clean prefix;
+abandoned v4 added to the RustFS lifecycle expiration policy.
 
 2026-06-22: Gitea proved the Barman path is usable again. v6 contained the real
 data; v7 was polluted by an aborted restore attempt and failed
