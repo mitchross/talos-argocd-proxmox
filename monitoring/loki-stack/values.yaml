@@ -101,6 +101,12 @@ chunksCache:
 resultsCache:
   allocatedMemory: 256
 gateway:
+  # Single node: Recreate avoids the RollingUpdate surge pod, which can't
+  # co-schedule with the old one under the chart's required gateway
+  # podAntiAffinity (one gateway per host) — otherwise the rollout wedges
+  # with a permanently-Pending new pod (seen 2026-06-23, stuck ~6h).
+  deploymentStrategy:
+    type: Recreate
   service:
     type: LoadBalancer
   resources:
