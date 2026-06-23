@@ -29,8 +29,7 @@ spec:
           barmanObjectName: immich-objectstore
           # Previous lineage to recover FROM. DO NOT change without
           # bumping recovery target lineage. See cnpg-plugin-migration.md
-          # §9.1. v3 is the lineage superseded by the 2026-06-12 rebuild
-          # (base writes to v4).
+          # §9.1. N-1 of base (base now writes v5).
           # CAUTION: all prior base backups are multipart and unreadable until
-          # the RustFS multipart bug is fixed — kept at N-1 by convention.
-          serverName: immich-database-v3
+          # the RustFS multipart bug is fixed — kept at N-1 by convention only.
+          serverName: immich-database-v4
