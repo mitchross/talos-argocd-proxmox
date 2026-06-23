@@ -17,6 +17,18 @@
       "Status": "Enabled",
       "Filter": { "Prefix": "cnpg/paperless/paperless-database-v4/" },
       "Expiration": { "Days": 60 }
+    },
+    {
+      "ID": "expire-abandoned-immich-v4-2026-06-23",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "cnpg/immich/immich-database-v4/" },
+      "Expiration": { "Days": 60 }
+    },
+    {
+      "ID": "expire-abandoned-temporal-v6-2026-06-23",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "cnpg/temporal/temporal-database-v6/" },
+      "Expiration": { "Days": 60 }
     }
   ]
 }

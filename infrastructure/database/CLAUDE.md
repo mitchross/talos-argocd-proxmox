@@ -57,9 +57,9 @@ The `serverName` values below live in each DB's `base/cluster.yaml` and
 | Database  | Current write target (base)  | Prior lineage (recovery source) |
 |-----------|------------------------------|---------------------------------|
 | gitea     | `gitea-database-v9`          | `gitea-database-v6`             |
-| immich    | `immich-database-v4`         | `immich-database-v3`            |
+| immich    | `immich-database-v5`         | `immich-database-v4`            |
 | paperless | `paperless-database-v5`      | `paperless-database-v4`         |
-| temporal  | `temporal-database-v6`       | `temporal-database-v5`          |
+| temporal  | `temporal-database-v7`       | `temporal-database-v6`          |
 
 All four bumped TWICE on 2026-06-11: once for the Longhorn V2 rebuild nuke,
 and again for the same-day re-nuke (SPDK cpu-mask validation run) because the
@@ -69,11 +69,13 @@ keeps the WAL-archive empty check passing. History: all DBs reset to `-v1` on
 2026-04-19 (S3 wipe); gitea `-v2` 2026-05-02 (GPU node loss, real Barman
 restore); gitea/temporal `-v3` opened around the 2026-06-02 first nuke.
 
-2026-06-23: Paperless bumped `v4 → v5` (forward-write only, not a DR). The
-2026-06-22 single-node rebuild's fresh initdb reused `v4`, whose prefix still
-held 2026-06-12 WAL, so `barman-cloud-check-wal-archive` returned `Expected
-empty archive` and ContinuousArchiving stayed False. v5 is a clean prefix;
-abandoned v4 added to the RustFS lifecycle expiration policy.
+2026-06-23: Paperless `v4→v5`, immich `v4→v5`, temporal `v6→v7` (forward-write
+only, not DR). The 2026-06-22 single-node rebuild's fresh initdb reused each
+DB's prior serverName, whose prefixes still held old WAL, so
+`barman-cloud-check-wal-archive` returned `Expected empty archive` and
+ContinuousArchiving stayed False on all three since 15:57 UTC. (gitea was the
+only one bumped during the rebuild → already healthy on v9.) New clean prefixes;
+abandoned v4/v4/v6 added to the RustFS lifecycle expiration policy.
 
 2026-06-22: Gitea proved the Barman path is usable again. v6 contained the real
 data; v7 was polluted by an aborted restore attempt and failed
