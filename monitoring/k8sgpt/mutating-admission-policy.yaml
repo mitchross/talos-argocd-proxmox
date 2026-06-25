@@ -1,0 +1,46 @@
+---
+# k8sgpt-operator v0.2.27 renders K8SGPT_BACKEND=localai but starts the
+# workload as plain `k8sgpt serve`. k8sgpt v0.4.34's serve command only
+# documents K8SGPT_METRICS_PORT as an env-backed flag and otherwise defaults
+# to backend=openai, causing:
+#   AI provider openai not specified in configuration. Please run k8sgpt auth
+#
+# Mutate only the operator-owned Deployment so the generated pod starts with
+# the localai backend that the K8sGPT CR already declares.
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: k8sgpt-serve-localai-backend
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [apps]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [deployments]
+  matchConditions:
+    - name: is-k8sgpt-deployment
+      expression: >-
+        object.metadata.namespace == "k8sgpt" &&
+        object.metadata.name == "k8sgpt"
+  failurePolicy: Fail
+  reinvocationPolicy: IfNeeded
+  mutations:
+    - patchType: JSONPatch
+      jsonPatch:
+        expression: >-
+          [
+            JSONPatch{
+              op: "add",
+              path: "/spec/template/spec/containers/0/args",
+              value: ["serve", "--backend", "localai"]
+            }
+          ]
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: k8sgpt-serve-localai-backend
+spec:
+  policyName: k8sgpt-serve-localai-backend

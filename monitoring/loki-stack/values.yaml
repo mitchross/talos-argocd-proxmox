@@ -1,7 +1,9 @@
 loki:
   commonConfig:
     path_prefix: /var/loki
-    replication_factor: 2
+    # Single-node/single-write Loki: replication must not exceed live write
+    # replicas, or ingestion fails with "at least 2 live replicas required".
+    replication_factor: 1
   storage:
     type: "s3"
     bucketNames:
