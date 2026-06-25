@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# kopiur GitOps-managed config (NOT the operator itself — that's the Helm
+# Application at core-dependencies/kopiur-operator-app.yaml).
+# Synced by core-dependencies/kopiur-config-app.yaml at Wave 3, after the
+# operator + CRDs land at Wave 2.
+resources:
+  - namespace.yaml
+  - externalsecret.yaml
+  - clusterrepository.yaml

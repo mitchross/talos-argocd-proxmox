@@ -1,0 +1,53 @@
+# kopiur backend for karakeep meilisearch-pvc (the search index).
+# Rebuildable in principle, but it was pvc-plumber-managed hourly, so we keep
+# parity here. Same bundle shape as data-pvc.yaml.
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: meilisearch-pvc
+  namespace: karakeep
+spec:
+  repository:
+    kind: ClusterRepository
+    name: cluster-kopia
+  sources:
+    - pvc:
+        name: meilisearch-pvc
+  identity:
+    username: meilisearch-pvc
+    hostname: karakeep
+  retention:
+    keepHourly: 24
+    keepDaily: 7
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: meilisearch-pvc-hourly
+  namespace: karakeep
+spec:
+  policyRef:
+    name: meilisearch-pvc
+  schedule:
+    cron: "25 * * * *"
+    jitter: 5m
+    runOnCreate: false
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: meilisearch-pvc-restore
+  namespace: karakeep
+spec:
+  repository:
+    kind: ClusterRepository
+    name: cluster-kopia
+  source:
+    identity:
+      username: meilisearch-pvc
+      hostname: karakeep
+  target:
+    populator: {}
+  policy:
+    onMissingSnapshot: Continue

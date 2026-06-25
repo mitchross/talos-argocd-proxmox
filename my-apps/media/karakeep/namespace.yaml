@@ -3,10 +3,11 @@ kind: Namespace
 metadata:
   name: karakeep
   labels:
+    # kopiur TRIAL (claude/kopiur-trial): pvc-plumber.io/managed-namespace
+    # REMOVED — karakeep is now driven by kopiur CRs (see ./kopiur/). With the
+    # PVC fuse labels also gone, pvc-plumber GCs karakeep's RS/RD and ignores
+    # the namespace. privileged-movers kept (harmless; still fans out the
+    # volsync secret, unused by kopiur) — drop it once the cutover is proven.
     volsync.backube/privileged-movers: "true"
-    # pvc-plumber v4.0.1 namespace write gate: opts this namespace in to
-    # operator-managed VolSync writes. Required (alongside the PVC fuse
-    # labels) before the operator will create/update/delete RS/RD here.
-    pvc-plumber.io/managed-namespace: "true"
   annotations:
     volsync.backube/privileged-movers: "true"

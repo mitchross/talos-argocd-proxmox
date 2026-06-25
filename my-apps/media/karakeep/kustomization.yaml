@@ -16,6 +16,9 @@ resources:
 - meilisearch/deployment-meilisearch.yaml
 - meilisearch/service-meilisearch.yaml
 - meilisearch/pvc-meilisearch.yaml
+# kopiur backend (TRIAL) — replaces pvc-plumber labels with explicit CRs
+- kopiur/data-pvc.yaml
+- kopiur/meilisearch-pvc.yaml
 
 configMapGenerator:
   - name: karakeep-configuration

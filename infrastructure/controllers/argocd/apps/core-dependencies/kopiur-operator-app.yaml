@@ -1,0 +1,54 @@
+# kopiur operator (TRIAL) — Helm chart rendered straight from the upstream
+# repo. Wave 2, same level as pvc-plumber: the operator serves the volume
+# populator AND its admission webhook, so it must be healthy before any app
+# PVC carrying a kopiur dataSourceRef is created (DR cold-start ordering).
+#
+# This installs the kopiur CRDs (chart ships them as templates).
+#
+# VERIFY before sync:
+#   - targetRevision tag format (0.4.x vs v0.4.x) — check the releases page.
+#   - kopiur is pre-1.0 and ships breaking CRD changes; pin and re-verify on bumps.
+#   - webhook.failurePolicy is set to Ignore for the trial so a kopiur outage
+#     can never gate Restore-CR creation. Flip to Fail once you trust it.
+#   - ALTERNATIVE: skip this Application and `helm install kopiur deploy/helm/kopiur
+#     -n kopiur-system --create-namespace --set installScope=cluster` once by hand
+#     (kopiur's own quickstart). GitOps-managing an alpha chart's CRDs is the
+#     friction point — see docs/kopiur-trial.md.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kopiur-operator
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: infrastructure
+  source:
+    repoURL: https://github.com/home-operations/kopiur.git
+    targetRevision: "0.4.13" # VERIFY tag format
+    path: deploy/helm/kopiur
+    helm:
+      releaseName: kopiur
+      valuesObject:
+        installScope: cluster
+        webhook:
+          failurePolicy: Ignore # trial: never gate CR creation on operator health
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kopiur-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 5m
