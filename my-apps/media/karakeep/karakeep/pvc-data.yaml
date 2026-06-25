@@ -19,13 +19,9 @@ metadata:
     app: karakeep
     type: data-storage
     restore-policy: "strict"
-    # Gate 3 handoff (2026-05-29): the v4 write fuse opts this PVC into
-    # pvc-plumber v4.0.0 operator management at tier=hourly (preserves the
-    # prior inline hourly cadence). The operator creates/repairs RS/data-pvc
-    # + RD/data-pvc-dst as managed-by=pvc-plumber.
-    pvc-plumber.io/enabled: "true"
-    pvc-plumber.io/manage-volsync: "true"
-    pvc-plumber.io/tier: "hourly"
+    # kopiur TRIAL (claude/kopiur-trial): de-fused from pvc-plumber. Backup +
+    # restore are now driven by the kopiur CR bundle in ../kopiur/data-pvc.yaml
+    # (SnapshotPolicy + SnapshotSchedule + Restore). No operator labels here.
 spec:
   accessModes:
   - ReadWriteOnce
@@ -33,17 +29,16 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  # Static dataSourceRef → ReplicationDestination/data-pvc-dst. On PVC
-  # re-creation (DR / namespace recreate), VolSync's volume populator reads
-  # the latest snapshot from the shared kopia repo and binds this PVC with
-  # restored data. No-op while the PVC is already Bound. The RS/RD targeted
-  # here are operator-managed by pvc-plumber v4.0.0 (Gate 3, 2026-05-29):
-  # this PVC carries the v4 write fuse, so the operator creates and repairs
-  # ReplicationSource/data-pvc + ReplicationDestination/data-pvc-dst (and
-  # recreates either within seconds if deleted) via its RS/RD watch. The
-  # operator-generated mover runs as 568:568:568 (was 1001 inline); fsGroup
-  # handles snapshot-clone read access. See git history (v4 cutover doc, pruned 2026-06-13).
+  # kopiur populator: on PVC re-creation, kopiur's Restore/data-pvc-restore
+  # holds this PVC in Pending and restores the latest snapshot for identity
+  # karakeep/data-pvc before binding. No-op while already Bound.
+  #
+  # ⚠️ dataSourceRef is IMMUTABLE. The LIVE PVC still points at the VolSync
+  # RD, so this change only takes effect on RECREATE (the restore drill).
+  # Until then ArgoCD flags a diff on /spec/dataSourceRef — the existing
+  # ServerSideApply=false annotation + the AppSet ignoreDifferences mask
+  # handle it. See docs/kopiur-trial.md "Cutover".
   dataSourceRef:
-    apiGroup: volsync.backube
-    kind: ReplicationDestination
-    name: data-pvc-dst
+    apiGroup: kopiur.home-operations.com
+    kind: Restore
+    name: data-pvc-restore

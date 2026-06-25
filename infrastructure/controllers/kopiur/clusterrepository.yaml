@@ -1,0 +1,39 @@
+# Cluster-wide kopia repository for kopiur — the engine equivalent of the
+# VolSync `volsync-kopia-repository` secret, but as a first-class CR.
+#
+# ISOLATION: new bucket prefix `kopiur-trial/` in the existing RustFS bucket.
+# This is a FRESH kopia repo (create.enabled: true) — it does NOT read the
+# VolSync repo at s3://volsync-kopia/cluster. So the proven backup path is
+# untouched, and karakeep's first kopiur snapshot captures its CURRENT data.
+#
+# VERIFY (kopiur is alpha — field names churn):
+#   kubectl explain clusterrepository.spec.backend.s3
+#   - the HTTP/TLS-off field for RustFS may be `insecure`, `disableTls`, or an
+#     http:// endpoint scheme. RustFS here is plain HTTP on :30292.
+#   - confirm secretRef requires `namespace` (webhook-enforced for cluster scope).
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: ClusterRepository
+metadata:
+  name: cluster-kopia
+spec:
+  backend:
+    s3:
+      bucket: volsync-kopia
+      prefix: kopiur-trial/
+      endpoint: 192.168.10.133:30292
+      region: us-east-1
+      insecure: true # VERIFY field name — RustFS is plain HTTP (no TLS)
+      auth:
+        secretRef:
+          name: kopiur-rustfs
+          namespace: kopiur-system
+  encryption:
+    passwordSecretRef:
+      name: kopiur-rustfs
+      namespace: kopiur-system
+      key: KOPIA_PASSWORD
+  create:
+    enabled: true
+  allowedNamespaces:
+    list:
+      - karakeep

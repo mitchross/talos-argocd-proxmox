@@ -1,0 +1,60 @@
+# kopiur backend for karakeep data-pvc (the SQLite DB + assets — the bookmarks).
+# Replaces the pvc-plumber label fuse: instead of 3 labels generating RS/RD,
+# this is the explicit CR bundle (policy + schedule + restore). The PVC's
+# dataSourceRef → Restore/data-pvc-restore is what holds binding until restore.
+#
+# identity (username/hostname) keys the snapshot in S3 and ties policy→restore,
+# so the populator finds THIS volume's backup. Mirrors VolSync's ns/pvc keying.
+#
+# VERIFY field names against the installed chart: kubectl explain snapshotpolicy.spec
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: data-pvc
+  namespace: karakeep
+spec:
+  repository:
+    kind: ClusterRepository
+    name: cluster-kopia
+  sources:
+    - pvc:
+        name: data-pvc
+  identity:
+    username: data-pvc
+    hostname: karakeep
+  retention:
+    keepHourly: 24
+    keepDaily: 7
+    keepWeekly: 4
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: data-pvc-hourly
+  namespace: karakeep
+spec:
+  policyRef:
+    name: data-pvc
+  schedule:
+    cron: "10 * * * *" # preserves the prior hourly cadence (minute 10)
+    jitter: 5m
+    runOnCreate: false
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: data-pvc-restore
+  namespace: karakeep
+spec:
+  repository:
+    kind: ClusterRepository
+    name: cluster-kopia
+  source:
+    identity:
+      username: data-pvc
+      hostname: karakeep
+  target:
+    populator: {} # passive volume populator — consumed by the PVC's dataSourceRef
+  policy:
+    onMissingSnapshot: Continue # backup exists → restore-before-bind · none → fresh
