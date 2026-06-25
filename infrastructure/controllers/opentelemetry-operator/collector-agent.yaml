@@ -90,6 +90,10 @@ spec:
         - container.id
 
     processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 384
+        spike_limit_mib: 96
       batch:
         timeout: 5s
         send_batch_size: 1024
@@ -105,13 +109,13 @@ spec:
       pipelines:
         logs:
           receivers: [filelog]
-          processors: [batch]
+          processors: [memory_limiter, batch]
           exporters: [otlp/gateway]
         traces:
           receivers: [otlp]
-          processors: [batch]
+          processors: [memory_limiter, batch]
           exporters: [otlp/gateway]
         metrics:
           receivers: [otlp, kubeletstats]
-          processors: [batch]
+          processors: [memory_limiter, batch]
           exporters: [otlp/gateway]

@@ -4,6 +4,7 @@ namespace: k8sgpt
 resources:
   - ns.yaml
   - secret.yaml
+  - mutating-admission-policy.yaml
   - k8sgpt.yaml
   - grafana-dashboard.yaml
 helmCharts:
