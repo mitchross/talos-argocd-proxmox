@@ -106,8 +106,11 @@ spec:
       # Batch for efficient export
       batch:
         timeout: 10s
-        send_batch_size: 8192
-        send_batch_max_size: 16384
+        # Keep OTLP->Loki requests comfortably under Loki's tenant burst limit.
+        # Large catch-up batches after an outage were ~6 MiB and hit 429s,
+        # backing pressure into the node agents.
+        send_batch_size: 1024
+        send_batch_max_size: 2048
 
     exporters:
       # Tempo - traces via OTLP gRPC
