@@ -43,6 +43,13 @@ spec:
       key: KOPIA_PASSWORD
   create:
     enabled: true
+  # Owner opt-in: permit projecting the kopiur-rustfs Secret from kopiur-system
+  # into consumer mover Jobs (the policies set credentialProjection.enabled).
+  credentialProjection:
+    allowed: true
   allowedNamespaces:
+    # kopiur-system: the managed Maintenance CR defaults to the operator namespace
+    # and must be allow-listed, else the webhook denies it (tenancy_denied).
     list:
       - karakeep
+      - kopiur-system
