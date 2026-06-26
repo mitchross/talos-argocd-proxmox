@@ -34,29 +34,30 @@ Files edited: the two karakeep PVCs (de-fused, `dataSourceRef` repointed), names
 4. **Secret keys** — ✅ RESOLVED: backend reads `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `KOPIA_PASSWORD` — exactly what the ESO writes.
 5. **CRDs via ArgoCD** — the chart ships CRDs as templates (not a `crds/` dir), so ArgoCD applies them on sync. `ServerSideApply=true` (set on the operator app) renders them without the 256KB last-applied-config limit. No cert-manager hook (webhook tls.mode=self), so no API-server-wedge risk.
 
-## How to run the trial (pure GitOps — no CLI helm)
-Operator + config are ArgoCD Applications in this repo. The root app-of-apps
-syncs `main`, so on this branch instantiate the two Apps once; ArgoCD then
-GitOps-manages everything from the repo (the operator chart is rendered from
-the upstream git tag — there is no published OCI chart):
+## How to run the trial (pure GitOps — merge, don't apply)
+The operator + config Applications are wired into the root app-of-apps
+kustomization (`infrastructure/controllers/argocd/apps/kustomization.yaml`) and
+track `main`. **There is no `kubectl apply` step** — open a PR, merge to `main`,
+and Argo deploys it (this is a real deploy to the live cluster):
+- **Wave 2** `kopiur-operator` — renders the chart from the upstream git tag
+  `0.4.13` → installs the 7 CRDs + operator + webhook.
+- **Wave 3** `kopiur-config` — namespace + ESO + ClusterRepository.
+- **Wave 6** the my-apps AppSet re-renders karakeep with the kopiur CR bundle and
+  the repointed PVCs.
 
+Watch:
 ```
-kubectl apply -f infrastructure/controllers/argocd/apps/core-dependencies/kopiur-operator-app.yaml
-kubectl apply -f infrastructure/controllers/argocd/apps/core-dependencies/kopiur-config-app.yaml
-```
-
-ArgoCD then renders the chart (Wave 2 → 7 CRDs + operator + webhook) and applies
-the ClusterRepository + ESO (Wave 3). Watch:
-```
+kubectl get applications -n argocd | grep kopiur
 kubectl -n kopiur-system get pods,clusterrepository
 kubectl -n karakeep get snapshotpolicy,snapshotschedule,snapshot,restore
 ```
+The first `Snapshot` captures karakeep's current data into the fresh repo (live
+PVCs are Bound; `dataSourceRef` is a no-op until recreate — the drill below).
 
-The karakeep CRs ride the existing my-apps AppSet once this lands on `main`. For
-the **branch** trial only, apply the karakeep overlay from a checkout (the AppSet
-won't discover a branch): `kubectl apply -k my-apps/media/karakeep`.
-The first `Snapshot` captures karakeep's **current** data into the fresh repo
-(live PVCs are Bound; `dataSourceRef` is a no-op until recreate).
+> Merging deploys to the live cluster. pvc-plumber + VolSync stay untouched for
+> every other app; only karakeep moves. karakeep's VolSync backups stop on merge
+> (labels gone) and kopiur's begin once the repo is healthy — the manual karakeep
+> backup covers the gap. Roll back by reverting the PR.
 
 ## Cutover & the real test (restore-before-bind drill)
 `dataSourceRef` is **immutable**, so the live PVCs still point at the VolSync RD.
