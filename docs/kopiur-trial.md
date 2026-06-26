@@ -18,7 +18,7 @@ Non-critical, easy to drill.
 | Per-PVC config | 3 labels + `dataSourceRef → ReplicationDestination` | explicit `SnapshotPolicy` + `SnapshotSchedule` + `Restore`, `dataSourceRef → Restore` |
 | Operator | `infrastructure/controllers/pvc-plumber/` (Wave 2) | `core-dependencies/kopiur-operator-app.yaml` Helm (Wave 2) |
 | Repo config | `volsync-kopia-repository` ClusterES | `infrastructure/controllers/kopiur/` (ns + ESO + `ClusterRepository`, Wave 3) |
-| kopia repo | `s3://volsync-kopia/cluster` | `s3://volsync-kopia/kopiur-trial/` (**fresh, isolated**) |
+| kopia repo | `s3://volsync-kopia/cluster` | `s3://kopiur/` (**dedicated bucket, isolated**) |
 | Namespace gate | `pvc-plumber.io/managed-namespace` | removed (kopiur uses `allowedNamespaces` on the ClusterRepository) |
 
 Files added: `infrastructure/controllers/kopiur/*`, `core-dependencies/kopiur-{operator,config}-app.yaml`,
