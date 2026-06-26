@@ -11,11 +11,13 @@
 # volsync-kopia only. If denied, widen the RustFS bucket policy (or use admin creds).
 # Endpoint is the S3 API port :30292 (NOT the console :30293).
 #
-# VERIFY (kopiur is alpha — field names churn):
-#   kubectl explain clusterrepository.spec.backend.s3
-#   - the HTTP/TLS-off field for RustFS may be `insecure`, `disableTls`, or an
-#     http:// endpoint scheme. RustFS here is plain HTTP on :30292.
-#   - confirm secretRef requires `namespace` (webhook-enforced for cluster scope).
+# Field shapes confirmed vs deploy/examples/backends/s3-minio-http.yaml:
+#   - TLS-off for plain-HTTP RustFS is `tls.disableTls: true`.
+#   - endpoint is a BARE host:port (no scheme, no trailing slash).
+#   - the creds Secret carries AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY /
+#     KOPIA_PASSWORD (exactly what externalsecret.yaml writes).
+#   - cluster-scoped secretRef MUST carry an explicit `namespace` (webhook-enforced).
+# Still verify against the INSTALLED chart: kubectl explain clusterrepository.spec
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: ClusterRepository
 metadata:
@@ -27,7 +29,8 @@ spec:
       prefix: "" # dedicated bucket — kopia repo lives at the bucket root
       endpoint: 192.168.10.133:30292
       region: us-east-1
-      insecure: true # VERIFY field name — RustFS is plain HTTP (no TLS)
+      tls:
+        disableTls: true # RustFS is plain HTTP — confirmed vs s3-minio-http.yaml
       auth:
         secretRef:
           name: kopiur-rustfs
