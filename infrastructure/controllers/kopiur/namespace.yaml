@@ -4,5 +4,8 @@ metadata:
   name: kopiur-system
   labels:
     app.kubernetes.io/part-of: infrastructure
+    # ClusterExternalSecret fanout target — gets the kopiur-rustfs Secret here
+    # for the controller connection + managed Maintenance mover.
+    kopiur.home-operations.com/repo: cluster-kopia
     # NOT pvc-plumber-managed. kopiur owns its own CRDs here; this namespace
     # holds the operator, webhook, and the cluster kopia credentials.
