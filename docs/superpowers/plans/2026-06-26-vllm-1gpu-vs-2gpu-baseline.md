@@ -75,8 +75,8 @@ Run:
 kubectl patch deploy -n vllm vllm-server --type=json -p='[
   {"op":"replace","path":"/spec/template/spec/containers/0/resources/requests/nvidia.com~1gpu","value":"1"},
   {"op":"replace","path":"/spec/template/spec/containers/0/resources/limits/nvidia.com~1gpu","value":"1"},
-  {"op":"replace","path":"/spec/template/spec/containers/0/args/5","value":"1"},
-  {"op":"replace","path":"/spec/template/spec/containers/0/args/15","value":"65536"}
+  {"op":"replace","path":"/spec/template/spec/containers/0/args/4","value":"1"},
+  {"op":"replace","path":"/spec/template/spec/containers/0/args/11","value":"65536"}
 ]'
 kubectl rollout status -n vllm deploy/vllm-server --timeout=20m
 ```
