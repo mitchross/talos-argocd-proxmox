@@ -5,6 +5,13 @@ resources:
 - namespace.yaml
 - httproute.yaml
 - externalsecret.yaml
+- kopiur/gitea-shared-storage.yaml
+
+# Uniform kopiur backup fields (repository, copyMethod, populator, privileged
+# mover) for the per-PVC stub in kopiur/.
+components:
+- ../../common/kopiur-backup
+
 helmCharts:
 - name: gitea
   repo: https://dl.gitea.com/charts/
@@ -22,27 +29,19 @@ patches:
     kind: PersistentVolumeClaim
     name: gitea-shared-storage
   patch: |
-    - op: add
-      path: /metadata/labels/restore-policy
-      value: strict
-    # pvc-plumber v4.0.1 DRY handoff (2026-05-31): fuse the chart-generated PVC
-    # at tier=daily so the operator creates/manages RS/RD (extraDeploy RS/RD
-    # removed from values.yaml). Operator normalizes mover 1000->568.
-    - op: add
-      path: /metadata/labels/pvc-plumber.io~1enabled
-      value: "true"
-    - op: add
-      path: /metadata/labels/pvc-plumber.io~1manage-volsync
-      value: "true"
-    - op: add
-      path: /metadata/labels/pvc-plumber.io~1tier
-      value: daily
+    # kopiur backup of the chart-generated PVC: backup CRs live in
+    # kopiur/gitea-shared-storage.yaml; uniform fields + privileged mover from
+    # the ../../common/kopiur-backup component. dataSourceRef -> the kopiur
+    # Restore so a recreate restores-before-bind.
     - op: add
       path: /metadata/annotations/argocd.argoproj.io~1compare-options
       value: ServerSideDiff=false
     - op: add
+      path: /metadata/annotations/argocd.argoproj.io~1sync-options
+      value: ServerSideApply=false
+    - op: add
       path: /spec/dataSourceRef
       value:
-        apiGroup: volsync.backube
-        kind: ReplicationDestination
-        name: gitea-shared-storage-dst
+        apiGroup: kopiur.home-operations.com
+        kind: Restore
+        name: gitea-shared-storage-restore

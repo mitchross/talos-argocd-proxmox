@@ -3,7 +3,9 @@ kind: Namespace
 metadata:
   name: gitea
   labels:
-    volsync.backube/privileged-movers: 'true'
-    # pvc-plumber v4.0.1 namespace write-gate (2026-05-31): opts gitea in so the
-    # operator may create/repair RS/RD for the fused gitea-shared-storage PVC.
-    pvc-plumber.io/managed-namespace: 'true'
+    # kopiur-managed: ClusterExternalSecret cred fanout + ClusterRepository
+    # tenancy (allowedNamespaces selector). Replaces pvc-plumber labels.
+    kopiur.home-operations.com/repo: cluster-kopia
+  annotations:
+    # privileged root mover gate (kopiur-backup component default)
+    kopiur.home-operations.com/privileged-movers: "true"

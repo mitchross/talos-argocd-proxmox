@@ -1,0 +1,44 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
+# mysql-data backup STUB — uniform fields (repository, copyMethod,
+# privileged mover, populator) injected by ../../common/kopiur-backup.
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: mysql-data
+  namespace: project-nomad
+spec:
+  sources:
+    - pvc:
+        name: mysql-data
+  identity:
+    username: mysql-data
+    hostname: project-nomad
+  retention:
+    keepDaily: 14
+    keepWeekly: 6
+    keepMonthly: 3
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: mysql-data-daily
+  namespace: project-nomad
+spec:
+  policyRef:
+    name: mysql-data
+  schedule:
+    cron: "25 3 * * *"
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: mysql-data-restore
+  namespace: project-nomad
+spec:
+  source:
+    fromPolicy:
+      name: mysql-data
+      offset: 0

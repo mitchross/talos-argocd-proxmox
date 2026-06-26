@@ -8,6 +8,12 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+  - kopiur/perplexica-data.yaml
+
+# Uniform kopiur backup fields (repository, copyMethod, populator, privileged
+# mover) for the per-PVC stub(s) in kopiur/.
+components:
+  - ../../common/kopiur-backup
 
 # Model-provider seed for the initContainer. Hash-suffixed so any
 # config.json change auto-rolls the deployment.

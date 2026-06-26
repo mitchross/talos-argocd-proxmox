@@ -73,10 +73,8 @@ valkey:
     persistence:
       enabled: false
 
-# extraDeploy RS/RD REMOVED 2026-05-31 (pvc-plumber v4.0.1 DRY handoff).
-# The inline ReplicationSource/gitea-shared-storage + ReplicationDestination/
-# gitea-shared-storage-dst that lived here are now operator-managed: pvc-plumber
-# recreates them (managed-by=pvc-plumber, tier=daily, mover normalized 1000->568)
-# because the chart-generated PVC carries the pvc-plumber.io/* fuse labels (added
-# via the kustomization.yaml JSONPatch) and the namespace is gated
-# managed-namespace=true. Do not re-add inline RS/RD here.
+# Backups are kopiur now (2026-06-26): the chart-generated PVC's dataSourceRef
+# and its SnapshotPolicy/SnapshotSchedule/Restore live in the kustomization PVC
+# patch + kopiur/gitea-shared-storage.yaml (uniform fields from the
+# ../../common/kopiur-backup component). Do not add inline RS/RD or extraDeploy
+# backup objects here.

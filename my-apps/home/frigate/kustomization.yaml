@@ -9,7 +9,13 @@ resources:
   - servicemonitor.yaml
   - httproute.yaml
   - externalsecret.yaml
+  - kopiur/frigate-config.yaml
 namespace: frigate
+
+# Uniform kopiur backup fields (repository, copyMethod, populator, privileged
+# mover) for the per-PVC stub(s) in kopiur/.
+components:
+  - ../../common/kopiur-backup
 
 # Hash-suffixed ConfigMaps so any data change forces a Deployment rollout
 # (Kustomize rewrites the volume reference to the new hashed name). Was

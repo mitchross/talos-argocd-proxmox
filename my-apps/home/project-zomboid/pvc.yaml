@@ -4,18 +4,12 @@ metadata:
   name: zomboid-data
   namespace: project-zomboid
   annotations:
+    # Immutable dataSourceRef on a Bound PVC — mask the SSA dry-run diff
+    # (the AppSet ignoreDifferences handles the live compare).
     argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
   labels:
     app: project-zomboid
-    restore-policy: "strict"
-    # pvc-plumber v4.0.1 DRY handoff (2026-05-30): operator-managed at
-    # tier=daily; ns project-zomboid carries managed-namespace=true. Mover 568.
-    # Migrated via Option-R reset (backup→-dst dsr; recreated from quiesced
-    # snapshot). Old PV pvc-d71b929e retained. Sibling zomboid-server-files
-    # stays backup-exempt (not fused).
-    pvc-plumber.io/enabled: "true"
-    pvc-plumber.io/manage-volsync: "true"
-    pvc-plumber.io/tier: "daily"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -23,15 +17,14 @@ spec:
     requests:
       storage: 20Gi
   storageClassName: longhorn
-  # Static dataSourceRef → ReplicationDestination/zomboid-data-dst. No-op while
-  # the PVC is already Bound. RS/RD are operator-managed by pvc-plumber v4.0.1
-  # (DRY handoff, 2026-05-30): the operator creates and repairs
-  # ReplicationSource/zomboid-data + ReplicationDestination/zomboid-data-dst as
-  # managed-by=pvc-plumber via its RS/RD watch.
+  # kopiur restore-before-bind: on recreate this binds Pending until the
+  # Restore populator hydrates it from the latest kopia snapshot. No-op while
+  # Bound. Backup/restore CRs in kopiur/zomboid-data.yaml; uniform fields + the
+  # privileged mover come from the ../../common/kopiur-backup component.
   dataSourceRef:
-    apiGroup: volsync.backube
-    kind: ReplicationDestination
-    name: zomboid-data-dst
+    apiGroup: kopiur.home-operations.com
+    kind: Restore
+    name: zomboid-data-restore
 ---
 ---
 apiVersion: v1
@@ -52,7 +45,6 @@ spec:
       storage: 60Gi
   storageClassName: longhorn
 
-# NOTE: inline ReplicationSource/zomboid-data + ReplicationDestination/
-# zomboid-data-dst were REMOVED on 2026-05-30 (pvc-plumber v4.0.1 DRY handoff).
-# pvc-plumber now owns the RS/RD lifecycle for zomboid-data. Do not re-add here.
-# (zomboid-server-files above remains backup-exempt — no RS/RD by design.)
+# NOTE: zomboid-data backup is owned by kopiur (SnapshotPolicy/SnapshotSchedule/
+# Restore in kopiur/zomboid-data.yaml + the ../../common/kopiur-backup component).
+# (zomboid-server-files above remains backup-exempt — no backup CRs by design.)

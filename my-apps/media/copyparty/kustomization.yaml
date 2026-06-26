@@ -11,6 +11,12 @@ resources:
   - deployment.yaml
   - svc.yaml
   - httproute.yaml
+  - kopiur/copyparty-data.yaml
+
+# Uniform kopiur backup fields (repository, copyMethod, populator, privileged
+# mover) for the per-PVC stub(s) in kopiur/.
+components:
+  - ../../common/kopiur-backup
 
 configMapGenerator:
   - name: copyparty-config

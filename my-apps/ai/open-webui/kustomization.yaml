@@ -10,7 +10,13 @@ resources:
 - pvc.yaml
 - httproute.yaml
 - function-loader-job.yaml
+- kopiur/storage.yaml
 namespace: open-webui
+
+# Uniform kopiur backup fields (repository, copyMethod, populator, privileged
+# mover) for the per-PVC stub(s) in kopiur/.
+components:
+  - ../../common/kopiur-backup
 
 configMapGenerator:
 - name: har-analyzer-function

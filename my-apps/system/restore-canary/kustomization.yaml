@@ -5,5 +5,11 @@ resources:
   - namespace.yaml
   - pvc.yaml
   - deployment.yaml
+  - kopiur/restore-canary-data.yaml
 
 namespace: restore-canary
+
+# Uniform kopiur backup fields (repository, copyMethod, populator, privileged
+# mover) for the per-PVC stub(s) in kopiur/.
+components:
+  - ../../common/kopiur-backup

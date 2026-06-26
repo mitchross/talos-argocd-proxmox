@@ -4,8 +4,9 @@ kind: Namespace
 metadata:
   name: nginx-example
   labels:
-    volsync.backube/privileged-movers: "true"
-    # pvc-plumber v4.0.1 namespace write gate: opts this namespace in to
-    # operator-managed VolSync writes. Required (alongside the PVC fuse
-    # labels) before the operator will create/update/delete RS/RD here.
-    pvc-plumber.io/managed-namespace: "true"
+    # kopiur-managed: ClusterExternalSecret cred fanout + ClusterRepository
+    # tenancy (allowedNamespaces selector). Replaces pvc-plumber labels.
+    kopiur.home-operations.com/repo: cluster-kopia
+  annotations:
+    # privileged root mover gate (kopiur-backup component default)
+    kopiur.home-operations.com/privileged-movers: "true"

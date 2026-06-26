@@ -1,39 +1,31 @@
 # The canary PVC. Deliberately tiny; holds only the drill sentinel file.
 #
-# tier=manual (not daily/hourly): v4.0.2 renders the ReplicationSource with
-# spec.trigger.manual=backup-on-demand — a backup fires only when that
-# string changes. The drill script bumps it to control backup timing
-# exactly, and there is zero idle mover churn between drills. The operator
-# never inspects/repairs the manual trigger value, only that no cron
-# schedule is present on a manual-tier RS.
+# kopiur daily schedule (kopiur/restore-canary-data.yaml): the old
+# pvc-plumber manual tier had no cron, so snapshots only existed when the
+# drill bumped the trigger. Under kopiur the canary runs a normal DAILY
+# SnapshotSchedule so a fresh snapshot always exists for the drill to
+# restore from, with no manual trigger plumbing.
 #
-# DAY-ONE NOTE (VolSync v0.17.11 source + live verification 2026-06-10):
-# the volume populator binds a new PVC only once the RD has a
-# status.latestImage — but the kopia mover completes as a SUCCESSFUL NO-OP
-# when the repo identity has no snapshots, so the RD's first restore-once
-# sync yields an EMPTY latestImage and a brand-new PVC binds (empty) a few
-# minutes later. No permanent deadlock — but also NO content guarantee: an
-# empty latestImage binds as happily as a real one. The drill therefore
-# always requires latestImage to ADVANCE past the fresh sentinel backup
-# before any delete. This canary was bootstrapped by pre-creating the PVC
-# WITHOUT the dataSourceRef (instant deterministic bind), seeding the
-# first backup, then letting the first drill install the ref via
-# delete -> Git recreate. Full procedure: docs/disaster-recovery.md.
+# DAY-ONE NOTE: a brand-new PVC carrying dataSourceRef binds only once the
+# Restore populator has a snapshot to hydrate from. The kopia mover
+# completes as a SUCCESSFUL NO-OP when the repo identity has no snapshots,
+# so a first restore can bind EMPTY — content is not guaranteed by the ref
+# alone. The drill therefore always requires the latest snapshot to ADVANCE
+# past the fresh sentinel backup before any delete. Full procedure:
+# docs/disaster-recovery.md.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: restore-canary-data
   namespace: restore-canary
   annotations:
+    # Immutable dataSourceRef on a Bound PVC — mask the SSA dry-run diff
+    # (the AppSet ignoreDifferences handles the live compare).
     argocd.argoproj.io/compare-options: ServerSideDiff=false
     argocd.argoproj.io/sync-options: ServerSideApply=false
   labels:
     app.kubernetes.io/name: restore-canary
     app.kubernetes.io/component: dr-canary
-    pvc-plumber.io/enabled: "true"
-    pvc-plumber.io/manage-volsync: "true"
-    pvc-plumber.io/tier: "manual"
-    restore-policy: "strict"
 spec:
   storageClassName: longhorn
   accessModes:
@@ -41,15 +33,12 @@ spec:
   resources:
     requests:
       storage: 1Gi
-  # Static dataSourceRef → ReplicationDestination/restore-canary-data-dst.
-  # On PVC re-creation (the drill, DR, namespace recreate), VolSync's
-  # volume populator consumes the RD's status.latestImage snapshot and
-  # binds this PVC with restored data. No-op while the PVC is Bound. The
-  # RS/RD targeted here are operator-managed by pvc-plumber: this PVC
-  # carries the v4 write fuse, so the operator creates and repairs
-  # ReplicationSource/restore-canary-data +
-  # ReplicationDestination/restore-canary-data-dst.
+  # kopiur restore-before-bind: on recreate (the drill, DR, namespace
+  # recreate) this binds Pending until the Restore populator hydrates it
+  # from the latest kopia snapshot. No-op while Bound. Backup/restore CRs in
+  # kopiur/restore-canary-data.yaml; uniform fields + the privileged mover
+  # come from the ../../common/kopiur-backup component.
   dataSourceRef:
-    apiGroup: volsync.backube
-    kind: ReplicationDestination
-    name: restore-canary-data-dst
+    apiGroup: kopiur.home-operations.com
+    kind: Restore
+    name: restore-canary-data-restore

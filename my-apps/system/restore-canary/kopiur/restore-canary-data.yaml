@@ -1,0 +1,46 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
+# restore-canary-data backup STUB — uniform fields (repository, copyMethod,
+# privileged mover, populator) injected by ../../common/kopiur-backup.
+# DR-drill canary: kept on a normal DAILY schedule (the old pvc-plumber
+# manual tier had no cron) so snapshots always exist for the drill.
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: restore-canary-data
+  namespace: restore-canary
+spec:
+  sources:
+    - pvc:
+        name: restore-canary-data
+  identity:
+    username: restore-canary-data
+    hostname: restore-canary
+  retention:
+    keepDaily: 14
+    keepWeekly: 6
+    keepMonthly: 3
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: restore-canary-data-daily
+  namespace: restore-canary
+spec:
+  policyRef:
+    name: restore-canary-data
+  schedule:
+    cron: "43 3 * * *"
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: restore-canary-data-restore
+  namespace: restore-canary
+spec:
+  source:
+    fromPolicy:
+      name: restore-canary-data
+      offset: 0

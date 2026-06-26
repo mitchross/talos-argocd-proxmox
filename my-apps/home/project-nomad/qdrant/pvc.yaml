@@ -9,12 +9,6 @@ metadata:
   labels:
     app: project-nomad
     type: qdrant
-    restore-policy: "strict"
-    # pvc-plumber v4.0.1 DRY handoff (2026-05-30): operator-managed at
-    # tier=daily; ns project-nomad carries managed-namespace=true. Mover 568.
-    pvc-plumber.io/enabled: "true"
-    pvc-plumber.io/manage-volsync: "true"
-    pvc-plumber.io/tier: "daily"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -22,12 +16,11 @@ spec:
     requests:
       storage: 20Gi
   storageClassName: longhorn
-  # Static dataSourceRef → ReplicationDestination/qdrant-data-dst. No-op
-  # while the PVC is already Bound. RS/RD are operator-managed by
-  # pvc-plumber v4.0.1 (DRY handoff, 2026-05-30): the operator creates and
-  # repairs ReplicationSource/qdrant-data + ReplicationDestination/
-  # qdrant-data-dst as managed-by=pvc-plumber via its RS/RD watch.
+  # kopiur restore-before-bind: on recreate this binds Pending until the
+  # Restore populator hydrates it from the latest kopia snapshot. No-op while
+  # Bound. Backup/restore CRs in kopiur-backup.yaml; uniform fields + the
+  # privileged mover come from the ../../common/kopiur-backup component.
   dataSourceRef:
-    apiGroup: volsync.backube
-    kind: ReplicationDestination
-    name: qdrant-data-dst
+    apiGroup: kopiur.home-operations.com
+    kind: Restore
+    name: qdrant-data-restore
