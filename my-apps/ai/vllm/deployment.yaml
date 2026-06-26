@@ -6,9 +6,8 @@ metadata:
   labels:
     app: vllm-server
 spec:
-  # vLLM is the active in-cluster LLM backend (TP=2 across both 3090s).
-  # llama-cpp is scaled to 0 (frees GPU0); comfyui already 0 (GPU1 idle).
-  # To revert: set this to 0 and llama-cpp-server back to 1 (one commit).
+  # TEMP experiment: 1x RTX 3090 vLLM baseline.
+  # Revert to the 2-GPU TP=2 / 262K BF16-INT4 config after the test run.
   replicas: 1
   strategy:
     type: Recreate            # whole-card GPU workload; never two pods on the cards at once
@@ -45,21 +44,21 @@ spec:
           imagePullPolicy: IfNotPresent
           # The image entrypoint runs `vllm serve`; the first arg is the positional model_tag.
           args:
-            - "/models/Qwen3.6-27B-AWQ-BF16-INT4"     # default model (higher quality; fits TP=2 / 48GB)
+            - "/models/Qwen3.6-27B-AWQ-BF16-INT4"     # same model as 2-GPU baseline; 1-GPU test lowers context only
             # served-model-name is a LIST (nargs+). Keep a single canonical
             # id so Open WebUI's model selector is not cluttered with aliases.
             # The next token MUST be a flag (--tensor-parallel-size) to end the list.
             - "--served-model-name"
             - "qwen3.6-27b"                                    # canonical
             - "--tensor-parallel-size"
-            - "2"                                      # pool both 3090s (48GB). Needs 2 WHOLE cards.
+            - "1"                                      # one whole 3090 for the temporary 1-GPU benchmark
             - "--distributed-executor-backend"
             - "mp"                                     # single-node multiprocessing; no Ray
             - "--disable-custom-all-reduce"            # 3090s have no NVLink/P2P → vLLM uses PYNCCL anyway; makes it explicit + silences the warning
             - "--gpu-memory-utilization"
             - "0.92"
             - "--max-model-len"
-            - "262144"                                 # full 262K native context; fits via fp8 KV + TP=2 paged cache
+            - "65536"                                  # 64K single-card test window; 262K is the 2-GPU baseline
             - "--max-num-seqs"
             - "2"                                      # 262K = deep single-stream; low concurrency keeps the KV pool sane
             - "--limit-mm-per-prompt"
@@ -143,13 +142,13 @@ spec:
             # reservation. Keep it low (bursts to the 14-core limit) so the
             # single 32-vCPU worker has headroom for the rest of the fleet.
             requests:
-              nvidia.com/gpu: "2"
+              nvidia.com/gpu: "1"
               cpu: "1"
               # Weights live in GPU VRAM; host RAM steady-state is ~1.2Gi.
               # Request 8Gi (headroom for load spikes); 64Gi limit allows burst.
               memory: 8Gi
             limits:
-              nvidia.com/gpu: "2"
+              nvidia.com/gpu: "1"
               cpu: "14"          # leave ~2 vCPU for kubelet/cilium/device-plugin/otel
               memory: 64Gi
           volumeMounts:
