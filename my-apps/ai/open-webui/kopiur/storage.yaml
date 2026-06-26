@@ -1,0 +1,44 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
+# open-webui storage backup STUB — uniform fields (repository, copyMethod,
+# privileged mover, populator) injected by ../../common/kopiur-backup.
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: storage
+  namespace: open-webui
+spec:
+  sources:
+    - pvc:
+        name: storage
+  identity:
+    username: storage
+    hostname: open-webui
+  retention:
+    keepDaily: 14
+    keepWeekly: 6
+    keepMonthly: 3
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: storage-daily
+  namespace: open-webui
+spec:
+  policyRef:
+    name: storage
+  schedule:
+    cron: "5 3 * * *"
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: storage-restore
+  namespace: open-webui
+spec:
+  source:
+    fromPolicy:
+      name: storage
+      offset: 0

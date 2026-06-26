@@ -4,17 +4,13 @@ metadata:
   name: data
   namespace: paperless-ngx
   annotations:
+    # Immutable dataSourceRef on a Bound PVC — mask the SSA dry-run diff
+    # (the AppSet ignoreDifferences handles the live compare).
     argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
   labels:
     app: paperless-ngx
     type: data
-    restore-policy: "strict"
-    # pvc-plumber v4.0.1 DRY handoff (2026-05-31): operator-managed at
-    # tier=hourly; ns gated managed-namespace=true. Mover 568. Disposable reset
-    # — recreated EMPTY (no dataSourceRef); operator backs up going forward.
-    pvc-plumber.io/enabled: "true"
-    pvc-plumber.io/manage-volsync: "true"
-    pvc-plumber.io/tier: "hourly"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -22,15 +18,14 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  # dataSourceRef → ReplicationDestination/data-dst (added 2026-05-31 during the
-  # paperless-data restore drill). The empty reset originally omitted this to
-  # avoid auto-restoring the nuked data; now that the app has rebuilt real data
-  # AND pvc-plumber backs it up, the dsr closes the DR gap — on recreate the
-  # VolSync volume populator restores the latest backup. No-op while Bound.
+  # kopiur restore-before-bind: on recreate this binds Pending until the
+  # Restore populator hydrates it from the latest kopia snapshot. No-op while
+  # Bound. Backup/restore CRs in kopiur/data.yaml; uniform fields + the
+  # privileged mover come from the ../../common/kopiur-backup component.
   dataSourceRef:
-    apiGroup: volsync.backube
-    kind: ReplicationDestination
-    name: data-dst
+    apiGroup: kopiur.home-operations.com
+    kind: Restore
+    name: data-restore
 ---
 ---
 apiVersion: v1
@@ -39,17 +34,13 @@ metadata:
   name: media
   namespace: paperless-ngx
   annotations:
+    # Immutable dataSourceRef on a Bound PVC — mask the SSA dry-run diff
+    # (the AppSet ignoreDifferences handles the live compare).
     argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
   labels:
     app: paperless-ngx
     type: media
-    restore-policy: "strict"
-    # pvc-plumber v4.0.1 DRY handoff (2026-05-31): operator-managed at
-    # tier=hourly; ns gated managed-namespace=true. Mover 568. Disposable reset
-    # — recreated EMPTY (no dataSourceRef); operator backs up going forward.
-    pvc-plumber.io/enabled: "true"
-    pvc-plumber.io/manage-volsync: "true"
-    pvc-plumber.io/tier: "hourly"
 spec:
   accessModes:
     - ReadWriteOnce
@@ -57,15 +48,14 @@ spec:
     requests:
       storage: 20Gi
   storageClassName: longhorn
-  # dataSourceRef → ReplicationDestination/media-dst (added 2026-05-31 during the
-  # paperless-media DR-completion drill). The empty reset originally omitted this;
-  # media now holds document originals/archives that pvc-plumber backs up, so the
-  # dsr closes the DR gap — on recreate the VolSync volume populator restores the
-  # latest backup. No-op while Bound. (Matches paperless/data, copyparty, etc.)
+  # kopiur restore-before-bind: on recreate this binds Pending until the
+  # Restore populator hydrates it from the latest kopia snapshot. No-op while
+  # Bound. Backup/restore CRs in kopiur/media.yaml; uniform fields + the
+  # privileged mover come from the ../../common/kopiur-backup component.
   dataSourceRef:
-    apiGroup: volsync.backube
-    kind: ReplicationDestination
-    name: media-dst
+    apiGroup: kopiur.home-operations.com
+    kind: Restore
+    name: media-restore
 ---
 ---
 apiVersion: v1
@@ -107,7 +97,7 @@ spec:
       storage: 10Gi
   storageClassName: longhorn
 
-# NOTE: inline ReplicationSource/ReplicationDestination for data (data-dst) and
-# media (media-dst) were REMOVED 2026-05-31 (pvc-plumber v4.0.1 DRY handoff).
-# pvc-plumber now owns the RS/RD lifecycle for both (tier=hourly, mover 568).
-# Do not re-add inline RS/RD here. (export/consume PVCs above stay backup-exempt.)
+# NOTE: backups migrated from pvc-plumber/VolSync to kopiur (Kustomize component
+# ../../common/kopiur-backup). Backup/restore CRs live in kopiur/data.yaml and
+# kopiur/media.yaml; data + media restore-on-recreate via dataSourceRef →
+# kopiur Restore. (export/consume PVCs above stay backup-exempt.)

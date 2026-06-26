@@ -14,6 +14,7 @@ resources:
   - mysql/deployment.yaml
   - mysql/service.yaml
   - mysql/pvc.yaml
+  - mysql/kopiur-backup.yaml
   # Redis
   - redis/deployment.yaml
   - redis/service.yaml
@@ -21,6 +22,7 @@ resources:
   - qdrant/deployment.yaml
   - qdrant/service.yaml
   - qdrant/pvc.yaml
+  - qdrant/kopiur-backup.yaml
   # Embeddings (HuggingFace TEI — nomic-embed-text for RAG)
   - embeddings/deployment.yaml
   - embeddings/service.yaml
@@ -46,7 +48,13 @@ resources:
   - flatnotes/deployment.yaml
   - flatnotes/service.yaml
   - flatnotes/pvc.yaml
+  - flatnotes/kopiur-backup.yaml
   - flatnotes/httproute.yaml
+
+# Uniform kopiur backup fields (repository, copyMethod, populator, privileged
+# mover) for the per-PVC stubs in flatnotes/, mysql/, qdrant/.
+components:
+  - ../../common/kopiur-backup
 
 configMapGenerator:
   - name: project-nomad-config

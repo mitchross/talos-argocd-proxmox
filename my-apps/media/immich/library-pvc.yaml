@@ -4,17 +4,13 @@ metadata:
   name: library
   namespace: immich
   annotations:
+    # Immutable dataSourceRef on a Bound PVC — mask the SSA dry-run diff
+    # (the AppSet ignoreDifferences handles the live compare).
     argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
   labels:
     app.kubernetes.io/name: immich
     app.kubernetes.io/component: library
-    restore-policy: "strict"
-    # pvc-plumber v4.0.1 DRY handoff (2026-05-31): operator-managed at
-    # tier=daily; ns gated managed-namespace=true. Mover 568. Disposable reset —
-    # recreated EMPTY (no dataSourceRef); operator backs up going forward.
-    pvc-plumber.io/enabled: "true"
-    pvc-plumber.io/manage-volsync: "true"
-    pvc-plumber.io/tier: "daily"
 spec:
   accessModes:
   - ReadWriteOnce
@@ -24,24 +20,17 @@ spec:
       # The library volume holds only immich's working set (thumbnails/transcodes/
       # new uploads) ~6Gi actual — originals live on the read-only nfs-photos
       # external library. 50Gi keeps generous headroom while reclaiming ~250Gi of
-      # Longhorn scheduling budget on the single 512G EDILOCA disk. pvc-plumber
-      # backup contract + dataSourceRef restore are UNCHANGED (restore-into-larger
-      # works fine).
+      # Longhorn scheduling budget on the single 512G EDILOCA disk.
       storage: 50Gi
   storageClassName: longhorn
-  # dataSourceRef → ReplicationDestination/library-dst (added 2026-05-31 during the
-  # immich-library DR-completion drill). The empty reset originally omitted this;
-  # library now holds the current (post-reset) working set that pvc-plumber backs
-  # up, so the dsr closes the last optional DR gap — on recreate the VolSync volume
-  # populator restores the latest backup. No-op while Bound. (Matches paperless,
-  # copyparty, etc.) NOTE: originals remain on exempt NFS nfs-photos; the immich
-  # CNPG DB still references pre-reset assets, so this restores the CURRENT library
-  # state only — it does NOT fix the prior DB-to-asset mismatch (accepted).
+  # kopiur restore-before-bind: on recreate this binds Pending until the
+  # Restore populator hydrates it from the latest kopia snapshot. No-op while
+  # Bound. Backup/restore CRs in kopiur/library.yaml; uniform fields + the
+  # privileged mover come from the ../../common/kopiur-backup component.
+  # NOTE: originals remain on exempt NFS nfs-photos; the immich CNPG DB (Barman/
+  # S3, untouched) still references pre-reset assets, so this restores the
+  # CURRENT library working set only.
   dataSourceRef:
-    apiGroup: volsync.backube
-    kind: ReplicationDestination
-    name: library-dst
-
-# NOTE: inline ReplicationSource/library + ReplicationDestination/library-dst
-# were REMOVED 2026-05-31 (pvc-plumber v4.0.1 DRY handoff). pvc-plumber now owns
-# the RS/RD lifecycle for library (tier=daily, mover 568). Do not re-add here.
+    apiGroup: kopiur.home-operations.com
+    kind: Restore
+    name: library-restore

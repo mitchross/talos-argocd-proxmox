@@ -3,14 +3,12 @@ kind: Namespace
 metadata:
   name: karakeep
   labels:
-    # kopiur TRIAL (claude/kopiur-trial): pvc-plumber.io/managed-namespace
-    # REMOVED — karakeep is now driven by kopiur CRs (see ./kopiur/). With the
-    # PVC fuse labels also gone, pvc-plumber GCs karakeep's RS/RD and ignores
-    # the namespace. privileged-movers kept (harmless; still fans out the
-    # volsync secret, unused by kopiur) — drop it once the cutover is proven.
-    volsync.backube/privileged-movers: "true"
-    # ClusterExternalSecret fanout target — delivers the kopiur-rustfs Secret
-    # here so the mover Job can read the repo creds locally (no projection).
+    # kopiur-managed namespace: drives the ClusterExternalSecret cred fanout AND
+    # ClusterRepository tenancy (allowedNamespaces selector). Replaces the
+    # pvc-plumber managed-namespace + volsync privileged-movers labels.
     kopiur.home-operations.com/repo: cluster-kopia
   annotations:
-    volsync.backube/privileged-movers: "true"
+    # Gate for the privileged root mover (kopiur-backup component default) —
+    # analog of the VolSync privileged-movers label. Required or movers get
+    # MoverPermitted=False.
+    kopiur.home-operations.com/privileged-movers: "true"

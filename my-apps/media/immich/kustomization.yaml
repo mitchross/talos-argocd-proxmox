@@ -17,3 +17,10 @@ resources:
   - deployment-machine-learning.yaml
   - deployment-valkey.yaml
   - services.yaml
+  - kopiur/library.yaml
+
+# Uniform kopiur backup fields (repository, copyMethod, populator, privileged
+# mover) for the per-PVC stub(s) in kopiur/. Backs up the `library` PVC ONLY —
+# the immich database is CNPG (Barman/S3) and is never under kopiur/VolSync.
+components:
+  - ../../common/kopiur-backup

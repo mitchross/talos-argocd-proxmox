@@ -1,0 +1,44 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
+# swarmui-output backup STUB — uniform fields (repository, copyMethod,
+# privileged mover, populator) injected by ../../common/kopiur-backup.
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: swarmui-output
+  namespace: swarmui
+spec:
+  sources:
+    - pvc:
+        name: swarmui-output
+  identity:
+    username: swarmui-output
+    hostname: swarmui
+  retention:
+    keepDaily: 14
+    keepWeekly: 6
+    keepMonthly: 3
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: swarmui-output-daily
+  namespace: swarmui
+spec:
+  policyRef:
+    name: swarmui-output
+  schedule:
+    cron: "13 3 * * *"
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: swarmui-output-restore
+  namespace: swarmui
+spec:
+  source:
+    fromPolicy:
+      name: swarmui-output
+      offset: 0

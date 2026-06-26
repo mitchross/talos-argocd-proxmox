@@ -1,0 +1,44 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
+# copyparty-data backup STUB — uniform fields (repository, copyMethod,
+# privileged mover, populator) injected by ../../common/kopiur-backup.
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: copyparty-data
+  namespace: copyparty
+spec:
+  sources:
+    - pvc:
+        name: copyparty-data
+  identity:
+    username: copyparty-data
+    hostname: copyparty
+  retention:
+    keepDaily: 14
+    keepWeekly: 6
+    keepMonthly: 3
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: copyparty-data-daily
+  namespace: copyparty
+spec:
+  policyRef:
+    name: copyparty-data
+  schedule:
+    cron: "31 3 * * *"
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: copyparty-data-restore
+  namespace: copyparty
+spec:
+  source:
+    fromPolicy:
+      name: copyparty-data
+      offset: 0

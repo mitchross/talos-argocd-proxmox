@@ -10,6 +10,12 @@ resources:
   - deployment.yaml
   - service.yaml
   - pdb.yaml
+  - kopiur/zomboid-data.yaml
+
+# Uniform kopiur backup fields (repository, copyMethod, populator, privileged
+# mover) for the per-PVC stub(s) in kopiur/.
+components:
+  - ../../common/kopiur-backup
 
 configMapGenerator:
   - name: zomboid-server-config

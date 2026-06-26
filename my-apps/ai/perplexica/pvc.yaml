@@ -3,25 +3,11 @@ kind: PersistentVolumeClaim
 metadata:
   name: perplexica-data
   namespace: perplexica
-  labels:
-    restore-policy: "strict"
-    # pvc-plumber v4.0.1 DRY handoff (2026-05-30): operator-managed at
-    # tier=daily; ns perplexica carries managed-namespace=true. Mover 568.
-    # Migrated via Option-R reset (backup→-dst dsr; recreated from quiesced
-    # snapshot). Old PV pvc-18d3d2c7 retained.
-    pvc-plumber.io/enabled: "true"
-    pvc-plumber.io/manage-volsync: "true"
-    pvc-plumber.io/tier: "daily"
   annotations:
-    # With controller.diff.server.side=true, ArgoCD's SSA dry-run tries to
-    # null that immutable field and the API server rejects it, producing a
-    # ComparisonError that wedges the whole app's sync (observed stuck since
-    # 2026-05-03, 2000+ retries). The global _PersistentVolumeClaim
-    # ignoreDifferences rule can't help because the SSA dry-run runs BEFORE
-    # ignore masking. Forcing client-side diff for this one PVC sidesteps
-    # the dry-run; the global ignoreDifferences then masks the dataSource
-    # drift normally. See docs/disaster-recovery.md.
+    # Immutable dataSourceRef on a Bound PVC — mask the SSA dry-run diff
+    # (the AppSet ignoreDifferences handles the live compare).
     argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
 spec:
   accessModes:
     - ReadWriteOnce
@@ -29,16 +15,11 @@ spec:
     requests:
       storage: 10Gi
   storageClassName: longhorn
-  # Static dataSourceRef → ReplicationDestination/perplexica-data-dst. No-op
-  # while the PVC is already Bound. RS/RD are operator-managed by pvc-plumber
-  # v4.0.1 (DRY handoff, 2026-05-30): the operator creates and repairs
-  # ReplicationSource/perplexica-data + ReplicationDestination/
-  # perplexica-data-dst as managed-by=pvc-plumber via its RS/RD watch.
+  # kopiur restore-before-bind: on recreate this binds Pending until the
+  # Restore populator hydrates it from the latest kopia snapshot. No-op while
+  # Bound. Backup/restore CRs in kopiur/perplexica-data.yaml; uniform fields +
+  # the privileged mover come from the ../../common/kopiur-backup component.
   dataSourceRef:
-    apiGroup: volsync.backube
-    kind: ReplicationDestination
-    name: perplexica-data-dst
-
-# NOTE: inline ReplicationSource/perplexica-data + ReplicationDestination/
-# perplexica-data-dst were REMOVED on 2026-05-30 (pvc-plumber v4.0.1 DRY
-# handoff). pvc-plumber now owns the RS/RD lifecycle. Do not re-add here.
+    apiGroup: kopiur.home-operations.com
+    kind: Restore
+    name: perplexica-data-restore

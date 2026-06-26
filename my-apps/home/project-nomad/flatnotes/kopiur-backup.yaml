@@ -1,0 +1,44 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
+# flatnotes-data backup STUB — uniform fields (repository, copyMethod,
+# privileged mover, populator) injected by ../../common/kopiur-backup.
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: flatnotes-data
+  namespace: project-nomad
+spec:
+  sources:
+    - pvc:
+        name: flatnotes-data
+  identity:
+    username: flatnotes-data
+    hostname: project-nomad
+  retention:
+    keepDaily: 14
+    keepWeekly: 6
+    keepMonthly: 3
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: flatnotes-data-daily
+  namespace: project-nomad
+spec:
+  policyRef:
+    name: flatnotes-data
+  schedule:
+    cron: "23 3 * * *"
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: flatnotes-data-restore
+  namespace: project-nomad
+spec:
+  source:
+    fromPolicy:
+      name: flatnotes-data
+      offset: 0
