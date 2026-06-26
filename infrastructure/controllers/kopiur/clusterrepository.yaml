@@ -47,8 +47,11 @@ spec:
   # consumer namespace by the ClusterExternalSecret (see externalsecret.yaml),
   # so the operator needs no cluster-wide secrets-write RBAC.
   allowedNamespaces:
-    # kopiur-system: the managed Maintenance CR defaults to the operator namespace
-    # and must be allow-listed, else the webhook denies it (tenancy_denied).
-    list:
-      - karakeep
-      - kopiur-system
+    # Label-driven tenancy (the pvc-plumber `managed-namespace` analog): any
+    # namespace labeled kopiur.home-operations.com/repo=cluster-kopia may use this
+    # repo. The SAME label drives the ESO cred fanout (externalsecret.yaml), so
+    # onboarding an app = one namespace label. kopiur-system carries it too, so
+    # the managed Maintenance CR is permitted (else webhook tenancy_denied).
+    selector:
+      matchLabels:
+        kopiur.home-operations.com/repo: cluster-kopia

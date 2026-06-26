@@ -1,0 +1,71 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# Reusable kopiur backup layer (pure Kustomize — pvc-plumber-shaped DX).
+#
+# Include from an app kustomization with:
+#   components:
+#     - ../../common/kopiur-backup
+# then add a per-PVC stub (SnapshotPolicy + SnapshotSchedule + Restore carrying
+# only the VARYING bits: name, sources.pvc.name, identity, schedule.cron, and the
+# Restore mover UID) plus `dataSourceRef -> <pvc>-restore` on the app's PVC.
+#
+# This component injects every UNIFORM field by kind, so the per-PVC stub stays
+# tiny and the fumble-prone fields (repository ref, populator, mover SC nesting)
+# live in ONE place. Prereqs (once per namespace): label the namespace
+# `kopiur.home-operations.com/repo: cluster-kopia` (ESO cred fanout + repo
+# tenancy via the ClusterRepository allowedNamespaces selector).
+#
+# Why not selector-based (one policy backs up all labeled PVCs)? kopiur's
+# selector-policy + per-PVC populator-Restore combo is undocumented (0.4.x), so
+# we use the per-PVC pattern proven by the 2026-06-26 karakeep DR drill.
+patches:
+  # --- SnapshotPolicy: uniform backup config -------------------------------
+  - target:
+      kind: SnapshotPolicy
+      group: kopiur.home-operations.com
+    patch: |
+      - op: add
+        path: /spec/copyMethod
+        value: Snapshot
+      - op: add
+        path: /spec/volumeSnapshotClassName
+        value: longhorn-snapclass
+      - op: add
+        path: /spec/repository
+        value:
+          kind: ClusterRepository
+          name: cluster-kopia
+  # NOTE: mover securityContext (UID/GID) is per-APP (varies by workload), so it
+  # is NOT set here — add it once in the app's kustomization as a patch over
+  # kind: SnapshotPolicy + Restore (see my-apps/media/karakeep/kustomization.yaml).
+  # --- SnapshotSchedule: uniform scheduling --------------------------------
+  - target:
+      kind: SnapshotSchedule
+      group: kopiur.home-operations.com
+    patch: |
+      - op: add
+        path: /spec/schedule/concurrencyPolicy
+        value: Forbid
+      - op: add
+        path: /spec/schedule/runOnCreate
+        value: false
+  # --- Restore: uniform passive-populator config ---------------------------
+  # NOTE: the Restore mover securityContext (UID) stays in the per-PVC stub —
+  # during a cold DR restore no consumer pod exists, so inherit can't resolve.
+  - target:
+      kind: Restore
+      group: kopiur.home-operations.com
+    patch: |
+      - op: add
+        path: /spec/repository
+        value:
+          kind: ClusterRepository
+          name: cluster-kopia
+      - op: add
+        path: /spec/target
+        value:
+          populator: {}
+      - op: add
+        path: /spec/policy
+        value:
+          onMissingSnapshot: Continue
