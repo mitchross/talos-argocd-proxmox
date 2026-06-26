@@ -15,7 +15,7 @@ spec:
   project: infrastructure
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
-    targetRevision: claude/kopiur-trial # TRIAL branch; point at main when promoted
+    targetRevision: main # deploys once merged — Argo GitOps, no manual apply
     path: infrastructure/controllers/kopiur
   destination:
     server: https://kubernetes.default.svc
