@@ -16,9 +16,36 @@ resources:
 - meilisearch/deployment-meilisearch.yaml
 - meilisearch/service-meilisearch.yaml
 - meilisearch/pvc-meilisearch.yaml
-# kopiur backend (TRIAL) — replaces pvc-plumber labels with explicit CRs
+# kopiur backend — per-PVC stubs; uniform fields come from the component below
 - kopiur/data-pvc.yaml
 - kopiur/meilisearch-pvc.yaml
+
+# Injects the uniform kopiur fields (repository, copyMethod, populator) into the
+# per-PVC stubs above. See my-apps/common/kopiur-backup.
+components:
+  - ../../common/kopiur-backup
+
+# Per-app kopiur mover identity: karakeep runs as uid/gid 1001 (verified live).
+# Applied to every SnapshotPolicy (backup) and Restore (restore) in this app.
+patches:
+  - target:
+      group: kopiur.home-operations.com
+      kind: SnapshotPolicy
+    patch: |
+      - op: add
+        path: /spec/mover
+        value:
+          securityContext: { runAsUser: 1001, runAsGroup: 1001 }
+          podSecurityContext: { fsGroup: 1001 }
+  - target:
+      group: kopiur.home-operations.com
+      kind: Restore
+    patch: |
+      - op: add
+        path: /spec/mover
+        value:
+          securityContext: { runAsUser: 1001, runAsGroup: 1001 }
+          podSecurityContext: { fsGroup: 1001 }
 
 configMapGenerator:
   - name: karakeep-configuration
