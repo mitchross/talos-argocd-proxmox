@@ -1,0 +1,67 @@
+# kopiur operator (TRIAL) — pure GitOps, no CLI / no local helm.
+#
+# kopiur publishes NO OCI/Helm-repo chart (it lives only at deploy/helm/kopiur
+# in the upstream repo, chart version 0.1.0). So ArgoCD renders the chart
+# straight from the upstream git repo pinned to the 0.4.13 release tag, and
+# installs the 7 CRDs + operator + webhook. Images are pinned to 0.4.13 too
+# (the chart's appVersion default is not trusted for a tag-rendered chart).
+#
+# Wave 2: same level as pvc-plumber. The operator serves the volume populator
+# AND its webhook, so it must be healthy before any PVC carrying a kopiur
+# dataSourceRef is created (DR cold-start ordering).
+#
+# ArgoCD-safety: webhook.tls.mode=self → the operator self-signs its serving
+# cert at runtime. No cert-manager Certificate, no Helm hook cert Job (the
+# pattern that wedges API server under ArgoCD). webhook.failurePolicy=Ignore
+# for the trial so a kopiur outage can never gate Restore-CR creation.
+#
+# Pre-1.0 / alpha: pin the tag and re-verify CRDs on every bump. Pin image
+# DIGESTS (image.*.digest) before trusting this for anything real.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kopiur-operator
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: infrastructure
+  source:
+    repoURL: https://github.com/home-operations/kopiur.git
+    targetRevision: "0.4.13"
+    path: deploy/helm/kopiur
+    helm:
+      releaseName: kopiur
+      valuesObject:
+        installScope: cluster # ClusterRole + ClusterRepository reconciliation
+        installCRDs: true # chart ships the 7 CRDs as templates
+        image:
+          controller:
+            tag: "0.4.13"
+          webhook:
+            tag: "0.4.13"
+          mover:
+            tag: "0.4.13"
+        webhook:
+          failurePolicy: Ignore # trial: never gate CR creation on operator health
+          tls:
+            mode: self # self-signed at runtime — no cert-manager / no hook Job
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kopiur-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true # required — renders large CRDs without the 256KB annotation limit
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 5m
