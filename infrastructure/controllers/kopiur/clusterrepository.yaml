@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/clusterrepository_v1alpha1.json
 # Cluster-wide kopia repository for kopiur — the engine equivalent of the
 # VolSync `volsync-kopia-repository` secret, but as a first-class CR.
 #
