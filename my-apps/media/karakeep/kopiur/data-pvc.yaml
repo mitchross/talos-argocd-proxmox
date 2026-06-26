@@ -12,8 +12,8 @@ metadata:
 spec:
   copyMethod: Snapshot # CSI VolumeSnapshot (Longhorn) — matches the old VolSync RS
   volumeSnapshotClassName: longhorn-snapclass
-  credentialProjection:
-    enabled: true # project the ClusterRepository creds into the mover Job here
+  # creds: kopiur-rustfs delivered to this namespace by the ClusterExternalSecret
+  # (no credentialProjection — see infrastructure/controllers/kopiur).
   repository:
     kind: ClusterRepository
     name: cluster-kopia
@@ -58,8 +58,6 @@ spec:
   repository:
     kind: ClusterRepository
     name: cluster-kopia
-  credentialProjection:
-    enabled: true
   source:
     fromPolicy:
       name: data-pvc

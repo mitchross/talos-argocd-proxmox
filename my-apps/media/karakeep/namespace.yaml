@@ -9,5 +9,8 @@ metadata:
     # the namespace. privileged-movers kept (harmless; still fans out the
     # volsync secret, unused by kopiur) — drop it once the cutover is proven.
     volsync.backube/privileged-movers: "true"
+    # ClusterExternalSecret fanout target — delivers the kopiur-rustfs Secret
+    # here so the mover Job can read the repo creds locally (no projection).
+    kopiur.home-operations.com/repo: cluster-kopia
   annotations:
     volsync.backube/privileged-movers: "true"

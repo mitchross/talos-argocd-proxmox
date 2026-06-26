@@ -10,8 +10,7 @@ metadata:
 spec:
   copyMethod: Snapshot
   volumeSnapshotClassName: longhorn-snapclass
-  credentialProjection:
-    enabled: true
+  # creds via ClusterExternalSecret (no credentialProjection) — see data-pvc.yaml
   repository:
     kind: ClusterRepository
     name: cluster-kopia
@@ -55,8 +54,6 @@ spec:
   repository:
     kind: ClusterRepository
     name: cluster-kopia
-  credentialProjection:
-    enabled: true
   source:
     fromPolicy:
       name: meilisearch-pvc
