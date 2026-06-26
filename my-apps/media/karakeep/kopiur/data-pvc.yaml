@@ -1,12 +1,9 @@
-# kopiur backend for karakeep data-pvc (the SQLite DB + assets — the bookmarks).
-# Replaces the pvc-plumber label fuse with the explicit CR bundle. The PVC's
-# dataSourceRef → Restore/data-pvc-restore holds binding until restore.
-#
-# Field shapes cross-checked against two working examples:
-#   - eleboucher/homelab  garage/app/kopiur.yaml
-#   - onedr0p/home-ops    #11012 (components/kopiur)
-# and kopiur deploy/examples/18-inherit-security-context.yaml (mover SC).
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
+# kopiur backend for karakeep data-pvc (the SQLite DB + assets — the bookmarks).
+# Replaces the pvc-plumber label fuse; the PVC's dataSourceRef → Restore holds
+# binding until restore. Field shapes cross-checked vs eleboucher/homelab,
+# onedr0p/home-ops#11012, and kopiur example 18 (mover securityContext).
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotPolicy
 metadata:
@@ -36,6 +33,7 @@ spec:
       runAsGroup: 568
       fsGroup: 568
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotSchedule
 metadata:
@@ -49,6 +47,7 @@ spec:
     concurrencyPolicy: Forbid # no overlapping snapshot Jobs
     runOnCreate: false
 ---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: Restore
 metadata:
