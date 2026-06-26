@@ -26,12 +26,12 @@ Files added: `infrastructure/controllers/kopiur/*`, `core-dependencies/kopiur-{o
 Files edited: the two karakeep PVCs (de-fused, `dataSourceRef` repointed), namespace, kustomization.
 
 ## ⚠️ VERIFY before you apply (kopiur is pre-1.0 / alpha — CRD fields churn)
-1. **Chart tag** — `kopiur-operator-app.yaml` pins `targetRevision: "0.4.13"`. Confirm the tag format on the releases page (`0.4.13` vs `v0.4.13`).
+1. **Chart tag** — ✅ confirmed: tags are `0.4.x` (no `v`). `targetRevision: "0.4.13"` is correct.
 2. **CRD field names** — after the operator installs, run:
    `kubectl explain clusterrepository.spec.backend.s3` · `snapshotpolicy.spec` · `restore.spec`.
-   I assembled these from the upstream `deploy/examples` on `main`; reconcile any drift.
-3. **RustFS HTTP/TLS** — `clusterrepository.yaml` sets `backend.s3.insecure: true` as a guess for "no TLS". The real field may be `disableTls` / an `http://` endpoint. RustFS here is plain HTTP on `:30292`.
-4. **Secret keys** — confirm the S3 backend reads `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` (the ESO writes those). Adjust `externalsecret.yaml` if kopiur wants different keys.
+   Assembled from upstream `deploy/examples` on `main`; reconcile any drift.
+3. **RustFS HTTP/TLS** — ✅ RESOLVED: `backend.s3.tls.disableTls: true` + bare `host:port` endpoint (vs `deploy/examples/backends/s3-minio-http.yaml`).
+4. **Secret keys** — ✅ RESOLVED: backend reads `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `KOPIA_PASSWORD` — exactly what the ESO writes.
 5. **CRDs via ArgoCD** — the chart ships CRDs as templates; SSA + large CRDs can be fiddly. If it fights you, `helm install kopiur deploy/helm/kopiur -n kopiur-system --create-namespace --set installScope=cluster` once by hand (kopiur's own quickstart) and keep only `infrastructure/controllers/kopiur/` in GitOps.
 
 ## How to run the trial
