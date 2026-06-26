@@ -81,7 +81,7 @@ Two real-world Flux adoptions cross-checked our manifests and corrected several 
 |---|---|
 | `copyMethod: Snapshot` + `volumeSnapshotClassName: longhorn-snapclass` | CSI snapshots won't fire on Longhorn without them |
 | `credentialProjection.enabled: true` (policy + restore) | the mover in the app namespace can't reach the ClusterRepository creds otherwise |
-| `mover.securityContext {568/568/568}` | restored files get wrong ownership (karakeep is 568); kopiur can also `mover.inheritSecurityContextFrom` a workload |
+| `mover.securityContext {runAsUser/runAsGroup: 568}` + `mover.podSecurityContext.fsGroup: 568` | restored files get wrong ownership (karakeep is 568). **`fsGroup` is pod-level — it lives under `mover.podSecurityContext`, NOT `mover.securityContext`** (the latter is the container SC and rejects `fsGroup` under strict CRD validation; caught live 2026-06-26 via SSA typed-patch). kopiur can also `mover.inheritSecurityContextFrom` a workload |
 | Restore `source.fromPolicy` (vs `identity`) | simpler; what both reference repos use |
 | Schedule `concurrencyPolicy: Forbid` | no overlapping snapshot Jobs |
 

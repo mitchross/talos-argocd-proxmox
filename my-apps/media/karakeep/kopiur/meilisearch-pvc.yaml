@@ -24,11 +24,12 @@ spec:
   retention:
     keepHourly: 24
     keepDaily: 7
-  mover:
-    securityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
+  mover: # karakeep meilisearch runs as uid/gid 1001 (verified live 2026-06-26)
+    securityContext: # container SC (no fsGroup — that's pod-level)
+      runAsUser: 1001
+      runAsGroup: 1001
+    podSecurityContext:
+      fsGroup: 1001 # group-writable source/restore volume (data is :1001)
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
 apiVersion: kopiur.home-operations.com/v1alpha1
@@ -64,8 +65,9 @@ spec:
     populator: {}
   policy:
     onMissingSnapshot: Continue
-  mover:
-    securityContext:
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
+  mover: # karakeep meilisearch runs as uid/gid 1001 (verified live 2026-06-26)
+    securityContext: # container SC (no fsGroup — that's pod-level)
+      runAsUser: 1001
+      runAsGroup: 1001
+    podSecurityContext:
+      fsGroup: 1001 # group-writable source/restore volume (data is :1001)
