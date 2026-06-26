@@ -1,0 +1,71 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
+# kopiur backend for karakeep meilisearch-pvc (the search index). Same corrected
+# bundle shape as data-pvc.yaml; cross-checked vs eleboucher / onedr0p.
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: meilisearch-pvc
+  namespace: karakeep
+spec:
+  copyMethod: Snapshot
+  volumeSnapshotClassName: longhorn-snapclass
+  credentialProjection:
+    enabled: true
+  repository:
+    kind: ClusterRepository
+    name: cluster-kopia
+  sources:
+    - pvc:
+        name: meilisearch-pvc
+  identity:
+    username: meilisearch-pvc
+    hostname: karakeep
+  retention:
+    keepHourly: 24
+    keepDaily: 7
+  mover:
+    securityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: meilisearch-pvc-hourly
+  namespace: karakeep
+spec:
+  policyRef:
+    name: meilisearch-pvc
+  schedule:
+    cron: "25 * * * *"
+    concurrencyPolicy: Forbid
+    runOnCreate: false
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: meilisearch-pvc-restore
+  namespace: karakeep
+spec:
+  repository:
+    kind: ClusterRepository
+    name: cluster-kopia
+  credentialProjection:
+    enabled: true
+  source:
+    fromPolicy:
+      name: meilisearch-pvc
+      offset: 0
+  target:
+    populator: {}
+  policy:
+    onMissingSnapshot: Continue
+  mover:
+    securityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568

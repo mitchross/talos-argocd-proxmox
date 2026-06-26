@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/clusterrepository_v1alpha1.json
+# Cluster-wide kopia repository for kopiur — the engine equivalent of the
+# VolSync `volsync-kopia-repository` secret, but as a first-class CR.
+#
+# ISOLATION: dedicated `kopiur` bucket on RustFS (created 2026-06-26).
+# This is a FRESH kopia repo (create.enabled: true) — it does NOT read the
+# VolSync repo at s3://volsync-kopia/cluster. So the proven backup path is
+# untouched, and karakeep's first kopiur snapshot captures its CURRENT data.
+#
+# ⚠️ ACCESS: confirm the rustfs workload key (rustfs-workload-access-key) has
+# read/write on the `kopiur` bucket — the existing policy may scope it to
+# volsync-kopia only. If denied, widen the RustFS bucket policy (or use admin creds).
+# Endpoint is the S3 API port :30292 (NOT the console :30293).
+#
+# Field shapes confirmed vs deploy/examples/backends/s3-minio-http.yaml:
+#   - TLS-off for plain-HTTP RustFS is `tls.disableTls: true`.
+#   - endpoint is a BARE host:port (no scheme, no trailing slash).
+#   - the creds Secret carries AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY /
+#     KOPIA_PASSWORD (exactly what externalsecret.yaml writes).
+#   - cluster-scoped secretRef MUST carry an explicit `namespace` (webhook-enforced).
+# Still verify against the INSTALLED chart: kubectl explain clusterrepository.spec
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: ClusterRepository
+metadata:
+  name: cluster-kopia
+spec:
+  backend:
+    s3:
+      bucket: kopiur
+      prefix: "" # dedicated bucket — kopia repo lives at the bucket root
+      endpoint: 192.168.10.133:30292
+      region: us-east-1
+      tls:
+        disableTls: true # RustFS is plain HTTP — confirmed vs s3-minio-http.yaml
+      auth:
+        secretRef:
+          name: kopiur-rustfs
+          namespace: kopiur-system
+  encryption:
+    passwordSecretRef:
+      name: kopiur-rustfs
+      namespace: kopiur-system
+      key: KOPIA_PASSWORD
+  create:
+    enabled: true
+  allowedNamespaces:
+    list:
+      - karakeep

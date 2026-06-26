@@ -1,0 +1,37 @@
+# kopiur GitOps config (TRIAL) — namespace, ESO credentials, ClusterRepository.
+# Wave 3: after the operator + CRDs exist (Wave 2), before app CRs (my-apps
+# Wave 6). The ClusterRepository CRD must be installed before this app syncs.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kopiur-config
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/manifest-generate-paths: infrastructure/controllers/kopiur
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: infrastructure
+  source:
+    repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+    targetRevision: main # deploys once merged — Argo GitOps, no manual apply
+    path: infrastructure/controllers/kopiur
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kopiur-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 5m
