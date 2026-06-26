@@ -1,12 +1,11 @@
 # kopiur backend for karakeep data-pvc (the SQLite DB + assets — the bookmarks).
-# Replaces the pvc-plumber label fuse: instead of 3 labels generating RS/RD,
-# this is the explicit CR bundle (policy + schedule + restore). The PVC's
-# dataSourceRef → Restore/data-pvc-restore is what holds binding until restore.
+# Replaces the pvc-plumber label fuse with the explicit CR bundle. The PVC's
+# dataSourceRef → Restore/data-pvc-restore holds binding until restore.
 #
-# identity (username/hostname) keys the snapshot in S3 and ties policy→restore,
-# so the populator finds THIS volume's backup. Mirrors VolSync's ns/pvc keying.
-#
-# VERIFY field names against the installed chart: kubectl explain snapshotpolicy.spec
+# Field shapes cross-checked against two working examples:
+#   - eleboucher/homelab  garage/app/kopiur.yaml
+#   - onedr0p/home-ops    #11012 (components/kopiur)
+# and kopiur deploy/examples/18-inherit-security-context.yaml (mover SC).
 ---
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotPolicy
@@ -14,6 +13,10 @@ metadata:
   name: data-pvc
   namespace: karakeep
 spec:
+  copyMethod: Snapshot # CSI VolumeSnapshot (Longhorn) — matches the old VolSync RS
+  volumeSnapshotClassName: longhorn-snapclass
+  credentialProjection:
+    enabled: true # project the ClusterRepository creds into the mover Job here
   repository:
     kind: ClusterRepository
     name: cluster-kopia
@@ -27,6 +30,11 @@ spec:
     keepHourly: 24
     keepDaily: 7
     keepWeekly: 4
+  mover:
+    securityContext: # karakeep data is 568 (pvc-plumber's mover normalized to 568)
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
 ---
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotSchedule
@@ -38,7 +46,7 @@ spec:
     name: data-pvc
   schedule:
     cron: "10 * * * *" # preserves the prior hourly cadence (minute 10)
-    jitter: 5m
+    concurrencyPolicy: Forbid # no overlapping snapshot Jobs
     runOnCreate: false
 ---
 apiVersion: kopiur.home-operations.com/v1alpha1
@@ -50,11 +58,18 @@ spec:
   repository:
     kind: ClusterRepository
     name: cluster-kopia
+  credentialProjection:
+    enabled: true
   source:
-    identity:
-      username: data-pvc
-      hostname: karakeep
+    fromPolicy:
+      name: data-pvc
+      offset: 0 # 0 = latest snapshot for this policy's identity
   target:
     populator: {} # passive volume populator — consumed by the PVC's dataSourceRef
   policy:
     onMissingSnapshot: Continue # backup exists → restore-before-bind · none → fresh
+  mover:
+    securityContext: # restored files owned by 568
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
