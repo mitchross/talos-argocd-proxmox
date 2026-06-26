@@ -1,6 +1,6 @@
 # kopiur backend for karakeep meilisearch-pvc (the search index).
-# Rebuildable in principle, but it was pvc-plumber-managed hourly, so we keep
-# parity here. Same bundle shape as data-pvc.yaml.
+# Same corrected bundle shape as data-pvc.yaml (copyMethod + snapshot class +
+# credentialProjection + mover SC), cross-checked vs eleboucher/onedr0p.
 ---
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotPolicy
@@ -8,6 +8,10 @@ metadata:
   name: meilisearch-pvc
   namespace: karakeep
 spec:
+  copyMethod: Snapshot
+  volumeSnapshotClassName: longhorn-snapclass
+  credentialProjection:
+    enabled: true
   repository:
     kind: ClusterRepository
     name: cluster-kopia
@@ -20,6 +24,11 @@ spec:
   retention:
     keepHourly: 24
     keepDaily: 7
+  mover:
+    securityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568
 ---
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotSchedule
@@ -31,7 +40,7 @@ spec:
     name: meilisearch-pvc
   schedule:
     cron: "25 * * * *"
-    jitter: 5m
+    concurrencyPolicy: Forbid
     runOnCreate: false
 ---
 apiVersion: kopiur.home-operations.com/v1alpha1
@@ -43,11 +52,18 @@ spec:
   repository:
     kind: ClusterRepository
     name: cluster-kopia
+  credentialProjection:
+    enabled: true
   source:
-    identity:
-      username: meilisearch-pvc
-      hostname: karakeep
+    fromPolicy:
+      name: meilisearch-pvc
+      offset: 0
   target:
     populator: {}
   policy:
     onMissingSnapshot: Continue
+  mover:
+    securityContext:
+      runAsUser: 568
+      runAsGroup: 568
+      fsGroup: 568

@@ -71,6 +71,23 @@ The auto-hydrate mechanics **already exist**; the only missing piece is a label�
 - **Mover:** statically-linked Rust binary + official kopia binary, distroless ~70 MB; reads a downward-API JSON work spec, streams `kopia --json`, PATCHes progress to `status`. Co-locates on the PVC's node for RWO (avoids Multi-Attach).
 - **Backend-down safety differs from ours:** kopiur uses a repository health-probe / preflight, **not** the `wait-for-rustfs` MutatingAdmissionPolicy (which only gates VolSync mover Jobs). Verify kopiur's preflight actually blocks a snapshot Job when RustFS is unreachable before trusting it.
 
+## Reference implementations (other clusters running kopiur)
+Two real-world Flux adoptions cross-checked our manifests and corrected several fields:
+- **onedr0p/home-ops #11012** ("chore: deploy kopiur", chart `0.2.0`) — installs the operator via an **OCI Helm chart** (`oci://ghcr.io/home-operations/…`, image digests pinned), a `ClusterRepository`, and a **reusable `components/kopiur` component** (SnapshotPolicy + SnapshotSchedule + deploy-or-restore PVC + passive Restore) composed per-app via `components:` + postBuild `APP=<app>`. Centralized mover defaults + `ttlSecondsAfterFinished`. Its migration steps match our drill (verify a Snapshot succeeded with non-zero files → scale down → delete PVC → reapply → populator hydrates → scale up).
+- **eleboucher/homelab** `garage/app/kopiur.yaml` — single-app form; confirmed the field shapes our first cut was missing.
+
+**Fields these corrected in our karakeep manifests (now applied):**
+| Field | Why it matters |
+|---|---|
+| `copyMethod: Snapshot` + `volumeSnapshotClassName: longhorn-snapclass` | CSI snapshots won't fire on Longhorn without them |
+| `credentialProjection.enabled: true` (policy + restore) | the mover in the app namespace can't reach the ClusterRepository creds otherwise |
+| `mover.securityContext {568/568/568}` | restored files get wrong ownership (karakeep is 568); kopiur can also `mover.inheritSecurityContextFrom` a workload |
+| Restore `source.fromPolicy` (vs `identity`) | simpler; what both reference repos use |
+| Schedule `concurrencyPolicy: Forbid` | no overlapping snapshot Jobs |
+
+- **Operator-install hint:** both use the **OCI chart** (`oci://ghcr.io/home-operations/…`) — cleaner than our git-tag render. Ours still renders from git tag `0.4.13` (deterministic app-version pin); switching to the OCI chart (that's the *chart* version, not the app version) is a follow-up once the exact registry path is confirmed.
+- **DX hint:** onedr0p's reusable component is the Flux analog of the Kustomize component to build for ArgoCD — stamp the whole bundle from ~2 values instead of hand-writing per PVC.
+
 ## Open items / next steps
 1. **Verify CRD field shapes** against the installed `0.4.13` chart (`kubectl explain`) — assembled here from upstream `main` examples.
 2. **Run the restore-before-bind drill** on karakeep (delete `data-pvc` → confirm `Pending` → restore → `Bound` with data). See `kopiur-trial.md`.
