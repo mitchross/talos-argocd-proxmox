@@ -27,11 +27,12 @@ spec:
     keepHourly: 24
     keepDaily: 7
     keepWeekly: 4
-  mover:
-    securityContext: # karakeep data is 568 (pvc-plumber's mover normalized to 568)
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
+  mover: # karakeep web runs as uid/gid 1001 (verified live 2026-06-26)
+    securityContext: # container SC (no fsGroup — that's pod-level)
+      runAsUser: 1001
+      runAsGroup: 1001
+    podSecurityContext:
+      fsGroup: 1001 # group-writable source/restore volume (data is :1001)
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
 apiVersion: kopiur.home-operations.com/v1alpha1
@@ -67,8 +68,9 @@ spec:
     populator: {} # passive volume populator — consumed by the PVC's dataSourceRef
   policy:
     onMissingSnapshot: Continue # backup exists → restore-before-bind · none → fresh
-  mover:
-    securityContext: # restored files owned by 568
-      runAsUser: 568
-      runAsGroup: 568
-      fsGroup: 568
+  mover: # restored files owned by 1001 (karakeep's uid/gid)
+    securityContext: # container SC (no fsGroup — that's pod-level)
+      runAsUser: 1001
+      runAsGroup: 1001
+    podSecurityContext:
+      fsGroup: 1001 # group-writable restore volume
