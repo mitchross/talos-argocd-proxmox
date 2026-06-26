@@ -32,14 +32,31 @@ Files edited: the two karakeep PVCs (de-fused, `dataSourceRef` repointed), names
    Assembled from upstream `deploy/examples` on `main`; reconcile any drift.
 3. **RustFS HTTP/TLS** — ✅ RESOLVED: `backend.s3.tls.disableTls: true` + bare `host:port` endpoint (vs `deploy/examples/backends/s3-minio-http.yaml`).
 4. **Secret keys** — ✅ RESOLVED: backend reads `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `KOPIA_PASSWORD` — exactly what the ESO writes.
-5. **CRDs via ArgoCD** — the chart ships CRDs as templates; SSA + large CRDs can be fiddly. If it fights you, `helm install kopiur deploy/helm/kopiur -n kopiur-system --create-namespace --set installScope=cluster` once by hand (kopiur's own quickstart) and keep only `infrastructure/controllers/kopiur/` in GitOps.
+5. **CRDs via ArgoCD** — the chart ships CRDs as templates (not a `crds/` dir), so ArgoCD applies them on sync. `ServerSideApply=true` (set on the operator app) renders them without the 256KB last-applied-config limit. No cert-manager hook (webhook tls.mode=self), so no API-server-wedge risk.
 
-## How to run the trial
-1. Add a throwaway ArgoCD Application pointing at this branch's `core-dependencies/` (or apply the two app manifests by hand). The operator (Wave 2) installs CRDs + webhook; config (Wave 3) creates the ClusterRepository.
-2. Watch kopiur create the repo and take the first karakeep snapshots:
-   `kubectl -n karakeep get snapshotpolicy,snapshotschedule,snapshot,restore`
-   `kubectl -n kopiur-system get clusterrepository`
-3. The first `Snapshot` captures karakeep's **current** data into the fresh repo (the live PVCs are already Bound; `dataSourceRef` is a no-op until recreate).
+## How to run the trial (pure GitOps — no CLI helm)
+Operator + config are ArgoCD Applications in this repo. The root app-of-apps
+syncs `main`, so on this branch instantiate the two Apps once; ArgoCD then
+GitOps-manages everything from the repo (the operator chart is rendered from
+the upstream git tag — there is no published OCI chart):
+
+```
+kubectl apply -f infrastructure/controllers/argocd/apps/core-dependencies/kopiur-operator-app.yaml
+kubectl apply -f infrastructure/controllers/argocd/apps/core-dependencies/kopiur-config-app.yaml
+```
+
+ArgoCD then renders the chart (Wave 2 → 7 CRDs + operator + webhook) and applies
+the ClusterRepository + ESO (Wave 3). Watch:
+```
+kubectl -n kopiur-system get pods,clusterrepository
+kubectl -n karakeep get snapshotpolicy,snapshotschedule,snapshot,restore
+```
+
+The karakeep CRs ride the existing my-apps AppSet once this lands on `main`. For
+the **branch** trial only, apply the karakeep overlay from a checkout (the AppSet
+won't discover a branch): `kubectl apply -k my-apps/media/karakeep`.
+The first `Snapshot` captures karakeep's **current** data into the fresh repo
+(live PVCs are Bound; `dataSourceRef` is a no-op until recreate).
 
 ## Cutover & the real test (restore-before-bind drill)
 `dataSourceRef` is **immutable**, so the live PVCs still point at the VolSync RD.
