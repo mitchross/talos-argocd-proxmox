@@ -40,8 +40,8 @@ spec:
               mountPath: /scripts
               readOnly: true
           resources:
-            requests: { cpu: 10m, memory: 32Mi }
-            limits:   { cpu: 200m, memory: 128Mi }
+            requests: { cpu: 100m, memory: 128Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
       volumes:
         - name: seed-script
           configMap:
