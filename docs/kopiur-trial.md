@@ -19,7 +19,7 @@ Non-critical, easy to drill.
 | Area | pvc-plumber (today) | kopiur (this branch) |
 |---|---|---|
 | Per-PVC config | 3 labels + `dataSourceRef → ReplicationDestination` | explicit `SnapshotPolicy` + `SnapshotSchedule` + `Restore`, `dataSourceRef → Restore` |
-| Operator | `infrastructure/controllers/pvc-plumber/` (Wave 2) | `core-dependencies/kopiur-operator-app.yaml` Helm (Wave 2) |
+| Operator | `infrastructure/controllers/pvc-plumber/` (Wave 2) | `kopiur-operator-app.yaml` → `infrastructure/controllers/kopiur-operator/` Kustomize `helmCharts:` (OCI chart, Wave 2) |
 | Repo config | `volsync-kopia-repository` ClusterES | `infrastructure/controllers/kopiur/` (ns + ESO + `ClusterRepository`, Wave 3) |
 | kopia repo | `s3://volsync-kopia/cluster` | `s3://kopiur/` (**dedicated bucket, isolated**) |
 | Namespace gate | `pvc-plumber.io/managed-namespace` | removed (kopiur uses `allowedNamespaces` on the ClusterRepository) |
@@ -29,7 +29,7 @@ Files added: `infrastructure/controllers/kopiur/*`, `core-dependencies/kopiur-{o
 Files edited: the two karakeep PVCs (de-fused, `dataSourceRef` repointed), namespace, kustomization.
 
 ## ⚠️ VERIFY before you apply (kopiur is pre-1.0 / alpha — CRD fields churn)
-1. **Chart tag** — ✅ confirmed: tags are `0.4.x` (no `v`). `targetRevision: "0.4.13"` is correct.
+1. **Chart version** — ✅ the operator renders the OCI chart `oci://ghcr.io/home-operations/charts/kopiur` pinned to `version: 0.4.13` in `infrastructure/controllers/kopiur-operator/kustomization.yaml` (chart version == app version; no `v` prefix). The Application tracks our repo `main`, not the upstream git tag.
 2. **CRD field names** — after the operator installs, run:
    `kubectl explain clusterrepository.spec.backend.s3` · `snapshotpolicy.spec` · `restore.spec`.
    Assembled from upstream `deploy/examples` on `main`; reconcile any drift.

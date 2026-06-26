@@ -1,0 +1,16 @@
+# kopiur operator Helm values (TRIAL). Rendered locally via Kustomize helmCharts
+# from the upstream OCI chart — see kustomization.yaml. Pin image tags to the
+# chart version; pin DIGESTS before trusting this for anything real.
+installScope: cluster # ClusterRole + ClusterRepository reconciliation
+installCRDs: true # chart ships the 7 CRDs as templates
+image:
+  controller:
+    tag: "0.4.13"
+  webhook:
+    tag: "0.4.13"
+  mover:
+    tag: "0.4.13"
+webhook:
+  failurePolicy: Ignore # trial: never gate CR creation on operator health
+  tls:
+    mode: self # self-signed at runtime — no cert-manager / no hook Job
