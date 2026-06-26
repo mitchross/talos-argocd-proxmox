@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kopiur-system
+
+# kopiur publishes its chart as an OCI artifact (release.yaml: helm push →
+# oci://ghcr.io/home-operations/charts). Render it locally like every other
+# chart in this repo so the manifests are served from our own git source — no
+# AppProject sourceRepos exception needed (cf. temporal-worker-controller).
+helmCharts:
+  - name: kopiur
+    repo: oci://ghcr.io/home-operations/charts
+    # renovate: datasource=docker depName=ghcr.io/home-operations/charts/kopiur
+    # CHART version == app version (release.yaml packages with --app-version=VERSION).
+    # Pre-1.0/alpha: re-verify CRDs on every bump.
+    version: 0.4.13
+    releaseName: kopiur
+    namespace: kopiur-system
+    includeCRDs: true
+    valuesFile: values.yaml
