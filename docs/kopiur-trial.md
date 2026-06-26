@@ -1,10 +1,13 @@
 # kopiur trial — replacing pvc-plumber (branch `claude/kopiur-trial`)
 
-> **Status: scaffold, not yet applied.** This branch stands kopiur up *alongside*
-> pvc-plumber and converts **one canary app (karakeep)** off pvc-plumber labels and
-> onto explicit kopiur CRs. Nothing here deploys until you point an ArgoCD
-> Application at this branch (the existing apps sync from `main`). It is fully
-> reversible — delete the branch, or revert the karakeep PVCs.
+> **Status: open as PR #1489** (branch `claude/kopiur-trial`). Stands kopiur up
+> *alongside* pvc-plumber and converts **one canary app (karakeep)** off
+> pvc-plumber labels onto explicit kopiur CRs. Nothing deploys until the PR is
+> merged to `main` (Argo GitOps — no manual apply). Fully reversible: revert the PR.
+>
+> **Why this trial exists (the decision + analysis):** see
+> [`domains/storage/kopiur-evaluation.md`](domains/storage/kopiur-evaluation.md) —
+> fit verdict, community landscape, maintainer conversation, kopiur code map, verified facts.
 
 ## Why karakeep
 It's the DR-doc worked example: two RWO PVCs (`data-pvc` = SQLite bookmarks +
