@@ -20,11 +20,10 @@ kind: PersistentVolumeClaim
 metadata:
   name: swarmui-data
   namespace: swarmui
+  labels:
+    backup-exempt: "true"
   annotations:
-    # Immutable dataSourceRef on a Bound PVC — mask the SSA dry-run diff
-    # (the AppSet ignoreDifferences handles the live compare).
-    argocd.argoproj.io/compare-options: ServerSideDiff=false
-    argocd.argoproj.io/sync-options: ServerSideApply=false
+    storage.vanillax.dev/backup-exempt-reason: "SwarmUI unused (never put into service); not worth backing up. Re-add a kopiur stub + dataSourceRef if it's ever adopted."
 spec:
   accessModes:
     - ReadWriteOnce
@@ -32,14 +31,6 @@ spec:
     requests:
       storage: 5Gi
   storageClassName: longhorn
-  # kopiur restore-before-bind: on recreate this binds Pending until the
-  # Restore populator hydrates it from the latest kopia snapshot. No-op while
-  # Bound. Backup/restore CRs in kopiur/swarmui-data.yaml; uniform fields + the
-  # privileged mover come from the ../../common/kopiur-backup component.
-  dataSourceRef:
-    apiGroup: kopiur.home-operations.com
-    kind: Restore
-    name: swarmui-data-restore
 ---
 ---
 apiVersion: v1

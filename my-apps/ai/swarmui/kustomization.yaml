@@ -9,12 +9,7 @@ resources:
 - deployment.yaml
 - service.yaml
 - httproute.yaml
-- kopiur/swarmui-data.yaml
-
-# Uniform kopiur backup fields (repository, copyMethod, populator, privileged
-# mover) for the per-PVC stubs in kopiur/.
-components:
-  - ../../common/kopiur-backup
+# No kopiur backup — swarmui is unused; all its PVCs are backup-exempt.
 
 commonLabels:
   app: swarmui
