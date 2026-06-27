@@ -214,5 +214,3 @@ kubectl get snapshot -A
 - **Rotation:** the per-step rotation procedure (new key on RustFS → update
   1Password → force ESO refresh → CNPG picks up automatically) lives in the
   [credential runbook](domains/rustfs/credential-runbook.md).
-</content>
-</invoke>
