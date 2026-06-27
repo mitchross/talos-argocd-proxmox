@@ -9,8 +9,8 @@ resources:
   - custom-alerts.yaml
   - custom-servicemonitors.yaml
   - longhorn-backup-alerts.yaml
-  - longhorn-pvc-backup-audit.yaml # Replaces deleted Kyverno audit ClusterPolicy
-  - volsync-alerts.yaml # VolSync backup/restore alerts
+  # volsync-alerts + longhorn-pvc-backup-audit removed 2026-06-27 (VolSync/pvc-plumber
+  # retired). A kopiur backup-coverage / stale-snapshot alert is a follow-up.
   - argocd-sync-alerts.yaml # ArgoCD control-plane + app-state alerts (stale-sync incident 2026-05-29)
   - dcgm-exporter.yaml # DCGM GPU monitoring
   - gpu-alerts.yaml # GPU alerting rules

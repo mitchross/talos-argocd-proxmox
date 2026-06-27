@@ -29,19 +29,21 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
 
 ## Documentation
 
-### 🚰 Storage & backups (start here)
+### 💾 Storage & backups (start here)
 
-1. **[storage-architecture.md](storage-architecture.md)** — **the one doc.**
-   Why it exists, plain-English explanation, the label contract, every
-   diagram, day-2 operations (add/exempt/verify/drill), troubleshooting,
-   adapting it to your cluster, honest limitations. *Send people this link.*
-   Visual learner? **[🎮 the interactive simulator](simulator.html)** lets you
-   nuke a toy cluster and watch the restore.
-2. **[backup-repository-setup.md](backup-repository-setup.md)** — the one-time
-   backend setup: S3 box, bucket, credentials, fan-out, the fail-closed gate.
-3. **[disaster-recovery.md](disaster-recovery.md)** — the full-cluster
-   destroy/rebuild runbook: pre-nuke checklist, calibrated restore-wave
-   expectations, proof history, the restore canary.
+Backups are **kopiur** (Kopia-native operator; replaced pvc-plumber + VolSync 2026-06-27).
+
+1. **[domains/storage/kopiur-backup-architecture.md](domains/storage/kopiur-backup-architecture.md)** — **the one doc.**
+   The pieces, the Kustomize-component pattern, backup + restore flows (boxes-and-arrows
+   diagrams), and a 6-step add-a-backup checklist. *Send people this link.*
+2. **[domains/storage/kopiur-mover-permissions.md](domains/storage/kopiur-mover-permissions.md)** —
+   why the backup mover runs as the data owner (the #1 gotcha), plain English + technical.
+3. **[storage-architecture.md](storage-architecture.md)** — storage source-of-truth
+   (Longhorn / NFS / CNPG separation + the kopiur backup overview).
+4. **[backup-repository-setup.md](backup-repository-setup.md)** — the one-time backend
+   setup: RustFS S3 bucket, credentials, the kopiur `ClusterRepository`.
+5. **[disaster-recovery.md](disaster-recovery.md)** — the full-cluster destroy/rebuild
+   runbook: pre-nuke checklist, restore-wave expectations, proof history, the restore canary.
 
 ### 🗃️ Domains
 
