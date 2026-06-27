@@ -21,7 +21,7 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
 - **CNI**: Cilium with Gateway API + LoadBalancer
 - **GitOps**: ArgoCD (self-managing) + ApplicationSets for auto-discovery
 - **Storage**: Longhorn (V1 engine, 2× replicas)
-- **Backup**: VolSync + Kopia → RustFS S3, wired by [pvc-plumber](https://github.com/mitchross/pvc-plumber) from PVC labels
+- **Backup**: [kopiur](https://github.com/home-operations/kopiur) (Kopia-native) → RustFS S3, per-PVC `SnapshotPolicy`/`Restore` with restore-before-bind
 - **Database**: CloudNativePG (Postgres) with Barman backups to S3
 - **Secrets**: 1Password Connect + External Secrets Operator
 - **Observability**: kube-prometheus-stack, Loki, Tempo, OpenTelemetry
