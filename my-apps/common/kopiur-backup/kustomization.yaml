@@ -5,21 +5,26 @@ kind: Component
 # Include from an app kustomization with:
 #   components:
 #     - ../../common/kopiur-backup
-# then add a per-PVC stub (SnapshotPolicy + SnapshotSchedule + Restore carrying
-# only the VARYING bits: name, sources.pvc.name, identity, schedule.cron, and the
-# Restore mover UID) plus `dataSourceRef -> <pvc>-restore` on the app's PVC.
+# then add a per-PVC stub (SnapshotPolicy + SnapshotSchedule + Restore). The
+# stub carries the per-PVC VARYING bits — name, sources.pvc.name, identity,
+# schedule.cron, AND the mover securityContext (run the mover as the DATA owner
+# uid:gid + supplementalGroups[gid]). Plus `dataSourceRef -> <pvc>-restore` on
+# the app's PVC.
 #
-# This component injects every UNIFORM field by kind, so the per-PVC stub stays
-# tiny and the fumble-prone fields (repository ref, populator, mover SC nesting)
-# live in ONE place. Prereqs (once per namespace): label the namespace
-# `kopiur.home-operations.com/repo: cluster-kopia` (ESO cred fanout + repo
-# tenancy via the ClusterRepository allowedNamespaces selector).
+# WHY the mover UID is per-PVC, not injected here: under baseline Pod Security
+# the mover can't use capabilities (no CAP_DAC_READ_SEARCH), and kopiur's
+# privilegedMode does NOT add caps — so a root mover cannot read non-root /
+# mode-600/700 data. The mover MUST run as the data's owner (proven 2026-06-26:
+# n8n 1000, gitea 700-dir 1000, mysql 999:568). Ownership also varies within a
+# namespace (project-nomad: 1000 / 999:568 / 568), so it can't be uniform here.
+# This component injects only the truly-uniform, non-mover fields by kind.
 #
-# Why not selector-based (one policy backs up all labeled PVCs)? kopiur's
-# selector-policy + per-PVC populator-Restore combo is undocumented (0.4.x), so
-# we use the per-PVC pattern proven by the 2026-06-26 karakeep DR drill.
+# Prereqs (once per namespace): label `kopiur.home-operations.com/repo:
+# cluster-kopia` (ESO cred fanout + repo tenancy via the ClusterRepository
+# allowedNamespaces selector). The privileged-movers namespace annotation is
+# only needed for stubs whose mover runs as root (uid 0).
 patches:
-  # --- SnapshotPolicy: uniform backup config -------------------------------
+  # --- SnapshotPolicy: uniform backup config (mover lives in the stub) ------
   - target:
       kind: SnapshotPolicy
       group: kopiur.home-operations.com
@@ -35,18 +40,6 @@ patches:
         value:
           kind: ClusterRepository
           name: cluster-kopia
-      # Privileged root mover — reads any source ownership and preserves
-      # original UID/GID on restore (the analog of VolSync privileged-movers,
-      # which every backed-up namespace already used). Uniform across apps, so
-      # no per-app UID. Requires the namespace annotation
-      # kopiur.home-operations.com/privileged-movers: "true" (else MoverPermitted=False).
-      - op: add
-        path: /spec/mover
-        value:
-          securityContext:
-            runAsUser: 0
-            runAsNonRoot: false
-          privilegedMode: true
   # --- SnapshotSchedule: uniform scheduling --------------------------------
   - target:
       kind: SnapshotSchedule
@@ -58,7 +51,7 @@ patches:
       - op: add
         path: /spec/schedule/runOnCreate
         value: false
-  # --- Restore: uniform passive-populator config ---------------------------
+  # --- Restore: uniform passive-populator config (mover lives in the stub) --
   - target:
       kind: Restore
       group: kopiur.home-operations.com
@@ -76,13 +69,3 @@ patches:
         path: /spec/policy
         value:
           onMissingSnapshot: Continue
-      # Same privileged root mover — restores files with their ORIGINAL owner
-      # (the consumer pod doesn't exist during a cold DR restore, so inherit
-      # can't resolve; privilegedMode chowns to the backed-up UID/GID).
-      - op: add
-        path: /spec/mover
-        value:
-          securityContext:
-            runAsUser: 0
-            runAsNonRoot: false
-          privilegedMode: true

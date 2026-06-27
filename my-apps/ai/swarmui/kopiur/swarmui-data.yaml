@@ -18,6 +18,10 @@ spec:
     keepDaily: 14
     keepWeekly: 6
     keepMonthly: 3
+  mover:
+    securityContext:
+      runAsUser: 0
+      runAsNonRoot: false
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
 apiVersion: kopiur.home-operations.com/v1alpha1
@@ -42,3 +46,7 @@ spec:
     fromPolicy:
       name: swarmui-data
       offset: 0
+  mover:
+    securityContext:
+      runAsUser: 0
+      runAsNonRoot: false

@@ -17,6 +17,15 @@ spec:
   retention:
     keepHourly: 24
     keepDaily: 7
+  mover:
+    securityContext:
+      runAsUser: 1001
+      runAsGroup: 1001
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 1001
+      supplementalGroups:
+        - 1001
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
 apiVersion: kopiur.home-operations.com/v1alpha1
@@ -42,3 +51,12 @@ spec:
       name: meilisearch-pvc
       offset: 0
   # repository/target/policy ← component · mover SC (uid 1001) ← per-app patch
+  mover:
+    securityContext:
+      runAsUser: 1001
+      runAsGroup: 1001
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 1001
+      supplementalGroups:
+        - 1001
