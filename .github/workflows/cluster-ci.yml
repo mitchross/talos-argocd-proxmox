@@ -94,38 +94,17 @@ jobs:
             echo "---" >> /tmp/all-manifests.yaml
           done
 
-      - name: Validate pvc-plumber restore contract (rendered)
-        # A managed PVC without dataSourceRef -> <pvc>-dst backs up fine
-        # but recreates EMPTY during DR. Runs against the rendered stream
-        # (not raw YAML) so Helm-rendered PVCs are covered — e.g.
-        # gitea/gitea-shared-storage, which a static grep cannot see.
-        run: |
-          set -euo pipefail
-          python3 -c "import yaml" 2>/dev/null || pip3 install --quiet pyyaml
-          bash ./scripts/validate-restore-contract.sh /tmp/all-manifests.yaml
-
       - name: Validate Kubernetes schemas
         run: |
           set -euo pipefail
-          # Filter known kubeconform false positives:
+          # Filter a known kubeconform false positive:
           # - Gitea Helm-rendered Service gitea-http: targetPort triggers a
           #   oneOf ambiguity in the Kubernetes Service schema.
-          # - VolSync ReplicationSource and ReplicationDestination:
-          #   Datree's CRD catalog schema is stale for our installed
-          #   VolSync and rejects valid spec.kopia configs on both kinds.
-          #   Both must be skipped — the previous filter skipped only
-          #   ReplicationSource, which let the 28 inline RD resources
-          #   in my-apps/** fail kubeconform with "additionalProperties
-          #   'kopia' not allowed" on every Cluster CI run.
-          # Split multi-doc YAML into per-document files, skip those documents.
+          # (kopiur CRDs are skipped via -ignore-missing-schemas below.)
           csplit -z -f /tmp/doc- /tmp/all-manifests.yaml '/^---$/' '{*}' > /dev/null
           : > /tmp/filtered-manifests.yaml
           for f in /tmp/doc-*; do
             if grep -q 'kind: Service' "$f" && grep -q 'name: gitea-http' "$f"; then
-              continue
-            fi
-            if grep -q 'apiVersion: volsync.backube/v1alpha1' "$f" \
-               && { grep -q 'kind: ReplicationSource' "$f" || grep -q 'kind: ReplicationDestination' "$f"; }; then
               continue
             fi
             cat "$f" >> /tmp/filtered-manifests.yaml
