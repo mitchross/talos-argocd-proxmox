@@ -20,6 +20,15 @@ spec:
     keepHourly: 24
     keepDaily: 7
     keepWeekly: 4
+  mover:
+    securityContext:
+      runAsUser: 1001
+      runAsGroup: 1001
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 1001
+      supplementalGroups:
+        - 1001
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
 apiVersion: kopiur.home-operations.com/v1alpha1
@@ -46,3 +55,12 @@ spec:
       offset: 0 # 0 = latest snapshot for this policy's identity
   # repository, target.populator, policy.onMissingSnapshot ← component
   # mover securityContext (uid 1001) ← per-app patch in kustomization.yaml
+  mover:
+    securityContext:
+      runAsUser: 1001
+      runAsGroup: 1001
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 1001
+      supplementalGroups:
+        - 1001
