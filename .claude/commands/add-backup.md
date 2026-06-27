@@ -122,4 +122,3 @@ fully-qualified annotation `storage.vanillax.dev/backup-exempt-reason: "<reason>
 - [`docs/domains/storage/kopiur-backup-architecture.md`](../../docs/domains/storage/kopiur-backup-architecture.md)
 - [`docs/domains/storage/kopiur-mover-permissions.md`](../../docs/domains/storage/kopiur-mover-permissions.md)
 - [`docs/disaster-recovery.md`](../../docs/disaster-recovery.md)
-</content>
