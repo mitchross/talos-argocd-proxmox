@@ -14,9 +14,9 @@ metadata:
     # backup-exempt (2026-06-01): this Redis is paperless-ngx's Celery broker
     # (PAPERLESS_REDIS) plus a redis-commander UI — a cache/broker, NOT a system
     # of record. Paperless's durable data lives in its data/media PVCs
-    # (pvc-plumber-backed) and its CNPG Postgres (Barman → S3). Redis persistence
-    # is disposable here; do NOT pvc-plumber migrate. Not a migration target.
-    storage.vanillax.dev/backup-exempt-reason: "Redis persistence is disposable/cache-like in this homelab (paperless Celery broker + redis-commander UI; system-of-record is paperless data/media PVCs + CNPG Postgres); do not pvc-plumber migrate."
+    # (kopiur-backed) and its CNPG Postgres (Barman → S3). Redis persistence
+    # is disposable here; do NOT back up.
+    storage.vanillax.dev/backup-exempt-reason: "Redis persistence is disposable/cache-like in this homelab (paperless Celery broker + redis-commander UI; system-of-record is paperless data/media PVCs + CNPG Postgres); do not back up."
 spec:
   accessModes:
     - ReadWriteOnce

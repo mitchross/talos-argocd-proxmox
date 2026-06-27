@@ -125,29 +125,8 @@ configs:
         end
       end
       return hs
-    # Custom health checks for VolSync resources
-    resource.customizations.health.volsync.backube_ReplicationSource: |
-      hs = {}
-      if obj.status ~= nil then
-        if obj.status.lastSyncTime ~= nil then
-          hs.status = "Healthy"
-          hs.message = "Last sync: " .. obj.status.lastSyncTime
-          return hs
-        end
-      end
-      hs.status = "Progressing"
-      hs.message = "Waiting for first sync"
-      return hs
-    resource.customizations.health.volsync.backube_ReplicationDestination: |
-      hs = {}
-      if obj.status ~= nil and obj.status.latestImage ~= nil then
-        hs.status = "Healthy"
-        hs.message = "Ready for restore"
-        return hs
-      end
-      hs.status = "Progressing"
-      hs.message = "Initializing"
-      return hs
+    # (VolSync ReplicationSource/Destination health checks removed 2026-06-27 —
+    # VolSync retired, replaced by kopiur. kopiur CRs report native health.)
     # Surface ExternalSecret sync failures (default reports health=None, so a
     # broken 1Password fetch stays invisible). Keys on the Ready condition.
     resource.customizations.health.external-secrets.io_ExternalSecret: |

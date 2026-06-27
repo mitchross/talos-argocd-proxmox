@@ -22,6 +22,42 @@ spec:
         runAsGroup: 568
         fsGroup: 568
         fsGroupChangePolicy: OnRootMismatch
+      # Repointed 2026-06-27 from the retired VolSync NFS repo to the kopiur S3
+      # repo (s3://kopiur on RustFS). The init container runs `kopia repository
+      # connect s3` at startup so the S3 creds are injected at RUNTIME (from the
+      # kopia-ui-secret ExternalSecret) and never committed to git. The main
+      # container then serves the web UI against the connected /config repo.
+      initContainers:
+        - name: connect
+          image: ghcr.io/home-operations/kopia:0.23.1
+          command: ["kopia"]
+          args:
+            - repository
+            - connect
+            - s3
+            - --bucket=kopiur
+            - --endpoint=192.168.10.133:30292
+            - --region=us-east-1
+            - --disable-tls
+            - --override-hostname=kopia-ui
+            - --override-username=kopia-ui
+            - --no-check-for-updates
+            - --config-file=/config/repository.config
+          # KOPIA_PASSWORD + AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY — kopia's
+          # S3 backend reads the AWS keys from env when --access-key is omitted,
+          # so creds stay out of the process args/config-in-git.
+          envFrom:
+            - secretRef:
+                name: kopia-ui-secret
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: kopia-config
+              mountPath: /config
       containers:
         - name: kopia
           image: ghcr.io/home-operations/kopia:0.23.1
@@ -69,28 +105,15 @@ spec:
             limits:
               memory: 1Gi
           volumeMounts:
-            - name: repository
-              mountPath: /repository
-            - name: config
-              mountPath: /config/repository.config
-              subPath: repository.config
-            - name: cache
-              mountPath: /config/cache
-            - name: logs
-              mountPath: /config/logs
+            - name: kopia-config
+              mountPath: /config
             - name: tmp
               mountPath: /tmp
       volumes:
-        - name: repository
-          nfs:
-            server: 192.168.10.133
-            path: /mnt/BigTank/k8s/volsync-kopia-nfs
-        - name: config
-          configMap:
-            name: kopia-ui-config
-        - name: cache
-          emptyDir: {}
-        - name: logs
+        # Shared between the connect init container (writes repository.config +
+        # cache) and the main UI container. emptyDir — the kopia repo lives on
+        # RustFS S3, this only holds the local config + metadata cache.
+        - name: kopia-config
           emptyDir: {}
         - name: tmp
           emptyDir: {}

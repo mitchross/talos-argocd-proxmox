@@ -379,12 +379,10 @@ kubeStateMetrics:
 # escape-hatch annotations the operator forgot to remove after a rebuild.
 kube-state-metrics:
   metricLabelsAllowlist:
-    # cnpg.io/cluster is exposed so the longhorn-pvc-backup-audit alert can
-    # exclude CNPG-managed PVCs (they back up via Barman to S3, not VolSync).
-    # kube-state-metrics sanitizes the label name to label_cnpg_io_cluster.
-    - persistentvolumeclaims=[backup,backup-exempt,cnpg.io/cluster]
-  metricAnnotationsAllowList:
-    - persistentvolumeclaims=[volsync.backup/skip-restore,volsync.backup/skip-restore-reason]
+    # backup-exempt surfaces explicitly-exempt PVCs; cnpg.io/cluster distinguishes
+    # CNPG-managed PVCs (Barman to S3, not kopiur). kube-state-metrics sanitizes
+    # the label name to label_cnpg_io_cluster.
+    - persistentvolumeclaims=[backup-exempt,cnpg.io/cluster]
   rbac:
     extraRules:
       - apiGroups: ["apiextensions.k8s.io"]

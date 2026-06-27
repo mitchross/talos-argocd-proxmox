@@ -7,14 +7,11 @@ metadata:
     app: posthog-kafka
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: kafka
-    # PostHog data is disposable/rebuildable in this homelab — backup-exempt.
-    # Not in the pvc-plumber migration queue; no VolSync RS/RD (removed below).
+    # PostHog data is disposable/rebuildable in this homelab — backup-exempt (no kopiur).
     backup-exempt: "true"
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
-    storage.vanillax.dev/backup-exempt-reason: "PostHog data is disposable/rebuildable in this homelab; do not VolSync/pvc-plumber migrate. Redpanda runs --unsafe-bypass-fsync with ~1h retention + auto_create_topics — log is ephemeral/rebuildable."
-    # Retained skip-restore (now a no-op since RS/RD are removed): never restore.
-    volsync.backup/skip-restore: "true"
+    storage.vanillax.dev/backup-exempt-reason: "PostHog data is disposable/rebuildable in this homelab; do not back up. Redpanda runs --unsafe-bypass-fsync with ~1h retention + auto_create_topics — log is ephemeral/rebuildable."
 spec:
   accessModes: ["ReadWriteOnce"]
   storageClassName: longhorn
