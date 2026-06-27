@@ -42,15 +42,15 @@ Applications deploy in strict order to prevent race conditions:
 | Wave | Component | Purpose |
 |------|-----------|---------|
 | **0** | Foundation | Cilium (CNI), ArgoCD, 1Password Connect, External Secrets, AppProjects |
-| **1** | Core controllers | cert-manager, Longhorn, VolumeSnapshot Controller, VolSync |
-| **2** | pvc-plumber core + VolSync backup cluster | pvc-plumber `v4.0.1` permissive controller, mover-Job backend gate, and shared Kopia credential fanout. pvc-plumber core has no monitoring dependency. |
-| **3** | CNPG Barman Plugin | Database backup plugin before database clusters |
+| **1** | Core controllers | cert-manager, Longhorn, VolumeSnapshot Controller |
+| **2** | kopiur operator | Kopia-native backup operator (7 CRDs + controller + webhook), rendered from the OCI chart `oci://ghcr.io/home-operations/charts/kopiur`. Serves the volume populator for restore-before-bind. |
+| **3** | CNPG Barman Plugin + kopiur config | Database backup plugin before DB clusters; kopiur `ClusterRepository cluster-kopia` + `ClusterExternalSecret` cred fanout + `VolumeSnapshotClass longhorn-snapclass` |
 | **4** | Infrastructure AppSet + custom entrypoints | Explicit path list plus KEDA and Temporal Worker Controller standalone Apps |
 | **4** | Database AppSet | Discovers `infrastructure/database/*/*` — `selfHeal: false` for DR |
 | **5** | OTEL + Monitoring AppSet | OpenTelemetry Operator plus `monitoring/*` |
 | **6** | Observability overlays + My-Apps AppSet | KEDA/OTEL ServiceMonitors after monitoring CRDs exist, plus `my-apps/*/*` |
 
-**FAIL-CLOSED**: The cluster-wide `volsync-mover-backend-availability` MutatingAdmissionPolicy (at `infrastructure/storage/volsync-backup-cluster/`) injects a `wait-for-rustfs` init container into every VolSync mover Job. The init container TCP-probes RustFS (192.168.10.133:30292) up to 1h; if RustFS is unreachable, the Job fails and Kubernetes backoff retries. Mover Jobs cannot proceed against a black-holed backend, so a fresh PVC's first backup never captures an empty volume into the kopia repo. Replaced the pvc-plumber PVC-admission webhook safety, with strictly smaller blast radius (Job-level, not cluster-wide PVC creation).
+**Backend-down safety** (kopiur, replacing the retired `wait-for-rustfs` MAP): a backup against an unreachable repo errors — the Snapshot Job fails and retries, nothing garbage is written. A **restore against an unreachable repo leaves the PVC `Pending`**: kopiur raises the backend error *before* the `onMissingSnapshot` decision, so an outage can never bind an empty volume. This preserves the exact guarantee the MAP gave VolSync, with no admission policy. (Source-verified: `crates/controller/src/restore/mod.rs` `resolve_snapshot`; a brand-new PVC with a *reachable* repo but no snapshot still binds empty and backs up forward — `onMissingSnapshot: Continue` = deploy-or-restore.)
 
 **Databases** use a separate AppSet with `selfHeal: false` so `skip-reconcile` annotations stick during DR recovery. The infrastructure AppSet uses `selfHeal: true` which would strip manual annotations.
 
@@ -98,7 +98,7 @@ docs/                   # Documentation
 - On **external** HTTPRoutes: add `labels: external-dns: "true"`, annotation `external-dns.alpha.kubernetes.io/target: vanillax.me`, and `sectionName: https` on the parentRef — **all three are required or DNS/routing silently fails**
 - Follow GitOps workflow for all changes
 - Store secrets in 1Password, reference via ExternalSecret
-- Add backups to a normal application PVC with the pvc-plumber v4.0.1 contract: add the namespace software gate `pvc-plumber.io/managed-namespace: "true"`, the PVC fuse labels `pvc-plumber.io/enabled`, `pvc-plumber.io/manage-volsync`, and `pvc-plumber.io/tier`, and a static `dataSourceRef` pointing to `<pvc-name>-dst`. pvc-plumber owns RS/RD; VolSync and Kopia move bytes. See `.claude/commands/add-backup.md`.
+- Add backups to a normal application PVC with **kopiur**: label the namespace `kopiur.home-operations.com/repo: cluster-kopia`, add a per-PVC stub (`SnapshotPolicy`+`SnapshotSchedule`+`Restore` in `kopiur/<pvc>.yaml`) with the **mover `securityContext` set to the data owner uid:gid**, pull in the `../../common/kopiur-backup` component, and point the PVC `dataSourceRef` at `<pvc>-restore`. See `.claude/commands/add-backup.md` and `docs/domains/storage/kopiur-backup-architecture.md`.
 - When marking a PVC `backup-exempt: "true"`, the reason annotation key **must be fully qualified**: `storage.vanillax.dev/backup-exempt-reason`. The bare `backup-exempt-reason` is silently ignored by the operator and the PVC is **denied on CREATE** — invisible until recreate/DR. CI job `backup-exempt-contract` enforces this
 - Use `storageClassName: longhorn` for PVCs that need backups (volumesnapshot required)
 - Use NFS CSI driver (`csi: driver: nfs.csi.k8s.io`) for static NFS PVs — **legacy `nfs:` silently ignores mountOptions**
@@ -108,8 +108,8 @@ docs/                   # Documentation
 - Use sync waves when adding infrastructure components
 - Add ArgoCD hook annotations to all Kubernetes Jobs — `argocd.argoproj.io/hook: Sync` + `argocd.argoproj.io/hook-delete-policy: BeforeHookCreation`. K8s Jobs are immutable after creation; without these, image tag bumps from Renovate cause "field is immutable" sync failures. For standalone Jobs, add annotations directly. For Helm-rendered Jobs, use Kustomize patches targeting `kind: Job`
 - Check `helm show values <chart> | grep -A20 certManager` when adding any Helm chart with webhooks — if a `certManager.enabled` option exists, **set it to `true`**. Helm hook Jobs for webhook certs break under ArgoCD (SA deleted before Job runs = stuck forever = API server death)
-- After adding a backed-up PVC, verify the in-namespace `volsync-kopia-repository` Secret and the operator-owned `ReplicationSource` and `ReplicationDestination`: `kubectl get secret,replicationsource,replicationdestination -n <ns>`
-- Treat the v4 migration campaign as closed. New normal application PVCs use the namespace software gate, PVC fuse labels, and static `dataSourceRef`; pvc-plumber owns RS/RD. There is no per-namespace RoleBinding step.
+- After adding a backed-up PVC, verify the in-namespace `kopiur-rustfs` Secret (fanned in by the ClusterExternalSecret) and the kopiur CRs: `kubectl -n <ns> get secret kopiur-rustfs; kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot` (the `Snapshot` should reach `Completed` with non-zero files)
+- The pvc-plumber→kopiur migration is **closed** (2026-06-27): all PVCs use the kopiur component pattern; pvc-plumber + VolSync are removed. The mover runs as the PVC's data owner uid:gid (baseline PSS gives the mover no read capabilities). See `docs/domains/storage/kopiur-mover-permissions.md`.
 - For abandoned CNPG backup lineages, update `infrastructure/storage/rustfs-lifecycle/postgres-backups-lifecycle-cm.yaml`; keep the full bucket lifecycle policy there because PUT replaces the whole RustFS lifecycle config
 - Use `strategy: type: Recreate` on Deployments with RWO PVCs — **RollingUpdate causes Multi-Attach deadlock**
 
@@ -121,10 +121,10 @@ docs/                   # Documentation
 - Commit secrets to Git
 - Bypass GitOps workflow for configuration changes
 - Deploy without considering sync wave order
-- Add the volsync-backup chart to CNPG database PVCs (they use Barman to S3, not VolSync)
+- Add kopiur backup CRs to CNPG database PVCs (they use Barman to S3, not kopiur)
 - Add active CNPG `serverName` prefixes to RustFS lifecycle expiration rules; only abandoned lineages belong there
-- Add backup labels to system namespace PVCs (kube-system, volsync-system, argocd, longhorn-system)
-- Manually create or delete `ReplicationSource`/`ReplicationDestination` out of band — pvc-plumber owns these resources for managed PVCs. Reconcile through the PVC labels and operator workflow.
+- Add backup CRs to system namespace PVCs (kube-system, argocd, longhorn-system, kopiur-system)
+- Manually create or delete kopiur `SnapshotPolicy`/`SnapshotSchedule`/`Restore` (or `ReplicationSource`/`ReplicationDestination` — those CRDs are gone) out of band. Manage backups through the per-PVC stub + the `kopiur-backup` component in git.
 - Make observability a core dependency or install Prometheus Operator CRDs early just to satisfy bootstrap apps. `kube-prometheus-stack` is the sole owner of `monitoring.coreos.com` CRDs.
 - Generic-migrate CNPG, PostHog, or Redis PVCs. CNPG uses native Barman/S3; PostHog and Redis are backup-exempt disposable data.
 - Use legacy `nfs:` block for NFS PVs (mountOptions silently ignored — use CSI)
@@ -132,7 +132,7 @@ docs/                   # Documentation
 - Create external HTTPRoutes without the three required pieces: `external-dns: "true"` label, `external-dns.alpha.kubernetes.io/target: vanillax.me` annotation, and `sectionName: https` — **DNS won't be created and Cloudflare tunnel routing fails silently**
 - Use `Replace=true,Force=true` sync-options on Jobs — causes duplicate Job execution bug ([#24005](https://github.com/argoproj/argo-cd/issues/24005)); use ArgoCD hooks instead
 - Auto-merge major Helm chart version bumps for critical infrastructure (kube-prometheus-stack, longhorn, cilium) — **a kube-prometheus-stack v82→v83 auto-merge caused a full cluster outage on 2026-04-08 via Kyverno webhook deadlock**. Pin Renovate to minor/patch only for these charts.
-- Modify the `volsync-mover-backend-availability` MutatingAdmissionPolicy without verifying the CEL expression renders cleanly (`kubectl apply --dry-run=server -k infrastructure/storage/volsync-backup-cluster/`). The MAP's `failurePolicy: Fail` is scoped to mover Jobs only — not cluster-wide PVC creates — so a broken policy can't deadlock app deployment, but it can silently stop all backups.
+- Run a kopiur mover as plain `root` to "fix" a permission error. Under baseline Pod Security the mover has no read capabilities, so root can't read non-root data — set the mover `securityContext` to the **data owner uid:gid** instead (`docs/domains/storage/kopiur-mover-permissions.md`). Only use `runAsUser: 0` + the `privileged-movers` namespace annotation when the data is genuinely root-owned.
 
 ## Nested CLAUDE.md Files
 
@@ -163,10 +163,11 @@ Detailed instructions load automatically when working in these directories:
 | **Minimal app** | `my-apps/development/nginx/` |
 | **GPU workload** | `my-apps/ai/comfyui/` |
 | **Complex app with storage** | `my-apps/media/immich/` |
-| **PVC with automatic backup** | `my-apps/home/project-zomboid/pvc.yaml` (backup on `zomboid-data`, unlabeled `zomboid-server-files`) |
-| **Managed PVC labels + static restore reference** | `my-apps/ai/open-webui/pvc.yaml` + `.claude/commands/add-backup.md` |
-| **MAP safety interlock (cluster-wide)** | `infrastructure/storage/volsync-backup-cluster/` |
-| **VolSync configuration** | `infrastructure/storage/volsync/` |
+| **PVC with automatic backup (kopiur)** | `my-apps/ai/open-webui/` (component + `kopiur/storage.yaml` stub + PVC `dataSourceRef`) |
+| **kopiur backup component (shared)** | `my-apps/common/kopiur-backup/` |
+| **kopiur repo + cred fanout + snapclass** | `infrastructure/controllers/kopiur/` |
+| **Daemon-drop mover uid (999:568)** | `my-apps/home/project-nomad/mysql/kopiur-backup.yaml` |
+| **Multi-PVC + backup-exempt mix** | `my-apps/home/project-zomboid/` (backs up `zomboid-data`, exempts `zomboid-server-files`) |
 | **RustFS lifecycle policy** | `infrastructure/storage/rustfs-lifecycle/` |
 | **Helm + Kustomize** | `infrastructure/controllers/1passwordconnect/` |
 | **Database with CNPG** | `infrastructure/database/cloudnative-pg/immich/` |
@@ -181,14 +182,14 @@ Detailed instructions load automatically when working in these directories:
 
 ### 🚰 Docs reading order for agents (START HERE, in order)
 1. **[docs/index.md](docs/index.md)** — canonical landing page + doc map.
-2. **[docs/storage-architecture.md](docs/storage-architecture.md)** — the backup/restore architecture: label contract, who-does-what, restore-on-recreate, MAP fail-closed gate, operator decision tree.
-3. **[docs/storage-architecture.md](docs/storage-architecture.md)** — day-2 ops: add a backup, exempt a PVC, the 5 debug questions, `/audit` verdicts, failure-mode table, drill procedure.
-4. **[docs/disaster-recovery.md](docs/disaster-recovery.md)** — full-cluster destroy/rebuild runbook, pre-nuke checklist, restore-wave expectations, acceptance semantics, restore canary. **DR source of truth.**
+2. **[docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md)** — the kopiur backup/restore architecture: the pieces, the Kustomize-component pattern, backup + restore flows (diagrams), add-a-backup checklist. **Start here for backups.**
+3. **[docs/domains/storage/kopiur-mover-permissions.md](docs/domains/storage/kopiur-mover-permissions.md)** — why the mover runs as the data owner (the #1 backup gotcha). Plus **[docs/storage-architecture.md](docs/storage-architecture.md)** for the Longhorn/NFS/CNPG storage source-of-truth.
+4. **[docs/disaster-recovery.md](docs/disaster-recovery.md)** — full-cluster destroy/rebuild runbook, pre-nuke checklist, restore-wave expectations, restore canary. **DR source of truth.**
 5. **[docs/domains/](docs/index.md)** — per-domain docs (CNPG, ArgoCD, networking, storage deep-dives).
 
 > ⚠️ **Agent guardrails when reading docs:**
 > - **Do NOT resurrect Kyverno** — it was removed from the backup path (no policies, no CRDs, no webhooks).
-> - **Do NOT treat v5 / admission / strict-mode docs as shipped** — v4.0.1 is a permissive reconciler with no admission webhook.
+> - **Do NOT add pvc-plumber/VolSync labels, `ReplicationSource`/`ReplicationDestination`, the `wait-for-rustfs` MAP, or `/audit` calls** — that whole stack was retired 2026-06-27. Backups are kopiur (per-PVC stub + `kopiur-backup` component); see `docs/domains/storage/kopiur-backup-architecture.md`.
 > - **Do NOT generic-migrate CNPG, PostHog, or Redis PVCs** — CNPG is Barman-native; PostHog and Redis are backup-exempt.
 > - **Do NOT make observability foundational** — core apps bootstrap without Prometheus; do not resurrect an early Prometheus Operator CRD app.
 > - **Do NOT re-enable the Longhorn V2 engine** — tried and retired 2026-06-12 (open Longhorn bugs #13315/#13314: interrupted rebuilds corrupt replica metadata). Forensics in git history; the DR doc carries the short version.
@@ -200,7 +201,7 @@ Detailed instructions load automatically when working in these directories:
 - **[docs/domains/argocd/argocd.md](docs/domains/argocd/argocd.md)** - ArgoCD documentation
 - **[docs/domains/argocd/entrypoints.md](docs/domains/argocd/entrypoints.md)** - ArgoCD root entrypoints, waves, and AppSet/custom-entrypoint decisions
 - **[docs/domains/storage/architecture-future.md](docs/domains/storage/architecture-future.md)** — **FUTURE IDEA (not implemented):** tiered storage (local CSI + VolSync DR default, Longhorn for availability-critical apps). Do not act on it now.
-- **pvc-plumber v4.0.1 is live and proven in permissive mode:** 24 operator-managed PVCs across 18 namespaces; full-cluster restores passed 2026-06-02, 2026-06-12 (unplanned, under storage-engine failure), and 2026-06-13 (planned V1 rebuild, unattended). PostHog, Redis, and `project-nomad/nomad-storage` are backup-exempt; CNPG stays native Barman/S3.
+- **kopiur is the backup system (since 2026-06-27):** ~24 PVCs across ~19 namespaces on the `kopiur-backup` component; restore-before-bind proven by the karakeep full-namespace DR drill (2026-06-27). pvc-plumber + VolSync removed. PostHog, Redis, and `project-nomad/nomad-storage` are backup-exempt; swarmui is unused/exempt; CNPG stays native Barman/S3.
 
 ## Mink capture
 

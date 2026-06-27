@@ -2,8 +2,13 @@
 
 > The full-cluster destroy → rebuild → restore runbook, and the proof history
 > behind it. Concepts + per-PVC operations live in
-> [storage-architecture.md](storage-architecture.md). Databases recover via a
-> **separate system** — [CNPG/Barman](domains/cnpg/disaster-recovery.md).
+> [storage-architecture.md](storage-architecture.md). The backup/restore engine
+> is **kopiur** (replaced pvc-plumber + VolSync, retired 2026-06-27) — how the
+> pieces fit and the exact flows live in
+> [domains/storage/kopiur-backup-architecture.md](domains/storage/kopiur-backup-architecture.md)
+> and [domains/storage/kopiur-mover-permissions.md](domains/storage/kopiur-mover-permissions.md);
+> this page does not re-derive them. Databases recover via a **separate system**
+> — [CNPG/Barman](domains/cnpg/disaster-recovery.md).
 
 > [!CAUTION]
 > The destructive steps require explicit operator intent. This documents the
@@ -28,7 +33,7 @@ flowchart TB
         OMNI[("Omni/Talos machine config")]
     end
     Survives -->|"bootstrap-argocd.sh + sync waves"| NEW[New cluster]
-    NEW -->|"pvc-plumber rewires RS/RD\npopulators restore from Kopia"| RESTORED[All protected data back,\nunattended]
+    NEW -->|"kopiur Restore populators\nhydrate PVCs from Kopia"| RESTORED[All protected data back,\nunattended]
 ```
 
 Clusters are cattle. The Kopia repository, the Git repo, and the secrets
@@ -36,14 +41,19 @@ vault are the pets. Everything between them is reconstructed automatically.
 
 ## Proof history
 
-| Date | Event | Result |
-|---|---|---|
-| 2026-06-02 | Planned full nuke (first acceptance) | **24/24 managed PVCs restored**, 24/24 post-restore backups Successful |
-| 2026-06-12 | **Unplanned**: Longhorn V2 engine meltdown mid-rebuild | **25/25 restored** despite an instance-manager crash, a poisoned node, and a host reboot — the repo never lost a byte |
-| 2026-06-13 | Planned rebuild onto Longhorn V1 | **24/24 restored unattended in ~75 minutes**, zero manual storage steps; operator at ~1m CPU; exemption contract honored |
+| Date | Engine | Event | Result |
+|---|---|---|---|
+| 2026-06-02 | pvc-plumber + VolSync | Planned full nuke (first acceptance) | **24/24 managed PVCs restored**, 24/24 post-restore backups Successful |
+| 2026-06-12 | pvc-plumber + VolSync | **Unplanned**: Longhorn V2 engine meltdown mid-rebuild | **25/25 restored** despite an instance-manager crash, a poisoned node, and a host reboot — the repo never lost a byte |
+| 2026-06-13 | pvc-plumber + VolSync | Planned rebuild onto Longhorn V1 | **24/24 restored unattended in ~75 minutes**, zero manual storage steps; operator at ~1m CPU; exemption contract honored |
+| 2026-06-27 | **kopiur** | Karakeep **full-namespace DR drill** (restore-before-bind) | Both RWO PVCs deleted; recreated from Git with `dataSourceRef → Restore`, held **Pending** until the kopiur populator hydrated them from the latest Kopia snapshot, then bound **with data** — proved restore-before-bind on the new engine ([kopiur-trial.md](kopiur-trial.md)) |
 
-Two full-cluster deaths inside 36 hours, one of them about as hostile as
-storage failure gets — every protected volume came back both times.
+The three 2026-06 full-cluster deaths above were on the prior pvc-plumber +
+VolSync stack (two inside 36 hours, one about as hostile as storage failure
+gets — every protected volume came back). kopiur replaced that stack on
+2026-06-27; its restore-before-bind path is proven by the karakeep namespace
+drill, with a full-cluster kopiur nuke still to be banked. The restore canary
+(below) now runs the kopiur path continuously to keep the proof fresh.
 
 > **The V2 footnote:** Longhorn's V2/SPDK engine was briefly tried and
 > retired the same day — interrupted rebuilds under mass-restore load
@@ -66,8 +76,9 @@ Block the nuke until every box checks — **you restore *from* these**:
 - [ ] RustFS/S3 endpoint reachable; access key registered on the external server; Kopia auth works
       (a past nuke proved an unregistered external credential blocks recovery even with perfect Git state)
 - [ ] Talos secrets / Omni machine configs available off-cluster
-- [ ] **Backups fresh**: every managed RS shows a recent `lastSyncTime` you can live with — apps roll back to exactly that moment
-- [ ] **`/audit` clean** (live, not from memory): managed contract clean (`already-matches`, `would-*=0`, `write-gate-missing=0`, `stale=false`) **and** `needs-human-review=0`
+- [ ] **Backups fresh**: each backed-up PVC has a recent `Completed` kopiur `Snapshot` you can live with — apps roll back to exactly that snapshot. Spot-check across namespaces:
+      `kubectl get snapshot -A` (look at the newest per source) and confirm no `SnapshotSchedule` is wedged: `kubectl get snapshotschedule -A`
+- [ ] **No PVC lacks a snapshot it expects to restore from.** A first restore only hydrates if a Snapshot already exists (kopiur `onMissingSnapshot: Continue` binds a snapshot-less PVC *empty* and backs up forward). Confirm every PVC you intend to *restore* (not seed) shows at least one `Completed` Snapshot before the nuke.
 - [ ] Restore canary green: recent `last-drill-result=pass`
 
 ## Rebuild sequence
@@ -78,7 +89,7 @@ flowchart LR
     W --> C[omnictl apply machine classes\n+ template validate/sync]
     C --> P[machines provision\nfrom the NEW template]
     P --> B[bootstrap-argocd.sh]
-    B --> WAVES[sync waves walk:\nCilium → Longhorn → pvc-plumber → apps]
+    B --> WAVES[sync waves walk:\nCilium → Longhorn → kopiur → apps]
     WAVES --> R[restore wave runs itself]
 ```
 
@@ -92,8 +103,14 @@ provision, or VMs are built from stale state and must be reprovisioned.
 - Observability is **not** a core dependency — core apps must bootstrap
   without Prometheus; `kube-prometheus-stack` is the sole owner of
   `monitoring.coreos.com` CRDs.
-- pvc-plumber lands at Wave 2 with the mover-gate MAP and the kopia
-  credential fan-out; databases (Wave 4) and apps (Wave 6) follow.
+- The **kopiur operator** lands at **Wave 2** (`infrastructure/controllers/kopiur-operator/`
+  — installs the CRDs + operator + webhook); **kopiur-config** at **Wave 3**
+  (`infrastructure/controllers/kopiur/` — namespace, the `ClusterRepository
+  cluster-kopia` → RustFS `s3://kopiur`, and the `ClusterExternalSecret`
+  credential fan-out). Databases (Wave 4) and app backups (Wave 6) follow. The
+  per-PVC kopiur CRs (`SnapshotPolicy`/`SnapshotSchedule`/`Restore`) and the
+  `kopiur.home-operations.com/repo: cluster-kopia` namespace label render with
+  each app at Wave 6.
 - Replica rebuilds stay throttled to **1/node**
   (`infrastructure/storage/longhorn/node-failure-settings.yaml`) — a mass
   restore saturates any engine on shared homelab hardware; do not raise it
@@ -101,10 +118,24 @@ provision, or VMs are built from stale state and must be reprovisioned.
 
 ## What the restore wave looks like (calibrated expectations)
 
-- All ReplicationDestinations appear within minutes of their namespaces; the
-  operator stamps them from labels alone.
-- Movers run with the injected `wait-for-rustfs` gate; restores complete in
-  rough size order. The 2026-06-13 wave: 24/24 in ~45 minutes of wave time.
+- Each backed-up PVC is recreated from Git with `spec.dataSourceRef → Restore
+  "<pvc>-restore"`. Kubernetes withholds binding while a populator
+  `dataSourceRef` is present, so the **PVC sits `Pending`** until the kopiur
+  populator restores the latest Kopia snapshot, then binds **with data** and the
+  pod starts. (Full flow:
+  [kopiur-backup-architecture.md §4](domains/storage/kopiur-backup-architecture.md#4-restore-before-bind-flow-the-dr-magic).)
+- **Backend-down is fail-safe (this replaces the old `wait-for-rustfs` MAP).**
+  The MutatingAdmissionPolicy is gone, but the guarantee is preserved by kopiur
+  itself: if the Kopia repo is **unreachable** during a restore, kopiur raises
+  the backend error *before* the `onMissingSnapshot` decision, so the PVC stays
+  `Pending` and retries — **it never binds empty over a black-holed backend.**
+  (Source-verified in kopiur `crates/controller/src/restore/mod.rs`
+  `resolve_snapshot`.) The one case that *does* bind empty is a brand-new PVC
+  with **no snapshot yet** while the **repo is reachable** (`onMissingSnapshot:
+  Continue` = deploy-or-restore), which is why the pre-nuke checklist insists a
+  Snapshot exists for anything you intend to restore.
+- Restores complete in rough size order. (pvc-plumber/VolSync baseline for
+  comparison: the 2026-06-13 wave did 24/24 in ~45 minutes of wave time.)
 - **The API server will wobble.** etcd fsync latency inflates under
   cluster-wide restore I/O — expect intermittent `readyz` failures, slow
   kubectl, csi-sidecar leader-election restarts. It recovers between bursts;
@@ -112,9 +143,10 @@ provision, or VMs are built from stale state and must be reprovisioned.
 - A few movers may hit cross-node attach conflicts ("volume is currently
   attached to a different node") as Jobs recreate pods — Longhorn's
   attachment reconciler clears these; the last stragglers land as load drains.
-- Verdict signals that something is actually wrong: a mover Job in `Failed`,
-  an RD with no `latestImage` long after its mover completed, or `/audit`
-  showing `needs-human-review`.
+- Verdict signals that something is actually wrong: a kopiur mover Job in
+  `Failed`, a `Restore` stuck without ever populating its PVC (PVC `Pending`
+  long after the repo is confirmed reachable), or a `Snapshot` stuck in error.
+  Watch with `kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot`.
 
 ## In-cluster registry and Gitea Actions
 
@@ -194,13 +226,17 @@ kubectl top nodes
 
 State BOTH claims, with live numbers:
 
-1. **Managed restore contract**: every managed PVC `Bound` via populator,
-   RS+RD `managed-by=pvc-plumber`, post-restore backups `Successful`,
-   `already-matches=N/N`.
-2. **Global audit hygiene**: `needs-human-review=0` across all PVCs —
-   non-zero isn't a restore failure but it masks real problems (history: two
-   exempt PVCs once sat unnoticed in review because acceptance only quoted
-   the managed counters).
+1. **Restore contract**: every backed-up PVC `Bound` via its kopiur `Restore`
+   populator (none stuck `Pending`), and the first post-restore `Snapshot` for
+   each source reaches `Completed`. Cross-check per namespace:
+   `kubectl -n <ns> get pvc,restore,snapshot`.
+2. **Exemption hygiene**: every intentionally backup-exempt PVC is still bound
+   and still carries the fully-qualified
+   `storage.vanillax.dev/backup-exempt-reason` annotation — non-zero isn't a
+   restore failure but it masks real problems (history: two exempt PVCs once sat
+   unnoticed because acceptance only quoted the protected counters). PostHog,
+   Redis, and `project-nomad/nomad-storage` are the expected exempt set; CNPG is
+   not in either count — it recovers via Barman/S3 (separate system).
 
 ---
 
@@ -208,16 +244,19 @@ State BOTH claims, with live numbers:
 
 Point-in-time acceptance rots; the canary keeps the proof fresh.
 
-`my-apps/system/restore-canary/` + `scripts/restore-canary-drill.sh`
-continuously re-run the real DR path against a dedicated test PVC:
+`my-apps/system/restore-canary/` (re-pointed to kopiur — its
+`kopiur/restore-canary-data.yaml` stub carries the `SnapshotPolicy` +
+`SnapshotSchedule` + `Restore`, and the PVC's `dataSourceRef` points at the
+`Restore`) + `scripts/restore-canary-drill.sh` continuously re-run the real DR
+path against a dedicated test PVC:
 
 ```
-sentinel (old UID + sha256) → forced backup → RD latestImage refresh
-→ delete ONLY the canary PVC → Git/Argo recreate with dataSourceRef
-→ populator restore → byte-identical verification
+sentinel (old UID + sha256) → forced kopiur Snapshot
+→ delete ONLY the canary PVC → Git/Argo recreate with dataSourceRef → Restore
+→ kopiur populator restore → byte-identical verification
 ```
 
-A passing drill proves the *entire* chain — Git render, operator wiring,
+A passing drill proves the *entire* chain — Git render, kopiur CR wiring,
 kopia round-trip, populator restore — with data integrity checked by hash,
 never touching production PVCs. Results land as
 `restore-canary.vanillax.dev/last-drill-*` annotations on the namespace.
