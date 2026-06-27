@@ -247,8 +247,10 @@ Point-in-time acceptance rots; the canary keeps the proof fresh.
 `my-apps/system/restore-canary/` (re-pointed to kopiur — its
 `kopiur/restore-canary-data.yaml` stub carries the `SnapshotPolicy` +
 `SnapshotSchedule` + `Restore`, and the PVC's `dataSourceRef` points at the
-`Restore`) + `scripts/restore-canary-drill.sh` continuously re-run the real DR
-path against a dedicated test PVC:
+`Restore`) re-runs the real DR path against a dedicated test PVC. The
+`SnapshotSchedule` keeps a fresh snapshot; to drill the restore, delete only the
+canary PVC and let Argo recreate it via its `dataSourceRef` → `Restore` populator
+(the old `scripts/restore-canary-drill.sh` was removed 2026-06-27):
 
 ```
 sentinel (old UID + sha256) → forced kopiur Snapshot
