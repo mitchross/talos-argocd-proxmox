@@ -1,0 +1,16 @@
+---
+# Default cluster VolumeSnapshotClass for Longhorn CSI snapshots. kopiur's
+# copyMethod=Snapshot references this (volumeSnapshotClassName: longhorn-snapclass).
+# Relocated here 2026-06-27 from the retired infrastructure/storage/volsync/ —
+# it must survive the VolSync removal since every kopiur backup depends on it.
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: longhorn-snapclass
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    snapshot.storage.kubernetes.io/is-default-class: "true"
+driver: driver.longhorn.io
+deletionPolicy: Delete
+parameters:
+  type: snap

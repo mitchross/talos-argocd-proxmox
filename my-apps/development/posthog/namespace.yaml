@@ -9,4 +9,3 @@ metadata:
     argocd.argoproj.io/sync-wave: "-1"
   labels:
     app.kubernetes.io/name: posthog
-    volsync.backube/privileged-movers: "true"

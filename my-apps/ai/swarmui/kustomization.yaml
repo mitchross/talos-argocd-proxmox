@@ -10,7 +10,6 @@ resources:
 - service.yaml
 - httproute.yaml
 - kopiur/swarmui-data.yaml
-- kopiur/swarmui-output.yaml
 
 # Uniform kopiur backup fields (repository, copyMethod, populator, privileged
 # mover) for the per-PVC stubs in kopiur/.

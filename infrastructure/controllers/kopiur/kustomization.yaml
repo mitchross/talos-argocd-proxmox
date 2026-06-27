@@ -8,3 +8,4 @@ resources:
   - namespace.yaml
   - externalsecret.yaml
   - clusterrepository.yaml
+  - volumesnapshotclass.yaml # cluster default snapclass kopiur backups need (moved from retired volsync)

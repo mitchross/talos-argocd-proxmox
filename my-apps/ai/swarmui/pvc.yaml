@@ -65,11 +65,15 @@ kind: PersistentVolumeClaim
 metadata:
   name: swarmui-output
   namespace: swarmui
+  labels:
+    backup-exempt: "true"
   annotations:
-    # Immutable dataSourceRef on a Bound PVC — mask the SSA dry-run diff
-    # (the AppSet ignoreDifferences handles the live compare).
-    argocd.argoproj.io/compare-options: ServerSideDiff=false
-    argocd.argoproj.io/sync-options: ServerSideApply=false
+    # Regenerable SwarmUI image-output dir. Longhorn volume faulted 2026-06-27
+    # (single replica failed under snapshot load on the scaled-to-0 GPU app);
+    # a faulted volume can't be snapshotted. Salvage via Longhorn UI and
+    # re-add the kopiur backup (stub + dataSourceRef) if the outputs are worth
+    # protecting.
+    storage.vanillax.dev/backup-exempt-reason: "SwarmUI generated-image output dir; regenerable. Longhorn volume faulted 2026-06-27, salvage + re-enable backup if desired."
 spec:
   accessModes:
     - ReadWriteOnce
@@ -77,14 +81,6 @@ spec:
     requests:
       storage: 50Gi
   storageClassName: longhorn
-  # kopiur restore-before-bind: on recreate this binds Pending until the
-  # Restore populator hydrates it from the latest kopia snapshot. No-op while
-  # Bound. Backup/restore CRs in kopiur/swarmui-output.yaml; uniform fields + the
-  # privileged mover come from the ../../common/kopiur-backup component.
-  dataSourceRef:
-    apiGroup: kopiur.home-operations.com
-    kind: Restore
-    name: swarmui-output-restore
 ---
 ---
 # Static PV pointing at the SAME TrueNAS share ComfyUI used (/mnt/ai-pool/comfyui).
