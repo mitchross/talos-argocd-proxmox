@@ -7,8 +7,6 @@ resources:
   - externalsecret.yaml
   - deployment.yaml
   - httproute.yaml
-
-configMapGenerator:
-  - name: kopia-ui-config
-    files:
-      - repository.config
+# repository.config configMapGenerator removed 2026-06-27 — the kopiur S3 repo
+# connection is now established at runtime by the deployment's init container
+# (creds from ESO), so there's no static config file to mount.

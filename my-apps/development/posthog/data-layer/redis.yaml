@@ -74,14 +74,11 @@ metadata:
   namespace: posthog
   labels:
     app: posthog-redis
-    # PostHog data is disposable/rebuildable in this homelab — backup-exempt.
-    # Not in the pvc-plumber migration queue; no VolSync RS/RD (removed below).
+    # PostHog data is disposable/rebuildable in this homelab — backup-exempt (no kopiur).
     backup-exempt: "true"
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
-    storage.vanillax.dev/backup-exempt-reason: "PostHog data is disposable/rebuildable in this homelab; do not VolSync/pvc-plumber migrate. Valkey cache (allkeys-lru, no RDB/AOF) — nothing to preserve."
-    # Retained skip-restore (now a no-op since RS/RD are removed): never restore.
-    volsync.backup/skip-restore: "true"
+    storage.vanillax.dev/backup-exempt-reason: "PostHog data is disposable/rebuildable in this homelab; do not back up. Valkey cache (allkeys-lru, no RDB/AOF) — nothing to preserve."
 spec:
   accessModes:
   - ReadWriteOnce

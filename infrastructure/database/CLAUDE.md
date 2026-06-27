@@ -3,12 +3,12 @@
 > **Required reading before performing DR or modifying database backups:**
 > - [`docs/domains/cnpg/disaster-recovery.md`](../../docs/domains/cnpg/disaster-recovery.md) — canonical DR runbook, overlay pattern, troubleshooting
 
-Databases use **CloudNativePG** with Barman backups to RustFS S3 — a **separate backup path** from the PVC/VolSync system.
+Databases use **CloudNativePG** with Barman backups to RustFS S3 — a **separate backup path** from the PVC backup path (kopiur).
 
-- **PVC backups**: Kopia on NFS via VolSync (automated by Kyverno)
+- **PVC backups**: kopiur (Kopia-native) → RustFS S3, per-PVC SnapshotPolicy/Restore
 - **Database backups**: Barman to S3 (SQL-aware base backup + WAL archiving for PITR)
 
-See [`docs/storage-architecture.md`](../../docs/storage-architecture.md) for why both exist.
+See [`docs/domains/storage/kopiur-backup-architecture.md`](../../docs/domains/storage/kopiur-backup-architecture.md) for why both exist.
 
 ## Repo layout per DB
 
@@ -122,7 +122,7 @@ See the full runbook in [`docs/domains/cnpg/disaster-recovery.md`](../../docs/do
   old DB won't re-run their migrations against the new empty one until restarted.
 - **Specify `database` + `owner` + `secret` in recovery bootstrap.** CNPG
   defaults to `database: app, owner: app` if omitted.
-- **Don't add CNPG PVCs to Kyverno backup labels.** They use Barman, not Kopia.
+- **Don't add kopiur backup CRs to CNPG PVCs.** They use Barman/S3, not kopiur.
 - **If Barman says `Expected empty archive`, do not reuse that forward
   `serverName`.** Bump the write target to the next clean lineage and keep the
   recovery source pointed at the last known-good lineage.
