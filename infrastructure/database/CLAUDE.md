@@ -56,10 +56,18 @@ The `serverName` values below live in each DB's `base/cluster.yaml` and
 
 | Database  | Current write target (base)  | Prior lineage (recovery source) |
 |-----------|------------------------------|---------------------------------|
-| gitea     | `gitea-database-v9`          | `gitea-database-v6`             |
-| immich    | `immich-database-v5`         | `immich-database-v4`            |
-| paperless | `paperless-database-v5`      | `paperless-database-v4`         |
-| temporal  | `temporal-database-v7`       | `temporal-database-v6`          |
+| gitea     | `gitea-database-v10`         | `gitea-database-v9`             |
+| immich    | `immich-database-v6`         | `immich-database-v5`            |
+| paperless | `paperless-database-v6`      | `paperless-database-v5`         |
+| temporal  | `temporal-database-v8`       | `temporal-database-v7`          |
+
+2026-06-28 (first kopiur-only full nuke): all four recovered from their prior
+lineage and write forward to the bumped target above (gitea v9→v10, immich
+v5→v6, paperless v5→v6, temporal v7→v8). After recovery completed and the
+primaries went healthy, all four root kustomizations were **flipped back
+`overlays/recovery` → `overlays/initdb`** (steady state) so a future PVC loss
+can't auto-restore a stale lineage. Recovery is re-enabled per-DB only as an
+explicit DR action.
 
 All four bumped TWICE on 2026-06-11: once for the Longhorn V2 rebuild nuke,
 and again for the same-day re-nuke (SPDK cpu-mask validation run) because the
@@ -129,9 +137,14 @@ See the full runbook in [`docs/domains/cnpg/disaster-recovery.md`](../../docs/do
 
 ## Deprecation warnings
 
-- **Native `spec.backup.barmanObjectStore`** — will be removed in CNPG 1.30.0.
-  Migrate to the Barman Cloud Plugin (already installed at
-  `infrastructure/database/cnpg-barman-plugin/`). Not urgent; track release notes.
+- **Native `spec.backup.barmanObjectStore` — MIGRATION DONE.** All four DBs use
+  the Barman Cloud Plugin (`infrastructure/database/cnpg-barman-plugin/`):
+  live backup config is `spec.plugins[]` (name `barman-cloud.cloudnative-pg.io`,
+  `isWALArchiver: true`, `parameters.barmanObjectName` → a sibling `ObjectStore`
+  CR + `parameters.serverName`), and recovery is `externalClusters[].plugin`.
+  The in-tree `barmanObjectStore` field is removed in CNPG 1.30.0 — do not
+  reintroduce it. (When adding a NEW DB, set serverName via the plugin
+  `parameters`, not `backup.barmanObjectStore`.)
 - **`spec.monitoring.enablePodMonitor`** — deprecated, replace with manually-
   managed `PodMonitor` resources per cluster.
 

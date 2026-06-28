@@ -20,10 +20,11 @@ commonLabels:
 commonAnnotations:
   argocd.argoproj.io/sync-wave: "-5"
 resources:
-  - overlays/recovery        # ← ACTIVE: restore gitea DB FROM v9 (current data,
-                             # pre-nuke). Writes forward to v10 (clean, unused
-                             # prefix) to pass barman-cloud-check-wal-archive.
-  # - overlays/initdb        # fresh empty DB (1 admin, 0 repos). Was active
-                             # while v5 was (wrongly) assumed unrestorable.
+  # - overlays/recovery      # DR-only: restore gitea DB FROM v9 → write v10.
+                             # Before a planned nuke, bump base serverName and
+                             # set this overlay's source, then re-enable.
+  - overlays/initdb          # ← ACTIVE (steady state; recovery completed
+                             # 2026-06-28). bootstrap.initdb is a no-op on the
+                             # existing cluster; writes forward to base v10.
   - externalsecret.yaml
   - scheduled-backup.yaml

@@ -11,7 +11,7 @@ commonLabels:
 commonAnnotations:
   argocd.argoproj.io/sync-wave: "-5"
 resources:
-  - overlays/recovery        # ← ACTIVE: restore from Barman v5 → write v6 (nuke recovery)
-  # - overlays/initdb        # fresh DB / normal operation
+  # - overlays/recovery      # DR-only: restore from Barman v5 → write v6. Re-enable before a nuke.
+  - overlays/initdb          # ← ACTIVE (steady state; recovered 2026-06-28). No-op on existing cluster; writes v6.
   - externalsecret.yaml
   - scheduled-backup.yaml
