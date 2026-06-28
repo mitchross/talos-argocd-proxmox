@@ -25,7 +25,7 @@ Create a new application at `$ARGUMENTS` following the project's GitOps patterns
    - Services MUST have named ports (`name: http`) for HTTPRoute — fails silently without this
    - Use Gateway API HTTPRoute (NOT Ingress) — reference `infrastructure/networking/gateway/`
    - Use ExternalSecret for secrets (never hardcode) — reference any app with `externalsecret.yaml`
-   - PVCs needing backup: use `storageClassName: longhorn` and follow `.claude/commands/add-backup.md` for the pvc-plumber v4 labels and static `dataSourceRef`
+   - PVCs needing backup: use `storageClassName: longhorn` and follow `.claude/commands/add-backup.md` for the kopiur per-PVC stub + `../../common/kopiur-backup` component + restore-before-bind `dataSourceRef`
    - GPU apps: use nodeSelector, runtimeClassName, tolerations, priorityClassName — reference `my-apps/ai/comfyui/`
    - CNPG databases go in `infrastructure/database/cloudnative-pg/<app>/` not in `my-apps/`
 

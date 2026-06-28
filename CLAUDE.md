@@ -104,7 +104,7 @@ docs/                   # Documentation
 - Use NFS CSI driver (`csi: driver: nfs.csi.k8s.io`) for static NFS PVs — **legacy `nfs:` silently ignores mountOptions**
 - Add new infrastructure component paths to `infrastructure/controllers/argocd/apps/appsets/infrastructure-appset.yaml` explicitly (not glob-discovered)
 - List ALL YAML files in each directory's `kustomization.yaml` under `resources:` — **unlisted files are never deployed**
-- Use llama-cpp (not ollama) for in-cluster AI backends
+- Use **vLLM** (`qwen3.6-27b`, the default for app inference) or llama-cpp for in-cluster AI backends — **never ollama**
 - Use sync waves when adding infrastructure components
 - Add ArgoCD hook annotations to all Kubernetes Jobs — `argocd.argoproj.io/hook: Sync` + `argocd.argoproj.io/hook-delete-policy: BeforeHookCreation`. K8s Jobs are immutable after creation; without these, image tag bumps from Renovate cause "field is immutable" sync failures. For standalone Jobs, add annotations directly. For Helm-rendered Jobs, use Kustomize patches targeting `kind: Job`
 - Check `helm show values <chart> | grep -A20 certManager` when adding any Helm chart with webhooks — if a `certManager.enabled` option exists, **set it to `true`**. Helm hook Jobs for webhook certs break under ArgoCD (SA deleted before Job runs = stuck forever = API server death)
@@ -200,7 +200,7 @@ Detailed instructions load automatically when working in these directories:
 - **[docs/domains/networking/policy.md](docs/domains/networking/policy.md)** - Cilium network policies
 - **[docs/domains/argocd/argocd.md](docs/domains/argocd/argocd.md)** - ArgoCD documentation
 - **[docs/domains/argocd/entrypoints.md](docs/domains/argocd/entrypoints.md)** - ArgoCD root entrypoints, waves, and AppSet/custom-entrypoint decisions
-- **[docs/domains/storage/architecture-future.md](docs/domains/storage/architecture-future.md)** — **FUTURE IDEA (not implemented):** tiered storage (local CSI + VolSync DR default, Longhorn for availability-critical apps). Do not act on it now.
+- **[docs/domains/storage/architecture-future.md](docs/domains/storage/architecture-future.md)** — **FUTURE IDEA (not implemented):** tiered storage (local CSI + kopiur restore-based DR default, Longhorn for availability-critical apps). Do not act on it now.
 - **kopiur is the backup system (since 2026-06-27):** ~24 PVCs across ~19 namespaces on the `kopiur-backup` component; restore-before-bind proven by the karakeep full-namespace DR drill (2026-06-27). pvc-plumber + VolSync removed. PostHog, Redis, and `project-nomad/nomad-storage` are backup-exempt; swarmui is unused/exempt; CNPG stays native Barman/S3.
 
 ## Mink capture
