@@ -25,14 +25,15 @@ This is the review map for everything directly rendered by the root Application 
 | `core-dependencies/cert-manager-app.yaml` | Application | 1 | Certificate controller required before CNPG Barman plugin | No, required before cert-dependent apps |
 | `core-dependencies/longhorn-app.yaml` | Application | 1 | Storage foundation before PVC consumers | No, required before restore/app PVC flows |
 | `core-dependencies/snapshot-controller-app.yaml` | Application | 1 | VolumeSnapshot CRDs and controller | No, required by backup/restore flows |
-| `core-dependencies/volsync-app.yaml` | Application | 1 | Backup/restore engine | No, required before PVC Plumber and restore policies |
-| `core-dependencies/pvc-plumber-app.yaml` | Application | 2 | pvc-plumber v4.0.1 bootstrap-core: permissive RS/RD controller with no monitoring dependency | No, required before managed app PVCs |
-| `core-dependencies/volsync-backup-cluster-app.yaml` | Application | 2 | Shared Kopia credentials and VolSync backup-cluster wiring | No, required before managed app PVCs |
+| `core-dependencies/kopiur-operator-app.yaml` | Application | 2 | kopiur operator (Kopia-native backup): CRDs + controller + webhook + volume populator; no monitoring dependency | No, required before managed app PVCs |
+| `core-dependencies/kopiur-config-app.yaml` | Application | 3 | kopiur repo config: `ClusterRepository cluster-kopia` + credential fanout + `VolumeSnapshotClass longhorn-snapclass` | No, required before managed app PVCs |
 | `custom-entrypoints/cnpg-barman-plugin-app.yaml` | Application | 3 | CNPG clusters reference the plugin in wave 4 | Not now, dependency must precede database AppSet |
 | `custom-entrypoints/keda-app.yaml` | Application | 4 | Standalone after prior AppSet generator/render-cache loop | Maybe, after proving AppSet render stability |
+| `custom-entrypoints/vertical-pod-autoscaler-app.yaml` | Application | 4 | VPA controller (recommender/updater/admission) | Maybe, after proving AppSet render stability |
 | `custom-entrypoints/temporal-worker-controller-app.yaml` | Application | 4 | Same AppSet render-cache history as KEDA | Maybe, after proving AppSet render stability |
 | `custom-entrypoints/opentelemetry-operator-app.yaml` | Application | 5 | Core operator after cert-manager; ServiceMonitor removed from core | Maybe, if cert-manager dependency is otherwise enforced |
 | `custom-entrypoints/keda-observability-app.yaml` | Application | 6 | Optional KEDA ServiceMonitor resources after monitoring CRDs exist | No, keeps observability out of core |
+| `custom-entrypoints/vpa-recommendations-app.yaml` | Application | 6 | Optional VPA recommendation CRs after monitoring CRDs exist | No, keeps observability out of core |
 | `custom-entrypoints/opentelemetry-operator-observability-app.yaml` | Application | 6 | Optional OpenTelemetry ServiceMonitor after monitoring CRDs exist | No, keeps observability out of core |
 | `appsets/infrastructure-appset.yaml` | ApplicationSet | 4 | Explicit list of core infrastructure directories | N/A |
 | `appsets/database-appset.yaml` | ApplicationSet | 4 | Discovers `infrastructure/database/*/*`; uses `selfHeal: false` for DR | N/A |
@@ -45,8 +46,7 @@ This is the review map for everything directly rendered by the root Application 
 PrometheusRule, Probe, AlertmanagerConfig) in its core kustomization.** Those CRDs don't exist until
 kube-prometheus-stack (Wave 5); an earlier-wave app shipping them fails dry-run and deadlocks the
 App-of-Apps wave gate (proven by the 2026-06-01 nuke drill). Put observability CRs in a **separate
-optional app that syncs after Wave 5** (e.g. `keda-observability` at Wave 6; pvc-plumber's were
-removed from its Wave-2 core). We deliberately do **not** install Prometheus Operator CRDs early —
+optional app that syncs after Wave 5** (e.g. `keda-observability` at Wave 6, split out of KEDA's Wave-4 core). We deliberately do **not** install Prometheus Operator CRDs early —
 `SkipDryRunOnMissingResource` is only an escape hatch / observability-app option, never a core fix.
 `cert-manager` is at **Wave 1** (not 4) so cert-dependent apps (cnpg-barman-plugin, Wave 3) can start.
 Full detail: [cluster DR nuke restore runbook](../../disaster-recovery.md).

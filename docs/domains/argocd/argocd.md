@@ -19,7 +19,7 @@ Do not install Prometheus Operator CRDs early just to satisfy bootstrap apps. Se
 ArgoCD starts from the manually seeded root application:
 
 ```text
-infrastructure/controllers/argocd/bootstrap/root-application.yaml
+infrastructure/controllers/argocd/root.yaml
 ```
 
 The root application renders three layers:
@@ -35,14 +35,14 @@ See [ArgoCD entrypoints](entrypoints.md) for the concrete files.
 | Wave | Applications |
 |---|---|
 | `0` | ArgoCD projects/bootstrap, Cilium, 1Password Connect, External Secrets |
-| `1` | cert-manager, Longhorn, snapshot-controller, VolSync |
-| `2` | pvc-plumber core, VolSync backup-cluster wiring |
-| `3` | CNPG Barman plugin |
+| `1` | cert-manager, Longhorn, snapshot-controller |
+| `2` | kopiur operator (CRDs + controller + webhook; volume populator) |
+| `3` | CNPG Barman plugin, kopiur config (ClusterRepository `cluster-kopia` + credential fanout + VolumeSnapshotClass) |
 | `4` | KEDA core, Temporal worker, infrastructure and database AppSets |
 | `5` | OpenTelemetry operator core, monitoring AppSet including `kube-prometheus-stack` |
 | `6` | KEDA observability, OpenTelemetry operator observability, workload AppSet |
 
-cert-manager is intentionally Wave `1`: the CNPG Barman plugin depends on it. pvc-plumber Wave `2` is core-only. KEDA and OpenTelemetry ServiceMonitor resources render from Wave `6` observability overlays.
+cert-manager is intentionally Wave `1`: the CNPG Barman plugin depends on it. The kopiur operator is Wave `2` (CRDs + controller + webhook), with its repo/credential config at Wave `3`. KEDA and OpenTelemetry ServiceMonitor resources render from Wave `6` observability overlays.
 
 CNPG `enablePodMonitor: true` remains an accepted runtime soft-coupling. It can log transient errors before monitoring exists, but it is not an ArgoCD dry-run blocker.
 

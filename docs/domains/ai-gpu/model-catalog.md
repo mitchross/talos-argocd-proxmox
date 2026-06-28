@@ -78,7 +78,7 @@ coding, tool calls, and vision.
 - **For:** the occasional very long research dig or full-repo context, when both
   3090s are pooled (layer-split, 48GB → 256K KV resident).
 - **On a single 3090 it's a trap:** 256K KV (~14GB) spills ~7GB to host RAM →
-  CPU-driven attention on the Broadwell CPU = slow, *and* it's a distinct
+  CPU-driven attention on the Threadripper 2950X CPU = slow, *and* it's a distinct
   instance that thrashes against the daily driver. Perplexica's embedding filter
   keeps prompts <64K anyway, so it does **not** default here. Select manually
   only when you've pooled both cards (scale ComfyUI→0). See optimization doc.

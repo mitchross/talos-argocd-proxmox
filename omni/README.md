@@ -41,7 +41,7 @@ A complete, production-ready starter kit for deploying self-hosted Sidero Omni w
 
 1. **Prerequisites** - See [docs/PREREQUISITES.md](docs/PREREQUISITES.md)
 2. **Deploy Omni** - Follow [omni/README.md](omni/README.md)
-3. **Setup Provider** - Follow [proxmox-provider/README.md](proxmox-provider/README.md)
+3. **Setup Provider** - Follow [proxmox-provider/](proxmox-provider/)
 4. **Apply Machine Classes** - `omnictl apply -f omni/machine-classes/`
 5. **Validate Template** - `omnictl cluster template validate -f omni/cluster-template/cluster-template.yaml`
 6. **Preview Provisioning** - `omnictl cluster template sync -f omni/cluster-template/cluster-template.yaml --dry-run`
@@ -63,12 +63,8 @@ plane and worker MachineSets; do not create MachineSets separately.
 │   ├── docker-compose.yml
 │   ├── .env.example
 │   └── config.yaml.example
-├── talos-configs/             # Example Talos configurations
-│   └── gpu-worker-patch.yaml  # NVIDIA GPU support
-├── examples/                  # Complete deployment examples
-│   ├── simple-homelab/        # Minimal 3-node cluster
-│   ├── gpu-ml-cluster/        # GPU-enabled for AI/ML
-│   └── production-ha/         # HA cluster with Cilium CNI
+├── machine-classes/           # VM specs (control-plane, worker, GPU, single-node)
+├── cluster-template/          # Cluster template + machine config patches
 └── docs/                      # Additional documentation
     ├── ARCHITECTURE.md
     ├── PREREQUISITES.md
@@ -82,7 +78,7 @@ plane and worker MachineSets; do not create MachineSets separately.
 Define "machine classes" in Omni that specify CPU, RAM, and disk resources. The Proxmox provider watches for new machines and automatically creates VMs matching your specifications.
 
 ### GPU Support (Optional)
-Include NVIDIA GPU support for AI/ML workloads. See [talos-configs/README.md](talos-configs/README.md) for configuration details.
+Include NVIDIA GPU support for AI/ML workloads. See the machine classes in [machine-classes/](machine-classes/) (e.g. `gpu-worker.yaml`, `single-node-talos-gpu.yaml`) and the patches in [cluster-template/patches/](cluster-template/patches/) for configuration details.
 
 ### Production Ready
 - SSL/TLS encryption with Let's Encrypt
@@ -92,9 +88,11 @@ Include NVIDIA GPU support for AI/ML workloads. See [talos-configs/README.md](ta
 
 ## Deployment Examples
 
-Choose the example that best fits your use case:
+Choose the topology that best fits your use case. Build each from the machine
+classes in [machine-classes/](machine-classes/) and the
+[cluster-template/](cluster-template/):
 
-### 🏠 [Simple Homelab](examples/simple-homelab/)
+### 🏠 Simple Homelab
 Perfect for learning and home use:
 - **3 nodes** (1 control plane + 2 workers)
 - **Minimal resources** (12 cores, 24GB RAM total)
@@ -104,7 +102,7 @@ Perfect for learning and home use:
 
 **Best for**: Learning Kubernetes, home automation, media servers, development
 
-### 🤖 [GPU ML Cluster](examples/gpu-ml-cluster/)
+### 🤖 GPU ML Cluster
 Optimized for AI/ML workloads:
 - **4 nodes** (1 control plane + 1 regular + 2 GPU workers)
 - **NVIDIA GPU support** with proprietary drivers
@@ -114,7 +112,7 @@ Optimized for AI/ML workloads:
 
 **Best for**: Machine learning, AI inference, GPU compute, data science
 
-### 🏭 [Production HA with Cilium](examples/production-ha/)
+### 🏭 Production HA with Cilium
 Enterprise-grade cluster:
 - **6+ nodes** (3 control plane + 3+ workers)
 - **High availability** with redundant control plane
@@ -146,7 +144,7 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/downloa
 kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
 
 cilium-cli install \
-    --version 1.19.4 \
+    --version 1.19.5 \
     --set cluster.name=talos-prod-cluster \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
@@ -168,26 +166,24 @@ currently in **beta**. Expect some limitations and potential bugs. Please
 report issues to the [upstream
 repository](https://github.com/siderolabs/omni-infra-provider-proxmox).
 
-### Concrete beta limitations (as of Talos 1.13 / Omni 1.8)
+### Concrete beta limitations (as of Talos 1.13 / Omni 1.9)
 
 These are things that hit me in practice — the generic "it's beta" line
 isn't enough to plan around.
 
-- **Single disk per VM.** The provider creates one disk when it
-  provisions a VM. Want separate OS + data disks? You'll have to attach
-  them manually in Proxmox after the fact, which means they won't be
-  recreated if the VM is destroyed and re-provisioned. In practice: plan
-  all storage as Longhorn replicas on the single disk, or use external
-  storage (NFS to TrueNAS, RustFS S3) for stateful data.
-- **No HA local storage.** Because of the single-disk limit, Longhorn can
-  replicate across nodes but not across dedicated storage tiers within
-  a node. Not a real problem for homelab scale, worth flagging for prod.
+- **Multiple disks per VM are supported.** The provider creates a primary
+  disk plus any `additional_disks` you declare in the machine class, and
+  provisions them all at VM creation — so extra data disks get recreated
+  with the VM rather than needing a manual Proxmox attach (see
+  `omni/machine-classes/single-node-talos-gpu.yaml`). You can still plan
+  storage as Longhorn replicas or use external storage (NFS to TrueNAS,
+  RustFS S3) for stateful data.
 - **Extensions must be baked into the Talos image OR declared in the
   cluster template.** You can't "install an extension" at runtime the
   way you would a package. Changing extensions = image rebuild in Omni +
   node replacement. This is especially relevant for NVIDIA driver
-  swaps (production → OSS) — see the OSS NVIDIA migration plan in
-  `docs/superpowers/plans/`.
+  swaps (production → OSS), which require rebuilding the Talos image and
+  replacing the affected nodes.
 - **`machine.install.disk` is mandatory on Talos 1.13.** Without it,
   fresh VMs provision but stay stuck in `UPGRADING` forever (see root
   README). This is a Talos 1.13 LifecycleService change, not a provider
