@@ -113,7 +113,7 @@ Simple installation without Gateway API support:
 
 ```bash
 cilium install \
-    --version 1.19.4 \
+    --version 1.19.5 \
     --set cluster.name=talos-prod-cluster \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
@@ -136,7 +136,7 @@ kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/re
 
 # Then install Cilium
 cilium install \
-    --version 1.19.4 \
+    --version 1.19.5 \
     --set cluster.name=talos-prod-cluster \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
@@ -162,7 +162,7 @@ kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/re
 
 # Install Cilium with Hubble
 cilium install \
-    --version 1.19.4 \
+    --version 1.19.5 \
     --set cluster.name=talos-prod-cluster \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
@@ -680,7 +680,7 @@ cilium version
 
 ```bash
 # Upgrade to specific version (must match chart version in infrastructure/networking/cilium/kustomization.yaml)
-cilium upgrade --version 1.19.4
+cilium upgrade --version 1.19.5
 
 # Or latest
 cilium upgrade
@@ -787,9 +787,9 @@ Enable service mesh features:
 
 ```bash
 cilium install \
-  --version 1.19.4 \
+  --version 1.19.5 \
   --set cluster.name=talos-prod-cluster \
-  --set kubeProxyReplacement=strict \
+  --set kubeProxyReplacement=true \
   --set ingressController.enabled=true \
   --set envoy.enabled=true
 ```
@@ -839,4 +839,4 @@ EOF
 
 ## Example Configurations
 
-See the [production-ha example](../examples/production-ha/) for a complete working configuration with Cilium, Gateway API, and all recommended settings.
+See the live [cluster-template/](../cluster-template/) and the cluster's Cilium config in [`infrastructure/networking/cilium/`](../../infrastructure/networking/cilium/) for a complete working configuration with Cilium, Gateway API, and all recommended settings.

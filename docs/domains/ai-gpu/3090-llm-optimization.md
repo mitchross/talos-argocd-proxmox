@@ -16,8 +16,8 @@
   GPU1 = ComfyUI. **Pool both on-demand** (layer-split) only for the occasional
   256K research / full-context coding burst. Keep both 3090s in the box; do
   **not** redistribute a card to the gaming PC.
-- **Why not single-card + CPU offload:** the node is a **Xeon E5 v4 (Broadwell)
-  DL360 Gen9, DDR4-2400, no AVX-512, PCIe 3.0, under Proxmox**. MoE expert
+- **Why not single-card + CPU offload:** the node is an **AMD Threadripper 2950X
+  (16c/32t, Zen+), 128GB ECC DDR4, no AVX-512, PCIe 3.0, under Proxmox**. MoE expert
   offload is memory-bandwidth-bound and would land ~8–12 TPS on this CPU. The
   second 3090 is what keeps the long-context path on-GPU and fast — on this box
   48GB is close to essential, not a nice-to-have.
@@ -57,7 +57,7 @@ three ways to buy more usable context, in priority order **on this CPU**:
 
 1. **More VRAM** — pool the second 3090 (cleanest here).
 2. **Smaller KV** — quantize KV (q8→q4 ≈ half; TurboQuant `turbo3` ≈ ⅕, see below).
-3. **CPU expert offload** — *last resort* on Broadwell; avoid.
+3. **CPU expert offload** — *last resort* on the Threadripper 2950X; avoid.
 
 This ordering is **inverted** from a modern DDR5 / AVX-512 box, where single-card
 + offload is fine.
@@ -79,7 +79,7 @@ both, on-demand ── pool layer-split for 256K research / full-context coding
 - **Rejected: redistribute** (single 3090 + AMD 6800 in cluster + 3090 →
   gaming PC). The 6800 is RDNA2/ROCm and much of the stack is CUDA-locked
   (faster-whisper = CTranslate2, many ComfyUI nodes), and a single cluster 3090
-  would be stuck on the slow Broadwell offload path. Only revisit if the LLM
+  would be stuck on the slow Threadripper-2950X offload path. Only revisit if the LLM
   workload moves off this node.
 
 ## Daily driver + single-vs-dual (decision)
@@ -338,9 +338,9 @@ offload, no spill**:
    used by `my-apps/ai/llmfit/` dual-GPU jobs.)
 3. On that 2-GPU deployment: drop `GGML_CUDA_ENABLE_UNIFIED_MEMORY`, keep KV
    symmetric q8/q8, optionally raise `-ub 1024`.
-4. **Proxmox/DL360 checks:** NUMA-pin the VM to one socket with both 3090s on
-   that socket's PCIe lanes; confirm both cards are x16 Gen3; NVLink optional
-   (helps spec-decode, not layer-split much).
+4. **Proxmox/X399 checks:** confirm both 3090s are passed through on PCIe Gen3
+   x16 lanes; pin the VM's vCPUs to physical cores and enable hugepages; NVLink
+   optional (helps spec-decode, not layer-split much).
 
 ## Model download checklist (NFS: `192.168.10.133:/mnt/ai-pool/llama-cpp`)
 
