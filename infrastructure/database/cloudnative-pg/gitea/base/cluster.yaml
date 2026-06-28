@@ -74,4 +74,4 @@ spec:
         # bring-up from v6; v9 is the steady forward write target after that
         # recovery proved good.
         # DO NOT change this value without bumping lineage in lockstep.
-        serverName: gitea-database-v9
+        serverName: gitea-database-v10
