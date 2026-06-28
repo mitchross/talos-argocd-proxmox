@@ -20,5 +20,17 @@ machine:
     - name: nvidia_uvm
     - name: nvidia_drm
     - name: nvidia_modeset
+    # SONOFF ZBDongle (Zigbee coordinator, USB-passed to this VM). Talos loads
+    # no USB-serial drivers by default, so the dongle never enumerates as a tty
+    # without these. cp210x covers the CP2102N bridge on the ZBDongle-E/-P
+    # (USB 10c4:ea60) -> /dev/ttyUSB0; ch341 covers CH9102/CH340 variants. Both
+    # are loaded as insurance (the canonical Talos+zigbee config does the same).
+    # Verify after sync: talosctl -n <node-ip> ls /dev | grep -E 'ttyUSB|ttyACM'
+    # NOTE: a udev SYMLINK rule for a stable /dev/zigbee is intentionally omitted
+    # — the cluster-level node-performance patch already owns machine.udev.rules
+    # and a second rules list here could replace (not append to) it. We mount the
+    # ttyUSB0 device node directly instead (single dongle => deterministic).
+    - name: cp210x
+    - name: ch341
   sysctls:
     net.core.bpf_jit_harden: 1
