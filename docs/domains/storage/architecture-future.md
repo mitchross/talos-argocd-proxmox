@@ -3,8 +3,8 @@
 > **Status: FUTURE IDEA — not implemented, do not act on this now.** No
 > storage classes, app PVCs, or CSI drivers should change based on this
 > document yet. Current live model: Longhorn (V1 engine) is the default CSI;
-> backups are VolSync→Kopia→S3 (RustFS), fully managed by pvc-plumber from
-> PVC labels. See [storage-architecture.md](../../storage-architecture.md).
+> backups are kopiur→Kopia→S3 (RustFS), declared per-PVC via the kopiur-backup
+> component (pvc-plumber + VolSync retired 2026-06-27). See [storage-architecture.md](../../storage-architecture.md).
 >
 > **2026-06 update — the case for this idea got stronger.** The Longhorn V2
 > experiment failed under full-DR restore load (see

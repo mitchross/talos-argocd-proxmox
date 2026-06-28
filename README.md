@@ -6,7 +6,7 @@
 
 A GitOps-driven Kubernetes cluster on **Talos OS** (secure, immutable Linux for K8s) with **ArgoCD** and **Cilium**, running on Proxmox. Nodes are provisioned and managed through **[Omni](https://github.com/siderolabs/omni)** (Sidero's Talos platform) with the **[Proxmox Infrastructure Provider](https://github.com/siderolabs/omni-infra-provider-proxmox)** — no SSH, no manual node config.
 
-The whole cluster boots from one script. Once Omni hands you a running Talos cluster, bootstrap is **five copy-paste steps** (Gateway CRDs → Cilium → secrets → ArgoCD), and ArgoCD takes over and deploys everything else from this repo.
+The whole cluster boots from one script. Once Omni hands you a running Talos cluster, bootstrap is **four copy-paste steps** (Gateway CRDs → Cilium → secrets → ArgoCD), and ArgoCD takes over and deploys everything else from this repo.
 
 ## Key Features
 
@@ -108,7 +108,7 @@ Keep the Omni server and local `omnictl` on the **same** release — mismatched 
 > | Template | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` | `omni/cluster-template/cluster-template.yaml` |
 > | Topology | 2 VMs (1 CP + 1 GPU worker) | 3 CP + 3 workers + 1 GPU |
 
-The full path from nothing to a running GitOps cluster, in order. Steps 1–3 are the Omni side (provision a Talos cluster); steps 4–8 are the bootstrap (install the GitOps stack). If Omni already gave you a running cluster with `kubectl` access, skip to step 4.
+The full path from nothing to a running GitOps cluster, in order. Steps 1–3 are the Omni side (provision a Talos cluster); steps 4–7 are the bootstrap (install the GitOps stack). If Omni already gave you a running cluster with `kubectl` access, skip to step 4.
 
 <details>
 <summary><b>The whole sequence, copy-paste</b> — the annotated steps below explain each block and the gotchas</summary>

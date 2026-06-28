@@ -1,9 +1,19 @@
 # AI Stack Guide
 
 Local AI infrastructure running on dual RTX 3090s (24 GB each) + 128 GB
-system RAM, 12-core CPU. Each GPU runs one workload — llama-server on
-GPU 0, ComfyUI on GPU 1. Time-slicing is OFF; whole-card allocation is
+system RAM, 12-core CPU. Time-slicing is OFF; whole-card allocation is
 enforced via the GPU Operator.
+
+The GPU workloads (vLLM, llama-cpp, ComfyUI) are **mutually-exclusive
+whole-card** (`type: Recreate`, no time-slicing) and **scale-swap** — bringing
+one up means scaling the others to `replicas: 0`, never two on the cards at
+once. **The current default app-inference backend is vLLM** (served model
+`qwen3.6-27b`, TP=2 across both 3090s); OpenWebUI, Perplexica, Project NOMAD, and
+Karakeep point there. llama-cpp and ComfyUI are currently scaled to 0 and
+swapped in on demand — llama-cpp for ComfyUI's vision→image workflow and manual
+multi-preset use. The authoritative app→backend table is
+`docs/domains/ai-gpu/model-catalog.md`; see `vllm/README.md` for the scale-swap
+commands.
 
 ## Architecture
 
@@ -11,23 +21,34 @@ enforced via the GPU Operator.
                         Open WebUI (chat UI)
                        /        |         \
                       /         |          \
-           llama-server    ComfyUI      SearXNG
-           (LLM inference) (image+video) (web search)
-           port 8080       port 8188
-           ┌──────────┐   ┌──────────────────────┐
-           │ Qwen 3.6 │   │ Z-Image-Turbo (t2i)  │
-           │ 35B-A3B  │   │ Qwen-Image-Edit (i2i)│
-           │ Q4_K_XL  │   │ Wan 2.2 T2V (video)  │
-           │ +mmproj  │   │ Wan 2.2 I2V (video)  │
-           └──────────┘   │ Florence-2 (caption) │
-           GPU 0 (24GB)   │ WD14 Tagger (tags)   │
-                          └──────────────────────┘
-                          GPU 1 (24GB)
+              vLLM         ComfyUI      SearXNG
+        (LLM inference,    (image+video) (web search)
+         DEFAULT backend)  port 8188
+         port 8080
+           ┌──────────────┐   ┌──────────────────────┐
+           │ Qwen3.6-27B  │   │ Z-Image-Turbo (t2i)  │
+           │ AWQ, TP=2    │   │ Qwen-Image-Edit (i2i)│
+           │ (multimodal) │   │ Wan 2.2 T2V (video)  │
+           └──────────────┘   │ Wan 2.2 I2V (video)  │
+                              │ Florence-2 (caption) │
+        (swap-in: llama-cpp   │ WD14 Tagger (tags)   │
+         Qwen3.6-35B-A3B GGUF └──────────────────────┘
+         +mmproj, presets)
+
+  Whole-card scale-swap across both 3090s (2×24GB) — never two on the
+  cards at once. vLLM TP=2 pools both cards; llama-cpp / ComfyUI swap in
+  on demand (scale others to replicas:0). Current state: vLLM up.
 ```
 
-## LLM Model (llama-cpp)
+## LLM Model (llama-cpp) — on-demand swap-in backend
 
-Multiple presets served via `llama-server` on GPU 0. Presets hot-swap on
+> Note: llama-cpp is **not** the current default app-inference backend — vLLM is
+> (see the top of this doc and `docs/domains/ai-gpu/model-catalog.md`). llama-cpp
+> is swapped in on demand (scale it to `replicas: 1`, others to `0`) for
+> ComfyUI's vision→image workflow and manual multi-preset use. The presets below
+> apply when llama-cpp is the resident workload.
+
+Multiple presets served via `llama-server` on a whole 3090. Presets hot-swap on
 the same GPU — weights only re-load when you switch between different
 model files (`qwen3.6` ↔ `gemma4` ↔ `uncensored`). Switching between
 `think` / `nothink` variants of the same model is instant (same GGUF,
@@ -284,7 +305,8 @@ IMAGE_STEPS: 9  (Z-Image-Turbo optimal)
 
 | Service | Internal URL | External URL |
 |---------|-------------|-------------|
-| llama-server | `llama-cpp-service.llama-cpp.svc:8080` | `llama.vanillax.me` |
+| vLLM (default LLM backend) | `vllm-service.vllm.svc:8080` | `vllm.vanillax.me` |
+| llama-server (swap-in) | `llama-cpp-service.llama-cpp.svc:8080` | `llama.vanillax.me` |
 | Open WebUI | `open-webui-service.open-webui.svc:8080` | `open-webui.vanillax.me` |
 | ComfyUI | `comfyui-service.comfyui.svc:8188` | `comfyui.vanillax.me` |
 | SearXNG | `searxng.searxng.svc:8080` | -- |

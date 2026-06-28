@@ -785,6 +785,8 @@ cilium config set enable-wireguard true
 
 Enable service mesh features:
 
+> **Note:** `ingressController.enabled=true` is an optional upstream Cilium feature shown here for completeness — **this cluster does NOT use it.** We standardize on Cilium Gateway API exclusively (not Ingress); do not enable the ingress controller thinking it's required.
+
 ```bash
 cilium install \
   --version 1.19.5 \

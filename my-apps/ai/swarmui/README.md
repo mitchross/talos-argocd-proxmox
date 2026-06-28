@@ -16,11 +16,19 @@ is a .NET frontend/orchestrator over ComfyUI. It **replaces the standalone
 - **Models are reused, not re-downloaded.** `swarmui-comfyui-models` is a static
   NFS PV pointing at the *same* TrueNAS share the old comfyui used
   (`192.168.10.133:/mnt/ai-pool/comfyui`), mounted at `/comfyui-models`.
-- **Storage.** `Data` + `Output` are Longhorn with explicit inline
-  VolSync `ReplicationSource`/`ReplicationDestination` + static
-  `dataSourceRef` in `pvc.yaml` (see `my-apps/CLAUDE.md`). `dlbackend`
-  (SwarmUI's auto-installed ComfyUI + torch venv) is Longhorn with **no**
-  backup wiring because it is fully reinstallable.
+- **Storage.** SwarmUI is currently **unused** (never put into service), so
+  every PVC is `backup-exempt: "true"` with a qualified
+  `storage.vanillax.dev/backup-exempt-reason` and there is **no kopiur backup**
+  (the `kustomization.yaml` pulls in no `kopiur-backup` component). `Data` and
+  `Output` are Longhorn but not worth protecting while the app is idle;
+  `dlbackend` (SwarmUI's auto-installed ComfyUI + torch venv) is Longhorn and
+  fully reinstallable; `models` is the shared NFS share. If SwarmUI is ever
+  adopted, re-enable backups the kopiur way — add a per-PVC stub
+  (`SnapshotPolicy` + `SnapshotSchedule` + `Restore`) under `kopiur/`, pull in
+  the `../../common/kopiur-backup` component, and point each PVC's
+  `dataSourceRef` at its `Restore` (see `my-apps/CLAUDE.md`). Note: the
+  `swarmui-output` Longhorn volume faulted 2026-06-27 and would need salvage
+  first.
 
 ## One-time bootstrap (required, ~10–15 min)
 

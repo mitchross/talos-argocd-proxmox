@@ -1,9 +1,11 @@
-# kopiur trial — replacing pvc-plumber (branch `claude/kopiur-trial`)
+# kopiur trial — replacing pvc-plumber (MERGED, now production)
 
-> **Status: open as PR #1489** (branch `claude/kopiur-trial`). Stands kopiur up
-> *alongside* pvc-plumber and converts **one canary app (karakeep)** off
-> pvc-plumber labels onto explicit kopiur CRs. Nothing deploys until the PR is
-> merged to `main` (Argo GitOps — no manual apply). Fully reversible: revert the PR.
+> **Status: MERGED / COMPLETE.** PR #1489 (branch `claude/kopiur-trial`) merged
+> 2026-06-26, and kopiur **fully replaced pvc-plumber + VolSync on 2026-06-27** —
+> kopiur is now the production backup system. This page is retained as the
+> trial/decision record: it originally stood kopiur up *alongside* pvc-plumber and
+> converted **one canary app (karakeep)** off pvc-plumber labels onto explicit
+> kopiur CRs.
 >
 > **Why this trial exists (the decision + analysis):** see
 > [`domains/storage/kopiur-evaluation.md`](domains/storage/kopiur-evaluation.md) —
