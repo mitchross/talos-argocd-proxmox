@@ -39,13 +39,16 @@ spec:
             - --endpoint=192.168.10.133:30292
             - --region=us-east-1
             - --disable-tls
+            # kopia 0.23 REQUIRES --access-key/--secret-access-key (no env fallback);
+            # $(VAR) expands from the envFrom secret at runtime → no creds in git.
+            - --access-key=$(AWS_ACCESS_KEY_ID)
+            - --secret-access-key=$(AWS_SECRET_ACCESS_KEY)
             - --override-hostname=kopia-ui
             - --override-username=kopia-ui
             - --no-check-for-updates
             - --config-file=/config/repository.config
-          # KOPIA_PASSWORD + AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY — kopia's
-          # S3 backend reads the AWS keys from env when --access-key is omitted,
-          # so creds stay out of the process args/config-in-git.
+          # KOPIA_PASSWORD (repo password, read from env) + AWS_ACCESS_KEY_ID +
+          # AWS_SECRET_ACCESS_KEY (passed as flags above) — all from kopia-ui-secret.
           envFrom:
             - secretRef:
                 name: kopia-ui-secret
