@@ -47,7 +47,7 @@ Backups are **kopiur** (Kopia-native operator; replaced pvc-plumber + VolSync 20
 
 ### 🗃️ Domains
 
-- **Databases**: [CNPG disaster recovery](domains/cnpg/disaster-recovery.md) · [CNPG explained](domains/cnpg/explained.md)
+- **Databases**: [Backup/restore/start — beginner guide](domains/cnpg/backup-restore-start-guide.md) · [CNPG explained](domains/cnpg/explained.md) · [CNPG disaster recovery](domains/cnpg/disaster-recovery.md)
 - **GitOps / ArgoCD**: [argocd](domains/argocd/argocd.md) · [entrypoints & waves](domains/argocd/entrypoints.md)
 - **Networking**: [topology](domains/networking/topology.md) · [policy](domains/networking/policy.md) · [Technitium `vanillax.me` migration](domains/networking/technitium-vanillax-me-migration.md)
 - **Storage**: [kopia maintenance](domains/storage/kopia-maintenance-plan.md) · [RWO/RWX model & sizing](domains/storage/storage-model-rwo-rwx-and-sizing.md) · [RustFS credentials](domains/rustfs/credential-runbook.md) · [future: tiered storage](domains/storage/architecture-future.md)

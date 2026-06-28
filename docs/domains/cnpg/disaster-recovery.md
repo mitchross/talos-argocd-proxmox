@@ -1,5 +1,9 @@
 # CloudNativePG Disaster Recovery
 
+> **New to CNPG?** Start with the plain-English, diagram-first
+> [Backup/Restore/Start beginner guide](./backup-restore-start-guide.md) — then
+> come back here for the full copy-paste runbook.
+
 This doc is the canonical reference for backing up, restoring, and managing
 CloudNativePG (CNPG) Postgres clusters in this repository.
 
