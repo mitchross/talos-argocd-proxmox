@@ -90,6 +90,15 @@ spec:
         - .spec.template.spec.initContainers[].imagePullPolicy
         - .spec.volumeClaimTemplates[].apiVersion
         - .spec.volumeClaimTemplates[].kind
+      # kopiur controller defaults these spec fields after apply → cosmetic
+      # OutOfSync on every backed-up app. Ignore only the defaulted fields.
+      - group: kopiur.home-operations.com
+        kind: SnapshotPolicy
+        jsonPointers:
+        - /spec/defaultDeletionPolicy
+        - /spec/groupBy
+        jqPathExpressions:
+        - .spec.sources[].sourcePathStrategy
 
       info:
       - name: 'Description'
