@@ -14,9 +14,10 @@ if you see it in git history.
 ## The DR claim (verified 2026-06-28 — first kopiur-only full nuke)
 
 A full cluster nuke-and-rebuild restores **all PVC data (kopiur)** and **all
-databases (CNPG / Barman)** with **zero manual intervention**. The lone historical
-exception — the gitea-actions runner token — is now automated too. End state of this
-rebuild: **93/93 ArgoCD Applications Synced + Healthy**.
+databases (CNPG / Barman)** automatically. The **one remaining manual step** is the
+gitea-actions runner token (re-register + recreate its Secret — the 1Password
+automation is staged but not yet enabled; see below). End state of this rebuild:
+**93/93 ArgoCD Applications Synced + Healthy**.
 
 ## Bootstrap / DR operational truths
 
@@ -41,18 +42,28 @@ rebuild: **93/93 ArgoCD Applications Synced + Healthy**.
   will **not** pick up a newly-created Secret on its own — that one needs a pod
   rotation.
 
-### gitea-actions runner token (the one former manual gap, now automated)
-- The runner's data PVC is **backup-exempt** (DinD cache), so its registration is
-  not restored and it must re-register on every nuke with a valid token.
-- Now automated: an **ExternalSecret pulls the token from the single 1Password
-  `gitea` item (field `act_runner_token`)**. The token is nuke-durable because it
-  lives in 1Password, not on the exempt PVC.
+### gitea-actions runner token (the one remaining manual step on rebuild)
+- The act-runner needs a Gitea registration token in `Secret/gitea-actions/act-runner-token`.
+  The runner's data PVC is **backup-exempt** (DinD cache), so the registration is
+  never restored — on each rebuild you regenerate the token and recreate the Secret:
+  ```bash
+  kubectl exec -n gitea deploy/gitea -- gitea actions generate-runner-token
+  # then create Secret/gitea-actions/act-runner-token from the value
+  ```
+- Automation is **staged but not yet live**:
+  `my-apps/development/gitea-actions/externalsecret.yaml` (sources field
+  `act_runner_token` from the 1Password `gitea-actions` item) is committed but
+  **commented out of the kustomization** until that 1Password field is populated.
+  Once enabled, the token becomes nuke-durable (lives in 1Password, not on the
+  exempt PVC).
 
 ### kopiur SnapshotPolicy → cosmetic OutOfSync
-- The kopiur controller server-defaults a few spec fields after apply (e.g.
-  `defaultDeletionPolicy`, `groupBy`, and a `sources[]` field) → a **cosmetic
-  OutOfSync on every backed-up app**. Absorbed by an `ignoreDifferences` on the
-  my-apps AppSet for exactly those fields. Not real drift.
+- The kopiur controller server-defaults a few `SnapshotPolicy` spec fields after
+  apply (e.g. `defaultDeletionPolicy`, `groupBy`), so a backed-up app can show a
+  **cosmetic OutOfSync** — confirm the diff is only server-defaulted fields before
+  treating it as drift. (The my-apps AppSet `ignoreDifferences` masks PVC restore
+  fields and StatefulSet `imagePullPolicy`, not these — so it may simply be
+  tolerated.)
 
 ### Omni / Proxmox infra-provider gotchas
 - A cluster stuck `Destroying` **and** `ScalingUp` simultaneously = the infra
@@ -79,4 +90,4 @@ rebuild: **93/93 ArgoCD Applications Synced + Healthy**.
 - Long-form root-cause notes live in the operator's Mink vault:
   `omni-stuck-cluster-destroy-infra-provider-proxmox-auth-failure`,
   `proxmox-api-secret-format`, `zigbee-usb-dongle-passthrough`,
-  `gitea-act-runner-token-now-auto-provisioned-from-1password`.
+  `gitea-act-runner-token`.
