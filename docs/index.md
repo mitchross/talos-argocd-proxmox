@@ -20,12 +20,12 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
 - **OS**: Talos Linux on Proxmox VMs, provisioned via Omni / Sidero
 - **CNI**: Cilium with Gateway API + LoadBalancer
 - **GitOps**: ArgoCD (self-managing) + ApplicationSets for auto-discovery
-- **Storage**: Longhorn (V1 engine, 2× replicas)
+- **Storage**: Longhorn (V1 engine, 1 replica — single-node)
 - **Backup**: [kopiur](https://github.com/home-operations/kopiur) (Kopia-native) → RustFS S3, per-PVC `SnapshotPolicy`/`Restore` with restore-before-bind
 - **Database**: CloudNativePG (Postgres) with Barman backups to S3
 - **Secrets**: 1Password Connect + External Secrets Operator
 - **Observability**: kube-prometheus-stack, Loki, Tempo, OpenTelemetry
-- **AI**: llama-cpp (Qwen3.6-35B multimodal) + ComfyUI on dedicated GPUs
+- **AI**: vLLM (Qwen3.6-27B, default app inference) + llama-cpp (Qwen3.6-35B multimodal, for ComfyUI) on mutually-exclusive whole-card GPUs
 
 ## Documentation
 

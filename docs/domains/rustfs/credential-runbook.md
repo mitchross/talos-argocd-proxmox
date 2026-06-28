@@ -110,12 +110,9 @@ These GitOps-managed ExternalSecrets read `rustfs-workload-access-key` and `rust
 | `monitoring/tempo-s3-credentials` | `tempo-s3-credentials` |
 | `posthog/posthog-secrets` | `posthog-secrets` |
 | `rustfs-lifecycle/rustfs-admin-credentials` | `rustfs-admin-credentials` |
-| Each chart-rendered `<ns>/volsync-<pvc>` per backed-up PVC | `volsync-<pvc>` |
+| `kopiur/kopiur-rustfs` (ClusterExternalSecret → every namespace labeled `kopiur.home-operations.com/repo: cluster-kopia`) | `kopiur-rustfs` |
 
-The `volsync-system/pvc-plumber-kopia` ExternalSecret was removed
-2026-05-21 along with the pvc-plumber operator decommission. Per-PVC
-ExternalSecrets are now rendered by the `volsync-backup` Helm chart
-at `infrastructure/storage/volsync-backup/` rather than the operator.
+Per-PVC backup credentials are now delivered by the single `kopiur-rustfs` ClusterExternalSecret (`infrastructure/controllers/kopiur/externalsecret.yaml`), which fans the repo credentials into every namespace labeled `kopiur.home-operations.com/repo: cluster-kopia`. The retired `volsync-backup` per-PVC ExternalSecrets are gone.
 
 Force ESO refresh after changing 1Password:
 
@@ -128,13 +125,9 @@ kubectl annotate externalsecret -n monitoring tempo-s3-credentials force-sync="$
 kubectl annotate externalsecret -n posthog posthog-secrets force-sync="$TS" --overwrite
 kubectl annotate externalsecret -n rustfs-lifecycle rustfs-admin-credentials force-sync="$TS" --overwrite
 
-# Also force every chart-rendered per-PVC ES:
-kubectl get externalsecret -A -l app.kubernetes.io/managed-by=volsync-backup-chart \
-  -o jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}{end}' | \
-  while read ns name; do
-    [ -z "$ns" ] && continue
-    kubectl annotate externalsecret -n "$ns" "$name" force-sync="$TS" --overwrite
-  done
+# Also refresh the kopiur repo-credential fanout (one ClusterExternalSecret
+# feeds the per-namespace kopiur-rustfs Secret into every backed-up namespace):
+kubectl annotate clusterexternalsecret kopiur-rustfs force-sync="$TS" --overwrite
 ```
 
 Restart consumers that load S3 credentials from environment variables:
@@ -153,8 +146,6 @@ kubectl rollout restart deploy/db deploy/feature-flags deploy/plugins deploy/web
                        -n posthog
 ```
 
-VolSync mover Jobs read the per-PVC Secret at Job creation time, so the
-NEXT scheduled (or manually triggered) backup run picks up the new
-credentials automatically — no restart of VolSync itself needed.
+kopiur mover Jobs read the namespace `kopiur-rustfs` Secret at Job creation time, so the next scheduled (or manually triggered) Snapshot picks up rotated credentials automatically — no operator restart needed.
 RustFS lifecycle Job is spawned by its CronJob — next scheduled run
 uses the refreshed Secret.

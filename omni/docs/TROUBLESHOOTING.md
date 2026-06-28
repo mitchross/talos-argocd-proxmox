@@ -35,8 +35,9 @@ curl -k https://omni.yourdomain.com
    ```bash
    sudo ufw allow 443/tcp
    sudo ufw allow 8090/tcp
-   sudo ufw allow 8099/tcp
-   sudo ufw allow 51821/udp
+   sudo ufw allow 8100/tcp
+   sudo ufw allow 8091/tcp
+   sudo ufw allow 50180/udp
    ```
 4. **DNS not resolving**: Update DNS A record
 5. **Certificate issues**: Verify cert paths in `omni.env`
@@ -145,18 +146,18 @@ talosctl -n <node-ip> get links
 1. Verify WireGuard IP in `omni.env`:
    ```bash
    # Should be actual IP, not domain
-   SIDEROLINK_WIREGUARD_ADVERTISED_ADDR=10.0.0.100:51821
+   SIDEROLINK_WIREGUARD_ADVERTISED_ADDR=10.0.0.100:50180
    ```
 
-2. Check UDP port 51821 is open:
+2. Check UDP port 50180 is open:
    ```bash
-   sudo ufw allow 51821/udp
+   sudo ufw allow 50180/udp
    ```
 
 3. Verify Talos can reach Omni:
    ```bash
    # From Proxmox host, test connectivity
-   nc -vz omni-host-ip 51821
+   nc -vz omni-host-ip 50180
    ```
 
 **Network issues**:
@@ -346,7 +347,7 @@ talosctl -n <control-plane-ip> get members
 
 **Extension download failing** (GPU extensions):
 - Nodes can't download extensions → check internet connectivity
-- Try custom ISO with extensions pre-baked (see [talos-configs/README.md](../talos-configs/README.md))
+- Try custom ISO with extensions pre-baked (see the GPU patches in `../cluster-template/patches/`)
 
 **Disk issues**:
 - Verify disk is large enough (minimum 50GB)
@@ -396,9 +397,11 @@ talosctl -n <control-plane-ip> get members
 
 **Symptom**: Cluster stuck on "Installing" with GPU extensions
 
-**Context**: This is a known issue. See discussion in [talos-configs/README.md](../talos-configs/README.md).
+**Context**: This is a known issue. See the GPU machine classes in `../machine-classes/` and patches in `../cluster-template/patches/`.
 
 **Solutions**:
+
+See the GPU machine classes in `../machine-classes/` and the patches in `../cluster-template/patches/` for the supported approach.
 
 **Solution 1**: Use custom ISO with extensions pre-baked
 ```bash
@@ -436,7 +439,7 @@ talosctl -n <node-ip> read /proc/modules | grep nvidia
 **Modules not loaded**:
 1. Extensions being present doesn't auto-load modules
 2. You must apply the machine config patch
-3. See [talos-configs/gpu-worker-patch.yaml](../talos-configs/gpu-worker-patch.yaml)
+3. See [cluster-template/patches/gpu-worker.yaml](../cluster-template/patches/gpu-worker.yaml)
 
 **Patch not applied**:
 1. Verify patch exists in Omni

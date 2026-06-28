@@ -305,7 +305,7 @@ Common issues:
 ## Next Steps
 
 Once Omni is deployed and accessible:
-1. [Setup Proxmox Provider](../proxmox-provider/README.md)
+1. [Setup Proxmox Provider](../proxmox-provider/)
 2. Generate infrastructure provider key in Omni UI
 3. Create machine classes
 4. Provision your first cluster

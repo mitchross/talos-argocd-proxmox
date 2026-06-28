@@ -132,8 +132,8 @@ Outbound HTTPS  - To Proxmox API (port 8006)
 
 **Talos Nodes**:
 ```
-Outbound 8099   - To Omni machine API
-Outbound 51821  - To Omni WireGuard
+Outbound 8090   - To Omni machine API
+Outbound 50180  - To Omni WireGuard
 6443 (TCP)      - Kubernetes API (exposed via Omni)
 ```
 
@@ -151,12 +151,12 @@ Outbound 51821  - To Omni WireGuard
 │                                         │
 │  ┌──────────┐    ┌──────────────────┐  │
 │  │ Web UI   │    │ Kubernetes Proxy │  │
-│  │ (443)    │    │ (8090)           │  │
+│  │ (443)    │    │ (8100)           │  │
 │  └──────────┘    └──────────────────┘  │
 │                                         │
 │  ┌──────────────────┐  ┌─────────────┐ │
 │  │ Machine API      │  │ SideroLink  │ │
-│  │ (8099)           │  │ (51821/udp) │ │
+│  │ (8090)           │  │ (50180/udp) │ │
 │  └──────────────────┘  └─────────────┘ │
 └──────┬───────────────────────┬──────────┘
        │                       │
@@ -254,7 +254,7 @@ Omni: Cluster ready
 └── EPHEMERAL partition (container storage, ephemeral data)
 
 Optional additional disks:
-/dev/sdb (if multi-disk support added)
+/dev/sdb (supported via the machine class `additional_disks`)
 └── Persistent storage (e.g., Longhorn volumes)
 ```
 

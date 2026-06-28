@@ -99,11 +99,10 @@ Any OpenID Connect compatible provider
 
 **Omni Server**:
 - `443` - HTTPS API and Web UI
-- `8090` - Kubernetes proxy
-- `8099` - gRPC API (machine API)
-- `50042` - Event sink
-- `50180` - SideroLink API
-- `51821/udp` - WireGuard (SideroLink)
+- `8090` - gRPC / Machine API (SideroLink)
+- `8100` - Kubernetes proxy
+- `8091` - Event sink
+- `50180/udp` - WireGuard (SideroLink)
 
 **Proxmox Provider**:
 - Outbound HTTPS to Omni API
@@ -152,7 +151,7 @@ If you plan to use NVIDIA GPUs:
 - **Proxmox** host with GPU passthrough configured
 - **NVIDIA GPU** (consumer or datacenter)
 - **IOMMU** enabled in BIOS
-- See [talos-configs/README.md](../talos-configs/README.md) for Talos-specific requirements
+- See the GPU machine classes in [machine-classes/](../machine-classes/) and the GPU patches in [cluster-template/patches/](../cluster-template/patches/) for Talos-specific requirements
 
 ## Pre-Flight Checklist
 
@@ -163,7 +162,7 @@ Before proceeding, verify:
 - [ ] Domain name configured
 - [ ] DNS provider API token ready
 - [ ] Authentication provider chosen and configured
-- [ ] Ports 443, 8090, 8099, 50042, 50180, 51821 available
+- [ ] Ports 443, 8090, 8091, 8100, 50180/udp available
 - [ ] UUID generated for Omni account
 - [ ] Storage directories created with correct permissions
 
@@ -171,4 +170,4 @@ Before proceeding, verify:
 
 Once all prerequisites are met, proceed to:
 1. [Deploy Omni](../omni/README.md)
-2. [Setup Proxmox Provider](../proxmox-provider/README.md)
+2. [Setup Proxmox Provider](../proxmox-provider/)
