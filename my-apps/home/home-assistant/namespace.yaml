@@ -3,10 +3,16 @@ kind: Namespace
 metadata:
   name: home-assistant
   labels:
-    # Since we removed hostNetwork, we can use baseline security
-    pod-security.kubernetes.io/enforce: baseline
-    pod-security.kubernetes.io/audit: restricted
-    pod-security.kubernetes.io/warn: restricted
+    # privileged: the home-assistant container runs privileged to open the
+    # SONOFF Zigbee dongle (hostPath char device /dev/ttyUSB0). A baseline
+    # namespace forbids privileged containers, so the ZHA pod would be rejected.
+    # The cleaner-but-heavier alternative (keep baseline) is a generic-device
+    # plugin DaemonSet that surfaces the tty as a schedulable resource; revisit
+    # if more nodes/devices appear. audit/warn stay at baseline to keep surfacing
+    # any *other* regressions.
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/warn: baseline
     # kopiur-managed: ClusterExternalSecret cred fanout + ClusterRepository
     # tenancy (allowedNamespaces selector). Replaces pvc-plumber labels.
     kopiur.home-operations.com/repo: cluster-kopia

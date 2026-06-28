@@ -29,6 +29,11 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       # Add restart policy for better reliability
       restartPolicy: Always
+      # Pin to the GPU worker (VM 100) — that is where the SONOFF Zigbee dongle
+      # is USB-passed and where cp210x exposes /dev/ttyUSB0. The hostPath device
+      # mount below only resolves on this node.
+      nodeSelector:
+        gpu-worker: "true"
       # Pod affinity to ensure all home-assistant pods stay on same node (RWO volume requirement)
       # This prevents Multi-Attach errors if replicas are increased
       affinity:
@@ -60,6 +65,9 @@ spec:
               cp /config-source/lovelace-homelab-power.yaml /config/lovelace-homelab-power.yaml
               # Ensure themes directory exists
               mkdir -p /config/themes
+              # AirCube ZHA quirk -> custom_zha_quirks/ (loaded via zha.custom_quirks_path)
+              mkdir -p /config/custom_zha_quirks
+              cp /config-source/aircube.py /config/custom_zha_quirks/aircube.py
               echo "Config files copied to PVC"
           volumeMounts:
             - name: config
@@ -96,6 +104,11 @@ spec:
           securityContext:
             runAsNonRoot: false
             runAsUser: 0
+            # privileged so the container can open the hostPath char device
+            # /dev/ttyUSB0 (the SONOFF Zigbee coordinator). Without this the
+            # device-cgroup controller denies access even though we run as root.
+            # Requires the namespace PSS enforce=privileged (see namespace.yaml).
+            privileged: true
           env:
             - name: TZ
               value: "America/New_York"
@@ -123,6 +136,9 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
+            # SONOFF Zigbee coordinator passed through to ZHA.
+            - name: zigbee-dongle
+              mountPath: /dev/ttyUSB0
           resources:
             requests:
               cpu: 100m
@@ -188,3 +204,11 @@ spec:
         - name: config-files
           configMap:
             name: config
+        # SONOFF Zigbee dongle char device on the gpu-worker node. cp210x must
+        # be loaded (Talos single-node-gpu.yaml) for this to exist. If the path
+        # ever shifts (e.g. a second serial device), switch to the stable
+        # /dev/serial/by-id/usb-… symlink target.
+        - name: zigbee-dongle
+          hostPath:
+            path: /dev/ttyUSB0
+            type: CharDevice
