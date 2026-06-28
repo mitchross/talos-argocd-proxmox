@@ -87,6 +87,7 @@ nav:
       - Decision record — kopiur evaluation: domains/storage/kopiur-evaluation.md
       - Decision record — kopiur trial: kopiur-trial.md
   - Databases (CloudNativePG):
+      - Backup/restore/start — beginner guide: domains/cnpg/backup-restore-start-guide.md
       - CNPG explained: domains/cnpg/explained.md
       - CNPG disaster recovery: domains/cnpg/disaster-recovery.md
   - GitOps:
