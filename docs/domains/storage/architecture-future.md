@@ -1,4 +1,11 @@
-# Future storage architecture: tiered CSI + VolSync restore-based DR
+# Future storage architecture: tiered CSI + restore-based DR
+
+> **Terminology note (2026-06-27):** this idea was written when the backup
+> layer was VolSync. VolSync + pvc-plumber are now **retired** — the backup/
+> restore layer is **[kopiur](kopiur-backup-architecture.md)** (Kopia-native,
+> restore-before-bind via PVC `dataSourceRef` → `Restore`). The *tiering*
+> concept below still stands; read "kopiur" wherever the body says
+> "VolSync / ReplicationDestination."
 
 > **Status: FUTURE IDEA — not implemented, do not act on this now.** No
 > storage classes, app PVCs, or CSI drivers should change based on this

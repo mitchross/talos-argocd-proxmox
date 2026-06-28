@@ -87,7 +87,7 @@ The **heterogeneity is the point** — do NOT try to make the two clusters ident
 | Ingress | Cilium Gateway API | OpenShift Gateway API | **HTTPRoute in base**, `parentRefs`+hostname in overlay |
 | Storage | Longhorn | LVM (`lvms-vg1`) | `storageClassName` overlay patch |
 | Secrets | 1Password+ESO | 1Password+ESO | **Ports cleanly** (same vault/store) |
-| Backups | (current PVC-Plumber-based design — VERIFY) | replicate to same TrueNAS NFS | **VERIFY current design first** (see §5) |
+| Backups | kopiur (Kopia → RustFS S3; pvc-plumber/VolSync retired 2026-06-27) | replicate to same TrueNAS NFS | per-PVC `kopiur-backup` component + `dataSourceRef` → `Restore` |
 | CNI | Cilium | OVN | platform-owned, NOT GitOps'd from the other cluster |
 | Security | permissive | SCCs enforced | `securityContext` overlay patch (don't hardcode UID; let SCC assign) |
 | ArgoCD install | Helm (manual) | GitOps Operator (OLM) | **intentionally different**, quarantined in `bootstrap/` |
