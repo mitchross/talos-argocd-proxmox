@@ -1,0 +1,82 @@
+# llms.txt — talos-argocd-proxmox
+
+> Curated, LLM-facing context for this repo. For the full developer guide see
+> [CLAUDE.md](CLAUDE.md); for the documentation map see [docs/index.md](docs/index.md).
+> This file captures **operational truths that cannot be inferred from the
+> manifests** — the behavior you only learn by nuking and rebuilding the cluster.
+
+GitOps Kubernetes cluster: **Talos OS + self-managing ArgoCD + Cilium on Proxmox**,
+provisioned via **Omni**. Apps are discovered by directory (directory = Application).
+PVC backups are **kopiur** (Kopia-native operator); databases are **CNPG / Barman → S3**.
+The retired pvc-plumber + VolSync + Kyverno stack is gone (2026-06-27) — ignore it
+if you see it in git history.
+
+## The DR claim (verified 2026-06-28 — first kopiur-only full nuke)
+
+A full cluster nuke-and-rebuild restores **all PVC data (kopiur)** and **all
+databases (CNPG / Barman)** with **zero manual intervention**. The lone historical
+exception — the gitea-actions runner token — is now automated too. End state of this
+rebuild: **93/93 ArgoCD Applications Synced + Healthy**.
+
+## Bootstrap / DR operational truths
+
+### Two independent restore systems — never conflate them
+- **PVC data → kopiur, restore-before-bind.** On bootstrap ~22 `Restore` CRs fire
+  `FromPolicy` with zero manual steps. PVCs sit **`Pending` until the populate job
+  hydrates them from RustFS, then bind with data** — this is correct, not stuck. The
+  flow is gated only on Longhorn coming up; populate pods sitting `Pending` while
+  storage initializes is normal.
+- **Postgres → CNPG native Barman/S3 (NOT kopiur).** Clusters auto-recover from the
+  backup lineage on bootstrap (`bootstrap.recovery` → external cluster). Small DBs
+  are healthy in minutes; large ones (e.g. gitea) sit on "Setting up primary /
+  Creating primary instance (from backup)" longer while WAL replays — that is
+  recovery in progress, not failure.
+
+### Self-healing vs. real intervention
+- App pods that depend on a DB or secret go `Init:CrashLoopBackOff` /
+  `CreateContainerConfigError` during restore. **`CrashLoopBackOff` self-heals**
+  (backoff caps ~5 min) once the dependency is up — do **not** delete pods to "fix"
+  it; just wait.
+- **Exception:** a pod stuck in `CreateContainerConfigError` for a *missing* Secret
+  will **not** pick up a newly-created Secret on its own — that one needs a pod
+  rotation.
+
+### gitea-actions runner token (the one former manual gap, now automated)
+- The runner's data PVC is **backup-exempt** (DinD cache), so its registration is
+  not restored and it must re-register on every nuke with a valid token.
+- Now automated: an **ExternalSecret pulls the token from the single 1Password
+  `gitea` item (field `act_runner_token`)**. The token is nuke-durable because it
+  lives in 1Password, not on the exempt PVC.
+
+### kopiur SnapshotPolicy → cosmetic OutOfSync
+- The kopiur controller server-defaults a few spec fields after apply (e.g.
+  `defaultDeletionPolicy`, `groupBy`, and a `sources[]` field) → a **cosmetic
+  OutOfSync on every backed-up app**. Absorbed by an `ignoreDifferences` on the
+  my-apps AppSet for exactly those fields. Not real drift.
+
+### Omni / Proxmox infra-provider gotchas
+- A cluster stuck `Destroying` **and** `ScalingUp` simultaneously = the infra
+  provider can't clear its `<provider>.ProvisionController` finalizer on the
+  MachineRequests. **Diagnose from the provider's omnictl, not the cluster's.**
+  `--destroy-disconnected-machines` does **not** help — it's a finalizer block, not
+  a connectivity problem.
+- The Proxmox API token must be the exact string `USER@REALM!TOKENID=SECRET` with no
+  stray whitespace or trailing newline. Any deviation → "not authorized to access
+  endpoint" on every provision.
+- The Omni Proxmox infra provider can only declare **`pci_devices`** (via resource
+  mappings in the machine class). **USB dongles** (e.g. the Zigbee CP2102N,
+  `10c4:ea60`) cannot be declared there — per rebuild you must `qm set <vmid> -usb0
+  mapping=…` by hand, use PCI-controller passthrough, or run ser2net-over-IP.
+
+## Deeper references
+
+- [CLAUDE.md](CLAUDE.md) — full development guide & patterns
+- [README.md](README.md) — provision + bootstrap runbook
+- [docs/index.md](docs/index.md) — documentation map
+- [docs/disaster-recovery.md](docs/disaster-recovery.md) — full nuke/rebuild runbook
+- [docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md) — backup/restore architecture
+- [docs/domains/cnpg/disaster-recovery.md](docs/domains/cnpg/disaster-recovery.md) — CNPG / Barman database DR
+- Long-form root-cause notes live in the operator's Mink vault:
+  `omni-stuck-cluster-destroy-infra-provider-proxmox-auth-failure`,
+  `proxmox-api-secret-format`, `zigbee-usb-dongle-passthrough`,
+  `gitea-act-runner-token-now-auto-provisioned-from-1password`.
