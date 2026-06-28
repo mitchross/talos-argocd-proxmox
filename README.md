@@ -88,7 +88,7 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 | Kubernetes | `v1.36.2` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
 | Cilium | `1.19.5` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.4.1` | bootstrap commands below |
-| ArgoCD Helm chart | `9.7.0` | `scripts/bootstrap-argocd.sh` |
+| ArgoCD Helm chart | `10.0.0` | `scripts/bootstrap-argocd.sh` |
 | Proxmox provider | `latest@sha256:96433a…` | `omni/proxmox-provider/docker-compose.yml` |
 
 Keep the Omni server and local `omnictl` on the **same** release — mismatched versions fail with obscure gRPC errors.
@@ -301,7 +301,7 @@ kubectl apply -f infrastructure/controllers/argocd/ns.yaml
 
 helm upgrade --install argocd argo-cd \
   --repo https://argoproj.github.io/argo-helm \
-  --version 9.7.0 \
+  --version 10.0.0 \
   --namespace argocd \
   --values infrastructure/controllers/argocd/values.yaml \
   --wait --timeout 10m
