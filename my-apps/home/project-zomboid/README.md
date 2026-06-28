@@ -46,19 +46,20 @@ different backup needs:
 
 | PVC                     | Size | Mount                          | Contains                                   | Backup? |
 |-------------------------|------|--------------------------------|--------------------------------------------|---------|
-| `zomboid-data`          | 20Gi | `/project-zomboid-config`       | `Server/*.ini`, `Server/*.lua`, world saves, player DB, logs | ✅ explicit inline VolSync RS/RD + static `dataSourceRef` (see `pvc.yaml`) |
+| `zomboid-data`          | 20Gi | `/project-zomboid-config`       | `Server/*.ini`, `Server/*.lua`, world saves, player DB, logs | ✅ kopiur per-PVC stub (`kopiur/zomboid-data.yaml`) + `../../common/kopiur-backup` component; PVC `dataSourceRef` → `Restore/zomboid-data-restore` |
 | `zomboid-server-files`  | 60Gi | `/project-zomboid`              | SteamCMD game install (~7GB + staging), workshop mods       | ❌ re-downloaded from Steam on demand |
 
 The 60Gi install PVC is deliberately **not** backed up — it's pure Steam
 output. If it vanishes, `UPDATE_ON_START=true` re-downloads it on next
-boot. Backing it up would waste 60Gi of VolSync storage for data that's
+boot. Backing it up would waste 60Gi of kopia repo storage for data that's
 trivially reproducible.
 
 The 20Gi data PVC is the **only** thing that matters for DR: world saves,
-player inventories, admin config. `pvc.yaml` inlines the
-`ReplicationSource` + `ReplicationDestination` and points the PVC's
-`dataSourceRef` at the RD, so a rebuild restores from the shared Kopia
-repo (`s3://volsync-kopia/cluster`) before the pod starts.
+player inventories, admin config. `kopiur/zomboid-data.yaml` declares the
+`SnapshotPolicy` + `SnapshotSchedule` + `Restore`, and `pvc.yaml` points
+the PVC's `dataSourceRef` at `Restore/zomboid-data-restore`, so a rebuild
+restores from the shared kopia repo (`cluster-kopia`, `s3://kopiur`) before
+the pod starts.
 
 > ⚠️ **Never wipe `zomboid-data` without explicit confirmation** — that's
 > irreversible loss of world saves. If you need a clean start, rename /
@@ -170,7 +171,8 @@ usual culprit.
 | File                     | Purpose                                                    |
 |--------------------------|------------------------------------------------------------|
 | `namespace.yaml`         | `project-zomboid` namespace                                |
-| `pvc.yaml`               | Two PVCs (see above) — `zomboid-data` inlines RS/RD + static `dataSourceRef`; `zomboid-server-files` is `backup-exempt: "true"` |
+| `pvc.yaml`               | Two PVCs (see above) — `zomboid-data` has `dataSourceRef` → `Restore/zomboid-data-restore`; `zomboid-server-files` is `backup-exempt: "true"` |
+| `kopiur/zomboid-data.yaml` | kopiur backup stub for `zomboid-data` — `SnapshotPolicy` + `SnapshotSchedule` (cron `29 3 * * *`) + `Restore`, mover runs as uid:gid `1000:1000` |
 | `deployment.yaml`        | Single pod, two init containers, graceful-shutdown `preStop` |
 | `service.yaml`           | LoadBalancer, UDP + TCP ports                              |
 | `pdb.yaml`               | PodDisruptionBudget — don't evict this unceremoniously     |
@@ -198,16 +200,20 @@ usual culprit.
 
 ## Backups & recovery
 
-Daily VolSync backup of `zomboid-data` is declared explicitly in
-`pvc.yaml`: that single file inlines the `PersistentVolumeClaim`, the
-`ReplicationSource` (schedule `59 2 * * *`), and the `ReplicationDestination`.
-The PVC carries a static `dataSourceRef` pointing at the RD, so:
+Daily kopiur backup of `zomboid-data` is declared in
+`kopiur/zomboid-data.yaml` (a `SnapshotPolicy` + `SnapshotSchedule`,
+cron `29 3 * * *`, + `Restore/zomboid-data-restore`) plus the shared
+`../../common/kopiur-backup` component, which injects the repository
+(`cluster-kopia` → `s3://kopiur`), `copyMethod: Snapshot`, the volume
+populator, and `onMissingSnapshot: Continue`. The mover runs as the data
+owner uid:gid `1000:1000`. The PVC carries `dataSourceRef` →
+`Restore/zomboid-data-restore`, so:
 
 1. On rebuild Argo CD applies the manifest.
-2. The new PVC is created with `dataSourceRef` → `ReplicationDestination/zomboid-data-dst`.
-3. VolSync's volume populator runs the RD's mover (gated by the cluster-wide
-   `MutatingAdmissionPolicy/volsync-mover-backend-availability`, which
-   blocks until RustFS at `192.168.10.133:30292` is reachable).
+2. The new PVC is created `Pending` with `dataSourceRef` → `Restore/zomboid-data-restore`.
+3. The kopiur volume populator hydrates the PVC from the latest kopia
+   snapshot. If the RustFS repo is unreachable the restore errors and the
+   PVC stays `Pending` — it never binds empty.
 4. The PVC binds with restored data; the pod starts; world saves and
    config come back intact. `server-files` PVC is empty,
    `UPDATE_ON_START=true` re-downloads Zomboid from Steam (~10 min).

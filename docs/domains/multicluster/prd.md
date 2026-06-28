@@ -1,5 +1,7 @@
 # PRD: Heterogeneous Multi-Cluster GitOps Fleet (Talos + OpenShift SNO)
 
+> Captured 2026-06-01 — planning brief, not current cluster truth.
+
 > **For the agent (Claude Code) executing this:** This document is a *brief*, not a literal spec. Many details were reasoned out in a planning conversation **without access to the live repo**, so some assumptions may be stale or wrong. Your **first job in every phase is to read the actual repository state and reconcile it against this PRD.** When the repo contradicts an assumption here, or when you hit a real decision point (naming, placement, a destructive change, an ambiguous convention), **STOP and ask the human a focused question** rather than guessing. Re-prompting is expected and encouraged. Work phase by phase; do not run ahead.
 
 ---

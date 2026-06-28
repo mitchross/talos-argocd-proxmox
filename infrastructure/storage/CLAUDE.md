@@ -30,7 +30,7 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: longhorn  # Cluster default (V2/SPDK engine), can be omitted
+  storageClassName: longhorn  # Cluster default (V1 data engine), can be omitted
 ```
 
 ## NFS Static PVs (CRITICAL: Use CSI, NOT legacy nfs:)

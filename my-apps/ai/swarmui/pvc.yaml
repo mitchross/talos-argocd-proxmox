@@ -124,9 +124,10 @@ spec:
   storageClassName: nfs-comfyui-10g
   volumeName: swarmui-comfyui-models-nfs-pv
 
-# NOTE: backups for swarmui-data and swarmui-output are now declared via the
-# kopiur Kustomize component. Backup/restore CRs (SnapshotPolicy +
-# SnapshotSchedule + Restore) live in kopiur/swarmui-data.yaml and
-# kopiur/swarmui-output.yaml; uniform fields come from ../../common/kopiur-backup.
-# Do not re-add inline ReplicationSource/ReplicationDestination here.
-# (swarmui-dlbackend + swarmui-comfyui-models remain backup-exempt by design.)
+# NOTE: swarmui is currently unused — ALL of its PVCs are backup-exempt
+# (see the backup-exempt label + reason on each PVC above); no kopiur stubs
+# exist and the kopiur-backup component is NOT wired into this app. To start
+# backing up swarmui-data / swarmui-output, add per-PVC stubs under kopiur/,
+# pull in ../../common/kopiur-backup, and point each PVC dataSourceRef at its
+# Restore (see my-apps/CLAUDE.md). swarmui-dlbackend + swarmui-comfyui-models
+# stay backup-exempt by design (reinstallable / shared NFS).

@@ -65,7 +65,8 @@ infrastructure/database/cloudnative-pg/<db>/
 ├── scheduled-backup.yaml           ← shared, never edited during DR
 ├── base/
 │   ├── kustomization.yaml
-│   └── cluster.yaml                ← NO `spec.bootstrap`; serverName = current write target
+│   ├── cluster.yaml                ← NO `spec.bootstrap`; spec.plugins[] serverName = current write target
+│   └── objectstore.yaml           ← Barman `ObjectStore` CR (S3 destinationPath, creds, retention)
 └── overlays/
     ├── initdb/
     │   ├── kustomization.yaml
@@ -93,9 +94,14 @@ resources:
 ### `base/cluster.yaml` — everything except bootstrap
 
 The base Cluster manifest contains all immutable spec (image, resources,
-storage, monitoring, backup target). `backup.barmanObjectStore.serverName` in
-base is always the **write target for new backups** — bump this when you bump
-the lineage.
+storage, monitoring, backup target). Backups are **plugin-based**: `spec.plugins[]`
+with `name: barman-cloud.cloudnative-pg.io`, `isWALArchiver: true`, and
+`parameters.barmanObjectName` pointing at the sibling `ObjectStore` CR
+(`base/objectstore.yaml`), which owns the S3 `destinationPath`, credentials,
+and retention. `spec.plugins[0].parameters.serverName` in base is always the
+**write target for new backups** — bump this when you bump the lineage.
+(The in-tree `spec.backup.barmanObjectStore` field this replaced was removed in
+CNPG 1.30.0.)
 
 ### `overlays/initdb/bootstrap-patch.yaml`
 
@@ -117,7 +123,7 @@ targetTime beyond the last archived WAL** — Postgres will FATAL with
 New day-zero app, no data to restore:
 
 1. Edit root `kustomization.yaml` → `overlays/initdb` active.
-2. Ensure `base/cluster.yaml` `backup.barmanObjectStore.serverName` = `<db>-database-v1`.
+2. Ensure `base/cluster.yaml` `spec.plugins[0].parameters.serverName` = `<db>-database-v1` (and `parameters.barmanObjectName` references the `<db>-objectstore` CR in `base/objectstore.yaml`).
 3. Ensure `overlays/initdb/bootstrap-patch.yaml` has your database name, owner, secret, postInitApplicationSQL.
 4. `git add / commit / push`.
 5. ArgoCD syncs, CNPG operator creates Cluster with `bootstrap.initdb`, Postgres comes up empty, scheduled backups start writing to `<db>-database-v1/` on S3.
@@ -148,9 +154,13 @@ after a cluster nuke) and you want to restore from backups.
 
 ```yaml
 # base/cluster.yaml — bump write target to the NEW lineage
-backup:
-  barmanObjectStore:
-    serverName: <db>-database-vN     # N = new lineage, e.g. v2 → v3
+spec:
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: <db>-objectstore     # the prod ObjectStore CR (base/objectstore.yaml)
+        serverName: <db>-database-vN           # N = new lineage, e.g. v2 → v3
 
 # overlays/recovery/bootstrap-patch.yaml — point externalClusters at the PRIOR lineage
 spec:
@@ -166,13 +176,22 @@ spec:
       #   targetTime: "2026-04-17T23:59:59Z"
   externalClusters:
     - name: <db>-recovery-source
-      barmanObjectStore:
-        serverName: <db>-database-v(N-1)   # N-1 = the lineage with good data
-        destinationPath: s3://postgres-backups/cnpg/<db>
-        endpointURL: http://192.168.10.133:30292
-        s3Credentials: { ... same as backup ... }
-        wal: { compression: gzip }
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          # Reuse the SAME prod ObjectStore CR as live backups (same bucket,
+          # creds, endpoint — destinationPath/endpointURL/s3Credentials all live
+          # on the ObjectStore, NOT inline here). Only serverName differs: it
+          # selects the PRIOR lineage subtree to restore from.
+          barmanObjectName: <db>-objectstore
+          serverName: <db>-database-v(N-1)   # N-1 = the lineage with good data
 ```
+
+> The `serverName` here selects the prior backup lineage on the same RustFS
+> bucket. **Verify that lineage is still within the S3 recovery window** —
+> older lineages age out of RustFS lifecycle retention and become
+> unrestorable. The in-tree `externalClusters[].barmanObjectStore` field this
+> replaces was removed in CNPG 1.30.0; all DBs now use the `plugin:` shape.
 
 **2. Flip the feature flag.**
 
@@ -315,7 +334,7 @@ done
 for db in gitea immich paperless temporal; do
   echo "--- $db ---"
   kubectl -n cloudnative-pg get cluster "$db-database" \
-    -o jsonpath='  mode={.spec.bootstrap.*}{"\n"}  serverName={.spec.backup.barmanObjectStore.serverName}{"\n"}  ready={.status.readyInstances}/{.spec.instances}{"\n"}  phase={.status.phase}{"\n"}'
+    -o jsonpath='  mode={.spec.bootstrap.*}{"\n"}  serverName={.spec.plugins[0].parameters.serverName}{"\n"}  ready={.status.readyInstances}/{.spec.instances}{"\n"}  phase={.status.phase}{"\n"}'
   echo
 done
 ```
@@ -380,25 +399,22 @@ If the cluster grows to 10+ CNPG DBs, revisit with a real web interface:
   CRDs, showing backup lineage timelines per DB, offering the same wizard
   actions the CLI has. Weekend project × several. Huge maintenance tax.
 
-### Tier 4 — backup-plugin migration (mandatory before CNPG 1.30.0)
+### Tier 4 — backup-plugin migration (DONE)
 
-Separate deprecation work, not a DR feature — tracked here for visibility.
+CNPG removed native `spec.backup.barmanObjectStore` / `externalClusters[].barmanObjectStore`
+in 1.30.0. **This migration is complete** — all four DBs (gitea, immich,
+paperless, temporal) now use the Barman Cloud Plugin
+(`infrastructure/database/cnpg-barman-plugin/`):
 
-CNPG is removing native `spec.backup.barmanObjectStore` in 1.30.0. We
-already have the Barman Cloud Plugin installed at
-`infrastructure/database/cnpg-barman-plugin/` but no DB uses it yet. Before
-upgrading CNPG past 1.29:
+1. Each DB's `base/cluster.yaml` uses `spec.plugins[]` (`name: barman-cloud.cloudnative-pg.io`,
+   `isWALArchiver: true`, `parameters.barmanObjectName` + `serverName`).
+2. Each `overlays/recovery/bootstrap-patch.yaml` uses `externalClusters[].plugin`
+   with the same `barmanObjectName` (pointing at the prod `ObjectStore`) and the
+   PRIOR-lineage `serverName`.
+3. Each DB has its own `base/objectstore.yaml` `ObjectStore` CR owning the S3
+   `destinationPath`, credentials, and `retentionPolicy`.
 
-1. Each DB's `base/cluster.yaml` moves from `spec.backup.barmanObjectStore`
-   to `spec.plugins[]` referencing an `ObjectStore` CR.
-2. Same for `overlays/recovery/bootstrap-patch.yaml` `externalClusters`.
-3. Each DB gets an `ObjectStore` CR (shared ones OK — bucket + creds are
-   the same).
-4. Test migration on one DB first (e.g. paperless), verify backups continue
-   flowing, migrate the rest.
-
-Budget: probably 1 evening per DB. Schedule when CNPG 1.30.0 is announced
-(watch https://cloudnative-pg.io/releases/).
+No further action needed — kept here for historical context.
 
 ### Explicitly NOT worth building
 
@@ -520,18 +536,23 @@ it as a write target or recovery source.
 
 ## Deprecation / forward migration
 
-### Native `spec.backup.barmanObjectStore` will be removed in CNPG 1.30.0
+### Native `spec.backup.barmanObjectStore` — removed in CNPG 1.30.0 (migration DONE)
 
-We currently use the native (in-Cluster) Barman config. The upstream
-replacement is the **Barman Cloud Plugin** (`infrastructure/database/cnpg-barman-plugin/`,
-already installed as `cnpg-barman-plugin-app.yaml`). Migration is required
-before CNPG 1.30.0.
+The native (in-Cluster) `spec.backup.barmanObjectStore` and
+`externalClusters[].barmanObjectStore` fields were removed in CNPG 1.30.0. All
+DBs have been migrated to the **Barman Cloud Plugin**
+(`infrastructure/database/cnpg-barman-plugin/`, installed as
+`cnpg-barman-plugin-app.yaml`):
 
-Migration plan: each DB's `base/cluster.yaml` moves from
-`spec.backup.barmanObjectStore` to a `spec.plugins[]` entry that references
-an `ObjectStore` CR. Same for `overlays/recovery/bootstrap-patch.yaml`'s
-`externalClusters`. Not urgent — track CNPG release notes for the 1.29 → 1.30
-cutover.
+- `base/cluster.yaml` declares backups via `spec.plugins[]`
+  (`name: barman-cloud.cloudnative-pg.io`, `parameters.barmanObjectName` +
+  `serverName`).
+- `overlays/recovery/bootstrap-patch.yaml` declares the recovery source via
+  `externalClusters[].plugin` (same `barmanObjectName`, prior-lineage `serverName`).
+- Each DB owns a `base/objectstore.yaml` `ObjectStore` CR (S3 `destinationPath`,
+  credentials, `retentionPolicy`).
+
+Nothing left to migrate — kept for historical context.
 
 ### `spec.monitoring.enablePodMonitor` deprecated
 
