@@ -30,5 +30,6 @@ spec:
           # endpoint). Only serverName changes between live writes and
           # recovery reads.
           barmanObjectName: gitea-objectstore
-          # v6 holds the real gitea data (v3/v5 lineages were empty/polluted).
-          serverName: gitea-database-v6
+          # v9 is the CURRENT pre-nuke lineage holding live gitea data (v6 aged
+          # out of the S3 recovery window — only v8/v9 retained as of 2026-06-27).
+          serverName: gitea-database-v9

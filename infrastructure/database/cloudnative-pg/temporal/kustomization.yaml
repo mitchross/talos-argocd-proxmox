@@ -11,7 +11,7 @@ commonLabels:
 commonAnnotations:
   argocd.argoproj.io/sync-wave: "-5"
 resources:
- # - overlays/recovery       # swap to this for disaster recovery (restore from Barman v(N-1) → write to vN)
-  - overlays/initdb          # ← ACTIVE: steady state. bootstrap.initdb is a no-op on existing Cluster.
+  - overlays/recovery        # ← ACTIVE: restore from Barman v7 → write v8 (nuke recovery)
+ # - overlays/initdb         # steady state. bootstrap.initdb is a no-op on existing Cluster.
   - externalsecret.yaml
   - scheduled-backup.yaml

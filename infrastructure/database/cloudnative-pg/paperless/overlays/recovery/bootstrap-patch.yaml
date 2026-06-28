@@ -33,7 +33,6 @@ spec:
           barmanObjectName: paperless-objectstore
           # Previous lineage to recover FROM. DO NOT change without
           # bumping recovery target lineage. See cnpg-plugin-migration.md
-          # §9.1. N-1 of base (base now writes v5).
-          # CAUTION: all prior base backups are multipart and unreadable until
-          # the RustFS multipart bug is fixed — kept at N-1 by convention only.
-          serverName: paperless-database-v4
+          # §9.1. N-1 of base (base now writes v6). RustFS multipart bug was
+          # FIXED 2026-06-19 (1.0.0-beta.8) — these base backups ARE restorable.
+          serverName: paperless-database-v5

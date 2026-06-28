@@ -82,4 +82,4 @@ spec:
         #        "Expected empty archive", ContinuousArchiving stuck False.
         #        Bumped to a clean v5 prefix.
         # DO NOT change this value without bumping lineage in lockstep.
-        serverName: paperless-database-v5
+        serverName: paperless-database-v6

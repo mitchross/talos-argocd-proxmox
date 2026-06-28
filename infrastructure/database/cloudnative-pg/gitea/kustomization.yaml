@@ -20,10 +20,9 @@ commonLabels:
 commonAnnotations:
   argocd.argoproj.io/sync-wave: "-5"
 resources:
-  - overlays/recovery        # ← ACTIVE: restore gitea DB FROM v6.
-                             # Writes forward to v9 because v7 is polluted and
-                             # fails barman-cloud-check-wal-archive with
-                             # "Expected empty archive".
+  - overlays/recovery        # ← ACTIVE: restore gitea DB FROM v9 (current data,
+                             # pre-nuke). Writes forward to v10 (clean, unused
+                             # prefix) to pass barman-cloud-check-wal-archive.
   # - overlays/initdb        # fresh empty DB (1 admin, 0 repos). Was active
                              # while v5 was (wrongly) assumed unrestorable.
   - externalsecret.yaml
