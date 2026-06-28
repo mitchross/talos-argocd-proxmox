@@ -19,7 +19,7 @@ Two layers of database state, two backup paths, **never confuse them**:
 | **Postgres data** (the actual database content — tables, rows, WAL) | Barman Cloud → S3 | Cluster CR + PVCs |
 | **App-side stuff** (ExternalSecret, ScheduledBackup, Cluster YAML) | Git | The repo |
 
-When you do a disaster recovery, you're using **Barman** to restore Postgres data into a fresh PVC. **pvc-plumber/VolSync has nothing to do with this.** The two backup systems run side-by-side and never touch each other. PVC-level kopia backups would corrupt a running Postgres mid-snapshot — that's why CNPG PVCs explicitly do NOT carry the `backup` label.
+When you do a disaster recovery, you're using **Barman** to restore Postgres data into a fresh PVC. **kopiur (the PVC-backup system) has nothing to do with this.** The two backup systems run side-by-side and never touch each other. PVC-level kopia backups would corrupt a running Postgres mid-snapshot — that's why CNPG PVCs explicitly do NOT carry the `backup` label.
 
 ---
 
@@ -255,11 +255,13 @@ operator orchestration was ~2 minutes.
 
 ---
 
-## Why this is separate from pvc-plumber
+## Why this is separate from the kopiur PVC backups
 
-A reasonable question: pvc-plumber backs up PVCs to kopia. CNPG database files live on PVCs. Why not just label the CNPG PVCs and let pvc-plumber back them up?
+A reasonable question: kopiur backs up PVCs to kopia. CNPG database files live on PVCs. Why not just back the CNPG PVCs up with kopiur too?
 
-Three reasons, in increasing severity:
+kopiur only backs up PVCs that carry an explicit per-PVC `SnapshotPolicy`/`Restore` stub (via the `kopiur-backup` Kustomize component) in a namespace labeled `kopiur.home-operations.com/repo: cluster-kopia`. CNPG PVCs deliberately get none of that, so kopiur never touches them. There is no admission webhook injecting `dataSourceRef` anymore — coverage is opt-in by the per-PVC stub, not enforced at admission.
+
+Three reasons it stays that way, in increasing severity:
 
 1. **Snapshot consistency.** A kopia snapshot of a running Postgres data directory is *not* a consistent backup. The on-disk state at any moment includes half-written files, WAL not yet flushed, etc. Restoring from a CSI snapshot of running Postgres almost works, but recovery is unsafe and Postgres might not even start. Barman uses `pg_basebackup` which IS Postgres-aware and produces a consistent backup.
 
@@ -267,7 +269,7 @@ Three reasons, in increasing severity:
 
 3. **PITR.** With Barman + WAL archiving, you can restore to any point in time within retention. With PVC snapshots, you can only restore to whenever the last snapshot was taken (default 1h or 1d).
 
-So: CNPG PVCs are explicitly **NOT** labeled `backup: hourly|daily`. pvc-plumber's mutating webhook would refuse to inject `dataSourceRef` on those anyway (operator's `SYSTEM_NAMESPACES` excludes `cloudnative-pg`), but as defense-in-depth, the manifest convention is to omit the label.
+So: CNPG PVCs explicitly carry **no** kopiur backup stub and the `cloudnative-pg` namespace is **not** labeled `kopiur.home-operations.com/repo: cluster-kopia`, so kopiur never enrolls them.
 
 ---
 
@@ -302,6 +304,6 @@ Yes — CNPG supports `bootstrap.recovery` with a different `metadata.name`. The
 ## Where to go deeper
 
 - [docs/domains/cnpg/disaster-recovery.md](disaster-recovery.md) — the technical runbook (this doc's reference)
-- [docs/plans/cnpg-plugin-migration.md](../../disaster-recovery.md) — why this cluster uses the Barman Cloud Plugin instead of the deprecated `spec.backup.barmanObjectStore`
+- [disaster-recovery.md](disaster-recovery.md) — why this cluster uses the Barman Cloud Plugin instead of the deprecated `spec.backup.barmanObjectStore`
 - [docs/disaster-recovery.md](../../disaster-recovery.md) — the OTHER backup system (PVC-level, kopia, NEVER use on CNPG PVCs)
 - [docs/pvc-plumber-explained.md](https://github.com/mitchross/pvc-plumber#readme) — pvc-plumber walkthrough for comparison

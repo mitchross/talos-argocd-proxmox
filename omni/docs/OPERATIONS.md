@@ -51,7 +51,8 @@ Apply each machine class individually using the `-f` flag:
 omnictl apply -f machine-classes/control-plane.yaml
 omnictl apply -f machine-classes/worker.yaml
 omnictl apply -f machine-classes/gpu-worker.yaml
-omnictl apply -f machine-classes/test-multi-disk.yaml
+omnictl apply -f machine-classes/single-node-control-plane.yaml
+omnictl apply -f machine-classes/single-node-talos-gpu.yaml
 ```
 
 ### Verifying Machine Classes
@@ -80,7 +81,7 @@ Once machine classes are applied, you can create a cluster through the Omni Web 
    - Navigate to `Clusters` -> `Create New Cluster`
    - Select your Machine Classes for Control Plane and Workers
 2. **Via CLI**:
-   Apply a cluster resource definition (see `examples/` for templates).
+   Apply a cluster resource definition (see `cluster-template/` for templates).
 
 ## 4. Troubleshooting Provisioning
 
