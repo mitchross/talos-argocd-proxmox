@@ -5,6 +5,16 @@ default_config:
 homeassistant:
   customize: !include customize.yaml
 
+# Zigbee Home Automation. The ZHA *integration* itself is added once via the UI
+# (Settings > Devices & Services > Add Integration > ZHA, serial port
+# /dev/ttyUSB0 = the SONOFF dongle hostPath-mounted into this pod) — that config
+# lives in .storage, not here. These two lines only enable loading the vendored
+# AirCube custom quirk. Keep the path exactly /config/custom_zha_quirks/ (works
+# on HA 2025.x and 2026.x; the trailing slash is required on 2026.x).
+zha:
+  custom_quirks_path: /config/custom_zha_quirks/
+  enable_quirks: true
+
 # Load frontend themes from the themes folder
 frontend:
   themes: !include_dir_merge_named themes

@@ -38,6 +38,9 @@ configMapGenerator:
   - scenes.yaml
   - customize.yaml
   - lovelace-homelab-power.yaml
+  # AirCube ZHA quirk — copied to /config/custom_zha_quirks/aircube.py by the
+  # copy-config initContainer (see deployment.yaml). Loaded via zha.custom_quirks_path.
+  - aircube.py
   options:
     # Better ConfigMap handling
     disableNameSuffixHash: true
