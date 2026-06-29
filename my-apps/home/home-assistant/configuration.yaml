@@ -57,6 +57,9 @@ prometheus:
       - sensor.homelab_total_*
       - sensor.homelab_cost_*
       - sensor.*_cost_today
+      # StuckAtPrototype AirCube Zigbee air-quality monitor (temp/humidity/eCO2/
+      # tVOC + rssi/lqi). Feeds the aircube-dashboard.yaml Grafana dashboard.
+      - sensor.stuckatprototype_aircube_*
     exclude_entity_globs:
       - sensor.homelab_smart_plug_* # not in use — keep out of homelab dashboards
       - sensor.dryer_smart_plug_*
