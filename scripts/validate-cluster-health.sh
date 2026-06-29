@@ -143,14 +143,14 @@ run "Longhorn volume summary (state x robustness)" -- bash -c '
     | sort | uniq -c | sort -rn || echo "(longhorn CRDs not available)"
 '
 
-run "VolSync replication sources" -- bash -c '
-  kubectl get replicationsource -A 2>/dev/null \
-    || echo "(volsync CRDs not available)"
+run "kopiur snapshot policies + schedules" -- bash -c '
+  kubectl get snapshotpolicy,snapshotschedule -A 2>/dev/null \
+    || echo "(kopiur CRDs not available)"
 '
 
-run "VolSync replication destinations" -- bash -c '
-  kubectl get replicationdestination -A 2>/dev/null \
-    || echo "(volsync CRDs not available)"
+run "kopiur snapshots (latest per source)" -- bash -c '
+  kubectl get snapshot.kopiur.home-operations.com -A 2>/dev/null \
+    || echo "(kopiur CRDs not available)"
 '
 
 # ─────────────────────────────────────────────
