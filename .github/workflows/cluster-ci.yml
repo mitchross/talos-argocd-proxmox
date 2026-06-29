@@ -117,22 +117,24 @@ jobs:
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             /tmp/filtered-manifests.yaml
 
-  backup-exempt-contract:
-    name: Backup-Exempt Annotation Contract
-    # Catches the class of bug found 2026-05-19 (and again 2026-06-09 in
-    # monitoring/ Helm values): a PVC labeled backup-exempt:"true" using
-    # the bare `backup-exempt-reason` key instead of the fully-qualified
-    # `storage.vanillax.dev/...` key. There is no runtime admission gate
-    # anymore (pvc-plumber is gone) — the bare key silently fails to record
-    # the reason, and the kopiur backup-coverage check can't attribute the
-    # exemption. This CI gate catches it at PR time, not during DR.
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Validate kopiur backup coverage
+        # Replaces the retired pvc-plumber validate-restore-contract.sh and the
+        # backup-exempt-contract job. Runs on the RENDERED stream so Helm-rendered
+        # PVCs (gitea, tubesync) are covered. Hard-fails when a backed-up PVC is
+        # missing its dataSourceRef (recreates EMPTY in DR) or a backed-up namespace
+        # lacks the kopiur.home-operations.com/repo label (repo creds won't fan in);
+        # warns on missing mover securityContext, uncovered+unexempt PVCs, and
+        # backup-exempt PVCs missing the qualified reason annotation.
+        run: |
+          set -euo pipefail
+          python3 -c "import yaml" 2>/dev/null || pip3 install --quiet pyyaml
+          python3 ./scripts/validate-kopiur-coverage.py /tmp/all-manifests.yaml
 
-      - name: Validate backup-exempt annotation keys
-        run: bash ./scripts/validate-backup-exempt-keys.sh
+  # backup-exempt-contract job RETIRED 2026-06-27 (pvc-plumber removed). It
+  # hard-failed on the bare `backup-exempt-reason` key because pvc-plumber denied
+  # such PVCs on CREATE; with pvc-plumber gone, nothing enforces the key, so the
+  # check is folded into validate-kopiur-coverage.py as a WARNING (grep-consistency
+  # only). The coverage check runs as a step in the render-and-schema job above.
 
   otel-collector-validate:
     name: OpenTelemetry Collector Config Validation
