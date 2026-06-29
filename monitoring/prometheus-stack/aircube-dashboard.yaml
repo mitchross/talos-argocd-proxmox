@@ -5,7 +5,10 @@
 # Metric names follow HA's prometheus integration convention:
 #   - temperature device_class -> homeassistant_sensor_temperature_celsius (ALWAYS °C; we convert to °F)
 #   - humidity device_class    -> homeassistant_sensor_humidity_percent
-#   - unrecognized units       -> homeassistant_sensor_unit_<unit>  (ppm / ppb)
+#   - eCO2 (no device_class)   -> homeassistant_sensor_unit_ppm
+#   - tVOC (volatile_organic_compounds_parts device_class)
+#                              -> homeassistant_sensor_volatile_organic_compounds_parts_ppb
+# (metric names verified live against /api/prometheus on 2026-06-29)
 # Sensors are selected by the exact `entity` label (stable across HA restarts).
 # Requires the matching `sensor.stuckatprototype_aircube_*` include glob in the
 # HA prometheus filter (my-apps/home/home-assistant/configuration.yaml).
@@ -115,7 +118,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "homeassistant_sensor_unit_ppb{entity=\"sensor.stuckatprototype_aircube_volatile_organic_compounds_parts\"}",
+              "expr": "homeassistant_sensor_volatile_organic_compounds_parts_ppb{entity=\"sensor.stuckatprototype_aircube_volatile_organic_compounds_parts\"}",
               "legendFormat": "tVOC",
               "refId": "A"
             }
@@ -278,7 +281,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "homeassistant_sensor_unit_ppb{entity=\"sensor.stuckatprototype_aircube_volatile_organic_compounds_parts\"}",
+              "expr": "homeassistant_sensor_volatile_organic_compounds_parts_ppb{entity=\"sensor.stuckatprototype_aircube_volatile_organic_compounds_parts\"}",
               "legendFormat": "tVOC",
               "refId": "A"
             }
