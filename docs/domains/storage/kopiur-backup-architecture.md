@@ -7,6 +7,43 @@
 kopiur replaced pvc-plumber + VolSync (retired 2026-06-27). It is a Kopia-native
 operator: you declare small CRs, it runs Jobs, kopia moves bytes to RustFS.
 
+## Lifecycle and Flows
+
+```mermaid
+flowchart TD
+    subgraph GitOps["1. GitOps & Kustomize Assembly (Build Time)"]
+        Stub["App Stub (kopiur/storage.yaml)<br/>- SnapshotPolicy<br/>- SnapshotSchedule<br/>- Restore<br/>- Mover UID:GID"]
+        Comp["Kopiur Component (common/kopiur-backup)<br/>- Injects: S3 repo info, copyMethod, VolumePopulator specs"]
+        Stub -->|"composes via components:"| KustBuild["Kustomize Build (ArgoCD)"]
+        Comp -->|"patches stubs"| KustBuild
+        KustBuild -->|"Rendered Manifests applied"| K8sAPI["Kubernetes API Server"]
+    end
+
+    subgraph BackupFlow["2. Scheduled Backup Flow (Runtime)"]
+        Sched["SnapshotSchedule (Cron)"] -->|"fires"| SnapCR["Snapshot CR"]
+        SnapCR -->|"reconciled by"| KopiurOp["Kopiur Operator"]
+        KopiurOp -->|"1. Triggers CSI Snapshot"| LH["Longhorn CSI VolumeSnapshot"]
+        KopiurOp -->|"2. Spawns"| MoverBackup["Mover Job<br/>(Runs as data owner uid:gid)"]
+        LH -->|"Mounts snapshot read-only"| MoverBackup
+        Creds["Secret (kopiur-rustfs)<br/>(Fanned in by ClusterExternalSecret)"] -->|"Provides S3 credentials"| MoverBackup
+        MoverBackup -->|"Uploads deduped/encrypted bytes"| S3[("RustFS S3 Store<br/>s3://kopiur")]
+    end
+
+    subgraph RestoreFlow["3. Restore-before-bind DR Flow (Disaster Recovery)"]
+        ArgoPVC["ArgoCD Recreates PVC<br/>(dataSourceRef -> Restore)"] -->|"withholds binding"| PendingPVC["PVC status: Pending"]
+        PendingPVC -->|"triggers populator"| Populator["Kopiur Restore Populator"]
+        Populator -->|"Spawns"| MoverRestore["Mover Job<br/>(Runs as data owner uid:gid)"]
+        S3 -->|"Downloads snapshot"| MoverRestore
+        MoverRestore -->|"Writes data directly to"| RawVol["Raw Longhorn Volume"]
+        MoverRestore -->|"Success exit"| Populator
+        Populator -->|"Signals recovery complete"| K8sPV["Kubernetes binds PVC"]
+        K8sPV -->|"PVC status: Bound"| ActivePod["Application Pod starts up!"]
+    end
+
+    K8sAPI -.-> Sched
+    K8sAPI -.-> ArgoPVC
+```
+
 ---
 
 ## 1. The pieces (what exists, and where)
