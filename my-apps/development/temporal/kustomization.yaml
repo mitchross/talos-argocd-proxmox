@@ -23,7 +23,7 @@ configMapGenerator:
 helmCharts:
   - name: temporal
     repo: https://go.temporal.io/helm-charts
-    version: 1.2.0
+    version: 1.4.0
     releaseName: temporal
     namespace: temporal
     includeCRDs: true
