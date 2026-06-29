@@ -134,3 +134,6 @@ scripts/k8s-talos-gpu-audit-omni-prod-talos-prod-cluster-talos-prod-sa_-20260504
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Antigravity/agent brainstorm scratch (HTML + server pid) — never commit
+.superpowers/
