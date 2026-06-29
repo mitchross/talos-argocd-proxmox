@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: copyparty
-        image: copyparty/ac:latest@sha256:39aa5ac09a6c46ab05b82ef9d6fec1e53bbbefb5e09e6ee5c5be2c8fbbd0a023
+        image: copyparty/ac:latest@sha256:f1171450643c6d22af9e33fca68ab560635dcbf8ee17bf7a3799a20c0e38296e
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
