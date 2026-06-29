@@ -22,6 +22,7 @@ resources:
   - loki-logs-dashboard.yaml # Custom Loki logs dashboard (uses OTEL labels)
   - solar-dashboard.yaml # Epever Solar MPPT dashboard
   - tapo-power-dashboard.yaml # Tapo smart plug power monitoring (all plugs)
+  - aircube-dashboard.yaml # StuckAtPrototype AirCube Zigbee air-quality (eCO2/tVOC/temp/humidity)
   - homelab-power-dashboard.yaml # Homelab cost dashboard ($0.21/kWh, 4 homelab plugs only)
   - radar-ng-dashboard.yaml # radar-ng backend dashboard (logs + tile-server metrics)
   - radar-ng-mobile-dashboard.yaml # radar-ng mobile app dashboard (Tempo spans + Loki errors)
