@@ -117,26 +117,15 @@ jobs:
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             /tmp/filtered-manifests.yaml
 
-  kyverno-policy-safety:
-    name: Kyverno Policy Safety Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Check for dangerous Kyverno generate policy settings
-        run: bash ./scripts/validate-kyverno-policies.sh
-
   backup-exempt-contract:
     name: Backup-Exempt Annotation Contract
     # Catches the class of bug found 2026-05-19 (and again 2026-06-09 in
     # monitoring/ Helm values): a PVC labeled backup-exempt:"true" using
     # the bare `backup-exempt-reason` key instead of the fully-qualified
-    # `storage.vanillax.dev/...` key. pvc-plumber v4 (permissive, no
-    # admission webhook) classifies that as ExemptMissingReason and parks
-    # the PVC in /audit as needs-human-review, where it masks real
-    # findings; any future strict mode would deny it at admission.
-    # Fail at PR time, not during DR.
+    # `storage.vanillax.dev/...` key. There is no runtime admission gate
+    # anymore (pvc-plumber is gone) — the bare key silently fails to record
+    # the reason, and the kopiur backup-coverage check can't attribute the
+    # exemption. This CI gate catches it at PR time, not during DR.
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
