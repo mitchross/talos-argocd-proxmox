@@ -8,12 +8,12 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
 > Source: [`mitchross/talos-argocd-proxmox`](https://github.com/mitchross/talos-argocd-proxmox)
 > · This site renders `docs/` from that repo.
 
-> [!TIP]
-> **The headline claim, with receipts:** this cluster was fully destroyed and
-> rebuilt twice in 36 hours (2026-06-12/13 — once unplanned, once planned).
-> Both times, every protected volume restored automatically from the
-> off-cluster Kopia repository. The second rebuild took ~75 minutes with
-> **zero manual storage steps**. See [disaster-recovery.md](disaster-recovery.md#proof-history).
+!!! tip
+    **The headline claim, with receipts:** this cluster was fully destroyed and
+    rebuilt twice in 36 hours (2026-06-12/13 — once unplanned, once planned).
+    Both times, every protected volume restored automatically from the
+    off-cluster Kopia repository. The second rebuild took ~75 minutes with
+    **zero manual storage steps**. See [disaster-recovery.md](disaster-recovery.md#proof-history).
 
 ## Stack
 
@@ -29,21 +29,55 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
 
 ## Documentation
 
-### 💾 Storage & backups (start here)
+<div class="grid cards" markdown>
+
+-   🎬 **The easy guide** — *share this one*
+
+    ---
+
+    The whole system from zero: GitOps → sync waves → Kustomize components →
+    kopiur → restore-before-bind. Real YAML, a demo script, an adoption
+    ladder for "I just want to try kopiur", and the colleague FAQ.
+
+    [→ easy-guide.md](easy-guide.md)
+
+-   💾 **kopiur backup architecture** — *the one doc*
+
+    ---
+
+    The pieces, the component pattern, backup + restore flow diagrams, and
+    the 6-step add-a-backup checklist.
+
+    [→ kopiur-backup-architecture.md](domains/storage/kopiur-backup-architecture.md)
+
+-   ☠️ **Disaster recovery** — *the runbook*
+
+    ---
+
+    Destroy → rebuild → restore: pre-nuke checklist, restore-wave
+    expectations, proof history, the restore canary.
+
+    [→ disaster-recovery.md](disaster-recovery.md)
+
+-   🗄️ **Storage architecture** — *operator's reference*
+
+    ---
+
+    Design decisions, who-provides-what, day-2 operations
+    (enable / exempt / drill), troubleshooting, and the honest limitations.
+
+    [→ storage-architecture.md](storage-architecture.md)
+
+</div>
+
+### 💾 More storage & backups
 
 Backups are **kopiur** (Kopia-native operator; replaced pvc-plumber + VolSync 2026-06-27).
 
-1. **[domains/storage/kopiur-backup-architecture.md](domains/storage/kopiur-backup-architecture.md)** — **the one doc.**
-   The pieces, the Kustomize-component pattern, backup + restore flows (boxes-and-arrows
-   diagrams), and a 6-step add-a-backup checklist. *Send people this link.*
-2. **[domains/storage/kopiur-mover-permissions.md](domains/storage/kopiur-mover-permissions.md)** —
-   why the backup mover runs as the data owner (the #1 gotcha), plain English + technical.
-3. **[storage-architecture.md](storage-architecture.md)** — storage source-of-truth
-   (Longhorn / NFS / CNPG separation + the kopiur backup overview).
-4. **[backup-repository-setup.md](backup-repository-setup.md)** — the one-time backend
-   setup: RustFS S3 bucket, credentials, the kopiur `ClusterRepository`.
-5. **[disaster-recovery.md](disaster-recovery.md)** — the full-cluster destroy/rebuild
-   runbook: pre-nuke checklist, restore-wave expectations, proof history, the restore canary.
+- **[domains/storage/kopiur-mover-permissions.md](domains/storage/kopiur-mover-permissions.md)** —
+  why the backup mover runs as the data owner (the #1 gotcha), plain English + technical.
+- **[backup-repository-setup.md](backup-repository-setup.md)** — the one-time backend
+  setup: RustFS S3 bucket, credentials, the kopiur `ClusterRepository`.
 
 ### 🗃️ Domains
 

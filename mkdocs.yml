@@ -7,6 +7,12 @@ edit_uri: edit/main/docs/
 
 docs_dir: docs
 
+# Broken intra-doc anchors are warnings (build runs with --strict in CI,
+# so a warning = failed deploy = caught before it ships).
+validation:
+  links:
+    anchors: warn
+
 theme:
   name: material
   features:
@@ -74,6 +80,7 @@ plugins:
 
 nav:
   - Home: index.md
+  - The easy guide (explain it to anyone): easy-guide.md
   - Storage & backups:
       - Storage architecture (source of truth): storage-architecture.md
       - kopiur backup architecture (the guide): domains/storage/kopiur-backup-architecture.md
