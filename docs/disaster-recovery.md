@@ -10,9 +10,9 @@
 > this page does not re-derive them. Databases recover via a **separate system**
 > — [CNPG/Barman](domains/cnpg/disaster-recovery.md).
 
-> [!CAUTION]
-> The destructive steps require explicit operator intent. This documents the
-> verified path; it is not an invitation to nuke during routine maintenance.
+!!! danger
+    The destructive steps require explicit operator intent. This documents the
+    verified path; it is not an invitation to nuke during routine maintenance.
 
 ---
 

@@ -44,13 +44,16 @@ jobs:
       - name: Install MkDocs Material
         run: |
           pip install \
+            'mkdocs>=1.6' \
             mkdocs-material==9.5.* \
             pymdown-extensions==10.*
 
       - name: Build site
-        # Not --strict: pre-existing cross-repo paths in older docs would
-        # block deploys. Warnings are still surfaced in the log.
-        run: mkdocs build
+        # --strict since 2026-07-01: the cross-repo links that used to warn
+        # were converted to absolute GitHub URLs, so any new warning is a
+        # real regression (broken link/nav/anchor — see mkdocs.yml
+        # `validation:`) and should block the deploy.
+        run: mkdocs build --strict
 
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request'

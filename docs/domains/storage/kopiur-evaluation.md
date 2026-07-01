@@ -1,5 +1,13 @@
 # kopiur evaluation — engine candidate for the backup path
 
+> **OUTCOME (2026-06-27): adopted.** kopiur fully replaced pvc-plumber + VolSync;
+> the "thin DRY layer" this doc recommends became the
+> [`my-apps/common/kopiur-backup` Kustomize component](kopiur-backup-architecture.md#2-how-a-kustomize-component-composes-read-this-if-components-are-new)
+> (open item #4 below is what shipped). The TL;DR's "don't rip-replace" lean and
+> the "Status: trialing" line reflect the 2026-06-26 evaluation moment — kept
+> unedited as the decision record. Current architecture:
+> [`kopiur-backup-architecture.md`](kopiur-backup-architecture.md).
+
 > Strategic companion to the operational [`docs/kopiur-trial.md`](../../kopiur-trial.md).
 > Captures the 2026-06-26 evaluation of **kopiur** (home-operations' Kopia-native
 > Rust backup operator) as a possible pvc-plumber/VolSync replacement: the fit

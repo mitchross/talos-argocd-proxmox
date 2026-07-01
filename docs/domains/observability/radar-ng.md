@@ -2,7 +2,7 @@
 
 App-specific guide for the radar-ng observability stack. The platform-level
 docs (collector layout, retention, storage backends) live in
-[`monitoring/README.md`](../../../monitoring/README.md) — this one is just the
+[`monitoring/README.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/README.md) — this one is just the
 "how do I find out what radar-ng is doing right now" reference.
 
 ## Signal sources
@@ -21,7 +21,7 @@ OTel-semconv labels in Loki: `k8s_namespace_name`, `k8s_pod_name`,
 
 ## Grafana — the radar-ng dashboard
 
-Auto-imported from [`monitoring/prometheus-stack/radar-ng-dashboard.yaml`](../../../monitoring/prometheus-stack/radar-ng-dashboard.yaml).
+Auto-imported from [`monitoring/prometheus-stack/radar-ng-dashboard.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/prometheus-stack/radar-ng-dashboard.yaml).
 Labelled `grafana_dashboard: "1"` so the sidecar picks it up. Open in
 Grafana → Dashboards → search "radar-ng".
 
@@ -223,9 +223,9 @@ flowchart TB
 
 ## Related links
 
-- [`monitoring/README.md`](../../../monitoring/README.md) — platform observability layout
-- [`monitoring/CLAUDE.md`](../../../monitoring/CLAUDE.md) — design rationale + pitfalls
-- [`monitoring/prometheus-stack/radar-ng-dashboard.yaml`](../../../monitoring/prometheus-stack/radar-ng-dashboard.yaml) — the dashboard JSON
-- [`my-apps/development/radar-ng/servicemonitor.yaml`](../../../my-apps/development/radar-ng/servicemonitor.yaml) — Prometheus scrape config
+- [`monitoring/README.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/README.md) — platform observability layout
+- [`monitoring/CLAUDE.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/CLAUDE.md) — design rationale + pitfalls
+- [`monitoring/prometheus-stack/radar-ng-dashboard.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/prometheus-stack/radar-ng-dashboard.yaml) — the dashboard JSON
+- [`my-apps/development/radar-ng/servicemonitor.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/development/radar-ng/servicemonitor.yaml) — Prometheus scrape config
 - radar-ng repo: `src/lib/telemetry.ts` — mobile OTel wiring
 - radar-ng repo: `services/shared/logger.py` — backend JSON logger

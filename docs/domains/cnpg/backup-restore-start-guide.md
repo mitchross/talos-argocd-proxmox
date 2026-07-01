@@ -6,19 +6,19 @@ CloudNativePG (CNPG) before, start here.
 
 When you need the full, gory, copy-paste DR runbook, jump to
 [disaster-recovery.md](./disaster-recovery.md). When you need the exact repo
-rules, see [infrastructure/database/CLAUDE.md](../../../infrastructure/database/CLAUDE.md).
+rules, see [infrastructure/database/CLAUDE.md](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/database/CLAUDE.md).
 
 ---
 
 ## TL;DR
 
-> [!TIP]
-> - **CNPG** is the operator that runs our Postgres databases (gitea, immich, paperless, temporal).
-> - Each database lives in its own folder: `infrastructure/database/cloudnative-pg/<db>/`. ArgoCD auto-discovers it — no manual wiring.
-> - Backups go to **RustFS S3** (our S3, hosted on TrueNAS) using the **Barman Cloud Plugin**. Two parts work together: a daily **base backup** (full snapshot) + continuous **WAL archiving** (the running journal of every change). Together = point-in-time recovery (PITR).
-> - There is **one feature flag** per database — a single line in its `kustomization.yaml` — that picks `overlays/initdb` (normal) or `overlays/recovery` (disaster recovery).
-> - **Normal = `initdb`.** You only flip to `recovery` for an actual restore, then flip back.
-> - **CNPG is NOT kopiur.** kopiur backs up files on PVCs; CNPG backs up the database itself (SQL-aware). Never mix the two.
+!!! tip
+    - **CNPG** is the operator that runs our Postgres databases (gitea, immich, paperless, temporal).
+    - Each database lives in its own folder: `infrastructure/database/cloudnative-pg/<db>/`. ArgoCD auto-discovers it — no manual wiring.
+    - Backups go to **RustFS S3** (our S3, hosted on TrueNAS) using the **Barman Cloud Plugin**. Two parts work together: a daily **base backup** (full snapshot) + continuous **WAL archiving** (the running journal of every change). Together = point-in-time recovery (PITR).
+    - There is **one feature flag** per database — a single line in its `kustomization.yaml` — that picks `overlays/initdb` (normal) or `overlays/recovery` (disaster recovery).
+    - **Normal = `initdb`.** You only flip to `recovery` for an actual restore, then flip back.
+    - **CNPG is NOT kopiur.** kopiur backs up files on PVCs; CNPG backs up the database itself (SQL-aware). Never mix the two.
 
 ---
 
@@ -34,10 +34,10 @@ each other. Knowing which is which saves a lot of confusion.
 | For | App data dirs, media, configs | Postgres databases only |
 | Where it's defined | per-PVC stub + `kopiur-backup` component | `infrastructure/database/cloudnative-pg/<db>/` |
 
-> [!WARNING]
-> **Never add kopiur backup CRs to a CNPG database's PVCs.** CNPG manages its
-> own backups via Barman to S3. Mixing them corrupts your mental model and can
-> double-handle the same data. Postgres = CNPG. Everything else = kopiur.
+!!! warning
+    **Never add kopiur backup CRs to a CNPG database's PVCs.** CNPG manages its
+    own backups via Barman to S3. Mixing them corrupts your mental model and can
+    double-handle the same data. Postgres = CNPG. Everything else = kopiur.
 
 ---
 
@@ -65,11 +65,11 @@ forward to bring the database back to (almost) the exact moment you want.
 | The S3 connection | `base/objectstore.yaml` | The `ObjectStore` CR. Holds `destinationPath`, `endpointURL`, and `s3Credentials`. |
 | The schedule | `scheduled-backup.yaml` | A daily `ScheduledBackup` — triggers the full base backups. |
 
-> [!NOTE]
-> We use the **Barman Cloud Plugin**, NOT the old in-tree `spec.backup.barmanObjectStore`.
-> That old field was removed in CNPG 1.30.0. Do not reintroduce it. The Cluster
-> references the `ObjectStore` CR by name via
-> `spec.plugins[0].parameters.barmanObjectName`.
+!!! note
+    We use the **Barman Cloud Plugin**, NOT the old in-tree `spec.backup.barmanObjectStore`.
+    That old field was removed in CNPG 1.30.0. Do not reintroduce it. The Cluster
+    references the `ObjectStore` CR by name via
+    `spec.plugins[0].parameters.barmanObjectName`.
 
 ### Diagram 1 — how a backup flows
 
@@ -108,13 +108,13 @@ database's backups live — for example `gitea-database-v10`. We call each one a
 - When you restore, you **read FROM** the prior lineage and **write forward TO a
   brand-new bumped lineage** (`vN` → `vN+1`).
 
-> [!IMPORTANT]
-> Why bump the number on every restore? Postgres requires a **clean (empty) WAL
-> archive** for a freshly-created cluster. If a new cluster tried to write WAL
-> into the same folder it just restored from, Barman rejects it with
-> `Expected empty archive`. Bumping to a new lineage keeps the restore source
-> untouched (still usable for future restores) and gives the new cluster a clean
-> folder to write into.
+!!! info
+    Why bump the number on every restore? Postgres requires a **clean (empty) WAL
+    archive** for a freshly-created cluster. If a new cluster tried to write WAL
+    into the same folder it just restored from, Barman rejects it with
+    `Expected empty archive`. Bumping to a new lineage keeps the restore source
+    untouched (still usable for future restores) and gives the new cluster a clean
+    folder to write into.
 
 **Current lineages (as of 2026-06-28, post-nuke):**
 
@@ -155,9 +155,9 @@ flowchart LR
     KUST -.->|only during a restore| DR
 ```
 
-> [!TIP]
-> Leave every database on `overlays/initdb` in normal life. `recovery` is only
-> ever turned on as a deliberate, temporary DR action — then flipped back.
+!!! tip
+    Leave every database on `overlays/initdb` in normal life. `recovery` is only
+    ever turned on as a deliberate, temporary DR action — then flipped back.
 
 ---
 
@@ -190,7 +190,7 @@ flowchart LR
 6. **Commit + push.** No AppSet edits needed — it's auto-discovered.
 
 (Mirrors the "Normal operation" section in
-[infrastructure/database/CLAUDE.md](../../../infrastructure/database/CLAUDE.md).)
+[infrastructure/database/CLAUDE.md](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/database/CLAUDE.md).)
 
 ---
 
@@ -203,11 +203,11 @@ The big idea: **read FROM the prior lineage `v(N-1)`, write forward to a new
 lineage `vN`**, by flipping the feature flag to `recovery` and forcing CNPG to
 re-create the cluster from scratch.
 
-> [!WARNING]
-> **CNPG only reads `spec.bootstrap` when a cluster is first created.** Flipping
-> the flag in git is NOT enough — you MUST delete the live Cluster **and its
-> PVCs** so CNPG re-evaluates bootstrap on a fresh creation. Skipping the PVC
-> delete is the #1 noob trap (see Gotchas).
+!!! warning
+    **CNPG only reads `spec.bootstrap` when a cluster is first created.** Flipping
+    the flag in git is NOT enough — you MUST delete the live Cluster **and its
+    PVCs** so CNPG re-evaluates bootstrap on a fresh creation. Skipping the PVC
+    delete is the #1 noob trap (see Gotchas).
 
 ### Diagram 3 — restore / DR sequence
 
@@ -248,54 +248,54 @@ flowchart TD
    existing cluster, `bootstrap.initdb` is a no-op — this just keeps "steady
    state" clean so a future PVC loss can't auto-restore a stale lineage.)
 
-> [!NOTE]
-> The full runbook adds important extra steps the short version glosses over —
-> notably a **hard-refresh of the ArgoCD app before deleting the Cluster** (so
-> ArgoCD doesn't re-create it from a stale cached manifest), plus data
-> verification and consumer-app restarts. Always follow
-> [disaster-recovery.md → Runbook: restore from Barman](./disaster-recovery.md#runbook-restore-from-barman-recovery)
-> for a real DR.
+!!! note
+    The full runbook adds important extra steps the short version glosses over —
+    notably a **hard-refresh of the ArgoCD app before deleting the Cluster** (so
+    ArgoCD doesn't re-create it from a stale cached manifest), plus data
+    verification and consumer-app restarts. Always follow
+    [disaster-recovery.md → Runbook: restore from Barman](./disaster-recovery.md#runbook-restore-from-barman-recovery)
+    for a real DR.
 
 ---
 
 ## Gotchas
 
-> [!WARNING]
-> **Delete the PVCs after deleting the Cluster.** `kubectl delete cluster` does
-> NOT remove PVCs — CNPG leaves them behind as data protection. If you skip the
-> PVC delete, the new cluster reuses the old empty volumes and hangs forever at
-> **"Setting up primary."**
+!!! warning
+    **Delete the PVCs after deleting the Cluster.** `kubectl delete cluster` does
+    NOT remove PVCs — CNPG leaves them behind as data protection. If you skip the
+    PVC delete, the new cluster reuses the old empty volumes and hangs forever at
+    **"Setting up primary."**
 
-> [!WARNING]
-> **Never set `recoveryTarget.targetTime` past the last archived WAL.** Postgres
-> will FATAL with *"recovery ended before configured recovery target was
-> reached"* and the recovery pod crash-loops. If unsure, **omit the target
-> entirely** to restore to the latest available WAL.
+!!! warning
+    **Never set `recoveryTarget.targetTime` past the last archived WAL.** Postgres
+    will FATAL with *"recovery ended before configured recovery target was
+    reached"* and the recovery pod crash-loops. If unsure, **omit the target
+    entirely** to restore to the latest available WAL.
 
-> [!WARNING]
-> **Rolling-restart the consumer apps after a rebuild.** Apps connected to the
-> old database won't re-run their migrations against the freshly-restored one
-> until they reconnect. Restart them:
-> ```bash
-> kubectl -n <app-namespace> rollout restart deployment/<app>
-> ```
+!!! warning
+    **Rolling-restart the consumer apps after a rebuild.** Apps connected to the
+    old database won't re-run their migrations against the freshly-restored one
+    until they reconnect. Restart them:
+    ```bash
+    kubectl -n <app-namespace> rollout restart deployment/<app>
+    ```
 
-> [!WARNING]
-> **CNPG is a SEPARATE backup system from kopiur.** kopiur = file-level PVC
-> backups (Kopia). CNPG = SQL-aware database backups (Barman/S3). **Never mix
-> them** — don't add kopiur CRs to CNPG PVCs, and don't expect kopiur to back up
-> your Postgres data.
+!!! warning
+    **CNPG is a SEPARATE backup system from kopiur.** kopiur = file-level PVC
+    backups (Kopia). CNPG = SQL-aware database backups (Barman/S3). **Never mix
+    them** — don't add kopiur CRs to CNPG PVCs, and don't expect kopiur to back up
+    your Postgres data.
 
-> [!TIP]
-> If Barman complains `Expected empty archive`, the forward lineage you bumped to
-> is already dirty. Don't reuse it — bump to the next clean lineage and keep the
-> recovery source pointed at the last known-good one.
+!!! tip
+    If Barman complains `Expected empty archive`, the forward lineage you bumped to
+    is already dirty. Don't reuse it — bump to the next clean lineage and keep the
+    recovery source pointed at the last known-good one.
 
 ---
 
 ## Where to go next
 
 - **Full DR runbook (the deep version):** [disaster-recovery.md](./disaster-recovery.md)
-- **Repo rules + current lineage table:** [infrastructure/database/CLAUDE.md](../../../infrastructure/database/CLAUDE.md)
+- **Repo rules + current lineage table:** [infrastructure/database/CLAUDE.md](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/database/CLAUDE.md)
 - **Why two backup systems exist:** [docs/disaster-recovery.md](../../disaster-recovery.md)
 - **Live health check:** `kubectl cnpg status <db>-database -n cloudnative-pg`

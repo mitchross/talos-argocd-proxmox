@@ -2,7 +2,7 @@
 
 **Incident date:** 2026-06-14 · **Affected:** radar-ng (and any NFS consumer of BigTank) · **Resolution:** software-only, no hardware change.
 
-> ⚠️ **UPDATE — this recurred on 2026-06-16/17. The software-only fix was insufficient.** The special vdev (consumer SSDs) was the real root cause and was never replaced. See **[Recurrence 2026-06-16](#recurrence-2026-06-16--software-fix-was-insufficient-vdev-removed)** below. Permanent fix: the metadata mirror was **removed** from the pool (`zpool remove`), evacuating metadata to the HDDs. The "Preventive followup (not urgent)" at the bottom is now **done, and was never optional.**
+> ⚠️ **UPDATE — this recurred on 2026-06-16/17. The software-only fix was insufficient.** The special vdev (consumer SSDs) was the real root cause and was never replaced. See **[Recurrence 2026-06-16](#recurrence-2026-06-16-software-fix-was-insufficient-vdev-removed)** below. Permanent fix: the metadata mirror was **removed** from the pool (`zpool remove`), evacuating metadata to the HDDs. The "Preventive followup (not urgent)" at the bottom is now **done, and was never optional.**
 
 This documents a multi-layer outage where the radar-ng app went dark, the TrueNAS box hung/flapped, and the cluster hit `ImagePullBackOff`. All three root causes were **runtime TrueNAS/DNS config, not GitOps manifests** — so there is nothing in this repo that "caused" it, but the operational lessons below must be honored when standing up clusters or TrueNAS datasets.
 
@@ -90,7 +90,7 @@ kubectl describe pod <pod>                         # image-pull TLS error
 - ARC is **not** capped: on a 157GiB box it idles at ~5GiB (c_min = RAM/32) and scales to tens of GiB under load (`arc_c_max`=156GiB, `zfs_arc_max`=0). A low idle ARC reading is normal, not a bug.
 
 ## Hardware followup — DONE 2026-06-17 (was NOT optional)
-**Originally filed as "not urgent." The 2026-06-16 recurrence proved it was the actual root cause.** Resolved by **removing** the special vdev entirely (`zpool remove`, metadata evacuated to HDD) — see [Recurrence 2026-06-16](#recurrence-2026-06-16--software-fix-was-insufficient-vdev-removed). The alternative (never used) was to replace the consumer SSDs with enterprise PLP SSDs (Solidigm/Intel S-series, Samsung PM), keeping the 3-way mirror intact during the swap — **special-vdev loss = whole-pool loss** — after verifying a current BigTank backup. **Lesson: a metadata vdev built from consumer DRAM-less/no-PLP SSDs is a latent outage, not a perf tweak. Don't ship one.**
+**Originally filed as "not urgent." The 2026-06-16 recurrence proved it was the actual root cause.** Resolved by **removing** the special vdev entirely (`zpool remove`, metadata evacuated to HDD) — see [Recurrence 2026-06-16](#recurrence-2026-06-16-software-fix-was-insufficient-vdev-removed). The alternative (never used) was to replace the consumer SSDs with enterprise PLP SSDs (Solidigm/Intel S-series, Samsung PM), keeping the 3-way mirror intact during the swap — **special-vdev loss = whole-pool loss** — after verifying a current BigTank backup. **Lesson: a metadata vdev built from consumer DRAM-less/no-PLP SSDs is a latent outage, not a perf tweak. Don't ship one.**
 
 ## Related
 - [storage-architecture.md](storage-architecture.md)

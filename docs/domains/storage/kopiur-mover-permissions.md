@@ -59,6 +59,16 @@ it owns the files and reads them fine — no master key needed.
 
 ### Choosing the mover identity
 
+```mermaid
+flowchart TD
+    Q1{"Who owns the data files?<br/><code>stat -c '%u:%g' &lt;path&gt;</code>"}
+    Q1 -->|"same UID the pod runs as<br/>(most bjw-s / single-UID apps)"| INH["✅ inheritSecurityContextFrom:<br/>pvcConsumer<br/><i>(backup only — restores have<br/>no pod to inherit from)</i>"]
+    Q1 -->|"pod runs root but data isn't<br/>(daemon-drop, e.g. mysql 999:568)"| EXPL["✅ explicit securityContext<br/>= data-owner UID:GID"]
+    Q1 -->|"root-owned data (0:0)"| ROOT["⚠️ runAsUser: 0 +<br/>privileged-movers<br/>namespace annotation"]
+    Q1 -->|"several owners, files<br/>group-readable (g+r)"| SUPP["✅ supplementalGroups: [gid]"]
+    Q1 -->|"several owners AND<br/>600/700 modes"| HARD["🛑 consolidate ownership —<br/>or CAP_DAC_READ_SEARCH +<br/>privileged PSS (last resort)"]
+```
+
 1. **`inheritSecurityContextFrom.pvcConsumer`** (recommended for backup) — kopiur
    copies the security context of the pod that mounts the PVC. Works perfectly
    when the **pod's UID equals the data owner** (most bjw-s / single-UID apps).
@@ -98,13 +108,13 @@ UID can read all of them, and group membership doesn't help. Two options:
   Determined UIDs here: `568` (open-webui, perplexica, immich, qdrant, copyparty,
   frigate, restore-canary), `1000` (n8n, paperless, flatnotes, zomboid, homepage,
   jellyfin, fizzy, gitea), `1001` (karakeep), `999:568` (mysql), `0:0`
-  (home-assistant, tubesync).
+  (home-assistant, tubesync, nginx).
 
 Examples to copy:
-- Component: [`my-apps/common/kopiur-backup/kustomization.yaml`](../../../my-apps/common/kopiur-backup/kustomization.yaml)
-- Simple single-UID case: [`my-apps/ai/open-webui/kopiur/storage.yaml`](../../../my-apps/ai/open-webui/kopiur/storage.yaml) (uid `568`)
-- Daemon-drop case (mysql): [`my-apps/home/project-nomad/mysql/kopiur-backup.yaml`](../../../my-apps/home/project-nomad/mysql/kopiur-backup.yaml) (uid `999:568`)
-- Root-owned case: [`my-apps/home/home-assistant/kopiur/config.yaml`](../../../my-apps/home/home-assistant/kopiur/config.yaml) (uid `0`, + namespace privileged-movers annotation)
+- Component: [`my-apps/common/kopiur-backup/kustomization.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/common/kopiur-backup/kustomization.yaml)
+- Simple single-UID case: [`my-apps/ai/open-webui/kopiur/storage.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/ai/open-webui/kopiur/storage.yaml) (uid `568`)
+- Daemon-drop case (mysql): [`my-apps/home/project-nomad/mysql/kopiur-backup.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/home/project-nomad/mysql/kopiur-backup.yaml) (uid `999:568`)
+- Root-owned case: [`my-apps/home/home-assistant/kopiur/config.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/home/home-assistant/kopiur/config.yaml) (uid `0`, + namespace privileged-movers annotation)
 
-See also: [`my-apps/CLAUDE.md`](../../../my-apps/CLAUDE.md) "Application with
-Persistent Storage + Backups" and [`.claude/commands/add-backup.md`](../../../.claude/commands/add-backup.md).
+See also: [`my-apps/CLAUDE.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/my-apps/CLAUDE.md) "Application with
+Persistent Storage + Backups" and [`.claude/commands/add-backup.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/.claude/commands/add-backup.md).
