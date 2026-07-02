@@ -61,7 +61,7 @@ spec:
         # making it a sidecar guarantees co-location. Runs non-versioned
         # (no TEMPORAL_DEPLOYMENT_NAME/BUILD_ID env → versioning off).
         - name: sync-worker
-          image: registry.vanillax.me/radar-ng-open-meteo-worker:v1.1.1
+          image: registry.vanillax.me/radar-ng-open-meteo-worker:v1.1.2
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
