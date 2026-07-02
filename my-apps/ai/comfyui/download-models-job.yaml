@@ -29,7 +29,9 @@ spec:
           from huggingface_hub import hf_hub_download
 
           token = os.environ.get('HF_TOKEN', None)
-          BASE = '/models/ComfyUI/models'
+          # /models is the shared repo (<share>/models via subPath) — the same
+          # per-type folders ComfyUI Desktop and the deployment use.
+          BASE = '/models'
           TMP = '/models/.tmp_download'
 
           def download(repo_id, filename, dest_dir, dest_name=None):
@@ -55,8 +57,9 @@ spec:
 
           # ==========================================================
           # NOTE: Main diffusion models (Z-Image-Turbo, Wan 2.2 T2V/I2V,
-          # Qwen-Image-Edit) are already on NFS. This job only downloads
-          # auxiliary files (text encoders, VAEs, CLIP vision) if missing.
+          # Qwen-Image-Edit) are already in the shared SMB repo. This job only
+          # downloads auxiliary files (text encoders, VAEs, CLIP vision) if
+          # missing.
           # ==========================================================
 
           # FLUX text encoders (for Z-Image-Turbo)
@@ -131,7 +134,8 @@ spec:
         volumeMounts:
         - name: comfyui-storage
           mountPath: /models
+          subPath: models
       volumes:
       - name: comfyui-storage
         persistentVolumeClaim:
-          claimName: comfyui-storage
+          claimName: comfyui-storage-smb

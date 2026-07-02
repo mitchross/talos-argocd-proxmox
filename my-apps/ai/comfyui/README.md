@@ -14,11 +14,13 @@ users → https://comfyui.vanillax.me
      → Service (comfyui-service:8188)
      → Deployment: comfyui  (GPU pod, one replica, Recreate)
             │
-            ├── /root  ← PVC: comfyui-storage (NFS RWM, 250Gi, TrueNAS)
+            ├── /root  ← PVC: comfyui-storage-smb (SMB RWM, 250Gi, TrueNAS)
             │            ├── ComfyUI/          ← app code + custom nodes
-            │            ├── ComfyUI/models/   ← models live here (pre-loaded + Job-downloaded)
+            │            ├── models/           ← shared model repo (share root)
             │            ├── user-scripts/     ← pre-start.sh copied from ConfigMap
             │            └── .download-complete  ← image's first-run marker
+            ├── /root/ComfyUI/models ← same PVC, subPath models/ — masks the
+            │            legacy dir so downloads land in the shared repo
             ├── /root/ComfyUI/user/__manager/config.ini ← ConfigMap
             └── /opt/custom-nodes (read-only)            ← ConfigMap
 ```
@@ -26,42 +28,50 @@ users → https://comfyui.vanillax.me
 - **Namespace:** `comfyui`
 - **GPU:** one full RTX 3090 (Ampere, compute 8.6) via `runtimeClassName: nvidia`, `nvidia.com/gpu: 1`.
 - **Priority:** `gpu-workload-preemptible` — llama-cpp preempts this when it needs the GPU back.
-- **Strategy:** `Recreate` (mandatory — RWM NFS is fine for multi-attach in theory, but the app isn't safe to multi-write).
+- **Strategy:** `Recreate` (mandatory — RWM SMB is fine for multi-attach in theory, but the app isn't safe to multi-write).
 
 ## Storage model — important
 
-The PVC is a **static, pre-provisioned NFS PV** pointing at
-`192.168.10.133:/mnt/ai-pool/comfyui` on TrueNAS (see `pvc.yaml`). It is
-**not** a dynamically provisioned Longhorn volume. Implications:
+The PVC is a **static, pre-provisioned SMB PV** pointing at
+`//192.168.10.133/comfyui` on TrueNAS (see `pvc.yaml`), authenticating with
+the `smbcreds` secret — SMB instead of NFS so access is password-protected
+rather than IP-trusted. It is **not** a dynamically provisioned Longhorn
+volume. Implications:
 
 - **The 250Gi PVC is just a quota/handle** — the real data lives on TrueNAS.
   Deleting + recreating the PVC (or the whole namespace) does **not** delete
-  the models. The backing NFS share is persistent across cluster rebuilds.
-- **Models are pre-loaded.** The NFS share already holds diffusion models
-  (Z-Image-Turbo, Qwen-Image-Edit, Wan 2.2, etc.) from prior runs. New
-  pods see them immediately at `/root/ComfyUI/models/…`.
+  the models. The backing SMB share is persistent across cluster rebuilds.
+- **Models live in the shared repo** at `<share>/models/` (standard ComfyUI
+  per-type folders), shared with ComfyUI Desktop on the CachyOS box (mounted
+  there at `/mnt/nas/comfyui/models`). The deployment masks it over
+  `/root/ComfyUI/models` via a `subPath` mount, so the app — and its
+  auto-downloader — reads and writes the shared repo directly. The legacy
+  NFS-era tree at `<share>/ComfyUI/` still exists but its models folders
+  were emptied into the shared repo (2026-07).
 - **`download-models-job.yaml` fills gaps.** The separate one-shot Job
   (`comfyui-download-models`) uses `huggingface_hub` + `HF_TOKEN` to pull
-  specific model files to the same NFS share. It's idempotent — the Python
+  specific model files to the same shared repo. It's idempotent — the Python
   script checks `os.path.exists(dest)` before downloading. Re-running the
   Job is safe; it only fetches what's missing.
 - **The image's entrypoint also runs on first boot.** On a genuinely empty
   PVC, `yanwk/comfyui-boot`'s entrypoint clones ComfyUI, installs custom
   nodes, and downloads a small set of default models. It drops
   `/root/.download-complete` when finished and skips on subsequent boots.
-  On this cluster that file already exists on NFS, so the entrypoint
+  On this cluster that file already exists on the share, so the entrypoint
   short-circuits straight to launching ComfyUI.
 
 **If you ever need to "reset" the models:** don't delete the PVC — SSH into
-TrueNAS and clean up `/mnt/ai-pool/comfyui/ComfyUI/models/` selectively,
+TrueNAS and clean up `/mnt/ai-pool/comfyui/models/` selectively,
 or remove `.download-complete` to force the image's first-run path again.
+Remember the models repo is shared with ComfyUI Desktop — deleting there
+deletes for both.
 
 ## Files
 
 | File | Purpose |
 |------|---------|
 | `namespace.yaml` | `comfyui` namespace |
-| `pvc.yaml` | Static NFS PV + PVC (250Gi RWM, `nfs.csi.k8s.io` driver, `nconnect=16`) |
+| `pvc.yaml` | Static SMB PV + PVC (250Gi RWM, `smb.csi.k8s.io` driver, `smbcreds` auth) |
 | `deployment.yaml` | GPU Deployment, init-container to seed `pre-start.sh`, main container |
 | `service.yaml` | ClusterIP with named port `http:8188` (required for HTTPRoute) |
 | `httproute.yaml` | External HTTPRoute → `comfyui.vanillax.me` |
@@ -138,7 +148,7 @@ re-apply them from here.
 
 ## Gotchas
 
-- **Don't delete the PVC to "clean up".** The NFS share is shared state —
+- **Don't delete the PVC to "clean up".** The SMB share is shared state —
   deleting the PVC drops the K8s handle but leaves the data on TrueNAS.
   Recreating the PVC remounts the same data.
 - **Manager `config.ini` via `subPath`.** The mount uses `subPath:
@@ -150,5 +160,6 @@ re-apply them from here.
 - **`download-models-job` is a Job with ArgoCD hooks** (`hook: Sync`,
   `hook-delete-policy: BeforeHookCreation`) — otherwise a Renovate image
   bump on the Python base would wedge ArgoCD on "Job is immutable".
-- **NFS `nconnect=16`** is load-bearing for model-read throughput on the
-  10GbE TrueNAS link. Don't drop it unless you're debugging NFS quirks.
+- **SMB `rsize`/`wsize` 4MiB + `max_credits=64`** are load-bearing for
+  model-read throughput on the 10GbE TrueNAS link. Don't drop them unless
+  you're debugging CIFS quirks.
