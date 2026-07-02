@@ -1,13 +1,15 @@
-# Keep at least one tile-server pod available during voluntary disruptions
-# (node drains, rolling cordons). HPA floor is 2, so allowing 1 disruption
-# at a time gives kured / Talos upgrades room to work.
+# Allow one tile-server pod to be evicted at a time during voluntary
+# disruptions. With minReplicas=1 on a single-node cluster, the previous
+# `minAvailable: 1` made `kubectl drain` (kured / Talos upgrades) impossible
+# to satisfy — the k8s docs call this out explicitly for single-instance
+# apps. maxUnavailable keeps the PDB honest at any replica count.
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: tile-server
   namespace: radar-ng
 spec:
-  minAvailable: 1
+  maxUnavailable: 1
   selector:
     matchLabels:
       app: tile-server
