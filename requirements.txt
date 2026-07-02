@@ -1,0 +1,5 @@
+# Docs site build (MkDocs Material). Mirrors .github/workflows/docs.yml so
+# GitHub Pages CI and Vercel install the exact same toolchain.
+mkdocs>=1.6
+mkdocs-material==9.5.*
+pymdown-extensions==10.*
