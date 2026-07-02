@@ -46,7 +46,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: registry.vanillax.me/radar-ng-open-meteo-worker:v1.1.1
+          image: registry.vanillax.me/radar-ng-open-meteo-worker:v1.1.2
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
