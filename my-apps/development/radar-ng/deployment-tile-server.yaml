@@ -89,6 +89,23 @@ spec:
               value: temporal-frontend.temporal.svc.cluster.local:7233
             - name: TEMPORAL_NAMESPACE
               value: default
+          # /api/livez is 200 iff the FastAPI process answers, probed through
+          # Caddy:8080 so it exercises both processes in the pod. start.sh
+          # backgrounds uvicorn — without a liveness probe a dead uvicorn
+          # leaves the pod Ready and 502ing /api/* forever. Do NOT probe
+          # /api/health: it reports degraded on stale NOAA data, a condition
+          # shared by every replica, and would restart/drain the whole fleet.
+          livenessProbe:
+            httpGet:
+              path: /api/livez
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /api/livez
+              port: 8080
+            periodSeconds: 10
           volumeMounts:
             - name: tiles
               mountPath: /data/tiles
