@@ -74,6 +74,9 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
 
 Backups are **kopiur** (Kopia-native operator; replaced pvc-plumber + VolSync 2026-06-27).
 
+- **[kopiur-playground.md](kopiur-playground.md)** — 🕹️ interactive, in-browser
+  simulation of backup + restore-before-bind: delete a PVC, take S3 offline,
+  nuke the cluster, watch what happens.
 - **[domains/storage/kopiur-mover-permissions.md](domains/storage/kopiur-mover-permissions.md)** —
   why the backup mover runs as the data owner (the #1 gotcha), plain English + technical.
 - **[backup-repository-setup.md](backup-repository-setup.md)** — the one-time backend

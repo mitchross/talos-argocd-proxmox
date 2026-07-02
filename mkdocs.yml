@@ -78,9 +78,16 @@ markdown_extensions:
 plugins:
   - search
 
+extra_css:
+  - assets/kopiur-playground.css
+
+extra_javascript:
+  - assets/kopiur-playground.js
+
 nav:
   - Home: index.md
   - The easy guide (explain it to anyone): easy-guide.md
+  - Interactive kopiur playground: kopiur-playground.md
   - Storage & backups:
       - Storage architecture (source of truth): storage-architecture.md
       - kopiur backup architecture (the guide): domains/storage/kopiur-backup-architecture.md
