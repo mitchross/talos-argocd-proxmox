@@ -1,7 +1,4 @@
 {
-  "enabledPlugins": {
-    "superpowers@claude-plugins-official": true
-  },
   "hooks": {
     "SessionStart": [
       {
@@ -83,5 +80,6 @@
         ]
       }
     ]
-  }
+  },
+  "enabledPlugins": {}
 }
