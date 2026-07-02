@@ -65,7 +65,7 @@ spec:
           # PVC mount below shadows that path entirely, so the baked file is
           # invisible at runtime — only the PVC contents are served. Future
           # cleanup: a v1.0.7 image that drops the COPY step.
-          image: registry.vanillax.me/radar-ng-basemap:v1.1.1
+          image: registry.vanillax.me/radar-ng-basemap:v1.1.2
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
