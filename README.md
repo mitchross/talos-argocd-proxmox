@@ -483,7 +483,7 @@ kubectl delete applications --all -n argocd
 
 - **[CLAUDE.md](CLAUDE.md)** — full development guide and patterns for this repo
 - **[docs/index.md](docs/index.md)** — documentation landing page + doc map
-- **[docs/easy-guide.md](docs/easy-guide.md)** — the whole system explained from zero (GitOps → sync waves → components → kopiur → DR), demo script included — the doc to share
+- **[docs/easy-guide.md](docs/easy-guide.md)** — the whole system explained from zero (GitOps → sync waves → components → kopiur → DR) — the doc to share
 - **[docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md)** — kopiur backup/restore architecture (start here for backups)
 - **[docs/disaster-recovery.md](docs/disaster-recovery.md)** — full-cluster destroy/rebuild runbook
 - **[docs/domains/argocd/argocd.md](docs/domains/argocd/argocd.md)** · **[entrypoints.md](docs/domains/argocd/entrypoints.md)** — ArgoCD patterns, root entrypoints, and waves
