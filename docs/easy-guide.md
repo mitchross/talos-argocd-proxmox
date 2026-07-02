@@ -375,6 +375,11 @@ That last row is the safety property everything else is built around: an
 outage can delay recovery, but it can never silently hand your app a blank
 volume that then gets backed up as if it were real.
 
+!!! example "Try it yourself, no cluster needed"
+    The [**kopiur playground**](kopiur-playground.md) is an interactive
+    simulation of exactly this state machine — delete the PVC, take S3
+    offline, nuke the cluster, and watch all three outcomes play out.
+
 The honest fine print: a PVC **without** the `dataSourceRef` recreates empty —
 the backup exists, but nothing tells Kubernetes to use it. CI
 (`validate-kopiur-coverage.py`) hard-fails a PR where a backed-up PVC is
