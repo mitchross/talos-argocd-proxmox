@@ -31,13 +31,13 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
 
 <div class="grid cards" markdown>
 
--   🎬 **The easy guide** — *share this one*
+-   📖 **The easy guide** — *share this one*
 
     ---
 
     The whole system from zero: GitOps → sync waves → Kustomize components →
-    kopiur → restore-before-bind. Real YAML, a demo script, an adoption
-    ladder for "I just want to try kopiur", and the colleague FAQ.
+    kopiur → restore-before-bind. Real YAML, an adoption ladder for
+    "I just want to try kopiur", and the colleague FAQ.
 
     [→ easy-guide.md](easy-guide.md)
 

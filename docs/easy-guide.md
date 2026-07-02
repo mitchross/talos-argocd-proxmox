@@ -2,8 +2,7 @@
 
 > The whole system — GitOps, sync waves, Kustomize components, kopiur backups,
 > restore-before-bind DR — built up from zero, in order, with the real YAML.
-> Written to be **read aloud**: use it as an article, a talk track, or the
-> skeleton of a video. Every claim here is pulled from this repo and its
+> Every claim here is pulled from this repo and its
 > [proof history](disaster-recovery.md#proof-history).
 >
 > Deep-dive companions: [storage architecture](storage-architecture.md) (the
@@ -72,9 +71,6 @@ flowchart LR
 The one manual act is applying `root.yaml`. From then on ArgoCD manages
 *everything* — including its own Helm values and the ApplicationSets that
 discover everything else. Git is the cluster; the cluster is a cache.
-
-!!! quote "🎙️ Talk track"
-    *"I don't deploy apps. I create folders."*
 
 ---
 
@@ -145,10 +141,6 @@ flowchart TD
     POD --> H["Application: Healthy —<br/>Argo's sync completes"]
 ```
 
-!!! quote "🎙️ Talk track"
-    *"Sync waves turn a disaster recovery into a script. Health checks turn
-    the script into one that actually waits for its own steps."*
-
 ---
 
 ## Part 3 — Kustomize components (the DRY trick)
@@ -217,10 +209,6 @@ patches *all* resources of a kind identically, and the mover UID must match
 each PVC's data owner — which differs app to app (and even within one
 namespace). Uniform things go in the component; varying things stay in the
 stub. That line is the entire design discipline.
-
-!!! quote "🎙️ Talk track"
-    *"The component is 'what a backup is here.' The stub is 'what's different
-    about this one volume.' Twenty-line stubs, zero copy-paste."*
 
 ---
 
@@ -399,11 +387,6 @@ recorded decision.
 > separate imperative step, which reintroduces the exact race above. That's
 > why this cluster runs kopiur. ([Full comparison](domains/storage/kopiur-evaluation.md).)
 
-!!! quote "🎙️ Talk track"
-    *"Most backup systems answer 'can I get my data back?' This answers a
-    better question: 'can my app ever accidentally start without it?' — and
-    makes the answer no."*
-
 ---
 
 ## Part 6 — The one gotcha: the mover runs as the data owner
@@ -437,10 +420,6 @@ shared component: it's the one field that genuinely varies per volume.
 Full detail, including the daemon-drop (mysql `999:568`) and root-owned
 (uid `0` + the `privileged-movers` namespace annotation) cases:
 [mover permissions](domains/storage/kopiur-mover-permissions.md).
-
-!!! quote "🎙️ Talk track"
-    *"The cluster takes the master key away from root on purpose. So don't
-    send a locksmith — send the tenant."*
 
 ---
 
@@ -552,59 +531,6 @@ B2, TrueNAS…).
     CI — arranged so the backup system needs **zero human choreography**. None
     of them are required to start; all of them are why the full-cluster-nuke
     story works unattended.
-
----
-
-## The demo script (video / live-talk skeleton)
-
-A sequence that shows everything above in ~10 minutes, in rising order of drama:
-
-**Scene 1 — "A directory is an app" (2 min).**
-Show `my-apps/ai/open-webui/` in the repo, then the generated Application in
-the ArgoCD UI. Add a folder on a branch to show what a new app takes.
-
-**Scene 2 — "The whole backup config" (2 min).**
-Open the four pieces from Part 4 side by side: label, `dataSourceRef`, stub,
-`components:` line. Then run
-`kubectl kustomize my-apps/ai/open-webui` and show the component's fields
-appearing in the rendered CRs — the mixin moment.
-
-**Scene 3 — "Watch a backup" (1 min).**
-```bash
-kubectl -n open-webui get snapshot
-# → Completed, with file + byte counts
-```
-
-**Scene 4 — the money shot: delete a PVC on camera (4 min).**
-Use the restore canary or a demo app — never a production volume without a
-fresh snapshot check first:
-```bash
-kubectl -n <ns> get snapshot                  # 1. fresh snapshot exists
-kubectl -n <ns> scale deploy/<app> --replicas=0
-kubectl -n <ns> delete pvc <pvc>              # 2. the scary part
-# 3. ArgoCD recreates it from Git…
-kubectl -n <ns> get pvc -w                    #    …it sits PENDING (not empty!)
-kubectl -n <ns> get pods                      # 4. mover Job appears, runs
-#    PVC flips to Bound; scale the app back up; the data is there.
-```
-Narrate the `Pending` state explicitly — *"Kubernetes is refusing to give the
-app an empty disk while the restore runs"* — that's the whole thesis on screen.
-
-**Scene 5 — the receipts (1 min).**
-Show the [proof-history table](disaster-recovery.md#proof-history) and the
-canary's `last-drill-result=pass` annotation. End on the pets-vs-cattle diagram.
-
-!!! example "Interactive, no-cluster demo layer: Webernetes"
-    ngrok built [Webernetes](https://github.com/ngrok/webernetes) — a partial
-    Kubernetes reimplemented in TypeScript that runs **entirely in the
-    browser** (pods, Deployments, scheduling, cluster DNS; ~140 KiB), made
-    explicitly for interactive Kubernetes content
-    ([blog post](https://ngrok.com/blog/i-ported-kubernetes-to-the-browser) ·
-    [live demo](https://webernetes-demo.ngrok.app/)). Great for letting an
-    article/video audience *poke at* pods and controllers inline without a
-    cluster. **Caveat:** it has no PVCs/volumes, so the restore-before-bind
-    money shot (Scene 4) still needs a real cluster — a `kind` cluster + the
-    restore-canary pattern is the cheapest honest stand-in.
 
 ---
 
