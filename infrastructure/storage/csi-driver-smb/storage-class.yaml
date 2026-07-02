@@ -7,6 +7,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: comfyui-smb
+  annotations:
+    argocd.argoproj.io/sync-options: Replace=true
 provisioner: smb.csi.k8s.io
 parameters:
   source: //192.168.10.133/k8s/comfyui
@@ -15,7 +17,8 @@ parameters:
 mountOptions:
     - dir_mode=0770
     - file_mode=0660
-    - vers=3.0
+    - vers=3.1.1
+    - max_channels=4
     - noserverino
     - cache=loose
     - rsize=4194304
@@ -32,6 +35,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: frigate-smb
+  annotations:
+    argocd.argoproj.io/sync-options: Replace=true
 provisioner: smb.csi.k8s.io
 parameters:
   source: //192.168.10.133/k8s/frigate
@@ -40,7 +45,8 @@ parameters:
 mountOptions:
     - dir_mode=0770
     - file_mode=0660
-    - vers=3.0
+    - vers=3.1.1
+    - max_channels=4
     - noserverino
     - cache=loose
     - rsize=4194304
@@ -57,6 +63,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: llama-cpp-smb
+  annotations:
+    argocd.argoproj.io/sync-options: Replace=true
 provisioner: smb.csi.k8s.io
 parameters:
   source: //192.168.10.133/k8s/llama-cpp
@@ -65,7 +73,8 @@ parameters:
 mountOptions:
     - dir_mode=0770
     - file_mode=0660
-    - vers=3.0
+    - vers=3.1.1
+    - max_channels=4
     - noserverino
     - cache=loose
     - rsize=4194304
@@ -82,6 +91,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: tubearchivist-smb
+  annotations:
+    argocd.argoproj.io/sync-options: Replace=true
 provisioner: smb.csi.k8s.io
 parameters:
   source: //192.168.10.133/k8s/tubearchivist
@@ -90,7 +101,8 @@ parameters:
 mountOptions:
     - dir_mode=0770
     - file_mode=0660
-    - vers=3.0
+    - vers=3.1.1
+    - max_channels=4
     - noserverino
     - cache=loose
     - rsize=4194304
@@ -107,6 +119,8 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: kiwix-smb
+  annotations:
+    argocd.argoproj.io/sync-options: Replace=true
 provisioner: smb.csi.k8s.io
 parameters:
   source: //192.168.10.133/k8s/kiwix
@@ -115,7 +129,8 @@ parameters:
 mountOptions:
     - dir_mode=0770
     - file_mode=0660
-    - vers=3.0
+    - vers=3.1.1
+    - max_channels=4
     - noserverino
     - cache=loose
     - rsize=4194304

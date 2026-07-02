@@ -1,45 +1,68 @@
-# Static PV - mounts NFS share root directly via CSI (not a CSI-created subdirectory)
-# Must use CSI driver (not legacy nfs:) for mountOptions like nconnect to work
+# Static PV — mounts the TrueNAS comfyui share root via the SMB CSI driver.
+# SMB (not NFS) on purpose: the share authenticates with the smbcreds
+# username/password (csi-driver-smb ns), so access is credential-gated
+# instead of NFS's IP-based trust. Same share + creds the CachyOS desktop
+# mounts at /mnt/nas/comfyui.
+#
+# Share layout (2026-07 restructure):
+#   <share>/models/    ← shared model repo (Desktop + k8s), standard ComfyUI
+#                        per-type folders. Mounted over ComfyUI/models via
+#                        subPath in deployment.yaml so auto-downloads land here.
+#   <share>/ComfyUI/   ← legacy app tree from the old NFS-era install (its
+#                        models/ type-folders were emptied into <share>/models).
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: comfyui-nfs-pv
+  name: comfyui-smb-pv
 spec:
   capacity:
     storage: 250Gi
   accessModes:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: nfs-comfyui-10g
+  storageClassName: ""
   mountOptions:
-    - nfsvers=4.1
-    - nolock
-    - tcp
-    - noatime
-    - rsize=1048576
-    - wsize=1048576
-    - nconnect=16
+    - dir_mode=0775
+    - file_mode=0664
+    - uid=0
+    - gid=0
+    - vers=3.1.1
+    # SMB multichannel (enabled server-side on TrueNAS 2026-07): 4 channels
+    # over the 10G link. Requires vers>=3.0 and the server toggle.
+    - max_channels=4
+    - noserverino
+    - cache=loose
+    - rsize=4194304
+    - wsize=4194304
+    - actimeo=60
+    - echo_interval=60
+    - max_credits=64
   csi:
-    driver: nfs.csi.k8s.io
-    volumeHandle: comfyui-nfs-pv
+    driver: smb.csi.k8s.io
+    volumeHandle: comfyui-smb-pv
     volumeAttributes:
-      server: "192.168.10.133"
-      share: "/mnt/ai-pool/comfyui"
+      source: "//192.168.10.133/comfyui"
+    nodeStageSecretRef:
+      name: smbcreds
+      namespace: csi-driver-smb
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: comfyui-storage
+  # Renamed from comfyui-storage when the PV moved NFS→SMB: PVC spec
+  # (volumeName) is immutable, so a rename lets ArgoCD create/prune
+  # cleanly instead of wedging on an in-place patch.
+  name: comfyui-storage-smb
   namespace: comfyui
   labels:
     backup-exempt: "true"
   annotations:
-    storage.vanillax.dev/backup-exempt-reason: "NFS-backed ComfyUI model and workspace cache; non-snapshottable, rebuildable from upstream model registries"
+    storage.vanillax.dev/backup-exempt-reason: "SMB-backed ComfyUI model and workspace cache; non-snapshottable, rebuildable from upstream model registries"
 spec:
   accessModes:
     - ReadWriteMany
   resources:
     requests:
       storage: 250Gi
-  storageClassName: nfs-comfyui-10g
-  volumeName: comfyui-nfs-pv
+  storageClassName: ""
+  volumeName: comfyui-smb-pv
