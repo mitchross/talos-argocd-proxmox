@@ -17,5 +17,6 @@ metadata:
     # tenancy (allowedNamespaces selector). Replaces pvc-plumber labels.
     kopiur.home-operations.com/repo: cluster-kopia
   annotations:
-    # privileged root mover gate (kopiur-backup component default)
+    # root-uid mover gate — required because this app's kopiur stub runs the
+    # mover as uid 0 (data is root-owned); NOT a component default.
     kopiur.home-operations.com/privileged-movers: "true"

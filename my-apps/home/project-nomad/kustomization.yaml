@@ -51,8 +51,7 @@ resources:
   - flatnotes/kopiur-backup.yaml
   - flatnotes/httproute.yaml
 
-# Uniform kopiur backup fields (repository, copyMethod, populator, privileged
-# mover) for the per-PVC stubs in flatnotes/, mysql/, qdrant/.
+# Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stubs in flatnotes/, mysql/, qdrant/.
 components:
   - ../../common/kopiur-backup
 
