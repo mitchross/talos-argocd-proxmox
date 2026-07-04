@@ -496,8 +496,11 @@ PVCs, missing mover securityContexts, and unqualified exempt reasons. A PVC
 with *no bundle at all* is therefore only a warning — Git review and the
 worked examples remain the guardrail for the negative space.
 
-**Pre-1.0 engine.** kopiur is alpha (`0.4.x`); CRD fields can churn. Pin the
-chart version and re-check `kubectl explain` after upgrades.
+**Pre-1.0 engine.** kopiur is pre-1.0 (`0.5.x` since 2026-07-04); CRD fields
+can churn. Pin the chart version and re-check `kubectl explain` after upgrades.
+The 0.5.0 breaking changes (copyMethod default flip, `verification.quick`
+reshape, metrics rename) were assessed 2026-07-04 — none affected this repo;
+see the note beside the pin in `infrastructure/controllers/kopiur-operator/kustomization.yaml`.
 
 **RPO is the schedule cadence.** Hourly at best. Anything needing tighter RPO
 or application-consistent quiescing (databases!) uses native tooling — CNPG

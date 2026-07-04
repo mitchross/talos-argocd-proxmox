@@ -216,7 +216,7 @@ spec:
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotSchedule
 metadata: { name: app-data-daily, namespace: app-name }
-spec: { policyRef: { name: app-data }, schedule: { cron: "MM 3 * * *" } }   # distinct minute, no herd
+spec: { policyRef: { name: app-data }, schedule: { cron: "MM 3 * * *" } }   # distinct minute vs ALL schedules incl. hourly "MM * * * *" tiers (hourly :MM collides with daily 03:MM)
 ---
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: Restore

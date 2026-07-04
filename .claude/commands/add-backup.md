@@ -53,7 +53,7 @@ are gone.
    apiVersion: kopiur.home-operations.com/v1alpha1
    kind: SnapshotSchedule
    metadata: { name: <pvc>-daily, namespace: <ns> }
-   spec: { policyRef: { name: <pvc> }, schedule: { cron: "MM 3 * * *" } }   # distinct minute, no herd
+   spec: { policyRef: { name: <pvc> }, schedule: { cron: "MM 3 * * *" } }   # distinct minute vs ALL schedules — incl. hourly "MM * * * *" tiers (an hourly at :MM collides with a daily at 03:MM)
    ---
    apiVersion: kopiur.home-operations.com/v1alpha1
    kind: Restore
