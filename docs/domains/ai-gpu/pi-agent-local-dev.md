@@ -96,12 +96,11 @@ The design difference: Claude Code ships everything integrated; pi keeps the
 **core minimal** and everything else — MCP, subagents, memory, planning — is
 opt-in via the [pi.dev/packages](https://pi.dev/packages) ecosystem
 (`pi install npm:<pkg>` / `pi install git:<repo>`; `pi list` / `pi update
---all` to manage). For a batteries-included start, **LazyPi** is a curated
-one-command bundle (60+ community skills, MCP support, subagents, persistent
-memory, planning mode) that installs into `~/.pi/agent/` and can be removed
-piecemeal. On this stack the shell still covers most needs — every system we
-run (Kubernetes, ArgoCD, Temporal, git, pnpm, uv) has a first-class CLI — so
-treat packages as additive, not required.
+--all` to manage). For a batteries-included start there's **LazyPi** — but
+read the local-model verdict in §4a before running it. On this stack the
+shell still covers most needs — every system we run (Kubernetes, ArgoCD,
+Temporal, git, pnpm, uv) has a first-class CLI — so treat packages as
+additive, not required.
 
 ## 3. Global `~/.pi/agent/AGENTS.md` starter
 
@@ -283,6 +282,49 @@ long context.
 default for anything touching this repo, since a wrong `kubectl` habit here
 becomes a cluster incident; it pairs with the `k8s-debug` skill's
 "diagnose read-only, fix via git" rule.
+
+### LazyPi — use the picker, not "install all" (local-model verdict)
+
+[LazyPi](https://lazypi.org/) (`npx @robzolkos/lazypi`) is a curated
+one-command bundle: 60+ community skills, 76 themes, MCP support, subagents,
+persistent memory, planning mode, diff review, a Claude Code CLI provider.
+Validated facts that matter for THIS setup:
+
+- **It coexists with our custom provider.** LazyPi installs packages into
+  `~/.pi/agent/` and never touches `models.json` — the homelab vLLM wiring
+  is untouched. Installs are idempotent (re-runs skip installed packages),
+  removal is per-package (`npx @robzolkos/lazypi remove <id>`), and the
+  installed pieces work independently of LazyPi afterward.
+- **The 60-skill firehose is a prefill tax on a local model.** pi loads
+  skills by progressive disclosure — full instructions load on demand, but
+  **every installed skill's name+description sits in the system prompt of
+  every request**. 60+ descriptions ≈ a couple thousand tokens re-prefilled
+  each turn on a backend where prefill is already the bottleneck (gotcha
+  #1), and it erodes pi's core advantage (a ~200-token system prompt).
+  Community reception says the same: the author's own retro
+  (["LazyPi made people mad"](https://www.zolkos.com/2026/04/21/lazypi-made-people-mad))
+  notes real praise as an onboarding ramp, alongside criticism that many
+  extensions "eat up a lot of system-prompt context" and most users
+  eventually pare down.
+- **A 27B is also more distractible than a frontier model.** More skill
+  descriptions = more invocation surface to fumble. pi's own docs admit
+  models "don't always" read the full SKILL.md before acting; keep the
+  skill list short so the daily driver can't grab the wrong one.
+
+**Verdict: works with our model and setup, but run the interactive picker
+and take ~6–8 pieces, not everything.** Worth taking: `pi-mcp-adapter`,
+`pi-plan`, `pi-subagents`, diff review, memory (trial it — it also injects
+context each turn), a theme. Skip: the bulk skill catalog (write the 3–4
+skills from §4 instead), usage tracking (local = $0). The **Claude Code CLI
+provider** is genuinely interesting for the Ctrl+P local↔frontier workflow —
+it routes pi through your existing Claude subscription instead of per-token
+API rates — but that's a subscription-terms gray area since Anthropic
+restricted third-party agent access; decide for yourself.
+
+**Verify after install:** send one message and read pi's live token footer.
+If the first-turn prompt grew by thousands of tokens vs. pre-LazyPi, prune
+skills until it's back near baseline; `npx @robzolkos/lazypi doctor` checks
+install health.
 
 ### ⚠️ Safety note: pi ships in "YOLO mode"
 
