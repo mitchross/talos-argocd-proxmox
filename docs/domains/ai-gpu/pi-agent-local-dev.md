@@ -87,9 +87,10 @@ don't fight these from the client:
 | MCP servers | **`pi install npm:pi-mcp-adapter`** (not in core — see §4a) | token-efficient proxy: ONE `mcp` tool (~200 tokens) instead of hundreds of tool defs |
 | Subagents / Task | **`pi-subagents` package** (not in core) | parallel isolated agents — but see the `max-num-seqs 2` warning in §4a |
 | Plan mode | **`pi-plan` package** — read-only planning + approval-based execution | the Claude Code plan-mode equivalent |
-| Session resume / compact | `pi -c`, `pi -r`, `/compact`, `/fork`, `/tree` | sessions in `~/.pi/agent/sessions/` |
-| Permission modes | `trust.json` + tool allow flags (`--tools`, `--exclude-tools`) | |
-| Custom tools/hooks | TypeScript extensions in `~/.pi/agent/extensions/` | can replace built-ins, add checkpointing |
+| Session resume / compact | `pi -c`, `pi -r`, `/compact` — plus a **session TREE**: `/fork`, `/tree`, branch and switch | sessions are JSONL trees, not linear — better than Claude Code for exploring alternatives |
+| Permission modes | ⚠️ **none by default — "YOLO mode"** | see the safety note below; `trust.json` + `--tools`/`--exclude-tools` + opt-in permission-gating extensions |
+| Hooks | 25 in-process TypeScript extension events (tool streaming, bash spawn interception, dynamic system prompt, context access) | richer than Claude Code's 14 shell hooks |
+| Custom tools/hooks | TypeScript extensions in `~/.pi/agent/extensions/` | can replace built-ins, add checkpointing; `--mode rpc` drives pi from external scripts |
 
 The design difference: Claude Code ships everything integrated; pi keeps the
 **core minimal** and everything else — MCP, subagents, memory, planning — is
@@ -283,6 +284,44 @@ default for anything touching this repo, since a wrong `kubectl` habit here
 becomes a cluster incident; it pairs with the `k8s-debug` skill's
 "diagnose read-only, fix via git" rule.
 
+### ⚠️ Safety note: pi ships in "YOLO mode"
+
+Unlike Claude Code's deny-first permissions, **pi executes tools with NO
+guardrails by default** (the author's position: "security in coding agents is
+mostly theater"). With a bash tool and a kubeconfig on the same machine,
+the model *can* run `kubectl delete`. Layered mitigation for cluster work:
+
+1. **Give pi a read-only kubeconfig.** Create a `view`-bound ServiceAccount
+   kubeconfig and export `KUBECONFIG` to it in pi sessions; keep the admin
+   kubeconfig out of the agent's environment. This is the only *hard*
+   guarantee on the list.
+2. `pi-plan` for propose→approve on anything mutating.
+3. AGENTS.md rules (GitOps-only) — soft, but the 27B follows them well with
+   the tuned sampling.
+4. An opt-in permission-gating extension from pi.dev/packages if you want
+   Claude-Code-style prompts for specific commands.
+
+## 4b. Workflow patterns worth stealing (community-proven)
+
+- **Multi-stage review loop, free at local prices:** spec → implement →
+  **review with a fresh context window** (`/fork` or a subagent) → fix → test.
+  On paid APIs this pattern doubles cost; on your hardware the only cost is
+  the prefill wait. This is the single most-cited pi extension pattern — and
+  the fresh-context review catches what the implementing context is blind to.
+- **Mix local + frontier in one session:** add your Anthropic/OpenAI key
+  alongside the homelab provider (built-in providers need only `/login` — no
+  models.json entry) and **Ctrl+P cycles models mid-session**. Daily loop on
+  `qwen3.6-27b` for free; hit a wall → Ctrl+P to a frontier model for one
+  hard turn → cycle back. This is the "local volume, frontier judgment"
+  economics from the wind-down plan, inside a single conversation.
+- **Session tree instead of restarts:** `/fork` before a risky refactor,
+  `/tree` + switch back if it goes sideways — cheaper than `/new` because the
+  shared prefix prefill is preserved by vLLM's prefix caching
+  (`--enable-prefix-caching` is on).
+- **Plans as files, not modes:** write plans to `PLAN.md` in-repo and have pi
+  read them per session — survives context resets, gets version control, and
+  works identically in Claude Code when you switch tools.
+
 ## 5. Research & RAG strategy
 
 - **Code understanding: agentic retrieval beats embedding RAG.** With 262K of
@@ -320,7 +359,19 @@ becomes a cluster incident; it pairs with the `k8s-debug` skill's
 6. **After GPU scale-swaps, pi errors are expected.** If vLLM is scaled to 0
    (image-gen session on the cards), pi gets connection errors — that's the
    whole-card topology, not a bug. Scale vLLM back to 1 in git.
-7. **Free upgrade pending:** swapping the vLLM checkpoint to AutoRound INT4 +
+7. **Empty responses with thinking enabled = known local-model gotcha.**
+   Community reports (pi + local Qwen) of `enable_thinking` producing
+   empty `content`: everything lands in the reasoning channel and the
+   client shows nothing. Our server-side `--reasoning-parser qwen3` should
+   split it correctly — but if pi renders empty turns with thinking on,
+   drop the `chatTemplateKwargs` thinking mapping and run nothink (the
+   daily default anyway).
+8. **vLLM fails loud, Ollama fails silent — that's a feature.** The
+   Ollama-based pi guides warn that oversizing `num_ctx` silently falls
+   back to CPU and "tanks tool-call reliability." vLLM has no such mode:
+   requests over budget error visibly. If pi starts erroring at huge
+   contexts, that's the 262K/KV budget talking — `/compact`, don't retry.
+9. **Free upgrade pending:** swapping the vLLM checkpoint to AutoRound INT4 +
    MTP n=3 (club-3090's default dual recipe) is specifically a *code-decode*
    win (149 → ~264 TPS on code) — pi is the workload that benefits most.
    Tracked in `3090-llm-optimization.md`.
@@ -344,3 +395,4 @@ becomes a cluster incident; it pairs with the `k8s-debug` skill's
 - [`model-catalog.md`](model-catalog.md) — what `qwen3.6-27b` is, app→backend wiring
 - [`3090-llm-optimization.md`](3090-llm-optimization.md) — engine/KV analysis, power profile, wind-down roadmap
 - [pi docs — models](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/models.md) · [pi coding agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) · [pi.dev/packages](https://pi.dev/packages) · [pi-mcp-adapter](https://github.com/nicobailon/pi-mcp-adapter)
+- Community: [disler/pi-vs-claude-code](https://github.com/disler/pi-vs-claude-code/blob/main/COMPARISON.md) (feature-by-feature map; source for the YOLO-mode and session-tree notes) · [InsiderLLM pi + local models guide](https://insiderllm.com/guides/pi-agent-local-models-ollama/) (local Qwen tool-calling gotchas) · [owainlewis review](https://newsletter.owainlewis.com/p/is-pi-better-than-claude-code) (multi-stage review-loop extension pattern)
