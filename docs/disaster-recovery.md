@@ -147,6 +147,14 @@ provision, or VMs are built from stale state and must be reprovisioned.
   `Failed`, a `Restore` stuck without ever populating its PVC (PVC `Pending`
   long after the repo is confirmed reachable), or a `Snapshot` stuck in error.
   Watch with `kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot`.
+- **Privileged-mover namespaces may lag a grant race** (upstream kopiur #194):
+  in the three root-mover namespaces (home-assistant, tubesync, nginx-example)
+  the controller can miss the `privileged-movers` annotation event when the
+  namespace and CRs land together (exactly the DR cold-start timing) and leave
+  `MoverPermitted=False` until a ~5 min backstop requeue. If a Restore there
+  sits blocked well past that, nudge it: `kubectl -n <ns> annotate restore
+  <name> kopiur.home-operations.com/kick="$(date +%s)"` (any no-op metadata
+  touch retriggers reconcile).
 
 ## In-cluster registry and Gitea Actions
 

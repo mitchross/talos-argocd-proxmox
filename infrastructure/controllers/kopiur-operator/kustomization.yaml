@@ -12,7 +12,15 @@ helmCharts:
     # renovate: datasource=docker depName=ghcr.io/home-operations/charts/kopiur
     # CHART version == app version (release.yaml packages with --app-version=VERSION).
     # Pre-1.0/alpha: re-verify CRDs on every bump.
-    version: 0.4.13
+    # 0.5.0 breaking changes assessed 2026-07-04 (upstream #190/#191/#192):
+    #   - copyMethod default flipped Direct→Snapshot — no impact, the
+    #     kopiur-backup component pins copyMethod: Snapshot explicitly (and must
+    #     keep pinning it: SSA re-defaulting hazard on implicit values).
+    #   - verification.quick reshaped to { schedule: {...} } — unused here.
+    #   - metrics renamed (kopiur_snapshot_* → kopiur_policy_last_backup_*) —
+    #     chart ServiceMonitor/PrometheusRule/dashboard all disabled; nothing
+    #     in monitoring/ scrapes kopiur metric names.
+    version: 0.5.1
     releaseName: kopiur
     namespace: kopiur-system
     includeCRDs: true

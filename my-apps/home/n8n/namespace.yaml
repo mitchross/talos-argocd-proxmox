@@ -8,6 +8,3 @@ metadata:
     # kopiur-managed: ClusterExternalSecret cred fanout + ClusterRepository
     # tenancy (allowedNamespaces selector). Replaces pvc-plumber labels.
     kopiur.home-operations.com/repo: cluster-kopia
-  annotations:
-    # privileged root mover gate (kopiur-backup component default)
-    kopiur.home-operations.com/privileged-movers: "true"
