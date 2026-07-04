@@ -54,6 +54,7 @@ are gone.
    kind: SnapshotSchedule
    metadata: { name: <pvc>-daily, namespace: <ns> }
    spec: { policyRef: { name: <pvc> }, schedule: { cron: "MM 3 * * *" } }   # distinct minute vs ALL schedules — incl. hourly "MM * * * *" tiers (an hourly at :MM collides with a daily at 03:MM)
+   # Taken minutes: grep -rh 'cron:' my-apps/*/*/kopiur* my-apps/*/*/*/kopiur* | sort
    ---
    apiVersion: kopiur.home-operations.com/v1alpha1
    kind: Restore
@@ -95,6 +96,13 @@ are gone.
 
    (Helm-rendered PVC: inject the `dataSourceRef` + annotations via a Kustomize
    `patches:` block on the chart PVC — see `my-apps/development/gitea/`.)
+
+   **Existing/Bound PVC?** ArgoCD will show a `PVC is invalid: Forbidden`
+   ComparisonError — `dataSourceRef` is immutable on a Bound PVC. This is
+   EXPECTED and harmless: backups start immediately; the `dataSourceRef` arms
+   on the next recreate (i.e., at DR time). The masking annotations + AppSet
+   `ignoreDifferences` handle the diff — do NOT try to "fix" it by recreating
+   the PVC unless you actually want a restore drill.
 
 7. Sync through GitOps and verify:
 

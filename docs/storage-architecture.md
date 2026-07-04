@@ -340,7 +340,10 @@ or the [`/project:add-backup`](https://github.com/mitchross/talos-argocd-proxmox
    `Restore`) with the mover `securityContext` set to that UID:GID and a
    distinct cron minute.
 4. **PVC:** add `dataSourceRef → Restore/<pvc>-restore` + the two `ServerSide*`
-   annotations (the immutable-`dataSourceRef` diff mask).
+   annotations (the immutable-`dataSourceRef` diff mask). On an already-Bound
+   PVC expect the harmless `Forbidden` ComparisonError (see
+   [Troubleshooting](#common-failure-modes)) — backups start now, the
+   `dataSourceRef` arms on next recreate.
 5. **Kustomization:** add the stub to `resources:` and
    `../../common/kopiur-backup` to `components:`.
 
