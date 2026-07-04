@@ -1,4 +1,5 @@
-# kopiur GitOps config (TRIAL) — namespace, ESO credentials, ClusterRepository.
+# kopiur GitOps config (production backup system since 2026-06-27) —
+# namespace, ESO credentials, ClusterRepository.
 # Wave 3: after the operator + CRDs exist (Wave 2), before app CRs (my-apps
 # Wave 6). The ClusterRepository CRD must be installed before this app syncs.
 apiVersion: argoproj.io/v1alpha1

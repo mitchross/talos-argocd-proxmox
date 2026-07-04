@@ -15,9 +15,8 @@ resources:
   # VolSync + pvc-plumber RETIRED 2026-06-27 — replaced by kopiur (all PVCs
   # migrated; see docs/kopiur-trial.md). Removed: volsync-app,
   # volsync-backup-cluster-app, pvc-plumber-app + their dirs.
-  # kopiur TRIAL — parallel to pvc-plumber (Wave 2 operator, Wave 3 config).
-  # Evaluating kopiur as a VolSync/pvc-plumber replacement; karakeep is the
-  # canary. Remove these two lines to back the trial out. See docs/kopiur-trial.md.
+  # kopiur — THE production backup system since 2026-06-27 (Wave 2 operator,
+  # Wave 3 config). Trial history: docs/kopiur-trial.md.
   - core-dependencies/kopiur-operator-app.yaml
   - core-dependencies/kopiur-config-app.yaml
 

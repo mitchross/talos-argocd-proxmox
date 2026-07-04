@@ -1,16 +1,16 @@
-# kopiur operator Helm values (TRIAL). Rendered locally via Kustomize helmCharts
-# from the upstream OCI chart — see kustomization.yaml. Pin image tags to the
-# chart version; pin DIGESTS before trusting this for anything real.
+# kopiur operator Helm values (production backup system since 2026-06-27).
+# Rendered locally via Kustomize helmCharts from the upstream OCI chart — see
+# kustomization.yaml.
+#
+# Image tags are deliberately NOT set here: empty tag defaults to
+# .Chart.AppVersion, and the OCI chart is packaged with appVersion == chart
+# version — so all three images (controller/webhook/mover) track the single
+# chart pin in kustomization.yaml. Explicit tags here drifted on Renovate
+# chart bumps (nothing updated them). Pin image.*.digest before trusting
+# this for anything real.
 installScope: cluster # ClusterRole + ClusterRepository reconciliation
 installCRDs: true # chart ships the 7 CRDs as templates
-image:
-  controller:
-    tag: "0.4.13"
-  webhook:
-    tag: "0.4.13"
-  mover:
-    tag: "0.4.13"
 webhook:
-  failurePolicy: Ignore # trial: never gate CR creation on operator health
+  failurePolicy: Ignore # deliberate (DR-safety): a kopiur outage must never gate CR creation
   tls:
     mode: self # self-signed at runtime — no cert-manager / no hook Job
