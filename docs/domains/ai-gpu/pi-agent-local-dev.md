@@ -1,10 +1,13 @@
 # Pi Agent — Claude-Code-Grade Local Dev on the Dual-3090 Backend
 
-> Goal: a fully local coding agent ([pi](https://github.com/badlogic/pi-mono),
-> `packages/coding-agent`) that mimics the Claude Code workflow — tools, repo
-> context, skills, research — backed by the cluster's tuned vLLM endpoint
-> (`qwen3.6-27b`, TP=2 across both 3090s, 262K context, vision, tool calling).
-> Free unlimited *volume*; keep paid frontier APIs for the hardest 10%.
+> Goal: fully local coding agents that match the Claude Code *capability set*
+> — tools, repo context, skills, research — without using Claude Code. The
+> toolchain is **[pi](https://github.com/badlogic/pi-mono) (primary) +
+> [OpenCode](https://opencode.ai) (companion, §7)**, both backed by the
+> cluster's tuned vLLM endpoint (`qwen3.6-27b`, TP=2 across both 3090s, 262K
+> context, vision, tool calling). Free unlimited *volume*; keep paid frontier
+> **APIs** (Anthropic/OpenAI/Google keys in the agents' provider lists) for
+> the hardest 10%.
 >
 > Stack targets: Kubernetes/Talos GitOps (this repo), JavaScript/Node/
 > TypeScript, Python, React Native, Temporal.io.
@@ -315,11 +318,9 @@ Validated facts that matter for THIS setup:
 and take ~6–8 pieces, not everything.** Worth taking: `pi-mcp-adapter`,
 `pi-plan`, `pi-subagents`, diff review, memory (trial it — it also injects
 context each turn), a theme. Skip: the bulk skill catalog (write the 3–4
-skills from §4 instead), usage tracking (local = $0). The **Claude Code CLI
-provider** is genuinely interesting for the Ctrl+P local↔frontier workflow —
-it routes pi through your existing Claude subscription instead of per-token
-API rates — but that's a subscription-terms gray area since Anthropic
-restricted third-party agent access; decide for yourself.
+skills from §4 instead), usage tracking (local = $0), and the **Claude Code
+CLI provider** (this toolchain doesn't use Claude Code; frontier access is
+via plain API keys as built-in pi providers).
 
 **Verify after install:** send one message and read pi's live token footer.
 If the first-turn prompt grew by thousands of tokens vs. pre-LazyPi, prune
@@ -362,7 +363,7 @@ the model *can* run `kubectl delete`. Layered mitigation for cluster work:
   (`--enable-prefix-caching` is on).
 - **Plans as files, not modes:** write plans to `PLAN.md` in-repo and have pi
   read them per session — survives context resets, gets version control, and
-  works identically in Claude Code when you switch tools.
+  works identically in OpenCode when you switch agents (§8).
 
 ## 5. Research & RAG strategy
 
@@ -418,7 +419,55 @@ the model *can* run `kubectl delete`. Layered mitigation for cluster work:
    win (149 → ~264 TPS on code) — pi is the workload that benefits most.
    Tracked in `3090-llm-optimization.md`.
 
-## 7. Verify checklist
+## 7. OpenCode alongside pi (same backend, different job)
+
+OpenCode is the second agent in the toolchain — same vLLM endpoint, same
+`AGENTS.md` files (both tools read them), different strengths. Wire it via
+`~/.config/opencode/opencode.json` (or per-project `opencode.json`):
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "homelab": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Homelab vLLM (2x3090)",
+      "options": { "baseURL": "https://vllm.vanillax.me/v1" },
+      "models": {
+        "qwen3.6-27b": {
+          "name": "Qwen3.6-27B",
+          "limit": { "context": 262144, "output": 32768 }
+        }
+      }
+    }
+  },
+  "model": "homelab/qwen3.6-27b"
+}
+```
+
+The `models` key must exactly match the served model id (`qwen3.6-27b`);
+restart OpenCode after editing and it appears in the model picker. Frontier
+API keys slot in as normal OpenCode providers next to it.
+
+**When to reach for which:**
+
+| | pi | OpenCode |
+|---|---|---|
+| Philosophy | minimal core, you compose it | fuller IDE-in-terminal out of the box |
+| Code intelligence | grep/read | **built-in LSP** — real go-to-def/diagnostics |
+| MCP | via `pi-mcp-adapter` (token-lean proxy) | native |
+| Plan mode | `pi-plan` package | built-in plan/build agent modes |
+| Sessions | **tree with fork/branch** | linear |
+| Extensibility | TypeScript extensions, 25 events | config + MCP |
+| Best at (here) | k8s/GitOps flows with custom skills, experiments, session branching | day-in-day-out TS/Python/React-Native editing where LSP pays |
+
+Shared-backend rule: **both agents count against `--max-num-seqs 2`.** pi +
+OpenCode simultaneously is the whole budget — fine for you alone, but don't
+also fire a Perplexica deep-research run mid-session. And OpenCode exposes
+per-model context limits in config (above) — keep them matching the server
+so it compacts instead of erroring at the ceiling.
+
+## 8. Verify checklist
 
 - [ ] `pi --list-models` shows `qwen3.6-27b`; `/model` selects it
 - [ ] `pi "run 'ls' and tell me what you see"` → real `bash` tool call
