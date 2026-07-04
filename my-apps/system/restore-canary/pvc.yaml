@@ -36,8 +36,8 @@ spec:
   # kopiur restore-before-bind: on recreate (the drill, DR, namespace
   # recreate) this binds Pending until the Restore populator hydrates it
   # from the latest kopia snapshot. No-op while Bound. Backup/restore CRs in
-  # kopiur/restore-canary-data.yaml; uniform fields + the privileged mover
-  # come from the ../../common/kopiur-backup component.
+  # kopiur/restore-canary-data.yaml; uniform fields come from the
+  # ../../common/kopiur-backup component; the mover uid:gid lives in the stub.
   dataSourceRef:
     apiGroup: kopiur.home-operations.com
     kind: Restore

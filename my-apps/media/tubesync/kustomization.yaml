@@ -8,8 +8,7 @@ resources:
   - http-route.yaml
   - kopiur/config-pvc.yaml
 
-# Uniform kopiur backup fields (repository, copyMethod, populator, privileged
-# mover) for the per-PVC stub(s) in kopiur/. Backs up config-pvc ONLY —
+# Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub(s) in kopiur/. Backs up config-pvc ONLY —
 # media-pvc is backup-exempt (SMB archive).
 components:
   - ../../common/kopiur-backup

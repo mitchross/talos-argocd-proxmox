@@ -1,7 +1,8 @@
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
-# n8n data backup STUB — uniform fields (repository, copyMethod, privileged
-# mover, populator) injected by ../../common/kopiur-backup.
+# n8n data backup STUB — uniform fields (repository, copyMethod,
+# populator) injected by ../../common/kopiur-backup. The mover securityContext
+# is per-PVC and stays in THIS stub (docs/domains/storage/kopiur-mover-permissions.md).
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotPolicy
 metadata:
