@@ -234,7 +234,7 @@ lot of the decisions here and in [`3090-llm-optimization.md`](3090-llm-optimizat
   `q8`-K + `q4`-V forces the KV cache to CPU, 44× slower. Keep KV symmetric.
 - **Docker tag scheme moved cuda12 → cuda13** (CUDA 13;
   [#21429](https://github.com/ggml-org/llama.cpp/issues/21429)) — why the renovate
-  regex was frozen and we bumped to `server-cuda13-b9354`.
+  regex was frozen; Renovate now tracks the cuda13 tag line (deployment on `server-cuda13-b9828` as of 2026-07).
 
 Full topology / KV / engine analysis lives in
 [`docs/domains/ai-gpu/3090-llm-optimization.md`](3090-llm-optimization.md).

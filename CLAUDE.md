@@ -160,7 +160,8 @@ Detailed instructions load automatically when working in these directories:
 
 | Pattern | Reference Location |
 |---------|-------------------|
-| **Minimal app** | `my-apps/development/nginx/` |
+| **Minimal app** | template in `my-apps/CLAUDE.md` § "Minimal Application" (no live example is truly minimal) |
+| **Backup with root-uid mover** | `my-apps/development/nginx/` (root-owned data: `runAsUser: 0` stub + `privileged-movers` namespace annotation) |
 | **GPU workload** | `my-apps/ai/comfyui/` |
 | **Complex app with storage** | `my-apps/media/immich/` |
 | **PVC with automatic backup (kopiur)** | `my-apps/ai/open-webui/` (component + `kopiur/storage.yaml` stub + PVC `dataSourceRef`) |
@@ -182,10 +183,11 @@ Detailed instructions load automatically when working in these directories:
 
 ### 🚰 Docs reading order for agents (START HERE, in order)
 1. **[docs/index.md](docs/index.md)** — canonical landing page + doc map.
-2. **[docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md)** — the kopiur backup/restore architecture: the pieces, the Kustomize-component pattern, backup + restore flows (diagrams), add-a-backup checklist. **Start here for backups.**
-3. **[docs/domains/storage/kopiur-mover-permissions.md](docs/domains/storage/kopiur-mover-permissions.md)** — why the mover runs as the data owner (the #1 backup gotcha). Plus **[docs/storage-architecture.md](docs/storage-architecture.md)** for the Longhorn/NFS/CNPG storage source-of-truth.
-4. **[docs/disaster-recovery.md](docs/disaster-recovery.md)** — full-cluster destroy/rebuild runbook, pre-nuke checklist, restore-wave expectations, restore canary. **DR source of truth.**
-5. **[docs/domains/](docs/index.md)** — per-domain docs (CNPG, ArgoCD, networking, storage deep-dives).
+2. **[docs/easy-guide.md](docs/easy-guide.md)** — zero-to-hero explainer of the whole stack (GitOps → waves → kopiur → restore-before-bind) with the adoption ladder for porting the pattern elsewhere. **Best first read for humans and new operators.**
+3. **[docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md)** — the kopiur backup/restore architecture: the pieces, the Kustomize-component pattern, backup + restore flows (diagrams), add-a-backup checklist. **Start here for backups.**
+4. **[docs/domains/storage/kopiur-mover-permissions.md](docs/domains/storage/kopiur-mover-permissions.md)** — why the mover runs as the data owner (the #1 backup gotcha). Plus **[docs/storage-architecture.md](docs/storage-architecture.md)** for the Longhorn/NFS/CNPG storage source-of-truth.
+5. **[docs/disaster-recovery.md](docs/disaster-recovery.md)** — full-cluster destroy/rebuild runbook, pre-nuke checklist, restore-wave expectations, restore canary. **DR source of truth.**
+6. **[docs/domains/](docs/index.md)** — per-domain docs (CNPG, ArgoCD, networking, storage deep-dives).
 
 > ⚠️ **Agent guardrails when reading docs:**
 > - **Do NOT resurrect Kyverno** — it was removed from the backup path (no policies, no CRDs, no webhooks).
