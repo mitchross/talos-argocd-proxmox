@@ -7,7 +7,7 @@ metadata:
     app: vllm-server
 spec:
   # vLLM is the active in-cluster LLM backend (TP=2 across both 3090s).
-  # llama-cpp is scaled to 0 (frees GPU0); comfyui already 0 (GPU1 idle).
+  # llama-cpp and comfyui are scaled to 0 — vLLM's TP=2 takes BOTH cards.
   # To revert: set this to 0 and llama-cpp-server back to 1 (one commit).
   replicas: 1
   strategy:
