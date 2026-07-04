@@ -7,8 +7,3 @@ metadata:
     # ClusterRepository tenancy (allowedNamespaces selector). Replaces the
     # pvc-plumber managed-namespace + volsync privileged-movers labels.
     kopiur.home-operations.com/repo: cluster-kopia
-  annotations:
-    # Gate for the privileged root mover (kopiur-backup component default) —
-    # analog of the VolSync privileged-movers label. Required or movers get
-    # MoverPermitted=False.
-    kopiur.home-operations.com/privileged-movers: "true"
