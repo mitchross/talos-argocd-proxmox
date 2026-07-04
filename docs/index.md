@@ -90,7 +90,7 @@ Backups are **kopiur** (Kopia-native operator; replaced pvc-plumber + VolSync 20
 - **Storage**: [kopia maintenance](domains/storage/kopia-maintenance-plan.md) · [RWO/RWX model & sizing](domains/storage/storage-model-rwo-rwx-and-sizing.md) · [RustFS credentials](domains/rustfs/credential-runbook.md) · [future: tiered storage](domains/storage/architecture-future.md)
 - **Multicluster**: [PRD](domains/multicluster/prd.md) · [handoff notes](domains/multicluster/handoff-notes.md)
 - **Observability**: [radar-ng](domains/observability/radar-ng.md)
-- **AI / GPU**: [model catalog](domains/ai-gpu/model-catalog.md) · [3090 LLM optimization](domains/ai-gpu/3090-llm-optimization.md)
+- **AI / GPU**: [model catalog](domains/ai-gpu/model-catalog.md) · [3090 LLM optimization](domains/ai-gpu/3090-llm-optimization.md) · [pi agent local-dev guide](domains/ai-gpu/pi-agent-local-dev.md)
 
 ## Adopting any of this
 
