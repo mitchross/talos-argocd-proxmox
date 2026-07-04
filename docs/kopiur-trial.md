@@ -31,7 +31,7 @@ Files added: `infrastructure/controllers/kopiur/*`, `core-dependencies/kopiur-{o
 Files edited: the two karakeep PVCs (de-fused, `dataSourceRef` repointed), namespace, kustomization.
 
 ## ⚠️ VERIFY before you apply (kopiur is pre-1.0 / alpha — CRD fields churn)
-1. **Chart version** — ✅ the operator renders the OCI chart `oci://ghcr.io/home-operations/charts/kopiur` pinned to `version: 0.4.13` in `infrastructure/controllers/kopiur-operator/kustomization.yaml` (chart version == app version; no `v` prefix). The Application tracks our repo `main`, not the upstream git tag.
+1. **Chart version** — ✅ the operator renders the OCI chart `oci://ghcr.io/home-operations/charts/kopiur` pinned in `infrastructure/controllers/kopiur-operator/kustomization.yaml` (chart version == app version; no `v` prefix; `0.5.1` as of 2026-07-04). The Application tracks our repo `main`, not the upstream git tag.
 2. **CRD field names** — after the operator installs, run:
    `kubectl explain clusterrepository.spec.backend.s3` · `snapshotpolicy.spec` · `restore.spec`.
    Assembled from upstream `deploy/examples` on `main`; reconcile any drift.
@@ -44,8 +44,8 @@ The operator + config Applications are wired into the root app-of-apps
 kustomization (`infrastructure/controllers/argocd/apps/kustomization.yaml`) and
 track `main`. **There is no `kubectl apply` step** — open a PR, merge to `main`,
 and Argo deploys it (this is a real deploy to the live cluster):
-- **Wave 2** `kopiur-operator` — renders the chart from the upstream git tag
-  `0.4.13` → installs the 7 CRDs + operator + webhook.
+- **Wave 2** `kopiur-operator` — renders the pinned upstream chart version
+  → installs the 7 CRDs + operator + webhook.
 - **Wave 3** `kopiur-config` — namespace + ESO + ClusterRepository.
 - **Wave 6** the my-apps AppSet re-renders karakeep with the kopiur CR bundle and
   the repointed PVCs.
