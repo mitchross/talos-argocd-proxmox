@@ -84,15 +84,23 @@ don't fight these from the client:
 | `CLAUDE.md` | `AGENTS.md` (global `~/.pi/agent/`, plus per-repo, concatenated up the dir tree) | this repo already ships `CLAUDE.md`s — symlink or copy: `ln -s CLAUDE.md AGENTS.md` |
 | Skills | Skills — **same Agent Skills standard** | `~/.pi/agent/skills/` or `.pi/skills/`; invoke `/skill:name` |
 | Slash commands | Prompt templates in `~/.pi/agent/prompts/` / `.pi/prompts/` | plain markdown, `/name` expands |
-| MCP servers | **None, by design** — CLI tools + a skill README instead | wire kubectl/temporal/curl via `bash`; an extension can add MCP if ever truly needed |
-| Subagents / Task | **None** — run parallel pi instances in tmux, or extensions | keep to ONE heavy pi at a time anyway (`max-num-seqs 2`) |
+| MCP servers | **`pi install npm:pi-mcp-adapter`** (not in core — see §4a) | token-efficient proxy: ONE `mcp` tool (~200 tokens) instead of hundreds of tool defs |
+| Subagents / Task | **`pi-subagents` package** (not in core) | parallel isolated agents — but see the `max-num-seqs 2` warning in §4a |
+| Plan mode | **`pi-plan` package** — read-only planning + approval-based execution | the Claude Code plan-mode equivalent |
 | Session resume / compact | `pi -c`, `pi -r`, `/compact`, `/fork`, `/tree` | sessions in `~/.pi/agent/sessions/` |
 | Permission modes | `trust.json` + tool allow flags (`--tools`, `--exclude-tools`) | |
 | Custom tools/hooks | TypeScript extensions in `~/.pi/agent/extensions/` | can replace built-ins, add checkpointing |
 
-The philosophical difference: Claude Code integrates via MCP; pi integrates
-via **the shell**. On this stack that's no loss — every system we run
-(Kubernetes, ArgoCD, Temporal, git, npm/pnpm, uv) has a first-class CLI.
+The design difference: Claude Code ships everything integrated; pi keeps the
+**core minimal** and everything else — MCP, subagents, memory, planning — is
+opt-in via the [pi.dev/packages](https://pi.dev/packages) ecosystem
+(`pi install npm:<pkg>` / `pi install git:<repo>`; `pi list` / `pi update
+--all` to manage). For a batteries-included start, **LazyPi** is a curated
+one-command bundle (60+ community skills, MCP support, subagents, persistent
+memory, planning mode) that installs into `~/.pi/agent/` and can be removed
+piecemeal. On this stack the shell still covers most needs — every system we
+run (Kubernetes, ArgoCD, Temporal, git, pnpm, uv) has a first-class CLI — so
+treat packages as additive, not required.
 
 ## 3. Global `~/.pi/agent/AGENTS.md` starter
 
@@ -217,6 +225,64 @@ runs `pnpm test`, `tsc`, `ruff`, `pytest`, `npx expo` like any other command.
 Add a skill only when a workflow has non-obvious steps worth encoding (e.g.
 a `release/` skill for your publishing checklist).
 
+## 4a. Extensions: MCP, subagents, plan mode
+
+Core pi has none of these; the package ecosystem does. What's worth installing
+here, and why the choices interact with the *local* backend:
+
+```bash
+pi install npm:pi-mcp-adapter   # MCP servers (restart pi after)
+pi install npm:pi-plan          # read-only plan mode + approve-to-execute
+pi install npm:pi-subagents     # parallel isolated subagents (read warning below)
+```
+
+**MCP via `pi-mcp-adapter`** — config lives in `~/.pi/agent/mcp.json` (global)
+or `.mcp.json` / `.pi/mcp.json` (per-project), Claude-compatible format:
+
+```json
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest"]
+    },
+    "some-http-server": {
+      "url": "http://localhost:3845/mcp",
+      "headers": { "Authorization": "Bearer ${API_KEY}" }
+    }
+  }
+}
+```
+
+Manage with `/mcp` (interactive panel), `/mcp setup`, `/mcp reconnect <server>`.
+
+Why this adapter is the right one for a **local** model specifically: it
+exposes **one `mcp` proxy tool (~200 tokens) instead of hundreds of tool
+definitions**, with on-demand tool search and lazy server lifecycle (connect
+on first call, disconnect after idle). On the 27B, prefill is the tax (gotcha
+#1) and every tool definition is resent each turn — a fat MCP toolset would
+bloat every single request. Keep proxy mode as the default; promote only your
+hottest 2–3 tools to `"directTools"` if the model fumbles the proxy calls.
+
+Useful servers for this stack: `chrome-devtools-mcp` (React/React-Native web
+debugging — the one capability plain bash can't fake), a Kubernetes MCP server
+if you want structured cluster reads instead of the `k8s-debug` skill's
+kubectl calls, GitHub MCP for PR/issue flows. Skip MCP wrappers for things
+with good CLIs (temporal, argocd) — the CLI costs zero context.
+
+**Subagents (`pi-subagents`) — mind the backend.** Parallel subagents each
+open their own request against vLLM, and `--max-num-seqs 2` means a fan-out
+of 3+ queues (and each queued request still pays full prefill when it lands).
+Use subagents for *sequential isolation* (fresh context per task) rather than
+wide parallel fan-outs — or raise `--max-num-seqs` in
+`my-apps/ai/vllm/deployment.yaml` first and accept the KV-pool split at
+long context.
+
+**Plan mode (`pi-plan`)** — read-only propose→approve→execute. Recommended
+default for anything touching this repo, since a wrong `kubectl` habit here
+becomes a cluster incident; it pairs with the `k8s-debug` skill's
+"diagnose read-only, fix via git" rule.
+
 ## 5. Research & RAG strategy
 
 - **Code understanding: agentic retrieval beats embedding RAG.** With 262K of
@@ -269,10 +335,12 @@ a `release/` skill for your publishing checklist).
       splits it into `reasoning_content`; pi should render it as thinking)
 - [ ] Paste a screenshot → model describes it (vision path through gateway)
 - [ ] `/skill:research quick lookup test` hits SearXNG and returns JSON
+- [ ] (if pi-mcp-adapter installed) `/mcp` lists servers; a proxy
+      `mcp({ search: ... })` call resolves a tool
 - [ ] Long session: `/compact` works and the next turn's prefill drops
 
 ## Related docs
 
 - [`model-catalog.md`](model-catalog.md) — what `qwen3.6-27b` is, app→backend wiring
 - [`3090-llm-optimization.md`](3090-llm-optimization.md) — engine/KV analysis, power profile, wind-down roadmap
-- [pi docs — models](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/models.md) · [pi coding agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent)
+- [pi docs — models](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/models.md) · [pi coding agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) · [pi.dev/packages](https://pi.dev/packages) · [pi-mcp-adapter](https://github.com/nicobailon/pi-mcp-adapter)
