@@ -14,8 +14,7 @@
       "WebFetch(domain:docs.siderolabs.com)",
       "WebFetch(domain:cloudnative-pg.io)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)",
-      "Bash(python3 -)"
+      "Bash(git commit -m ' *)"
     ],
     "deny": [
       "Bash(git reset --hard:*)",
