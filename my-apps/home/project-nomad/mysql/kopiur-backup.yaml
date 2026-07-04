@@ -38,7 +38,9 @@ spec:
   policyRef:
     name: mysql-data
   schedule:
-    cron: "25 3 * * *"
+    # 03:49 — minute 25 collided with karakeep meilisearch's hourly
+    # "25 * * * *" at 03:25 (distinct-minute-per-app convention).
+    cron: "49 3 * * *"
 ---
 # yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
 apiVersion: kopiur.home-operations.com/v1alpha1
