@@ -10,8 +10,8 @@ metadata:
     app: karakeep
     type: meilisearch-storage
     restore-policy: "strict"
-    # kopiur TRIAL (claude/kopiur-trial): de-fused from pvc-plumber. Backup +
-    # restore now driven by ../kopiur/meilisearch-pvc.yaml.
+    # Backup + restore driven by the kopiur CR bundle in
+    # ../kopiur/meilisearch-pvc.yaml.
 spec:
   accessModes:
   - ReadWriteOnce
