@@ -60,7 +60,12 @@ once**. They **scale-swap**: bringing one up means scaling the others to
 - Time-slicing is DISABLED (`time-slicing-config.yaml` has no sharing block) so
   whole-card allocation is enforced. Don't set `NVIDIA_VISIBLE_DEVICES` or
   `CUDA_VISIBLE_DEVICES` in pod env — they override the device-plugin's CDI
-  injection.
+  injection. (Sole exception: the `gpu-power-limit` admin DaemonSet, which must
+  see all cards without consuming a `nvidia.com/gpu` allocation.)
+- **Both 3090s are power-capped at 290W** by `my-apps/ai/gpu-power-limit/`
+  (measured efficiency knee: −22% power for −7% decode TPS — see the power
+  section of `docs/domains/ai-gpu/3090-llm-optimization.md`). Don't "fix" a
+  perceived slowdown by deleting the cap; tune `POWER_LIMIT_WATTS` instead.
 
 ## GPU Workload Pattern
 
