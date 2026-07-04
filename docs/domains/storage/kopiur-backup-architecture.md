@@ -174,10 +174,19 @@ holds at `Pending` until kopiur restores its data, *then* binds.
    mover set to that uid:gid; pick a distinct cron minute — check **both**
    tiers: an hourly `MM * * * *` occupies minute MM of *every* hour, so a
    daily `MM 3 * * *` with the same MM collides at 03:MM (caught in the
-   2026-07-04 audit: mysql 03:25 vs meilisearch hourly :25).
+   2026-07-04 audit: mysql 03:25 vs meilisearch hourly :25). List the taken
+   minutes before picking:
+   ```bash
+   grep -rh 'cron:' my-apps/*/*/kopiur* my-apps/*/*/*/kopiur* | sort
+   ```
 4. PVC: `dataSourceRef -> Restore/<pvc>-restore` + the two `ServerSide*` annotations
    (`argocd.argoproj.io/compare-options: ServerSideDiff=false` and
    `argocd.argoproj.io/sync-options: ServerSideApply=false` — the immutable-`dataSourceRef` diff mask).
+   **Retrofitting a running app?** Expected: ArgoCD shows a
+   `PVC is invalid: Forbidden` ComparisonError — `dataSourceRef` is immutable
+   on a Bound PVC. Harmless: backups start immediately anyway, and the
+   `dataSourceRef` arms on the next recreate (which is exactly what DR is).
+   The annotations + AppSet `ignoreDifferences` mask the diff.
 5. Kustomization: add the stub to `resources:` and `../../common/kopiur-backup` to `components:`.
 6. Verify: `kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot,secret`.
 
@@ -218,6 +227,9 @@ What changed upstream in 0.5.0/0.5.1 and how it lands here:
 - **`files.ignoreRules` defaults** to OS-artifact junk (`/lost+found`,
   `System Volume Information`, `$RECYCLE.BIN`, `@eaDir`, `.snapshot`) — free
   win, no action.
+- **`kubectl kopiur` CLI shipped in 0.5.1** (krew + Homebrew). Friendliest
+  debugging surface for backup state — worth installing on workstations:
+  `kubectl krew install kopiur`, then `kubectl kopiur --help`.
 - **`credentialProjection` is heading for removal** (maintainer is migrating
   off it upstream). We never used it — the ESO `ClusterExternalSecret` fanout
   in `infrastructure/controllers/kopiur/externalsecret.yaml` is exactly the
