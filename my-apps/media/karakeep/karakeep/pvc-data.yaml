@@ -5,23 +5,18 @@ metadata:
   namespace: karakeep
   annotations:
     argocd.argoproj.io/compare-options: ServerSideDiff=false
-    # Gate 2 (2026-05-29): data-pvc's immutable spec.dataSourceRef is
-    # data-pvc-backup live vs data-pvc-dst here in Git (historical drift,
-    # predates the pvc-plumber migration). The my-apps AppSet forces
-    # ServerSideApply=true, so every compare runs an SSA dry-run that the
-    # apiserver rejects on the immutable field → app-wide ComparisonError.
-    # Disabling SSA for THIS PVC lets Argo compare via client-side + the
-    # AppSet ignoreDifferences mask on /spec/dataSourceRef (the dsr was
-    # repaired to data-pvc-dst on 2026-05-29). Retained through the Gate 3
-    # handoff as belt-and-suspenders for the immutable dataSourceRef.
+    # Immutable-dataSourceRef masking: a Bound PVC's live spec.dataSourceRef
+    # can lag Git (it only converges on recreate). SSA dry-run compares are
+    # rejected by the apiserver on the immutable field → app-wide
+    # ComparisonError, so this PVC compares client-side and the my-apps
+    # AppSet ignoreDifferences mask hides /spec/dataSourceRef drift.
     argocd.argoproj.io/sync-options: ServerSideApply=false
   labels:
     app: karakeep
     type: data-storage
     restore-policy: "strict"
-    # kopiur TRIAL (claude/kopiur-trial): de-fused from pvc-plumber. Backup +
-    # restore are now driven by the kopiur CR bundle in ../kopiur/data-pvc.yaml
-    # (SnapshotPolicy + SnapshotSchedule + Restore). No operator labels here.
+    # Backup + restore are driven by the kopiur CR bundle in
+    # ../kopiur/data-pvc.yaml (SnapshotPolicy + SnapshotSchedule + Restore).
 spec:
   accessModes:
   - ReadWriteOnce
@@ -33,11 +28,9 @@ spec:
   # holds this PVC in Pending and restores the latest snapshot for identity
   # karakeep/data-pvc before binding. No-op while already Bound.
   #
-  # ⚠️ dataSourceRef is IMMUTABLE. The LIVE PVC still points at the VolSync
-  # RD, so this change only takes effect on RECREATE (the restore drill).
-  # Until then ArgoCD flags a diff on /spec/dataSourceRef — the existing
-  # ServerSideApply=false annotation + the AppSet ignoreDifferences mask
-  # handle it. See docs/kopiur-trial.md "Cutover".
+  # ⚠️ dataSourceRef is IMMUTABLE — it only takes effect on RECREATE (proven
+  # by the 2026-06-27 full-namespace DR drill). The masking annotations above
+  # + the AppSet ignoreDifferences handle any interim diff.
   dataSourceRef:
     apiGroup: kopiur.home-operations.com
     kind: Restore
