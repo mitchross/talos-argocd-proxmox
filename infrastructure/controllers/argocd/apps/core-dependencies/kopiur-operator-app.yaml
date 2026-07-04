@@ -1,12 +1,13 @@
-# kopiur operator (TRIAL) — pure GitOps, no CLI / no local helm.
+# kopiur operator (production backup system since 2026-06-27) — pure GitOps,
+# no CLI / no local helm.
 #
 # kopiur publishes its chart as an OCI artifact (oci://ghcr.io/home-operations/
 # charts/kopiur, chart version == app version). We render it locally via
 # Kustomize helmCharts (infrastructure/controllers/kopiur-operator) like every
 # other chart in this repo, so manifests are served from our own git source and
 # no AppProject sourceRepos exception is needed (cf. temporal-worker-controller).
-# Installs the 7 CRDs + operator + webhook. Images/chart pinned to 0.4.13 in
-# that dir's values.yaml + kustomization.yaml.
+# Installs the 7 CRDs + operator + webhook. Images/chart pinned in that dir's
+# values.yaml + kustomization.yaml (0.5.1 as of 2026-07-04).
 #
 # Wave 2: same level as pvc-plumber. The operator serves the volume populator
 # AND its webhook, so it must be healthy before any PVC carrying a kopiur
@@ -15,7 +16,7 @@
 # ArgoCD-safety: webhook.tls.mode=self → the operator self-signs its serving
 # cert at runtime. No cert-manager Certificate, no Helm hook cert Job (the
 # pattern that wedges API server under ArgoCD). webhook.failurePolicy=Ignore
-# for the trial so a kopiur outage can never gate Restore-CR creation.
+# is deliberate (DR-safety): a kopiur outage can never gate Restore-CR creation.
 #
 # Pre-1.0 / alpha: pin the chart version and re-verify CRDs on every bump. Pin
 # image DIGESTS (image.*.digest) before trusting this for anything real.

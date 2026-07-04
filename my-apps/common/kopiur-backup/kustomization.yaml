@@ -25,6 +25,10 @@ kind: Component
 # only needed for stubs whose mover runs as root (uid 0).
 patches:
   # --- SnapshotPolicy: uniform backup config (mover lives in the stub) ------
+  # copyMethod is upstream's default since kopiur 0.5.0, but KEEP injecting it
+  # explicitly: upstream warns a server-defaulted field has no SSA field owner,
+  # so GitOps re-applies of manifests that omit it can silently flip on CRD
+  # upgrades. Explicit value = owned field = no re-defaulting hazard.
   - target:
       kind: SnapshotPolicy
       group: kopiur.home-operations.com
