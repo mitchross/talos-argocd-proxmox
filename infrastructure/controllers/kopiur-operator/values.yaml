@@ -1,5 +1,6 @@
-# kopiur operator Helm values (TRIAL). Rendered locally via Kustomize helmCharts
-# from the upstream OCI chart — see kustomization.yaml.
+# kopiur operator Helm values (production backup system since 2026-06-27).
+# Rendered locally via Kustomize helmCharts from the upstream OCI chart — see
+# kustomization.yaml.
 #
 # Image tags are deliberately NOT set here: empty tag defaults to
 # .Chart.AppVersion, and the OCI chart is packaged with appVersion == chart
@@ -10,6 +11,6 @@
 installScope: cluster # ClusterRole + ClusterRepository reconciliation
 installCRDs: true # chart ships the 7 CRDs as templates
 webhook:
-  failurePolicy: Ignore # trial: never gate CR creation on operator health
+  failurePolicy: Ignore # deliberate (DR-safety): a kopiur outage must never gate CR creation
   tls:
     mode: self # self-signed at runtime — no cert-manager / no hook Job
