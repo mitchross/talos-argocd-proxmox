@@ -5,7 +5,18 @@
 > [`noonghunna/club-3090`](https://github.com/noonghunna/club-3090) recipe repo,
 > which this cluster's hardware (2× RTX 3090) directly matches.
 >
-> Last updated: 2026-05-28.
+> Last updated: 2026-07-04.
+>
+> ⚠️ **2026-06/07 update:** the "llama.cpp single-card is the steady state"
+> framing below is superseded — **vLLM TP=2 (both 3090s, `qwen3.6-27b` AWQ,
+> 262K) is the live default backend** (see `my-apps/ai/vllm/deployment.yaml`
+> and the model catalog's "Who points at what"). llama-cpp and ComfyUI are
+> scaled to 0. The engine analysis below remains correct per-configuration;
+> the MTP "skip" verdict applied to single-card llama.cpp only — under the
+> now-live vLLM TP=2 it IS the documented win (149 → 179 narr / 264 code TPS
+> with MTP-3; club-3090's default dual recipe is AutoRound INT4 + MTP n=3).
+> See also the power section at the bottom: this node is now on a measured
+> wind-down roadmap.
 
 ## TL;DR
 
@@ -397,6 +408,63 @@ download models, apply the model-dependent edits, open a PR.
 Already merged on `claude/3090-cluster-optimization-cybYD` (no models needed):
 staged presets, symmetric-KV guard, daily-driver `default` alias, Perplexica
 resource bump + longctx label fix, `ai/CLAUDE.md` refresh, this doc.
+
+## Power profile & Threadripper wind-down roadmap (2026-07-04)
+
+Measured at the wall (smart plug `threadripper-gpus`, July 2026, effective
+rate $0.21/kWh from the plug's own billing config):
+
+| State | Draw | Cost |
+|---|---|---|
+| Idle 24/7 (Proxmox + Talos VM + vLLM resident, no requests) | ~300–311W (7.1 kWh/day, flat) | ~219 kWh/mo ≈ **$46/mo ≈ $552/yr** |
+| During inference (vLLM TP=2, both cards) | ~761W | ~$0.09 per AI-hour ≈ **$3–6/mo** at current duty cycle |
+
+**~90% of this box's electricity is the 24/7 idle baseline** (X399 platform +
+Threadripper 2950X + two idle-but-resident 3090s), not AI load. In-cluster
+tuning can only trim the small slice; retiring the platform is the real saving.
+
+**Live mitigation:** `my-apps/ai/gpu-power-limit/` — a DaemonSet on the GPU
+node that caps both 3090s at **290W** (club-3090 `docs/HARDWARE.md` measured
+knee: −22% board power for −7% decode TPS vs 370W stock; the "230W sweet spot"
+lore costs ~16% efficiency vs 290W). Set `POWER_LIMIT_WATTS=250` to favor
+prefill-heavy workloads (−5% chat TPS, prefill at its own knee).
+
+**Rejected: KEDA cron scale-to-zero for vLLM overnight.** The my-apps AppSet
+runs `selfHeal: true` and the GPU apps use git replica-flips as the
+scale-swap mechanism — an HPA/KEDA-driven `spec.replicas` change would either
+be reverted every reconcile or require an `ignoreDifferences` on replicas
+that breaks the documented swap workflow. Savings would have been ~$1–2/mo
+(cards idle ~30–40W lower with no process resident); not worth breaking the
+pattern. Revisit only if the swap mechanism ever moves off replica-flips.
+
+**Wind-down roadmap (decided 2026-07-04; goal = fully retire this node, no
+burst-rig retention):**
+
+1. **Base layer first:** move the always-on cluster roles off this node onto
+   low-power mini-PC Talos nodes (~10–25W each). The $46/mo idle baseline is
+   the target; nothing else moves the bill meaningfully.
+2. **Fall 2026 AI-box decision** (both ship Q3–Q4 2026):
+   - **NVIDIA RTX Spark (N1X-class, 128GB unified @ ~300 GB/s, ~$2,899
+     rumored)** — GB10-derived consumer boxes/laptops. CUDA continuity for the
+     whole stack (vLLM, ComfyUI/Ideogram-4, faster-whisper), strong prefill,
+     and **NVFP4** (Blackwell-native 4-bit float: near-FP8 accuracy at 4 bits,
+     ~3.5× smaller than FP16, ~2× model size per GB vs FP8). Default choice —
+     single box replaces LLM + vision + image gen.
+   - **AMD Ryzen AI Max 400 "Gorgon Halo" (192GB unified, up to 160GB VRAM)** —
+     the bigger *accuracy* tier (235B-class MoE at clean Q4), same ~256 GB/s
+     bandwidth as Strix Halo (speed unchanged, ~10–20 TPS on big MoE). Costs
+     the CUDA-locked parts of the stack (ComfyUI nodes, CTranslate2) — pick it
+     only if raw model quality outweighs image-gen/vision continuity.
+   - Decide on launch reviews; default RTX Spark N1X.
+3. **Rejected paths:** single RTX 5090 (32GB = same 27–35B accuracy tier,
+   still needs a host platform — all speed, no accuracy, no baseline fix);
+   DGX Spark today ($3,999+ for the same silicon class the fall RTX Spark
+   sells cheaper); waiting for Medusa Halo (2027–2028, fixes bandwidth we've
+   already agreed to trade away); dropping to a single 3090 (saves ~$2/mo,
+   loses resident 262K).
+4. **After migration:** decommission and sell the Threadripper + both 3090s.
+   Image gen (Ideogram-4) and pi's vision workload move to the replacement
+   box — verify the chosen box's multimodal story before the rig leaves.
 
 ## References
 
