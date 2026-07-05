@@ -179,7 +179,7 @@ vision→image workflow and as the manual multi-preset playground.
 | Perplexica / Vane | vLLM | `qwen3.6-27b` | active model id lives in browser `localStorage["chatModelKey"]` |
 | Project NOMAD | vLLM | `qwen3.6-27b` (`AI_BENCHMARK_MODEL`) | embeddings via separate `embeddings.project-nomad` (nomic-embed) |
 | Karakeep | vLLM | `qwen3.6-27b` (`INFERENCE_TEXT`/`IMAGE`) | tagging/summarization only. Vector search is **off** (`EMBEDDING_ENABLE_AUTO_INDEXING` unset → `false`); the `EMBEDDING_TEXT_MODEL` line is inert. Full-text search via Meilisearch. Enabling semantic search needs one endpoint serving both chat + embeddings (Karakeep shares `OPENAI_BASE_URL`). |
-| ComfyUI | llama-cpp (`ln.svc:8080`) | vision GGUF | vision→image workflow stays on llama-cpp multimodal |
+| ComfyUI | llama-cpp (`ln.svc:8080`) | vision GGUF | vision→image stays on llama-cpp multimodal. **Image-gen frontend under review**: ComfyUI's manifest is marked retired in favor of `swarmui`, decision pending — both at `replicas: 0` ([scale-swap runbook](gpu-scale-swap.md)) |
 
 The llama-cpp preset aliases (`qwen3.6`, `qwen3.6-nothink`, `qwen3.6-longctx`,
 `gemma4*`, `uncensored`) remain available for manual/interactive use against the
