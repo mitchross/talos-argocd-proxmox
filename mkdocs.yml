@@ -18,7 +18,6 @@ theme:
   features:
     - navigation.instant
     - navigation.tracking
-    - navigation.sections
     - navigation.top
     - navigation.indexes
     - toc.follow
@@ -61,11 +60,7 @@ markdown_extensions:
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences:
-      custom_fences:
-        - name: mermaid
-          class: mermaid
-          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.tasklist:
@@ -80,6 +75,7 @@ plugins:
 
 extra_css:
   - assets/kopiur-playground.css
+  - assets/nav-tweaks.css
 
 extra_javascript:
   - assets/kopiur-playground.js

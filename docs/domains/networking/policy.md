@@ -1,11 +1,5 @@
 # Network Security & LAN Isolation
 
-> ⚠️ **Topology note:** any "Storage backend (10G)" / dedicated-link references
-> here describe the pre-2026-06 multi-node layout — the cluster is now
-> single-node (see the staleness banner in `topology.md`). The CiliumClusterwide
-> policy itself is current; only the physical-link framing is stale. TrueNAS/
-> RustFS-S3 at `192.168.10.133` remains the live storage backend.
-
 This document details the Cilium network policy that isolates Kubernetes pods from the local network, preventing lateral movement attacks while allowing legitimate traffic.
 
 ## Overview
@@ -20,33 +14,19 @@ When hosting public-facing applications (via Cloudflare Tunnel), an attacker who
 2. Scan the internal network
 3. Pivot to attack other LAN devices (router, NAS, other servers)
 
-```mermaid
-graph LR
-    subgraph "Internet"
-        Attacker[Attacker]
-    end
-
-    subgraph "Cloudflare"
-        CF[Cloudflare Tunnel]
-    end
-
-    subgraph "Kubernetes Cluster"
-        VulnPod[Vulnerable Pod]
-    end
-
-    subgraph "LAN (192.168.10.0/24)"
-        Router[Router .1]
-        NAS[TrueNAS .133]
-        Other[Other Devices]
-    end
-
-    Attacker -->|1. Exploit| CF
-    CF -->|2. RCE| VulnPod
-    VulnPod -.->|3. Pivot BLOCKED| Router
-    VulnPod -.->|3. Pivot BLOCKED| Other
-
-    style VulnPod fill:#f96,stroke:#333,stroke-width:2px
-    style Router fill:#f66,stroke:#333,stroke-width:2px
+```text
+  Internet            Cloudflare           Kubernetes Cluster
+  ┌──────────┐  1.    ┌────────────┐  2.   ┌──────────────────┐
+  │ Attacker │──────▶ │ Cloudflare │─────▶ │  Vulnerable Pod  │
+  │          │ Exploit│  Tunnel    │  RCE  │                  │
+  └──────────┘        └────────────┘       └────────┬─────────┘
+                                                    │ 3. Pivot
+                                                    │    BLOCKED
+                                                    ▼
+                          LAN (192.168.10.0/24)
+                          ┌──────────────────────────────────┐
+                          │  Router .1   TrueNAS .133   Other │  <- unreachable
+                          └──────────────────────────────────┘
 ```
 
 ## The Solution: CiliumClusterwideNetworkPolicy
@@ -74,35 +54,18 @@ Located at: `infrastructure/networking/cilium/policies/block-lan-access.yaml`
 
 ## Policy Architecture
 
-```mermaid
-graph TD
-    subgraph "Egress Rules"
-        Internet[Internet<br/>0.0.0.0/0 EXCEPT RFC1918]
-        Cluster[Cluster Entities<br/>pods, nodes, apiserver]
-        Storage[Whitelisted Storage<br/>TrueNAS: NFS,SMB,RustFS]
-        LB[LoadBalancer Pool<br/>192.168.10.32/27]
-    end
-
-    subgraph "All Pods"
-        Pod[Any Pod]
-    end
-
-    subgraph "Blocked"
-        LAN[LAN Devices<br/>192.168.10.x]
-        Router[Router<br/>192.168.10.1]
-    end
-
-    Pod -->|ALLOWED| Internet
-    Pod -->|ALLOWED| Cluster
-    Pod -->|ALLOWED| Storage
-    Pod -->|ALLOWED| LB
-    Pod -.->|BLOCKED| LAN
-    Pod -.->|BLOCKED| Router
-
-    style LAN fill:#f66,stroke:#333
-    style Router fill:#f66,stroke:#333
-    style Internet fill:#6f6,stroke:#333
-    style Cluster fill:#6f6,stroke:#333
+```text
+                          ┌─────────────┐
+                          │   Any Pod   │
+                          └──────┬──────┘
+              ALLOWED  ┌─────────┼─────────┐  BLOCKED
+                       ▼         ▼         ▼
+   ─────────────────────────────────    ──────────────────────────
+   ✓ Internet   (0.0.0.0/0 EXCEPT       ✗ LAN Devices (192.168.10.x)
+                 RFC1918)               ✗ Router      (192.168.10.1)
+   ✓ Cluster    (pods, nodes, apiserver)
+   ✓ Storage    (TrueNAS: NFS,SMB,RustFS)
+   ✓ LB Pool    (192.168.10.32/27)
 ```
 
 ## Whitelisted LAN Resources
@@ -130,26 +93,16 @@ This means:
 - n8n pod cannot reach LAN
 - If attacker pivots from DVWA → n8n, n8n STILL cannot reach LAN
 
-```mermaid
-sequenceDiagram
-    participant Attacker
-    participant DVWA as DVWA Pod
-    participant N8N as n8n Pod
-    participant Router as Router (192.168.10.1)
+```text
+Attacker ──exploit──▶ DVWA Pod            (shell access gained)
+                        │
+                        ├── ping 192.168.10.1 ──✗ BLOCKED (100% packet loss)
+                        │
+                        └── pivot ──▶ n8n Pod  (lateral movement works)
+                                        │
+                                        └── ping 192.168.10.1 ──✗ STILL BLOCKED
 
-    Attacker->>DVWA: Exploit vulnerability
-    Note over DVWA: Shell access gained
-
-    DVWA->>Router: ping 192.168.10.1
-    Router--xDVWA: BLOCKED (100% packet loss)
-
-    DVWA->>N8N: Pivot to n8n pod
-    Note over N8N: Lateral movement works
-
-    N8N->>Router: ping 192.168.10.1
-    Router--xN8N: STILL BLOCKED
-
-    Note over Attacker,Router: No matter which pod,<br/>LAN is unreachable
+  No matter which pod the attacker lands on, the LAN is unreachable.
 ```
 
 ## Testing the Policy
