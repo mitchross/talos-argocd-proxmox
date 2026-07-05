@@ -5,10 +5,9 @@ The **one-time backend setup** behind the
 credentials, and how they fan out to every namespace. You do this once; after
 that, a single namespace label does everything.
 
-> **kopiur replaced pvc-plumber + VolSync (retired 2026-06-27).** The kopia repo
-> is now a first-class CR (`ClusterRepository`) rather than a hand-rolled Secret.
-> For how backup *and restore* actually flow once the backend is up, see
-> [kopiur backup architecture](domains/storage/kopiur-backup-architecture.md).
+The kopia repo is a first-class CR (`ClusterRepository`). For how backup *and
+restore* flow once the backend is up, see
+[kopiur backup architecture](domains/storage/kopiur-backup-architecture.md).
 
 > **This cluster uses** [RustFS](https://github.com/rustfs/rustfs) (an
 > S3-compatible object store) running off-cluster at `192.168.10.133:30292`.
@@ -17,27 +16,26 @@ that, a single namespace label does everything.
 
 ## The credential flow
 
-```mermaid
-flowchart LR
-    OP[("🔑 1Password item: rustfs<br/>kopia_password · accessKey · secretKey")]
-    ESO[External Secrets Operator]
-    CES["ClusterExternalSecret<br/>kopiur-rustfs"]
-    NS1["📦 namespace A<br/>(repo=cluster-kopia)"]
-    NS2["📦 namespace B<br/>(repo=cluster-kopia)"]
-    MOVER[🚚 kopiur mover Jobs]
-    S3[("💾 RustFS S3<br/>bucket: kopiur")]
-
-    OP --> ESO --> CES
-    CES -->|Secret copy| NS1 --> MOVER
-    CES -->|Secret copy| NS2 --> MOVER
-    MOVER -->|kopia| S3
-
-    classDef secret fill:#fff7cc,stroke:#8a6d00,color:#453500;
-    classDef ns fill:#dbeafe,stroke:#1e40af,color:#0c1f4a;
-    classDef store fill:#d9fbe5,stroke:#16803c,color:#0b3d1b;
-    class OP,ESO,CES secret;
-    class NS1,NS2 ns;
-    class S3,MOVER store;
+```text
+ 1Password item: rustfs
+ (kopia_password · accessKey · secretKey)
+        │
+        ▼
+ External Secrets Operator
+        │
+        ▼
+ ClusterExternalSecret  kopiur-rustfs
+        │ Secret copy         │ Secret copy
+        ▼                     ▼
+ namespace A            namespace B
+ (repo=cluster-kopia)   (repo=cluster-kopia)
+        │                     │
+        └────────┬────────────┘
+                 ▼
+        kopiur mover Jobs
+                 │ kopia
+                 ▼
+        RustFS S3  (bucket: kopiur)
 ```
 
 One credential, stored once, materialized automatically into every namespace
@@ -77,16 +75,15 @@ API port, not the console**).
    exact IAM policy JSON and the root-vs-workload rationale:
    [RustFS credential runbook](domains/rustfs/credential-runbook.md).
    **The workload key MUST have read/write on the `kopiur` bucket** — if the
-   existing policy only scopes it to old buckets, widen it, or the
+   policy only scopes it to other buckets, widen it, or the
    `ClusterRepository` create/connect fails.
-4. **Register & verify the key works before you ever rely on it** — see
-   hard-won lessons below.
+4. **Register & verify the key works before you ever rely on it** — see the
+   rules below.
 
 ### 2. The secret side (1Password → ESO)
 
-One item, `rustfs`, in the `homelab-prod` vault — the **same item** the old
-VolSync path used (full field list incl. the admin-only root keys:
-[credential runbook](domains/rustfs/credential-runbook.md)):
+One item, `rustfs`, in the `homelab-prod` vault (full field list incl. the
+admin-only root keys: [credential runbook](domains/rustfs/credential-runbook.md)):
 
 | Field | Used as |
 |---|---|
@@ -168,17 +165,14 @@ Label the namespace, get the Secret. No per-app credential plumbing, ever.
 `infrastructure/controllers/kopiur/volumesnapshotclass.yaml` ships
 `VolumeSnapshotClass longhorn-snapclass` (driver `driver.longhorn.io`, the
 cluster-default snapshot class). kopiur's `copyMethod: Snapshot` references it by
-name, so every backup depends on it — it was relocated here when VolSync was
-removed so it survives the retirement.
+name, so every backup depends on it.
 
-### 6. The fail-closed behavior (now built in)
+### 6. Fail-closed behavior
 
-The old VolSync `wait-for-rustfs` MutatingAdmissionPolicy / init-container is
-**gone** — kopiur preserves the same safety property natively. On a
-restore-before-bind, if the repo is **unreachable**, kopiur raises a backend
-error *before* it reaches the "no snapshot → bind empty" decision, so the PVC
-stays `Pending` and never binds an empty volume. There is no separate gate to
-maintain. Full flow:
+On a restore-before-bind, if the repo is **unreachable**, kopiur raises a
+backend error *before* it reaches the "no snapshot → bind empty" decision, so
+the PVC stays `Pending` and never binds an empty volume. There is no separate
+admission gate to maintain. Full flow:
 [kopiur backup architecture §4 (restore-before-bind)](domains/storage/kopiur-backup-architecture.md).
 
 ## Verifying the backend
@@ -197,15 +191,15 @@ nc -zw5 192.168.10.133 30292 && echo OK
 kubectl get snapshot -A
 ```
 
-## Hard-won lessons
+## Operational rules
 
 - **Register the access key on the S3 server, then verify before any
-  destructive rebuild.** A past full nuke proved an unregistered external
-  credential blocks all recovery even with perfect Git state — the
+  destructive rebuild.** An unregistered external credential blocks all
+  recovery even with perfect Git state — the
   [DR pre-nuke checklist](disaster-recovery.md#pre-nuke-checklist) checks
   this for you.
 - **Confirm the workload key has read/write on the `kopiur` bucket.** A policy
-  scoped to an older bucket will let everything else look healthy while the
+  scoped to another bucket lets everything else look healthy while the
   `ClusterRepository` fails to create/connect.
 - **The Kopia password is the single blast radius.** One shared repo, one
   password, every backup encrypted with it. Keep it only in 1Password;

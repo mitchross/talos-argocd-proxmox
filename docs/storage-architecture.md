@@ -9,7 +9,7 @@ this cluster — including the cluster itself ceasing to exist.
     [CNPG disaster recovery](domains/cnpg/disaster-recovery.md). Different
     tool, different runbook; the two systems never touch each other.
 
-!!! info "Where things live now (this page stopped being the narrative)"
+!!! info "Related pages"
     - **The story, from zero** — pitch, plain English, talk tracks, the
       adoption ladder, FAQ: [the easy guide](easy-guide.md).
     - **The mechanism** — CR shapes, component composition, flow diagrams,
@@ -22,16 +22,6 @@ this cluster — including the cluster itself ceasing to exist.
     - **Full-cluster rebuild** — [disaster recovery](disaster-recovery.md).
     - **This page** — the reference: what exists, the design decisions,
       day-2 operations, troubleshooting, portability, honest limitations.
-
-!!! warning "History (for stale-doc detection)"
-    This path used to run **pvc-plumber + VolSync** (3 labels → generated
-    `ReplicationSource`/`ReplicationDestination`, a `/audit` ledger, and a
-    `wait-for-rustfs` MutatingAdmissionPolicy). Retired **2026-06-27**,
-    replaced by **kopiur** — explicit per-PVC CRs wrapped in a shared
-    Kustomize component. Any doc, label, or runbook still mentioning
-    `pvc-plumber.io/*`, VolSync, `ReplicationSource`/`ReplicationDestination`,
-    `volsync-kopia-repository`, the `/audit` endpoint, or
-    `volsync-mover-backend-availability` is stale.
 
 ---
 
@@ -108,15 +98,12 @@ comes back **with its data**.
 
 Nuke the entire cluster, redeploy from Git, and every app comes back with its
 data — no restore scripts, no snapshot IDs, no ordering choreography. Per-PVC
-restore is the mechanism; **cluster rebuild is the use case.** This is
-measured, not hoped: the same Kubernetes volume-populator contract ran three
-full unattended rebuilds in June 2026 (once mid storage-engine meltdown), and
-kopiur's cutover was proven by a live namespace drill plus a continuously
-running [restore canary](disaster-recovery.md#the-restore-canary) — receipts
-in the [proof history](disaster-recovery.md#proof-history). Day-zero install
+restore is the mechanism; **cluster rebuild is the use case.** Day-zero install
 and day-N disaster recovery are the **same code path**; the only difference is
 whether the repo has a snapshot for that PVC (`onMissingSnapshot: Continue`
-binds fresh when there isn't one). For the full narrative, read
+binds fresh when there isn't one). A continuously running
+[restore canary](disaster-recovery.md#the-restore-canary) keeps "restores work"
+a measured fact between disasters. For the full narrative, read
 [the easy guide](easy-guide.md).
 
 ---
@@ -125,30 +112,28 @@ binds fresh when there isn't one). For the full narrative, read
 
 The whole behavior, first install or rebuild or "oops", in one diagram:
 
-```mermaid
-flowchart TD
-    START(["📦 PVC created from Git"]) --> Q{"dataSourceRef<br/>→ Restore?"}
-
-    Q -->|"✅ YES → <pvc>-restore"| HOLD["K8s withholds binding<br/>(PVC = Pending)"]
-    HOLD --> R{"kopiur Restore<br/>populator"}
-    R -->|"snapshot exists"| RESTORE["mover restores latest snapshot"]
-    RESTORE --> RBOUND(["PVC Bound<br/>with prior data ✅"])
-    R -->|"no snapshot<br/>(onMissingSnapshot: Continue)"| EMPTYOK(["binds empty,<br/>backs up forward ⚪"])
-    R -->|"backend unreachable"| WAIT(["errors + retries,<br/>stays Pending — never empty ✅"])
-
-    Q -->|"❌ NO bundle"| FRESH["Longhorn provisions empty"]
-    FRESH --> CHECK{"intentional?"}
-    CHECK -->|"backup-exempt /<br/>disposable"| FINE(["fine — disposable ⚪"])
-    CHECK -->|"no"| GAP(["DR GAP ⚠️<br/>add the kopiur bundle"])
-
-    classDef start fill:#fef3c7,stroke:#92400e,color:#451a03;
-    classDef restore fill:#d1fae5,stroke:#065f46,color:#022c22;
-    classDef bad fill:#fee2e2,stroke:#991b1b,color:#450a0a;
-    classDef decision fill:#f3e8ff,stroke:#6b21a8,color:#3b0764;
-    class START start;
-    class Q,CHECK,R decision;
-    class HOLD,RESTORE,RBOUND,FINE,EMPTYOK,WAIT restore;
-    class GAP bad;
+```text
+  PVC created from Git
+    |
+    +-- dataSourceRef -> Restore ?
+        |
+        +-- YES (-> <pvc>-restore)
+        |     K8s withholds binding (PVC = Pending)
+        |       -> kopiur Restore populator:
+        |            - snapshot exists        -> mover restores latest
+        |            |                           -> PVC Bound with prior data
+        |            - no snapshot             -> binds empty, backs up forward
+        |            |   (onMissingSnapshot:      (disposable)
+        |            |    Continue)
+        |            - backend unreachable     -> errors + retries, stays
+        |                                         Pending -- never empty
+        |
+        +-- NO bundle
+              Longhorn provisions empty
+                -> intentional?
+                     - backup-exempt / disposable -> fine, disposable
+                     - no                          -> DR GAP: add the
+                                                       kopiur bundle
 ```
 
 !!! danger "The single most important rule in this whole system"
@@ -172,11 +157,11 @@ The whole behaviour as a flat lookup table:
 | Recreate that PVC — same cluster or a brand-new one | The `Restore` populator restores it from the latest snapshot **before the app starts**. No human action. |
 | Delete the app from Git, re-add it next month | Same as above. Your "oops" undoes itself. |
 | Whole cluster gets nuked | Every PVC carrying a `dataSourceRef` auto-restores during bootstrap, in parallel. |
-| Recreate a PVC that has **no snapshot yet** | `onMissingSnapshot: Continue` → binds empty and starts backing up forward. (No day-one "ship without the ref first" dance — kopiur handles the empty repo cleanly.) |
+| Recreate a PVC that has **no snapshot yet** | `onMissingSnapshot: Continue` → binds empty and starts backing up forward. |
 | RustFS/S3 is down when a PVC is recreated | The `Restore` populator errors and retries; the PVC holds `Pending`. **It never binds empty against a black-holed repo.** |
 | Label a PVC `backup-exempt: "true"` + a fully-qualified reason annotation | You deliberately ship no kopiur bundle. It recreates empty, **by recorded decision**. |
-| Use the bare `backup-exempt-reason` key instead of the fully-qualified one | The bare key records nothing — nothing at runtime enforces it anymore. CI (`validate-kopiur-coverage.py`) **warns** on it. We learned this the hard way. |
-| Add the kopiur label/stub to a system namespace (`kube-system`, `argocd`, `longhorn-system`) | Don't. System namespaces are not opted in. |
+| Use the bare `backup-exempt-reason` key instead of the fully-qualified one | The bare key records nothing and nothing at runtime enforces it. CI (`validate-kopiur-coverage.py`) **warns** on it. Always use the fully-qualified `storage.vanillax.dev/backup-exempt-reason`. |
+| Add the kopiur label/stub to a system namespace (`kube-system`, `argocd`, `longhorn-system`, `kopiur-system`) | Don't. System namespaces are not opted in. |
 | Add a kopiur bundle to a CNPG database PVC | Don't. Postgres needs SQL-aware backups (Barman → S3), not filesystem snapshots. [Separate system, separate runbook](domains/cnpg/disaster-recovery.md). |
 | Mover fails with `PermissionDenied` | Its `securityContext` UID isn't the data owner. Fix the stub's `mover` UID:GID — [mover permissions](domains/storage/kopiur-mover-permissions.md). |
 
@@ -184,40 +169,30 @@ The whole behaviour as a flat lookup table:
 
 ## Architecture at a glance
 
-```mermaid
-flowchart LR
-    subgraph Secrets["🔑 Secrets (infrastructure/controllers/kopiur)"]
-      OP1[1Password vault] --> CSS[ClusterSecretStore] --> CES["ClusterExternalSecret<br/>kopiur-rustfs<br/>→ every labeled namespace"]
-    end
-    subgraph Operator["🦀 kopiur operator (Wave 2)"]
-      REC["reconciles SnapshotPolicy /<br/>SnapshotSchedule / Restore /<br/>Snapshot CRs"]
-    end
-    subgraph Config["🗂️ kopiur-config (Wave 3)"]
-      CR["ClusterRepository<br/>cluster-kopia"]
-      VSC["VolumeSnapshotClass<br/>longhorn-snapclass"]
-    end
-    subgraph Data["🚚 Data plane"]
-      LH["Longhorn (V1 engine)<br/>RWO volumes + CSI snapshots"]
-      MV["mover Jobs<br/>(as the data owner)"]
-    end
-    S3[("💾 RustFS S3<br/>192.168.10.133:30292<br/>bucket: kopiur<br/>snapshots keyed by identity")]
-
-    REC -- takes --> SN[CSI VolumeSnapshot]
-    SN --> VSC
-    REC -- launches --> MV
-    CR --> REC
-    CES --> MV
-    MV --> LH
-    MV --> S3
-
-    classDef secret fill:#fff7cc,stroke:#8a6d00,color:#453500;
-    classDef own fill:#dbeafe,stroke:#2563eb,color:#1e3a8a;
-    classDef data fill:#e0e7ff,stroke:#4338ca,color:#1e1b4b;
-    classDef store fill:#d9fbe5,stroke:#16803c,color:#0b3d1b;
-    class OP1,CSS,CES secret;
-    class REC,CR,VSC,SN own;
-    class LH,MV data;
-    class S3 store;
+```text
+  Secrets (infrastructure/controllers/kopiur)
+    1Password vault -> ClusterSecretStore -> ClusterExternalSecret
+                                             (kopiur-rustfs -> every
+                                              labeled namespace)
+                                                    |
+                                                    v
+  kopiur-config (Wave 3)                       mover Jobs (as the data owner)
+    ClusterRepository cluster-kopia                 |  ^
+       |                                            |  | (creds)
+       v                                            v  |
+  kopiur operator (Wave 2)  --launches-->  ---------+  |
+    reconciles SnapshotPolicy /                     |  |
+    SnapshotSchedule / Restore /                    |  |
+    Snapshot CRs                                     |  |
+       |                                             |  |
+       | takes                                       |  +-- Longhorn (V1 engine)
+       v                                             |         RWO volumes +
+  CSI VolumeSnapshot -> VolumeSnapshotClass          |         CSI snapshots
+                        longhorn-snapclass           |
+                        (Wave 3)                      v
+                                          RustFS S3 (192.168.10.133:30292)
+                                            bucket: kopiur
+                                            snapshots keyed by identity
 ```
 
 ### Who provides what
@@ -235,32 +210,28 @@ flowchart LR
 
 ## Design decisions
 
-**No fail-closed PVC admission webhook.** An earlier generation ran
-validating+mutating webhooks on every PVC create with `failurePolicy: Fail` —
-a beautiful guarantee, and a platform-wide single point of failure (a webhook
-deadlock once took the whole cluster down). kopiur's webhook is scoped to its
+**No fail-closed PVC admission webhook.** kopiur's webhook is scoped to its
 **own CRDs only**, never PVCs or Pods, so an operator outage cannot block app
 deployment. A missing `dataSourceRef` is caught by CI + Git review, not
-blocked at create time.
+blocked at create time. Do not add a validating/mutating webhook on PVC create
+with `failurePolicy: Fail` — a webhook deadlock is a platform-wide single point
+of failure.
 
-**The one safety interlock that survived** is "never bind empty over a
-black-holed backend". The old system enforced it with a `wait-for-rustfs`
-MutatingAdmissionPolicy injected into mover Jobs. kopiur gives it **for
+**Never bind empty over a black-holed backend.** kopiur gives this **for
 free**: the `Restore` populator raises a backend error *before* the "no
 snapshot → empty" decision, so an outage holds the PVC `Pending` instead of
 binding empty (source-verified: `crates/controller/src/restore/mod.rs`
 `resolve_snapshot` — see
 [kopiur backup architecture §4](domains/storage/kopiur-backup-architecture.md#4-restore-before-bind-flow-the-dr-magic)).
 
-**ArgoCD is in the loop, on purpose.** Two things quietly depend on the
-GitOps engine: (1) *something must recreate the PVC from Git* — on a rebuild
-ArgoCD is the thing doing the creating, for every app, in parallel; and
-(2) *sync waves make the rebuild deterministic* — the backup machinery
-(Longhorn W1 → kopiur operator W2 → repo config W3) exists **before** the
-first protected PVC does (W4–6). Without wave ordering you get retry soup:
-populators waiting on CRs that don't exist, movers failing on creds that
-haven't fanned out. Wave table and gating mechanics:
-[entrypoints](domains/argocd/entrypoints.md) ·
+**ArgoCD is in the loop, on purpose.** Two things depend on the GitOps engine:
+(1) *something must recreate the PVC from Git* — on a rebuild ArgoCD is the
+thing doing the creating, for every app, in parallel; and (2) *sync waves make
+the rebuild deterministic* — the backup machinery (Longhorn W1 → kopiur
+operator W2 → repo config W3) exists **before** the first protected PVC does
+(W4–6). Without wave ordering you get retry soup: populators waiting on CRs
+that don't exist, movers failing on creds that haven't fanned out. Wave table
+and gating mechanics: [entrypoints](domains/argocd/entrypoints.md) ·
 [how Argo waits](easy-guide.md#part-2-how-argo-waits-sync-waves).
 
 ---
@@ -369,15 +340,13 @@ metadata:
   labels:
     backup-exempt: "true"
   annotations:
-    storage.vanillax.dev/backup-exempt-reason: "<why, dated>"
+    storage.vanillax.dev/backup-exempt-reason: "<why>"
 ```
 
 - The reason key **must be fully qualified** — the bare `backup-exempt-reason`
-  simply records nothing, and with pvc-plumber gone there is **no runtime
-  admission gate** to catch it. CI (`validate-kopiur-coverage.py`) **warns** on
-  missing/unqualified reason keys; it does not block. (The old
-  `backup-exempt-contract` job that hard-failed the bare key retired with
-  pvc-plumber on 2026-06-27.)
+  records nothing, and there is **no runtime admission gate**. CI
+  (`validate-kopiur-coverage.py`) **warns** on missing/unqualified reason keys;
+  it does not block.
 - An exempt PVC has no `Restore` CR, so **do not add a `dataSourceRef`** — a
   dangling one deadlocks the recreated PVC `Pending` forever.
 - An exempt PVC recreates **empty** after DR. That is the contract — write the
@@ -392,14 +361,14 @@ metadata:
 
 A backup that has never been restored is a hypothesis, not a recovery plan.
 
-```mermaid
-flowchart LR
-    D1["confirm a Snapshot exists\n(non-zero files)"] --> D2["scale app to 0"]
-    D2 --> D3["delete the PVC"]
-    D3 --> D4["Git recreates it\n(dataSourceRef → Restore)"]
-    D4 --> D5["PVC holds Pending\nwhile the populator restores"]
-    D5 --> D6["binds WITH data;\napp starts"]
-    D6 --> D7["verify a sentinel\nbyte-identical"]
+```text
+  confirm a Snapshot exists (non-zero files)
+    -> scale app to 0
+    -> delete the PVC
+    -> Git recreates it (dataSourceRef -> Restore)
+    -> PVC holds Pending while the populator restores
+    -> binds WITH data; app starts
+    -> verify a sentinel byte-identical
 ```
 
 !!! warning
@@ -490,14 +459,14 @@ ransomware on the NAS) loses the backups. Add a second destination (rclone to
 B2, ZFS replication) if you need real off-site coverage.
 
 **No coverage ledger.** kopiur reports on its *own* resources, not the negative
-space. There is no `/audit` map of "which PVCs lack a bundle" and no
-`needs-human-review` parking. The automated gate is the
-`validate-kopiur-coverage.py` CI check (run on the rendered manifest stream):
-it **hard-fails** a PR where a backed-up PVC is missing its `dataSourceRef` or
-a backed-up namespace lacks the repo label, and **warns** on uncovered+unexempt
-PVCs, missing mover securityContexts, and unqualified exempt reasons. A PVC
-with *no bundle at all* is therefore only a warning — Git review and the
-worked examples remain the guardrail for the negative space.
+space. There is no map of "which PVCs lack a bundle" and no `needs-human-review`
+parking. The automated gate is the `validate-kopiur-coverage.py` CI check (run
+on the rendered manifest stream): it **hard-fails** a PR where a backed-up PVC
+is missing its `dataSourceRef` or a backed-up namespace lacks the repo label,
+and **warns** on uncovered+unexempt PVCs, missing mover securityContexts, and
+unqualified exempt reasons. A PVC with *no bundle at all* is therefore only a
+warning — Git review and the worked examples remain the guardrail for the
+negative space.
 
 **Pre-1.0 engine.** kopiur is pre-1.0 (`0.5.x` since 2026-07-04); CRD fields
 can churn. Pin the chart version and re-check `kubectl explain` after upgrades.

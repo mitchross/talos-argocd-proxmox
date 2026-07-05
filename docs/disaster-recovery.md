@@ -1,14 +1,11 @@
 # Disaster Recovery
 
-> The full-cluster destroy → rebuild → restore runbook, and the proof history
-> behind it. Concepts + per-PVC operations live in
-> [storage-architecture.md](storage-architecture.md). The backup/restore engine
-> is **kopiur** (replaced pvc-plumber + VolSync, retired 2026-06-27) — how the
-> pieces fit and the exact flows live in
-> [domains/storage/kopiur-backup-architecture.md](domains/storage/kopiur-backup-architecture.md)
-> and [domains/storage/kopiur-mover-permissions.md](domains/storage/kopiur-mover-permissions.md);
-> this page does not re-derive them. Databases recover via a **separate system**
-> — [CNPG/Barman](domains/cnpg/disaster-recovery.md).
+> The full-cluster destroy → rebuild → restore runbook. Concepts + per-PVC
+> operations live in [storage-architecture.md](storage-architecture.md); the
+> backup/restore engine (**kopiur**) and its exact flows live in
+> [kopiur-backup-architecture.md](domains/storage/kopiur-backup-architecture.md)
+> and [kopiur-mover-permissions.md](domains/storage/kopiur-mover-permissions.md).
+> Databases recover via a **separate system** — [CNPG/Barman](domains/cnpg/disaster-recovery.md).
 
 !!! danger
     The destructive steps require explicit operator intent. This documents the
@@ -18,50 +15,28 @@
 
 ## The DR model in one diagram
 
-```mermaid
-flowchart TB
-    subgraph Dies["☠️ Dies with the cluster"]
-        LV[Longhorn volumes]
-        K8S[every Kubernetes object]
-        EX[exempt data: PostHog, Redis, scratch]
-    end
-    subgraph Survives["🧱 Survives (off-cluster)"]
-        GIT[("Git repo")]
-        KOPIA[("Kopia repo\nRustFS S3")]
-        BARMAN[("CNPG Barman\nS3 objects")]
-        OP[("1Password vault")]
-        OMNI[("Omni/Talos machine config")]
-    end
-    Survives -->|"bootstrap-argocd.sh + sync waves"| NEW[New cluster]
-    NEW -->|"kopiur Restore populators\nhydrate PVCs from Kopia"| RESTORED[All protected data back,\nunattended]
+```text
+  Dies with the cluster            Survives (off-cluster)
+  -----------------------          -------------------------------
+  - Longhorn volumes               - Git repo
+  - every Kubernetes object        - Kopia repo (RustFS S3)
+  - exempt data:                   - CNPG Barman (S3 objects)
+      PostHog, Redis, scratch      - 1Password vault
+                                   - Omni/Talos machine config
+
+  Survives ==[ bootstrap-argocd.sh + sync waves ]==> New cluster
+      New cluster
+        ==[ kopiur Restore populators hydrate PVCs from Kopia ]==>
+      All protected data back, unattended
 ```
 
 Clusters are cattle. The Kopia repository, the Git repo, and the secrets
 vault are the pets. Everything between them is reconstructed automatically.
 
-## Proof history
-
-| Date | Engine | Event | Result |
-|---|---|---|---|
-| 2026-06-02 | pvc-plumber + VolSync | Planned full nuke (first acceptance) | **24/24 managed PVCs restored**, 24/24 post-restore backups Successful |
-| 2026-06-12 | pvc-plumber + VolSync | **Unplanned**: Longhorn V2 engine meltdown mid-rebuild | **25/25 restored** despite an instance-manager crash, a poisoned node, and a host reboot — the repo never lost a byte |
-| 2026-06-13 | pvc-plumber + VolSync | Planned rebuild onto Longhorn V1 | **24/24 restored unattended in ~75 minutes**, zero manual storage steps; operator at ~1m CPU; exemption contract honored |
-| 2026-06-27 | **kopiur** | Karakeep **full-namespace DR drill** (restore-before-bind) | Both RWO PVCs deleted; recreated from Git with `dataSourceRef → Restore`, held **Pending** until the kopiur populator hydrated them from the latest Kopia snapshot, then bound **with data** — proved restore-before-bind on the new engine ([kopiur-trial.md](kopiur-trial.md)) |
-
-The three 2026-06 full-cluster deaths above were on the prior pvc-plumber +
-VolSync stack (two inside 36 hours, one about as hostile as storage failure
-gets — every protected volume came back). kopiur replaced that stack on
-2026-06-27; its restore-before-bind path is proven by the karakeep namespace
-drill, with a full-cluster kopiur nuke still to be banked. The restore canary
-(below) now runs the kopiur path continuously to keep the proof fresh.
-
-> **The V2 footnote:** Longhorn's V2/SPDK engine was briefly tried and
-> retired the same day — interrupted rebuilds under mass-restore load
-> permanently corrupt replica metadata (open upstream bugs
-> [#13315](https://github.com/longhorn/longhorn/issues/13315),
-> [#13314](https://github.com/longhorn/longhorn/issues/13314)). The cluster
-> runs V1, the upstream default. Don't revisit V2 without those fixed and a
-> passed DR drill; full forensics in git history.
+!!! warning "Longhorn runs the V1 engine — do not switch to V2"
+    Interrupted rebuilds under mass-restore load corrupt V2/SPDK replica metadata
+    (upstream [#13315](https://github.com/longhorn/longhorn/issues/13315),
+    [#13314](https://github.com/longhorn/longhorn/issues/13314)). Stay on V1.
 
 ---
 
@@ -83,14 +58,14 @@ Block the nuke until every box checks — **you restore *from* these**:
 
 ## Rebuild sequence
 
-```mermaid
-flowchart LR
-    N[omnictl cluster delete] --> W[wait: machines drained,\nVMs gone in Proxmox]
-    W --> C[omnictl apply machine classes\n+ template validate/sync]
-    C --> P[machines provision\nfrom the NEW template]
-    P --> B[bootstrap-argocd.sh]
-    B --> WAVES[sync waves walk:\nCilium → Longhorn → kopiur → apps]
-    WAVES --> R[restore wave runs itself]
+```text
+  omnictl cluster delete
+    -> wait: machines drained, VMs gone in Proxmox
+    -> omnictl apply machine classes + template validate/sync
+    -> machines provision from the NEW template
+    -> bootstrap-argocd.sh
+    -> sync waves walk: Cilium -> Longhorn -> kopiur -> apps
+    -> restore wave runs itself
 ```
 
 > **Manual pre-steps before `bootstrap-argocd.sh`** — the script assumes them; the
@@ -130,18 +105,14 @@ provision, or VMs are built from stale state and must be reprovisioned.
   populator restores the latest Kopia snapshot, then binds **with data** and the
   pod starts. (Full flow:
   [kopiur-backup-architecture.md §4](domains/storage/kopiur-backup-architecture.md#4-restore-before-bind-flow-the-dr-magic).)
-- **Backend-down is fail-safe (this replaces the old `wait-for-rustfs` MAP).**
-  The MutatingAdmissionPolicy is gone, but the guarantee is preserved by kopiur
-  itself: if the Kopia repo is **unreachable** during a restore, kopiur raises
-  the backend error *before* the `onMissingSnapshot` decision, so the PVC stays
-  `Pending` and retries — **it never binds empty over a black-holed backend.**
-  (Source-verified in kopiur `crates/controller/src/restore/mod.rs`
-  `resolve_snapshot`.) The one case that *does* bind empty is a brand-new PVC
-  with **no snapshot yet** while the **repo is reachable** (`onMissingSnapshot:
-  Continue` = deploy-or-restore), which is why the pre-nuke checklist insists a
-  Snapshot exists for anything you intend to restore.
-- Restores complete in rough size order. (pvc-plumber/VolSync baseline for
-  comparison: the 2026-06-13 wave did 24/24 in ~45 minutes of wave time.)
+- **Backend-down is fail-safe.** If the Kopia repo is **unreachable** during a
+  restore, kopiur raises the backend error before the `onMissingSnapshot` decision,
+  so the PVC stays `Pending` and retries — **it never binds empty over a black-holed
+  backend.** The one case that *does* bind empty is a brand-new PVC with **no
+  snapshot yet** while the repo is reachable (`onMissingSnapshot: Continue` =
+  deploy-or-restore) — which is why the pre-nuke checklist insists a Snapshot exists
+  for anything you intend to restore.
+- Restores complete in rough size order; a full wave of ~24 PVCs is roughly an hour.
 - **The API server will wobble.** etcd fsync latency inflates under
   cluster-wide restore I/O — expect intermittent `readyz` failures, slow
   kubectl, csi-sidecar leader-election restarts. It recovers between bursts;
@@ -258,13 +229,11 @@ State BOTH claims, with live numbers:
 
 Point-in-time acceptance rots; the canary keeps the proof fresh.
 
-`my-apps/system/restore-canary/` (re-pointed to kopiur — its
-`kopiur/restore-canary-data.yaml` stub carries the `SnapshotPolicy` +
-`SnapshotSchedule` + `Restore`, and the PVC's `dataSourceRef` points at the
-`Restore`) re-runs the real DR path against a dedicated test PVC. The
-`SnapshotSchedule` keeps a fresh snapshot; to drill the restore, delete only the
-canary PVC and let Argo recreate it via its `dataSourceRef` → `Restore` populator
-(the old `scripts/restore-canary-drill.sh` was removed 2026-06-27):
+`my-apps/system/restore-canary/` re-runs the real DR path against a dedicated test
+PVC: its `kopiur/restore-canary-data.yaml` stub carries the `SnapshotPolicy` +
+`SnapshotSchedule` + `Restore`, and the PVC's `dataSourceRef` points at the `Restore`.
+The `SnapshotSchedule` keeps a fresh snapshot; to drill the restore, delete only the
+canary PVC and let Argo recreate it via its `dataSourceRef` → `Restore` populator:
 
 ```
 sentinel (old UID + sha256) → forced kopiur Snapshot
@@ -281,9 +250,8 @@ What it does **not** prove: restores of backups older than its own, CNPG
 recovery (separate system), or app-level data semantics — drill those
 separately when they matter.
 
-## Failure-mode catalog (from the 2026-06-12 incident)
+## Failure-mode catalog
 
-Worked fixes for everything the hostile rebuild threw at us — stale CSI
-attachments, read-only filesystems, wedged clone PVCs, finalizer-stuck
-resources — live in the
+Worked fixes for the things a hostile rebuild throws at you — stale CSI attachments,
+read-only filesystems, wedged clone PVCs, finalizer-stuck resources — live in the
 [common failure modes table](storage-architecture.md#common-failure-modes).
