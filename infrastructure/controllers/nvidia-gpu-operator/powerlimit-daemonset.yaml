@@ -4,13 +4,13 @@
 # Without this DS, the RTX 3090s run at their default limit of 420W each
 # (~840W total across both cards on this node).
 #
-# This DaemonSet runs on every GPU node, applies `nvidia-smi -pl <watts>`
-# to every GPU it finds, then sleeps. The setting persists until the
-# driver unloads (reboot / talosctl reset / driver reinstall), at which
-# point the DS re-runs on pod restart and re-applies it.
+# This DaemonSet runs on every GPU node and reapplies
+# `nvidia-smi -pl <watts>` to every GPU every five minutes. The loop restores
+# the setting after a driver reload without requiring the pod to restart.
 #
 # Valid range on RTX 3090: ~100W (min) .. 450W (max). Default is 420W.
-# We cap at 220W — aggressive undervolt for thermal/power headroom.
+# We cap at 290W — the measured air-cooled decode-efficiency knee:
+# ~22% less board power for ~7% less decode throughput versus 370W.
 #
 # Requires:
 #   - privileged container (nvidia-smi -pl needs root + driver write)
@@ -55,8 +55,8 @@ spec:
       containers:
         - name: nvidia-powerlimit
           # renovate: ignore
-          # Minimal image that ships nvidia-smi. Any CUDA base tag works;
-          # pin a specific SHA if you want to stop Renovate from bumping.
+          # CUDA userspace base; the NVIDIA runtime injects nvidia-smi and the
+          # host driver libraries. Pin a specific SHA to make this immutable.
           # Source from NVIDIA's own registry (nvcr.io) to dodge Docker Hub
           # rate limits — same byte-identical image as docker.io/nvidia/cuda.
           image: nvcr.io/nvidia/cuda:12.8.1-base-ubuntu22.04
@@ -64,34 +64,28 @@ spec:
             - /bin/bash
             - -c
             - |
-              set -euo pipefail
-
-              TARGET_WATTS=220
+              set -u
 
               echo "[powerlimit] waiting for nvidia-smi to become available..."
               until nvidia-smi >/dev/null 2>&1; do sleep 5; done
 
-              GPU_COUNT=$(nvidia-smi --query-gpu=count --format=csv,noheader | head -n1)
-              echo "[powerlimit] found ${GPU_COUNT} GPU(s); target=${TARGET_WATTS}W"
+              echo "[powerlimit] capping all GPUs at ${POWER_LIMIT_WATTS}W; reapplying every ${REAPPLY_SECONDS}s"
+              while true; do
+                # Best-effort: persistence mode keeps the driver loaded between
+                # CUDA processes. The reapply loop covers driver reloads.
+                nvidia-smi -pm 1 >/dev/null 2>&1 \
+                  || echo "[powerlimit] WARN: could not enable persistence mode"
 
-              # Enable persistence mode so the driver keeps the limit
-              # between kernel module loads. Best-effort — some setups
-              # don't allow it and that's fine.
-              nvidia-smi -pm 1 || echo "[powerlimit] persistence-mode set failed (non-fatal)"
+                if nvidia-smi -pl "${POWER_LIMIT_WATTS}" >/dev/null; then
+                  nvidia-smi \
+                    --query-gpu=index,name,power.limit,power.default_limit,power.max_limit,power.draw \
+                    --format=csv,noheader
+                else
+                  echo "[powerlimit] WARN: failed to set power limit; retrying in ${REAPPLY_SECONDS}s"
+                fi
 
-              for i in $(seq 0 $((GPU_COUNT - 1))); do
-                echo "[powerlimit] setting GPU ${i} to ${TARGET_WATTS}W"
-                nvidia-smi -i "${i}" -pl "${TARGET_WATTS}" \
-                  || echo "[powerlimit] WARN: failed to set GPU ${i}"
+                sleep "${REAPPLY_SECONDS}"
               done
-
-              echo "[powerlimit] current power limits:"
-              nvidia-smi --query-gpu=index,name,power.limit,power.default_limit,power.max_limit \
-                         --format=csv
-
-              # Keep the pod alive so kubelet doesn't CrashLoop-restart
-              # us every few seconds. Limits persist anyway.
-              exec sleep infinity
           securityContext:
             # Required for nvidia-smi -pl; the driver rejects the ioctl
             # from an unprivileged user namespace.
@@ -101,6 +95,12 @@ spec:
               value: "all"
             - name: NVIDIA_DRIVER_CAPABILITIES
               value: "utility"
+            # 290W is the measured decode-efficiency knee for air-cooled 3090s.
+            # Use 250W instead when optimizing for prefill-heavy workloads.
+            - name: POWER_LIMIT_WATTS
+              value: "290"
+            - name: REAPPLY_SECONDS
+              value: "300"
           resources:
             requests:
               cpu: 10m

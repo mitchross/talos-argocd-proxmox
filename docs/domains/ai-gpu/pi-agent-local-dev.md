@@ -20,7 +20,7 @@
 pi (workstation TUI)
   └── https://vllm.vanillax.me/v1          (internal gateway route, LAN only)
         └── vLLM TP=2 · qwen3.6-27b · 262K ctx · vision · qwen3_coder tool parser
-              └── 2× RTX 3090 @ 290W cap (my-apps/ai/gpu-power-limit/)
+              └── 2× RTX 3090 @ 290W cap (NVIDIA infrastructure DaemonSet)
 ```
 
 Everything agent-side lives on the workstation (`~/.pi/agent/`); nothing here
