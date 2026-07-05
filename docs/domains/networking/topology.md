@@ -1,21 +1,17 @@
 # Network Topology
 
-> ⚠️ **STALE — pre-2026-06 multi-node layout.** The diagram and IP table below
-> describe the old 3-control-plane / multi-worker cluster. The cluster is now
-> **single-node** (`talos-singlenode-gpu-prod`): one control-plane VM
-> (`192.168.10.184`) + one GPU worker VM (`192.168.10.103`), dual RTX 3090 on
-> the bare-metal X399/2950X host. TrueNAS/RustFS-S3 remains live at
-> `192.168.10.133` (backups verified flowing). The per-host 10G / dedicated-link
-> claims predate the DL360-era network change and have **not** been re-verified —
-> treat the physical-link details as unconfirmed. Verify live with
-> `kubectl get nodes -o wide`. TODO: redraw once the current physical topology is
-> confirmed end-to-end.
-
 ## Overview
 
-The cluster uses a single network with 10G switch infrastructure:
-- **Main LAN (192.168.10.0/24)** - All cluster traffic via 10G switch
-- **TrueNAS Storage** - 192.168.10.133 (10G connected via switch)
+The cluster is **single-node** (`talos-singlenode-gpu-prod`) on a flat LAN with
+10G switch infrastructure:
+
+- **Main LAN (192.168.10.0/24)** — all cluster traffic via the 10G switch.
+- **Control-plane VM** — `192.168.10.184`.
+- **GPU worker VM** — `192.168.10.103` (dual RTX 3090 passed through from the
+  bare-metal X399/2950X host).
+- **Storage** — TrueNAS/RustFS-S3 at `192.168.10.133` (NFS/SMB/RustFS S3).
+
+Verify live node addresses with `kubectl get nodes -o wide`.
 
 ## Physical Topology
 
@@ -26,32 +22,22 @@ The cluster uses a single network with 10G switch infrastructure:
 │                                                                              │
 │   ┌─────────────────┐                                ┌─────────────────┐    │
 │   │    Proxmox      │                                │    TrueNAS      │    │
-│   │   hp-server-1   │                                │  192.168.10.133 │    │
-│   │  192.168.10.14  │                                │                 │    │
+│   │  192.168.10.14  │                                │  192.168.10.133 │    │
 │   └────────┬────────┘                                └────────┬────────┘    │
 │            │ 10G                                              │ 10G         │
-│            │                                                  │             │
 │            ▼                                                  ▼             │
 │   ┌────────────────────────────────────────────────────────────────────┐   │
 │   │                        10G SWITCH                                   │   │
 │   │                     192.168.10.0/24                                 │   │
 │   └────────────────────────────────────────────────────────────────────┘   │
-│            │              │              │              │                    │
-│            ▼              ▼              ▼              ▼                    │
-│   ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐       │
-│   │ Control Plane│ │ Control Plane│ │ Control Plane│ │   Workers    │       │
-│   │  .237        │ │  .76         │ │  .140        │ │ .164/.219/.159│      │
-│   └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘       │
-│                                                                              │
-│   ┌──────────────────────────────────────────────────────────────────┐      │
-│   │                        GPU Worker VM 100                          │      │
-│   │  ┌─────────────────┐                                             │      │
-│   │  │ net0 (ens18)    │                                             │      │
-│   │  │ vmbr0 → 10G LAN │                                             │      │
-│   │  │ 192.168.10.x    │                                             │      │
-│   │  │ (DHCP)          │                                             │      │
-│   │  └─────────────────┘                                             │      │
-│   └──────────────────────────────────────────────────────────────────┘      │
+│            │                                    │                            │
+│            ▼                                    ▼                            │
+│   ┌──────────────────────┐          ┌──────────────────────────────────┐    │
+│   │  Control-Plane VM    │          │        GPU Worker VM             │    │
+│   │   192.168.10.184     │          │       192.168.10.103            │    │
+│   │                      │          │  net0 (ens18) → vmbr0 → 10G LAN │    │
+│   └──────────────────────┘          │  dual RTX 3090 (passthrough)    │    │
+│                                     └──────────────────────────────────┘    │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -62,16 +48,12 @@ The cluster uses a single network with 10G switch infrastructure:
 
 | Device | IP | Purpose |
 |--------|-----|---------|
-| Router/Gateway | 192.168.10.1 | Default route |
-| Proxmox (hp-server-1) | 192.168.10.14 | Hypervisor |
-| TrueNAS | 192.168.10.133 | NAS (NFS/SMB/RustFS S3) - 10G |
-| Control Plane 1 | 192.168.10.237 | K8s master |
-| Control Plane 2 | 192.168.10.76 | K8s master |
-| Control Plane 3 | 192.168.10.140 | K8s master |
-| Worker 1 | 192.168.10.164 | K8s worker |
-| Worker 2 | 192.168.10.219 | K8s worker |
-| Worker 3 | 192.168.10.159 | K8s worker |
-| GPU Worker | 192.168.10.x (DHCP) | K8s GPU worker |
+| Router/Gateway | 192.168.10.1 | Default route + client DNS (Firewalla) |
+| Proxmox | 192.168.10.14 | Hypervisor |
+| Technitium | 192.168.10.15 | Split-DNS for `vanillax.me` |
+| GPU Worker | 192.168.10.103 | K8s GPU worker node |
+| TrueNAS | 192.168.10.133 | NAS (NFS/SMB/RustFS S3) — 10G |
+| Control Plane | 192.168.10.184 | K8s control-plane node |
 | Wyze Bridge | 192.168.10.46 | RTSP camera streams |
 | LoadBalancer Pool | 192.168.10.32-63 (/27) | Cilium L2 announcements |
 
@@ -126,7 +108,7 @@ showmount -e 192.168.10.133
 ### Storage Performance Testing
 
 ```bash
-# Test raw wire speed (should be ~9.4 Gbps)
+# Test raw wire speed (target ~9.4 Gbps)
 iperf3 -c 192.168.10.133
 
 # Test NFS throughput from inside a pod
@@ -145,19 +127,19 @@ The default Linux kernel `read_ahead_kb` of 128 KB limits NFS sequential reads t
 |-------|---------|-------|
 | **VFS readahead** | udev rule `ATTR{read_ahead_kb}` | 16384 (16MB) |
 | **NFS readahead** | `siderolabs/nfsrahead` extension | Installed on all nodes |
-| **RPC concurrency** | `sunrpc.tcp_slot_table_entries` | 128 (default was 2) |
+| **RPC concurrency** | `sunrpc.tcp_slot_table_entries` | 128 |
 | **TCP congestion** | `net.ipv4.tcp_congestion_control` | bbr |
 | **TCP buffers** | `net.core.rmem_max` / `wmem_max` | 64MB |
 | **NIC ring buffers** | Proxmox + TrueNAS | 8192 (max) |
 | **NFS mount options** | Per-PV CSI mountOptions | `nconnect=16,rsize=1M,wsize=1M` |
 
-**Verified performance** (from TrueNAS ARC-cached 4GB file):
+Reference throughput (TrueNAS ARC-cached 4GB file):
 
 | Layer | Speed |
 |-------|-------|
 | iperf3 (wire) | 9.4 Gb/s |
 | Proxmox host → NFS | 2.7 GB/s |
-| Talos VM → NFS (before tuning) | ~128 MB/s |
+| Talos VM → NFS (untuned) | ~128 MB/s |
 
 **Debug commands**:
 ```bash

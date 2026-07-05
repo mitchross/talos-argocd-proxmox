@@ -1,12 +1,12 @@
 # CNPG Postgres: Backup, Restore & Start — Beginner's Guide
 
-This is the **friendly on-ramp** for understanding how Postgres databases get
-backed up, restored, and created in this cluster. If you've never touched
-CloudNativePG (CNPG) before, start here.
+This is the **friendly on-ramp** for how Postgres databases get backed up,
+restored, and created in this cluster. If you've never touched CloudNativePG
+(CNPG) before, start here.
 
-When you need the full, gory, copy-paste DR runbook, jump to
-[disaster-recovery.md](./disaster-recovery.md). When you need the exact repo
-rules, see [infrastructure/database/CLAUDE.md](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/database/CLAUDE.md).
+For the full copy-paste DR runbook, jump to
+[disaster-recovery.md](./disaster-recovery.md). For the exact repo rules, see
+[infrastructure/database/CLAUDE.md](https://github.com/mitchross/talos-argocd-proxmox/blob/main/infrastructure/database/CLAUDE.md).
 
 ---
 
@@ -17,7 +17,7 @@ rules, see [infrastructure/database/CLAUDE.md](https://github.com/mitchross/talo
     - Each database lives in its own folder: `infrastructure/database/cloudnative-pg/<db>/`. ArgoCD auto-discovers it — no manual wiring.
     - Backups go to **RustFS S3** (our S3, hosted on TrueNAS) using the **Barman Cloud Plugin**. Two parts work together: a daily **base backup** (full snapshot) + continuous **WAL archiving** (the running journal of every change). Together = point-in-time recovery (PITR).
     - There is **one feature flag** per database — a single line in its `kustomization.yaml` — that picks `overlays/initdb` (normal) or `overlays/recovery` (disaster recovery).
-    - **Normal = `initdb`.** You only flip to `recovery` for an actual restore, then flip back.
+    - **Normal = `initdb`.** Flip to `recovery` only for an actual restore, then flip back.
     - **CNPG is NOT kopiur.** kopiur backs up files on PVCs; CNPG backs up the database itself (SQL-aware). Never mix the two.
 
 ---
@@ -36,8 +36,7 @@ each other. Knowing which is which saves a lot of confusion.
 
 !!! warning
     **Never add kopiur backup CRs to a CNPG database's PVCs.** CNPG manages its
-    own backups via Barman to S3. Mixing them corrupts your mental model and can
-    double-handle the same data. Postgres = CNPG. Everything else = kopiur.
+    own backups via Barman to S3. Postgres = CNPG. Everything else = kopiur.
 
 ---
 
@@ -66,42 +65,34 @@ forward to bring the database back to (almost) the exact moment you want.
 | The schedule | `scheduled-backup.yaml` | A daily `ScheduledBackup` — triggers the full base backups. |
 
 !!! note
-    We use the **Barman Cloud Plugin**, NOT the old in-tree `spec.backup.barmanObjectStore`.
-    That old field was removed in CNPG 1.30.0. Do not reintroduce it. The Cluster
-    references the `ObjectStore` CR by name via
-    `spec.plugins[0].parameters.barmanObjectName`.
+    Backups use the **Barman Cloud Plugin**, not an in-tree
+    `spec.backup.barmanObjectStore` field (that field does not exist in CNPG
+    1.30.0+ — do not add it). The Cluster references the `ObjectStore` CR by
+    name via `spec.plugins[0].parameters.barmanObjectName`.
 
 ### Diagram 1 — how a backup flows
 
-```mermaid
-flowchart TD
-    subgraph K8s["Kubernetes (cloudnative-pg namespace)"]
-        PG["Postgres Cluster CR<br/>(base/cluster.yaml)"]
-        SB["ScheduledBackup<br/>(daily, 04:00)<br/>scheduled-backup.yaml"]
-        PLUGIN["Barman Cloud Plugin<br/>name: barman-cloud.cloudnative-pg.io<br/>isWALArchiver: true"]
-        OS["ObjectStore CR<br/>(base/objectstore.yaml)<br/>S3 endpoint + creds + retention"]
-    end
-
-    subgraph S3["RustFS S3 (on TrueNAS)"]
-        LIN["serverName lineage folder<br/>e.g. gitea-database-v10/"]
-        BASE["base/  (full snapshots)"]
-        WAL["wals/  (WAL journal, append-only)"]
-    end
-
-    SB -->|triggers full snapshot| PLUGIN
-    PG -->|every WAL segment as it fills| PLUGIN
-    PLUGIN -->|reads S3 config from| OS
-    OS --> LIN
-    PLUGIN -->|base backup| BASE
-    PLUGIN -->|WAL archive| WAL
-    LIN --> BASE
-    LIN --> WAL
+```text
+Kubernetes (cloudnative-pg namespace)
+  ScheduledBackup (daily 04:00) ──triggers full snapshot──┐
+  scheduled-backup.yaml                                   ▼
+  Postgres Cluster CR ──every WAL segment as it fills──▶ Barman Cloud Plugin
+  base/cluster.yaml                                      (isWALArchiver: true)
+                                                              │
+                          reads S3 config from ObjectStore CR │
+                          (base/objectstore.yaml: endpoint +  │
+                           creds + retention)                 │
+                                                              ▼
+RustFS S3 (on TrueNAS)
+  serverName lineage folder  (e.g. gitea-database-v10/)
+      ├─ base/   ◀── base backup   (full snapshots)
+      └─ wals/   ◀── WAL archive   (WAL journal, append-only)
 ```
 
 ### What is a "serverName" / "lineage"?
 
 The **`serverName`** is the named **folder** inside the S3 bucket where one
-database's backups live — for example `gitea-database-v10`. We call each one a
+database's backups live — for example `gitea-database-v10`. Each one is a
 **lineage**.
 
 - `base/cluster.yaml` sets the **CURRENT WRITE** serverName (where new backups land).
@@ -116,14 +107,9 @@ database's backups live — for example `gitea-database-v10`. We call each one a
     untouched (still usable for future restores) and gives the new cluster a clean
     folder to write into.
 
-**Current lineages (as of 2026-06-28, post-nuke):**
-
-| Database | Current write target | Prior (restore source) |
-|----------|----------------------|------------------------|
-| gitea | `gitea-database-v10` | `gitea-database-v9` |
-| immich | `immich-database-v6` | `immich-database-v5` |
-| paperless | `paperless-database-v6` | `paperless-database-v5` |
-| temporal | `temporal-database-v8` | `temporal-database-v7` |
+The current write target for each database is `spec.plugins[0].parameters.serverName`
+in that DB's `base/cluster.yaml`; the recovery overlay's `externalClusters` source
+`serverName` is always the prior lineage.
 
 ---
 
@@ -139,20 +125,18 @@ This single line is the entire mode switch.
 
 ### Diagram 2 — the one feature flag
 
-```mermaid
-flowchart LR
-    KUST["kustomization.yaml<br/>(pick ONE overlay)"]
-
-    subgraph NORMAL["overlays/initdb  — NORMAL"]
-        I["bootstrap.initdb<br/>→ fresh empty DB on first create<br/>→ no-op if cluster already exists"]
-    end
-
-    subgraph DR["overlays/recovery  — DISASTER RECOVERY"]
-        R["bootstrap.recovery<br/>→ restore from prior lineage v(N-1)<br/>→ write forward to vN"]
-    end
-
-    KUST -->|steady state| NORMAL
-    KUST -.->|only during a restore| DR
+```text
+kustomization.yaml  (pick ONE overlay)
+   │
+   ├─ steady state ─────────▶ overlays/initdb  — NORMAL
+   │                            bootstrap.initdb
+   │                            → fresh empty DB on first create
+   │                            → no-op if cluster already exists
+   │
+   └─ only during a restore ─▶ overlays/recovery  — DISASTER RECOVERY
+                                bootstrap.recovery
+                                → restore from prior lineage v(N-1)
+                                → write forward to vN
 ```
 
 !!! tip
@@ -168,14 +152,26 @@ auto-discovers** anything matching `infrastructure/database/*/*`.
 
 ### Diagram 4 — start a new DB
 
-```mermaid
-flowchart LR
-    A["Copy an existing<br/>&lt;db&gt;/ folder<br/>(e.g. gitea/)"] --> B["Rename + edit names,<br/>owner, image, SQL"]
-    B --> C["Set serverName =<br/>&lt;db&gt;-database-v1"]
-    C --> D["Keep kustomization on<br/>overlays/initdb"]
-    D --> E["git commit + push"]
-    E --> F["Database AppSet<br/>auto-creates the app"]
-    F --> G["CNPG creates an<br/>empty DB, backups start"]
+```text
+Copy an existing <db>/ folder (e.g. gitea/)
+        │
+        ▼
+Rename + edit names, owner, image, SQL
+        │
+        ▼
+Set serverName = <db>-database-v1
+        │
+        ▼
+Keep kustomization on overlays/initdb
+        │
+        ▼
+git commit + push
+        │
+        ▼
+Database AppSet auto-creates the app
+        │
+        ▼
+CNPG creates an empty DB, backups start
 ```
 
 ### Steps
@@ -196,7 +192,7 @@ flowchart LR
 
 ## Restore from backup (Disaster Recovery)
 
-You only do this for a real DR event: the database is gone, corrupt, or empty
+Do this only for a real DR event: the database is gone, corrupt, or empty
 after a cluster nuke, and you want its data back from S3.
 
 The big idea: **read FROM the prior lineage `v(N-1)`, write forward to a new
@@ -207,24 +203,34 @@ re-create the cluster from scratch.
     **CNPG only reads `spec.bootstrap` when a cluster is first created.** Flipping
     the flag in git is NOT enough — you MUST delete the live Cluster **and its
     PVCs** so CNPG re-evaluates bootstrap on a fresh creation. Skipping the PVC
-    delete is the #1 noob trap (see Gotchas).
+    delete is the #1 trap (see Gotchas).
 
 ### Diagram 3 — restore / DR sequence
 
-```mermaid
-flowchart TD
-    S1["1. Bump base/cluster.yaml<br/>serverName → vN (new lineage)"]
-    S2["2. Set overlays/recovery source<br/>serverName → v(N-1) (prior, good data)"]
-    S3["3. Flip kustomization.yaml<br/>→ overlays/recovery"]
-    S4["4. git commit + push"]
-    S5["5. Delete live Cluster + PVCs<br/>(REQUIRED — forces fresh bootstrap)"]
-    S6["6. Sync the ArgoCD app"]
-    S7["7. Watch *-full-recovery-* pod<br/>replay base backup + WAL"]
-    S8["8. Once healthy:<br/>FLIP BACK to overlays/initdb"]
-
-    S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8
-
-    S5 -.->|"kubectl delete cluster &lt;db&gt;-database<br/>kubectl delete pvc -l cnpg.io/cluster=&lt;db&gt;-database"| S5
+```text
+1. Bump base/cluster.yaml serverName → vN (new lineage)
+        │
+        ▼
+2. Set overlays/recovery source serverName → v(N-1) (prior, good data)
+        │
+        ▼
+3. Flip kustomization.yaml → overlays/recovery
+        │
+        ▼
+4. git commit + push
+        │
+        ▼
+5. Delete live Cluster + PVCs  (REQUIRED — forces fresh bootstrap)
+        │       kubectl delete cluster <db>-database
+        │       kubectl delete pvc -l cnpg.io/cluster=<db>-database
+        ▼
+6. Sync the ArgoCD app
+        │
+        ▼
+7. Watch *-full-recovery-* pod replay base backup + WAL
+        │
+        ▼
+8. Once healthy: FLIP BACK to overlays/initdb
 ```
 
 ### The 8 steps
@@ -252,9 +258,8 @@ flowchart TD
     The full runbook adds important extra steps the short version glosses over —
     notably a **hard-refresh of the ArgoCD app before deleting the Cluster** (so
     ArgoCD doesn't re-create it from a stale cached manifest), plus data
-    verification and consumer-app restarts. Always follow
-    [disaster-recovery.md → Runbook: restore from Barman](./disaster-recovery.md#runbook-restore-from-barman-recovery)
-    for a real DR.
+    verification and consumer-app restarts. For a real DR, always follow
+    [disaster-recovery.md → Runbook: restore from Barman](./disaster-recovery.md#runbook-restore-from-barman-recovery).
 
 ---
 

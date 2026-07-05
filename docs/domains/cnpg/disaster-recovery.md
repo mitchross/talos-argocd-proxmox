@@ -26,13 +26,15 @@ CNPG databases live in two layers:
 | **Postgres data** | inside the CNPG `Cluster` CR | Barman Cloud → RustFS S3 | `spec.bootstrap.recovery` + `externalClusters` |
 | **App state** | outside (ExternalSecret, ScheduledBackup) | committed to Git as declarative state | ArgoCD sync |
 
-**Barman ≠ PVC backups.** The PVC/Kopia system (the **kopiur** operator, writing to RustFS S3) handles *file-level* PVC backups. CNPG has its own SQL-aware backup path: Barman Cloud → RustFS S3. The two never touch each other. See
+**Barman ≠ PVC backups.** The PVC/Kopia system (the **kopiur** operator, writing
+to RustFS S3) handles *file-level* PVC backups. CNPG has its own SQL-aware backup
+path: Barman Cloud → RustFS S3. The two never touch each other. See
 [docs/disaster-recovery.md](../../disaster-recovery.md) for why both exist.
 
 ### How recovery works (the 30-second version)
 
 - Normal operation → `Cluster` has `bootstrap.initdb`, Postgres comes up empty, Barman writes WAL + scheduled base backups to S3.
-- DR event → flip the feature flag to `bootstrap.recovery` + specify `externalClusters` pointing at the prior backup lineage, CNPG runs `barman-cloud-restore` on first boot to pull base backup + replay WAL.
+- DR event → flip the feature flag to `bootstrap.recovery` + specify `externalClusters` pointing at the prior backup lineage; CNPG runs `barman-cloud-restore` on first boot to pull the base backup + replay WAL.
 
 ### Why "lineage" (`-v1`, `-v2`, ...)
 
@@ -45,17 +47,17 @@ s3://postgres-backups/cnpg/<app>/
 ├── <app>-database-v1/     ← original / day-0 lineage
 │   ├── base/              (full backups)
 │   └── wals/              (WAL archive — append-only)
-├── <app>-database-v2/     ← lineage created after first DR
+├── <app>-database-v2/     ← prior lineage (restore source)
 │   ├── base/
 │   └── wals/
-└── <app>-database-v3/     ← current write target (after second DR)
+└── <app>-database-v3/     ← current write target
     ├── base/
     └── wals/
 ```
 
-During DR, you restore FROM one lineage (e.g., v2) and point new backups AT
-the next (v3). The prior lineage stays untouched as a PITR source for future
-DR events.
+During DR, you restore FROM one lineage (e.g., v2) and point new backups AT the
+next (v3). The prior lineage stays untouched as a PITR source for future DR
+events.
 
 ## Repo layout per DB
 
@@ -75,7 +77,7 @@ infrastructure/database/cloudnative-pg/<db>/
     ├── initdb/
     │   ├── kustomization.yaml
     │   └── bootstrap-patch.yaml    ← strategic merge: adds bootstrap.initdb
-    └── overlays/recovery/
+    └── recovery/
         ├── kustomization.yaml
         └── bootstrap-patch.yaml    ← strategic merge: adds bootstrap.recovery + externalClusters
 ```
@@ -103,9 +105,9 @@ with `name: barman-cloud.cloudnative-pg.io`, `isWALArchiver: true`, and
 `parameters.barmanObjectName` pointing at the sibling `ObjectStore` CR
 (`base/objectstore.yaml`), which owns the S3 `destinationPath`, credentials,
 and retention. `spec.plugins[0].parameters.serverName` in base is always the
-**write target for new backups** — bump this when you bump the lineage.
-(The in-tree `spec.backup.barmanObjectStore` field this replaced was removed in
-CNPG 1.30.0.)
+**write target for new backups** — bump this when you bump the lineage. Do not
+add an in-tree `spec.backup.barmanObjectStore` field; it does not exist in CNPG
+1.30.0+.
 
 ### `overlays/initdb/bootstrap-patch.yaml`
 
@@ -194,8 +196,8 @@ spec:
 > The `serverName` here selects the prior backup lineage on the same RustFS
 > bucket. **Verify that lineage is still within the S3 recovery window** —
 > older lineages age out of RustFS lifecycle retention and become
-> unrestorable. The in-tree `externalClusters[].barmanObjectStore` field this
-> replaces was removed in CNPG 1.30.0; all DBs now use the `plugin:` shape.
+> unrestorable. All DBs use the `plugin:` shape (no in-tree
+> `externalClusters[].barmanObjectStore`).
 
 **2. Flip the feature flag.**
 
@@ -220,7 +222,7 @@ git push
 new git state.** Without this, ArgoCD may re-create the deleted Cluster
 from a stale rendered manifest (pre-recovery-flip) — you'll get a fresh
 empty database with `bootstrap.initdb` and `serverName: v(N-1)` despite
-git being correct. Drill 2026-05-02 burned a cycle on exactly this.
+git being correct.
 
 ```bash
 kubectl annotate application <db> -n argocd \
@@ -280,9 +282,9 @@ kubectl -n <db> rollout restart deployment/<app>
 
 **10. (Optional) Flip back to initdb.** Once the Cluster exists and is running
 with the recovered data, `spec.bootstrap` is a no-op — CNPG ignores it on
-existing Clusters. You can leave the overlay on `recovery` forever, or flip
-the root `kustomization.yaml` back to `overlays/initdb` for a tidier "steady
-state" git declaration. Both are valid.
+existing Clusters. You can leave the overlay on `recovery`, or flip the root
+`kustomization.yaml` back to `overlays/initdb` for a tidier "steady state" git
+declaration. Both are valid.
 
 ---
 
@@ -312,7 +314,7 @@ done
 
 ## Monitoring and tools
 
-**Currently deployed (use these first):**
+**Use these first:**
 
 - **ArgoCD UI** (http://localhost:39681 or https://argocd.vanillax.me)
   Shows sync/health status per DB app. Good for "is this DB's git in sync with cluster?"
@@ -347,9 +349,8 @@ done
 
 ## Future improvements (ideas to come back to)
 
-Unfinished work — revisit when DR becomes a routine drill (quarterly) or when
-this is painful enough the tools are worth building. Rough-ordered by
-effort-vs-payoff.
+Optional tooling to build when DR becomes a routine drill (quarterly) or painful
+enough that the tools are worth it. Rough-ordered by effort-vs-payoff.
 
 ### Tier 1 — quick wins (do first when you have 30 min)
 
@@ -361,11 +362,11 @@ effort-vs-payoff.
   visibility.
 
 - **Install the `kubectl cnpg` plugin locally.** Single best tool for CNPG
-  state. Already referenced above — pin this as prerequisite in onboarding.
+  state. Pin this as a prerequisite in onboarding.
 
 - **Committed state-check script** in `scripts/` that prints a summary table
   of all CNPG DBs: current serverName, last successful backup, last WAL
-  archive age, Cluster phase. Just expands the inline script above into a
+  archive age, Cluster phase. Expands the inline script above into a
   standalone tool with nicer formatting. ~30 lines of bash.
 
 ### Tier 2 — DR wizard CLI (weekend project, ~1-2 days)
@@ -375,64 +376,43 @@ guided steps. Minimum viable feature set:
 
 - `dr-wizard status` — reads git + live state, prints "here's each DB's
   current lineage, mode flag, backup age."
-- `dr-wizard plan <db>` — dry-run: "you want to restore `<db>`. Available
-  lineages on S3: v1 (WAL ends 2026-04-16). Proposed changes: base.serverName
-  v1 → v2; recovery overlay serverName → v1. Here's the diff, ready to open
-  a PR?"
+- `dr-wizard plan <db>` — dry-run: available lineages on S3, proposed
+  serverName changes, the diff, ready to open a PR.
 - `dr-wizard execute <db>` — after PR merged, performs the destructive
   kubectl delete cluster + PVC + sync step with y/N confirmations.
 - `dr-wizard validate <db>` — post-recovery, runs SQL sanity check (counts
   rows in a few tables, reports vs. previously-known counts).
 
-Why it's worth it IF DR becomes routine: collapses a 30-minute copy-paste
-dance into ~3 commands with built-in guardrails (WAL range check, lineage
-math, consumer-app restart). Not worth building for a once-a-year use case.
+Worth it IF DR becomes routine: collapses a 30-minute copy-paste dance into ~3
+commands with built-in guardrails (WAL range check, lineage math, consumer-app
+restart). Not worth building for a once-a-year use case.
 
-**Scope creep to avoid:** don't try to build a web UI. CLI + GitHub PR
-checkout is already a UI. Just make the CLI nice.
+**Scope creep to avoid:** don't build a web UI. CLI + GitHub PR checkout is
+already a UI. Just make the CLI nice.
 
 ### Tier 3 — proper state-management UI (only if scale grows)
 
 If the cluster grows to 10+ CNPG DBs, revisit with a real web interface:
 
-- **Adopt an existing tool first.** Check if CNPG has an upstream dashboard
-  project by the time this matters (they had hints of one in 2025). If yes,
-  use that.
+- **Adopt an existing tool first.** Check whether CNPG has an upstream
+  dashboard project by the time this matters. If yes, use that.
 - **Custom web UI (last resort).** Only build if nothing upstream exists
   AND DR is happening monthly+. A Next.js dashboard reading the Cluster
   CRDs, showing backup lineage timelines per DB, offering the same wizard
-  actions the CLI has. Weekend project × several. Huge maintenance tax.
-
-### Tier 4 — backup-plugin migration (DONE)
-
-CNPG removed native `spec.backup.barmanObjectStore` / `externalClusters[].barmanObjectStore`
-in 1.30.0. **This migration is complete** — all four DBs (gitea, immich,
-paperless, temporal) now use the Barman Cloud Plugin
-(`infrastructure/database/cnpg-barman-plugin/`):
-
-1. Each DB's `base/cluster.yaml` uses `spec.plugins[]` (`name: barman-cloud.cloudnative-pg.io`,
-   `isWALArchiver: true`, `parameters.barmanObjectName` + `serverName`).
-2. Each `overlays/recovery/bootstrap-patch.yaml` uses `externalClusters[].plugin`
-   with the same `barmanObjectName` (pointing at the prod `ObjectStore`) and the
-   PRIOR-lineage `serverName`.
-3. Each DB has its own `base/objectstore.yaml` `ObjectStore` CR owning the S3
-   `destinationPath`, credentials, and `retentionPolicy`.
-
-No further action needed — kept here for historical context.
+  actions the CLI has. Huge maintenance tax.
 
 ### Explicitly NOT worth building
 
 - **General-purpose Postgres management GUI** (pgAdmin, Adminer, DBeaver
   server, etc.). They operate at the SQL layer, not the CNPG Cluster
-  lifecycle you actually care about during DR. Install locally as a client
-  tool if useful for ad-hoc queries — but they add zero value for DR.
+  lifecycle you care about during DR. Install locally as a client tool if
+  useful for ad-hoc queries — but they add zero value for DR.
 - **Lua / Helm-hook automation** around the delete-cluster-PVC step. The
   manual `kubectl` sequence is already 2 commands and explicitly destructive;
-  hiding it behind automation just makes "oops I meant the other DB"
-  blastier.
+  hiding it behind automation just makes "oops I meant the other DB" blastier.
 - **Automated PITR-target guessing** (e.g. "restore to yesterday 23:59").
   Always specify targets explicitly or omit them entirely. Guesswork here
-  produces the same "recovery ended before target" FATAL we hit on 2026-04-19.
+  produces the "recovery ended before target" FATAL.
 
 ---
 
@@ -458,9 +438,6 @@ identified the exact abandoned prefix. The safe recovery is:
 4. Delete the live Cluster, recovery Jobs, and CNPG PVCs.
 5. Let Argo recreate the Cluster from the current render.
 
-2026-06-22 Gitea example: v6 held real data, v7 was polluted, v8 brought the
-restore online, and v9 became the steady clean write target.
-
 ### "relation does not exist" after a successful recovery
 
 The restored DB is empty (or has a subset of data). Common causes:
@@ -476,16 +453,15 @@ The restored DB is empty (or has a subset of data). Common causes:
 ### New Cluster comes up with `bootstrap.initdb` despite git saying `recovery`
 
 ArgoCD's `ignoreDifferences` on `.spec.bootstrap` + `RespectIgnoreDifferences=true`
-will **strip** the bootstrap field during apply. We removed that from the
-database AppSet (commit 61d4aef0) — verify `infrastructure/controllers/argocd/apps/appsets/database-appset.yaml`
-does NOT have `.spec.bootstrap` in its `jqPathExpressions`. If it does, ArgoCD
-is silently dropping your recovery config.
+**strips** the bootstrap field during apply. The database AppSet must NOT have
+`.spec.bootstrap` in its `jqPathExpressions` — verify
+`infrastructure/controllers/argocd/apps/appsets/database-appset.yaml`. If it
+does, ArgoCD is silently dropping your recovery config.
 
 ### Sync "Succeeded" but Cluster doesn't appear
 
-The DB's ArgoCD Application may have a stuck `argocd.argoproj.io/skip-reconcile: "true"`
-annotation (left over from old scripts). ArgoCD reports sync success but never
-actually reconciles. Fix:
+The DB's ArgoCD Application may carry a `argocd.argoproj.io/skip-reconcile: "true"`
+annotation. ArgoCD reports sync success but never actually reconciles. Fix:
 
 ```bash
 kubectl -n argocd annotate application <db> \
@@ -540,26 +516,8 @@ it as a write target or recovery source.
 
 ## Deprecation / forward migration
 
-### Native `spec.backup.barmanObjectStore` — removed in CNPG 1.30.0 (migration DONE)
-
-The native (in-Cluster) `spec.backup.barmanObjectStore` and
-`externalClusters[].barmanObjectStore` fields were removed in CNPG 1.30.0. All
-DBs have been migrated to the **Barman Cloud Plugin**
-(`infrastructure/database/cnpg-barman-plugin/`, installed as
-`cnpg-barman-plugin-app.yaml`):
-
-- `base/cluster.yaml` declares backups via `spec.plugins[]`
-  (`name: barman-cloud.cloudnative-pg.io`, `parameters.barmanObjectName` +
-  `serverName`).
-- `overlays/recovery/bootstrap-patch.yaml` declares the recovery source via
-  `externalClusters[].plugin` (same `barmanObjectName`, prior-lineage `serverName`).
-- Each DB owns a `base/objectstore.yaml` `ObjectStore` CR (S3 `destinationPath`,
-  credentials, `retentionPolicy`).
-
-Nothing left to migrate — kept for historical context.
-
 ### `spec.monitoring.enablePodMonitor` deprecated
 
-Currently used by all DBs. CNPG 1.30.0 will remove it. Migration: replace with
-a manually-managed `PodMonitor` resource per cluster. Also not urgent but note
-the warning in CNPG logs.
+Used by all DBs. A future CNPG release removes it. Migration: replace with a
+manually-managed `PodMonitor` resource per cluster. Not urgent, but note the
+warning in CNPG logs.

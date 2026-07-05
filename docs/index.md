@@ -8,12 +8,10 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
 > Source: [`mitchross/talos-argocd-proxmox`](https://github.com/mitchross/talos-argocd-proxmox)
 > · This site renders `docs/` from that repo.
 
-!!! tip
-    **The headline claim, with receipts:** this cluster was fully destroyed and
-    rebuilt twice in 36 hours (2026-06-12/13 — once unplanned, once planned).
-    Both times, every protected volume restored automatically from the
-    off-cluster Kopia repository. The second rebuild took ~75 minutes with
-    **zero manual storage steps**. See [disaster-recovery.md](disaster-recovery.md#proof-history).
+!!! tip "The point"
+    The whole cluster can be destroyed and rebuilt with every protected volume
+    restored automatically from the off-cluster Kopia repository — no manual storage
+    steps. See [disaster recovery](disaster-recovery.md).
 
 ## Stack
 
@@ -55,7 +53,7 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
     ---
 
     Destroy → rebuild → restore: pre-nuke checklist, restore-wave
-    expectations, proof history, the restore canary.
+    expectations, and the restore canary.
 
     [→ disaster-recovery.md](disaster-recovery.md)
 
@@ -72,7 +70,7 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
 
 ### 💾 More storage & backups
 
-Backups are **kopiur** (Kopia-native operator; replaced pvc-plumber + VolSync 2026-06-27).
+Backups are **kopiur** (Kopia-native operator).
 
 - **[kopiur-playground.md](kopiur-playground.md)** — 🕹️ interactive, in-browser
   simulation of backup + restore-before-bind: delete a PVC, take S3 offline,
