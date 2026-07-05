@@ -1,0 +1,39 @@
+/* Sidebar readability: higher-contrast collapsible section labels, clearer
+ * hierarchy via indentation + a guide line, and comfortable spacing. */
+
+/* Collapsible section labels (top-level groups) read as headings, not faded text */
+.md-nav--primary .md-nav__item--nested > label.md-nav__link,
+.md-nav--primary .md-nav__item--nested > .md-nav__link {
+  font-weight: 700;
+  color: var(--md-default-fg-color);
+  letter-spacing: -0.005em;
+}
+
+/* Leaf links: a touch more contrast than Material's default muted grey */
+.md-nav--primary .md-nav__link {
+  color: var(--md-default-fg-color--light);
+  line-height: 1.45;
+}
+.md-nav--primary .md-nav__link:hover,
+.md-nav--primary .md-nav__link:focus {
+  color: var(--md-accent-fg-color);
+}
+/* Current page stays clearly highlighted */
+.md-nav--primary .md-nav__link--active,
+.md-nav--primary .md-nav__link[aria-current="page"] {
+  color: var(--md-accent-fg-color);
+  font-weight: 600;
+}
+
+/* Indent nested items under a section and draw a subtle guide line */
+.md-nav--primary .md-nav__item--nested .md-nav__list {
+  margin-left: 0.55rem;
+  padding-left: 0.7rem;
+  border-left: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* A bit of breathing room between items */
+.md-nav--primary .md-nav__item {
+  padding-top: 0.05rem;
+  padding-bottom: 0.05rem;
+}

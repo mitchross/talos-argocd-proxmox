@@ -1,9 +1,9 @@
 # radar-ng observability cookbook
 
-App-specific guide for the radar-ng observability stack. The platform-level
-docs (collector layout, retention, storage backends) live in
-[`monitoring/README.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/README.md) — this one is just the
-"how do I find out what radar-ng is doing right now" reference.
+App-specific guide for the radar-ng observability stack: how to find out what
+radar-ng is doing right now. Platform-level docs (collector layout, retention,
+storage backends) live in
+[`monitoring/README.md`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/monitoring/README.md).
 
 ## Signal sources
 
@@ -141,8 +141,8 @@ Service name: `radar-ng-mobile`. Search in Grafana → Explore → Tempo by
 service. Click any span → "Logs for this span" pulls correlated Loki lines.
 
 To correlate with backend, ensure your backend hook propagates the
-`traceparent` header from the OTLP request through to its own logger. Right
-now FastAPI in `tile-server` doesn't auto-propagate — instrumentation TODO.
+`traceparent` header from the OTLP request through to its own logger. FastAPI
+in `tile-server` doesn't auto-propagate — instrumentation TODO.
 
 ## Prometheus — radar-ng metric reference
 
@@ -203,22 +203,28 @@ Drop these into `monitoring/prometheus-stack/` as a `PrometheusRule`.
 
 ## Troubleshooting flow
 
-```mermaid
-flowchart TB
-    A[user reports: app slow / radar stale] --> B{check Grafana<br/>radar-ng dashboard}
-    B -->|MRMS age red| C[ingest-mrms<br/>not keeping up]
-    B -->|tile-server requests/sec spike| D[traffic surge<br/>HPA should kick in]
-    B -->|all panels green| E[client-side issue<br/>check Tempo for radar-ng-mobile]
-
-    C --> C1[Loki: ingest-mrms backlog query]
-    C1 -->|backlog growing| C2[bump ingest-mrms CPU/RAM<br/>or check NOAA S3 latency]
-    C1 -->|backlog flat| C3[OOM kill or crash<br/>kubectl describe pod]
-
-    D --> D1[kubectl get hpa -n radar-ng]
-    D1 -->|maxReplicas hit| D2[bump HPA ceiling]
-
-    E --> E1[Tempo: span errors for radar-ng-mobile]
-    E --> E2[Loki: service_name=radar-ng-mobile errors]
+```text
+user reports: app slow / radar stale
+        │
+        ▼
+check Grafana radar-ng dashboard
+        │
+        ├─ MRMS age red ─────────────▶ ingest-mrms not keeping up
+        │                                     │
+        │                              Loki: ingest-mrms backlog query
+        │                                     ├─ backlog growing ─▶ bump ingest-mrms CPU/RAM
+        │                                     │                     or check NOAA S3 latency
+        │                                     └─ backlog flat ────▶ OOM kill or crash
+        │                                                           (kubectl describe pod)
+        │
+        ├─ tile-server req/sec spike ─▶ traffic surge (HPA should kick in)
+        │                                     │
+        │                              kubectl get hpa -n radar-ng
+        │                                     └─ maxReplicas hit ─▶ bump HPA ceiling
+        │
+        └─ all panels green ─────────▶ client-side issue (check Tempo for radar-ng-mobile)
+                                              ├─ Tempo: span errors for radar-ng-mobile
+                                              └─ Loki: service_name=radar-ng-mobile errors
 ```
 
 ## Related links

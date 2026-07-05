@@ -23,17 +23,6 @@ Required fields:
 | `endpoint` | RustFS S3 endpoint, currently `http://192.168.10.133:30292`. |
 | `S3_ENDPOINT` | RustFS S3 endpoint, currently `http://192.168.10.133:30292`. |
 
-Deprecated fields:
-
-| Field | Replacement |
-| --- | --- |
-| `k8s-admin-access-key` | `rustfs-workload-access-key` |
-| `k8s-admin-secret-key` | `rustfs-workload-secret-key` |
-| `pvc-plumber-access-key` | `rustfs-workload-access-key` (renamed 2026-05-21 with pvc-plumber decommission) |
-| `pvc-plumber-secret-key` | `rustfs-workload-secret-key` (renamed 2026-05-21 with pvc-plumber decommission) |
-
-Delete the deprecated fields only after all ExternalSecrets are synced to the replacement field names.
-
 ## Workload key IAM policy
 
 The single workload key (named `homelab-workload` in the RustFS console) is
@@ -52,19 +41,18 @@ configured with a broad allow policy:
 }
 ```
 
-Decision (homelab single-tenant, 2026-05-21): scope is intentionally broad.
-Per-bucket IAM scoping would duplicate Kubernetes RBAC's namespace separation
-without adding meaningful protection in a single-operator homelab — a
-compromised cluster would mean a compromised key either way. Broad policy
-also means new buckets work immediately without a forgotten-IAM failure mode
-when adding a new logging/metrics/backup destination. Workload key remains
-distinct from `root-access-key` so cluster cannot invoke RustFS admin
-operations (bucket create/delete, user mgmt — those use root via console).
+Scope is intentionally broad (homelab single-tenant). Per-bucket IAM scoping
+would duplicate Kubernetes RBAC's namespace separation without adding meaningful
+protection in a single-operator homelab — a compromised cluster would mean a
+compromised key either way. Broad policy also means new buckets work immediately
+without a forgotten-IAM failure mode when adding a new logging/metrics/backup
+destination. The workload key is kept distinct from `root-access-key` so the
+cluster cannot invoke RustFS admin operations (bucket create/delete, user
+mgmt — those use root via console).
 
 When to tighten:
-- If multiple operators/people gain cluster access and homelab becomes shared.
-- If a specific app starts misbehaving with the bucket — scope ITS key, not
-  the shared one.
+- If multiple operators/people gain cluster access and the homelab becomes shared.
+- If a specific app misbehaves with the bucket — scope ITS key, not the shared one.
 - If running an audit/compliance exercise that requires least-privilege docs.
 
 Captured in mink:
@@ -112,7 +100,7 @@ These GitOps-managed ExternalSecrets read `rustfs-workload-access-key` and `rust
 | `rustfs-lifecycle/rustfs-admin-credentials` | `rustfs-admin-credentials` |
 | `kopiur/kopiur-rustfs` (ClusterExternalSecret → every namespace labeled `kopiur.home-operations.com/repo: cluster-kopia`) | `kopiur-rustfs` |
 
-Per-PVC backup credentials are now delivered by the single `kopiur-rustfs` ClusterExternalSecret (`infrastructure/controllers/kopiur/externalsecret.yaml`), which fans the repo credentials into every namespace labeled `kopiur.home-operations.com/repo: cluster-kopia`. The retired `volsync-backup` per-PVC ExternalSecrets are gone.
+Per-PVC backup credentials are delivered by the single `kopiur-rustfs` ClusterExternalSecret (`infrastructure/controllers/kopiur/externalsecret.yaml`), which fans the repo credentials into every namespace labeled `kopiur.home-operations.com/repo: cluster-kopia`.
 
 Force ESO refresh after changing 1Password:
 
@@ -147,5 +135,5 @@ kubectl rollout restart deploy/db deploy/feature-flags deploy/plugins deploy/web
 ```
 
 kopiur mover Jobs read the namespace `kopiur-rustfs` Secret at Job creation time, so the next scheduled (or manually triggered) Snapshot picks up rotated credentials automatically — no operator restart needed.
-RustFS lifecycle Job is spawned by its CronJob — next scheduled run
+The RustFS lifecycle Job is spawned by its CronJob — the next scheduled run
 uses the refreshed Secret.
