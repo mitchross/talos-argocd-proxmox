@@ -8,10 +8,11 @@
 # interrupted rebuilds permanently poison replica metadata; re-crash after
 # auto-reattach). V1 is upstream's default engine, still actively maintained,
 # and ran this cluster stably for months before the V2 rebuild. Data path is
-# the default /var/lib/longhorn (bind-mounted from /var/local/longhorn on the
-# single 800G disk by the cluster template's longhorn-storage patch). Engines
-# cannot be flipped on a live cluster with attached volumes — this config is
-# applied via nuke + rebuild with restore-from-backup (the proven DR flow).
+# two filesystem paths configured by the active single-node template:
+# /var/lib/longhorn (bind-mounted from /var/local/longhorn on scsi0) and
+# /var/mnt/longhorn-nvme1 (a Talos user volume on scsi1). Engines cannot be
+# flipped on a live cluster with attached volumes — this config is applied via
+# nuke + rebuild with restore-from-backup (the proven DR flow).
 # History: V2 forensics in git history; short version in docs/disaster-recovery.md.
 defaultSettings:
   # NOTE: Longhorn 1.10 consolidates settings for V1/V2 data engines. Use either
@@ -26,10 +27,10 @@ defaultSettings:
   # applies this global % to annotation-created default disks, so keep it 0 (the
   # real physical guard is storageMinimalAvailablePercentage above).
   storageReservedPercentageForDefaultDisk: "0"
-  # Single-node: ~1.3 TiB of declared volumes on one 448 GiB disk. Volumes are
-  # thin (~117 GiB physical), so 600% is safe — physical free is the real guard
-  # (storageMinimalAvailablePercentage: 10). Band-aid for thin disk headroom;
-  # durable fix is NFS offload of bulk PVCs. History pre-600%: git log.
+  # Single-node: declared Longhorn capacity exceeds the two 450 GiB thin-backed
+  # filesystems. 600% permits those declarations; actual free space remains
+  # protected by storageMinimalAvailablePercentage: 10. This is a scheduling
+  # band-aid, not extra physical capacity; offload bulk data to NFS.
   storageOverProvisioningPercentage: "600"
   allowRecurringJobWhileVolumeDetached: "true"
   replicaAutoBalance: "best-effort"
@@ -69,11 +70,10 @@ defaultSettings:
   # needed. REMOVED 2026-06-12: v2DataEngine "true" + v1DataEngine "false" +
   # createDefaultDiskLabeledNodes + storageReservedPercentageForDefaultDisk
   # (all V2-block-disk plumbing). With V1, Longhorn auto-creates its default
-  # filesystem disk at defaultDataPath (/var/lib/longhorn) on every node
-  # running longhorn-manager, and the chart's default 30% storage reservation
-  # is CORRECT again — the data path shares the 800G disk with Talos system +
-  # images + pod ephemeral, which is exactly the shared-OS-disk setup that
-  # reservation exists to protect.
+  # filesystem disk at defaultDataPath (/var/lib/longhorn) on every labeled
+  # node. The active template's annotation registers that path plus the second
+  # filesystem at /var/mnt/longhorn-nvme1, both with storageReserved: 0; the
+  # 10% minimal-available guard above protects real free space.
 # -- Disables the pre-upgrade check job. This is recommended for GitOps tools
 # like ArgoCD to prevent sync failures.
 preUpgradeChecker:
@@ -92,7 +92,7 @@ persistence:
   # class): MUST be 1. With replica >1 on one node, Longhorn's default replica
   # anti-affinity has nowhere to place the extra replicas, so every volume stays
   # Degraded forever. Node-failure resilience is N/A with a single node anyway —
-  # off-cluster durability comes from VolSync + Kopia backups to NFS.
+  # off-cluster durability comes from kopiur/Kopia backups to RustFS S3.
   # (Was 2 for the multi-node DL360 cluster, where Longhorn served from a
   # surviving replica on another node; restore that value if you scale back out.)
   defaultClassReplicaCount: 1

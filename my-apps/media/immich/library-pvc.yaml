@@ -20,7 +20,7 @@ spec:
       # The library volume holds only immich's working set (thumbnails/transcodes/
       # new uploads) ~6Gi actual — originals live on the read-only nfs-photos
       # external library. 50Gi keeps generous headroom while reclaiming ~250Gi of
-      # Longhorn scheduling budget on the single 512G EDILOCA disk.
+      # Longhorn scheduling budget across the worker's two 450GiB filesystems.
       storage: 50Gi
   storageClassName: longhorn
   # kopiur restore-before-bind: on recreate this binds Pending until the
