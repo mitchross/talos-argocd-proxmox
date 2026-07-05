@@ -41,10 +41,10 @@ spec:
       # Longhorn stays default; static/pre-existing NFS stays on nfs.csi.k8s.io.
       - path: infrastructure/storage/truenas-csi
       - path: infrastructure/storage/local-storage
-      # NOTE: longhorn, snapshot-controller, volsync are NOT listed here
+      # NOTE: longhorn and snapshot-controller are NOT listed here.
       # They have dedicated standalone Applications at Wave 1 (longhorn-app.yaml,
-      # snapshot-controller-app.yaml, volsync-app.yaml) to ensure storage is
-      # healthy before PVC Plumber (Wave 2).
+      # snapshot-controller-app.yaml) so storage is healthy before the
+      # kopiur operator (Wave 2).
       - path: infrastructure/storage/kopia-ui
       - path: infrastructure/storage/rustfs-lifecycle
   template:

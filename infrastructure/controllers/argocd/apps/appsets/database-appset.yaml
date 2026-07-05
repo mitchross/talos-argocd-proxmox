@@ -11,10 +11,10 @@ spec:
   ignoreApplicationDifferences:
   - jsonPointers:
     - /metadata/annotations/argocd.argoproj.io~1skip-reconcile
-    # TEMPORARY VolSync migration escape hatch for redis-instance:
+    # Immutable-dataSourceRef escape hatch (VolSync-era, redis-instance):
     # preserve a manual ServerSideDiff=false annotation while its Bound PVC
-    # still carries an old immutable dataSourceRef value. Remove after the PVC
-    # is recreated/restored and the annotation is removed.
+    # still carries the old immutable dataSourceRef. Removable once that PVC
+    # is recreated without it (redis is backup-exempt going forward).
     - /metadata/annotations/argocd.argoproj.io~1compare-options
   generators:
   - git:

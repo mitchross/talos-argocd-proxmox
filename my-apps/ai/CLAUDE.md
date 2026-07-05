@@ -55,8 +55,9 @@ once**. They **scale-swap**: bringing one up means scaling the others to
 `replicas: 0`.
 
 - **Current state:** vLLM `replicas: 1`; llama-cpp and ComfyUI at `0`.
-  (Current, not permanent — flip the replica counts to swap which workload owns
-  the cards.)
+  (Current, not permanent — flip the committed replica counts to swap which
+  workload owns the cards. Full procedure + card truth table:
+  [`docs/domains/ai-gpu/gpu-scale-swap.md`](../../docs/domains/ai-gpu/gpu-scale-swap.md).)
 - Time-slicing is DISABLED (`time-slicing-config.yaml` has no sharing block) so
   whole-card allocation is enforced. Don't set `NVIDIA_VISIBLE_DEVICES` or
   `CUDA_VISIBLE_DEVICES` in pod env — they override the device-plugin's CDI

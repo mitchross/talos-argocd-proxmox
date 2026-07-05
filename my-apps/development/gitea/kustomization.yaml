@@ -7,8 +7,7 @@ resources:
 - externalsecret.yaml
 - kopiur/gitea-shared-storage.yaml
 
-# Uniform kopiur backup fields (repository, copyMethod, populator, privileged
-# mover) for the per-PVC stub in kopiur/.
+# Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub in kopiur/.
 components:
 - ../../common/kopiur-backup
 
@@ -30,8 +29,8 @@ patches:
     name: gitea-shared-storage
   patch: |
     # kopiur backup of the chart-generated PVC: backup CRs live in
-    # kopiur/gitea-shared-storage.yaml; uniform fields + privileged mover from
-    # the ../../common/kopiur-backup component. dataSourceRef -> the kopiur
+    # kopiur/gitea-shared-storage.yaml; uniform fields from the
+    # ../../common/kopiur-backup component (mover securityContext in the stub). dataSourceRef -> the kopiur
     # Restore so a recreate restores-before-bind.
     - op: add
       path: /metadata/annotations/argocd.argoproj.io~1compare-options

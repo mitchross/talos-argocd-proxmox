@@ -1,0 +1,338 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learn: How your data survives a cluster wipe</title>
+<style>
+  :root{
+    --bg:#f4f6fc; --panel:#ffffff; --ink:#1a2133; --ink-2:#4c556f; --ink-3:#828bab; --line:#e3e7f2;
+    --accent:#5a4bff; --accent-2:#8b80ff; --accent-wash:#efedff;
+    --good:#12a86e; --good-wash:#e6f8f0; --warn:#c98a00; --warn-wash:#fff5e0; --bad:#e0405e; --bad-wash:#fdecef; --info:#1f7ae0;
+    --code-bg:#0f1629; --code-ink:#e7ebfb; --code-key:#8ea2ff; --code-str:#7ee0b0; --code-com:#7a83a8; --code-hl:#20294a; --code-line:#212a48;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans",Cantarell,Ubuntu,system-ui,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji";
+    --mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Menlo,Consolas,"DejaVu Sans Mono",monospace;
+    --emoji:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Twemoji Mozilla",sans-serif;
+    --nav-h:64px; --head-h:56px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{font-family:var(--sans);color:var(--ink);background:var(--bg);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased;overflow:hidden;}
+  .app{display:flex;flex-direction:column;height:100vh;}
+
+  /* header */
+  .head{height:var(--head-h);flex:none;display:flex;align-items:center;gap:18px;padding:0 20px;background:var(--panel);border-bottom:1px solid var(--line);z-index:10;}
+  .head .logo{font-family:var(--mono);font-size:14px;font-weight:600;}
+  .head .logo b{color:var(--accent);}
+  .head .course{font-size:14px;color:var(--ink-2);font-weight:600;}
+  .head .course span{color:var(--ink-3);font-weight:400;}
+  .head .prog{margin-left:auto;display:flex;align-items:center;gap:10px;min-width:180px;}
+  .head .prog .track{flex:1;height:7px;border-radius:999px;background:var(--bg);overflow:hidden;border:1px solid var(--line);}
+  .head .prog .fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));width:0;transition:width .5s cubic-bezier(.4,0,.2,1);}
+  .head .prog .pct{font-family:var(--mono);font-size:12px;color:var(--ink-3);width:34px;text-align:right;}
+
+  /* body split */
+  .body{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);min-height:0;}
+  .pane{min-height:0;overflow-y:auto;}
+  .learn{background:var(--bg);padding:56px 44px 60px;display:flex;flex-direction:column;justify-content:center;}
+  .learn-inner{max-width:34rem;width:100%;margin:0 auto;}
+  .show{background:linear-gradient(160deg,#0f1629,#0c1122);padding:40px 34px;display:flex;flex-direction:column;gap:18px;align-items:center;justify-content:center;}
+  .show>*{width:100%;max-width:560px;}
+
+  @media(max-width:900px){
+    body{overflow:auto;}
+    .app{height:auto;min-height:100vh;}
+    .body{grid-template-columns:1fr;}
+    .pane{overflow:visible;}
+    .learn{padding:26px 20px 30px;}
+    .show{padding:24px 18px;}
+  }
+
+  /* learn content */
+  .lnum{font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 10px;}
+  .learn h1{font-size:30px;line-height:1.12;letter-spacing:-.02em;margin:0 0 16px;font-weight:800;text-wrap:balance;}
+  .learn p{margin:14px 0;color:var(--ink);}
+  .learn p.lead{font-size:17.5px;color:var(--ink-2);}
+  .learn strong{font-weight:680;}
+  .learn code{font-family:var(--mono);font-size:.85em;background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:1px 6px;}
+  .learn a{color:var(--accent);text-underline-offset:2px;}
+
+  .note{border-radius:12px;padding:14px 16px;margin:20px 0;border:1px solid var(--line);border-left:4px solid var(--accent);background:var(--accent-wash);}
+  .note.tip{border-left-color:var(--good);background:var(--good-wash);} .note.warn{border-left-color:var(--warn);background:var(--warn-wash);} .note.danger{border-left-color:var(--bad);background:var(--bad-wash);}
+  .note .nt{font-family:var(--mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;font-weight:700;margin-bottom:3px;color:var(--accent);}
+  .note.tip .nt{color:var(--good);} .note.warn .nt{color:var(--warn);} .note.danger .nt{color:var(--bad);}
+  .note p{margin:3px 0;font-size:15px;}
+  .goal{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;color:var(--ink-2);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:18px 0;}
+  .goal .g-ic{color:var(--good);font-weight:700;}
+
+  /* show pane: code */
+  .code{background:#0b1122;border:1px solid var(--code-line);border-radius:14px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,.35);}
+  .code .cbar{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--code-line);}
+  .code .cbar .d{width:11px;height:11px;border-radius:50%;background:#333c5e;}
+  .code .cbar .fname{font-family:var(--mono);font-size:12px;color:#9aa3c4;margin-left:8px;}
+  .code .cbar .tag{margin-left:auto;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#6f78a0;border:1px solid #2a3454;border-radius:6px;padding:2px 7px;}
+  pre{margin:0;padding:16px 18px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.7;color:var(--code-ink);counter-reset:ln;}
+  pre .k{color:var(--code-key);} pre .s{color:var(--code-str);} pre .c{color:var(--code-com);}
+  pre .hl{display:block;background:var(--code-hl);margin:0 -18px;padding:0 15px;border-left:3px solid var(--accent);}
+  .show .cap{font-family:var(--mono);font-size:12px;color:#8891b4;text-align:center;}
+  .show .cap b{color:#c3c9e6;}
+
+  /* show pane: figure frame */
+  .figframe{background:rgba(255,255,255,.02);border:1px solid #1d2745;border-radius:14px;padding:26px 20px;}
+
+  /* pets vs cattle */
+  .pvc2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:560px){.pvc2{grid-template-columns:1fr;}}
+  .kard{border:1px solid #263257;border-radius:12px;padding:15px;background:rgba(255,255,255,.02);}
+  .kard h4{margin:0 0 4px;font-size:14.5px;color:#e7ebfb;display:flex;gap:7px;align-items:center;}
+  .kard .tl{font-family:var(--mono);font-size:11px;color:#8891b4;margin:0 0 10px;}
+  .kard ul{margin:0;padding-left:17px;font-size:13.5px;color:#c3c9e6;} .kard li{margin:3px 0;}
+  .kard.keep{border-color:color-mix(in srgb,var(--good) 45%,#263257);}
+
+  /* flow animation */
+  .flow{position:relative;display:flex;align-items:center;justify-content:space-between;gap:4px;}
+  .flow .track{position:absolute;top:50%;left:8%;right:8%;height:2px;background:repeating-linear-gradient(90deg,#2a3358 0 7px,transparent 7px 13px);}
+  .flow .runner{position:absolute;top:calc(50% - 6px);left:8%;width:12px;height:12px;border-radius:50%;background:var(--accent-2);box-shadow:0 0 12px 3px var(--accent);animation:run 4.4s cubic-bezier(.5,0,.5,1) infinite;}
+  @keyframes run{0%{left:8%;opacity:0}6%{opacity:1}27%{left:35%}52%{left:62%}77%{left:89%}94%{opacity:1}100%{left:89%;opacity:0}}
+  .flow .b{position:relative;z-index:2;flex:1;text-align:center;background:#0f1730;border:1.5px solid #263257;border-radius:11px;padding:11px 4px 9px;font-size:12.5px;font-weight:650;color:#e7ebfb;}
+  .flow .b .em{display:block;font-size:21px;margin-bottom:2px;} .flow .b small{display:block;font-family:var(--mono);font-size:9.5px;color:#8891b4;font-weight:400;}
+
+  /* waves animation */
+  .waves{display:flex;flex-direction:column;gap:8px;}
+  .wv{display:flex;align-items:center;gap:10px;}
+  .wv .lb{font-family:var(--mono);font-size:11.5px;color:#c3c9e6;flex:1;}
+  .wv .bar{width:96px;flex:none;height:10px;border-radius:999px;background:rgba(255,255,255,.05);overflow:hidden;position:relative;}
+  .wv .bar i{position:absolute;inset:0;transform-origin:left;transform:scaleX(0);border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent-2));animation:fw 7s ease infinite;}
+  .wv:nth-child(1) i{animation-delay:0s}.wv:nth-child(2) i{animation-delay:.55s}.wv:nth-child(3) i{animation-delay:1.1s}.wv:nth-child(4) i{animation-delay:1.65s}.wv:nth-child(5) i{animation-delay:2.2s}.wv:nth-child(6) i{animation-delay:2.75s}.wv:nth-child(7) i{animation-delay:3.3s}
+  @keyframes fw{0%{transform:scaleX(0)}12%,88%{transform:scaleX(1)}100%{transform:scaleX(1)}}
+
+  /* restore-before-bind */
+  .rbb{display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;}
+  .rbb .vault{text-align:center;font-family:var(--mono);font-size:11px;color:#8891b4;}
+  .rbb .vault .v{width:70px;height:70px;border-radius:13px;border:1.5px solid color-mix(in srgb,var(--good) 45%,#263257);display:flex;align-items:center;justify-content:center;font-size:28px;background:rgba(18,168,110,.12);margin-bottom:7px;}
+  .rbb .ar{position:relative;width:104px;height:22px;}
+  .rbb .ar::before{content:"";position:absolute;top:10px;left:0;right:0;height:2px;background:repeating-linear-gradient(90deg,#2a3358 0 6px,transparent 6px 11px);}
+  .rbb .ar .pk{position:absolute;top:5px;left:0;width:11px;height:11px;border-radius:50%;background:var(--good);box-shadow:0 0 9px 2px color-mix(in srgb,var(--good) 60%,transparent);animation:xfer 5s ease infinite;opacity:0;}
+  @keyframes xfer{0%,40%{left:0;opacity:0}46%{opacity:1}70%{left:92px;opacity:1}78%,100%{left:92px;opacity:0}}
+  .rbb .volw{text-align:center;font-family:var(--mono);font-size:11px;color:#8891b4;}
+  .rbb .vol{width:104px;height:78px;border-radius:11px;border:2px solid var(--info);position:relative;overflow:hidden;background:#0f1730;margin-bottom:7px;animation:pend 5s ease infinite;}
+  .rbb .vol .fl{position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(180deg,rgba(18,168,110,.85),rgba(18,168,110,.4));animation:fillv 5s ease infinite;}
+  .rbb .vol .st{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;}
+  .rbb .vol .sp{color:#6fb6ff;animation:sp 5s ease infinite;} .rbb .vol .so{color:#7ee0b0;opacity:0;animation:so 5s ease infinite;}
+  @keyframes pend{0%,44%{border-color:var(--info)}70%,100%{border-color:var(--good)}}
+  @keyframes fillv{0%,46%{height:0}72%,100%{height:100%}}
+  @keyframes sp{0%,42%{opacity:1}60%,100%{opacity:0}} @keyframes so{0%,66%{opacity:0}80%,100%{opacity:1}}
+
+  /* references list */
+  .reflist{list-style:none;padding:0;margin:6px 0 0;}
+  .reflist li{padding:11px 0;border-bottom:1px solid var(--line);}
+  .reflist a{font-weight:600;color:var(--accent);} .reflist .ds{display:block;color:var(--ink-3);font-size:13.5px;font-weight:400;}
+
+  /* footer nav */
+  .nav{height:var(--nav-h);flex:none;display:flex;align-items:center;gap:14px;padding:0 24px;background:var(--panel);border-top:1px solid var(--line);z-index:10;}
+  .dots{display:flex;gap:7px;margin:0 auto;}
+  .dots .dot{width:9px;height:9px;border-radius:50%;background:var(--line);cursor:pointer;transition:all .25s;border:none;padding:0;}
+  .dots .dot.done{background:var(--accent-2);} .dots .dot.cur{background:var(--accent);transform:scale(1.35);}
+  .btn{font-family:var(--sans);font-size:14.5px;font-weight:650;cursor:pointer;border-radius:10px;padding:10px 20px;border:1px solid var(--line);background:var(--panel);color:var(--ink);transition:all .18s;}
+  .btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 6px 16px rgba(90,75,255,.28);}
+  .btn.primary:hover:not(:disabled){filter:brightness(1.07);color:#fff;}
+  .btn:disabled{opacity:.4;cursor:default;}
+  @media(max-width:560px){.nav{padding:0 14px;}.btn{padding:9px 14px;font-size:13.5px;}.dots{gap:5px;}}
+
+  @media(prefers-reduced-motion:reduce){
+    .runner,.wv .bar i,.rbb .pk,.rbb .vol,.rbb .fl,.rbb .st{animation:none!important;}
+    .rbb .vol .fl{height:100%;} .rbb .vol .sp{opacity:0;} .rbb .vol .so{opacity:1;} .head .prog .fill{transition:none;}
+  }
+</style>
+
+<div class="app">
+  <div class="head">
+    <a class="logo" href="../../" style="text-decoration:none;color:inherit">← <b>talos-argocd</b> docs</a>
+    <span class="course">GitOps backups <span>· for total beginners</span></span>
+    <div class="prog"><span class="track"><span class="fill" id="pfill"></span></span><span class="pct" id="ppct">0%</span></div>
+  </div>
+
+  <div class="body">
+    <div class="pane learn"><div class="learn-inner" id="learn"></div></div>
+    <div class="pane show" id="show"></div>
+  </div>
+
+  <div class="nav">
+    <button class="btn" id="prev">◀ Back</button>
+    <div class="dots" id="dots"></div>
+    <button class="btn primary" id="next">Continue ▶</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  // ---------- reusable code/figure fragments ----------
+  const code = (file, tag, body) =>
+    `<div class="code"><div class="cbar"><span class="d"></span><span class="fname">${file}</span><span class="tag">${tag}</span></div><pre>${body}</pre></div>`;
+  const cap = (html) => `<div class="cap">${html}</div>`;
+
+  const NS = code("my-apps/media/karakeep/namespace.yaml","real file",
+`<span class="k">apiVersion:</span> v1
+<span class="k">kind:</span> Namespace
+<span class="k">metadata:</span>
+  <span class="k">name:</span> <span class="s">karakeep</span>
+<span class="hl">  <span class="k">labels:</span>
+    <span class="k">kopiur.home-operations.com/repo:</span> <span class="s">cluster-kopia</span>   <span class="c"># “back this app up”</span></span>`);
+
+  const PVC = code("my-apps/media/karakeep/karakeep/pvc-data.yaml","real file",
+`<span class="k">apiVersion:</span> v1
+<span class="k">kind:</span> PersistentVolumeClaim
+<span class="k">metadata:</span>
+  <span class="k">name:</span> <span class="s">data-pvc</span>
+  <span class="k">namespace:</span> <span class="s">karakeep</span>
+<span class="k">spec:</span>
+  <span class="k">accessModes:</span> [<span class="s">ReadWriteOnce</span>]
+  <span class="k">storageClassName:</span> <span class="s">longhorn</span>
+  <span class="k">resources:</span>
+    <span class="k">requests:</span> { <span class="k">storage:</span> <span class="s">10Gi</span> }`);
+
+  const PVC_HL = code("my-apps/media/karakeep/karakeep/pvc-data.yaml","real file",
+`<span class="k">kind:</span> PersistentVolumeClaim
+<span class="k">metadata:</span>
+  <span class="k">name:</span> <span class="s">data-pvc</span>
+  <span class="k">namespace:</span> <span class="s">karakeep</span>
+<span class="k">spec:</span>
+  <span class="k">storageClassName:</span> <span class="s">longhorn</span>
+  <span class="k">resources:</span> { <span class="k">requests:</span> { <span class="k">storage:</span> <span class="s">10Gi</span> } }
+<span class="hl">  <span class="k">dataSourceRef:</span>              <span class="c"># ← put my data back first</span>
+    <span class="k">apiGroup:</span> <span class="s">kopiur.home-operations.com</span>
+    <span class="k">kind:</span> <span class="s">Restore</span>
+    <span class="k">name:</span> <span class="s">data-pvc-restore</span></span>`);
+
+  const KUST = code("my-apps/media/karakeep/kustomization.yaml","real file",
+`<span class="k">resources:</span>
+  <span class="k">-</span> <span class="s">karakeep/pvc-data.yaml</span>
+  <span class="k">-</span> <span class="s">kopiur/data-pvc.yaml</span>
+<span class="hl"><span class="k">components:</span>                       <span class="c"># ← turns backups ON</span>
+  <span class="k">-</span> <span class="s">../../common/kopiur-backup</span></span>`);
+
+  const STUB = code("my-apps/media/karakeep/kopiur/data-pvc.yaml","real file · trimmed",
+`<span class="k">kind:</span> SnapshotSchedule
+<span class="k">metadata:</span> { <span class="k">name:</span> <span class="s">data-pvc-hourly</span> }
+<span class="k">spec:</span>
+  <span class="k">policyRef:</span> { <span class="k">name:</span> <span class="s">data-pvc</span> }
+<span class="hl">  <span class="k">schedule:</span> { <span class="k">cron:</span> <span class="s">"10 * * * *"</span> }     <span class="c"># every hour</span></span>
+<span class="c">---</span>
+<span class="k">kind:</span> Restore
+<span class="k">spec:</span>
+  <span class="k">mover:</span>
+    <span class="k">securityContext:</span> { <span class="k">runAsUser:</span> <span class="s">1001</span> }
+  <span class="k">policy:</span> { <span class="k">onMissingSnapshot:</span> <span class="s">Continue</span> }`);
+
+  const FIG_PETS = `<div class="figframe"><div class="pvc2">
+    <div class="kard keep"><h4>🧬 Precious</h4><p class="tl">kept OFF the cluster</p><ul><li><b>Git</b> — the config (recipe)</li><li><b>Off-site backups</b> — your data (cake)</li></ul></div>
+    <div class="kard"><h4>🐄 Disposable</h4><p class="tl">lives ON the cluster</p><ul><li>servers / nodes</li><li>running apps (pods)</li><li>the live disks</li></ul></div>
+  </div></div>` + cap("Guard the <b>recipe</b> and the <b>cake</b>. The kitchen is replaceable.");
+
+  const FIG_FLOW = `<div class="figframe"><div class="flow"><span class="track"></span><span class="runner"></span>
+    <div class="b"><span class="em">📂</span>Git<small>the plan</small></div>
+    <div class="b"><span class="em">🤖</span>ArgoCD<small>the builder</small></div>
+    <div class="b"><span class="em">☸️</span>Cluster<small>runs the app</small></div>
+    <div class="b"><span class="em">💾</span>Backup<small>off-site</small></div>
+  </div></div>` + cap("The whole journey: a <b>plan</b> in Git → a <b>robot</b> builds it → the <b>app runs</b> → a <b>copy</b> stays off-site.");
+
+  const FIG_WAVES = `<div class="figframe"><div class="waves">
+    <div class="wv"><span class="lb">wave 0 · network + secrets</span><span class="bar"><i></i></span></div>
+    <div class="wv"><span class="lb">wave 1 · storage (Longhorn)</span><span class="bar"><i></i></span></div>
+    <div class="wv"><span class="lb">wave 2 · backup engine (kopiur)</span><span class="bar"><i></i></span></div>
+    <div class="wv"><span class="lb">wave 3 · backup repo + keys</span><span class="bar"><i></i></span></div>
+    <div class="wv"><span class="lb">wave 4 · databases</span><span class="bar"><i></i></span></div>
+    <div class="wv"><span class="lb">wave 5 · monitoring</span><span class="bar"><i></i></span></div>
+    <div class="wv"><span class="lb">wave 6 · your apps (Karakeep!)</span><span class="bar"><i></i></span></div>
+  </div></div>` + cap("Waves fill top-to-bottom — <b>each waits for the one above</b>. Karakeep is last, so its backup engine is already running.");
+
+  const FIG_RBB = `<div class="figframe"><div class="rbb">
+    <div class="vault"><div class="v">💾</div>off-site backup</div>
+    <div class="ar"><span class="pk"></span></div>
+    <div class="volw"><div class="vol"><div class="fl"></div><div class="st sp">Pending ⏳</div><div class="st so">data ✓</div></div>the app's disk</div>
+  </div></div>` + cap("The disk holds at <b>Pending</b> while the snapshot copies in — then turns green. It <b>never</b> comes up empty.");
+
+  // ---------- lessons ----------
+  const L = [
+    { n:"Lesson 1 of 8", title:"The big idea: keep the recipe, not the cake",
+      learn:`<p class="lead">Imagine you delete your entire setup by accident — every server, every disk. In this cluster, the app quietly rebuilds itself in about an hour, <strong>with all its data</strong>, and no one restores a backup by hand.</p>
+      <p>The trick is deciding up front what is <strong>precious</strong> and what is <strong>disposable</strong>. Only two things are precious, and they're kept <em>off</em> the cluster: your <strong>Git</strong> repo (the recipe) and your <strong>off-site backups</strong> (the data). Everything else can be thrown away and remade.</p>
+      <div class="note tip"><div class="nt">💡 mental model</div><p>Git holds the <em>recipe</em>. The backup holds the <em>cake</em>. The cluster is just the <em>kitchen</em> — burn it down, bake the same cake in a new one.</p></div>
+      <p>Throughout this course we'll follow one real app — <strong>Karakeep</strong>, a bookmark manager — using its actual files. →</p>`,
+      show:FIG_PETS },
+
+    { n:"Lesson 2 of 8", title:"Everything is just text in Git",
+      learn:`<p>There's no dashboard where you click “deploy”. Karakeep is defined entirely by text files in <code>my-apps/media/karakeep/</code>. Here's the file that creates its private space on the cluster — a <strong>namespace</strong>.</p>
+      <p>The highlighted label is how the app <em>opts in</em> to backups. That single line tells the backup system: “watch this whole namespace.” →</p>
+      <div class="goal"><span class="g-ic">✓</span><span>You learned: a <strong>namespace</strong> is an app's private area, and one label switches on its backups.</span></div>`,
+      show:NS + cap("The <b>real</b> namespace file for Karakeep.") },
+
+    { n:"Lesson 3 of 8", title:"The app's disk — a “PVC”",
+      learn:`<p>Apps that remember things need a disk. In Kubernetes, an app asks for one with a <strong>PersistentVolumeClaim</strong> — a <strong>PVC</strong>. Read it as the app saying: <em>“I need a 10&nbsp;GB drive to store my data.”</em></p>
+      <p>On the right is Karakeep's real disk request. <code>storageClassName: longhorn</code> just picks which storage system provides it. So far, nothing special — this is a plain, empty 10&nbsp;GB disk.</p>
+      <div class="goal"><span class="g-ic">✓</span><span>You learned: a <strong>PVC</strong> is how an app requests a disk. Right now it would come up empty.</span></div>`,
+      show:PVC + cap("A plain disk request — <b>no data protection yet</b>.") },
+
+    { n:"Lesson 4 of 8", title:"The one line that saves your data",
+      learn:`<p>Here's the most important line in the whole course. We add <code>dataSourceRef</code> to the PVC. It points at a <strong>Restore</strong> and changes everything: now, when this disk is created, Kubernetes will <strong>refuse to hand it over until your real data has been copied back onto it</strong>.</p>
+      <p>The disk sits in <em>Pending</em> on purpose. Better to wait a minute than to start the app with a blank disk. This behavior is called <strong>restore-before-bind</strong> — watch it below.</p>
+      <div class="note warn"><div class="nt">⚠️ remember this</div><p>No <code>dataSourceRef</code> → the disk comes up <strong>empty</strong>. With it → the disk waits and restores first.</p></div>`,
+      show:PVC_HL + FIG_RBB },
+
+    { n:"Lesson 5 of 8", title:"Turning backups on — one reference",
+      learn:`<p>You might expect pages of backup config per app. Instead there's a shared, reusable block (a Kustomize <strong>component</strong>) that every app just <em>references</em>. This is the entire wiring for Karakeep's backups:</p>
+      <p>The <code>components:</code> line pulls in all the standard backup settings; the two files above it are Karakeep's own disk + its backup rules (next lesson). That's it. →</p>
+      <div class="goal"><span class="g-ic">✓</span><span>You learned: backups are switched on by <strong>referencing a shared component</strong>, not by copy-pasting config.</span></div>`,
+      show:KUST + cap("One reference wires up the whole backup system.") },
+
+    { n:"Lesson 6 of 8", title:"When to back up, and how to restore",
+      learn:`<p>Two small rules finish the picture. A <strong>SnapshotSchedule</strong> says <em>when</em> to back up — here, every hour. A <strong>Restore</strong> says <em>how</em> to come back.</p>
+      <p>Notice <code>runAsUser: 1001</code> — the backup runs as the same user that owns the data, so it can actually read the files. And <code>onMissingSnapshot: Continue</code> politely means: <em>“brand-new app with no backup yet? Start empty and begin protecting it from now.”</em></p>
+      <div class="goal"><span class="g-ic">✓</span><span>You learned: an hourly <strong>schedule</strong> plus a <strong>restore</strong> rule is all a protected app needs.</span></div>`,
+      show:STUB + cap("<b>Real</b> backup + restore rules for Karakeep's disk.") },
+
+    { n:"Lesson 7 of 8", title:"How it all boots — in careful waves",
+      learn:`<p>A tool called <strong>ArgoCD</strong> watches Git and makes the cluster match. It can't start everything at once — the backup engine must exist <em>before</em> an app asks it to restore. So it brings things up in <strong>waves</strong>, and won't start the next wave until the current one is healthy.</p>
+      <p>Watch the order on the right. Karakeep is in the last wave, so by the time it needs to restore, everything it depends on is already running. →</p>`,
+      show:FIG_WAVES },
+
+    { n:"Lesson 8 of 8", title:"The payoff: destroy it all, get it back",
+      learn:`<p>The moment of truth. Someone deletes the <strong>entire cluster</strong> — every node and disk, gone. But Git and the off-site backup aren't part of the cluster, so they survive.</p>
+      <p>Rebuilding is one script: ArgoCD walks the waves again → recreates Karakeep → the disk hits <code>dataSourceRef</code> and holds Pending → the backup streams back in → the disk turns green → the app starts. <strong>Karakeep is live again at <code>karakeep.vanillax.me</code> with every bookmark.</strong></p>
+      <div class="note tip"><div class="nt">✅ proven, not theoretical</div><p>This cluster was destroyed and rebuilt <strong>twice in 36 hours</strong>. Every protected volume auto-restored; the second rebuild took ~75 minutes with zero manual storage steps.</p></div>
+      <h3 style="font-size:16px;margin:22px 0 2px;">Keep going →</h3>
+      <ul class="reflist">
+        <li><a href="../../domains/storage/kopiur-backup-architecture/">kopiur backup architecture (the guide)</a><span class="ds">The full diagrams + the add-a-backup checklist.</span></li>
+        <li><a href="../../storage-architecture/">Storage architecture (source of truth)</a><span class="ds">The PVC decision flow and component topology.</span></li>
+        <li><a href="../../domains/argocd/argocd/">ArgoCD architecture &amp; sync waves</a><span class="ds">How discovery and wave-gating really work.</span></li>
+        <li><a href="../../disaster-recovery/">Disaster recovery runbook</a><span class="ds">The real destroy/rebuild procedure.</span></li>
+      </ul>`,
+      show:FIG_FLOW }
+  ];
+
+  // ---------- driver ----------
+  let i = 0;
+  const learnEl=document.getElementById("learn"), showEl=document.getElementById("show");
+  const dotsEl=document.getElementById("dots");
+  L.forEach((_,k)=>{ const b=document.createElement("button"); b.className="dot"; b.setAttribute("aria-label","lesson "+(k+1)); b.addEventListener("click",()=>go(k)); dotsEl.appendChild(b); });
+  const dots=[...dotsEl.children];
+
+  function render(){
+    const l=L[i];
+    learnEl.innerHTML = `<p class="lnum">${l.n}</p><h1>${l.title}</h1>${l.learn}`;
+    showEl.innerHTML = l.show;
+    dots.forEach((d,k)=>{ d.className="dot"+(k<i?" done":"")+(k===i?" cur":""); });
+    const pct=Math.round(((i+1)/L.length)*100);
+    document.getElementById("pfill").style.width=pct+"%";
+    document.getElementById("ppct").textContent=pct+"%";
+    document.getElementById("prev").disabled = i===0;
+    const nx=document.getElementById("next"); nx.textContent = i===L.length-1 ? "↺ Start over" : "Continue ▶";
+    document.querySelector(".learn").scrollTop=0; showEl.scrollTop=0;
+    window.scrollTo(0,0);
+  }
+  function go(k){ i=Math.max(0,Math.min(L.length-1,k)); render(); }
+  document.getElementById("next").addEventListener("click",()=>{ if(i===L.length-1) go(0); else go(i+1); });
+  document.getElementById("prev").addEventListener("click",()=>go(i-1));
+  document.addEventListener("keydown",(e)=>{ if(e.key==="ArrowRight")go(i+1); if(e.key==="ArrowLeft")go(i-1); });
+  render();
+})();
+</script>

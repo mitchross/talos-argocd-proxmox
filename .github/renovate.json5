@@ -101,7 +101,7 @@
       // Driver on the GPU node is 595.71.05 / CUDA 13.2 (>=580), so track the
       // CUDA-13 server tag line. Upstream stopped publishing server-cuda12
       // tags ~b93xx, which is why the old cuda12 pin froze at b9070. See
-      // docs/3090-llm-optimization.md "llama.cpp image bump (CUDA-13 caution)".
+      // docs/domains/ai-gpu/3090-llm-optimization.md "llama.cpp image bump (CUDA-13) — RESOLVED".
       versioning: 'regex:^server-cuda13-b(?<major>\\d+)$',
     },
     {
