@@ -331,7 +331,7 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 ## What Happens After Bootstrap
 
-ArgoCD takes over and deploys everything from Git in the order shown in the [Sync Wave Architecture](#sync-wave-architecture) table — Wave 0 (Cilium, secrets) through Wave 6 (user apps). There are **zero manual storage steps**: Longhorn auto-creates its filesystem disk at `/var/lib/longhorn` on every storage node, the kopiur operator comes up at Wave 2, and any restore-before-bind PVCs populate unattended.
+ArgoCD takes over and deploys everything from Git in the order shown in the [Sync Wave Architecture](#sync-wave-architecture) table — Wave 0 (Cilium, secrets) through Wave 6 (user apps). There are **zero manual storage steps**: Longhorn registers the filesystem disks declared by each node template (the active Threadripper worker uses `/var/lib/longhorn` and `/var/mnt/longhorn-nvme1`), the kopiur operator comes up at Wave 2, and any restore-before-bind PVCs populate unattended.
 
 From here, new applications are discovered automatically — add a directory with a `kustomization.yaml` and push to Git.
 

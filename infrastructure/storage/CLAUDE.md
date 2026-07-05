@@ -4,7 +4,7 @@
 
 | Class | Use Case |
 |-------|----------|
-| `longhorn` | Distributed block storage — **cluster default**, served by the **V1 data engine** (chart default) with data as files under `/var/lib/longhorn` on each storage node's single 800G disk. **V2/SPDK was tried and retired 2026-06-12** — it failed under full-DR restore load (open Longhorn 1.12 bugs #13315/#13314); forensics in git history; short version in `docs/disaster-recovery.md`. Do not re-enable V2 without a fixed Longhorn release + a passed DR drill. |
+| `longhorn` | Distributed block storage — **cluster default**, served by the **V1 data engine** (chart default). The active Threadripper worker has two 450 GiB XFS filesystems: `/var/lib/longhorn` on its Talos/system disk and `/var/mnt/longhorn-nvme1` on its second disk. **V2/SPDK was tried and retired 2026-06-12** — it failed under full-DR restore load (open Longhorn 1.12 bugs #13315/#13314); forensics in git history; short version in `docs/disaster-recovery.md`. Do not re-enable V2 without a fixed release + a passed DR drill. |
 | `truenas-nfs` | Official TrueNAS CSI dynamic NFS (canary-gated, non-default) |
 | `nfs-comfyui-10g` | NFS 10G for ComfyUI models |
 | `nfs-llama-cpp-10g` | NFS 10G for LLM models |
@@ -91,18 +91,21 @@ Linux kernel (5.4+) defaults NFS `read_ahead_kb` to **128 KB**, limiting sequent
 - `nfsvers=4.1` — NFSv4.1 with session slots
 - `noatime` — skip access time updates
 
-## Proxmox ZFS Storage Pools
+## Proxmox Storage Configuration
 
-| Pool | Backing | Purpose | Thin Provisioning |
-|------|---------|---------|-------------------|
-| `ssdpool` | 4x PNY CS900 1TB SATA SSD (stripe) | Worker + GPU node disks | `sparse 1` (enabled) |
-| `fastpool` | 3x 480GB MK000480GWCEV SSD (stripe) | Control plane disks | `sparse 1` (enabled) |
+| Storage Pool | Physical Backing | Purpose | Type / Provisioning |
+|--------------|------------------|---------|---------------------|
+| `nvme0-vmstore` | `/dev/nvme0n1` (EDILOCA EN605 512GB NVMe) | Worker VM Disk 1 (`scsi0`) / Control Plane | LVM-Thin |
+| `nvme1-vmstore` | `/dev/nvme1n1` (EDILOCA EN605 512GB NVMe) | Worker VM Disk 2 (`scsi1`) | LVM-Thin |
+| `local-lvm` | `/dev/sda` (SanDisk SD7TB3Q 256GB SATA SSD) | Proxmox Boot & Host Storage | LVM-Thin |
 
-**Thin provisioning (`sparse 1`)** is enabled on both pools in `/etc/pve/storage.cfg`. Without it, ZFS zvols reserve their full size via `refreservation`, wasting ~2.5 TB on ssdpool alone (600 GB reserved per worker VM even when only 30 GB is used).
+**LVM-Thin** is utilized to provide thin provisioning, preventing virtual disks from reserving their full size up front.
 
-To verify or change: `pvesm set ssdpool --sparse 1` / `pvesm set fastpool --sparse 1`
-
-**PNY CS900 note**: These are DRAM-less SATA SSDs. ZFS performance degrades past ~80% pool capacity due to copy-on-write fragmentation. With thin provisioning enabled this is not a concern at current data volumes (~400 GB actual on 4 TB pool).
+**EDILOCA EN605 note**: These are consumer NVMe SSDs; this repository has no
+verified evidence of enterprise power-loss protection or a particular DRAM
+cache design. Do not blame a pod startup storm from the model name alone. The
+2026-07-05 all-pod restart was verified as Kubernetes CPU-request pressure plus
+Longhorn controller/volume reattach churn, not as an SSD-latency incident.
 
 ## Debugging Storage
 

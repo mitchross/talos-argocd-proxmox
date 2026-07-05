@@ -3,8 +3,8 @@
 `talos-singlenode-gpu-prod` is intended to run on the Threadripper Proxmox host
 as two VMs:
 
-- `single-node-control-plane`: 4 vCPU, 24 GiB RAM, 100 GiB disk.
-- `single-node-talos-gpu`: 32 vCPU, 80 GiB RAM, two 450 GiB disks, two RTX 3090s.
+- `single-node-control-plane`: 4 vCPU, 16 GiB RAM, 100 GiB disk.
+- `single-node-talos-gpu`: 32 vCPU, 96 GiB RAM, two 450 GiB disks, two RTX 3090s.
 
 The split keeps Kubernetes control-plane services away from GPU and app
 workloads. It improves stability and scheduler headroom, but it is still not HA
@@ -22,10 +22,13 @@ apps.
 
 ## Notes
 
-- Keep the GPU worker RAM below the old 100 GiB setting unless the control-plane
-  VM is reduced. VFIO pins guest RAM during GPU passthrough.
+- The GPU worker is set to 96 GiB and the control plane to 16 GiB. VFIO pins
+  guest RAM during GPU passthrough, so retain enough Proxmox host headroom.
 - Keep `siderolabs/nfs-utils` off GPU worker nodes. Use the CSI NFS path.
 - The second Longhorn disk is attached at VM creation time by the provider.
+- Longhorn uses one replica per volume in this single-worker cluster. It places
+  volumes across both disks; it does not mirror data between them. Disk-loss
+  recovery therefore depends on the off-host kopiur/Kopia backups.
 - The Cilium L2 policy must allow the current single control-plane node to
   announce VIPs until the rebuild is complete.
 

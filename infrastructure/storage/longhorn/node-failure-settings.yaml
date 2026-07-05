@@ -74,7 +74,7 @@ value: "true"
 # ~22% CPU, so this was SPDK contention, not resources). Dropping to 1 broke
 # the loop within minutes. The V2 engine was retired the same day, but the
 # throttle STAYS at 1 on V1: mass-restore bootstraps overload any engine on
-# this hardware (4 consumer SSDs in one stripe behind all workers), and slow
+# this hardware (two consumer NVMe-backed LVM-thin stores), and slow
 # redundancy recovery is an acceptable price. Raise to 2-3 only after a
 # passed DR drill shows headroom.
 apiVersion: longhorn.io/v1beta2

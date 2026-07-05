@@ -68,7 +68,8 @@ proxmox:
 # disk: 200
 # storage: |
 #   storage.filter(s, s.type == "zfspool" && s.enabled && s.active)[0].storage
-# Note: GPU passthrough must be configured manually in Proxmox
+# Note: Create Proxmox PCI resource mappings first, then reference them through
+# `pci_devices` in the machine class provider data.
 
 # ==============================================================================
 # STORAGE SELECTION (CEL Expression Examples)
@@ -132,13 +133,14 @@ proxmox:
 # Then update username above to: omni@pve
 
 # ==============================================================================
-# KNOWN LIMITATIONS
+# CONFIGURATION NOTES
 # ==============================================================================
-# Current provider limitations (as of beta):
+# Current provider behavior (as of beta):
 #
-# - Single disk per VM only (multiple disk support is a potential feature)
+# - Multiple disks require explicit `additional_disks` provider data
 # - Basic networking (uses default Proxmox bridge)
-# - No automatic GPU passthrough configuration
+# - GPU passthrough requires pre-created Proxmox resource mappings plus
+#   `pci_devices` entries in provider data
 # - Limited advanced Proxmox features
 #
 # See: https://github.com/siderolabs/omni-infra-provider-proxmox/issues
