@@ -25,7 +25,7 @@ spec:
         - name: power-limit
           # Plain glibc base — nvidia-smi + driver libs are injected by the
           # nvidia container runtime (runtimeClassName above) at start.
-          image: ubuntu:24.04
+          image: ubuntu:26.04
           command: ["/bin/bash", "-c"]
           args:
             - |
