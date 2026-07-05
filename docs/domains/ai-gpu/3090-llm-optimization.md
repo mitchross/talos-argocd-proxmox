@@ -400,11 +400,13 @@ rate $0.21/kWh from the plug's own billing config):
 Threadripper 2950X + two idle-but-resident 3090s), not AI load. In-cluster
 tuning can only trim the small slice; retiring the platform is the real saving.
 
-**Live mitigation:** `my-apps/ai/gpu-power-limit/` — a DaemonSet on the GPU
-node that caps both 3090s at **290W** (club-3090 `docs/HARDWARE.md` measured
-knee: −22% board power for −7% decode TPS vs 370W stock; the "230W sweet spot"
-lore costs ~16% efficiency vs 290W). Set `POWER_LIMIT_WATTS=250` to favor
-prefill-heavy workloads (−5% chat TPS, prefill at its own knee).
+**Live mitigation:**
+`infrastructure/controllers/nvidia-gpu-operator/powerlimit-daemonset.yaml` —
+a DaemonSet on the GPU node that caps both 3090s at **290W** (club-3090
+`docs/HARDWARE.md` measured knee: −22% board power for −7% decode TPS vs 370W
+stock; the "230W sweet spot" lore costs ~16% efficiency vs 290W). Set
+`POWER_LIMIT_WATTS=250` to favor prefill-heavy workloads (−5% chat TPS,
+prefill at its own knee).
 
 **Rejected: KEDA cron scale-to-zero for vLLM overnight.** The my-apps AppSet
 runs `selfHeal: true` and the GPU apps use git replica-flips as the

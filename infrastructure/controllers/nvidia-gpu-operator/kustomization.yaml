@@ -5,7 +5,7 @@ resources:
 - namespace.yaml
 - external-secret.yaml
 - time-slicing-config.yaml
-- powerlimit-daemonset.yaml    # Caps each GPU at 220W (default 420W on RTX 3090) — see file header
+- powerlimit-daemonset.yaml    # Caps each GPU at 290W and reapplies after driver reloads
 # cluster-policy.yaml intentionally not included — the Helm chart generates its
 # own ClusterPolicy from valuesInline below. Keeping both would cause a conflict.
 # hook-sa.yaml removed — the upstream chart hook-SA namespace bug that this

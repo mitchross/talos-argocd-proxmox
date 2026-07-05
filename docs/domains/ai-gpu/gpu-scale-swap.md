@@ -63,7 +63,7 @@ kubectl -n comfyui get pods; kubectl -n swarmui get pods
 
 # Who actually holds the cards (run inside the power-limit admin DaemonSet,
 # which sees all GPUs without consuming an allocation)
-kubectl -n gpu-power-limit exec ds/gpu-power-limit -- nvidia-smi
+kubectl -n gpu-operator exec ds/nvidia-powerlimit -- nvidia-smi
 
 # Endpoint answers (from any in-cluster pod)
 curl -s http://vllm-service.vllm.svc.cluster.local:8080/v1/models
@@ -87,12 +87,14 @@ curl -s http://vllm-service.vllm.svc.cluster.local:8080/v1/models
 
 - Don't `kubectl scale` (selfHeal reverts it — commit the value).
 - Don't set `NVIDIA_VISIBLE_DEVICES`/`CUDA_VISIBLE_DEVICES` in pod env — they
-  bypass the device plugin's accounting (sole exception: the `gpu-power-limit`
-  admin DaemonSet).
+  bypass the device plugin's accounting (sole exception: the infrastructure
+  `nvidia-powerlimit` admin DaemonSet).
 - Don't switch a GPU Deployment to `RollingUpdate` — Recreate is what
   guarantees the old pod releases the card (and avoids RWO Multi-Attach).
 - Don't delete the 290 W power cap to "fix" slowness — tune
-  `POWER_LIMIT_WATTS` in `my-apps/ai/gpu-power-limit/` instead.
+  `POWER_LIMIT_WATTS` in
+  `infrastructure/controllers/nvidia-gpu-operator/powerlimit-daemonset.yaml`
+  instead.
 
 Related: [model catalog](model-catalog.md) (who points at what) ·
 [3090 LLM optimization](3090-llm-optimization.md) (why vLLM TP=2 is the
