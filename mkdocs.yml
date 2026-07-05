@@ -118,6 +118,7 @@ nav:
       - Technitium vanillax.me migration: domains/networking/technitium-vanillax-me-migration.md
   - AI / GPU:
       - Model catalog: domains/ai-gpu/model-catalog.md
+      - GPU scale-swap runbook: domains/ai-gpu/gpu-scale-swap.md
       - 3090 LLM optimization: domains/ai-gpu/3090-llm-optimization.md
       - Pi agent — local dev guide: domains/ai-gpu/pi-agent-local-dev.md
   - Reference & ops:
