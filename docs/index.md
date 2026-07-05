@@ -25,7 +25,7 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
 - **Database**: CloudNativePG (Postgres) with Barman backups to S3
 - **Secrets**: 1Password Connect + External Secrets Operator
 - **Observability**: kube-prometheus-stack, Loki, Tempo, OpenTelemetry
-- **AI**: vLLM (Qwen3.6-27B, default app inference) + llama-cpp (Qwen3.6-35B multimodal, for ComfyUI) on mutually-exclusive whole-card GPUs
+- **AI**: vLLM (Qwen3.6-27B, default app inference) + llama-cpp (Qwen3.6-35B multimodal — vision→image + preset playground) on mutually-exclusive whole-card GPUs ([scale-swap runbook](domains/ai-gpu/gpu-scale-swap.md))
 
 ## Documentation
 

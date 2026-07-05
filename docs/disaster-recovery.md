@@ -93,6 +93,12 @@ flowchart LR
     WAVES --> R[restore wave runs itself]
 ```
 
+> **Manual pre-steps before `bootstrap-argocd.sh`** — the script assumes them; the
+> exact commands are `README.md` § Bootstrap, steps 4–6: **(4)** Gateway API CRDs,
+> **(5)** Cilium CNI install, **(6)** pre-seed the 1Password Connect credential
+> Secrets. Skip them and the new cluster has no CNI (nodes stay `NotReady`) and
+> External Secrets can never start. Step 7 is the script itself.
+
 **Ordering rule (twice-learned):** machine classes and the cluster template
 are **snapshots inside Omni** — apply + sync them *before* machines
 provision, or VMs are built from stale state and must be reprovisioned.

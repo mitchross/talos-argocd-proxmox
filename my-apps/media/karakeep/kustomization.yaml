@@ -20,10 +20,10 @@ resources:
 - kopiur/data-pvc.yaml
 - kopiur/meilisearch-pvc.yaml
 
-# Injects ALL uniform kopiur fields (repository, copyMethod, populator, and the
-# privileged root mover) into the per-PVC stubs above. See my-apps/common/
-# kopiur-backup. No per-app mover patch needed — privilegedMode preserves the
-# app's original file ownership on restore.
+# Injects the uniform kopiur fields (repository, copyMethod, populator) into
+# the per-PVC stubs above. See my-apps/common/kopiur-backup. The mover
+# securityContext (uid 1001) is per-PVC and lives in each stub — the component
+# never injects a mover.
 components:
   - ../../common/kopiur-backup
 

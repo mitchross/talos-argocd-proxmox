@@ -25,8 +25,8 @@ spec:
   storageClassName: longhorn
   # kopiur restore-before-bind: on recreate this binds Pending until the
   # Restore populator hydrates it from the latest kopia snapshot. No-op while
-  # Bound. Backup/restore CRs in kopiur/library.yaml; uniform fields + the
-  # privileged mover come from the ../../common/kopiur-backup component.
+  # Bound. Backup/restore CRs in kopiur/library.yaml; uniform fields come from the
+  # ../../common/kopiur-backup component; the mover uid:gid lives in the stub.
   # NOTE: originals remain on exempt NFS nfs-photos; the immich CNPG DB (Barman/
   # S3, untouched) still references pre-reset assets, so this restores the
   # CURRENT library working set only.

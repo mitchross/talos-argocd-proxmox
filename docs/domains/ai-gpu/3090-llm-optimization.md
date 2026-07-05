@@ -112,46 +112,26 @@ cluster points at it; swap to WhiteRabbitNeo (or any preset) on demand in the UI
   not vLLM, unless a fast resident-256K coding endpoint later proves worth pinning
   both cards (see "vLLM vs llama.cpp").
 
-## llama.cpp image bump (CUDA-13 caution)
+## llama.cpp image bump (CUDA-13) — RESOLVED
 
-Current: `ghcr.io/ggml-org/llama.cpp:server-cuda12-b9070`. Latest published
-`server-cuda13` build is **b9354** (verified on ghcr 2026-05-28; the earlier
-`b9384` named here never existed upstream), BUT the Docker tag scheme moved to
-**`server-cuda13` (CUDA 13)** around
-b93xx, and `server-cuda` now requires **CUDA ≥12.9**
-([#21429](https://github.com/ggml-org/llama.cpp/issues/21429)). Bumping a
-`Recreate` + auto-synced always-on service onto a CUDA it can't run = hard down.
+The CUDA-12→13 freeze is fixed: the deployment runs
+`ghcr.io/ggml-org/llama.cpp:server-cuda13-b9828` and `.github/renovate.json5`
+tracks the cuda13 tag line (`^server-cuda13-b(?<major>\\d+)$`), so Renovate
+bump PRs flow again. The GPU node driver is 595.71.05 / CUDA 13.2.
 
-**Before bumping, read the node's driver** (Talos NVIDIA extension
-`nonfree-kmod-nvidia-production`, set at the Omni image level — not in this repo):
+Kept for the next tag-scheme break (upstream renamed the Docker tag line
+cuda12 → cuda13 around b93xx,
+[#21429](https://github.com/ggml-org/llama.cpp/issues/21429)):
 
-```
-talosctl read /proc/driver/nvidia/version
-# or: kubectl exec <llama-cpp pod> -n llama-cpp -- nvidia-smi   # see "CUDA Version"
-```
-
-| Driver | Max CUDA | Tag |
-|--------|----------|-----|
-| 580.x+ | 13.0 | `server-cuda13-b9354` (newest verified) |
-| 575–579.x | 12.9 | latest `server-cuda` / `server-cuda12` build available |
-| < 575 | ≤12.8 | stay `server-cuda12-bXXXX` (cuda12 line ended ~b93xx) |
-
-**Renovate is why it's stuck.** `.github/renovate.json5` pins llama.cpp to the
-CUDA-12 tag line:
-```json5
-matchPackageNames: ['ghcr.io/ggml-org/llama.cpp'],
-versioning: 'regex:^server-cuda12-b(?<major>\\d+)$',
-```
-Upstream stopped publishing `server-cuda12` tags (~b93xx → moved to
-`server-cuda13`), so this regex matches nothing newer — Renovate can no longer
-generate bump PRs, which is why it's frozen at b9070. **The fix is two edits made
-together**, only after confirming the driver is CUDA-13-capable (580.x+):
-1. `deployment.yaml` image → `server-cuda13-b9354`
-2. `renovate.json5` regex → `^server-cuda13-b(?<major>\\d+)$`
-Doing one without the other = no bumps or a broken pod. If the driver is < 580,
-leave both on cuda12. **Always verify the exact tag resolves on ghcr before
-bumping** — `b9384` was a documented guess that 404'd; `b9354` is the real
-newest cuda13 server build.
+- **Bump the deployment tag and the Renovate `versioning` regex in the same
+  commit** — one without the other means no future bumps, or a hard-down pod
+  on a `Recreate` + auto-synced always-on service.
+- **Read the node driver first** (`talosctl read /proc/driver/nvidia/version`
+  or `nvidia-smi` in the pod) — a new CUDA line may require a newer driver
+  (CUDA 13 needs 580.x+; the Talos NVIDIA extension is set at the Omni image
+  level, not in this repo).
+- **Verify the exact tag resolves on ghcr before bumping** — a previous doc
+  revision named `b9384`, which never existed upstream and 404'd.
 
 ## Model bank (per job)
 
@@ -392,12 +372,9 @@ download models, apply the model-dependent edits, open a PR.
    - **Skip MTP** — no net speedup on Ampere + A3B under llama.cpp.
 2. **Confirm each preset's `model =` path matches the downloaded filename** in
    `my-apps/ai/llama-cpp/presets.ini` (the `[STAGED]` sections).
-3. **llama.cpp image bump (currently frozen by Renovate):** read the driver
-   (`talosctl read /proc/driver/nvidia/version`). If 580.x+ (CUDA 13), make BOTH
-   edits together: tag → `server-cuda13-b9354` in
-   `my-apps/ai/llama-cpp/deployment.yaml`, AND the regex in
-   `.github/renovate.json5` → `^server-cuda13-b(?<major>\d+)$`. If < 580, leave
-   both on cuda12. See the "llama.cpp image bump" section for why.
+3. **llama.cpp image bump — DONE:** deployment on `server-cuda13-b9828`,
+   Renovate tracking the cuda13 tag line. Nothing to do unless upstream breaks
+   the tag scheme again — see "llama.cpp image bump (CUDA-13) — RESOLVED".
 4. **(Optional, biggest Perplexica win)** verify Vane's embedding-provider schema,
    then wire `embeddingModels` to `embeddings.project-nomad.svc.cluster.local:8080/v1`
    (`nomic-embed-text-v1.5`) in `my-apps/ai/perplexica/config.json`.

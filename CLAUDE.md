@@ -15,7 +15,7 @@ This is a production-grade GitOps Kubernetes cluster running on **Talos OS** wit
 - **vLLM** (`http://vllm-service.vllm.svc.cluster.local:8080/v1`, served model `qwen3.6-27b` — Qwen3.6-27B dense AWQ, multimodal/vision) is the **default for app inference**. OpenWebUI, Perplexica, Project NOMAD, and Karakeep all point here. Use vLLM / `qwen3.6-27b` when wiring an in-cluster app to chat/vision inference.
 - **llama-cpp** (`http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`) serves the **Qwen3.6-35B-A3B** MoE (Unsloth UD-Q4_K_XL + `mmproj-BF16.gguf`) plus Gemma 4 and Qwen 3.5 Uncensored as selectable presets (aliases `qwen3.6` / `qwen3.6-nothink` / `qwen3.6-longctx` / `gemma4*` / `uncensored`; see `my-apps/ai/llama-cpp/presets.ini`). Kept for ComfyUI's vision→image workflow and manual/interactive multi-preset use.
 
-GPU topology: the GPU workloads are **mutually exclusive whole-card** (`type: Recreate`, time-slicing disabled — never two pods on the cards at once). They scale-swap: bringing one up means scaling the others to `replicas: 0`. Current state is vLLM `replicas: 1` with llama-cpp and ComfyUI at `0` (so the external `llama.vanillax.me` route reads "no healthy upstream" until llama-cpp is scaled back up). App→backend wiring is tabulated in `docs/domains/ai-gpu/model-catalog.md`.
+GPU topology: the GPU workloads are **mutually exclusive whole-card** (`type: Recreate`, time-slicing disabled — never two pods on the cards at once). They scale-swap: bringing one up means scaling the others to `replicas: 0`. Current state is vLLM `replicas: 1` with llama-cpp and ComfyUI at `0` (so the external `llama.vanillax.me` route reads "no healthy upstream" until llama-cpp is scaled back up). App→backend wiring is tabulated in `docs/domains/ai-gpu/model-catalog.md`; the swap procedure + card truth table live in `docs/domains/ai-gpu/gpu-scale-swap.md`.
 
 ## Core Architecture Pattern: GitOps Self-Management
 
@@ -160,7 +160,8 @@ Detailed instructions load automatically when working in these directories:
 
 | Pattern | Reference Location |
 |---------|-------------------|
-| **Minimal app** | `my-apps/development/nginx/` |
+| **Minimal app** | template in `my-apps/CLAUDE.md` § "Minimal Application" (no live example is truly minimal) |
+| **Backup with root-uid mover** | `my-apps/development/nginx/` (root-owned data: `runAsUser: 0` stub + `privileged-movers` namespace annotation) |
 | **GPU workload** | `my-apps/ai/comfyui/` |
 | **Complex app with storage** | `my-apps/media/immich/` |
 | **PVC with automatic backup (kopiur)** | `my-apps/ai/open-webui/` (component + `kopiur/storage.yaml` stub + PVC `dataSourceRef`) |
@@ -182,10 +183,11 @@ Detailed instructions load automatically when working in these directories:
 
 ### 🚰 Docs reading order for agents (START HERE, in order)
 1. **[docs/index.md](docs/index.md)** — canonical landing page + doc map.
-2. **[docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md)** — the kopiur backup/restore architecture: the pieces, the Kustomize-component pattern, backup + restore flows (diagrams), add-a-backup checklist. **Start here for backups.**
-3. **[docs/domains/storage/kopiur-mover-permissions.md](docs/domains/storage/kopiur-mover-permissions.md)** — why the mover runs as the data owner (the #1 backup gotcha). Plus **[docs/storage-architecture.md](docs/storage-architecture.md)** for the Longhorn/NFS/CNPG storage source-of-truth.
-4. **[docs/disaster-recovery.md](docs/disaster-recovery.md)** — full-cluster destroy/rebuild runbook, pre-nuke checklist, restore-wave expectations, restore canary. **DR source of truth.**
-5. **[docs/domains/](docs/index.md)** — per-domain docs (CNPG, ArgoCD, networking, storage deep-dives).
+2. **[docs/easy-guide.md](docs/easy-guide.md)** — zero-to-hero explainer of the whole stack (GitOps → waves → kopiur → restore-before-bind) with the adoption ladder for porting the pattern elsewhere. **Best first read for humans and new operators.**
+3. **[docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md)** — the kopiur backup/restore architecture: the pieces, the Kustomize-component pattern, backup + restore flows (diagrams), add-a-backup checklist. **Start here for backups.**
+4. **[docs/domains/storage/kopiur-mover-permissions.md](docs/domains/storage/kopiur-mover-permissions.md)** — why the mover runs as the data owner (the #1 backup gotcha). Plus **[docs/storage-architecture.md](docs/storage-architecture.md)** for the Longhorn/NFS/CNPG storage source-of-truth.
+5. **[docs/disaster-recovery.md](docs/disaster-recovery.md)** — full-cluster destroy/rebuild runbook, pre-nuke checklist, restore-wave expectations, restore canary. **DR source of truth.**
+6. **[docs/domains/](docs/index.md)** — per-domain docs (CNPG, ArgoCD, networking, storage deep-dives).
 
 > ⚠️ **Agent guardrails when reading docs:**
 > - **Do NOT resurrect Kyverno** — it was removed from the backup path (no policies, no CRDs, no webhooks).
