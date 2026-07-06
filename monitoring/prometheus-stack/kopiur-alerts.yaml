@@ -1,0 +1,72 @@
+# kopiur backup health — the follow-up promised in kustomization.yaml when
+# VolSync/pvc-plumber alerts were retired (2026-06-27). The kopiur controller
+# exposes per-policy backup metrics on kopiur-controller-metrics:8081
+# (scraped via the kopiur ServiceMonitor in custom-servicemonitors.yaml).
+#
+# Motivating incident (2026-07-06): karakeep data-pvc hourly backups failed
+# silently for 4 days after its Longhorn volume faulted — nothing alerted.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kopiur-alerts
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack
+    app.kubernetes.io/instance: kube-prometheus-stack
+    app.kubernetes.io/managed-by: Helm
+    prometheus: kube-prometheus-stack-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: kopiur.backup
+      rules:
+        - alert: KopiurSnapshotsFailing
+          expr: kopiur_snapshot_consecutive_failures >= 3
+          for: 10m
+          labels:
+            severity: warning
+            component: kopiur
+            category: backup
+          annotations:
+            summary: "kopiur backups failing repeatedly: {{ $labels.namespace }}/{{ $labels.policy }}"
+            description: |
+              {{ $value }} consecutive snapshot failures.
+
+              Actions:
+              1. kubectl -n {{ $labels.namespace }} get snapshot | tail
+              2. Check the failed Snapshot's status.failure and mover Job logs
+              3. Common causes: source PVC unattachable (Longhorn volume
+                 faulted), repo unreachable, mover uid/gid mismatch
+        - alert: KopiurBackupStale
+          # All app PVCs snapshot hourly (the canary is daily), so >26h with
+          # no successful backup means the schedule is broken, not just slow.
+          expr: time() - kopiur_policy_last_backup_success_timestamp_seconds > 26 * 3600
+          for: 15m
+          labels:
+            severity: critical
+            component: kopiur
+            category: backup
+          annotations:
+            summary: "kopiur backup stale (>26h): {{ $labels.namespace }}/{{ $labels.policy }}"
+            description: |
+              No successful kopiur snapshot for over 26 hours. The restore
+              point for this PVC is aging — a volume failure now means losing
+              everything since the last snapshot.
+
+              Actions:
+              1. kubectl -n {{ $labels.namespace }} get snapshotpolicy,snapshotschedule,snapshot
+              2. Check SnapshotSchedule is not suspended and Snapshots' failure status
+        - alert: KopiurControllerDown
+          expr: up{job="kopiur-controller-metrics"} == 0 or absent(up{job="kopiur-controller-metrics"})
+          for: 15m
+          labels:
+            severity: critical
+            component: kopiur
+            category: backup
+          annotations:
+            summary: "kopiur controller metrics endpoint is down"
+            description: |
+              Prometheus cannot scrape kopiur-controller-metrics. Either the
+              controller is down (no backups are running at all) or the
+              ServiceMonitor/Service changed. Backup staleness alerts are
+              blind while this fires.

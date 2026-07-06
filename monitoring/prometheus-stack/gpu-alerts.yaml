@@ -21,7 +21,10 @@ spec:
         description: "GPU {{ $labels.gpu }} on node {{ $labels.kubernetes_node }} temperature is {{ $value }}°C. Check cooling."
     # GPU Down/Unavailable
     - alert: GPUDown
-      expr: up{job="dcgm-exporter-metrics"} == 0
+      # job label = the scraped Service's name (dcgm-exporter), NOT the
+      # ServiceMonitor name (dcgm-exporter-metrics) — verified live 2026-07-06;
+      # the old selector matched nothing so GPUDown could never fire.
+      expr: up{job="dcgm-exporter"} == 0
       for: 5m
       labels:
         severity: critical
