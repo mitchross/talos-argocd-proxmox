@@ -6,8 +6,8 @@
 # Kustomize helmCharts (infrastructure/controllers/kopiur-operator) like every
 # other chart in this repo, so manifests are served from our own git source and
 # no AppProject sourceRepos exception is needed (cf. temporal-worker-controller).
-# Installs the 7 CRDs + operator + webhook. Images/chart pinned in that dir's
-# values.yaml + kustomization.yaml (0.5.1 as of 2026-07-04).
+# Installs the 8 CRDs + operator + webhook. Chart version pinned in that dir's
+# kustomization.yaml (images follow the chart's appVersion — see values.yaml).
 #
 # Wave 2: same level as pvc-plumber. The operator serves the volume populator
 # AND its webhook, so it must be healthy before any PVC carrying a kopiur
