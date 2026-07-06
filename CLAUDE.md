@@ -43,7 +43,7 @@ Applications deploy in strict order to prevent race conditions:
 |------|-----------|---------|
 | **0** | Foundation | Cilium (CNI), ArgoCD, 1Password Connect, External Secrets, AppProjects |
 | **1** | Core controllers | cert-manager, Longhorn, VolumeSnapshot Controller |
-| **2** | kopiur operator | Kopia-native backup operator (7 CRDs + controller + webhook), rendered from the OCI chart `oci://ghcr.io/home-operations/charts/kopiur`. Serves the volume populator for restore-before-bind. |
+| **2** | kopiur operator | Kopia-native backup operator (8 CRDs + controller + webhook), rendered from the OCI chart `oci://ghcr.io/home-operations/charts/kopiur`. Serves the volume populator for restore-before-bind. |
 | **3** | CNPG Barman Plugin + kopiur config | Database backup plugin before DB clusters; kopiur `ClusterRepository cluster-kopia` + `ClusterExternalSecret` cred fanout + `VolumeSnapshotClass longhorn-snapclass` |
 | **4** | Infrastructure AppSet + custom entrypoints | Explicit path list plus KEDA and Temporal Worker Controller standalone Apps |
 | **4** | Database AppSet | Discovers `infrastructure/database/*/*` — `selfHeal: false` for DR |

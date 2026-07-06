@@ -41,7 +41,7 @@ the blank-PVC-then-corrupt race this system exists to prevent.
 Sharpest example: a game-server world save (Minecraft/Valheim/Zomboid) —
 irreplaceable, no login, and the fresh-world backup overwrites the real one.
 
-## Verified kopiur facts (as of `0.5.1`)
+## Verified kopiur facts (as of `0.5.x`, 2026-07)
 
 - **OCI chart** at `oci://ghcr.io/home-operations/charts/kopiur`, rendered locally
   via Kustomize `helmCharts:` (`infrastructure/controllers/kopiur-operator/`).
