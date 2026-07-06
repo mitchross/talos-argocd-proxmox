@@ -34,10 +34,11 @@ spec:
           type: RuntimeDefault
       containers:
         - name: open-meteo
-          # Pinned after upstream :latest (1.5.3) shipped with a missing
-          # libparquet-glib and crashlooped the forecast API for ~10 h on
-          # 2026-07-02. Renovate proposes bumps; never track :latest here.
-          image: ghcr.io/open-meteo/open-meteo:1.5.3
+          # Pinned after upstream 1.5.3 shipped with a missing
+          # libparquet-glib and crashlooped the forecast API.
+          # Renovate has a guard in .github/renovate.json5 for this image;
+          # never track :latest here.
+          image: ghcr.io/open-meteo/open-meteo:1.5.2
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

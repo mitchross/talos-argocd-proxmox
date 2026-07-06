@@ -126,6 +126,17 @@
       ],
       versioning: 'regex:^(?<major>\\d{4})\\.(?<minor>\\d{1,2})\\.(?<patch>\\d{1,2})-[a-f0-9]+$',
     },
+    {
+      description: 'radar-ng Open-Meteo: block known-bad 1.5.3 image, which is missing libparquet-glib.so.2400 and crashloops the forecast API. Allow 1.5.4+ only after human review.',
+      matchPackageNames: [
+        'ghcr.io/open-meteo/open-meteo',
+      ],
+      matchFileNames: [
+        'my-apps/development/radar-ng/deployment-open-meteo.yaml',
+      ],
+      allowedVersions: '<1.5.3 || >=1.5.4',
+      automerge: false,
+    },
     // -------------------------------------------------------------------
     // PostHog image rules
     // -------------------------------------------------------------------
