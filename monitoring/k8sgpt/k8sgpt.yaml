@@ -34,4 +34,4 @@ spec:
     - CronJob
   noCache: false
   repository: ghcr.io/k8sgpt-ai/k8sgpt
-  version: "v0.4.34@sha256:7bfabdfa48ceb3cb8c6be54bcea6b956206fe02a16035ef2dbc25186e59250ec"
+  version: "v0.4.35@sha256:3c65507c2a57a662b57e5adbd78cfaf6c50edf05bac7d3ec5948d80b9e26f2a8"
