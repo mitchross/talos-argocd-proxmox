@@ -11,7 +11,12 @@ metadata:
     # External-DNS: Create CNAME records to vanillax.me instead of A records
     external-dns.alpha.kubernetes.io/target: "vanillax.me"
 spec:
-  # No addresses - Cilium will auto-assign, but external-DNS will use target annotation for CNAME
+  # Pinned LB IP: external traffic arrives via the Cloudflare tunnel (CNAME
+  # target above), but an unpinned gateway races pinned services for specific
+  # IPs on rebuild (it squatted project-zomboid's .51 after the 06-28 rebuild).
+  addresses:
+    - type: IPAddress
+      value: 192.168.10.49
   gatewayClassName: cilium
   listeners:
     - name: http
