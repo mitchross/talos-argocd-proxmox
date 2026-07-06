@@ -23,26 +23,32 @@ spec:
 # ArgoCD metrics are handled by the argo-cd Helm chart's built-in ServiceMonitors
 # (enabled via per-component metrics.serviceMonitor.enabled in ArgoCD values.yaml)
 ---
-# ServiceMonitor for NVIDIA Device Plugin
+# ServiceMonitor for kopiur (backup controller). Scrapes
+# kopiur-controller-metrics:8081 (kopiur_snapshot_*/kopiur_policy_* backup
+# health metrics) — consumed by kopiur-alerts.yaml.
+# (The old nvidia-device-plugin ServiceMonitor that lived here matched
+# nothing: wrong namespace, and the gpu-operator exposes no device-plugin
+# metrics Service on this cluster. Removed 2026-07-06.)
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: nvidia-device-plugin-metrics
+  name: kopiur-controller-metrics
   namespace: prometheus-stack
   labels:
-    app.kubernetes.io/name: nvidia-device-plugin
+    app.kubernetes.io/name: kopiur
     release: kube-prometheus-stack
     prometheus: kube-prometheus-stack-prometheus
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: nvidia-device-plugin
+      app.kubernetes.io/name: kopiur
+      app.kubernetes.io/component: controller
   namespaceSelector:
     matchNames:
-      - gpu-device-plugin
+      - kopiur-system
   endpoints:
-    - port: http-metrics
-      interval: 30s
+    - port: metrics
+      interval: 60s
       path: /metrics
 ---
 # ServiceMonitor for DCGM Exporter (GPU Metrics)

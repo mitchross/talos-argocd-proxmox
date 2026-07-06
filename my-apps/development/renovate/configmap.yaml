@@ -74,6 +74,13 @@ data:
             "matchUpdateTypes": ["patch", "minor"],
             "automerge": true,
             "automergeType": "pr"
+          },
+          {
+            "description": "radar-ng open-meteo sync worker embeds the upstream Open-Meteo binary. Do not auto-merge: upstream open-meteo 1.5.3 missed libparquet-glib.so.2400 and broke model sync/forecast serving.",
+            "matchDatasources": ["custom.gitea-vanillax"],
+            "matchPackageNames": ["registry.vanillax.me/radar-ng-open-meteo-worker"],
+            "matchFileNames": ["my-apps/development/radar-ng/deployment-open-meteo.yaml"],
+            "automerge": false
           }
         ]
       }

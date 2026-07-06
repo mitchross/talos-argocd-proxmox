@@ -50,7 +50,7 @@ authoritative sink so there's never a "which one do I trust" question:
 | Traces  | Tempo (`tempo/`)                | Grafana Explore |
 | Alerts  | Alertmanager                    | alertmanager.vanillax.me |
 
-Retention: metrics 15d, logs 30d, traces 72h (see table near the bottom).
+Retention: metrics 15d, logs 24h, traces 72h (see table near the bottom).
 For anything longer-term, export from Loki/Tempo to S3 before rotation.
 
 ## Components
@@ -63,6 +63,8 @@ For anything longer-term, export from Loki/Tempo to S3 before rotation.
 | **Prometheus** | `monitoring/prometheus-stack/` | Metrics storage, alerting, Grafana |
 | **Loki** | `monitoring/loki-stack/` | Log storage (S3 on RustFS) |
 | **Tempo** | `monitoring/tempo/` | Trace storage (S3 on RustFS) |
+| **k8sgpt** | `monitoring/k8sgpt/` | AI cluster diagnostics via vLLM (`qwen3.6-27b`) |
+| **pod-cleanup** | `monitoring/pod-cleanup/` | 6-hourly CronJob deleting Failed/Succeeded pods cluster-wide |
 
 ## Auto-Instrumentation
 
@@ -171,7 +173,7 @@ Grafana has data, it's the reverse.
 | Signal | Retention |
 |--------|-----------|
 | Metrics | 15 days (Prometheus) |
-| Logs | 30 days (Loki) |
+| Logs | 24 hours (Loki — deliberately short; see loki-stack/values.yaml) |
 | Traces | 72 hours (Tempo) |
 | Alerts | 72 hours (Alertmanager) |
 

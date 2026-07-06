@@ -9,73 +9,60 @@ CRs, it runs Jobs, kopia moves bytes to RustFS.
 
 ## Lifecycle and Flows
 
-```text
- 1. GITOPS & KUSTOMIZE ASSEMBLY (build time)
- ───────────────────────────────────────────
-   App Stub (kopiur/storage.yaml)          Kopiur Component (common/kopiur-backup)
-   • SnapshotPolicy                        • injects S3 repo info, copyMethod,
-   • SnapshotSchedule                        VolumePopulator specs
-   • Restore                                       │ patches stubs
-   • Mover UID:GID                                 │
-        │ composes via components:                 │
-        └──────────────► Kustomize Build (ArgoCD) ◄┘
-                                │  rendered manifests applied
-                                ▼
-                        Kubernetes API Server
-                          │                 │
-             (feeds Schedule)           (feeds Restore PVC)
-                          ▼                 ▼
+<div class="grid cards" markdown>
 
- 2. SCHEDULED BACKUP FLOW (runtime)
- ──────────────────────────────────
-   SnapshotSchedule (cron) ──fires──► Snapshot CR ──reconciled by──► Kopiur Operator
-                                                                      │        │
-                        1. CSI VolumeSnapshot (Longhorn) ◄────────────┘        │
-                                    │                                          │
-                                    │ mounts snapshot read-only                │
-                                    ▼                                          ▼
-     Secret kopiur-rustfs ──S3 creds──► Mover Job (runs as data owner uid:gid)
-     (fanned in by ClusterExternalSecret)          │
-                                                    │ uploads deduped/encrypted bytes
-                                                    ▼
-                                          RustFS S3 Store  s3://kopiur
+-   **1. GitOps & Kustomize Assembly**
 
- 3. RESTORE-BEFORE-BIND DR FLOW (disaster recovery)
- ──────────────────────────────────────────────────
-   ArgoCD recreates PVC (dataSourceRef -> Restore)
-        │ withholds binding
-        ▼
-   PVC status: Pending ──triggers──► Kopiur Restore Populator
-                                          │ spawns
-                                          ▼
-        RustFS S3 ──downloads snapshot──► Mover Job (runs as data owner uid:gid)
-                                          │ writes data directly to Raw Longhorn Volume
-                                          │ success exit
-                                          ▼
-                                   Kubernetes binds PVC (status: Bound)
-                                          │
-                                          ▼
-                                   Application Pod starts up!
-```
+    `Build time`
+
+    1. The **app stub** declares the policy, schedule, restore target, and mover
+       UID:GID.
+    2. The shared **kopiur component** adds the repository, copy method, and
+       volume-populator settings.
+    3. **ArgoCD** combines both with Kustomize and applies the rendered resources
+       to Kubernetes.
+
+-   **2. Scheduled Backup**
+
+    `Runtime`
+
+    1. A **SnapshotSchedule** creates a Snapshot custom resource.
+    2. The **kopiur operator** takes a Longhorn CSI snapshot and starts a mover
+       Job as the data owner.
+    3. The mover reads S3 credentials from `kopiur-rustfs` and uploads encrypted,
+       deduplicated data to `s3://kopiur`.
+
+-   **3. Restore Before Bind**
+
+    `Disaster recovery`
+
+    1. **ArgoCD** recreates a PVC that references a kopiur Restore.
+    2. Kubernetes keeps the PVC `Pending` while the **restore populator** starts
+       a mover Job.
+    3. The mover restores data from RustFS; only then does Kubernetes bind the
+       PVC and start the application.
+
+</div>
 
 ---
 
 ## 1. The pieces (what exists, and where)
 
-```
- CLUSTER-WIDE (set up once)                          PER APP (you add these)
- ──────────────────────────                          ───────────────────────
- infrastructure/controllers/kopiur/                  my-apps/<cat>/<app>/
-   • ClusterRepository  "cluster-kopia"                • namespace.yaml   (1 label)
-       └─ points at RustFS  s3://kopiur                • pvc.yaml         (dataSourceRef)
-   • ClusterExternalSecret "kopiur-rustfs"             • kopiur/<pvc>.yaml (the STUB)
-       └─ copies repo creds into labeled namespaces    • kustomization.yaml
-   • VolumeSnapshotClass "longhorn-snapclass"              └─ components: [kopiur-backup]
-                                                            └─ resources:  [kopiur/<pvc>.yaml]
- kopiur operator (kopiur-system)
-   • watches the CRs, runs Snapshot/Restore Jobs      my-apps/common/kopiur-backup/
-                                                        • the shared COMPONENT (no app owns it)
-```
+**Cluster-wide — set up once**
+
+- `infrastructure/controllers/kopiur/` defines the `cluster-kopia` repository,
+  the `kopiur-rustfs` credential fanout, and `longhorn-snapclass`.
+- The operator in `kopiur-system` watches kopiur resources and runs snapshot and
+  restore Jobs.
+- `my-apps/common/kopiur-backup/` holds the shared Kustomize component.
+
+**Per app — add for every protected PVC**
+
+- Label `namespace.yaml` to receive repository credentials.
+- Point `pvc.yaml` at the Restore with `dataSourceRef`.
+- Add the `kopiur/<pvc>.yaml` stub.
+- Include the stub under `resources:` and the shared component under
+  `components:` in `kustomization.yaml`.
 
 | Piece | Scope | What it does |
 |---|---|---|
@@ -98,24 +85,23 @@ list, then lets the component **patch** them. So the per-PVC stub stays tiny (ju
 the bits that differ); the component fills in everything that's the same for every
 backup.
 
+```yaml
+resources:
+  - namespace.yaml
+  - pvc.yaml
+  - kopiur/<pvc>.yaml
+components:
+  - ../../common/kopiur-backup
 ```
- my-apps/<cat>/<app>/kustomization.yaml
-   resources:
-     - namespace.yaml            label: kopiur.home-operations.com/repo=cluster-kopia
-     - pvc.yaml                  spec.dataSourceRef -> Restore "<pvc>-restore"
-     - kopiur/<pvc>.yaml  ◄───── YOUR STUB (varying bits ONLY):
-   components:                       SnapshotPolicy  { name, sources.pvc, identity, retention, MOVER uid:gid }
-     - ../../common/kopiur-backup    SnapshotSchedule{ cron }
-              │                      Restore         { fromPolicy, MOVER uid:gid }
-              │
-              └── patches by KIND, adds the UNIFORM fields:
-                    SnapshotPolicy += repository: cluster-kopia, copyMethod: Snapshot,
-                                      volumeSnapshotClassName: longhorn-snapclass
-                    SnapshotSchedule += concurrencyPolicy: Forbid, runOnCreate: false
-                    Restore += repository, target.populator:{}, onMissingSnapshot: Continue
 
-   $ kubectl kustomize <app>     ─────►   FULL CRs  =  (your stub fields)  +  (component fields)
-```
+| Resource | App stub supplies | Component adds |
+|---|---|---|
+| `SnapshotPolicy` | name, source PVC, identity, retention, mover UID:GID | repository, `copyMethod: Snapshot`, `volumeSnapshotClassName` |
+| `SnapshotSchedule` | cron schedule | `concurrencyPolicy: Forbid`, `runOnCreate: false` |
+| `Restore` | source policy, mover UID:GID | repository, `target.populator`, `onMissingSnapshot: Continue` |
+
+`kubectl kustomize <app>` combines both sets of fields into the complete custom
+resources that ArgoCD applies.
 
 **Keep the mover UID in the stub, not the component:** it varies per PVC (the
 data owner differs app to app — even within one namespace), and a component
@@ -126,25 +112,16 @@ The component sets only what's identical everywhere.
 
 ## 3. Backup flow (what happens on a schedule)
 
-```
- SnapshotSchedule (cron, e.g. "10 3 * * *")
-        │  fires
-        ▼
-   Snapshot CR ──────────────► kopiur operator
-                                   │
-                                   ├─ 1. CSI VolumeSnapshot (longhorn-snapclass)
-                                   │        └─► Longhorn point-in-time snapshot of the PVC
-                                   │
-                                   └─ 2. MOVER Job   (runs as the DATA OWNER uid:gid)
-                                          • mounts the snapshot, read-only
-                                          • reads creds from local Secret "kopiur-rustfs"
-                                          │        (put there by the ClusterExternalSecret)
-                                          ▼
-                                        kopia ──upload──► RustFS  s3://kopiur
-                                          (deduplicated + encrypted)
-                                          ▼
-                                        Snapshot → Completed (files, bytes)
-```
+1. A `SnapshotSchedule` fires on its cron, for example `10 3 * * *`, and creates
+   a Snapshot custom resource.
+2. The kopiur operator creates a point-in-time CSI `VolumeSnapshot` through
+   `longhorn-snapclass`.
+3. The operator launches a mover Job as the data owner UID:GID and mounts the
+   snapshot read-only.
+4. The mover reads S3 credentials from the local `kopiur-rustfs` Secret, which
+   the `ClusterExternalSecret` placed in the namespace.
+5. Kopia uploads deduplicated, encrypted data to RustFS at `s3://kopiur`, then
+   marks the Snapshot `Completed` with its file and byte counts.
 
 The mover must run as the **data owner** or it can't read the files — see
 [`kopiur-mover-permissions.md`](kopiur-mover-permissions.md).
@@ -159,21 +136,17 @@ nothing garbage is written.
 The whole point: when a PVC is recreated, it does **not** come up empty — it
 holds at `Pending` until kopiur restores its data, *then* binds.
 
-```
- PVC deleted  /  namespace recreated  /  full DR
-        │
-        ▼
- ArgoCD recreates the PVC from git   (spec.dataSourceRef -> Restore "<pvc>-restore")
-        │
-        ▼
- Kubernetes sees a populator dataSourceRef  ──►  withholds binding   (PVC = Pending)
-        │
-        ▼
- kopiur Restore populator decides:
-   ├─ repo reachable + snapshot exists ─► MOVER Job restores ─► PVC Binds WITH data ─► pod starts ✅
-   ├─ repo reachable + NO snapshot yet  ─► onMissingSnapshot: Continue ─► binds EMPTY, backs up forward
-   └─ repo UNREACHABLE                  ─► errors + retries ─► stays Pending, never empty ✅ (safe)
-```
+1. ArgoCD recreates the PVC from Git after a PVC deletion, namespace recreation,
+   or full disaster recovery.
+2. The PVC's `dataSourceRef` points to `<pvc>-restore`, so Kubernetes withholds
+   binding and leaves the PVC `Pending`.
+3. The kopiur restore populator checks the repository and decides how to proceed.
+
+| Repository state | Result |
+|---|---|
+| Reachable, snapshot exists | A mover restores the data, the PVC binds, and the pod starts. |
+| Reachable, no snapshot yet | `onMissingSnapshot: Continue` binds an empty PVC, which backs up forward. |
+| Unreachable | The restore errors and retries; the PVC stays `Pending` and never binds empty. |
 
 > A restore against an unreachable repo leaves the PVC `Pending` — kopiur raises
 > the backend error *before* the "no snapshot → empty" decision, so an outage can
@@ -215,9 +188,34 @@ or [`my-apps/home/project-nomad/mysql/`](https://github.com/mitchross/talos-argo
 
 ---
 
-## 6. Upstream 0.5.x notes (assessed 2026-07-04, chart pinned `0.5.1`)
+## 6. Upstream 0.5.x notes (assessed 2026-07-04, updated 2026-07-06, chart pinned `0.5.2`)
 
-What changed upstream in 0.5.0/0.5.1 and how it lands here:
+What changed upstream in 0.5.0–0.5.2 and how it lands here:
+
+- **0.5.2: transient VolumeSnapshot errors are retried, not terminal** (#201).
+  Before, a Longhorn hiccup during CSI staging burned the whole backup run.
+- **Failed `Snapshot` CRs are terminal by design** — kopiur never retries a
+  failed run in place; the **next cron fires a fresh Snapshot** (partial
+  uploads in the Kopia repo are reused, so retries are cheap). Failed CRs are
+  pruned at `failedJobsHistoryLimit` (default 10). A staging hang fails at
+  `spec.staging.timeout` (default 10m, reason `StagingTimedOut`).
+- **`inheritSecurityContextFrom: pvcConsumer: {}`** exists as an alternative to
+  hand-set mover uids — we deliberately DON'T use it: bjw-s reported it
+  detecting the wrong consumer uid intermittently, and during a DR cold-start
+  restore there is **no consumer pod to inherit from**. Explicit
+  data-owner uids in the stubs stay the rule
+  (`kopiur-mover-permissions.md`).
+- **Chart refactor landed upstream** (#203 → PR #206, merged 2026-07-06;
+  ships in the next release, presumably 0.6). **Pre-verified against our
+  values (2026-07-06):** `installScope`, `webhook.failurePolicy`, and
+  `webhook.tls.mode` keep their exact paths; image tags still default to
+  `.Chart.AppVersion`; `failurePolicy: Ignore` confirmed in the render;
+  CRDs move from templated resources to Helm's native `crds/` dir, which
+  our Kustomize `includeCRDs: true` still renders. The ONLY migration step
+  at the 0.6 bump: delete the now-inert `installCRDs: true` line from
+  `kopiur-operator/values.yaml` (noted inline there). New in the render:
+  a leader-election Role/RoleBinding (leaderElection defaults on) — benign.
+  Renovate opens the bump PR but won't automerge it (renovate.json5 rule).
 
 - **`copyMethod` now defaults to `Snapshot` upstream** (was `Direct`). We were
   already pinning `Snapshot` via the component — **keep the explicit pin**:

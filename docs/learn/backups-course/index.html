@@ -12,6 +12,15 @@
     --emoji:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Twemoji Mozilla",sans-serif;
     --nav-h:64px; --head-h:56px;
   }
+  @media(prefers-color-scheme:dark){
+    :root{
+      --bg:#0d1120; --panel:#161c33; --ink:#e7ebfb; --ink-2:#aab3d4; --ink-3:#7c86ab; --line:#242e52;
+      --accent:#8b80ff; --accent-2:#a89eff; --accent-wash:#1c2145;
+      --good:#2fd394; --good-wash:#0e2a20; --warn:#e6b357; --warn-wash:#2b2210; --bad:#ff7d95; --bad-wash:#2c1420;
+    }
+    .code,.figframe{box-shadow:0 16px 40px rgba(0,0,0,.5);}
+    .btn.primary{box-shadow:0 6px 16px rgba(139,128,255,.25);}
+  }
   *{box-sizing:border-box;}
   html,body{margin:0;height:100%;}
   body{font-family:var(--sans);color:var(--ink);background:var(--bg);font-size:16px;line-height:1.65;-webkit-font-smoothing:antialiased;overflow:hidden;}
@@ -203,7 +212,7 @@
     <span class="k">kind:</span> <span class="s">Restore</span>
     <span class="k">name:</span> <span class="s">data-pvc-restore</span></span>`);
 
-  const KUST = code("my-apps/media/karakeep/kustomization.yaml","real file",
+  const KUST = code("my-apps/media/karakeep/kustomization.yaml","real file · trimmed",
 `<span class="k">resources:</span>
   <span class="k">-</span> <span class="s">karakeep/pvc-data.yaml</span>
   <span class="k">-</span> <span class="s">kopiur/data-pvc.yaml</span>
@@ -221,7 +230,7 @@
 <span class="k">spec:</span>
   <span class="k">mover:</span>
     <span class="k">securityContext:</span> { <span class="k">runAsUser:</span> <span class="s">1001</span> }
-  <span class="k">policy:</span> { <span class="k">onMissingSnapshot:</span> <span class="s">Continue</span> }`);
+  <span class="k">policy:</span> { <span class="k">onMissingSnapshot:</span> <span class="s">Continue</span> }   <span class="c"># ← injected by the shared component</span>`);
 
   const FIG_PETS = `<div class="figframe"><div class="pvc2">
     <div class="kard keep"><h4>🧬 Precious</h4><p class="tl">kept OFF the cluster</p><ul><li><b>Git</b> — the config (recipe)</li><li><b>Off-site backups</b> — your data (cake)</li></ul></div>
@@ -253,54 +262,68 @@
 
   // ---------- lessons ----------
   const L = [
-    { n:"Lesson 1 of 8", title:"The big idea: keep the recipe, not the cake",
+    { n:"Lesson 1 of 9", title:"The big idea: keep the recipe, not the cake",
       learn:`<p class="lead">Imagine you delete your entire setup by accident — every server, every disk. In this cluster, the app quietly rebuilds itself in about an hour, <strong>with all its data</strong>, and no one restores a backup by hand.</p>
       <p>The trick is deciding up front what is <strong>precious</strong> and what is <strong>disposable</strong>. Only two things are precious, and they're kept <em>off</em> the cluster: your <strong>Git</strong> repo (the recipe) and your <strong>off-site backups</strong> (the data). Everything else can be thrown away and remade.</p>
       <div class="note tip"><div class="nt">💡 mental model</div><p>Git holds the <em>recipe</em>. The backup holds the <em>cake</em>. The cluster is just the <em>kitchen</em> — burn it down, bake the same cake in a new one.</p></div>
       <p>Throughout this course we'll follow one real app — <strong>Karakeep</strong>, a bookmark manager — using its actual files. →</p>`,
       show:FIG_PETS },
 
-    { n:"Lesson 2 of 8", title:"Everything is just text in Git",
+    { n:"Lesson 2 of 9", title:"Everything is just text in Git",
       learn:`<p>There's no dashboard where you click “deploy”. Karakeep is defined entirely by text files in <code>my-apps/media/karakeep/</code>. Here's the file that creates its private space on the cluster — a <strong>namespace</strong>.</p>
       <p>The highlighted label is how the app <em>opts in</em> to backups. That single line tells the backup system: “watch this whole namespace.” →</p>
       <div class="goal"><span class="g-ic">✓</span><span>You learned: a <strong>namespace</strong> is an app's private area, and one label switches on its backups.</span></div>`,
       show:NS + cap("The <b>real</b> namespace file for Karakeep.") },
 
-    { n:"Lesson 3 of 8", title:"The app's disk — a “PVC”",
+    { n:"Lesson 3 of 9", title:"The app's disk — a “PVC”",
       learn:`<p>Apps that remember things need a disk. In Kubernetes, an app asks for one with a <strong>PersistentVolumeClaim</strong> — a <strong>PVC</strong>. Read it as the app saying: <em>“I need a 10&nbsp;GB drive to store my data.”</em></p>
       <p>On the right is Karakeep's real disk request. <code>storageClassName: longhorn</code> just picks which storage system provides it. So far, nothing special — this is a plain, empty 10&nbsp;GB disk.</p>
       <div class="goal"><span class="g-ic">✓</span><span>You learned: a <strong>PVC</strong> is how an app requests a disk. Right now it would come up empty.</span></div>`,
       show:PVC + cap("A plain disk request — <b>no data protection yet</b>.") },
 
-    { n:"Lesson 4 of 8", title:"The one line that saves your data",
+    { n:"Lesson 4 of 9", title:"The one line that saves your data",
       learn:`<p>Here's the most important line in the whole course. We add <code>dataSourceRef</code> to the PVC. It points at a <strong>Restore</strong> and changes everything: now, when this disk is created, Kubernetes will <strong>refuse to hand it over until your real data has been copied back onto it</strong>.</p>
       <p>The disk sits in <em>Pending</em> on purpose. Better to wait a minute than to start the app with a blank disk. This behavior is called <strong>restore-before-bind</strong> — watch it below.</p>
-      <div class="note warn"><div class="nt">⚠️ remember this</div><p>No <code>dataSourceRef</code> → the disk comes up <strong>empty</strong>. With it → the disk waits and restores first.</p></div>`,
+      <div class="note warn"><div class="nt">⚠️ remember this</div><p>No <code>dataSourceRef</code> → the disk comes up <strong>empty</strong>. With it → the disk waits and restores first.</p></div>
+      <div class="note tip"><div class="nt">🛡️ and if the backup box is down?</div><p>The disk just <strong>stays Pending and retries</strong>. An outage can make recovery slower — it can never silently hand the app a blank disk that then gets backed up as if it were real.</p></div>`,
       show:PVC_HL + FIG_RBB },
 
-    { n:"Lesson 5 of 8", title:"Turning backups on — one reference",
+    { n:"Lesson 5 of 9", title:"Turning backups on — one reference",
       learn:`<p>You might expect pages of backup config per app. Instead there's a shared, reusable block (a Kustomize <strong>component</strong>) that every app just <em>references</em>. This is the entire wiring for Karakeep's backups:</p>
       <p>The <code>components:</code> line pulls in all the standard backup settings; the two files above it are Karakeep's own disk + its backup rules (next lesson). That's it. →</p>
       <div class="goal"><span class="g-ic">✓</span><span>You learned: backups are switched on by <strong>referencing a shared component</strong>, not by copy-pasting config.</span></div>`,
       show:KUST + cap("One reference wires up the whole backup system.") },
 
-    { n:"Lesson 6 of 8", title:"When to back up, and how to restore",
+    { n:"Lesson 6 of 9", title:"When to back up, and how to restore",
       learn:`<p>Two small rules finish the picture. A <strong>SnapshotSchedule</strong> says <em>when</em> to back up — here, every hour. A <strong>Restore</strong> says <em>how</em> to come back.</p>
       <p>Notice <code>runAsUser: 1001</code> — the backup runs as the same user that owns the data, so it can actually read the files. And <code>onMissingSnapshot: Continue</code> politely means: <em>“brand-new app with no backup yet? Start empty and begin protecting it from now.”</em></p>
-      <div class="goal"><span class="g-ic">✓</span><span>You learned: an hourly <strong>schedule</strong> plus a <strong>restore</strong> rule is all a protected app needs.</span></div>`,
+      <div class="goal"><span class="g-ic">✓</span><span>You learned: an hourly <strong>schedule</strong> plus a <strong>restore</strong> rule is all a protected app needs.</span></div>
+      <div class="note"><div class="nt">⌨️ can't wait for the hour?</div><p><code>kubectl kopiur snapshot now --policy data-pvc -n karakeep</code> takes a backup on demand — handy right before risky changes.</p></div>`,
       show:STUB + cap("<b>Real</b> backup + restore rules for Karakeep's disk.") },
 
-    { n:"Lesson 7 of 8", title:"How it all boots — in careful waves",
+    { n:"Lesson 7 of 9", title:"How it all boots — in careful waves",
       learn:`<p>A tool called <strong>ArgoCD</strong> watches Git and makes the cluster match. It can't start everything at once — the backup engine must exist <em>before</em> an app asks it to restore. So it brings things up in <strong>waves</strong>, and won't start the next wave until the current one is healthy.</p>
       <p>Watch the order on the right. Karakeep is in the last wave, so by the time it needs to restore, everything it depends on is already running. →</p>`,
       show:FIG_WAVES },
 
-    { n:"Lesson 8 of 8", title:"The payoff: destroy it all, get it back",
+    { n:"Lesson 8 of 9", title:"What deliberately does NOT use this path",
+      learn:`<p>Two kinds of data skip the snapshot machinery — <strong>on purpose</strong>, and each skip is written down.</p>
+      <p><strong>Databases</strong> (Postgres) are backed up by a database-aware tool instead (<strong>CNPG&nbsp;/&nbsp;Barman</strong> streaming to its own S3 bucket). Copying a database's disk mid-write can capture a torn, half-written state; the database tool archives its own write-ahead log and restores to a consistent point in time.</p>
+      <p><strong>Disposable data</strong> (caches, analytics, easily-rebuilt files) is marked <code>backup-exempt: "true"</code> — always paired with a written <em>reason</em>, so “not backed up” is a recorded decision, never an accident. A CI check audits every disk: protected, or exempt-with-reason. Nothing in between.</p>
+      <div class="goal"><span class="g-ic">✓</span><span>You learned: databases use their own SQL-aware backups, and every unprotected disk carries a written reason.</span></div>`,
+      show:`<div class="figframe"><div class="pvc2">
+    <div class="kard keep"><h4>🐘 Databases</h4><p class="tl">CNPG / Barman → own S3 bucket</p><ul><li>SQL-aware, point-in-time</li><li>never raw disk snapshots</li><li>separate restore runbook</li></ul></div>
+    <div class="kard"><h4>🏷️ Exempt (on purpose)</h4><p class="tl">backup-exempt + written reason</p><ul><li>caches &amp; analytics (PostHog, Redis)</li><li>rebuildable media/scratch</li><li>CI audits every disk</li></ul></div>
+  </div></div>` + cap("Two sanctioned exits — <b>everything else</b> must be protected.") },
+
+    { n:"Lesson 9 of 9", title:"The payoff: destroy it all, get it back",
       learn:`<p>The moment of truth. Someone deletes the <strong>entire cluster</strong> — every node and disk, gone. But Git and the off-site backup aren't part of the cluster, so they survive.</p>
       <p>Rebuilding is one script: ArgoCD walks the waves again → recreates Karakeep → the disk hits <code>dataSourceRef</code> and holds Pending → the backup streams back in → the disk turns green → the app starts. <strong>Karakeep is live again at <code>karakeep.vanillax.me</code> with every bookmark.</strong></p>
       <div class="note tip"><div class="nt">✅ proven, not theoretical</div><p>This cluster was destroyed and rebuilt <strong>twice in 36 hours</strong>. Every protected volume auto-restored; the second rebuild took ~75 minutes with zero manual storage steps.</p></div>
       <h3 style="font-size:16px;margin:22px 0 2px;">Keep going →</h3>
       <ul class="reflist">
+        <li><a href="../../kopiur-playground/">Interactive kopiur playground</a><span class="ds">Break things safely: delete the disk, take S3 offline, nuke the cluster — watch all three outcomes.</span></li>
+        <li><a href="../../easy-guide/">The easy guide</a><span class="ds">This course's big sibling — the whole stack from zero, with the adoption ladder for your own cluster.</span></li>
         <li><a href="../../domains/storage/kopiur-backup-architecture/">kopiur backup architecture (the guide)</a><span class="ds">The full diagrams + the add-a-backup checklist.</span></li>
         <li><a href="../../storage-architecture/">Storage architecture (source of truth)</a><span class="ds">The PVC decision flow and component topology.</span></li>
         <li><a href="../../domains/argocd/argocd/">ArgoCD architecture &amp; sync waves</a><span class="ds">How discovery and wave-gating really work.</span></li>
@@ -310,7 +333,9 @@
   ];
 
   // ---------- driver ----------
+  const KEY="backups-course-lesson";
   let i = 0;
+  try{ const v=parseInt(localStorage.getItem(KEY),10); if(v>0 && v<L.length) i=v; }catch(e){}
   const learnEl=document.getElementById("learn"), showEl=document.getElementById("show");
   const dotsEl=document.getElementById("dots");
   L.forEach((_,k)=>{ const b=document.createElement("button"); b.className="dot"; b.setAttribute("aria-label","lesson "+(k+1)); b.addEventListener("click",()=>go(k)); dotsEl.appendChild(b); });
@@ -329,7 +354,7 @@
     document.querySelector(".learn").scrollTop=0; showEl.scrollTop=0;
     window.scrollTo(0,0);
   }
-  function go(k){ i=Math.max(0,Math.min(L.length-1,k)); render(); }
+  function go(k){ i=Math.max(0,Math.min(L.length-1,k)); try{localStorage.setItem(KEY,i);}catch(e){} render(); }
   document.getElementById("next").addEventListener("click",()=>{ if(i===L.length-1) go(0); else go(i+1); });
   document.getElementById("prev").addEventListener("click",()=>go(i-1));
   document.addEventListener("keydown",(e)=>{ if(e.key==="ArrowRight")go(i+1); if(e.key==="ArrowLeft")go(i-1); });

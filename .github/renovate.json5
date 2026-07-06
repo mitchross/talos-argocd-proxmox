@@ -126,6 +126,17 @@
       ],
       versioning: 'regex:^(?<major>\\d{4})\\.(?<minor>\\d{1,2})\\.(?<patch>\\d{1,2})-[a-f0-9]+$',
     },
+    {
+      description: 'radar-ng Open-Meteo: block known-bad 1.5.3 image, which is missing libparquet-glib.so.2400 and crashloops the forecast API. Allow 1.5.4+ only after human review.',
+      matchPackageNames: [
+        'ghcr.io/open-meteo/open-meteo',
+      ],
+      matchFileNames: [
+        'my-apps/development/radar-ng/deployment-open-meteo.yaml',
+      ],
+      allowedVersions: '<1.5.3 || >=1.5.4',
+      automerge: false,
+    },
     // -------------------------------------------------------------------
     // PostHog image rules
     // -------------------------------------------------------------------
@@ -265,6 +276,17 @@
       matchPackageNames: ['cloudnative-pg'],
       registryUrls: ['https://cloudnative-pg.github.io/charts'],
       enabled: false,
+    },
+    {
+      // kopiur is pre-1.0: 0.x MINORS are breaking by convention, and upstream
+      // has announced a chart refactor with intentional breaking changes
+      // (home-operations/kopiur#203, "maximum breaking changes", 2026-07-05).
+      // CLAUDE.md rule: re-verify CRDs on every bump — impossible if it
+      // automerges. PRs still open immediately; merge is manual.
+      description: 'kopiur chart/image bumps require manual review — pre-1.0 breaking minors + announced breaking chart refactor (#203)',
+      matchPackageNames: ['kopiur', 'ghcr.io/home-operations/charts/kopiur', 'ghcr.io/home-operations/kopiur-controller', 'ghcr.io/home-operations/kopiur-webhook', 'ghcr.io/home-operations/kopiur-mover'],
+      automerge: false,
+      prCreation: 'immediate',
     },
     {
       // argo-cd is the self-managing app: when its sync wedges, the entire

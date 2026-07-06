@@ -8,9 +8,8 @@ resources:
   - prometheus-http-route.yaml
   - custom-alerts.yaml
   - custom-servicemonitors.yaml
-  - longhorn-backup-alerts.yaml
-  # volsync-alerts + longhorn-pvc-backup-audit removed 2026-06-27 (VolSync/pvc-plumber
-  # retired). A kopiur backup-coverage / stale-snapshot alert is a follow-up.
+  - longhorn-alerts.yaml # volume/node health (was longhorn-backup-alerts.yaml; dead backup-target alerts dropped 2026-07-06)
+  - kopiur-alerts.yaml # kopiur backup staleness/failure alerts (the follow-up promised when volsync-alerts were retired 2026-06-27)
   - argocd-sync-alerts.yaml # ArgoCD control-plane + app-state alerts (stale-sync incident 2026-05-29)
   - dcgm-exporter.yaml # DCGM GPU monitoring
   - gpu-alerts.yaml # GPU alerting rules
@@ -85,7 +84,7 @@ patches:
 helmCharts:
   - name: kube-prometheus-stack
     repo: https://prometheus-community.github.io/helm-charts
-    version: 87.3.0
+    version: 87.10.1
     releaseName: kube-prometheus-stack
     namespace: prometheus-stack
     valuesFile: values.yaml

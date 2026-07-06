@@ -14,7 +14,9 @@ prometheus:
   prometheusSpec:
     # Data retention and storage
     retention: 15d
-    retentionSize: 15GB
+    # PVC below is 50Gi; leave headroom for WAL/compaction but don't strand
+    # ~35Gi (was 15GB).
+    retentionSize: 40GB
     walCompression: true
     # Storage configuration with Longhorn
     storageSpec:
@@ -145,10 +147,10 @@ prometheus:
         - namespace: prometheus-stack
           name: kube-prometheus-stack-alertmanager
           port: 9093
-    caching:
-      enabled: true
-      cacheSize: 500MB
-      cacheTTL: 10m
+    # Accept OTLP metrics on /api/v1/otlp — the OTEL gateway collector exports
+    # its metrics pipeline (k8s_cluster, kubeletstats, app OTLP) here and was
+    # getting 404s while this was off (chart default is false).
+    enableOTLPReceiver: true
 # Alertmanager Configuration
 alertmanager:
   enabled: true
@@ -372,11 +374,11 @@ kubeStateMetrics:
     limits:
       cpu: 200m
       memory: 512Mi
-# kube-state-metrics sub-chart values. Expose PVC backup labels and
-# annotations so that alerts can join on the real backup label rather than
-# on a missing volumeattributesclass series, and so the
-# ProtectedPVCSkipRestoreStale alert can detect long-lived skip-restore
-# escape-hatch annotations the operator forgot to remove after a rebuild.
+# kube-state-metrics sub-chart values. Expose PVC backup labels so alerts
+# and dashboards can distinguish backup-exempt and CNPG-managed PVCs.
+# (The ProtectedPVCSkipRestoreStale alert this originally served was retired
+# with pvc-plumber 2026-06-27; kopiur backup health is alerted via
+# kopiur-alerts.yaml instead.)
 kube-state-metrics:
   metricLabelsAllowlist:
     # backup-exempt surfaces explicitly-exempt PVCs; cnpg.io/cluster distinguishes
