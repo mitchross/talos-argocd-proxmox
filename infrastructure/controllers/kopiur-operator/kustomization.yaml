@@ -24,7 +24,15 @@ helmCharts:
     # terminally fail backups (#201). Directly relevant: Longhorn under load
     # throws exactly those (DR doc "attach conflicts"); pre-0.5.2 they burned
     # the whole run until the next cron.
-    version: 0.5.2
+    # 0.6.0 (2026-07-06): the breaking chart refactor (#206) — pre-verified
+    # 2026-07-06 before release: our values keys keep their paths; CRDs moved
+    # from templated resources to Helm's native crds/ dir. That move DELETED
+    # CRDs (and every kopiur CR with them) for Flux HelmRelease users on
+    # upgrade — helm doesn't manage crds/ on upgrade. Our path is immune:
+    # helm template --include-crds (this includeCRDs: true) emits the same 8
+    # CRDs before and after, so ArgoCD never sees them leave the manifest.
+    # NEVER remove includeCRDs: true — it IS the CRD lifecycle here.
+    version: 0.6.0
     releaseName: kopiur
     namespace: kopiur-system
     includeCRDs: true

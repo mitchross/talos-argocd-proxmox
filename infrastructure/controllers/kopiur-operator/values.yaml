@@ -9,10 +9,6 @@
 # chart bumps (nothing updated them). Pin image.*.digest before trusting
 # this for anything real.
 installScope: cluster # ClusterRole + ClusterRepository reconciliation
-installCRDs: true # 0.5.x: chart ships the CRDs as templates. The 0.6 chart
-# refactor (upstream #206) moves them to Helm's native crds/ dir and drops this
-# flag — DELETE this line when bumping to 0.6; kustomization includeCRDs: true
-# keeps rendering them either way (helm template --include-crds).
 webhook:
   failurePolicy: Ignore # deliberate (DR-safety): a kopiur outage must never gate CR creation
   tls:

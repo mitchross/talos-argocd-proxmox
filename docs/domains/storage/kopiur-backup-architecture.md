@@ -188,7 +188,7 @@ or [`my-apps/home/project-nomad/mysql/`](https://github.com/mitchross/talos-argo
 
 ---
 
-## 6. Upstream 0.5.x notes (assessed 2026-07-04, updated 2026-07-06, chart pinned `0.5.2`)
+## 6. Upstream 0.5.x/0.6 notes (assessed 2026-07-04, updated 2026-07-06, chart pinned `0.6.0`)
 
 What changed upstream in 0.5.0–0.5.2 and how it lands here:
 
@@ -205,17 +205,21 @@ What changed upstream in 0.5.0–0.5.2 and how it lands here:
   restore there is **no consumer pod to inherit from**. Explicit
   data-owner uids in the stubs stay the rule
   (`kopiur-mover-permissions.md`).
-- **Chart refactor landed upstream** (#203 → PR #206, merged 2026-07-06;
-  ships in the next release, presumably 0.6). **Pre-verified against our
-  values (2026-07-06):** `installScope`, `webhook.failurePolicy`, and
-  `webhook.tls.mode` keep their exact paths; image tags still default to
-  `.Chart.AppVersion`; `failurePolicy: Ignore` confirmed in the render;
-  CRDs move from templated resources to Helm's native `crds/` dir, which
-  our Kustomize `includeCRDs: true` still renders. The ONLY migration step
-  at the 0.6 bump: delete the now-inert `installCRDs: true` line from
-  `kopiur-operator/values.yaml` (noted inline there). New in the render:
-  a leader-election Role/RoleBinding (leaderElection defaults on) — benign.
-  Renovate opens the bump PR but won't automerge it (renovate.json5 rule).
+- **0.6.0 = the breaking chart refactor** (#203 → #206), bumped here
+  2026-07-06. Our values keys (`installScope`, `webhook.failurePolicy`,
+  `webhook.tls.mode`) kept their paths; the inert `installCRDs` line was
+  deleted; images follow appVersion as before. New in the render: a
+  leader-election Role/RoleBinding — benign.
+  **⚠️ The upgrade that burned everyone else:** CRDs moved from templated
+  chart resources to Helm's native `crds/` dir, and Helm does NOT manage
+  `crds/` on upgrade — Flux HelmRelease users had the old templated CRDs
+  **deleted on upgrade, taking every kopiur CR with them**, then had to
+  force-reconcile them back (upstream Discord, 2026-07-06). **This repo's
+  render path is immune**: Kustomize runs `helm template --include-crds`,
+  which emits the same 8 CRDs before and after the move, so ArgoCD never
+  sees them leave the manifest (CRD-set continuity render-verified at the
+  bump). The load-bearing line is `includeCRDs: true` in
+  `kopiur-operator/kustomization.yaml` — never remove it.
 
 - **`copyMethod` now defaults to `Snapshot` upstream** (was `Direct`). We were
   already pinning `Snapshot` via the component — **keep the explicit pin**:
