@@ -11,7 +11,7 @@
 # TEMPORAL_DEPLOYMENT_NAME, TEMPORAL_WORKER_BUILD_ID into every Pod — do not
 # set them via env here.
 #
-# Image is built by .gitea/workflows/build-temporal-worker.yml. Renovate
+# Image is built by .github/workflows/ghcr-temporal-worker.yml. Renovate
 # auto-PRs bumps. Each tag bump becomes a new build_id + progressive rollout.
 apiVersion: temporal.io/v1alpha1
 kind: WorkerDeployment
@@ -51,7 +51,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: registry.vanillax.me/radar-ng-temporal-worker:v1.1.15
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.15
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false

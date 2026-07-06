@@ -23,7 +23,7 @@
 
 set -euo pipefail
 
-REGISTRY="${REGISTRY:-registry.vanillax.me}"
+REGISTRY="${REGISTRY:-ghcr.io/mitchross}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUNTIME="${RUNTIME:-docker}"  # override with RUNTIME=podman if preferred
 
