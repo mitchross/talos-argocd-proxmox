@@ -215,9 +215,27 @@ or [`my-apps/home/project-nomad/mysql/`](https://github.com/mitchross/talos-argo
 
 ---
 
-## 6. Upstream 0.5.x notes (assessed 2026-07-04, chart pinned `0.5.1`)
+## 6. Upstream 0.5.x notes (assessed 2026-07-04, updated 2026-07-06, chart pinned `0.5.2`)
 
-What changed upstream in 0.5.0/0.5.1 and how it lands here:
+What changed upstream in 0.5.0–0.5.2 and how it lands here:
+
+- **0.5.2: transient VolumeSnapshot errors are retried, not terminal** (#201).
+  Before, a Longhorn hiccup during CSI staging burned the whole backup run.
+- **Failed `Snapshot` CRs are terminal by design** — kopiur never retries a
+  failed run in place; the **next cron fires a fresh Snapshot** (partial
+  uploads in the Kopia repo are reused, so retries are cheap). Failed CRs are
+  pruned at `failedJobsHistoryLimit` (default 10). A staging hang fails at
+  `spec.staging.timeout` (default 10m, reason `StagingTimedOut`).
+- **`inheritSecurityContextFrom: pvcConsumer: {}`** exists as an alternative to
+  hand-set mover uids — we deliberately DON'T use it: bjw-s reported it
+  detecting the wrong consumer uid intermittently, and during a DR cold-start
+  restore there is **no consumer pod to inherit from**. Explicit
+  data-owner uids in the stubs stay the rule
+  (`kopiur-mover-permissions.md`).
+- **⚠️ Chart refactor incoming** (upstream #203): maintainer announced a Helm
+  chart rework with intentional breaking changes. Renovate is pinned to
+  manual review for kopiur (renovate.json5 rule) — when that PR arrives,
+  re-render locally and re-verify values keys + CRDs before merging.
 
 - **`copyMethod` now defaults to `Snapshot` upstream** (was `Direct`). We were
   already pinning `Snapshot` via the component — **keep the explicit pin**:
