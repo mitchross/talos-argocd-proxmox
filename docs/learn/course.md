@@ -11,9 +11,10 @@ animated diagrams. No Kubernetes experience needed.
 
     ---
 
-    8 short lessons · ~12 min. Learn what a PVC is, the one line (`dataSourceRef`) that makes
-    data restore itself, how sync waves order the boot, and what actually happens when the
-    cluster is rebuilt from nothing.
+    9 short lessons · ~14 min. Learn what a PVC is, the one line (`dataSourceRef`) that makes
+    data restore itself, how sync waves order the boot, what deliberately does NOT use this
+    path (databases, exempt disks), and what actually happens when the cluster is rebuilt
+    from nothing. Your progress is remembered — leave and come back any time.
 
     [:octicons-arrow-right-24: Open the course](../backups-course/){ .md-button .md-button--primary }
 

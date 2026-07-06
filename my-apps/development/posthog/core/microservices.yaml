@@ -83,7 +83,7 @@ spec:
     spec:
       containers:
         - name: property-defs-rs
-          image: ghcr.io/posthog/posthog/property-defs-rs:master@sha256:b848c8e8b90eea139c0ce2e733f3455dc7c8424c9ead63006e4a8fadd7d3487b
+          image: ghcr.io/posthog/posthog/property-defs-rs:master@sha256:948bc6adbc51ef825c9f8560678ef80ca50ecbfdafc8328ebbc4350c3bc967e4
           env:
             - name: PGPASSWORD
               valueFrom:
@@ -131,7 +131,7 @@ spec:
     spec:
       containers:
         - name: cyclotron-janitor
-          image: ghcr.io/posthog/posthog/cyclotron-janitor:master@sha256:fc732677c67f8181c98aec751cecf0d8e787e0eb44fecce78ccc2bcf0a517e90
+          image: ghcr.io/posthog/posthog/cyclotron-janitor:master@sha256:13233c8536bea9d8942b5ee79bcfb5e74fcd7c020806358e72ad3d11cefdff2b
           env:
             - name: PGPASSWORD
               valueFrom:
@@ -181,7 +181,7 @@ spec:
     spec:
       containers:
         - name: cymbal
-          image: ghcr.io/posthog/posthog/cymbal:master@sha256:bc27c4c98326813193a69dd994197a7b6b26483243422018824c38874f5af92d
+          image: ghcr.io/posthog/posthog/cymbal:master@sha256:af7a44bef100f50df6b96773888756ff6a50c661a7aa435fd61129766e56017e
           env:
             - name: PGPASSWORD
               valueFrom:

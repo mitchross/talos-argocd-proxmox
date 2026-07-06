@@ -20,7 +20,11 @@ helmCharts:
     #   - metrics renamed (kopiur_snapshot_* → kopiur_policy_last_backup_*) —
     #     chart ServiceMonitor/PrometheusRule/dashboard all disabled; nothing
     #     in monitoring/ scrapes kopiur metric names.
-    version: 0.5.1
+    # 0.5.2 (2026-07-05): one fix — transient VolumeSnapshot errors no longer
+    # terminally fail backups (#201). Directly relevant: Longhorn under load
+    # throws exactly those (DR doc "attach conflicts"); pre-0.5.2 they burned
+    # the whole run until the next cron.
+    version: 0.5.2
     releaseName: kopiur
     namespace: kopiur-system
     includeCRDs: true
