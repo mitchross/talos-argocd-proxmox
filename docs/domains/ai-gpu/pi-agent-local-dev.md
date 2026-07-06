@@ -12,7 +12,9 @@
 > Stack targets: Kubernetes/Talos GitOps (this repo), JavaScript/Node/
 > TypeScript, Python, React Native, Temporal.io.
 >
-> Last updated: 2026-07-04.
+> Last updated: 2026-07-06 (post live benchmark — see §6 gotchas 10–12 and
+> the scripted-mode section in §4a; models.json + Perplexica curls now match
+> the verified deployed config).
 
 ## Architecture
 
@@ -50,8 +52,8 @@ don't fight these from the client:
       "compat": {
         "supportsDeveloperRole": false,
         "supportsReasoningEffort": false,
-        "thinkingFormat": "chat-template",
-        "chatTemplateKwargs": { "enable_thinking": { "$var": "thinking.enabled" } }
+        "supportsUsageInStreaming": false,
+        "thinkingFormat": "qwen-chat-template"
       },
       "models": [
         {
@@ -69,11 +71,16 @@ don't fight these from the client:
 }
 ```
 
-- `enable_thinking` is Qwen's chat-template kwarg; the server defaults it off
-  (`--default-chat-template-kwargs`), and this mapping lets pi's thinking
-  toggle (Shift+Tab) turn it on per request. If thinking doesn't engage,
-  try `"thinkingFormat": "qwen"` (pi ships a qwen preset) and re-test —
-  `models.json` hot-reloads on `/model`, no restart needed.
+- `"qwen-chat-template"` is a pi ≥0.80 built-in preset that maps pi's thinking
+  toggle (Shift+Tab) to Qwen's `enable_thinking` chat-template kwarg — no
+  manual `chatTemplateKwargs` block needed. Verified against the server
+  (2026-07-06) via vLLM `/tokenize`: per-request kwargs are honored (nothink
+  renders the forced-empty `<think></think>`, +2 tokens). The server defaults
+  thinking off (`--default-chat-template-kwargs`); `models.json` hot-reloads
+  on `/model`, no restart needed.
+- `"supportsUsageInStreaming": false` matches what this vLLM route delivers —
+  side effect: **pi's token counters read 0** for these runs. Measure work in
+  wall time and tool-call counts (from the session JSONL), not tokens.
 - `input: ["text","image"]` enables pi's screenshot flow (the 27B is
   multimodal).
 - Select with `/model` or `pi --model qwen3.6-27b`. Verify tools work:
@@ -84,7 +91,7 @@ don't fight these from the client:
 
 | Claude Code | pi equivalent | Notes |
 |---|---|---|
-| `CLAUDE.md` | `AGENTS.md` (global `~/.pi/agent/`, plus per-repo, concatenated up the dir tree) | this repo already ships `CLAUDE.md`s — symlink or copy: `ln -s CLAUDE.md AGENTS.md` |
+| `CLAUDE.md` | `AGENTS.md` (global `~/.pi/agent/`, plus per-repo, concatenated up the dir tree) — and pi ≥0.80 **discovers `CLAUDE.md` natively** (see `--no-context-files` in `pi --help`) | no symlink needed: this repo's nested `CLAUDE.md`s load as-is |
 | Skills | Skills — **same Agent Skills standard** | `~/.pi/agent/skills/` or `.pi/skills/`; invoke `/skill:name` |
 | Slash commands | Prompt templates in `~/.pi/agent/prompts/` / `.pi/prompts/` | plain markdown, `/name` expands |
 | MCP servers | **`pi install npm:pi-mcp-adapter`** (not in core — see §4a) | token-efficient proxy: ONE `mcp` tool (~200 tokens) instead of hundreds of tool defs |
@@ -194,10 +201,17 @@ Two tiers, both local/private:
 1. Quick lookups — SearXNG JSON:
    `curl -s 'https://search.vanillax.me/search?q=QUERY&format=json' | jq '.results[:5] | .[] | {title, url, content}'`
    (needs `format: json` enabled in SearXNG settings — check once)
-2. Synthesized answers with citations — Perplexica API:
-   `curl -s https://perplexica.vanillax.me/api/search -H 'Content-Type: application/json' -d '{"query":"QUERY","focusMode":"webSearch","optimizationMode":"balanced"}'`
-   (verify the request schema against the deployed Perplexica version once,
-   then pin the working curl here)
+2. Synthesized answers with citations — Perplexica (vane v1.12) API.
+   Schema pinned against the deployed version (verified 2026-07-05): the old
+   `focusMode` field is GONE; `sources` is an array and `chatModel`/
+   `embeddingModel` are required `{providerId, key}` objects. Use
+   `"stream": true` — non-stream buffers the whole agent run (can exceed
+   120s); streaming returns `sources` events in seconds:
+   `curl -sN -m 180 https://perplexica.vanillax.me/api/search -H 'Content-Type: application/json' -d '{"query":"QUERY","sources":["web"],"optimizationMode":"speed","stream":true,"chatModel":{"providerId":"llama-cpp-cluster","key":"qwen3.6-27b"},"embeddingModel":{"providerId":"transformers-default","key":"Xenova/all-MiniLM-L6-v2"}}'`
+   (output is ND-JSON events: `sources` then `response` chunks; if models
+   change, re-list with `curl -s https://perplexica.vanillax.me/api/providers`.
+   The chat model is the SAME vLLM instance pi runs on — each call takes one
+   of the two `--max-num-seqs` slots.)
 
 Fetch promising URLs with `curl -sL` and read the content — don't answer
 from snippets alone. Cite URLs in the final answer.
@@ -236,7 +250,9 @@ here, and why the choices interact with the *local* backend:
 ```bash
 pi install npm:pi-mcp-adapter   # MCP servers (restart pi after)
 pi install npm:pi-plan          # read-only plan mode + approve-to-execute
-pi install npm:pi-subagents     # parallel isolated subagents (read warning below)
+# npm:pi-subagents — NOT installed (removed 2026-07-06: zero usage in session
+# history, and wide fan-outs fight --max-num-seqs 2 anyway; reinstall if a
+# real parallel-isolation need appears — read the warning below first)
 ```
 
 **MCP via `pi-mcp-adapter`** — config lives in `~/.pi/agent/mcp.json` (global)
@@ -273,7 +289,10 @@ if you want structured cluster reads instead of the `k8s-debug` skill's
 kubectl calls, GitHub MCP for PR/issue flows. Skip MCP wrappers for things
 with good CLIs (temporal, argocd) — the CLI costs zero context.
 
-**Subagents (`pi-subagents`) — mind the backend.** Parallel subagents each
+**Subagents (`pi-subagents`) — currently NOT installed** (removed 2026-07-06
+along with `pi-goal`: zero historical usage, and every extension is failure
+surface — see the scripted-mode section). If you reinstall, mind the backend:
+parallel subagents each
 open their own request against vLLM, and `--max-num-seqs 2` means a fan-out
 of 3+ queues (and each queued request still pays full prefill when it lands).
 Use subagents for *sequential isolation* (fresh context per task) rather than
@@ -285,6 +304,34 @@ long context.
 default for anything touching this repo, since a wrong `kubectl` habit here
 becomes a cluster incident; it pairs with the `k8s-debug` skill's
 "diagnose read-only, fix via git" rule.
+
+### ⚠️ Scripted mode (`pi -p`) reliability — learned the hard way (2026-07-06)
+
+Driving pi non-interactively (`pi -p`, cron, CI, benchmark harnesses) hit an
+**intermittent pre-request hang**: the node event loop parks before the first
+HTTP request ever leaves the machine (server provably idle, ~0 CPU), and pi
+has **no client-side request timeout**, so it hangs until the HTTPRoute's 30m
+cut. Reproduced 5× in one session; forensics stack-sampled to the event loop.
+What we know:
+
+- **`@narumitw/pi-goal` was the main aggravator** — it reacts to task-shaped
+  prompts ("fix X", "implement Y") pre-request; trivial prompts ("run ls")
+  always passed. Removing it (`pi remove npm:@narumitw/pi-goal`) fixed the
+  streak instantly — but ONE recurrence without it says it's a startup race
+  pi-goal aggravates, not solely causes.
+- **`--no-extensions` does NOT unload settings.json packages** — it only
+  disables extension *discovery*. Bisecting with `-ne` proves nothing about
+  installed packages; use `pi remove` (or `pi config`) to actually exclude one.
+- Interactive TUI use is unaffected — this is a scripted-mode problem.
+
+Operational rules for scripted pi:
+1. Put the instructions in a `TASK.md` and prompt just
+   `"Read TASK.md in this directory and do exactly what it says."` — short
+   argv prompts, instructions in files.
+2. Wrap every run in a watchdog: if no session-JSONL event appears within
+   ~2 min, kill and relaunch (a retry almost always lands).
+3. Constrain debugging turns: "no prose — write a repro, run it, minimal fix,
+   verify" (see gotcha #11 for why).
 
 ### LazyPi — use the picker, not "install all" (local-model verdict)
 
@@ -313,10 +360,16 @@ Validated facts that matter for THIS setup:
   descriptions = more invocation surface to fumble. pi's own docs admit
   models "don't always" read the full SKILL.md before acting; keep the
   skill list short so the daily driver can't grab the wrong one.
+- **Every extension is in-process failure surface, not just prompt bloat.**
+  Live evidence (2026-07-06): a single convenience extension (`pi-goal`)
+  silently wedged every scripted task-shaped run pre-request and cost an
+  hour to bisect (§4a scripted-mode section). Sixty more packages is sixty
+  more chances at that. The bar is now: an extension must justify itself
+  against "this might be the next thing I spend an hour bisecting."
 
 **Verdict: works with our model and setup, but run the interactive picker
 and take ~6–8 pieces, not everything.** Worth taking: `pi-mcp-adapter`,
-`pi-plan`, `pi-subagents`, diff review, memory (trial it — it also injects
+`pi-plan`, diff review, memory (trial it — it also injects
 context each turn), a theme. Skip: the bulk skill catalog (write the 3–4
 skills from §4 instead), usage tracking (local = $0), and the **Claude Code
 CLI provider** (this toolchain doesn't use Claude Code; frontier access is
@@ -418,6 +471,25 @@ the model *can* run `kubectl delete`. Layered mitigation for cluster work:
    MTP n=3 (club-3090's default dual recipe) is specifically a *code-decode*
    win (149 → ~264 TPS on code) — pi is the workload that benefits most.
    Tracked in `3090-llm-optimization.md`.
+10. **Scripted `pi -p` can hang pre-request, forever.** No client timeout;
+    intermittent startup race aggravated by prompt-reactive extensions
+    (pi-goal). Full story + workarounds (TASK.md prompts, watchdog+retry,
+    `--no-extensions` caveat) in §4a's scripted-mode section.
+11. **Open-ended debug prompts trigger mega-generations.** "Diagnose the root
+    cause" once produced a 25-minute unbounded think-ramble (model simulating
+    the program in its head instead of running it). Constrain debug turns to
+    tool use: write a repro, run it, minimal fix. And when giving the model
+    failing-test feedback, give the FULL expected output and quote the spec
+    rule — partial hints once produced a confident spec-violating "fix" that
+    masked the symptom and self-declared success.
+12. **The 27B's blind spots survive its own verification.** Benchmarked
+    2026-07-06 (hard cron+DAG-scheduler challenge, 32 hidden tests): one-shot
+    96.9% in ~10 min — genuinely strong, better cron algorithm than the
+    frontier reference — but a checklist+self-tests discipline run scored the
+    SAME 96.9% with the SAME bug: its self-written checklist omitted the rule
+    it misconceived, and its self-tests avoided the case. One round of
+    precise external feedback → 100% in 60s. Moral: local model writes the
+    code; an external oracle (real tests, frontier review) buys the last 3%.
 
 ## 7. OpenCode alongside pi (same backend, different job)
 
