@@ -232,10 +232,17 @@ What changed upstream in 0.5.0–0.5.2 and how it lands here:
   restore there is **no consumer pod to inherit from**. Explicit
   data-owner uids in the stubs stay the rule
   (`kopiur-mover-permissions.md`).
-- **⚠️ Chart refactor incoming** (upstream #203): maintainer announced a Helm
-  chart rework with intentional breaking changes. Renovate is pinned to
-  manual review for kopiur (renovate.json5 rule) — when that PR arrives,
-  re-render locally and re-verify values keys + CRDs before merging.
+- **Chart refactor landed upstream** (#203 → PR #206, merged 2026-07-06;
+  ships in the next release, presumably 0.6). **Pre-verified against our
+  values (2026-07-06):** `installScope`, `webhook.failurePolicy`, and
+  `webhook.tls.mode` keep their exact paths; image tags still default to
+  `.Chart.AppVersion`; `failurePolicy: Ignore` confirmed in the render;
+  CRDs move from templated resources to Helm's native `crds/` dir, which
+  our Kustomize `includeCRDs: true` still renders. The ONLY migration step
+  at the 0.6 bump: delete the now-inert `installCRDs: true` line from
+  `kopiur-operator/values.yaml` (noted inline there). New in the render:
+  a leader-election Role/RoleBinding (leaderElection defaults on) — benign.
+  Renovate opens the bump PR but won't automerge it (renovate.json5 rule).
 
 - **`copyMethod` now defaults to `Snapshot` upstream** (was `Direct`). We were
   already pinning `Snapshot` via the component — **keep the explicit pin**:
