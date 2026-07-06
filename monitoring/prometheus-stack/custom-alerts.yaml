@@ -87,26 +87,12 @@ spec:
           annotations:
             summary: "ArgoCD Application {{ $labels.name }} is unhealthy"
             description: "ArgoCD Application {{ $labels.name }} in project {{ $labels.project }} is in an unhealthy state."
-    # Storage Alerts (Longhorn)
-    - name: storage.longhorn
-      interval: 30s
-      rules:
-        - alert: LonghornVolumeHealthy
-          expr: longhorn_volume_state{state!~"attached|detached"} > 0
-          for: 5m
-          labels:
-            severity: critical
-          annotations:
-            summary: "Longhorn volume {{ $labels.volume }} is unhealthy"
-            description: "Longhorn volume {{ $labels.volume }} is in state {{ $labels.state }}"
-        - alert: LonghornNodeStorageSpaceLow
-          expr: (longhorn_node_storage_usage_bytes / longhorn_node_storage_capacity_bytes) * 100 > 90
-          for: 5m
-          labels:
-            severity: warning
-          annotations:
-            summary: "Longhorn node {{ $labels.node }} storage space is low"
-            description: "Longhorn node {{ $labels.node }} storage usage is above 90% (current value: {{ printf \"%.2f\" $value }}%)"
+    # Longhorn alerts live in longhorn-alerts.yaml. The two rules that used
+    # to sit here (LonghornVolumeHealthy, LonghornNodeStorageSpaceLow) were
+    # duplicates of LonghornVolumeFaulted/Degraded and LonghornNodeStorageLow;
+    # LonghornVolumeHealthy also flapped (a faulted volume cycles through
+    # attaching/detaching every ~2m, resetting its `for: 5m`) so it never
+    # fired during the 2026-07-02 karakeep volume fault. Removed 2026-07-06.
     # Prometheus Stack Health
     - name: monitoring.stack.health
       interval: 30s

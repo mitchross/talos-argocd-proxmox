@@ -1,0 +1,126 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: longhorn-alerts
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack
+    app.kubernetes.io/instance: kube-prometheus-stack
+    app.kubernetes.io/managed-by: Helm
+    prometheus: kube-prometheus-stack-prometheus
+    role: alert-rules
+spec:
+  groups:
+    # Volume + node health. The old longhorn.backup group (backup target,
+    # backup jobs, recurring jobs) was deleted 2026-07-06: PVC backups moved
+    # to kopiur (see kopiur-alerts.yaml) and no Longhorn backupstore is
+    # configured, so longhorn_backup_*/longhorn_recurring_* metrics are absent.
+    - name: longhorn.volume
+      rules:
+        # longhorn_volume_robustness is one-hot encoded with a `state` label
+        # (healthy/degraded/faulted/unknown), NOT `robustness`. The previous
+        # exprs matched on robustness="..." and could never fire — verified
+        # 2026-07-06 when a faulted volume (karakeep data-pvc) alerted nothing
+        # for 4 days.
+        # max_over_time makes this flap-proof: a faulted volume cycles through
+        # attaching/detaching/salvage every ~2m, briefly leaving the faulted
+        # state, which would reset a plain `for:` timer.
+        - alert: LonghornVolumeFaulted
+          expr: max_over_time(longhorn_volume_robustness{state="faulted"}[10m]) == 1
+          for: 2m
+          labels:
+            severity: critical
+            component: longhorn
+            category: volume
+          annotations:
+            summary: "Longhorn volume is faulted: {{ $labels.volume }}"
+            description: |
+              Volume {{ $labels.volume }} is in faulted state — Longhorn cannot
+              serve it and attach attempts will loop. Data loss is possible.
+
+              IMMEDIATE ACTIONS:
+              1. Check engine/replica state: kubectl -n longhorn-system get engines,replicas -l longhornvolume={{ $labels.volume }}
+              2. Check instance-manager logs for the replica open error
+              3. If the replica is unrecoverable, restore from kopiur
+                 (docs/storage-architecture.md § Restore drill)
+            runbook_url: "https://longhorn.io/docs/latest/troubleshooting/"
+        - alert: LonghornVolumeDegraded
+          expr: longhorn_volume_robustness{state="degraded"} == 1
+          for: 15m
+          labels:
+            severity: warning
+            component: longhorn
+            category: volume
+          annotations:
+            summary: "Longhorn volume is degraded: {{ $labels.volume }}"
+            description: |
+              Volume {{ $labels.volume }} has fewer healthy replicas than desired
+              for more than 15 minutes (rebuilds normally clear this sooner).
+
+              Actions:
+              1. Check node health and storage capacity
+              2. Check replica rebuild progress in the Longhorn UI
+            runbook_url: "https://longhorn.io/docs/latest/troubleshooting/"
+        - alert: LonghornSnapshotChainTooLong
+          expr: longhorn_volume_snapshot_count > 100
+          for: 5m
+          labels:
+            severity: warning
+            component: longhorn
+            category: snapshot
+          annotations:
+            summary: "Longhorn volume has too many snapshots: {{ $labels.volume }}"
+            description: |
+              Volume {{ $labels.volume }} has {{ $value }} snapshots.
+              Long snapshot chains can impact performance.
+            runbook_url: "https://longhorn.io/docs/latest/snapshots-and-backups/snapshots/"
+        - alert: LonghornNodeStorageLow
+          expr: |
+            (
+              (longhorn_node_storage_capacity_bytes - longhorn_node_storage_usage_bytes) /
+              longhorn_node_storage_capacity_bytes
+            ) * 100 < 20
+          for: 10m
+          labels:
+            severity: warning
+            component: longhorn
+            category: storage
+          annotations:
+            summary: "Longhorn node storage is running low: {{ $labels.node }}"
+            description: |
+              Node {{ $labels.node }} has less than 20% Longhorn storage available.
+
+              Actions:
+              1. Clean up unused volumes/snapshots
+              2. Add more storage to the node
+            runbook_url: "https://longhorn.io/docs/latest/troubleshooting/"
+    - name: longhorn.performance
+      rules:
+        - alert: LonghornVolumeHighLatency
+          expr: "histogram_quantile(0.99, \n  rate(longhorn_volume_read_latency_seconds_bucket[5m])\n) > 0.1\n"
+          for: 5m
+          labels:
+            severity: warning
+            component: longhorn
+            category: performance
+          annotations:
+            summary: "High read latency on Longhorn volume: {{ $labels.volume }}"
+            description: |
+              Volume {{ $labels.volume }} is experiencing high read latency.
+              99th percentile latency: {{ $value | humanizeDuration }}
+            runbook_url: "https://longhorn.io/docs/latest/troubleshooting/"
+        - alert: LonghornVolumeHighIOPS
+          expr: "rate(longhorn_volume_read_iops_total[5m]) + \nrate(longhorn_volume_write_iops_total[5m]) > 1000\n"
+          for: 10m
+          labels:
+            severity: info
+            component: longhorn
+            category: performance
+          annotations:
+            summary: "High IOPS on Longhorn volume: {{ $labels.volume }}"
+            description: |
+              Volume {{ $labels.volume }} is experiencing high IOPS.
+              Current IOPS: {{ $value | humanize }}
+
+              This is informational - monitor for performance impact.
+            runbook_url: "https://longhorn.io/docs/latest/troubleshooting/"
