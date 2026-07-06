@@ -15,6 +15,8 @@ External clients (e.g. the radar-ng mobile app) hit the Gateway over HTTPS at
 - **Prometheus + Grafana** (`monitoring/prometheus-stack/`) — metrics storage, dashboards, alerting
 - **Loki** (`monitoring/loki-stack/`) — log storage (S3 backend on RustFS)
 - **Tempo** (`monitoring/tempo/`) — trace storage (S3 backend on RustFS)
+- **k8sgpt** (`monitoring/k8sgpt/`) — AI cluster diagnostics via vLLM (`qwen3.6-27b`)
+- **pod-cleanup** (`monitoring/pod-cleanup/`) — 6-hourly CronJob deleting Failed/Succeeded pods cluster-wide
 
 ## Auto-Instrumentation
 
@@ -22,11 +24,18 @@ Apps opt-in by adding an annotation to their Deployment:
 
 ```yaml
 annotations:
-  instrumentation.opentelemetry.io/inject-python: "true"
-  # also: inject-nodejs, inject-java, inject-go, inject-dotnet
+  instrumentation.opentelemetry.io/inject-nodejs: "opentelemetry/default"
+  # also: inject-java, inject-go, inject-dotnet
 ```
 
 The OTEL Operator webhook injects an init container with the OTEL SDK. Traces are sent to the Agent's OTLP endpoint automatically.
+
+**NEVER use `inject-python`** — it crashed every Python app it touched here
+(see README § auto-instrumentation), and `instrumentation.yaml` intentionally
+pins no python image. Only annotate apps whose main container actually runs
+the matching runtime: the injection adds an init container that gates pod
+start on an image pull, so it's pure cost on a non-matching runtime (e.g. a
+static SPA served by nginx).
 
 ## Common Pitfalls
 

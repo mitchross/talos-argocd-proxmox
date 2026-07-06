@@ -21,8 +21,8 @@ spec:
             - /bin/sh
             - -c
             - |
-              echo "Cleaning up Failed pods..."
+              echo "Cleaning up all Failed pods..."
               kubectl delete pods --field-selector=status.phase=Failed -A --ignore-not-found
-              echo "Cleaning up Succeeded pods older than 1h..."
+              echo "Cleaning up all Succeeded pods..."
               kubectl delete pods --field-selector=status.phase=Succeeded -A --ignore-not-found
               echo "Done."
