@@ -220,6 +220,11 @@ What changed upstream in 0.5.0–0.5.2 and how it lands here:
   sees them leave the manifest (CRD-set continuity render-verified at the
   bump). The load-bearing line is `includeCRDs: true` in
   `kopiur-operator/kustomization.yaml` — never remove it.
+  Second 0.6.0 gotcha, caught by CI: the chart's `kubeVersion` floor rose to
+  `>=1.32.0-0`, and `kustomize build --enable-helm` (CI **and** the ArgoCD
+  repo-server) templates with helm's default capabilities (v1.31) unless the
+  helmCharts entry sets `kubeVersion:` — added, pointing at the real cluster
+  version. Any future chart with a kubeVersion constraint needs the same.
 
 - **`copyMethod` now defaults to `Snapshot` upstream** (was `Direct`). We were
   already pinning `Snapshot` via the component — **keep the explicit pin**:
