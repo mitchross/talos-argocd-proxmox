@@ -25,7 +25,8 @@ The DR-doc worked example — two RWO PVCs (`data-pvc` = SQLite bookmarks + asse
 
 Deploy is pure GitOps (merge to `main`, ArgoCD reconciles — no `kubectl apply`):
 - **Wave 2** `kopiur-operator` — renders the OCI chart `oci://ghcr.io/home-operations/charts/kopiur`
-  pinned to `version: 0.5.1`, installs the CRDs + operator + webhook.
+  (version pinned in `infrastructure/controllers/kopiur-operator/kustomization.yaml`),
+  installs the CRDs + operator + webhook.
   `ServerSideApply=true` avoids the 256KB last-applied-config limit on CRDs.
 - **Wave 3** `kopiur-config` — namespace + ESO + `ClusterRepository`.
 - **Wave 6** the my-apps AppSet renders the app with the kopiur CR bundle and the

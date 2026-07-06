@@ -52,7 +52,8 @@ Block the nuke until every box checks — **you restore *from* these**:
       (a past nuke proved an unregistered external credential blocks recovery even with perfect Git state)
 - [ ] Talos secrets / Omni machine configs available off-cluster
 - [ ] **Backups fresh**: each backed-up PVC has a recent `Completed` kopiur `Snapshot` you can live with — apps roll back to exactly that snapshot. Spot-check across namespaces:
-      `kubectl get snapshot -A` (look at the newest per source) and confirm no `SnapshotSchedule` is wedged: `kubectl get snapshotschedule -A`
+      `kubectl get snapshot -A` (look at the newest per source) and confirm no `SnapshotSchedule` is wedged: `kubectl get snapshotschedule -A`.
+      To top up a stale one on demand: `kubectl kopiur snapshot now --policy <name> -n <ns>` (CLI ≥0.5.1, krew)
 - [ ] **No PVC lacks a snapshot it expects to restore from.** A first restore only hydrates if a Snapshot already exists (kopiur `onMissingSnapshot: Continue` binds a snapshot-less PVC *empty* and backs up forward). Confirm every PVC you intend to *restore* (not seed) shows at least one `Completed` Snapshot before the nuke.
 - [ ] Restore canary green: recent `last-drill-result=pass`
 
