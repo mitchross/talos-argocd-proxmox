@@ -24,4 +24,4 @@ spec:
   go:
     image: ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:latest@sha256:664715c04cb854ffdbb920ea1289a86b0717f39e46b18e6584caa9e1f2e4d83f
   dotnet:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:latest@sha256:952864bcc690b8dee91a2f4800b66d408d392492e93c52d1f8cce5c668b31a05
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:latest@sha256:93bd2314f6407d00f462fcd4220211ecfecb31d09a8b46a979dbdb287a8eee66
