@@ -77,10 +77,12 @@ spec:
           - k8s.daemonset.name
           - k8s.replicaset.name
           labels:
+          # Distinct tag names — both previously mapped to `app`, so the
+          # app.kubernetes.io/name value silently overwrote the app label.
           - tag_name: app
             key: app
             from: pod
-          - tag_name: app
+          - tag_name: app_name
             key: app.kubernetes.io/name
             from: pod
         pod_association:
