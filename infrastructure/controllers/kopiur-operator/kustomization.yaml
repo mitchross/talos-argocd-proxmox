@@ -37,3 +37,9 @@ helmCharts:
     namespace: kopiur-system
     includeCRDs: true
     valuesFile: values.yaml
+    # 0.6.0 raised the chart's kubeVersion floor to >=1.32.0-0. Without this
+    # field, `kustomize build --enable-helm` (CI AND the ArgoCD repo-server)
+    # templates with helm's DEFAULT capabilities (v1.31) and the render fails
+    # "chart requires kubeVersion >=1.32.0-0". Keep loosely in step with the
+    # real cluster version (omni/cluster-template/cluster-template.yaml).
+    kubeVersion: "1.36.2"
