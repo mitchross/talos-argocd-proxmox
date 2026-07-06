@@ -16,7 +16,7 @@ spec:
           restartPolicy: Never
           containers:
           - name: cleanup
-            image: bitnami/kubectl:latest@sha256:b9f4412e53f09d76b0991cdd29c0feff4c1d1e112b307e0ab155e5b050a9f4ec
+            image: bitnami/kubectl:latest@sha256:e21d3b5ca1f600677376b5468416e6d025a1380aaec77f981345cccec5916066
             command:
             - /bin/sh
             - -c
