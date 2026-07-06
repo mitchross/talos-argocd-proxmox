@@ -34,10 +34,10 @@ spec:
           type: RuntimeDefault
       containers:
         - name: open-meteo
-          # Pinned after upstream :latest (1.5.3) shipped with a missing
-          # libparquet-glib and crashlooped the forecast API for ~10 h on
-          # 2026-07-02. Renovate proposes bumps; never track :latest here.
-          image: ghcr.io/open-meteo/open-meteo:1.5.3
+          # 1.5.3 ships without libparquet-glib.so.2400 (same break as the
+          # sync-worker's old 1.5.3 base) — pin tag@digest of a verified
+          # build; a bare tag re-pulls broken rebuilds via pullPolicy Always.
+          image: ghcr.io/open-meteo/open-meteo:1.5.2@sha256:1aed7d47ddac28c1f8b69ea94b5e604e05df469baa43843629baaac4a30bac20
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
