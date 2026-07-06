@@ -611,6 +611,7 @@ kubectl -n <ns> get secret kopiur-rustfs
 kubectl get snapshot -A                        # recent runs Completed?
 kubectl -n kopiur-system get pods,clusterrepository
 # Or the official CLI (0.5.1+): kubectl krew install kopiur && kubectl kopiur --help
+# On-demand backup right now: kubectl kopiur snapshot now --policy <name> -n <ns>
 
 # Sync-wave order at a glance
 kubectl get applications -n argocd \
