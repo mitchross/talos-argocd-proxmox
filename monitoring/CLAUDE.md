@@ -16,6 +16,7 @@ External clients (e.g. the radar-ng mobile app) hit the Gateway over HTTPS at
 - **Loki** (`monitoring/loki-stack/`) — log storage (S3 backend on RustFS)
 - **Tempo** (`monitoring/tempo/`) — trace storage (S3 backend on RustFS)
 - **k8sgpt** (`monitoring/k8sgpt/`) — AI cluster diagnostics via vLLM (`qwen3.6-27b`)
+- **Trivy Operator** (`monitoring/trivy-operator/`) — conservative vulnerability + exposed-secret scanning
 - **pod-cleanup** (`monitoring/pod-cleanup/`) — 6-hourly CronJob deleting Failed/Succeeded pods cluster-wide
 
 ## Auto-Instrumentation
