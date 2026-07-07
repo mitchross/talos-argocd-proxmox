@@ -15,8 +15,8 @@ spec:
     anonymized: false
     language: english
     maxTokens: "16384"
-    # Required even for localai/llama-cpp: the k8sgpt CLI refuses to start
-    # without a registered API key, even though llama-cpp does not validate it.
+    # Required even for the local vLLM backend: the k8sgpt CLI refuses to start
+    # without a registered API key, even though vLLM does not validate it here.
     # See secret.yaml for context. Without this the pod CrashLoops with:
     #   "AI provider openai not specified in configuration. Please run k8sgpt auth"
     secret:
