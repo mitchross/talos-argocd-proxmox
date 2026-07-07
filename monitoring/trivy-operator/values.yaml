@@ -13,10 +13,15 @@ operator:
   # Low concurrency: at most 2 scan jobs at once. Homelab nodes, not a fleet.
   scanJobsConcurrentLimit: 2
   scanJobTimeout: 10m
+  # Do not grant cluster-wide Secret/ServiceAccount reads just to discover image
+  # pull credentials. Current registries are public or anonymously readable
+  # inside the cluster; revisit only if scans fail on private images.
+  accessGlobalSecretsAndServiceAccount: false
 
   # --- Phase 1 scanners: ON ---
   vulnerabilityScannerEnabled: true
   exposedSecretScannerEnabled: true
+  sbomGenerationEnabled: false
 
   # --- Deferred scanners: OFF until vuln scanning proves its worth ---
   configAuditScannerEnabled: false

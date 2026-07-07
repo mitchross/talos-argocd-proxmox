@@ -168,6 +168,8 @@ Grafana has data, it's the reverse.
 - GPU alerts/dashboard: `monitoring/prometheus-stack/gpu-alerts.yaml`, `gpu-dashboard.yaml`
 - OTEL Collectors: `infrastructure/controllers/opentelemetry-operator/collector-*.yaml`
 - Auto-instrumentation: `infrastructure/controllers/opentelemetry-operator/instrumentation.yaml`
+- k8sgpt runbook: `monitoring/k8sgpt/README.md`
+- Trivy Operator runbook: `monitoring/trivy-operator/README.md`
 
 ## Retention
 
