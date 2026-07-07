@@ -22,6 +22,11 @@ spec:
     secret:
       name: k8sgpt-llama-cpp-key
       key: api-key
+  # Without this the operator re-runs a full analysis every ~30-40s, hammering
+  # vLLM continuously. 6h is plenty for a homelab; drop lower only if you want
+  # fresher Result CRs. autoRemediation stays off (default) — diagnose only.
+  analysis:
+    interval: 6h
   filters:
     - Pod
     - Service

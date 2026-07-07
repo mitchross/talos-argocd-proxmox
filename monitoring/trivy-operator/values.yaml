@@ -1,0 +1,70 @@
+# Trivy Operator — conservative first rollout.
+# Goal: prove vulnerability + exposed-secret scanning is useful before turning on
+# the noisier compliance / RBAC / infra / config-audit scanners. Keep concurrency
+# and metric cardinality low so it can't hammer the cluster or blow up Prometheus.
+
+# All-namespaces mode (blank targetNamespaces) with a denylist.
+# dvwa is Damn Vulnerable Web App — intentionally vulnerable — so scanning it
+# would permanently drown the dashboard in expected criticals. Exclude it.
+targetNamespaces: ""
+excludeNamespaces: "dvwa"
+
+operator:
+  # Low concurrency: at most 2 scan jobs at once. Homelab nodes, not a fleet.
+  scanJobsConcurrentLimit: 2
+  scanJobTimeout: 10m
+
+  # --- Phase 1 scanners: ON ---
+  vulnerabilityScannerEnabled: true
+  exposedSecretScannerEnabled: true
+
+  # --- Deferred scanners: OFF until vuln scanning proves its worth ---
+  configAuditScannerEnabled: false
+  rbacAssessmentScannerEnabled: false
+  infraAssessmentScannerEnabled: false
+  clusterComplianceEnabled: false
+
+  # Only scan the current revision of a workload, not every historical ReplicaSet.
+  vulnerabilityScannerScanOnlyCurrentRevisions: true
+  configAuditScannerScanOnlyCurrentRevisions: true
+
+  # Metrics: aggregate per-resource severity counts are fine and drive the
+  # dashboard. Per-CVE-id metrics (metricsVulnIdEnabled) are a cardinality bomb
+  # — one series per CVE per image — keep them OFF.
+  metricsFindingsEnabled: true
+  metricsVulnIdEnabled: false
+
+# Emit a ServiceMonitor so kube-prometheus-stack scrapes the operator.
+# serviceMonitorSelectorNilUsesHelmValues:false means any SM is selected, but
+# match the repo convention label for consistency with custom-servicemonitors.yaml.
+serviceMonitor:
+  enabled: true
+  labels:
+    release: kube-prometheus-stack
+
+# Operator deployment resources. Scan jobs have their own resources below.
+resources:
+  requests:
+    cpu: 25m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+trivy:
+  # Hide vulnerabilities with no available fix — pure noise you can't action.
+  ignoreUnfixed: true
+  timeout: "10m0s"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# The chart renders default ClusterComplianceReport specs unless this list is
+# empty. Keep compliance explicitly off in phase 1 so the app does not look like
+# it is running CIS/NSA/PSS checks when the scanner is disabled above.
+compliance:
+  specs: []
