@@ -3,11 +3,12 @@
 # ServiceMonitor; the gauge is trivy_image_vulnerabilities{severity,namespace,
 # image_repository,image_tag,...} = current count per workload image.
 #
-# Design note: ~389 CRITICALs already exist cluster-wide, so "alert on any
-# critical" would be an instant storm. Instead we alert only when a SINGLE image
-# has accumulated a large critical count — the signal that an image is badly out
-# of date and worth a tag bump / base rebuild. Aggregated with max by(image) so
-# multiple ReplicaSet revisions of the same image don't multi-fire.
+# Design note: alerting on any critical would be an instant storm. Instead we
+# alert only when a SINGLE active image has accumulated a large critical count
+# — the signal that an image is badly out of date and worth a tag bump / base
+# rebuild. Trivy retains reports for old Deployment ReplicaSets, so the query
+# joins ReplicaSet reports to kube-state-metrics and excludes scaled-to-zero
+# revisions. Aggregated with max by(image) so shared images don't multi-fire.
 #
 # Deliberately NOT alerting on trivy_image_exposedsecrets yet: the only current
 # hits are upstream test fixtures inside Ruby gems (false positives). Add a
@@ -32,10 +33,31 @@ spec:
     - name: trivy.vulnerabilities
       rules:
         - alert: TrivyImageHighCriticalCount
-          # Tunable threshold. Today's worst offenders: fizzy 35, gotenberg 28,
-          # postgresql 21, project-nomad 17, karakeep 16 — so >15 surfaces the
-          # handful of badly-outdated images without flagging every image.
-          expr: max by (namespace, image_repository, image_tag) (trivy_image_vulnerabilities{severity="Critical"}) > 15
+          # Tunable threshold. >15 surfaces the handful of badly outdated
+          # active images without flagging every image. Non-ReplicaSet reports
+          # pass through; ReplicaSet reports must have at least one live replica.
+          expr: >-
+            max by (namespace, image_repository, image_tag) (
+              trivy_image_vulnerabilities{
+                severity="Critical",
+                resource_kind!="ReplicaSet"
+              }
+              or
+              (
+                trivy_image_vulnerabilities{
+                  severity="Critical",
+                  resource_kind="ReplicaSet"
+                }
+                and on(namespace, resource_name)
+                label_replace(
+                  kube_replicaset_status_replicas > 0,
+                  "resource_name",
+                  "$1",
+                  "replicaset",
+                  "(.+)"
+                )
+              )
+            ) > 15
           for: 30m
           labels:
             severity: warning
