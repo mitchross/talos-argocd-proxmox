@@ -13,6 +13,12 @@ operator:
   # Low concurrency: at most 2 scan jobs at once. Homelab nodes, not a fleet.
   scanJobsConcurrentLimit: 2
   scanJobTimeout: 10m
+  # Standalone mode is broken for multi-container workloads: the operator runs
+  # one Trivy process per workload container in the same scan pod and all share
+  # /tmp/trivy/.cache, so sibling containers hit BoltDB/cache flock timeouts.
+  # Built-in server mode centralizes the cache in one long-running server and
+  # turns scan jobs into clients, which is the current upstream workaround.
+  builtInTrivyServer: true
   # Do not grant cluster-wide Secret/ServiceAccount reads just to discover image
   # pull credentials. Current registries are public or anonymously readable
   # inside the cluster; revisit only if scans fail on private images.
@@ -47,6 +53,24 @@ serviceMonitor:
   labels:
     release: kube-prometheus-stack
 
+# Operator pod hardening. The chart defaults already drop capabilities and make
+# the root filesystem read-only, but do not set runAsNonRoot/seccomp.
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  runAsNonRoot: true
+  privileged: false
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  seccompProfile:
+    type: RuntimeDefault
+  capabilities:
+    drop:
+      - ALL
+
 # Operator deployment resources. Scan jobs have their own resources below.
 resources:
   requests:
@@ -58,15 +82,41 @@ resources:
 
 trivy:
   image:
-    # 0.71.1 has a multi-container scan race in Kubernetes: each scan
-    # container runs Trivy as PID 1, so concurrent containers collide on the
-    # same /tmp/trivy-* temp path/cache lock and one scan container exits
-    # fatal. 0.72.0 includes the upstream Trivy temp-dir fix; keep this
-    # override until the chart default catches up.
+    # Keep the scanner current while the chart default is still 0.71.1. The
+    # multi-container Standalone cache-lock bug still requires built-in server
+    # mode above; this tag alone is not enough.
     tag: 0.72.0
+  # Server cache is disposable vulnerability DB/artifact cache. Use emptyDir so
+  # Trivy does not create a Longhorn PVC that would then need backup/exemption
+  # policy for data we can redownload.
+  storageClassEnabled: false
   # Hide vulnerabilities with no available fix — pure noise you can't action.
   ignoreUnfixed: true
   timeout: "10m0s"
+  server:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 1
+        memory: 1Gi
+    podSecurityContext:
+      runAsUser: 65534
+      runAsNonRoot: true
+      fsGroup: 65534
+      seccompProfile:
+        type: RuntimeDefault
+    securityContext:
+      runAsNonRoot: true
+      privileged: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop:
+          - ALL
   resources:
     requests:
       cpu: 100m
