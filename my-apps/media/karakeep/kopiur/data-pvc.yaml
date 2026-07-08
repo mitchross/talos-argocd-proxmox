@@ -50,9 +50,17 @@ metadata:
   namespace: karakeep
 spec:
   source:
-    fromPolicy:
-      name: data-pvc
-      offset: 0 # 0 = latest snapshot for this policy's identity
+    # DR PIN (2026-07-08): offset:0 kept resolving to a phantom object
+    # (eb7ca5e…) left by failed backups after CSI snapshotting broke on
+    # 2026-07-02, so the populator errored "content not found". Pinned to the
+    # last verified-good snapshot (07-02 02:10 UTC, root k88cb…, restore-tested)
+    # to recover deterministically. Revert to fromPolicy/offset:0 once the
+    # restored volume is healthy and fresh backups are succeeding again.
+    identity:
+      username: data-pvc
+      hostname: karakeep
+      sourcePath: /pvc/data-pvc
+      snapshotID: c32606dfe053be73c2983b6039453115
   # repository, target.populator, policy.onMissingSnapshot ← component
   # mover securityContext (uid 1001) ← per-app patch in kustomization.yaml
   mover:
