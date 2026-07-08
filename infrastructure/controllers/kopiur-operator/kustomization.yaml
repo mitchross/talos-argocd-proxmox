@@ -32,7 +32,11 @@ helmCharts:
     # helm template --include-crds (this includeCRDs: true) emits the same 8
     # CRDs before and after, so ArgoCD never sees them leave the manifest.
     # NEVER remove includeCRDs: true — it IS the CRD lifecycle here.
-    version: 0.6.0
+    # 0.7.0 (2026-07-07): trivial for us — values.yaml unchanged vs 0.6.0,
+    # same kubeVersion floor, same 8-CRD set. Breaking changes are all internal
+    # Rust dep bumps (kube 4.0, croner 3.0) + the RepositoryReplication cred fix
+    # (#200) which we don't use. Render-verified with our values.
+    version: 0.7.0
     releaseName: kopiur
     namespace: kopiur-system
     includeCRDs: true
