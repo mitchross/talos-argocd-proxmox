@@ -1,0 +1,50 @@
+# Trivy vulnerability alerting — pairs with monitoring/trivy-operator (phase-1
+# vuln + exposed-secret scanning). Metrics come from the trivy-operator
+# ServiceMonitor; the gauge is trivy_image_vulnerabilities{severity,namespace,
+# image_repository,image_tag,...} = current count per workload image.
+#
+# Design note: ~389 CRITICALs already exist cluster-wide, so "alert on any
+# critical" would be an instant storm. Instead we alert only when a SINGLE image
+# has accumulated a large critical count — the signal that an image is badly out
+# of date and worth a tag bump / base rebuild. Aggregated with max by(image) so
+# multiple ReplicaSet revisions of the same image don't multi-fire.
+#
+# Deliberately NOT alerting on trivy_image_exposedsecrets yet: the only current
+# hits are upstream test fixtures inside Ruby gems (false positives). Add a
+# .trivyignore for those first, then an exposed-secret alert becomes meaningful.
+#
+# Exposure-scoped alerting (only internet-facing apps) was considered but the
+# metric carries no exposure label; a hand-maintained namespace allowlist is
+# brittle homelab busywork, so we key on severity volume instead.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: trivy-alerts
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack
+    app.kubernetes.io/instance: kube-prometheus-stack
+    app.kubernetes.io/managed-by: Helm
+    prometheus: kube-prometheus-stack-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: trivy.vulnerabilities
+      rules:
+        - alert: TrivyImageHighCriticalCount
+          # Tunable threshold. Today's worst offenders: fizzy 35, gotenberg 28,
+          # postgresql 21, project-nomad 17, karakeep 16 — so >15 surfaces the
+          # handful of badly-outdated images without flagging every image.
+          expr: max by (namespace, image_repository, image_tag) (trivy_image_vulnerabilities{severity="Critical"}) > 15
+          for: 30m
+          labels:
+            severity: warning
+            component: trivy-operator
+            category: security
+          annotations:
+            summary: "{{ $labels.image_repository }}:{{ $labels.image_tag }} has {{ $value }} critical CVEs"
+            description: >-
+              Image {{ $labels.image_repository }}:{{ $labels.image_tag }} in
+              namespace {{ $labels.namespace }} has {{ $value }} fixable CRITICAL
+              vulnerabilities (ignoreUnfixed is on, so all are actionable). Bump
+              the image tag or rebuild it on a newer base image, then re-scan.
