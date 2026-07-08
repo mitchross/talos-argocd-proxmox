@@ -57,6 +57,13 @@ resources:
     memory: 512Mi
 
 trivy:
+  image:
+    # 0.71.1 has a multi-container scan race in Kubernetes: each scan
+    # container runs Trivy as PID 1, so concurrent containers collide on the
+    # same /tmp/trivy-* temp path/cache lock and one scan container exits
+    # fatal. 0.72.0 includes the upstream Trivy temp-dir fix; keep this
+    # override until the chart default catches up.
+    tag: 0.72.0
   # Hide vulnerabilities with no available fix — pure noise you can't action.
   ignoreUnfixed: true
   timeout: "10m0s"
