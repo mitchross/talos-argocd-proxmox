@@ -188,10 +188,17 @@ or [`my-apps/home/project-nomad/mysql/`](https://github.com/mitchross/talos-argo
 
 ---
 
-## 6. Upstream 0.5.x/0.6 notes (assessed 2026-07-04, updated 2026-07-06, chart pinned `0.6.0`)
+## 6. Upstream 0.5.x–0.7 notes (assessed 2026-07-04, updated 2026-07-07, chart pinned `0.7.0`)
 
-What changed upstream in 0.5.0–0.5.2 and how it lands here:
+What changed upstream in 0.5.0–0.7.0 and how it lands here:
 
+- **0.7.0 = a trivial bump for us** (2026-07-07). The chart's `values.yaml` is
+  byte-identical to 0.6.0, the `kubeVersion` floor is unchanged (`>=1.32.0-0`),
+  and the CRD set is the same 8. Its breaking changes are all internal Rust
+  dependency upgrades (kube 4.0, croner 3.0, reqwest/rand) plus the
+  `RepositoryReplication` sync-to credential fix (#200) — which we don't use
+  (no replication). Render-verified with our values: 20 objects, images at
+  `0.7.0`, `failurePolicy: Ignore` intact.
 - **0.5.2: transient VolumeSnapshot errors are retried, not terminal** (#201).
   Before, a Longhorn hiccup during CSI staging burned the whole backup run.
 - **Failed `Snapshot` CRs are terminal by design** — kopiur never retries a
