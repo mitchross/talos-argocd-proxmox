@@ -21,7 +21,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: fizzy
-          image: ghcr.io/basecamp/fizzy:sha-d729cf5
+          image: ghcr.io/basecamp/fizzy:sha-d8ec07d@sha256:5ee67abbc4a096535672fc235250c8c7974416d0f54a5b88612d7e5abdad5d38
           imagePullPolicy: IfNotPresent
           env:
             - name: TZ
