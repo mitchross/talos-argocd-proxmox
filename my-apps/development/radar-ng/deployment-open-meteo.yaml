@@ -68,7 +68,7 @@ spec:
           # libparquet-glib.so.2400 → HRRR sync activity crashed rc=127 and
           # OpenMeteoSyncWorkflow failed. v1.1.3 (radar-ng 144dcb9) pins the
           # base to 1.5.2, matching the serve container.
-          image: ghcr.io/mitchross/radar-ng-open-meteo-worker:v1.1.4
+          image: ghcr.io/mitchross/radar-ng-open-meteo-worker:v1.1.5
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
