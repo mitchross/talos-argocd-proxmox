@@ -40,7 +40,7 @@ data:
               "decimals": 1
             }
           },
-          "gridPos": { "h": 6, "w": 8, "x": 0, "y": 1 },
+          "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
           "id": 2,
           "options": {
             "colorMode": "value",
@@ -49,7 +49,7 @@ data:
             "textMode": "auto",
             "wideLayout": true
           },
-          "title": "Homelab — Total Power Now",
+          "title": "Total Power Now",
           "type": "stat",
           "targets": [
             {
@@ -67,29 +67,29 @@ data:
               "thresholds": {
                 "steps": [
                   { "color": "green", "value": null },
-                  { "color": "yellow", "value": 1 },
-                  { "color": "orange", "value": 3 }
+                  { "color": "yellow", "value": 0.23 },
+                  { "color": "red", "value": 0.28 }
                 ]
               },
-              "unit": "kwatth",
-              "decimals": 2
+              "unit": "currencyUSD",
+              "decimals": 4
             }
           },
-          "gridPos": { "h": 6, "w": 8, "x": 8, "y": 1 },
+          "gridPos": { "h": 6, "w": 6, "x": 6, "y": 1 },
           "id": 3,
           "options": {
             "colorMode": "value",
-            "graphMode": "area",
+            "graphMode": "none",
             "reduceOptions": { "calcs": ["lastNotNull"] },
             "textMode": "auto",
             "wideLayout": true
           },
-          "title": "Energy Today",
+          "title": "Current Rate ($/kWh)",
           "type": "stat",
           "targets": [
             {
-              "expr": "homeassistant_sensor_energy_kwh{entity=\"sensor.homelab_total_energy_today\"}",
-              "legendFormat": "kWh",
+              "expr": "homeassistant_sensor_unit_usd_kwh{entity=\"sensor.current_electricity_rate\"}",
+              "legendFormat": "Rate",
               "refId": "A"
             }
           ]
@@ -111,7 +111,7 @@ data:
               "decimals": 2
             }
           },
-          "gridPos": { "h": 6, "w": 8, "x": 16, "y": 1 },
+          "gridPos": { "h": 6, "w": 6, "x": 12, "y": 1 },
           "id": 4,
           "options": {
             "colorMode": "value",
@@ -120,11 +120,47 @@ data:
             "textMode": "auto",
             "wideLayout": true
           },
-          "title": "Cost Today ($0.21/kWh)",
+          "title": "Cost Today",
           "type": "stat",
           "targets": [
             {
-              "expr": "homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_today\"}",
+              "expr": "homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_daily\"}",
+              "legendFormat": "USD",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "thresholds": {
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 15 },
+                  { "color": "orange", "value": 30 },
+                  { "color": "red", "value": 50 }
+                ]
+              },
+              "unit": "currencyUSD",
+              "decimals": 2
+            }
+          },
+          "gridPos": { "h": 6, "w": 6, "x": 18, "y": 1 },
+          "id": 5,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "reduceOptions": { "calcs": ["lastNotNull"] },
+            "textMode": "auto",
+            "wideLayout": true
+          },
+          "title": "Cost This Month",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_monthly\"}",
               "legendFormat": "USD",
               "refId": "A"
             }
@@ -133,7 +169,76 @@ data:
         {
           "collapsed": false,
           "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
-          "id": 5,
+          "id": 6,
+          "title": "Share of homelab draw",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "unit": "watt",
+              "decimals": 1
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "id": 7,
+          "options": {
+            "pieType": "donut",
+            "reduceOptions": { "calcs": ["lastNotNull"] },
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "values": ["value", "percent"]
+            },
+            "tooltip": { "mode": "multi" }
+          },
+          "title": "Power Share — Per Plug",
+          "type": "piechart",
+          "targets": [
+            {
+              "expr": "homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current_consumption\"}",
+              "legendFormat": "{{friendly_name}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "unit": "percent",
+              "decimals": 1,
+              "min": 0,
+              "max": 100,
+              "custom": { "displayMode": "gradient" }
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "id": 8,
+          "options": {
+            "orientation": "horizontal",
+            "displayMode": "gradient",
+            "reduceOptions": { "calcs": ["lastNotNull"] },
+            "showUnfilled": true,
+            "valueMode": "color"
+          },
+          "title": "Percent of Homelab Total",
+          "type": "bargauge",
+          "targets": [
+            {
+              "expr": "homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current_consumption\"} / scalar(homeassistant_sensor_power_w{entity=\"sensor.homelab_total_power\"}) * 100",
+              "legendFormat": "{{friendly_name}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+          "id": 9,
           "title": "Per-plug power",
           "type": "row"
         },
@@ -147,8 +252,8 @@ data:
               "custom": { "displayMode": "gradient" }
             }
           },
-          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
-          "id": 6,
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 17 },
+          "id": 10,
           "options": {
             "orientation": "horizontal",
             "displayMode": "gradient",
@@ -160,7 +265,7 @@ data:
           "type": "bargauge",
           "targets": [
             {
-              "expr": "homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_smart_plug_current_consumption\"}",
+              "expr": "homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current_consumption\"}",
               "legendFormat": "{{friendly_name}}",
               "refId": "A"
             }
@@ -179,8 +284,8 @@ data:
               }
             }
           },
-          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 16 },
-          "id": 7,
+          "gridPos": { "h": 9, "w": 24, "x": 0, "y": 25 },
+          "id": 11,
           "options": {
             "tooltip": { "mode": "multi", "sort": "desc" },
             "legend": {
@@ -193,39 +298,7 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_smart_plug_current_consumption\"}",
-              "legendFormat": "{{friendly_name}}",
-              "refId": "A"
-            }
-          ]
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "watt",
-              "custom": {
-                "fillOpacity": 10,
-                "lineWidth": 2,
-                "spanNulls": false
-              }
-            }
-          },
-          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 26 },
-          "id": 8,
-          "options": {
-            "tooltip": { "mode": "multi", "sort": "desc" },
-            "legend": {
-              "displayMode": "table",
-              "placement": "right",
-              "calcs": ["mean", "max", "lastNotNull"]
-            }
-          },
-          "title": "Per-Plug Power Over Time",
-          "type": "timeseries",
-          "targets": [
-            {
-              "expr": "homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_smart_plug_current_consumption\"}",
+              "expr": "homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current_consumption\"}",
               "legendFormat": "{{friendly_name}}",
               "refId": "A"
             }
@@ -233,8 +306,8 @@ data:
         },
         {
           "collapsed": false,
-          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
-          "id": 9,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 34 },
+          "id": 12,
           "title": "Cost",
           "type": "row"
         },
@@ -248,8 +321,8 @@ data:
               "custom": { "displayMode": "gradient" }
             }
           },
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 37 },
-          "id": 10,
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 35 },
+          "id": 13,
           "options": {
             "orientation": "horizontal",
             "displayMode": "gradient",
@@ -261,7 +334,36 @@ data:
           "type": "bargauge",
           "targets": [
             {
-              "expr": "homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_cost_today\"}",
+              "expr": "homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_cost_daily\"}",
+              "legendFormat": "{{friendly_name}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "unit": "currencyUSD",
+              "decimals": 2,
+              "custom": { "displayMode": "gradient" }
+            }
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 35 },
+          "id": 14,
+          "options": {
+            "orientation": "horizontal",
+            "displayMode": "gradient",
+            "reduceOptions": { "calcs": ["lastNotNull"] },
+            "showUnfilled": true,
+            "valueMode": "color"
+          },
+          "title": "Cost This Month — Per Plug",
+          "type": "bargauge",
+          "targets": [
+            {
+              "expr": "homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_cost_monthly\"}",
               "legendFormat": "{{friendly_name}}",
               "refId": "A"
             }
@@ -279,8 +381,8 @@ data:
               }
             }
           },
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 37 },
-          "id": 11,
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 43 },
+          "id": 15,
           "options": {
             "tooltip": { "mode": "multi", "sort": "desc" },
             "legend": {
@@ -289,25 +391,36 @@ data:
               "calcs": ["lastNotNull"]
             }
           },
-          "title": "Cost Today Over Time",
+          "title": "Cost Accrual Today (resets at midnight)",
           "type": "timeseries",
           "targets": [
             {
-              "expr": "homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_today\"}",
+              "expr": "homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_daily\"}",
               "legendFormat": "Homelab Total",
               "refId": "A"
             },
             {
-              "expr": "homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_cost_today\"}",
+              "expr": "homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_cost_daily\"}",
               "legendFormat": "{{friendly_name}}",
               "refId": "B"
             }
           ]
         },
         {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "h": 3, "w": 24, "x": 0, "y": 51 },
+          "id": 16,
+          "options": {
+            "mode": "markdown",
+            "content": "**Weekly / monthly / yearly cost & energy history lives in Home Assistant** (Settings → Energy, and the *Homelab Power* dashboard). Prometheus retains only ~15 days, so this Grafana board is real-time + recent detail; long-term trends are kept forever in HA Long-Term Statistics."
+          },
+          "title": "",
+          "type": "text"
+        },
+        {
           "collapsed": false,
-          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 45 },
-          "id": 12,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 54 },
+          "id": 17,
           "title": "Electrical",
           "type": "row"
         },
@@ -319,8 +432,8 @@ data:
               "custom": { "fillOpacity": 10, "lineWidth": 2, "spanNulls": false }
             }
           },
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 46 },
-          "id": 13,
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 55 },
+          "id": 18,
           "options": {
             "tooltip": { "mode": "multi" },
             "legend": { "displayMode": "list", "placement": "bottom" }
@@ -329,7 +442,7 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "homeassistant_sensor_voltage_v{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_smart_plug_voltage\"}",
+              "expr": "homeassistant_sensor_voltage_v{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_voltage\"}",
               "legendFormat": "{{friendly_name}}",
               "refId": "A"
             }
@@ -343,8 +456,8 @@ data:
               "custom": { "fillOpacity": 10, "lineWidth": 2, "spanNulls": false }
             }
           },
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 46 },
-          "id": 14,
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 55 },
+          "id": 19,
           "options": {
             "tooltip": { "mode": "multi" },
             "legend": { "displayMode": "list", "placement": "bottom" }
@@ -353,7 +466,7 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "homeassistant_sensor_current_a{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_smart_plug_current\"}",
+              "expr": "homeassistant_sensor_current_a{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current\"}",
               "legendFormat": "{{friendly_name}}",
               "refId": "A"
             }
@@ -369,5 +482,5 @@ data:
       "timezone": "",
       "title": "Homelab Power & Cost",
       "uid": "homelab-power-cost",
-      "version": 1
+      "version": 2
     }
