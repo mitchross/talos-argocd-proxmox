@@ -8,3 +8,10 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+configMapGenerator:
+  - name: dozzle-config
+    envs:
+      - dozzle.env
+  - name: dozzle-default-profile
+    files:
+      - profile.json
