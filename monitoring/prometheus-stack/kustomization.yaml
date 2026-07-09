@@ -27,10 +27,6 @@ resources:
   - homelab-power-dashboard.yaml # Homelab cost dashboard ($0.21/kWh, 4 homelab plugs only)
   - radar-ng-dashboard.yaml # radar-ng backend dashboard (logs + tile-server metrics)
   - radar-ng-mobile-dashboard.yaml # radar-ng mobile app dashboard (Tempo spans + Loki errors)
-# Strategic merge patches to handle resource conflicts
-patchesStrategicMerge:
-  - alertmanager-config.yaml
-
 # Per-CRD sync-options — kube-prometheus-stack ships several CRDs whose
 # OpenAPI schemas are large enough that ArgoCD's default client-side apply
 # tries to write a `kubectl.kubernetes.io/last-applied-configuration`
@@ -41,6 +37,9 @@ patchesStrategicMerge:
 # kustomization.yaml for the same defensive pattern on CNPG's CRDs.
 # Incident: 2026-05-07 ArgoCD sync failure post-Kyverno-removal merge.
 patches:
+  # Strategic-merge overlay for the Alertmanager config Secret
+  # (migrated from the deprecated patchesStrategicMerge field)
+  - path: alertmanager-config.yaml
   - target:
       kind: CustomResourceDefinition
       name: scrapeconfigs.monitoring.coreos.com

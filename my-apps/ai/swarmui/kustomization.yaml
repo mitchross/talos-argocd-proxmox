@@ -11,5 +11,10 @@ resources:
 - httproute.yaml
 # No kopiur backup — swarmui is unused; all its PVCs are backup-exempt.
 
-commonLabels:
-  app: swarmui
+labels:
+  # includeSelectors: true == the old commonLabels behavior (labels stamped on
+  # metadata, selectors, AND pod templates). Keep true: selectors are immutable
+  # on live Deployments/StatefulSets; flipping to false forces delete/recreate.
+  - includeSelectors: true
+    pairs:
+      app: swarmui
