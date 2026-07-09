@@ -6,6 +6,8 @@
 # see the input_number.rate_* helpers + sensor.current_electricity_rate.
 # Long-term (monthly/yearly) trends come from HA Long-Term Statistics, which
 # outlives Prometheus's 15-day retention.
+#
+# Three plugs: Threadripper GPUs (entity_id gpu_psu_*), NAS PSU, TrueNAS Server.
 title: Homelab Power
 views:
   - title: Overview
@@ -18,7 +20,7 @@ views:
             content: |
               # Homelab Power & Cost
               Real-time draw, per-device share, and time-of-use cost across the
-              GPU PSU, NAS PSU, Proxmox host and TrueNAS host. Cost uses the
+              Threadripper GPUs, NAS PSU and TrueNAS host. Cost uses the
               **all-in marginal rate** (energy + delivery riders + tax) that
               varies by season and peak/off-peak window. Switch entities are
               locked read-only — see the `Homelab plug power-off lockout`
@@ -51,11 +53,9 @@ views:
               - entity: sensor.homelab_total_power
                 name: Total
               - entity: sensor.gpu_psu_current_consumption
-                name: GPU PSU
+                name: Threadripper GPUs
               - entity: sensor.nas_psu_current_consumption
                 name: NAS PSU
-              - entity: sensor.proxmox_server_current_consumption
-                name: Proxmox
               - entity: sensor.truenas_server_current_consumption
                 name: TrueNAS
 
@@ -64,7 +64,7 @@ views:
         cards:
           - type: gauge
             entity: sensor.gpu_psu_power_share
-            name: GPU PSU
+            name: Threadripper GPUs
             unit: "%"
             min: 0
             max: 100
@@ -72,13 +72,6 @@ views:
           - type: gauge
             entity: sensor.nas_psu_power_share
             name: NAS PSU
-            unit: "%"
-            min: 0
-            max: 100
-            needle: true
-          - type: gauge
-            entity: sensor.proxmox_server_power_share
-            name: Proxmox
             unit: "%"
             min: 0
             max: 100
@@ -111,21 +104,17 @@ views:
           - type: section
             label: Today
           - entity: sensor.gpu_psu_cost_daily
-            name: GPU PSU
+            name: Threadripper GPUs
           - entity: sensor.nas_psu_cost_daily
             name: NAS PSU
-          - entity: sensor.proxmox_server_cost_daily
-            name: Proxmox
           - entity: sensor.truenas_server_cost_daily
             name: TrueNAS
           - type: section
             label: This Month
           - entity: sensor.gpu_psu_cost_monthly
-            name: GPU PSU
+            name: Threadripper GPUs
           - entity: sensor.nas_psu_cost_monthly
             name: NAS PSU
-          - entity: sensor.proxmox_server_cost_monthly
-            name: Proxmox
           - entity: sensor.truenas_server_cost_monthly
             name: TrueNAS
 
@@ -135,11 +124,9 @@ views:
         refresh_interval: 30
         entities:
           - entity: sensor.gpu_psu_current_consumption
-            name: GPU PSU
+            name: Threadripper GPUs
           - entity: sensor.nas_psu_current_consumption
             name: NAS PSU
-          - entity: sensor.proxmox_server_current_consumption
-            name: Proxmox
           - entity: sensor.truenas_server_current_consumption
             name: TrueNAS
           - entity: sensor.homelab_total_power
@@ -155,7 +142,6 @@ views:
         entities:
           - sensor.gpu_psu_energy
           - sensor.nas_psu_energy
-          - sensor.proxmox_server_energy
           - sensor.truenas_server_energy
 
       - type: statistics-graph
@@ -168,7 +154,6 @@ views:
         entities:
           - sensor.gpu_psu_cost
           - sensor.nas_psu_cost
-          - sensor.proxmox_server_cost
           - sensor.truenas_server_cost
 
       - type: statistics-graph
@@ -185,7 +170,7 @@ views:
         title: Per-plug detail
         entities:
           - type: section
-            label: GPU PSU
+            label: Threadripper GPUs
           - entity: sensor.gpu_psu_current_consumption
           - entity: sensor.gpu_psu_power_share
           - entity: sensor.gpu_psu_energy_daily
@@ -200,14 +185,6 @@ views:
           - entity: sensor.nas_psu_voltage
           - entity: sensor.nas_psu_current
           - entity: sensor.nas_psu_cost_daily
-          - type: section
-            label: Proxmox Server
-          - entity: sensor.proxmox_server_current_consumption
-          - entity: sensor.proxmox_server_power_share
-          - entity: sensor.proxmox_server_energy_daily
-          - entity: sensor.proxmox_server_voltage
-          - entity: sensor.proxmox_server_current
-          - entity: sensor.proxmox_server_cost_daily
           - type: section
             label: TrueNAS Server
           - entity: sensor.truenas_server_current_consumption

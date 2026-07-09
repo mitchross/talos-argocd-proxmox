@@ -14,6 +14,11 @@ metadata:
 # the pie total balloons). `max by (entity)` collapses duplicates to one series
 # per entity; `instant: true` on the current-value panels evaluates at now, so
 # frozen (stale) series with no recent sample drop out entirely.
+#
+# Three plugs: gpu_psu, nas_psu, truenas_server. The gpu_psu entity_id is kept
+# (preserves history) but the device is now "threadripper-gpus" — the nested
+# label_replace(..., "plug", "threadripper-gpus", "plug", "gpu_psu") remaps just
+# that legend. (Proxmox was removed — that plug was relocated.)
 data:
   homelab-power.json: |
     {
@@ -210,7 +215,7 @@ data:
           "type": "piechart",
           "targets": [
             {
-              "expr": "label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current_consumption\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\")",
+              "expr": "label_replace(label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server)_current_consumption\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\"), \"plug\", \"threadripper-gpus\", \"plug\", \"gpu_psu\")",
               "legendFormat": "{{plug}}",
               "instant": true,
               "refId": "A"
@@ -242,7 +247,7 @@ data:
           "type": "bargauge",
           "targets": [
             {
-              "expr": "label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current_consumption\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\") / scalar(max(homeassistant_sensor_power_w{entity=\"sensor.homelab_total_power\"})) * 100",
+              "expr": "label_replace(label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server)_current_consumption\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\"), \"plug\", \"threadripper-gpus\", \"plug\", \"gpu_psu\") / scalar(max(homeassistant_sensor_power_w{entity=\"sensor.homelab_total_power\"})) * 100",
               "legendFormat": "{{plug}}",
               "instant": true,
               "refId": "A"
@@ -279,7 +284,7 @@ data:
           "type": "bargauge",
           "targets": [
             {
-              "expr": "label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current_consumption\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\")",
+              "expr": "label_replace(label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server)_current_consumption\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\"), \"plug\", \"threadripper-gpus\", \"plug\", \"gpu_psu\")",
               "legendFormat": "{{plug}}",
               "instant": true,
               "refId": "A"
@@ -313,7 +318,7 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current_consumption\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\")",
+              "expr": "label_replace(label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server)_current_consumption\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\"), \"plug\", \"threadripper-gpus\", \"plug\", \"gpu_psu\")",
               "legendFormat": "{{plug}}",
               "refId": "A"
             }
@@ -349,7 +354,7 @@ data:
           "type": "bargauge",
           "targets": [
             {
-              "expr": "label_replace(max by (entity) (homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_cost_daily\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_cost_daily\")",
+              "expr": "label_replace(label_replace(max by (entity) (homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server)_cost_daily\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_cost_daily\"), \"plug\", \"threadripper-gpus\", \"plug\", \"gpu_psu\")",
               "legendFormat": "{{plug}}",
               "instant": true,
               "refId": "A"
@@ -379,7 +384,7 @@ data:
           "type": "bargauge",
           "targets": [
             {
-              "expr": "label_replace(max by (entity) (homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_cost_monthly\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_cost_monthly\")",
+              "expr": "label_replace(label_replace(max by (entity) (homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server)_cost_monthly\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_cost_monthly\"), \"plug\", \"threadripper-gpus\", \"plug\", \"gpu_psu\")",
               "legendFormat": "{{plug}}",
               "instant": true,
               "refId": "A"
@@ -417,7 +422,7 @@ data:
               "refId": "A"
             },
             {
-              "expr": "label_replace(max by (entity) (homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_cost_daily\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_cost_daily\")",
+              "expr": "label_replace(label_replace(max by (entity) (homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server)_cost_daily\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_cost_daily\"), \"plug\", \"threadripper-gpus\", \"plug\", \"gpu_psu\")",
               "legendFormat": "{{plug}}",
               "refId": "B"
             }
@@ -459,7 +464,7 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "label_replace(max by (entity) (homeassistant_sensor_voltage_v{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_voltage\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_voltage\")",
+              "expr": "label_replace(label_replace(max by (entity) (homeassistant_sensor_voltage_v{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server)_voltage\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_voltage\"), \"plug\", \"threadripper-gpus\", \"plug\", \"gpu_psu\")",
               "legendFormat": "{{plug}}",
               "refId": "A"
             }
@@ -483,7 +488,7 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "label_replace(max by (entity) (homeassistant_sensor_current_a{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current\")",
+              "expr": "label_replace(label_replace(max by (entity) (homeassistant_sensor_current_a{entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server)_current\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current\"), \"plug\", \"threadripper-gpus\", \"plug\", \"gpu_psu\")",
               "legendFormat": "{{plug}}",
               "refId": "A"
             }
@@ -499,5 +504,5 @@ data:
       "timezone": "",
       "title": "Homelab Power & Cost",
       "uid": "homelab-power-cost",
-      "version": 3
+      "version": 4
     }

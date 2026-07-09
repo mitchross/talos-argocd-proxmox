@@ -3,14 +3,14 @@
 # Hiding the switch via customize.yaml only removes it from the default UI;
 # the entity is still toggleable via API, the Tapo phone app, or any other
 # Lovelace card. This automation is the actual enforcement — if any of the
-# four homelab plugs flips to "off" we immediately turn it back on and fire
+# three homelab plugs flips to "off" we immediately turn it back on and fire
 # a persistent notification so it's visible in HA + on the bell icon.
 #
 # If you *intentionally* need to power-cycle one of these plugs, disable this
 # automation from Settings > Automations first.
 - id: homelab_plug_poweroff_lockout
   alias: Homelab plug power-off lockout
-  description: Prevents accidental shutdown of GPU PSU / NAS PSU / Proxmox / TrueNAS Tapo plugs.
+  description: Prevents accidental shutdown of Threadripper GPUs / NAS PSU / TrueNAS Tapo plugs.
   mode: parallel
   max: 10
   trigger:
@@ -18,7 +18,6 @@
       entity_id:
         - switch.gpu_psu_smart_plug
         - switch.nas_psu_smart_plug
-        - switch.proxmox_server_smart_plug
         - switch.truenas_server_smart_plug
       from: "on"
       to: "off"
