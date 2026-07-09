@@ -5,7 +5,11 @@
 > backup/restore engine (**kopiur**) and its exact flows live in
 > [kopiur-backup-architecture.md](domains/storage/kopiur-backup-architecture.md)
 > and [kopiur-mover-permissions.md](domains/storage/kopiur-mover-permissions.md).
-> Databases recover via a **separate system** — [CNPG/Barman](domains/cnpg/disaster-recovery.md).
+> Databases recover via a **separate system** — [CNPG/Barman](domains/cnpg/disaster-recovery.md) —
+> while they remain on CNPG. They are migrating to plain Postgres + kopiur
+> (zero-touch, same restore-before-bind as app PVCs) per the
+> [plain Postgres migration doc](domains/cnpg/plain-postgres-migration.md);
+> migrated databases follow the normal kopiur flow in this runbook.
 
 !!! danger
     The destructive steps require explicit operator intent. This documents the

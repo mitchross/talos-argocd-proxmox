@@ -27,11 +27,14 @@ automation is staged but not yet enabled; see below). End state of this rebuild:
   hydrates them from RustFS, then bind with data** — this is correct, not stuck. The
   flow is gated only on Longhorn coming up; populate pods sitting `Pending` while
   storage initializes is normal.
-- **Postgres → CNPG native Barman/S3 (NOT kopiur).** Clusters auto-recover from the
-  backup lineage on bootstrap (`bootstrap.recovery` → external cluster). Small DBs
-  are healthy in minutes; large ones (e.g. gitea) sit on "Setting up primary /
-  Creating primary instance (from backup)" longer while WAL replays — that is
-  recovery in progress, not failure.
+- **Postgres → CNPG native Barman/S3 (NOT kopiur)** while a DB remains on CNPG.
+  Clusters auto-recover from the backup lineage on bootstrap
+  (`bootstrap.recovery` → external cluster). Small DBs are healthy in minutes;
+  large ones (e.g. gitea) sit on "Setting up primary / Creating primary instance
+  (from backup)" longer while WAL replays — that is recovery in progress, not failure.
+  NOTE (2026-07-09): databases are migrating to **plain Postgres + kopiur**
+  (docs/domains/cnpg/plain-postgres-migration.md); migrated ones restore like any
+  other PVC, and NEW databases start on the plain pattern.
 
 ### Self-healing vs. real intervention
 - App pods that depend on a DB or secret go `Init:CrashLoopBackOff` /

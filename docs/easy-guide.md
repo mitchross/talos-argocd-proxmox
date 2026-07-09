@@ -589,9 +589,12 @@ Restores error and retry; PVCs stay `Pending`. Nothing binds empty. Recovery
 is delayed, never corrupted. (Row 3 of the table in Part 5.)
 
 **What about the databases?**
-CNPG Postgres uses Barman WAL archiving to a separate S3 bucket — SQL-aware,
-point-in-time capable, entirely independent of kopiur.
-([CNPG DR](domains/cnpg/disaster-recovery.md).)
+The CNPG-managed ones use Barman WAL archiving to a separate S3 bucket —
+SQL-aware, point-in-time capable, entirely independent of kopiur
+([CNPG DR](domains/cnpg/disaster-recovery.md)). They are migrating to plain
+Postgres + kopiur so databases follow the exact same restore-before-bind flow
+as every other PVC ([migration doc](domains/cnpg/plain-postgres-migration.md));
+new databases start on that pattern directly.
 
 **How do I add a backup to a new app?**
 Six steps, ~5 minutes: find the data owner's uid:gid → label the namespace →
