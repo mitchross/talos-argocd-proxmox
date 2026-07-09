@@ -3,7 +3,7 @@ kind: Namespace
 metadata:
   name: csi-driver-smb
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "-1"  # PSS privileged label must land before the driver workloads (was a positive wave — applied AFTER pods on fresh bootstrap)
   labels:
     pod-security.kubernetes.io/enforce: privileged
     pod-security.kubernetes.io/audit: privileged
