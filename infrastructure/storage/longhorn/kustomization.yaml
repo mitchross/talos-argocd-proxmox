@@ -3,7 +3,8 @@ kind: Kustomization
 namespace: longhorn-system
 resources:
   - namespace.yaml
-  #- httproute.yaml
+  # Longhorn UI route: infrastructure/networking/gateway/httproute-longhorn.yaml
+  # (deploys at wave 4 alongside the Gateway)
   - volumesnapshotclass.yaml
   - node-failure-settings.yaml
   # The chart-created `longhorn` StorageClass provisions V1-engine volumes
