@@ -21,9 +21,14 @@ resources:
 components:
   - ../../common/kopiur-backup
 
-commonLabels:
-  app.kubernetes.io/managed-by: kustomize
-  environment: production
+labels:
+  # includeSelectors: true == the old commonLabels behavior (labels stamped on
+  # metadata, selectors, AND pod templates). Keep true: selectors are immutable
+  # on live Deployments/StatefulSets; flipping to false forces delete/recreate.
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/managed-by: kustomize
+      environment: production
 
 generatorOptions:
   disableNameSuffixHash: true

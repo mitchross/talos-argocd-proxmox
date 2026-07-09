@@ -32,7 +32,7 @@ spec:
             - name: steam-cache
               mountPath: /steam-cache
         - name: copy-config
-          image: busybox
+          image: busybox:1.37
           command:
             - sh
             - -c

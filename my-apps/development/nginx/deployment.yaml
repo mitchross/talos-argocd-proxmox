@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: nginx:alpine
+          image: nginx:1.29-alpine
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

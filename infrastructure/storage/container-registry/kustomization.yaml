@@ -1,6 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+# INTENTIONAL OUTLIER: a user-ish workload (PVC + HTTPRoute) in kube-system.
+# Moving it to its own namespace means recreating the registry PVC (kube-system
+# PVCs are exempt from kopiur by policy, so its data has no restore path) and
+# repointing every image reference at a new Service DNS name. Documented
+# tripwire, not worth the churn — revisit only if the registry is rebuilt.
 namespace: kube-system
 
 resources:
