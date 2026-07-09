@@ -6,6 +6,14 @@ metadata:
   labels:
     grafana_dashboard: "1"
     app.kubernetes.io/name: grafana-dashboards
+# NOTE on the max by (entity) + instant queries below:
+# Home Assistant's Prometheus target label (instance/pod) changes on every HA
+# pod restart, so Prometheus keeps the OLD pod's series (frozen at their last
+# value) for the full retention window. Without dedup, "last value over range"
+# panels sum the live series AND every stale one (e.g. a plug appears 2-3x and
+# the pie total balloons). `max by (entity)` collapses duplicates to one series
+# per entity; `instant: true` on the current-value panels evaluates at now, so
+# frozen (stale) series with no recent sample drop out entirely.
 data:
   homelab-power.json: |
     {
@@ -53,8 +61,9 @@ data:
           "type": "stat",
           "targets": [
             {
-              "expr": "homeassistant_sensor_power_w{entity=\"sensor.homelab_total_power\"}",
+              "expr": "max by (entity) (homeassistant_sensor_power_w{entity=\"sensor.homelab_total_power\"})",
               "legendFormat": "Total",
+              "instant": true,
               "refId": "A"
             }
           ]
@@ -88,8 +97,9 @@ data:
           "type": "stat",
           "targets": [
             {
-              "expr": "homeassistant_sensor_unit_usd_per_kwh{entity=\"sensor.current_electricity_rate\"}",
+              "expr": "max by (entity) (homeassistant_sensor_unit_usd_per_kwh{entity=\"sensor.current_electricity_rate\"})",
               "legendFormat": "Rate",
+              "instant": true,
               "refId": "A"
             }
           ]
@@ -124,8 +134,9 @@ data:
           "type": "stat",
           "targets": [
             {
-              "expr": "homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_daily\"}",
+              "expr": "max by (entity) (homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_daily\"})",
               "legendFormat": "USD",
+              "instant": true,
               "refId": "A"
             }
           ]
@@ -160,8 +171,9 @@ data:
           "type": "stat",
           "targets": [
             {
-              "expr": "homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_monthly\"}",
+              "expr": "max by (entity) (homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_monthly\"})",
               "legendFormat": "USD",
+              "instant": true,
               "refId": "A"
             }
           ]
@@ -198,8 +210,9 @@ data:
           "type": "piechart",
           "targets": [
             {
-              "expr": "homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current_consumption\"}",
-              "legendFormat": "{{friendly_name}}",
+              "expr": "label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current_consumption\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\")",
+              "legendFormat": "{{plug}}",
+              "instant": true,
               "refId": "A"
             }
           ]
@@ -229,8 +242,9 @@ data:
           "type": "bargauge",
           "targets": [
             {
-              "expr": "homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current_consumption\"} / scalar(homeassistant_sensor_power_w{entity=\"sensor.homelab_total_power\"}) * 100",
-              "legendFormat": "{{friendly_name}}",
+              "expr": "label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current_consumption\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\") / scalar(max(homeassistant_sensor_power_w{entity=\"sensor.homelab_total_power\"})) * 100",
+              "legendFormat": "{{plug}}",
+              "instant": true,
               "refId": "A"
             }
           ]
@@ -265,8 +279,9 @@ data:
           "type": "bargauge",
           "targets": [
             {
-              "expr": "homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current_consumption\"}",
-              "legendFormat": "{{friendly_name}}",
+              "expr": "label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current_consumption\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\")",
+              "legendFormat": "{{plug}}",
+              "instant": true,
               "refId": "A"
             }
           ]
@@ -298,8 +313,8 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current_consumption\"}",
-              "legendFormat": "{{friendly_name}}",
+              "expr": "label_replace(max by (entity) (homeassistant_sensor_power_w{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current_consumption\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current_consumption\")",
+              "legendFormat": "{{plug}}",
               "refId": "A"
             }
           ]
@@ -334,8 +349,9 @@ data:
           "type": "bargauge",
           "targets": [
             {
-              "expr": "homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_cost_daily\"}",
-              "legendFormat": "{{friendly_name}}",
+              "expr": "label_replace(max by (entity) (homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_cost_daily\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_cost_daily\")",
+              "legendFormat": "{{plug}}",
+              "instant": true,
               "refId": "A"
             }
           ]
@@ -363,8 +379,9 @@ data:
           "type": "bargauge",
           "targets": [
             {
-              "expr": "homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_cost_monthly\"}",
-              "legendFormat": "{{friendly_name}}",
+              "expr": "label_replace(max by (entity) (homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_cost_monthly\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_cost_monthly\")",
+              "legendFormat": "{{plug}}",
+              "instant": true,
               "refId": "A"
             }
           ]
@@ -395,13 +412,13 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_daily\"}",
+              "expr": "max by (entity) (homeassistant_sensor_unit_usd{entity=\"sensor.homelab_cost_daily\"})",
               "legendFormat": "Homelab Total",
               "refId": "A"
             },
             {
-              "expr": "homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_cost_daily\"}",
-              "legendFormat": "{{friendly_name}}",
+              "expr": "label_replace(max by (entity) (homeassistant_sensor_unit_usd{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_cost_daily\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_cost_daily\")",
+              "legendFormat": "{{plug}}",
               "refId": "B"
             }
           ]
@@ -442,8 +459,8 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "homeassistant_sensor_voltage_v{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_voltage\"}",
-              "legendFormat": "{{friendly_name}}",
+              "expr": "label_replace(max by (entity) (homeassistant_sensor_voltage_v{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_voltage\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_voltage\")",
+              "legendFormat": "{{plug}}",
               "refId": "A"
             }
           ]
@@ -466,8 +483,8 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "homeassistant_sensor_current_a{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current\"}",
-              "legendFormat": "{{friendly_name}}",
+              "expr": "label_replace(max by (entity) (homeassistant_sensor_current_a{entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current\"}), \"plug\", \"$1\", \"entity\", \"sensor\\\\.(.+)_current\")",
+              "legendFormat": "{{plug}}",
               "refId": "A"
             }
           ]
@@ -482,5 +499,5 @@ data:
       "timezone": "",
       "title": "Homelab Power & Cost",
       "uid": "homelab-power-cost",
-      "version": 2
+      "version": 3
     }
