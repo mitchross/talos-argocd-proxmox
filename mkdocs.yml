@@ -108,6 +108,7 @@ nav:
       - Backup/restore/start — beginner guide: domains/cnpg/backup-restore-start-guide.md
       - CNPG explained: domains/cnpg/explained.md
       - CNPG disaster recovery: domains/cnpg/disaster-recovery.md
+      - Plain Postgres migration (CNPG exit ramp): domains/cnpg/plain-postgres-migration.md
   - Networking:
       - Topology: domains/networking/topology.md
       - Cilium policies: domains/networking/policy.md

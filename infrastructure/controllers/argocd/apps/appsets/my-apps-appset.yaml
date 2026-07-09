@@ -22,6 +22,14 @@ spec:
       # project-nomad is intentionally one bundled app at my-apps/home/project-nomad.
       # Its child folders are resources, not generated apps.
       - path: my-apps/*/*
+      # my-apps/common/* holds shared Kustomize Components (kind: Component),
+      # consumed via `components:` from app kustomizations — they are not apps.
+      # kustomize (5.4+) builds a Component directory as an EMPTY render, so
+      # without this exclude the generator creates a phantom zero-resource
+      # Application (e.g. my-apps-kopiur-backup, Synced/Healthy, manages
+      # nothing). Guarded by validate-argocd-apps.sh Check 8.
+      - path: my-apps/common/*
+        exclude: true
   template:
     metadata:
       name: 'my-apps-{{path.basename}}'

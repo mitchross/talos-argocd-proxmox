@@ -30,7 +30,7 @@ spec:
                     operator: DoesNotExist
       containers:
       - name: mcpo-kiwix
-        image: ghcr.io/open-webui/mcpo:main
+        image: ghcr.io/open-webui/mcpo:v0.0.20
         ports:
         - containerPort: 8002
           name: http

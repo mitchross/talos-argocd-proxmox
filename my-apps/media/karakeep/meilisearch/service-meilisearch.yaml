@@ -6,7 +6,8 @@ spec:
   selector:
     app: karakeep-meilisearch
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 7700
       targetPort: 7700
   type: ClusterIP

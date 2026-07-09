@@ -131,6 +131,38 @@ Per-PVC backup configs stay tiny (storing only what varies: cron schedules and t
 
 ---
 
+## Emergency: Pausing Reconciliation (Incident Response)
+
+When you must hand-patch live resources during an incident, `selfHeal: true` will
+revert your fix on the next reconcile. Three escalation levels, smallest first:
+
+1. **One Application** — annotate the Application (same annotation the database
+   AppSet already preserves for DR):
+   ```bash
+   kubectl -n argocd annotate application <app> argocd.argoproj.io/skip-reconcile=true
+   # resume:
+   kubectl -n argocd annotate application <app> argocd.argoproj.io/skip-reconcile-
+   ```
+   Caveat: AppSets with `selfHeal` strip manual annotations unless the AppSet
+   lists them under `ignoreApplicationDifferences` (only the database AppSet
+   does today — add the pointer there before relying on this for other AppSets).
+
+2. **Whole cluster (Argo CD 3.4+)** — the same annotation on the **cluster
+   Secret** pauses reconciliation for every Application targeting that cluster.
+   This cluster uses the implicit in-cluster destination
+   (`https://kubernetes.default.svc`), which has **no cluster Secret by
+   default** — a declarative in-cluster Secret would need to exist first, so
+   this path is currently unavailable here as-is.
+
+3. **Big red switch (works today, any version)** — stop the controller:
+   ```bash
+   kubectl -n argocd scale statefulset argocd-application-controller --replicas=0
+   # resume:
+   kubectl -n argocd scale statefulset argocd-application-controller --replicas=1
+   ```
+   Nothing reconciles, nothing prunes, UI still shows (stale) state. Resume
+   triggers a full re-compare against current git — equivalent to a fresh sync.
+
 ## Related Docs
 
 - [ArgoCD entrypoints](entrypoints.md)
