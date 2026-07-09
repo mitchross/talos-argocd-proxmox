@@ -25,5 +25,10 @@ configMapGenerator:
     files:
       - image_to_llamacpp_base64.py
 
-commonLabels:
-  app: comfyui
+labels:
+  # includeSelectors: true == the old commonLabels behavior (labels stamped on
+  # metadata, selectors, AND pod templates). Keep true: selectors are immutable
+  # on live Deployments/StatefulSets; flipping to false forces delete/recreate.
+  - includeSelectors: true
+    pairs:
+      app: comfyui
