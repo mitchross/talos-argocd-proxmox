@@ -3,6 +3,6 @@ kind: Namespace
 metadata:
   name: snapshot-controller
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "-1"  # PSS privileged label must land before the driver workloads (was a positive wave — applied AFTER pods on fresh bootstrap)
   labels:
     pod-security.kubernetes.io/enforce: privileged
