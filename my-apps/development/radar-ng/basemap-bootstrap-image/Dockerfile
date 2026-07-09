@@ -14,7 +14,7 @@
 # Bases are digest-pinned (repo rule: never float on a tag alone).
 
 # go-pmtiles binary source (distroless upstream; we only want the binary).
-FROM protomaps/go-pmtiles:v1.30.3@sha256:dfd5ce912b0f061002a853fef6dca87dcd3c21ee900c57a3e32bb974daa3e061 AS pmtiles
+FROM protomaps/go-pmtiles:v1.31.0@sha256:7497c3b4274b57902b45f741d25ca495a8a245f6bece93444ad3cecbcad8b202 AS pmtiles
 
 FROM alpine:3@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
 
