@@ -88,7 +88,7 @@ data:
           "type": "stat",
           "targets": [
             {
-              "expr": "homeassistant_sensor_unit_usd_kwh{entity=\"sensor.current_electricity_rate\"}",
+              "expr": "homeassistant_sensor_unit_usd_per_kwh{entity=\"sensor.current_electricity_rate\"}",
               "legendFormat": "Rate",
               "refId": "A"
             }
