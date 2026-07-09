@@ -301,7 +301,7 @@ kubectl apply -f infrastructure/controllers/argocd/ns.yaml
 
 helm upgrade --install argocd argo-cd \
   --repo https://argoproj.github.io/argo-helm \
-  --version 10.1.2 \
+  --version 10.1.3 \
   --namespace argocd \
   --values infrastructure/controllers/argocd/values.yaml \
   --wait --timeout 10m
