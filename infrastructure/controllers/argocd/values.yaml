@@ -218,6 +218,11 @@ controller:
     # Performance: split large app trees across Redis keys
     - name: ARGOCD_APPLICATION_TREE_SHARD_SIZE
       value: "100"
+    # Go GC ceiling ~90% of the 6Gi memory limit: the GC works harder as the
+    # heap approaches this instead of letting the kernel OOM-kill the pod
+    # during comparison spikes. Keep in sync with resources.limits.memory.
+    - name: GOMEMLIMIT
+      value: "5500MiB"
   metrics:
     enabled: true
     applicationLabels:
@@ -243,6 +248,11 @@ repoServer:
   env:
     - name: ARGOCD_EXEC_TIMEOUT
       value: "3m"
+    # Go GC ceiling ~90% of the 4Gi memory limit — big Helm renders
+    # (kube-prometheus-stack) spike the heap; GC pressure beats OOM-kill.
+    # Keep in sync with resources.limits.memory.
+    - name: GOMEMLIMIT
+      value: "3600MiB"
   metrics:
     enabled: true
     serviceMonitor:
