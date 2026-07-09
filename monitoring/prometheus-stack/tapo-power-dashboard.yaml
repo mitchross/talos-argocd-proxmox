@@ -11,8 +11,10 @@ metadata:
 # pod restart, so Prometheus keeps the old pod's series (frozen at their last
 # value) for the retention window; without dedup a plug appears 2-3x. Legends
 # use label_replace(entity) instead of friendly_name because the friendly_name
-# can change across pod generations (e.g. a device rename), which would defeat
-# grouping. See homelab-power-dashboard.yaml for the same pattern.
+# can change across pod generations (a device rename), which would defeat
+# grouping. The gpu_psu entity_id is kept (preserves history) but the device is
+# now "threadripper-gpus" — the second label_replace remaps just that prefix.
+# (Proxmox was removed — that plug was relocated.)
 data:
   tapo-power-monitoring.json: |
     {
@@ -60,7 +62,7 @@ data:
           "type": "stat",
           "targets": [
             {
-              "expr": "label_replace(max by (entity) ({__name__=~\"homeassistant_sensor_power_w|homeassistant_sensor_current_consumption_w\", entity!=\"\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.*)\")",
+              "expr": "label_replace(label_replace(max by (entity) ({__name__=~\"homeassistant_sensor_power_w|homeassistant_sensor_current_consumption_w\", entity!=\"\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.*)\"), \"name\", \"threadripper-gpus$1\", \"name\", \"gpu_psu(.*)\")",
               "legendFormat": "{{name}}",
               "instant": true,
               "refId": "A"
@@ -101,7 +103,7 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "label_replace(max by (entity) ({__name__=~\"homeassistant_sensor_power_w|homeassistant_sensor_current_consumption_w\", entity!=\"\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.*)\")",
+              "expr": "label_replace(label_replace(max by (entity) ({__name__=~\"homeassistant_sensor_power_w|homeassistant_sensor_current_consumption_w\", entity!=\"\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.*)\"), \"name\", \"threadripper-gpus$1\", \"name\", \"gpu_psu(.*)\")",
               "legendFormat": "{{name}}",
               "refId": "A"
             }
@@ -143,7 +145,7 @@ data:
           "type": "stat",
           "targets": [
             {
-              "expr": "label_replace(max by (entity) ({__name__=~\"homeassistant_sensor_energy_kwh|homeassistant_sensor_today_energy_kwh\", entity!=\"\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.*)\")",
+              "expr": "label_replace(label_replace(max by (entity) ({__name__=~\"homeassistant_sensor_energy_kwh|homeassistant_sensor_today_energy_kwh\", entity!=\"\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.*)\"), \"name\", \"threadripper-gpus$1\", \"name\", \"gpu_psu(.*)\")",
               "legendFormat": "{{name}}",
               "instant": true,
               "refId": "A"
@@ -175,7 +177,7 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "label_replace(max by (entity) ({__name__=~\"homeassistant_sensor_voltage_v\", entity!=\"\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.*)\")",
+              "expr": "label_replace(label_replace(max by (entity) ({__name__=~\"homeassistant_sensor_voltage_v\", entity!=\"\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.*)\"), \"name\", \"threadripper-gpus$1\", \"name\", \"gpu_psu(.*)\")",
               "legendFormat": "{{name}}",
               "refId": "A"
             }
@@ -199,7 +201,7 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "label_replace(max by (entity) ({__name__=~\"homeassistant_sensor_current_a\", entity!=\"\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.*)\")",
+              "expr": "label_replace(label_replace(max by (entity) ({__name__=~\"homeassistant_sensor_current_a\", entity!=\"\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.*)\"), \"name\", \"threadripper-gpus$1\", \"name\", \"gpu_psu(.*)\")",
               "legendFormat": "{{name}}",
               "refId": "A"
             }
@@ -239,7 +241,7 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "label_replace(max by (entity) ({__name__=\"homeassistant_sensor_power_w\", entity=~\"sensor\\\\.(gpu_psu|nas_psu|proxmox_server|truenas_server)_current_consumption\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.*)\")",
+              "expr": "label_replace(label_replace(max by (entity) ({__name__=\"homeassistant_sensor_power_w\", entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server)_current_consumption\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.*)\"), \"name\", \"threadripper-gpus$1\", \"name\", \"gpu_psu(.*)\")",
               "legendFormat": "{{name}}",
               "refId": "A"
             }
@@ -254,5 +256,5 @@ data:
       "timezone": "",
       "title": "Tapo Power Monitor",
       "uid": "tapo-power-monitor",
-      "version": 2
+      "version": 3
     }

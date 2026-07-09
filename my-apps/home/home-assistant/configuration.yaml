@@ -46,16 +46,17 @@ recorder:
 # Scoped to homelab Tapo plugs only — household plugs (dryer/office/tv) and the
 # unused homelab-smart-plug are deliberately excluded so the homelab cost
 # dashboard isn't polluted with non-server load. The device-prefix globs
-# (gpu_psu_*, nas_psu_*, proxmox_server_*, truenas_server_*) already capture the
-# new per-device cost/energy/percentage sensors; homelab_cost_* / homelab_total_*
-# capture the totals. Only the standalone rate sensors need explicit globs.
+# (gpu_psu_* = the Threadripper/GPUs box, nas_psu_*, truenas_server_*) already
+# capture the per-device cost/energy/percentage sensors; homelab_cost_* /
+# homelab_total_* capture the totals. Only the standalone rate sensors need
+# explicit globs. NOTE: gpu_psu_* is displayed as "Threadripper GPUs" (see
+# customize.yaml) — the entity_id is kept as gpu_psu_* to preserve history.
 prometheus:
   requires_auth: false
   filter:
     include_entity_globs:
       - sensor.gpu_psu_*
       - sensor.nas_psu_*
-      - sensor.proxmox_server_*
       - sensor.truenas_server_*
       - sensor.homelab_total_*
       - sensor.homelab_cost_*
@@ -72,7 +73,7 @@ prometheus:
       - sensor.tv_smart_plug_*
 
 # Enable energy monitoring (dashboard configured in UI; sensors below feed it).
-# Add the four sensor.<dev>_energy sensors as "Individual devices" in
+# Add the three sensor.<dev>_energy sensors as "Individual devices" in
 # Settings > Dashboards > Energy, optionally attaching the matching <dev>_cost
 # entity, to unlock HA's native daily/monthly/yearly energy+cost history.
 energy:
@@ -158,6 +159,7 @@ input_number:
 # (`integration` platform); the cost integrations integrate a live USD/h
 # cost-rate (power * current TOU rate) so cost accrues at whatever rate was
 # active moment-to-moment — the correct way to handle time-of-use pricing.
+# Three plugs: gpu_psu (Threadripper GPUs), nas_psu, truenas_server.
 # NOTE: every integral starts at 0 when first created and builds up over time;
 # today's numbers are only accurate from the next local midnight onward, and
 # monthly/yearly totals fill in as data accumulates.
@@ -175,13 +177,6 @@ sensor:
     source: sensor.nas_psu_current_consumption
     name: "NAS PSU Energy"
     unique_id: nas_psu_energy
-    unit_prefix: k
-    round: 3
-    method: left
-  - platform: integration
-    source: sensor.proxmox_server_current_consumption
-    name: "Proxmox Server Energy"
-    unique_id: proxmox_server_energy
     unit_prefix: k
     round: 3
     method: left
@@ -218,13 +213,6 @@ sensor:
     round: 4
     method: left
   - platform: integration
-    source: sensor.proxmox_server_cost_rate
-    name: "Proxmox Server Cost"
-    unique_id: proxmox_server_cost
-    unit_time: h
-    round: 4
-    method: left
-  - platform: integration
     source: sensor.truenas_server_cost_rate
     name: "TrueNAS Server Cost"
     unique_id: truenas_server_cost
@@ -253,7 +241,7 @@ sensor:
 # ---------------------------------------------------------------------------
 utility_meter:
   # ===== ENERGY (kWh) =====
-  # GPU PSU
+  # GPU PSU (Threadripper GPUs)
   gpu_psu_energy_daily:
     name: "GPU PSU Energy Daily"
     source: sensor.gpu_psu_energy
@@ -287,23 +275,6 @@ utility_meter:
     name: "NAS PSU Energy Yearly"
     source: sensor.nas_psu_energy
     cycle: yearly
-  # Proxmox Server
-  proxmox_server_energy_daily:
-    name: "Proxmox Server Energy Daily"
-    source: sensor.proxmox_server_energy
-    cycle: daily
-  proxmox_server_energy_weekly:
-    name: "Proxmox Server Energy Weekly"
-    source: sensor.proxmox_server_energy
-    cycle: weekly
-  proxmox_server_energy_monthly:
-    name: "Proxmox Server Energy Monthly"
-    source: sensor.proxmox_server_energy
-    cycle: monthly
-  proxmox_server_energy_yearly:
-    name: "Proxmox Server Energy Yearly"
-    source: sensor.proxmox_server_energy
-    cycle: yearly
   # TrueNAS Server
   truenas_server_energy_daily:
     name: "TrueNAS Server Energy Daily"
@@ -336,7 +307,7 @@ utility_meter:
     cycle: yearly
 
   # ===== COST (USD) =====
-  # GPU PSU
+  # GPU PSU (Threadripper GPUs)
   gpu_psu_cost_daily:
     name: "GPU PSU Cost Daily"
     source: sensor.gpu_psu_cost
@@ -369,23 +340,6 @@ utility_meter:
   nas_psu_cost_yearly:
     name: "NAS PSU Cost Yearly"
     source: sensor.nas_psu_cost
-    cycle: yearly
-  # Proxmox Server
-  proxmox_server_cost_daily:
-    name: "Proxmox Server Cost Daily"
-    source: sensor.proxmox_server_cost
-    cycle: daily
-  proxmox_server_cost_weekly:
-    name: "Proxmox Server Cost Weekly"
-    source: sensor.proxmox_server_cost
-    cycle: weekly
-  proxmox_server_cost_monthly:
-    name: "Proxmox Server Cost Monthly"
-    source: sensor.proxmox_server_cost
-    cycle: monthly
-  proxmox_server_cost_yearly:
-    name: "Proxmox Server Cost Yearly"
-    source: sensor.proxmox_server_cost
     cycle: yearly
   # TrueNAS Server
   truenas_server_cost_daily:
@@ -426,9 +380,9 @@ utility_meter:
 # Template sensors.
 #   * current_electricity_rate  — live all-in USD/kWh (TOU + riders + tax)
 #   * electricity_tariff_period — human label for the active tariff window
-#   * homelab_total_power       — instantaneous draw of all 4 homelab plugs (W)
-#   * homelab_total_energy_today— kWh used today across all 4 (resets at midnight)
-#   * homelab_cost_rate         — live USD/h spend across all 4 (feeds integration)
+#   * homelab_total_power       — instantaneous draw of all 3 homelab plugs (W)
+#   * homelab_total_energy_today— kWh used today across all 3 (resets at midnight)
+#   * homelab_cost_rate         — live USD/h spend across all 3 (feeds integration)
 #   * <plug>_cost_rate          — live USD/h spend per plug (feeds integration)
 #   * <plug>_power_share         — live share of homelab draw (%)
 #   * <plug>_energy_share_today  — share of today's homelab energy (%)
@@ -477,12 +431,10 @@ template:
         availability: >
           {{ states('sensor.gpu_psu_current_consumption') not in ['unknown','unavailable']
              or states('sensor.nas_psu_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.proxmox_server_current_consumption') not in ['unknown','unavailable']
              or states('sensor.truenas_server_current_consumption') not in ['unknown','unavailable'] }}
         state: >
           {{ (states('sensor.gpu_psu_current_consumption') | float(0)
             + states('sensor.nas_psu_current_consumption') | float(0)
-            + states('sensor.proxmox_server_current_consumption') | float(0)
             + states('sensor.truenas_server_current_consumption') | float(0)) | round(1) }}
 
       - name: "Homelab Total Energy Today"
@@ -493,7 +445,6 @@ template:
         state: >
           {{ (states('sensor.gpu_psu_energy_daily') | float(0)
             + states('sensor.nas_psu_energy_daily') | float(0)
-            + states('sensor.proxmox_server_energy_daily') | float(0)
             + states('sensor.truenas_server_energy_daily') | float(0)) | round(3) }}
 
       # ----- live USD/h cost-rate (power_kW * current all-in rate) -----
@@ -520,14 +471,6 @@ template:
         state_class: measurement
         state: >
           {{ (states('sensor.nas_psu_current_consumption') | float(0) / 1000
-            * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
-
-      - name: "Proxmox Server Cost Rate"
-        unique_id: proxmox_server_cost_rate
-        unit_of_measurement: "USD/h"
-        state_class: measurement
-        state: >
-          {{ (states('sensor.proxmox_server_current_consumption') | float(0) / 1000
             * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
 
       - name: "TrueNAS Server Cost Rate"
@@ -559,17 +502,6 @@ template:
           {% set total = states('sensor.homelab_total_power') | float(0) %}
           {% if total > 0 %}
             {{ (states('sensor.nas_psu_current_consumption') | float(0) / total * 100) | round(1) }}
-          {% else %}0{% endif %}
-
-      - name: "Proxmox Server Power Share"
-        unique_id: proxmox_server_power_share
-        unit_of_measurement: "%"
-        state_class: measurement
-        icon: mdi:chart-pie
-        state: >
-          {% set total = states('sensor.homelab_total_power') | float(0) %}
-          {% if total > 0 %}
-            {{ (states('sensor.proxmox_server_current_consumption') | float(0) / total * 100) | round(1) }}
           {% else %}0{% endif %}
 
       - name: "TrueNAS Server Power Share"
@@ -604,17 +536,6 @@ template:
           {% set total = states('sensor.homelab_total_energy_today') | float(0) %}
           {% if total > 0 %}
             {{ (states('sensor.nas_psu_energy_daily') | float(0) / total * 100) | round(1) }}
-          {% else %}0{% endif %}
-
-      - name: "Proxmox Server Energy Share Today"
-        unique_id: proxmox_server_energy_share_today
-        unit_of_measurement: "%"
-        state_class: measurement
-        icon: mdi:chart-donut
-        state: >
-          {% set total = states('sensor.homelab_total_energy_today') | float(0) %}
-          {% if total > 0 %}
-            {{ (states('sensor.proxmox_server_energy_daily') | float(0) / total * 100) | round(1) }}
           {% else %}0{% endif %}
 
       - name: "TrueNAS Server Energy Share Today"
