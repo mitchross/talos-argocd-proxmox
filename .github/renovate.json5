@@ -57,6 +57,16 @@
   },
   packageRules: [
     {
+      description: 'Group ALL container digest pins into one rolling PR. Version bumps stay as separate PRs. Placed first so more-specific rules (PostHog group, etc.) override this groupName.',
+      matchDatasources: [
+        'docker',
+      ],
+      matchUpdateTypes: [
+        'digest',
+      ],
+      groupName: 'all container digests',
+    },
+    {
       matchUpdateTypes: [
         'minor',
         'patch',
