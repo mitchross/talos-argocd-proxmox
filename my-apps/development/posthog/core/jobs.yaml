@@ -104,6 +104,24 @@ spec:
           echo "ClickHouse ready"
           echo "Flushing ClickHouse system logs..."
           wget -q -O- "http://clickhouse:8123/?query=SYSTEM+FLUSH+LOGS" 2>/dev/null || true
+          echo "Applying self-hosted Postgres schema guards..."
+          python - <<'PY'
+          import os
+
+          os.environ.setdefault("DJANGO_SETTINGS_MODULE", "posthog.settings")
+
+          import django
+
+          django.setup()
+
+          from django.db import connection
+
+          with connection.cursor() as cursor:
+              cursor.execute(
+                  "ALTER TABLE public.posthog_person "
+                  "ADD COLUMN IF NOT EXISTS last_seen_at timestamptz NULL"
+              )
+          PY
           echo "Running Django migrations..."
           python manage.py migrate --noinput
           echo "Running ClickHouse migrations..."
