@@ -18,7 +18,6 @@ fi
 TOTAL=$(echo "$PR_NUMBERS" | wc -l | tr -d ' ')
 MERGED=0
 FAILED=0
-SKIPPED=0
 
 echo "Found $TOTAL open PR(s). Merging with '$MERGE_STRATEGY' strategy..."
 echo "-------------------------------------------------------"
