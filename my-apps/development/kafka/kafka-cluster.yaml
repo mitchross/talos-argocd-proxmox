@@ -36,13 +36,6 @@ spec:
         size: 20Gi
         deleteClaim: false
         kraftMetadata: shared
-  template:
-    persistentVolumeClaim:
-      metadata:
-        annotations:
-          # The claim is created/restored by kopiur first, then adopted by
-          # Strimzi. Keep Strimzi from deleting it if the node pool is removed.
-          strimzi.io/delete-claim: "false"
 ---
 apiVersion: kafka.strimzi.io/v1
 kind: Kafka
