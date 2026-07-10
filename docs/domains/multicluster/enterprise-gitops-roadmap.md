@@ -143,7 +143,7 @@ Recommended progression:
 5. Reverting the promotion PR restores the prior desired digest.
 
 Git tags/releases are useful only if Argo or the promotion workflow consumes
-them. Creating release tags while every Application tracks `HEAD` is version
+them. Creating release tags while every Application tracks `main` is version
 bookkeeping, not a deployment control.
 
 Automated sync can remain enabled in every environment when merge permissions,
@@ -358,7 +358,6 @@ A phase is complete only when:
 ## Related planning
 
 - [Concrete heterogeneous fleet PRD](prd.md)
-- [Multi-cluster handoff notes](handoff-notes.md)
 - [Argo CD architecture](../argocd/argocd.md)
 - [kopiur backup architecture](../storage/kopiur-backup-architecture.md)
 - [Disaster recovery runbook](../../disaster-recovery.md)
