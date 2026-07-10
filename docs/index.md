@@ -29,6 +29,10 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
 
 ## Documentation
 
+Every page follows the [documentation reader contract](documentation-standard.md):
+state the current posture, explain unfamiliar choices, provide verifiable steps,
+and include failure/rollback guidance for risky operations.
+
 <div class="grid cards" markdown>
 
 -   📖 **The easy guide** — *share this one*
@@ -86,6 +90,7 @@ Backups are **kopiur** (Kopia-native operator).
 
 - **Databases**: [Plain Postgres migration — CNPG exit ramp, new-DB default](domains/cnpg/plain-postgres-migration.md) · [Backup/restore/start — beginner guide](domains/cnpg/backup-restore-start-guide.md) · [CNPG explained](domains/cnpg/explained.md) · [CNPG disaster recovery](domains/cnpg/disaster-recovery.md)
 - **GitOps / ArgoCD**: [argocd](domains/argocd/argocd.md) · [entrypoints & waves](domains/argocd/entrypoints.md)
+- **Enterprise multi-cluster planning**: [roadmap](domains/multicluster/enterprise-gitops-roadmap.md) · [concrete fleet PRD](domains/multicluster/prd.md)
 - **Networking**: [topology](domains/networking/topology.md) · [policy](domains/networking/policy.md) · [Technitium `vanillax.me` migration](domains/networking/technitium-vanillax-me-migration.md)
 - **Storage**: [kopia maintenance](domains/storage/kopia-maintenance-plan.md) · [RWO/RWX model & sizing](domains/storage/storage-model-rwo-rwx-and-sizing.md) · [RustFS credentials](domains/rustfs/credential-runbook.md) · [future: tiered storage](domains/storage/architecture-future.md)
 - **Multicluster**: [PRD](domains/multicluster/prd.md) · [handoff notes](domains/multicluster/handoff-notes.md)

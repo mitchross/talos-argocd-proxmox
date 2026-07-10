@@ -1,6 +1,6 @@
 # Multi-Cluster PRD — Handoff Notes
 
-> Status: TODO / for later. Companion to [`prd.md`](prd.md) (the Talos + OpenShift SNO fleet). The PRD is the spec; this file is the posture for whoever picks it up.
+> Status: TODO / for later. Companion to [`prd.md`](prd.md) (the Talos + OpenShift SNO fleet) and the broader [enterprise GitOps roadmap](enterprise-gitops-roadmap.md). The PRD is the concrete fleet spec; this file is the posture for whoever picks it up.
 
 ## Opening prompt (forces reconcile-first)
 

@@ -104,8 +104,17 @@ configs:
       managedFieldsManagers:
       - kube-controller-manager
       - kube-scheduler
-    # Enable Application health check for app-of-apps sync waves
-    # This was removed in ArgoCD 1.8 but is needed for sync waves to work properly
+    # Custom health keys use `<API group>_<Kind>`. Argo runs the Lua block with
+    # the live Kubernetes object in `obj`; the script returns `hs.status` and
+    # `hs.message`. `Progressing` holds the parent Application's next sync wave,
+    # `Healthy` releases it, and `Degraded` surfaces a failure. Lua uses `~=` for
+    # "not equal", `..` to join strings, and `or` to choose the first non-nil
+    # value. The nil checks matter because a new CR often has no `.status` until
+    # its controller performs the first reconciliation.
+    #
+    # Child Application health is not assessed automatically by modern Argo CD.
+    # Copy the child's `.status.health` into Argo's health result so the root
+    # app-of-apps waits for each child before advancing to its next sync wave.
     resource.customizations.health.argoproj.io_Application: |
       hs = {}
       hs.status = "Progressing"
@@ -119,9 +128,11 @@ configs:
         end
       end
       return hs
-    # Gate later sync waves on an explicit kopiur restore. This matters for
-    # operator-owned PVCs (Kafka): kopiur creates/restores the exact PVC at an
-    # earlier wave, and the workload must not mount it until phase=Completed.
+    # kopiur Restore has no built-in Argo health assessment. Keep it Progressing
+    # while kopiur resolves and hydrates the volume, report Completed as Healthy,
+    # and preserve the controller's failure message when phase=Failed. This
+    # gates later waves for operator-owned PVCs such as Kafka: kopiur restores
+    # the exact PVC first, and the workload must not mount it until completion.
     resource.customizations.health.kopiur.home-operations.com_Restore: |
       hs = {}
       hs.status = "Progressing"
@@ -142,7 +153,11 @@ configs:
         end
       end
       return hs
-    # KafkaTopic resources land only after Strimzi reports the cluster Ready.
+    # Strimzi Kafka has no built-in Argo health assessment. Walk (`ipairs`) its
+    # condition list and translate Ready=True to Healthy or NotReady=True to
+    # Degraded. Until either condition exists, remain Progressing. Because the
+    # Kafka CR is wave 0 and KafkaTopic is wave 1, this prevents topics from
+    # landing before the broker is actually ready.
     resource.customizations.health.kafka.strimzi.io_Kafka: |
       hs = {}
       hs.status = "Progressing"
@@ -161,8 +176,10 @@ configs:
         end
       end
       return hs
-    # Surface ExternalSecret sync failures (default reports health=None, so a
-    # broken 1Password fetch stays invisible). Keys on the Ready condition.
+    # ExternalSecret otherwise reports no useful Argo health. Translate its
+    # Ready condition so a successful secret fetch is Healthy, a rejected or
+    # failed fetch is Degraded, and a brand-new object remains Progressing until
+    # external-secrets has attempted its first synchronization.
     resource.customizations.health.external-secrets.io_ExternalSecret: |
       hs = {}
       if obj.status ~= nil and obj.status.conditions ~= nil then

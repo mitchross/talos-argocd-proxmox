@@ -2,6 +2,10 @@
 
 > Planning brief, not current cluster truth. Read the live repo and reconcile before acting on any phase.
 
+For the platform-neutral strategy, adoption triggers, and incremental controls
+behind this concrete fleet design, see the
+[enterprise multi-cluster GitOps roadmap](enterprise-gitops-roadmap.md).
+
 ## What this is
 
 A **two-cluster homelab fleet** used to practice heterogeneous multi-cluster GitOps. The two clusters run *deliberately different* Kubernetes distributions so the exercise mirrors a real multi-cloud fleet (e.g. GKE + ARO): the skill being practiced is managing **per-platform divergence** while keeping **applications portable**. The heterogeneity is the point — do **not** try to make the two clusters identical at the platform layer.
