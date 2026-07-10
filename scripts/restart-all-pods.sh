@@ -177,7 +177,7 @@ fi
 
 # Discover and filter workloads
 for kind in "${WORKLOAD_KINDS[@]}"; do
-  kubectl get "$kind" ${KUBECTL_SCOPE[@]} ${KUBECTL_SELECTOR[@]+"${KUBECTL_SELECTOR[@]}"} \
+  kubectl get "$kind" ${KUBECTL_SCOPE[@]+"${KUBECTL_SCOPE[@]}"} ${KUBECTL_SELECTOR[@]+"${KUBECTL_SELECTOR[@]}"} \
     -o go-template='{{range .items}}{{.kind}}{{"\t"}}{{.metadata.namespace}}{{"\t"}}{{.metadata.name}}{{"\t"}}{{index .metadata.labels "argocd.argoproj.io/instance"}}{{"\n"}}{{end}}' \
     2>/dev/null || true
 done | while IFS=$'\t' read -r kind namespace name argo_instance; do

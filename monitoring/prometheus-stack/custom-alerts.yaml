@@ -67,26 +67,9 @@ spec:
           annotations:
             summary: "Node {{ $labels.instance }} has high CPU usage"
             description: "Node {{ $labels.instance }} CPU usage is above 90% (current value: {{ printf \"%.2f\" $value }}%)"
-    # ArgoCD Monitoring
-    - name: argocd.health
-      interval: 30s
-      rules:
-        - alert: ArgoCDApplicationNotSynced
-          expr: argocd_app_info{sync_status!="Synced"} > 0
-          for: 15m
-          labels:
-            severity: warning
-          annotations:
-            summary: "ArgoCD Application {{ $labels.name }} is not synced"
-            description: "ArgoCD Application {{ $labels.name }} in project {{ $labels.project }} has been out of sync for more than 15 minutes."
-        - alert: ArgoCDApplicationUnhealthy
-          expr: argocd_app_info{health_status!="Healthy",health_status!="Progressing"} > 0
-          for: 15m
-          labels:
-            severity: warning
-          annotations:
-            summary: "ArgoCD Application {{ $labels.name }} is unhealthy"
-            description: "ArgoCD Application {{ $labels.name }} in project {{ $labels.project }} is in an unhealthy state."
+    # ArgoCD alerts live exclusively in argocd-sync-alerts.yaml. Keeping the
+    # simpler legacy rules here caused duplicate pages for the same app and did
+    # not account for intentionally manual-sync database Applications.
     # Longhorn alerts live in longhorn-alerts.yaml. The two rules that used
     # to sit here (LonghornVolumeHealthy, LonghornNodeStorageSpaceLow) were
     # duplicates of LonghornVolumeFaulted/Degraded and LonghornNodeStorageLow;

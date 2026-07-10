@@ -13,8 +13,6 @@ labels:
     pairs:
       app.kubernetes.io/name: paperless-db
       app.kubernetes.io/managed-by: argocd
-commonAnnotations:
-  argocd.argoproj.io/sync-wave: "-5"
 resources:
   # - overlays/recovery      # DR-only: restore from Barman v5 → write v6. Re-enable before a nuke.
   - overlays/initdb          # ← ACTIVE (steady state; recovered 2026-06-28). No-op on existing cluster; writes v6.

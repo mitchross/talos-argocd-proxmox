@@ -85,6 +85,7 @@ nav:
   - Overview & architecture:
       - Home — the big picture: index.md
       - The easy guide (explain it to anyone): easy-guide.md
+      - Documentation reader contract: documentation-standard.md
   - GitOps & ArgoCD:
       - ArgoCD architecture: domains/argocd/argocd.md
       - Root entrypoints & sync waves: domains/argocd/entrypoints.md
@@ -121,7 +122,7 @@ nav:
   - Reference & ops:
       - RustFS credential runbook: domains/rustfs/credential-runbook.md
       - Observability — radar-ng cookbook: domains/observability/radar-ng.md
+      - Enterprise multi-cluster roadmap: domains/multicluster/enterprise-gitops-roadmap.md
       - Multicluster — PRD: domains/multicluster/prd.md
-      - Multicluster — handoff notes: domains/multicluster/handoff-notes.md
       - Technitium ExternalDNS — design (historical): superpowers/specs/2026-06-13-technitium-external-dns-design.md
       - Technitium ExternalDNS — plan (historical): superpowers/plans/2026-06-13-technitium-external-dns.md

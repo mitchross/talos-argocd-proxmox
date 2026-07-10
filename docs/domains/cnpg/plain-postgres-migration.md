@@ -28,7 +28,7 @@ the owning app's directory:
 
 | Piece | Key points |
 |---|---|
-| `postgres/deployment.yaml` | `postgres:<MAJOR.MINOR>` pinned; `Recreate`; uid/gid/fsGroup **999**; `PGDATA` subdir; `POSTGRES_DB`/`POSTGRES_USER`/`POSTGRES_PASSWORD` env declare the database on first (empty-volume) boot — no admin tool; `--data-checksums`; `pg_isready` probes; 60s termination grace |
+| `postgres/deployment.yaml` | `postgres:<MAJOR.MINOR>` pinned; `Recreate`; uid/gid/fsGroup **999**; `PGDATA` subdir; `POSTGRES_DB`/`POSTGRES_USER`/`POSTGRES_PASSWORD` env declare the database on first (empty-volume) boot — no admin tool; `--data-checksums`; `pg_isready` startup/readiness/liveness probes; 60s termination grace |
 | `postgres/service.yaml` | named port `postgres`/5432 |
 | `postgres/pvc.yaml` | `longhorn` + `dataSourceRef` → the kopiur `Restore` + the two masking annotations |
 | `kopiur/<app>-postgres-data.yaml` | stub with mover `999:999`, **hourly** retention tier (`keepHourly: 24, keepDaily: 7, keepWeekly: 4`), distinct cron minute |
@@ -37,6 +37,24 @@ Consistency model: kopiur's CSI VolumeSnapshot is crash-consistent
 (point-in-time, single volume). Postgres is designed to recover from exactly
 that — WAL replay on boot, as after a power cut. `--data-checksums` makes any
 torn-page corruption loudly detectable instead of silent.
+
+The startup probe deliberately allows roughly five minutes before liveness
+can restart the container. A large restored database may need a longer budget;
+size it from observed recovery time, not from the normal empty-start time.
+
+### Credential state after restore
+
+The official image's `POSTGRES_*` initialization variables only act on an
+empty data directory. A kopiur restore therefore brings back the database role
+password that existed at snapshot time; changing only the 1Password item does
+not change that role and can lock the application out after either rotation or
+restore.
+
+Treat password rotation as a coordinated stateful operation: authenticate with
+the current password, execute `ALTER ROLE <role> WITH PASSWORD '<new>'`, update
+the 1Password item immediately, let External Secrets reconcile, restart the
+consumers, and verify them before discarding the old credential. Do not place
+the password or SQL command in Git or shell history.
 
 ## Per-app cutover runbook (~15 min, one app at a time)
 
@@ -69,7 +87,7 @@ cluster; nothing changes for the app until step 4. Gitea shown; adjust names.
 5. **Seed the first backup and verify** (do NOT skip — restore-before-bind is
    only as good as the newest snapshot):
    ```bash
-   kubectl -n gitea get snapshot   # wait for Completed with non-zero files
+   kubectl -n gitea get snapshot   # wait for Succeeded with non-zero files
    ```
 6. **Retire the CNPG cluster** — delete
    `infrastructure/database/cloudnative-pg/gitea/` and its entry anywhere it's

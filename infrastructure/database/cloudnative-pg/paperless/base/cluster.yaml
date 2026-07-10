@@ -9,6 +9,8 @@ apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: paperless-database
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
   labels:
     app: paperless-ngx
 spec:

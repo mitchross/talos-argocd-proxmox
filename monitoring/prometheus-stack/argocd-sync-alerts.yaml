@@ -30,7 +30,9 @@ spec:
     - name: argocd.controlplane
       rules:
         # Any ArgoCD component scrape target down (controller, repo-server, server,
-        # applicationset, notifications). If the controller is down, NOTHING syncs.
+        # applicationset). If the controller is down, NOTHING syncs. The
+        # notifications controller is intentionally disabled until a delivery
+        # service is configured, so it is not an expected scrape target.
         - alert: ArgoCDComponentDown
           expr: up{namespace="argocd"} == 0
           for: 5m
@@ -81,10 +83,11 @@ spec:
 
     - name: argocd.appstate
       rules:
-        # Drift ArgoCD CAN see but is not auto-correcting. Scoped to apps with
-        # automated sync ENABLED — databases and other DR apps intentionally run
-        # autosync_enabled="false" and may sit OutOfSync legitimately during
-        # recovery, so they are excluded to avoid permanent false alerts.
+        # Drift ArgoCD sees in an Application with automated sync enabled.
+        # Database Applications also export autosync_enabled="true": their
+        # selfHeal=false setting disables live-drift correction, not automated
+        # sync of new Git revisions. Silence this alert during a deliberate DR
+        # operation rather than pretending those Applications are excluded.
         - alert: ArgoCDAppOutOfSync
           expr: argocd_app_info{sync_status="OutOfSync", autosync_enabled="true"} == 1
           for: 15m
@@ -97,8 +100,9 @@ spec:
             description: |
               Application {{ $labels.name }} (project {{ $labels.project }},
               dest ns {{ $labels.dest_namespace }}) has automated sync enabled but
-              has been OutOfSync for 15m. Auto-sync/selfHeal is failing to converge
-              — usually a sync error, an immutable-field conflict, or a hook stuck.
+              has been OutOfSync for 15m. Automated convergence is failing or
+              live drift is awaiting operator action — usually a sync error, an
+              immutable-field conflict, or a hook stuck.
 
               Actions:
               1. kubectl describe application {{ $labels.name }} -n argocd
@@ -106,6 +110,29 @@ spec:
               3. Try a hard refresh:
                  kubectl annotate application {{ $labels.name }} -n argocd \
                    argocd.argoproj.io/refresh=hard --overwrite
+
+        # ComparisonError and similar failures export sync_status=Unknown, not
+        # OutOfSync. Without this rule a broken repo-server render can disappear
+        # from alerting even though Argo cannot determine desired state.
+        - alert: ArgoCDAppSyncUnknown
+          expr: argocd_app_info{sync_status="Unknown"} == 1
+          for: 10m
+          labels:
+            severity: critical
+            component: argocd
+            category: gitops
+          annotations:
+            summary: "ArgoCD cannot determine sync status: {{ $labels.name }}"
+            description: |
+              Application {{ $labels.name }} has reported sync status Unknown for
+              10m. Argo CD cannot reliably compare Git with the cluster; common
+              causes are manifest-generation, repository, discovery, or diff
+              errors.
+
+              Actions:
+              1. kubectl describe application {{ $labels.name }} -n argocd
+              2. Inspect .status.conditions and repo-server logs.
+              3. Hard-refresh only after recording the comparison error.
 
         # Real resource health failure (CrashLoop, failed Job, unhealthy CR, etc.).
         - alert: ArgoCDAppDegraded
@@ -126,6 +153,28 @@ spec:
               1. kubectl get application {{ $labels.name }} -n argocd -o json \
                  | jq '.status.resources[] | select(.health.status=="Degraded")'
               2. Inspect the degraded workload in dest ns {{ $labels.dest_namespace }}.
+
+        # Missing, Unknown, and Suspended are unhealthy but were not covered by
+        # the narrower Degraded rule. Missing commonly means a pruned/deleted
+        # resource; Unknown can mean Argo lacks a health assessment.
+        - alert: ArgoCDAppHealthAbnormal
+          expr: argocd_app_info{health_status=~"Missing|Unknown|Suspended"} == 1
+          for: 15m
+          labels:
+            severity: warning
+            component: argocd
+            category: gitops
+          annotations:
+            summary: "ArgoCD app health {{ $labels.health_status }}: {{ $labels.name }}"
+            description: |
+              Application {{ $labels.name }} (project {{ $labels.project }}) has
+              reported {{ $labels.health_status }} health for 15m. Check whether
+              a managed resource was pruned, cannot be discovered, or was
+              deliberately suspended.
+
+              Actions:
+              1. kubectl describe application {{ $labels.name }} -n argocd
+              2. Inspect .status.resources and .status.conditions.
 
         # Rollout that never settles. A healthy deploy passes through Progressing
         # briefly; 30m of Progressing means a stuck rollout (image pull, probe
