@@ -1,4 +1,4 @@
-replicaCount: 0
+replicaCount: 1
 
 persistence:
   enabled: true
@@ -38,7 +38,7 @@ gitea:
       SSH_DOMAIN: gitea.vanillax.me
     database:
       DB_TYPE: postgres
-      HOST: gitea-database-rw.cloudnative-pg.svc.cluster.local:5432
+      HOST: gitea-postgres.gitea.svc.cluster.local:5432
       NAME: gitea
       USER: gitea
       SCHEMA: public
