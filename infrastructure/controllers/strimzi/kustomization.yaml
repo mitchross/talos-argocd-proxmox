@@ -2,15 +2,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: kafka
 labels:
-  # includeSelectors: true == the old commonLabels behavior (labels stamped on
-  # metadata, selectors, AND pod templates). Keep true: selectors are immutable
-  # on live Deployments/StatefulSets; flipping to false forces delete/recreate.
+  # Preserve the existing immutable selectors while ownership moves from the
+  # old wave-6 my-apps Application to this wave-4 infrastructure Application.
   - includeSelectors: true
     pairs:
       app.kubernetes.io/name: strimzi
       app.kubernetes.io/managed-by: argocd
-resources:
-  - namespace.yaml
 helmCharts:
   - name: strimzi-kafka-operator
     repo: https://strimzi.io/charts/

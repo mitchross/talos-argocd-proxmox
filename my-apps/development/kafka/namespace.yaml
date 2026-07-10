@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kafka
+  annotations:
+    # The Kafka Application owns its backup prerequisite. Land the label before
+    # its wave -3 policy so ClusterExternalSecret fans in kopiur-rustfs.
+    argocd.argoproj.io/sync-wave: "-4"
+  labels:
+    kopiur.home-operations.com/repo: cluster-kopia

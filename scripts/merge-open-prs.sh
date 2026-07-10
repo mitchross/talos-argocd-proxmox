@@ -18,7 +18,6 @@ fi
 TOTAL=$(echo "$PR_NUMBERS" | wc -l | tr -d ' ')
 MERGED=0
 FAILED=0
-SKIPPED=0
 
 echo "Found $TOTAL open PR(s). Merging with '$MERGE_STRATEGY' strategy..."
 echo "-------------------------------------------------------"
@@ -29,14 +28,13 @@ for NUM in $PR_NUMBERS; do
 
   echo -n "PR #$NUM ($STATE): $TITLE ... "
 
-  OUTPUT=$(gh pr merge "$NUM" --repo "$REPO" --squash --delete-branch 2>&1)
-  if [[ $? -eq 0 ]]; then
+  if OUTPUT=$(gh pr merge "$NUM" --repo "$REPO" --squash --delete-branch 2>&1); then
     echo "✓ merged"
-    ((MERGED++))
+    MERGED=$((MERGED + 1))
   else
     # Could be already merged, conflict, or failing checks
     echo "✗ $OUTPUT"
-    ((FAILED++))
+    FAILED=$((FAILED + 1))
   fi
 done
 

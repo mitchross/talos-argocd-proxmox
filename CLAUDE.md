@@ -108,7 +108,7 @@ docs/                   # Documentation
 - Use sync waves when adding infrastructure components
 - Add ArgoCD hook annotations to all Kubernetes Jobs — `argocd.argoproj.io/hook: Sync` + `argocd.argoproj.io/hook-delete-policy: BeforeHookCreation`. K8s Jobs are immutable after creation; without these, image tag bumps from Renovate cause "field is immutable" sync failures. For standalone Jobs, add annotations directly. For Helm-rendered Jobs, use Kustomize patches targeting `kind: Job`
 - Check `helm show values <chart> | grep -A20 certManager` when adding any Helm chart with webhooks — if a `certManager.enabled` option exists, **set it to `true`**. Helm hook Jobs for webhook certs break under ArgoCD (SA deleted before Job runs = stuck forever = API server death)
-- After adding a backed-up PVC, verify the in-namespace `kopiur-rustfs` Secret (fanned in by the ClusterExternalSecret) and the kopiur CRs: `kubectl -n <ns> get secret kopiur-rustfs; kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot` (the `Snapshot` should reach `Completed` with non-zero files)
+- After adding a backed-up PVC, verify the in-namespace `kopiur-rustfs` Secret (fanned in by the ClusterExternalSecret) and the kopiur CRs: `kubectl -n <ns> get secret kopiur-rustfs; kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot` (the `Snapshot` should reach `Succeeded` with non-zero files)
 - The pvc-plumber→kopiur migration is **closed** (2026-06-27): all PVCs use the kopiur component pattern; pvc-plumber + VolSync are removed. The mover runs as the PVC's data owner uid:gid (baseline PSS gives the mover no read capabilities). See `docs/domains/storage/kopiur-mover-permissions.md`.
 - For abandoned CNPG backup lineages, update `infrastructure/storage/rustfs-lifecycle/postgres-backups-lifecycle-cm.yaml`; keep the full bucket lifecycle policy there because PUT replaces the whole RustFS lifecycle config
 - Use `strategy: type: Recreate` on Deployments with RWO PVCs — **RollingUpdate causes Multi-Attach deadlock**
@@ -189,6 +189,12 @@ Detailed instructions load automatically when working in these directories:
 4. **[docs/domains/storage/kopiur-mover-permissions.md](docs/domains/storage/kopiur-mover-permissions.md)** — why the mover runs as the data owner (the #1 backup gotcha). Plus **[docs/storage-architecture.md](docs/storage-architecture.md)** for the Longhorn/NFS/CNPG storage source-of-truth.
 5. **[docs/disaster-recovery.md](docs/disaster-recovery.md)** — full-cluster destroy/rebuild runbook, pre-nuke checklist, restore-wave expectations, restore canary. **DR source of truth.**
 6. **[docs/domains/](docs/index.md)** — per-domain docs (CNPG, ArgoCD, networking, storage deep-dives).
+
+New and substantially revised documentation follows
+**[docs/documentation-standard.md](docs/documentation-standard.md)**: distinguish
+current state from plans, explain repository-specific syntax, include expected
+results and rollback for risky steps, and link to one canonical source instead
+of duplicating procedures.
 
 > ⚠️ **Agent guardrails when reading docs:**
 > - **Do NOT resurrect Kyverno** — it was removed from the backup path (no policies, no CRDs, no webhooks).

@@ -142,9 +142,9 @@ Grafana has data, it's the reverse.
 
 | Component | Storage | Location |
 |-----------|---------|----------|
-| Prometheus | Longhorn PVC (20Gi) | Local cluster |
-| Grafana | Longhorn PVC (5Gi) | Local cluster |
-| Alertmanager | Longhorn PVC (2Gi) | Local cluster |
+| Prometheus | Longhorn PVC (50Gi) | Local cluster |
+| Grafana | Longhorn PVC (10Gi) | Local cluster |
+| Alertmanager | Longhorn PVC (5Gi) | Local cluster |
 | Loki | RustFS S3 (`loki` bucket) | TrueNAS 192.168.10.133:30293 |
 | Tempo | RustFS S3 (`tempo` bucket) | TrueNAS 192.168.10.133:30293 |
 
@@ -165,6 +165,7 @@ Grafana has data, it's the reverse.
 
 - Custom ServiceMonitors: `monitoring/prometheus-stack/custom-servicemonitors.yaml`
 - Custom alerts: `monitoring/prometheus-stack/custom-alerts.yaml`
+- Argo CD alerts: `monitoring/prometheus-stack/argocd-sync-alerts.yaml`
 - GPU alerts/dashboard: `monitoring/prometheus-stack/gpu-alerts.yaml`, `gpu-dashboard.yaml`
 - OTEL Collectors: `infrastructure/controllers/opentelemetry-operator/collector-*.yaml`
 - Auto-instrumentation: `infrastructure/controllers/opentelemetry-operator/instrumentation.yaml`
@@ -179,6 +180,18 @@ Grafana has data, it's the reverse.
 | Logs | 24 hours (Loki — deliberately short; see loki-stack/values.yaml) |
 | Traces | 72 hours (Tempo) |
 | Alerts | 72 hours (Alertmanager) |
+
+Alert evaluation and notification delivery are separate. Prometheus evaluates
+the rules and Grafana/Prometheus/Alertmanager show their state today. The live
+Alertmanager receiver is intentionally `null`, so no message is delivered
+outside the cluster until a real receiver credential and destination are
+selected. Argo CD Notifications is not needed for this metrics-based path.
+
+Argo CD is already covered by component ServiceMonitors, Grafana dashboard
+14584, and dedicated alerts for component availability, reconcile stalls,
+auto-sync drift, degraded apps, stuck progress, and failed syncs. Keep those
+rules in `argocd-sync-alerts.yaml`; do not duplicate broad Argo rules in
+`custom-alerts.yaml`.
 
 ## Troubleshooting
 
@@ -211,6 +224,9 @@ kubectl logs -n opentelemetry deploy/collector-gateway  # gateway forwarded?
 - ArgoCD metrics: must be per-component (`controller.metrics`, `server.metrics`, …) — top-level `metrics:` does nothing.
 - Longhorn ServiceMonitor: select `app: longhorn-manager` (NOT `app.kubernetes.io/name: …`).
 - `ignoreDifferences`: use `jqPathExpressions`, not `jsonPointers` (RFC 6901 has no `*` wildcard).
-- PVC storage in `ignoreDifferences`: must ignore `.spec.resources.requests.storage` (PVCs can't shrink).
+- PVC storage in `ignoreDifferences`: do not ignore `.spec.resources.requests.storage`
+  globally. `RespectIgnoreDifferences=true` would also suppress legitimate
+  Git-driven expansions. Keep Git at or above the live size and scope any
+  legacy exception to the affected Application/PVC.
 - Loki tenant_id: multi-tenant mode requires `X-Scope-OrgID` header or `tenant_id` — 401 without it.
 - OTEL Collector CRD versions: `v1beta1` for `OpenTelemetryCollector`, `v1alpha1` for `Instrumentation`.

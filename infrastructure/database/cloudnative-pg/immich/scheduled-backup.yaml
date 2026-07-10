@@ -3,6 +3,10 @@ kind: ScheduledBackup
 metadata:
   name: immich-daily-backup
   namespace: cloudnative-pg
+  annotations:
+    # Wait for the Cluster itself to become Healthy before creating its
+    # recurring backup schedule.
+    argocd.argoproj.io/sync-wave: "-4"
 spec:
   # CNPG schedule is 6-field cron — first field is SECONDS, not minute.
   # 5-field "0 2 * * *" was parsed as "seconds=0 minute=2 hour=* * * *" and

@@ -6,6 +6,19 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "6"
 spec:
+  # Render each generated Application with Go templates. In an expression such
+  # as `{{ .path.basename }}`, the leading `.` means "the current generator
+  # result" (the template context). The Git generator supplies its matched
+  # directory as the `path` object: `.path.basename` is the final directory
+  # name, while `.path.path` is the complete repository-relative path.
+  # Example: `my-apps/media/karakeep` produces `.path.basename = karakeep` and
+  # `.path.path = my-apps/media/karakeep`, so Argo creates Application
+  # `my-apps-karakeep` in namespace `karakeep` and renders that exact folder.
+  # `missingkey=error` stops generation when a field is absent instead of
+  # silently creating an Application with an empty name, path, or namespace.
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
   # Immutable-dataSourceRef escape hatch: preserve per-Application
   # compare-options annotations while any Bound PVC still carries an older
   # immutable dataSourceRef than Git (live converges only on PVC recreate,
@@ -32,9 +45,9 @@ spec:
         exclude: true
   template:
     metadata:
-      name: 'my-apps-{{path.basename}}'
+      name: 'my-apps-{{ .path.basename }}'
       annotations:
-        argocd.argoproj.io/manifest-generate-paths: '{{path}}'
+        argocd.argoproj.io/manifest-generate-paths: '{{ .path.path }}'
         argocd.argoproj.io/sync-wave: "6"
         # Immutable-dataSourceRef compare mode: disables server-side diff
         # for every my-apps-* Application while any backed-up PVC's live
@@ -55,10 +68,10 @@ spec:
       source:
         repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
         targetRevision: main
-        path: '{{path}}'
+        path: '{{ .path.path }}'
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{path.basename}}'
+        namespace: '{{ .path.basename }}'
       syncPolicy:
         automated:
           prune: true
@@ -68,7 +81,7 @@ spec:
         - CreateNamespace=true
         - ServerSideApply=true
         - RespectIgnoreDifferences=true
-        - Replace=false
+        - FailOnSharedResource=true
         retry:
           # Bounded retry — see root.yaml. Unbounded -1 plus a misbehaving
           # PreSync hook can wedge the entire app-of-apps behind a stale
@@ -110,4 +123,4 @@ spec:
 
       info:
       - name: 'Description'
-        value: 'Application: {{path.basename}}'
+        value: 'Application: {{ .path.basename }}'
