@@ -79,7 +79,9 @@ cluster; nothing changes for the app until step 4. Gitea shown; adjust names.
 
 ## Full-retirement checklist (after the last DB migrates)
 
-- [ ] gitea migrated
+- [x] gitea migrated (2026-07-10: dump/restore verified 112 tables / 5 repos /
+      2 users; first populated kopiur snapshot confirmed; CNPG cluster deleted,
+      v9/v10 lineages added to rustfs lifecycle)
 - [ ] temporal migrated
 - [ ] paperless migrated
 - [ ] immich migrated — **needs the pgvector/VectorChord image**
