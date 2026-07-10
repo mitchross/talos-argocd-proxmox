@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: presenton
+  namespace: presenton
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: presenton
+  template:
+    metadata:
+      labels:
+        app: presenton
+    spec:
+      containers:
+      - name: presenton
+        # renovate: datasource=docker depName=ghcr.io/presenton/presenton
+        image: ghcr.io/presenton/presenton:v0.8.9-beta@sha256:673e992ae74ac723f27ca92e802b1e58d8929e453d5b1a6321d66820a28e720d
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1000Mi
+          limits:
+            memory: 4000Mi
+        envFrom:
+        - configMapRef:
+            name: presenton-config
+        - secretRef:
+            name: presenton-auth
+        volumeMounts:
+        - name: data
+          mountPath: /app_data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: presenton-data

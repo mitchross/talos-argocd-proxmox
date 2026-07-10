@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: presenton
+  namespace: presenton
+  labels:
+    app: presenton
+spec:
+  selector:
+    app: presenton
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+  type: ClusterIP
