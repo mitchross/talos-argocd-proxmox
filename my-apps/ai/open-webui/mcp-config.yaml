@@ -28,7 +28,7 @@ spec:
                     operator: DoesNotExist
       containers:
       - name: mcpo-multi
-        image: ghcr.io/open-webui/mcpo:v0.0.20
+        image: ghcr.io/open-webui/mcpo:main@sha256:1e82c9555c19e50b80745705f32b47a2647589f35279527b5118ecd3a71bd467
         ports:
         - containerPort: 8001
           name: http
