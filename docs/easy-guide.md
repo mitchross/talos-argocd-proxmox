@@ -244,7 +244,7 @@ encrypts, deduplicates, and ships bytes to S3. The cast:
 | `ClusterRepository` | cluster | "The Kopia repo lives at RustFS `s3://kopiur`; namespaces with *this label* may use it." |
 | `SnapshotPolicy` | per PVC | "Back up *this PVC*, under *this identity*, keep *this much* history, run the mover as *this user*." |
 | `SnapshotSchedule` | per PVC | "Fire the policy on *this cron*." |
-| `Snapshot` | created per run | One backup execution; ends `Completed` with file/byte counts. |
+| `Snapshot` | created per run | One backup execution; ends `Succeeded` with file/byte counts. |
 | `Restore` | per PVC | "I can rebuild this volume from the repo" — the thing a PVC's `dataSourceRef` points at. |
 
 Plus one non-CR trick: the **credential fanout**. A single
@@ -486,15 +486,16 @@ The rebuild, end to end:
    while its populator hydrates it; apps start on restored data, in parallel.
 5. You drink the coffee.
 
-A [restore canary](disaster-recovery.md#the-restore-canary) continuously
-re-runs the real delete→recreate→populate→byte-verify loop against a dedicated
-test PVC, so "restores work" stays a measured fact.
+A [restore canary](disaster-recovery.md#the-restore-canary) takes daily backups
+and runs weekly quick verification. Its isolated test PVC is where an operator
+can safely re-run the destructive delete→recreate→populate→byte-verify drill.
 
 The honest boundaries:
 
-- **Databases don't use this path** — CNPG Postgres uses SQL-aware Barman
-  backups to S3 (crash-consistent filesystem snapshots aren't how you back up
-  a database). Two systems, deliberately separate.
+- **Database recovery is an explicit RPO choice** — remaining CNPG databases
+  use Postgres-aware Barman + WAL/PITR. Plain single-instance Postgres uses a
+  single-volume crash-consistent kopiur snapshot and WAL crash recovery, with
+  no PITR. Do not mix both systems on one database PVC.
 - **One repo copy, on-LAN** — this is not 3-2-1; a NAS-level disaster loses
   the backups. Known, accepted, documented.
 - **RPO = the cron cadence.** You lose at most one interval of data.
@@ -523,7 +524,7 @@ problem actually demands:
 | **3 — credential fanout** | the namespace label + `ClusterExternalSecret` (or any secret sync) | New namespace = one label; repo creds appear, tenancy granted. No per-app secret plumbing. | Backed-up apps live in more than ~3 namespaces. |
 | **4 — the component** | `common/kopiur-backup` Kustomize component | Per-PVC config shrinks to a ~20-line stub; cluster-wide backup policy changes in one file. | You're copy-pasting the same CR fields a 5th time. |
 | **5 — sync waves** | wave annotations + the Application health Lua | A **whole-cluster rebuild** that orders itself: storage → operator → repo → apps, restores gating each app's start. | You want "nuke it and re-bootstrap" as a supported operation. |
-| **6 — trust at scale** | CI coverage check + the restore canary | A PR can't ship a backed-up PVC missing its `dataSourceRef`; "restores work" is re-proven daily. | The system must stay correct *without you re-checking it*. |
+| **6 — trust at scale** | CI coverage check + the restore canary | A PR can't ship a backed-up PVC missing its `dataSourceRef`; backup verification is scheduled and destructive restore drills have an isolated target. | The system must stay correct *without risking production data*. |
 
 ### Rung 0–1 on YOUR cluster, concretely
 

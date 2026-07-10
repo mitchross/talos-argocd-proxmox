@@ -44,7 +44,10 @@ static SPA served by nginx).
 - **ArgoCD metrics**: Must be per-component (`controller.metrics`, `server.metrics`, etc.), top-level `metrics:` key does nothing
 - **Longhorn ServiceMonitor**: Select `app: longhorn-manager` (NOT `app.kubernetes.io/name: longhorn-manager`)
 - **ArgoCD ignoreDifferences**: Use `jqPathExpressions` NOT `jsonPointers` for wildcards (RFC 6901 doesn't support `*`)
-- **PVC storage in ignoreDifferences**: Must ignore `.spec.resources.requests.storage` — can't shrink existing PVCs
+- **PVC storage drift**: Do not globally ignore `.spec.resources.requests.storage`.
+  With `RespectIgnoreDifferences=true`, that also suppresses legitimate Git-driven
+  expansions. Keep Git at or above the live requested size; use a narrowly scoped
+  per-Application ignore only for a known legacy PVC that cannot be reconciled.
 - **Loki tenant_id**: Multi-tenant mode requires `X-Scope-OrgID` header or `tenant_id` config — 401 without it
 - **OTEL Collector CRDs**: Use `v1beta1` API version for `OpenTelemetryCollector`, `v1alpha1` for `Instrumentation`
 

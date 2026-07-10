@@ -66,6 +66,15 @@ spec:
             # mount contains lost+found).
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
+          # A restored or crash-recovering database can take longer than a
+          # fresh 48 MiB test database. The startup probe suppresses liveness
+          # restarts while PostgreSQL replays WAL after restore.
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "gitea", "-d", "gitea"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
           readinessProbe:
             exec:
               command: ["pg_isready", "-U", "gitea", "-d", "gitea"]

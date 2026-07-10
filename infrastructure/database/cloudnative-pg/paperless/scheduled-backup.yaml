@@ -3,6 +3,8 @@ kind: ScheduledBackup
 metadata:
   name: paperless-daily-backup
   namespace: cloudnative-pg
+  annotations:
+    argocd.argoproj.io/sync-wave: "-4"
 spec:
   # CNPG schedule is 6-field cron — first field is SECONDS, not minute.
   # See immich/scheduled-backup.yaml for the gotcha. Daily at 05:00:00

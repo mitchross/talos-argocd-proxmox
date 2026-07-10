@@ -121,7 +121,7 @@ The component sets only what's identical everywhere.
 4. The mover reads S3 credentials from the local `kopiur-rustfs` Secret, which
    the `ClusterExternalSecret` placed in the namespace.
 5. Kopia uploads deduplicated, encrypted data to RustFS at `s3://kopiur`, then
-   marks the Snapshot `Completed` with its file and byte counts.
+   marks the Snapshot `Succeeded` with its file and byte counts.
 
 The mover must run as the **data owner** or it can't read the files — see
 [`kopiur-mover-permissions.md`](kopiur-mover-permissions.md).

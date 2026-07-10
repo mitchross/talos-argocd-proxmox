@@ -13,7 +13,9 @@ are covered, which a static grep of *.yaml cannot do).
 HARD FAILS (exit 1):
   [dsr]     A backed-up PVC (target of a kopiur SnapshotPolicy) whose
             spec.dataSourceRef does NOT point at a kopiur Restore → it recreates
-            EMPTY in DR. The single most dangerous silent gap.
+            EMPTY in DR. Operator-owned PVCs are also valid when a matching
+            Restore.target.pvc creates that exact claim from the same policy.
+            The single most dangerous silent gap.
   [nslabel] A namespace containing a SnapshotPolicy that lacks the
             `kopiur.home-operations.com/repo: cluster-kopia` label → the
             ClusterExternalSecret won't fan the repo creds in; the mover can't auth.
@@ -91,6 +93,19 @@ def main():
         elif group == KOPIUR_GROUP and kind == "Restore":
             restores.append(d)
 
+    # Some operators own their PVC manifests. kopiur's direct target.pvc mode
+    # safely creates/restores the deterministic claim first, after which the
+    # workload operator adopts it (Kafka/Strimzi). Index only restores whose
+    # source policy matches the PVC's SnapshotPolicy; a same-name target alone
+    # must not accidentally satisfy the DR contract.
+    direct_restore_pvcs = {}
+    for r in restores:
+        spec = r.get("spec") or {}
+        target_name = (((spec.get("target") or {}).get("pvc") or {}).get("name"))
+        policy_name = (((spec.get("source") or {}).get("fromPolicy") or {}).get("name"))
+        if target_name and policy_name:
+            direct_restore_pvcs[(meta(r, "namespace"), target_name, policy_name)] = r
+
     fails, warns = [], []
     backed_pvcs, backed_namespaces = set(), set()
 
@@ -106,7 +121,13 @@ def main():
             backed_pvcs.add((pns, pvcname))
             pvc = pvcs.get((pns, pvcname))
             if pvc is None:
-                fails.append(f"[dsr]     SnapshotPolicy {pns}/{pname} backs up PVC '{pvcname}' but no such PVC was rendered")
+                direct = direct_restore_pvcs.get((pns, pvcname, pname))
+                if direct is None:
+                    fails.append(
+                        f"[dsr]     SnapshotPolicy {pns}/{pname} backs up PVC "
+                        f"'{pvcname}' but neither that PVC nor a matching "
+                        "Restore.target.pvc was rendered"
+                    )
                 continue
             dsr = (pvc.get("spec") or {}).get("dataSourceRef") or {}
             if dsr.get("apiGroup") != KOPIUR_GROUP or dsr.get("kind") != "Restore":

@@ -37,9 +37,6 @@ resources:
 # kustomization.yaml for the same defensive pattern on CNPG's CRDs.
 # Incident: 2026-05-07 ArgoCD sync failure post-Kyverno-removal merge.
 patches:
-  # Strategic-merge overlay for the Alertmanager config Secret
-  # (migrated from the deprecated patchesStrategicMerge field)
-  - path: alertmanager-config.yaml
   - target:
       kind: CustomResourceDefinition
       name: scrapeconfigs.monitoring.coreos.com
