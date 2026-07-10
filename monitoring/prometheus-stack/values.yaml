@@ -190,7 +190,10 @@ alertmanager:
       fsGroup: 65534
     # Retention
     retention: 72h
-    # Configuration for alert routing (placeholder)
+    # Alert rules are visible in Prometheus, Grafana, and the internal
+    # Alertmanager UI. Delivery remains the chart's explicit null receiver
+    # until a real destination Secret is chosen; do not ship localhost webhook
+    # placeholders that look configured but discard every notification.
     configSecret: ""
 # Grafana Configuration
 grafana:

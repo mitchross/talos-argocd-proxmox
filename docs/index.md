@@ -18,7 +18,9 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
 - **OS**: Talos Linux on Proxmox VMs, provisioned via Omni / Sidero
 - **CNI**: Cilium with Gateway API + LoadBalancer
 - **GitOps**: ArgoCD (self-managing) + ApplicationSets for auto-discovery
-- **Storage**: Longhorn (V1 engine, 1 replica — single-node)
+- **Storage**: Longhorn V1 engine, currently 1 replica because the active
+  control-plane + worker VMs share one physical Proxmox failure domain;
+  replica count is designed to rise when workers span additional hosts
 - **Backup**: [kopiur](https://github.com/home-operations/kopiur) (Kopia-native) → RustFS S3, per-PVC `SnapshotPolicy`/`Restore` with restore-before-bind
 - **Database**: CloudNativePG (Postgres) with Barman backups to S3
 - **Secrets**: 1Password Connect + External Secrets Operator

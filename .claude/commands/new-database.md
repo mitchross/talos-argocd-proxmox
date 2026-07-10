@@ -19,7 +19,8 @@ rationale: `docs/domains/cnpg/plain-postgres-migration.md`.
    (`grep -rn "cron:" my-apps --include=*.yaml`).
 3. Declare the database in the Deployment env: `POSTGRES_DB` /
    `POSTGRES_USER` / `POSTGRES_PASSWORD` (from an ExternalSecret) — created
-   on first empty-volume boot; restored data always wins afterward.
+   on first empty-volume boot; restored data always wins afterward. The image
+   does not reconcile users or passwords on an existing/restored data dir.
 4. Pin the image to a `postgres:<MAJOR.MINOR>` tag. Renovate handles
    patches/minors; **never auto-merge a MAJOR** (data dirs are not
    major-compatible — majors need a manual dump/restore).
@@ -27,13 +28,20 @@ rationale: `docs/domains/cnpg/plain-postgres-migration.md`.
    `../../common/kopiur-backup` component if not already present) and ensure
    the namespace carries the `kopiur.home-operations.com/repo: cluster-kopia`
    label.
-6. After deploy, verify the first backup before trusting DR:
-   `kubectl -n <app> get snapshot` → `Completed` with non-zero files.
+6. Keep a generous `startupProbe` using `pg_isready` (the Gitea reference
+   allows about five minutes) so liveness does not kill Postgres during WAL
+   replay after a restore.
+7. After deploy, verify the first backup before trusting DR:
+   `kubectl -n <app> get snapshot` → `Succeeded` with non-zero files.
 
 ### Critical rules
 
 - The app's PVC restore-point is the last snapshot (~1h with the hourly
   tier) — if the app cannot tolerate that, use the CNPG path below.
+- The password stored inside a restored database is restored state. Never
+  rotate only the 1Password item: connect with the current credential, run
+  `ALTER ROLE ... PASSWORD ...`, then update 1Password and restart consumers
+  as one controlled rotation. Keep the old credential until the app verifies.
 - Special images where needed (e.g. immich requires
   `ghcr.io/immich-app/postgres` with VectorChord).
 

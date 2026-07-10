@@ -1,0 +1,72 @@
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
+# Single-volume Kafka/KRaft backup. Broker logs and KRaft metadata share this
+# volume, so the CSI snapshot has the same crash-consistency boundary as sudden
+# power loss. A restore drill is still required before treating this as proven.
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: kafka-data
+  namespace: kafka
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+spec:
+  sources:
+    - pvc:
+        name: data-0-dev-kafka-dual-role-0
+  identity:
+    username: kafka-data
+    hostname: kafka
+  retention:
+    keepDaily: 14
+    keepWeekly: 6
+    keepMonthly: 3
+  mover:
+    securityContext:
+      # Verified from quay.io/strimzi/kafka:1.1.0-kafka-4.3.0 (/etc/passwd).
+      runAsUser: 1001
+      runAsGroup: 0
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 0
+      supplementalGroups:
+        - 0
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: kafka-data-daily
+  namespace: kafka
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  policyRef:
+    name: kafka-data
+  schedule:
+    # Daily is intentional: this high-churn learning log needs nuke recovery,
+    # not a one-hour RPO or 24 snapshots of constantly rolling segments.
+    cron: "11 3 * * *"
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: kafka-data-restore
+  namespace: kafka
+  annotations:
+    # Argo's kopiur health customization holds wave 0 until this is Completed.
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  source:
+    fromPolicy:
+      name: kafka-data
+      offset: 0
+  mover:
+    securityContext:
+      runAsUser: 1001
+      runAsGroup: 0
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 0
+      supplementalGroups:
+        - 0

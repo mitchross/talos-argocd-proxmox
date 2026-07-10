@@ -1,0 +1,76 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: dual-role
+  namespace: kafka
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    strimzi.io/cluster: dev-kafka
+spec:
+  # One broker/controller fits today's single schedulable worker. Scale to
+  # three only after adding real worker/failure-domain capacity, then raise the
+  # replication settings in the Kafka resource below.
+  replicas: 1
+  roles:
+    - broker
+    - controller
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  jvmOptions:
+    -Xms: 512m
+    -Xmx: 512m
+  # JBOD from day one avoids an immutable storage-type migration when the
+  # learning cluster grows. Additional volume IDs can be added later.
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        class: longhorn
+        size: 20Gi
+        deleteClaim: false
+        kraftMetadata: shared
+  template:
+    persistentVolumeClaim:
+      metadata:
+        annotations:
+          # The claim is created/restored by kopiur first, then adopted by
+          # Strimzi. Keep Strimzi from deleting it if the node pool is removed.
+          strimzi.io/delete-claim: "false"
+---
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: dev-kafka
+  namespace: kafka
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  kafka:
+    version: 4.3.0
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+    config:
+      # Kafka defaults its general replication/min-ISR settings to one. The
+      # internal offsets and transaction topics default to 3/3/2, so these
+      # three overrides are load-bearing on a single broker.
+      offsets.topic.replication.factor: 1
+      transaction.state.log.replication.factor: 1
+      transaction.state.log.min.isr: 1
+      auto.create.topics.enable: false
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}

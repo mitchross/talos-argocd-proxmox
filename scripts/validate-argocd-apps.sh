@@ -87,8 +87,12 @@ while IFS= read -r f; do
   fi
 done < <(app_yaml_files)
 
-# Sort and deduplicate
-mapfile -t sorted_waves < <(printf '%s\n' "${waves[@]}" | sort -n | uniq)
+# Sort and deduplicate. Use a read loop instead of `mapfile`, which is absent
+# from the Bash 3.2 shipped by macOS.
+sorted_waves=()
+while IFS= read -r wave; do
+  sorted_waves+=("$wave")
+done < <(printf '%s\n' "${waves[@]}" | sort -n | uniq)
 echo "  Waves found: ${sorted_waves[*]}"
 
 # Check for gaps > 1 between consecutive waves

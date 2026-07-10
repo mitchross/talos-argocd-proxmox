@@ -6,6 +6,9 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "4"
 spec:
+  goTemplate: true
+  goTemplateOptions:
+  - missingkey=error
   generators:
   - git:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
@@ -49,9 +52,9 @@ spec:
       - path: infrastructure/storage/rustfs-lifecycle
   template:
     metadata:
-      name: '{{path.basename}}'
+      name: '{{ .path.basename }}'
       annotations:
-        argocd.argoproj.io/manifest-generate-paths: '{{path}}'
+        argocd.argoproj.io/manifest-generate-paths: '{{ .path.path }}'
         argocd.argoproj.io/sync-wave: "4"
       labels:
         app.kubernetes.io/part-of: infrastructure
@@ -61,10 +64,10 @@ spec:
       source:
         repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
         targetRevision: main
-        path: '{{path}}'
+        path: '{{ .path.path }}'
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{path.basename}}'
+        namespace: '{{ .path.basename }}'
       syncPolicy:
         automated:
           prune: true
@@ -74,7 +77,7 @@ spec:
         - CreateNamespace=true
         - ServerSideApply=true
         - RespectIgnoreDifferences=true
-        - Replace=false
+        - FailOnSharedResource=true
         retry:
           # Bounded retry — see root.yaml. Unbounded -1 plus a misbehaving
           # PreSync hook can wedge the entire app-of-apps behind a stale

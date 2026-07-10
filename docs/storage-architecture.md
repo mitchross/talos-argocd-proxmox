@@ -101,9 +101,9 @@ data — no restore scripts, no snapshot IDs, no ordering choreography. Per-PVC
 restore is the mechanism; **cluster rebuild is the use case.** Day-zero install
 and day-N disaster recovery are the **same code path**; the only difference is
 whether the repo has a snapshot for that PVC (`onMissingSnapshot: Continue`
-binds fresh when there isn't one). A continuously running
-[restore canary](disaster-recovery.md#the-restore-canary) keeps "restores work"
-a measured fact between disasters. For the full narrative, read
+binds fresh when there isn't one). Scheduled backup verification plus explicit
+[restore canary](disaster-recovery.md#the-restore-canary) drills keep "restores
+work" a measured fact between disasters. For the full narrative, read
 [the easy guide](easy-guide.md).
 
 ---
@@ -264,7 +264,7 @@ kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot,pvc
 kubectl -n <ns> get secret kopiur-rustfs    # fanned out by the ClusterExternalSecret
 ```
 
-Expect the three CRs present, recent `Snapshot` objects `Completed` with
+Expect the three CRs present, recent `Snapshot` objects `Succeeded` with
 non-zero files, and the PVC `Bound`.
 
 ---
@@ -375,10 +375,10 @@ A backup that has never been restored is a hypothesis, not a recovery plan.
     Before deleting, **wait until ArgoCD's synced revision contains the
     `dataSourceRef`** — deleting against a stale render recreates the PVC empty.
 
-This loop runs continuously against a dedicated test PVC — the
+This drill runs on demand against a dedicated test PVC — the
 [restore canary](disaster-recovery.md#the-restore-canary)
-(`my-apps/system/restore-canary/`) — so "restores work" stays a measured fact
-between disasters.
+(`my-apps/system/restore-canary/`). Its backup and quick-verification schedules
+run continuously; the destructive restore remains deliberate.
 
 ---
 

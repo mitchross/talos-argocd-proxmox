@@ -88,7 +88,7 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 | Kubernetes | `v1.36.2` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
 | Cilium | `1.19.5` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.4.1` | bootstrap commands below |
-| ArgoCD Helm chart | `10.0.0` | `scripts/bootstrap-argocd.sh` |
+| ArgoCD Helm chart | `10.1.3` (Argo CD `v3.4.5`) | `scripts/bootstrap-argocd.sh` |
 | Proxmox provider | `latest@sha256:96433a…` | `omni/proxmox-provider/docker-compose.yml` |
 
 Keep the Omni server and local `omnictl` on the **same** release — mismatched versions fail with obscure gRPC errors.
@@ -467,7 +467,7 @@ Network
 | **Storage issues** | `kubectl get pvc -A` · `kubectl get pods -n longhorn-system` |
 | **Secrets not syncing** | `kubectl get externalsecret -A` · `kubectl get pods -n 1passwordconnect` · `kubectl describe clustersecretstore 1password` |
 | **GPU issues** | `kubectl get nodes -l feature.node.kubernetes.io/pci-0300_10de.present=true` · `kubectl get pods -n gpu-operator` |
-| **Backup issues** | `kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot` (Snapshot should reach `Completed` with non-zero files) · `kubectl -n <ns> get secret kopiur-rustfs` · `kubectl get pods -n kopiur-system` |
+| **Backup issues** | `kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot` (Snapshot should reach `Succeeded` with non-zero files) · `kubectl -n <ns> get secret kopiur-rustfs` · `kubectl get pods -n kopiur-system` |
 
 ### Emergency reset
 

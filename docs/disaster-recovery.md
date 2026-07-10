@@ -55,10 +55,10 @@ Block the nuke until every box checks — **you restore *from* these**:
 - [ ] RustFS/S3 endpoint reachable; access key registered on the external server; Kopia auth works
       (a past nuke proved an unregistered external credential blocks recovery even with perfect Git state)
 - [ ] Talos secrets / Omni machine configs available off-cluster
-- [ ] **Backups fresh**: each backed-up PVC has a recent `Completed` kopiur `Snapshot` you can live with — apps roll back to exactly that snapshot. Spot-check across namespaces:
+- [ ] **Backups fresh**: each backed-up PVC has a recent `Succeeded` kopiur `Snapshot` you can live with — apps roll back to exactly that snapshot. Spot-check across namespaces:
       `kubectl get snapshot -A` (look at the newest per source) and confirm no `SnapshotSchedule` is wedged: `kubectl get snapshotschedule -A`.
       To top up a stale one on demand: `kubectl kopiur snapshot now --policy <name> -n <ns>` (CLI ≥0.5.1, krew)
-- [ ] **No PVC lacks a snapshot it expects to restore from.** A first restore only hydrates if a Snapshot already exists (kopiur `onMissingSnapshot: Continue` binds a snapshot-less PVC *empty* and backs up forward). Confirm every PVC you intend to *restore* (not seed) shows at least one `Completed` Snapshot before the nuke.
+- [ ] **No PVC lacks a snapshot it expects to restore from.** A first restore only hydrates if a Snapshot already exists (kopiur `onMissingSnapshot: Continue` binds a snapshot-less PVC *empty* and backs up forward). Confirm every PVC you intend to *restore* (not seed) shows at least one `Succeeded` Snapshot before the nuke.
 - [ ] Restore canary green: recent `last-drill-result=pass`
 
 ## Rebuild sequence
@@ -218,7 +218,7 @@ State BOTH claims, with live numbers:
 
 1. **Restore contract**: every backed-up PVC `Bound` via its kopiur `Restore`
    populator (none stuck `Pending`), and the first post-restore `Snapshot` for
-   each source reaches `Completed`. Cross-check per namespace:
+   each source reaches `Succeeded`. Cross-check per namespace:
    `kubectl -n <ns> get pvc,restore,snapshot`.
 2. **Exemption hygiene**: every intentionally backup-exempt PVC is still bound
    and still carries the fully-qualified
@@ -232,13 +232,17 @@ State BOTH claims, with live numbers:
 
 ## The restore canary
 
-Point-in-time acceptance rots; the canary keeps the proof fresh.
+Point-in-time acceptance rots; the canary provides a safe, isolated place to
+repeat the proof.
 
 `my-apps/system/restore-canary/` re-runs the real DR path against a dedicated test
 PVC: its `kopiur/restore-canary-data.yaml` stub carries the `SnapshotPolicy` +
 `SnapshotSchedule` + `Restore`, and the PVC's `dataSourceRef` points at the `Restore`.
-The `SnapshotSchedule` keeps a fresh snapshot; to drill the restore, delete only the
-canary PVC and let Argo recreate it via its `dataSourceRef` → `Restore` populator:
+The `SnapshotSchedule` keeps a fresh snapshot and a weekly quick verification
+checks repository blobs. Those automated checks do **not** prove a restore. To
+drill the full path, write and hash a sentinel, force and wait for a successful
+snapshot, delete only the canary PVC, and let Argo recreate it via its
+`dataSourceRef` → `Restore` populator:
 
 ```
 sentinel (old UID + sha256) → forced kopiur Snapshot
@@ -246,10 +250,15 @@ sentinel (old UID + sha256) → forced kopiur Snapshot
 → kopiur populator restore → byte-identical verification
 ```
 
-A passing drill proves the *entire* chain — Git render, kopiur CR wiring,
+A manually executed passing drill proves the *entire* chain — Git render, kopiur CR wiring,
 kopia round-trip, populator restore — with data integrity checked by hash,
 never touching production PVCs. Results land as
 `restore-canary.vanillax.dev/last-drill-*` annotations on the namespace.
+
+Treat a missing or stale `last-drill-*` annotation as “restore not recently
+proven,” even when snapshots and quick verification are green. Automating the
+destructive PVC deletion is intentionally deferred until a kopiur-native,
+namespace-contained drill helper has been reviewed.
 
 What it does **not** prove: restores of backups older than its own, CNPG
 recovery (separate system), or app-level data semantics — drill those
