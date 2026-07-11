@@ -9,6 +9,62 @@ the current one-worker homelab while keeping an expansion path:
 - `deleteClaim: false` preserves data across normal operator reconciliation.
 - `dev-events` is GitOps-managed by the Topic Operator; automatic topic
   creation is disabled so topic intent stays visible in Git.
+- `kafka-demo-seed` writes and verifies five deterministic JSON events once;
+  later Argo syncs detect `demo-001` and do not duplicate the sample set.
+- Kafbat UI provides a read-only browser on the internal Gateway. It can inspect
+  brokers, topics, partitions, messages, and consumer groups, but cannot mutate
+  the cluster.
+
+## Interactive demo
+
+Open `https://kafka.vanillax.me` from the LAN or VPN, then select:
+
+1. **dev-kafka**
+2. **Topics**
+3. **dev-events**
+4. **Messages**
+
+Choose `String` for the key and value deserializers. The initial log is a small
+order lifecycle with stable keys, so it demonstrates both partition affinity
+and event-driven state transitions:
+
+| Event | Key | Meaning |
+|---|---|---|
+| `demo-001` | `order-1001` | Order accepted |
+| `demo-002` | `order-1001` | Payment authorized |
+| `demo-003` | `sku-keyboard` | Inventory reserved |
+| `demo-004` | `order-1001` | Warehouse fulfilled the order |
+| `demo-005` | `order-1001` | Shipment dispatched |
+
+The four `order-1001` records hash to the same partition and retain order within
+that partition. The inventory event deliberately uses a different key, showing
+that Kafka does not promise ordering across partitions.
+
+### Verify without the UI
+
+The seed hook verifies all five IDs before Argo marks the sync successful:
+
+```bash
+kubectl -n kafka logs job/kafka-demo-seed
+```
+
+To inspect the current log directly with the broker's matching Kafka CLI:
+
+```bash
+kubectl -n kafka exec dev-kafka-dual-role-0 -c kafka -- \
+  /opt/kafka/bin/kafka-console-consumer.sh \
+  --bootstrap-server dev-kafka-kafka-bootstrap.kafka.svc:9092 \
+  --topic dev-events \
+  --from-beginning \
+  --max-messages 5 \
+  --property print.key=true \
+  --property key.separator=' | '
+```
+
+Expected result: five JSON records appear, including `demo-001` through
+`demo-005`. This is intentionally sample data, but it is real Kafka data: the
+topic log lives on the kopiur-protected broker PVC and is included in future
+recovery drills.
 
 ## Expansion trigger
 
