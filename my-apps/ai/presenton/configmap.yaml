@@ -11,7 +11,8 @@ data:
   CUSTOM_MODEL: "qwen3.6-27b"
 
   # Image generation
-  DISABLE_IMAGE_GENERATION: "true"
+  DISABLE_IMAGE_GENERATION: "false"
+  IMAGE_PROVIDER: "pexels"
 
   # Telemetry
   DISABLE_ANONYMOUS_TRACKING: "true"
