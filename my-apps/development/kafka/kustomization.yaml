@@ -13,7 +13,19 @@ resources:
   - namespace.yaml
   - kafka-cluster.yaml
   - topics.yaml
+  - demo-seed-job.yaml
+  - kafka-ui.yaml
   - kopiur/kafka-data.yaml
+configMapGenerator:
+  # Keep executable logic and sample payloads out of Kubernetes YAML. The
+  # generated name hash automatically gives each Job revision its exact files.
+  - name: kafka-demo
+    files:
+      - seed-and-verify.sh=demo/seed-and-verify.sh
+      - events.jsonl=demo/events.jsonl
+    options:
+      annotations:
+        argocd.argoproj.io/sync-wave: "1"
 components:
   - ../../common/kopiur-backup
 patches:
