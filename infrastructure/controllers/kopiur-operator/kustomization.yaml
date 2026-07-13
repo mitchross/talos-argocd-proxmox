@@ -36,13 +36,9 @@ helmCharts:
     # same kubeVersion floor, same 8-CRD set. Breaking changes are all internal
     # Rust dep bumps (kube 4.0, croner 3.0) + the RepositoryReplication cred fix
     # (#200) which we don't use. Render-verified with our values.
-    # 0.7.1–0.7.3 (2026-07-10→12): no breaking changes. 0.7.1 adds kopia CLI
-    # tuning flags to the CRDs (#221, optional fields) + staged-PVC
-    # storageClass/accessModes overrides and binding-race fix (#228) + mover
-    # ConfigMap reaping (#225). 0.7.2/0.7.3 fix credential-Secret projection
-    # scoping/naming (#234) and populator behavior on already-bound PVCs +
-    # ClusterRepository secret-namespace handling — both directly relevant to
-    # our restore-before-bind + ClusterExternalSecret fanout setup.
+    # 0.7.1–0.7.3 (2026-07-12): no breaking changes; fixes populator behavior
+    # on bound PVCs + credential-Secret projection (both touch our
+    # restore-before-bind path). Values keys/CRD set/kubeVersion unchanged.
     version: 0.7.3
     releaseName: kopiur
     namespace: kopiur-system
