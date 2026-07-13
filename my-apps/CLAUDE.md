@@ -161,6 +161,37 @@ patches:
 
 **Do NOT use `Replace=true,Force=true`** — causes duplicate Job execution ([#24005](https://github.com/argoproj/argo-cd/issues/24005)).
 
+### Which StorageClass? (decide BEFORE writing the PVC)
+
+Full reasoning + the measured numbers + the per-PVC classification:
+**`docs/domains/storage/storage-tiers.md`**. The short version:
+
+> **The only question that matters: does this volume fsync on every write?**
+> Databases do. Almost nothing else does.
+
+| Use | Class | Why |
+|-----|-------|-----|
+| **Databases** (Postgres, MySQL, ClickHouse, Kafka, Redis, Prometheus TSDB, Qdrant, Meilisearch) | `truenas-flash` | ~3,000 fsync IOPS vs Longhorn's **259**. RWO only. |
+| **Everything else** — app config/state, caches, read-mostly, and **anything RWX** | `longhorn` (default) | **Reads 2x FASTER than the flash tier**, and no NAS dependency. |
+| **Bulk media / model weights / hand-browsable** | SMB or NFS classes | Files, not blocks. |
+
+**The tiers are not "fast" and "slow".** `truenas-flash` is ~11x on writes and ~2x **WORSE** on
+reads — Longhorn's consumer NVMe genuinely out-reads enterprise SATA. Putting a read-heavy volume
+on flash is a **downgrade**. When in doubt: **Longhorn**.
+
+**⚠️ Moving a backed-up PVC to `truenas-flash` silently kills its backups** unless you also stack
+the flash kopiur override. A VolumeSnapshotClass is bound to ONE CSI driver, and the base
+component injects `longhorn-snapclass` (`driver.longhorn.io`), which cannot snapshot a
+`csi.truenas.io` volume:
+
+```yaml
+components:
+  - ../../common/kopiur-backup        # base
+  - ../../common/kopiur-backup-flash  # REQUIRED on truenas-flash PVCs
+```
+Then verify — `kubectl -n <ns> get snapshot` must reach `Succeeded` with a **non-zero** file count.
+(CNPG is exempt from this trap: it backs up via Barman to S3, not via a VolumeSnapshotClass.)
+
 ### Application with Persistent Storage + Backups
 
 Backups are **kopiur** (home-operations' Kopia-native operator). It replaced
