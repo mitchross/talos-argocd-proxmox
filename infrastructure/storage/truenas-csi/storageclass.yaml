@@ -25,26 +25,32 @@ reclaimPolicy: Retain
 volumeBindingMode: Immediate
 allowVolumeExpansion: true
 ---
-# Fast tier for write-latency-sensitive workloads (databases). ZVOL on `flashpool`
-# (3x HPE MK000480GWCEV enterprise SATA SSD, RAIDZ1) exported over NVMe-oF/TCP.
+# WRITE tier only. ZVOL on `flashpool` (3x enterprise SATA SSD w/ PLP, RAIDZ1),
+# exported over NVMe-oF/TCP. NVMe-oF is the wire protocol — nothing here is an NVMe
+# disk; see configmap.yaml for why it beats iSCSI on Talos.
 #
-# Why this exists: the Longhorn default class is backed by consumer EDILOCA EN605
-# NVMe in the Proxmox host, measured at 259 fsync IOPS @ 1.25ms — DRAM-less, no
-# power-loss protection. The flashpool SSDs measure 14,484 fsync IOPS @ 0.064ms.
-# Even paying ~0.15ms of 10GbE round-trip, this lands ~6x better than local disk
-# for the fsync-per-commit workload Postgres/ClickHouse/Kafka actually run.
+# Use this ONLY for fsync-heavy workloads (Postgres/ClickHouse/Kafka/Prometheus).
+# Measured, each through its full stack:
+#              4K fsync write     4K random read
+#   Longhorn:      259 IOPS         161k IOPS
+#   this class:  ~3,000 IOPS         68k IOPS
+# So it is ~11x on writes and ~2x WORSE on reads — Longhorn's consumer NVMe simply
+# out-reads enterprise SATA. Moving a read-heavy volume here is a downgrade.
 #
-# NVMe-oF (not iSCSI) on purpose — see configmap.yaml for the full reasoning.
+# The ~3,000 ceiling is ZFS's ZIL on zvols, not the disks (a raw drive does 14,484)
+# and not the vdev layout — stripe, mirror and RAIDZ1 all measured identical, and it
+# does not scale with queue depth. Do not restripe the pool chasing write IOPS, and
+# do NOT "fix" it with sync=disabled: that makes ZFS lie about fsync, which for
+# Postgres is a corrupt cluster, not a few lost seconds.
 #
-# volblocksize is IMMUTABLE once a ZVOL is created. 16K matches Postgres' 8K page
-# with compression headroom; do not change it after volumes exist.
+# volblocksize is IMMUTABLE once a ZVOL exists. Do not change it after volumes exist.
 #
-# NOT the default class: Longhorn stays default. Only move a PVC here deliberately,
-# and only after adding a kopiur bundle that references VolumeSnapshotClass
-# `truenas-snapshot` — the shared my-apps/common/kopiur-backup component hardcodes
-# `longhorn-snapclass`, which is bound to driver.longhorn.io and will NOT snapshot a
-# csi.truenas.io volume. A database moved here without that swap loses its backups
-# silently.
+# GOTCHA — a PVC moved here loses its backups unless you also swap the kopiur
+# component. A VolumeSnapshotClass is bound to ONE CSI driver: the shared
+# my-apps/common/kopiur-backup injects `longhorn-snapclass` (driver.longhorn.io),
+# which cannot snapshot a csi.truenas.io volume. Stack
+# my-apps/common/kopiur-backup-flash on top to swap in `truenas-snapshot`. Without
+# it the PVC looks backed up in git and produces nothing.
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
