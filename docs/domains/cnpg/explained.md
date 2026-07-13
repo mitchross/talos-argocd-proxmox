@@ -4,6 +4,12 @@ Companion to [`disaster-recovery.md`](disaster-recovery.md) (the technical
 runbook). This doc explains what's actually happening, why it works, and
 **what's a Git change vs. a kubectl command vs. a feature flag**.
 
+![Decision between database-aware CNPG Barman recovery and plain PostgreSQL Kopiur recovery](../../assets/postgres-recovery-choice.svg)
+
+*This page explains the capability-first CNPG side. The staged exit ramp uses
+the simpler path only where its RPO and lack of failover are acceptable.
+[Open the full-size PostgreSQL decision diagram](../../assets/postgres-recovery-choice.svg).*
+
 Read this when:
 
 - You're standing up your first Postgres cluster on Kubernetes

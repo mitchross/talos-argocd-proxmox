@@ -9,6 +9,11 @@ The kopia repo is a first-class CR (`ClusterRepository`). For how backup *and
 restore* flow once the backend is up, see
 [kopiur backup architecture](domains/storage/kopiur-backup-architecture.md).
 
+![Git references and 1Password values flowing through External Secrets into labeled namespaces](assets/secret-fanout-flow.svg)
+
+*Git owns the references; 1Password owns the values; External Secrets owns the
+namespace copies. [Open the full-size credential-flow diagram](assets/secret-fanout-flow.svg).*
+
 > **This cluster uses** [RustFS](https://github.com/rustfs/rustfs) (an
 > S3-compatible object store) running off-cluster at `192.168.10.133:30292`.
 > Any S3 works — MinIO, TrueNAS S3, Garage, Backblaze B2 — only the endpoint

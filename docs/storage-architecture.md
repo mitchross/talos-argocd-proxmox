@@ -3,6 +3,11 @@
 The **operator's reference** for how application data survives anything in
 this cluster — including the cluster itself ceasing to exist.
 
+![Longhorn live storage, Kopiur restore-before-bind, and off-cluster RustFS failure domains](assets/storage-failure-domains.svg)
+
+*Longhorn provides live availability inside Kubernetes; RustFS provides the
+recoverable copy outside it. [Open the full-size storage diagram](assets/storage-failure-domains.svg).*
+
 !!! abstract "Scope"
     Application PVCs (Longhorn → kopiur/Kopia → RustFS S3). **Out of scope:**
     CloudNativePG database backups (Barman → S3) — see

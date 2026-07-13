@@ -8,6 +8,11 @@
 > [kopiur backup architecture](domains/storage/kopiur-backup-architecture.md) (the mechanism),
 > [disaster recovery](disaster-recovery.md) (the runbook).
 
+![The complete platform from Proxmox and Omni through Talos, Argo CD, applications, and off-cluster recovery](assets/platform-overview.svg)
+
+*Git reconstructs desired state, 1Password reconstructs credentials, and RustFS
+reconstructs protected data. [Open the platform map full size](assets/platform-overview.svg).*
+
 ---
 
 ## The 30-second pitch
@@ -77,6 +82,11 @@ discover everything else. Git is the cluster; the cluster is a cache.
 ---
 
 ## Part 2 — How Argo waits (sync waves)
+
+![Argo CD sync waves turn repository dependencies into a gated rebuild sequence](assets/argocd-sync-waves.svg)
+
+*Wave numbers order resources; health checks make each dependency gate wait.
+[Open the sync-wave sequence full size](assets/argocd-sync-waves.svg).*
 
 A cluster rebuild has a brutal ordering problem: apps need volumes, volumes
 need the backup operator, the operator needs credentials, credentials need the
@@ -157,15 +167,21 @@ Application: Healthy — Argo's sync completes
 
 ---
 
-## Part 3 — Kustomize components (the DRY trick)
+## Part 3 — Kustomize components (shared build-time patches)
+
+![An application opts into a Kustomize Component, which patches matching resources before Argo applies the rendered YAML](assets/kustomize-component-mixin.svg)
+
+*The app explicitly opts in, Kustomize patches matching objects during build,
+and Argo receives the complete rendered output. [Open the Kustomize Component flow full size](assets/kustomize-component-mixin.svg).*
 
 Classic Kustomize is **base → overlay**: an overlay inherits one base and
 patches it. That model breaks when you want to share one cross-cutting
 *feature* — "make this thing backed up" — across 20 unrelated apps that share
 no base.
 
-A **component** is Kustomize's answer: a reusable bundle of patches you mix
-into any app, like a trait/mixin in programming. An app opts in with one line:
+A **Component** is an optional Kustomize package containing reusable resources
+and patches. Nothing discovers it automatically. An application explicitly
+opts in through `components:`:
 
 ```yaml
 # my-apps/ai/open-webui/kustomization.yaml
@@ -175,19 +191,12 @@ resources:
   - kopiur/storage.yaml            # ← the app's tiny per-PVC stub
 ```
 
-```text
-  your stub                          shared component
-  kopiur/storage.yaml                common/kopiur-backup
-  (only what varies)                 (only what's uniform)
-        |                                   |
-        |                                   | patches by kind
-        +----------------+------------------+
-                         v
-              kustomize build  (ArgoCD runs this)
-                         |
-                         v
-              complete CRs applied to the cluster
-```
+During `kustomize build`, Kustomize parses the application's resources, finds
+objects matching each patch target by API group and kind, applies the JSON
+Patch operations to exact field paths, and emits complete Kubernetes YAML.
+Argo CD then diffs and applies that rendered output. The Component does not run
+in the cluster, watch live resources, scan the repository for filenames, or
+perform text replacement.
 
 The division of labor is the whole design:
 
@@ -234,6 +243,11 @@ entire design discipline.
 ---
 
 ## Part 4 — kopiur: the backup operator
+
+![Kopiur configuration is assembled at Kustomize build time, while backup and restore happen later inside Kubernetes](assets/kopiur-kustomize-flow.svg)
+
+*Build time declares the recovery contract; runtime moves the data and enforces
+restore-before-bind. [Open the complete Kopiur flow full size](assets/kopiur-kustomize-flow.svg).*
 
 [kopiur](https://github.com/home-operations/kopiur) is a Kopia-native Kubernetes
 operator (Rust). You declare small CRs; it runs Jobs; [Kopia](https://kopia.io)
@@ -457,6 +471,11 @@ Full detail, including the daemon-drop (mysql `999:568`) and root-owned
 ---
 
 ## Part 7 — Putting it together: the full DR story
+
+![The disaster-recovery sequence from surviving sources of truth through Talos provisioning, Argo reconciliation, data restoration, and proof](assets/disaster-recovery-sequence.svg)
+
+*Recovery finishes only when desired state, credentials, protected data, and
+runtime health all converge. [Open the disaster-recovery sequence full size](assets/disaster-recovery-sequence.svg).*
 
 Everything above composes into one sentence: **the off-cluster pieces are the
 pets; the cluster is cattle.**
