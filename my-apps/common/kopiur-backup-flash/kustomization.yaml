@@ -1,0 +1,34 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# Thin override for PVCs on the `truenas-flash` StorageClass (csi.truenas.io,
+# NVMe-oF ZVOLs on `flashpool`). STACK IT AFTER the base component — it does not
+# replace it:
+#
+#   components:
+#     - ../../common/kopiur-backup        # base: repository, copyMethod, schedule
+#     - ../../common/kopiur-backup-flash  # then: swap the VolumeSnapshotClass
+#
+# WHY this exists: a VolumeSnapshotClass is bound to ONE CSI driver. The base
+# component injects `longhorn-snapclass`, which is bound to `driver.longhorn.io`
+# (infrastructure/controllers/kopiur/volumesnapshotclass.yaml). It physically
+# cannot snapshot a `csi.truenas.io` volume. Point a flash-tier PVC at the base
+# component alone and the SnapshotPolicy will never produce a usable Snapshot —
+# the PVC looks backed up in git and is not. This swaps in `truenas-snapshot`
+# (infrastructure/storage/truenas-csi/volumesnapshotclass.yaml, driver:
+# csi.truenas.io), which can.
+#
+# `replace` (not `add`) on purpose: the base already set the field, so this is an
+# override and MUST fail loudly if the base ever stops setting it, rather than
+# silently appending a second value.
+#
+# After adding this to an app, VERIFY — do not assume:
+#   kubectl -n <ns> get snapshot
+#   # the Snapshot must reach Succeeded with a NON-ZERO file count
+patches:
+  - target:
+      kind: SnapshotPolicy
+      group: kopiur.home-operations.com
+    patch: |
+      - op: replace
+        path: /spec/volumeSnapshotClassName
+        value: truenas-snapshot

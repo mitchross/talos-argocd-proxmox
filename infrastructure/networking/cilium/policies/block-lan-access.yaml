@@ -71,6 +71,13 @@ spec:
               protocol: TCP
             - port: "9000"
               protocol: TCP
+            # NVMe-oF/TCP — the `truenas-flash` StorageClass (csi.truenas.io,
+            # protocol: nvmeof) attaches ZVOLs from `flashpool` over this port.
+            # Without it every flash-tier volume mount hangs rather than fails
+            # loudly. TCP 3260 (iSCSI) stays blocked on purpose — this cluster
+            # uses NVMe-oF, and Talos needs no initiator extension for it.
+            - port: "4420"
+              protocol: TCP
 
     # ============================================
     # ALLOW: Wyze Bridge RTSP (for Frigate)

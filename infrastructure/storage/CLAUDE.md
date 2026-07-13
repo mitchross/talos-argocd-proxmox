@@ -12,9 +12,22 @@
 | `local-path` | Node-local fast storage |
 
 `truenas-nfs` provisions new datasets under `BigTank/k8s/nfs/v`. It does not
-replace static `nfs.csi.k8s.io` PVs for pre-existing data. TrueNAS CSI v1.0.4
-creates NFS shares with `mapall` semantics; run the documented ownership
-canary before adopting the class for a workload that runs as a non-root UID.
+replace static `nfs.csi.k8s.io` PVs for pre-existing data. TrueNAS CSI (pinned
+**v1.1.1**) creates NFS shares with `mapall` semantics; run the documented
+ownership canary before adopting the class for a workload that runs as a
+non-root UID.
+
+`truenas-flash` (added 2026-07-13) provisions ZVOLs on `flashpool` (3x enterprise
+SATA SSD, RAIDZ1) over **NVMe-oF/TCP** for write-latency-sensitive workloads. It
+is the fast tier for databases: the Longhorn default class sits on consumer
+EDILOCA NVMe measured at **259 fsync IOPS @ 1.25ms**, versus **14,484 @ 0.064ms**
+on flashpool. NVMe-oF, not iSCSI — Talos 1.13 has `CONFIG_NVME_TCP=y` built in and
+nvme-cli ships inside the driver image, so it needs no system extension and no
+rolling reboot. A PVC moved here MUST also swap its kopiur bundle to the
+`kopiur-backup-flash` component (VolumeSnapshotClass `truenas-snapshot`) — the
+base component's `longhorn-snapclass` is bound to `driver.longhorn.io` and cannot
+snapshot a `csi.truenas.io` volume, so the PVC would look backed up in git while
+producing nothing.
 
 ## Longhorn PVC Template
 
