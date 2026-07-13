@@ -1,6 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
-# Reusable kopiur backup layer (pure Kustomize — pvc-plumber-shaped DX).
+# Reusable kopiur backup layer implemented as a pure Kustomize Component.
 #
 # Include from an app kustomization with:
 #   components:

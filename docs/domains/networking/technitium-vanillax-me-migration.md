@@ -4,6 +4,11 @@ Split-horizon DNS for `vanillax.me` is served by Technitium (`192.168.10.15`)
 behind Firewalla. LAN clients get private records for internal services and fall
 back to Cloudflare for public names:
 
+![Private Technitium and public Cloudflare request paths through separate Cilium gateways](../../assets/networking-request-paths.svg)
+
+*Private and public exposure are separate DNS, Gateway, and HTTPRoute choices.
+[Open the full-size request-path diagram](../../assets/networking-request-paths.svg).*
+
 ```text
 LAN client
   -> Firewalla DNS (192.168.10.1)

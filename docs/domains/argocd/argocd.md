@@ -2,6 +2,11 @@
 
 The ArgoCD bootstrap and sync-wave reference for this cluster.
 
+![Argo CD root Application, entrypoint layers, and health-gated sync waves zero through six](../../assets/argocd-sync-waves.svg)
+
+*The root Application creates the self-managing tree. Each wave must become
+Healthy before Argo CD applies the next one. [Open the full-size sync-wave diagram](../../assets/argocd-sync-waves.svg).*
+
 ## Bootstrap Rule
 
 Apply resources in this order:
@@ -93,12 +98,22 @@ Restore-before-bind inside Waves 4-6:
 
 ## What a Kustomize Component Is (Concept & Usage)
 
+![An application explicitly imports a Kustomize Component, which patches matching resources before Argo applies the rendered output](../../assets/kustomize-component-mixin.svg)
+
+*The application owns varying fields; the Component owns shared defaults; the
+rendered object contains both. [Open the Kustomize Component flow full size](../../assets/kustomize-component-mixin.svg).*
+
 Traditional Kustomize uses a rigid **base-overlay** pattern: an overlay inherits everything from a single base and applies environment-specific patches. This model breaks down when you need to share multiple independent, cross-cutting features (backups, ingress models, observability) across many apps.
 
-A **Kustomize Component** acts like a **mixin or trait**:
-*   It is a reusable bundle of patches loaded alongside base resources.
-*   An application can mix in multiple components in its `kustomization.yaml` (e.g. `components: [ ../../common/kopiur-backup, ../../common/observability ]`).
-*   The component targets resources by `kind` and `group` and injects uniform properties at build time.
+A **Kustomize Component** is an optional bundle of resources and patches:
+
+*   An application must explicitly load it through `components:` in its `kustomization.yaml`.
+*   During `kustomize build`, Kustomize parses the application's objects and matches Component patches by API group and kind.
+*   Structured JSON Patch operations add values at exact object paths, and Kustomize emits complete YAML for Argo CD to diff and apply.
+
+The Component does not run inside Kubernetes, discover files by name, or edit
+the source YAML as text. The complete mechanism and rendered example live in
+the [kopiur backup architecture](../storage/kopiur-backup-architecture.md#2-how-a-kustomize-component-composes-read-this-if-components-are-new).
 
 ### How the `kopiur-backup` Component works
 

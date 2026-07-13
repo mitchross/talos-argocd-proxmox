@@ -29,25 +29,10 @@ The whole cluster boots from one script. Once Omni hands you a running Talos clu
 
 ## How It Works
 
-```mermaid
-graph TD;
-    subgraph "Bootstrap (Manual, once)"
-        User(["User"]) -- "scripts/bootstrap-argocd.sh" --> Helm["Helm installs ArgoCD"];
-        Helm -- "Applies" --> RootApp["Root Application<br/>(root.yaml)"];
-    end
+![Argo CD bootstrap and dependency-gated sync waves](docs/assets/argocd-sync-waves.svg)
 
-    subgraph "GitOps Self-Management Loop (Automatic)"
-        RootApp -- "1. Points to<br/>.../argocd/apps/" --> ArgoConfigDir["ArgoCD Config<br/>(Projects, AppSets,<br/>entrypoints)"];
-        ArgoConfigDir -- "2. Deploys" --> AppSets["ApplicationSets"];
-        AppSets -- "3. Scan repo for<br/>app directories" --> AppManifests["Application dirs<br/>(e.g. my-apps/ai/comfyui/)"];
-        AppManifests -- "4. ArgoCD deploys" --> ClusterResources["Cluster Resources<br/>(workloads, operators, …)"];
-    end
-
-    style User fill:#a2d5c6,stroke:#333
-    style Helm fill:#5bc0de,stroke:#333
-    style RootApp fill:#f0ad4e,stroke:#333
-    style ArgoConfigDir fill:#d9534f,stroke:#333,color:#fff
-```
+*Wave numbers establish order; health checks make Argo CD wait.
+[Open the Argo CD flow full size](docs/assets/argocd-sync-waves.svg).*
 
 **The core idea: a directory *is* an application.** Add a directory with a `kustomization.yaml` under `my-apps/`, `infrastructure/`, or `monitoring/`, push to Git, and an ApplicationSet discovers it and creates the ArgoCD `Application` automatically. No manual `Application` resources.
 

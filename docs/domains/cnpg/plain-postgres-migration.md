@@ -5,6 +5,12 @@ backed up by kopiur**, and the four CNPG databases (gitea, immich, paperless,
 temporal) migrate to that pattern one at a time. The idle Crunchy PGO operator
 was removed the same day (it managed zero databases).
 
+![Decision between CNPG with Barman and plain PostgreSQL with Kopiur based on the required recovery contract](../../assets/postgres-recovery-choice.svg)
+
+*Choose CNPG when PITR or operator capabilities are requirements; choose the
+plain path when simple GitOps recovery and its explicit RPO are acceptable.
+[Open the full-size PostgreSQL decision diagram](../../assets/postgres-recovery-choice.svg).*
+
 ## Why
 
 CNPG's DR flow is intrinsically multi-commit: `bootstrap:` is creation-time

@@ -8,6 +8,11 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
 > Source: [`mitchross/talos-argocd-proxmox`](https://github.com/mitchross/talos-argocd-proxmox)
 > · This site renders `docs/` from that repo.
 
+![Logical overview of the Proxmox, Talos, Argo CD, networking, secrets, storage, and backup platform](assets/platform-overview.svg)
+
+*Git reconstructs desired state, 1Password reconstructs credentials, and RustFS
+reconstructs protected data. [Open the full-size platform map](assets/platform-overview.svg).*
+
 !!! tip "The point"
     The whole cluster can be destroyed and rebuilt with every protected volume
     restored automatically from the off-cluster Kopia repository — no manual storage

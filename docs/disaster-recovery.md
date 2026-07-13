@@ -11,6 +11,11 @@
 > [plain Postgres migration doc](domains/cnpg/plain-postgres-migration.md);
 > migrated databases follow the normal kopiur flow in this runbook.
 
+![Full-cluster failure, external survivors, Talos rebuild, Argo waves, data restoration, and acceptance](assets/disaster-recovery-sequence.svg)
+
+*Recovery is complete only after desired state, credentials, and protected data
+converge and are verified. [Open the full-size DR sequence](assets/disaster-recovery-sequence.svg).*
+
 !!! danger
     The destructive steps require explicit operator intent. This documents the
     verified path; it is not an invitation to nuke during routine maintenance.
