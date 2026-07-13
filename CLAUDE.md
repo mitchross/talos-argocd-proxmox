@@ -89,6 +89,14 @@ omni/                   # Omni (Sidero) deployment configs
 docs/                   # Documentation
 ```
 
+## Comment Style
+
+Comments earn their place in two ways only:
+1. **How it works** — mechanics not obvious from the YAML itself (e.g. how an ArgoCD app renders a chart, why `includeCRDs: true` IS the CRD lifecycle).
+2. **We got burned** — gotchas that caused a real incident or would silently break things (the "NEVER remove X" class).
+
+Do **not** write changelog/jira-style comments: no per-version release-note summaries, no "assessed on date, no impact" entries, no restating upstream changelogs — git history and release pages already record that. A version bump only warrants a comment if it changes how something works or adds a new gotcha. Don't match the legacy comment density in older files; it's accumulated cruft, not the standard.
+
 ## Critical Rules
 
 ### DO:
