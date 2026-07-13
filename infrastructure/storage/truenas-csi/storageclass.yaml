@@ -24,3 +24,47 @@ parameters:
 reclaimPolicy: Retain
 volumeBindingMode: Immediate
 allowVolumeExpansion: true
+---
+# WRITE tier only. ZVOL on `flashpool` (3x enterprise SATA SSD w/ PLP, RAIDZ1),
+# exported over NVMe-oF/TCP. NVMe-oF is the wire protocol — nothing here is an NVMe
+# disk; see configmap.yaml for why it beats iSCSI on Talos.
+#
+# Use this ONLY for fsync-heavy workloads (Postgres/ClickHouse/Kafka/Prometheus).
+# Measured, each through its full stack:
+#              4K fsync write     4K random read
+#   Longhorn:      259 IOPS         161k IOPS
+#   this class:  ~3,000 IOPS         68k IOPS
+# So it is ~11x on writes and ~2x WORSE on reads — Longhorn's consumer NVMe simply
+# out-reads enterprise SATA. Moving a read-heavy volume here is a downgrade.
+#
+# The ~3,000 ceiling is ZFS's ZIL on zvols, not the disks (a raw drive does 14,484)
+# and not the vdev layout — stripe, mirror and RAIDZ1 all measured identical, and it
+# does not scale with queue depth. Do not restripe the pool chasing write IOPS, and
+# do NOT "fix" it with sync=disabled: that makes ZFS lie about fsync, which for
+# Postgres is a corrupt cluster, not a few lost seconds.
+#
+# volblocksize is IMMUTABLE once a ZVOL exists. Do not change it after volumes exist.
+#
+# GOTCHA — a PVC moved here loses its backups unless you also swap the kopiur
+# component. A VolumeSnapshotClass is bound to ONE CSI driver: the shared
+# my-apps/common/kopiur-backup injects `longhorn-snapclass` (driver.longhorn.io),
+# which cannot snapshot a csi.truenas.io volume. Stack
+# my-apps/common/kopiur-backup-flash on top to swap in `truenas-snapshot`. Without
+# it the PVC looks backed up in git and produces nothing.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: truenas-flash
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: csi.truenas.io
+parameters:
+  protocol: "nvmeof"
+  pool: "flashpool"
+  datasetPath: "k8s/flash"
+  compression: "LZ4"
+  sync: "STANDARD"
+  volblocksize: "16K"
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
