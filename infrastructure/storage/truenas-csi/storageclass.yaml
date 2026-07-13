@@ -24,3 +24,41 @@ parameters:
 reclaimPolicy: Retain
 volumeBindingMode: Immediate
 allowVolumeExpansion: true
+---
+# Fast tier for write-latency-sensitive workloads (databases). ZVOL on `flashpool`
+# (3x HPE MK000480GWCEV enterprise SATA SSD, RAIDZ1) exported over NVMe-oF/TCP.
+#
+# Why this exists: the Longhorn default class is backed by consumer EDILOCA EN605
+# NVMe in the Proxmox host, measured at 259 fsync IOPS @ 1.25ms — DRAM-less, no
+# power-loss protection. The flashpool SSDs measure 14,484 fsync IOPS @ 0.064ms.
+# Even paying ~0.15ms of 10GbE round-trip, this lands ~6x better than local disk
+# for the fsync-per-commit workload Postgres/ClickHouse/Kafka actually run.
+#
+# NVMe-oF (not iSCSI) on purpose — see configmap.yaml for the full reasoning.
+#
+# volblocksize is IMMUTABLE once a ZVOL is created. 16K matches Postgres' 8K page
+# with compression headroom; do not change it after volumes exist.
+#
+# NOT the default class: Longhorn stays default. Only move a PVC here deliberately,
+# and only after adding a kopiur bundle that references VolumeSnapshotClass
+# `truenas-snapshot` — the shared my-apps/common/kopiur-backup component hardcodes
+# `longhorn-snapclass`, which is bound to driver.longhorn.io and will NOT snapshot a
+# csi.truenas.io volume. A database moved here without that swap loses its backups
+# silently.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: truenas-flash
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: csi.truenas.io
+parameters:
+  protocol: "nvmeof"
+  pool: "flashpool"
+  datasetPath: "k8s/flash"
+  compression: "LZ4"
+  sync: "STANDARD"
+  volblocksize: "16K"
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
