@@ -56,9 +56,18 @@ when the reader would otherwise need to assemble a flow from several files or
 controllers. Runbooks only need a diagram when ordering, state transitions, or
 failure boundaries are difficult to express as numbered steps.
 
-Use original SVG assets under `docs/assets/`; do not use Mermaid for canonical
-reader-facing diagrams. SVG keeps typography, spacing, arrows, and responsive
-behavior consistent without adding a JavaScript rendering dependency.
+Reader-facing diagrams are committed SVG assets under `docs/assets/`; the site
+does not render Mermaid in the browser. Operational flows use Mermaid sources
+under `docs/diagrams/` and are generated with the pinned CLI by running
+`npm run diagrams`. Do not edit those generated SVG files directly. The main
+platform map and Kustomize Component mental model remain hand-authored SVGs
+because their teaching composition needs deliberate spatial grouping.
+
+This split keeps routine flows auto-laid out and diffable while preserving full
+control where the visual itself carries the explanation. CI regenerates every
+Mermaid-backed asset and fails when the committed SVG does not match its
+source. The normalization step adds `xml:space="preserve"` through an XML
+parser so native SVG renderers retain spaces in Mermaid's nested text spans.
 
 Every diagram should:
 
@@ -77,13 +86,13 @@ Every diagram should:
 
 Motion is allowed when it explains direction or order. Keep it inside the SVG
 so the same asset works on GitHub Pages and remains a valid static image in
-Markdown. A connector is always a permanent solid path with a small open
-chevron. Animation is a separate packet that follows that path; it must never
-replace or hide the connector itself. Every animated SVG must hide packets
-under `prefers-reduced-motion: reduce` and remain fully understandable without
-them.
+Markdown. Mermaid flow sources assign stable edge IDs and use `animation: fast`
+or `animation: slow`; shared configuration disables those animations under
+`prefers-reduced-motion: reduce`. Custom SVG connectors use a permanent solid
+path with a small open chevron plus a separate moving packet. Every diagram
+must remain fully understandable when animation is disabled.
 
-The implementation is ordinary, dependency-free SVG:
+The custom-SVG implementation is ordinary, dependency-free SVG:
 
 ```xml
 <defs>
@@ -112,11 +121,20 @@ The implementation is ordinary, dependency-free SVG:
 </circle>
 ```
 
-`markerUnits="userSpaceOnUse"` keeps arrowheads independent of connector
-stroke width. Initial packet opacity keeps static renderers clean; browsers
-reveal the packet when animation begins. Negative `begin` values may stagger
-packets across a flow. Do not animate the connector's dash offset: short paths
-can appear detached, and static SVG renderers do not all freeze the same frame.
+For Mermaid sources, give each animated edge an ID and an explicit speed:
+
+```mermaid
+flowchart LR
+  Git desired@--> Argo
+  desired@{ animation: fast }
+```
+
+For custom SVG, `markerUnits="userSpaceOnUse"` keeps arrowheads independent of
+connector stroke width. Initial packet opacity keeps static renderers clean;
+browsers reveal the packet when animation begins. Negative `begin` values may
+stagger packets across a flow. Do not animate the connector's dash offset:
+short paths can appear detached, and static SVG renderers do not all freeze the
+same frame.
 This uses the same moving-flow idea as Draw.io's
 [Flow Animation](https://drawio-app.com/blog/connector-styles-and-animations-in-draw-io/),
 but preserves the line as the diagram's durable information layer.

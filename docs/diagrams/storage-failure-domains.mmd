@@ -1,0 +1,63 @@
+---
+title: Availability inside the cluster is not a backup
+config:
+  layout: elk
+---
+flowchart LR
+  accTitle: Longhorn, Kopiur, and Barman failure domains
+  accDescr: Longhorn and CSI snapshots remain inside Kubernetes. Kopiur copies application data to RustFS and restores replacement PVCs before binding. CloudNativePG uses a separate Barman bucket.
+
+  subgraph CLUSTER["TALOS CLUSTER"]
+    direction TB
+    APP["`Application pod
+    reads and writes`"]
+    PVC["`Longhorn PVC
+    live block storage`"]
+    SNAP["`CSI snapshot
+    point-in-time source`"]
+    REPLACE["`Replacement PVC
+    Pending`"]
+    MOVER["`Kopiur restore mover
+    hydrates volume`"]
+    BOUND["`PVC Bound with data
+    application may start`"]
+    CNPG["`CloudNativePG
+    database and WAL`"]
+    APP app@--> PVC
+    PVC snapshot@--> SNAP
+    REPLACE restore1@--> MOVER
+    MOVER restore2@--> BOUND
+  end
+
+  subgraph OFFCLUSTER["OUTSIDE KUBERNETES"]
+    direction TB
+    RUSTFS["`TrueNAS / RustFS
+    separate host boundary`"]
+    KOPIA["`Kopia bucket
+    application snapshots`"]
+    BARMAN["`postgres-backups bucket
+    base backup and WAL`"]
+    RUSTFS ~~~ KOPIA
+    KOPIA ~~~ BARMAN
+  end
+
+  SNAP backup@-- "Kopia mover" --> KOPIA
+  KOPIA hydrate@-- "restore" --> MOVER
+  CNPG database@-- "Barman" --> BARMAN
+
+  classDef workload fill:#fde8e8,stroke:#dc8c8c,color:#17212b
+  classDef runtime fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  classDef restore fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  classDef external fill:#fff3df,stroke:#d8ad55,color:#17212b
+  class APP workload
+  class PVC,SNAP,CNPG runtime
+  class REPLACE,MOVER,BOUND restore
+  class RUSTFS,KOPIA,BARMAN external
+
+  app@{ animation: fast }
+  snapshot@{ animation: fast }
+  backup@{ animation: slow }
+  hydrate@{ animation: slow }
+  restore1@{ animation: fast }
+  restore2@{ animation: fast }
+  database@{ animation: slow }

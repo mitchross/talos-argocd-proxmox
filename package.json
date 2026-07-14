@@ -1,0 +1,11 @@
+{
+  "name": "talos-argocd-proxmox-docs",
+  "private": true,
+  "scripts": {
+    "diagrams": "bash scripts/render-diagrams.sh"
+  },
+  "devDependencies": {
+    "@xmldom/xmldom": "0.9.10",
+    "@mermaid-js/mermaid-cli": "11.16.0"
+  }
+}

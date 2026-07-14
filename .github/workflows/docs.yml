@@ -7,11 +7,19 @@ on:
     paths:
       - "docs/**"
       - "mkdocs.yml"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/render-diagrams.sh"
+      - "scripts/normalize-diagram.mjs"
       - ".github/workflows/docs.yml"
   pull_request:
     paths:
       - "docs/**"
       - "mkdocs.yml"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/render-diagrams.sh"
+      - "scripts/normalize-diagram.mjs"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
 
@@ -28,15 +36,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Verify generated diagrams
+        run: |
+          npm ci
+          npm run diagrams
+          git diff --exit-code -- docs/assets
+
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.x"
           # cache: pip removed — repo has no requirements.txt/pyproject.toml,
-          # so setup-python@v5 fails before MkDocs runs. Deps are installed
+          # so setup-python fails before MkDocs runs. Deps are installed
           # inline by the next step (mkdocs-material + pymdown-extensions);
           # a one-job CI run installing two small wheels is cheap enough that
           # we don't need pip caching here.
@@ -57,7 +76,7 @@ jobs:
 
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
@@ -71,4 +90,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

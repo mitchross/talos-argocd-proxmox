@@ -1,0 +1,50 @@
+---
+title: How Argo CD bootstraps and waits
+config:
+  layout: dagre
+---
+flowchart LR
+  accTitle: Argo CD bootstrap and sync-wave ordering
+  accDescr: A manual seed creates the root Application. Argo CD then discovers entrypoints and applies waves zero through six, waiting for each wave to become healthy before continuing.
+
+  subgraph BOOTSTRAP["BOOTSTRAP ONCE"]
+    direction LR
+    BOOT["`Manual seed: root.yaml
+    Root Application self-manages
+    Entrypoints discover Applications`"]
+  end
+
+  subgraph WAVES["HEALTH-GATED RECONCILIATION"]
+    direction LR
+    W01["`WAVES 0-1 - FOUNDATION
+    Argo CD, Cilium, 1Password, ESO
+    cert-manager, Longhorn, snapshots`"]
+    W23["`WAVES 2-3 - RECOVERY
+    Kopiur operator and CRDs
+    repository, credentials, snapshot class`"]
+    W45["`WAVES 4-5 - PLATFORM
+    infrastructure and databases
+    OpenTelemetry and monitoring`"]
+    W6["`Wave 6 - User workloads
+    applications and
+    observability overlays`"]
+    W01 wave12@--> W23
+    W23 wave34@--> W45
+    W45 wave56@--> W6
+  end
+
+  BOOT entry@--> W01
+
+  classDef action fill:#fde8e8,stroke:#dc8c8c,color:#17212b
+  classDef desired fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  classDef waiting fill:#f3f6f8,stroke:#9aa8b3,color:#17212b
+  class W6 action
+  class BOOT desired
+  class W23 controller
+  class W01,W45 waiting
+
+  entry@{ animation: fast }
+  wave12@{ animation: slow }
+  wave34@{ animation: slow }
+  wave56@{ animation: slow }
