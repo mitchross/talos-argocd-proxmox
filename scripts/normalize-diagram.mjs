@@ -1,10 +1,13 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { DOMParser, XMLSerializer } from "@xmldom/xmldom";
+import { diagramHash } from "./diagram-hash.mjs";
 
-const [path] = process.argv.slice(2);
+const [path, ...hashInputs] = process.argv.slice(2);
 
-if (!path) {
-  throw new Error("usage: node scripts/normalize-diagram.mjs <diagram.svg>");
+if (!path || hashInputs.length === 0) {
+  throw new Error(
+    "usage: node scripts/normalize-diagram.mjs <diagram.svg> <hash-input>...",
+  );
 }
 
 const source = await readFile(path, "utf8");
@@ -20,5 +23,6 @@ svg.setAttributeNS(
   "xml:space",
   "preserve",
 );
+svg.setAttribute("data-source-hash", await diagramHash(hashInputs));
 
 await writeFile(path, new XMLSerializer().serializeToString(document));

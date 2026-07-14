@@ -11,6 +11,9 @@ on:
       - "package-lock.json"
       - "scripts/render-diagrams.sh"
       - "scripts/normalize-diagram.mjs"
+      - "scripts/diagram-hash.mjs"
+      - "scripts/verify-diagram.mjs"
+      - "scripts/check-diagrams.sh"
       - ".github/workflows/docs.yml"
   pull_request:
     paths:
@@ -20,6 +23,9 @@ on:
       - "package-lock.json"
       - "scripts/render-diagrams.sh"
       - "scripts/normalize-diagram.mjs"
+      - "scripts/diagram-hash.mjs"
+      - "scripts/verify-diagram.mjs"
+      - "scripts/check-diagrams.sh"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
 
@@ -54,8 +60,7 @@ jobs:
       - name: Verify generated diagrams
         run: |
           npm ci
-          npm run diagrams
-          git diff --exit-code -- docs/assets
+          npm run diagrams:check
 
       - uses: actions/setup-python@v6
         with:

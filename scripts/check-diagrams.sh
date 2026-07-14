@@ -3,7 +3,8 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source_dir="${repo_root}/docs/diagrams"
-output_dir="${DIAGRAM_OUTPUT_DIR:-${repo_root}/docs/assets}"
+committed_dir="${repo_root}/docs/assets"
+temporary_dir="$(mktemp -d)"
 config="${source_dir}/mermaid-config.json"
 puppeteer_config="${source_dir}/puppeteer-config.json"
 shared_hash_inputs=(
@@ -15,19 +16,19 @@ shared_hash_inputs=(
   "${repo_root}/scripts/diagram-hash.mjs"
 )
 
-mkdir -p "${output_dir}"
+trap 'rm -rf "${temporary_dir}"' EXIT
+
+DIAGRAM_OUTPUT_DIR="${temporary_dir}" \
+  bash "${repo_root}/scripts/render-diagrams.sh"
 
 for source in "${source_dir}"/*.mmd; do
   name="$(basename "${source}" .mmd)"
-  npx mmdc \
-    --quiet \
-    --input "${source}" \
-    --output "${output_dir}/${name}.svg" \
-    --configFile "${config}" \
-    --puppeteerConfigFile "${puppeteer_config}" \
-    --backgroundColor white
-  node "${repo_root}/scripts/normalize-diagram.mjs" \
-    "${output_dir}/${name}.svg" \
-    "${source}" \
-    "${shared_hash_inputs[@]}"
+  hash_inputs=("${source}" "${shared_hash_inputs[@]}")
+
+  node "${repo_root}/scripts/verify-diagram.mjs" \
+    "${committed_dir}/${name}.svg" \
+    "${hash_inputs[@]}"
+  node "${repo_root}/scripts/verify-diagram.mjs" \
+    "${temporary_dir}/${name}.svg" \
+    "${hash_inputs[@]}"
 done
