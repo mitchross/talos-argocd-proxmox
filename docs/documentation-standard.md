@@ -66,6 +66,8 @@ Every diagram should:
 - use numbered stages and directional arrows for ordered flows;
 - separate build time, runtime, and recovery when those phases differ;
 - keep box labels short and put detailed caveats in the surrounding prose;
+- route connectors through whitespace and enter a target from a clear edge;
+  connector paths must never cross headings, labels, or body text;
 - use a `viewBox`, readable text at narrow widths, and descriptive `<title>` and
   `<desc>` elements;
 - include meaningful Markdown alt text and a caption that states the invariant
