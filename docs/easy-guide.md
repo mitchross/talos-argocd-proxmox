@@ -83,7 +83,7 @@ discover everything else. Git is the cluster; the cluster is a cache.
 
 ## Part 2 — How Argo waits (sync waves)
 
-![Argo CD sync waves turn repository dependencies into a gated rebuild sequence](assets/argocd-sync-waves.svg)
+![Argo CD sync waves turn repository dependencies into a gated rebuild sequence](assets/argocd-sync-waves.svg){ loading=lazy }
 
 *Wave numbers order resources; health checks make each dependency gate wait.
 [Open the sync-wave sequence full size](assets/argocd-sync-waves.svg).*
@@ -169,7 +169,7 @@ Application: Healthy — Argo's sync completes
 
 ## Part 3 — Kustomize components (shared build-time patches)
 
-![An application opts into a Kustomize Component, which patches matching resources before Argo applies the rendered YAML](assets/kustomize-component-mixin.svg)
+![An application opts into a Kustomize Component, which patches matching resources before Argo applies the rendered YAML](assets/kustomize-component-mixin.svg){ loading=lazy }
 
 *The app explicitly opts in, Kustomize patches matching objects during build,
 and Argo receives the complete rendered output. [Open the Kustomize Component flow full size](assets/kustomize-component-mixin.svg).*
@@ -244,7 +244,7 @@ entire design discipline.
 
 ## Part 4 — kopiur: the backup operator
 
-![Kopiur configuration is assembled at Kustomize build time, while backup and restore happen later inside Kubernetes](assets/kopiur-kustomize-flow.svg)
+![Kopiur configuration is assembled at Kustomize build time, while backup and restore happen later inside Kubernetes](assets/kopiur-kustomize-flow.svg){ loading=lazy }
 
 *Build time declares the recovery contract; runtime moves the data and enforces
 restore-before-bind. [Open the complete Kopiur flow full size](assets/kopiur-kustomize-flow.svg).*
@@ -472,7 +472,7 @@ Full detail, including the daemon-drop (mysql `999:568`) and root-owned
 
 ## Part 7 — Putting it together: the full DR story
 
-![The disaster-recovery sequence from surviving sources of truth through Talos provisioning, Argo reconciliation, data restoration, and proof](assets/disaster-recovery-sequence.svg)
+![The disaster-recovery sequence from surviving sources of truth through Talos provisioning, Argo reconciliation, data restoration, and proof](assets/disaster-recovery-sequence.svg){ loading=lazy }
 
 *Recovery finishes only when desired state, credentials, protected data, and
 runtime health all converge. [Open the disaster-recovery sequence full size](assets/disaster-recovery-sequence.svg).*

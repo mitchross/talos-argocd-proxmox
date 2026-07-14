@@ -1,0 +1,23 @@
+/* Give architecture diagrams enough room without changing mobile navigation. */
+@media screen and (min-width: 76.25em) {
+  .md-grid {
+    max-width: 80rem;
+  }
+}
+
+.md-typeset p > img[src*="assets/"][src$=".svg"] {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 1.25rem auto 0.8rem;
+  background: #fff;
+  border: 1px solid rgb(88 103 117 / 22%);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgb(23 33 43 / 14%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .md-typeset p > img[src*="assets/"][src$=".svg"] {
+    scroll-behavior: auto;
+  }
+}

@@ -166,7 +166,7 @@ target selector and JSON Patch operations, but the data flow is equivalent.
 Non-matching resources pass through unchanged, and the source YAML files are not
 rewritten.
 
-![A per-PVC stub and reusable Kustomize Component combine into a complete SnapshotPolicy](../../assets/kustomize-component-mixin.svg)
+![A per-PVC stub and reusable Kustomize Component combine into a complete SnapshotPolicy](../../assets/kustomize-component-mixin.svg){ loading=lazy }
 
 *Coral fields belong to the application. Green fields are shared defaults from
 the Component. The rendered resource contains both before Argo CD sees it.*

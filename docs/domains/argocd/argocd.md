@@ -98,7 +98,7 @@ Restore-before-bind inside Waves 4-6:
 
 ## What a Kustomize Component Is (Concept & Usage)
 
-![An application explicitly imports a Kustomize Component, which patches matching resources before Argo applies the rendered output](../../assets/kustomize-component-mixin.svg)
+![An application explicitly imports a Kustomize Component, which patches matching resources before Argo applies the rendered output](../../assets/kustomize-component-mixin.svg){ loading=lazy }
 
 *The application owns varying fields; the Component owns shared defaults; the
 rendered object contains both. [Open the Kustomize Component flow full size](../../assets/kustomize-component-mixin.svg).*

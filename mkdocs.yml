@@ -76,6 +76,7 @@ plugins:
 extra_css:
   - assets/kopiur-playground.css
   - assets/nav-tweaks.css
+  - assets/diagram-docs.css
 
 extra_javascript:
   - assets/kopiur-playground.js
