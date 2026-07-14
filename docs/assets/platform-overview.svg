@@ -67,13 +67,13 @@
   <rect x="1175" y="675" width="130" height="66" rx="6" fill="#e1f3e8"/><text x="1240" y="704" text-anchor="middle" class="b">Plain PG</text><text x="1240" y="727" text-anchor="middle" class="sm">+ Kopiur</text>
   <rect x="1320" y="675" width="130" height="66" rx="6" fill="#fff3df"/><text x="1385" y="704" text-anchor="middle" class="b">CNPG</text><text x="1385" y="727" text-anchor="middle" class="sm">+ Barman</text>
 
-  <path id="omni-talos" class="connector" d="M195 261 V300 H235 V398" stroke="#70bcc4" marker-end="url(#at)"/>
+  <path id="omni-talos" class="connector" d="M195 261 V300 H340 V388 H235 V398" stroke="#70bcc4" marker-end="url(#at)"/>
   <circle class="packet" r="6" fill="#087e8b" opacity="0"><set attributeName="opacity" to="1" begin=".01s" fill="freeze"/><animateMotion dur="2.4s" repeatCount="indefinite" begin="-.2s"><mpath href="#omni-talos"/></animateMotion></circle>
   <path id="git-argo" class="connector" d="M475 261 V286 H565 V398" stroke="#70bcc4" marker-end="url(#at)"/>
   <circle class="packet" r="6" fill="#087e8b" opacity="0"><set attributeName="opacity" to="1" begin=".01s" fill="freeze"/><animateMotion dur="2.4s" repeatCount="indefinite" begin="-.6s"><mpath href="#git-argo"/></animateMotion></circle>
-  <path id="dns-cilium" class="connector" d="M755 261 V300 H860 V481" stroke="#70bcc4" marker-end="url(#at)"/>
+  <path id="dns-cilium" class="connector" d="M755 261 V524 H788" stroke="#70bcc4" marker-end="url(#at)"/>
   <circle class="packet" r="6" fill="#087e8b" opacity="0"><set attributeName="opacity" to="1" begin=".01s" fill="freeze"/><animateMotion dur="2.4s" repeatCount="indefinite" begin="-1s"><mpath href="#dns-cilium"/></animateMotion></circle>
-  <path id="onepassword-eso" class="connector" d="M1035 261 V286 H1000 V481" stroke="#dc8c8c" marker-end="url(#ar)"/>
+  <path id="onepassword-eso" class="connector" d="M1035 261 V300 H1105 V524 H1072" stroke="#dc8c8c" marker-end="url(#ar)"/>
   <circle class="packet" r="6" fill="#dc5f5f" opacity="0"><set attributeName="opacity" to="1" begin=".01s" fill="freeze"/><animateMotion dur="2.4s" repeatCount="indefinite" begin="-1.4s"><mpath href="#onepassword-eso"/></animateMotion></circle>
 
   <path id="talos-argo" class="connector" d="M365 596 H398" stroke="#7b8995" marker-end="url(#ad)"/>
