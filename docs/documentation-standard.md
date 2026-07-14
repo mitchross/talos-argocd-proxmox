@@ -74,35 +74,50 @@ Every diagram should:
   that cannot be verified from the owning manifests.
 
 Motion is allowed when it explains direction or order. Keep it inside the SVG
-as dependency-free CSS so the same asset works on GitHub Pages and remains a
-valid static image in Markdown. Animated connectors should use moving dash
-offsets and a short staggered reveal, not decorative movement. Every animated
-SVG must disable animation under `prefers-reduced-motion: reduce` and remain
-fully understandable in that static state.
+so the same asset works on GitHub Pages and remains a valid static image in
+Markdown. A connector is always a permanent solid path with a small open
+chevron. Animation is a separate packet that follows that path; it must never
+replace or hide the connector itself. Every animated SVG must hide packets
+under `prefers-reduced-motion: reduce` and remain fully understandable without
+them.
 
-The implementation is ordinary SVG CSS:
+The implementation is ordinary, dependency-free SVG:
 
-```css
-.flow {
-  stroke-dasharray: 14 10;
-  animation:
-    reveal 0.45s ease-out both var(--delay, 0s),
-    flow 1.1s linear infinite;
-}
+```xml
+<defs>
+  <marker id="arrow" markerUnits="userSpaceOnUse"
+          markerWidth="10" markerHeight="10" refX="9" refY="5"
+          orient="auto">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="#087e8b"
+          stroke-width="1.8" stroke-linecap="round"
+          stroke-linejoin="round" />
+  </marker>
+  <style>
+    .connector { fill:none; stroke:#70bcc4; stroke-width:3.5;
+                 stroke-linecap:round; stroke-linejoin:round }
+    .packet { stroke:#fff; stroke-width:2 }
+    @media (prefers-reduced-motion:reduce) { .packet { display:none } }
+  </style>
+</defs>
 
-@keyframes flow {
-  to { stroke-dashoffset: -48; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .flow { animation: none; stroke-dasharray: none; }
-}
+<path id="git-argo" class="connector" d="M120 180 H420"
+      marker-end="url(#arrow)" />
+<circle class="packet" r="5" fill="#087e8b" opacity="0">
+  <set attributeName="opacity" to="1" begin=".01s" fill="freeze" />
+  <animateMotion dur="2s" repeatCount="indefinite">
+    <mpath href="#git-argo" />
+  </animateMotion>
+</circle>
 ```
 
-Set `style="--delay:.4s"` on successive connectors to stage the first reveal.
-Use `loading=lazy` on diagrams below the first viewport so the reveal begins
-near the time the reader reaches it. This is the same moving-connector model as
-Draw.io's [Flow Animation](https://drawio-app.com/blog/connector-styles-and-animations-in-draw-io/), implemented directly in the repository-owned SVG.
+`markerUnits="userSpaceOnUse"` keeps arrowheads independent of connector
+stroke width. Initial packet opacity keeps static renderers clean; browsers
+reveal the packet when animation begins. Negative `begin` values may stagger
+packets across a flow. Do not animate the connector's dash offset: short paths
+can appear detached, and static SVG renderers do not all freeze the same frame.
+This uses the same moving-flow idea as Draw.io's
+[Flow Animation](https://drawio-app.com/blog/connector-styles-and-animations-in-draw-io/),
+but preserves the line as the diagram's durable information layer.
 
 Keep color meanings stable across the site:
 
