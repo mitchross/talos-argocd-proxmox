@@ -73,6 +73,37 @@ Every diagram should:
 - avoid credentials, private identifiers, volatile version numbers, and details
   that cannot be verified from the owning manifests.
 
+Motion is allowed when it explains direction or order. Keep it inside the SVG
+as dependency-free CSS so the same asset works on GitHub Pages and remains a
+valid static image in Markdown. Animated connectors should use moving dash
+offsets and a short staggered reveal, not decorative movement. Every animated
+SVG must disable animation under `prefers-reduced-motion: reduce` and remain
+fully understandable in that static state.
+
+The implementation is ordinary SVG CSS:
+
+```css
+.flow {
+  stroke-dasharray: 14 10;
+  animation:
+    reveal 0.45s ease-out both var(--delay, 0s),
+    flow 1.1s linear infinite;
+}
+
+@keyframes flow {
+  to { stroke-dashoffset: -48; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow { animation: none; stroke-dasharray: none; }
+}
+```
+
+Set `style="--delay:.4s"` on successive connectors to stage the first reveal.
+Use `loading=lazy` on diagrams below the first viewport so the reveal begins
+near the time the reader reaches it. This is the same moving-connector model as
+Draw.io's [Flow Animation](https://drawio-app.com/blog/connector-styles-and-animations-in-draw-io/), implemented directly in the repository-owned SVG.
+
 Keep color meanings stable across the site:
 
 | Color | Meaning |
