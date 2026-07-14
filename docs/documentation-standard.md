@@ -64,10 +64,12 @@ platform map and Kustomize Component mental model remain hand-authored SVGs
 because their teaching composition needs deliberate spatial grouping.
 
 This split keeps routine flows auto-laid out and diffable while preserving full
-control where the visual itself carries the explanation. CI regenerates every
-Mermaid-backed asset and fails when the committed SVG does not match its
-source. The normalization step adds `xml:space="preserve"` through an XML
-parser so native SVG renderers retain spaces in Mermaid's nested text spans.
+control where the visual itself carries the explanation. Each committed SVG
+contains a source hash covering its Mermaid file, renderer lockfile, scripts,
+and configuration. CI verifies that hash, independently compiles every source
+to a temporary directory, and checks the resulting SVG structure. The
+normalization step adds `xml:space="preserve"` through an XML parser so native
+SVG renderers retain spaces in Mermaid's nested text spans.
 
 Every diagram should:
 
