@@ -1,0 +1,42 @@
+{
+  "theme": "base",
+  "look": "neo",
+  "layout": "elk",
+  "htmlLabels": false,
+  "deterministicIds": true,
+  "deterministicIDSeed": "talos-argocd-proxmox",
+  "fontFamily": "Inter, ui-sans-serif, system-ui, sans-serif",
+  "flowchart": {
+    "htmlLabels": false,
+    "curve": "linear",
+    "nodeSpacing": 44,
+    "rankSpacing": 64,
+    "padding": 18
+  },
+  "elk": {
+    "mergeEdges": false,
+    "nodePlacementStrategy": "LINEAR_SEGMENTS",
+    "considerModelOrder": "PREFER_NODES"
+  },
+  "themeVariables": {
+    "background": "#ffffff",
+    "primaryColor": "#dff4f6",
+    "primaryTextColor": "#17212b",
+    "primaryBorderColor": "#70bcc4",
+    "secondaryColor": "#e1f3e8",
+    "secondaryTextColor": "#17212b",
+    "secondaryBorderColor": "#7bc397",
+    "tertiaryColor": "#f3f6f8",
+    "tertiaryTextColor": "#17212b",
+    "tertiaryBorderColor": "#cbd6dd",
+    "lineColor": "#52616d",
+    "textColor": "#17212b",
+    "mainBkg": "#ffffff",
+    "nodeBorder": "#9fd3da",
+    "clusterBkg": "#f3f6f8",
+    "clusterBorder": "#cbd6dd",
+    "edgeLabelBackground": "#ffffff",
+    "fontSize": "18px"
+  },
+  "themeCSS": ".node rect,.node polygon,.node path{filter:drop-shadow(0 3px 3px rgba(23,33,43,.10))}.nodeLabel{font-weight:600}.cluster-label text{font-weight:700;fill:#344250!important}.edgePath path{stroke-width:2.4px}.edgeLabel text{font-size:15px;fill:#455563!important}.labelBkg{fill:#fff!important;opacity:.94}.flowchart-link{stroke-linecap:round;stroke-linejoin:round}@media (prefers-reduced-motion:reduce){.edge-animation-slow,.edge-animation-fast{animation:none!important;stroke-dasharray:none!important}}"
+}
