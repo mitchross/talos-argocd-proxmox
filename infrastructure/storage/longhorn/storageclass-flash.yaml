@@ -1,0 +1,58 @@
+# Fast local flash tier. Longhorn volumes pinned (via `diskSelector: flash`) to the
+# `ssd-flash` disk — 2x HPE MK000480GWCEV enterprise SATA SSDs with power-loss
+# protection, in an mdadm RAID1, exposed to Proxmox as a **thick** LVM VG
+# (`ssd-ent`).
+#
+# This is one of the cluster's storage tiers, classified by what the hardware IS,
+# not by any single app:
+#
+#   longhorn-flash  (this class)  Proxmox 2x enterprise SATA SSD (PLP, RAID1)  fast local flash, write-strong
+#   longhorn        (default)     Proxmox 2x EDILOCA NVMe                       fast local, read-strong
+#   truenas-nfs                   TrueNAS HDD (BigTank)                         network bulk RWX
+#   *-smb                         TrueNAS HDD                                   network SMB shares
+#
+# Use `longhorn-flash` for anything that wants fast, low-latency local flash and is
+# write- or fsync-sensitive: databases, message queues, anything doing many small
+# durable writes. It is NOT database-only — it is the fast-flash tier, usable by any
+# workload that benefits from it.
+#
+# WHY it exists — measured 4K QD1 fsync=1 (a single durable write / DB commit):
+#
+#   longhorn        (EDILOCA NVMe)            :   259 IOPS @ 1.25 ms (p99 2.5 ms)
+#   longhorn-flash  (enterprise SATA, RAID1)  : 3,069 IOPS @ 0.32 ms (p99 0.92 ms)
+#
+# ~12x the durable-write rate and a 2.7x better tail. The EDILOCA is DRAM-less with
+# no PLP (raw fsync 697 IOPS, QD32 p99 78 ms).
+#
+# WHEN NOT to use it: read-heavy or big-sequential-write volumes. The EDILOCA NVMe
+# behind the default class genuinely out-reads these SATA drives (161k vs 68k random
+# read IOPS; 2310 vs ~500 MB/s sequential), and sequential write on this host's X399
+# chipset SATA is only ~65-92 MB/s. Read-dominated or streaming-write workloads
+# (ClickHouse, Prometheus TSDB, Loki) belong on the default class.
+#
+# GOTCHA — the underlying Proxmox VG is **thick** LVM on purpose, NOT lvmthin.
+# LVM-thin commits pool metadata on every fsync and that transaction serializes
+# everything: measured 170 IOPS @ 4.8ms on these same drives, i.e. WORSE than the
+# consumer NVMe. Pre-allocating the volume did not help. If anyone recreates
+# `ssd-ent` as an lvmthin pool, this tier silently becomes a downgrade.
+#
+# dataLocality strict-local: the replica must live on the node that runs the pod —
+# no cross-node hop on the write path. Fine here: single worker node.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-flash
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "1"
+  staleReplicaTimeout: "30"
+  fsType: "ext4"
+  # Pins volumes to Longhorn disks tagged `flash` — see the
+  # node.longhorn.io/default-disks-config annotation in the Omni cluster template.
+  diskSelector: "flash"
+  dataLocality: "strict-local"
