@@ -17,17 +17,16 @@ replace static `nfs.csi.k8s.io` PVs for pre-existing data. TrueNAS CSI (pinned
 ownership canary before adopting the class for a workload that runs as a
 non-root UID.
 
-`truenas-flash` (added 2026-07-13) provisions ZVOLs on `flashpool` (3x enterprise
-SATA SSD, RAIDZ1) over **NVMe-oF/TCP** for write-latency-sensitive workloads. It
-is the fast tier for databases: the Longhorn default class sits on consumer
-EDILOCA NVMe measured at **259 fsync IOPS @ 1.25ms**, versus **14,484 @ 0.064ms**
-on flashpool. NVMe-oF, not iSCSI — Talos 1.13 has `CONFIG_NVME_TCP=y` built in and
-nvme-cli ships inside the driver image, so it needs no system extension and no
-rolling reboot. A PVC moved here MUST also swap its kopiur bundle to the
-`kopiur-backup-flash` component (VolumeSnapshotClass `truenas-snapshot`) — the
-base component's `longhorn-snapclass` is bound to `driver.longhorn.io` and cannot
-snapshot a `csi.truenas.io` volume, so the PVC would look backed up in git while
-producing nothing.
+**Do not add a network-attached block tier for databases.** This was built and
+measured on 2026-07-13 (a `flashpool` of 3x enterprise SATA SSD on the NAS, exported
+over NVMe-oF/TCP) and **abandoned**. The driver worked, but sync writes do not survive
+the network hop: the same zvol did **2,510 fsync IOPS locally on the NAS and 437 over
+the wire** — only 1.7x better than Longhorn's 259, nowhere near the ~11x the local
+numbers implied. It is not the wire (RTT is 0.147ms); it is that every fsync becomes
+ext4-journal -> NVMe-oF FLUSH -> nvmet -> ZFS ZIL commit, each a round trip. A real SAN
+array hides this behind battery-backed NVRAM; a NAS running honest ZFS cannot.
+Databases fsync on every commit, so they are the **worst** workload to put behind a
+network. Put database flash **local to the node that runs them** instead.
 
 ## Longhorn PVC Template
 
