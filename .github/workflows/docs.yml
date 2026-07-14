@@ -45,6 +45,12 @@ jobs:
           node-version: "24"
           cache: npm
 
+      - name: Install diagram font
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends fonts-inter
+          fc-cache --force
+
       - name: Verify generated diagrams
         run: |
           npm ci
