@@ -1,125 +1,94 @@
-# Storage tiers — which StorageClass for which PVC
+# Storage tiers — and why database flash must be node-local
 
-**The one rule:** *does this volume fsync on every write?*
-Databases do (every commit). Almost nothing else does.
+**Status (2026-07-13):** a network-attached flash tier was **built, measured, and abandoned**.
+This doc records why, so nobody rebuilds it.
 
-That single question decides the tier, because the tiers are not "fast" and "slow" — they each
-win at a different thing, and picking wrong makes things **worse**, not just suboptimal.
+## The rule
 
-## The measurements this rule is built on
+| Use | Class |
+|-----|-------|
+| **Anything RWO** — app state, caches, **and databases** | `longhorn` (default, node-local block) |
+| Bulk media, model weights, hand-browsable, **RWX** | SMB / NFS classes (see `infrastructure/storage/CLAUDE.md`) |
 
-Each measured through its **full stack** (fio, 2026-07-13):
+**Do not add a network-attached block StorageClass for databases.** We tried. Numbers below.
 
-| | 4K fsync write | 4K random read | 1M seq read | 1M seq write |
-|---|---|---|---|---|
-| **`longhorn`** (consumer EDILOCA NVMe, in Proxmox) | **259 IOPS** | **161k IOPS** | **2310 MB/s** | 109 MB/s |
-| **`truenas-flash`** (enterprise SATA SSD, RAIDZ1, over NVMe-oF) | **~3,000 IOPS** | 68k IOPS | 1018 MB/s | **~750 MB/s** |
+## What we tried and what it cost
 
-Read that table twice. **Longhorn's consumer NVMe out-reads the enterprise SATA by 2x.** NVMe beats
-SATA at reading, and power-loss protection does not change that. What the consumer drive *cannot*
-do is write: 259 fsync IOPS is a DRAM-less, no-PLP write cliff.
+A `flashpool` on the NAS — 3x HPE MK000480GWCEV enterprise SATA SSD (power-loss protected),
+RAIDZ1 — exported to Kubernetes over **NVMe-oF/TCP** via `truenas-csi` v1.1.1.
 
-So: **`truenas-flash` is ~11x on writes and ~2x WORSE on reads.** It is a *write* tier, not a
-"fast" tier. Moving a read-heavy volume onto it is a **downgrade**.
+**The driver worked.** Talos v1.13 has `CONFIG_NVME_TCP=y` built in and nvme-cli ships inside the
+driver image, so it attached `/dev/nvme0n1` in a pod with **no system extension and no reboot**.
+That part was never the problem.
 
-## The decision tree
+**The performance was.** 4K QD1 `fsync=1` — one database commit:
 
-```
-                    Does more than one pod mount it,
-                    or is it bulk media / model weights?
-                              |
-                 yes ---------+--------- no
-                  |                       |
-          SMB / NFS classes        Is it a DATABASE?
-       (BigTank or ai-pool)        (fsyncs every write)
-                                          |
-                            yes ----------+---------- no
-                             |                         |
-                     truenas-flash                 longhorn
-                     (NVMe-oF, RWO)             (the default)
-```
+| | IOPS | per-op |
+|---|---|---|
+| Longhorn (consumer EDILOCA NVMe, local to Proxmox) | 259 | 3.86 ms |
+| flashpool zvol, **local on the NAS** | **2,510** | 0.076 ms |
+| flashpool zvol, **over NVMe-oF** (what a pod actually gets) | **437** | **2.29 ms** |
 
-### 1. `truenas-flash` — databases only
+**1.7x over Longhorn.** Not the ~11x the local numbers promised.
 
-Postgres, MySQL, ClickHouse, Kafka/Redpanda, Redis (persistent), Prometheus TSDB, Loki,
-Qdrant, Meilisearch. Anything whose write path is "append to a log, fsync, acknowledge."
+**And it is not the network.** Measured: RTT Proxmox->NAS is **0.147 ms**; ZFS on the zvol is
+**0.076 ms**. Those imply ~0.22 ms/op (~4,500 IOPS). We got **2.29 ms/op**.
 
-**RWO only.** NVMe-oF is block storage — it cannot be RWX. A block device mounted by two
-writers is a corrupted block device.
+The ~2ms is the *chain*: every fsync becomes
+`ext4 journal write` -> `NVMe-oF FLUSH` -> `nvmet` -> `ZFS ZIL commit` -> ack — each a round trip,
+and the ZIL commit is a real write to real disks.
 
-### 2. `longhorn` — the default, and it stays the default
+**Why enterprise SANs don't have this problem:** a NetApp/Pure/PowerStore acknowledges a sync
+write once it lands in **battery-backed NVRAM mirrored across two controllers** (~100us), then
+destages later. It cheats, safely. ZFS is *honest* about durability and actually commits the log.
+A NAS running ZFS is not a SAN array, and asking it to behave like one produces exactly the
+numbers above.
 
-App config, app state, caches, libraries, anything read-mostly, and **anything needing RWX**
-(Longhorn provides that via a share-manager pod). It reads better than the flash tier and it is
-node-local (no NAS dependency). **When in doubt, use Longhorn.**
+**Databases fsync on every commit.** That makes them the single worst workload to put behind a
+network. This is the opposite of the intuition that led us here ("databases are write-heavy, so
+give them the fast write tier") — the write-heaviness is precisely what the network destroys.
 
-### 3. SMB / NFS — bulk and shared
+## Three operational failures, in the first hour
 
-Media libraries, model weights, anything multiple pods read, anything you want to browse by hand.
-Files, not blocks. See `infrastructure/storage/CLAUDE.md` for the class list.
+Recorded because any one would bite a future attempt:
 
-## Why not "just put everything on flash"
+1. **ext4 corruption** after a detach/reattach cycle (`UNEXPECTED INCONSISTENCY / Resize inode not
+   valid`). Cause not fully isolated, but "maybe it corrupts volumes" is not acceptable under a
+   database.
+2. **Child datasets silently unmounted** (`flashpool/k8s/flash` had a mountpoint but was not
+   mounted) -> *all* provisioning failed with `[ENOENT] Path /mnt/flashpool/k8s/flash not found`.
+   This would return after every NAS reboot.
+3. **Leaked NVMe-oF exports** — `csi-*` nvmet subsystems and namespaces survived PVC deletion,
+   including from a *failed* provision. Had to be reaped by hand.
 
-Three independent reasons, each sufficient on its own:
+## Where the flash actually belongs: local to the node
 
-1. **Reads get worse.** See the table. Most PVCs are read-mostly.
-2. **It adds a NAS dependency.** A Longhorn volume survives the NAS being down; a `truenas-flash`
-   volume does not mount. The cluster still *boots* (volumes attach at pod-schedule time, not VM
-   boot), but those pods will not start. Don't spend that dependency on a volume that gains nothing.
-3. **Backups break silently unless you also swap the kopiur component.** See below. This is the
-   one that will actually hurt you.
+The drives are not the problem — the *location* was. Raw, no stack, no network:
 
-## ⚠️ The backup trap — read this before moving any PVC
+| 4K QD1 fsync, RAW device | IOPS | avg | p99 |
+|---|---|---|---|
+| **EDILOCA EN605** (consumer NVMe — currently holds every DB) | **697** | 0.299 ms | **2.83 ms** |
+| **HPE enterprise SATA** (PLP) | **14,484** | 0.064 ms | **0.146 ms** |
 
-A `VolumeSnapshotClass` is bound to exactly **one** CSI driver.
-`my-apps/common/kopiur-backup` injects `volumeSnapshotClassName: longhorn-snapclass`, which is
-bound to `driver.longhorn.io`. It **physically cannot snapshot a `csi.truenas.io` volume.**
+**20.8x — and that is the bare drive, with Longhorn and the network removed.** Longhorn turns 697
+into 259 (real overhead), but the *drive* is the primary bottleneck. The EDILOCA is DRAM-less with
+no power-loss protection; its 1M sequential write is 109 MB/s and its QD32 p99 is **78 ms**.
 
-Move a backed-up PVC to `truenas-flash` without changing anything else and it will look perfectly
-backed up in git while producing **nothing**. You find out during a restore.
+**The fix is to put the enterprise SSDs in the Proxmox host**, on a PCIe SATA HBA (the X399
+chipset SATA ports are unreliable), and tier Longhorn with disk tags:
 
-The fix — stack the flash override **after** the base component:
+| Disk | Wins at | Give it |
+|---|---|---|
+| EDILOCA NVMe x2 | **reads** (161k IOPS, 2310 MB/s) | app state, caches, read-heavy |
+| Enterprise SATA x3 (PLP) | **writes** (20x fsync, p99 0.146ms) | **databases** |
 
-```yaml
-components:
-  - ../../common/kopiur-backup        # base
-  - ../../common/kopiur-backup-flash  # swaps in truenas-snapshot
-```
+Everything stays node-local: no network hop, no second CSI driver, no NVMe-oF, no rebuilt backup
+path. It also takes Longhorn from ~1TB to ~2.44TB, relieving the thin-pool pressure.
 
-Then **verify, do not assume**:
-```bash
-kubectl -n <ns> get snapshot     # must reach Succeeded with a NON-ZERO file count
-```
+This is also what modern Kubernetes-on-metal actually does — OpenShift Data Foundation, Portworx,
+and vSAN all pool **local** NVMe and replicate in software, rather than front a SAN. Kubernetes
+already handles replication at the app layer; shared-array semantics are redundant.
 
-CNPG databases are the exception: they back up via **Barman to S3**, which does not use a
-VolumeSnapshotClass at all. A CNPG PVC can change storage class without touching its backups.
-(Never add kopiur CRs to a CNPG PVC — that rule is unchanged.)
+## The real single point of failure (unchanged by any of this)
 
-## Migration risk ladder
-
-Move in this order. Each rung is safe only because the one before it proved something.
-
-**Rung 1 — backup-exempt databases (zero backup risk, they have no backups by design).**
-Also serves as the canary for the whole NVMe-oF path.
-`posthog` (clickhouse, postgres, redis7, redpanda), `prometheus-stack` (TSDB),
-`redis-instance`, `searxng` (redis).
-
-**Rung 2 — CNPG (Barman-backed; no VolumeSnapshotClass dependency).**
-`immich-database`, `paperless-database`, `temporal-database` (+ their WAL volumes).
-Note: CNPG cannot change `storageClass` in place — it needs a new cluster + switchover, or a
-restore from Barman. Plan it as a database operation, not a YAML edit.
-
-**Rung 3 — kopiur-backed databases. ONLY after a `kopiur-backup-flash` Snapshot has been
-observed reaching `Succeeded` with non-zero files.**
-`gitea/gitea-postgres-data`, `project-nomad/mysql-data`, `project-nomad/qdrant-data`,
-`karakeep/meilisearch-pvc`, `kafka/data-0-dev-kafka-dual-role-0`, `loki-stack/*`.
-
-## Everything else stays on Longhorn
-
-Every other PVC — `immich/library`, `home-assistant/config`, `jellyfin/config`, `n8n/data`,
-`open-webui/storage`, `perplexica`, `paperless-ngx/data`+`media`, `karakeep/data-pvc`,
-`frigate/frigate-config`, `copyparty`, `fizzy`, `presenton`, `flatnotes`, `tubesync/config-pvc`,
-`gitea-shared-storage`, `homepage-dashboard`, `zomboid-data`, `restore-canary`, `registry`, and
-all the caches (`immich-ml-cache`, `act-runner-docker-cache`, `swarmui/*`, `nomad-storage`,
-`protomaps-data`, `openmeteo-data`, `embeddings-model-cache`) — is app state or read-mostly.
-**It gains nothing from flash and would read slower there.** Leave it.
+`defaultClassReplicaCount: 1` on a single worker node. No storage protocol fixes that.
