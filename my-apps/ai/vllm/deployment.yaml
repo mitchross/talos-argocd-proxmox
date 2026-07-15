@@ -150,7 +150,6 @@ spec:
               memory: 8Gi
             limits:
               nvidia.com/gpu: "2"
-              cpu: "14"          # leave ~2 vCPU for kubelet/cilium/device-plugin/otel
               memory: 64Gi
           volumeMounts:
             - name: models

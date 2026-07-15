@@ -48,7 +48,6 @@ prometheus:
         cpu: 500m
         memory: 3Gi
       limits:
-        cpu: 2000m
         memory: 6Gi
     # Security context
     securityContext:
@@ -181,7 +180,6 @@ alertmanager:
         cpu: 100m
         memory: 128Mi
       limits:
-        cpu: 500m
         memory: 512Mi
     # Security context
     securityContext:
@@ -224,7 +222,6 @@ grafana:
       cpu: 100m
       memory: 512Mi
     limits:
-      cpu: 1000m
       memory: 1Gi
   # Security context
   securityContext:
@@ -366,7 +363,6 @@ nodeExporter:
       cpu: 50m
       memory: 128Mi
     limits:
-      cpu: 200m
       memory: 256Mi
 kubeStateMetrics:
   enabled: true
@@ -375,7 +371,6 @@ kubeStateMetrics:
       cpu: 50m
       memory: 256Mi
     limits:
-      cpu: 200m
       memory: 512Mi
 # kube-state-metrics sub-chart values. Expose PVC backup labels so alerts
 # and dashboards can distinguish backup-exempt and CNPG-managed PVCs.
@@ -536,7 +531,6 @@ prometheusOperator:
       cpu: 100m
       memory: 128Mi
     limits:
-      cpu: 500m
       memory: 512Mi
   # Security context
   securityContext:

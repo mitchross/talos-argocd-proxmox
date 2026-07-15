@@ -116,7 +116,6 @@ spec:
             failureThreshold: 3
           resources:
             limits:
-              cpu: "32"
               memory: 64Gi
               nvidia.com/gpu: "1"
               ephemeral-storage: "50Gi"

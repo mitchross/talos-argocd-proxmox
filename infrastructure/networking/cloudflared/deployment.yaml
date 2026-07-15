@@ -55,7 +55,6 @@ spec:
               cpu: 300m
               memory: 600Mi
             limits:
-              cpu: 500m
               memory: 1Gi
           securityContext:
             runAsNonRoot: true

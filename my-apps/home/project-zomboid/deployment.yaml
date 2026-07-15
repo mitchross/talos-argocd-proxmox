@@ -159,7 +159,6 @@ spec:
               cpu: "1"
             limits:
               memory: 20Gi
-              cpu: "8"
       volumes:
         - name: server-files
           persistentVolumeClaim:
