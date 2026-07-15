@@ -1,0 +1,39 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: radar-ng
+  namespace: radar-ng
+  labels:
+    app: radar-ng
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: radar-ng.data
+      rules:
+        - alert: RadarNgObservedRadarStale
+          expr: radar_ng_mrms_age_seconds > 600
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: radar-ng observed radar is stale
+            description: MRMS has been more than 10 minutes old for 5 minutes.
+        - alert: RadarNgFreshnessMetricMissing
+          expr: absent(radar_ng_mrms_age_seconds) == 1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: radar-ng is not reporting MRMS freshness
+            description: The tile API is unavailable or has no published MRMS frame.
+        - alert: RadarNgApiHighErrorRate
+          expr: |
+            sum(rate(radar_ng_http_requests_total{status=~"5.."}[5m]))
+              /
+            clamp_min(sum(rate(radar_ng_http_requests_total[5m])), 0.01) > 0.05
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: radar-ng API error rate is above 5 percent
+            description: The five-minute API 5xx ratio has stayed above 5 percent for 10 minutes.

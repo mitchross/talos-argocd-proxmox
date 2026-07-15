@@ -37,15 +37,20 @@ fi
 
 # Namespaces to ensure exist. Listed here instead of parameterized via
 # env var so a grep in the repo finds every namespace we use.
-# shellcheck disable=SC2043 # Intentional single-item list; add namespaces here as needed.
-for NS in default; do
+# `radar-ng` is isolated from unrelated application histories and task queues;
+# `default` remains for workloads that have not migrated yet.
+for NS in default radar-ng; do
   echo "[seed] ensuring namespace: $NS"
   if temporal_rpc operator namespace describe -n "$NS" >/dev/null 2>&1; then
     echo "[seed]   already exists"
   else
+    DESCRIPTION="Application namespace (GitOps-seeded)"
+    if [ "$NS" = "default" ]; then
+      DESCRIPTION="Default user namespace (GitOps-seeded)"
+    fi
     temporal_rpc operator namespace create \
       --retention 168h \
-      --description "Default user namespace (GitOps-seeded)" \
+      --description "$DESCRIPTION" \
       -n "$NS"
     echo "[seed]   created"
   fi
