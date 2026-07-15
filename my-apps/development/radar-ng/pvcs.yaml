@@ -1,16 +1,28 @@
-# Shared RWX PVCs for the radar-ng backend, on the truenas-csi NFS class.
+# radar-ng backend PVCs.
 #
-# Access-mode rationale:
-#   - tiles/grids/state are written by multiple pods (ingestors, nowcast) and
-#     read by tile-server, so RWX.
-#   - openmeteo-data is written by the serve Deployment and its sync CronJobs,
-#     which can run concurrently with serve, so RWX.
+# tiles/grids/state moved off `truenas-nfs` (BigTank = spinning HDD, RWX) onto
+# `longhorn-flash` (enterprise SATA SSD, RWO) on 2026-07-15. This is a SMALL-BLOCK
+# RANDOM-IO workload — the tile renderer reads MRMS grids and writes thousands of
+# small PNG/MVT tiles — and on HDD-backed NFS it thrashed: measured 102 IOPS @
+# 310ms on BigTank. On local SSD that is thousands of IOPS at sub-ms latency, and
+# putting it on the separate `flash` spindle keeps that thrashing OFF the shared
+# NVMe disk the databases live on. (Large SEQUENTIAL media — jellyfin, frigate —
+# stays on HDD-NFS; HDD is fine for streaming. Small-block RANDOM is the thing HDD
+# is terrible at, and that is radar-ng.)
 #
-# Moved off Longhorn RWX (which spins up an NFS share-manager pod per volume)
-# to the centralized truenas-csi `truenas-nfs` class — real NFS RWX, no
-# share-manager pods, TrueNAS-side snapshots. These volumes hold backup-exempt
-# rebuildable data, so the storageClassName change (immutable on a bound PVC)
-# is applied by deleting + recreating the PVCs; the data regenerates.
+# RWX -> RWO: these were RWX only to allow multiple writer pods. Kubernetes RWO is
+# "once per NODE" (not per pod), so on this single-node cluster all radar-ng pods
+# (workers + tile-server + temporal-worker) share one RWO volume fine — the exact
+# pattern openmeteo-data below already proves in production. RWO ext4 is also
+# faster than any NFS/share-manager path and sidesteps the errno-95 O_TMPFILE class
+# of NFS bugs (see openmeteo-data).
+#   MULTI-NODE CAVEAT: RWO-shared-by-many-pods only holds while they co-locate on
+#   one node. Before adding worker nodes, pin radar-ng workers + tile-server +
+#   temporal-worker together with podAffinity (as open-meteo already does), or move
+#   these back to a real RWX class.
+#
+# All three hold backup-exempt REBUILDABLE data, so the immutable storageClass/
+# accessMode change is applied by delete+recreate of the PVCs; tiles regenerate.
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -22,8 +34,8 @@ metadata:
   annotations:
     storage.vanillax.dev/backup-exempt-reason: "PNG/MVT tiles generated from grids/; rebuildable by re-running tile generation"
 spec:
-  accessModes: [ReadWriteMany]
-  storageClassName: truenas-nfs
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn-flash
   resources:
     requests:
       storage: 100Gi
@@ -38,8 +50,8 @@ metadata:
   annotations:
     storage.vanillax.dev/backup-exempt-reason: "MRMS NetCDF grids; re-fetchable from upstream MRMS within retention window"
 spec:
-  accessModes: [ReadWriteMany]
-  storageClassName: truenas-nfs
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn-flash
   resources:
     requests:
       storage: 20Gi
@@ -54,8 +66,8 @@ metadata:
   annotations:
     storage.vanillax.dev/backup-exempt-reason: "Transient ingestion state (last-seen timestamps, partial frames); regenerates on next pull"
 spec:
-  accessModes: [ReadWriteMany]
-  storageClassName: truenas-nfs
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn-flash
   resources:
     requests:
       storage: 5Gi
