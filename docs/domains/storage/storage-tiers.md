@@ -37,9 +37,24 @@ workload:
   media files, and HDDs do sequential throughput well (~160+ MB/s). Leave them on SMB/NFS.
 
 So the question isn't "which apps deserve flash" — it's **"which apps do small-block random IO and
-are currently on HDD-NFS."** First mover: **radar-ng** (`tiles`/`grids`/`state`), moved from
-`truenas-nfs` (HDD) to `longhorn-flash` (SSD, RWO) on 2026-07-15. It was the textbook case — a tile
-renderer thrashing thousands of small PNG/MVT files on 102-IOPS spinning disk over NFS.
+are currently on HDD-NFS."** First mover: **radar-ng** (`tiles`/`grids`/`state`/`pmtiles`), moved
+from `truenas-nfs` (HDD) to `longhorn-flash` (SSD, RWO) on 2026-07-15. It was the textbook case — a
+tile renderer thrashing thousands of small PNG/MVT files on 102-IOPS spinning disk over NFS.
+
+### The second use of `longhorn-flash`: IO isolation for noisy write-heavy apps
+
+`longhorn-flash` is also a *separate physical spindle*, so it doubles as an isolation lane. Apps
+that are **write-heavy but read-tolerant** — metrics, logs, disposable analytics — are moved here
+NOT because flash is faster (through Longhorn it isn't; ~200 fsync either way, and SATA reads
+slower), but so their heavy IO stops contending with the latency-sensitive databases on the shared
+NVMe disk. Moved 2026-07-15: **all of PostHog** (clickhouse/postgres/redis/kafka — disposable
+product analytics) and **all of monitoring** (Prometheus TSDB, Alertmanager, Grafana, Loki
+write/backend). All backup-exempt; their history is disposable (Loki/Tempo data lives on S3/RustFS
+anyway), so the migration is a clean delete+recreate.
+
+Net effect: the shared NVMe disk (`longhorn` default) is left for the databases and latency-
+sensitive volumes; the flash spindle absorbs the noisy random/write-heavy IO. Two disks, workloads
+split by profile.
 
 RWX→RWO note: those PVCs were RWX only for multiple writer pods. Kubernetes RWO is per-*node*, so on
 a single-node cluster co-located pods share one RWO volume (the proven `openmeteo-data` pattern).
