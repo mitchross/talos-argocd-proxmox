@@ -54,6 +54,13 @@ recommender:
   replicas: 1
   podDisruptionBudget:
     enabled: false
+  # Default recommendation floors are 25m/250Mi PER CONTAINER. With ~80 mostly
+  # tiny single-replica apps that floor alone manufactured ~10Gi of phantom
+  # memory requests and pushed the worker node to 107% requested on 73% real
+  # usage — pods went Pending cluster-wide (2026-07-15). Keep these floors low.
+  extraArgs:
+    - --pod-recommendation-min-memory-mb=64
+    - --pod-recommendation-min-cpu-millicores=15
   resources:
     requests:
       cpu: 50m
