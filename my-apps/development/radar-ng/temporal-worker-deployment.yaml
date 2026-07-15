@@ -47,6 +47,13 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
+        # fsGroup REQUIRED: tiles/grids/state moved to longhorn-flash RWO (ext4)
+        # on 2026-07-15. Fresh Longhorn block volumes mount root:root, so a
+        # non-root (uid 1000) worker cannot write — unlike the previous
+        # truenas-nfs class, which mapped all access to root and masked this.
+        # fsGroup makes the kubelet chown the volume group-writable to gid 1000.
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
       containers:
