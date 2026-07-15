@@ -1,18 +1,59 @@
-# Passive VPA install: recommender only.
+# Active VPA install: recommender + updater + admission controller.
 #
-# The updater and admission controller are intentionally disabled so VPA cannot
-# evict, resize, or mutate any workload. Per-workload VPA objects use
-# updateMode: Off and only publish recommendations under status.
+# In-place resize path: k8s 1.36 has InPlacePodVerticalScaling GA and VPA 1.7
+# ships InPlaceOrRecreate GA (the VPA feature gate was removed in 1.7 — do NOT
+# pass --feature-gates=InPlaceOrRecreate, it's an unknown flag now). Per-workload
+# VPA objects in infrastructure/controllers/vpa-recommendations/ opt in with
+# updateMode: InPlaceOrRecreate; the updater resizes pods without restart and
+# only falls back to eviction when the kubelet can't satisfy the resize.
+#
+# Webhook cert is cert-manager-managed (chart creates a self-signed Issuer → CA
+# → webhook Certificate, cainjector fills the webhook caBundle). certGen is the
+# alternative and is a hook-style Job — broken under ArgoCD, keep it off.
+#
+# All components run 1 replica with PDBs off: a minAvailable:1 PDB on a
+# single-replica deployment blocks Talos node drains forever.
 
 admissionController:
-  enabled: false
+  enabled: true
+  replicas: 1
+  podDisruptionBudget:
+    enabled: false
+  certGen:
+    enabled: false
+  certManager:
+    enabled: true
+    createSelfSignedIssuer:
+      enabled: true
+  # failurePolicy stays Ignore (chart default): if the admission controller is
+  # down, pods still schedule with their git-declared requests instead of
+  # deadlocking the whole cluster on one webhook.
+  resources:
+    requests:
+      cpu: 25m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 
 updater:
-  enabled: false
+  enabled: true
+  replicas: 1
+  podDisruptionBudget:
+    enabled: false
+  resources:
+    requests:
+      cpu: 25m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 
 recommender:
   enabled: true
   replicas: 1
+  podDisruptionBudget:
+    enabled: false
   resources:
     requests:
       cpu: 50m
