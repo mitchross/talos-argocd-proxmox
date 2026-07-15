@@ -7,7 +7,6 @@ connect:
         cpu: "100m"
       limits:
         memory: "300Mi"
-        cpu: "200m"
   sync:
     enabled: true 
     resources:
@@ -16,7 +15,6 @@ connect:
         cpu: "100m"
       limits:
         memory: "300Mi"
-        cpu: "200m"
   
   # This is the correct parameter for the credentials secret name
   credentialsName: "1password-credentials"    # Instead of credentialsSecret
@@ -34,6 +32,5 @@ operator:
       cpu: "100m"
     limits:
       memory: "300Mi"
-      cpu: "200m"
   autoRestart: true
   pollingInterval: 300
