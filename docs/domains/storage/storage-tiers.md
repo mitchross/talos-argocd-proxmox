@@ -21,6 +21,30 @@ distinct classes, and you choose per volume:
 - **shared (RWX) → NFS/SMB.** Neither local block tier can be RWX safely.
 - **when in doubt → `longhorn` default.**
 
+## The rule that matters most in practice: get small-block RANDOM IO off the HDD
+
+The biggest real-world storage win here is **not** flash-vs-NVMe (that difference is marginal, and
+Longhorn caps fsync ~200 IOPS on both — see below). It is **HDD-NFS → local SSD** for the right
+workload:
+
+- **Small-block RANDOM IO on HDD-backed NFS (`truenas-nfs` / SMB on BigTank) is catastrophic** —
+  measured **102 IOPS @ 310ms** on BigTank. A workload that reads/writes many small files with
+  random access (a tile renderer, a search index, a small database) will *thrash* there.
+- The same workload on **local SSD is thousands of IOPS at sub-ms** — a 20–100× win, from *either*
+  local tier. Use `longhorn-flash` for it specifically, so the thrashing lands on the separate SSD
+  spindle and stays **off** the shared NVMe disk the databases use.
+- **Large SEQUENTIAL IO on HDD-NFS is fine** — jellyfin, frigate, tubearchivist, kiwix stream large
+  media files, and HDDs do sequential throughput well (~160+ MB/s). Leave them on SMB/NFS.
+
+So the question isn't "which apps deserve flash" — it's **"which apps do small-block random IO and
+are currently on HDD-NFS."** First mover: **radar-ng** (`tiles`/`grids`/`state`), moved from
+`truenas-nfs` (HDD) to `longhorn-flash` (SSD, RWO) on 2026-07-15. It was the textbook case — a tile
+renderer thrashing thousands of small PNG/MVT files on 102-IOPS spinning disk over NFS.
+
+RWX→RWO note: those PVCs were RWX only for multiple writer pods. Kubernetes RWO is per-*node*, so on
+a single-node cluster co-located pods share one RWO volume (the proven `openmeteo-data` pattern).
+Before going multi-node, pin the consumers with podAffinity or move back to a real RWX class.
+
 ## Do not put fsync-sensitive storage behind the network
 
 Below the tier table is the record of a network-attached flash tier that was **built,
