@@ -104,6 +104,16 @@ spec:
           echo "ClickHouse ready"
           echo "Flushing ClickHouse system logs..."
           wget -q -O- "http://clickhouse:8123/?query=SYSTEM+FLUSH+LOGS" 2>/dev/null || true
+          echo "Running Django migrations..."
+          python manage.py migrate --noinput
+          # Self-hosted schema guard MUST run AFTER manage.py migrate. On a fresh
+          # empty DB, public.posthog_person does not exist until migrate creates
+          # it, so an ALTER-before-migrate fails with "relation posthog_person
+          # does not exist" and the whole job dies before ever migrating (hit
+          # 2026-07-15 when the posthog DB was wiped during a storage migration —
+          # the guard was previously ordered before migrate and only ever worked
+          # because the schema already existed). ADD COLUMN IF NOT EXISTS keeps it
+          # idempotent on an already-migrated DB.
           echo "Applying self-hosted Postgres schema guards..."
           python - <<'PY'
           import os
@@ -122,8 +132,6 @@ spec:
                   "ADD COLUMN IF NOT EXISTS last_seen_at timestamptz NULL"
               )
           PY
-          echo "Running Django migrations..."
-          python manage.py migrate --noinput
           echo "Running ClickHouse migrations..."
           python manage.py migrate_clickhouse
           # Async ClickHouse migrations gate worker startup (worker entrypoint
