@@ -1,16 +1,32 @@
-# Storage tiers — and why database flash must be node-local
+# Storage tiers
 
-**Status (2026-07-13):** a network-attached flash tier was **built, measured, and abandoned**.
-This doc records why, so nobody rebuilds it.
+The cluster has four storage tiers, **classified by what the hardware is** — not by
+which app uses them. Pick a class by the volume's access pattern.
 
-## The rule
+| Class | Backing hardware | Character | Use for |
+|-------|------------------|-----------|---------|
+| `longhorn` (**default**) | Proxmox 2× EDILOCA NVMe (LVM) | fast local, **read-strong**, RWO | app state, caches, read-heavy volumes, big sequential-write DBs (ClickHouse, Prometheus TSDB, Loki) |
+| `longhorn-flash` | Proxmox 2× enterprise SATA SSD, PLP, mdadm RAID1, **thick** LVM | fast local flash, **write-strong** (PLP), RWO | anything fsync-heavy: Postgres/MySQL commits, WAL, Kafka, Redis AOF, message queues |
+| `truenas-nfs` | TrueNAS HDD (BigTank) | network bulk, **RWX** | shared volumes, rebuildable tile/grid caches |
+| `*-smb` / static NFS | TrueNAS HDD / ai-pool SSD | network SMB/NFS shares | media libraries, model weights, hand-browsable data |
 
-| Use | Class |
-|-----|-------|
-| **Anything RWO** — app state, caches, **and databases** | `longhorn` (default, node-local block) |
-| Bulk media, model weights, hand-browsable, **RWX** | SMB / NFS classes (see `infrastructure/storage/CLAUDE.md`) |
+**The two local tiers have opposite strengths** (measured — see below): the enterprise
+SATA wins durable writes ~12×; the EDILOCA NVMe wins reads ~2–3×. So they are two
+distinct classes, and you choose per volume:
 
-**Do not add a network-attached block StorageClass for databases.** We tried. Numbers below.
+- **fsync-sensitive → `longhorn-flash`.** Every commit is a durable write; that is where
+  the enterprise SSD's power-loss protection pays off.
+- **read-heavy or big-sequential-write → `longhorn` (default).** The NVMe reads far
+  faster, and sequential write on this host's X399 chipset SATA is only ~65–92 MB/s.
+- **shared (RWX) → NFS/SMB.** Neither local block tier can be RWX safely.
+- **when in doubt → `longhorn` default.**
+
+## Do not put fsync-sensitive storage behind the network
+
+Below the tier table is the record of a network-attached flash tier that was **built,
+measured, and abandoned** — because sync writes do not survive a network hop. It is
+kept so nobody rebuilds it. The node-local `longhorn-flash` tier above is the answer
+that replaced it.
 
 ## What we tried and what it cost
 
