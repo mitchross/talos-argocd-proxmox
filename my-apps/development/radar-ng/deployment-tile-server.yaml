@@ -52,6 +52,11 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
+        # fsGroup for the longhorn-flash RWO tiles/grids/state volumes (see
+        # temporal-worker-deployment.yaml) — non-root pods need it to read the
+        # group-owned files the worker writes.
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
       containers:
