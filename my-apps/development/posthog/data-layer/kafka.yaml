@@ -14,7 +14,7 @@ metadata:
     storage.vanillax.dev/backup-exempt-reason: "PostHog data is disposable/rebuildable in this homelab; do not back up. Redpanda runs --unsafe-bypass-fsync with ~1h retention + auto_create_topics — log is ephemeral/rebuildable."
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: longhorn
+  storageClassName: longhorn-flash
   resources:
     requests:
       # Shrunk 20Gi -> 8Gi for the single-node rebuild (2026-06-19). Redpanda

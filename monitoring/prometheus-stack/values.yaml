@@ -32,7 +32,7 @@ prometheus:
           annotations:
             storage.vanillax.dev/backup-exempt-reason: "Prometheus metrics are re-scrapeable; monitoring data not worth backup pipeline overhead"
         spec:
-          storageClassName: longhorn
+          storageClassName: longhorn-flash
           accessModes:
             - ReadWriteOnce
           resources:
@@ -169,7 +169,7 @@ alertmanager:
           annotations:
             storage.vanillax.dev/backup-exempt-reason: "Alertmanager silences are operator-set; trivially recreated"
         spec:
-          storageClassName: longhorn
+          storageClassName: longhorn-flash
           accessModes:
             - ReadWriteOnce
           resources:
@@ -205,7 +205,7 @@ grafana:
   # Persistence
   persistence:
     enabled: true
-    storageClassName: longhorn
+    storageClassName: longhorn-flash
     size: 10Gi
     accessModes:
       - ReadWriteOnce

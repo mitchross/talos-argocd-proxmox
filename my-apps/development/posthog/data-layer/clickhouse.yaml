@@ -18,7 +18,7 @@ metadata:
     storage.vanillax.dev/backup-exempt-reason: "regenerable from PostHog ingest; 100Gi too large for current Kopia/RustFS S3 path"
 spec:
   accessModes: ["ReadWriteOnce"]
-  storageClassName: longhorn
+  storageClassName: longhorn-flash
   resources:
     requests:
       # Shrunk 100Gi -> 40Gi for the single-node 2950X rebuild (2026-06-19).
