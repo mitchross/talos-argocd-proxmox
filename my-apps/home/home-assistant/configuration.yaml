@@ -5,6 +5,20 @@ default_config:
 homeassistant:
   customize: !include customize.yaml
 
+# Log levels. Pinned here because the ZHA integration's "Enable debug logging"
+# UI toggle is runtime-only state that lives in neither git nor .storage — it
+# silently turns bellows into a firehose (a full 40-counter EZSP dump + every
+# ASH frame, every 10s) until someone notices and clicks it off again.
+#
+# zha stays at info so device joins/leaves are still visible while pairing.
+# To chase a stubborn join, raise bellows/zigpy to debug *here*, not in the UI.
+logger:
+  default: info
+  logs:
+    bellows: warning
+    zigpy: warning
+    zha: info
+
 # Zigbee Home Automation. The ZHA *integration* itself is added once via the UI
 # (Settings > Devices & Services > Add Integration > ZHA, serial port
 # /dev/ttyUSB0 = the SONOFF dongle hostPath-mounted into this pod) — that config
