@@ -108,18 +108,24 @@ metadata:
   annotations:
     storage.vanillax.dev/backup-exempt-reason: "Protomaps basemap extract; rebuildable by re-running basemap-bootstrap Job from a build.protomaps.com daily build"
 spec:
-  # RWX (was RWO). The RWO assumption "Bootstrap Job + Deployment run
-  # one-at-a-time" was false in practice: the basemap Deployment runs 24/7
-  # holding the RWO volume, so basemap-bootstrap could NEVER attach while
-  # basemap was up -> permanent Multi-Attach error, Job stuck 10h+.
-  # go-pmtiles is distroless (no shell) so an idempotent single
-  # initContainer isn't possible without a custom image; RWX lets the
-  # one-shot, stable-named bootstrap Job and the reader Deployment coexist
-  # (Job writes once then Completes; basemap mmap-reads). Now served by
-  # truenas-csi NFS RWX (no Longhorn share-manager pod) — TrueNAS exports the
-  # dataset directly.
-  accessModes: [ReadWriteMany]
-  storageClassName: truenas-nfs
+  # RWO on longhorn-flash (was RWX on truenas-nfs HDD). basemap mmap-reads this
+  # protomaps extract for map tile serving — small-block RANDOM reads, which on
+  # spinning HDD-over-NFS (102 IOPS @ 310ms) is exactly the thrash that hurt
+  # radar-ng. On the enterprise-SSD flash spindle it is thousands of IOPS at
+  # sub-ms, and off the shared NVMe disk the databases use.
+  #
+  # The old "RWO = permanent Multi-Attach" concern (basemap 24/7 reader vs the
+  # one-shot basemap-bootstrap writer Job) was Longhorn RWO behaving as single-POD
+  # attach. Current Longhorn does RWO multi-pod-same-NODE — proven in this same
+  # namespace: tiles/grids/state now run RWO with 4 co-located pods sharing them.
+  # basemap + the bootstrap Job co-locate on the single worker node, so both
+  # attach fine. (Multi-node caveat as with tiles: pin them together with
+  # podAffinity, or use a real RWX class, before adding worker nodes.)
+  #
+  # Rebuildable: after this PVC is recreated empty, re-run the basemap-bootstrap
+  # Job to re-download the extract from build.protomaps.com.
+  accessModes: [ReadWriteOnce]
+  storageClassName: longhorn-flash
   resources:
     requests:
       storage: 50Gi
