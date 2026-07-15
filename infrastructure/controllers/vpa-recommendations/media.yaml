@@ -1,0 +1,110 @@
+# Media apps.
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: immich-server
+  namespace: immich
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: immich-server
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "4"
+          memory: 8Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: immich-machine-learning
+  namespace: immich
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: immich-machine-learning
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "4"
+          memory: 8Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: immich-valkey
+  namespace: immich
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: immich-valkey
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "1"
+          memory: 2Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: jellyfin
+  namespace: jellyfin
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: jellyfin
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "4"
+          memory: 8Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: tubesync
+  namespace: tubesync
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: tubesync
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 4Gi
