@@ -37,7 +37,7 @@ spec:
           # 1.5.3 ships without libparquet-glib.so.2400 (same break as the
           # sync-worker's old 1.5.3 base) — pin tag@digest of a verified
           # build; a bare tag re-pulls broken rebuilds via pullPolicy Always.
-          image: ghcr.io/open-meteo/open-meteo:1.5.2@sha256:1aed7d47ddac28c1f8b69ea94b5e604e05df469baa43843629baaac4a30bac20
+          image: ghcr.io/open-meteo/open-meteo:1.5.5@sha256:99978696b7def9d4851d2b9e85ea7a8ba08bd824f6fa6779edd733a164434694
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
