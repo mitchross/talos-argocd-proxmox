@@ -1,69 +1,146 @@
-# Home automation and game servers.
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: home-assistant
-  namespace: home-assistant
+  name: argocd-application-controller
+  namespace: argocd
 spec:
   targetRef:
     apiVersion: apps/v1
-    kind: Deployment
-    name: home-assistant
+    kind: StatefulSet
+    name: argocd-application-controller
   updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: "*"
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "2"
-          memory: 4Gi
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: mosquitto
-  namespace: frigate
+  name: argocd-repo-server
+  namespace: argocd
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: mosquitto
+    name: argocd-repo-server
   updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: "*"
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 1Gi
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: wyze-bridge
-  namespace: wyze-bridge
+  name: vllm-server
+  namespace: vllm
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: wyze-bridge
+    name: vllm-server
   updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: "*"
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "2"
-          memory: 2Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: posthog-web
+  namespace: posthog
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: web
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: posthog-worker
+  namespace: posthog
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: worker
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: posthog-clickhouse
+  namespace: posthog
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: clickhouse
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: radar-ng-worker
+  namespace: radar-ng
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: radar-ng-worker-v1-1-7-fd5c
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: radar-ng-tile-server
+  namespace: radar-ng
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: tile-server
+  updatePolicy:
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
@@ -76,211 +153,81 @@ spec:
     kind: Deployment
     name: project-zomboid
   updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: "*"
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "4"
-          memory: 16Gi
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: project-nomad
-  namespace: project-nomad
+  name: gitea-act-runner
+  namespace: gitea-actions
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: project-nomad
+    name: act-runner
   updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: "*"
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "2"
-          memory: 4Gi
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: nomad-embeddings
-  namespace: project-nomad
+  name: prometheus
+  namespace: prometheus-stack
 spec:
   targetRef:
     apiVersion: apps/v1
-    kind: Deployment
-    name: embeddings
+    kind: StatefulSet
+    name: prometheus-kube-prometheus-stack-prometheus
   updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: "*"
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "2"
-          memory: 4Gi
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: nomad-flatnotes
-  namespace: project-nomad
+  name: loki-write
+  namespace: loki-stack
 spec:
   targetRef:
     apiVersion: apps/v1
-    kind: Deployment
-    name: flatnotes
+    kind: StatefulSet
+    name: loki-write
   updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: "*"
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 1Gi
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: nomad-kiwix
-  namespace: project-nomad
+  name: jellyfin
+  namespace: jellyfin
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: kiwix
+    name: jellyfin
   updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: "*"
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 2Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: nomad-mysql
-  namespace: project-nomad
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: mysql
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "2"
-          memory: 4Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: nomad-protomaps
-  namespace: project-nomad
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: protomaps
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 2Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: nomad-qdrant
-  namespace: project-nomad
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: qdrant
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "2"
-          memory: 4Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: nomad-redis
-  namespace: project-nomad
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: redis
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 1Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: nomad-cyberchef
-  namespace: project-nomad
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: cyberchef
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 1Gi
