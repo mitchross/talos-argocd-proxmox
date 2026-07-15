@@ -102,7 +102,7 @@ metadata:
 spec:
   accessModes:
   - ReadWriteOnce
-  storageClassName: longhorn
+  storageClassName: longhorn-flash
   resources:
     requests:
       # Shrunk 20Gi -> 8Gi for the single-node rebuild (2026-06-19). PostHog's
