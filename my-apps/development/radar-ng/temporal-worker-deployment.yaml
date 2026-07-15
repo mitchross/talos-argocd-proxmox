@@ -58,7 +58,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.16
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.18
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
@@ -90,6 +90,13 @@ spec:
             # file for the secret/volume blocks that were removed).
             - name: PUSH_DISABLED
               value: "1"
+            # Compatibility gate for the role-aware worker release. The
+            # single WorkerDeployment remains on the legacy queue until the
+            # isolated pools are rolled out in the documented order.
+            - name: WORKER_ROLE
+              value: legacy
+            - name: USE_ISOLATED_TASK_QUEUES
+              value: "0"
           envFrom:
             - configMapRef: { name: radar-ng-temporal-config }
           volumeMounts:
