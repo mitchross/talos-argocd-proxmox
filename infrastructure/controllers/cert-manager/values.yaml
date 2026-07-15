@@ -30,7 +30,6 @@ securityContext:
 # Resource limits for production workloads - This section is well-configured
 resources:
   limits:
-    cpu: 200m
     memory: 256Mi
   requests:
     cpu: 20m
@@ -43,7 +42,6 @@ webhook:
       type: RuntimeDefault
   resources:
     limits:
-      cpu: 100m
       memory: 256Mi
     requests:
       cpu: 15m
@@ -56,7 +54,6 @@ cainjector:
       type: RuntimeDefault
   resources:
     limits:
-      cpu: 200m
       memory: 384Mi
     requests:
       cpu: 20m

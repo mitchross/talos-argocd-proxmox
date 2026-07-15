@@ -31,7 +31,6 @@ spec:
               cpu: 15m
               memory: 128Mi
             limits:
-              cpu: 250m
               memory: 256Mi
           volumeMounts:
             - name: protomaps-data

@@ -20,7 +20,6 @@ main:
       cpu: 100m
       memory: 256Mi
     limits:
-      cpu: 1000m
       memory: 1Gi
   extraEnv:
     N8N_HOST:

@@ -9,10 +9,19 @@
 targetNamespaces: ""
 excludeNamespaces: "dvwa"
 
+# Redpanda (docker.redpanda.com) rate-limits unauthenticated pulls and has no
+# local runtime socket for the scanner to inspect — every scan attempt fails
+# identically. Exclude it to stop the endless retry cycle.
+trivyOperator:
+  excludeImages: "docker.redpanda.com/*/*"
+
 operator:
   # Low concurrency: at most 2 scan jobs at once. Homelab nodes, not a fleet.
   scanJobsConcurrentLimit: 2
   scanJobTimeout: 10m
+  # Default 30s retry creates a tight loop of OOMKilled/error scans. Back off
+  # to 15m so failed jobs don't hammer the node on every reconcile.
+  scanJobsRetryDelay: 15m
   # Standalone mode is broken for multi-container workloads: the operator runs
   # one Trivy process per workload container in the same scan pod and all share
   # /tmp/trivy/.cache, so sibling containers hit BoltDB/cache flock timeouts.
@@ -123,7 +132,9 @@ trivy:
       memory: 128Mi
     limits:
       cpu: 500m
-      memory: 512Mi
+      # Posthog images (worker, migrate, presenton) exceed 512Mi during analysis.
+      # Bump to 1Gi to avoid OOMKilled retry loops.
+      memory: 1Gi
 
 # The chart renders default ClusterComplianceReport specs unless this list is
 # empty. Keep compliance explicitly off in phase 1 so the app does not look like

@@ -75,7 +75,6 @@ spec:
             nvidia.com/gpu: "1"
           limits:
             memory: "80Gi"
-            cpu: "16"
             nvidia.com/gpu: "1"
         volumeMounts:
         - name: comfyui-storage

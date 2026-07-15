@@ -28,7 +28,6 @@ spec:
               cpu: 250m
               memory: 512Mi
             limits:
-              cpu: 1000m
               memory: 1Gi
           volumeMounts:
             - name: kolibri-data
