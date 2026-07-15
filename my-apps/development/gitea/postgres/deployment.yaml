@@ -35,7 +35,7 @@ spec:
           # Pin MAJOR.MINOR — Renovate bumps patches/minors; MAJOR upgrades
           # need a manual dump/restore (Postgres data dirs are not
           # major-version compatible). Do NOT let a major bump auto-merge.
-          image: postgres:17.5
+          image: postgres:17.10
           securityContext:
             runAsUser: 999
             runAsGroup: 999
