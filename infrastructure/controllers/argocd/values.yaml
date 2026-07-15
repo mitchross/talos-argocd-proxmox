@@ -220,7 +220,6 @@ server:
       cpu: 50m
       memory: 512Mi  # Increased from 256Mi (was below VPA lowerBound)
     limits:
-      cpu: 500m
       memory: 1Gi
 # ApplicationSet controller settings
 applicationSet:
@@ -239,7 +238,6 @@ applicationSet:
       cpu: 100m  # 2x VPA target for safety margin
       memory: 128Mi
     limits:
-      cpu: 500m  # Reduced from 1000m (VPA upperBound: 755m)
       memory: 512Mi  # Reduced from 1Gi
 # Current topology has one schedulable workload worker and one physical
 # Proxmox failure domain. Do not enable the redis-ha subchart until at least
@@ -251,7 +249,6 @@ redis:
       cpu: 25m
       memory: 64Mi
     limits:
-      cpu: 250m
       memory: 256Mi
 # Argo CD controller settings
 controller:
@@ -285,7 +282,6 @@ controller:
       cpu: 2000m
       memory: 4Gi   # Increased from 1536Mi (was below VPA lowerBound)
     limits:
-      cpu: 4000m
       memory: 6Gi   # Increased from 4Gi to accommodate memory growth
 # Argo CD repo-server settings
 repoServer:
@@ -315,7 +311,6 @@ repoServer:
       cpu: 1000m   # low steady reservation; bursts to 4000m on big renders
       memory: 768Mi  # Reduced from 1Gi (VPA target only 523Mi)
     limits:
-      cpu: 4000m   # Keep at 4000m (VPA upperBound: 28+ cores during Prometheus chart)
       memory: 4Gi  # Keep at 4Gi (VPA upperBound: 3.95Gi for large Helm charts)
 # Dex is disabled. Argo CD is exposed only through the internal Gateway and
 # intentionally uses local admin authentication in this single-operator lab.

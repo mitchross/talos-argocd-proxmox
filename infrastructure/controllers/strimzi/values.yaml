@@ -7,7 +7,6 @@ resources:
     cpu: "200m"
   limits:
     memory: 384Mi
-    cpu: "1000m"
 
 logLevel: INFO
 loggers:

@@ -71,7 +71,6 @@ backend:
       cpu: 50m
       memory: 256Mi
     limits:
-      cpu: 500m
       memory: 1Gi
   extraEnvFrom:
   - secretRef:
@@ -83,7 +82,6 @@ read:
       cpu: 50m
       memory: 256Mi
     limits:
-      cpu: 1000m
       memory: 1Gi
   extraEnvFrom:
   - secretRef:
@@ -98,7 +96,6 @@ write:
       cpu: 50m
       memory: 256Mi
     limits:
-      cpu: 500m
       memory: 1Gi
   extraEnvFrom:
   - secretRef:
@@ -134,5 +131,4 @@ gateway:
       cpu: 50m
       memory: 128Mi
     limits:
-      cpu: 200m
       memory: 256Mi

@@ -43,7 +43,6 @@ resources:
     cpu: 128m
     memory: 192Mi
   limits:
-    cpu: 256m
     memory: 384Mi
 
 # Security Context
