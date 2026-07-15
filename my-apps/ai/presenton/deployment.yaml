@@ -18,7 +18,7 @@ spec:
       containers:
       - name: presenton
         # renovate: datasource=docker depName=ghcr.io/presenton/presenton
-        image: ghcr.io/presenton/presenton:v0.8.9-beta@sha256:673e992ae74ac723f27ca92e802b1e58d8929e453d5b1a6321d66820a28e720d
+        image: ghcr.io/presenton/presenton:v0.9.0-beta@sha256:8757c5d0b842e4572aeaa6bbc79817ee201a05c73909fb46bb2972165eac0a88
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
