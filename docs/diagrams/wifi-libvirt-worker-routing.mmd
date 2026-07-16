@@ -1,0 +1,67 @@
+---
+title: How a Wi-Fi Talos worker joins the routed cluster
+config:
+  layout: elk
+---
+flowchart LR
+  accTitle: Routed Wi-Fi Talos worker architecture
+  accDescr: Omni on the management NUC asks the provider on the Wi-Fi CachyOS host to create a Talos virtual machine. Firewalla routes the virtual-machine subnet to the host, while Cilium routes a unique pod subnet to each Talos node.
+
+  subgraph MANAGEMENT["MANAGEMENT"]
+    direction TB
+    GIT["`Git desired state
+    machine class and cluster template`"]
+    OMNI["`Omni on NUC
+    machine lifecycle and Talos config`"]
+    GIT desired@--> OMNI
+  end
+
+  subgraph UNDERLAY["ROUTED WI-FI UNDERLAY"]
+    direction LR
+    CORE["`Wired Talos core
+    control plane and GPU worker
+    HomeLab node addresses`"]
+    FW["`Firewalla
+    route VM subnet to Dell
+    route pod subnets to owners`"]
+    DELL["`CachyOS Dell on Wi-Fi
+    libvirt and Omni provider
+    routes without internal NAT`"]
+    VM["`Talos worker VM
+    routed node address
+    no workload storage ownership`"]
+    CORE coreToFw@<--> FW
+    FW fwToDell@<--> DELL
+    DELL dellToVm@<--> VM
+  end
+
+  subgraph PODS["KUBERNETES DATA PLANE"]
+    direction TB
+    EXISTING["`Existing Cilium pod CIDRs
+    one non-overlapping range per node`"]
+    DELL_PODS["`Dell Cilium pod CIDR
+    assigned when worker joins`"]
+    EXISTING podRoute@<--> DELL_PODS
+  end
+
+  OMNI request@--> DELL
+  CORE ownsExisting@--> EXISTING
+  VM ownsDell@--> DELL_PODS
+
+  classDef action fill:#fde8e8,stroke:#dc8c8c,color:#17212b
+  classDef desired fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  classDef external fill:#fff3df,stroke:#d8ad55,color:#17212b
+  class GIT desired
+  class OMNI,DELL,VM controller
+  class FW external
+  class CORE,EXISTING,DELL_PODS action
+
+  desired@{ animation: slow }
+  request@{ animation: fast }
+  coreToFw@{ animation: fast }
+  fwToDell@{ animation: fast }
+  dellToVm@{ animation: fast }
+  ownsExisting@{ animation: slow }
+  ownsDell@{ animation: slow }
+  podRoute@{ animation: fast }
