@@ -1,0 +1,16 @@
+<network>
+  <name>talos-routed</name>
+  <!--
+    Wi-Fi cannot provide a normal layer-2 VM bridge. Route this dedicated
+    subnet through the CachyOS host instead; Firewalla routes the subnet back
+    through 192.168.10.20 so Cilium nodes have symmetric reachability.
+  -->
+  <forward mode="route" dev="wlan0"/>
+  <bridge name="virbr1" stp="on" delay="0"/>
+  <domain name="talos-routed"/>
+  <ip address="192.168.123.1" netmask="255.255.255.0">
+    <dhcp>
+      <range start="192.168.123.100" end="192.168.123.254"/>
+    </dhcp>
+  </ip>
+</network>

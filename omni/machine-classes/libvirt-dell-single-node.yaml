@@ -1,0 +1,21 @@
+---
+metadata:
+  namespace: default
+  type: MachineClasses.omni.sidero.dev
+  id: libvirt-dell-single-node
+spec:
+  matchlabels: []
+  autoprovision:
+    providerid: libvirt
+    kernelargs: []
+    metavalues: []
+    providerdata: |
+      cores: 4
+      memory: 32768
+      disk_size: 160
+      storage_pool: default
+      network_interfaces:
+        - driver: virtio
+          # Routed through the Wi-Fi host and Firewalla. A NAT-only libvirt
+          # network breaks Cilium native-routing reachability from LAN nodes.
+          network_name: talos-routed
