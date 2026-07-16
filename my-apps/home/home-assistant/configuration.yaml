@@ -51,9 +51,18 @@ http:
     - 192.168.10.32/27 # Cilium IP Pool
     - 192.168.10.50 # Gateway IP
 
-# Enable the recorder (database)
+# Enable the recorder (database).
+# Exclude Zigbee link-diagnostic sensors (rssi/lqi) — they churn every update
+# and add nothing to history, so keep them out of the SQLite DB. Long-term
+# statistics (the energy/cost trends) are stored separately and are unaffected.
+# purge_keep_days is left at the HA default (10) — raise it here if you want a
+# longer detailed-history window (costs PVC space; does not affect LTS).
 recorder:
   db_url: sqlite:////config/home-assistant_v2.db
+  exclude:
+    entity_globs:
+      - sensor.*_rssi
+      - sensor.*_lqi
 
 # Prometheus metrics endpoint for Grafana.
 #
@@ -562,7 +571,3 @@ template:
           {% if total > 0 %}
             {{ (states('sensor.truenas_server_energy_daily') | float(0) / total * 100) | round(1) }}
           {% else %}0{% endif %}
-
-# # Expose Camera Stream Source Integration
-# # Allows exposing camera stream URLs via API for go2rtc/Frigate integration
-# expose_camera_stream_source:
