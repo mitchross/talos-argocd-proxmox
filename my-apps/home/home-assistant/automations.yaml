@@ -32,3 +32,48 @@
           {{ trigger.entity_id }} was turned off and has been restored.
           Disable the "Homelab plug power-off lockout" automation if this
           was intentional.
+
+# AirCube air-quality alerts.
+#
+# Fire a persistent notification when air quality crosses a "take action"
+# threshold, sustained for 5 min so a transient spike (cooking, a spray) does
+# not nag. Each uses a fixed notification_id so repeat triggers UPDATE the same
+# notification instead of stacking. Thresholds match the aircube-dashboard.yaml
+# bands: eCO2 1000 ppm = ventilate; tVOC 500 ppb = elevated.
+- id: aircube_eco2_high
+  alias: AirCube eCO2 high — ventilate
+  description: Notifies when AirCube eCO2 exceeds 1000 ppm for 5 minutes.
+  mode: single
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.stuckatprototype_aircube_equivalent_co2
+      above: 1000
+      for:
+        minutes: 5
+  action:
+    - service: persistent_notification.create
+      data:
+        notification_id: aircube_eco2_high
+        title: Air quality — eCO2 high
+        message: >
+          AirCube eCO2 is {{ states('sensor.stuckatprototype_aircube_equivalent_co2') }} ppm
+          (above 1000). Open a window or increase ventilation.
+
+- id: aircube_tvoc_high
+  alias: AirCube tVOC high
+  description: Notifies when AirCube tVOC exceeds 500 ppb for 5 minutes.
+  mode: single
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.stuckatprototype_aircube_volatile_organic_compounds_parts
+      above: 500
+      for:
+        minutes: 5
+  action:
+    - service: persistent_notification.create
+      data:
+        notification_id: aircube_tvoc_high
+        title: Air quality — tVOC high
+        message: >
+          AirCube tVOC is {{ states('sensor.stuckatprototype_aircube_volatile_organic_compounds_parts') }} ppb
+          (above 500). Ventilate and check for VOC sources (paint, cleaners, off-gassing).

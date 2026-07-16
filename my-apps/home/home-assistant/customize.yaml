@@ -1,4 +1,5 @@
-# Per-entity overrides for Tapo homelab plugs.
+# Per-entity overrides for the Tapo homelab plugs and the AirCube air-quality
+# monitor.
 #
 # - Friendly names flow into the `friendly_name` Prometheus label and HA's UI
 #   (Energy dashboard, Developer Tools).
@@ -62,3 +63,40 @@ switch.truenas_server_smart_plug:
 # ---------- TrueNAS host ----------
 # (Displays "Truenas Server …" from the device name; derived sensors keep their
 # "TrueNAS Server …" names.)
+
+# ---------- StuckAtPrototype AirCube (Zigbee air-quality, ZHA quirk) ----------
+# ZHA's auto-derived friendly names are verbose ("StuckAtPrototype AirCube
+# Volatile organic compounds parts"); shorten them. These names flow into the
+# `friendly_name` Prometheus label, but the Grafana dashboard matches on the
+# stable `entity` label (not friendly_name), so renaming here is display-only
+# and does NOT break aircube-dashboard.yaml.
+sensor.stuckatprototype_aircube_temperature:
+  friendly_name: AirCube Temperature
+sensor.stuckatprototype_aircube_humidity:
+  friendly_name: AirCube Humidity
+sensor.stuckatprototype_aircube_equivalent_co2:
+  friendly_name: AirCube eCO2
+sensor.stuckatprototype_aircube_volatile_organic_compounds_parts:
+  friendly_name: AirCube tVOC
+sensor.stuckatprototype_aircube_voc_level:
+  friendly_name: AirCube VOC Level
+number.stuckatprototype_aircube_brightness:
+  friendly_name: AirCube Brightness
+
+# Declutter the default dashboard: rssi/lqi are Zigbee link diagnostics, and
+# `number.stuckatprototype_aircube` is a DUPLICATE of the brightness slider —
+# it's ZHA's raw AnalogOutput present_value, controlling the same thing as
+# number.stuckatprototype_aircube_brightness (the quirk's v2 .number()). The
+# identify button is a commissioning aid, not a daily control.
+sensor.stuckatprototype_aircube_rssi:
+  friendly_name: AirCube RSSI
+  hidden: true
+sensor.stuckatprototype_aircube_lqi:
+  friendly_name: AirCube LQI
+  hidden: true
+number.stuckatprototype_aircube:
+  friendly_name: AirCube Brightness (duplicate — use AirCube Brightness)
+  hidden: true
+button.stuckatprototype_aircube_identify:
+  friendly_name: AirCube Identify
+  hidden: true
