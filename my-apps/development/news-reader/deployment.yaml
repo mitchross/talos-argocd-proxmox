@@ -7,8 +7,9 @@ metadata:
     app: news-reader
 spec:
   replicas: 1
+  revisionHistoryLimit: 2
   strategy:
-    type: Recreate
+    type: RollingUpdate
   selector:
     matchLabels:
       app: news-reader
@@ -17,18 +18,62 @@ spec:
       labels:
         app: news-reader
     spec:
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: news-reader
-          image: registry.vanillax.me/news-reader:v0.2.6
+          image: registry.vanillax.me/news-reader:v0.2.7
+          imagePullPolicy: IfNotPresent
           env:
             - name: HOSTNAME
               value: "0.0.0.0"
+            - name: TEMPORAL_ADDRESS
+              value: "temporal-frontend.temporal.svc.cluster.local:7233"
+            - name: TEMPORAL_NAMESPACE
+              value: "default"
           ports:
             - containerPort: 3000
               name: http
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
           resources:
             requests:
               cpu: 50m
               memory: 128Mi
             limits:
               memory: 384Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi

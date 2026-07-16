@@ -8,6 +8,6 @@ spec:
     app: news-reader
   ports:
     - port: 3000
-      targetPort: 3000
+      targetPort: http
       name: http
   type: ClusterIP
