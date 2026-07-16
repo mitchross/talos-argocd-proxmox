@@ -94,6 +94,29 @@ patches:
           bind-address: "0.0.0.0"
 ---
 kind: Workers
+name: dell-cpu-workers
+machineClass:
+  name: libvirt-dell-single-node
+  size: 1
+systemExtensions:
+- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
+- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
+- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
+- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
+- siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
+patches:
+- name: libvirt-worker
+  inline:
+    machine:
+      # The cluster-wide Proxmox default is /dev/sda; libvirt exposes virtio
+      # disks as /dev/vda, so this worker set must override the install disk.
+      install:
+        disk: /dev/vda
+      nodeLabels:
+        node.vanillax.dev/class: dell-cpu
+        topology.kubernetes.io/zone: yard
+---
+kind: Workers
 name: gpu-workers
 machineClass:
   name: single-node-talos-gpu
