@@ -62,7 +62,7 @@ data:
           "type": "stat",
           "targets": [
             {
-              "expr": "label_replace(label_replace(max by (entity) ({__name__=~\"homeassistant_sensor_power_w|homeassistant_sensor_current_consumption_w\", entity!=\"\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.*)\"), \"name\", \"threadripper-gpus$1\", \"name\", \"gpu_psu(.*)\")",
+              "expr": "label_replace(label_replace(max by (entity) ({__name__=\"homeassistant_sensor_power_w\", entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server)_current_consumption\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.*)\"), \"name\", \"threadripper-gpus$1\", \"name\", \"gpu_psu(.*)\")",
               "legendFormat": "{{name}}",
               "instant": true,
               "refId": "A"
@@ -103,7 +103,7 @@ data:
           "type": "timeseries",
           "targets": [
             {
-              "expr": "label_replace(label_replace(max by (entity) ({__name__=~\"homeassistant_sensor_power_w|homeassistant_sensor_current_consumption_w\", entity!=\"\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.*)\"), \"name\", \"threadripper-gpus$1\", \"name\", \"gpu_psu(.*)\")",
+              "expr": "label_replace(label_replace(max by (entity) ({__name__=\"homeassistant_sensor_power_w\", entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server)_current_consumption\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.*)\"), \"name\", \"threadripper-gpus$1\", \"name\", \"gpu_psu(.*)\")",
               "legendFormat": "{{name}}",
               "refId": "A"
             }
@@ -145,7 +145,7 @@ data:
           "type": "stat",
           "targets": [
             {
-              "expr": "label_replace(label_replace(max by (entity) ({__name__=~\"homeassistant_sensor_energy_kwh|homeassistant_sensor_today_energy_kwh\", entity!=\"\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.*)\"), \"name\", \"threadripper-gpus$1\", \"name\", \"gpu_psu(.*)\")",
+              "expr": "label_replace(label_replace(max by (entity) ({__name__=\"homeassistant_sensor_energy_kwh\", entity=~\"sensor\\\\.(gpu_psu|nas_psu|truenas_server)_today_s_consumption\"}), \"name\", \"$1\", \"entity\", \"sensor\\\\.(.*)\"), \"name\", \"threadripper-gpus$1\", \"name\", \"gpu_psu(.*)\")",
               "legendFormat": "{{name}}",
               "instant": true,
               "refId": "A"
@@ -256,5 +256,5 @@ data:
       "timezone": "",
       "title": "Tapo Power Monitor",
       "uid": "tapo-power-monitor",
-      "version": 3
+      "version": 4
     }
