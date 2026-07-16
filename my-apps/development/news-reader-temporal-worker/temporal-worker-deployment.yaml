@@ -100,7 +100,7 @@ spec:
           # The Temporal Worker Controller turns each tag bump into a
           # new build_id + progressive worker rollout. Do NOT pin to
           # :latest here — the controller cannot tell two pushes apart.
-          image: registry.vanillax.me/news-reader-temporal-worker:v1.0.10
+          image: registry.vanillax.me/news-reader-temporal-worker:v1.0.11
           imagePullPolicy: IfNotPresent
           # The controller injects four env vars into every Pod it creates:
           #   TEMPORAL_ADDRESS         — from spec.workerOptions.connectionRef
