@@ -36,7 +36,7 @@ helmCharts:
     # same kubeVersion floor, same 8-CRD set. Breaking changes are all internal
     # Rust dep bumps (kube 4.0, croner 3.0) + the RepositoryReplication cred fix
     # (#200) which we don't use. Render-verified with our values.
-    version: 0.7.4
+    version: 0.7.5
     releaseName: kopiur
     namespace: kopiur-system
     includeCRDs: true
