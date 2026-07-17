@@ -2,16 +2,34 @@
 
 ## Overview
 
-The cluster is **single-node** (`talos-singlenode-gpu-prod`) on a flat LAN with
-10G switch infrastructure:
+The cluster (`talos-singlenode-gpu-prod`) runs a wired control plane and GPU
+worker on a flat LAN with 10G switch infrastructure, plus one routed Wi-Fi
+CPU worker:
 
-- **Main LAN (192.168.10.0/24)** — all cluster traffic via the 10G switch.
-- **Control-plane VM** — `192.168.10.184`.
-- **GPU worker VM** — `192.168.10.103` (dual RTX 3090 passed through from the
+- **Main LAN (192.168.10.0/24)** — all wired cluster traffic via the 10G switch.
+- **Control-plane VM** — `192.168.10.81`.
+- **GPU worker VM** — `192.168.10.177` (dual RTX 3090 passed through from the
   bare-metal X399/2950X host).
+- **Dell CPU worker VM** — `192.168.123.119` on the routed libvirt subnet
+  `192.168.123.0/24` behind the Wi-Fi Dell host `192.168.10.20`; see
+  [routed Wi-Fi Talos workers](wifi-libvirt-talos-workers.md).
 - **Storage** — TrueNAS/RustFS-S3 at `192.168.10.133` (NFS/SMB/RustFS S3).
 
 Verify live node addresses with `kubectl get nodes -o wide`.
+
+PodCIDRs are natively routed (Cilium, no overlay). **Firewalla carries no pod
+routes** — only `192.168.123.0/24 → 192.168.10.20` for the routed node subnet.
+Wired↔wired pod routes are installed by Cilium (`autoDirectNodeRoutes`); the
+wired nodes carry one permanent machine-config aggregate route
+`10.244.0.0/16 via 192.168.10.20` for the routed worker, and the Dell host
+routes each PodCIDR to its owner (see
+[routed Wi-Fi Talos workers](wifi-libvirt-talos-workers.md)).
+
+| PodCIDR | Node | Routed by |
+|---------|------|-----------|
+| 10.244.0.0/24 | GPU worker | Cilium direct routes + Dell host return route |
+| 10.244.1.0/24 | Control plane | Cilium direct routes + Dell host return route |
+| 10.244.2.0/24 | Dell CPU worker | wired-node /16 aggregate → Dell host → VM |
 
 ## Physical Topology
 
@@ -34,10 +52,15 @@ Verify live node addresses with `kubectl get nodes -o wide`.
 │            ▼                                    ▼                            │
 │   ┌──────────────────────┐          ┌──────────────────────────────────┐    │
 │   │  Control-Plane VM    │          │        GPU Worker VM             │    │
-│   │   192.168.10.184     │          │       192.168.10.103            │    │
+│   │   192.168.10.81      │          │       192.168.10.177            │    │
 │   │                      │          │  net0 (ens18) → vmbr0 → 10G LAN │    │
 │   └──────────────────────┘          │  dual RTX 3090 (passthrough)    │    │
 │                                     └──────────────────────────────────┘    │
+│                                                                              │
+│   Wi-Fi ┌──────────────────────┐  virbr1  ┌──────────────────────────┐      │
+│   ~~~~~▶│  Dell CachyOS host   │─────────▶│    Dell CPU Worker VM    │      │
+│         │   192.168.10.20      │  routed  │    192.168.123.119       │      │
+│         └──────────────────────┘ .123/24  └──────────────────────────┘      │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -50,10 +73,12 @@ Verify live node addresses with `kubectl get nodes -o wide`.
 |--------|-----|---------|
 | Router/Gateway | 192.168.10.1 | Default route + client DNS (Firewalla) |
 | Proxmox | 192.168.10.14 | Hypervisor |
-| Technitium | 192.168.10.15 | Split-DNS for `vanillax.me` |
-| GPU Worker | 192.168.10.103 | K8s GPU worker node |
+| Technitium / Omni (NUC) | 192.168.10.15 | Split-DNS for `vanillax.me` + self-hosted Omni |
+| Dell Wi-Fi host | 192.168.10.20 | CachyOS libvirt router for 192.168.123.0/24 |
+| Control Plane | 192.168.10.81 | K8s control-plane node |
+| GPU Worker | 192.168.10.177 | K8s GPU worker node |
 | TrueNAS | 192.168.10.133 | NAS (NFS/SMB/RustFS S3) — 10G |
-| Control Plane | 192.168.10.184 | K8s control-plane node |
+| Dell CPU Worker | 192.168.123.119 | K8s worker on routed libvirt subnet |
 | Wyze Bridge | 192.168.10.46 | RTSP camera streams |
 | LoadBalancer Pool | 192.168.10.32-63 (/27) | Cilium L2 announcements |
 

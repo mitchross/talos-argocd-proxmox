@@ -113,6 +113,7 @@ nav:
       - Plain Postgres migration (CNPG exit ramp): domains/cnpg/plain-postgres-migration.md
   - Networking:
       - Topology: domains/networking/topology.md
+      - Routed Wi-Fi Talos workers: domains/networking/wifi-libvirt-talos-workers.md
       - Cilium policies: domains/networking/policy.md
       - Technitium vanillax.me migration: domains/networking/technitium-vanillax-me-migration.md
   - AI / GPU:
