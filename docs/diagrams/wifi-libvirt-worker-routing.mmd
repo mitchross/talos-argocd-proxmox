@@ -5,7 +5,7 @@ config:
 ---
 flowchart LR
   accTitle: Bridged Wi-Fi Talos worker architecture
-  accDescr: Omni on the management NUC asks the provider on the Wi-Fi CachyOS host to create a Talos virtual machine. An ASUS media bridge presents multi-MAC Ethernet over Wi-Fi, so the host and the VM sit directly on the HomeLab VLAN and Cilium exchanges pod routes automatically.
+  accDescr: Omni on the management NUC asks the provider on the Wi-Fi CachyOS host to create a Talos virtual machine. An ASUS media bridge presents Ethernet over Wi-Fi, the host and VM sit directly on the HomeLab VLAN, and Cilium tunnels cross-node pod traffic between node addresses.
 
   subgraph MANAGEMENT["MANAGEMENT"]
     direction TB
@@ -36,9 +36,9 @@ flowchart LR
 
   subgraph PODS["KUBERNETES DATA PLANE"]
     direction TB
-    ROUTES["`Cilium autoDirectNodeRoutes
-    per-node PodCIDR routes
-    exchanged automatically`"]
+    ROUTES["`Cilium VXLAN tunnel
+    pod traffic encapsulated
+    between node IPs`"]
   end
 
   OMNI request@--> DELL
