@@ -68,21 +68,6 @@ systemExtensions:
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 patches:
-# Aggregate forward route for routed (off-LAN) workers: longest-prefix-match
-# keeps wired<->wired pod traffic on the direct autoDirectNodeRoutes /24s; only
-# PodCIDRs with no wired owner (the Dell VM's, whatever /24 it gets after any
-# rebuild) fall through to the Dell host. Do NOT add this to dell-cpu-workers:
-# 192.168.10.20 is unreachable from the VM's 192.168.123.0/24 subnet.
-- name: pod-aggregate-route
-  inline:
-    machine:
-      network:
-        interfaces:
-        - interface: eth0
-          dhcp: true
-          routes:
-          - network: 10.244.0.0/16
-            gateway: 192.168.10.20
 - name: control-plane-performance
   inline:
     cluster:
@@ -156,17 +141,6 @@ systemExtensions:
 - siderolabs/nonfree-kmod-nvidia-production # renovate: datasource=docker depName=siderolabs/nonfree-kmod-nvidia-production
 - siderolabs/nvidia-container-toolkit-production # renovate: datasource=docker depName=siderolabs/nvidia-container-toolkit-production
 patches:
-# Same aggregate route as the control plane; see pod-aggregate-route above.
-- name: pod-aggregate-route
-  inline:
-    machine:
-      network:
-        interfaces:
-        - interface: eth0
-          dhcp: true
-          routes:
-          - network: 10.244.0.0/16
-            gateway: 192.168.10.20
 - name: gpu-worker-labels
   inline:
     machine:

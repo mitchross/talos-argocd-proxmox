@@ -1,34 +1,34 @@
-# Routed Wi-Fi Talos workers with Omni and libvirt
+# Wi-Fi Talos workers with Omni and libvirt
 
 This guide explains how a Wi-Fi-only Linux machine contributes replaceable CPU
 capacity to `talos-singlenode-gpu-prod` without becoming a control-plane or
 storage failure dependency.
 
-!!! info "Status — current (2026-07-16)"
-    The Dell worker is Ready in `talos-singlenode-gpu-prod` at
-    `192.168.123.119` with PodCIDR `10.244.2.0/24`, and cross-node pod
-    traffic, DNS, services, and egress are verified. Pod routing uses the
-    aggregate design below — **no per-PodCIDR Firewalla routes exist or are
-    wanted**. Remaining follow-up: FRR + Cilium BGP replaces the interim
-    static return routes on the Dell host, which is what makes the design
-    fully rebuild-proof.
+!!! info "Status — current, bridged architecture (2026-07-17)"
+    The Dell worker is Ready at `192.168.10.119` **directly on the HomeLab
+    VLAN**, bridged through an ASUS RT-AX86U in Media Bridge mode. The earlier
+    routed design (dedicated `192.168.123.0/24` subnet, host routing, egress
+    NAT, per-PodCIDR routes) is fully retired — its history and rationale
+    live in git (PR #1657) and the fallback section below.
 
-**Scope:** this procedure prepares a CachyOS host, connects its libvirt provider
-to self-hosted Omni, creates a routed Talos VM, and adds that VM to the existing
-production cluster as a worker. It deliberately leaves the wired control plane,
-GPU worker, Proxmox hosts, TrueNAS, and Longhorn storage ownership unchanged.
+**Scope:** this procedure prepares a CachyOS host, connects its libvirt
+provider to self-hosted Omni, and adds a bridged Talos VM to the existing
+production cluster as a worker. It deliberately leaves the wired control
+plane, GPU worker, Proxmox hosts, TrueNAS, and Longhorn storage ownership
+unchanged.
 
-![Omni and Firewalla route a Wi-Fi-hosted Talos worker into the existing cluster](../../assets/wifi-libvirt-worker-routing.svg)
+![Omni provisions a Wi-Fi-hosted Talos worker bridged onto the HomeLab VLAN](../../assets/wifi-libvirt-worker-routing.svg)
 
-*The invariant is that the Wi-Fi host adds optional compute. Omni owns the VM,
-Firewalla and the Dell own the routes, and wired systems retain the durable
+*The invariant is that the Wi-Fi host adds optional compute. Omni owns the
+VM, the media bridge owns the Wi-Fi hop, and wired systems retain the durable
 control-plane and storage roles.*
 
 ## The mental model
 
-CachyOS remains the physical operating system. Kubernetes does not run directly
-on it. QEMU/KVM runs a complete Talos VM, and the official Omni libvirt provider
-turns Omni `MachineRequest` resources into local libvirt disks and domains.
+CachyOS remains the physical operating system. Kubernetes does not run
+directly on it. QEMU/KVM runs a complete Talos VM, and the official Omni
+libvirt provider turns Omni `MachineRequest` resources into local libvirt
+disks and domains.
 
 ```text
 NUC: Omni API and desired-state repositories
@@ -37,423 +37,220 @@ NUC: Omni API and desired-state repositories
   v
 Dell CachyOS: libvirt + provider agent
   |
-  | routed virtual bridge
+  | br0 -> eno1 -> ASUS media bridge -> Wi-Fi -> AP -> HomeLab VLAN
   v
 Talos VM: kubelet + Cilium + ordinary production workloads
 ```
 
-Four address layers are involved:
+The trick that makes this simple is the **media bridge**: an ASUS RT-AX86U
+(Asuswrt-Merlin) in Media Bridge mode is a Wi-Fi client that presents true
+multi-MAC Ethernet. The Dell host and the Talos VM each appear on
+`192.168.10.0/24` with their own MAC and address, exactly as if wired. A
+plain Wi-Fi station cannot do this — 3-address 802.11 frames cannot carry
+foreign source MACs, which is why hanging a worker directly off a host
+wlan requires the far more complex routed design in the fallback section.
+
+Address layers:
 
 | Layer | CIDR or address | Owner | Purpose |
 |---|---|---|---|
-| HomeLab Wi-Fi/LAN | `192.168.10.0/24` | Firewalla | NUC, wired Talos nodes, and Dell uplink |
-| Dell uplink | `192.168.10.20` | Firewalla DHCP reservation | Next hop for every Dell-hosted routed subnet |
-| Legacy libvirt NAT | `192.168.122.0/24` | Dell `virbr0` | Temporary provider proof only; not production |
-| Routed VM network | `192.168.123.0/24` | Dell `virbr1` | Production Talos VM node addresses |
-| Kubernetes pods | `10.244.0.0/16` aggregate | Kubernetes + Cilium | A distinct `/24` is assigned to each node |
+| HomeLab Wi-Fi/LAN | `192.168.10.0/24` | Firewalla | Every node, including the Dell VM |
+| Dell host on br0 | DHCP (`.186` at time of writing) | Firewalla DHCP | Hypervisor + provider agent |
+| Talos VM | `192.168.10.119` static | Omni machine config (git) | Worker node address |
+| Kubernetes pods | `10.244.0.0/16` aggregate | Kubernetes + Cilium | A distinct `/24` per node, fully automatic |
 
-The physical Dell is the router between HomeLab and `192.168.123.0/24`.
-Firewalla carries a static route for that subnet through `192.168.10.20`.
-Unlike the legacy `.122` network, internal `.123` traffic is not hidden by NAT.
+**No pod routes exist anywhere outside Cilium.** Because the VM is on the
+same L2 as the wired nodes, `autoDirectNodeRoutes` exchanges the per-node
+PodCIDR routes automatically, for any `/24` Kubernetes assigns after any
+rebuild. Firewalla carries no cluster routes at all.
 
-## How Cilium traffic crosses the routed boundary
+## Why the VM address is static
 
-The production Cilium configuration uses native routing. Packets keep their
-`10.244.x.x` source and destination addresses instead of being wrapped in a
-VXLAN packet. Every node receives a non-overlapping PodCIDR:
-
-```text
-GPU worker:     10.244.0.0/24 -> node 192.168.10.177
-Control plane:  10.244.1.0/24 -> node 192.168.10.81
-Dell worker:    10.244.2.0/24 -> next hop 192.168.10.20 (verified 2026-07-16)
-```
-
-Firewalla carries **no pod routes** — only the node-subnet route
-`192.168.123.0/24 -> 192.168.10.20`, which is static in git. Pod routing is
-layered so that every dynamic value lives where it self-heals or is
-version-controlled:
-
-- **Wired nodes** carry one permanent machine-config route,
-  `10.244.0.0/16 via 192.168.10.20` (the `pod-aggregate-route` patch in the
-  cluster template). Longest-prefix-match keeps wired↔wired pod traffic on
-  the direct `/24` routes that `autoDirectNodeRoutes` maintains; only the
-  routed worker's PodCIDR — whatever `/24` it gets after any rebuild — falls
-  through to the Dell host. The route survives rebuilds unchanged.
-- **The Dell host** routes each wired PodCIDR to its owning node and the VM
-  PodCIDR to the VM (interim static units; FRR learning them from Cilium BGP
-  advertisements is the follow-up that removes the last per-rebuild edit).
-
-Never predict the Dell PodCIDR: read it after Kubernetes assigns it.
-
-```bash
-kubectl get nodes \
-  -o custom-columns='NODE:.metadata.name,NODE_IP:.status.addresses[?(@.type=="InternalIP")].address,POD_CIDR:.spec.podCIDR'
-```
-
-The live agents also read `ipv4-native-routing-cidr: 10.14.0.0/16`, which does
-not cover the `10.244.0.0/16` PodCIDRs. Cross-node pod traffic still keeps pod
-addresses because `bpf.masquerade` exempts cluster-known destinations via the
-ipcache, so the setting is currently inert for pod-to-pod paths. Treat it as an
-existing value to verify deliberately — do not change it as a side effect of
-this procedure.
-
-Internet traffic is different. The Dell masquerades only public destinations
-from `192.168.123.0/24` behind its Wi-Fi address. RFC 1918 node and pod traffic
-explicitly bypasses that chain, so internal traffic remains routed and visible.
-Firewalla Source Networks is the preferred WAN-edge alternative, but it did not
-return replies for the downstream subnet in the verified setup.
+The media bridge's proxy-STA forwards unicast traffic for secondary MACs
+perfectly, but **breaks DHCP for every MAC after the first** (the DISCOVER
+leaves, the lease never arrives — NetworkManager sits in "getting IP
+configuration" forever). The Dell host, as the bridge's primary client,
+leases normally; the VM cannot. The VM therefore carries a static address in
+its Omni machine-set patch, which is also the more rebuild-proof choice: a
+replacement VM has a new random MAC, and a static-in-git address doesn't
+care. Keep `192.168.10.119` outside (or reserved against) the Firewalla DHCP
+pool.
 
 ## Owning configuration
 
 The version-controlled inputs are:
 
-- [`omni/machine-classes/libvirt-dell-single-node.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/machine-classes/libvirt-dell-single-node.yaml) — VM size, pool, and routed network.
-- [`omni/cluster-template/cluster-template-singlenode-gpu.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/cluster-template/cluster-template-singlenode-gpu.yaml) — the `dell-cpu-workers` production machine set.
-- [`omni/libvirt-provider/talos-routed-network.xml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/libvirt-provider/talos-routed-network.xml) — libvirt routed bridge and DHCP range.
+- [`omni/machine-classes/libvirt-dell-single-node.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/machine-classes/libvirt-dell-single-node.yaml) — VM size, pool, and network name.
+- [`omni/cluster-template/cluster-template-singlenode-gpu.yaml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/cluster-template/cluster-template-singlenode-gpu.yaml) — the `dell-cpu-workers` machine set, including the static `192.168.10.119` network patch.
+- [`omni/libvirt-provider/talos-routed-network.xml`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/libvirt-provider/talos-routed-network.xml) — the libvirt network, now a plain bridge onto `br0` (the name `talos-routed` survives because the machine class references it).
 - [`omni/libvirt-provider/omni-infra-provider-libvirt.service`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/libvirt-provider/omni-infra-provider-libvirt.service) — hardened provider service.
-- [`omni/libvirt-provider/99-talos-libvirt-routing.conf`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/libvirt-provider/99-talos-libvirt-routing.conf) — persistent IPv4 forwarding.
-- [`omni/libvirt-provider/talos-routed-egress-nat.sh`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/libvirt-provider/talos-routed-egress-nat.sh) — public-only egress NAT with RFC 1918 exclusions.
-- [`omni/libvirt-provider/talos-routed-egress-nat.service`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/libvirt-provider/talos-routed-egress-nat.service) — persistent systemd ownership for that chain.
-- [`omni/libvirt-provider/talos-dell-pod-route.service`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/libvirt-provider/talos-dell-pod-route.service) — the verified Dell PodCIDR route.
-- [`omni/libvirt-provider/talos-wired-pod-routes.service`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/libvirt-provider/talos-wired-pod-routes.service) — interim wired-PodCIDR return routes until FRR/BGP replaces them.
-- `omni/cluster-template/cluster-template-singlenode-gpu.yaml` `pod-aggregate-route` patches — the permanent `10.244.0.0/16 via 192.168.10.20` route on wired nodes.
+
+Host-side state that is deliberate but not in git: the NetworkManager `br0`
+bridge (below), the AX86U's Media Bridge configuration, and the Firewalla
+DHCP reservations for the Dell host and the AX86U.
 
 The NUC at `192.168.10.15` runs Omni. The provider agent runs on the Dell
 because `qemu:///system` is the Dell-local libvirt API. A root-only
-`provider.env` contains the provider service-account key and is never committed.
+`provider.env` contains the provider service-account key and is never
+committed.
 
-## Prerequisites and stop conditions
+## Build the bridge path
 
-Before changing a cluster:
+### 1. ASUS media bridge
 
-1. Reserve the Dell address as `192.168.10.20` in Firewalla.
-2. Add `192.168.123.0/24 -> 192.168.10.20` as a static HomeLab route for all devices.
-3. Configure public egress either through Firewalla Source Networks or the
-   scoped Dell egress-NAT service below.
-4. Confirm `talos-singlenode-gpu-prod` is Ready with its original nodes.
-5. Confirm the temporary lab is disposable and contains no workloads or data.
-6. Confirm the Dell has hardware virtualization and at least the requested CPU,
-   memory, disk, and CachyOS headroom.
+Put the RT-AX86U in **Media Bridge** mode joined to the HomeLab SSID, and
+cable it to the Dell's Ethernet port. Give the AX86U a Firewalla DHCP
+reservation so it stays findable. Verify from the Dell that the wired NIC
+leases a `192.168.10.x` address.
 
-Stop before deleting the lab when any of these fail:
-
-- a HomeLab device cannot reach `192.168.123.1`;
-- a disposable `.123` guest cannot reach the NUC and both Talos nodes;
-- a disposable `.123` guest cannot reach the internet;
-- Omni reports the libvirt provider disconnected;
-- production is not Ready before the change.
-
-## Rebuild the CachyOS host
-
-Run host commands on the Dell, not the NUC.
-
-### 1. Install and enable virtualization
+Prove multi-MAC forwarding before touching the cluster — this is the test
+that validates the whole design:
 
 ```bash
-sudo pacman -Syu --needed qemu-desktop libvirt dnsmasq openbsd-netcat
-sudo systemctl enable --now libvirtd.service
+sudo ip link add mbtest0 link eno1 type macvlan mode bridge
+sudo ip link set mbtest0 up
+sudo ip addr add 192.168.10.199/24 dev mbtest0   # any free address
+ping -c 3 -I mbtest0 192.168.10.1                 # expect replies
+sudo ip link del mbtest0
 ```
 
-Define and autostart a directory-backed `default` pool at
-`/var/lib/libvirt/images`. Preserve any existing pool instead of redefining it.
+A second MAC pinging the gateway proves proxy-STA forwards foreign MACs both
+ways. (Expect DHCP on that same interface to fail — that is the known
+limitation, handled by the VM's static address.)
 
-### 2. Install the provider
-
-Install the pinned official provider binary at
-`/usr/local/bin/omni-infra-provider-libvirt`, verify its published SHA-256, and
-copy the version-controlled config and unit to their `/etc` paths.
-
-Create the provider identity from a trusted Omni workstation:
+### 2. Host bridge
 
 ```bash
-omnictl infraprovider create libvirt -t 8760h
+sudo nmcli connection add type bridge ifname br0 con-name br0 \
+  bridge.stp no ipv4.method auto ipv6.method disabled \
+  ethernet.cloned-mac-address <eno1-mac>
+sudo nmcli connection add type ethernet ifname eno1 con-name br0-port-eno1 \
+  master br0
+sudo nmcli connection down "Wired connection 1"
+sudo nmcli connection modify "Wired connection 1" connection.autoconnect no
+sudo nmcli connection up br0-port-eno1 && sudo nmcli connection up br0
 ```
 
-Install the resulting endpoint and service-account key only as:
+Cloning eno1's MAC onto br0 keeps the host's existing DHCP lease. The host's
+own Wi-Fi (`wlan0`) can stay up as an out-of-band path during surgery; long
+term it is optional.
 
-```text
-/etc/omni-infra-provider-libvirt/provider.env  0600 root:root
-```
-
-Then enable the service:
+### 3. libvirt network
 
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now omni-infra-provider-libvirt.service
+sudo virsh net-define omni/libvirt-provider/talos-routed-network.xml
+sudo virsh net-start talos-routed
+sudo virsh net-autostart talos-routed
 ```
 
-Expected result: `omnictl infraprovider list` reports provider `libvirt` as
-connected with an empty error column.
+When redefining an existing network, embed its current UUID in the XML first
+(`virsh net-dumpxml talos-routed | grep uuid`) or `net-define` refuses.
+Switching an existing VM's network requires: guest shutdown → `net-define` →
+`net-destroy` → `net-start` → guest start.
 
-### 3. Create the routed network
+### 4. Provider and template
 
-```bash
-sudo install -m 0644 \
-  omni/libvirt-provider/99-talos-libvirt-routing.conf \
-  /etc/sysctl.d/99-talos-libvirt-routing.conf
-sudo sysctl -w net.ipv4.ip_forward=1
-
-sudo virsh -c qemu:///system net-define \
-  omni/libvirt-provider/talos-routed-network.xml
-sudo virsh -c qemu:///system net-start talos-routed
-sudo virsh -c qemu:///system net-autostart talos-routed
-```
-
-Permit only the required bridge and HomeLab forwarding paths:
-
-```bash
-sudo ufw allow in on virbr1 from 192.168.123.0/24
-sudo ufw allow in on virbr1 proto udp from any port 68 to any port 67 \
-  comment "Talos routed DHCP"
-sudo ufw allow in on wlan0 from 192.168.10.0/24 to 192.168.123.1
-sudo ufw route allow in on virbr1 out on wlan0 from 192.168.123.0/24
-sudo ufw route allow in on wlan0 out on virbr1 \
-  from 192.168.10.0/24 to 192.168.123.0/24
-```
-
-Expected result:
-
-```text
-Name:           talos-routed
-Active:         yes
-Persistent:     yes
-Autostart:      yes
-Bridge:         virbr1
-```
-
-The DHCP allowance is required even though the broader `.123/24` rule exists:
-a client sends its initial discover from `0.0.0.0:68`, before it can match the
-subnet source rule. Without it, Talos boots but repeatedly reports `network is
-unreachable`, and `virsh net-dhcp-leases talos-routed` remains empty.
-
-### 4. Provide public-only egress
-
-Install the version-controlled egress script and unit when Firewalla does not
-source-NAT the downstream subnet:
-
-```bash
-sudo install -D -m 0755 \
-  omni/libvirt-provider/talos-routed-egress-nat.sh \
-  /usr/local/libexec/talos-routed-egress-nat
-sudo install -D -m 0644 \
-  omni/libvirt-provider/talos-routed-egress-nat.service \
-  /etc/systemd/system/talos-routed-egress-nat.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now talos-routed-egress-nat.service
-```
-
-The dedicated iptables chain returns without translation for `10.0.0.0/8`,
-`172.16.0.0/12`, and `192.168.0.0/16`, then masquerades all other destinations.
-This keeps Cilium native routing symmetric while allowing Talos factory access,
-DNS, image pulls, and ordinary internet egress.
-
-### 5. Prove routing before cluster mutation
-
-Create a disposable namespace with a short Linux interface name:
-
-```bash
-sudo ip netns add talos-route-test
-sudo ip link add trtest0 type veth peer name eth0 netns talos-route-test
-sudo ip link set trtest0 master virbr1
-sudo ip link set trtest0 up
-sudo ip -n talos-route-test link set lo up
-sudo ip -n talos-route-test link set eth0 up
-sudo ip -n talos-route-test addr add 192.168.123.2/24 dev eth0
-sudo ip -n talos-route-test route add default via 192.168.123.1
-```
-
-From the Dell namespace, verify the NUC, both production node addresses, and an
-internet address. From the NUC, verify `192.168.123.2`.
-
-Remove the disposable namespace after proof:
-
-```bash
-sudo ip netns del talos-route-test
-sudo ip link del trtest0 2>/dev/null || true
-```
-
-## Migrate the proof VM into production
-
-!!! danger "Destructive checkpoint"
-    The next step destroys only the temporary lab cluster and its provider-owned
-    VM. Re-check the template filename and cluster ID. Never run template delete
-    against `talos-singlenode-gpu-prod`.
-
-1. Delete the temporary lab template resources and wait for the provider to
-   remove its libvirt domain and volumes.
-2. Apply `libvirt-dell-single-node.yaml` so future requests select
-   `talos-routed`.
-3. Validate and dry-run the production template.
-4. Sync the production template. This creates only the new
-   `dell-cpu-workers` machine set, patch, and extension configuration.
-5. Wait for the provider to create the VM, Talos to install, the system-extension
-   upgrade to settle, and the node to become Ready.
-6. Enable libvirt autostart on the new provider-created domain.
-
-Template patch paths resolve relative to the process working directory. Apply
-the machine class from the repository root, then run template commands from its
-directory:
+Install the pinned provider binary and service as in the provider unit file,
+create the provider identity with `omnictl infraprovider create libvirt`,
+then apply the machine class and sync the template from the repository:
 
 ```bash
 omnictl apply -f omni/machine-classes/libvirt-dell-single-node.yaml
 cd omni/cluster-template
 omnictl cluster template validate -f cluster-template-singlenode-gpu.yaml
-omnictl cluster template sync --dry-run \
-  -f cluster-template-singlenode-gpu.yaml
+omnictl cluster template sync --dry-run -f cluster-template-singlenode-gpu.yaml
 omnictl cluster template sync -v -f cluster-template-singlenode-gpu.yaml
 ```
 
-Do not intervene during a system-extension reboot merely because readiness
-briefly drops. Wait until Omni reports `MachineUpgradeStatus` phase 3,
-`machine is up to date`, and identical desired/current schematic IDs.
+Template patch paths resolve relative to the working directory: apply the
+machine class from the repository root, run template commands from
+`omni/cluster-template/`.
 
 Keep `omnictl` at the same version as the Omni backend before trusting its
 output. A v1.4.7 client against a v1.9.0 backend reported stale or missing
-phase data while the UI was already healthy. The dashboard serves matching
-binaries; the same version is also on the official GitHub release page.
-
-## Complete native pod routing
-
-Pod routing needs three layers. None of them involve Firewalla.
-
-**1. Wired nodes: the permanent aggregate route.** The cluster template's
-`pod-aggregate-route` patch puts `10.244.0.0/16 via 192.168.10.20` on the
-wired nodes' `eth0`. It is already in git and applies on every rebuild via
-the normal template sync — nothing to do per rebuild. Verify it is live and
-that wired↔wired traffic still prefers the direct `/24`s:
-
-```bash
-# via a wired cilium agent pod; expect the peer /24 direct, Dell /24 via .20
-kubectl -n kube-system exec <wired-cilium-pod> -c cilium-agent -- \
-  ip route get <peer-pod-ip>    # expect: via <peer-node-ip>
-kubectl -n kube-system exec <wired-cilium-pod> -c cilium-agent -- \
-  ip route get <dell-pod-ip>    # expect: via 192.168.10.20
-```
-
-**2. Dell host: per-PodCIDR routes (the only per-rebuild values).** After
-reading the live allocations, the host needs the VM PodCIDR toward the VM and
-each wired PodCIDR toward its owner:
-
-```bash
-sudo ip route replace <dell-pod-cidr> via <dell-talos-node-ip> dev virbr1
-sudo ip route replace <wired-pod-cidr> via <wired-node-ip> dev wlan0   # one per wired node
-```
-
-The first verified production allocation was:
-
-```text
-10.244.0.0/24 -> 192.168.10.177   GPU worker
-10.244.1.0/24 -> 192.168.10.81    control plane
-10.244.2.0/24 -> 192.168.123.119  Talos VM via virbr1
-```
-
-`talos-dell-pod-route.service` and the interim `talos-wired-pod-routes.service`
-persist these. They are the piece the FRR + Cilium BGP follow-up replaces:
-every node then advertises its live PodCIDR and FRR installs these routes
-itself, making a rebuild zero-touch. Until then, a VM replacement or cluster
-rebuild means re-reading the values and updating those two units — and
-nothing else.
-
-```bash
-sudo install -D -m 0644 \
-  omni/libvirt-provider/talos-dell-pod-route.service \
-  /etc/systemd/system/talos-dell-pod-route.service
-sudo install -D -m 0644 \
-  omni/libvirt-provider/talos-wired-pod-routes.service \
-  /etc/systemd/system/talos-wired-pod-routes.service
-sudo systemctl daemon-reload
-sudo systemctl enable --now talos-dell-pod-route.service talos-wired-pod-routes.service
-```
-
-**3. Dell host UFW: aggregate rules.** Deliberately `/16`-wide so they never
-drift:
-
-```bash
-sudo ufw route allow in on wlan0 out on virbr1 \
-  from 192.168.10.0/24 to 10.244.0.0/16
-sudo ufw route allow in on wlan0 out on virbr1 \
-  from 10.244.0.0/16 to 10.244.0.0/16
-sudo ufw route allow in on virbr1 out on wlan0 \
-  from 10.244.0.0/16 to 192.168.10.0/24
-sudo ufw route allow in on virbr1 out on wlan0 \
-  from 10.244.0.0/16 to 10.244.0.0/16
-```
-
-At larger scale, replace the host static routes with the FRR/BGP design
-sooner rather than later; the aggregate route and UFW rules already scale
-unchanged.
+phase data while the UI was already healthy. Do not intervene during a
+system-extension reboot merely because readiness briefly drops; wait for
+`machine is up to date` with identical desired/current schematic IDs.
 
 ## Verification
 
-The migration is complete only when all checks agree:
-
 ```bash
 omnictl get clusterstatus talos-singlenode-gpu-prod -o yaml
-kubectl get nodes -o wide
-kubectl -n kube-system get pods -l k8s-app=cilium -o wide
+kubectl get nodes -o custom-columns='NODE:.metadata.name,IP:.status.addresses[?(@.type=="InternalIP")].address,POD_CIDR:.spec.podCIDR'
+kubectl -n kube-system exec <wired-cilium-pod> -c cilium-agent -- ip route show | grep 10.244
 kubectl get pods -A --field-selector=status.phase!=Running,status.phase!=Succeeded
 ```
 
 Expected state:
 
-- production has one control plane, one GPU worker, and one Dell CPU worker;
-- all three nodes are Ready;
-- every Cilium agent is Ready;
-- the Dell worker has `node.vanillax.dev/class=dell-cpu` and
-  `topology.kubernetes.io/zone=yard`;
-- cross-node pod probes, DNS, image pulls, and internet egress succeed;
+- three Ready nodes, the Dell worker at `192.168.10.119` with
+  `node.vanillax.dev/class=dell-cpu` and `topology.kubernetes.io/zone=yard`;
+- every wired node shows a direct `10.244.x.0/24 via 192.168.10.119` route
+  installed by Cilium (no static routes anywhere);
+- cross-node pod probes, cluster DNS, service reachability, and internet
+  egress succeed from Dell-scheduled pods;
 - the Dell domain, network, pool, libvirt service, and provider service all
-  autostart;
-- `talos-dell-lab` no longer exists.
+  autostart.
 
 Longhorn needs no exclusion for this node. The cluster sets
 `createDefaultDiskLabeledNodes: "true"`, and only the GPU worker carries the
-`node.longhorn.io/create-default-disk` label, so the Dell registers with zero
-disks and owns no replicas. Its `longhorn-csi-plugin` DaemonSet pod stays —
-that is what lets Dell-scheduled workloads mount Longhorn volumes served from
-the wired node.
+`node.longhorn.io/create-default-disk` label, so the Dell registers with
+zero disks and owns no replicas. Its `longhorn-csi-plugin` DaemonSet pod
+stays — that is what lets Dell-scheduled workloads mount Longhorn volumes
+served from the wired node.
 
-## Failure paths and rollback
+!!! warning "Longhorn volumes attach over Wi-Fi"
+    Any pod with a Longhorn PVC scheduled onto the Dell does its disk I/O
+    via iSCSI across the Wi-Fi hop. Under RF congestion this surfaces as
+    `input/output error` in the pod (seen on kopiur movers). Prefer
+    stateless or NFS-backed workloads on this node, and consider a taint if
+    movers land there too often — kopiur's mover spec has no placement
+    fields.
+
+## Failure paths
 
 | Symptom | Stop and inspect | Recovery |
 |---|---|---|
-| NUC cannot reach `.123.1` | Firewalla static route, Dell address, `virbr1` | Fix underlay before cluster changes |
-| `.123` guest reaches LAN but not internet | packet capture on `wlan0`, Firewalla Source Networks, egress-NAT service | Enable one public-egress implementation; do not provision yet |
-| Talos boots but never joins Omni | `virsh net-dhcp-leases`, DHCP capture on `vnet*`, UFW | Allow UDP client port 68 to server port 67 on `virbr1` |
-| Talos connects to Omni but node stays NotReady | Cilium agent, API reachability, node route | Keep original production nodes; fix routing |
-| Node Ready but cross-node pods fail | aggregate route on wired nodes, Dell host PodCIDR routes | Re-read live PodCIDRs; fix the host route units |
-| Pod-sourced traffic refused with ICMP port-unreachable from `192.168.123.1` while node traffic works | `virsh net-dumpxml talos-routed` forward mode | libvirt `route` mode firewalls out non-`.123/24` traffic; the network must be `mode="open"` |
-| `omnictl` output disagrees with the Omni UI | `omnictl --version` vs backend version | Upgrade the client to the backend version before acting on CLI output |
-| Provider replaces the domain | New domain lacks autostart | Re-enable autostart on the replacement |
-| Wi-Fi is unstable | Node pressure/disconnect events | Cordon/drain and scale worker set to zero |
+| Dell host has no lease on the wired NIC | AX86U parent-AP status, cabling, Firewalla | Fix the bridge before anything else |
+| VM never gets its address | machine-set static patch synced? `virsh domiflist` shows `br0`? | Sync template; flip the network per step 3 |
+| Second MAC cannot DHCP | — | Known media-bridge limitation; static addresses only |
+| Node Ready but cross-node pods fail | wired nodes' `ip route` for the Dell `/24` | Cilium reinstalls direct routes when node IPs are on one L2; check node InternalIP |
+| Sluggish or failing disk I/O in Dell pods | Longhorn volume attached over Wi-Fi | Reschedule to a wired node; see warning above |
+| Provider replaces the domain | New domain lacks autostart; new MAC | Re-enable autostart; static IP makes the MAC change a non-event |
+| Wi-Fi is unstable | AX86U RSSI/link rate, AP airtime | Cordon/drain and scale the worker set to zero |
 
-To remove the production experiment, delete the `dell-cpu-workers` document
-from the template, validate, and sync. Omni will deprovision that provider-owned
-VM while leaving the original control plane and GPU worker intact. Remove host
-routes and `talos-routed` only after no machine request references them.
+To remove the worker, delete the `dell-cpu-workers` document from the
+template, validate, and sync. Omni deprovisions the provider-owned VM while
+leaving the original control plane and GPU worker intact.
+
+## Fallback: no bridge device available
+
+If a site has no media-bridge-capable device, a routed design works with a
+plain host wlan: a dedicated libvirt subnet routed through the host, a
+Firewalla route for the node subnet, static PodCIDR routes (or FRR + Cilium
+BGP), and public-only egress NAT. This repository ran that design first —
+the full procedure, its systemd units, and its hard-won gotchas are in git
+history (PR #1657). The two gotchas worth remembering even now:
+
+- libvirt `mode="route"` networks install `LIBVIRT_FWI/FWO` FORWARD rules
+  that permit only the network's own subnet and REJECT everything else
+  (including pod CIDRs) with ICMP port-unreachable, before UFW is consulted.
+  Routed libvirt networks for Cilium must use `mode="open"`.
+- A brand-new Talos client DHCPs from `0.0.0.0:68`, which does not match a
+  subnet-scoped UFW allow — routed-network DHCP needs an explicit UDP
+  client-port-68 rule on the bridge.
 
 ## Scaling beyond one Wi-Fi worker
 
-Use Ansible to prepare physical hosts, but keep VM lifecycle in Omni. A future
-role should manage packages, libvirt, storage pools, routed networks, sysctls,
-UFW, provider binaries and checksums, systemd units, and verification. Inject
-provider credentials from 1Password or Ansible Vault rather than Git.
-
-Assign a unique node subnet per physical Wi-Fi site, for example `.123/24`,
-`.124/24`, and `.125/24`. Manual native PodCIDR routing is reasonable for a
-small proof, but not a fleet. Choose Cilium tunneling or a router capable of
-BGP/OSPF when route count becomes operational toil.
-
-Do not install Proxmox merely to solve Wi-Fi bridging. A normal Wi-Fi station
-cannot transparently bridge arbitrary VM MAC addresses, so Proxmox would still
-need a routed/NAT design. If a remote location must host 24/7 dependencies, use
-a hardware point-to-point wireless bridge that presents Ethernet, or keep those
-dependencies on wired Proxmox and TrueNAS systems.
+Each additional Wi-Fi site needs its own media bridge (or an AP7 in wireless
+backhaul with its bridged Ethernet ports) and one static VM address from the
+LAN — nothing else. There are no per-site subnets or routes to plan anymore.
+Keep VM lifecycle in Omni; prepare hosts with Ansible if the fleet grows.
 
 ## Upstream references
 
 - [Omni infrastructure providers](https://docs.siderolabs.com/omni/infrastructure-and-extensions/infrastructure-providers)
 - [Omni cluster templates](https://docs.siderolabs.com/omni/reference/cluster-templates)
-- [libvirt routed network format](https://www.libvirt.org/formatnetwork.html)
-- [Firewalla Network Manager, routes, and NAT settings](https://help.firewalla.com/hc/en-us/articles/360046703673-Firewalla-Feature-Guide-Network-Manager)
+- [libvirt network format](https://www.libvirt.org/formatnetwork.html)
+- [Asuswrt-Merlin](https://www.asuswrt-merlin.net/)
 - [Talos KubeSpan and Cilium limitations](https://docs.siderolabs.com/talos/v1.13/networking/kubespan)

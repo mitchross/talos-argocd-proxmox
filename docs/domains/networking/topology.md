@@ -3,33 +3,25 @@
 ## Overview
 
 The cluster (`talos-singlenode-gpu-prod`) runs a wired control plane and GPU
-worker on a flat LAN with 10G switch infrastructure, plus one routed Wi-Fi
-CPU worker:
+worker on a flat LAN with 10G switch infrastructure, plus one Wi-Fi-bridged
+CPU worker — all three nodes on the same `192.168.10.0/24`:
 
-- **Main LAN (192.168.10.0/24)** — all wired cluster traffic via the 10G switch.
+- **Main LAN (192.168.10.0/24)** — all cluster traffic; wired nodes via the
+  10G switch.
 - **Control-plane VM** — `192.168.10.81`.
 - **GPU worker VM** — `192.168.10.177` (dual RTX 3090 passed through from the
   bare-metal X399/2950X host).
-- **Dell CPU worker VM** — `192.168.123.119` on the routed libvirt subnet
-  `192.168.123.0/24` behind the Wi-Fi Dell host `192.168.10.20`; see
-  [routed Wi-Fi Talos workers](wifi-libvirt-talos-workers.md).
+- **Dell CPU worker VM** — `192.168.10.119` (static, in git), bridged over
+  Wi-Fi through an ASUS RT-AX86U media bridge; see
+  [Wi-Fi Talos workers](wifi-libvirt-talos-workers.md).
 - **Storage** — TrueNAS/RustFS-S3 at `192.168.10.133` (NFS/SMB/RustFS S3).
 
 Verify live node addresses with `kubectl get nodes -o wide`.
 
-PodCIDRs are natively routed (Cilium, no overlay). **Firewalla carries no pod
-routes** — only `192.168.123.0/24 → 192.168.10.20` for the routed node subnet.
-Wired↔wired pod routes are installed by Cilium (`autoDirectNodeRoutes`); the
-wired nodes carry one permanent machine-config aggregate route
-`10.244.0.0/16 via 192.168.10.20` for the routed worker, and the Dell host
-routes each PodCIDR to its owner (see
-[routed Wi-Fi Talos workers](wifi-libvirt-talos-workers.md)).
-
-| PodCIDR | Node | Routed by |
-|---------|------|-----------|
-| 10.244.0.0/24 | GPU worker | Cilium direct routes + Dell host return route |
-| 10.244.1.0/24 | Control plane | Cilium direct routes + Dell host return route |
-| 10.244.2.0/24 | Dell CPU worker | wired-node /16 aggregate → Dell host → VM |
+PodCIDRs are natively routed (Cilium, no overlay). All three nodes share one
+L2, so Cilium's `autoDirectNodeRoutes` exchanges every per-node PodCIDR route
+automatically — **no static pod routes exist anywhere** (not on Firewalla,
+not in machine config, not on any host).
 
 ## Physical Topology
 
@@ -57,10 +49,12 @@ routes each PodCIDR to its owner (see
 │   └──────────────────────┘          │  dual RTX 3090 (passthrough)    │    │
 │                                     └──────────────────────────────────┘    │
 │                                                                              │
-│   Wi-Fi ┌──────────────────────┐  virbr1  ┌──────────────────────────┐      │
-│   ~~~~~▶│  Dell CachyOS host   │─────────▶│    Dell CPU Worker VM    │      │
-│         │   192.168.10.20      │  routed  │    192.168.123.119       │      │
-│         └──────────────────────┘ .123/24  └──────────────────────────┘      │
+│   Wi-Fi ┌──────────────────┐  eth  ┌────────────────┐  br0  ┌────────────┐  │
+│   ~~~~~▶│  ASUS RT-AX86U   │──────▶│ Dell CachyOS   │──────▶│ Dell CPU   │  │
+│         │  media bridge    │       │ host (.186)    │       │ Worker VM  │  │
+│         │  192.168.10.70   │       │                │       │ .119 static│  │
+│         └──────────────────┘       └────────────────┘       └────────────┘  │
+│          (all three appear directly on 192.168.10.0/24)                      │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -74,11 +68,12 @@ routes each PodCIDR to its owner (see
 | Router/Gateway | 192.168.10.1 | Default route + client DNS (Firewalla) |
 | Proxmox | 192.168.10.14 | Hypervisor |
 | Technitium / Omni (NUC) | 192.168.10.15 | Split-DNS for `vanillax.me` + self-hosted Omni |
-| Dell Wi-Fi host | 192.168.10.20 | CachyOS libvirt router for 192.168.123.0/24 |
+| ASUS RT-AX86U | 192.168.10.70 | Media bridge (Wi-Fi → Ethernet) for the Dell |
 | Control Plane | 192.168.10.81 | K8s control-plane node |
-| GPU Worker | 192.168.10.177 | K8s GPU worker node |
+| Dell CPU Worker | 192.168.10.119 | K8s worker VM (static, bridged via AX86U) |
 | TrueNAS | 192.168.10.133 | NAS (NFS/SMB/RustFS S3) — 10G |
-| Dell CPU Worker | 192.168.123.119 | K8s worker on routed libvirt subnet |
+| GPU Worker | 192.168.10.177 | K8s GPU worker node |
+| Dell CachyOS host | 192.168.10.186 (DHCP) | libvirt hypervisor behind the media bridge |
 | Wyze Bridge | 192.168.10.46 | RTSP camera streams |
 | LoadBalancer Pool | 192.168.10.32-63 (/27) | Cilium L2 announcements |
 
