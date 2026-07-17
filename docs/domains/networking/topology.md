@@ -18,10 +18,14 @@ CPU worker — all three nodes on the same `192.168.10.0/24`:
 
 Verify live node addresses with `kubectl get nodes -o wide`.
 
-PodCIDRs are natively routed (Cilium, no overlay). All three nodes share one
-L2, so Cilium's `autoDirectNodeRoutes` exchanges every per-node PodCIDR route
-automatically — **no static pod routes exist anywhere** (not on Firewalla,
-not in machine config, not on any host).
+Cross-node pod traffic rides a **Cilium VXLAN tunnel between node IPs**
+(`routingMode: tunnel`) — **no pod routes exist anywhere** (not on Firewalla,
+not in machine config, not on any host), and no device between nodes ever
+sees a pod IP on the wire. Tunnel mode was adopted because the Wi-Fi
+worker's media bridge silently drops inbound-first frames for IPs without an
+ARP-learned binding — i.e. every pod IP (see
+[Wi-Fi Talos workers](wifi-libvirt-talos-workers.md)). Node-IP traffic
+(NFS, Longhorn iSCSI, API) is not encapsulated.
 
 ## Physical Topology
 
