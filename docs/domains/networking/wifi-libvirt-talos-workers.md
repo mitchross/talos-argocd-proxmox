@@ -43,12 +43,13 @@ Talos VM: kubelet + Cilium + ordinary production workloads
 ```
 
 The trick that makes this simple is the **media bridge**: an ASUS RT-AX86U
-(Asuswrt-Merlin) in Media Bridge mode is a Wi-Fi client that presents true
-multi-MAC Ethernet. The Dell host and the Talos VM each appear on
-`192.168.10.0/24` with their own MAC and address, exactly as if wired. A
-plain Wi-Fi station cannot do this — 3-address 802.11 frames cannot carry
-foreign source MACs, which is why hanging a worker directly off a host
-wlan requires the far more complex routed design in the fallback section.
+(Asuswrt-Merlin) in Media Bridge mode provides a proxy-STA Ethernet handoff
+over Wi-Fi. It is not a transparent Layer 2 bridge. The Dell host and a Talos
+VM with a static address can each appear on `192.168.10.0/24`, but the bridge
+tracks IP-to-MAC bindings: DHCP works only for the primary client, and inbound
+traffic for an address it has not learned is dropped. A plain host Wi-Fi
+station cannot carry the VM's foreign source MAC at all, which is why hanging
+a worker directly off host wlan requires the routed fallback design.
 
 Address layers:
 
@@ -73,21 +74,22 @@ traffic to Dell-scheduled backends, cilium-health endpoint probes — were
 silently dropped or worked only intermittently after the bridge eventually
 learned an address, while node-IP traffic and Dell-initiated flows worked
 perfectly. Encapsulating pod traffic inside node-IP UDP (port 8472) removes
-the entire class of problem for any bridge or transport. The cost lands
-only on cross-node pod↔pod packets (~50 bytes + encap CPU); NFS, Longhorn
-iSCSI attach, and API traffic ride node IPs untunneled.
+the entire class of problem for any bridge or transport. The cost lands on
+cross-node traffic addressed to pod IPs (~50 bytes + encap CPU), including
+Longhorn instance-manager or replica flows when they cross nodes. Direct
+node/LAN traffic such as NFS to TrueNAS and API node endpoints is untunneled.
 
 ## Why the VM address is static
 
-The media bridge's proxy-STA forwards unicast traffic for secondary MACs
-perfectly, but **breaks DHCP for every MAC after the first** (the DISCOVER
-leaves, the lease never arrives — NetworkManager sits in "getting IP
-configuration" forever). The Dell host, as the bridge's primary client,
-leases normally; the VM cannot. The VM therefore carries a static address in
-its Omni machine-set patch, which is also the more rebuild-proof choice: a
-replacement VM has a new random MAC, and a static-in-git address doesn't
-care. Keep `192.168.10.119` outside (or reserved against) the Firewalla DHCP
-pool.
+The media bridge's proxy-STA forwards unicast traffic for a known static
+address behind the VM's secondary MAC, but **breaks DHCP for every MAC after
+the first** (the DISCOVER leaves, the lease never arrives — NetworkManager
+sits in "getting IP configuration" forever). The Dell host, as the bridge's
+primary client, leases normally; the VM cannot. The VM therefore carries a
+static address in its Omni machine-set patch, which is also the more
+rebuild-proof choice: a replacement VM has a new random MAC, and a
+static-in-git address doesn't care. Keep `192.168.10.119` outside (or reserved
+against) the Firewalla DHCP pool.
 
 ## Owning configuration
 
@@ -116,8 +118,9 @@ cable it to the Dell's Ethernet port. Give the AX86U a Firewalla DHCP
 reservation so it stays findable. Verify from the Dell that the wired NIC
 leases a `192.168.10.x` address.
 
-Prove multi-MAC forwarding before touching the cluster — this is the test
-that validates the whole design:
+Prove the static secondary-MAC node path before touching the cluster. This
+validates the path VXLAN will use; it does not imply transparent forwarding
+for arbitrary IPs behind the VM:
 
 ```bash
 sudo ip link add mbtest0 link eno1 type macvlan mode bridge
@@ -127,9 +130,9 @@ ping -c 3 -I mbtest0 192.168.10.1                 # expect replies
 sudo ip link del mbtest0
 ```
 
-A second MAC pinging the gateway proves proxy-STA forwards foreign MACs both
-ways. (Expect DHCP on that same interface to fail — that is the known
-limitation, handled by the VM's static address.)
+A second MAC with a static address pinging the gateway proves proxy-STA can
+forward the VM's node-IP path both ways. Expect DHCP on that same interface to
+fail — that is the known limitation handled by the VM's static address.
 
 ### 2. Host bridge
 
@@ -190,7 +193,8 @@ system-extension reboot merely because readiness briefly drops; wait for
 ```bash
 omnictl get clusterstatus talos-singlenode-gpu-prod -o yaml
 kubectl get nodes -o custom-columns='NODE:.metadata.name,IP:.status.addresses[?(@.type=="InternalIP")].address,POD_CIDR:.spec.podCIDR'
-kubectl -n kube-system exec <wired-cilium-pod> -c cilium-agent -- ip route show | grep 10.244
+kubectl -n kube-system exec <wired-cilium-pod> -c cilium-agent -- cilium-dbg bpf tunnel list
+kubectl -n kube-system exec <wired-cilium-pod> -c cilium-agent -- cilium-health status --verbose
 kubectl get pods -A --field-selector=status.phase!=Running,status.phase!=Succeeded
 ```
 
@@ -198,8 +202,11 @@ Expected state:
 
 - three Ready nodes, the Dell worker at `192.168.10.119` with
   `node.vanillax.dev/class=dell-cpu` and `topology.kubernetes.io/zone=yard`;
-- every wired node shows a direct `10.244.x.0/24 via 192.168.10.119` route
-  installed by Cilium (no static routes anywhere);
+- each Cilium tunnel map associates remote `10.244.x.0/24` PodCIDRs with the
+  owning node's `192.168.10.x` address; no direct or static PodCIDR routes
+  should exist;
+- Cilium health reports both node and endpoint reachability in every
+  direction, including the Dell worker;
 - cross-node pod probes, cluster DNS, service reachability, and internet
   egress succeed from Dell-scheduled pods;
 - the Dell domain, network, pool, libvirt service, and provider service all
@@ -212,13 +219,14 @@ zero disks and owns no replicas. Its `longhorn-csi-plugin` DaemonSet pod
 stays — that is what lets Dell-scheduled workloads mount Longhorn volumes
 served from the wired node.
 
-!!! warning "Longhorn volumes attach over Wi-Fi"
-    Any pod with a Longhorn PVC scheduled onto the Dell does its disk I/O
-    via iSCSI across the Wi-Fi hop. Under RF congestion this surfaces as
-    `input/output error` in the pod (seen on kopiur movers). Prefer
-    stateless or NFS-backed workloads on this node, and consider a taint if
-    movers land there too often — kopiur's mover spec has no placement
-    fields.
+!!! warning "Longhorn volumes depend on Wi-Fi"
+    A pod with a Longhorn PVC scheduled onto the Dell attaches to a local
+    Longhorn engine, but that engine's replica traffic crosses Wi-Fi to the
+    disk-owning wired node and is VXLAN-encapsulated when addressed to pod
+    endpoints. Under RF congestion this surfaces as `input/output error` in
+    the pod (seen on kopiur movers). Prefer stateless or NFS-backed workloads
+    on this node, and consider a taint if movers land there too often —
+    kopiur's mover spec has no placement fields.
 
 ## Failure paths
 
@@ -227,8 +235,8 @@ served from the wired node.
 | Dell host has no lease on the wired NIC | AX86U parent-AP status, cabling, Firewalla | Fix the bridge before anything else |
 | VM never gets its address | machine-set static patch synced? `virsh domiflist` shows `br0`? | Sync template; flip the network per step 3 |
 | Second MAC cannot DHCP | — | Known media-bridge limitation; static addresses only |
-| Node Ready but cross-node pods fail | wired nodes' `ip route` for the Dell `/24` | Cilium reinstalls direct routes when node IPs are on one L2; check node InternalIP |
-| Sluggish or failing disk I/O in Dell pods | Longhorn volume attached over Wi-Fi | Reschedule to a wired node; see warning above |
+| Node Ready but cross-node pods fail | `cilium status`; `cilium-dbg bpf tunnel list`; UDP 8472 reachability between node IPs | Restore VXLAN reachability and confirm each remote PodCIDR maps to its node IP; do not add static PodCIDR routes |
+| Sluggish or failing disk I/O in Dell pods | Longhorn engine-to-replica path over Wi-Fi | Reschedule to a wired node; see warning above |
 | Provider replaces the domain | New domain lacks autostart; new MAC | Re-enable autostart; static IP makes the MAC change a non-event |
 | Wi-Fi is unstable | AX86U RSSI/link rate, AP airtime | Cordon/drain and scale the worker set to zero |
 

@@ -22,8 +22,8 @@ flowchart LR
     CORE["`Wired Talos core
     control plane and GPU worker`"]
     MB["`ASUS media bridge
-    multi-MAC Ethernet over Wi-Fi
-    DHCP works only for first MAC`"]
+    proxy-STA Ethernet over Wi-Fi
+    L3-aware; static VM address`"]
     DELL["`CachyOS Dell host
     br0 bridge + libvirt provider`"]
     VM["`Talos worker VM

@@ -49,9 +49,10 @@ cgroup:
 # any IP it has never seen ARP for — which is every pod IP. Encapsulating
 # cross-node pod traffic between node IPs (which the bridge forwards
 # reliably in both directions) removes the entire class of problem, for any
-# transport and any future rebuild. Cross-node pod-to-pod pays ~50B/packet
-# VXLAN overhead; node-IP traffic (NFS, iSCSI, Longhorn replication, API) is
-# untouched. UDP 8472 must pass between node IPs.
+# transport and any future rebuild. VXLAN overhead applies to cross-node
+# traffic addressed to pod IPs, including Longhorn instance-manager/replica
+# flows when they cross nodes. Direct node/LAN traffic (NFS to TrueNAS, node
+# endpoints, API) is untouched. UDP 8472 must pass between node IPs.
 routingMode: tunnel
 tunnelProtocol: vxlan
 
