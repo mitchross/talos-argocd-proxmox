@@ -4,12 +4,14 @@ This guide explains how a Wi-Fi-only Linux machine contributes replaceable CPU
 capacity to `talos-singlenode-gpu-prod` without becoming a control-plane or
 storage failure dependency.
 
-!!! info "Status — node joined, PodCIDR routes pending (2026-07-16)"
-    The Dell worker joined `talos-singlenode-gpu-prod` and is Ready at
-    `192.168.123.119` with PodCIDR `10.244.2.0/24`. Node-address routing,
-    DHCP, and public egress are verified; `talos-dell-lab` is deleted. The
-    three Firewalla PodCIDR routes and the final cross-node pod verification
-    below remain before this status changes to current.
+!!! info "Status — current (2026-07-16)"
+    The Dell worker is Ready in `talos-singlenode-gpu-prod` at
+    `192.168.123.119` with PodCIDR `10.244.2.0/24`, and cross-node pod
+    traffic, DNS, services, and egress are verified. Pod routing uses the
+    aggregate design below — **no per-PodCIDR Firewalla routes exist or are
+    wanted**. Remaining follow-up: FRR + Cilium BGP replaces the interim
+    static return routes on the Dell host, which is what makes the design
+    fully rebuild-proof.
 
 **Scope:** this procedure prepares a CachyOS host, connects its libvirt provider
 to self-hosted Omni, creates a routed Talos VM, and adds that VM to the existing
@@ -66,9 +68,22 @@ Control plane:  10.244.1.0/24 -> node 192.168.10.81
 Dell worker:    10.244.2.0/24 -> next hop 192.168.10.20 (verified 2026-07-16)
 ```
 
-For the Dell PodCIDR, Firewalla routes to the physical Dell and the Dell routes
-to the Talos VM. For existing PodCIDRs, Firewalla routes to the owning wired
-node. Never predict the Dell PodCIDR: read it after Kubernetes assigns it.
+Firewalla carries **no pod routes** — only the node-subnet route
+`192.168.123.0/24 -> 192.168.10.20`, which is static in git. Pod routing is
+layered so that every dynamic value lives where it self-heals or is
+version-controlled:
+
+- **Wired nodes** carry one permanent machine-config route,
+  `10.244.0.0/16 via 192.168.10.20` (the `pod-aggregate-route` patch in the
+  cluster template). Longest-prefix-match keeps wired↔wired pod traffic on
+  the direct `/24` routes that `autoDirectNodeRoutes` maintains; only the
+  routed worker's PodCIDR — whatever `/24` it gets after any rebuild — falls
+  through to the Dell host. The route survives rebuilds unchanged.
+- **The Dell host** routes each wired PodCIDR to its owning node and the VM
+  PodCIDR to the VM (interim static units; FRR learning them from Cilium BGP
+  advertisements is the follow-up that removes the last per-rebuild edit).
+
+Never predict the Dell PodCIDR: read it after Kubernetes assigns it.
 
 ```bash
 kubectl get nodes \
@@ -100,6 +115,8 @@ The version-controlled inputs are:
 - [`omni/libvirt-provider/talos-routed-egress-nat.sh`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/libvirt-provider/talos-routed-egress-nat.sh) — public-only egress NAT with RFC 1918 exclusions.
 - [`omni/libvirt-provider/talos-routed-egress-nat.service`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/libvirt-provider/talos-routed-egress-nat.service) — persistent systemd ownership for that chain.
 - [`omni/libvirt-provider/talos-dell-pod-route.service`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/libvirt-provider/talos-dell-pod-route.service) — the verified Dell PodCIDR route.
+- [`omni/libvirt-provider/talos-wired-pod-routes.service`](https://github.com/mitchross/talos-argocd-proxmox/blob/main/omni/libvirt-provider/talos-wired-pod-routes.service) — interim wired-PodCIDR return routes until FRR/BGP replaces them.
+- `omni/cluster-template/cluster-template-singlenode-gpu.yaml` `pod-aggregate-route` patches — the permanent `10.244.0.0/16 via 192.168.10.20` route on wired nodes.
 
 The NUC at `192.168.10.15` runs Omni. The provider agent runs on the Dell
 because `qemu:///system` is the Dell-local libvirt API. A root-only
@@ -297,15 +314,29 @@ binaries; the same version is also on the official GitHub release page.
 
 ## Complete native pod routing
 
-After the Dell node becomes visible, read all PodCIDRs. Add Firewalla routes for
-each current owner and route the Dell PodCIDR through `192.168.10.20`.
-On the Dell, add a more-specific route for that Dell PodCIDR through the Talos
-VM node address on `virbr1`.
+Pod routing needs three layers. None of them involve Firewalla.
 
-The exact Dell route has this shape:
+**1. Wired nodes: the permanent aggregate route.** The cluster template's
+`pod-aggregate-route` patch puts `10.244.0.0/16 via 192.168.10.20` on the
+wired nodes' `eth0`. It is already in git and applies on every rebuild via
+the normal template sync — nothing to do per rebuild. Verify it is live and
+that wired↔wired traffic still prefers the direct `/24`s:
+
+```bash
+# via a wired cilium agent pod; expect the peer /24 direct, Dell /24 via .20
+kubectl -n kube-system exec <wired-cilium-pod> -c cilium-agent -- \
+  ip route get <peer-pod-ip>    # expect: via <peer-node-ip>
+kubectl -n kube-system exec <wired-cilium-pod> -c cilium-agent -- \
+  ip route get <dell-pod-ip>    # expect: via 192.168.10.20
+```
+
+**2. Dell host: per-PodCIDR routes (the only per-rebuild values).** After
+reading the live allocations, the host needs the VM PodCIDR toward the VM and
+each wired PodCIDR toward its owner:
 
 ```bash
 sudo ip route replace <dell-pod-cidr> via <dell-talos-node-ip> dev virbr1
+sudo ip route replace <wired-pod-cidr> via <wired-node-ip> dev wlan0   # one per wired node
 ```
 
 The first verified production allocation was:
@@ -313,38 +344,44 @@ The first verified production allocation was:
 ```text
 10.244.0.0/24 -> 192.168.10.177   GPU worker
 10.244.1.0/24 -> 192.168.10.81    control plane
-10.244.2.0/24 -> 192.168.10.20    Dell router, then 192.168.123.119
+10.244.2.0/24 -> 192.168.123.119  Talos VM via virbr1
 ```
 
-Install the version-controlled route unit on the Dell after verifying those
-exact current values:
+`talos-dell-pod-route.service` and the interim `talos-wired-pod-routes.service`
+persist these. They are the piece the FRR + Cilium BGP follow-up replaces:
+every node then advertises its live PodCIDR and FRR installs these routes
+itself, making a rebuild zero-touch. Until then, a VM replacement or cluster
+rebuild means re-reading the values and updating those two units — and
+nothing else.
 
 ```bash
 sudo install -D -m 0644 \
   omni/libvirt-provider/talos-dell-pod-route.service \
   /etc/systemd/system/talos-dell-pod-route.service
+sudo install -D -m 0644 \
+  omni/libvirt-provider/talos-wired-pod-routes.service \
+  /etc/systemd/system/talos-wired-pod-routes.service
 sudo systemctl daemon-reload
-sudo systemctl enable --now talos-dell-pod-route.service
+sudo systemctl enable --now talos-dell-pod-route.service talos-wired-pod-routes.service
 ```
 
-Allow the native-routing paths through UFW. These rules cover both preserved
-pod sources and Cilium-masqueraded node sources:
+**3. Dell host UFW: aggregate rules.** Deliberately `/16`-wide so they never
+drift:
 
 ```bash
 sudo ufw route allow in on wlan0 out on virbr1 \
-  from 192.168.10.0/24 to 10.244.2.0/24
+  from 192.168.10.0/24 to 10.244.0.0/16
 sudo ufw route allow in on wlan0 out on virbr1 \
-  from 10.244.0.0/16 to 10.244.2.0/24
+  from 10.244.0.0/16 to 10.244.0.0/16
 sudo ufw route allow in on virbr1 out on wlan0 \
-  from 10.244.2.0/24 to 192.168.10.0/24
+  from 10.244.0.0/16 to 192.168.10.0/24
 sudo ufw route allow in on virbr1 out on wlan0 \
-  from 10.244.2.0/24 to 10.244.0.0/16
+  from 10.244.0.0/16 to 10.244.0.0/16
 ```
 
-If Omni replaces the VM, its MAC, routed node address, and PodCIDR can change.
-Re-read all three values and update both the route unit and Firewalla routes.
-At larger scale, replace manual per-node PodCIDR routes with a deliberate
-overlay or dynamic-routing design.
+At larger scale, replace the host static routes with the FRR/BGP design
+sooner rather than later; the aggregate route and UFW rules already scale
+unchanged.
 
 ## Verification
 
@@ -384,8 +421,8 @@ the wired node.
 | `.123` guest reaches LAN but not internet | packet capture on `wlan0`, Firewalla Source Networks, egress-NAT service | Enable one public-egress implementation; do not provision yet |
 | Talos boots but never joins Omni | `virsh net-dhcp-leases`, DHCP capture on `vnet*`, UFW | Allow UDP client port 68 to server port 67 on `virbr1` |
 | Talos connects to Omni but node stays NotReady | Cilium agent, API reachability, node route | Keep original production nodes; fix routing |
-| Node Ready but cross-node pods fail | PodCIDRs and Firewalla routes | Add exact per-node native routes |
-| Dell pods get `connection refused`/timeouts to `10.96.0.1` and services | Firewalla PodCIDR routes, Dell UFW route rules | Return paths for `10.244.x.0/24` are missing until all three routes exist |
+| Node Ready but cross-node pods fail | aggregate route on wired nodes, Dell host PodCIDR routes | Re-read live PodCIDRs; fix the host route units |
+| Pod-sourced traffic refused with ICMP port-unreachable from `192.168.123.1` while node traffic works | `virsh net-dumpxml talos-routed` forward mode | libvirt `route` mode firewalls out non-`.123/24` traffic; the network must be `mode="open"` |
 | `omnictl` output disagrees with the Omni UI | `omnictl --version` vs backend version | Upgrade the client to the backend version before acting on CLI output |
 | Provider replaces the domain | New domain lacks autostart | Re-enable autostart on the replacement |
 | Wi-Fi is unstable | Node pressure/disconnect events | Cordon/drain and scale worker set to zero |

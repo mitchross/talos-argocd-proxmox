@@ -4,8 +4,14 @@
     Wi-Fi cannot provide a normal layer-2 VM bridge. Route this dedicated
     subnet through the CachyOS host instead; Firewalla routes the subnet back
     through 192.168.10.20 so Cilium nodes have symmetric reachability.
+
+    mode MUST be "open", not "route": route mode installs LIBVIRT_FWI/FWO
+    FORWARD rules that permit only 192.168.123.0/24 and REJECT everything
+    else — silently killing all Cilium pod-CIDR (10.244.0.0/16) traffic with
+    ICMP port-unreachable before UFW is ever consulted. Open mode is routed
+    forwarding with no libvirt firewall management; UFW owns the rules.
   -->
-  <forward mode="route" dev="wlan0"/>
+  <forward mode="open"/>
   <bridge name="virbr1" stp="on" delay="0"/>
   <domain name="talos-routed"/>
   <ip address="192.168.123.1" netmask="255.255.255.0">
