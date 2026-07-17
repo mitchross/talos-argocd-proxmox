@@ -1,22 +1,19 @@
 <network>
   <name>talos-routed</name>
   <!--
-    Wi-Fi cannot provide a normal layer-2 VM bridge. Route this dedicated
-    subnet through the CachyOS host instead; Firewalla routes the subnet back
-    through 192.168.10.20 so Cilium nodes have symmetric reachability.
+    Bridge onto the host's br0 (eno1 -> ASUS RT-AX86U in Media Bridge mode),
+    which presents true multi-MAC Ethernet over Wi-Fi. The VM sits directly
+    on the HomeLab VLAN (192.168.10.0/24); no routed subnet, host routes, or
+    egress NAT are involved anymore.
 
-    mode MUST be "open", not "route": route mode installs LIBVIRT_FWI/FWO
-    FORWARD rules that permit only 192.168.123.0/24 and REJECT everything
-    else — silently killing all Cilium pod-CIDR (10.244.0.0/16) traffic with
-    ICMP port-unreachable before UFW is ever consulted. Open mode is routed
-    forwarding with no libvirt firewall management; UFW owns the rules.
+    The name stays "talos-routed" because the Omni libvirt provider's machine
+    class references it; only the implementation changed.
+
+    Gotcha that shaped this: the media bridge (proxy-STA) forwards unicast
+    for secondary MACs but breaks DHCP for every MAC after the first — the
+    VM therefore uses a static address from its Omni machine config, and
+    this network must not carry ip/dhcp elements.
   -->
-  <forward mode="open"/>
-  <bridge name="virbr1" stp="on" delay="0"/>
-  <domain name="talos-routed"/>
-  <ip address="192.168.123.1" netmask="255.255.255.0">
-    <dhcp>
-      <range start="192.168.123.100" end="192.168.123.254"/>
-    </dhcp>
-  </ip>
+  <forward mode="bridge"/>
+  <bridge name="br0"/>
 </network>
