@@ -17,14 +17,19 @@ CPU worker:
 
 Verify live node addresses with `kubectl get nodes -o wide`.
 
-PodCIDRs are natively routed (Cilium, no overlay); Firewalla carries a static
-route per PodCIDR:
+PodCIDRs are natively routed (Cilium, no overlay). **Firewalla carries no pod
+routes** — only `192.168.123.0/24 → 192.168.10.20` for the routed node subnet.
+Wired↔wired pod routes are installed by Cilium (`autoDirectNodeRoutes`); the
+wired nodes carry one permanent machine-config aggregate route
+`10.244.0.0/16 via 192.168.10.20` for the routed worker, and the Dell host
+routes each PodCIDR to its owner (see
+[routed Wi-Fi Talos workers](wifi-libvirt-talos-workers.md)).
 
-| PodCIDR | Node | Firewalla next hop |
-|---------|------|--------------------|
-| 10.244.0.0/24 | GPU worker | 192.168.10.177 |
-| 10.244.1.0/24 | Control plane | 192.168.10.81 |
-| 10.244.2.0/24 | Dell CPU worker | 192.168.10.20 (Dell host, then 192.168.123.119) |
+| PodCIDR | Node | Routed by |
+|---------|------|-----------|
+| 10.244.0.0/24 | GPU worker | Cilium direct routes + Dell host return route |
+| 10.244.1.0/24 | Control plane | Cilium direct routes + Dell host return route |
+| 10.244.2.0/24 | Dell CPU worker | wired-node /16 aggregate → Dell host → VM |
 
 ## Physical Topology
 
