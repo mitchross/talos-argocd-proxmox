@@ -28,6 +28,11 @@ spec:
               value: America/Detroit
             - name: RAILS_ENV
               value: production
+            # Rails 8 puma defaults workers to processor count — 32 threads on
+            # the GPU node meant ~32 forked workers ballooning to the 2Gi limit
+            # within minutes of boot (OOM crashloop, 345+ restarts).
+            - name: WEB_CONCURRENCY
+              value: "2"
             - name: SECRET_KEY_BASE
               valueFrom:
                 secretKeyRef:
