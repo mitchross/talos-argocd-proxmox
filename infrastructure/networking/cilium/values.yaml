@@ -46,6 +46,11 @@ cgroup:
 # Routing Configuration
 routingMode: native
 autoDirectNodeRoutes: true
+# Does NOT match the live pod CIDR (10.244.0.0/16, Talos default) — inert
+# today because bpf.masquerade exempts cluster destinations via the ipcache.
+# Becomes 10.10.0.0/16 when the staged predictable-cluster-subnets patch in
+# the Omni cluster template is activated at the next rebuild; change the two
+# together, never live.
 ipv4NativeRoutingCIDR: 10.14.0.0/16
 
 # IPAM Configuration

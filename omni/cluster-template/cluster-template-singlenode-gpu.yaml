@@ -12,6 +12,22 @@ kubernetes:
 talos:
   version: v1.13.4
 patches:
+# STAGED — ACTIVATE ONLY AT A FULL CLUSTER REBUILD. Pod/service subnets are
+# immutable after bootstrap; syncing this onto the live cluster half-applies
+# and breaks routing. Predictable address plan (see
+# docs/domains/networking/topology.md): nodes are VLAN 10 (192.168.10.0/24),
+# pods 10.10.0.0/16, services 10.11.0.0/16. When activating, also flip in the
+# same commit: the two pod-aggregate-route patches below,
+# infrastructure/networking/cilium/values.yaml ipv4NativeRoutingCIDR, the
+# omni/libvirt-provider pod-route units, and the Dell UFW /16 rules.
+# - name: predictable-cluster-subnets
+#   inline:
+#     cluster:
+#       network:
+#         podSubnets:
+#         - 10.10.0.0/16
+#         serviceSubnets:
+#         - 10.11.0.0/16
 - name: disable-default-cni
   inline:
     cluster:

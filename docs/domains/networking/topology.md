@@ -65,6 +65,29 @@ routes each PodCIDR to its owner (see
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
+## Address plan
+
+Cluster-internal ranges follow a mnemonic scheme anchored on the HomeLab
+VLAN 10. The pod/service values are **staged, not live**: they are baked in at
+cluster bootstrap and can only change at a full rebuild, so the live cluster
+still runs the Talos defaults until the next rebuild activates the
+`predictable-cluster-subnets` patch in the Omni cluster template.
+
+| Layer | Live today | Plan (next rebuild) | Why |
+|-------|-----------|---------------------|-----|
+| Nodes (HomeLab, VLAN 10) | 192.168.10.0/24 | unchanged | Firewalla-owned |
+| Routed VM subnet | 192.168.123.0/24 | unchanged | static in git |
+| Pods | 10.244.0.0/16 (Talos default) | 10.10.0.0/16 | "VLAN 10 → 10.10" |
+| Services | 10.96.0.0/12 (Talos default) | 10.11.0.0/16 | next block after pods |
+| Cilium `ipv4NativeRoutingCIDR` | 10.14.0.0/16 (mismatched, inert) | 10.10.0.0/16 | must equal pod CIDR |
+
+Activation checklist (one commit, applied only via rebuild): uncomment the
+template patch, flip both `pod-aggregate-route` patches, the Cilium value,
+the `omni/libvirt-provider` pod-route units, and the Dell UFW `/16` rules.
+Free-range check against Firewalla networks (192.168.1/10/50/100/101/103,
+10.190.26, 10.180.43) done 2026-07-16 — 10.10/16 and 10.11/16 collide with
+nothing.
+
 ## IP Assignments
 
 ### Main LAN (192.168.10.0/24)

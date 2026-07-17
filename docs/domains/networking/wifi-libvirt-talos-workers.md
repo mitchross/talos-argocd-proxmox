@@ -50,7 +50,7 @@ Four address layers are involved:
 | Dell uplink | `192.168.10.20` | Firewalla DHCP reservation | Next hop for every Dell-hosted routed subnet |
 | Legacy libvirt NAT | `192.168.122.0/24` | Dell `virbr0` | Temporary provider proof only; not production |
 | Routed VM network | `192.168.123.0/24` | Dell `virbr1` | Production Talos VM node addresses |
-| Kubernetes pods | `10.244.0.0/16` aggregate | Kubernetes + Cilium | A distinct `/24` is assigned to each node |
+| Kubernetes pods | `10.244.0.0/16` aggregate | Kubernetes + Cilium | A distinct `/24` per node; staged to become `10.10.0.0/16` at the next rebuild (topology doc "Address plan") |
 
 The physical Dell is the router between HomeLab and `192.168.123.0/24`.
 Firewalla carries a static route for that subnet through `192.168.10.20`.
