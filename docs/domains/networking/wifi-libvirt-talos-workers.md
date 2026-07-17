@@ -59,10 +59,23 @@ Address layers:
 | Talos VM | `192.168.10.119` static | Omni machine config (git) | Worker node address |
 | Kubernetes pods | `10.244.0.0/16` aggregate | Kubernetes + Cilium | A distinct `/24` per node, fully automatic |
 
-**No pod routes exist anywhere outside Cilium.** Because the VM is on the
-same L2 as the wired nodes, `autoDirectNodeRoutes` exchanges the per-node
-PodCIDR routes automatically, for any `/24` Kubernetes assigns after any
-rebuild. Firewalla carries no cluster routes at all.
+**Cross-node pod traffic is VXLAN-tunneled between node IPs** (Cilium
+`routingMode: tunnel`), so nothing between the nodes — including the media
+bridge — ever sees a pod IP on the wire, and no pod routes exist anywhere.
+Firewalla carries no cluster routes at all.
+
+Tunneling is load-bearing, not optional. The first bridged deployment ran
+Cilium native routing and hit a subtle defect: the media bridge is
+**L3-aware** and forwards inbound frames only for IPs it has ARP-learned.
+Pod IPs never ARP (they are routed behind the node address), so
+inbound-first connections to Dell pod IPs — Prometheus scrapes, service
+traffic to Dell-scheduled backends, cilium-health endpoint probes — were
+silently dropped or worked only intermittently after the bridge eventually
+learned an address, while node-IP traffic and Dell-initiated flows worked
+perfectly. Encapsulating pod traffic inside node-IP UDP (port 8472) removes
+the entire class of problem for any bridge or transport. The cost lands
+only on cross-node pod↔pod packets (~50 bytes + encap CPU); NFS, Longhorn
+iSCSI attach, and API traffic ride node IPs untunneled.
 
 ## Why the VM address is static
 
