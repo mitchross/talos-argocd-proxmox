@@ -24,8 +24,10 @@ not in machine config, not on any host), and no device between nodes ever
 sees a pod IP on the wire. Tunnel mode was adopted because the Wi-Fi
 worker's media bridge silently drops inbound-first frames for IPs without an
 ARP-learned binding — i.e. every pod IP (see
-[Wi-Fi Talos workers](wifi-libvirt-talos-workers.md)). Node-IP traffic
-(NFS, Longhorn iSCSI, API) is not encapsulated.
+[Wi-Fi Talos workers](wifi-libvirt-talos-workers.md)). Direct node/LAN traffic
+such as NFS to TrueNAS and API node endpoints is not encapsulated. Traffic
+whose remote endpoint is a pod IP, including cross-node Longhorn
+instance-manager or replica flows, uses VXLAN.
 
 ## Physical Topology
 
