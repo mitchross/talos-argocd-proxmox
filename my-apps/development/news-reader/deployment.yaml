@@ -28,7 +28,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: news-reader
-          image: registry.vanillax.me/news-reader:v0.2.11
+          image: registry.vanillax.me/news-reader:v0.2.12
           imagePullPolicy: IfNotPresent
           env:
             - name: HOSTNAME
