@@ -16,6 +16,7 @@ spec:
       storage_pool: default
       network_interfaces:
         - driver: virtio
-          # Routed through the Wi-Fi host and Firewalla. A NAT-only libvirt
-          # network breaks Cilium native-routing reachability from LAN nodes.
+          # Bridged onto the HomeLab VLAN via the host's br0 and the ASUS
+          # media bridge; the VM uses a static address from machine config
+          # (the media bridge breaks DHCP for secondary MACs).
           network_name: talos-routed
