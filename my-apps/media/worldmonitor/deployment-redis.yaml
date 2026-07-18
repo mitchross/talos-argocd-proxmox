@@ -32,10 +32,15 @@ spec:
                   key: REDIS_PASSWORD
           command:
             - redis-server
+          # redis-server rejects --flag=value syntax ("Bad directive") — each
+          # flag and its value must be separate args
           args:
-            - "--requirepass=$(REDIS_PASSWORD)"
-            - "--maxmemory=256mb"
-            - "--maxmemory-policy=allkeys-lru"
+            - "--requirepass"
+            - "$(REDIS_PASSWORD)"
+            - "--maxmemory"
+            - "256mb"
+            - "--maxmemory-policy"
+            - "allkeys-lru"
           ports:
             - name: redis
               containerPort: 6379
