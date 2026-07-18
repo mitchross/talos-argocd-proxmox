@@ -20,10 +20,8 @@ spec:
     spec:
       containers:
         - name: worldmonitor
-          image: ghcr.io/mitchross/worldmonitor:main
-          # :main is a mutable tag rebuilt by the daily upstream sync — Always
-          # re-resolves the digest on pod restart; IfNotPresent pins stale builds
-          imagePullPolicy: Always
+          image: ghcr.io/mitchross/worldmonitor:sha-b8bc626
+          imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
                 name: worldmonitor-env
