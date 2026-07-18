@@ -11,8 +11,9 @@
 #   the worst possible time. The custom image
 #   (my-apps/development/radar-ng/basemap-bootstrap-image/) resolves the
 #   newest build that actually exists at run time, so nothing here ever
-#   needs a date bump. Build/push via
-#   TAG=vX.Y.Z scripts/build-push-custom-apps.sh basemap-bootstrap.
+#   needs a date bump. Built by GitHub Actions
+#   (.github/workflows/basemap-bootstrap-image.yml) from the VERSION file
+#   in the image directory.
 #
 # Refresh strategy (Sync hook + PVC marker):
 #   - This Job is an ArgoCD Sync hook with BeforeHookCreation, so Argo
@@ -79,11 +80,11 @@ spec:
           # Self-healing wrapper: resolves the newest available Protomaps
           # build at run time and runs `pmtiles extract`. Source/Dockerfile:
           # my-apps/development/radar-ng/basemap-bootstrap-image/
-          # New version: TAG=vX.Y.Z scripts/build-push-custom-apps.sh
-          # basemap-bootstrap, then bump the tag here (repo rule: no :latest —
-          # the pinned tag makes the manifest and image move atomically; if the
-          # push is forgotten the hook fails ImagePullBackOff instead of
-          # silently running the old script).
+          # Release = bump basemap-bootstrap-image/VERSION + this tag in one
+          # PR; the workflow builds on merge (repo rule: no :latest — the
+          # pinned tag makes the manifest and image move atomically; a missing
+          # push fails ImagePullBackOff instead of silently running the old
+          # script).
           image: ghcr.io/mitchross/basemap-bootstrap:v1.0.0
           securityContext:
             allowPrivilegeEscalation: false

@@ -1,0 +1,71 @@
+# Builds + pushes ghcr.io/mitchross/basemap-bootstrap:<VERSION> when the image
+# source changes on main (PRs get a build-only smoke test). The radar-ng Job
+# manifest pins the same tag, so a release is: bump VERSION + the tag in
+# job-basemap-bootstrap.yaml in one PR — merge builds the image, ArgoCD syncs
+# the manifest. If the sync races ahead of the push, the hook Job waits in
+# ImagePullBackOff until the tag exists, then self-resolves.
+#
+# Tags are immutable by policy: if VERSION already exists on GHCR the push is
+# skipped with a notice — bump VERSION to publish new script/image content.
+#
+# NOTE: the basemap-bootstrap package was originally pushed manually with a
+# PAT. If the first Actions push 403s, grant this repo write access on the
+# package: github.com/users/mitchross/packages/container/basemap-bootstrap/settings
+# → Manage Actions access.
+name: basemap-bootstrap image
+
+on:
+  pull_request:
+    paths:
+      - 'my-apps/development/radar-ng/basemap-bootstrap-image/**'
+  push:
+    branches: [main]
+    paths:
+      - 'my-apps/development/radar-ng/basemap-bootstrap-image/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/basemap-bootstrap
+  CONTEXT: my-apps/development/radar-ng/basemap-bootstrap-image
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        id: v
+        run: echo "tag=$(cat "$CONTEXT/VERSION")" >> "$GITHUB_OUTPUT"
+
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Skip if tag already published
+        if: github.event_name != 'pull_request'
+        id: exists
+        run: |
+          if docker manifest inspect "$IMAGE:${{ steps.v.outputs.tag }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$IMAGE:${{ steps.v.outputs.tag }} already published — bump VERSION to release new content"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build (push on main)
+        if: steps.exists.outputs.exists != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.CONTEXT }}
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ env.IMAGE }}:${{ steps.v.outputs.tag }}
