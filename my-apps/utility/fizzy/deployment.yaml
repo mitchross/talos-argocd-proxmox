@@ -28,10 +28,15 @@ spec:
               value: America/Detroit
             - name: RAILS_ENV
               value: production
-            # Rails 8 puma defaults workers to processor count — 32 threads on
-            # the GPU node meant ~32 forked workers ballooning to the 2Gi limit
-            # within minutes of boot (OOM crashloop, 345+ restarts).
+            # Fizzy sizes itself to the hardware twice over — both must be
+            # pinned on the 32-thread GPU node or it OOMs its 2Gi limit within
+            # minutes of boot (was a 345+ restart crashloop):
+            # - puma: workers default to processor count
+            # - solid_queue: queue.yml processes default to physical cores
+            #   (verified in-image: JOB_CONCURRENCY is the fetch env)
             - name: WEB_CONCURRENCY
+              value: "2"
+            - name: JOB_CONCURRENCY
               value: "2"
             - name: SECRET_KEY_BASE
               valueFrom:
