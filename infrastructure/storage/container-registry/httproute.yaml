@@ -5,7 +5,9 @@ metadata:
   namespace: kube-system
 spec:
   parentRefs:
-    - name: gateway-internal-technitium
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal-technitium
       namespace: gateway
   hostnames:
     - "registry.vanillax.me"

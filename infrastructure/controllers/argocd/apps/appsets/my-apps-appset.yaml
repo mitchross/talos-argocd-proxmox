@@ -93,7 +93,10 @@ spec:
             factor: 2
             maxDuration: 10m
       ignoreDifferences:
-      # HTTPRoute, ExternalSecret, and PVC restore diff noise is ignored globally.
+      # ExternalSecret and PVC restore diff noise is ignored globally.
+      # (The global HTTPRoute ignore was removed 2026-07-18: argo-cd#25284
+      # array-element freeze blocked parentRef sectionName syncs. Keep route
+      # manifests explicit about group/kind/weight instead — see values.yaml.)
       # App-level PVC ignores are still required because
       # RespectIgnoreDifferences=true only strips app ignore rules during sync;
       # otherwise immutable restore fields keep retrying forever on Bound PVCs.

@@ -173,7 +173,12 @@ sync). Directory paths and names are ordinary string templates.
 Generated Applications use:
 
 - `ServerSideApply=true` for explicit field ownership and large resources.
-- `RespectIgnoreDifferences=true` only with narrowly scoped ignore rules.
+- `RespectIgnoreDifferences=true` only with narrowly scoped ignore rules —
+  and never on array subfields (`.spec.foo[].bar`): argo-cd#25284 freezes the
+  whole array element during sync, so sibling-field changes (e.g. an HTTPRoute
+  `sectionName` pin) never apply while the app stays OutOfSync. The global
+  HTTPRoute ignore was removed for this on 2026-07-18; keep route manifests
+  explicit about `group`/`kind`/`weight` instead of ignoring the defaults.
 - `FailOnSharedResource=true` so a future directory/layout mistake cannot make
   two Applications fight over one Kubernetes object.
 - Bounded retry so a failed hook cannot pin the app-of-apps to a stale manifest

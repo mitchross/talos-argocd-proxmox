@@ -5,7 +5,9 @@ metadata:
   namespace: posthog
 spec:
   parentRefs:
-    - name: gateway-internal-technitium
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal-technitium
       namespace: gateway
       sectionName: https
   hostnames:
@@ -26,16 +28,22 @@ spec:
             type: PathPrefix
             value: /batch
       backendRefs:
-        - name: capture
+        - group: ""
+          kind: Service
+          name: capture
           port: 3000
+          weight: 1
     # Session replay capture (Rust)
     - matches:
         - path:
             type: PathPrefix
             value: /s
       backendRefs:
-        - name: replay-capture
+        - group: ""
+          kind: Service
+          name: replay-capture
           port: 3000
+          weight: 1
     # Feature flags + /decide (Rust) — required for session replay config
     - matches:
         - path:
@@ -45,8 +53,11 @@ spec:
             type: PathPrefix
             value: /flags
       backendRefs:
-        - name: feature-flags
+        - group: ""
+          kind: Service
+          name: feature-flags
           port: 3001
+          weight: 1
     # CDP webhooks
     - matches:
         - path:
@@ -56,16 +67,22 @@ spec:
             type: PathPrefix
             value: /public/m
       backendRefs:
-        - name: plugins
+        - group: ""
+          kind: Service
+          name: plugins
           port: 6738
+          weight: 1
     # Default - Django web UI/API
     - matches:
         - path:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: web
+        - group: ""
+          kind: Service
+          name: web
           port: 8000
+          weight: 1
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -78,7 +95,9 @@ metadata:
     external-dns.alpha.kubernetes.io/target: "vanillax.me"
 spec:
   parentRefs:
-    - name: gateway-external
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-external
       namespace: gateway
       sectionName: https
   hostnames:
@@ -98,15 +117,21 @@ spec:
             type: PathPrefix
             value: /batch
       backendRefs:
-        - name: capture
+        - group: ""
+          kind: Service
+          name: capture
           port: 3000
+          weight: 1
     - matches:
         - path:
             type: PathPrefix
             value: /s
       backendRefs:
-        - name: replay-capture
+        - group: ""
+          kind: Service
+          name: replay-capture
           port: 3000
+          weight: 1
     # Feature flags + /decide (Rust) — required for session replay config
     - matches:
         - path:
@@ -116,8 +141,11 @@ spec:
             type: PathPrefix
             value: /flags
       backendRefs:
-        - name: feature-flags
+        - group: ""
+          kind: Service
+          name: feature-flags
           port: 3001
+          weight: 1
     # CDP webhooks
     - matches:
         - path:
@@ -127,13 +155,19 @@ spec:
             type: PathPrefix
             value: /public/m
       backendRefs:
-        - name: plugins
+        - group: ""
+          kind: Service
+          name: plugins
           port: 6738
+          weight: 1
     # Default fallback to web
     - matches:
         - path:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: web
+        - group: ""
+          kind: Service
+          name: web
           port: 8000
+          weight: 1
