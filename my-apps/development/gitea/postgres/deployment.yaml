@@ -34,7 +34,11 @@ spec:
         - name: postgres
           # Pin MAJOR.MINOR — Renovate bumps patches/minors; MAJOR upgrades
           # need a manual dump/restore (Postgres data dirs are not
-          # major-version compatible). Do NOT let a major bump auto-merge.
+          # major-version compatible). Majors are gated on dependency-
+          # dashboard approval in .github/renovate.json5 after #1621
+          # (17.10->18.4) crashlooped this pod on a stale PG17 data dir.
+          # If merging a major by hand anyway: dump with the OLD major's
+          # image first, wipe/reinit PGDATA, then restore.
           image: postgres:18.4
           securityContext:
             runAsUser: 999
