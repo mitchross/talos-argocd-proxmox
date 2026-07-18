@@ -16,9 +16,16 @@ search, no routing.
 - **Dataset:** `osm.20260608.versatiles` — full planet, zoom 0–14, Shortbread
   schema, **62.0 GiB**, from <https://download.versatiles.org/> (free, no
   account, sha256-verified)
-- **Storage:** 150Gi PVC `map-data` on the default `longhorn` (NVMe) class —
-  62 GiB active + headroom for the atomic download-then-swap during refresh.
-  Backup-exempt (re-downloadable public data).
+- **Storage:** TrueNAS SMB share `//192.168.10.133/k8s/versatiles` via static
+  PV + PVC `map-data-smb` (comfyui pattern). **Chosen for nuke-survival:** the
+  archive + bootstrap marker live on the NAS, so a rebuilt cluster's bootstrap
+  Job finds them and exits in seconds — no 62 GiB re-download per rebuild.
+  Backup-exempt (the NAS copy is the durable copy). Perf tradeoff accepted:
+  random tile reads over SMB are slower than local NVMe; if it ever matters,
+  add a local cache tier in front — don't move the durable copy.
+  **One-time prereq:** create the `versatiles` folder inside the `k8s` SMB
+  share on TrueNAS before first deploy (Finder:
+  `smb://192.168.10.133/k8s` → New Folder `versatiles`).
 - **Image:** `versatiles/versatiles-frontend:v4.6.0` (server + bundled
   upstream frontend; Renovate manages bumps)
 
@@ -28,7 +35,7 @@ search, no routing.
 download.versatiles.org (osm.YYYYMMDD.versatiles + .sha256)
         │  map-bootstrap Job (ArgoCD Sync hook): download → verify → atomic mv
         ▼
-map-data PVC (150Gi longhorn)
+map-data-smb PVC → TrueNAS //192.168.10.133/k8s/versatiles (survives cluster rebuilds)
         │  read-only mount; init container blocks until archive exists
         ▼
 versatiles Deployment (serve -c config.yaml /data/osm.versatiles)
@@ -129,6 +136,9 @@ radar-ng app in this repo is intentionally untouched by this deployment.
 - Dataset refresh is a manual URL bump + rollout restart (no auto-cron yet).
 - No native Prometheus metrics upstream; coverage is the generic kube-state
   + ArgoCD sync/degraded alerts.
+- Tile serving reads randomly from the archive over SMB — noticeably slower
+  than local NVMe under load, accepted for cross-rebuild durability (see
+  Storage above).
 - Zoom is capped at 14 by the dataset (Shortbread planet); street-level
   detail renders fine because vector tiles overzoom client-side.
 
@@ -141,10 +151,11 @@ curl -I https://maps.vanillax.me                    # 200 + html
 curl -s https://maps.vanillax.me/tiles/index.json   # ["osm"]
 ```
 
-## Later: NAS/RustFS archival (not implemented)
+## Later: local speed tier (not implemented)
 
-If historical snapshots become worth keeping, stage `osm.YYYYMMDD.versatiles`
-files on TrueNAS (SMB/NFS share or RustFS bucket) as archive-only storage and
-keep serving from the local PVC — do not put network storage in the tile
-serving path (random byte-range reads; see
-`docs/domains/storage/storage-tiers.md`).
+Serving currently reads straight from the NAS share. If tile latency ever
+matters, add a local NVMe **cache/copy** in front (e.g. a longhorn PVC an
+init step rsyncs from the NAS copy) — the NAS stays the durable
+source-of-truth that survives cluster rebuilds; local storage would be pure
+cache. Historical `osm.YYYYMMDD` snapshots can also accumulate on the same
+share as cheap archive.
