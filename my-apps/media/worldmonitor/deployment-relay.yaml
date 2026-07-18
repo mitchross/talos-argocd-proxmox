@@ -40,6 +40,11 @@ spec:
                 secretKeyRef:
                   name: worldmonitor-secrets
                   key: RELAY_SHARED_SECRET
+            - name: AISSTREAM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: worldmonitor-secrets
+                  key: AISSTREAM_API_KEY
             - name: PORT
               value: "3004"
           ports:
