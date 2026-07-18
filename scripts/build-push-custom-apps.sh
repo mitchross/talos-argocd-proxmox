@@ -9,23 +9,25 @@
 #     is anonymous-push.
 #
 # What gets built:
-#   registry.vanillax.me/news-reader:latest      (Next.js RSS reader UI)
-#   registry.vanillax.me/temporal-worker:latest  (Python Temporal worker)
+#   <registry>/news-reader        (Next.js RSS reader UI)
+#   <registry>/temporal-worker    (Python Temporal worker)
+#   <registry>/basemap-bootstrap  (radar-ng Protomaps extract wrapper)
 #
-# After push, the two pending pods auto-heal once kubelet retries the pull:
-#   kubectl rollout restart -n news-reader      deploy/news-reader
-#   kubectl rollout restart -n temporal-worker  deploy/temporal-worker
-#
-# Usage:
-#   ./scripts/build-push-custom-apps.sh              # build+push both
-#   ./scripts/build-push-custom-apps.sh news-reader  # just news-reader
-#   ./scripts/build-push-custom-apps.sh temporal-worker
+# Usage (TAG is required — no :latest; manifests pin version tags so the
+# manifest and the image move atomically through git):
+#   TAG=v1.0.0 ./scripts/build-push-custom-apps.sh basemap-bootstrap
+#   TAG=v1.2.3 ./scripts/build-push-custom-apps.sh   # build+push all
 
 set -euo pipefail
 
 REGISTRY="${REGISTRY:-ghcr.io/mitchross}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUNTIME="${RUNTIME:-docker}"  # override with RUNTIME=podman if preferred
+# Cluster nodes are amd64; an arm64 Mac's default build arch would push an
+# image the cluster can't exec. Override only for local experiments.
+PLATFORM="${PLATFORM:-linux/amd64}"
+
+TAG="${TAG:?TAG is required (e.g. TAG=v1.0.0). Version tags only — no :latest; pin the same tag in the consuming manifest.}"
 
 # Map: app-name => "<context-relative-path>;<dockerfile-relative-path>"
 declare -A APPS=(
@@ -39,7 +41,7 @@ build_push() {
   local spec="${APPS[$name]}"
   local ctx="${spec%%;*}"
   local dockerfile="${spec##*;}"
-  local tag="${REGISTRY}/${name}:latest"
+  local tag="${REGISTRY}/${name}:${TAG}"
 
   echo ""
   echo "────────────────────────────────────────────────────────"
@@ -49,6 +51,7 @@ build_push() {
   echo "────────────────────────────────────────────────────────"
 
   "$RUNTIME" build \
+    --platform "$PLATFORM" \
     -t "$tag" \
     -f "$REPO_ROOT/$dockerfile" \
     "$REPO_ROOT/$ctx"
@@ -81,12 +84,12 @@ echo ""
 echo "  Pick up the new image:"
 for t in "${targets[@]}"; do
   if [[ "$t" == "basemap-bootstrap" ]]; then
-    # Job, not a Deployment: delete it so Argo recreates with the new
-    # image, then bounce the consumer once the extract Completes.
-    echo "    kubectl -n radar-ng delete job basemap-bootstrap   # Argo recreates"
-    echo "    kubectl -n radar-ng rollout restart deploy/basemap  # after it Completes"
+    # ArgoCD Sync-hook Job with a pinned tag: deploying = bumping the tag
+    # in git. The marker gate keeps the re-run cheap unless REFRESH/BBOX
+    # changed.
+    echo "    bump image tag to :${TAG} in my-apps/development/radar-ng/job-basemap-bootstrap.yaml, commit + push"
   else
-    echo "    kubectl rollout restart -n $t deploy/$t"
+    echo "    pin :${TAG} in the $t manifest, commit + push (or kubectl rollout restart -n $t deploy/$t if still on :latest)"
   fi
 done
 echo "════════════════════════════════════════════════════════"
