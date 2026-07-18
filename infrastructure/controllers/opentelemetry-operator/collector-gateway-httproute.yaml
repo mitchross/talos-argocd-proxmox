@@ -27,12 +27,20 @@ metadata:
     # --label-filter=external-dns=true). Without this label, external-dns
     # silently ignores the route and no CNAME is created in Cloudflare.
     external-dns: "true"
+  annotations:
+    # Inherited from gateway-external's own target annotation when unset
+    # (verified live), but the repo rule requires it per-route: keeps the
+    # CNAME pinned to the tunnel if the Gateway annotation ever moves.
+    external-dns.alpha.kubernetes.io/target: vanillax.me
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
       name: gateway-external
       namespace: gateway
+      # Pin to the HTTPS listener — without sectionName the route binds the
+      # plain-HTTP :80 listener too, serving OTLP ingest unencrypted.
+      sectionName: https
   hostnames:
     - otel.vanillax.me
   rules:

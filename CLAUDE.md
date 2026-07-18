@@ -219,7 +219,7 @@ of duplicating procedures.
 - **[docs/domains/argocd/entrypoints.md](docs/domains/argocd/entrypoints.md)** - ArgoCD root entrypoints, waves, and AppSet/custom-entrypoint decisions
 - **[docs/domains/storage/architecture-future.md](docs/domains/storage/architecture-future.md)** — **FUTURE IDEA (not implemented):** tiered storage (local CSI + kopiur restore-based DR default, Longhorn for availability-critical apps). Do not act on it now.
 - **kopiur is the backup system (since 2026-06-27):** 22 PVCs across 18 namespaces on the `kopiur-backup` component (count verified 2026-07-01; gitea-postgres-data pending as #23); restore-before-bind proven by the karakeep full-namespace DR drill (2026-06-27). pvc-plumber + VolSync removed. PostHog, Redis, and `project-nomad/nomad-storage` are backup-exempt; swarmui is unused/exempt; CNPG stays native Barman/S3.
-- **Database direction (since 2026-07-09):** new databases default to **plain Postgres + kopiur** (reference: `my-apps/development/gitea/postgres/`); the four CNPG databases migrate one at a time per `docs/domains/cnpg/plain-postgres-migration.md`. Crunchy PGO removed (was idle). ALL CNPG rules in this file stay in force until that doc's retirement checklist is fully ticked — do not relax them early.
+- **Database direction (since 2026-07-09):** new databases default to **plain Postgres + kopiur** (reference: `my-apps/development/gitea/postgres/`); the three remaining CNPG databases (immich, paperless, temporal) migrate one at a time per `docs/domains/cnpg/plain-postgres-migration.md`. Crunchy PGO removed (was idle). ALL CNPG rules in this file stay in force until that doc's retirement checklist is fully ticked — do not relax them early.
 
 ## Mink capture
 

@@ -1,9 +1,9 @@
 # Plain Postgres + kopiur: the CNPG exit ramp
 
 **Decision (2026-07-09):** new databases run as **plain Postgres Deployments
-backed up by kopiur**, and the four CNPG databases (gitea, immich, paperless,
-temporal) migrate to that pattern one at a time. The idle Crunchy PGO operator
-was removed the same day (it managed zero databases).
+backed up by kopiur**, and the CNPG databases migrate to that pattern one at
+a time (gitea done in #1603; immich, paperless, temporal remaining). The idle
+Crunchy PGO operator was removed the same day (it managed zero databases).
 
 ![Decision between CNPG with Barman and plain PostgreSQL with Kopiur based on the required recovery contract](../../assets/postgres-recovery-choice.svg)
 
