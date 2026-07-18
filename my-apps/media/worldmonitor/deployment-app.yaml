@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worldmonitor
+  namespace: worldmonitor
+  labels:
+    app.kubernetes.io/name: worldmonitor
+    app.kubernetes.io/component: app
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: worldmonitor
+      app.kubernetes.io/component: app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: worldmonitor
+        app.kubernetes.io/component: app
+    spec:
+      containers:
+        - name: worldmonitor
+          image: ghcr.io/mitchross/worldmonitor:sha-b8bc626
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: worldmonitor-env
+          env:
+            # Map secret keys to the names the app expects
+            - name: RELAY_SHARED_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: worldmonitor-secrets
+                  key: RELAY_SHARED_SECRET
+            - name: UPSTASH_REDIS_REST_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: worldmonitor-secrets
+                  key: REDIS_TOKEN
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              memory: 4Gi
+          livenessProbe:
+            httpGet:
+              path: /api/sidecar-health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /api/sidecar-health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
