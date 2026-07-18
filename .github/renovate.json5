@@ -237,6 +237,24 @@
       enabled: false,
     },
     {
+      // 2026-07-17 incident: #1621 (postgres 17.10→18.4) crashlooped
+      // gitea-postgres 159x — PG data dirs are NOT major-version compatible
+      // and need a manual dump/restore. The repo-wide major rule already
+      // blocked automerge and the deployment file even carries a warning
+      // comment, but the PR looked like every other green bump and was
+      // merged by hand. Gate PR CREATION on dependency-dashboard approval
+      // so a major never shows up as a mergeable PR in the first place.
+      // Minors/patches keep automerging per the repo-wide rule. PG19 GA is
+      // ~Sept 2026. Migration runbook captured 2026-07-18 (dump/restore
+      // via temp postgres:17 pod on the same PVC).
+      description: 'gitea plain-Postgres image: MAJOR bumps require dependency-dashboard approval — PG data dirs are not major-version compatible; manual dump/restore needed (2026-07-17 incident, PR #1621)',
+      matchPackageNames: ['postgres'],
+      matchFileNames: ['my-apps/development/gitea/postgres/deployment.yaml'],
+      matchUpdateTypes: ['major'],
+      dependencyDashboardApproval: true,
+      automerge: false,
+    },
+    {
       description: 'Pin project-nomad MySQL to 8.x (AdonisJS/Lucid not tested with MySQL 9)',
       matchPackageNames: ['mysql'],
       matchFileNames: ['my-apps/home/project-nomad/**'],
