@@ -1,26 +1,36 @@
-# One-shot Job that populates the `pmtiles` PVC with a Protomaps basemap
-# extract (CONUS bbox) for the radar-ng weather-radar background map. The
-# basemap Deployment's init container blocks pod start until
+# Run-once-per-change Job that populates the `pmtiles` PVC with a Protomaps
+# basemap extract (CONUS bbox) for the radar-ng weather-radar background map.
+# The basemap Deployment's init container blocks pod start until
 # /data/basemap.pmtiles exists, so this Job and the Deployment can deploy
 # together — order doesn't matter, the Deployment just waits.
 #
 # Self-healing source (DO NOT reintroduce a pinned date):
 #   build.protomaps.com serves date-stamped planet builds with ~6-day
 #   retention and no `latest` alias. A hardcoded YYYYMMDD rots in ~6 days
-#   and the rot is invisible until the Job is recreated (cluster DR /
-#   namespace rebuild) — then it 404s at the worst possible time. The
-#   custom image (my-apps/development/radar-ng/basemap-bootstrap-image/)
-#   resolves the newest build that actually exists at run time, so nothing
-#   here ever needs a date bump. Build/push via
-#   scripts/build-push-custom-apps.sh basemap-bootstrap.
+#   and the rot is invisible until the Job re-extracts — then it 404s at
+#   the worst possible time. The custom image
+#   (my-apps/development/radar-ng/basemap-bootstrap-image/) resolves the
+#   newest build that actually exists at run time, so nothing here ever
+#   needs a date bump. Build/push via
+#   TAG=vX.Y.Z scripts/build-push-custom-apps.sh basemap-bootstrap.
 #
-# Refresh strategy:
-#   - Stable name `basemap-bootstrap`. Once Complete, Argo won't recreate.
-#   - Changing BBOX (wider/narrower map) changes the pod spec → Argo
-#     recreates the Job automatically → re-extract.
-#   - To force a re-extract WITHOUT a bbox change (e.g. pull a fresher
-#     planet), bump the `refresh` label below. Then pick up the new file:
+# Refresh strategy (Sync hook + PVC marker):
+#   - This Job is an ArgoCD Sync hook with BeforeHookCreation, so Argo
+#     deletes + recreates it on EVERY radar-ng sync. To keep that cheap,
+#     resolve-and-extract.sh writes a marker next to the output on the PVC
+#     keyed by BBOX+REFRESH and exits in seconds when the marker already
+#     matches. Only a BBOX change or REFRESH bump runs the ~35-min CONUS
+#     extract.
+#   - To pull a fresher planet without a bbox change: bump REFRESH in the
+#     container env, wait for the next sync, then
 #     `kubectl -n radar-ng rollout restart deploy basemap`.
+#   - Why a hook and not a plain resource: hook resources are not part of
+#     the app's desired state, so the my-apps AppSet's selfHeal cannot
+#     recreate the Job. We got burned: as a plain resource, the
+#     ttlSecondsAfterFinished GC deleted the whole Job OBJECT (not just the
+#     pod — the old comment here believed otherwise) and selfHeal recreated
+#     it, so this "run-once" Job silently re-downloaded the CONUS extract
+#     from build.protomaps.com every day (2026-06-23 → 2026-07-17).
 #
 # Why a Job and not a Temporal workflow:
 #   - One-time bootstrap (re-run only on bbox change or explicit refresh).
@@ -32,20 +42,23 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  # No argocd hook annotations BY DESIGN: a Sync/PostSync hook re-runs the full
-  # CONUS extract on every sync. Run-once + refresh-label bump is correct here,
-  # and the image is :latest self-built (never Renovate-bumped) so the immutable-
-  # tag failure the hook rule guards against can't occur. See exemption note.
+  annotations:
+    # Hook resources sit outside the app's desired state, so selfHeal can't
+    # recreate the Job after TTL GC (the daily-loop burn in the header).
+    # BeforeHookCreation also satisfies the repo-wide Job rule: immutable
+    # Jobs fail sync on spec change without hooks.
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
   name: basemap-bootstrap
   namespace: radar-ng
   labels:
     app: basemap
     bbox: "conus"
-    # Bump to force a re-extract without changing the bbox. Argo sees the
-    # spec change → recreates the Job → newest planet is re-resolved.
-    refresh: "1"
 spec:
-  ttlSecondsAfterFinished: 86400  # 1d after Complete, k8s GCs the Pod
+  # GCs the completed Job OBJECT (pod included) a day after finish. Under
+  # hook semantics this is pure hygiene; as a plain resource it was the
+  # selfHeal re-run trigger (see header).
+  ttlSecondsAfterFinished: 86400
   backoffLimit: 5
   template:
     metadata:
@@ -66,10 +79,12 @@ spec:
           # Self-healing wrapper: resolves the newest available Protomaps
           # build at run time and runs `pmtiles extract`. Source/Dockerfile:
           # my-apps/development/radar-ng/basemap-bootstrap-image/
-          image: ghcr.io/mitchross/basemap-bootstrap:latest
-          # Always: the :latest wrapper is self-built; on Job recreate we
-          # want the current image, not a stale node-cached layer.
-          imagePullPolicy: Always
+          # New version: TAG=vX.Y.Z scripts/build-push-custom-apps.sh
+          # basemap-bootstrap, then bump the tag here (repo rule: no :latest —
+          # the pinned tag makes the manifest and image move atomically; if the
+          # push is forgotten the hook fails ImagePullBackOff instead of
+          # silently running the old script).
+          image: ghcr.io/mitchross/basemap-bootstrap:v1.0.0
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -78,6 +93,10 @@ spec:
             # extract bbox: minLon,minLat,maxLon,maxLat (CONUS)
             - name: BBOX
               value: "-125,24,-66,50"
+            # Marker key alongside BBOX. Bump to force a re-extract (pull a
+            # fresher planet) without changing the bbox.
+            - name: REFRESH
+              value: "1"
           resources:
             requests:
               cpu: 200m
