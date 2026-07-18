@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worldmonitor-ais-relay
+  namespace: worldmonitor
+  labels:
+    app.kubernetes.io/name: worldmonitor
+    app.kubernetes.io/component: ais-relay
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: worldmonitor
+      app.kubernetes.io/component: ais-relay
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: worldmonitor
+        app.kubernetes.io/component: ais-relay
+    spec:
+      containers:
+        - name: ais-relay
+          image: ghcr.io/mitchross/worldmonitor-relay:main
+          imagePullPolicy: Always  # mutable :main tag, rebuilt by daily upstream sync
+          envFrom:
+            - configMapRef:
+                name: worldmonitor-env
+          env:
+            - name: UPSTASH_REDIS_REST_URL
+              value: "http://worldmonitor-redis-rest:80"
+            - name: UPSTASH_REDIS_REST_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: worldmonitor-secrets
+                  key: REDIS_TOKEN
+            - name: UPSTASH_ALLOW_INSECURE_HTTP
+              value: "true"
+            - name: RELAY_SHARED_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: worldmonitor-secrets
+                  key: RELAY_SHARED_SECRET
+            - name: PORT
+              value: "3004"
+          ports:
+            - name: http
+              containerPort: 3004
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 2Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5

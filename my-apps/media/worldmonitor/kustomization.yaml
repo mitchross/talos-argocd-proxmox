@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: worldmonitor
+labels:
+  - pairs:
+      app.kubernetes.io/name: worldmonitor
+      app.kubernetes.io/managed-by: argocd
+
+resources:
+  - namespace.yaml
+  - externalsecret.yaml
+  - configmap.yaml
+  - pvc.yaml
+  - httproute.yaml
+  - deployment-app.yaml
+  - deployment-relay.yaml
+  - deployment-redis.yaml
+  - deployment-redis-rest.yaml
+  - services.yaml
