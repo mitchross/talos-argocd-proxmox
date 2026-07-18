@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worldmonitor-redis-rest
+  namespace: worldmonitor
+  labels:
+    app.kubernetes.io/name: worldmonitor
+    app.kubernetes.io/component: redis-rest
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: worldmonitor
+      app.kubernetes.io/component: redis-rest
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: worldmonitor
+        app.kubernetes.io/component: redis-rest
+    spec:
+      containers:
+        - name: redis-rest
+          image: ghcr.io/mitchross/worldmonitor-redis-rest:main
+          imagePullPolicy: Always  # mutable :main tag, rebuilt by daily upstream sync
+          env:
+            - name: SRH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: worldmonitor-secrets
+                  key: REDIS_TOKEN
+            - name: SRH_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: worldmonitor-secrets
+                  key: REDIS_CONNECTION_STRING
+          ports:
+            - name: http
+              containerPort: 80
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              memory: 256Mi

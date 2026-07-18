@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: worldmonitor-env
+  namespace: worldmonitor
+data:
+  # Redis REST proxy (internal service)
+  UPSTASH_REDIS_REST_URL: "http://worldmonitor-redis-rest:80"
+  LOCAL_API_PORT: "46123"
+  LOCAL_API_MODE: "docker"
+  LOCAL_API_CLOUD_FALLBACK: "false"
+  # AIS relay (internal service)
+  WS_RELAY_URL: "http://worldmonitor-ais-relay:3004"
+  # LLM — in-cluster vLLM (qwen3.6-27b)
+  LLM_API_URL: "http://vllm-service.vllm.svc.cluster.local:8080/v1/chat/completions"
+  LLM_MODEL: "qwen3.6-27b"
+  # Must be non-empty: the generic LLM provider is skipped entirely when
+  # LLM_API_KEY is unset/empty (server/_shared/llm.ts). vLLM runs without
+  # --api-key so any value passes.
+  LLM_API_KEY: "not-needed"
