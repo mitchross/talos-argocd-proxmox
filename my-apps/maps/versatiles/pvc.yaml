@@ -1,0 +1,27 @@
+# Holds the active planet archive plus headroom for the atomic download-then-
+# rename swap in job-bootstrap.yaml (peak usage during a refresh is ~2x the
+# archive: old file still active + new file in .tmp). Default longhorn (NVMe)
+# class, NOT longhorn-flash: tile serving is read-dominated random byte-range
+# IO, and the NVMe tier out-reads the flash tier (161k vs 68k random-read IOPS
+# — see infrastructure/storage/longhorn/storageclass-flash.yaml "WHEN NOT to
+# use it"). NOT NFS/SMB: random small reads on HDD-NFS are the documented
+# catastrophe case (docs/domains/storage/storage-tiers.md).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: map-data
+  namespace: versatiles
+  labels:
+    backup-exempt: "true"
+  annotations:
+    storage.vanillax.dev/backup-exempt-reason: >-
+      ~62GB VersaTiles planet archive; re-downloadable from
+      download.versatiles.org by the map-bootstrap hook Job (sha256-verified);
+      backing it up would waste 62GB of kopia repo on public data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 150Gi
