@@ -1,0 +1,13 @@
+# versatiles server config (passed via `serve -c`). ONLY the cors section
+# lives here on purpose — sources, static frontend, and port stay on CLI args
+# because upstream documents config.yaml support as still maturing; keeping
+# this file single-purpose limits the blast radius if a future version changes
+# the schema. Patterns are regexes matched against the request Origin.
+cors:
+  default_policy: 'block'
+  allow_patterns:
+    # any https vanillax.me subdomain (maps itself, radar, home-assistant, ...)
+    - '^https://([a-z0-9-]+\.)?vanillax\.me$'
+    # local development (MapLibre dev servers on any port)
+    - '^https?://localhost(:[0-9]+)?$'
+    - '^https?://127\.0\.0\.1(:[0-9]+)?$'

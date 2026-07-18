@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: versatiles
+  namespace: versatiles
+  labels:
+    app.kubernetes.io/name: versatiles
+spec:
+  selector:
+    app.kubernetes.io/name: versatiles
+  ports:
+    - name: http  # named port — HTTPRoute fails silently without it
+      port: 8080
+      targetPort: http
