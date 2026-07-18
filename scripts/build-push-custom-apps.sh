@@ -11,11 +11,13 @@
 # What gets built:
 #   <registry>/news-reader        (Next.js RSS reader UI)
 #   <registry>/temporal-worker    (Python Temporal worker)
-#   <registry>/basemap-bootstrap  (radar-ng Protomaps extract wrapper)
+#
+# basemap-bootstrap is NOT built here — GitHub Actions owns it
+# (.github/workflows/basemap-bootstrap-image.yml, tag from the VERSION file).
 #
 # Usage (TAG is required — no :latest; manifests pin version tags so the
 # manifest and the image move atomically through git):
-#   TAG=v1.0.0 ./scripts/build-push-custom-apps.sh basemap-bootstrap
+#   TAG=v1.2.3 ./scripts/build-push-custom-apps.sh news-reader
 #   TAG=v1.2.3 ./scripts/build-push-custom-apps.sh   # build+push all
 
 set -euo pipefail
@@ -33,7 +35,6 @@ TAG="${TAG:?TAG is required (e.g. TAG=v1.0.0). Version tags only — no :latest;
 declare -A APPS=(
   [news-reader]="my-apps/development/news-reader/app;my-apps/development/news-reader/app/Dockerfile"
   [temporal-worker]="my-apps/development/temporal-worker;my-apps/development/temporal-worker/Dockerfile"
-  [basemap-bootstrap]="my-apps/development/radar-ng/basemap-bootstrap-image;my-apps/development/radar-ng/basemap-bootstrap-image/Dockerfile"
 )
 
 build_push() {
@@ -83,13 +84,6 @@ echo "  All pushes complete."
 echo ""
 echo "  Pick up the new image:"
 for t in "${targets[@]}"; do
-  if [[ "$t" == "basemap-bootstrap" ]]; then
-    # ArgoCD Sync-hook Job with a pinned tag: deploying = bumping the tag
-    # in git. The marker gate keeps the re-run cheap unless REFRESH/BBOX
-    # changed.
-    echo "    bump image tag to :${TAG} in my-apps/development/radar-ng/job-basemap-bootstrap.yaml, commit + push"
-  else
-    echo "    pin :${TAG} in the $t manifest, commit + push (or kubectl rollout restart -n $t deploy/$t if still on :latest)"
-  fi
+  echo "    pin :${TAG} in the $t manifest, commit + push (or kubectl rollout restart -n $t deploy/$t if still on :latest)"
 done
 echo "════════════════════════════════════════════════════════"
