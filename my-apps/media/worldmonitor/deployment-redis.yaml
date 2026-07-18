@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: redis
-          image: docker.io/redis:7-alpine
+          image: docker.io/redis:7.4.9-alpine
           imagePullPolicy: IfNotPresent
           env:
             - name: REDIS_PASSWORD

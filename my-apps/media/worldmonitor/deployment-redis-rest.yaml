@@ -20,8 +20,8 @@ spec:
     spec:
       containers:
         - name: redis-rest
-          image: ghcr.io/mitchross/worldmonitor-redis-rest:main
-          imagePullPolicy: Always  # mutable :main tag, rebuilt by daily upstream sync
+          image: ghcr.io/mitchross/worldmonitor-redis-rest:sha-b8bc626
+          imagePullPolicy: IfNotPresent
           env:
             - name: SRH_TOKEN
               valueFrom:

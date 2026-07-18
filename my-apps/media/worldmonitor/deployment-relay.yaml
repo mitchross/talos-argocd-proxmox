@@ -20,8 +20,8 @@ spec:
     spec:
       containers:
         - name: ais-relay
-          image: ghcr.io/mitchross/worldmonitor-relay:main
-          imagePullPolicy: Always  # mutable :main tag, rebuilt by daily upstream sync
+          image: ghcr.io/mitchross/worldmonitor-relay:sha-b8bc626
+          imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
                 name: worldmonitor-env
