@@ -46,6 +46,10 @@ detectors:
       labelmap_path: /openvino-model/coco_91cl_bkgr.txt
 ffmpeg:
   input_args: preset-rtsp-generic
+  # NVDEC on the Dell GTX 1050 Ti (Pascal): auto-selects the right decode
+  # profile per stream. Detection stays OpenVINO-on-CPU — Frigate 0.17's
+  # TensorRT detector needs Turing+, not Pascal.
+  hwaccel_args: preset-nvidia
 # go2rtc with Nest cameras via direct SDM API
 # Using the correct echo:curl syntax from official documentation
 go2rtc:

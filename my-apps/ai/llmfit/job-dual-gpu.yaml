@@ -39,3 +39,4 @@ spec:
             nvidia.com/gpu: "2"
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        gpu-worker: "true"

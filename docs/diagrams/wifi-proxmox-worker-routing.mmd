@@ -1,0 +1,61 @@
+---
+title: How Omni provisions the Wi-Fi Proxmox GPU worker
+config:
+  layout: elk
+---
+flowchart LR
+  accTitle: Wi-Fi Proxmox Talos GPU worker architecture
+  accDescr: Git and Omni define a Talos worker request. A Proxmox provider on the management NUC creates a VM on the Dell host, attaches the mapped GTX 1050 Ti, and the worker joins the existing cluster through the ASUS media bridge.
+
+  subgraph MANAGEMENT["MANAGEMENT"]
+    direction LR
+    GIT["`Git desired state
+    machine class + template`"]
+    OMNI["`Omni
+    machine lifecycle`"]
+    PROVIDER["`Proxmox provider
+    one Dell API endpoint`"]
+    GIT desired@--> OMNI
+    OMNI request@--> PROVIDER
+  end
+
+  subgraph WIFI["WI-FI SITE"]
+    direction LR
+    BRIDGE["`ASUS media bridge
+    Ethernet over Wi-Fi`"]
+    PVE["`Dell Proxmox
+    VFIO + PCI mapping`"]
+    VM["`Talos worker VM
+    static address + GTX 1050 Ti`"]
+    BRIDGE link@<--> PVE
+    PVE create@--> VM
+  end
+
+  subgraph CLUSTER["KUBERNETES"]
+    direction TB
+    CORE["`Existing wired core
+    control plane + RTX 3090 worker`"]
+    VXLAN["`Cilium VXLAN
+    node-IP transport`"]
+    CORE corePath@--> VXLAN
+    VM dellPath@--> VXLAN
+  end
+
+  PROVIDER provision@--> PVE
+
+  classDef action fill:#fde8e8,stroke:#dc8c8c,color:#17212b
+  classDef desired fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  classDef external fill:#fff3df,stroke:#d8ad55,color:#17212b
+  class GIT desired
+  class OMNI,PROVIDER,PVE,VM controller
+  class BRIDGE external
+  class CORE,VXLAN action
+
+  desired@{ animation: slow }
+  request@{ animation: fast }
+  provision@{ animation: fast }
+  link@{ animation: fast }
+  create@{ animation: fast }
+  corePath@{ animation: slow }
+  dellPath@{ animation: slow }

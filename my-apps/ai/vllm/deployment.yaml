@@ -31,6 +31,7 @@ spec:
       terminationGracePeriodSeconds: 120
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        gpu-worker: "true"
       tolerations:
         - key: "nvidia.com/gpu"
           operator: "Exists"

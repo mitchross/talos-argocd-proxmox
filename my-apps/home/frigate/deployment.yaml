@@ -4,7 +4,7 @@ metadata:
   name: frigate
   namespace: frigate
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -15,8 +15,12 @@ spec:
       labels:
         app: frigate
     spec:
-      # nodeSelector:
-      #   feature.node.kubernetes.io/custom-usb.coral-tpu: "true"
+      # Pin to the Dell 1050 Ti worker: NVDEC handles all camera decode there.
+      # This card is opt-in only (see my-apps/ai/CLAUDE.md) — big AI workloads
+      # pin to rtx-3090 and must never land here.
+      nodeSelector:
+        node.vanillax.dev/gpu-class: gtx-1050-ti
+      runtimeClassName: nvidia
       containers:
       - name: frigate
         image: ghcr.io/blakeblackshear/frigate:0.17.2
@@ -24,6 +28,10 @@ spec:
         env:
         - name: TZ
           value: "America/New_York"
+        # "video" is required for NVDEC — the default injected capability set
+        # (compute,utility) leaves ffmpeg hwaccel without the decoder libs.
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: "compute,video,utility"
         - name: FRIGATE_MQTT_USER
           valueFrom:
             secretKeyRef:
@@ -58,8 +66,10 @@ spec:
           requests:
             cpu: 1000m
             memory: 2Gi
+            nvidia.com/gpu: "1"
           limits:
             memory: 12Gi
+            nvidia.com/gpu: "1"
         securityContext:
           privileged: true
           allowPrivilegeEscalation: true

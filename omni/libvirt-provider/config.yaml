@@ -1,2 +1,0 @@
-libvirt:
-  uri: qemu:///system
