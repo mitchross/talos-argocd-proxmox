@@ -8,6 +8,16 @@ configs:
     controller.operation.processors: "25"
     # Performance: limit concurrent manifest generations to prevent OOM
     reposerver.parallelism.limit: "5"
+    # Redis manifest-cache TTL (default 24h). 2026-07-19: repo-server cached
+    # manifests rendered from a STALE checkout under the NEW revision's cache
+    # key — apps reported Synced at HEAD while the cluster ran a prior commit
+    # (versatiles configmap never rolled, worldmonitor image bump ignored).
+    # Even hard refresh kept logging "manifest cache hit" for the poisoned
+    # entry; the hourly timeout.hard.reconciliation (below) could not clear it
+    # either. Only restarting argocd-repo-server + argocd-redis recovered.
+    # Upstream (argoproj/argo-cd#26530) is open with no fixed release, so
+    # bound the poison window to 1h instead of 24h.
+    reposerver.repo.cache.expiration: "1h"
     # Performance: increase repo-server timeout for large Helm charts like prometheus-stack
     controller.repo.server.timeout.seconds: "300"
     # Server-Side Diff — controller asks the API server for a dry-run apply
