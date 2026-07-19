@@ -37,13 +37,17 @@ detectors:
   ov:
     type: openvino
     device: CPU
-    model:
-      path: /openvino-model/ssdlite_mobilenet_v2.xml
-      width: 300
-      height: 300
-      input_tensor: nhwc
-      input_pixel_format: bgr
-      labelmap_path: /openvino-model/coco_91cl_bkgr.txt
+# Frigate 0.17 reads model config ONLY from this top-level block — the old
+# nested detectors.<name>.model form silently resolves to path=None and the
+# detector process crashes with "stat: path should be string ... NoneType",
+# which takes the whole container down (CrashLoopBackOff, 2026-07-19).
+model:
+  path: /openvino-model/ssdlite_mobilenet_v2.xml
+  width: 300
+  height: 300
+  input_tensor: nhwc
+  input_pixel_format: bgr
+  labelmap_path: /openvino-model/coco_91cl_bkgr.txt
 ffmpeg:
   input_args: preset-rtsp-generic
   # NVDEC on the Dell GTX 1050 Ti (Pascal): auto-selects the right decode

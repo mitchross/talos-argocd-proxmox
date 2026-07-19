@@ -301,6 +301,52 @@ revert your fix on the next reconcile. Three escalation levels, smallest first:
    Nothing reconciles, nothing prunes, UI still shows (stale) state. Resume
    triggers a full re-compare against current git — equivalent to a fresh sync.
 
+## Runbook: App "Synced" at HEAD but Cluster Runs an Older Commit
+
+**Symptom (2026-07-19 incident):** merged commits never reach the cluster.
+The Application reports `Synced` at the latest revision, but live resources
+match a prior commit (e.g. a configMapGenerator hash never changes, an image
+bump never rolls). Hard refresh does not help. Upstream: open bug
+[argoproj/argo-cd#26530](https://github.com/argoproj/argo-cd/issues/26530) —
+the repo-server caches manifests rendered from a stale checkout under the new
+revision's cache key, and the poisoned entry survives hard refresh and the
+hourly `timeout.hard.reconciliation`.
+
+**Confirm** (expected result: repeated cache hits for the app path at the
+current revision even while you issue hard refreshes):
+```bash
+kubectl -n argocd logs deploy/argocd-repo-server --since=10m | grep "manifest cache hit"
+```
+
+**Remediate** (safe — both are stateless cache/render components; ~30s of
+sync unavailability, no workload impact):
+```bash
+kubectl -n argocd rollout restart deploy/argocd-repo-server deploy/argocd-redis
+kubectl -n argocd rollout status deploy/argocd-repo-server
+kubectl -n argocd annotate application <app> argocd.argoproj.io/refresh=hard --overwrite
+```
+Recovery is immediate: the next render is fresh, the app goes `OutOfSync`,
+and automated sync applies the real HEAD.
+
+**Bound the blast radius:** `reposerver.repo.cache.expiration: "1h"` in
+`values.yaml` (`configs.params`) caps how long a poisoned entry can live
+(default was 24h). Distinct from the 2026-05-29 stale *live-state* cache
+incident that motivated `timeout.hard.reconciliation` — that knob does not
+clear this cache.
+
+**Two adjacent gotchas discovered in the same incident:**
+- Editing **only a hook resource** (e.g. `argocd.argoproj.io/hook: Sync` Jobs)
+  never makes an app OutOfSync — hooks sit outside desired state, so the change
+  only applies on the next *sync operation*. Force one:
+  ```bash
+  kubectl -n argocd patch application <app> --type merge \
+    -p '{"operation":{"initiatedBy":{"username":"manual"},"sync":{"prune":true}}}'
+  ```
+- A running sync operation **blocks** while waiting on an in-flight hook Job,
+  and no new operation can start. If the hook can't finish, delete the Job
+  (`kubectl delete job <hook-job>`) — the op fails, then a fresh sync recreates
+  the hook from the current spec (`BeforeHookCreation`).
+
 ## Related Docs
 
 - [ArgoCD entrypoints](entrypoints.md)
