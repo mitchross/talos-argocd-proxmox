@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitea-postgres
+  namespace: gitea
+  labels:
+    app: gitea-postgres
+spec:
+  selector:
+    app: gitea-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432

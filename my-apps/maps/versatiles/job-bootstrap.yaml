@@ -1,0 +1,126 @@
+# One-shot-per-dataset Job that downloads the VersaTiles planet archive
+# (~62GB) onto the map-data PVC. The versatiles Deployment's init container
+# blocks pod start until the file exists, so Job and Deployment deploy
+# together — order doesn't matter.
+#
+# Why an ArgoCD hook and not a plain Job: as a plain resource,
+# ttlSecondsAfterFinished would GC the Job OBJECT a day after completion and
+# the AppSet's selfHeal would recreate it — the exact daily re-download loop
+# that burned radar-ng's basemap-bootstrap (see that Job's header). Hook
+# resources sit outside desired state, so selfHeal can't recreate them; the
+# marker fast-path below makes routine per-sync re-runs exit in seconds.
+#
+# Why a versioned snapshot URL (osm.YYYYMMDD) and not the mutable
+# /osm.versatiles alias: the versioned URL + its .sha256 sidecar make the
+# download reproducible and integrity-checked, and changing it in
+# kustomization.yaml IS the update trigger (hash-suffixed ConfigMap name
+# changes -> Job pod spec changes -> hook re-runs -> marker key mismatch ->
+# fresh download). See README.md for the full update/rollback flow.
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: map-bootstrap
+  namespace: versatiles
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+  labels:
+    app.kubernetes.io/name: versatiles
+spec:
+  ttlSecondsAfterFinished: 86400  # hygiene only; hooks aren't selfHeal-recreated
+  backoffLimit: 4
+  # download.versatiles.org throttles to ~2.7MB/s per connection (measured
+  # 2026-07-19), so the 62GB pull needs ~6.5h — a 4h ceiling killed it mid-run
+  activeDeadlineSeconds: 28800
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: versatiles
+        job: map-bootstrap
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000  # non-root container writes to the PVC
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: download
+          # Same pinned alpine base the repo already uses; busybox wget +
+          # sha256sum are all this needs.
+          image: alpine:3@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              TARGET="/data/${TARGET_FILE}"
+              TMP="${TARGET}.tmp"
+              MARKER="/data/.bootstrap-marker"
+
+              # Fast path: the Sync hook re-runs this Job on every app sync.
+              # A successful download records its URL in a marker on the PVC;
+              # when it already matches there is nothing to do.
+              if [ -s "$TARGET" ] && [ -f "$MARKER" ] && [ "$(head -n1 "$MARKER")" = "$DATASET_URL" ]; then
+                echo "marker matches (${DATASET_URL}); archive already present, nothing to do"
+                exit 0
+              fi
+
+              # The origin drops long single-stream transfers ("wget:
+              # connection closed prematurely"); with set -e each drop killed
+              # the container, OnFailure restarted it, and the rm -f started
+              # over from byte 0 — the 62GB download could never finish.
+              # Resume with wget -c in a bounded loop; a stale partial from a
+              # different DATASET_URL is caught by the sha256 check below
+              # (mismatch deletes the tmp, next run starts clean).
+              echo "downloading ${DATASET_URL} -> ${TMP}"
+              attempt=0
+              while ! wget -q -c -O "$TMP" "$DATASET_URL"; do
+                attempt=$((attempt + 1))
+                if [ "$attempt" -ge 200 ]; then
+                  echo "FATAL: download did not complete after ${attempt} resume attempts" >&2
+                  exit 1
+                fi
+                echo "connection dropped at $(wc -c <"$TMP" 2>/dev/null || echo 0) bytes, resuming (attempt ${attempt})"
+                sleep 5
+              done
+
+              echo "verifying sha256 (${DATASET_SHA256_URL})"
+              EXPECTED="$(wget -q -O - "$DATASET_SHA256_URL" | cut -d' ' -f1)"
+              ACTUAL="$(sha256sum "$TMP" | cut -d' ' -f1)"
+              if [ "$EXPECTED" != "$ACTUAL" ]; then
+                echo "FATAL: sha256 mismatch: expected ${EXPECTED}, got ${ACTUAL}" >&2
+                rm -f "$TMP"
+                exit 1
+              fi
+
+              # Atomic swap: same filesystem, so mv can't leave a partial
+              # file where the init container's non-empty check would see it.
+              # A running server keeps serving the OLD file via its open fd
+              # until the Deployment is restarted (documented in README.md).
+              mv -f "$TMP" "$TARGET"
+              printf '%s\nsize=%s downloaded=%s\n' "$DATASET_URL" "$(wc -c <"$TARGET")" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$MARKER"
+              echo "done: ${TARGET} ($(wc -c <"$TARGET") bytes)"
+          envFrom:
+            - configMapRef:
+                name: bootstrap-env
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: map-data
+              mountPath: /data
+      volumes:
+        - name: map-data
+          persistentVolumeClaim:
+            claimName: map-data-smb

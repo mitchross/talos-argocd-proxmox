@@ -9,11 +9,13 @@ apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: paperless-database
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
   labels:
     app: paperless-ngx
 spec:
   instances: 1
-  imageName: ghcr.io/cloudnative-pg/postgresql:16.2
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.14-standard-trixie@sha256:23439cd89a6c71a2a0e11c42b05382b68b5d40c32e5f0901fb2cb59962fd5592
   resources:
     requests:
       memory: 1Gi

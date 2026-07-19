@@ -33,7 +33,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: llama-cpp-server
-          image: ghcr.io/ggml-org/llama.cpp:server-cuda13-b9879
+          image: ghcr.io/ggml-org/llama.cpp:server-cuda13-b10068
           imagePullPolicy: IfNotPresent
           command: ["/app/llama-server"]
           args:
@@ -116,7 +116,6 @@ spec:
             failureThreshold: 3
           resources:
             limits:
-              cpu: "32"
               memory: 64Gi
               nvidia.com/gpu: "1"
               ephemeral-storage: "50Gi"
@@ -150,3 +149,4 @@ spec:
             sizeLimit: 8Gi
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        gpu-worker: "true"

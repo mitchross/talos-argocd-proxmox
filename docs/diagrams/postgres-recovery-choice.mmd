@@ -1,0 +1,54 @@
+---
+title: Choose the recovery contract before the PostgreSQL controller
+config:
+  layout: elk
+---
+flowchart TB
+  accTitle: PostgreSQL recovery-controller decision
+  accDescr: Workloads requiring point-in-time recovery, replicas, or automated failover use CloudNativePG and Barman. Simpler workloads use plain PostgreSQL and Kopiur restore-before-bind.
+
+  NEED{"`Need PITR, replicas,
+  automated failover,
+  or near-zero RPO?`"}
+
+  subgraph CNPG["DATABASE-AWARE RECOVERY"]
+    direction LR
+    CLUSTER["`CloudNativePG Cluster
+    operator-owned pods`"]
+    BARMAN["`Barman
+    base backups and WAL`"]
+    DBBUCKET["`RustFS
+    database lineage`"]
+    CLUSTER cnpg1@--> BARMAN
+    BARMAN cnpg2@--> DBBUCKET
+  end
+
+  subgraph PLAIN["VOLUME RECOVERY"]
+    direction LR
+    DEPLOY["`Plain PostgreSQL
+    Recreate Deployment`"]
+    PVC["`One PVC
+    PGDATA and WAL`"]
+    KOPIUR["`Kopiur
+    restore-before-bind`"]
+    DEPLOY plain1@--> PVC
+    PVC plain2@--> KOPIUR
+  end
+
+  NEED yes@-- "YES" --> CLUSTER
+  NEED no@-- "NO" --> DEPLOY
+
+  classDef decision fill:#344250,stroke:#17212b,color:#ffffff
+  classDef external fill:#fff3df,stroke:#d8ad55,color:#17212b
+  classDef desired fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  class NEED decision
+  class CLUSTER,BARMAN,DBBUCKET external
+  class DEPLOY,PVC,KOPIUR desired
+
+  yes@{ animation: fast }
+  no@{ animation: fast }
+  cnpg1@{ animation: slow }
+  cnpg2@{ animation: slow }
+  plain1@{ animation: slow }
+  plain2@{ animation: slow }

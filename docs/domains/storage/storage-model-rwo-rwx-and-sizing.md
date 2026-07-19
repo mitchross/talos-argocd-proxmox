@@ -9,12 +9,24 @@ Storage-class decisions and capacity sizing across the core repo
 - **Static SMB/NFS shares stay on the plain CSI drivers** (`csi-driver-nfs`,
   `csi-driver-smb`). They hold real data you browse/edit by hand; keep them
   human-readable and decoupled from the TrueNAS API. `truenas-csi`
-  (`csi.truenas.io`) is for **dynamic provisioning only**, and v1.0.4 does
-  **iSCSI + NFS only — no SMB**.
-- **Talos:** use **Longhorn for RWO** (block). Do **not** add truenas-csi iSCSI on
-  Talos — it would need the `siderolabs/iscsi-tools` system extension + a Cilium
-  TCP 3260 egress rule, and Longhorn does block RWO better here (node-local
-  replication). Use truenas-csi **NFS (`truenas-nfs`) for RWX** only.
+  (`csi.truenas.io`) is for **dynamic provisioning only**, and does
+  **iSCSI + NVMe-oF + NFS — no SMB**.
+- **Talos:** **Longhorn is the default for RWO** (block, node-local). Use
+  truenas-csi **NFS (`truenas-nfs`) for RWX**, and **`truenas-flash` (NVMe-oF) for
+  write-latency-sensitive RWO** — databases. Rationale (measured 2026-07-13):
+  Longhorn's backing disks are consumer EDILOCA NVMe at **259 fsync IOPS @
+  1.25ms**; the flashpool SSDs do **14,484 @ 0.064ms**, and even paying ~0.15ms of
+  10GbE round-trip that is ~6x better for the fsync-per-commit workload databases
+  actually run. Longhorn still wins for read-heavy volumes and RWX-via-share.
+- **Do not add truenas-csi *iSCSI* on Talos** — but NOT for the reason previously
+  given here. `siderolabs/iscsi-tools` is in fact **already installed on all three
+  machine sets**, and `CONFIG_ISCSI_TCP=y` is built into the Talos 1.13 kernel. The
+  real blocker is that upstream never reads `iscsi.global.basename`
+  (truenas-csi#41): this appliance still carries the FreeNAS-era base name
+  `iqn.2005-10.org.freenas.ctl`, and a mismatch fails every stage with `failed to
+  find device path: []` *and* bakes the wrong IQN into the PV at provision time.
+  NVMe-oF sidesteps it entirely. TCP 3260 stays blocked in Cilium; TCP 4420 is now
+  allowed.
 - **OpenShift/SNO:** no Longhorn. RWO/DBs → `vanillax-local-rwo`
   (`csi.truenas.io` **iSCSI**, block, safe for databases). RWX →
   `truenas-nfs-csi` (NFS). Regenerable caches → `local-path` (node-local).

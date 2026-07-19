@@ -30,7 +30,7 @@ spec:
                     operator: DoesNotExist
       containers:
       - name: mcpo-kiwix
-        image: ghcr.io/open-webui/mcpo:main
+        image: ghcr.io/open-webui/mcpo:main@sha256:1e82c9555c19e50b80745705f32b47a2647589f35279527b5118ecd3a71bd467
         ports:
         - containerPort: 8002
           name: http
@@ -51,7 +51,6 @@ spec:
             cpu: 100m
             memory: 256Mi
           limits:
-            cpu: 1000m
             memory: 1Gi
         volumeMounts:
         - name: kiwix-config

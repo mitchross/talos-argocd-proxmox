@@ -8,6 +8,11 @@
 > [kopiur backup architecture](domains/storage/kopiur-backup-architecture.md) (the mechanism),
 > [disaster recovery](disaster-recovery.md) (the runbook).
 
+![The complete platform from Proxmox and Omni through Talos, Argo CD, applications, and off-cluster recovery](assets/platform-overview.svg)
+
+*Git reconstructs desired state, 1Password reconstructs credentials, and RustFS
+reconstructs protected data. [Open the platform map full size](assets/platform-overview.svg).*
+
 ---
 
 ## The 30-second pitch
@@ -77,6 +82,11 @@ discover everything else. Git is the cluster; the cluster is a cache.
 ---
 
 ## Part 2 — How Argo waits (sync waves)
+
+![Argo CD sync waves turn repository dependencies into a gated rebuild sequence](assets/argocd-sync-waves.svg){ loading=lazy }
+
+*Wave numbers order resources; health checks make each dependency gate wait.
+[Open the sync-wave sequence full size](assets/argocd-sync-waves.svg).*
 
 A cluster rebuild has a brutal ordering problem: apps need volumes, volumes
 need the backup operator, the operator needs credentials, credentials need the
@@ -157,15 +167,21 @@ Application: Healthy — Argo's sync completes
 
 ---
 
-## Part 3 — Kustomize components (the DRY trick)
+## Part 3 — Kustomize components (shared build-time patches)
+
+![An application opts into a Kustomize Component, which patches matching resources before Argo applies the rendered YAML](assets/kustomize-component-mixin.svg){ loading=lazy }
+
+*The app explicitly opts in, Kustomize patches matching objects during build,
+and Argo receives the complete rendered output. [Open the Kustomize Component flow full size](assets/kustomize-component-mixin.svg).*
 
 Classic Kustomize is **base → overlay**: an overlay inherits one base and
 patches it. That model breaks when you want to share one cross-cutting
 *feature* — "make this thing backed up" — across 20 unrelated apps that share
 no base.
 
-A **component** is Kustomize's answer: a reusable bundle of patches you mix
-into any app, like a trait/mixin in programming. An app opts in with one line:
+A **Component** is an optional Kustomize package containing reusable resources
+and patches. Nothing discovers it automatically. An application explicitly
+opts in through `components:`:
 
 ```yaml
 # my-apps/ai/open-webui/kustomization.yaml
@@ -175,19 +191,12 @@ resources:
   - kopiur/storage.yaml            # ← the app's tiny per-PVC stub
 ```
 
-```text
-  your stub                          shared component
-  kopiur/storage.yaml                common/kopiur-backup
-  (only what varies)                 (only what's uniform)
-        |                                   |
-        |                                   | patches by kind
-        +----------------+------------------+
-                         v
-              kustomize build  (ArgoCD runs this)
-                         |
-                         v
-              complete CRs applied to the cluster
-```
+During `kustomize build`, Kustomize parses the application's resources, finds
+objects matching each patch target by API group and kind, applies the JSON
+Patch operations to exact field paths, and emits complete Kubernetes YAML.
+Argo CD then diffs and applies that rendered output. The Component does not run
+in the cluster, watch live resources, scan the repository for filenames, or
+perform text replacement.
 
 The division of labor is the whole design:
 
@@ -235,6 +244,11 @@ entire design discipline.
 
 ## Part 4 — kopiur: the backup operator
 
+![Kopiur configuration is assembled at Kustomize build time, while backup and restore happen later inside Kubernetes](assets/kopiur-kustomize-flow.svg){ loading=lazy }
+
+*Build time declares the recovery contract; runtime moves the data and enforces
+restore-before-bind. [Open the complete Kopiur flow full size](assets/kopiur-kustomize-flow.svg).*
+
 [kopiur](https://github.com/home-operations/kopiur) is a Kopia-native Kubernetes
 operator (Rust). You declare small CRs; it runs Jobs; [Kopia](https://kopia.io)
 encrypts, deduplicates, and ships bytes to S3. The cast:
@@ -244,7 +258,7 @@ encrypts, deduplicates, and ships bytes to S3. The cast:
 | `ClusterRepository` | cluster | "The Kopia repo lives at RustFS `s3://kopiur`; namespaces with *this label* may use it." |
 | `SnapshotPolicy` | per PVC | "Back up *this PVC*, under *this identity*, keep *this much* history, run the mover as *this user*." |
 | `SnapshotSchedule` | per PVC | "Fire the policy on *this cron*." |
-| `Snapshot` | created per run | One backup execution; ends `Completed` with file/byte counts. |
+| `Snapshot` | created per run | One backup execution; ends `Succeeded` with file/byte counts. |
 | `Restore` | per PVC | "I can rebuild this volume from the repo" — the thing a PVC's `dataSourceRef` points at. |
 
 Plus one non-CR trick: the **credential fanout**. A single
@@ -458,6 +472,11 @@ Full detail, including the daemon-drop (mysql `999:568`) and root-owned
 
 ## Part 7 — Putting it together: the full DR story
 
+![The disaster-recovery sequence from surviving sources of truth through Talos provisioning, Argo reconciliation, data restoration, and proof](assets/disaster-recovery-sequence.svg){ loading=lazy }
+
+*Recovery finishes only when desired state, credentials, protected data, and
+runtime health all converge. [Open the disaster-recovery sequence full size](assets/disaster-recovery-sequence.svg).*
+
 Everything above composes into one sentence: **the off-cluster pieces are the
 pets; the cluster is cattle.**
 
@@ -486,15 +505,16 @@ The rebuild, end to end:
    while its populator hydrates it; apps start on restored data, in parallel.
 5. You drink the coffee.
 
-A [restore canary](disaster-recovery.md#the-restore-canary) continuously
-re-runs the real delete→recreate→populate→byte-verify loop against a dedicated
-test PVC, so "restores work" stays a measured fact.
+A [restore canary](disaster-recovery.md#the-restore-canary) takes daily backups
+and runs weekly quick verification. Its isolated test PVC is where an operator
+can safely re-run the destructive delete→recreate→populate→byte-verify drill.
 
 The honest boundaries:
 
-- **Databases don't use this path** — CNPG Postgres uses SQL-aware Barman
-  backups to S3 (crash-consistent filesystem snapshots aren't how you back up
-  a database). Two systems, deliberately separate.
+- **Database recovery is an explicit RPO choice** — remaining CNPG databases
+  use Postgres-aware Barman + WAL/PITR. Plain single-instance Postgres uses a
+  single-volume crash-consistent kopiur snapshot and WAL crash recovery, with
+  no PITR. Do not mix both systems on one database PVC.
 - **One repo copy, on-LAN** — this is not 3-2-1; a NAS-level disaster loses
   the backups. Known, accepted, documented.
 - **RPO = the cron cadence.** You lose at most one interval of data.
@@ -523,7 +543,7 @@ problem actually demands:
 | **3 — credential fanout** | the namespace label + `ClusterExternalSecret` (or any secret sync) | New namespace = one label; repo creds appear, tenancy granted. No per-app secret plumbing. | Backed-up apps live in more than ~3 namespaces. |
 | **4 — the component** | `common/kopiur-backup` Kustomize component | Per-PVC config shrinks to a ~20-line stub; cluster-wide backup policy changes in one file. | You're copy-pasting the same CR fields a 5th time. |
 | **5 — sync waves** | wave annotations + the Application health Lua | A **whole-cluster rebuild** that orders itself: storage → operator → repo → apps, restores gating each app's start. | You want "nuke it and re-bootstrap" as a supported operation. |
-| **6 — trust at scale** | CI coverage check + the restore canary | A PR can't ship a backed-up PVC missing its `dataSourceRef`; "restores work" is re-proven daily. | The system must stay correct *without you re-checking it*. |
+| **6 — trust at scale** | CI coverage check + the restore canary | A PR can't ship a backed-up PVC missing its `dataSourceRef`; backup verification is scheduled and destructive restore drills have an isolated target. | The system must stay correct *without risking production data*. |
 
 ### Rung 0–1 on YOUR cluster, concretely
 
@@ -589,9 +609,12 @@ Restores error and retry; PVCs stay `Pending`. Nothing binds empty. Recovery
 is delayed, never corrupted. (Row 3 of the table in Part 5.)
 
 **What about the databases?**
-CNPG Postgres uses Barman WAL archiving to a separate S3 bucket — SQL-aware,
-point-in-time capable, entirely independent of kopiur.
-([CNPG DR](domains/cnpg/disaster-recovery.md).)
+The CNPG-managed ones use Barman WAL archiving to a separate S3 bucket —
+SQL-aware, point-in-time capable, entirely independent of kopiur
+([CNPG DR](domains/cnpg/disaster-recovery.md)). They are migrating to plain
+Postgres + kopiur so databases follow the exact same restore-before-bind flow
+as every other PVC ([migration doc](domains/cnpg/plain-postgres-migration.md));
+new databases start on that pattern directly.
 
 **How do I add a backup to a new app?**
 Six steps, ~5 minutes: find the data owner's uid:gid → label the namespace →

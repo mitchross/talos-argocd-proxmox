@@ -23,6 +23,7 @@ spec:
       # Node selector for GPU nodes
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        gpu-worker: "true"
       runtimeClassName: nvidia
       priorityClassName: gpu-workload-preemptible
       tolerations:
@@ -37,7 +38,7 @@ spec:
       # (entrypoint does chmod +x, so ConfigMap subPath mount won't work — read-only)
       initContainers:
       - name: copy-pre-start
-        image: alpine
+        image: alpine:latest@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b # digest-pinned like home-assistant init
         command: ["cp", "/opt/pre-start/pre-start.sh", "/root/user-scripts/pre-start.sh"]
         volumeMounts:
         - name: comfyui-storage
@@ -75,7 +76,6 @@ spec:
             nvidia.com/gpu: "1"
           limits:
             memory: "80Gi"
-            cpu: "16"
             nvidia.com/gpu: "1"
         volumeMounts:
         - name: comfyui-storage

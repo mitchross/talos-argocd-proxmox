@@ -1,0 +1,5 @@
+order-1001|{"event_id":"demo-001","event_type":"order.created","order_id":"order-1001","customer":"Ada Lovelace","total":42.50,"currency":"USD","occurred_at":"2026-07-11T12:00:00Z"}
+order-1001|{"event_id":"demo-002","event_type":"payment.authorized","order_id":"order-1001","payment_id":"pay-9001","total":42.50,"currency":"USD","occurred_at":"2026-07-11T12:00:03Z"}
+sku-keyboard|{"event_id":"demo-003","event_type":"inventory.reserved","order_id":"order-1001","sku":"keyboard-75","quantity":1,"occurred_at":"2026-07-11T12:00:05Z"}
+order-1001|{"event_id":"demo-004","event_type":"order.fulfilled","order_id":"order-1001","warehouse":"detroit-1","occurred_at":"2026-07-11T12:00:11Z"}
+order-1001|{"event_id":"demo-005","event_type":"shipment.dispatched","order_id":"order-1001","carrier":"demo-express","tracking_id":"track-1001","occurred_at":"2026-07-11T12:01:00Z"}

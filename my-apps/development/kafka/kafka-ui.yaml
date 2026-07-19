@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-ui
+  namespace: kafka
+  annotations:
+    # Kafka and its topic must be Healthy before the browser starts polling.
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: kafka-ui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: kafka-ui
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: kafka-ui
+          # renovate: datasource=docker depName=ghcr.io/kafbat/kafka-ui
+          image: ghcr.io/kafbat/kafka-ui:v1.5.0@sha256:7cda86a33344160309fdb65146332e4da65db81a945614f2fe32e210803f6fd1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: KAFKA_CLUSTERS_0_NAME
+              value: dev-kafka
+            - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+              value: dev-kafka-kafka-bootstrap.kafka.svc:9092
+            # Browsing messages and consumer groups is allowed; creating,
+            # deleting, or editing Kafka resources through the UI is not.
+            - name: KAFKA_CLUSTERS_0_READONLY
+              value: "true"
+            - name: DYNAMIC_CONFIG_ENABLED
+              value: "false"
+            - name: GITHUB_RELEASE_INFO_ENABLED
+              value: "false"
+            - name: LOGGING_LEVEL_IO_KAFBAT_UI
+              value: info
+            - name: JAVA_OPTS
+              value: -XX:InitialRAMPercentage=25 -XX:MaxRAMPercentage=75
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 45
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-ui
+  namespace: kafka
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  selector:
+    app.kubernetes.io/component: kafka-ui
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: kafka-ui
+  namespace: kafka
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  # Internal Technitium-backed Gateway only: no Cloudflare/external-dns labels.
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal-technitium
+      namespace: gateway
+  hostnames:
+    - kafka.vanillax.me
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: kafka-ui
+          port: 8080
+          weight: 1

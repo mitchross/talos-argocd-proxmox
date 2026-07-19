@@ -21,6 +21,15 @@ spec:
     keepDaily: 14
     keepWeekly: 6
     keepMonthly: 3
+  # Weekly repository/blob verification complements the daily backup. This is
+  # non-destructive; the full PVC delete-and-restore drill remains an explicit
+  # operator action documented in the canary README.
+  verification:
+    quick:
+      schedule:
+        cron: "13 6 * * 0"
+        timezone: America/Detroit
+    verifyFilesPercent: 10
   mover:
     securityContext:
       runAsUser: 568

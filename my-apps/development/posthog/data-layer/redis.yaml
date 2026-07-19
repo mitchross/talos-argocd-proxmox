@@ -82,7 +82,7 @@ metadata:
 spec:
   accessModes:
   - ReadWriteOnce
-  storageClassName: longhorn
+  storageClassName: longhorn-flash
   resources:
     requests:
       # Shrunk 10Gi -> 4Gi for the single-node rebuild (2026-06-19). Valkey cache

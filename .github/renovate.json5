@@ -57,6 +57,16 @@
   },
   packageRules: [
     {
+      description: 'Group ALL container digest pins into one rolling PR. Version bumps stay as separate PRs. Placed first so more-specific rules (PostHog group, etc.) override this groupName.',
+      matchDatasources: [
+        'docker',
+      ],
+      matchUpdateTypes: [
+        'digest',
+      ],
+      groupName: 'all container digests',
+    },
+    {
       matchUpdateTypes: [
         'minor',
         'patch',
@@ -227,6 +237,24 @@
       enabled: false,
     },
     {
+      // 2026-07-17 incident: #1621 (postgres 17.10→18.4) crashlooped
+      // gitea-postgres 159x — PG data dirs are NOT major-version compatible
+      // and need a manual dump/restore. The repo-wide major rule already
+      // blocked automerge and the deployment file even carries a warning
+      // comment, but the PR looked like every other green bump and was
+      // merged by hand. Gate PR CREATION on dependency-dashboard approval
+      // so a major never shows up as a mergeable PR in the first place.
+      // Minors/patches keep automerging per the repo-wide rule. PG19 GA is
+      // ~Sept 2026. Migration runbook captured 2026-07-18 (dump/restore
+      // via temp postgres:17 pod on the same PVC).
+      description: 'gitea plain-Postgres image: MAJOR bumps require dependency-dashboard approval — PG data dirs are not major-version compatible; manual dump/restore needed (2026-07-17 incident, PR #1621)',
+      matchPackageNames: ['postgres'],
+      matchFileNames: ['my-apps/development/gitea/postgres/deployment.yaml'],
+      matchUpdateTypes: ['major'],
+      dependencyDashboardApproval: true,
+      automerge: false,
+    },
+    {
       description: 'Pin project-nomad MySQL to 8.x (AdonisJS/Lucid not tested with MySQL 9)',
       matchPackageNames: ['mysql'],
       matchFileNames: ['my-apps/home/project-nomad/**'],
@@ -255,27 +283,20 @@
       enabled: false,
     },
     {
-      // Pinned during the CNPG in-tree → plugin backup-path migration. The
-      // operator chart `cloudnative-pg` v0.28.0 ships appVersion 1.29.0,
-      // which still accepts `spec.backup.barmanObjectStore` on Cluster CRs.
-      // appVersion 1.30 REMOVES that field; auto-merging a chart bump that
-      // ships appVersion 1.30 would brick all 4 production CNPG clusters
-      // simultaneously (immich, gitea, paperless, temporal) until each is
-      // migrated to `spec.plugins[]`.
-      //
-      // Migration plan: docs/plans/cnpg-plugin-migration.md.
-      // REMOVE THIS ENTRY once all 4 Cluster CRs are on spec.plugins[] AND
-      // verified writing backups via the plugin path. Verify by:
-      //   for c in immich gitea paperless temporal; do
-      //     kubectl get cluster -n cloudnative-pg ${c}-database \
-      //       -o jsonpath='{.spec.plugins[0].name}{"\n"}'
-      //   done
-      // Expect each to print: barman-cloud.cloudnative-pg.io
-      description: 'Pin CNPG operator chart during in-tree → plugin migration. See docs/plans/cnpg-plugin-migration.md §9.6. Remove once all 4 Cluster CRs are on spec.plugins[].',
+      // The in-tree → plugin backup migration is COMPLETE: all three
+      // remaining CNPG clusters (immich, paperless, temporal) run
+      // spec.plugins[] with barman-cloud.cloudnative-pg.io, daily plugin
+      // backups verified completing 2026-07-17. gitea left CNPG for plain
+      // Postgres + kopiur in #1603. The old hard pin (enabled: false) is
+      // retired, but bumps stay manual: a chart bump lands on all
+      // production clusters simultaneously — same review class as argo-cd
+      // and kopiur. Majors are already blocked repo-wide above.
+      description: 'CNPG operator chart bumps require manual review — critical DB infrastructure; one bump lands on all clusters at once. Plugin migration complete; hard pin retired 2026-07-17.',
       matchDatasources: ['helm'],
       matchPackageNames: ['cloudnative-pg'],
       registryUrls: ['https://cloudnative-pg.github.io/charts'],
-      enabled: false,
+      automerge: false,
+      prCreation: 'immediate',
     },
     {
       // kopiur is pre-1.0: 0.x MINORS are breaking by convention, and upstream

@@ -29,25 +29,10 @@ The whole cluster boots from one script. Once Omni hands you a running Talos clu
 
 ## How It Works
 
-```mermaid
-graph TD;
-    subgraph "Bootstrap (Manual, once)"
-        User(["User"]) -- "scripts/bootstrap-argocd.sh" --> Helm["Helm installs ArgoCD"];
-        Helm -- "Applies" --> RootApp["Root Application<br/>(root.yaml)"];
-    end
+![Argo CD bootstrap and dependency-gated sync waves](docs/assets/argocd-sync-waves.svg)
 
-    subgraph "GitOps Self-Management Loop (Automatic)"
-        RootApp -- "1. Points to<br/>.../argocd/apps/" --> ArgoConfigDir["ArgoCD Config<br/>(Projects, AppSets,<br/>entrypoints)"];
-        ArgoConfigDir -- "2. Deploys" --> AppSets["ApplicationSets"];
-        AppSets -- "3. Scan repo for<br/>app directories" --> AppManifests["Application dirs<br/>(e.g. my-apps/ai/comfyui/)"];
-        AppManifests -- "4. ArgoCD deploys" --> ClusterResources["Cluster Resources<br/>(workloads, operators, …)"];
-    end
-
-    style User fill:#a2d5c6,stroke:#333
-    style Helm fill:#5bc0de,stroke:#333
-    style RootApp fill:#f0ad4e,stroke:#333
-    style ArgoConfigDir fill:#d9534f,stroke:#333,color:#fff
-```
+*Wave numbers establish order; health checks make Argo CD wait.
+[Open the Argo CD flow full size](docs/assets/argocd-sync-waves.svg).*
 
 **The core idea: a directory *is* an application.** Add a directory with a `kustomization.yaml` under `my-apps/`, `infrastructure/`, or `monitoring/`, push to Git, and an ApplicationSet discovers it and creates the ArgoCD `Application` automatically. No manual `Application` resources.
 
@@ -88,7 +73,7 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 | Kubernetes | `v1.36.2` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
 | Cilium | `1.19.5` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.4.1` | bootstrap commands below |
-| ArgoCD Helm chart | `10.0.0` | `scripts/bootstrap-argocd.sh` |
+| ArgoCD Helm chart | `10.1.3` (Argo CD `v3.4.5`) | `scripts/bootstrap-argocd.sh` |
 | Proxmox provider | `latest@sha256:96433a…` | `omni/proxmox-provider/docker-compose.yml` |
 
 Keep the Omni server and local `omnictl` on the **same** release — mismatched versions fail with obscure gRPC errors.
@@ -255,6 +240,7 @@ kubectl get nodes
 ```
 
 > Three settings here **must match** the values ArgoCD will render at Wave 0 (`infrastructure/networking/cilium/`), or Wave 0 fights the CLI install:
+> - **Routing mode matches by default**: the CLI's default (`tunnel`/vxlan) equals `values.yaml`'s `routingMode: tunnel`. If the managed values ever change routing mode, add the matching `--set routingMode=...` here or Wave 0 restarts every agent mid-bootstrap.
 > - **`--version 1.19.5`** must match `infrastructure/networking/cilium/kustomization.yaml`. A mismatch makes ArgoCD upgrade Cilium at Wave 0, regenerating some Hubble certs but not others → `x509: certificate signed by unknown authority` blocks every later wave.
 > - **`cluster.name`** must match `values.yaml` (Hubble cert SANs). Run without it and certs are issued for `default`/`kind-kind` → TLS failures.
 > - **Hubble stays disabled at bootstrap on purpose** — ArgoCD enables it at Wave 0 so it's the sole owner of the Hubble TLS certs (no CLI-vs-ArgoCD cert mismatch).
@@ -301,7 +287,7 @@ kubectl apply -f infrastructure/controllers/argocd/ns.yaml
 
 helm upgrade --install argocd argo-cd \
   --repo https://argoproj.github.io/argo-helm \
-  --version 10.1.2 \
+  --version 10.1.4 \
   --namespace argocd \
   --values infrastructure/controllers/argocd/values.yaml \
   --wait --timeout 10m
@@ -467,7 +453,7 @@ Network
 | **Storage issues** | `kubectl get pvc -A` · `kubectl get pods -n longhorn-system` |
 | **Secrets not syncing** | `kubectl get externalsecret -A` · `kubectl get pods -n 1passwordconnect` · `kubectl describe clustersecretstore 1password` |
 | **GPU issues** | `kubectl get nodes -l feature.node.kubernetes.io/pci-0300_10de.present=true` · `kubectl get pods -n gpu-operator` |
-| **Backup issues** | `kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot` (Snapshot should reach `Completed` with non-zero files) · `kubectl -n <ns> get secret kopiur-rustfs` · `kubectl get pods -n kopiur-system` |
+| **Backup issues** | `kubectl -n <ns> get snapshotpolicy,snapshotschedule,restore,snapshot` (Snapshot should reach `Succeeded` with non-zero files) · `kubectl -n <ns> get secret kopiur-rustfs` · `kubectl get pods -n kopiur-system` |
 
 ### Emergency reset
 

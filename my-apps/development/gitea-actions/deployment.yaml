@@ -62,7 +62,6 @@ spec:
               cpu: 200m
               memory: 512Mi
             limits:
-              cpu: 1000m
               memory: 1Gi
 
         # Plain Docker-in-Docker. Privileged is required (the gitea-actions
@@ -88,7 +87,6 @@ spec:
               cpu: 1000m
               memory: 2Gi
             limits:
-              cpu: 4000m
               memory: 6Gi
           # Dockerd ready when `docker info` over the shared socket succeeds.
           startupProbe:
@@ -133,7 +131,6 @@ spec:
               cpu: 10m
               memory: 32Mi
             limits:
-              cpu: 200m
               memory: 128Mi
 
       volumes:

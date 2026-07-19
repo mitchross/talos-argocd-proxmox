@@ -3,9 +3,12 @@ kind: Kustomization
 namespace: longhorn-system
 resources:
   - namespace.yaml
-  #- httproute.yaml
+  # Longhorn UI route: infrastructure/networking/gateway/httproute-longhorn.yaml
+  # (deploys at wave 4 alongside the Gateway)
   - volumesnapshotclass.yaml
   - node-failure-settings.yaml
+  # Fast local flash tier — enterprise-SSD Longhorn disk (tag `flash`).
+  - storageclass-flash.yaml
   # The chart-created `longhorn` StorageClass provisions V1-engine volumes
   # (chart default; the dataEngine:v2 routing was removed 2026-06-12 when the
   # V2/SPDK experiment was retired — see values.yaml header).

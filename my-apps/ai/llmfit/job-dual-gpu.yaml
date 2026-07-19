@@ -27,11 +27,10 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: llmfit
-        image: ghcr.io/alexsjones/llmfit:latest@sha256:16b5e5076710d7d5cd71ceafb6dc558078b789e59a5e48d0177b022ed04f978b
+        image: ghcr.io/alexsjones/llmfit:latest@sha256:a358303a2a09b5c7117a0e954f09736ba01dbf563d67e563d723f03c2dd543d4
         imagePullPolicy: IfNotPresent
         resources:
           limits:
-            cpu: "8000m"
             memory: 32Gi
             nvidia.com/gpu: "2"
           requests:
@@ -40,3 +39,4 @@ spec:
             nvidia.com/gpu: "2"
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        gpu-worker: "true"

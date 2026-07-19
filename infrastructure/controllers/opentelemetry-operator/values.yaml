@@ -4,7 +4,6 @@ manager:
       cpu: 50m
       memory: 128Mi
     limits:
-      cpu: 250m
       memory: 256Mi
   # Bootstrap principle: a bootstrap-critical app must NOT render
   # monitoring.coreos.com CRs. The OTel operator syncs at Wave 5 — the SAME

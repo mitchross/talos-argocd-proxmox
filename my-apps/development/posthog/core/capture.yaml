@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: capture
-          image: ghcr.io/posthog/posthog/capture:master@sha256:88b7751a2062ce7b64eb812bfbca6d5fb04724e867c60ccfbf9dcf864902148a
+          image: ghcr.io/posthog/posthog/capture:master@sha256:fe8c4fade7871bce14002bc916cd9fd8fa13bea08d84ec5224c126de3033baec
           env:
             - name: ADDRESS
               value: "0.0.0.0:3000"
@@ -84,7 +84,7 @@ spec:
     spec:
       containers:
         - name: replay-capture
-          image: ghcr.io/posthog/posthog/capture:master@sha256:88b7751a2062ce7b64eb812bfbca6d5fb04724e867c60ccfbf9dcf864902148a
+          image: ghcr.io/posthog/posthog/capture:master@sha256:fe8c4fade7871bce14002bc916cd9fd8fa13bea08d84ec5224c126de3033baec
           envFrom:
             - configMapRef:
                 name: posthog-env
@@ -169,8 +169,8 @@ spec:
     spec:
       initContainers:
         - name: copy-geoip
-          # Pinned to pre-WarpStream SHA — see jobs.yaml header comment.
-          image: posthog/posthog:latest@sha256:4af6ae259dcd33bbd12c353b024f052e88bfa9b9746c54b7bc42ff8139d89fe6
+          # Keep this aligned with the posthog-migrate hook in jobs.yaml.
+          image: posthog/posthog:latest@sha256:334b0b6a604d0cde5f48af199bac141b26f8867ed2f6fd77435cf859a9537d76
           command:
             - /bin/sh
             - -c
@@ -183,7 +183,7 @@ spec:
               mountPath: /share
       containers:
         - name: feature-flags
-          image: ghcr.io/posthog/posthog/feature-flags:master@sha256:a050d362393adaf70fa1213ab27cb5b65376d422ad883b6d06ff551128b1f70d
+          image: ghcr.io/posthog/posthog/feature-flags:master@sha256:07eed8ed81a1fc9e2a88b82b8cfb0947ed0fbff8af9b0e32bfafacaf66b66ef0
           env:
             - name: PGPASSWORD
               valueFrom:

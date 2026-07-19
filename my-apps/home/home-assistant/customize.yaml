@@ -1,60 +1,102 @@
-# Per-entity overrides for Tapo homelab plugs.
+# Per-entity overrides for the Tapo homelab plugs and the AirCube air-quality
+# monitor.
 #
-# - Friendly names flow into the `friendly_name` Prometheus label so Grafana
-#   legends read "GPU PSU" instead of "gpu_psu_smart_plug_current_consumption".
+# - Friendly names flow into the `friendly_name` Prometheus label and HA's UI
+#   (Energy dashboard, Developer Tools).
 # - `hidden: true` on the switch entity removes the on/off control from the
 #   default Lovelace view. The automation in automations.yaml ("Homelab plug
 #   power-off lockout") is the actual enforcement — even if the switch is
 #   toggled via API or the Tapo app it gets restored within seconds.
+#
+# The GPU plug's entity_id is kept as gpu_psu_* (preserves history), but its
+# device was renamed to "threadripper-gpus" — so the derived sensors below are
+# relabelled to "Threadripper GPUs …" to match. The Tapo integration's own
+# power/voltage/current sensors already display "threadripper-gpus …" from the
+# device rename, so only the derived (integration/utility_meter/template)
+# entities need an override here.
 
-# ---------- GPU external PSU ----------
-sensor.gpu_psu_smart_plug_current_consumption:
-  friendly_name: GPU PSU Power
-sensor.gpu_psu_smart_plug_today_energy:
-  friendly_name: GPU PSU Energy Today
-sensor.gpu_psu_smart_plug_voltage:
-  friendly_name: GPU PSU Voltage
-sensor.gpu_psu_smart_plug_current:
-  friendly_name: GPU PSU Current
+# ---------- Threadripper GPUs (entity_id kept as gpu_psu_* for history) ----------
+sensor.gpu_psu_energy:
+  friendly_name: Threadripper GPUs Energy
+sensor.gpu_psu_cost:
+  friendly_name: Threadripper GPUs Cost
+sensor.gpu_psu_cost_rate:
+  friendly_name: Threadripper GPUs Cost Rate
+sensor.gpu_psu_power_share:
+  friendly_name: Threadripper GPUs Power Share
+sensor.gpu_psu_energy_share_today:
+  friendly_name: Threadripper GPUs Energy Share Today
+sensor.gpu_psu_energy_daily:
+  friendly_name: Threadripper GPUs Energy Daily
+sensor.gpu_psu_energy_weekly:
+  friendly_name: Threadripper GPUs Energy Weekly
+sensor.gpu_psu_energy_monthly:
+  friendly_name: Threadripper GPUs Energy Monthly
+sensor.gpu_psu_energy_yearly:
+  friendly_name: Threadripper GPUs Energy Yearly
+sensor.gpu_psu_cost_daily:
+  friendly_name: Threadripper GPUs Cost Daily
+sensor.gpu_psu_cost_weekly:
+  friendly_name: Threadripper GPUs Cost Weekly
+sensor.gpu_psu_cost_monthly:
+  friendly_name: Threadripper GPUs Cost Monthly
+sensor.gpu_psu_cost_yearly:
+  friendly_name: Threadripper GPUs Cost Yearly
+
+# Switch entities keep the `_smart_plug` suffix (unlike the sensors). Hide the
+# read-only controls from the default view; the power-off lockout automation is
+# the real enforcement.
 switch.gpu_psu_smart_plug:
-  friendly_name: GPU PSU (read-only)
+  friendly_name: Threadripper GPUs (read-only)
   hidden: true
-
-# ---------- NAS external HDD PSU ----------
-sensor.nas_psu_smart_plug_current_consumption:
-  friendly_name: NAS PSU Power
-sensor.nas_psu_smart_plug_today_energy:
-  friendly_name: NAS PSU Energy Today
-sensor.nas_psu_smart_plug_voltage:
-  friendly_name: NAS PSU Voltage
-sensor.nas_psu_smart_plug_current:
-  friendly_name: NAS PSU Current
 switch.nas_psu_smart_plug:
   friendly_name: NAS PSU (read-only)
   hidden: true
-
-# ---------- Proxmox host ----------
-sensor.proxmox_server_smart_plug_current_consumption:
-  friendly_name: Proxmox Server Power
-sensor.proxmox_server_smart_plug_today_energy:
-  friendly_name: Proxmox Server Energy Today
-sensor.proxmox_server_smart_plug_voltage:
-  friendly_name: Proxmox Server Voltage
-sensor.proxmox_server_smart_plug_current:
-  friendly_name: Proxmox Server Current
-switch.proxmox_server_smart_plug:
-  friendly_name: Proxmox Server (read-only)
-  hidden: true
-
-# ---------- TrueNAS host ----------
-sensor.truenas_server_smart_plug_current_consumption:
-  friendly_name: TrueNAS Server Power
-sensor.truenas_server_smart_plug_today_energy:
-  friendly_name: TrueNAS Server Energy Today
-sensor.truenas_server_smart_plug_voltage:
-  friendly_name: TrueNAS Server Voltage
-sensor.truenas_server_smart_plug_current:
-  friendly_name: TrueNAS Server Current
 switch.truenas_server_smart_plug:
   friendly_name: TrueNAS Server (read-only)
+  hidden: true
+
+# ---------- NAS external HDD PSU ----------
+# (The Tapo integration displays "Nas psu …" from the device name; the derived
+# sensors keep their "NAS PSU …" names from configuration.yaml.)
+
+# ---------- TrueNAS host ----------
+# (Displays "Truenas Server …" from the device name; derived sensors keep their
+# "TrueNAS Server …" names.)
+
+# ---------- StuckAtPrototype AirCube (Zigbee air-quality, ZHA quirk) ----------
+# ZHA's auto-derived friendly names are verbose ("StuckAtPrototype AirCube
+# Volatile organic compounds parts"); shorten them. These names flow into the
+# `friendly_name` Prometheus label, but the Grafana dashboard matches on the
+# stable `entity` label (not friendly_name), so renaming here is display-only
+# and does NOT break aircube-dashboard.yaml.
+sensor.stuckatprototype_aircube_temperature:
+  friendly_name: AirCube Temperature
+sensor.stuckatprototype_aircube_humidity:
+  friendly_name: AirCube Humidity
+sensor.stuckatprototype_aircube_equivalent_co2:
+  friendly_name: AirCube eCO2
+sensor.stuckatprototype_aircube_volatile_organic_compounds_parts:
+  friendly_name: AirCube tVOC
+sensor.stuckatprototype_aircube_voc_level:
+  friendly_name: AirCube VOC Level
+number.stuckatprototype_aircube_brightness:
+  friendly_name: AirCube Brightness
+
+# Declutter the default dashboard: rssi/lqi are Zigbee link diagnostics, and
+# `number.stuckatprototype_aircube` is a DUPLICATE of the brightness slider —
+# it's ZHA's raw AnalogOutput present_value, controlling the same thing as
+# number.stuckatprototype_aircube_brightness (the quirk's v2 .number()). The
+# identify button is a commissioning aid, not a daily control.
+sensor.stuckatprototype_aircube_rssi:
+  friendly_name: AirCube RSSI
+  hidden: true
+sensor.stuckatprototype_aircube_lqi:
+  friendly_name: AirCube LQI
+  hidden: true
+number.stuckatprototype_aircube:
+  friendly_name: AirCube Brightness (duplicate — use AirCube Brightness)
+  hidden: true
+button.stuckatprototype_aircube_identify:
+  friendly_name: AirCube Identify
   hidden: true

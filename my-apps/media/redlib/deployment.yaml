@@ -24,7 +24,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: redlib
-        image: ghcr.io/mitchross/redlib:2.0.3
+        image: ghcr.io/mitchross/redlib:2.2.0
         imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:
@@ -44,7 +44,6 @@ spec:
             cpu: 100m
             memory: 128Mi
           limits:
-            cpu: 2000m
             memory: 1Gi
         livenessProbe:
           httpGet:

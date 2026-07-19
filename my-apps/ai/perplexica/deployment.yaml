@@ -61,7 +61,7 @@ spec:
               mountPath: /data
           resources:
             requests: { cpu: 10m, memory: 32Mi }
-            limits:   { cpu: 200m, memory: 128Mi }
+            limits:   { memory: 128Mi }
           securityContext:
             # apk needs a writable root FS to unpack jq into /usr/bin.
             # Still no privilege escalation, all caps dropped.
@@ -145,7 +145,6 @@ spec:
               cpu: 500m
               memory: 1Gi
             limits:
-              cpu: "4"
               memory: 4Gi
       volumes:
         - name: data

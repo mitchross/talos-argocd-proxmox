@@ -16,6 +16,7 @@ resources:
   - job-basemap-bootstrap.yaml
   - deployment-open-meteo.yaml
   - servicemonitor.yaml
+  - prometheusrule.yaml
   # Temporal worker pool. The main worker handles all radar-ng-owned
   # activities. The open-meteo sync worker (FROM ghcr.io/open-meteo/open-meteo)
   # is NO LONGER a standalone WorkerDeployment — it runs as a sidecar in the

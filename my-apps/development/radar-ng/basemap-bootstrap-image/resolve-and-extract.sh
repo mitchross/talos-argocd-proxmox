@@ -6,15 +6,28 @@
 #
 # Env:
 #   BBOX            extract bbox, "minLon,minLat,maxLon,maxLat" (required)
+#   REFRESH         marker key; bump to force a re-extract (default 0)
 #   MAX_LOOKBACK    how many days back to probe before giving up (default 14)
 #   OUT             output path (default /data/basemap.pmtiles)
 set -eu
 
 BASE_URL="https://build.protomaps.com"
 BBOX="${BBOX:?BBOX env is required (e.g. -125,24,-66,50)}"
+REFRESH="${REFRESH:-0}"
 MAX_LOOKBACK="${MAX_LOOKBACK:-14}"
 OUT="${OUT:-/data/basemap.pmtiles}"
 TMP="${OUT}.tmp"
+MARKER="${OUT}.marker"
+
+# Fast path: the ArgoCD Sync hook re-runs this Job on every app sync. A
+# successful extract records the BBOX+REFRESH it produced in a marker on
+# the PVC; when the key already matches there is nothing to do, so routine
+# syncs exit in seconds instead of re-downloading the ~35-min extract.
+KEY="bbox=${BBOX} refresh=${REFRESH}"
+if [ -s "$OUT" ] && [ -f "$MARKER" ] && [ "$(head -n1 "$MARKER")" = "$KEY" ]; then
+  echo "marker matches (${KEY}); extract already done, nothing to do"
+  exit 0
+fi
 
 resolved=""
 i=0
@@ -42,4 +55,6 @@ fi
 echo "extracting bbox=${BBOX} -> ${OUT}"
 pmtiles extract "$resolved" "$TMP" --bbox="$BBOX"
 mv -f "$TMP" "$OUT"
+# Marker line 1 is the skip key; line 2 records provenance for humans.
+printf '%s\nbuild=%s extracted=%s\n' "$KEY" "$d" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$MARKER"
 echo "done: $(ls -lh "$OUT")"

@@ -40,7 +40,6 @@ spec:
             cpu: 100m
             memory: 256Mi
           limits:
-            cpu: "1"
             memory: 2Gi
       volumes:
       - name: config

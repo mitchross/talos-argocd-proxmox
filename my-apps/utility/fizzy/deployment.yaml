@@ -21,13 +21,23 @@ spec:
         fsGroup: 1000
       containers:
         - name: fizzy
-          image: ghcr.io/basecamp/fizzy:sha-d729cf5
+          image: ghcr.io/basecamp/fizzy:sha-d8ec07d@sha256:5ee67abbc4a096535672fc235250c8c7974416d0f54a5b88612d7e5abdad5d38
           imagePullPolicy: IfNotPresent
           env:
             - name: TZ
               value: America/Detroit
             - name: RAILS_ENV
               value: production
+            # Fizzy sizes itself to the hardware twice over — both must be
+            # pinned on the 32-thread GPU node or it OOMs its 2Gi limit within
+            # minutes of boot (was a 345+ restart crashloop):
+            # - puma: workers default to processor count
+            # - solid_queue: queue.yml processes default to physical cores
+            #   (verified in-image: JOB_CONCURRENCY is the fetch env)
+            - name: WEB_CONCURRENCY
+              value: "2"
+            - name: JOB_CONCURRENCY
+              value: "2"
             - name: SECRET_KEY_BASE
               valueFrom:
                 secretKeyRef:
@@ -51,7 +61,6 @@ spec:
               cpu: "100m"
             limits:
               memory: "2Gi"
-              cpu: "500m"
       volumes:
         - name: fizzy-storage
           persistentVolumeClaim:

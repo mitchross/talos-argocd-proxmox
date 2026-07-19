@@ -61,12 +61,16 @@ loki:
 deploymentMode: SimpleScalable
 backend:
   replicas: 1
+  # Local write-path state (WAL / boltdb-shipper cache) on the flash isolation
+  # tier — Loki's actual log data lives on S3 (RustFS). Keeps log-ingest IO off
+  # the shared NVMe disk the databases use. Backup-exempt; rebuilds from S3.
+  persistence:
+    storageClass: longhorn-flash
   resources:
     requests:
       cpu: 50m
       memory: 256Mi
     limits:
-      cpu: 500m
       memory: 1Gi
   extraEnvFrom:
   - secretRef:
@@ -78,19 +82,20 @@ read:
       cpu: 50m
       memory: 256Mi
     limits:
-      cpu: 1000m
       memory: 1Gi
   extraEnvFrom:
   - secretRef:
       name: loki-s3-credentials
 write:
   replicas: 1
+  # Local write-path state on the flash isolation tier (log data is on S3/RustFS).
+  persistence:
+    storageClass: longhorn-flash
   resources:
     requests:
       cpu: 50m
       memory: 256Mi
     limits:
-      cpu: 500m
       memory: 1Gi
   extraEnvFrom:
   - secretRef:
@@ -126,5 +131,4 @@ gateway:
       cpu: 50m
       memory: 128Mi
     limits:
-      cpu: 200m
       memory: 256Mi

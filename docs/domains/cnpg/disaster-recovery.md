@@ -88,7 +88,7 @@ infrastructure/database/cloudnative-pg/<db>/
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: cloudnative-pg
-commonLabels: { ... }
+labels: [ ... ]   # (was commonLabels — migrated repo-wide 2026-07-09)
 resources:
   # Comment one, uncomment the other. That IS the DR switch.
   - overlays/initdb           # ← fresh DB, no restore

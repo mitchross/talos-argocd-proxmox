@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: copyparty
-        image: copyparty/ac:latest@sha256:f1171450643c6d22af9e33fca68ab560635dcbf8ee17bf7a3799a20c0e38296e
+        image: copyparty/ac:latest@sha256:0c593762acd34f9af3b1773ab6122f4da3ad963d37a62df21f9d23fa9b2507b8
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
@@ -46,7 +46,6 @@ spec:
             cpu: "100m"
           limits:
             memory: "1Gi"
-            cpu: "2000m"
         livenessProbe:
           httpGet:
             path: /

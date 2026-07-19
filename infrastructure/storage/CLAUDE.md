@@ -4,7 +4,7 @@
 
 | Class | Use Case |
 |-------|----------|
-| `longhorn` | Distributed block storage — **cluster default**, served by the **V1 data engine** (chart default). The active Threadripper worker has two 450 GiB XFS filesystems: `/var/lib/longhorn` on its Talos/system disk and `/var/mnt/longhorn-nvme1` on its second disk. **V2/SPDK was tried and retired 2026-06-12** — it failed under full-DR restore load (open Longhorn 1.12 bugs #13315/#13314); forensics in git history; short version in `docs/disaster-recovery.md`. Do not re-enable V2 without a fixed release + a passed DR drill. |
+| `longhorn` | Distributed block storage — **cluster default**, served by the **V1 data engine** (chart default). The active Threadripper worker has three Longhorn disks: `/var/lib/longhorn` on its Talos/system disk, `/var/mnt/longhorn-nvme1` on its second (NVMe) disk, and `/var/mnt/longhorn-ssd-flash` (tag `flash`) on the enterprise-SATA RAID1 backing the `longhorn-flash` StorageClass. **V2/SPDK was tried and retired 2026-06-12** — it failed under full-DR restore load (open Longhorn 1.12 bugs #13315/#13314); forensics in git history; short version in `docs/disaster-recovery.md`. Do not re-enable V2 without a fixed release + a passed DR drill. |
 | `truenas-nfs` | Official TrueNAS CSI dynamic NFS (canary-gated, non-default) |
 | `nfs-comfyui-10g` | NFS 10G for ComfyUI models |
 | `nfs-llama-cpp-10g` | NFS 10G for LLM models |
@@ -12,9 +12,21 @@
 | `local-path` | Node-local fast storage |
 
 `truenas-nfs` provisions new datasets under `BigTank/k8s/nfs/v`. It does not
-replace static `nfs.csi.k8s.io` PVs for pre-existing data. TrueNAS CSI v1.0.4
-creates NFS shares with `mapall` semantics; run the documented ownership
-canary before adopting the class for a workload that runs as a non-root UID.
+replace static `nfs.csi.k8s.io` PVs for pre-existing data. TrueNAS CSI (pinned
+**v1.1.1**) creates NFS shares with `mapall` semantics; run the documented
+ownership canary before adopting the class for a workload that runs as a
+non-root UID.
+
+**Do not add a network-attached block tier for databases.** This was built and
+measured on 2026-07-13 (a `flashpool` of 3x enterprise SATA SSD on the NAS, exported
+over NVMe-oF/TCP) and **abandoned**. The driver worked, but sync writes do not survive
+the network hop: the same zvol did **2,510 fsync IOPS locally on the NAS and 437 over
+the wire** — only 1.7x better than Longhorn's 259, nowhere near the ~11x the local
+numbers implied. It is not the wire (RTT is 0.147ms); it is that every fsync becomes
+ext4-journal -> NVMe-oF FLUSH -> nvmet -> ZFS ZIL commit, each a round trip. A real SAN
+array hides this behind battery-backed NVRAM; a NAS running honest ZFS cannot.
+Databases fsync on every commit, so they are the **worst** workload to put behind a
+network. Put database flash **local to the node that runs them** instead.
 
 ## Longhorn PVC Template
 
@@ -97,9 +109,15 @@ Linux kernel (5.4+) defaults NFS `read_ahead_kb` to **128 KB**, limiting sequent
 |--------------|------------------|---------|---------------------|
 | `nvme0-vmstore` | `/dev/nvme0n1` (EDILOCA EN605 512GB NVMe) | Worker VM Disk 1 (`scsi0`) / Control Plane | LVM-Thin |
 | `nvme1-vmstore` | `/dev/nvme1n1` (EDILOCA EN605 512GB NVMe) | Worker VM Disk 2 (`scsi1`) | LVM-Thin |
-| `local-lvm` | `/dev/sda` (SanDisk SD7TB3Q 256GB SATA SSD) | Proxmox Boot & Host Storage | LVM-Thin |
+| `ssd-ent` | `/dev/md0` = mdadm RAID1 of 2× HPE MK000480GWCEV enterprise SATA SSD (PLP) | Worker VM Disk 3 → Longhorn `flash` disk (`longhorn-flash` StorageClass) | **thick LVM** (NOT thin) |
+| `local-lvm` | `/dev/sdb` (SanDisk SD7TB3Q 256GB SATA SSD) | Proxmox Boot & Host Storage | LVM-Thin |
 
-**LVM-Thin** is utilized to provide thin provisioning, preventing virtual disks from reserving their full size up front.
+**LVM-Thin** on the NVMe/boot pools gives thin provisioning. **`ssd-ent` is deliberately
+THICK LVM** — an lvmthin pool collapses fsync to ~170 IOPS (metadata commit per fsync,
+serialized), *worse* than the consumer NVMe it exists to beat; thick measured 3,069 IOPS
+vs 259 on the default class. Never recreate `ssd-ent` as lvmthin. The two enterprise SSDs
+sit on the X399 chipset SATA (not a dedicated HBA), which caps their sequential write at
+~65–92 MB/s — fine for the fsync-heavy workloads this tier is for, not for streaming writes.
 
 **EDILOCA EN605 note**: These are consumer NVMe SSDs; this repository has no
 verified evidence of enterprise power-loss protection or a particular DRAM

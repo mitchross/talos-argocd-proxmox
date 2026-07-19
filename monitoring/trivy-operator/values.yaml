@@ -9,10 +9,25 @@
 targetNamespaces: ""
 excludeNamespaces: "dvwa"
 
+# Redpanda (docker.redpanda.com) rate-limits unauthenticated pulls and has no
+# local runtime socket for the scanner to inspect — every scan attempt fails
+# identically. Exclude it to stop the endless retry cycle.
+trivyOperator:
+  excludeImages: "docker.redpanda.com/*/*"
+
 operator:
   # Low concurrency: at most 2 scan jobs at once. Homelab nodes, not a fleet.
   scanJobsConcurrentLimit: 2
   scanJobTimeout: 10m
+  # Default 30s retry creates a tight loop of OOMKilled/error scans. Back off
+  # to 15m so failed jobs don't hammer the node on every reconcile.
+  scanJobsRetryDelay: 15m
+  # Standalone mode is broken for multi-container workloads: the operator runs
+  # one Trivy process per workload container in the same scan pod and all share
+  # /tmp/trivy/.cache, so sibling containers hit BoltDB/cache flock timeouts.
+  # Built-in server mode centralizes the cache in one long-running server and
+  # turns scan jobs into clients, which is the current upstream workaround.
+  builtInTrivyServer: true
   # Do not grant cluster-wide Secret/ServiceAccount reads just to discover image
   # pull credentials. Current registries are public or anonymously readable
   # inside the cluster; revisit only if scans fail on private images.
@@ -47,6 +62,24 @@ serviceMonitor:
   labels:
     release: kube-prometheus-stack
 
+# Operator pod hardening. The chart defaults already drop capabilities and make
+# the root filesystem read-only, but do not set runAsNonRoot/seccomp.
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  runAsNonRoot: true
+  privileged: false
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  seccompProfile:
+    type: RuntimeDefault
+  capabilities:
+    drop:
+      - ALL
+
 # Operator deployment resources. Scan jobs have their own resources below.
 resources:
   requests:
@@ -57,16 +90,51 @@ resources:
     memory: 512Mi
 
 trivy:
+  image:
+    # Keep the scanner current while the chart default is still 0.71.1. The
+    # multi-container Standalone cache-lock bug still requires built-in server
+    # mode above; this tag alone is not enough.
+    tag: 0.72.0
+  # Server cache is disposable vulnerability DB/artifact cache. Use emptyDir so
+  # Trivy does not create a Longhorn PVC that would then need backup/exemption
+  # policy for data we can redownload.
+  storageClassEnabled: false
   # Hide vulnerabilities with no available fix — pure noise you can't action.
   ignoreUnfixed: true
   timeout: "10m0s"
+  server:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 1
+        memory: 1Gi
+    podSecurityContext:
+      runAsUser: 65534
+      runAsNonRoot: true
+      fsGroup: 65534
+      seccompProfile:
+        type: RuntimeDefault
+    securityContext:
+      runAsNonRoot: true
+      privileged: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      seccompProfile:
+        type: RuntimeDefault
+      capabilities:
+        drop:
+          - ALL
   resources:
     requests:
       cpu: 100m
       memory: 128Mi
     limits:
       cpu: 500m
-      memory: 512Mi
+      # Posthog images (worker, migrate, presenton) exceed 512Mi during analysis.
+      # Bump to 1Gi to avoid OOMKilled retry loops.
+      memory: 1Gi
 
 # The chart renders default ClusterComplianceReport specs unless this list is
 # empty. Keep compliance explicitly off in phase 1 so the app does not look like

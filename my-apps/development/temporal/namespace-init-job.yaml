@@ -33,7 +33,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: seed
-          image: temporalio/admin-tools:1.31.1
+          image: temporalio/admin-tools:1.31.2
           command: ["/bin/sh", "/scripts/seed-namespaces.sh"]
           volumeMounts:
             - name: seed-script
@@ -41,7 +41,7 @@ spec:
               readOnly: true
           resources:
             requests: { cpu: 100m, memory: 128Mi }
-            limits:   { cpu: 500m, memory: 512Mi }
+            limits:   { memory: 512Mi }
       volumes:
         - name: seed-script
           configMap:

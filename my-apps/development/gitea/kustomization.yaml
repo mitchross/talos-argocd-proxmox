@@ -6,6 +6,12 @@ resources:
 - httproute.yaml
 - externalsecret.yaml
 - kopiur/gitea-shared-storage.yaml
+# In-app Postgres (plain postgres + kopiur, replacing the CNPG gitea-database
+# cluster — cutover runbook: docs/domains/cnpg/plain-postgres-migration.md)
+- postgres/deployment.yaml
+- postgres/service.yaml
+- postgres/pvc.yaml
+- kopiur/gitea-postgres-data.yaml
 
 # Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub in kopiur/.
 components:
@@ -14,7 +20,7 @@ components:
 helmCharts:
 - name: gitea
   repo: https://dl.gitea.com/charts/
-  version: 12.6.0
+  version: 12.7.0
   releaseName: gitea
   namespace: gitea
   valuesFile: values.yaml

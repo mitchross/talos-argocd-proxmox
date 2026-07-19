@@ -29,6 +29,7 @@ resources:
   - custom-entrypoints/temporal-worker-controller-app.yaml
   - custom-entrypoints/opentelemetry-operator-app.yaml
   - custom-entrypoints/opentelemetry-operator-observability-app.yaml   # Wave 6 — OTel operator ServiceMonitor, after monitoring (split from otel core)
+  - custom-entrypoints/strimzi-app.yaml   # Wave 4 — Kafka CRDs/operator before wave-6 Kafka resources
 
   # ApplicationSet entrypoints: broad discovery after core dependencies are in place.
   - appsets/infrastructure-appset.yaml

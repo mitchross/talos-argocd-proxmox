@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kafka
+labels:
+  # Preserve the existing immutable selectors while ownership moves from the
+  # old wave-6 my-apps Application to this wave-4 infrastructure Application.
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/name: strimzi
+      app.kubernetes.io/managed-by: argocd
+helmCharts:
+  - name: strimzi-kafka-operator
+    repo: https://strimzi.io/charts/
+    version: 1.1.0
+    releaseName: strimzi
+    namespace: kafka
+    valuesFile: values.yaml
+    includeCRDs: true

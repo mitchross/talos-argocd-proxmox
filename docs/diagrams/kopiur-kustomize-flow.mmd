@@ -1,0 +1,85 @@
+---
+title: Kustomize assembles policy; Kubernetes runs backup and restore
+config:
+  layout: dagre
+---
+flowchart TB
+  accTitle: Kopiur Kustomize, backup, and restore flow
+  accDescr: A small per-PVC manifest and shared Kustomize Component render complete Kopiur resources. At runtime the schedule snapshots Longhorn, Kopia copies data to RustFS, and restore-before-bind hydrates replacement PVCs.
+
+  subgraph BUILD["BUILD TIME - DESIRED STATE"]
+    direction LR
+    STUB["`Per-PVC stub
+    identity, schedule, retention
+    mover UID and GID`"]
+    COMPONENT["`Shared Kustomize Component
+    repository, snapshot class
+    restore defaults, copy method`"]
+    KBUILD(("`Kustomize
+    build`"))
+    OUTPUT["`Rendered resources
+    SnapshotPolicy
+    SnapshotSchedule
+    Restore`"]
+    STUB stub@--> KBUILD
+    COMPONENT component@--> KBUILD
+    KBUILD rendered@--> OUTPUT
+  end
+
+  subgraph BACKUP["RUNTIME - SCHEDULED BACKUP"]
+    direction LR
+    SCHEDULE["`SnapshotSchedule
+    cron and retention`"]
+    JOB["`Kopiur Job
+    runs as data owner`"]
+    LONGHORN["`Longhorn snapshot
+    point-in-time volume`"]
+    KOPIA["`Kopia mover
+    content-addressed copy`"]
+    RUSTFS["`RustFS on TrueNAS
+    off-cluster repository`"]
+    SCHEDULE backup1@--> JOB
+    JOB backup2@--> LONGHORN
+    LONGHORN backup3@--> KOPIA
+    KOPIA backup4@--> RUSTFS
+  end
+
+  subgraph RESTORE["RUNTIME - RESTORE BEFORE BIND"]
+    direction LR
+    CLAIM["`Replacement PVC
+    dataSourceRef: Restore`"]
+    PENDING["`PVC Pending
+    application cannot start`"]
+    RMOVER["`Restore mover
+    hydrates from Kopia`"]
+    READY["`PVC Bound with data
+    application starts`"]
+    CLAIM restore1@--> PENDING
+    PENDING restore2@--> RMOVER
+    RMOVER restore3@--> READY
+  end
+
+  OUTPUT desired@-.-> SCHEDULE
+  OUTPUT contract@-.-> CLAIM
+  RUSTFS hydrate@--> RMOVER
+
+  classDef input fill:#fde8e8,stroke:#dc8c8c,color:#17212b
+  classDef desired fill:#e1f3e8,stroke:#7bc397,color:#17212b
+  classDef controller fill:#dff4f6,stroke:#70bcc4,color:#17212b
+  classDef external fill:#fff3df,stroke:#d8ad55,color:#17212b
+  class STUB input
+  class COMPONENT,OUTPUT,SCHEDULE,CLAIM,PENDING,READY desired
+  class KBUILD,JOB,LONGHORN,KOPIA,RMOVER controller
+  class RUSTFS external
+
+  stub@{ animation: fast }
+  component@{ animation: fast }
+  rendered@{ animation: fast }
+  backup1@{ animation: slow }
+  backup2@{ animation: slow }
+  backup3@{ animation: slow }
+  backup4@{ animation: slow }
+  restore1@{ animation: fast }
+  restore2@{ animation: fast }
+  restore3@{ animation: fast }
+  hydrate@{ animation: slow }

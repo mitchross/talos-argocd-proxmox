@@ -25,10 +25,18 @@ data:
   MRMS_PREFIX: "CONUS/MergedBaseReflectivityQC_00.50"
   FORECAST_HOURS: "18"
   EXTENDED_FORECAST_HOURS: "48"
+  # Radar is the priority product. Secondary HRRR weather layers stay behind
+  # this capacity flag; Open-Meteo serves their point forecasts meanwhile.
+  HRRR_ENABLED_LAYERS: "radar-hrrr"
   # nowcast
   NOWCAST_HORIZON_MIN: "60"
   NOWCAST_STEP_MIN: "5"
   NOWCAST_INPUT_FRAMES: "4"
+  NOWCAST_GRID_INPUT_LAYER: "radar-nowcast-input"
+  NOWCAST_SCIENCE_GRID_MAX_CELLS: "7000000"
+  NOWCAST_MAX_INPUT_GAP_MIN: "6"
+  # Never present a fading stationary copy as forecast motion.
+  NOWCAST_ALLOW_PERSISTENCE_FALLBACK: "0"
   # storm-watch + alerts
   WATCH_RADIUS_KM: "20"
   INTENSIFY_DBZ_DELTA: "10"

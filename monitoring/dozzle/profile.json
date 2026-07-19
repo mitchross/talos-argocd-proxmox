@@ -1,0 +1,22 @@
+{
+  "settings": {
+    "showTimestamp": true,
+    "showStd": true,
+    "showAllContainers": false,
+    "softWrap": true,
+    "collapseNav": false,
+    "smallerScrollbars": true,
+    "search": true,
+    "compact": true,
+    "menuWidth": 320,
+    "size": "small",
+    "lightTheme": "auto",
+    "hourStyle": "12",
+    "dateLocale": "en-US",
+    "locale": "en",
+    "groupContainers": "always"
+  },
+  "pinned": [],
+  "visibleKeys": [],
+  "collapsedGroups": []
+}

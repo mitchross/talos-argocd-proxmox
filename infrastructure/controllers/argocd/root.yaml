@@ -25,11 +25,16 @@ metadata:
   finalizers:
   - resources-finalizer.argocd.argoproj.io
 spec:
+  # project MUST stay `default` (which always exists). The named AppProjects
+  # (infrastructure/my-apps/monitoring) are created BY this app via
+  # projects.yaml — pointing root at one of them would deadlock a fresh
+  # bootstrap: root can't sync until the project exists, and the project
+  # only exists once root syncs.
   project: default
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
     path: infrastructure/controllers/argocd/apps
-    targetRevision: HEAD
+    targetRevision: main
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

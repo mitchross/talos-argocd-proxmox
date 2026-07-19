@@ -1,9 +1,83 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: kafka
-commonLabels:
-  app.kubernetes.io/name: kafka
-  app.kubernetes.io/managed-by: argocd
+labels:
+  # includeSelectors: true == the old commonLabels behavior (labels stamped on
+  # metadata, selectors, AND pod templates). Keep true: selectors are immutable
+  # on live Deployments/StatefulSets; flipping to false forces delete/recreate.
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/name: kafka
+      app.kubernetes.io/managed-by: argocd
 resources:
+  - namespace.yaml
   - kafka-cluster.yaml
   - topics.yaml
+  - demo-seed-job.yaml
+  - kafka-ui.yaml
+  - kopiur/kafka-data.yaml
+configMapGenerator:
+  # Keep executable logic and sample payloads out of Kubernetes YAML. The
+  # generated name hash automatically gives each Job revision its exact files.
+  - name: kafka-demo
+    files:
+      - seed-and-verify.sh=demo/seed-and-verify.sh
+      - events.jsonl=demo/events.jsonl
+    options:
+      annotations:
+        argocd.argoproj.io/sync-wave: "1"
+components:
+  - ../../common/kopiur-backup
+patches:
+  # The shared component defaults Restore to passive-populator mode. Strimzi
+  # owns the PVC manifest, so kopiur instead creates/restores the exact
+  # deterministic Strimzi claim before the wave-0 KafkaNodePool can start.
+  - target:
+      group: kopiur.home-operations.com
+      version: v1alpha1
+      kind: Restore
+      name: kafka-data-restore
+    patch: |-
+      - op: replace
+        path: /spec/target
+        value:
+          pvc:
+            name: data-0-dev-kafka-dual-role-0
+            # Replacements below overwrite these two values from the
+            # KafkaNodePool storage declaration. They remain syntactically
+            # valid here so this patch is independently readable.
+            storageClassName: longhorn
+            capacity: 20Gi
+            accessModes:
+              - ReadWriteOnce
+replacements:
+  # Keep restore capacity/class mechanically tied to immutable Strimzi volume
+  # 0. A future storage expansion cannot silently leave DR at the old size.
+  - source:
+      group: kafka.strimzi.io
+      version: v1
+      kind: KafkaNodePool
+      name: dual-role
+      fieldPath: spec.storage.volumes.0.size
+    targets:
+      - select:
+          group: kopiur.home-operations.com
+          version: v1alpha1
+          kind: Restore
+          name: kafka-data-restore
+        fieldPaths:
+          - spec.target.pvc.capacity
+  - source:
+      group: kafka.strimzi.io
+      version: v1
+      kind: KafkaNodePool
+      name: dual-role
+      fieldPath: spec.storage.volumes.0.class
+    targets:
+      - select:
+          group: kopiur.home-operations.com
+          version: v1alpha1
+          kind: Restore
+          name: kafka-data-restore
+        fieldPaths:
+          - spec.target.pvc.storageClassName

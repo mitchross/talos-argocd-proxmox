@@ -23,7 +23,7 @@ spec:
         fsGroup: 0
       containers:
         - name: kiwix
-          image: ghcr.io/kiwix/kiwix-serve:latest@sha256:50b8a6024f676e26ad23c7d47cc0ebb46b2009070f08b39ac56ab71027201885
+          image: ghcr.io/kiwix/kiwix-serve:latest@sha256:3726381c51838247db440eac9c08c739cb0483c3a448f02d93d5eb2988dce36c
           imagePullPolicy: IfNotPresent
           args:
             - "*.zim"
@@ -38,7 +38,6 @@ spec:
               cpu: 100m
               memory: 256Mi
             limits:
-              cpu: 2000m
               memory: 2Gi
           livenessProbe:
             httpGet:

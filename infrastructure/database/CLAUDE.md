@@ -1,5 +1,12 @@
 # Database Guidelines (CNPG CloudNativePG)
 
+> **Direction (2026-07-09): NEW databases do NOT go here.** They run as plain
+> Postgres + kopiur inside the owning app's directory (reference:
+> `my-apps/development/gitea/postgres/`; pattern + migration runbook:
+> [`docs/domains/cnpg/plain-postgres-migration.md`](../../docs/domains/cnpg/plain-postgres-migration.md)).
+> The four existing CNPG databases migrate off one at a time. Everything below
+> remains **fully in force for the unmigrated databases** — do not relax it early.
+
 > **Required reading before performing DR or modifying database backups:**
 > - [`docs/domains/cnpg/disaster-recovery.md`](../../docs/domains/cnpg/disaster-recovery.md) — canonical DR runbook, overlay pattern, troubleshooting
 

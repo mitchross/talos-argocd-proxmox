@@ -7,5 +7,10 @@ metadata:
     app.kubernetes.io/component: scheduling
 resources:
   - priority-classes.yaml
-commonLabels:
-  app.kubernetes.io/part-of: gpu-infrastructure
+labels:
+  # includeSelectors: true == the old commonLabels behavior (labels stamped on
+  # metadata, selectors, AND pod templates). Keep true: selectors are immutable
+  # on live Deployments/StatefulSets; flipping to false forces delete/recreate.
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/part-of: gpu-infrastructure
