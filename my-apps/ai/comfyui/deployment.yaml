@@ -23,6 +23,7 @@ spec:
       # Node selector for GPU nodes
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        gpu-worker: "true"
       runtimeClassName: nvidia
       priorityClassName: gpu-workload-preemptible
       tolerations:
