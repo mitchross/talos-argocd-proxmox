@@ -54,6 +54,12 @@ GPU workloads (vLLM, llama-cpp, ComfyUI) are **mutually-exclusive whole-card**
 once**. They **scale-swap**: bringing one up means scaling the others to
 `replicas: 0`.
 
+The production AI workloads are pinned to the existing `gpu-worker=true`
+label. The Wi-Fi Dell worker has a separate GTX 1050 Ti
+(`gpu-class=gtx-1050-ti`, 4 GiB VRAM) and deliberately does not carry that
+label, so it cannot receive these 24/48-GiB model workloads. A workload
+intended for that card must opt in with the Dell GPU class explicitly.
+
 - **Current state:** vLLM `replicas: 1`; llama-cpp and ComfyUI at `0`.
   (Current, not permanent — flip the committed replica counts to swap which
   workload owns the cards. Full procedure + card truth table:
@@ -81,6 +87,7 @@ spec:
       # Select GPU nodes
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        gpu-worker: "true"
 
       # NVIDIA runtime for CUDA
       runtimeClassName: nvidia

@@ -149,3 +149,4 @@ spec:
             sizeLimit: 8Gi
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        gpu-worker: "true"
