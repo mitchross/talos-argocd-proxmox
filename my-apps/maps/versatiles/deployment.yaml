@@ -107,7 +107,7 @@ spec:
       volumes:
         - name: map-data
           persistentVolumeClaim:
-            claimName: map-data
+            claimName: map-data-smb
         - name: config
           configMap:
             name: versatiles-config

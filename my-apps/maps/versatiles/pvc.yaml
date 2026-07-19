@@ -1,27 +1,80 @@
-# Holds the active planet archive plus headroom for the atomic download-then-
-# rename swap in job-bootstrap.yaml (peak usage during a refresh is ~2x the
-# archive: old file still active + new file in .tmp). Default longhorn (NVMe)
-# class, NOT longhorn-flash: tile serving is read-dominated random byte-range
-# IO, and the NVMe tier out-reads the flash tier (161k vs 68k random-read IOPS
-# — see infrastructure/storage/longhorn/storageclass-flash.yaml "WHEN NOT to
-# use it"). NOT NFS/SMB: random small reads on HDD-NFS are the documented
-# catastrophe case (docs/domains/storage/storage-tiers.md).
+# NAS-backed (TrueNAS SMB) storage for the planet archive — chosen for
+# NUKE-SURVIVAL, not speed: the cluster gets rebuilt often, and the archive +
+# bootstrap marker living on the NAS means a fresh cluster's bootstrap Job
+# sees them and exits in seconds instead of re-downloading 62GB. The NAS copy
+# IS the durable copy; no kopiur backup needed.
+#
+# Perf tradeoff (accepted, "start slow then move fast"): tile serving is
+# random byte-range reads, the slow case on HDD-backed SMB
+# (docs/domains/storage/storage-tiers.md). Personal-traffic tile loads +
+# cache=loose + OS page cache make it tolerable; if it ever feels slow the
+# upgrade path is a local NVMe cache/copy tier in front — NOT moving the
+# durable copy off the NAS.
+#
+# Static PV with a FIXED share path (comfyui pattern), NOT a dynamic *-smb
+# class: dynamic provisioning creates a fresh pvc-<uuid> subdir per PVC, so a
+# rebuilt cluster would get an empty new folder and silently re-download —
+# defeating the survival goal.
+#
+# PREREQ (one-time, manual): the folder must exist on TrueNAS before the
+# mount succeeds — create `versatiles` inside the `k8s` SMB share
+# (Finder: smb://192.168.10.133/k8s → New Folder "versatiles").
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: versatiles-smb-pv
+spec:
+  capacity:
+    storage: 150Gi  # nominal; SMB doesn't enforce quota here
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - dir_mode=0775
+    - file_mode=0664
+    - uid=1000
+    - gid=1000
+    - vers=3.1.1
+    # SMB multichannel (enabled server-side on TrueNAS): 4 channels over 10G.
+    - max_channels=4
+    - noserverino
+    - cache=loose
+    - rsize=4194304
+    - wsize=4194304
+    - actimeo=60
+    - echo_interval=60
+    - max_credits=64
+  csi:
+    driver: smb.csi.k8s.io
+    volumeHandle: versatiles-smb-pv
+    volumeAttributes:
+      source: "//192.168.10.133/k8s/versatiles"
+    nodeStageSecretRef:
+      name: smbcreds
+      namespace: csi-driver-smb
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: map-data
+  # -smb suffix: renamed from the original longhorn `map-data` when storage
+  # moved local→NAS. PVC spec (volumeName/storageClass) is immutable, so a
+  # rename lets ArgoCD create/prune cleanly instead of wedging on an
+  # in-place patch (same lesson as comfyui's NFS→SMB move).
+  name: map-data-smb
   namespace: versatiles
   labels:
     backup-exempt: "true"
   annotations:
     storage.vanillax.dev/backup-exempt-reason: >-
-      ~62GB VersaTiles planet archive; re-downloadable from
-      download.versatiles.org by the map-bootstrap hook Job (sha256-verified);
-      backing it up would waste 62GB of kopia repo on public data
+      lives on the TrueNAS k8s/versatiles SMB share, which is itself the
+      durable cross-rebuild copy; also re-downloadable from
+      download.versatiles.org (sha256-verified) if the NAS copy is lost
 spec:
   accessModes:
-    - ReadWriteOnce
-  storageClassName: longhorn
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: versatiles-smb-pv
   resources:
     requests:
       storage: 150Gi
