@@ -4,9 +4,9 @@
 # Without this DS, the RTX 3090s run at their default limit of 420W each
 # (~840W total across both cards on this node).
 #
-# This DaemonSet runs on every GPU node and reapplies
-# `nvidia-smi -pl <watts>` to every GPU every five minutes. The loop restores
-# the setting after a driver reload without requiring the pod to restart.
+# This DaemonSet runs only on the dual-RTX-3090 worker and reapplies
+# `nvidia-smi -pl <watts>` every five minutes. The Dell GTX 1050 Ti does not
+# carry the `gpu-worker=true` label and must not receive the 3090's 290W cap.
 #
 # Valid range on RTX 3090: ~100W (min) .. 450W (max). Default is 420W.
 # We cap at 290W — the measured air-cooled decode-efficiency knee:
@@ -37,10 +37,11 @@ spec:
     spec:
       # CDI-injected nvidia-smi is available when runtimeClassName is "nvidia"
       runtimeClassName: nvidia
-      # Only schedule on nodes with at least one NVIDIA GPU.
-      # This label is set by the GPU Operator's node-feature-discovery.
+      # Only schedule on the established RTX worker. NFD's generic NVIDIA
+      # label alone would also match the Dell GTX 1050 Ti.
       nodeSelector:
         nvidia.com/gpu.present: "true"
+        gpu-worker: "true"
       # Match the rest of the GPU stack's tolerations so this DS is
       # allowed onto tainted GPU nodes.
       tolerations:

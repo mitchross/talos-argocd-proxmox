@@ -21,6 +21,7 @@ spec:
       # comfyui is scaled to replicas:0.
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        gpu-worker: "true"
       runtimeClassName: nvidia
       priorityClassName: gpu-workload-preemptible
       tolerations:

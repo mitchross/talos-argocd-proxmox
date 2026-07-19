@@ -94,9 +94,9 @@ patches:
           bind-address: "0.0.0.0"
 ---
 kind: Workers
-name: dell-cpu-workers
+name: dell-gpu-workers
 machineClass:
-  name: libvirt-dell-single-node
+  name: proxmox-dell-gpu
   size: 1
 systemExtensions:
 - siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
@@ -104,21 +104,24 @@ systemExtensions:
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 - siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
+# The GTX 1050 Ti is Pascal. NVIDIA moved Pascal off the unified production
+# driver after R580, so the 595.x *-production extensions used by the RTX 3090
+# worker cannot drive it. Keep this pair on the matching 580.x LTS branch.
+- siderolabs/nonfree-kmod-nvidia-lts # renovate: datasource=docker depName=siderolabs/nonfree-kmod-nvidia-lts
+- siderolabs/nvidia-container-toolkit-lts # renovate: datasource=docker depName=siderolabs/nvidia-container-toolkit-lts
 patches:
-- name: libvirt-worker
+- name: dell-proxmox-gpu-worker
   inline:
     machine:
-      # The cluster-wide Proxmox default is /dev/sda; libvirt exposes virtio
-      # disks as /dev/vda, so this worker set must override the install disk.
-      install:
-        disk: /dev/vda
-      # Static address, NOT DHCP: the VM reaches the LAN through an ASUS
-      # media bridge (proxy-STA), which forwards unicast for secondary MACs
-      # but silently breaks DHCP for every MAC after the first. Static-in-git
-      # also survives VM replacement (new MAC, same address).
+      # Static-in-git address: survives VM replacement (new MAC, same address)
+      # and gives the AX86U media bridge one stable IP to ARP-learn — its L3
+      # filter only forwards inbound unicast for learned bindings. (DHCP does
+      # work through the bridge — the ISO registration phase relies on it —
+      # but a DHCP-leased node address would move on every reprovision.)
       network:
         interfaces:
-        - interface: eth0
+        - deviceSelector:
+            physical: true
           dhcp: false
           addresses:
           - 192.168.10.119/24
@@ -126,8 +129,10 @@ patches:
           - network: 0.0.0.0/0
             gateway: 192.168.10.1
       nodeLabels:
-        node.vanillax.dev/class: dell-cpu
+        node.vanillax.dev/class: dell-gpu
+        node.vanillax.dev/gpu-class: gtx-1050-ti
         topology.kubernetes.io/zone: yard
+- file: patches/gpu-worker.yaml
 ---
 kind: Workers
 name: gpu-workers
@@ -147,6 +152,7 @@ patches:
       nodeLabels:
         gpu-worker: "true"
         nvidia.com/gpu: "true"
+        node.vanillax.dev/gpu-class: rtx-3090
 - name: longhorn-node-disks
   inline:
     machine:

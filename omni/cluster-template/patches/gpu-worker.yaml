@@ -1,13 +1,8 @@
-# GPU Worker Talos Configuration
-# Network topology (2026-06-11): single virtio NIC on vmbr1, Main LAN
-# 192.168.10.x (DHCP). The DL360 Gen9 host has ONE fiber uplink — there is
-# no dedicated TrueNAS/storage link anymore; LAN + storage (NFS/RustFS at
-# 192.168.10.133) share that uplink.
-# DHCP is Talos's DEFAULT on all physical links — do NOT pin a DHCPv4Config
-# to an interface name: PCIe enumeration shifts when VM hardware changes
-# (the 2026-06-11 second-disk addition moved the NIC off ens18 and the
-# pinned config left the node IP-less and unreachable; fix required a
-# reprovision). nodeIP.validSubnets below handles address selection instead.
+# Shared GPU worker Talos configuration. The worker set owns its DHCP/static
+# address policy; this patch only constrains kubelet address selection and
+# loads the NVIDIA modules required by both the RTX 3090 and GTX 1050 Ti VMs.
+# Do not pin DHCP to a PCI-derived interface name: passthrough hardware can
+# reorder the virtual NIC. nodeIP.validSubnets is stable across that reshuffle.
 machine:
   kubelet:
     nodeIP:

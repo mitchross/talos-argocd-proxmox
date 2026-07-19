@@ -8,6 +8,8 @@ omni/omni.env
 omni/.env
 proxmox-provider/.env
 proxmox-provider/config.yaml
+proxmox-provider-dell/.env
+proxmox-provider-dell/config.yaml
 
 # GPG keys (encryption keys for etcd)
 *.asc
