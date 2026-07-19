@@ -14,9 +14,10 @@ VE host managed by Omni's Proxmox infrastructure provider.
 
 **Scope:** add one replaceable Talos worker VM to
 `talos-singlenode-gpu-prod`. The Dell remains behind the ASUS RT-AX86U media
-bridge, owns no Longhorn replicas, and is not eligible for the large RTX 3090
-AI workloads. This procedure does not change the existing control plane,
-Threadripper GPU worker, storage, Cilium VXLAN mode, or application replicas.
+bridge, contributes reserved space from its Talos system disk to Longhorn, and
+is not eligible for the large RTX 3090 AI workloads. This procedure does not
+change the existing control plane, Threadripper GPU worker, Longhorn replica
+counts, Cilium VXLAN mode, or application replicas.
 
 ![Omni provisions the Wi-Fi Proxmox Talos GPU worker](../../assets/wifi-proxmox-worker-routing.svg)
 
@@ -34,6 +35,19 @@ machine set owns the stable node address and GPU driver branch.*
 | PCI mapping | `gpu-1050ti`, all GPU functions | Proxmox Datacenter resource mapping |
 | Talos worker | Static `192.168.10.119` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
 | GPU class | `node.vanillax.dev/gpu-class=gtx-1050-ti` | same cluster template |
+| Longhorn disk | `/var/lib/longhorn` on the existing 100 GiB system disk; 30 GiB reserved | same cluster template |
+
+The Dell has one 251 GB physical SSD. Proxmox allocates about 138 GiB of it to
+the `local-lvm` thin pool, and the Talos VM already has a 100 GiB thin disk.
+Do not add a nominal 200 GiB virtual disk: it would exceed the physical pool
+and turn normal Longhorn growth into a host-wide thin-pool exhaustion risk.
+Longhorn instead uses the existing Talos disk through a kubelet bind mount,
+with 30 GiB reserved for Talos, images, and operational headroom.
+
+This adds a storage target, not replication by itself. The current `longhorn`
+StorageClass and all existing volumes request one replica. Moving selected
+volumes to two replicas is a separate decision because synchronous writes to
+the Dell cross the Wi-Fi media bridge and Cilium VXLAN path.
 
 The machine class deliberately carries **no** `ip=` kernel argument
 (`kernelargs: []`). Two findings from the first provisioning attempt
@@ -209,11 +223,11 @@ Only after the dry run is clean:
 omnictl cluster template sync -v -f cluster-template-singlenode-gpu.yaml
 ```
 
-Watch the Omni machine request and the Dell provider logs. The VM should boot
-with the kernel-argument address, join Omni, install Talos to `/dev/sda`, apply
-the full static network configuration, install the 580 LTS extensions, and
-reboot. A system-extension reboot is expected; wait for desired and current
-schematic IDs to match before intervening.
+Watch the Omni machine request and the Dell provider logs. The VM should use a
+temporary DHCP lease while booting the ISO, join Omni, install Talos to
+`/dev/sda`, apply the full static network configuration, install the 580 LTS
+extensions, and reboot. A system-extension reboot is expected; wait for
+desired and current schematic IDs to match before intervening.
 
 ## Verification
 
@@ -223,6 +237,8 @@ kubectl get nodes -o wide -L node.vanillax.dev/class,node.vanillax.dev/gpu-class
 kubectl get node -l node.vanillax.dev/gpu-class=gtx-1050-ti \
   -o jsonpath='{.items[0].status.capacity.nvidia\.com/gpu}{"\n"}'
 kubectl -n gpu-operator get pods -o wide
+kubectl -n longhorn-system get nodes.longhorn.io \
+  talos-singlenode-gpu-prod-dell-gpu-workers-qg4pgk -o yaml
 talosctl -n 192.168.10.119 get extensions
 talosctl -n 192.168.10.119 read /proc/driver/nvidia/version
 ```
@@ -235,7 +251,9 @@ Expected:
 - both installed NVIDIA extensions are the same `580.159.04` driver branch;
 - the `nvidia-powerlimit` DaemonSet remains only on the RTX 3090 worker;
 - Cilium node/endpoint health succeeds in every direction over VXLAN;
-- the Dell owns no Longhorn disks or replicas.
+- Longhorn reports a schedulable `talos-ephemeral` disk at
+  `/var/lib/longhorn` with `storageReserved: 32212254720`; existing volumes
+  remain at one replica until their replica policy is changed explicitly.
 
 Test the card only with a small CUDA image or a workload explicitly selecting
 `gpu-class=gtx-1050-ti`. Do not use the production LLM deployments as a test.
@@ -248,6 +266,7 @@ Test the card only with a small CUDA image or a workload explicitly selecting
 | VM will not start | provider logs, mapping path, IOMMU group, `vfio-pci` binding | Fix the host mapping/binding before retrying |
 | NVIDIA modules fail | installed extension versions and `/proc/driver/nvidia/version` | Confirm both extensions use `-lts`; never pair LTS with production |
 | Large AI pod targets Dell | pod node selector and `gpu-worker` label | Restore `gpu-worker=true` on the workload before scaling it |
+| Dell Longhorn disk is absent | node label/annotation and Talos kubelet extra mount | Confirm the `dell-longhorn-system-disk` patch reached the node; do not create the disk manually in the Longhorn UI |
 | Cross-node pod traffic fails | Cilium tunnel map and UDP 8472 between node IPs | Restore VXLAN reachability; do not add PodCIDR routes |
 
 To roll back, remove the `dell-gpu-workers` document (or set its size to zero)
@@ -255,6 +274,10 @@ in the cluster template, validate, dry-run, and sync. Omni deprovisions only
 the provider-owned Dell VM. Leave the Proxmox host and PCI mapping intact for
 diagnosis. Delete the `proxmox-dell` provider identity only after its container
 is stopped and no machine request references it.
+
+Before removing only the Dell Longhorn disk configuration, disable scheduling
+on that disk and wait for every replica to evacuate. Removing the label,
+annotation, or kubelet mount while replicas remain is a data-loss operation.
 
 ## Upstream references
 

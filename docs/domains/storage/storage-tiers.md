@@ -5,7 +5,7 @@ which app uses them. Pick a class by the volume's access pattern.
 
 | Class | Backing hardware | Character | Use for |
 |-------|------------------|-----------|---------|
-| `longhorn` (**default**) | Proxmox 2× EDILOCA NVMe (LVM) | fast local, **read-strong**, RWO | app state, caches, read-heavy volumes, big sequential-write DBs (ClickHouse, Prometheus TSDB, Loki) |
+| `longhorn` (**default**) | Threadripper EDILOCA NVMe plus the Dell Talos system SSD | local RWO; Threadripper tier is **read-strong**, Dell is a small Wi-Fi-site failure domain | app state, caches, read-heavy volumes, big sequential-write DBs (ClickHouse, Prometheus TSDB, Loki) |
 | `longhorn-flash` | Proxmox 2× enterprise SATA SSD, PLP, mdadm RAID1, **thick** LVM | fast local flash, **write-strong** (PLP), RWO | anything fsync-heavy: Postgres/MySQL commits, WAL, Kafka, Redis AOF, message queues |
 | `truenas-nfs` | TrueNAS HDD (BigTank) | network bulk, **RWX** | shared volumes, rebuildable tile/grid caches |
 | `*-smb` / static NFS | TrueNAS HDD / ai-pool SSD | network SMB/NFS shares | media libraries, model weights, hand-browsable data |
@@ -144,6 +144,10 @@ This is also what modern Kubernetes-on-metal actually does — OpenShift Data Fo
 and vSAN all pool **local** NVMe and replicate in software, rather than front a SAN. Kubernetes
 already handles replication at the app layer; shared-array semantics are redundant.
 
-## The real single point of failure (unchanged by any of this)
+## The real single point of failure (unchanged until replica policy changes)
 
-`defaultClassReplicaCount: 1` on a single worker node. No storage protocol fixes that.
+The Dell provides a second schedulable Longhorn disk, but the `longhorn`
+StorageClass and existing volumes still request one replica. Capacity on two
+nodes is not redundancy: selected volumes must move to two replicas before
+they survive losing either Proxmox host. That trade-off is explicit because
+the second synchronous replica crosses the Wi-Fi media bridge.

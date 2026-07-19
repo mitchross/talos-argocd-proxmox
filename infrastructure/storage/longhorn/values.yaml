@@ -8,9 +8,11 @@
 # interrupted rebuilds permanently poison replica metadata; re-crash after
 # auto-reattach). V1 is upstream's default engine, still actively maintained,
 # and ran this cluster stably for months before the V2 rebuild. Data path is
-# two filesystem paths configured by the active single-node template:
-# /var/lib/longhorn (bind-mounted from /var/local/longhorn on scsi0) and
-# /var/mnt/longhorn-nvme1 (a Talos user volume on scsi1). Engines cannot be
+# filesystem paths declared by the active cluster template. The Threadripper
+# worker provides /var/lib/longhorn (scsi0), /var/mnt/longhorn-nvme1 (scsi1),
+# and the flash-tagged /var/mnt/longhorn-ssd-flash; the Dell worker provides a
+# smaller /var/lib/longhorn target on its 100 GiB Talos system disk. Engines
+# cannot be
 # flipped on a live cluster with attached volumes — this config is applied via
 # nuke + rebuild with restore-from-backup (the proven DR flow).
 # History: V2 forensics in git history; short version in docs/disaster-recovery.md.
@@ -23,14 +25,15 @@ defaultSettings:
   # cluster template, so Longhorn registers BOTH disks on fresh bootstrap. Without
   # this, Longhorn ignores the annotation and only creates defaultDataPath.
   createDefaultDiskLabeledNodes: "true"
-  # The annotation already sets storageReserved:0 per disk; Longhorn 1.12 also
-  # applies this global % to annotation-created default disks, so keep it 0 (the
-  # real physical guard is storageMinimalAvailablePercentage above).
+  # Disk annotations own their reservations: Threadripper disks use 0, while
+  # the Dell system disk reserves 30 GiB. Keep the global percentage at 0 so it
+  # does not add a second, implicit reservation on top of those declarations.
   storageReservedPercentageForDefaultDisk: "0"
-  # Single-node: declared Longhorn capacity exceeds the two 450 GiB thin-backed
-  # filesystems. 600% permits those declarations; actual free space remains
-  # protected by storageMinimalAvailablePercentage: 10. This is a scheduling
-  # band-aid, not extra physical capacity; offload bulk data to NFS.
+  # Declared Longhorn capacity exceeds the Threadripper's two 450 GiB thin-
+  # backed filesystems. 600% permits those declarations; actual free space
+  # remains protected by storageMinimalAvailablePercentage: 10 and the Dell's
+  # explicit 30 GiB reservation. This is a scheduling band-aid, not extra
+  # physical capacity; offload bulk data to NFS.
   storageOverProvisioningPercentage: "600"
   allowRecurringJobWhileVolumeDetached: "true"
   replicaAutoBalance: "best-effort"
@@ -71,9 +74,8 @@ defaultSettings:
   # createDefaultDiskLabeledNodes + storageReservedPercentageForDefaultDisk
   # (all V2-block-disk plumbing). With V1, Longhorn auto-creates its default
   # filesystem disk at defaultDataPath (/var/lib/longhorn) on every labeled
-  # node. The active template's annotation registers that path plus the second
-  # filesystem at /var/mnt/longhorn-nvme1, both with storageReserved: 0; the
-  # 10% minimal-available guard above protects real free space.
+  # node. Per-node annotations declare each worker's paths and reservations;
+  # the 10% minimal-available guard above remains the final free-space stop.
 # -- Disables the pre-upgrade check job. This is recommended for GitOps tools
 # like ArgoCD to prevent sync failures.
 preUpgradeChecker:
@@ -88,13 +90,11 @@ persistence:
   # default) — the `dataEngine: v2` routing was removed 2026-06-12.
   defaultClass: true
   # -- Default number of replicas for volumes.
-  # SINGLE-NODE cluster (2950X Threadripper box, single-node-talos-gpu machine
-  # class): MUST be 1. With replica >1 on one node, Longhorn's default replica
-  # anti-affinity has nowhere to place the extra replicas, so every volume stays
-  # Degraded forever. Node-failure resilience is N/A with a single node anyway —
-  # off-cluster durability comes from kopiur/Kopia backups to RustFS S3.
-  # (Was 2 for the multi-node DL360 cluster, where Longhorn served from a
-  # surviving replica on another node; restore that value if you scale back out.)
+  # Keep new volumes at one replica even after adding the Dell storage target.
+  # A second replica would synchronously place writes across the Wi-Fi media
+  # bridge, changing latency and rebuild behavior for every default-class PVC.
+  # Promote selected volumes/classes to two only after measuring that path.
+  # Off-cluster durability remains kopiur/Kopia backups to RustFS S3.
   defaultClassReplicaCount: 1
   # -- Default filesystem type.
   defaultFsType: ext4
@@ -105,6 +105,6 @@ persistence:
 # separate HTTPRoute resource.
 ingress:
   enabled: false
-# Single node: 1 UI replica (chart default 2 buys no HA on one node).
+# One operator-facing UI replica is sufficient for this homelab.
 longhornUI:
   replicas: 1
