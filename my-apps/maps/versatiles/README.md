@@ -90,15 +90,13 @@ alerts).
 - `https://maps.vanillax.me/tiles/osm/tiles.json` — TileJSON for the planet
   source (id = filename stem `osm`)
 - `https://maps.vanillax.me/tiles/osm/{z}/{x}/{y}` — vector tiles (pbf)
-- `https://maps.vanillax.me/assets/styles/<style_id>/style.json` — MapLibre
-  styles; `https://maps.vanillax.me/assets/glyphs/…`, `…/assets/sprites/…`
-  — fonts and sprites
-
-> **TODO (fill in after first live deploy):** the exact shipped `style_id`
-> list (expected: the VersaTiles `colorful` / `graybeard` / `eclipse` /
-> `neutrino` family) — verify with
-> `curl -s https://maps.vanillax.me/assets/styles/index.json` (or browse
-> `/assets/`) and replace this note with the real URLs.
+- `https://maps.vanillax.me/assets/glyphs/index.json`, `…/assets/sprites/index.json`
+  — fonts and sprites (verified live)
+- `https://maps.vanillax.me/assets/lib/versatiles-style/versatiles-style.js`
+  — the style **library**. Verified live 2026-07-19: the v4.6 frontend has NO
+  static `style.json` URLs — styles (`colorful`, `eclipse`, `graybeard`,
+  `neutrino`, `shadow`) are built **client-side** by `VersaTilesStyle`, which
+  points sources/glyphs/sprites at this host automatically.
 
 ## CORS
 
@@ -116,15 +114,24 @@ future custom frontend.
 ## Future RadarNG integration (documentation only — NOT wired up)
 
 RadarNG stays batteries-included upstream (bundled basemap default). The
-clean integration contract for *this* deployment is a MapLibre **style URL**,
-which encapsulates tile sources, glyphs, sprites, layers, and attribution:
+clean integration contract is a MapLibre **style**. Two working options
+(verified against the live instance):
 
-```env
-RADAR_BASEMAP_LIGHT_STYLE_URL=https://maps.vanillax.me/assets/styles/<light-style-id>/style.json
-RADAR_BASEMAP_DARK_STYLE_URL=https://maps.vanillax.me/assets/styles/<dark-style-id>/style.json
+1. **Client-side build** (what the upstream frontend itself does):
+
+```js
+import { colorful } from 'https://maps.vanillax.me/assets/lib/versatiles-style/versatiles-style.js';
+map.setStyle(colorful({ baseUrl: 'https://maps.vanillax.me', tiles: ['https://maps.vanillax.me/tiles/osm/{z}/{x}/{y}'] }));
+// dark variant: eclipse(...); grayscale: graybeard(...); minimal: neutrino(...)
 ```
 
-(Real style IDs go in once verified live — see TODO above.) That keeps RadarNG
+2. **Static style URL** (the cleaner `RADAR_BASEMAP_*_STYLE_URL` contract):
+   not served by the v4.6 frontend — to offer it, generate style JSONs once
+   with the `versatiles-style` npm package and serve them as extra static
+   content. Do this WHEN RadarNG integration actually starts, not before.
+
+CORS is verified live: `radar.vanillax.me` gets `access-control-allow-origin`;
+unlisted origins get nothing. That keeps RadarNG
 ignorant of whether the backend is VersaTiles, Protomaps, or Martin. The
 radar-ng app in this repo is intentionally untouched by this deployment.
 
