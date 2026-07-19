@@ -133,6 +133,28 @@ patches:
         node.vanillax.dev/gpu-class: gtx-1050-ti
         topology.kubernetes.io/zone: yard
 - file: patches/gpu-worker.yaml
+- name: dell-longhorn-system-disk
+  inline:
+    machine:
+      # The Dell has one 251GB physical SSD and its local-lvm pool is only
+      # ~138GiB. Reuse the VM's existing 100GB Talos disk instead of thin-
+      # provisioning a second virtual disk larger than the physical pool.
+      nodeLabels:
+        node.longhorn.io/create-default-disk: "config"
+      nodeAnnotations:
+        # Reserve 30GiB for Talos, container images, and operational headroom.
+        # Longhorn values storageReserved in bytes.
+        node.longhorn.io/default-disks-config: >-
+          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":true,"diskType":"filesystem","storageReserved":32212254720,"tags":[]}]
+      kubelet:
+        extraMounts:
+        - destination: /var/lib/longhorn
+          type: bind
+          source: /var/local/longhorn
+          options:
+          - bind
+          - rshared
+          - rw
 ---
 kind: Workers
 name: gpu-workers

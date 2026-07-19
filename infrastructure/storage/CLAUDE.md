@@ -4,7 +4,7 @@
 
 | Class | Use Case |
 |-------|----------|
-| `longhorn` | Distributed block storage — **cluster default**, served by the **V1 data engine** (chart default). The active Threadripper worker has three Longhorn disks: `/var/lib/longhorn` on its Talos/system disk, `/var/mnt/longhorn-nvme1` on its second (NVMe) disk, and `/var/mnt/longhorn-ssd-flash` (tag `flash`) on the enterprise-SATA RAID1 backing the `longhorn-flash` StorageClass. **V2/SPDK was tried and retired 2026-06-12** — it failed under full-DR restore load (open Longhorn 1.12 bugs #13315/#13314); forensics in git history; short version in `docs/disaster-recovery.md`. Do not re-enable V2 without a fixed release + a passed DR drill. |
+| `longhorn` | Distributed block storage — **cluster default**, served by the **V1 data engine** (chart default). The Threadripper worker has three Longhorn disks: `/var/lib/longhorn` on its Talos/system disk, `/var/mnt/longhorn-nvme1` on its second (NVMe) disk, and `/var/mnt/longhorn-ssd-flash` (tag `flash`) on the enterprise-SATA RAID1 backing the `longhorn-flash` StorageClass. The Dell worker also contributes `/var/lib/longhorn` from its 100 GiB Talos system disk with 30 GiB reserved; it does not have a `flash` disk. **V2/SPDK was tried and retired 2026-06-12** — it failed under full-DR restore load (open Longhorn 1.12 bugs #13315/#13314); forensics in git history; short version in `docs/disaster-recovery.md`. Do not re-enable V2 without a fixed release + a passed DR drill. |
 | `truenas-nfs` | Official TrueNAS CSI dynamic NFS (canary-gated, non-default) |
 | `nfs-comfyui-10g` | NFS 10G for ComfyUI models |
 | `nfs-llama-cpp-10g` | NFS 10G for LLM models |
