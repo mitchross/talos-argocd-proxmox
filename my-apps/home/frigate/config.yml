@@ -54,6 +54,12 @@ ffmpeg:
   # profile per stream. Detection stays OpenVINO-on-CPU — Frigate 0.17's
   # TensorRT detector needs Turing+, not Pascal.
   hwaccel_args: preset-nvidia
+# Cameras use preset-rtsp-restream (NOT the -low-latency variant): go2rtc's
+# nest producers cold-start on first consumer, and the low-latency preset's
+# nobuffer probing gives up before the Nest WebRTC negotiation finishes —
+# every camera then loops "Invalid data found when processing input" forever
+# (verified live 2026-07-19: warming a producer via the go2rtc API instantly
+# unstuck the camera). The patient preset rides out the cold start.
 # go2rtc with Nest cameras via direct SDM API
 # Using the correct echo:curl syntax from official documentation
 go2rtc:
@@ -92,7 +98,7 @@ cameras:
   backyard:
     enabled: true
     ffmpeg:
-      input_args: preset-rtsp-restream-low-latency
+      input_args: preset-rtsp-restream
       inputs:
       - path: rtsp://127.0.0.1:8554/backyard-nest?video
         roles:
@@ -114,7 +120,7 @@ cameras:
   garage-inside:
     enabled: true
     ffmpeg:
-      input_args: preset-rtsp-restream-low-latency
+      input_args: preset-rtsp-restream
       inputs:
       - path: rtsp://127.0.0.1:8554/garage-inside-nest?video
         roles:
@@ -134,7 +140,7 @@ cameras:
   garage-outside:
     enabled: true
     ffmpeg:
-      input_args: preset-rtsp-restream-low-latency
+      input_args: preset-rtsp-restream
       inputs:
       - path: rtsp://127.0.0.1:8554/garage-outside-nest?video
         roles:
@@ -154,7 +160,7 @@ cameras:
   front-porch:
     enabled: true
     ffmpeg:
-      input_args: preset-rtsp-restream-low-latency
+      input_args: preset-rtsp-restream
       inputs:
       - path: rtsp://127.0.0.1:8554/front-porch-nest?video
         roles:
@@ -189,7 +195,7 @@ cameras:
   living-room:
     enabled: true
     ffmpeg:
-      input_args: preset-rtsp-restream-low-latency
+      input_args: preset-rtsp-restream
       inputs:
       - path: rtsp://127.0.0.1:8554/living-room-nest?video
         roles:
@@ -210,7 +216,7 @@ cameras:
   kitchen:
     enabled: true
     ffmpeg:
-      input_args: preset-rtsp-restream-low-latency
+      input_args: preset-rtsp-restream
       inputs:
       - path: rtsp://127.0.0.1:8554/kitchen-nest?video
         roles:
