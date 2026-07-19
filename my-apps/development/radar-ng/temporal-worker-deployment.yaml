@@ -47,11 +47,18 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
+        # fsGroup REQUIRED: tiles/grids/state moved to longhorn-flash RWO (ext4)
+        # on 2026-07-15. Fresh Longhorn block volumes mount root:root, so a
+        # non-root (uid 1000) worker cannot write — unlike the previous
+        # truenas-nfs class, which mapped all access to root and masked this.
+        # fsGroup makes the kubelet chown the volume group-writable to gid 1000.
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.15
+          image: ghcr.io/mitchross/radar-ng-temporal-worker:v1.1.22
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
@@ -83,6 +90,13 @@ spec:
             # file for the secret/volume blocks that were removed).
             - name: PUSH_DISABLED
               value: "1"
+            # Compatibility gate for the role-aware worker release. The
+            # single WorkerDeployment remains on the legacy queue until the
+            # isolated pools are rolled out in the documented order.
+            - name: WORKER_ROLE
+              value: legacy
+            - name: USE_ISOLATED_TASK_QUEUES
+              value: "0"
           envFrom:
             - configMapRef: { name: radar-ng-temporal-config }
           volumeMounts:

@@ -6,7 +6,8 @@ spec:
   selector:
     app: karakeep-chrome
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 9222
       targetPort: 9222
   type: ClusterIP

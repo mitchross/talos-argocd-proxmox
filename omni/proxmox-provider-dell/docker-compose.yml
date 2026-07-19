@@ -1,0 +1,21 @@
+services:
+  omni-infra-provider-proxmox-dell:
+    # Second instance of the Sidero Proxmox provider, pointed at the Dell
+    # Proxmox host (192.168.10.16) and registered in Omni as provider id
+    # "proxmox-dell". Same digest-pinning rationale as omni/proxmox-provider/
+    # (Sidero ships :latest only; pin by content digest, Renovate tracks it).
+    image: ghcr.io/siderolabs/omni-infra-provider-proxmox:latest@sha256:96433a9747ffc2649b5be114bc6bd8034cc59972e21e73297c8b619940bcc5bf
+    container_name: omni-infra-provider-proxmox-dell
+    env_file:
+      - .env
+    volumes:
+      - ./config.yaml:/config.yaml:ro
+    command: >
+      --config-file /config.yaml
+      --omni-api-endpoint ${OMNI_API_ENDPOINT}
+      --omni-service-account-key ${OMNI_INFRA_PROVIDER_KEY}
+      --id proxmox-dell
+      --provider-name "Proxmox Dell"
+      --provider-description "Proxmox infrastructure provider - Dell host (1050 Ti)"
+    restart: unless-stopped
+    network_mode: host

@@ -74,10 +74,9 @@ spec:
         pauseDuration: 5m                     # hold 5 minutes
       # the final 100% is implicit after the last step's pause
   sunset:
-    # Once the new version owns 100% of NEW work, how long to keep the
-    # old version's Pods alive so any still-running (typically PINNED)
-    # workflows can finish on their original build_id; then how long
-    # before the controller deletes the old Deployment.
+    # Temporal first keeps the old version in Draining while any PINNED
+    # workflow can still reach it. Only after it reports Drained do these
+    # delays control scale-down and deletion of the old Deployment.
     scaledownDelay: 10m
     deleteDelay: 1h
   template:
@@ -85,6 +84,14 @@ spec:
       labels:
         app: news-reader-temporal-worker
     spec:
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: worker
           # Versioned tag — Renovate auto-PRs bumps when the monorepo build at
@@ -93,8 +100,8 @@ spec:
           # The Temporal Worker Controller turns each tag bump into a
           # new build_id + progressive worker rollout. Do NOT pin to
           # :latest here — the controller cannot tell two pushes apart.
-          image: registry.vanillax.me/news-reader-temporal-worker:v1.0.7
-          imagePullPolicy: Always
+          image: registry.vanillax.me/news-reader-temporal-worker:v1.0.12
+          imagePullPolicy: IfNotPresent
           # The controller injects four env vars into every Pod it creates:
           #   TEMPORAL_ADDRESS         — from spec.workerOptions.connectionRef
           #   TEMPORAL_NAMESPACE       — from spec.workerOptions.temporalNamespace
@@ -102,14 +109,23 @@ spec:
           #   TEMPORAL_WORKER_BUILD_ID — from the image tag (the build_id)
           # Do not set those here — let the controller own them.
           #
-          # App-level config (e.g. REDDIT_FRONTEND, LLAMA_URL) belongs in
-          # the worker code at gitea.vanillax.me/vanillax/news-reader
-          # temporal/app/worker.py — not in this manifest. The k8s spec
-          # stays infra-only.
+          # Cluster-specific endpoints and model names stay here; the worker
+          # code only provides defaults for local/standalone execution.
+          env:
+            - name: LLM_URL
+              value: "http://vllm-service.vllm.svc.cluster.local:8080/v1/chat/completions"
+            - name: LLM_MODEL
+              value: "qwen3.6-27b"
+            - name: REDDIT_FRONTEND
+              value: "https://redlib.vanillax.me"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
           resources:
             requests:
               cpu: 50m
               memory: 256Mi
             limits:
-              cpu: 200m
               memory: 512Mi

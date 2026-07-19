@@ -32,7 +32,7 @@ prometheus:
           annotations:
             storage.vanillax.dev/backup-exempt-reason: "Prometheus metrics are re-scrapeable; monitoring data not worth backup pipeline overhead"
         spec:
-          storageClassName: longhorn
+          storageClassName: longhorn-flash
           accessModes:
             - ReadWriteOnce
           resources:
@@ -48,7 +48,6 @@ prometheus:
         cpu: 500m
         memory: 3Gi
       limits:
-        cpu: 2000m
         memory: 6Gi
     # Security context
     securityContext:
@@ -169,7 +168,7 @@ alertmanager:
           annotations:
             storage.vanillax.dev/backup-exempt-reason: "Alertmanager silences are operator-set; trivially recreated"
         spec:
-          storageClassName: longhorn
+          storageClassName: longhorn-flash
           accessModes:
             - ReadWriteOnce
           resources:
@@ -181,7 +180,6 @@ alertmanager:
         cpu: 100m
         memory: 128Mi
       limits:
-        cpu: 500m
         memory: 512Mi
     # Security context
     securityContext:
@@ -190,7 +188,10 @@ alertmanager:
       fsGroup: 65534
     # Retention
     retention: 72h
-    # Configuration for alert routing (placeholder)
+    # Alert rules are visible in Prometheus, Grafana, and the internal
+    # Alertmanager UI. Delivery remains the chart's explicit null receiver
+    # until a real destination Secret is chosen; do not ship localhost webhook
+    # placeholders that look configured but discard every notification.
     configSecret: ""
 # Grafana Configuration
 grafana:
@@ -202,7 +203,7 @@ grafana:
   # Persistence
   persistence:
     enabled: true
-    storageClassName: longhorn
+    storageClassName: longhorn-flash
     size: 10Gi
     accessModes:
       - ReadWriteOnce
@@ -221,7 +222,6 @@ grafana:
       cpu: 100m
       memory: 512Mi
     limits:
-      cpu: 1000m
       memory: 1Gi
   # Security context
   securityContext:
@@ -363,7 +363,6 @@ nodeExporter:
       cpu: 50m
       memory: 128Mi
     limits:
-      cpu: 200m
       memory: 256Mi
 kubeStateMetrics:
   enabled: true
@@ -372,7 +371,6 @@ kubeStateMetrics:
       cpu: 50m
       memory: 256Mi
     limits:
-      cpu: 200m
       memory: 512Mi
 # kube-state-metrics sub-chart values. Expose PVC backup labels so alerts
 # and dashboards can distinguish backup-exempt and CNPG-managed PVCs.
@@ -533,7 +531,6 @@ prometheusOperator:
       cpu: 100m
       memory: 128Mi
     limits:
-      cpu: 500m
       memory: 512Mi
   # Security context
   securityContext:

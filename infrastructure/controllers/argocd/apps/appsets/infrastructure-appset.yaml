@@ -6,6 +6,19 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "4"
 spec:
+  # Render each generated Application with Go templates. In an expression such
+  # as `{{ .path.basename }}`, the leading `.` means "the current generator
+  # result" (the template context). The Git generator supplies its matched
+  # directory as the `path` object: `.path.basename` is the final directory
+  # name, while `.path.path` is the complete repository-relative path.
+  # Example: `infrastructure/networking/gateway` produces
+  # `.path.basename = gateway` and `.path.path = infrastructure/networking/gateway`,
+  # so Argo creates the `gateway` Application/namespace and renders that folder.
+  # `missingkey=error` stops generation when a field is absent instead of
+  # silently creating an Application with an empty name, path, or namespace.
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
   generators:
   - git:
       repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
@@ -49,9 +62,9 @@ spec:
       - path: infrastructure/storage/rustfs-lifecycle
   template:
     metadata:
-      name: '{{path.basename}}'
+      name: '{{ .path.basename }}'
       annotations:
-        argocd.argoproj.io/manifest-generate-paths: '{{path}}'
+        argocd.argoproj.io/manifest-generate-paths: '{{ .path.path }}'
         argocd.argoproj.io/sync-wave: "4"
       labels:
         app.kubernetes.io/part-of: infrastructure
@@ -61,10 +74,10 @@ spec:
       source:
         repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
         targetRevision: main
-        path: '{{path}}'
+        path: '{{ .path.path }}'
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{path.basename}}'
+        namespace: '{{ .path.basename }}'
       syncPolicy:
         automated:
           prune: true
@@ -74,7 +87,7 @@ spec:
         - CreateNamespace=true
         - ServerSideApply=true
         - RespectIgnoreDifferences=true
-        - Replace=false
+        - FailOnSharedResource=true
         retry:
           # Bounded retry — see root.yaml. Unbounded -1 plus a misbehaving
           # PreSync hook can wedge the entire app-of-apps behind a stale

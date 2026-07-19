@@ -27,7 +27,6 @@ operator:
       cpu: 50m
       memory: 128Mi
     limits:
-      cpu: 500m
       memory: 512Mi
 
 metricsServer:
@@ -37,7 +36,6 @@ metricsServer:
       cpu: 50m
       memory: 128Mi
     limits:
-      cpu: 500m
       memory: 512Mi
 
 webhooks:
@@ -48,7 +46,6 @@ webhooks:
       cpu: 25m
       memory: 64Mi
     limits:
-      cpu: 250m
       memory: 256Mi
 
 # Metrics endpoints/services stay ON, but the ServiceMonitor CRs are DISABLED

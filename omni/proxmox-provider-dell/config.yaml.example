@@ -1,0 +1,12 @@
+# Copy to config.yaml and fill in credentials. config.yaml is gitignored.
+proxmox:
+  # Dell Proxmox host (behind the AX86U media bridge)
+  url: "https://192.168.10.16:8006/api2/json"
+  insecureSkipVerify: true
+
+  # Username/password, same as the threadripper provider: API tokens have had
+  # insufficient permissions AND the user@realm!tokenid secret format breaks
+  # on special characters.
+  username: "root"
+  password: "CHANGE_ME"
+  realm: "pam"

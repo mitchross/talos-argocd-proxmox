@@ -1,0 +1,113 @@
+# VersaTiles tile server + bundled upstream frontend, serving the planet
+# archive from the map-data PVC at maps.vanillax.me.
+#
+# The versatiles-frontend image's ENTRYPOINT is
+#   versatiles serve --static /app/frontend-dev.br.tar
+# so the k8s `args` APPEND to it — the effective command is
+#   versatiles serve --static /app/frontend-dev.br.tar -c /config/config.yaml /data/osm.versatiles
+# (verified against versatiles-docker's versatiles-frontend/Dockerfile).
+# Don't set `command:` — that would replace the entrypoint and drop the
+# bundled frontend.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: versatiles
+  namespace: versatiles
+  labels:
+    app.kubernetes.io/name: versatiles
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # RWO PVC — RollingUpdate deadlocks on Multi-Attach
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: versatiles
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: versatiles
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        # Block pod start until the map-bootstrap hook Job has populated the
+        # PVC, so a fresh deploy waits (~15-60min first download) instead of
+        # crashlooping on a missing archive.
+        - name: wait-for-map
+          image: busybox:1.38
+          command:
+            - sh
+            - -c
+            - |
+              echo "waiting for /data/osm.versatiles..."
+              until [ -s /data/osm.versatiles ]; do
+                sleep 5
+              done
+              echo "found archive, starting server"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: map-data
+              mountPath: /data
+              readOnly: true
+      containers:
+        - name: versatiles
+          image: versatiles/versatiles-frontend:v4.6.0@sha256:53d8b2056bd70b8a2291c5f609c1912f35483e5c89d5d38064b5248cb9fabc61
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-c"
+            - "/config/config.yaml"
+            - "/data/osm.versatiles"
+          ports:
+            - containerPort: 8080
+              name: http
+          # No dedicated health endpoint upstream; /tiles/index.json is served
+          # once the tile source is loaded, which is exactly "ready".
+          startupProbe:
+            httpGet:
+              path: /tiles/index.json
+              port: http
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /tiles/index.json
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /tiles/index.json
+              port: http
+            periodSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: map-data
+              mountPath: /data
+              readOnly: true  # the bootstrap Job is the only writer
+            - name: config
+              mountPath: /config
+              readOnly: true
+      volumes:
+        - name: map-data
+          persistentVolumeClaim:
+            claimName: map-data-smb
+        - name: config
+          configMap:
+            name: versatiles-config

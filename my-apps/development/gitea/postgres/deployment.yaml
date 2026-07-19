@@ -1,0 +1,105 @@
+# Plain PostgreSQL for gitea — the project-nomad/mysql pattern applied to
+# Postgres. No operator: the DB is an ordinary app whose PVC kopiur backs up
+# (hourly tier) and restores-before-bind on recreate. Postgres treats a
+# restored crash-consistent snapshot like a power loss and WAL-recovers
+# cleanly on boot. Trade-off vs CNPG: restore granularity is the last
+# snapshot, not point-in-time. Migration runbook:
+# docs/domains/cnpg/plain-postgres-migration.md
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitea-postgres
+  namespace: gitea
+  labels:
+    app: gitea-postgres
+spec:
+  strategy:
+    type: Recreate # RWO PVC — RollingUpdate deadlocks on Multi-Attach
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitea-postgres
+  template:
+    metadata:
+      labels:
+        app: gitea-postgres
+    spec:
+      # SIGINT (the image's STOPSIGNAL) triggers Postgres "fast shutdown":
+      # it aborts open transactions and flushes cleanly. 60s covers a busy
+      # checkpoint before the kubelet escalates to SIGKILL.
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 999 # postgres uid:gid in the official image
+      containers:
+        - name: postgres
+          # Pin MAJOR.MINOR — Renovate bumps patches/minors; MAJOR upgrades
+          # need a manual dump/restore (Postgres data dirs are not
+          # major-version compatible). Majors are gated on dependency-
+          # dashboard approval in .github/renovate.json5 after #1621
+          # (17.10->18.4) crashlooped this pod on a stale PG17 data dir.
+          # If merging a major by hand anyway: dump with the OLD major's
+          # image first, wipe/reinit PGDATA, then restore.
+          image: postgres:18.4
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            # First boot on an EMPTY volume creates this DB + user — the
+            # whole database is declared right here, no admin tool. On a
+            # restored (non-empty) volume these are ignored and the restored
+            # data wins.
+            - name: POSTGRES_DB
+              value: "gitea"
+            - name: POSTGRES_USER
+              value: "gitea"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: gitea-db-secret # same 1Password item CNPG used
+                  key: password
+            - name: POSTGRES_INITDB_ARGS
+              value: "--data-checksums"
+            # Subdirectory keeps initdb happy on a fresh PVC (top-level
+            # mount contains lost+found).
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          # A restored or crash-recovering database can take longer than a
+          # fresh 48 MiB test database. The startup probe suppresses liveness
+          # restarts while PostgreSQL replays WAL after restore.
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "gitea", "-d", "gitea"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "gitea", "-d", "gitea"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "gitea", "-d", "gitea"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: gitea-postgres-data

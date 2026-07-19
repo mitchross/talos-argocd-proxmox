@@ -15,6 +15,8 @@ resources:
   - gpu-alerts.yaml # GPU alerting rules
   - gpu-dashboard.yaml # Grafana dashboard
   - vpa-recommendations-dashboard.yaml # Passive VPA recommendation dashboard
+  - trivy-dashboard.yaml # Trivy Operator vulnerability dashboard (Grafana 17813; pairs with monitoring/trivy-operator)
+  - trivy-alerts.yaml # Trivy critical-vuln alerting (high per-image critical count)
   - etcd-dashboard.yaml # etcd cluster dashboard (Grafana 3070; pairs with kube-etcd scrape job)
   - network-policy.yaml # Allow Grafana to access Prometheus
   - frigate-dashboard.yaml # Frigate Grafana dashboard
@@ -25,10 +27,6 @@ resources:
   - homelab-power-dashboard.yaml # Homelab cost dashboard ($0.21/kWh, 4 homelab plugs only)
   - radar-ng-dashboard.yaml # radar-ng backend dashboard (logs + tile-server metrics)
   - radar-ng-mobile-dashboard.yaml # radar-ng mobile app dashboard (Tempo spans + Loki errors)
-# Strategic merge patches to handle resource conflicts
-patchesStrategicMerge:
-  - alertmanager-config.yaml
-
 # Per-CRD sync-options — kube-prometheus-stack ships several CRDs whose
 # OpenAPI schemas are large enough that ArgoCD's default client-side apply
 # tries to write a `kubectl.kubernetes.io/last-applied-configuration`
@@ -84,7 +82,7 @@ patches:
 helmCharts:
   - name: kube-prometheus-stack
     repo: https://prometheus-community.github.io/helm-charts
-    version: 87.10.1
+    version: 87.17.0
     releaseName: kube-prometheus-stack
     namespace: prometheus-stack
     valuesFile: values.yaml

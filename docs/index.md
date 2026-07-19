@@ -8,6 +8,11 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
 > Source: [`mitchross/talos-argocd-proxmox`](https://github.com/mitchross/talos-argocd-proxmox)
 > · This site renders `docs/` from that repo.
 
+![Logical overview of the Proxmox, Talos, Argo CD, networking, secrets, storage, and backup platform](assets/platform-overview.svg)
+
+*Git reconstructs desired state, 1Password reconstructs credentials, and RustFS
+reconstructs protected data. [Open the full-size platform map](assets/platform-overview.svg).*
+
 !!! tip "The point"
     The whole cluster can be destroyed and rebuilt with every protected volume
     restored automatically from the off-cluster Kopia repository — no manual storage
@@ -18,7 +23,9 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
 - **OS**: Talos Linux on Proxmox VMs, provisioned via Omni / Sidero
 - **CNI**: Cilium with Gateway API + LoadBalancer
 - **GitOps**: ArgoCD (self-managing) + ApplicationSets for auto-discovery
-- **Storage**: Longhorn (V1 engine, 1 replica — single-node)
+- **Storage**: Longhorn V1 engine, currently 1 replica because the active
+  control-plane + worker VMs share one physical Proxmox failure domain;
+  replica count is designed to rise when workers span additional hosts
 - **Backup**: [kopiur](https://github.com/home-operations/kopiur) (Kopia-native) → RustFS S3, per-PVC `SnapshotPolicy`/`Restore` with restore-before-bind
 - **Database**: CloudNativePG (Postgres) with Barman backups to S3
 - **Secrets**: 1Password Connect + External Secrets Operator
@@ -26,6 +33,10 @@ cluster can be destroyed and rebuilt **unattended** — restores included.
 - **AI**: vLLM (Qwen3.6-27B, default app inference) + llama-cpp (Qwen3.6-35B multimodal — vision→image + preset playground) on mutually-exclusive whole-card GPUs ([scale-swap runbook](domains/ai-gpu/gpu-scale-swap.md))
 
 ## Documentation
+
+Every page follows the [documentation reader contract](documentation-standard.md):
+state the current posture, explain unfamiliar choices, provide verifiable steps,
+and include failure/rollback guidance for risky operations.
 
 <div class="grid cards" markdown>
 
@@ -82,11 +93,11 @@ Backups are **kopiur** (Kopia-native operator).
 
 ### 🗃️ Domains
 
-- **Databases**: [Backup/restore/start — beginner guide](domains/cnpg/backup-restore-start-guide.md) · [CNPG explained](domains/cnpg/explained.md) · [CNPG disaster recovery](domains/cnpg/disaster-recovery.md)
+- **Databases**: [Plain Postgres migration — CNPG exit ramp, new-DB default](domains/cnpg/plain-postgres-migration.md) · [Backup/restore/start — beginner guide](domains/cnpg/backup-restore-start-guide.md) · [CNPG explained](domains/cnpg/explained.md) · [CNPG disaster recovery](domains/cnpg/disaster-recovery.md)
 - **GitOps / ArgoCD**: [argocd](domains/argocd/argocd.md) · [entrypoints & waves](domains/argocd/entrypoints.md)
-- **Networking**: [topology](domains/networking/topology.md) · [policy](domains/networking/policy.md) · [Technitium `vanillax.me` migration](domains/networking/technitium-vanillax-me-migration.md)
+- **Enterprise multi-cluster planning**: [roadmap](domains/multicluster/enterprise-gitops-roadmap.md) · [concrete fleet PRD](domains/multicluster/prd.md)
+- **Networking**: [topology](domains/networking/topology.md) · [Wi-Fi Proxmox Talos worker](domains/networking/wifi-proxmox-talos-worker.md) · [policy](domains/networking/policy.md) · [Technitium `vanillax.me` migration](domains/networking/technitium-vanillax-me-migration.md)
 - **Storage**: [kopia maintenance](domains/storage/kopia-maintenance-plan.md) · [RWO/RWX model & sizing](domains/storage/storage-model-rwo-rwx-and-sizing.md) · [RustFS credentials](domains/rustfs/credential-runbook.md) · [future: tiered storage](domains/storage/architecture-future.md)
-- **Multicluster**: [PRD](domains/multicluster/prd.md) · [handoff notes](domains/multicluster/handoff-notes.md)
 - **Observability**: [radar-ng](domains/observability/radar-ng.md)
 - **AI / GPU**: [model catalog](domains/ai-gpu/model-catalog.md) · [3090 LLM optimization](domains/ai-gpu/3090-llm-optimization.md) · [pi agent local-dev guide](domains/ai-gpu/pi-agent-local-dev.md)
 

@@ -8,10 +8,20 @@
 #   - eCO2 (no device_class)   -> homeassistant_sensor_unit_ppm
 #   - tVOC (volatile_organic_compounds_parts device_class)
 #                              -> homeassistant_sensor_volatile_organic_compounds_parts_ppb
-# (metric names verified live against /api/prometheus on 2026-06-29)
-# Sensors are selected by the exact `entity` label (stable across HA restarts).
-# Requires the matching `sensor.stuckatprototype_aircube_*` include glob in the
-# HA prometheus filter (my-apps/home/home-assistant/configuration.yaml).
+#   - VOC Level (unitless AQI index, no device_class)
+#                              -> homeassistant_sensor_state (generic metric shared by ALL
+#                                 unitless sensors — the entity= matcher is what isolates it)
+# rssi/lqi are NOT charted: ZHA exposes them as diagnostic entities that are
+# disabled by default, so they emit no value metric until enabled in the HA UI.
+# (metric names verified live against /api/prometheus on 2026-07-15)
+#
+# Every query is wrapped in `max by (entity)` and the stat panels use
+# `instant: true`. The `entity` label is stable, but HA's Prometheus target
+# label (instance/pod) changes on each HA pod restart, so Prometheus keeps the
+# old pod's series (frozen at their last value) for the retention window —
+# without dedup each metric would show 2-3x (once per pod generation). Requires
+# the matching `sensor.stuckatprototype_aircube_*` include glob in the HA
+# prometheus filter (my-apps/home/home-assistant/configuration.yaml).
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -36,7 +46,7 @@ data:
       "title": "Air Quality — AirCube",
       "uid": "aircube-air-quality",
       "schemaVersion": 39,
-      "version": 1,
+      "version": 3,
       "refresh": "30s",
       "panels": [
         {
@@ -79,8 +89,9 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "homeassistant_sensor_unit_ppm{entity=\"sensor.stuckatprototype_aircube_equivalent_co2\"}",
+              "expr": "max by (entity) (homeassistant_sensor_unit_ppm{entity=\"sensor.stuckatprototype_aircube_equivalent_co2\"})",
               "legendFormat": "eCO₂",
+              "instant": true,
               "refId": "A"
             }
           ]
@@ -118,8 +129,9 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "homeassistant_sensor_volatile_organic_compounds_parts_ppb{entity=\"sensor.stuckatprototype_aircube_volatile_organic_compounds_parts\"}",
+              "expr": "max by (entity) (homeassistant_sensor_volatile_organic_compounds_parts_ppb{entity=\"sensor.stuckatprototype_aircube_volatile_organic_compounds_parts\"})",
               "legendFormat": "tVOC",
+              "instant": true,
               "refId": "A"
             }
           ]
@@ -158,8 +170,9 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "homeassistant_sensor_temperature_celsius{entity=\"sensor.stuckatprototype_aircube_temperature\"} * 9 / 5 + 32",
+              "expr": "max by (entity) (homeassistant_sensor_temperature_celsius{entity=\"sensor.stuckatprototype_aircube_temperature\"}) * 9 / 5 + 32",
               "legendFormat": "Temperature",
+              "instant": true,
               "refId": "A"
             }
           ]
@@ -182,8 +195,8 @@ data:
                 "steps": [
                   { "color": "orange", "value": null },
                   { "color": "green", "value": 30 },
-                  { "color": "green", "value": 60 },
-                  { "color": "orange", "value": 65 }
+                  { "color": "orange", "value": 60 },
+                  { "color": "red", "value": 65 }
                 ]
               }
             },
@@ -200,8 +213,9 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "homeassistant_sensor_humidity_percent{entity=\"sensor.stuckatprototype_aircube_humidity\"}",
+              "expr": "max by (entity) (homeassistant_sensor_humidity_percent{entity=\"sensor.stuckatprototype_aircube_humidity\"})",
               "legendFormat": "Humidity",
+              "instant": true,
               "refId": "A"
             }
           ]
@@ -227,9 +241,10 @@ data:
                 "fillOpacity": 15,
                 "lineWidth": 2,
                 "showPoints": "never",
-                "spanNulls": true
+                "spanNulls": true,
+                "thresholdsStyle": { "mode": "dashed" }
               },
-              "color": { "mode": "palette-classic" },
+              "color": { "mode": "thresholds" },
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
@@ -248,7 +263,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "homeassistant_sensor_unit_ppm{entity=\"sensor.stuckatprototype_aircube_equivalent_co2\"}",
+              "expr": "max by (entity) (homeassistant_sensor_unit_ppm{entity=\"sensor.stuckatprototype_aircube_equivalent_co2\"})",
               "legendFormat": "eCO₂",
               "refId": "A"
             }
@@ -268,9 +283,18 @@ data:
                 "fillOpacity": 15,
                 "lineWidth": 2,
                 "showPoints": "never",
-                "spanNulls": true
+                "spanNulls": true,
+                "thresholdsStyle": { "mode": "dashed" }
               },
-              "color": { "mode": "palette-classic" }
+              "color": { "mode": "thresholds" },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "orange", "value": 500 },
+                  { "color": "red", "value": 1000 }
+                ]
+              }
             },
             "overrides": []
           },
@@ -281,7 +305,7 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "homeassistant_sensor_volatile_organic_compounds_parts_ppb{entity=\"sensor.stuckatprototype_aircube_volatile_organic_compounds_parts\"}",
+              "expr": "max by (entity) (homeassistant_sensor_volatile_organic_compounds_parts_ppb{entity=\"sensor.stuckatprototype_aircube_volatile_organic_compounds_parts\"})",
               "legendFormat": "tVOC",
               "refId": "A"
             }
@@ -325,15 +349,107 @@ data:
           "targets": [
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "homeassistant_sensor_temperature_celsius{entity=\"sensor.stuckatprototype_aircube_temperature\"} * 9 / 5 + 32",
+              "expr": "max by (entity) (homeassistant_sensor_temperature_celsius{entity=\"sensor.stuckatprototype_aircube_temperature\"}) * 9 / 5 + 32",
               "legendFormat": "Temperature (°F)",
               "refId": "A"
             },
             {
               "datasource": { "type": "prometheus", "uid": "prometheus" },
-              "expr": "homeassistant_sensor_humidity_percent{entity=\"sensor.stuckatprototype_aircube_humidity\"}",
+              "expr": "max by (entity) (homeassistant_sensor_humidity_percent{entity=\"sensor.stuckatprototype_aircube_humidity\"})",
               "legendFormat": "Humidity (%)",
               "refId": "B"
+            }
+          ]
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
+          "id": 10,
+          "title": "VOC Level (AQI index)",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "id": 11,
+          "title": "VOC Level",
+          "description": "AirCube VOC air-quality index (0=clean). Unitless, so HA exports it on the generic homeassistant_sensor_state metric — the entity matcher is what isolates it.",
+          "type": "stat",
+          "gridPos": { "h": 8, "w": 6, "x": 0, "y": 25 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "decimals": 0,
+              "color": { "mode": "thresholds" },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 50 },
+                  { "color": "orange", "value": 100 },
+                  { "color": "red", "value": 200 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "max by (entity) (homeassistant_sensor_state{entity=\"sensor.stuckatprototype_aircube_voc_level\"})",
+              "legendFormat": "VOC Level",
+              "instant": true,
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "id": 12,
+          "title": "VOC Level over time",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 18, "x": 6, "y": 25 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "none",
+              "custom": {
+                "drawStyle": "line",
+                "fillOpacity": 15,
+                "lineWidth": 2,
+                "showPoints": "never",
+                "spanNulls": true,
+                "thresholdsStyle": { "mode": "dashed" }
+              },
+              "color": { "mode": "thresholds" },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 50 },
+                  { "color": "orange", "value": 100 },
+                  { "color": "red", "value": 200 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "calcs": ["last", "max", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "max by (entity) (homeassistant_sensor_state{entity=\"sensor.stuckatprototype_aircube_voc_level\"})",
+              "legendFormat": "VOC Level",
+              "refId": "A"
             }
           ]
         }

@@ -16,7 +16,7 @@ animated diagrams. No Kubernetes experience needed.
     path (databases, exempt disks), and what actually happens when the cluster is rebuilt
     from nothing. Your progress is remembered — leave and come back any time.
 
-    [:octicons-arrow-right-24: Open the course](../backups-course/){ .md-button .md-button--primary }
+    [:octicons-arrow-right-24: Open the course](backups-course/index.html){ .md-button .md-button--primary }
 
 </div>
 

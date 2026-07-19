@@ -4,6 +4,12 @@ Companion to [`disaster-recovery.md`](disaster-recovery.md) (the technical
 runbook). This doc explains what's actually happening, why it works, and
 **what's a Git change vs. a kubectl command vs. a feature flag**.
 
+![Decision between database-aware CNPG Barman recovery and plain PostgreSQL Kopiur recovery](../../assets/postgres-recovery-choice.svg)
+
+*This page explains the capability-first CNPG side. The staged exit ramp uses
+the simpler path only where its RPO and lack of failover are acceptable.
+[Open the full-size PostgreSQL decision diagram](../../assets/postgres-recovery-choice.svg).*
+
 Read this when:
 
 - You're standing up your first Postgres cluster on Kubernetes
@@ -279,9 +285,18 @@ no admission webhook injecting `dataSourceRef`.
 
 Three reasons it stays that way, in increasing severity:
 
-1. **Snapshot consistency.** A kopia snapshot of a running Postgres data directory is *not* a consistent backup. The on-disk state at any moment includes half-written files, WAL not yet flushed, etc. Recovery from such a snapshot is unsafe and Postgres might not even start. Barman uses `pg_basebackup`, which IS Postgres-aware and produces a consistent backup.
+1. **Recovery granularity and assurance.** A single-volume CSI snapshot is
+   crash-consistent: Postgres can normally recover it by replaying the WAL
+   present on that volume, just as after power loss. It is still a weaker
+   contract than a Postgres-aware base backup: it has no independent WAL
+   archive/PITR, and application recovery must be tested. Barman uses
+   `pg_basebackup` plus archived WAL and is the stronger choice when that
+   recovery objective is required.
 
-2. **WAL.** Postgres recovery requires both a base backup AND the WAL records that follow it. Barman archives WAL continuously. PVC snapshots don't archive WAL — they just snapshot whatever WAL was on disk at snapshot time, which could be hours old.
+2. **WAL.** Barman archives WAL continuously, enabling recovery beyond the base
+   backup and to a chosen point. A PVC snapshot contains only the WAL present
+   on disk at snapshot time, so it recovers only to that crash-consistent point
+   and inherits the snapshot schedule's RPO.
 
 3. **PITR.** With Barman + WAL archiving, you can restore to any point in time within retention. With PVC snapshots, you can only restore to whenever the last snapshot was taken.
 

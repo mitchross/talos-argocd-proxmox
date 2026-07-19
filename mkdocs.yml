@@ -76,6 +76,7 @@ plugins:
 extra_css:
   - assets/kopiur-playground.css
   - assets/nav-tweaks.css
+  - assets/diagram-docs.css
 
 extra_javascript:
   - assets/kopiur-playground.js
@@ -85,6 +86,7 @@ nav:
   - Overview & architecture:
       - Home — the big picture: index.md
       - The easy guide (explain it to anyone): easy-guide.md
+      - Documentation reader contract: documentation-standard.md
   - GitOps & ArgoCD:
       - ArgoCD architecture: domains/argocd/argocd.md
       - Root entrypoints & sync waves: domains/argocd/entrypoints.md
@@ -108,8 +110,10 @@ nav:
       - Backup/restore/start — beginner guide: domains/cnpg/backup-restore-start-guide.md
       - CNPG explained: domains/cnpg/explained.md
       - CNPG disaster recovery: domains/cnpg/disaster-recovery.md
+      - Plain Postgres migration (CNPG exit ramp): domains/cnpg/plain-postgres-migration.md
   - Networking:
       - Topology: domains/networking/topology.md
+      - Wi-Fi Proxmox Talos worker: domains/networking/wifi-proxmox-talos-worker.md
       - Cilium policies: domains/networking/policy.md
       - Technitium vanillax.me migration: domains/networking/technitium-vanillax-me-migration.md
   - AI / GPU:
@@ -120,7 +124,7 @@ nav:
   - Reference & ops:
       - RustFS credential runbook: domains/rustfs/credential-runbook.md
       - Observability — radar-ng cookbook: domains/observability/radar-ng.md
+      - Enterprise multi-cluster roadmap: domains/multicluster/enterprise-gitops-roadmap.md
       - Multicluster — PRD: domains/multicluster/prd.md
-      - Multicluster — handoff notes: domains/multicluster/handoff-notes.md
       - Technitium ExternalDNS — design (historical): superpowers/specs/2026-06-13-technitium-external-dns-design.md
       - Technitium ExternalDNS — plan (historical): superpowers/plans/2026-06-13-technitium-external-dns.md

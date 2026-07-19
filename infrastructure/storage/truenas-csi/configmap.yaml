@@ -14,6 +14,11 @@ data:
   TRUENAS_NFS_SERVER: "192.168.10.133"
   # Required by the shared upstream driver config even though this rollout does
   # not create an iSCSI StorageClass or permit TCP 3260 through Cilium.
+  # IQN base MUST equal the appliance's actual Target Global "Base Name" — this box
+  # still carries the FreeNAS-era value. Upstream never reads iscsi.global.basename
+  # (truenas-csi#41), and a mismatch fails every stage with
+  # `failed to find device path: []`, baking the wrong IQN into the PV at provision
+  # time. Kept correct so a future iSCSI SC does not inherit a silent landmine.
   TRUENAS_ISCSI_PORTAL: "192.168.10.133:3260"
-  TRUENAS_ISCSI_IQN_BASE: "iqn.2000-01.io.truenas"
+  TRUENAS_ISCSI_IQN_BASE: "iqn.2005-10.org.freenas.ctl"
 

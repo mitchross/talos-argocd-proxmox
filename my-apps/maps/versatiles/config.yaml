@@ -1,0 +1,16 @@
+# versatiles server config (passed via `serve -c`). ONLY the cors section
+# lives here on purpose — sources, static frontend, and port stay on CLI args
+# because upstream documents config.yaml support as still maturing; keeping
+# this file single-purpose limits the blast radius if a future version changes
+# the schema.
+#
+# v4.6.0 schema (from `versatiles help config`): allowed_origins entries are
+# exact origins, domain globs, or /slash-enclosed/ regexes. Origins not in the
+# list are blocked — there is no separate default_policy field.
+cors:
+  allowed_origins:
+    # any https vanillax.me subdomain (maps itself, radar, home-assistant, ...)
+    - '/^https://([a-z0-9-]+\.)?vanillax\.me$/'
+    # local development (MapLibre dev servers on any port)
+    - '/^https?://localhost(:[0-9]+)?$/'
+    - '/^https?://127\.0\.0\.1(:[0-9]+)?$/'

@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: versatiles
+
+resources:
+  - namespace.yaml
+  - pvc.yaml
+  - job-bootstrap.yaml
+  - deployment.yaml
+  - service.yaml
+  - httproute.yaml
+
+configMapGenerator:
+  # Hash-suffixed names are the update mechanism: editing DATASET_URL below
+  # (or config.yaml) changes the generated name, which changes the consuming
+  # pod spec, which re-runs the bootstrap hook / restarts the server on the
+  # next sync. To refresh the planet: point DATASET_URL (+ sha256) at a newer
+  # osm.YYYYMMDD snapshot from https://download.versatiles.org/ — see README.
+  - name: versatiles-config
+    files:
+      - config.yaml
+  - name: bootstrap-env
+    literals:
+      - DATASET_URL=https://download.versatiles.org/osm.20260608.versatiles
+      - DATASET_SHA256_URL=https://download.versatiles.org/osm.20260608.versatiles.sha256
+      - TARGET_FILE=osm.versatiles

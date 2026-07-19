@@ -7,6 +7,14 @@
 kopiur is the cluster's backup system: a Kopia-native operator. You declare small
 CRs, it runs Jobs, kopia moves bytes to RustFS.
 
+![Kopiur Kustomize assembly, backup, and restore-before-bind flow](../../assets/kopiur-kustomize-flow.svg)
+
+*The app stub owns what varies per PVC; the shared Component adds cluster-wide
+defaults. Kustomize renders complete resources for Argo CD, and those resources
+drive both the scheduled backup and restore-before-bind paths.*
+
+[Open the full-size diagram](../../assets/kopiur-kustomize-flow.svg)
+
 ## Lifecycle and Flows
 
 <div class="grid cards" markdown>
@@ -85,6 +93,101 @@ list, then lets the component **patch** them. So the per-PVC stub stays tiny (ju
 the bits that differ); the component fills in everything that's the same for every
 backup.
 
+In plain English: the app explicitly opts into the Component. Kustomize loads the
+app's resources, finds the Kubernetes objects targeted by the Component, adds the
+shared fields in memory, and prints complete YAML. Argo CD then compares and
+applies that rendered YAML.
+
+Kustomize parses the YAML into structured Kubernetes objects, matches the
+Component patches to resources by API group and kind, applies JSON Patch
+operations to exact object paths such as `/spec/repository`, and serializes the
+result as complete YAML. Neither source file is rewritten. Components are a
+first-class Kustomize feature intended to package reusable, opt-in configuration,
+not a repository workaround ([upstream Components example](https://github.com/kubernetes-sigs/kustomize/blob/master/examples/components.md)).
+
+It does **not** automatically run because a certain filename exists. The app's
+`kustomization.yaml` is the build entrypoint and must explicitly list the
+Component under `components:`. The Component then sees the resources accumulated
+by that app and transforms matching objects. It is not a parent manifest and it
+does not run independently.
+
+### Is this like Kyverno?
+
+No. The outcome can look similar because both tools can add fields, but they run
+at different times and own different boundaries:
+
+| Kustomize Component | Kyverno policy |
+|---|---|
+| Runs during `kustomize build`, before submission | Runs inside the cluster during admission/background reconciliation |
+| Explicitly included by an app's `components:` list | Watches API requests or existing cluster resources |
+| Produces the desired YAML that Argo CD compares and applies | Validates or mutates resources as they enter or live in the cluster |
+| No controller remains running for the Component | Kyverno controllers must remain running |
+
+With Argo CD, the actual path is:
+
+```text
+Git files -> Argo CD repo-server -> kustomize build
+          -> rendered YAML -> Argo CD diff/apply -> Kubernetes API
+```
+
+`kubectl apply -k <app>` performs the same build-then-apply sequence locally.
+
+Conceptually, the build does this:
+
+```javascript
+function applyKopiurComponent(resource) {
+  // Kustomize works on parsed objects, not raw text or filenames.
+  const output = structuredClone(resource);
+
+  const isSnapshotPolicy =
+    output.apiVersion.startsWith("kopiur.home-operations.com/") &&
+    output.kind === "SnapshotPolicy";
+
+  if (isSnapshotPolicy) {
+    output.spec.copyMethod = "Snapshot";
+    output.spec.volumeSnapshotClassName = "longhorn-snapclass";
+    output.spec.repository = {
+      kind: "ClusterRepository",
+      name: "cluster-kopia",
+    };
+  }
+
+  return output;
+}
+
+const appResources = loadResourcesFromKustomization();
+const renderedResources = appResources.map(applyKopiurComponent);
+
+printYaml(renderedResources); // this is what Argo CD applies
+```
+
+That JavaScript is only a teaching model. Real Kustomize uses the Component's
+target selector and JSON Patch operations, but the data flow is equivalent.
+Non-matching resources pass through unchanged, and the source YAML files are not
+rewritten.
+
+![A per-PVC stub and reusable Kustomize Component combine into a complete SnapshotPolicy](../../assets/kustomize-component-mixin.svg){ loading=lazy }
+
+*Coral fields belong to the application. Green fields are shared defaults from
+the Component. The rendered resource contains both before Argo CD sees it.*
+
+[Open the full-size Component diagram](../../assets/kustomize-component-mixin.svg)
+
+### Why use it here?
+
+Every protected PVC needs the same repository, snapshot class, copy method,
+restore populator, and scheduling safety defaults. Repeating those fields in
+every app would make drift likely and a cluster-wide change tedious. The
+Component makes those settings one shared policy while each app still owns its
+identity, retention, schedule, and mover UID.
+
+The trade-off is visibility: the stub is not the complete deployed object when
+read by itself. Use `kubectl kustomize <app>` to inspect the real output. Keep
+varying fields out of the Component, keep targets narrow, and render every app in
+CI. In this repository the Component intentionally affects every matching
+`SnapshotPolicy`, `SnapshotSchedule`, and `Restore` included by that one app's
+Kustomization; it cannot reach resources in another Argo CD Application.
+
 ```yaml
 resources:
   - namespace.yaml
@@ -93,6 +196,9 @@ resources:
 components:
   - ../../common/kopiur-backup
 ```
+
+Read that as: "load these resources, opt into these shared transformations,
+then print the combined result."
 
 | Resource | App stub supplies | Component adds |
 |---|---|---|
@@ -121,7 +227,7 @@ The component sets only what's identical everywhere.
 4. The mover reads S3 credentials from the local `kopiur-rustfs` Secret, which
    the `ClusterExternalSecret` placed in the namespace.
 5. Kopia uploads deduplicated, encrypted data to RustFS at `s3://kopiur`, then
-   marks the Snapshot `Completed` with its file and byte counts.
+   marks the Snapshot `Succeeded` with its file and byte counts.
 
 The mover must run as the **data owner** or it can't read the files — see
 [`kopiur-mover-permissions.md`](kopiur-mover-permissions.md).

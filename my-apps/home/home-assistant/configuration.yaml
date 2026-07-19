@@ -5,6 +5,20 @@ default_config:
 homeassistant:
   customize: !include customize.yaml
 
+# Log levels. Pinned here because the ZHA integration's "Enable debug logging"
+# UI toggle is runtime-only state that lives in neither git nor .storage — it
+# silently turns bellows into a firehose (a full 40-counter EZSP dump + every
+# ASH frame, every 10s) until someone notices and clicks it off again.
+#
+# zha stays at info so device joins/leaves are still visible while pairing.
+# To chase a stubborn join, raise bellows/zigpy to debug *here*, not in the UI.
+logger:
+  default: info
+  logs:
+    bellows: warning
+    zigpy: warning
+    zha: info
+
 # Zigbee Home Automation. The ZHA *integration* itself is added once via the UI
 # (Settings > Devices & Services > Add Integration > ZHA, serial port
 # /dev/ttyUSB0 = the SONOFF dongle hostPath-mounted into this pod) — that config
@@ -37,26 +51,40 @@ http:
     - 192.168.10.32/27 # Cilium IP Pool
     - 192.168.10.50 # Gateway IP
 
-# Enable the recorder (database)
+# Enable the recorder (database).
+# Exclude Zigbee link-diagnostic sensors (rssi/lqi) — they churn every update
+# and add nothing to history, so keep them out of the SQLite DB. Long-term
+# statistics (the energy/cost trends) are stored separately and are unaffected.
+# purge_keep_days is left at the HA default (10) — raise it here if you want a
+# longer detailed-history window (costs PVC space; does not affect LTS).
 recorder:
   db_url: sqlite:////config/home-assistant_v2.db
+  exclude:
+    entity_globs:
+      - sensor.*_rssi
+      - sensor.*_lqi
 
 # Prometheus metrics endpoint for Grafana.
 #
 # Scoped to homelab Tapo plugs only — household plugs (dryer/office/tv) and the
 # unused homelab-smart-plug are deliberately excluded so the homelab cost
-# dashboard isn't polluted with non-server load.
+# dashboard isn't polluted with non-server load. The device-prefix globs
+# (gpu_psu_* = the Threadripper/GPUs box, nas_psu_*, truenas_server_*) already
+# capture the per-device cost/energy/percentage sensors; homelab_cost_* /
+# homelab_total_* capture the totals. Only the standalone rate sensors need
+# explicit globs. NOTE: gpu_psu_* is displayed as "Threadripper GPUs" (see
+# customize.yaml) — the entity_id is kept as gpu_psu_* to preserve history.
 prometheus:
   requires_auth: false
   filter:
     include_entity_globs:
       - sensor.gpu_psu_*
       - sensor.nas_psu_*
-      - sensor.proxmox_server_*
       - sensor.truenas_server_*
       - sensor.homelab_total_*
       - sensor.homelab_cost_*
-      - sensor.*_cost_today
+      - sensor.current_electricity_rate
+      - sensor.electricity_tariff_period
       # StuckAtPrototype AirCube Zigbee air-quality monitor (temp/humidity/eCO2/
       # tVOC + rssi/lqi). Feeds the aircube-dashboard.yaml Grafana dashboard.
       - sensor.stuckatprototype_aircube_*
@@ -68,6 +96,9 @@ prometheus:
       - sensor.tv_smart_plug_*
 
 # Enable energy monitoring (dashboard configured in UI; sensors below feed it).
+# Add the three sensor.<dev>_energy sensors as "Individual devices" in
+# Settings > Dashboards > Energy, optionally attaching the matching <dev>_cost
+# entity, to unlock HA's native daily/monthly/yearly energy+cost history.
 energy:
 
 # Enable the person integration
@@ -84,16 +115,80 @@ lovelace:
       show_in_sidebar: true
       filename: lovelace-homelab-power.yaml
 
-# Riemann-sum energy + daily utility meters.
+# ---------------------------------------------------------------------------
+# Electricity rate helpers (Consumers Energy, Rate 1001 — time-of-use).
+#
+# GIT IS THE SOURCE OF TRUTH: `initial:` pins each rate to the value from the
+# bill, so an HA restart resets the sliders to these numbers. The UI sliders are
+# for quick what-if experiments; permanent rate changes go HERE, in git.
+#
+# All-in marginal cost is modelled as (energy_rate + delivery_riders) * (1+tax):
+#   * energy_rate varies by season + peak/off-peak (see current_electricity_rate)
+#   * delivery_riders = Distribution + PSCR + every per-kWh surcharge, summed
+#   * tax = MI state sales tax
+# ---------------------------------------------------------------------------
+input_number:
+  rate_summer_onpeak:
+    name: "Rate — Summer On-Peak Energy"
+    min: 0
+    max: 1
+    step: 0.000001
+    mode: box
+    unit_of_measurement: "USD/kWh"
+    icon: mdi:cash-clock
+    initial: 0.151904
+  rate_summer_offpeak:
+    name: "Rate — Summer Off-Peak Energy"
+    min: 0
+    max: 1
+    step: 0.000001
+    mode: box
+    unit_of_measurement: "USD/kWh"
+    icon: mdi:cash
+    initial: 0.103970
+  rate_nonsummer:
+    name: "Rate — Non-Summer Energy"
+    min: 0
+    max: 1
+    step: 0.000001
+    mode: box
+    unit_of_measurement: "USD/kWh"
+    icon: mdi:cash
+    initial: 0.082996
+  rate_delivery_riders:
+    name: "Rate — Delivery Riders (per kWh)"
+    min: 0
+    max: 1
+    step: 0.000001
+    mode: box
+    unit_of_measurement: "USD/kWh"
+    icon: mdi:transmission-tower
+    initial: 0.120887
+  rate_sales_tax_pct:
+    name: "Rate — Sales Tax"
+    min: 0
+    max: 20
+    step: 0.1
+    mode: box
+    unit_of_measurement: "%"
+    icon: mdi:percent
+    initial: 6.0
+
+# ---------------------------------------------------------------------------
+# Riemann-sum energy/cost integrations.
 #
 # The TP-Link P115 plugs expose only instantaneous power (Current consumption,
-# W), Current (A) and Voltage (V) — there is NO cumulative energy sensor. We
-# integrate each plug's power into kWh (`integration` platform), then a
-# daily-cycle `utility_meter` yields "today's" energy that resets at midnight.
-# These feed the cost templates and the dashboard energy graphs.
-# NOTE: the integral starts at 0 when first created and builds up over time;
-# today's numbers are only accurate from the next local midnight onward.
+# W), Current (A) and Voltage (V). We integrate each plug's power into kWh
+# (`integration` platform); the cost integrations integrate a live USD/h
+# cost-rate (power * current TOU rate) so cost accrues at whatever rate was
+# active moment-to-moment — the correct way to handle time-of-use pricing.
+# Three plugs: gpu_psu (Threadripper GPUs), nas_psu, truenas_server.
+# NOTE: every integral starts at 0 when first created and builds up over time;
+# today's numbers are only accurate from the next local midnight onward, and
+# monthly/yearly totals fill in as data accumulates.
+# ---------------------------------------------------------------------------
 sensor:
+  # --- per-plug energy (kWh) ---
   - platform: integration
     source: sensor.gpu_psu_current_consumption
     name: "GPU PSU Energy"
@@ -109,13 +204,6 @@ sensor:
     round: 3
     method: left
   - platform: integration
-    source: sensor.proxmox_server_current_consumption
-    name: "Proxmox Server Energy"
-    unique_id: proxmox_server_energy
-    unit_prefix: k
-    round: 3
-    method: left
-  - platform: integration
     source: sensor.truenas_server_current_consumption
     name: "TrueNAS Server Energy"
     unique_id: truenas_server_energy
@@ -123,34 +211,241 @@ sensor:
     round: 3
     method: left
 
+  # --- homelab total energy (kWh) — feeds weekly/monthly/yearly meters ---
+  - platform: integration
+    source: sensor.homelab_total_power
+    name: "Homelab Total Energy"
+    unique_id: homelab_total_energy
+    unit_prefix: k
+    round: 3
+    method: left
+
+  # --- per-plug cumulative cost (USD) — integrates the USD/h cost-rate ---
+  - platform: integration
+    source: sensor.gpu_psu_cost_rate
+    name: "GPU PSU Cost"
+    unique_id: gpu_psu_cost
+    unit_time: h
+    round: 4
+    method: left
+  - platform: integration
+    source: sensor.nas_psu_cost_rate
+    name: "NAS PSU Cost"
+    unique_id: nas_psu_cost
+    unit_time: h
+    round: 4
+    method: left
+  - platform: integration
+    source: sensor.truenas_server_cost_rate
+    name: "TrueNAS Server Cost"
+    unique_id: truenas_server_cost
+    unit_time: h
+    round: 4
+    method: left
+
+  # --- homelab total cumulative cost (USD) ---
+  - platform: integration
+    source: sensor.homelab_cost_rate
+    name: "Homelab Cost"
+    unique_id: homelab_cost
+    unit_time: h
+    round: 4
+    method: left
+
+# ---------------------------------------------------------------------------
+# Utility meters — reset-per-cycle counters. HA keeps these in Long-Term
+# Statistics forever, so the daily/weekly/monthly/yearly cost & energy trends
+# survive well beyond Prometheus's 15-day retention.
+#
+# IMPORTANT: each `name:` is chosen so its slug equals the config key, giving a
+# deterministic entity_id (e.g. sensor.gpu_psu_energy_daily). HA derives a
+# utility_meter's entity_id from the slug of `name` when set, so the two MUST
+# match or downstream references (templates, dashboards) silently read nothing.
+# ---------------------------------------------------------------------------
 utility_meter:
+  # ===== ENERGY (kWh) =====
+  # GPU PSU (Threadripper GPUs)
   gpu_psu_energy_daily:
-    name: "GPU PSU Energy Today"
+    name: "GPU PSU Energy Daily"
     source: sensor.gpu_psu_energy
     cycle: daily
+  gpu_psu_energy_weekly:
+    name: "GPU PSU Energy Weekly"
+    source: sensor.gpu_psu_energy
+    cycle: weekly
+  gpu_psu_energy_monthly:
+    name: "GPU PSU Energy Monthly"
+    source: sensor.gpu_psu_energy
+    cycle: monthly
+  gpu_psu_energy_yearly:
+    name: "GPU PSU Energy Yearly"
+    source: sensor.gpu_psu_energy
+    cycle: yearly
+  # NAS PSU
   nas_psu_energy_daily:
-    name: "NAS PSU Energy Today"
+    name: "NAS PSU Energy Daily"
     source: sensor.nas_psu_energy
     cycle: daily
-  proxmox_server_energy_daily:
-    name: "Proxmox Server Energy Today"
-    source: sensor.proxmox_server_energy
-    cycle: daily
+  nas_psu_energy_weekly:
+    name: "NAS PSU Energy Weekly"
+    source: sensor.nas_psu_energy
+    cycle: weekly
+  nas_psu_energy_monthly:
+    name: "NAS PSU Energy Monthly"
+    source: sensor.nas_psu_energy
+    cycle: monthly
+  nas_psu_energy_yearly:
+    name: "NAS PSU Energy Yearly"
+    source: sensor.nas_psu_energy
+    cycle: yearly
+  # TrueNAS Server
   truenas_server_energy_daily:
-    name: "TrueNAS Server Energy Today"
+    name: "TrueNAS Server Energy Daily"
     source: sensor.truenas_server_energy
     cycle: daily
+  truenas_server_energy_weekly:
+    name: "TrueNAS Server Energy Weekly"
+    source: sensor.truenas_server_energy
+    cycle: weekly
+  truenas_server_energy_monthly:
+    name: "TrueNAS Server Energy Monthly"
+    source: sensor.truenas_server_energy
+    cycle: monthly
+  truenas_server_energy_yearly:
+    name: "TrueNAS Server Energy Yearly"
+    source: sensor.truenas_server_energy
+    cycle: yearly
+  # Homelab total energy
+  homelab_total_energy_weekly:
+    name: "Homelab Total Energy Weekly"
+    source: sensor.homelab_total_energy
+    cycle: weekly
+  homelab_total_energy_monthly:
+    name: "Homelab Total Energy Monthly"
+    source: sensor.homelab_total_energy
+    cycle: monthly
+  homelab_total_energy_yearly:
+    name: "Homelab Total Energy Yearly"
+    source: sensor.homelab_total_energy
+    cycle: yearly
 
-# Template sensors:
-#   * homelab_total_power           — instantaneous draw of all 4 homelab plugs (W)
-#   * homelab_total_energy_today    — kWh used today across all 4 (resets at midnight)
-#   * homelab_cost_today            — total_energy_today * MICHIGAN_RATE (USD)
-#   * <plug>_cost_today             — per-plug breakdown so Grafana can rank cost
-#
-# Michigan residential rate is hard-coded at 0.21 USD/kWh. Update both the
-# total and per-plug expressions if your utility rate changes.
+  # ===== COST (USD) =====
+  # GPU PSU (Threadripper GPUs)
+  gpu_psu_cost_daily:
+    name: "GPU PSU Cost Daily"
+    source: sensor.gpu_psu_cost
+    cycle: daily
+  gpu_psu_cost_weekly:
+    name: "GPU PSU Cost Weekly"
+    source: sensor.gpu_psu_cost
+    cycle: weekly
+  gpu_psu_cost_monthly:
+    name: "GPU PSU Cost Monthly"
+    source: sensor.gpu_psu_cost
+    cycle: monthly
+  gpu_psu_cost_yearly:
+    name: "GPU PSU Cost Yearly"
+    source: sensor.gpu_psu_cost
+    cycle: yearly
+  # NAS PSU
+  nas_psu_cost_daily:
+    name: "NAS PSU Cost Daily"
+    source: sensor.nas_psu_cost
+    cycle: daily
+  nas_psu_cost_weekly:
+    name: "NAS PSU Cost Weekly"
+    source: sensor.nas_psu_cost
+    cycle: weekly
+  nas_psu_cost_monthly:
+    name: "NAS PSU Cost Monthly"
+    source: sensor.nas_psu_cost
+    cycle: monthly
+  nas_psu_cost_yearly:
+    name: "NAS PSU Cost Yearly"
+    source: sensor.nas_psu_cost
+    cycle: yearly
+  # TrueNAS Server
+  truenas_server_cost_daily:
+    name: "TrueNAS Server Cost Daily"
+    source: sensor.truenas_server_cost
+    cycle: daily
+  truenas_server_cost_weekly:
+    name: "TrueNAS Server Cost Weekly"
+    source: sensor.truenas_server_cost
+    cycle: weekly
+  truenas_server_cost_monthly:
+    name: "TrueNAS Server Cost Monthly"
+    source: sensor.truenas_server_cost
+    cycle: monthly
+  truenas_server_cost_yearly:
+    name: "TrueNAS Server Cost Yearly"
+    source: sensor.truenas_server_cost
+    cycle: yearly
+  # Homelab total cost
+  homelab_cost_daily:
+    name: "Homelab Cost Daily"
+    source: sensor.homelab_cost
+    cycle: daily
+  homelab_cost_weekly:
+    name: "Homelab Cost Weekly"
+    source: sensor.homelab_cost
+    cycle: weekly
+  homelab_cost_monthly:
+    name: "Homelab Cost Monthly"
+    source: sensor.homelab_cost
+    cycle: monthly
+  homelab_cost_yearly:
+    name: "Homelab Cost Yearly"
+    source: sensor.homelab_cost
+    cycle: yearly
+
+# ---------------------------------------------------------------------------
+# Template sensors.
+#   * current_electricity_rate  — live all-in USD/kWh (TOU + riders + tax)
+#   * electricity_tariff_period — human label for the active tariff window
+#   * homelab_total_power       — instantaneous draw of all 3 homelab plugs (W)
+#   * homelab_total_energy_today— kWh used today across all 3 (resets at midnight)
+#   * homelab_cost_rate         — live USD/h spend across all 3 (feeds integration)
+#   * <plug>_cost_rate          — live USD/h spend per plug (feeds integration)
+#   * <plug>_power_share         — live share of homelab draw (%)
+#   * <plug>_energy_share_today  — share of today's homelab energy (%)
+# ---------------------------------------------------------------------------
 template:
   - sensor:
+      # Live all-in rate. HA re-renders now()-based templates every minute, so
+      # this tracks time-of-day and season automatically. float(<bill default>)
+      # keeps it correct even before the input_number sliders are first touched.
+      - name: "Current Electricity Rate"
+        unique_id: current_electricity_rate
+        unit_of_measurement: "USD/kWh"
+        state_class: measurement
+        icon: mdi:cash-multiple
+        state: >
+          {% set n = now() %}
+          {% set summer = n.month in [6, 7, 8, 9] %}
+          {% set onpeak = summer and n.weekday() < 5 and 14 <= n.hour < 19 %}
+          {% if onpeak %}
+            {% set e = states('input_number.rate_summer_onpeak') | float(0.151904) %}
+          {% elif summer %}
+            {% set e = states('input_number.rate_summer_offpeak') | float(0.103970) %}
+          {% else %}
+            {% set e = states('input_number.rate_nonsummer') | float(0.082996) %}
+          {% endif %}
+          {% set r = states('input_number.rate_delivery_riders') | float(0.120887) %}
+          {% set t = states('input_number.rate_sales_tax_pct') | float(6) %}
+          {{ ((e + r) * (1 + t / 100)) | round(5) }}
+
+      - name: "Electricity Tariff Period"
+        unique_id: electricity_tariff_period
+        icon: mdi:clock-outline
+        state: >
+          {% set n = now() %}
+          {% set summer = n.month in [6, 7, 8, 9] %}
+          {% set onpeak = summer and n.weekday() < 5 and 14 <= n.hour < 19 %}
+          {% if onpeak %}Summer On-Peak
+          {% elif summer %}Summer Off-Peak
+          {% else %}Non-Summer{% endif %}
+
       - name: "Homelab Total Power"
         unique_id: homelab_total_power
         unit_of_measurement: "W"
@@ -159,12 +454,10 @@ template:
         availability: >
           {{ states('sensor.gpu_psu_current_consumption') not in ['unknown','unavailable']
              or states('sensor.nas_psu_current_consumption') not in ['unknown','unavailable']
-             or states('sensor.proxmox_server_current_consumption') not in ['unknown','unavailable']
              or states('sensor.truenas_server_current_consumption') not in ['unknown','unavailable'] }}
         state: >
           {{ (states('sensor.gpu_psu_current_consumption') | float(0)
             + states('sensor.nas_psu_current_consumption') | float(0)
-            + states('sensor.proxmox_server_current_consumption') | float(0)
             + states('sensor.truenas_server_current_consumption') | float(0)) | round(1) }}
 
       - name: "Homelab Total Energy Today"
@@ -175,43 +468,106 @@ template:
         state: >
           {{ (states('sensor.gpu_psu_energy_daily') | float(0)
             + states('sensor.nas_psu_energy_daily') | float(0)
-            + states('sensor.proxmox_server_energy_daily') | float(0)
             + states('sensor.truenas_server_energy_daily') | float(0)) | round(3) }}
 
-      - name: "Homelab Cost Today"
-        unique_id: homelab_cost_today
-        unit_of_measurement: "USD"
-        state_class: total_increasing
+      # ----- live USD/h cost-rate (power_kW * current all-in rate) -----
+      - name: "Homelab Cost Rate"
+        unique_id: homelab_cost_rate
+        unit_of_measurement: "USD/h"
+        state_class: measurement
+        icon: mdi:cash-fast
         state: >
-          {{ ((states('sensor.gpu_psu_energy_daily') | float(0)
-            + states('sensor.nas_psu_energy_daily') | float(0)
-            + states('sensor.proxmox_server_energy_daily') | float(0)
-            + states('sensor.truenas_server_energy_daily') | float(0)) * 0.21) | round(2) }}
+          {{ (states('sensor.homelab_total_power') | float(0) / 1000
+            * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
 
-      - name: "GPU PSU Cost Today"
-        unique_id: gpu_psu_cost_today
-        unit_of_measurement: "USD"
-        state_class: total_increasing
-        state: "{{ (states('sensor.gpu_psu_energy_daily') | float(0) * 0.21) | round(2) }}"
+      - name: "GPU PSU Cost Rate"
+        unique_id: gpu_psu_cost_rate
+        unit_of_measurement: "USD/h"
+        state_class: measurement
+        state: >
+          {{ (states('sensor.gpu_psu_current_consumption') | float(0) / 1000
+            * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
 
-      - name: "NAS PSU Cost Today"
-        unique_id: nas_psu_cost_today
-        unit_of_measurement: "USD"
-        state_class: total_increasing
-        state: "{{ (states('sensor.nas_psu_energy_daily') | float(0) * 0.21) | round(2) }}"
+      - name: "NAS PSU Cost Rate"
+        unique_id: nas_psu_cost_rate
+        unit_of_measurement: "USD/h"
+        state_class: measurement
+        state: >
+          {{ (states('sensor.nas_psu_current_consumption') | float(0) / 1000
+            * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
 
-      - name: "Proxmox Server Cost Today"
-        unique_id: proxmox_server_cost_today
-        unit_of_measurement: "USD"
-        state_class: total_increasing
-        state: "{{ (states('sensor.proxmox_server_energy_daily') | float(0) * 0.21) | round(2) }}"
+      - name: "TrueNAS Server Cost Rate"
+        unique_id: truenas_server_cost_rate
+        unit_of_measurement: "USD/h"
+        state_class: measurement
+        state: >
+          {{ (states('sensor.truenas_server_current_consumption') | float(0) / 1000
+            * states('sensor.current_electricity_rate') | float(0)) | round(4) }}
 
-      - name: "TrueNAS Server Cost Today"
-        unique_id: truenas_server_cost_today
-        unit_of_measurement: "USD"
-        state_class: total_increasing
-        state: "{{ (states('sensor.truenas_server_energy_daily') | float(0) * 0.21) | round(2) }}"
+      # ----- live % of homelab draw (entity slug == *_power_share) -----
+      - name: "GPU PSU Power Share"
+        unique_id: gpu_psu_power_share
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:chart-pie
+        state: >
+          {% set total = states('sensor.homelab_total_power') | float(0) %}
+          {% if total > 0 %}
+            {{ (states('sensor.gpu_psu_current_consumption') | float(0) / total * 100) | round(1) }}
+          {% else %}0{% endif %}
 
-# # Expose Camera Stream Source Integration
-# # Allows exposing camera stream URLs via API for go2rtc/Frigate integration
-# expose_camera_stream_source:
+      - name: "NAS PSU Power Share"
+        unique_id: nas_psu_power_share
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:chart-pie
+        state: >
+          {% set total = states('sensor.homelab_total_power') | float(0) %}
+          {% if total > 0 %}
+            {{ (states('sensor.nas_psu_current_consumption') | float(0) / total * 100) | round(1) }}
+          {% else %}0{% endif %}
+
+      - name: "TrueNAS Server Power Share"
+        unique_id: truenas_server_power_share
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:chart-pie
+        state: >
+          {% set total = states('sensor.homelab_total_power') | float(0) %}
+          {% if total > 0 %}
+            {{ (states('sensor.truenas_server_current_consumption') | float(0) / total * 100) | round(1) }}
+          {% else %}0{% endif %}
+
+      # ----- share of today's homelab energy (entity slug == *_energy_share_today) -----
+      - name: "GPU PSU Energy Share Today"
+        unique_id: gpu_psu_energy_share_today
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:chart-donut
+        state: >
+          {% set total = states('sensor.homelab_total_energy_today') | float(0) %}
+          {% if total > 0 %}
+            {{ (states('sensor.gpu_psu_energy_daily') | float(0) / total * 100) | round(1) }}
+          {% else %}0{% endif %}
+
+      - name: "NAS PSU Energy Share Today"
+        unique_id: nas_psu_energy_share_today
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:chart-donut
+        state: >
+          {% set total = states('sensor.homelab_total_energy_today') | float(0) %}
+          {% if total > 0 %}
+            {{ (states('sensor.nas_psu_energy_daily') | float(0) / total * 100) | round(1) }}
+          {% else %}0{% endif %}
+
+      - name: "TrueNAS Server Energy Share Today"
+        unique_id: truenas_server_energy_share_today
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:chart-donut
+        state: >
+          {% set total = states('sensor.homelab_total_energy_today') | float(0) %}
+          {% if total > 0 %}
+            {{ (states('sensor.truenas_server_energy_daily') | float(0) / total * 100) | round(1) }}
+          {% else %}0{% endif %}

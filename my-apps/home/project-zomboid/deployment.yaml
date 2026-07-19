@@ -32,7 +32,7 @@ spec:
             - name: steam-cache
               mountPath: /steam-cache
         - name: copy-config
-          image: busybox
+          image: busybox:1.38
           command:
             - sh
             - -c
@@ -159,7 +159,6 @@ spec:
               cpu: "1"
             limits:
               memory: 20Gi
-              cpu: "8"
       volumes:
         - name: server-files
           persistentVolumeClaim:

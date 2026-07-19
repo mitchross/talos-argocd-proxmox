@@ -1,8 +1,6 @@
-# Autoscale tile-server on CPU. Min=3 keeps HA and leaves one spare pod
-# during radar-worker catch-up; max=8 caps cost.
-# Average per-pod CPU is normally <50m, so 70% of 250m request gives plenty
-# of headroom before scale-out triggers, while still reacting to bursts
-# (cold MapLibre style fetches, manifest polling spikes).
+# The API currently mounts three RWO publication volumes. Keep it single-pod
+# until immutable tiles move to object storage; claiming 8 replicas here made
+# the autoscaler promise a multi-node topology Kubernetes could not attach.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -14,7 +12,7 @@ spec:
     kind: Deployment
     name: tile-server
   minReplicas: 1
-  maxReplicas: 8
+  maxReplicas: 1
   metrics:
     - type: Resource
       resource:

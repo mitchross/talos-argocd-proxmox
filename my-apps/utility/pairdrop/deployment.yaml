@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: pairdrop
-        image: ghcr.io/linuxserver/pairdrop:latest@sha256:aded384de9f52ea903b24b8f313373c7ba950427ff22680b88a321cc621ccbeb
+        image: ghcr.io/linuxserver/pairdrop:latest@sha256:9e5d246f4e5d14770d8c6cc670d32c9e436147dde0b1db86c24df7d00e3ccc06
         imagePullPolicy: IfNotPresent
         env:
         - name: TZ
@@ -44,7 +44,6 @@ spec:
             cpu: 50m
             memory: 64Mi
           limits:
-            cpu: 200m
             memory: 128Mi
         livenessProbe:
           httpGet:

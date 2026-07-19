@@ -1,9 +1,14 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: redis-instance
-commonLabels:
-  app.kubernetes.io/name: redis
-  app.kubernetes.io/managed-by: argocd
+labels:
+  # includeSelectors: true == the old commonLabels behavior (labels stamped on
+  # metadata, selectors, AND pod templates). Keep true: selectors are immutable
+  # on live Deployments/StatefulSets; flipping to false forces delete/recreate.
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/name: redis
+      app.kubernetes.io/managed-by: argocd
 resources:
   - namespace.yaml
   - pvc.yaml
@@ -11,7 +16,7 @@ resources:
 helmCharts:
   - name: redis
     repo: oci://registry-1.docker.io/bitnamicharts
-    version: 27.0.13
+    version: 27.0.15
     releaseName: redis
     namespace: redis-instance
     includeCRDs: true
@@ -19,6 +24,16 @@ helmCharts:
       architecture: standalone
       auth:
         enabled: false
+      # Redis is a disposable broker/cache for Paperless and redis-commander,
+      # not a system of record. Keep modules, but do not persist AOF: a corrupt
+      # appendonly.aof tail wedged redis-master-0 for 37h and blocked Paperless
+      # startup on 2026-07-09. Durable Paperless data lives in CNPG + kopiur
+      # backed PVCs, not here.
+      commonConfiguration: |-
+        loadmodule /opt/bitnami/redis/lib/redis/modules/redisearch.so
+        loadmodule /opt/bitnami/redis/lib/redis/modules/rejson.so
+        appendonly no
+        save ""
       master:
         persistence:
           enabled: true

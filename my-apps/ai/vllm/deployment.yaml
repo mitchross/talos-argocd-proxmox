@@ -31,6 +31,7 @@ spec:
       terminationGracePeriodSeconds: 120
       nodeSelector:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
+        gpu-worker: "true"
       tolerations:
         - key: "nvidia.com/gpu"
           operator: "Exists"
@@ -41,7 +42,7 @@ spec:
       containers:
         - name: vllm-server
           # Digest-pinned (== `latest` at pin time, 2026-06). Renovate-trackable + immutable.
-          image: vllm/vllm-openai:v0.24.0@sha256:251eba5cc7c12fed0b75da22a9240e582b1c9e39f6fbc064f86781b963bd814f
+          image: vllm/vllm-openai:v0.25.1@sha256:e4f88a835143cd22aee2397a26ec6bb80b3a4a6fe0c882bcbc63822904766089
           imagePullPolicy: IfNotPresent
           # The image entrypoint runs `vllm serve`; the first arg is the positional model_tag.
           args:
@@ -150,7 +151,6 @@ spec:
               memory: 8Gi
             limits:
               nvidia.com/gpu: "2"
-              cpu: "14"          # leave ~2 vCPU for kubelet/cilium/device-plugin/otel
               memory: 64Gi
           volumeMounts:
             - name: models

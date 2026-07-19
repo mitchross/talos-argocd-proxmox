@@ -13,9 +13,9 @@
 # of truth lives here.
 #
 # IMPORTANT — sync-wave.
-# Annotated to sync-wave -6 so it is admitted BEFORE the Cluster mod
-# (commonAnnotations on the root kustomization sets the Cluster's wave to
-# -5). The Cluster's plugin parameters reference this ObjectStore by name;
+# Annotated to sync-wave -6 so it is admitted BEFORE the Cluster manifest,
+# which sets its own wave to -5. The Cluster's plugin parameters reference
+# this ObjectStore by name;
 # CNPG's webhook needs the ObjectStore to exist to validate the reference.
 apiVersion: barmancloud.cnpg.io/v1
 kind: ObjectStore

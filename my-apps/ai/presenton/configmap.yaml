@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: presenton-config
+  namespace: presenton
+data:
+  # LLM: point at in-cluster vLLM (qwen3.6-27b)
+  LLM: "custom"
+  CUSTOM_LLM_URL: "http://vllm-service.vllm.svc.cluster.local:8080/v1"
+  CUSTOM_LLM_API_KEY: "sk-no-key-required"
+  CUSTOM_MODEL: "qwen3.6-27b"
+
+  # Image generation
+  DISABLE_IMAGE_GENERATION: "false"
+  IMAGE_PROVIDER: "pexels"
+
+  # Telemetry
+  DISABLE_ANONYMOUS_TRACKING: "true"
+
+  # Database: SQLite under /app_data (default when DATABASE_URL unset)
+  MIGRATE_DATABASE_ON_STARTUP: "true"
+
+  # Mem0 (presentation memory) — point at vLLM too
+  MEM0_ENABLED: "true"
+  MEM0_LLM_MODEL: "qwen3.6-27b"
+  MEM0_LLM_API_KEY: "ollama"
+  MEM0_LLM_BASE_URL: "http://vllm-service.vllm.svc.cluster.local:8080/v1"
+  MEM0_DIR: "/app_data/mem0"
+  MEM0_EMBEDDER_PROVIDER: "fastembed"
+  MEM0_EMBEDDER_MODEL: "BAAI/bge-small-en-v1.5"
+  MEM0_EMBEDDING_DIMS: "384"
+
+  # Puppeteer (PPTX/PDF export)
+  PUPPETEER_EXECUTABLE_PATH: "/usr/bin/chromium"

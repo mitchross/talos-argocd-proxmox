@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: protomaps
-          image: ghcr.io/protomaps/go-pmtiles:latest@sha256:dfd5ce912b0f061002a853fef6dca87dcd3c21ee900c57a3e32bb974daa3e061
+          image: ghcr.io/protomaps/go-pmtiles:latest@sha256:057f8e5a6c77e89b46eebd40d62d295a0b69009371542bc0abfe1ecbc7ee6285
           args: ["serve", "/data"]
           ports:
             - containerPort: 8080
@@ -31,7 +31,6 @@ spec:
               cpu: 15m
               memory: 128Mi
             limits:
-              cpu: 250m
               memory: 256Mi
           volumeMounts:
             - name: protomaps-data

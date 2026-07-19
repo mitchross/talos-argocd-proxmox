@@ -161,6 +161,22 @@ patches:
 
 **Do NOT use `Replace=true,Force=true`** — causes duplicate Job execution ([#24005](https://github.com/argoproj/argo-cd/issues/24005)).
 
+### Which StorageClass? (decide BEFORE writing the PVC)
+
+Full reasoning + measured numbers: **`docs/domains/storage/storage-tiers.md`**.
+
+| Use | Class | Why |
+|-----|-------|-----|
+| **Anything RWO** — app state, databases, caches | `longhorn` (default) | node-local block. **Databases included.** |
+| **Bulk media / model weights / hand-browsable / RWX** | SMB or NFS classes | files, not blocks |
+
+**Do NOT put databases on network-attached block storage.** A `flashpool`-over-NVMe-oF tier was
+built and measured on 2026-07-13 and **abandoned**: the same zvol did **2,510 fsync IOPS locally
+on the NAS but only 437 over the wire** — a mere 1.7x over Longhorn's 259. Sync writes do not
+survive the network hop (every fsync becomes ext4-journal -> FLUSH -> nvmet -> ZFS ZIL commit,
+each a round trip). Databases fsync on **every commit**, making them the worst possible workload
+to put behind a network. Database flash belongs **local to the node**.
+
 ### Application with Persistent Storage + Backups
 
 Backups are **kopiur** (home-operations' Kopia-native operator). It replaced

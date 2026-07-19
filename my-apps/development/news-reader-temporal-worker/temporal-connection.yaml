@@ -5,10 +5,10 @@
 # reconcile spec changes. Must be `kind: Connection` to be live.)
 #
 # Describes "how to reach our Temporal server" as a reusable resource that
-# any TemporalWorkerDeployment in this namespace can reference by name.
+# any WorkerDeployment in this namespace can reference by name.
 # Pure config — applying or re-applying it never restarts anything.
 #
-# Why it's a separate object from TemporalWorkerDeployment:
+# Why it's a separate object from WorkerDeployment:
 #   - Many worker deployments in the same namespace can share one
 #     connection. If you ever flip to mTLS or change the frontend
 #     hostport, you edit this file once instead of N.

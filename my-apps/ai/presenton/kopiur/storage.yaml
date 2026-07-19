@@ -1,0 +1,50 @@
+---
+# Presenton app_data backup stub — uniform fields injected by ../../common/kopiur-backup.
+# Data is root-owned (container runs as root), so mover uses runAsUser: 0.
+# Namespace has kopiur.home-operations.com/privileged-movers: "true" annotation.
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: presenton-data
+  namespace: presenton
+spec:
+  sources:
+    - pvc:
+        name: presenton-data
+  identity:
+    username: presenton-data
+    hostname: presenton
+  retention:
+    keepDaily: 14
+    keepWeekly: 6
+    keepMonthly: 3
+  mover:
+    securityContext:
+      runAsUser: 0
+      runAsNonRoot: false
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: presenton-data-daily
+  namespace: presenton
+spec:
+  policyRef:
+    name: presenton-data
+  schedule:
+    cron: "35 3 * * *"
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: presenton-data-restore
+  namespace: presenton
+spec:
+  source:
+    fromPolicy:
+      name: presenton-data
+      offset: 0
+  mover:
+    securityContext:
+      runAsUser: 0
+      runAsNonRoot: false
