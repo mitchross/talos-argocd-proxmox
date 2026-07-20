@@ -122,7 +122,7 @@ cameras:
     ffmpeg:
       input_args: preset-rtsp-restream
       inputs:
-      - path: rtsp://127.0.0.1:8554/backyard-restream
+      - path: rtsp://127.0.0.1:8554/backyard-nest?video
         roles:
         - detect
         - record
@@ -144,7 +144,7 @@ cameras:
     ffmpeg:
       input_args: preset-rtsp-restream
       inputs:
-      - path: rtsp://127.0.0.1:8554/garage-inside-restream
+      - path: rtsp://127.0.0.1:8554/garage-inside-nest?video
         roles:
         - detect
         - record
@@ -164,7 +164,7 @@ cameras:
     ffmpeg:
       input_args: preset-rtsp-restream
       inputs:
-      - path: rtsp://127.0.0.1:8554/garage-outside-restream
+      - path: rtsp://127.0.0.1:8554/garage-outside-nest?video
         roles:
         - detect
         - record
@@ -184,7 +184,7 @@ cameras:
     ffmpeg:
       input_args: preset-rtsp-restream
       inputs:
-      - path: rtsp://127.0.0.1:8554/front-porch-restream
+      - path: rtsp://127.0.0.1:8554/front-porch-nest?video
         roles:
         - detect
         - record
@@ -219,7 +219,7 @@ cameras:
     ffmpeg:
       input_args: preset-rtsp-restream
       inputs:
-      - path: rtsp://127.0.0.1:8554/living-room-restream
+      - path: rtsp://127.0.0.1:8554/living-room-nest?video
         roles:
         - detect
         - record
@@ -240,7 +240,7 @@ cameras:
     ffmpeg:
       input_args: preset-rtsp-restream
       inputs:
-      - path: rtsp://127.0.0.1:8554/kitchen-restream
+      - path: rtsp://127.0.0.1:8554/kitchen-nest?video
         roles:
         - detect
         - record

@@ -23,7 +23,14 @@ spec:
       runtimeClassName: nvidia
       containers:
       - name: frigate
-        image: ghcr.io/blakeblackshear/frigate:0.17.2
+        # 0.17.2 rolled back to 0.17.1: the 0.17.2 bump auto-merged 2026-06-28 while
+        # frigate sat at replicas:0 and its first real run (2026-07-19) could never
+        # decode the Nest WebRTC streams (keyframe starvation on every consumer
+        # type; go2rtc 1.9.9/1.9.10/1.9.14 all identical). 0.17.1 is the stack
+        # that demonstrably served these cameras through April 2026. Keep Renovate
+        # off this until the regression is bisected.
+        # renovate: ignore
+        image: ghcr.io/blakeblackshear/frigate:0.17.1
         imagePullPolicy: IfNotPresent
         env:
         - name: TZ
