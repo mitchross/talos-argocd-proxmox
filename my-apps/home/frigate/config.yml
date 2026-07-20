@@ -64,19 +64,41 @@ ffmpeg:
 # Using the correct echo:curl syntax from official documentation
 go2rtc:
   streams:
-    # Nest cameras via Google SDM API (direct, no Home Assistant)
+    # Nest cameras via Google SDM API (direct, no Home Assistant).
+    #
+    # Each *-nest stream gets a paired *-restream ffmpeg wrapper and cameras
+    # consume ONLY the wrapper. Load-bearing: Nest's WebRTC sends a keyframe
+    # only at session start and ignores go2rtc's PLI keyframe requests, so a
+    # consumer that attaches to a live *-nest session waits forever for a
+    # keyframe it will never get ("Invalid data found when processing input"
+    # loops; verified live 2026-07-19 — MP4/RTSP consumers starved at random
+    # depending on attach timing). The wrapper attaches at session start,
+    # catches the one keyframe, and re-encodes on the 1050 Ti (NVDEC+NVENC,
+    # #hardware=cuda) with a regular GOP so anything can join anytime.
     backyard-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEu-b9WJaOye6XlAOJsVuG4cdrmJC3WIVTtENALQQfkYJSpLEQj4va9k1c1YHqDcgAWUdfaIgvBMIy3--kQBCmq_dDI&protocols=WEB_RTC&video=h264&audio=opus"
+    backyard-restream:
+    - "ffmpeg:backyard-nest#video=h264#hardware=cuda"
     garage-inside-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEuwG9L_DWqqKXGMkSsZWGLHxyieW9NJBmZCARSyBqtpOt2BxS8Un3SYTfuClz3pCd1BS32T-sTRnsRwR3M_ddddZ6s&protocols=WEB_RTC&video=h264&audio=opus"
+    garage-inside-restream:
+    - "ffmpeg:garage-inside-nest#video=h264#hardware=cuda"
     garage-outside-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEv2h0W3viecoGaYuzNnJYw5JpuFl22mo6_2OxWG7xIs8fTPCL0uwgrIOU8WEm7IiTIOQ_cgyzkh18OaR6nBzlTUWQ0&protocols=WEB_RTC&video=h264&audio=opus"
+    garage-outside-restream:
+    - "ffmpeg:garage-outside-nest#video=h264#hardware=cuda"
     front-porch-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEtOw3n2_DdhAm0wdt_NFRX7r04GI3RgzvQ2l2jt7KrpS7kCuvSvUtlDAmDCxg9nqMYUMEQz2IaXjtYJmT3A7gH1vPQ&protocols=WEB_RTC&video=h264&audio=opus"
+    front-porch-restream:
+    - "ffmpeg:front-porch-nest#video=h264#hardware=cuda"
     living-room-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEvWU1Xm4--F8EQvLgj32449ix_pnGNv82a1xR6gJoWCsdxUyyWk1b3C9Aox-hLzJtQ2rp85L1F_BAw1HYaMgaLIa5U&protocols=WEB_RTC&video=h264&audio=opus"
+    living-room-restream:
+    - "ffmpeg:living-room-nest#video=h264#hardware=cuda"
     kitchen-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEtnbEGv0Bh9GblHDv66SK0jKGBAbQ1Mnnkuki_YW4_XQJGgV_dZ-nlouy_oRShGc1_7PwBFabTHa8ovpRYEyb8CZVk&protocols=WEB_RTC&video=h264&audio=opus"
+    kitchen-restream:
+    - "ffmpeg:kitchen-nest#video=h264#hardware=cuda"
 cameras:
   # Wyze camera via wyze-bridge (disabled - Wyze API auth broken)
   # shed:
@@ -100,7 +122,7 @@ cameras:
     ffmpeg:
       input_args: preset-rtsp-restream
       inputs:
-      - path: rtsp://127.0.0.1:8554/backyard-nest?video
+      - path: rtsp://127.0.0.1:8554/backyard-restream
         roles:
         - detect
         - record
@@ -122,7 +144,7 @@ cameras:
     ffmpeg:
       input_args: preset-rtsp-restream
       inputs:
-      - path: rtsp://127.0.0.1:8554/garage-inside-nest?video
+      - path: rtsp://127.0.0.1:8554/garage-inside-restream
         roles:
         - detect
         - record
@@ -142,7 +164,7 @@ cameras:
     ffmpeg:
       input_args: preset-rtsp-restream
       inputs:
-      - path: rtsp://127.0.0.1:8554/garage-outside-nest?video
+      - path: rtsp://127.0.0.1:8554/garage-outside-restream
         roles:
         - detect
         - record
@@ -162,7 +184,7 @@ cameras:
     ffmpeg:
       input_args: preset-rtsp-restream
       inputs:
-      - path: rtsp://127.0.0.1:8554/front-porch-nest?video
+      - path: rtsp://127.0.0.1:8554/front-porch-restream
         roles:
         - detect
         - record
@@ -197,7 +219,7 @@ cameras:
     ffmpeg:
       input_args: preset-rtsp-restream
       inputs:
-      - path: rtsp://127.0.0.1:8554/living-room-nest?video
+      - path: rtsp://127.0.0.1:8554/living-room-restream
         roles:
         - detect
         - record
@@ -218,7 +240,7 @@ cameras:
     ffmpeg:
       input_args: preset-rtsp-restream
       inputs:
-      - path: rtsp://127.0.0.1:8554/kitchen-nest?video
+      - path: rtsp://127.0.0.1:8554/kitchen-restream
         roles:
         - detect
         - record
