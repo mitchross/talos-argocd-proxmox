@@ -17,13 +17,7 @@ spec:
   hostnames:
     - "maps.vanillax.me"
   rules:
-    # NOTE: /styles/* is served by a SEPARATE HTTPRoute (httproute-styles.yaml),
-    # NOT a second rule here. Adding a rule to this existing route's array does
-    # not sync: ArgoCD's global HTTPRoute ignoreDifferences (on
-    # .spec.rules[].backendRefs[]) + ServerSideApply + Cilium co-management makes
-    # array-length changes flap and revert (argo-cd#25284). A fresh single-rule
-    # route creates cleanly; Gateway API merges routes on the same hostname by
-    # path precedence, so /styles still wins over "/".
+    # /styles/* is a separate route (httproute-styles.yaml).
     - matches:
         - path:
             type: PathPrefix

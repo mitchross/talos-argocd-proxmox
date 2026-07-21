@@ -1,17 +1,6 @@
-# Separate HTTPRoute for the pre-generated MapLibre styles (map-styles nginx).
-#
-# Why its own route instead of a second rule on versatiles-route: adding a rule
-# to an EXISTING route's `.spec.rules` array does not sync in this cluster —
-# ArgoCD's global HTTPRoute ignoreDifferences (`.spec.rules[].backendRefs[]`) +
-# ServerSideApply + Cilium co-managing the route makes an array-length change
-# flap and revert (argo-cd#25284). A freshly CREATED single-rule route is not
-# subject to that (versatiles-route itself proves single-rule routes sync fine).
-#
-# Gateway API merges HTTPRoutes that share a hostname on the same listener and
-# resolves by path precedence, so `/styles/*` here wins over versatiles-route's
-# `/`. DNS for maps.vanillax.me is already owned by versatiles-route's
-# external-dns label — this route intentionally omits external-dns to avoid a
-# duplicate-owner conflict; it only needs the parentRef + hostname to attach.
+# /styles/* -> map-styles nginx. Separate route from versatiles-route (Gateway
+# API merges same-hostname routes by path precedence). DNS owned by
+# versatiles-route, so no external-dns label here.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
