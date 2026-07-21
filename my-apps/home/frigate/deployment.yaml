@@ -39,13 +39,6 @@ spec:
         # (compute,utility) leaves ffmpeg hwaccel without the decoder libs.
         - name: NVIDIA_DRIVER_CAPABILITIES
           value: "compute,video,utility"
-        # Frigate 0.17 disables go2rtc exec: sources by default (security). The
-        # Nest cameras REQUIRE the exec ffmpeg wrapper streams (config.yml
-        # *-restream: AUD insertion for the AUD-less Nest H264) — without this
-        # var go2rtc silently strips every wrapper and cameras get no frames.
-        # The exec commands are static and repo-controlled, so this is safe here.
-        - name: GO2RTC_ALLOW_ARBITRARY_EXEC
-          value: "true"
         - name: FRIGATE_MQTT_USER
           valueFrom:
             secretKeyRef:
