@@ -54,18 +54,24 @@ ffmpeg:
   # profile per stream. Detection stays OpenVINO-on-CPU — Frigate 0.17's
   # TensorRT detector needs Turing+, not Pascal.
   hwaccel_args: preset-nvidia
-# Cameras use preset-rtsp-restream (NOT the -low-latency variant): go2rtc's
-# nest producers cold-start on first consumer, and the low-latency preset's
-# nobuffer probing gives up before the Nest WebRTC negotiation finishes —
-# every camera then loops "Invalid data found when processing input" forever
-# (verified live 2026-07-19: warming a producer via the go2rtc API instantly
-# unstuck the camera). The patient preset rides out the cold start.
+  # Nest streams carry Opus audio; MP4 recordings need AAC. This preset
+  # transcodes audio to AAC for the record role (without it, recordings are
+  # silent or fail to mux the Opus track).
+  output_args:
+    record: preset-record-generic-audio-aac
 # go2rtc with Nest cameras via direct SDM API
-# Using the correct echo:curl syntax from official documentation
 go2rtc:
+  # preload keeps the on-demand Nest WebRTC producers connected on startup so a
+  # keyframe is ready the instant a consumer (Frigate / the live UI) attaches,
+  # instead of a ~5-10s cold-start on first access after a restart.
+  preload:
+    backyard-nest: "video=h264&audio=opus"
+    garage-inside-nest: "video=h264&audio=opus"
+    garage-outside-nest: "video=h264&audio=opus"
+    front-porch-nest: "video=h264&audio=opus"
+    living-room-nest: "video=h264&audio=opus"
+    kitchen-nest: "video=h264&audio=opus"
   streams:
-    # Nest cameras via Google SDM API (direct, no Home Assistant).
-    #
     # Nest cameras via Google SDM API (direct WebRTC, no Home Assistant).
     # Cameras consume these PLAIN streams (NOT ?video): the video-only
     # ?video variant starves ffmpeg of a keyframe at attach ("Invalid data
@@ -107,7 +113,7 @@ cameras:
   backyard:
     enabled: true
     ffmpeg:
-      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 5000000
+      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 50000000
       inputs:
       - path: rtsp://127.0.0.1:8554/backyard-nest
         roles:
@@ -129,7 +135,7 @@ cameras:
   garage-inside:
     enabled: true
     ffmpeg:
-      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 5000000
+      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 50000000
       inputs:
       - path: rtsp://127.0.0.1:8554/garage-inside-nest
         roles:
@@ -149,7 +155,7 @@ cameras:
   garage-outside:
     enabled: true
     ffmpeg:
-      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 5000000
+      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 50000000
       inputs:
       - path: rtsp://127.0.0.1:8554/garage-outside-nest
         roles:
@@ -169,7 +175,7 @@ cameras:
   front-porch:
     enabled: true
     ffmpeg:
-      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 5000000
+      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 50000000
       inputs:
       - path: rtsp://127.0.0.1:8554/front-porch-nest
         roles:
@@ -204,7 +210,7 @@ cameras:
   living-room:
     enabled: true
     ffmpeg:
-      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 5000000
+      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 50000000
       inputs:
       - path: rtsp://127.0.0.1:8554/living-room-nest
         roles:
@@ -225,7 +231,7 @@ cameras:
   kitchen:
     enabled: true
     ffmpeg:
-      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 5000000
+      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 50000000
       inputs:
       - path: rtsp://127.0.0.1:8554/kitchen-nest
         roles:
