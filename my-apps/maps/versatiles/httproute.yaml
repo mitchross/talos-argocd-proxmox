@@ -17,19 +17,13 @@ spec:
   hostnames:
     - "maps.vanillax.me"
   rules:
-    # Pre-generated MapLibre style JSONs (map-styles nginx). More specific than
-    # "/", so Gateway API routes /styles/* here and everything else to the
-    # versatiles server below.
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /styles
-      backendRefs:
-        - group: ""
-          kind: Service
-          name: map-styles
-          port: 8080
-          weight: 1
+    # NOTE: /styles/* is served by a SEPARATE HTTPRoute (httproute-styles.yaml),
+    # NOT a second rule here. Adding a rule to this existing route's array does
+    # not sync: ArgoCD's global HTTPRoute ignoreDifferences (on
+    # .spec.rules[].backendRefs[]) + ServerSideApply + Cilium co-management makes
+    # array-length changes flap and revert (argo-cd#25284). A fresh single-rule
+    # route creates cleanly; Gateway API merges routes on the same hostname by
+    # path precedence, so /styles still wins over "/".
     - matches:
         - path:
             type: PathPrefix
