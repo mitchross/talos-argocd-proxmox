@@ -8,6 +8,8 @@ resources:
   - job-bootstrap.yaml
   - deployment.yaml
   - service.yaml
+  - style-server.yaml
+  - style-server-service.yaml
   - httproute.yaml
 
 configMapGenerator:
@@ -24,3 +26,13 @@ configMapGenerator:
       - DATASET_URL=https://download.versatiles.org/osm.20260608.versatiles
       - DATASET_SHA256_URL=https://download.versatiles.org/osm.20260608.versatiles.sha256
       - TARGET_FILE=osm.versatiles
+  # map-styles static server: the nginx config + the two pre-generated style
+  # JSONs. Editing a style (re-run styles/generate.mjs) or the config changes
+  # the hash-suffixed name → rolls the map-styles Deployment.
+  - name: map-styles-nginx
+    files:
+      - default.conf=nginx-styles.conf
+  - name: map-styles-files
+    files:
+      - styles/light.json
+      - styles/dark.json
