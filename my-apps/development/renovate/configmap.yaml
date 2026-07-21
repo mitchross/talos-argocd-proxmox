@@ -29,7 +29,7 @@ data:
       "gitAuthor": "Renovate Bot <renovate@vanillax.me>",
       "binarySource": "install",
       "persistRepoData": false,
-      "ignorePrAuthor": true,
+      "ignorePrAuthor": false,
       "force": {
         "dependencyDashboard": true,
         "dependencyDashboardTitle": "Dependency Dashboard — self-hosted (LAN registry)",
