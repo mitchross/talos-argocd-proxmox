@@ -97,35 +97,3 @@ spec:
   resources:
     requests:
       storage: 30Gi
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: pmtiles
-  namespace: radar-ng
-  labels:
-    backup-exempt: "true"
-  annotations:
-    storage.vanillax.dev/backup-exempt-reason: "Protomaps basemap extract; rebuildable by re-running basemap-bootstrap Job from a build.protomaps.com daily build"
-spec:
-  # RWO on longhorn-flash (was RWX on truenas-nfs HDD). basemap mmap-reads this
-  # protomaps extract for map tile serving — small-block RANDOM reads, which on
-  # spinning HDD-over-NFS (102 IOPS @ 310ms) is exactly the thrash that hurt
-  # radar-ng. On the enterprise-SSD flash spindle it is thousands of IOPS at
-  # sub-ms, and off the shared NVMe disk the databases use.
-  #
-  # The old "RWO = permanent Multi-Attach" concern (basemap 24/7 reader vs the
-  # one-shot basemap-bootstrap writer Job) was Longhorn RWO behaving as single-POD
-  # attach. Current Longhorn does RWO multi-pod-same-NODE — proven in this same
-  # namespace: tiles/grids/state now run RWO with 4 co-located pods sharing them.
-  # basemap + the bootstrap Job co-locate on the single worker node, so both
-  # attach fine. (Multi-node caveat as with tiles: pin them together with
-  # podAffinity, or use a real RWX class, before adding worker nodes.)
-  #
-  # Rebuildable: after this PVC is recreated empty, re-run the basemap-bootstrap
-  # Job to re-download the extract from build.protomaps.com.
-  accessModes: [ReadWriteOnce]
-  storageClassName: longhorn-flash
-  resources:
-    requests:
-      storage: 50Gi

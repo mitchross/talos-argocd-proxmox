@@ -1,8 +1,11 @@
 # Tile-server — Caddy + FastAPI. Serves:
 #   /tiles/*          rendered radar/HRRR/etc PNG tiles (from PVC)
-#   /basemap/tiles/*  proxied to basemap service (go-pmtiles)
-#   /basemap/styles/* Protomaps style JSONs baked into the image
 #   /api/*            FastAPI endpoints (manifest, wind-field, storms, etc.)
+#   /basemap/*        image-baked Caddy routes (go-pmtiles proxy + bundled
+#                     Protomaps styles) — DEAD in this deployment: the basemap
+#                     service + PVC were retired and our RadarNG app build uses
+#                     the external VersaTiles basemap. Kept for upstream/forks
+#                     that run the bundled path; harmless here (nothing hits it).
 apiVersion: apps/v1
 kind: Deployment
 metadata:

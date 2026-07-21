@@ -8,12 +8,12 @@ resources:
   - deployment-tile-server.yaml
   - hpa-tile-server.yaml
   - pdb-tile-server.yaml
-  - deployment-basemap.yaml
-  # One-shot Job: extracts a CONUS bbox from the latest Protomaps daily
-  # build and writes /data/basemap.pmtiles on the pmtiles PVC. The
-  # basemap Deployment's init container blocks pod start until the file
-  # exists, so order doesn't matter.
-  - job-basemap-bootstrap.yaml
+  # NOTE: the bundled Protomaps basemap subsystem (deployment-basemap.yaml,
+  # job-basemap-bootstrap.yaml, the `basemap` Service, the `pmtiles` PVC, and
+  # basemap-bootstrap-image/) was retired here — this deployment's RadarNG app
+  # is built with EXPO_PUBLIC_BASEMAP_*_STYLE_URL pointing at the shared
+  # VersaTiles server (maps.vanillax.me/styles). Upstream/forks stay
+  # batteries-included via the bundled path in the image (mitchross/radar-ng#30).
   - deployment-open-meteo.yaml
   - servicemonitor.yaml
   - prometheusrule.yaml
