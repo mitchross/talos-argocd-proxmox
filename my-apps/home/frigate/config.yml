@@ -63,6 +63,13 @@ ffmpeg:
 # go2rtc with Nest cameras via direct SDM API
 # Using the correct echo:curl syntax from official documentation
 go2rtc:
+  preload:
+    backyard-nest: "video=h264&audio=opus"
+    garage-inside-nest: "video=h264&audio=opus"
+    garage-outside-nest: "video=h264&audio=opus"
+    front-porch-nest: "video=h264&audio=opus"
+    living-room-nest: "video=h264&audio=opus"
+    kitchen-nest: "video=h264&audio=opus"
   streams:
     # Nest cameras via Google SDM API (direct, no Home Assistant).
     #
@@ -80,27 +87,27 @@ go2rtc:
     backyard-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEu-b9WJaOye6XlAOJsVuG4cdrmJC3WIVTtENALQQfkYJSpLEQj4va9k1c1YHqDcgAWUdfaIgvBMIy3--kQBCmq_dDI&protocols=WEB_RTC&video=h264&audio=opus"
     backyard-restream:
-    - "exec:/usr/lib/ffmpeg/7.0/bin/ffmpeg -hide_banner -v error -thread_queue_size 4096 -rtbufsize 256m -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp -i rtsp://127.0.0.1:8554/backyard-nest -map 0:v:0 -map 0:a:0? -c:v copy -bsf:v h264_metadata=aud=insert -c:a aac -b:a 128k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp {{output}}"
+    - "exec:/usr/lib/ffmpeg/7.0/bin/ffmpeg -hide_banner -v error -thread_queue_size 4096 -rtbufsize 256m -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp -i rtsp://127.0.0.1:8554/backyard-nest -map 0:v:0 -map 0:a:0? -c:v copy -bsf:v h264_metadata=aud=insert -c:a aac -b:a 128k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp {{output}}#starttimeout=60"
     garage-inside-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEuwG9L_DWqqKXGMkSsZWGLHxyieW9NJBmZCARSyBqtpOt2BxS8Un3SYTfuClz3pCd1BS32T-sTRnsRwR3M_ddddZ6s&protocols=WEB_RTC&video=h264&audio=opus"
     garage-inside-restream:
-    - "exec:/usr/lib/ffmpeg/7.0/bin/ffmpeg -hide_banner -v error -thread_queue_size 4096 -rtbufsize 256m -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp -i rtsp://127.0.0.1:8554/garage-inside-nest -map 0:v:0 -map 0:a:0? -c:v copy -bsf:v h264_metadata=aud=insert -c:a aac -b:a 128k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp {{output}}"
+    - "exec:/usr/lib/ffmpeg/7.0/bin/ffmpeg -hide_banner -v error -thread_queue_size 4096 -rtbufsize 256m -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp -i rtsp://127.0.0.1:8554/garage-inside-nest -map 0:v:0 -map 0:a:0? -c:v copy -bsf:v h264_metadata=aud=insert -c:a aac -b:a 128k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp {{output}}#starttimeout=60"
     garage-outside-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEv2h0W3viecoGaYuzNnJYw5JpuFl22mo6_2OxWG7xIs8fTPCL0uwgrIOU8WEm7IiTIOQ_cgyzkh18OaR6nBzlTUWQ0&protocols=WEB_RTC&video=h264&audio=opus"
     garage-outside-restream:
-    - "exec:/usr/lib/ffmpeg/7.0/bin/ffmpeg -hide_banner -v error -thread_queue_size 4096 -rtbufsize 256m -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp -i rtsp://127.0.0.1:8554/garage-outside-nest -map 0:v:0 -map 0:a:0? -c:v copy -bsf:v h264_metadata=aud=insert -c:a aac -b:a 128k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp {{output}}"
+    - "exec:/usr/lib/ffmpeg/7.0/bin/ffmpeg -hide_banner -v error -thread_queue_size 4096 -rtbufsize 256m -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp -i rtsp://127.0.0.1:8554/garage-outside-nest -map 0:v:0 -map 0:a:0? -c:v copy -bsf:v h264_metadata=aud=insert -c:a aac -b:a 128k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp {{output}}#starttimeout=60"
     front-porch-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEtOw3n2_DdhAm0wdt_NFRX7r04GI3RgzvQ2l2jt7KrpS7kCuvSvUtlDAmDCxg9nqMYUMEQz2IaXjtYJmT3A7gH1vPQ&protocols=WEB_RTC&video=h264&audio=opus"
     front-porch-restream:
-    - "exec:/usr/lib/ffmpeg/7.0/bin/ffmpeg -hide_banner -v error -thread_queue_size 4096 -rtbufsize 256m -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp -i rtsp://127.0.0.1:8554/front-porch-nest -map 0:v:0 -map 0:a:0? -c:v copy -bsf:v h264_metadata=aud=insert -c:a aac -b:a 128k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp {{output}}"
+    - "exec:/usr/lib/ffmpeg/7.0/bin/ffmpeg -hide_banner -v error -thread_queue_size 4096 -rtbufsize 256m -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp -i rtsp://127.0.0.1:8554/front-porch-nest -map 0:v:0 -map 0:a:0? -c:v copy -bsf:v h264_metadata=aud=insert -c:a aac -b:a 128k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp {{output}}#starttimeout=60"
     living-room-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEvWU1Xm4--F8EQvLgj32449ix_pnGNv82a1xR6gJoWCsdxUyyWk1b3C9Aox-hLzJtQ2rp85L1F_BAw1HYaMgaLIa5U&protocols=WEB_RTC&video=h264&audio=opus"
     living-room-restream:
-    - "exec:/usr/lib/ffmpeg/7.0/bin/ffmpeg -hide_banner -v error -thread_queue_size 4096 -rtbufsize 256m -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp -i rtsp://127.0.0.1:8554/living-room-nest -map 0:v:0 -map 0:a:0? -c:v copy -bsf:v h264_metadata=aud=insert -c:a aac -b:a 128k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp {{output}}"
+    - "exec:/usr/lib/ffmpeg/7.0/bin/ffmpeg -hide_banner -v error -thread_queue_size 4096 -rtbufsize 256m -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp -i rtsp://127.0.0.1:8554/living-room-nest -map 0:v:0 -map 0:a:0? -c:v copy -bsf:v h264_metadata=aud=insert -c:a aac -b:a 128k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp {{output}}#starttimeout=60"
     kitchen-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEtnbEGv0Bh9GblHDv66SK0jKGBAbQ1Mnnkuki_YW4_XQJGgV_dZ-nlouy_oRShGc1_7PwBFabTHa8ovpRYEyb8CZVk&protocols=WEB_RTC&video=h264&audio=opus"
     kitchen-restream:
-    - "exec:/usr/lib/ffmpeg/7.0/bin/ffmpeg -hide_banner -v error -thread_queue_size 4096 -rtbufsize 256m -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp -i rtsp://127.0.0.1:8554/kitchen-nest -map 0:v:0 -map 0:a:0? -c:v copy -bsf:v h264_metadata=aud=insert -c:a aac -b:a 128k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp {{output}}"
+    - "exec:/usr/lib/ffmpeg/7.0/bin/ffmpeg -hide_banner -v error -thread_queue_size 4096 -rtbufsize 256m -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp -i rtsp://127.0.0.1:8554/kitchen-nest -map 0:v:0 -map 0:a:0? -c:v copy -bsf:v h264_metadata=aud=insert -c:a aac -b:a 128k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp {{output}}#starttimeout=60"
 cameras:
   # Wyze camera via wyze-bridge (disabled - Wyze API auth broken)
   # shed:
