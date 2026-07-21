@@ -17,6 +17,19 @@ spec:
   hostnames:
     - "maps.vanillax.me"
   rules:
+    # Pre-generated MapLibre style JSONs (map-styles nginx). More specific than
+    # "/", so Gateway API routes /styles/* here and everything else to the
+    # versatiles server below.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /styles
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: map-styles
+          port: 8080
+          weight: 1
     - matches:
         - path:
             type: PathPrefix
