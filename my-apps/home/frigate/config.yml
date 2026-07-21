@@ -61,37 +61,42 @@ ffmpeg:
     record: preset-record-generic-audio-aac
 # go2rtc with Nest cameras via direct SDM API
 go2rtc:
-  # preload keeps the on-demand Nest WebRTC producers connected on startup so a
-  # keyframe is ready the instant a consumer (Frigate / the live UI) attaches,
-  # instead of a ~5-10s cold-start on first access after a restart.
-  preload:
-    backyard-nest: "video=h264&audio=opus"
-    garage-inside-nest: "video=h264&audio=opus"
-    garage-outside-nest: "video=h264&audio=opus"
-    front-porch-nest: "video=h264&audio=opus"
-    living-room-nest: "video=h264&audio=opus"
-    kitchen-nest: "video=h264&audio=opus"
   streams:
-    # Nest cameras via Google SDM API (direct WebRTC, no Home Assistant).
-    # Cameras consume these PLAIN streams (NOT ?video): the video-only
-    # ?video variant starves ffmpeg of a keyframe at attach ("Invalid data
-    # found") — the audio track in the full stream lets ffmpeg establish
-    # timing and wait for Nest's late keyframe. Patience + corruption
-    # tolerance live in each camera's input_args. Verified: plain nest cold
-    # = 180 decoded frames; ?video = 0. (exec AUD-wrapper approach dropped —
-    # go2rtc exec-timeout raced Nest cold-start; the plain path is simpler.)
+    # Nest cameras via Google SDM API (direct WebRTC). Each *-nest raw stream
+    # feeds an *-sub ffmpeg re-encode; cameras consume the CLEAN *-sub.
+    # WHY: Nest's H264 is AUD-less with irregular keyframes, so Frigate's own
+    # ffmpeg fails INSTANTLY with "Invalid data found" on a cold producer —
+    # probe/timeout tuning does NOT help (it fails before the probe window;
+    # verified @kancelott's 50M/50M/60s still errors). go2rtc's ffmpeg: module
+    # stays connected (internal retries, no exec starttimeout), keeps the Nest
+    # producer warm, and the forced scale = full decode+encode = clean
+    # keyframes Frigate consumes fine. Pattern from frigate #17527 (@edse).
+    # (preload was tried and dropped — bundled go2rtc 1.9.10 didn't hold the
+    # WebRTC producers warm.)
     backyard-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEu-b9WJaOye6XlAOJsVuG4cdrmJC3WIVTtENALQQfkYJSpLEQj4va9k1c1YHqDcgAWUdfaIgvBMIy3--kQBCmq_dDI&protocols=WEB_RTC&video=h264&audio=opus"
+    backyard-sub:
+    - "ffmpeg:backyard-nest#video=h264#width=1280#height=720#raw=-fpsmax 5"
     garage-inside-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEuwG9L_DWqqKXGMkSsZWGLHxyieW9NJBmZCARSyBqtpOt2BxS8Un3SYTfuClz3pCd1BS32T-sTRnsRwR3M_ddddZ6s&protocols=WEB_RTC&video=h264&audio=opus"
+    garage-inside-sub:
+    - "ffmpeg:garage-inside-nest#video=h264#width=1280#height=720#raw=-fpsmax 5"
     garage-outside-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEv2h0W3viecoGaYuzNnJYw5JpuFl22mo6_2OxWG7xIs8fTPCL0uwgrIOU8WEm7IiTIOQ_cgyzkh18OaR6nBzlTUWQ0&protocols=WEB_RTC&video=h264&audio=opus"
+    garage-outside-sub:
+    - "ffmpeg:garage-outside-nest#video=h264#width=1280#height=720#raw=-fpsmax 5"
     front-porch-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEtOw3n2_DdhAm0wdt_NFRX7r04GI3RgzvQ2l2jt7KrpS7kCuvSvUtlDAmDCxg9nqMYUMEQz2IaXjtYJmT3A7gH1vPQ&protocols=WEB_RTC&video=h264&audio=opus"
+    front-porch-sub:
+    - "ffmpeg:front-porch-nest#video=h264#width=480#height=640#raw=-fpsmax 5"
     living-room-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEvWU1Xm4--F8EQvLgj32449ix_pnGNv82a1xR6gJoWCsdxUyyWk1b3C9Aox-hLzJtQ2rp85L1F_BAw1HYaMgaLIa5U&protocols=WEB_RTC&video=h264&audio=opus"
+    living-room-sub:
+    - "ffmpeg:living-room-nest#video=h264#width=1280#height=720#raw=-fpsmax 5"
     kitchen-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEtnbEGv0Bh9GblHDv66SK0jKGBAbQ1Mnnkuki_YW4_XQJGgV_dZ-nlouy_oRShGc1_7PwBFabTHa8ovpRYEyb8CZVk&protocols=WEB_RTC&video=h264&audio=opus"
+    kitchen-sub:
+    - "ffmpeg:kitchen-nest#video=h264#width=1280#height=720#raw=-fpsmax 5"
 cameras:
   # Wyze camera via wyze-bridge (disabled - Wyze API auth broken)
   # shed:
@@ -113,9 +118,9 @@ cameras:
   backyard:
     enabled: true
     ffmpeg:
-      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 50000000
+      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
       inputs:
-      - path: rtsp://127.0.0.1:8554/backyard-nest
+      - path: rtsp://127.0.0.1:8554/backyard-sub
         roles:
         - detect
         - record
@@ -135,9 +140,9 @@ cameras:
   garage-inside:
     enabled: true
     ffmpeg:
-      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 50000000
+      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
       inputs:
-      - path: rtsp://127.0.0.1:8554/garage-inside-nest
+      - path: rtsp://127.0.0.1:8554/garage-inside-sub
         roles:
         - detect
         - record
@@ -155,9 +160,9 @@ cameras:
   garage-outside:
     enabled: true
     ffmpeg:
-      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 50000000
+      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
       inputs:
-      - path: rtsp://127.0.0.1:8554/garage-outside-nest
+      - path: rtsp://127.0.0.1:8554/garage-outside-sub
         roles:
         - detect
         - record
@@ -175,9 +180,9 @@ cameras:
   front-porch:
     enabled: true
     ffmpeg:
-      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 50000000
+      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
       inputs:
-      - path: rtsp://127.0.0.1:8554/front-porch-nest
+      - path: rtsp://127.0.0.1:8554/front-porch-sub
         roles:
         - detect
         - record
@@ -210,9 +215,9 @@ cameras:
   living-room:
     enabled: true
     ffmpeg:
-      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 50000000
+      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
       inputs:
-      - path: rtsp://127.0.0.1:8554/living-room-nest
+      - path: rtsp://127.0.0.1:8554/living-room-sub
         roles:
         - detect
         - record
@@ -231,9 +236,9 @@ cameras:
   kitchen:
     enabled: true
     ffmpeg:
-      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 50000000
+      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp
       inputs:
-      - path: rtsp://127.0.0.1:8554/kitchen-nest
+      - path: rtsp://127.0.0.1:8554/kitchen-sub
         roles:
         - detect
         - record
