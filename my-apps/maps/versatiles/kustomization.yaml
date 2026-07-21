@@ -11,6 +11,7 @@ resources:
   - style-server.yaml
   - style-server-service.yaml
   - httproute.yaml
+  - httproute-styles.yaml
 
 configMapGenerator:
   # Hash-suffixed names are the update mechanism: editing DATASET_URL below

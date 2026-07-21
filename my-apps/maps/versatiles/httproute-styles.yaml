@@ -1,12 +1,11 @@
+# /styles/* -> map-styles nginx. Separate route from versatiles-route (Gateway
+# API merges same-hostname routes by path precedence). DNS owned by
+# versatiles-route, so no external-dns label here.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: versatiles-route
+  name: map-styles-route
   namespace: versatiles
-  labels:
-    external-dns: "true"
-  annotations:
-    external-dns.alpha.kubernetes.io/target: "vanillax.me"
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
@@ -17,14 +16,13 @@ spec:
   hostnames:
     - "maps.vanillax.me"
   rules:
-    # /styles/* is a separate route (httproute-styles.yaml).
     - matches:
         - path:
             type: PathPrefix
-            value: /
+            value: /styles
       backendRefs:
         - group: ""
           kind: Service
-          name: versatiles
+          name: map-styles
           port: 8080
           weight: 1
