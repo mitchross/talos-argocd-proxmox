@@ -54,15 +54,16 @@ ffmpeg:
   # profile per stream. Detection stays OpenVINO-on-CPU — Frigate 0.17's
   # TensorRT detector needs Turing+, not Pascal.
   hwaccel_args: preset-nvidia
-# Cameras use preset-rtsp-restream (NOT the -low-latency variant): go2rtc's
-# nest producers cold-start on first consumer, and the low-latency preset's
-# nobuffer probing gives up before the Nest WebRTC negotiation finishes —
-# every camera then loops "Invalid data found when processing input" forever
-# (verified live 2026-07-19: warming a producer via the go2rtc API instantly
-# unstuck the camera). The patient preset rides out the cold start.
+  # Nest streams carry Opus audio; MP4 recordings need AAC. This preset
+  # transcodes audio to AAC for the record role (without it, recordings are
+  # silent or fail to mux the Opus track).
+  output_args:
+    record: preset-record-generic-audio-aac
 # go2rtc with Nest cameras via direct SDM API
-# Using the correct echo:curl syntax from official documentation
 go2rtc:
+  # preload keeps the on-demand Nest WebRTC producers connected on startup so a
+  # keyframe is ready the instant a consumer (Frigate / the live UI) attaches,
+  # instead of a ~5-10s cold-start on first access after a restart.
   preload:
     backyard-nest: "video=h264&audio=opus"
     garage-inside-nest: "video=h264&audio=opus"
@@ -71,43 +72,26 @@ go2rtc:
     living-room-nest: "video=h264&audio=opus"
     kitchen-nest: "video=h264&audio=opus"
   streams:
-    # Nest cameras via Google SDM API (direct, no Home Assistant).
-    #
-    # Each *-nest raw stream is wrapped by an *-restream exec ffmpeg (below);
-    # cameras consume ONLY the wrapper. WHY: Nest's WebRTC H264 carries no
-    # Access Unit Delimiters, and Frigate 0.17's ffmpeg 7.0 rejects it with
-    # "Invalid data found when processing input" (0.16/ffmpeg5 was lenient —
-    # THIS is the 0.16->0.17 regression, not a config change). The wrapper
-    # copies video (no re-encode), inserts AUDs via the h264_metadata bsf, and
-    # drops corrupt packets (+genpts+discardcorrupt), producing a stream
-    # Frigate parses cleanly. go2rtc restarts the exec until the on-demand Nest
-    # producer is warm, then it locks on. Verified: AUD-insert on a warm nest
-    # yielded 132 decoded frames where the raw stream gave 0. Pattern from
-    # frigate discussion #17527.
+    # Nest cameras via Google SDM API (direct WebRTC, no Home Assistant).
+    # Cameras consume these PLAIN streams (NOT ?video): the video-only
+    # ?video variant starves ffmpeg of a keyframe at attach ("Invalid data
+    # found") — the audio track in the full stream lets ffmpeg establish
+    # timing and wait for Nest's late keyframe. Patience + corruption
+    # tolerance live in each camera's input_args. Verified: plain nest cold
+    # = 180 decoded frames; ?video = 0. (exec AUD-wrapper approach dropped —
+    # go2rtc exec-timeout raced Nest cold-start; the plain path is simpler.)
     backyard-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEu-b9WJaOye6XlAOJsVuG4cdrmJC3WIVTtENALQQfkYJSpLEQj4va9k1c1YHqDcgAWUdfaIgvBMIy3--kQBCmq_dDI&protocols=WEB_RTC&video=h264&audio=opus"
-    backyard-restream:
-    - "exec:/usr/lib/ffmpeg/7.0/bin/ffmpeg -hide_banner -v error -thread_queue_size 4096 -rtbufsize 256m -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp -i rtsp://127.0.0.1:8554/backyard-nest -map 0:v:0 -map 0:a:0? -c:v copy -bsf:v h264_metadata=aud=insert -c:a aac -b:a 128k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp {{output}}#starttimeout=60"
     garage-inside-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEuwG9L_DWqqKXGMkSsZWGLHxyieW9NJBmZCARSyBqtpOt2BxS8Un3SYTfuClz3pCd1BS32T-sTRnsRwR3M_ddddZ6s&protocols=WEB_RTC&video=h264&audio=opus"
-    garage-inside-restream:
-    - "exec:/usr/lib/ffmpeg/7.0/bin/ffmpeg -hide_banner -v error -thread_queue_size 4096 -rtbufsize 256m -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp -i rtsp://127.0.0.1:8554/garage-inside-nest -map 0:v:0 -map 0:a:0? -c:v copy -bsf:v h264_metadata=aud=insert -c:a aac -b:a 128k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp {{output}}#starttimeout=60"
     garage-outside-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEv2h0W3viecoGaYuzNnJYw5JpuFl22mo6_2OxWG7xIs8fTPCL0uwgrIOU8WEm7IiTIOQ_cgyzkh18OaR6nBzlTUWQ0&protocols=WEB_RTC&video=h264&audio=opus"
-    garage-outside-restream:
-    - "exec:/usr/lib/ffmpeg/7.0/bin/ffmpeg -hide_banner -v error -thread_queue_size 4096 -rtbufsize 256m -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp -i rtsp://127.0.0.1:8554/garage-outside-nest -map 0:v:0 -map 0:a:0? -c:v copy -bsf:v h264_metadata=aud=insert -c:a aac -b:a 128k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp {{output}}#starttimeout=60"
     front-porch-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEtOw3n2_DdhAm0wdt_NFRX7r04GI3RgzvQ2l2jt7KrpS7kCuvSvUtlDAmDCxg9nqMYUMEQz2IaXjtYJmT3A7gH1vPQ&protocols=WEB_RTC&video=h264&audio=opus"
-    front-porch-restream:
-    - "exec:/usr/lib/ffmpeg/7.0/bin/ffmpeg -hide_banner -v error -thread_queue_size 4096 -rtbufsize 256m -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp -i rtsp://127.0.0.1:8554/front-porch-nest -map 0:v:0 -map 0:a:0? -c:v copy -bsf:v h264_metadata=aud=insert -c:a aac -b:a 128k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp {{output}}#starttimeout=60"
     living-room-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEvWU1Xm4--F8EQvLgj32449ix_pnGNv82a1xR6gJoWCsdxUyyWk1b3C9Aox-hLzJtQ2rp85L1F_BAw1HYaMgaLIa5U&protocols=WEB_RTC&video=h264&audio=opus"
-    living-room-restream:
-    - "exec:/usr/lib/ffmpeg/7.0/bin/ffmpeg -hide_banner -v error -thread_queue_size 4096 -rtbufsize 256m -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp -i rtsp://127.0.0.1:8554/living-room-nest -map 0:v:0 -map 0:a:0? -c:v copy -bsf:v h264_metadata=aud=insert -c:a aac -b:a 128k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp {{output}}#starttimeout=60"
     kitchen-nest:
     - "nest:?client_id={FRIGATE_NEST_CLIENT_ID}&client_secret={FRIGATE_NEST_CLIENT_SECRET}&refresh_token={FRIGATE_NEST_REFRESH_TOKEN}&project_id={FRIGATE_NEST_PROJECT_ID}&device_id=AVPHwEtnbEGv0Bh9GblHDv66SK0jKGBAbQ1Mnnkuki_YW4_XQJGgV_dZ-nlouy_oRShGc1_7PwBFabTHa8ovpRYEyb8CZVk&protocols=WEB_RTC&video=h264&audio=opus"
-    kitchen-restream:
-    - "exec:/usr/lib/ffmpeg/7.0/bin/ffmpeg -hide_banner -v error -thread_queue_size 4096 -rtbufsize 256m -fflags +genpts+discardcorrupt -rtsp_transport tcp -rtsp_flags prefer_tcp -i rtsp://127.0.0.1:8554/kitchen-nest -map 0:v:0 -map 0:a:0? -c:v copy -bsf:v h264_metadata=aud=insert -c:a aac -b:a 128k -ar 48000 -ac 2 -f rtsp -rtsp_transport tcp {{output}}#starttimeout=60"
 cameras:
   # Wyze camera via wyze-bridge (disabled - Wyze API auth broken)
   # shed:
@@ -129,9 +113,9 @@ cameras:
   backyard:
     enabled: true
     ffmpeg:
-      input_args: preset-rtsp-restream
+      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 50000000
       inputs:
-      - path: rtsp://127.0.0.1:8554/backyard-restream
+      - path: rtsp://127.0.0.1:8554/backyard-nest
         roles:
         - detect
         - record
@@ -151,9 +135,9 @@ cameras:
   garage-inside:
     enabled: true
     ffmpeg:
-      input_args: preset-rtsp-restream
+      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 50000000
       inputs:
-      - path: rtsp://127.0.0.1:8554/garage-inside-restream
+      - path: rtsp://127.0.0.1:8554/garage-inside-nest
         roles:
         - detect
         - record
@@ -171,9 +155,9 @@ cameras:
   garage-outside:
     enabled: true
     ffmpeg:
-      input_args: preset-rtsp-restream
+      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 50000000
       inputs:
-      - path: rtsp://127.0.0.1:8554/garage-outside-restream
+      - path: rtsp://127.0.0.1:8554/garage-outside-nest
         roles:
         - detect
         - record
@@ -191,9 +175,9 @@ cameras:
   front-porch:
     enabled: true
     ffmpeg:
-      input_args: preset-rtsp-restream
+      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 50000000
       inputs:
-      - path: rtsp://127.0.0.1:8554/front-porch-restream
+      - path: rtsp://127.0.0.1:8554/front-porch-nest
         roles:
         - detect
         - record
@@ -226,9 +210,9 @@ cameras:
   living-room:
     enabled: true
     ffmpeg:
-      input_args: preset-rtsp-restream
+      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 50000000
       inputs:
-      - path: rtsp://127.0.0.1:8554/living-room-restream
+      - path: rtsp://127.0.0.1:8554/living-room-nest
         roles:
         - detect
         - record
@@ -247,9 +231,9 @@ cameras:
   kitchen:
     enabled: true
     ffmpeg:
-      input_args: preset-rtsp-restream
+      input_args: -avoid_negative_ts make_zero -fflags +genpts+discardcorrupt -rtsp_transport tcp -analyzeduration 10000000 -probesize 10000000 -timeout 50000000
       inputs:
-      - path: rtsp://127.0.0.1:8554/kitchen-restream
+      - path: rtsp://127.0.0.1:8554/kitchen-nest
         roles:
         - detect
         - record
