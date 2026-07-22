@@ -85,7 +85,7 @@ spec:
           # pinned tag makes the manifest and image move atomically; a missing
           # push fails ImagePullBackOff instead of silently running the old
           # script).
-          image: ghcr.io/mitchross/basemap-bootstrap:v1.0.0
+          image: ghcr.io/mitchross/basemap-bootstrap:v1.0.1
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
