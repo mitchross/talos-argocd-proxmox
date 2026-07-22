@@ -26,7 +26,7 @@ spec:
         effect: "NoSchedule"
       containers:
       - name: llmfit
-        image: ghcr.io/alexsjones/llmfit:latest@sha256:97c1f698e1893908ab8f56d48ecb22233bedc13c5c61f08620b23dbf3492fa7a
+        image: ghcr.io/alexsjones/llmfit:latest@sha256:40135558ba93511afc8dca184f0696cd8b456537157a6fb7837389b6f2ce84b3
         imagePullPolicy: IfNotPresent
         resources:
           limits:
