@@ -30,7 +30,7 @@ spec:
         # that demonstrably served these cameras through April 2026. Keep Renovate
         # off this until the regression is bisected.
         # renovate: ignore
-        image: ghcr.io/blakeblackshear/frigate:0.17.1
+        image: ghcr.io/blakeblackshear/frigate:0.17.2
         imagePullPolicy: IfNotPresent
         env:
         - name: TZ
