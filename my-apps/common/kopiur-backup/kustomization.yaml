@@ -44,6 +44,21 @@ patches:
         value:
           kind: ClusterRepository
           name: cluster-kopia
+      # deletion.onPolicyDelete added in kopiur 0.8.0 (#272). Default is Retain
+      # (kopia repo snapshots SURVIVE a policy deletion — only Snapshot CRs are
+      # GC'd), which is exactly the GitOps-prune safety we need: an ArgoCD prune
+      # of a SnapshotPolicy (refactor, app decommission, bad sync) must NEVER
+      # destroy backup history. We PIN it for the same reason we pin copyMethod:
+      # a server-defaulted field has no SSA owner, so a future default flip
+      # (Retain→Delete) could silently arm cascade-deletion on the next re-apply.
+      # The wrong value here is catastrophic (permanent loss of every snapshot a
+      # pruned policy owned), so it is pinned everywhere. Deliberate cascade
+      # cleanup of a decommissioned app is a MANUAL op (set Delete in the stub +
+      # the mass-deletion breaker), never the GitOps default.
+      - op: add
+        path: /spec/deletion
+        value:
+          onPolicyDelete: Retain
   # --- SnapshotSchedule: uniform scheduling --------------------------------
   - target:
       kind: SnapshotSchedule
