@@ -33,7 +33,7 @@ spec:
         fsGroupChangePolicy: "OnRootMismatch"
       containers:
         - name: llama-cpp-server
-          image: ghcr.io/ggml-org/llama.cpp:server-cuda13-b10088
+          image: ghcr.io/ggml-org/llama.cpp:server-cuda13-b10103
           imagePullPolicy: IfNotPresent
           command: ["/app/llama-server"]
           args:
