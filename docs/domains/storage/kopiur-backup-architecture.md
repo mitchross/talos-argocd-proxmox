@@ -294,40 +294,25 @@ or [`my-apps/home/project-nomad/mysql/`](https://github.com/mitchross/talos-argo
 
 ---
 
-## 6. Upstream 0.5.x–0.8 notes (assessed 2026-07-04, updated 2026-07-23, chart pinned `0.8.0`)
+## 6. Upstream 0.5.x–0.8 notes (chart pinned `0.8.0`)
 
 What changed upstream in 0.5.0–0.8.0 and how it lands here:
 
-- **0.8.0 = the breaking release; safe-by-default for us** (assessed 2026-07-23).
-  It adds **SnapshotPolicy deletion cascade + auto-adoption of discovered
-  snapshots** (#272) and mass-deletion protection (cascade guard, per-repo
-  breaker, batched deletes; #265). Two new `SnapshotPolicy` fields:
-    - `spec.deletion.onPolicyDelete` — enum `Retain` (default) / `Delete`.
-      **Retain is what a GitOps cluster wants:** deleting/pruning a
-      `SnapshotPolicy` leaves the kopia repo snapshots intact (only the
-      `Snapshot` CRs are GC'd). We now **pin `onPolicyDelete: Retain`
-      explicitly** in the `kopiur-backup` component — same SSA re-default
-      hazard as `copyMethod`, except the wrong value here would let an ArgoCD
-      prune *cascade-delete backup history*. Deliberate cleanup of a
-      decommissioned app is a manual op (`Delete` + the mass-deletion breaker),
-      never the default.
-    - `spec.adoption` — enum `Adopt` (default) / `Ignore`. Discovered snapshots
-      whose resolved identity (`username`/`hostname`/`sourcePath`) matches a
-      live policy are recreated as `origin: adopted` rows so retention can
-      govern/prune them (solves "pre-DR history occupies storage forever").
-      Foreign-cluster snapshots are refused by three independent guards — moot
-      here anyway (dedicated single-cluster `s3://kopiur` bucket). Left at the
-      beneficial default. CRD-schema-verified field-by-field against the 0.8.0
-      tag: same 8 CRDs, and **every field the component/stubs consume is
-      unchanged** — no stub edits needed.
-- **0.7.1–0.7.5 = additive/irrelevant** (2026-07-10..16). New *opt-in* CRD
-  fields only (kopia CLI tuning flags + staged-PVC storageClass/accessMode
-  overrides, 0.7.1); per-CR projected-credential naming (0.7.2/0.7.3 — we use
-  the ESO fanout, not `credentialProjection`); multi-cluster shared-repo
-  identity + maintenance leases (0.7.4 — we run a dedicated single-cluster
-  bucket, but this is the groundwork for 0.8.0's foreign-cluster guards); a
-  `securityContext`-inheritance fix (0.7.5 — we pin explicit data-owner uids, so
-  `inheritSecurityContextFrom` stays unused). No field we consume changed.
+- **0.8.0 adds a SnapshotPolicy deletion cascade + snapshot auto-adoption**
+  (#272), with mass-deletion protection. Two new `SnapshotPolicy` fields:
+    - `spec.deletion.onPolicyDelete` (`Retain` default / `Delete`) — `Retain`
+      leaves the kopia repo snapshots when a policy is pruned (only `Snapshot`
+      CRs are GC'd). We **pin `Retain`** in the `kopiur-backup` component: like
+      `copyMethod`, a server-defaulted field has no SSA owner, so a future
+      default flip could let an ArgoCD prune cascade-delete backup history.
+      Deliberate cleanup of a decommissioned app is a manual `Delete`.
+    - `spec.adoption` (`Adopt` default / `Ignore`) — identity-matched orphan
+      snapshots are adopted so retention prunes them; foreign-cluster snapshots
+      are guarded. Left at the default. CRDs are unchanged (still 8) — no stub
+      edits needed.
+- **0.7.1–0.7.5**: only additive/opt-in CRD fields and features we don't use
+  (CLI tuning flags, `credentialProjection` naming, multi-cluster identity, a
+  `securityContext`-inherit fix). Nothing we consume changed.
 - **0.7.0 = a trivial bump for us** (2026-07-07). The chart's `values.yaml` is
   byte-identical to 0.6.0, the `kubeVersion` floor is unchanged (`>=1.32.0-0`),
   and the CRD set is the same 8. Its breaking changes are all internal Rust
@@ -380,19 +365,12 @@ What changed upstream in 0.5.0–0.8.0 and how it lands here:
   it, use the nested shape — the old shape is rejected on new writes.
   Verification is also now **gated on a verifiable snapshot existing** (no more
   verify-Job-fails-against-empty-repo on a fresh policy).
-- **Metrics renamed / store-backed** since 0.5.0 (the store-backed
-  `kopiur_policy_last_backup_*` series were added alongside the older
-  `kopiur_snapshot_*` counters; `kopiur_resource_phase` emits active-only
-  series). We **do** scrape kopiur now: the chart's ServiceMonitor/PrometheusRule/
-  dashboard stay disabled, but `monitoring/prometheus-stack/custom-servicemonitors.yaml`
-  defines our own `kopiur-controller-metrics` ServiceMonitor feeding
-  `kopiur-alerts.yaml`. Both alert queries are 0.8.0-verified to exist:
-  `kopiur_snapshot_consecutive_failures` (the failure counter survived the
-  rename) and `kopiur_policy_last_backup_success_timestamp_seconds`. 0.8.0 also
-  adds cascade/adoption observability — `kopiur_policy_cascade_children_deleted`
-  (labels `namespace`, `mode` ∈ `retain`/`delete`), `kopiur_snapshots_adopted`,
-  `kopiur_repo_foreign_snapshots` — and we alert on a `mode="delete"` cascade as
-  a backup-history tripwire (`KopiurCascadeDeletedSnapshots`).
+- **We scrape kopiur metrics.** `custom-servicemonitors.yaml` defines a
+  `kopiur-controller-metrics` ServiceMonitor feeding `kopiur-alerts.yaml` (the
+  chart's own ServiceMonitor/PrometheusRule stay disabled). 0.8.0 adds a
+  `mode="delete"` cascade counter (`kopiur_policy_cascade_children_deleted_total`)
+  that the `KopiurCascadeDeletedSnapshots` tripwire watches — it should never
+  fire while `onPolicyDelete: Retain` is pinned.
 - **`scheduleDefaults.timezone`** can now be set once on the
   `ClusterRepository` and every cron (backup schedules, verification,
   maintenance) inherits it. We deliberately stay on UTC — setting it would

@@ -246,8 +246,7 @@ spec:
 For **root-owned** data use `securityContext: { runAsUser: 0, runAsNonRoot: false }`
 (no podSecurityContext needed) AND add the namespace privileged-movers annotation.
 The component injects `repository: cluster-kopia`, `copyMethod: Snapshot`,
-`volumeSnapshotClassName: longhorn-snapclass`, `deletion.onPolicyDelete: Retain`
-(kopiur 0.8.0 — keeps a prune from cascade-deleting backup history),
+`volumeSnapshotClassName: longhorn-snapclass`, `deletion.onPolicyDelete: Retain`,
 `target.populator: {}`, `policy.onMissingSnapshot: Continue`,
 `concurrencyPolicy: Forbid`, `runOnCreate: false` — do NOT duplicate those in the stub.
 

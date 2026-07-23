@@ -32,40 +32,9 @@ helmCharts:
     # helm template --include-crds (this includeCRDs: true) emits the same 8
     # CRDs before and after, so ArgoCD never sees them leave the manifest.
     # NEVER remove includeCRDs: true — it IS the CRD lifecycle here.
-    # 0.7.0 (2026-07-07): trivial for us — values.yaml unchanged vs 0.6.0,
-    # same kubeVersion floor, same 8-CRD set. Breaking changes are all internal
-    # Rust dep bumps (kube 4.0, croner 3.0) + the RepositoryReplication cred fix
-    # (#200) which we don't use. Render-verified with our values.
-    # 0.7.1–0.7.5 (2026-07-10..16): all additive or irrelevant to us. New OPT-IN
-    # CRD fields only (kopia CLI tuning flags + staged-PVC storageClass/accessMode
-    # overrides, 0.7.1); per-CR projected-credential naming (0.7.2/0.7.3 — we use
-    # the ESO ClusterExternalSecret fanout, not credentialProjection); multi-cluster
-    # shared-repo identity + maintenance leases (0.7.4 — we run a DEDICATED
-    # single-cluster bucket); a securityContext-inheritance fix (0.7.5 — we pin
-    # explicit data-owner uids, so inheritSecurityContextFrom is unused). No CRD
-    # field our component/stubs consume changed.
-    # 0.8.0 (2026-07-19): the breaking release — "SnapshotPolicy deletion cascade
-    # + auto-adoption of discovered snapshots" (#272) plus mass-deletion protection
-    # (#265). Assessed 2026-07-23 (this review):
-    #   - CRD-schema-verified FIELD BY FIELD against the 0.8.0 tag (deploy/crds/):
-    #     same 8 CRDs, same kinds. Every field our component + stubs consume is
-    #     unchanged — copyMethod, volumeSnapshotClassName, repository, sources,
-    #     identity, retention, mover (SnapshotPolicy); policyRef,
-    #     schedule.{cron,concurrencyPolicy,runOnCreate} (SnapshotSchedule);
-    #     source.fromPolicy, target.populator, policy.onMissingSnapshot, mover
-    #     (Restore). Our config validates as-is. (No local helm here — verified
-    #     vs upstream CRD source, which is stronger than a render for API compat.)
-    #   - TWO new SnapshotPolicy fields: spec.deletion.onPolicyDelete (default
-    #     Retain) and spec.adoption (default Adopt). Default Retain IS the
-    #     GitOps-prune safety we want: pruning a SnapshotPolicy leaves the kopia
-    #     repo snapshots intact (only the Snapshot CRs are GC'd). We now PIN
-    #     onPolicyDelete: Retain in the kopiur-backup component — same SSA
-    #     re-default hazard as copyMethod, except the wrong value here would let a
-    #     prune CASCADE-DELETE backup history. Adoption stays at the beneficial
-    #     default (identity-matched orphans fall under our retention; foreign-cluster
-    #     snapshots are guarded — moot on a dedicated single-cluster bucket anyway).
-    #   - values.yaml interface unchanged; same kubeVersion floor. New cascade
-    #     metric wired to a tripwire alert (monitoring/prometheus-stack/kopiur-alerts.yaml).
+    # 0.8.0: adds a SnapshotPolicy deletion cascade. onPolicyDelete: Retain is
+    # pinned in the kopiur-backup component so an ArgoCD prune of a policy can't
+    # delete its backup history. CRDs unchanged (still 8) — stubs render as-is.
     version: 0.8.0
     releaseName: kopiur
     namespace: kopiur-system
