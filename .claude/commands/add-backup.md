@@ -68,7 +68,8 @@ are gone.
 
    The component injects the uniform fields (`repository: cluster-kopia`,
    `copyMethod: Snapshot`, `volumeSnapshotClassName: longhorn-snapclass`,
-   `target.populator: {}`, `onMissingSnapshot: Continue`, schedule
+   `deletion.onPolicyDelete: Retain`, `target.populator: {}`,
+   `onMissingSnapshot: Continue`, schedule
    `concurrencyPolicy: Forbid`/`runOnCreate: false`) — do not duplicate them.
 
 5. **Kustomization** — add the stub + the component:

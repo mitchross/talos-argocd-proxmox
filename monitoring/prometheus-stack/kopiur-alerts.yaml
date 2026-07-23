@@ -56,6 +56,35 @@ spec:
               Actions:
               1. kubectl -n {{ $labels.namespace }} get snapshotpolicy,snapshotschedule,snapshot
               2. Check SnapshotSchedule is not suspended and Snapshots' failure status
+        - alert: KopiurCascadeDeletedSnapshots
+          # Tripwire for the kopiur 0.8.0 deletion-cascade (#272). We pin
+          # spec.deletion.onPolicyDelete: Retain in the kopiur-backup component,
+          # so a SnapshotPolicy deletion must only ever RETAIN its repo snapshots
+          # (mode="retain"). This fires only if a cascade actually DELETED backup
+          # history (mode="delete") — meaning the Retain pin was bypassed, a stub
+          # set Delete, or a future chart flipped the default past our pinned
+          # field. Any firing = backup history is being destroyed; investigate now.
+          # (mode label values source-verified vs kopiur 0.8.0 PolicyCascadeMode.)
+          expr: increase(kopiur_policy_cascade_children_deleted_total{mode="delete"}[15m]) > 0
+          for: 0m
+          labels:
+            severity: critical
+            component: kopiur
+            category: backup
+          annotations:
+            summary: "kopiur cascade-DELETED backup snapshots: {{ $labels.namespace }}"
+            description: |
+              A SnapshotPolicy deletion cascade removed {{ $value }} snapshot(s)
+              from the repository in {{ $labels.namespace }}. With
+              onPolicyDelete pinned to Retain (my-apps/common/kopiur-backup),
+              this should be impossible — backup history is being destroyed.
+
+              Actions:
+              1. kubectl -n {{ $labels.namespace }} get snapshotpolicy -o yaml | grep -A2 deletion
+                 (should show onPolicyDelete: Retain — if Delete, a stub overrode the component)
+              2. Confirm the kopiur-backup component still pins Retain and the
+                 rendered SnapshotPolicy carries it (kubectl kustomize <app>)
+              3. Check kopiur-system controller logs for the cascade finalizer
         - alert: KopiurControllerDown
           expr: up{job="kopiur-controller-metrics"} == 0 or absent(up{job="kopiur-controller-metrics"})
           for: 15m
