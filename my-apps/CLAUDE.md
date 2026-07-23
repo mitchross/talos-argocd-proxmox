@@ -246,9 +246,9 @@ spec:
 For **root-owned** data use `securityContext: { runAsUser: 0, runAsNonRoot: false }`
 (no podSecurityContext needed) AND add the namespace privileged-movers annotation.
 The component injects `repository: cluster-kopia`, `copyMethod: Snapshot`,
-`volumeSnapshotClassName: longhorn-snapclass`, `target.populator: {}`,
-`policy.onMissingSnapshot: Continue`, `concurrencyPolicy: Forbid`,
-`runOnCreate: false` — do NOT duplicate those in the stub.
+`volumeSnapshotClassName: longhorn-snapclass`, `deletion.onPolicyDelete: Retain`,
+`target.populator: {}`, `policy.onMissingSnapshot: Continue`,
+`concurrencyPolicy: Forbid`, `runOnCreate: false` — do NOT duplicate those in the stub.
 
 **4. The PVC** — point `dataSourceRef` at the Restore (restore-before-bind) and
 keep the immutable-dataSourceRef masking annotations:

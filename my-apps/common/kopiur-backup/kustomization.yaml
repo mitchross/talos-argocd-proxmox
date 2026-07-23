@@ -44,6 +44,15 @@ patches:
         value:
           kind: ClusterRepository
           name: cluster-kopia
+      # onPolicyDelete (kopiur 0.8.0): Retain keeps the kopia repo snapshots when
+      # a SnapshotPolicy is pruned — only Snapshot CRs are GC'd. Retain is the
+      # upstream default, but pin it like copyMethod: a server-defaulted field has
+      # no SSA owner, so a future default flip (→Delete) could silently let an
+      # ArgoCD prune cascade-delete backup history.
+      - op: add
+        path: /spec/deletion
+        value:
+          onPolicyDelete: Retain
   # --- SnapshotSchedule: uniform scheduling --------------------------------
   - target:
       kind: SnapshotSchedule

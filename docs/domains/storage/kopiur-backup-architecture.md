@@ -202,7 +202,7 @@ then print the combined result."
 
 | Resource | App stub supplies | Component adds |
 |---|---|---|
-| `SnapshotPolicy` | name, source PVC, identity, retention, mover UID:GID | repository, `copyMethod: Snapshot`, `volumeSnapshotClassName` |
+| `SnapshotPolicy` | name, source PVC, identity, retention, mover UID:GID | repository, `copyMethod: Snapshot`, `volumeSnapshotClassName`, `deletion.onPolicyDelete: Retain` |
 | `SnapshotSchedule` | cron schedule | `concurrencyPolicy: Forbid`, `runOnCreate: false` |
 | `Restore` | source policy, mover UID:GID | repository, `target.populator`, `onMissingSnapshot: Continue` |
 
@@ -294,10 +294,25 @@ or [`my-apps/home/project-nomad/mysql/`](https://github.com/mitchross/talos-argo
 
 ---
 
-## 6. Upstream 0.5.x–0.7 notes (assessed 2026-07-04, updated 2026-07-07, chart pinned `0.7.0`)
+## 6. Upstream 0.5.x–0.8 notes (chart pinned `0.8.0`)
 
-What changed upstream in 0.5.0–0.7.0 and how it lands here:
+What changed upstream in 0.5.0–0.8.0 and how it lands here:
 
+- **0.8.0 adds a SnapshotPolicy deletion cascade + snapshot auto-adoption**
+  (#272), with mass-deletion protection. Two new `SnapshotPolicy` fields:
+    - `spec.deletion.onPolicyDelete` (`Retain` default / `Delete`) — `Retain`
+      leaves the kopia repo snapshots when a policy is pruned (only `Snapshot`
+      CRs are GC'd). We **pin `Retain`** in the `kopiur-backup` component: like
+      `copyMethod`, a server-defaulted field has no SSA owner, so a future
+      default flip could let an ArgoCD prune cascade-delete backup history.
+      Deliberate cleanup of a decommissioned app is a manual `Delete`.
+    - `spec.adoption` (`Adopt` default / `Ignore`) — identity-matched orphan
+      snapshots are adopted so retention prunes them; foreign-cluster snapshots
+      are guarded. Left at the default. CRDs are unchanged (still 8) — no stub
+      edits needed.
+- **0.7.1–0.7.5**: only additive/opt-in CRD fields and features we don't use
+  (CLI tuning flags, `credentialProjection` naming, multi-cluster identity, a
+  `securityContext`-inherit fix). Nothing we consume changed.
 - **0.7.0 = a trivial bump for us** (2026-07-07). The chart's `values.yaml` is
   byte-identical to 0.6.0, the `kubeVersion` floor is unchanged (`>=1.32.0-0`),
   and the CRD set is the same 8. Its breaking changes are all internal Rust
@@ -350,11 +365,12 @@ What changed upstream in 0.5.0–0.7.0 and how it lands here:
   it, use the nested shape — the old shape is rejected on new writes.
   Verification is also now **gated on a verifiable snapshot existing** (no more
   verify-Job-fails-against-empty-repo on a fresh policy).
-- **Metrics renamed / store-backed** (`kopiur_snapshot_*` →
-  `kopiur_policy_last_backup_*`; `kopiur_resource_phase` emits active-only
-  series). Irrelevant here today: the chart's ServiceMonitor/PrometheusRule/
-  dashboard are all disabled and nothing in `monitoring/` scrapes kopiur metric
-  names. If you ever enable scraping, use the new names.
+- **We scrape kopiur metrics.** `custom-servicemonitors.yaml` defines a
+  `kopiur-controller-metrics` ServiceMonitor feeding `kopiur-alerts.yaml` (the
+  chart's own ServiceMonitor/PrometheusRule stay disabled). 0.8.0 adds a
+  `mode="delete"` cascade counter (`kopiur_policy_cascade_children_deleted_total`)
+  that the `KopiurCascadeDeletedSnapshots` tripwire watches — it should never
+  fire while `onPolicyDelete: Retain` is pinned.
 - **`scheduleDefaults.timezone`** can now be set once on the
   `ClusterRepository` and every cron (backup schedules, verification,
   maintenance) inherits it. We deliberately stay on UTC — setting it would
