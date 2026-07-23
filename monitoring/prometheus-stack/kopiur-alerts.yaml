@@ -57,14 +57,10 @@ spec:
               1. kubectl -n {{ $labels.namespace }} get snapshotpolicy,snapshotschedule,snapshot
               2. Check SnapshotSchedule is not suspended and Snapshots' failure status
         - alert: KopiurCascadeDeletedSnapshots
-          # Tripwire for the kopiur 0.8.0 deletion-cascade (#272). We pin
-          # spec.deletion.onPolicyDelete: Retain in the kopiur-backup component,
-          # so a SnapshotPolicy deletion must only ever RETAIN its repo snapshots
-          # (mode="retain"). This fires only if a cascade actually DELETED backup
-          # history (mode="delete") — meaning the Retain pin was bypassed, a stub
-          # set Delete, or a future chart flipped the default past our pinned
-          # field. Any firing = backup history is being destroyed; investigate now.
-          # (mode label values source-verified vs kopiur 0.8.0 PolicyCascadeMode.)
+          # onPolicyDelete: Retain is pinned in the kopiur-backup component, so a
+          # policy deletion must only RETAIN. A mode="delete" cascade means the pin
+          # was bypassed and backup history is being destroyed. (metric name,
+          # _total suffix, and mode label verified against kopiur 0.8.0.)
           expr: increase(kopiur_policy_cascade_children_deleted_total{mode="delete"}[15m]) > 0
           for: 0m
           labels:
