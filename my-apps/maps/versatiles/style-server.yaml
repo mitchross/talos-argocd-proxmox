@@ -64,6 +64,10 @@ spec:
             - name: styles
               mountPath: /usr/share/nginx/html/styles
               readOnly: true
+            - name: index
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+              readOnly: true
       volumes:
         - name: conf
           configMap:
@@ -71,3 +75,6 @@ spec:
         - name: styles
           configMap:
             name: map-styles-files
+        - name: index
+          configMap:
+            name: map-styles-index

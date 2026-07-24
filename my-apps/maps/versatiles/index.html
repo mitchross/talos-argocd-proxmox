@@ -1,0 +1,53 @@
+<!doctype html>
+<!--
+  Fullscreen MapLibre viewer served at maps.vanillax.me/ so the root is a MAP,
+  not the VersaTiles frontend dashboard (which serves a landing/preview page you
+  have to click through). Points at the self-hosted /styles/{dark,light}.json —
+  tiles/glyphs/sprites are all local. maplibre-gl itself is the ONLY external
+  dependency (jsdelivr, major-pinned @5). Vendoring it would blow the 1MB
+  ConfigMap limit, so it stays on the CDN; the map data underneath is self-hosted.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>maps.vanillax.me</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <link href="https://cdn.jsdelivr.net/npm/maplibre-gl@5/dist/maplibre-gl.css" rel="stylesheet" />
+    <style>
+      html, body { margin: 0; height: 100%; background: #0b0e12; }
+      #map { position: absolute; inset: 0; }
+      .maplibregl-ctrl-attrib { font-size: 11px; }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5/dist/maplibre-gl.js"></script>
+    <script>
+      // Follow the OS theme; both style docs live on this same host.
+      const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const style = dark ? '/styles/dark.json' : '/styles/light.json';
+
+      const map = new maplibregl.Map({
+        container: 'map',
+        style,
+        center: [-98.5, 39.8], // continental US; geolocate overrides on grant
+        zoom: 3.6,
+        hash: true,            // deep-link position in the URL (#zoom/lat/lng)
+        attributionControl: { compact: true },
+      });
+
+      map.addControl(new maplibregl.NavigationControl(), 'top-right');
+      map.addControl(new maplibregl.ScaleControl({ unit: 'imperial' }));
+
+      const geolocate = new maplibregl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: true,
+      });
+      map.addControl(geolocate, 'top-right');
+      // Jump to the user's location on first load (no-op if they deny / no #hash).
+      map.on('load', () => {
+        if (!location.hash) geolocate.trigger();
+      });
+    </script>
+  </body>
+</html>

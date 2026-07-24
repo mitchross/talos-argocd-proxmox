@@ -1,0 +1,33 @@
+# Exact `/` -> map-styles nginx, which serves the fullscreen MapLibre viewer
+# (index.html) instead of the VersaTiles frontend landing page. A FRESH,
+# single-rule route on purpose: growing an existing HTTPRoute's .spec.rules does
+# NOT converge in this cluster (ArgoCD reports Synced but only one rule lands) —
+# see the map-styles-route split. Exact `/` beats versatiles-route's PathPrefix
+# `/` by Gateway API path precedence, so only the bare root is intercepted;
+# /tiles, /preview, /styles, /assets still fall through to versatiles.
+# DNS is owned by versatiles-route, so no external-dns label here.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: map-viewer-route
+  namespace: versatiles
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-external
+      namespace: gateway
+      sectionName: https
+  hostnames:
+    - "maps.vanillax.me"
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: map-styles
+          port: 8080
+          weight: 1
