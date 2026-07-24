@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: stirling-pdf
 
 resources:
+  - vpa.yaml
   - namespace.yaml
   - deployment.yaml
   - service.yaml

@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: perplexica
 
 resources:
+  - vpa.yaml
   - namespace.yaml
   - pvc.yaml
   - deployment.yaml

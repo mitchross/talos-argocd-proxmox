@@ -24,8 +24,9 @@ resources:
   - custom-entrypoints/cnpg-barman-plugin-app.yaml
   - custom-entrypoints/keda-app.yaml
   - custom-entrypoints/vertical-pod-autoscaler-app.yaml
+  - custom-entrypoints/vertical-pod-autoscaler-observability-app.yaml   # Wave 6 — VPA metrics and alerts, after monitoring
   - custom-entrypoints/keda-observability-app.yaml   # Wave 6 — KEDA ServiceMonitors, after monitoring (split from keda core)
-  - custom-entrypoints/vpa-recommendations-app.yaml   # Wave 6 — passive VPA recommendation objects, after VPA CRDs
+  - custom-entrypoints/vpa-system-policies-app.yaml   # Wave 6 — system VPA policies not co-located with an app
   - custom-entrypoints/temporal-worker-controller-app.yaml
   - custom-entrypoints/opentelemetry-operator-app.yaml
   - custom-entrypoints/opentelemetry-operator-observability-app.yaml   # Wave 6 — OTel operator ServiceMonitor, after monitoring (split from otel core)

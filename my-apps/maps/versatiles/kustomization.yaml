@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: versatiles
 
 resources:
+  - vpa.yaml
   - namespace.yaml
   - pvc.yaml
   - job-bootstrap.yaml

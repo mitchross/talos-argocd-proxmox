@@ -3,9 +3,9 @@
 # In-place resize path: k8s 1.36 has InPlacePodVerticalScaling GA and VPA 1.7
 # ships InPlaceOrRecreate GA (the VPA feature gate was removed in 1.7 — do NOT
 # pass --feature-gates=InPlaceOrRecreate, it's an unknown flag now). Per-workload
-# VPA objects in infrastructure/controllers/vpa-recommendations/ opt in with
-# updateMode: InPlaceOrRecreate; the updater resizes pods without restart and
-# only falls back to eviction when the kubelet can't satisfy the resize.
+# Co-located vpa.yaml files and infrastructure/controllers/vpa-system-policies/
+# opt in with updateMode: InPlaceOrRecreate; the updater resizes pods without
+# restart and only falls back to eviction when the kubelet cannot satisfy it.
 #
 # Webhook cert is cert-manager-managed (chart creates a self-signed Issuer → CA
 # → webhook Certificate, cainjector fills the webhook caBundle). certGen is the

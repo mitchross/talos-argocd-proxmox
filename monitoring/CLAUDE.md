@@ -40,6 +40,11 @@ static SPA served by nginx).
 
 ## Common Pitfalls
 
+- **VPA ceilings are per container**: keep each monitoring app's `vpa.yaml`
+  co-located and name main containers explicitly when a pod has sidecars.
+- **VPA update-mode metric**: kube-state-metrics' custom StateSet must include
+  `InPlaceOrRecreate`; otherwise active policies disappear from dashboards.
+
 - **Tempo/Loki S3 creds**: Use `extraEnvFrom` with secretRef, NOT inline `${VAR}` in config (they don't expand env vars)
 - **ArgoCD metrics**: Must be per-component (`controller.metrics`, `server.metrics`, etc.), top-level `metrics:` key does nothing
 - **Longhorn ServiceMonitor**: Select `app: longhorn-manager` (NOT `app.kubernetes.io/name: longhorn-manager`)

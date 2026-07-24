@@ -1,58 +1,92 @@
-# Media apps.
+# VPA policy is owned with this application so Argo prunes it with the target.
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: immich-server
-  namespace: immich
+  name: prometheus
+  namespace: prometheus-stack
 spec:
+  # Target the operator's top-level CR, not its generated StatefulSet. This
+  # keeps the VPA attached across operator-controlled pod revisions.
   targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: immich-server
+    apiVersion: monitoring.coreos.com/v1
+    kind: Prometheus
+    name: kube-prometheus-stack-prometheus
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      - containerName: "*"
+      - containerName: prometheus
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
-          cpu: "4"
+          cpu: "2"
           memory: 8Gi
+      - containerName: config-reloader
+        mode: Off
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: immich-machine-learning
-  namespace: immich
+  name: alertmanager
+  namespace: prometheus-stack
 spec:
+  # Target the operator's top-level CR for the same ownership reason as
+  # Prometheus above.
   targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: immich-machine-learning
+    apiVersion: monitoring.coreos.com/v1
+    kind: Alertmanager
+    name: kube-prometheus-stack-alertmanager
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      - containerName: "*"
+      - containerName: alertmanager
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
-          cpu: "4"
-          memory: 8Gi
+          cpu: "1"
+          memory: 1Gi
+      - containerName: config-reloader
+        mode: Off
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: immich-valkey
-  namespace: immich
+  name: grafana
+  namespace: prometheus-stack
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: immich-valkey
+    name: kube-prometheus-stack-grafana
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: grafana
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 2Gi
+      - containerName: grafana-sc-dashboard
+        mode: Off
+      - containerName: grafana-sc-datasources
+        mode: Off
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: kube-state-metrics
+  namespace: prometheus-stack
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: kube-prometheus-stack-kube-state-metrics
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
@@ -63,48 +97,4 @@ spec:
         controlledValues: RequestsOnly
         maxAllowed:
           cpu: "1"
-          memory: 2Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: jellyfin
-  namespace: jellyfin
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: jellyfin
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "4"
-          memory: 8Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: tubesync
-  namespace: tubesync
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: tubesync
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "2"
-          memory: 4Gi
+          memory: 1Gi

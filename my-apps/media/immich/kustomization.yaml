@@ -7,6 +7,7 @@ labels:
       app.kubernetes.io/managed-by: argocd
 
 resources:
+  - vpa.yaml
   - namespace.yaml
   - externalsecret.yaml
   - nfs-photos-pvc.yaml

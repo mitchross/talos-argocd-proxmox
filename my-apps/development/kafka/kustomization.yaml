@@ -10,6 +10,7 @@ labels:
       app.kubernetes.io/name: kafka
       app.kubernetes.io/managed-by: argocd
 resources:
+  - vpa.yaml
   - namespace.yaml
   - kafka-cluster.yaml
   - topics.yaml

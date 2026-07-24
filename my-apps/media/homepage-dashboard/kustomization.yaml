@@ -10,6 +10,7 @@ labels:
       app.kubernetes.io/name: homepage-dashboard
       app.kubernetes.io/managed-by: argocd
 resources:
+  - vpa.yaml
   - ns.yaml
   - pvc.yaml
   - deployment.yaml

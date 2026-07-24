@@ -1,0 +1,57 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: vertical-pod-autoscaler
+  labels:
+    app.kubernetes.io/name: vertical-pod-autoscaler
+spec:
+  groups:
+    - name: vertical-pod-autoscaler
+      rules:
+        - alert: VPAControllerUnavailable
+          expr: |
+            kube_deployment_status_replicas_available{
+              namespace="vertical-pod-autoscaler",
+              deployment=~"vpa-vertical-pod-autoscaler-(admission-controller|recommender|updater)"
+            } < 1
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: "VPA component {{ $labels.deployment }} is unavailable"
+            description: "VPA recommendations or request actuation are degraded for more than 10 minutes."
+        - alert: VPAMissingRecommendation
+          expr: |
+            kube_verticalpodautoscaler_spec_updatepolicy_updatemode{
+              update_mode=~"InPlaceOrRecreate|Off"
+            } == 1
+              unless on (namespace, verticalpodautoscaler)
+            kube_verticalpodautoscaler_status_recommendation_containerrecommendations_target_memory
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "VPA {{ $labels.namespace }}/{{ $labels.verticalpodautoscaler }} has no recommendation"
+            description: "Check target existence, selector compatibility, and recommender logs."
+        - alert: NodeMemoryRequestsHigh
+          expr: |
+            sum by (node) (
+              kube_pod_container_resource_requests{
+                resource="memory",
+                unit="byte",
+                node!=""
+              }
+            )
+              /
+            sum by (node) (
+              kube_node_status_allocatable{
+                resource="memory",
+                unit="byte"
+              }
+            ) > 0.90
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Memory requests exceed 90% on {{ $labels.node }}"
+            description: "Requested memory leaves little scheduler headroom; inspect VPA targets and hand-set requests."
