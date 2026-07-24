@@ -154,6 +154,7 @@ Detailed instructions load automatically when working in these directories:
 | `infrastructure/networking/` | Gateway API routing patterns, HTTPRoute templates |
 | `my-apps/` | App templates (minimal, web, secrets, storage), Helm+Kustomize patterns |
 | `my-apps/ai/` | GPU workload patterns, llama-cpp backend |
+| `my-apps/development/posthog/` | Self-hosted PostHog: file map, invariants, upgrade/DR rules, porting guide |
 | `monitoring/` | Monitoring pitfalls (S3 creds, ServiceMonitor selectors) |
 
 ## Custom Commands
