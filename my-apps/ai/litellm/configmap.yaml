@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: litellm-config
+  namespace: litellm
+data:
+  config.yaml: |
+    model_list:
+      - model_name: qwen3.6-27b
+        litellm_params:
+          model: hosted_vllm/qwen3.6-27b
+          api_base: http://vllm-service.vllm.svc.cluster.local:8080/v1
+          api_key: "vllm-no-key-required"
+        model_info:
+          # Self-hosted — pin explicitly rather than rely on LiteLLM's cost map.
+          input_cost_per_token: 0
+          output_cost_per_token: 0
+      - model_name: kimi-k3
+        litellm_params:
+          model: moonshot/kimi-k3
+          api_key: os.environ/MOONSHOT_API_KEY
+        model_info:
+          # Kimi K3 pricing (moonshot.ai, 2026-07): $3/M input, $15/M output.
+          # Set explicitly since the model may be too new for LiteLLM's built-in cost map.
+          input_cost_per_token: 0.000003
+          output_cost_per_token: 0.000015
+
+    litellm_settings:
+      success_callback: ["posthog"]
+      failure_callback: ["posthog"]
+      # Kimi K3 fixes temperature/top_p/n/presence_penalty/frequency_penalty
+      # server-side and rejects overrides — drop rather than error if a
+      # client sends them.
+      drop_params: true
+
+    general_settings:
+      master_key: os.environ/LITELLM_MASTER_KEY
