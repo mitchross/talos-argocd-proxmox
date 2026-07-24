@@ -12,9 +12,9 @@
 > Stack targets: Kubernetes/Talos GitOps (this repo), JavaScript/Node/
 > TypeScript, Python, React Native, Temporal.io.
 >
-> Last updated: 2026-07-06 (post live benchmark — see §6 gotchas 10–12 and
-> the scripted-mode section in §4a; models.json + Perplexica curls now match
-> the verified deployed config).
+> Last updated: 2026-07-24 (added §9 — LiteLLM proxy + PostHog LLM Analytics,
+> and the `kimi-consult` subagent; §4a's pi-subagents status corrected —
+> it's back, for one targeted reason).
 
 ## Architecture
 
@@ -289,16 +289,17 @@ if you want structured cluster reads instead of the `k8s-debug` skill's
 kubectl calls, GitHub MCP for PR/issue flows. Skip MCP wrappers for things
 with good CLIs (temporal, argocd) — the CLI costs zero context.
 
-**Subagents (`pi-subagents`) — currently NOT installed** (removed 2026-07-06
-along with `pi-goal`: zero historical usage, and every extension is failure
-surface — see the scripted-mode section). If you reinstall, mind the backend:
-parallel subagents each
-open their own request against vLLM, and `--max-num-seqs 2` means a fan-out
-of 3+ queues (and each queued request still pays full prefill when it lands).
-Use subagents for *sequential isolation* (fresh context per task) rather than
-wide parallel fan-outs — or raise `--max-num-seqs` in
-`my-apps/ai/vllm/deployment.yaml` first and accept the KV-pool split at
-long context.
+**Subagents (`pi-subagents`) — reinstalled 2026-07-24, for one specific
+reason: `kimi-consult` (§9).** It was removed 2026-07-06 (zero usage, and
+every extension is failure surface — see the scripted-mode section) with the
+warning that parallel subagents each open their own request against vLLM,
+where `--max-num-seqs 2` means a fan-out of 3+ queues. That warning still
+holds for **general-purpose subagents against the local backend** — but
+`kimi-consult` doesn't hit vLLM at all; it's a single subagent pinned to a
+*different* model/provider (Kimi K3 via LiteLLM → Moonshot's API), so it
+doesn't touch the `max-num-seqs` budget. Don't reintroduce wide parallel
+fan-outs of `worker`/`scout`/etc. against the local model without reading the
+warning above first; `kimi-consult` alone doesn't reopen that problem.
 
 **Plan mode (`pi-plan`)** — read-only propose→approve→execute. Recommended
 default for anything touching this repo, since a wrong `kubectl` habit here
@@ -553,9 +554,135 @@ so it compacts instead of erroring at the ceiling.
       `mcp({ search: ... })` call resolves a tool
 - [ ] Long session: `/compact` works and the next turn's prefill drops
 
+## 9. LiteLLM proxy — logging pi's LLM usage to PostHog
+
+A second, optional path: an in-cluster **LiteLLM proxy** (`my-apps/ai/litellm/`)
+sits between pi and its backends purely for observability — every request's
+tokens, cost, latency, and model land in the self-hosted PostHog instance's
+**LLM Analytics** (Clusters/Playground included, same ingestion feeds all
+three). It doesn't replace the direct vLLM path above; it's a second provider
+you opt into per-model.
+
+```
+pi (workstation TUI)
+  ├── https://vllm.vanillax.me/v1              (default daily driver, §1 — unlogged)
+  └── https://litellm.vanillax.me/v1            (internal route, LAN only)
+        ├── hosted_vllm/qwen3.6-27b  → same vLLM backend, now logged
+        └── moonshot/kimi-k3         → api.moonshot.ai — logged, has real $ cost
+              └── success/failure_callback: ["posthog"] → capture.posthog.svc.cluster.local
+```
+
+### Cluster side (already deployed, GitOps-managed)
+
+`my-apps/ai/litellm/` — a plain non-GPU app (no scale-swap concerns, unlike
+the AI workloads above). Config highlights worth knowing before touching it:
+
+- `drop_params: true` — **required**, not cosmetic. Kimi K3 fixes
+  `temperature`/`top_p`/`n`/`presence_penalty`/`frequency_penalty` server-side
+  and **rejects** requests that override them, rather than ignoring the
+  override. Without `drop_params`, any client that sends its own sampling
+  values breaks Kimi K3 calls through this proxy.
+- `model_info.input_cost_per_token`/`output_cost_per_token` set explicitly
+  per model — `0` for vLLM (self-hosted), `0.000003`/`0.000015` for Kimi K3
+  ($3/$15 per million, Moonshot's July 2026 pricing). Set explicitly rather
+  than relying on LiteLLM's built-in cost map, since Kimi K3 may be too new
+  for it.
+- Secrets (`master_key`, `moonshot_api_key`, `posthog_api_key`) come from the
+  1Password item **`litellm`** in vault `homelab-prod` via the standard
+  `ExternalSecret` pattern — see `my-apps/CLAUDE.md` if it ever needs
+  recreating.
+- **Memory gotcha (learned the hard way):** the container OOMKilled
+  (exit 137) within ~11s of starting at a 512Mi limit — LiteLLM's Python/
+  FastAPI stack + cost-map load at boot needs more than that. Current
+  limit is 1536Mi (512Mi request). If you see a `CrashLoopBackOff` with
+  `reason: OOMKilled` in `kubectl describe pod -n litellm`, this is why —
+  don't chase it as a config bug.
+
+### Client side — `~/.pi/agent/models.json`
+
+Add a second provider alongside the one in §1 (don't replace it — vLLM stays
+reachable directly too):
+
+```json
+"vanillax-litellm": {
+  "baseUrl": "https://litellm.vanillax.me/v1",
+  "api": "openai-completions",
+  "apiKey": "<LITELLM_MASTER_KEY>",
+  "models": [
+    {
+      "id": "kimi-k3",
+      "name": "Kimi K3 (via LiteLLM, logged to PostHog)",
+      "reasoning": true,
+      "input": ["text", "image"],
+      "contextWindow": 1000000,
+      "maxTokens": 131072,
+      "cost": { "input": 3, "output": 15, "cacheRead": 0.3, "cacheWrite": 0 }
+    }
+  ]
+}
+```
+
+Get the master key onto disk without ever pasting it into a chat/agent
+session — run this yourself:
+
+```bash
+KEY=$(op read "op://homelab-prod/litellm/master_key")
+jq --arg key "$KEY" '.providers["vanillax-litellm"].apiKey = $key' \
+  ~/.pi/agent/models.json > ~/.pi/agent/models.json.tmp \
+  && mv ~/.pi/agent/models.json.tmp ~/.pi/agent/models.json
+unset KEY
+```
+
+Verify: `pi --list-models` should list both `vanillax-vllm/qwen3.6-27b` and
+`vanillax-litellm/kimi-k3`. Selecting the latter with `/model` and sending a
+message routes it through LiteLLM → Moonshot, logged to PostHog.
+
+### Kimi K3 API specifics (learned from Moonshot's docs, not assumed)
+
+- **1M token context**, default max output 131,072 (ceiling 1,048,576) — not
+  the 262K/32K you'd guess from the vLLM numbers above; it's a different
+  model on a different backend.
+- **`reasoning_effort`** (`low`/`high`/`max`, default `max`) replaces a
+  binary thinking toggle — and **can't be disabled**. K3 always reasons at
+  max depth unless told otherwise, which is exactly what you want from a
+  "consult on hard problems" model, so nothing to configure.
+- The fixed-sampling-params behavior above (`drop_params: true`) is the one
+  real gotcha — everything else behaves like a normal OpenAI-compatible
+  chat model.
+
+### The `kimi-consult` subagent
+
+`~/.pi/agent/agents/kimi-consult.md` defines a custom subagent (via
+`@narumitw/pi-subagents`, §4a) pinned to `vanillax-litellm/kimi-k3`,
+read-only tools (`read`/`grep`/`find`/`ls`). The daily-driver Qwen3.6 agent
+calls it via the `subagent` tool —
+`{"agent": "kimi-consult", "task": "..."}` — for a second opinion on
+genuinely hard problems: an ambiguous spec, a bug it isn't converging on, an
+architecture tradeoff. `~/.pi/agent/AGENTS.md`'s "Escalate to Kimi K3" section
+tells the main agent when this is worth the cost (~$3/$15 per million tokens,
+unlike free local Qwen) instead of leaving it to reach for automatically.
+
+Because `kimi-consult` calls Moonshot's API rather than the local vLLM
+endpoint, it does **not** consume any of the `--max-num-seqs 2` budget from
+§4a/§6 — it's the one subagent use case that doesn't reopen that contention
+problem.
+
+### Verify checklist
+
+- [ ] `kubectl get pods -n litellm` — `Running`/`1/1 Ready`, no OOMKilled
+- [ ] `curl -H "Authorization: Bearer $LITELLM_MASTER_KEY" https://litellm.vanillax.me/v1/models`
+      lists both `qwen3.6-27b` and `kimi-k3`
+- [ ] `pi --list-models` shows `vanillax-litellm/kimi-k3`
+- [ ] A message through `/model vanillax-litellm/kimi-k3` shows up in
+      PostHog → AI engineering → LLM analytics within a few seconds
+- [ ] `{"agent": "kimi-consult", "task": "say hello"}` via the `subagent`
+      tool returns a Kimi K3 response, also logged to PostHog
+
 ## Related docs
 
 - [`model-catalog.md`](model-catalog.md) — what `qwen3.6-27b` is, app→backend wiring
 - [`3090-llm-optimization.md`](3090-llm-optimization.md) — engine/KV analysis, power profile, wind-down roadmap
+- [`my-apps/ai/litellm/`](https://github.com/mitchross/talos-argocd-proxmox/tree/main/my-apps/ai/litellm) — §9's proxy source (config, secrets, deployment)
+- [LiteLLM docs — Moonshot AI provider](https://docs.litellm.ai/docs/providers/moonshot) · [PostHog LLM analytics](https://posthog.com/docs/llm-analytics) · [Kimi K3 quickstart](https://platform.kimi.ai/docs/guide/kimi-k3-quickstart)
 - [pi docs — models](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/models.md) · [pi coding agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) · [pi.dev/packages](https://pi.dev/packages) · [pi-mcp-adapter](https://github.com/nicobailon/pi-mcp-adapter)
 - Community: [disler/pi-vs-claude-code](https://github.com/disler/pi-vs-claude-code/blob/main/COMPARISON.md) (feature-by-feature map; source for the YOLO-mode and session-tree notes) · [InsiderLLM pi + local models guide](https://insiderllm.com/guides/pi-agent-local-models-ollama/) (local Qwen tool-calling gotchas) · [owainlewis review](https://newsletter.owainlewis.com/p/is-pi-better-than-claude-code) (multi-stage review-loop extension pattern)
