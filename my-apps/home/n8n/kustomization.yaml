@@ -6,6 +6,7 @@ labels:
       app.kubernetes.io/name: n8n
       app.kubernetes.io/managed-by: argocd
 resources:
+  - vpa.yaml
   - namespace.yaml
   - httproute.yaml
   - pvc.yaml

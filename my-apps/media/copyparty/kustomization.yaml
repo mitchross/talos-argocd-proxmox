@@ -6,6 +6,7 @@ generatorOptions:
   disableNameSuffixHash: true
 
 resources:
+  - vpa.yaml
   - ns.yaml
   - data-pvc.yaml
   - deployment.yaml
