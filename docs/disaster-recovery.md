@@ -124,6 +124,10 @@ provision, or VMs are built from stale state and must be reprovisioned.
   deploy-or-restore) — which is why the pre-nuke checklist insists a Snapshot exists
   for anything you intend to restore.
 - Restores complete in rough size order; a full wave of ~24 PVCs is roughly an hour.
+- **PostHog adds ~nothing to the wave**: only `postgres-data` restores
+  (~165 MB actual — seconds to hydrate). Its ClickHouse/Kafka/Redis rebuild
+  empty by design; PostHog's rebuild cost is the migrate Job re-creating the
+  ClickHouse schema (minutes), not data movement.
 - **The API server will wobble.** etcd fsync latency inflates under
   cluster-wide restore I/O — expect intermittent `readyz` failures, slow
   kubectl, csi-sidecar leader-election restarts. It recovers between bursts;

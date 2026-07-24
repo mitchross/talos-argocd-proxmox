@@ -179,7 +179,11 @@
     // off + weekend-only schedule.
     {
       description: 'PostHog sidecars: declare loose versioning for master-<sha7> tag format.',
+      // posthog-node is pulled from Docker Hub — match both registry forms
+      // (same dead-rule class as the monolith entry below).
       matchPackageNames: [
+        'posthog/posthog-node',
+        'docker.io/posthog/posthog-node',
         'ghcr.io/posthog/posthog-node',
         'ghcr.io/posthog/posthog/capture',
         'ghcr.io/posthog/posthog/property-defs-rs',
@@ -194,6 +198,8 @@
     {
       description: 'PostHog sidecars (Rust + node): group into one PR per sweep, but do NOT auto-merge — the 2026-05-09 sharded_events outage was triggered by a sidecar digest auto-merge re-firing the migrate hook against a pre-existing CH config drift. A human reviewer must check each PR against the upstream commit range surfaced by the master-<sha7> tag format before merging.',
       matchPackageNames: [
+        'posthog/posthog-node',
+        'docker.io/posthog/posthog-node',
         'ghcr.io/posthog/posthog-node',
         'ghcr.io/posthog/posthog/capture',
         'ghcr.io/posthog/posthog/property-defs-rs',
@@ -226,8 +232,12 @@
     },
     {
       description: 'PostHog data layer: disable auto-updates (versions must match PostHog docker-compose.base.yml)',
+      // valkey is pulled from Docker Hub as valkey/valkey — without that form
+      // here, the kubernetes-manager minor/patch automerge rule applies to it.
       matchPackageNames: [
         'postgres',
+        'valkey/valkey',
+        'docker.io/valkey/valkey',
         'ghcr.io/valkey-io/valkey',
         'redis',
         'clickhouse/clickhouse-server',
