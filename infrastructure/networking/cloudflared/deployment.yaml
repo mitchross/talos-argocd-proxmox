@@ -21,6 +21,13 @@ spec:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
           whenUnsatisfiable: ScheduleAnyway
+          # Compare only pods from the same rollout. Old/new ReplicaSets
+          # otherwise distort skew while a Deployment is replacing pods.
+          matchLabelKeys:
+            - pod-template-hash
+          # Do not count tainted nodes that these pods cannot use as eligible
+          # topology domains.
+          nodeTaintsPolicy: Honor
           labelSelector:
             matchLabels:
               app: cloudflared

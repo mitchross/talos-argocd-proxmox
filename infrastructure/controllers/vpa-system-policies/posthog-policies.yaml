@@ -1,4 +1,7 @@
-# VPA policy is owned with this application so Argo prunes it with the target.
+# Temporary central ownership: the PostHog Application is currently blocked on
+# its migration hook and cannot safely adopt these policies during this
+# one-PR handoff. Move this file back beside PostHog only after that
+# Application is sync-healthy; preserve every VPA namespace/name.
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
