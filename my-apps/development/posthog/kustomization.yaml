@@ -6,6 +6,7 @@ resources:
   - namespace.yaml
   - externalsecret.yaml
   - httproute.yaml
+  - kopiur/postgres-data.yaml
   # Data layer (all in posthog namespace)
   - data-layer/postgres.yaml
   - data-layer/redis.yaml
@@ -38,3 +39,6 @@ configMapGenerator:
   - name: posthog-env
     envs:
       - posthog-env.env
+
+components:
+  - ../../common/kopiur-backup

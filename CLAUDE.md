@@ -134,7 +134,7 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - Add backup CRs to system namespace PVCs (kube-system, argocd, longhorn-system, kopiur-system)
 - Manually create or delete kopiur `SnapshotPolicy`/`SnapshotSchedule`/`Restore` (or `ReplicationSource`/`ReplicationDestination` — those CRDs are gone) out of band. Manage backups through the per-PVC stub + the `kopiur-backup` component in git.
 - Make observability a core dependency or install Prometheus Operator CRDs early just to satisfy bootstrap apps. `kube-prometheus-stack` is the sole owner of `monitoring.coreos.com` CRDs.
-- Generic-migrate CNPG, PostHog, or Redis PVCs. CNPG uses native Barman/S3; PostHog and Redis are backup-exempt disposable data.
+- Generic-migrate CNPG or Redis PVCs. CNPG uses native Barman/S3; Redis and PostHog's ClickHouse/Kafka are backup-exempt disposable data. PostHog's **Postgres** is kopiur-backed (identity layer: API keys, users, dashboards, flag definitions — survives cluster rebuild).
 - Use legacy `nfs:` block for NFS PVs (mountOptions silently ignored — use CSI)
 - Use `RollingUpdate` strategy on Deployments with RWO PVCs (causes Multi-Attach deadlock)
 - Create external HTTPRoutes without the three required pieces: `external-dns: "true"` label, `external-dns.alpha.kubernetes.io/target: vanillax.me` annotation, and `sectionName: https` — **DNS won't be created and Cloudflare tunnel routing fails silently**
@@ -207,7 +207,7 @@ of duplicating procedures.
 > ⚠️ **Agent guardrails when reading docs:**
 > - **Do NOT resurrect Kyverno** — it was removed from the backup path (no policies, no CRDs, no webhooks).
 > - **Do NOT add pvc-plumber/VolSync labels, `ReplicationSource`/`ReplicationDestination`, the `wait-for-rustfs` MAP, or `/audit` calls** — that whole stack was retired 2026-06-27. Backups are kopiur (per-PVC stub + `kopiur-backup` component); see `docs/domains/storage/kopiur-backup-architecture.md`.
-> - **Do NOT generic-migrate CNPG, PostHog, or Redis PVCs** — CNPG is Barman-native; PostHog and Redis are backup-exempt.
+> - **Do NOT generic-migrate CNPG or Redis PVCs** — CNPG is Barman-native; Redis and PostHog's ClickHouse/Kafka are backup-exempt. PostHog's Postgres uses the standard kopiur component (do not exempt it again — it carries the API keys).
 > - **Do NOT make observability foundational** — core apps bootstrap without Prometheus; do not resurrect an early Prometheus Operator CRD app.
 > - **Do NOT re-enable the Longhorn V2 engine** — tried and retired 2026-06-12 (open Longhorn bugs #13315/#13314: interrupted rebuilds corrupt replica metadata). Forensics in git history; the DR doc carries the short version.
 > - Historical campaign/incident docs were pruned 2026-06-13 (git history retains them) — do not hunt for `docs/archive/`, `docs/research/`, `docs/plans/`, or `pvc-plumber-v4-*`/`v5-*` files.
@@ -218,7 +218,7 @@ of duplicating procedures.
 - **[docs/domains/argocd/argocd.md](docs/domains/argocd/argocd.md)** - ArgoCD documentation
 - **[docs/domains/argocd/entrypoints.md](docs/domains/argocd/entrypoints.md)** - ArgoCD root entrypoints, waves, and AppSet/custom-entrypoint decisions
 - **[docs/domains/storage/architecture-future.md](docs/domains/storage/architecture-future.md)** — **FUTURE IDEA (not implemented):** tiered storage (local CSI + kopiur restore-based DR default, Longhorn for availability-critical apps). Do not act on it now.
-- **kopiur is the backup system (since 2026-06-27):** 22 PVCs across 18 namespaces on the `kopiur-backup` component (count verified 2026-07-01; gitea-postgres-data pending as #23); restore-before-bind proven by the karakeep full-namespace DR drill (2026-06-27). pvc-plumber + VolSync removed. PostHog, Redis, and `project-nomad/nomad-storage` are backup-exempt; swarmui is unused/exempt; CNPG stays native Barman/S3.
+- **kopiur is the backup system (since 2026-06-27):** 22 PVCs across 18 namespaces on the `kopiur-backup` component (count verified 2026-07-01; gitea-postgres-data pending as #23); restore-before-bind proven by the karakeep full-namespace DR drill (2026-06-27). pvc-plumber + VolSync removed. PostHog ClickHouse/Kafka/Redis, standalone Redis, and `project-nomad/nomad-storage` are backup-exempt; swarmui is unused/exempt; CNPG stays native Barman/S3. PostHog `postgres-data` joined the kopiur component 2026-07-24 (#24 — identity layer survives rebuild; DR drill pending).
 - **Database direction (since 2026-07-09):** new databases default to **plain Postgres + kopiur** (reference: `my-apps/development/gitea/postgres/`); the three remaining CNPG databases (immich, paperless, temporal) migrate one at a time per `docs/domains/cnpg/plain-postgres-migration.md`. Crunchy PGO removed (was idle). ALL CNPG rules in this file stay in force until that doc's retirement checklist is fully ticked — do not relax them early.
 
 ## Mink capture

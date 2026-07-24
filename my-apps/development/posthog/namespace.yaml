@@ -9,3 +9,4 @@ metadata:
     argocd.argoproj.io/sync-wave: "-1"
   labels:
     app.kubernetes.io/name: posthog
+    kopiur.home-operations.com/repo: cluster-kopia
