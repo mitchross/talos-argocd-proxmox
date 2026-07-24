@@ -126,6 +126,7 @@ nav:
       - 3090 LLM optimization: domains/ai-gpu/3090-llm-optimization.md
       - Pi agent — local dev guide: domains/ai-gpu/pi-agent-local-dev.md
   - Reference & ops:
+      - VPA policy ownership and topology: domains/scheduling/vpa-and-topology.md
       - RustFS credential runbook: domains/rustfs/credential-runbook.md
       - Observability — radar-ng cookbook: domains/observability/radar-ng.md
       - Enterprise multi-cluster roadmap: domains/multicluster/enterprise-gitops-roadmap.md

@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: presenton
 
 resources:
+- vpa.yaml
 - namespace.yaml
 - configmap.yaml
 - externalsecret.yaml

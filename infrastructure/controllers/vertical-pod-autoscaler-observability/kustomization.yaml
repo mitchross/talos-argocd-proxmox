@@ -1,0 +1,7 @@
+# Optional VPA observability, deployed after kube-prometheus-stack CRDs exist.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: vertical-pod-autoscaler
+resources:
+  - podmonitor.yaml
+  - prometheus-rules.yaml

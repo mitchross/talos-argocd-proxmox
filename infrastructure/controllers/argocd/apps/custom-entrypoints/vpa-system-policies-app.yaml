@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  # Keep the historical Application identity during the one-PR ownership
+  # handoff. Renaming it would delete the old Application and cascade-prune all
+  # 96 policies before the new owners can adopt them.
+  name: vpa-recommendations
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+    argocd.argoproj.io/manifest-generate-paths: infrastructure/controllers/vpa-system-policies
+  labels:
+    app.kubernetes.io/part-of: infrastructure
+spec:
+  project: infrastructure
+  revisionHistoryLimit: 3
+  source:
+    repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
+    targetRevision: main
+    path: infrastructure/controllers/vpa-system-policies
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vertical-pod-autoscaler
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
+      - RespectIgnoreDifferences=true
+      - Replace=false
+    retry:
+      limit: 10
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 10m

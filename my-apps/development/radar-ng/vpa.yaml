@@ -1,0 +1,75 @@
+# VPA policy is owned with this application so Argo prunes it with the target.
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: radar-ng-tile-server
+  namespace: radar-ng
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: tile-server
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      # The HPA scales on CPU utilization (a percentage of the CPU request).
+      # VPA must not move that denominator; this policy is memory-only.
+      - containerName: "*"
+        controlledResources: ["memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          memory: 4Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: radar-ng-basemap
+  namespace: radar-ng
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: basemap
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 4Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: radar-ng-open-meteo
+  namespace: radar-ng
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: open-meteo
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      # maxAllowed is per container. These separate policies make the combined
+      # 6Gi pod ceiling visible instead of silently permitting 8Gi.
+      - containerName: open-meteo
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 2Gi
+      - containerName: sync-worker
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 4Gi

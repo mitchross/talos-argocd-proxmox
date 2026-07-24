@@ -10,6 +10,7 @@ metadata:
 
 # Resource ordering for proper deployment
 resources:
+- vpa.yaml
 - namespace.yaml
 - pvc.yaml
 - service.yaml

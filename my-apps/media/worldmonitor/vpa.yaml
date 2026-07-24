@@ -1,0 +1,88 @@
+# VPA policies are owned with this application so Argo prunes them with the targets.
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: worldmonitor
+  namespace: worldmonitor
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: worldmonitor
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 4Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: worldmonitor-ais-relay
+  namespace: worldmonitor
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: worldmonitor-ais-relay
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "1"
+          memory: 1Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: worldmonitor-redis
+  namespace: worldmonitor
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: worldmonitor-redis
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "1"
+          memory: 1Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: worldmonitor-redis-rest
+  namespace: worldmonitor
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: worldmonitor-redis-rest
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "1"
+          memory: 1Gi

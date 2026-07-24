@@ -160,6 +160,13 @@ jobs:
           python3 -c "import yaml" 2>/dev/null || pip3 install --quiet pyyaml
           python3 ./scripts/validate-kopiur-coverage.py /tmp/all-manifests.yaml
 
+      - name: Validate VPA policy safety and coverage
+        # Uses the same aggregate render as schema validation so Helm-generated
+        # workloads and operator CR targets are checked, not just raw YAML.
+        run: |
+          set -euo pipefail
+          python3 ./scripts/validate-vpa-policies.py /tmp/all-manifests.yaml
+
   # backup-exempt-contract job RETIRED 2026-06-27 (pvc-plumber removed). It
   # hard-failed on the bare `backup-exempt-reason` key because pvc-plumber denied
   # such PVCs on CREATE; with pvc-plumber gone, nothing enforces the key, so the

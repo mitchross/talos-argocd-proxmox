@@ -1,14 +1,14 @@
-# Small web apps and utilities.
+# VPA policy is owned with this application so Argo prunes it with the target.
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: homepage-dashboard
-  namespace: homepage-dashboard
+  name: posthog-clickhouse
+  namespace: posthog
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: homepage-dashboard
+    name: clickhouse
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
@@ -18,195 +18,19 @@ spec:
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
-          cpu: "1"
-          memory: 2Gi
+          cpu: "4"
+          memory: 8Gi
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: it-tools
-  namespace: it-tools
+  name: posthog-db
+  namespace: posthog
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: it-tools
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 1Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: excalidraw
-  namespace: excalidraw
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: excalidraw
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 1Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: convertx
-  namespace: convertx
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: convertx
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "2"
-          memory: 2Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: copyparty
-  namespace: copyparty
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: copyparty
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 2Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: fizzy
-  namespace: fizzy
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: fizzy
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 1Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: kiwix
-  namespace: kiwix
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: kiwix
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 2Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: news-reader
-  namespace: news-reader
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: news-reader
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 2Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: pairdrop
-  namespace: pairdrop
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: pairdrop
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 1Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: presenton
-  namespace: presenton
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: presenton
+    name: db
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
@@ -222,13 +46,167 @@ spec:
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: redlib
-  namespace: redlib
+  name: posthog-kafka
+  namespace: posthog
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: redlib
+    name: kafka
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 4Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: posthog-redis7
+  namespace: posthog
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: redis7
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "1"
+          memory: 2Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: posthog-worker
+  namespace: posthog
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: worker
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 16Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: posthog-web
+  namespace: posthog
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: web
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 8Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: posthog-plugins
+  namespace: posthog
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: plugins
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "1"
+          memory: 2Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: posthog-ingestion-general
+  namespace: posthog
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ingestion-general
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "1"
+          memory: 2Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: posthog-ingestion-sessionreplay
+  namespace: posthog
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ingestion-sessionreplay
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "1"
+          memory: 2Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: posthog-recording-api
+  namespace: posthog
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: recording-api
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
@@ -244,13 +222,13 @@ spec:
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: stirling-pdf
-  namespace: stirling-pdf
+  name: posthog-capture
+  namespace: posthog
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: stirling-pdf
+    name: capture
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
@@ -260,19 +238,19 @@ spec:
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
-          cpu: "2"
-          memory: 4Gi
+          cpu: "500m"
+          memory: 512Mi
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: vert
-  namespace: vert
+  name: posthog-capture-ai
+  namespace: posthog
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: vert
+    name: capture-ai
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
@@ -282,19 +260,19 @@ spec:
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
-          cpu: "1"
-          memory: 2Gi
+          cpu: "500m"
+          memory: 512Mi
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: vertd
-  namespace: vert
+  name: posthog-replay-capture
+  namespace: posthog
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: vertd
+    name: replay-capture
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
@@ -304,19 +282,19 @@ spec:
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
-          cpu: "2"
-          memory: 2Gi
+          cpu: "500m"
+          memory: 512Mi
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: paperless-ngx
-  namespace: paperless-ngx
+  name: posthog-feature-flags
+  namespace: posthog
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: paperless-ngx
+    name: feature-flags
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
@@ -326,19 +304,19 @@ spec:
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
-          cpu: "2"
-          memory: 4Gi
+          cpu: "500m"
+          memory: 512Mi
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: gotenberg
-  namespace: paperless-ngx
+  name: posthog-property-defs-rs
+  namespace: posthog
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: gotenberg
+    name: property-defs-rs
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1
@@ -348,151 +326,19 @@ spec:
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
-          cpu: "1"
-          memory: 2Gi
+          cpu: "500m"
+          memory: 512Mi
 ---
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: tika
-  namespace: paperless-ngx
+  name: posthog-temporal-django-worker
+  namespace: posthog
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: tika
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 2Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: karakeep-web
-  namespace: karakeep
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: karakeep-web
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "2"
-          memory: 4Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: karakeep-chrome
-  namespace: karakeep
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: karakeep-chrome
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 2Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: karakeep-meilisearch
-  namespace: karakeep
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: karakeep-meilisearch
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 2Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: redis-commander
-  namespace: redis
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: redis-commander
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 1Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: redis-master
-  namespace: redis-instance
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: StatefulSet
-    name: redis-master
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 2Gi
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: kopia-ui
-  namespace: kopia-ui
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: kopia-ui
+    name: temporal-django-worker
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1

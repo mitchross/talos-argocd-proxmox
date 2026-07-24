@@ -68,6 +68,13 @@ systemExtensions:
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 patches:
+- name: house-topology
+  inline:
+    machine:
+      # Control plane and RTX 3090 worker share the Threadripper/Proxmox
+      # failure domain. The Dell worker is the separate `yard` domain.
+      nodeLabels:
+        topology.kubernetes.io/zone: house
 - name: control-plane-performance
   inline:
     cluster:
@@ -175,6 +182,7 @@ patches:
         gpu-worker: "true"
         nvidia.com/gpu: "true"
         node.vanillax.dev/gpu-class: rtx-3090
+        topology.kubernetes.io/zone: house
 - name: longhorn-node-disks
   inline:
     machine:
