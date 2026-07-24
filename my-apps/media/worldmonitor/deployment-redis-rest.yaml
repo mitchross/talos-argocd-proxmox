@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: redis-rest
-          image: ghcr.io/mitchross/worldmonitor-redis-rest:sha-b8ada8f
+          image: ghcr.io/mitchross/worldmonitor-redis-rest:sha-0f31bf3
           imagePullPolicy: IfNotPresent
           env:
             - name: SRH_TOKEN

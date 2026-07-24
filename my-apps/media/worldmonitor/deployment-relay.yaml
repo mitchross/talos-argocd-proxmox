@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: ais-relay
-          image: ghcr.io/mitchross/worldmonitor-relay:sha-b8ada8f
+          image: ghcr.io/mitchross/worldmonitor-relay:sha-0f31bf3
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
