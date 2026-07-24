@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: cyberchef
-          image: ghcr.io/gchq/cyberchef:11.2.0
+          image: ghcr.io/gchq/cyberchef:11.3.0
           ports:
             # gchq/cyberchef is nginx-unprivileged: it listens on 8080 and
             # cannot bind 80. containerPort 80 made the gateway 503 silently.
