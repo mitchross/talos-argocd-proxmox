@@ -52,6 +52,11 @@ kind: Restore
 metadata:
   name: postgres-data-restore
   namespace: posthog
+  annotations:
+    # Passive populator on a live cluster: Ready only flips when a rebuilt PVC
+    # claims it via dataSourceRef, so it idles AwaitingClaim forever here and
+    # would hang every sync. Real DR gating is the PVC bind, not this health.
+    argocd.argoproj.io/ignore-healthcheck: "true"
 spec:
   source:
     fromPolicy:
