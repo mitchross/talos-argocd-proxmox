@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: prometheus-stack
 resources:
+  - vpa.yaml
   - ns.yaml
   - alertmanager-http-route.yaml
   - grafana-http-route.yaml
@@ -14,7 +15,7 @@ resources:
   - dcgm-exporter.yaml # DCGM GPU monitoring
   - gpu-alerts.yaml # GPU alerting rules
   - gpu-dashboard.yaml # Grafana dashboard
-  - vpa-recommendations-dashboard.yaml # Passive VPA recommendation dashboard
+  - vpa-recommendations-dashboard.yaml # Active VPA policy and recommendation dashboard
   - trivy-dashboard.yaml # Trivy Operator vulnerability dashboard (Grafana 17813; pairs with monitoring/trivy-operator)
   - trivy-alerts.yaml # Trivy critical-vuln alerting (high per-image critical count)
   - etcd-dashboard.yaml # etcd cluster dashboard (Grafana 3070; pairs with kube-etcd scrape job)

@@ -10,6 +10,7 @@ labels:
       app.kubernetes.io/name: paperless-ngx
       app.kubernetes.io/managed-by: argocd
 resources:
+  - vpa.yaml
   - namespace.yaml
   - pvc.yaml
   - deployment.yaml

@@ -1,0 +1,130 @@
+# Machine-readable exceptions consumed by validate-vpa-policies.py.
+# An exception is a reviewed decision, not a way to silence a warning: every
+# entry requires a reason and stale exact-name entries fail validation.
+coverageExemptions:
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: comfyui
+    name: comfyui
+    reason: "Scale-swap GPU workload is intentionally kept at replicas=0."
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: llama-cpp
+    name: llama-cpp-server
+    reason: "Scale-swap GPU workload is intentionally kept at replicas=0."
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: swarmui
+    name: swarmui
+    reason: "Scale-swap GPU workload is intentionally kept at replicas=0."
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: posthog
+    name: cyclotron-janitor
+    reason: "PostHog component is intentionally scaled to zero."
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: posthog
+    name: cymbal
+    reason: "PostHog component is intentionally scaled to zero."
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: posthog
+    name: livestream
+    reason: "PostHog component is intentionally scaled to zero."
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: posthog
+    name: toolbox
+    reason: "PostHog component is intentionally scaled to zero."
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: radar-ng
+    namePattern: "^radar-ng-worker-"
+    reason: "Temporal Worker Controller versions the Deployment name."
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: news-reader
+    namePattern: "^news-digest-"
+    reason: "Temporal Worker Controller versions the Deployment name."
+
+# These workloads are materialized by an operator and therefore are not present
+# in the Git render that CI validates.
+generatedTargets:
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: k8sgpt
+    name: k8sgpt
+    reason: "The K8sGPT operator creates this Deployment from the K8sGPT CR."
+
+# Controller and test namespaces are outside the app-workload coverage policy.
+# Their sizing is owned by upstream charts or by deliberately disposable tests.
+namespaceExemptions:
+  - namespace: 1passwordconnect
+    reason: "Bootstrap secret controllers are chart-owned."
+  - namespace: cert-manager
+    reason: "Bootstrap certificate controllers are chart-owned."
+  - namespace: cloudnative-pg
+    reason: "Database operators own their controller resources."
+  - namespace: csi-driver-nfs
+    reason: "CSI controllers are chart-owned."
+  - namespace: csi-driver-smb
+    reason: "CSI controllers are chart-owned."
+  - namespace: echo-server
+    reason: "Disposable test application."
+  - namespace: external-dns
+    reason: "Infrastructure controller is chart-owned."
+  - namespace: external-secrets
+    reason: "Bootstrap secret controllers are chart-owned."
+  - namespace: gpu-operator
+    reason: "GPU operator controllers are chart-owned."
+  - namespace: kafka
+    reason: "The Strimzi operator controller is chart-owned; Kafka UI has a VPA."
+  - namespace: keda
+    reason: "Autoscaling controllers are chart-owned."
+  - namespace: kopiur-system
+    reason: "Backup controllers are chart-owned."
+  - namespace: longhorn-system
+    reason: "Storage controllers are chart-owned."
+  - namespace: metrics-server
+    reason: "Cluster metrics controller is chart-owned."
+  - namespace: nginx-example
+    reason: "Disposable test application."
+  - namespace: node-feature-discovery
+    reason: "Node discovery controllers are chart-owned."
+  - namespace: opentelemetry
+    reason: "Telemetry operator controller is chart-owned."
+  - namespace: restore-canary
+    reason: "Disposable disaster-recovery canary."
+  - namespace: snapshot-controller
+    reason: "CSI snapshot controller is chart-owned."
+  - namespace: temporal-worker-controller
+    reason: "Temporal operator controller is chart-owned."
+  - namespace: trivy-operator
+    reason: "Trivy server has a VPA; the operator controller is chart-owned."
+  - namespace: truenas-csi
+    reason: "CSI controllers are chart-owned."
+  - namespace: vertical-pod-autoscaler
+    reason: "The VPA controller cannot safely manage its own sizing."
+
+workloadExemptions:
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: argocd
+    name: argocd-applicationset-controller
+    reason: "Argo CD controller sizing stays chart-owned."
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: argocd
+    name: argocd-redis
+    reason: "Argo CD internal Redis sizing stays chart-owned."
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: k8sgpt
+    name: k8sgpt-operator-controller-manager
+    reason: "K8sGPT operator controller sizing stays chart-owned."
+  - apiVersion: apps/v1
+    kind: Deployment
+    namespace: prometheus-stack
+    name: kube-prometheus-stack-operator
+    reason: "Prometheus operator controller sizing stays chart-owned."

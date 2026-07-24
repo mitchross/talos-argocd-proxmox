@@ -52,15 +52,15 @@ data:
         ]
       },
       "panels": [
-        { "type": "row", "id": 100, "title": "Passive VPA status", "gridPos": {"x":0,"y":0,"w":24,"h":1}, "collapsed": false },
+        { "type": "row", "id": 100, "title": "VPA policy status", "gridPos": {"x":0,"y":0,"w":24,"h":1}, "collapsed": false },
         {
           "type": "stat",
           "id": 1,
-          "title": "Passive VPAs",
-          "description": "VPAs with updateMode=Off. These publish recommendations only.",
+          "title": "Active VPAs",
+          "description": "VPAs using in-place resize with recreate fallback.",
           "gridPos": {"x":0,"y":1,"w":6,"h":4},
           "datasource": {"type":"prometheus","uid":"${DS_PROM}"},
-          "targets": [{"expr":"count(kube_verticalpodautoscaler_spec_updatepolicy_updatemode{namespace=~\"$namespace\",target_name=~\"$target\",update_mode=\"Off\"} == 1)","refId":"A"}],
+          "targets": [{"expr":"count(kube_verticalpodautoscaler_spec_updatepolicy_updatemode{namespace=~\"$namespace\",target_name=~\"$target\",update_mode=\"InPlaceOrRecreate\"} == 1)","refId":"A"}],
           "fieldConfig": {"defaults": {"unit":"short","thresholds":{"mode":"absolute","steps":[{"color":"green","value":null}]}}},
           "options": {"reduceOptions":{"calcs":["lastNotNull"]},"colorMode":"background","graphMode":"none"}
         },

@@ -15,6 +15,15 @@ spec:
       labels:
         app: cloudflared
     spec:
+      # Soft spread keeps ingress replicas balanced while still permitting all
+      # three to run during a node outage.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: cloudflared
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

@@ -15,6 +15,7 @@ configMapGenerator:
       - TZ="America/Detroit"
 
 resources:
+  - vpa.yaml
   - ns.yaml
   - pvc.yaml
   - svc.yaml

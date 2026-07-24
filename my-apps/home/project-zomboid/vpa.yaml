@@ -1,0 +1,26 @@
+# VPA policy is owned with this application so Argo prunes it with the target.
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: project-zomboid
+  namespace: project-zomboid
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: project-zomboid
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        # Zomboid's honest recommendation is ~13Gi; reserving that on paper
+        # starved the scheduler (node hit 107% requested). It ran fine for
+        # months with a small request — cap the reservation, let the limit
+        # absorb the real usage.
+        maxAllowed:
+          cpu: "4"
+          memory: 6Gi

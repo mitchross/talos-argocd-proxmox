@@ -2,6 +2,11 @@
 
 ## Adding New Applications
 
+Long-running Deployments and StatefulSets also get a co-located `vpa.yaml`.
+List it in `kustomization.yaml`; use `InPlaceOrRecreate`, `minReplicas: 1`, and
+`RequestsOnly`. CPU-utilization HPA targets use a memory-only VPA. Intentional
+exceptions must be added with a reason to `scripts/vpa-exemptions.yaml`.
+
 ### Minimal Application (No storage/secrets)
 
 ```bash

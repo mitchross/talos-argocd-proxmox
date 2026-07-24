@@ -1,11 +1,13 @@
+# Optional monitoring CRs are separated from the wave-4 VPA controller so a
+# missing monitoring stack can never block controller bootstrap.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: vpa-recommendations
+  name: vertical-pod-autoscaler-observability
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "6"
-    argocd.argoproj.io/manifest-generate-paths: infrastructure/controllers/vpa-recommendations
+    argocd.argoproj.io/manifest-generate-paths: infrastructure/controllers/vertical-pod-autoscaler-observability
   labels:
     app.kubernetes.io/part-of: infrastructure
 spec:
@@ -14,7 +16,7 @@ spec:
   source:
     repoURL: https://github.com/mitchross/talos-argocd-proxmox.git
     targetRevision: main
-    path: infrastructure/controllers/vpa-recommendations
+    path: infrastructure/controllers/vertical-pod-autoscaler-observability
   destination:
     server: https://kubernetes.default.svc
     namespace: vertical-pod-autoscaler
@@ -24,14 +26,12 @@ spec:
       selfHeal: true
       allowEmpty: false
     syncOptions:
-      - CreateNamespace=true
+      - CreateNamespace=false
       - ServerSideApply=true
       - SkipDryRunOnMissingResource=true
-      - RespectIgnoreDifferences=true
-      - Replace=false
     retry:
       limit: 10
       backoff:
-        duration: 10s
+        duration: 15s
         factor: 2
-        maxDuration: 10m
+        maxDuration: 5m
