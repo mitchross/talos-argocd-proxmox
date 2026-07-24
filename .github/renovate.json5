@@ -179,7 +179,11 @@
     // off + weekend-only schedule.
     {
       description: 'PostHog sidecars: declare loose versioning for master-<sha7> tag format.',
+      // posthog-node is pulled from Docker Hub — match both registry forms
+      // (same dead-rule class as the monolith entry below).
       matchPackageNames: [
+        'posthog/posthog-node',
+        'docker.io/posthog/posthog-node',
         'ghcr.io/posthog/posthog-node',
         'ghcr.io/posthog/posthog/capture',
         'ghcr.io/posthog/posthog/property-defs-rs',
@@ -194,6 +198,8 @@
     {
       description: 'PostHog sidecars (Rust + node): group into one PR per sweep, but do NOT auto-merge — the 2026-05-09 sharded_events outage was triggered by a sidecar digest auto-merge re-firing the migrate hook against a pre-existing CH config drift. A human reviewer must check each PR against the upstream commit range surfaced by the master-<sha7> tag format before merging.',
       matchPackageNames: [
+        'posthog/posthog-node',
+        'docker.io/posthog/posthog-node',
         'ghcr.io/posthog/posthog-node',
         'ghcr.io/posthog/posthog/capture',
         'ghcr.io/posthog/posthog/property-defs-rs',
@@ -209,25 +215,28 @@
       schedule: ['every weekend'],
     },
     {
-      description: 'PostHog MONOLITH (posthog/posthog): do NOT auto-bump. Requires ClickHouse-side config changes per release (named collections, satellite clusters, sharded_events bootstrap, etc.) that our self-hosted config drifts from. 2026-04-19: the `9b518de` auto-merge broke migrate_clickhouse for a full day because upstream 0227_warpstream migration required a `warpstream_calculated_events` named collection our CH config lacked. 2026-05-09: a sidecar auto-merge re-fired the migrate hook and surfaced an even older config drift — `posthog.events` Distributed table pointing at a never-created `sharded_events` shard table. Manually bump after checking PostHog/posthog/docker/clickhouse/config.d/default.xml for any new named_collections / remote_servers / storage_policies our config.d/default.xml is missing AND verifying our clickhouse-init.yaml stub covers any new sharded_* tables introduced by the target release.',
-      // The monolith is pulled from Docker Hub as `posthog/posthog`, so
-      // Renovate's docker datasource packageName is `posthog/posthog`
-      // (and the fully-qualified `docker.io/posthog/posthog`). The old
-      // single `ghcr.io/posthog/posthog` entry never matched, so this
-      // disable rule was dead and #1290 (a ~5wk master jump) slipped
-      // through to a manual merge on 2026-05-17. Match all forms.
+      description: 'PostHog MONOLITH (posthog/posthog): ride the same "posthog images" group PR as the sidecars — one PR per version roll, digests moving in lockstep with posthog-node (the migrate hook image must match web/worker). NEVER automerge: before merging, run the my-apps/development/posthog/UPGRADE.md checklist (upstream named_collections/remote_servers diff, new sharded_* tables vs clickhouse-init, newly-required env, server entrypoint) — both prior posthog outages (2026-04-19, 2026-05-09) were config drift surfaced by an unreviewed image bump.',
+      // Pulled from Docker Hub — match all registry forms (a ghcr-only
+      // entry here was once dead and let a ~5wk master jump slip through).
       matchPackageNames: [
         'posthog/posthog',
         'docker.io/posthog/posthog',
         'ghcr.io/posthog/posthog',
       ],
       matchFileNames: ['my-apps/development/posthog/**'],
-      enabled: false,
+      matchUpdateTypes: ['digest'],
+      groupName: 'posthog images',
+      automerge: false,
+      schedule: ['every weekend'],
     },
     {
       description: 'PostHog data layer: disable auto-updates (versions must match PostHog docker-compose.base.yml)',
+      // valkey is pulled from Docker Hub as valkey/valkey — without that form
+      // here, the kubernetes-manager minor/patch automerge rule applies to it.
       matchPackageNames: [
         'postgres',
+        'valkey/valkey',
+        'docker.io/valkey/valkey',
         'ghcr.io/valkey-io/valkey',
         'redis',
         'clickhouse/clickhouse-server',

@@ -287,7 +287,7 @@ kubectl -n app-name get snapshot                 # Completed with non-zero files
 `storage.vanillax.dev/backup-exempt-reason: "<reason>"` (the **fully-qualified**
 key — bare `backup-exempt-reason` is silently ignored by the CI guard):
 temporary/cache data, externally-synced data, frequently-recreated PVCs,
-**CNPG database PVCs** (Barman to S3, never kopiur), PostHog/Redis (disposable).
+**CNPG database PVCs** (Barman to S3, never kopiur), PostHog ClickHouse/Kafka/Redis (disposable — but PostHog **Postgres** is kopiur-backed: it holds the API keys).
 
 **Multi-PVC apps**: each PVC gets its own stub + `dataSourceRef`; the mover uid
 is per-PVC (e.g. `my-apps/home/project-nomad/` runs `1000` / `999:568` / `568`

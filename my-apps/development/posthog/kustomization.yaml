@@ -6,6 +6,7 @@ resources:
   - namespace.yaml
   - externalsecret.yaml
   - httproute.yaml
+  - kopiur/postgres-data.yaml
   # Data layer (all in posthog namespace)
   - data-layer/postgres.yaml
   - data-layer/redis.yaml
@@ -19,12 +20,14 @@ resources:
   - core/workers.yaml
   - core/plugins.yaml
   - core/capture.yaml
+  - core/capture-ai.yaml
   - core/ingestion.yaml
   - core/ingestion-sessionreplay.yaml
   - core/recording-api.yaml
   - core/temporal-worker.yaml
   - core/microservices.yaml
   - core/toolbox.yaml
+  - core/servicemonitor.yaml
 
 # Hash-suffixed env configmap. Consumed via envFrom by 11+ posthog
 # workloads (web, capture, ingestion, recording-api, plugins, workers,
@@ -36,3 +39,6 @@ configMapGenerator:
   - name: posthog-env
     envs:
       - posthog-env.env
+
+components:
+  - ../../common/kopiur-backup

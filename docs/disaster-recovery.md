@@ -30,7 +30,8 @@ converge and are verified. [Open the full-size DR sequence](assets/disaster-reco
   - Longhorn volumes               - Git repo
   - every Kubernetes object        - Kopia repo (RustFS S3)
   - exempt data:                   - CNPG Barman (S3 objects)
-      PostHog, Redis, scratch      - 1Password vault
+      PostHog CH/Kafka/Redis,      - 1Password vault
+      Redis, scratch
                                    - Omni/Talos machine config
 
   Survives ==[ bootstrap-argocd.sh + sync waves ]==> New cluster
@@ -123,6 +124,10 @@ provision, or VMs are built from stale state and must be reprovisioned.
   deploy-or-restore) — which is why the pre-nuke checklist insists a Snapshot exists
   for anything you intend to restore.
 - Restores complete in rough size order; a full wave of ~24 PVCs is roughly an hour.
+- **PostHog adds ~nothing to the wave**: only `postgres-data` restores
+  (~165 MB actual — seconds to hydrate). Its ClickHouse/Kafka/Redis rebuild
+  empty by design; PostHog's rebuild cost is the migrate Job re-creating the
+  ClickHouse schema (minutes), not data movement.
 - **The API server will wobble.** etcd fsync latency inflates under
   cluster-wide restore I/O — expect intermittent `readyz` failures, slow
   kubectl, csi-sidecar leader-election restarts. It recovers between bursts;
@@ -229,9 +234,11 @@ State BOTH claims, with live numbers:
    and still carries the fully-qualified
    `storage.vanillax.dev/backup-exempt-reason` annotation — non-zero isn't a
    restore failure but it masks real problems (history: two exempt PVCs once sat
-   unnoticed because acceptance only quoted the protected counters). PostHog,
-   Redis, and `project-nomad/nomad-storage` are the expected exempt set; CNPG is
-   not in either count — it recovers via Barman/S3 (separate system).
+   unnoticed because acceptance only quoted the protected counters). PostHog's
+   ClickHouse/Kafka/Redis, standalone Redis, and `project-nomad/nomad-storage`
+   are the expected exempt set (PostHog's `postgres-data` is protected — it
+   carries the API keys/dashboards); CNPG is not in either count — it recovers
+   via Barman/S3 (separate system).
 
 ---
 

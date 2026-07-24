@@ -87,6 +87,17 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
+          # /_health does not cover kafka connectivity (stayed Ready through a broker
+          # outage) — this only restarts a wedged process/event loop. Generous
+          # thresholds so a slow S3 fetch never restart-loops it.
+          livenessProbe:
+            httpGet:
+              path: /_health
+              port: 6738
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
           resources:
             requests:
               cpu: 100m

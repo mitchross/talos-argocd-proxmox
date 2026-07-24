@@ -21,7 +21,7 @@ spec:
       restartPolicy: OnFailure
       containers:
       - name: kafka-init
-        image: docker.redpanda.com/redpandadata/redpanda:v25.1.9
+        image: docker.redpanda.com/redpandadata/redpanda:v25.1.9@sha256:8f7e9e4c1422baaa1a5e2a6c6c668cfe05442cb3cb476542c7dff61725e6fe31
         imagePullPolicy: IfNotPresent
         command:
         - /bin/sh
@@ -41,7 +41,7 @@ spec:
               fi
           done
           echo "Kafka broker is accepting requests, creating topics..."
-          for topic in events_plugin_ingestion exceptions_ingestion clickhouse_events_json session_recording_events session_recording_events2 session_recording_snapshot_item_events clickhouse_app_metrics2 logs_ingestion; do
+          for topic in events_plugin_ingestion exceptions_ingestion clickhouse_events_json session_recording_events session_recording_events2 session_recording_snapshot_item_events clickhouse_app_metrics2 logs_ingestion ai_events_ingestion clickhouse_ai_events_json; do
               if rpk topic create "$topic" --brokers kafka:9092 -p 1 -r 1 2>&1; then
                   echo "Topic $topic created successfully"
               else
@@ -82,7 +82,7 @@ spec:
       - name: migrate
         # Keep the migration hook on the same monolith digest as web/workers.
         # Mixed monolith/node digests caused schema drift during pod restarts.
-        image: posthog/posthog:latest@sha256:334b0b6a604d0cde5f48af199bac141b26f8867ed2f6fd77435cf859a9537d76
+        image: posthog/posthog:latest@sha256:f607c58b19de904789fc23d38bba43dd6225697b1687f1515fc940302dce4bdc
         command:
         - /bin/sh
         - -c
@@ -131,6 +131,9 @@ spec:
                   "ALTER TABLE public.posthog_person "
                   "ADD COLUMN IF NOT EXISTS last_seen_at timestamptz NULL"
               )
+              # Library is preloaded via postgres args; without the extension the
+              # hourly monitoring task errors in the db log.
+              cursor.execute("CREATE EXTENSION IF NOT EXISTS pg_stat_statements")
           PY
           echo "Running ClickHouse migrations..."
           python manage.py migrate_clickhouse
