@@ -35,21 +35,27 @@ the pod. A balanced workload can therefore become imbalanced as requests grow.
 |---|---|---|
 | User application | `my-apps/<category>/<app>/vpa.yaml` | App deletion prunes its policy; target and sizing review happen together |
 | Monitoring application | `monitoring/<app>/vpa.yaml` | Same ownership rule, including Helm-rendered and operator CR targets |
-| Bootstrap/system workload | `infrastructure/controllers/vpa-system-policies/` | Small explicit exception for workloads without a suitable co-located wave-5/6 owner |
+| Bootstrap/system workload | `infrastructure/controllers/vpa-system-policies/` | Explicit exception for workloads whose owner reconciles at the VPA CRD wave or otherwise cannot safely own the policy after CRD bootstrap |
 | VPA controller | `infrastructure/controllers/vertical-pod-autoscaler/` | Recommender, updater, admission controller, and CRDs at wave 4 |
 | VPA monitoring | `infrastructure/controllers/vertical-pod-autoscaler-observability/` | Optional PodMonitor and alerts at wave 6, after Prometheus CRDs |
 
 The policy object identity is its namespace and name. Keep both unchanged when
 moving a policy between Argo applications. The recommender's checkpoints and
 in-memory aggregate histories can then reattach after the ownership handoff.
-Argo's `FailOnSharedResource=true` may make the new owner retry once while the
-old owner prunes; that retry is expected, but two rendered policies targeting
-the same workload are not.
+During the one-PR migration, the historical central Application reconciles at
+wave 4 and prunes moved policies before monitoring owners at wave 5 and user
+application owners at wave 6 adopt them. PostHog is a temporary exception:
+because its migration hook currently blocks sync, its policies stay central
+until that Application is sync-healthy. Two rendered policies targeting the
+same workload are never permitted.
 
 The system-policy entrypoint intentionally retains the historical Argo
-Application name `vpa-recommendations` for this one-step migration. Its file and
-source path describe the new responsibility; preserving the Application
-identity prevents a cascading delete of every existing VPA.
+Application name `vpa-recommendations`. Its file and source path describe the
+new responsibility; preserving the Application identity prevents a cascading
+delete of every existing VPA. It carries `SkipDryRunOnMissingResource=true` and
+retry settings because it shares wave 4 with the VPA controller on a cold
+bootstrap. Infrastructure applications at that same wave remain central unless
+they gain an explicitly ordered post-CRD owner.
 
 ## Policy contract
 
@@ -140,9 +146,9 @@ Talos node by itself.
 
 ## Failure and rollback
 
-- If a moved policy is `SharedResource`, wait for the old Argo application to
-  prune and let the automated retry run. Stop if two policies target the same
-  workload.
+- If a moved policy is `SharedResource`, confirm the central wave-4 owner has
+  pruned it before allowing a later-wave owner to retry. Stop if two policies
+  target the same workload.
 - If recommendations disappear, confirm the target kind/name/namespace and
   inspect recommender logs. Do not rename the VPA as a first response.
 - If resizing threatens scheduler headroom, disable both updater and admission

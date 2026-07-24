@@ -75,16 +75,11 @@ def target_exists(
 ) -> bool:
     if key in objects:
         return True
-    # A few Helm charts omit metadata.namespace and rely on the Argo
-    # destination namespace. Only accept that fallback when name/kind/API are
-    # unique in the render.
+    # A few Helm charts genuinely omit metadata.namespace and rely on the Argo
+    # destination namespace. Accept only that exact namespace-less render key;
+    # never accept a same-named workload rendered in a different namespace.
     api, kind, _namespace, name = key
-    candidates = [
-        candidate
-        for candidate in objects
-        if candidate[0] == api and candidate[1] == kind and candidate[3] == name
-    ]
-    return len(candidates) == 1
+    return (api, kind, "", name) in objects
 
 
 def cpu_controlled(vpa: dict[str, Any]) -> bool:
@@ -100,6 +95,23 @@ def cpu_controlled(vpa: dict[str, Any]) -> bool:
         if resources is None or "cpu" in resources:
             return True
     return False
+
+
+def is_memory_only(vpa: dict[str, Any]) -> bool:
+    """Require an explicit memory-only contract for CPU-utilization HPA targets."""
+    policies = [
+        policy
+        for policy in (
+            vpa.get("spec", {})
+            .get("resourcePolicy", {})
+            .get("containerPolicies", [])
+        )
+        if policy.get("mode") != "Off"
+    ]
+    return bool(policies) and all(
+        set(policy.get("controlledResources") or []) == {"memory"}
+        for policy in policies
+    )
 
 
 def hpa_cpu_targets(
@@ -242,10 +254,10 @@ def main() -> int:
 
     for target in hpa_cpu_targets(documents):
         for vpa in target_to_vpas.get(target, []):
-            if cpu_controlled(vpa):
+            if cpu_controlled(vpa) or not is_memory_only(vpa):
                 errors.append(
-                    f"{label(identity(vpa))} controls CPU while an HPA/ScaledObject "
-                    f"uses CPU utilization on {label(target)}"
+                    f"{label(identity(vpa))} must explicitly control memory only "
+                    f"while an HPA/ScaledObject uses CPU utilization on {label(target)}"
                 )
 
     workloads = {

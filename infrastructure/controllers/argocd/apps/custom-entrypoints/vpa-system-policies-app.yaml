@@ -1,13 +1,14 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  # Keep the historical Application identity during the one-PR ownership
-  # handoff. Renaming it would delete the old Application and cascade-prune all
-  # 96 policies before the new owners can adopt them.
+  # Keep the historical Application identity and reconcile it before the
+  # monitoring (wave 5) and user-app (wave 6) owners. This makes the one-PR
+  # handoff deterministic: the old owner prunes before new owners adopt.
+  # PostHog policies remain here while that Application is sync-blocked.
   name: vpa-recommendations
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "6"
+    argocd.argoproj.io/sync-wave: "4"
     argocd.argoproj.io/manifest-generate-paths: infrastructure/controllers/vpa-system-policies
   labels:
     app.kubernetes.io/part-of: infrastructure

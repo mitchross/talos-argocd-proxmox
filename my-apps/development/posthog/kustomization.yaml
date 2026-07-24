@@ -3,7 +3,6 @@ kind: Kustomization
 namespace: posthog
 
 resources:
-  - vpa.yaml
   - namespace.yaml
   - externalsecret.yaml
   - httproute.yaml
