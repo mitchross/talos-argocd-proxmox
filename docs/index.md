@@ -99,6 +99,7 @@ Backups are **kopiur** (Kopia-native operator).
 - **Networking**: [topology](domains/networking/topology.md) · [Wi-Fi Proxmox Talos worker](domains/networking/wifi-proxmox-talos-worker.md) · [policy](domains/networking/policy.md) · [Technitium `vanillax.me` migration](domains/networking/technitium-vanillax-me-migration.md)
 - **Storage**: [kopia maintenance](domains/storage/kopia-maintenance-plan.md) · [RWO/RWX model & sizing](domains/storage/storage-model-rwo-rwx-and-sizing.md) · [RustFS credentials](domains/rustfs/credential-runbook.md) · [future: tiered storage](domains/storage/architecture-future.md)
 - **Observability**: [radar-ng](domains/observability/radar-ng.md)
+- **Apps**: [Self-hosting PostHog on Kubernetes](posthog-self-host-k8s.md) — the full recipe (topology, single-node ClickHouse, routing, upgrade checklist), portable to any cluster
 - **AI / GPU**: [model catalog](domains/ai-gpu/model-catalog.md) · [3090 LLM optimization](domains/ai-gpu/3090-llm-optimization.md) · [pi agent local-dev guide](domains/ai-gpu/pi-agent-local-dev.md)
 
 ## Adopting any of this
