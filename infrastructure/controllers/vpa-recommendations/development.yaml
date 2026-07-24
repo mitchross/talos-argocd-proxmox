@@ -491,6 +491,28 @@ spec:
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
+  name: posthog-capture-ai
+  namespace: posthog
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: capture-ai
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "500m"
+          memory: 512Mi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
   name: posthog-replay-capture
   namespace: posthog
 spec:
