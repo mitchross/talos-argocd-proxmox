@@ -417,7 +417,9 @@ kube-state-metrics:
                   stateSet:
                     labelName: "update_mode"
                     path: [spec, updatePolicy, updateMode]
-                    list: ["Auto", "Initial", "Off", "Recreate"]
+                    # VPA 1.7 uses InPlaceOrRecreate for active policies. Keep
+                    # the legacy states too so a rollback remains observable.
+                    list: ["Auto", "Initial", "Off", "Recreate", "InPlaceOrRecreate"]
               - name: "verticalpodautoscaler_status_recommendation_containerrecommendations_lowerbound_memory"
                 help: "Minimum memory resources the container can use before the VerticalPodAutoscaler updater evicts it."
                 commonLabels:

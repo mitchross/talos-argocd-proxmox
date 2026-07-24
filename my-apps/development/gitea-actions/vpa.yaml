@@ -1,0 +1,32 @@
+# VPA policy is owned with this application so Argo prunes it with the target.
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: gitea-act-runner
+  namespace: gitea-actions
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: act-runner
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      # maxAllowed is per container. Manage the two workload containers
+      # explicitly and leave the tiny maintenance loop at its Git request.
+      - containerName: runner
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "1"
+          memory: 2Gi
+      - containerName: dind
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 4Gi
+      - containerName: prune
+        mode: Off

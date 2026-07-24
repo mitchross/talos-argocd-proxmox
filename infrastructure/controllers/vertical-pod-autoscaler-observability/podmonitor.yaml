@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: vertical-pod-autoscaler
+  labels:
+    app.kubernetes.io/name: vertical-pod-autoscaler
+spec:
+  namespaceSelector:
+    matchNames:
+      - vertical-pod-autoscaler
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vertical-pod-autoscaler
+  podMetricsEndpoints:
+    - port: prometheus
+      path: /metrics
+      interval: 30s

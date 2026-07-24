@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: project-nomad
 
 resources:
+  - vpa.yaml
   - namespace.yaml
   - externalsecret.yaml
   # Core — Nomad app

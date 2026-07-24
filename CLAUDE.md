@@ -120,8 +120,19 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - The pvc-plumber→kopiur migration is **closed** (2026-06-27): all PVCs use the kopiur component pattern; pvc-plumber + VolSync are removed. The mover runs as the PVC's data owner uid:gid (baseline PSS gives the mover no read capabilities). See `docs/domains/storage/kopiur-mover-permissions.md`.
 - For abandoned CNPG backup lineages, update `infrastructure/storage/rustfs-lifecycle/postgres-backups-lifecycle-cm.yaml`; keep the full bucket lifecycle policy there because PUT replaces the whole RustFS lifecycle config
 - Use `strategy: type: Recreate` on Deployments with RWO PVCs — **RollingUpdate causes Multi-Attach deadlock**
+- Add an app-owned `vpa.yaml` for new long-running workloads, using
+  `InPlaceOrRecreate`, `minReplicas: 1`, and `RequestsOnly`; record intentional
+  exclusions in `scripts/vpa-exemptions.yaml`. See
+  `docs/domains/scheduling/vpa-and-topology.md`.
+- Treat VPA `maxAllowed` as a per-container ceiling. Name containers explicitly
+  for multi-container pods and set fixed-size sidecars to `mode: Off`.
 
 ### DON'T:
+- Let a VPA control CPU on a workload whose HPA or KEDA ScaledObject scales on
+  CPU utilization; use a memory-only VPA so the autoscalers do not move each
+  other's denominator.
+- Add a `minAvailable: 1` PDB to a single-replica controller; it blocks Talos
+  drains. Increase replicas first or leave the PDB disabled.
 - Create manual ArgoCD `Application` resources (use directory discovery)
 - Use `kubectl edit` on Talos nodes (changes are ephemeral)
 - Create Services without named ports when using HTTPRoute

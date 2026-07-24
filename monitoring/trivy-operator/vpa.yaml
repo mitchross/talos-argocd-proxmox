@@ -1,0 +1,22 @@
+# VPA policy is owned with this application so Argo prunes it with the target.
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: trivy-server
+  namespace: trivy-operator
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: trivy-server
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "*"
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 4Gi

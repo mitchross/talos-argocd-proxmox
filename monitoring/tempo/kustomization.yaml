@@ -6,6 +6,7 @@ kind: Kustomization
 # tempo is ever rebuilt from scratch.
 namespace: monitoring
 resources:
+- vpa.yaml
 - ns.yaml
 - externalsecret.yaml
 helmCharts:

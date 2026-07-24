@@ -1,0 +1,26 @@
+# VPA policy is owned with this application so Argo prunes it with the target.
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: home-assistant
+  namespace: home-assistant
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: home-assistant
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: home-assistant
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        maxAllowed:
+          cpu: "2"
+          memory: 4Gi
+      # The editor is ancillary; keep its small Git request outside the
+      # Home Assistant workload ceiling.
+      - containerName: code-server
+        mode: Off

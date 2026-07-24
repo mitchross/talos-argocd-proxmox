@@ -4,6 +4,7 @@ kind: Kustomization
 namespace: project-zomboid
 
 resources:
+  - vpa.yaml
   - namespace.yaml
   - pvc.yaml
   - externalsecret.yaml
