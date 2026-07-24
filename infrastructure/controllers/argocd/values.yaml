@@ -138,43 +138,6 @@ configs:
         end
       end
       return hs
-    # kopiur Restore has no built-in Argo health assessment. Keep it Progressing
-    # while kopiur resolves and hydrates the volume, report Completed as Healthy,
-    # and preserve the controller's failure message when phase=Failed. This
-    # gates later waves for operator-owned PVCs such as Kafka: kopiur restores
-    # the exact PVC first, and the workload must not mount it until completion.
-    resource.customizations.health.kopiur.home-operations.com_Restore: |
-      hs = {}
-      hs.status = "Progressing"
-      hs.message = "Waiting for restore controller"
-      if obj.status ~= nil then
-        if obj.status.phase == "Completed" then
-          hs.status = "Healthy"
-          hs.message = "Restore completed"
-        elseif obj.status.phase == "Failed" then
-          hs.status = "Degraded"
-          if obj.status.failure ~= nil and obj.status.failure.message ~= nil then
-            hs.message = obj.status.failure.message
-          else
-            hs.message = "Restore failed"
-          end
-        elseif obj.status.phase ~= nil then
-          hs.message = "Restore phase: " .. obj.status.phase
-        end
-        -- Passive populator on a live cluster: AwaitingClaim=True means the
-        -- Restore idles until a rebuild-time PVC claims it via dataSourceRef.
-        -- That is its healthy steady state — without this, adding backup to an
-        -- app whose PVC already exists hangs every sync on the wave gate.
-        if hs.status == "Progressing" and obj.status.conditions ~= nil then
-          for _, c in ipairs(obj.status.conditions) do
-            if c.type == "AwaitingClaim" and c.status == "True" then
-              hs.status = "Healthy"
-              hs.message = "Passive populator awaiting PVC claim (live-cluster steady state)"
-            end
-          end
-        end
-      end
-      return hs
     # Strimzi Kafka has no built-in Argo health assessment. Walk (`ipairs`) its
     # condition list and translate Ready=True to Healthy or NotReady=True to
     # Degraded. Until either condition exists, remain Progressing. Because the

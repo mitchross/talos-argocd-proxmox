@@ -54,7 +54,8 @@ metadata:
   name: kafka-data-restore
   namespace: kafka
   annotations:
-    # Argo's kopiur health customization holds wave 0 until this is Completed.
+    # The namespace-scoped restore gate in wave -1 waits for Ready=True before
+    # Strimzi lands in wave 0; Argo itself needs no Kopiur health customization.
     argocd.argoproj.io/sync-wave: "-2"
 spec:
   source:
