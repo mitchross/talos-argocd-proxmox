@@ -23,6 +23,8 @@ spec:
       containers:
         - name: capture
           image: ghcr.io/posthog/posthog/capture:master@sha256:cd1226f78be3fd78b55bcda05b798291da97ce0e3902519e91f7ad53b55cb1c3
+          # No envFrom on purpose: events mode needs no S3/shared config, and skipping
+          # the ConfigMap keeps env edits from rolling the hot ingest path.
           env:
             - name: ADDRESS
               value: "0.0.0.0:3000"

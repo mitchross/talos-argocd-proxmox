@@ -21,7 +21,7 @@ spec:
       restartPolicy: OnFailure
       containers:
       - name: kafka-init
-        image: docker.redpanda.com/redpandadata/redpanda:v25.1.9
+        image: docker.redpanda.com/redpandadata/redpanda:v25.1.9@sha256:8f7e9e4c1422baaa1a5e2a6c6c668cfe05442cb3cb476542c7dff61725e6fe31
         imagePullPolicy: IfNotPresent
         command:
         - /bin/sh
@@ -131,6 +131,9 @@ spec:
                   "ALTER TABLE public.posthog_person "
                   "ADD COLUMN IF NOT EXISTS last_seen_at timestamptz NULL"
               )
+              # Library is preloaded via postgres args; without the extension the
+              # hourly monitoring task errors in the db log.
+              cursor.execute("CREATE EXTENSION IF NOT EXISTS pg_stat_statements")
           PY
           echo "Running ClickHouse migrations..."
           python manage.py migrate_clickhouse

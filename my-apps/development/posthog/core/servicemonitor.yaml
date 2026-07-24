@@ -1,0 +1,19 @@
+# Scrapes the web container's PROMETHEUS_METRICS_EXPORT_PORT (8001) into
+# kube-prometheus-stack (empty serviceMonitorSelectors — auto-discovered).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: posthog-web
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: web
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
