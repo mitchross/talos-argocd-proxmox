@@ -82,7 +82,7 @@ spec:
       - name: migrate
         # Keep the migration hook on the same monolith digest as web/workers.
         # Mixed monolith/node digests caused schema drift during pod restarts.
-        image: posthog/posthog:latest@sha256:334b0b6a604d0cde5f48af199bac141b26f8867ed2f6fd77435cf859a9537d76
+        image: posthog/posthog:latest@sha256:f607c58b19de904789fc23d38bba43dd6225697b1687f1515fc940302dce4bdc
         command:
         - /bin/sh
         - -c
