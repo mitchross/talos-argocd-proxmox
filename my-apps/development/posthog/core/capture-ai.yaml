@@ -1,0 +1,85 @@
+# LLM-analytics capture (upstream `capture-ai`): same rust capture binary as
+# core/capture.yaml, pointed at ai_events_ingestion with large prompt/completion
+# bodies offloaded to S3 (AI_S3_*). Basic $ai_* events also flow via the normal
+# /e path; this serves the dedicated /i/v0/ai blob-offload path.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: capture-ai
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: capture-ai
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: capture-ai
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: posthog
+        app.kubernetes.io/component: capture-ai
+    spec:
+      containers:
+        - name: capture-ai
+          image: ghcr.io/posthog/posthog/capture:master@sha256:62076bf2327198c455c0cd50185de2796a929d09f6f61c82a35b3f0997c5f5a9
+          env:
+            - name: ADDRESS
+              value: "0.0.0.0:3000"
+            - name: KAFKA_TOPIC
+              value: "ai_events_ingestion"
+            - name: KAFKA_HOSTS
+              value: "kafka:9092"
+            - name: REDIS_URL
+              value: "redis://redis7:6379/"
+            - name: CAPTURE_MODE
+              value: "events"
+            - name: RUST_LOG
+              value: "info,rdkafka=warn"
+            # Upstream uses a dedicated ai-blobs bucket; we reuse the existing
+            # RustFS posthog bucket under llma/ to avoid out-of-band bucket setup.
+            - name: AI_S3_BUCKET
+              value: "posthog"
+            - name: AI_S3_PREFIX
+              value: "llma/"
+            - name: AI_S3_ENDPOINT
+              value: "http://192.168.10.133:30293"
+            - name: AI_S3_REGION
+              value: "us-east-1"
+            - name: AI_S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-access-key
+            - name: AI_S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: posthog-secrets
+                  key: rustfs-secret-key
+          ports:
+            - containerPort: 3000
+              name: http
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: capture-ai
+  namespace: posthog
+spec:
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+  selector:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: capture-ai

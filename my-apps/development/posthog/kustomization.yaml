@@ -19,6 +19,7 @@ resources:
   - core/workers.yaml
   - core/plugins.yaml
   - core/capture.yaml
+  - core/capture-ai.yaml
   - core/ingestion.yaml
   - core/ingestion-sessionreplay.yaml
   - core/recording-api.yaml

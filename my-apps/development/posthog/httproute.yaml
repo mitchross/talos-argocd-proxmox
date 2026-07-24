@@ -28,6 +28,14 @@ spec:
       backendRefs:
         - name: capture
           port: 3000
+    # LLM analytics capture (Rust) — longest-prefix-match beats /i/v0 above
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /i/v0/ai
+      backendRefs:
+        - name: capture-ai
+          port: 3000
     # Session replay capture (Rust)
     - matches:
         - path:
@@ -99,6 +107,14 @@ spec:
             value: /batch
       backendRefs:
         - name: capture
+          port: 3000
+    # LLM analytics capture (Rust) — longest-prefix-match beats /i/v0 above
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /i/v0/ai
+      backendRefs:
+        - name: capture-ai
           port: 3000
     - matches:
         - path:
