@@ -563,14 +563,83 @@ tokens, cost, latency, and model land in the self-hosted PostHog instance's
 three). It doesn't replace the direct vLLM path above; it's a second provider
 you opt into per-model.
 
+```mermaid
+flowchart TD
+    subgraph WS["💻 Workstation"]
+        PI["pi TUI<br/>driven by ONE model at a time"]
+        SEL{"/model — which model drives<br/>this session? (manual, explicit choice)"}
+        SUB{"mid-task: is this hard enough to<br/>escalate? (qwen's own judgment,<br/>steered by AGENTS.md)"}
+        PI --> SEL
+        PI -.->|"while qwen is driving"| SUB
+    end
+
+    SEL -->|"vanillax-vllm<br/>(default — NOT logged)"| VROUTE["https://vllm.vanillax.me/v1<br/>(direct, bypasses LiteLLM)"]
+    SEL -->|"vanillax-litellm<br/>(manual switch — logged)"| LROUTE["https://litellm.vanillax.me/v1"]
+    SUB -->|"yes → subagent tool call<br/>agent: kimi-consult"| LROUTE
+
+    subgraph CLUSTER["☸️ Kubernetes cluster"]
+        VROUTE --> VLLM["vLLM<br/>2x RTX 3090 · qwen3.6-27b"]
+        LROUTE --> LITELLM["LiteLLM proxy<br/>looks up model → real backend + real key"]
+        LITELLM -->|"hosted_vllm/qwen3.6-27b"| VLLM
+        LITELLM -->|"moonshot/kimi-k3"| MOONSHOT
+        LITELLM -.->|"success/failure_callback"| CAPTURE["PostHog capture"]
+        CAPTURE --> CH[("ClickHouse")]
+        CH --> UI["PostHog UI<br/>Traces / Generations / Users"]
+
+        OP["1Password item:<br/>litellm"] --> ES["ExternalSecret"] --> SECRET[("k8s Secret<br/>litellm-secrets")] --> LITELLM
+    end
+
+    subgraph EXT["🌐 External"]
+        MOONSHOT["Moonshot API<br/>api.moonshot.ai — real $ cost"]
+    end
 ```
-pi (workstation TUI)
-  ├── https://vllm.vanillax.me/v1              (default daily driver, §1 — unlogged)
-  └── https://litellm.vanillax.me/v1            (internal route, LAN only)
-        ├── hosted_vllm/qwen3.6-27b  → same vLLM backend, now logged
-        └── moonshot/kimi-k3         → api.moonshot.ai — logged, has real $ cost
-              └── success/failure_callback: ["posthog"] → capture.posthog.svc.cluster.local
-```
+
+**The one thing worth being precise about:** the everyday `vanillax-vllm` path is
+**not logged**. Only traffic through LiteLLM — a manual `/model` switch, or a
+`kimi-consult` escalation — shows up in PostHog.
+
+### How the routing decision actually works
+
+There are two *different* decisions hiding in "how does pi know to use qwen or
+k3" — don't conflate them:
+
+**1. Which model drives the session — manual, not automatic.** pi runs one
+model at a time as the "brain" of a session; it doesn't dynamically pick
+per-message. You choose it explicitly (`/model` or `--model`) and it stays
+active — reading prompts, deciding tool calls, writing every response — until
+you switch it. pi never swaps its own driver model on its own initiative.
+
+**2. Whether the driver calls out to Kimi mid-task — automatic, an LLM
+judgment call, not routing logic.** This is a **tool call**, not routing:
+
+1. `@narumitw/pi-subagents` registers a `subagent` tool the driver (qwen) can
+   call like any other tool (read/edit/bash/…).
+2. `{"agent": "kimi-consult"}` is a valid argument because
+   `~/.pi/agent/agents/kimi-consult.md` declares an agent by that name, with
+   `model: vanillax-litellm/kimi-k3` in its frontmatter.
+3. Whether qwen actually emits that call on a given turn is qwen's own
+   reasoning, steered (not forced) by the "Escalate to Kimi K3" section in
+   `AGENTS.md`. It's non-deterministic — the same task might or might not
+   trigger it, same as deciding whether to reach for `grep`.
+4. When it fires, `pi-subagents` (plain extension code, not an LLM) spawns a
+   **second, separate pi process** configured per `kimi-consult.md` — pinned
+   to `vanillax-litellm/kimi-k3`, read-only tools only — runs it to
+   completion, and hands its final answer back to qwen as the tool result.
+   Qwen keeps driving, now with Kimi's opinion in context.
+
+No box "decides" between qwen and Kimi — qwen always decides, and Kimi only
+ever appears as a tool result inside qwen's own conversation, never as a peer.
+
+### What each box does
+
+| Box | What it actually does |
+|---|---|
+| `vanillax-vllm` / `vanillax-litellm` (`models.json` entries) | Not services — client-side config only. Each tells pi "here's a base URL, an API key, and the model IDs + specs available there." Selecting a model just points pi's OpenAI-compatible HTTP client at one entry. |
+| **LiteLLM proxy** | The only box doing real work in the middle. Per request: validate `Authorization: Bearer <master_key>` → read the `model` field → look it up in its own `model_list` for the *real* upstream + *real* credentials → forward using its own server-side key (pi never sees Moonshot's key or vLLM's) → stream the response back → fire-and-forget a PostHog event with token/cost/latency. A dictionary lookup + credential swap, nothing smarter. |
+| **vLLM** | Doesn't know or care that LiteLLM exists. Identical GPU backend either way — the direct route and the LiteLLM-proxied route are just two different front doors to the same service. |
+| **Moonshot's API** | Third-party SaaS, entirely outside the cluster. LiteLLM is just an HTTP client of it, same as pi would be directly — except pi's request only ever carries LiteLLM's master key, which Moonshot has never heard of. |
+| **PostHog capture → ClickHouse** | `capture` validates/buffers events; the rows land in ClickHouse, which Traces/Generations query. The Dashboard tab's errors come from a *different* PostHog component (Django querying Postgres for cached-insight metadata) — unrelated to whether events reached ClickHouse. |
+| **1Password → ExternalSecret → k8s Secret** | External Secrets Operator polls 1Password Connect hourly and materializes values as a real `Secret` object in the `litellm` namespace; the Deployment pulls it in as env vars at container start. Only the LiteLLM pod's environment ever holds `MOONSHOT_API_KEY` — it never reaches your workstation. |
 
 ### Cluster side (already deployed, GitOps-managed)
 
