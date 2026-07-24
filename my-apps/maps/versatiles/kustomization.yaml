@@ -12,6 +12,7 @@ resources:
   - style-server-service.yaml
   - httproute.yaml
   - httproute-styles.yaml
+  - httproute-viewer.yaml
 
 configMapGenerator:
   # Hash-suffixed names are the update mechanism: editing DATASET_URL below
@@ -37,3 +38,8 @@ configMapGenerator:
     files:
       - styles/light.json
       - styles/dark.json
+  # Fullscreen MapLibre viewer served at `/` (see httproute-viewer.yaml). Hash
+  # suffix rolls the map-styles Deployment when index.html changes.
+  - name: map-styles-index
+    files:
+      - index.html
