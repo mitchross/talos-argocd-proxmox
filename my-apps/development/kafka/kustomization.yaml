@@ -16,6 +16,7 @@ resources:
   - demo-seed-job.yaml
   - kafka-ui.yaml
   - kopiur/kafka-data.yaml
+  - kopiur/restore-gate.yaml
 configMapGenerator:
   # Keep executable logic and sample payloads out of Kubernetes YAML. The
   # generated name hash automatically gives each Job revision its exact files.
