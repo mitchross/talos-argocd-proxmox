@@ -161,6 +161,18 @@ configs:
         elseif obj.status.phase ~= nil then
           hs.message = "Restore phase: " .. obj.status.phase
         end
+        -- Passive populator on a live cluster: AwaitingClaim=True means the
+        -- Restore idles until a rebuild-time PVC claims it via dataSourceRef.
+        -- That is its healthy steady state — without this, adding backup to an
+        -- app whose PVC already exists hangs every sync on the wave gate.
+        if hs.status == "Progressing" and obj.status.conditions ~= nil then
+          for _, c in ipairs(obj.status.conditions) do
+            if c.type == "AwaitingClaim" and c.status == "True" then
+              hs.status = "Healthy"
+              hs.message = "Passive populator awaiting PVC claim (live-cluster steady state)"
+            end
+          end
+        end
       end
       return hs
     # Strimzi Kafka has no built-in Argo health assessment. Walk (`ipairs`) its
