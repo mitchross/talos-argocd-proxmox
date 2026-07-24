@@ -24,7 +24,12 @@ spec:
     spec:
       containers:
       - name: db
-        image: postgres:15.12-alpine
+        image: postgres:15.12-alpine@sha256:ef9d1517df69c4d27dbb9ddcec14f431a2442628603f4e9daa429b92ae6c3cd1
+        # PostHog's hourly monitoring task queries pg_stat_statements; preload the
+        # library so the migrate job's CREATE EXTENSION works (stops hourly log errors).
+        args:
+        - -c
+        - shared_preload_libraries=pg_stat_statements
         env:
         - name: POSTGRES_USER
           value: posthog
@@ -94,24 +99,23 @@ metadata:
   namespace: posthog
   labels:
     app: posthog-db
-    # PostHog data is disposable/rebuildable in this homelab — backup-exempt (no kopiur).
-    backup-exempt: "true"
   annotations:
+    # immutable dataSourceRef on a Bound PVC — mask the SSA dry-run diff;
+    # the AppSet ignoreDifferences handles the live compare.
     argocd.argoproj.io/compare-options: ServerSideDiff=false
-    storage.vanillax.dev/backup-exempt-reason: "PostHog data is disposable/rebuildable in this homelab; do not back up. If Postgres preservation is ever needed, use native pg_dump, not generic volume-snapshot restore."
+    argocd.argoproj.io/sync-options: ServerSideApply=false
 spec:
   accessModes:
   - ReadWriteOnce
   storageClassName: longhorn-flash
   resources:
     requests:
-      # Shrunk 20Gi -> 8Gi for the single-node rebuild (2026-06-19). PostHog's
-      # Postgres holds metadata/config (small); 8Gi is ample. Backup-exempt;
-      # starts empty on nuke.
+      # PostHog's Postgres holds identity metadata (small); 8Gi is ample.
       storage: 8Gi
-  # PostHog data is disposable/rebuildable (backup-exempt above) — intentionally
-  # NO dataSourceRef and NO VolSync ReplicationSource/ReplicationDestination.
-  # Inline RS/postgres-data + RD/postgres-data-dst were REMOVED 2026-05-31 to
-  # stop backups. dataSourceRef omitted to match the live PVC (empty) — on
-  # recreate the PVC comes up empty (acceptable; data is disposable). Do not
-  # re-add RS/RD; use native pg_dump if preservation is ever required.
+  # Restore-before-bind: on rebuild this PVC hydrates from the latest kopiur
+  # snapshot — API keys, users, dashboards, flag/cohort definitions survive.
+  # ClickHouse/Kafka/Redis stay backup-exempt; event history rebuilds empty.
+  dataSourceRef:
+    apiGroup: kopiur.home-operations.com
+    kind: Restore
+    name: postgres-data-restore

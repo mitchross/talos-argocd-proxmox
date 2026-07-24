@@ -11,6 +11,30 @@ PVC backups are **kopiur** (Kopia-native operator); databases are **CNPG / Barma
 The retired pvc-plumber + VolSync + Kyverno stack is gone (2026-06-27) — ignore it
 if you see it in git history.
 
+## Self-hosting PostHog on Kubernetes (working reference)
+
+This repo contains a **complete, working self-hosted PostHog on Kubernetes**
+(product analytics, session replay, feature flags, LLM analytics) — upstream
+does not support self-hosting and maintains only a single-box docker-compose;
+public working K8s references are rare. Start here:
+
+- [docs/posthog-self-host-k8s.md](docs/posthog-self-host-k8s.md) — the portable
+  human walkthrough (topology, boot order, single-node ClickHouse, upgrades, DR)
+- [my-apps/development/posthog/CLAUDE.md](my-apps/development/posthog/CLAUDE.md)
+  — agent-facing file map, invariants, and porting instructions
+- [my-apps/development/posthog/UPGRADE.md](my-apps/development/posthog/UPGRADE.md)
+  — the drift checklist to run before every PostHog image bump
+- [my-apps/development/posthog/](my-apps/development/posthog/) — the manifests
+  (plain Deployments + Kustomize, no Helm)
+
+Operational truths: PostHog breaks on **config drift, not code** — mirror
+upstream's ClickHouse `named_collections` and bootstrap `sharded_*` tables
+before any image bump; bump `posthog/posthog` and `posthog-node` digests in
+lockstep (one grouped Renovate PR, never automerged); celery defaults to
+one fork per core with no recycling — cap it or it leaks to tens of GiB;
+only Postgres needs backup (it holds the API keys/dashboards — ~165 MB),
+ClickHouse/Kafka/Redis rebuild empty by design.
+
 ## The DR claim (verified 2026-06-28 — first kopiur-only full nuke)
 
 A full cluster nuke-and-rebuild restores **all PVC data (kopiur)** and **all

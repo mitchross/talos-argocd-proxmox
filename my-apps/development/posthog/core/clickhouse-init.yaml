@@ -21,7 +21,7 @@ spec:
       restartPolicy: OnFailure
       containers:
       - name: clickhouse-init
-        image: clickhouse/clickhouse-server:25.12.8.9
+        image: clickhouse/clickhouse-server:26.6.1.1193@sha256:1d1f6508eba2dccce2cee9913907c5f7766327debc57a6b1991f2c9e3176c163
         imagePullPolicy: IfNotPresent
         command:
         - sh
