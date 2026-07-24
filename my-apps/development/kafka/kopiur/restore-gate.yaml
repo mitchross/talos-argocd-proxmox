@@ -1,0 +1,86 @@
+# Kafka is the one kopiur exception that restores a PVC directly because
+# Strimzi owns the claim manifest. Keep this dependency local: apply the Restore
+# in wave -2, wait on kopiur's standard Ready condition here in wave -1, then
+# allow the KafkaNodePool and Kafka resources to land in wave 0.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kafka-restore-gate
+  namespace: kafka
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kafka-restore-gate
+  namespace: kafka
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+rules:
+  - apiGroups:
+      - kopiur.home-operations.com
+    resources:
+      - restores
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kafka-restore-gate
+  namespace: kafka
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kafka-restore-gate
+subjects:
+  - kind: ServiceAccount
+    name: kafka-restore-gate
+    namespace: kafka
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-restore-gate
+  namespace: kafka
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  activeDeadlineSeconds: 3600
+  backoffLimit: 0
+  template:
+    spec:
+      serviceAccountName: kafka-restore-gate
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: wait
+          image: registry.k8s.io/kubectl:v1.36.3@sha256:6e4fce3c83651edb91b74bc67701c5cd263dd8aa3cd4254b1798d6425a5ab789
+          args:
+            - wait
+            - --for=condition=Ready
+            - --timeout=55m
+            - restore.kopiur.home-operations.com/kafka-data-restore
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
