@@ -25,6 +25,7 @@ resources:
   - core/temporal-worker.yaml
   - core/microservices.yaml
   - core/toolbox.yaml
+  - core/servicemonitor.yaml
 
 # Hash-suffixed env configmap. Consumed via envFrom by 11+ posthog
 # workloads (web, capture, ingestion, recording-api, plugins, workers,

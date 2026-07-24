@@ -33,6 +33,15 @@ spec:
             - configMapRef:
                 name: posthog-env
           env:
+            # Celery defaults --concurrency to CPU count (~32 on this node) with no
+            # child recycling — leaked memory accumulated to ~15Gi RSS. Cap the pool
+            # and recycle children by task count / RSS (KiB).
+            - name: WEB_CONCURRENCY
+              value: "4"
+            - name: CELERY_MAX_TASKS_PER_CHILD
+              value: "300"
+            - name: CELERY_MAX_MEMORY_PER_CHILD
+              value: "1048576"
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:

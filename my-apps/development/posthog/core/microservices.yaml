@@ -211,7 +211,7 @@ spec:
             - name: OBJECT_STORAGE_BUCKET
               value: "posthog"
             - name: OBJECT_STORAGE_ENDPOINT
-              value: "http://192.168.10.133:30292"
+              value: "http://192.168.10.133:30293"
             - name: OBJECT_STORAGE_FORCE_PATH_STYLE
               value: "true"
             - name: OBJECT_STORAGE_ACCESS_KEY_ID

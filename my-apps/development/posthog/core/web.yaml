@@ -77,6 +77,8 @@ spec:
               key: rustfs-secret-key
         - name: LIVESTREAM_HOST
           value: "https://posthog.vanillax.me/livestream"
+        # Active in Unit mode (upstream default 4); 2 fits the 12Gi limit.
+        # Re-check if upstream flips USE_GRANIAN to default.
         - name: NGINX_UNIT_APP_PROCESSES
           value: "2"
         ports:
@@ -128,11 +130,17 @@ kind: Service
 metadata:
   name: web
   namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+    app.kubernetes.io/component: web
 spec:
   ports:
   - name: http
     port: 8000
     targetPort: 8000
+  - name: metrics
+    port: 8001
+    targetPort: 8001
   selector:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: web
