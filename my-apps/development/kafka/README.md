@@ -78,8 +78,9 @@ domains.
 
 The deterministic Strimzi claim `data-0-dev-kafka-dual-role-0` has a daily
 kopiur recovery point. Kafka uses kopiur's direct-PVC variant because Strimzi,
-not Git, normally creates the claim; the Argo health gate ensures restoration
-finishes before Kafka mounts it. The capacity and storage class are copied from
+not Git, normally creates the claim. A namespace-scoped Sync Job waits for the
+Restore's standard `Ready=True` condition before Argo advances from wave -1 to
+the Strimzi resources in wave 0. The capacity and storage class are copied from
 the node-pool declaration with Kustomize replacements so the live and restore
 contracts cannot drift independently.
 
