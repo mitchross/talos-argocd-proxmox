@@ -86,7 +86,10 @@ spec:
           valueFrom:
             secretKeyRef:
               name: posthog-secrets
-              key: posthog-db-url
+              # The exporter is a sidecar. Using the db Service here creates a
+              # readiness deadlock because the Service does not publish this
+              # pod as an endpoint until every container is ready.
+              key: posthog-exporter-db-url
         ports:
         - containerPort: 9187
           name: metrics
