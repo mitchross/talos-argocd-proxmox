@@ -1,0 +1,1060 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: posthog-performance-dashboard
+  namespace: prometheus-stack
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/name: grafana-dashboards
+data:
+  posthog-performance.json: |
+    {
+      "annotations": { "list": [] },
+      "description": "One-page PostHog root-cause dashboard: web/API, PostgreSQL, Kafka/Redpanda, ClickHouse, workers, and correlated errors.",
+      "editable": false,
+      "graphTooltip": 1,
+      "links": [
+        {
+          "asDropdown": false,
+          "icon": "dashboard",
+          "includeVars": false,
+          "keepTime": true,
+          "targetBlank": false,
+          "title": "Back to START HERE",
+          "type": "link",
+          "url": "/d/performance-cockpit/start-here-cluster-performance"
+        },
+        {
+          "asDropdown": false,
+          "icon": "dashboard",
+          "includeVars": false,
+          "keepTime": true,
+          "targetBlank": false,
+          "title": "PostHog pod investigator",
+          "type": "link",
+          "url": "/d/app-performance-investigator/why-is-this-app-slow?var-namespace=posthog"
+        }
+      ],
+      "panels": [
+        {
+          "id": 1,
+          "type": "text",
+          "title": "WHY IS POSTHOG SLOW? — read left to right",
+          "gridPos": { "x": 0, "y": 0, "w": 24, "h": 6 },
+          "options": {
+            "mode": "markdown",
+            "content": "## The first red card identifies the layer\n**WEB/API red + data stores green:** bad release, schema mismatch, dependency address, or application error. Read **Current root-cause errors**.\n\n**POSTGRES red:** connections, a long transaction, locks, deadlocks, or poor cache hit. **KAFKA LAG red:** an ingestion consumer cannot keep up. **CLICKHOUSE red:** analytics queries, merges, parts, or memory are blocking work. **WORKERS red:** a pod is CPU/memory constrained or restarting.\n\n### Healthy guide\nWeb p95 **< 1 s** · HTTP 5xx **< 1%** · Kafka lag **near 0** · Postgres connections **< 70%** · cache hit **> 95%** · no deadlocks · no long transaction **> 60 s**. Click a row title to expand only the layer that is red."
+          }
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "WEB — p95 response",
+          "description": "95% of web requests completed faster than this over 15 minutes.",
+          "gridPos": { "x": 0, "y": 6, "w": 4, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum by(le) (rate(django_http_requests_latency_including_middlewares_seconds_bucket{namespace=\"posthog\"}[15m])))",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "noValue": "NO WEB METRICS",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1 },
+                  { "color": "red", "value": 3 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto",
+            "wideLayout": true
+          }
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "WEB — HTTP 5xx",
+          "description": "Server-error percentage over 15 minutes. NaN with no requests is healthy/idle.",
+          "gridPos": { "x": 4, "y": 6, "w": 4, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "(100 * sum(rate(django_http_responses_total_by_status_total{namespace=\"posthog\",status=~\"5..\"}[15m])) / sum(rate(django_http_responses_total_by_status_total{namespace=\"posthog\"}[15m]))) or vector(0)",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1 },
+                  { "color": "red", "value": 5 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto",
+            "wideLayout": true
+          }
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "KAFKA — worst lag",
+          "description": "Largest unprocessed consumer offset. The Kafka row names the delayed group and topic.",
+          "gridPos": { "x": 8, "y": 6, "w": 4, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "max(clamp_min(max by(redpanda_topic,redpanda_partition) (redpanda_kafka_max_offset{namespace=\"posthog\",redpanda_namespace=\"kafka\"}) - on(redpanda_topic,redpanda_partition) group_right(redpanda_group) max by(redpanda_group,redpanda_topic,redpanda_partition) (redpanda_kafka_consumer_group_committed_offset{namespace=\"posthog\"}), 0)) or vector(0)",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "noValue": "NO KAFKA METRICS",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1000 },
+                  { "color": "red", "value": 10000 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto",
+            "wideLayout": true
+          }
+        },
+        {
+          "id": 5,
+          "type": "stat",
+          "title": "POSTGRES — connections",
+          "description": "Current database connections as a percentage of max_connections.",
+          "gridPos": { "x": 12, "y": 6, "w": 4, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "(100 * max(pg_stat_database_numbackends{namespace=\"posthog\",datname=\"posthog\"}) / max(pg_settings_max_connections{namespace=\"posthog\"})) or vector(0)",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "noValue": "NO PG METRICS",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 70 },
+                  { "color": "red", "value": 85 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto",
+            "wideLayout": true
+          }
+        },
+        {
+          "id": 6,
+          "type": "stat",
+          "title": "CLICKHOUSE — active work",
+          "description": "Queries plus background merges. Sustained growth points to analytics pressure.",
+          "gridPos": { "x": 16, "y": 6, "w": 4, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "max(ClickHouseMetrics_Query{namespace=\"posthog\"}) + max(ClickHouseMetrics_Merge{namespace=\"posthog\"}) or vector(0)",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "noValue": "NO CH METRICS",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 10 },
+                  { "color": "red", "value": 50 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto",
+            "wideLayout": true
+          }
+        },
+        {
+          "id": 7,
+          "type": "stat",
+          "title": "ERRORS — last 15m",
+          "description": "PostHog error, exception, timeout, connection-refused, and traceback lines.",
+          "gridPos": { "x": 20, "y": 6, "w": 4, "h": 4 },
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "targets": [
+            {
+              "expr": "sum(count_over_time({k8s_namespace_name=\"posthog\"} |~ \"(?i)error|exception|traceback|timed out|timeout|connection refused\" [15m]))",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1 },
+                  { "color": "red", "value": 20 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto",
+            "wideLayout": true
+          }
+        },
+        {
+          "id": 100,
+          "type": "row",
+          "title": "WEB / API — WHICH SCREEN OR ENDPOINT IS SLOW OR BROKEN?",
+          "collapsed": false,
+          "gridPos": { "x": 0, "y": 10, "w": 24, "h": 1 },
+          "panels": []
+        },
+        {
+          "id": 8,
+          "type": "bargauge",
+          "title": "Slowest endpoints — average over 15m",
+          "description": "The exact PostHog view and HTTP method consuming time. Empty means no recent traffic.",
+          "gridPos": { "x": 0, "y": 11, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "topk(12, (sum by(view,method) (rate(django_http_requests_latency_seconds_by_view_method_sum{namespace=\"posthog\"}[15m])) / sum by(view,method) (rate(django_http_requests_latency_seconds_by_view_method_count{namespace=\"posthog\"}[15m]))) and on(view,method) (sum by(view,method) (increase(django_http_requests_latency_seconds_by_view_method_count{namespace=\"posthog\"}[15m])) > 0))",
+              "instant": true,
+              "legendFormat": "{{method}} {{view}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1 },
+                  { "color": "red", "value": 3 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "displayMode": "gradient",
+            "maxVizHeight": 300,
+            "minVizHeight": 16,
+            "minVizWidth": 8,
+            "namePlacement": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "showUnfilled": true,
+            "sizing": "auto",
+            "valueMode": "color"
+          }
+        },
+        {
+          "id": 9,
+          "type": "bargauge",
+          "title": "Failing endpoints — HTTP 5xx in selected range",
+          "description": "Names the broken PostHog feature instead of showing one anonymous error total.",
+          "gridPos": { "x": 12, "y": 11, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "topk(12, sum by(view,method) (increase(django_http_responses_total_by_status_view_method_total{namespace=\"posthog\",status=~\"5..\"}[$__range])))",
+              "instant": true,
+              "legendFormat": "{{method}} {{view}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1 },
+                  { "color": "red", "value": 10 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "displayMode": "gradient",
+            "maxVizHeight": 300,
+            "minVizHeight": 16,
+            "minVizWidth": 8,
+            "namePlacement": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "showUnfilled": true,
+            "sizing": "auto",
+            "valueMode": "color"
+          }
+        },
+        {
+          "id": 10,
+          "type": "timeseries",
+          "title": "Web p50 / p95 / p99 response time",
+          "description": "A rising tail with green data stores usually means a slow endpoint or application release.",
+          "gridPos": { "x": 0, "y": 19, "w": 12, "h": 7 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.50, sum by(le) (rate(django_http_requests_latency_including_middlewares_seconds_bucket{namespace=\"posthog\"}[5m])))",
+              "legendFormat": "p50",
+              "refId": "A"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum by(le) (rate(django_http_requests_latency_including_middlewares_seconds_bucket{namespace=\"posthog\"}[5m])))",
+              "legendFormat": "p95",
+              "refId": "B"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum by(le) (rate(django_http_requests_latency_including_middlewares_seconds_bucket{namespace=\"posthog\"}[5m])))",
+              "legendFormat": "p99",
+              "refId": "C"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s", "min": 0 }, "overrides": [] },
+          "options": {
+            "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 11,
+          "type": "timeseries",
+          "title": "Requests and server errors",
+          "description": "Traffic explains load; 5xx tells you whether users are waiting on a failure.",
+          "gridPos": { "x": 12, "y": 19, "w": 12, "h": 7 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "sum(rate(django_http_responses_total_by_status_total{namespace=\"posthog\"}[5m]))",
+              "legendFormat": "all responses / sec",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(django_http_responses_total_by_status_total{namespace=\"posthog\",status=~\"5..\"}[5m]))",
+              "legendFormat": "5xx / sec",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 }, "overrides": [] },
+          "options": {
+            "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 101,
+          "type": "row",
+          "title": "POSTGRES — CONNECTIONS, CACHE, LOCKS, OR A SLOW QUERY?",
+          "collapsed": false,
+          "gridPos": { "x": 0, "y": 26, "w": 24, "h": 1 },
+          "panels": []
+        },
+        {
+          "id": 12,
+          "type": "stat",
+          "title": "Cache hit",
+          "description": "Below 95% means Postgres is going to storage much more often.",
+          "gridPos": { "x": 0, "y": 27, "w": 6, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "(100 * sum(rate(pg_stat_database_blks_hit{namespace=\"posthog\",datname=\"posthog\"}[5m])) / (sum(rate(pg_stat_database_blks_hit{namespace=\"posthog\",datname=\"posthog\"}[5m])) + sum(rate(pg_stat_database_blks_read{namespace=\"posthog\",datname=\"posthog\"}[5m])))) or vector(100)",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "noValue": "NO PG METRICS",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "yellow", "value": 90 },
+                  { "color": "green", "value": 95 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto",
+            "wideLayout": true
+          }
+        },
+        {
+          "id": 13,
+          "type": "stat",
+          "title": "Deadlocks — 1h",
+          "description": "Any increase means transactions blocked each other and Postgres killed one.",
+          "gridPos": { "x": 6, "y": 27, "w": 6, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "sum(increase(pg_stat_database_deadlocks{namespace=\"posthog\",datname=\"posthog\"}[1h])) or vector(0)",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "red", "value": 1 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto",
+            "wideLayout": true
+          }
+        },
+        {
+          "id": 14,
+          "type": "stat",
+          "title": "Oldest active transaction",
+          "description": "Long transactions hold old row versions and can block cleanup.",
+          "gridPos": { "x": 12, "y": 27, "w": 6, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "max(pg_long_running_transactions_oldest_timestamp_seconds{namespace=\"posthog\"}) or vector(0)",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 60 },
+                  { "color": "red", "value": 300 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto",
+            "wideLayout": true
+          }
+        },
+        {
+          "id": 15,
+          "type": "stat",
+          "title": "Temporary data — 1h",
+          "description": "Large values mean sorts/hashes spilled to disk.",
+          "gridPos": { "x": 18, "y": 27, "w": 6, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "sum(increase(pg_stat_database_temp_bytes{namespace=\"posthog\",datname=\"posthog\"}[1h])) or vector(0)",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1073741824 },
+                  { "color": "red", "value": 5368709120 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto",
+            "wideLayout": true
+          }
+        },
+        {
+          "id": 16,
+          "type": "timeseries",
+          "title": "Postgres transactions / sec",
+          "description": "Rollback spikes usually pair with application errors or contention.",
+          "gridPos": { "x": 0, "y": 31, "w": 8, "h": 7 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "sum(rate(pg_stat_database_xact_commit{namespace=\"posthog\",datname=\"posthog\"}[5m]))",
+              "legendFormat": "committed",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(pg_stat_database_xact_rollback{namespace=\"posthog\",datname=\"posthog\"}[5m]))",
+              "legendFormat": "rolled back",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "ops", "min": 0 }, "overrides": [] },
+          "options": {
+            "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 17,
+          "type": "timeseries",
+          "title": "Postgres locks by mode",
+          "description": "AccessExclusiveLock growth is the dangerous one; it can block normal reads and writes.",
+          "gridPos": { "x": 8, "y": 31, "w": 8, "h": 7 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "sum by(mode) (pg_locks_count{namespace=\"posthog\",datname=\"posthog\"})",
+              "legendFormat": "{{mode}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] },
+          "options": {
+            "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 18,
+          "type": "bargauge",
+          "title": "Slow Postgres query IDs — average over 15m",
+          "description": "Query text is intentionally not exported. Use the queryid with pg_stat_statements in the toolbox.",
+          "gridPos": { "x": 16, "y": 31, "w": 8, "h": 7 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "topk(10, rate(pg_stat_statements_seconds_total{namespace=\"posthog\",datname=\"posthog\"}[15m]) / clamp_min(rate(pg_stat_statements_calls_total{namespace=\"posthog\",datname=\"posthog\"}[15m]), 0.000001))",
+              "instant": true,
+              "legendFormat": "query {{queryid}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 0.1 },
+                  { "color": "red", "value": 1 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "displayMode": "gradient",
+            "orientation": "horizontal",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "showUnfilled": true,
+            "sizing": "auto",
+            "valueMode": "color"
+          }
+        },
+        {
+          "id": 102,
+          "type": "row",
+          "title": "KAFKA / REDPANDA — WHICH CONSUMER IS FALLING BEHIND?",
+          "collapsed": false,
+          "gridPos": { "x": 0, "y": 38, "w": 24, "h": 1 },
+          "panels": []
+        },
+        {
+          "id": 19,
+          "type": "bargauge",
+          "title": "Consumer lag by group",
+          "description": "This is the backlog that makes ingestion and downstream analytics feel delayed.",
+          "gridPos": { "x": 0, "y": 39, "w": 12, "h": 10 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "topk(20, sum by(redpanda_group) (clamp_min(max by(redpanda_topic,redpanda_partition) (redpanda_kafka_max_offset{namespace=\"posthog\",redpanda_namespace=\"kafka\"}) - on(redpanda_topic,redpanda_partition) group_right(redpanda_group) max by(redpanda_group,redpanda_topic,redpanda_partition) (redpanda_kafka_consumer_group_committed_offset{namespace=\"posthog\"}), 0)))",
+              "instant": true,
+              "legendFormat": "{{redpanda_group}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1000 },
+                  { "color": "red", "value": 10000 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "displayMode": "gradient",
+            "orientation": "horizontal",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "showUnfilled": true,
+            "sizing": "auto",
+            "valueMode": "color"
+          }
+        },
+        {
+          "id": 20,
+          "type": "timeseries",
+          "title": "Lag trend by consumer group",
+          "description": "Rising means the consumer is slower than producers; falling means it is catching up.",
+          "gridPos": { "x": 12, "y": 39, "w": 12, "h": 10 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "sum by(redpanda_group) (clamp_min(max by(redpanda_topic,redpanda_partition) (redpanda_kafka_max_offset{namespace=\"posthog\",redpanda_namespace=\"kafka\"}) - on(redpanda_topic,redpanda_partition) group_right(redpanda_group) max by(redpanda_group,redpanda_topic,redpanda_partition) (redpanda_kafka_consumer_group_committed_offset{namespace=\"posthog\"}), 0))",
+              "legendFormat": "{{redpanda_group}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] },
+          "options": {
+            "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 21,
+          "type": "stat",
+          "title": "Unavailable partitions",
+          "description": "Anything above zero is a Redpanda availability problem.",
+          "gridPos": { "x": 0, "y": 49, "w": 6, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "sum(redpanda_cluster_unavailable_partitions{namespace=\"posthog\"}) or vector(0)",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "red", "value": 1 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto",
+            "wideLayout": true
+          }
+        },
+        {
+          "id": 22,
+          "type": "timeseries",
+          "title": "Active consumers by group",
+          "description": "A drop to zero explains growing lag even when Kafka itself is healthy.",
+          "gridPos": { "x": 6, "y": 49, "w": 18, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "sum by(redpanda_group) (redpanda_kafka_consumer_group_consumers{namespace=\"posthog\"})",
+              "legendFormat": "{{redpanda_group}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] },
+          "options": {
+            "legend": { "calcs": ["lastNotNull", "min"], "displayMode": "table", "placement": "right", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 103,
+          "type": "row",
+          "title": "CLICKHOUSE — QUERY, MERGE, PART, OR MEMORY PRESSURE?",
+          "collapsed": false,
+          "gridPos": { "x": 0, "y": 53, "w": 24, "h": 1 },
+          "panels": []
+        },
+        {
+          "id": 23,
+          "type": "timeseries",
+          "title": "Active ClickHouse queries and merges",
+          "description": "Queries are user work; merges are background storage work competing for CPU and I/O.",
+          "gridPos": { "x": 0, "y": 54, "w": 8, "h": 7 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "ClickHouseMetrics_Query{namespace=\"posthog\"}",
+              "legendFormat": "queries",
+              "refId": "A"
+            },
+            {
+              "expr": "ClickHouseMetrics_Merge{namespace=\"posthog\"}",
+              "legendFormat": "merges",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] },
+          "options": {
+            "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 24,
+          "type": "timeseries",
+          "title": "ClickHouse query successes and failures",
+          "description": "A failure spike is a query/schema/config problem, not a generic capacity issue.",
+          "gridPos": { "x": 8, "y": 54, "w": 8, "h": 7 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "rate(ClickHouseProfileEvents_Query{namespace=\"posthog\"}[5m])",
+              "legendFormat": "queries / sec",
+              "refId": "A"
+            },
+            {
+              "expr": "rate(ClickHouseProfileEvents_FailedQuery{namespace=\"posthog\"}[5m])",
+              "legendFormat": "failed / sec",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "ops", "min": 0 }, "overrides": [] },
+          "options": {
+            "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 25,
+          "type": "timeseries",
+          "title": "ClickHouse memory vs pod limit",
+          "description": "Near 100% with restarts means OOM risk. Tracked memory explains query/cache pressure.",
+          "gridPos": { "x": 16, "y": 54, "w": 8, "h": 7 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "100 * sum(container_memory_working_set_bytes{namespace=\"posthog\",container=\"clickhouse\",image!=\"\"}) / sum(kube_pod_container_resource_limits{namespace=\"posthog\",container=\"clickhouse\",resource=\"memory\"})",
+              "legendFormat": "pod limit used",
+              "refId": "A"
+            },
+            {
+              "expr": "100 * max(ClickHouseMetrics_MemoryTracking{namespace=\"posthog\"}) / sum(kube_pod_container_resource_limits{namespace=\"posthog\",container=\"clickhouse\",resource=\"memory\"})",
+              "legendFormat": "ClickHouse tracked",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
+          "options": {
+            "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 26,
+          "type": "timeseries",
+          "title": "MergeTree parts pressure",
+          "description": "A rising maximum part count means inserts are creating parts faster than merges can combine them.",
+          "gridPos": { "x": 0, "y": 61, "w": 12, "h": 7 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "ClickHouseAsyncMetrics_MaxPartCountForPartition{namespace=\"posthog\"}",
+              "legendFormat": "max parts / partition",
+              "refId": "A"
+            },
+            {
+              "expr": "ClickHouseMetrics_PartsTemporary{namespace=\"posthog\"}",
+              "legendFormat": "temporary parts",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] },
+          "options": {
+            "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 27,
+          "type": "timeseries",
+          "title": "ClickHouse CPU and restarts",
+          "description": "High CPU plus merges means storage maintenance; high CPU plus queries means analytics load.",
+          "gridPos": { "x": 12, "y": 61, "w": 12, "h": 7 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"posthog\",container=\"clickhouse\",image!=\"\"}[5m]))",
+              "legendFormat": "CPU cores",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"posthog\",container=\"clickhouse\"}[1h]))",
+              "legendFormat": "restarts / hour",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] },
+          "options": {
+            "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 104,
+          "type": "row",
+          "title": "WORKERS / PODS — IS ONE COMPONENT SATURATED OR CRASHING?",
+          "collapsed": false,
+          "gridPos": { "x": 0, "y": 68, "w": 24, "h": 1 },
+          "panels": []
+        },
+        {
+          "id": 28,
+          "type": "timeseries",
+          "title": "CPU by PostHog component",
+          "description": "Names the pod consuming CPU. Sustained flat-topping suggests worker saturation.",
+          "gridPos": { "x": 0, "y": 69, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "topk(15, sum by(pod) (rate(container_cpu_usage_seconds_total{namespace=\"posthog\",container!=\"\",container!=\"POD\",image!=\"\"}[5m])))",
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "cores", "min": 0 }, "overrides": [] },
+          "options": {
+            "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 29,
+          "type": "timeseries",
+          "title": "Memory by PostHog component",
+          "description": "Names the pod consuming RAM. Correlate a limit approach with restarts/OOMs.",
+          "gridPos": { "x": 12, "y": 69, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "topk(15, sum by(pod) (container_memory_working_set_bytes{namespace=\"posthog\",container!=\"\",container!=\"POD\",image!=\"\"}))",
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "bytes", "min": 0 }, "overrides": [] },
+          "options": {
+            "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 105,
+          "type": "row",
+          "title": "CURRENT ROOT-CAUSE ERRORS — READ THE MESSAGE, NOT 89 MORE MENUS",
+          "collapsed": false,
+          "gridPos": { "x": 0, "y": 77, "w": 24, "h": 1 },
+          "panels": []
+        },
+        {
+          "id": 30,
+          "type": "timeseries",
+          "title": "Error-like lines by pod",
+          "description": "The pod with the spike is the component to inspect in the log panel below.",
+          "gridPos": { "x": 0, "y": 78, "w": 24, "h": 6 },
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "targets": [
+            {
+              "expr": "sum by(k8s_pod_name) (count_over_time({k8s_namespace_name=\"posthog\"} |~ \"(?i)error|exception|traceback|timed out|timeout|connection refused\" [$__auto]))",
+              "legendFormat": "{{k8s_pod_name}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] },
+          "options": {
+            "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "right", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 31,
+          "type": "logs",
+          "title": "Actual PostHog errors — newest first",
+          "description": "This is where schema mismatch, connection refused, timeouts, OOM clues, and failing migrations become plain text.",
+          "gridPos": { "x": 0, "y": 84, "w": 24, "h": 16 },
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "targets": [
+            {
+              "expr": "{k8s_namespace_name=\"posthog\"} |~ \"(?i)error|exception|traceback|timed out|timeout|connection refused\"",
+              "refId": "A"
+            }
+          ],
+          "options": {
+            "dedupStrategy": "exact",
+            "enableLogDetails": true,
+            "prettifyLogMessage": true,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          }
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["posthog", "performance", "root-cause", "start-here"],
+      "templating": {
+        "list": [
+          {
+            "current": {},
+            "hide": 2,
+            "includeAll": false,
+            "label": "Prometheus",
+            "multi": false,
+            "name": "DS_PROM",
+            "options": [],
+            "query": "prometheus",
+            "refresh": 1,
+            "regex": "",
+            "skipUrlSync": true,
+            "type": "datasource"
+          },
+          {
+            "current": {},
+            "hide": 2,
+            "includeAll": false,
+            "label": "Loki",
+            "multi": false,
+            "name": "DS_LOKI",
+            "options": [],
+            "query": "loki",
+            "refresh": 1,
+            "regex": "",
+            "skipUrlSync": true,
+            "type": "datasource"
+          }
+        ]
+      },
+      "time": { "from": "now-6h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "WHY IS POSTHOG SLOW?",
+      "uid": "posthog-performance",
+      "version": 1
+    }

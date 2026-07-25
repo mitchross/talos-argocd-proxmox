@@ -14,6 +14,9 @@ resources:
   - argocd-sync-alerts.yaml # ArgoCD control-plane + app-state alerts (stale-sync incident 2026-05-29)
   - dcgm-exporter.yaml # DCGM GPU monitoring
   - gpu-alerts.yaml # GPU alerting rules
+  - performance-cockpit-dashboard.yaml # Default Grafana home: plain-English cluster performance triage
+  - app-performance-dashboard.yaml # Two-selector workload investigation with correlated Loki errors
+  - posthog-performance-dashboard.yaml # PostHog web/Postgres/Kafka/ClickHouse root-cause decoder
   - gpu-dashboard.yaml # Grafana dashboard
   - vpa-recommendations-dashboard.yaml # Active VPA policy and recommendation dashboard
   - trivy-dashboard.yaml # Trivy Operator vulnerability dashboard (Grafana 17813; pairs with monitoring/trivy-operator)
