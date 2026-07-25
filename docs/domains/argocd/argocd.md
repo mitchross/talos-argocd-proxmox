@@ -206,7 +206,7 @@ repo-server. For Argo CD `v3.4.5`, this repository pins:
 | Kustomize | `5.8.1` |
 | Helm | `3.19.4` |
 | Kubeconform | `0.7.0` |
-| Kubernetes schema | `1.36.2` |
+| Kubernetes schema | `1.36.3` |
 
 When Argo CD moves to a release that bundles Helm 4, upgrade Argo, CI, and local
 render tooling in one review. This repository inflates many Helm charts through
