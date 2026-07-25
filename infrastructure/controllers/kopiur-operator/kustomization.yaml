@@ -45,4 +45,4 @@ helmCharts:
     # templates with helm's DEFAULT capabilities (v1.31) and the render fails
     # "chart requires kubeVersion >=1.32.0-0". Keep loosely in step with the
     # real cluster version (omni/cluster-template/cluster-template.yaml).
-    kubeVersion: "1.36.2"
+    kubeVersion: "1.36.3"

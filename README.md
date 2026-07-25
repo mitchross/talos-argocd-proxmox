@@ -69,8 +69,8 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 | Component | Version | Source of truth |
 |-----------|---------|-----------------|
 | Omni server + `omnictl` | `v1.9.0` | `omni/omni/omni.env.example` |
-| Talos Linux | `v1.13.4` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
-| Kubernetes | `v1.36.2` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
+| Talos Linux | `v1.13.7` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
+| Kubernetes | `v1.36.3` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
 | Cilium | `1.19.5` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.4.1` | bootstrap commands below |
 | ArgoCD Helm chart | `10.1.3` (Argo CD `v3.4.5`) | `scripts/bootstrap-argocd.sh` |
@@ -324,7 +324,7 @@ From here, new applications are discovered automatically — add a directory wit
 > **Multi-node prod only** — confirm storage nodes were born with the expected layout (catches a stale-Omni-config failure at provision time instead of at Longhorn bootstrap):
 >
 > ```bash
-> kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage'  # expect every node Talos (v1.13.4)
+> kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage'  # expect every node Talos (v1.13.7)
 > talosctl -n <worker-ip> get disks               # expect a single ~800G sda (sda+sdb = STALE 2-disk layout)
 > kubectl get nodes.longhorn.io -n longhorn-system # expect 4 Ready storage nodes after Longhorn starts
 > ```
@@ -383,11 +383,11 @@ Normal application PVC backups use **[kopiur](https://github.com/home-operations
 
 ## Cluster Upgrades & Talos 1.13 Notes
 
-The cluster runs Talos **1.13.4** (migrated from 1.12 in April 2026). A few things changed at 1.13 that you'll hit when you spin up or rebuild — read this before touching the cluster template.
+The cluster runs Talos **1.13.7**. A few things changed at 1.13 that you'll hit when you spin up or rebuild — read this before touching the cluster template.
 
-### Don't rebuild on Talos 1.13.2
+### Never pin below Talos 1.13.4
 
-1.13.3 fixed containerd mount propagation and concurrent config-apply; 1.13.4 added a kube-scheduler integer-marshalling fix. This template sets scheduler integer args and must stay on 1.13.4 (or a newer validated 1.13 patch).
+1.13.3 fixed containerd mount propagation and concurrent config-apply; 1.13.4 added a kube-scheduler integer-marshalling fix. This template sets scheduler integer args, so 1.13.4 is the floor — use it or a newer 1.13 patch.
 
 **Observed 1.13.2 failure:** freshly provisioned nodes repeatedly failed to create pod sandboxes (`lstat /proc/.../ns/ipc: no such file or directory`, `can't find shim for sandbox`, `ttrpc: closed`). Rebooting and reinstalling Cilium didn't help; moving them to 1.13.4 restored containerd, control-plane pods, and Cilium. For a stuck rollout, reprovision one machine at a time (preserves etcd quorum for control planes):
 
