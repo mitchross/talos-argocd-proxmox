@@ -120,6 +120,7 @@ spec:
         - /spec/groupBy
         jqPathExpressions:
         - .spec.sources[].sourcePathStrategy
+        - .spec.sources[].readOnly
 
       info:
       - name: 'Description'
