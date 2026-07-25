@@ -237,8 +237,36 @@ grafana:
       searchNamespace: ALL
       label: grafana_dashboard
       labelValue: "1"
-  # Default dashboards
-  defaultDashboardsEnabled: true
+  # Community dashboards are downloaded onto Grafana's persistent data volume.
+  # Removing a gnetId from values does not remove the old JSON file, so prune
+  # only the retired dashboard files before Grafana's downloader runs.
+  extraInitContainers:
+    - name: prune-retired-dashboards
+      image: docker.io/library/busybox:1.38.0@sha256:fd8d9aa63ba2f0982b5304e1ee8d3b90a210bc1ffb5314d980eb6962f1a9715d
+      imagePullPolicy: IfNotPresent
+      command: ["/bin/sh", "-ec"]
+      args:
+        - |
+          find /var/lib/grafana/dashboards/kubernetes \
+            -maxdepth 1 -type f -name '*.json' -delete 2>/dev/null || true
+          find /var/lib/grafana/dashboards/infrastructure \
+            -maxdepth 1 -type f -name 'vpa-autoscaling.json' -delete 2>/dev/null || true
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+        runAsNonRoot: true
+        runAsUser: 472
+        seccompProfile:
+          type: RuntimeDefault
+      volumeMounts:
+        - name: storage
+          mountPath: /var/lib/grafana
+  # The chart's stock dashboard bundle is intentionally disabled. It added
+  # two dozen overlapping Kubernetes boards and made incident triage a search
+  # problem. The GitOps-managed performance cockpit is the starting point;
+  # specialist boards stay available when the cockpit links to them.
+  defaultDashboardsEnabled: false
   defaultDashboardsTimezone: UTC
   # Community dashboards - auto-provisioned from grafana.com
   dashboardProviders:
@@ -249,7 +277,7 @@ grafana:
         orgId: 1
         folder: 'Kubernetes'
         type: file
-        disableDeletion: true
+        disableDeletion: false
         editable: false
         options:
           path: /var/lib/grafana/dashboards/kubernetes
@@ -257,7 +285,7 @@ grafana:
         orgId: 1
         folder: 'Infrastructure'
         type: file
-        disableDeletion: true
+        disableDeletion: false
         editable: false
         options:
           path: /var/lib/grafana/dashboards/infrastructure
@@ -265,32 +293,15 @@ grafana:
         orgId: 1
         folder: 'Logging'
         type: file
-        disableDeletion: true
+        disableDeletion: false
         editable: false
         options:
           path: /var/lib/grafana/dashboards/logging
   dashboards:
-    kubernetes:
-      k8s-views-global:
-        gnetId: 15757
-        revision: 37
-        datasource: Prometheus
-      k8s-views-namespaces:
-        gnetId: 15758
-        revision: 34
-        datasource: Prometheus
-      k8s-views-nodes:
-        gnetId: 15759
-        revision: 29
-        datasource: Prometheus
-      k8s-views-pods:
-        gnetId: 15760
-        revision: 28
-        datasource: Prometheus
-      node-exporter-full:
-        gnetId: 1860
-        revision: 36
-        datasource: Prometheus
+    # The broad community Kubernetes boards duplicated the same signals across
+    # global/namespace/node/pod screens. The performance cockpit plus its
+    # workload investigator replace that maze.
+    kubernetes: {}
     # Loki dashboards moved to custom ConfigMaps (loki-logs-dashboard.yaml)
     # because community dashboards use Promtail's 'job' label but we use OTEL
     # which sends logs with 'service_name' label instead
@@ -307,10 +318,6 @@ grafana:
       cloudnative-pg:
         gnetId: 20417
         revision: 3
-        datasource: Prometheus
-      vpa-autoscaling:
-        gnetId: 22168
-        revision: 1
         datasource: Prometheus
   # Additional data sources configuration
   additionalDataSources:
@@ -337,6 +344,10 @@ grafana:
   grafana.ini:
     server:
       root_url: https://grafana.vanillax.me
+    dashboards:
+      # The dashboard sidecar writes this GitOps-managed file into the shared
+      # /tmp/dashboards volume. Opening Grafana now lands on the cockpit.
+      default_home_dashboard_path: /tmp/dashboards/performance-cockpit.json
     security:
       allow_embedding: true
       cookie_secure: true

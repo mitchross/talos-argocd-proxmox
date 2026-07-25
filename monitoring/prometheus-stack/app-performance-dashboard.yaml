@@ -1,0 +1,553 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-performance-dashboard
+  namespace: prometheus-stack
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/name: grafana-dashboards
+data:
+  app-performance-investigator.json: |
+    {
+      "annotations": { "list": [] },
+      "description": "A focused workload investigator that puts metrics and matching logs on one page.",
+      "editable": false,
+      "graphTooltip": 1,
+      "links": [
+        {
+          "asDropdown": false,
+          "icon": "dashboard",
+          "includeVars": false,
+          "keepTime": true,
+          "targetBlank": false,
+          "title": "BACK TO START HERE",
+          "type": "link",
+          "url": "/d/performance-cockpit/start-here"
+        }
+      ],
+      "panels": [
+        {
+          "id": 1,
+          "type": "text",
+          "title": "CAUSE DECODER — $namespace / $workload",
+          "gridPos": { "x": 0, "y": 0, "w": 24, "h": 5 },
+          "options": {
+            "mode": "markdown",
+            "content": "## Read the four cards, then match the symptom\n- **CPU high + throttling high:** the CPU limit is choking the app. Raise/remove the limit or reduce work.\n- **Memory climbing + near limit + restarts/OOM:** likely leak, unbounded cache, or too-small limit.\n- **CPU/RAM green + error logs high:** app bug, schema/config problem, or an unhealthy dependency.\n- **Only one pod is bad:** pod/node-local issue. **Every pod is bad:** shared dependency, traffic spike, or rollout.\n\nThe dashboard opened from **START HERE** selects the workload automatically. If you came here directly, use only the two selectors above: **Namespace** and **Workload**."
+          }
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Pods ready",
+          "description": "100% means every selected pod reports Ready.",
+          "gridPos": { "x": 0, "y": 5, "w": 6, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "100 * sum(kube_pod_status_ready{namespace=\"$namespace\",pod=~\"$pod\",condition=\"true\"} == 1) / clamp_min(count(kube_pod_status_ready{namespace=\"$namespace\",pod=~\"$pod\",condition=\"true\"}), 1)",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "yellow", "value": 90 },
+                  { "color": "green", "value": 100 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto",
+            "wideLayout": true
+          }
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Restarts — selected range",
+          "description": "Container restarts for this workload during the dashboard time range.",
+          "gridPos": { "x": 6, "y": 5, "w": 6, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"$namespace\",pod=~\"$pod\"}[$__range])) or vector(0)",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "decimals": 0,
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1 },
+                  { "color": "red", "value": 5 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto",
+            "wideLayout": true
+          }
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "Memory limit used",
+          "description": "85%+ is urgent OOM risk. No value means the workload has no memory limit.",
+          "gridPos": { "x": 12, "y": 5, "w": 6, "h": 4 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "100 * sum(container_memory_working_set_bytes{namespace=\"$namespace\",pod=~\"$pod\",container!=\"\",container!=\"POD\"}) / clamp_min(sum(kube_pod_container_resource_limits{namespace=\"$namespace\",pod=~\"$pod\",resource=\"memory\",unit=\"byte\",container!=\"\"}), 1)",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 70 },
+                  { "color": "red", "value": 85 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "area",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto",
+            "wideLayout": true
+          }
+        },
+        {
+          "id": 5,
+          "type": "stat",
+          "title": "Error-like log lines — selected range",
+          "description": "Broad error/exception/traceback/failed match. Read the log panel for context.",
+          "gridPos": { "x": 18, "y": 5, "w": 6, "h": 4 },
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "targets": [
+            {
+              "expr": "sum(count_over_time({k8s_namespace_name=\"$namespace\",k8s_pod_name=~\"$pod\"} |~ \"(?i)error|exception|traceback|failed\" [$__range]))",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1 },
+                  { "color": "red", "value": 100 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "textMode": "auto",
+            "wideLayout": true
+          }
+        },
+        {
+          "id": 100,
+          "type": "row",
+          "title": "CPU — is the app busy, or is a limit choking it?",
+          "collapsed": false,
+          "gridPos": { "x": 0, "y": 9, "w": 24, "h": 1 },
+          "panels": []
+        },
+        {
+          "id": 6,
+          "type": "timeseries",
+          "title": "CPU used vs request vs hard limit",
+          "description": "Used above request is allowed and mainly means the request is undersized. Used pinned near the hard limit plus throttling means real latency risk. No HARD LIMIT line means no CPU limit.",
+          "gridPos": { "x": 0, "y": 10, "w": 16, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",pod=~\"$pod\",container!=\"\",container!=\"POD\",image!=\"\"}[5m]))",
+              "legendFormat": "ACTUAL CPU",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(kube_pod_container_resource_requests{namespace=\"$namespace\",pod=~\"$pod\",resource=\"cpu\",unit=\"core\",container!=\"\"})",
+              "legendFormat": "REQUEST",
+              "refId": "B"
+            },
+            {
+              "expr": "sum(kube_pod_container_resource_limits{namespace=\"$namespace\",pod=~\"$pod\",resource=\"cpu\",unit=\"core\",container!=\"\"})",
+              "legendFormat": "HARD LIMIT",
+              "refId": "C"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "cores",
+              "decimals": 2,
+              "custom": {
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 3,
+                "showPoints": "never",
+                "spanNulls": true
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 7,
+          "type": "timeseries",
+          "title": "CPU throttling",
+          "description": "10%+ sustained means the CPU limit is actively blocking work. No line means there is no CPU limit or no throttling.",
+          "gridPos": { "x": 16, "y": 10, "w": 8, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "100 * sum(rate(container_cpu_cfs_throttled_periods_total{namespace=\"$namespace\",pod=~\"$pod\",container!=\"\",container!=\"POD\"}[5m])) / clamp_min(sum(rate(container_cpu_cfs_periods_total{namespace=\"$namespace\",pod=~\"$pod\",container!=\"\",container!=\"POD\"}[5m])), 0.001)",
+              "legendFormat": "throttled",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 10 },
+                  { "color": "red", "value": 25 }
+                ]
+              },
+              "custom": {
+                "drawStyle": "line",
+                "fillOpacity": 30,
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 3,
+                "showPoints": "never",
+                "spanNulls": true,
+                "thresholdsStyle": { "mode": "area" }
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "single", "sort": "none" }
+          }
+        },
+        {
+          "id": 101,
+          "type": "row",
+          "title": "MEMORY — stable cache, steady leak, or hard-limit danger?",
+          "collapsed": false,
+          "gridPos": { "x": 0, "y": 18, "w": 24, "h": 1 },
+          "panels": []
+        },
+        {
+          "id": 8,
+          "type": "timeseries",
+          "title": "Memory used vs request vs hard limit",
+          "description": "A stable plateau is usually cache. A steady climb is leak-shaped. Touching the hard limit causes OOM kills.",
+          "gridPos": { "x": 0, "y": 19, "w": 16, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"$namespace\",pod=~\"$pod\",container!=\"\",container!=\"POD\"})",
+              "legendFormat": "ACTUAL MEMORY",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(kube_pod_container_resource_requests{namespace=\"$namespace\",pod=~\"$pod\",resource=\"memory\",unit=\"byte\",container!=\"\"})",
+              "legendFormat": "REQUEST",
+              "refId": "B"
+            },
+            {
+              "expr": "sum(kube_pod_container_resource_limits{namespace=\"$namespace\",pod=~\"$pod\",resource=\"memory\",unit=\"byte\",container!=\"\"})",
+              "legendFormat": "HARD LIMIT",
+              "refId": "C"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "custom": {
+                "drawStyle": "line",
+                "fillOpacity": 12,
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 3,
+                "showPoints": "never",
+                "spanNulls": true
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 9,
+          "type": "bargauge",
+          "title": "Memory by pod right now",
+          "description": "One pod much larger than its peers points to a pod-local leak, backlog, or hot shard.",
+          "gridPos": { "x": 16, "y": 19, "w": 8, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "sum by(pod) (container_memory_working_set_bytes{namespace=\"$namespace\",pod=~\"$pod\",container!=\"\",container!=\"POD\"})",
+              "instant": true,
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "options": {
+            "displayMode": "gradient",
+            "legend": { "showLegend": false },
+            "minVizHeight": 16,
+            "minVizWidth": 8,
+            "namePlacement": "auto",
+            "orientation": "horizontal",
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "showUnfilled": true,
+            "sizing": "auto",
+            "valueMode": "color"
+          }
+        },
+        {
+          "id": 102,
+          "type": "row",
+          "title": "DEPENDENCIES AND I/O — is the app waiting on something else?",
+          "collapsed": false,
+          "gridPos": { "x": 0, "y": 27, "w": 24, "h": 1 },
+          "panels": []
+        },
+        {
+          "id": 10,
+          "type": "timeseries",
+          "title": "Network traffic",
+          "description": "Traffic spikes explain load. A flatline during expected traffic can indicate routing or dependency failure.",
+          "gridPos": { "x": 0, "y": 28, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"$namespace\",pod=~\"$pod\"}[5m]))",
+              "legendFormat": "received",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"$namespace\",pod=~\"$pod\"}[5m]))",
+              "legendFormat": "sent",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+          "options": {
+            "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 11,
+          "type": "timeseries",
+          "title": "Container filesystem I/O",
+          "description": "Heavy reads/writes can explain latency even when CPU is low. This is container filesystem traffic, not storage latency.",
+          "gridPos": { "x": 12, "y": 28, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+          "targets": [
+            {
+              "expr": "sum(rate(container_fs_reads_bytes_total{namespace=\"$namespace\",pod=~\"$pod\"}[5m]))",
+              "legendFormat": "read",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(container_fs_writes_bytes_total{namespace=\"$namespace\",pod=~\"$pod\"}[5m]))",
+              "legendFormat": "written",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+          "options": {
+            "legend": { "calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 103,
+          "type": "row",
+          "title": "ERRORS — the matching logs, already filtered",
+          "collapsed": false,
+          "gridPos": { "x": 0, "y": 36, "w": 24, "h": 1 },
+          "panels": []
+        },
+        {
+          "id": 12,
+          "type": "timeseries",
+          "title": "Error-like log lines over time",
+          "description": "Correlate spikes with CPU, memory, I/O, and restarts above.",
+          "gridPos": { "x": 0, "y": 37, "w": 24, "h": 6 },
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "targets": [
+            {
+              "expr": "sum by(k8s_pod_name) (count_over_time({k8s_namespace_name=\"$namespace\",k8s_pod_name=~\"$pod\"} |~ \"(?i)error|exception|traceback|failed\" [$__auto]))",
+              "legendFormat": "{{k8s_pod_name}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "options": {
+            "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "right", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 13,
+          "type": "logs",
+          "title": "Recent matching errors",
+          "description": "Newest first. Expand a line for labels and full context.",
+          "gridPos": { "x": 0, "y": 43, "w": 24, "h": 14 },
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "targets": [
+            {
+              "expr": "{k8s_namespace_name=\"$namespace\",k8s_pod_name=~\"$pod\"} |~ \"(?i)error|exception|traceback|failed\"",
+              "refId": "A"
+            }
+          ],
+          "options": {
+            "dedupStrategy": "exact",
+            "enableLogDetails": true,
+            "prettifyLogMessage": true,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          }
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["performance", "kubernetes", "logs", "start-here"],
+      "templating": {
+        "list": [
+          {
+            "type": "datasource",
+            "name": "DS_PROM",
+            "label": "Prometheus",
+            "query": "prometheus",
+            "hide": 2,
+            "current": { "text": "Prometheus", "value": "Prometheus" }
+          },
+          {
+            "type": "datasource",
+            "name": "DS_LOKI",
+            "label": "Loki",
+            "query": "loki",
+            "hide": 2,
+            "current": { "text": "Loki", "value": "Loki" }
+          },
+          {
+            "type": "query",
+            "name": "namespace",
+            "label": "Namespace",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+            "query": {
+              "query": "label_values(namespace_workload_pod:kube_pod_owner:relabel, namespace)",
+              "refId": "Namespace"
+            },
+            "refresh": 1,
+            "sort": 1,
+            "multi": false,
+            "includeAll": false,
+            "current": { "selected": true, "text": "posthog", "value": "posthog" }
+          },
+          {
+            "type": "query",
+            "name": "workload",
+            "label": "Workload",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+            "query": {
+              "query": "label_values(namespace_workload_pod:kube_pod_owner:relabel{namespace=\"$namespace\"}, workload)",
+              "refId": "Workload"
+            },
+            "refresh": 1,
+            "sort": 1,
+            "multi": true,
+            "includeAll": true,
+            "allValue": ".*",
+            "current": { "selected": true, "text": "All", "value": "$__all" }
+          },
+          {
+            "type": "query",
+            "name": "pod",
+            "label": "Pod",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
+            "query": {
+              "query": "label_values(namespace_workload_pod:kube_pod_owner:relabel{namespace=\"$namespace\",workload=~\"$workload\"}, pod)",
+              "refId": "Pod"
+            },
+            "refresh": 1,
+            "sort": 1,
+            "multi": true,
+            "includeAll": true,
+            "allValue": ".*",
+            "hide": 2,
+            "current": { "selected": true, "text": "All", "value": "$__all" }
+          }
+        ]
+      },
+      "time": { "from": "now-6h", "to": "now" },
+      "timezone": "browser",
+      "title": "WHY IS THIS APP SLOW?",
+      "uid": "app-performance-investigator",
+      "version": 1
+    }

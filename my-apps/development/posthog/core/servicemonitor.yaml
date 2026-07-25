@@ -17,3 +17,64 @@ spec:
       path: /metrics
       interval: 30s
       scrapeTimeout: 10s
+---
+# Postgres exporter sidecar on the db Service. Includes connection saturation,
+# locks, cache hit/read activity, deadlocks, table churn, and pg_stat_statements.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: posthog-postgres
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: db
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+---
+# Redpanda publishes consumer offsets and topic high-water marks at
+# /public_metrics. The dashboard computes lag using Redpanda's documented
+# PromQL so the exact delayed group/topic is visible.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: posthog-kafka
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: kafka
+  endpoints:
+    - port: metrics
+      path: /public_metrics
+      interval: 30s
+      scrapeTimeout: 10s
+---
+# ClickHouse's built-in exporter shows active queries/merges, memory, parts,
+# disk space, ProfileEvents, and exceptions without a third-party exporter.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: posthog-clickhouse
+  namespace: posthog
+  labels:
+    app.kubernetes.io/name: posthog
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: posthog
+      app.kubernetes.io/component: clickhouse
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

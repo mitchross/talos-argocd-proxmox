@@ -161,6 +161,51 @@ Grafana has data, it's the reverse.
 | Alertmanager | https://alertmanager.vanillax.me |
 | Loki | https://loki.vanillax.me |
 
+## Performance Triage
+
+Grafana opens on **START HERE — Cluster Performance**. This is the supported
+front door for performance incidents; do not begin by browsing dashboard
+folders.
+
+1. Read the four red/yellow/green incident cards.
+2. Check whether node CPU, memory, disk, or kubelet pressure is red.
+3. Use the ranked workload panels to find the CPU/RAM consumer or the workload
+   closest to a hard limit.
+4. Click the workload bar. Grafana opens **WHY IS THIS APP SLOW?** with the
+   namespace and workload already selected.
+5. Match CPU throttling, memory growth, restarts, network/filesystem traffic,
+   and the workload's Loki errors on the same time range.
+
+Only two selectors are exposed on the investigator: **Namespace** and
+**Workload**. The pod selector is derived automatically. Specialist dashboards
+remain available from the START HERE instructions for PostHog, Longhorn,
+Argo CD, VPA, GPU, and raw logs.
+
+For PostHog, open **WHY IS POSTHOG SLOW?**. It deliberately keeps all of the
+following on one page:
+
+- Django web/API latency, 5xx rate, and the exact slow/failing view.
+- PostgreSQL connections, cache hit, deadlocks, long transactions, locks,
+  temporary data, and slow `pg_stat_statements` query IDs.
+- Redpanda consumer lag by PostHog consumer group, active consumers, and
+  unavailable partitions.
+- ClickHouse queries, merges, failures, memory, MergeTree parts, CPU, and
+  restarts.
+- PostHog pod CPU/memory and correlated Loki error messages.
+
+PostgreSQL uses a pinned `postgres_exporter` sidecar; Redpanda and ClickHouse
+use their built-in Prometheus endpoints. Query text is not placed in metric
+labels.
+
+The kube-prometheus-stack stock dashboard bundle and the five community
+Kubernetes views are deliberately disabled. They duplicated the same signals
+across global/namespace/node/pod menus and obscured the incident workflow.
+The three GitOps-managed entrypoints are:
+
+- `monitoring/prometheus-stack/performance-cockpit-dashboard.yaml`
+- `monitoring/prometheus-stack/app-performance-dashboard.yaml`
+- `monitoring/prometheus-stack/posthog-performance-dashboard.yaml`
+
 ## Key Files
 
 - Custom ServiceMonitors: `monitoring/prometheus-stack/custom-servicemonitors.yaml`
