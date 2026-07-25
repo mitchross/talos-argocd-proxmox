@@ -81,9 +81,13 @@ extra_css:
   - assets/kopiur-playground.css
   - assets/nav-tweaks.css
   - assets/diagram-docs.css
+  - assets/motion.css
 
 extra_javascript:
   - assets/kopiur-playground.js
+  # Adds body.motion-on, which is what arms the reveal rules in motion.css.
+  # Without it every page renders fully static — never blank.
+  - assets/motion.js
 
 # 8 top-level sections. Long topics nest one level so no section feels crowded.
 nav:

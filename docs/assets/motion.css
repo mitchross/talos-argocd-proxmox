@@ -1,0 +1,468 @@
+/* ---------------------------------------------------------------------------
+ * Sitewide motion + animated-diagram primitives.
+ *
+ * Two independent layers:
+ *   1. Reveal-on-scroll for content blocks (headings, tables, admonitions...).
+ *   2. `.dgm` — animated flow diagrams built from HTML, not SVG, so text stays
+ *      real text (selectable, searchable, wraps on mobile, scales with the
+ *      reader's font size).
+ *
+ * The reveal layer only engages once motion.js sets `body.motion-on`. If the
+ * script fails to load or IntersectionObserver is missing, nothing is ever
+ * hidden — a broken script must not blank the docs.
+ * ------------------------------------------------------------------------ */
+
+/* --------------------------------------------------------------- 1. reveal */
+
+body.motion-on [data-motion] {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+body.motion-on [data-motion].motion-in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.34s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.34s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Admonitions and blockquotes arrive from their rule edge instead of below —
+ * they read as an aside, and the sideways motion says so. */
+body.motion-on [data-motion].admonition,
+body.motion-on [data-motion] > .admonition,
+body.motion-on blockquote[data-motion] {
+  transform: translateX(-10px);
+}
+
+/* Table rows cascade once the table itself is revealed. Capped at 10 rows;
+ * beyond that the remaining rows simply appear with the last delay. */
+body.motion-on [data-motion] tbody tr {
+  animation: motion-row 0.36s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation-play-state: paused;
+}
+body.motion-on [data-motion].motion-in tbody tr {
+  animation-play-state: running;
+}
+body.motion-on [data-motion] tbody tr:nth-child(1) { animation-delay: 0.02s; }
+body.motion-on [data-motion] tbody tr:nth-child(2) { animation-delay: 0.06s; }
+body.motion-on [data-motion] tbody tr:nth-child(3) { animation-delay: 0.10s; }
+body.motion-on [data-motion] tbody tr:nth-child(4) { animation-delay: 0.14s; }
+body.motion-on [data-motion] tbody tr:nth-child(5) { animation-delay: 0.18s; }
+body.motion-on [data-motion] tbody tr:nth-child(6) { animation-delay: 0.22s; }
+body.motion-on [data-motion] tbody tr:nth-child(7) { animation-delay: 0.26s; }
+body.motion-on [data-motion] tbody tr:nth-child(n + 8) { animation-delay: 0.30s; }
+
+@keyframes motion-row {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---------------------------------------------------------- 2. hover polish */
+
+.md-typeset table:not([class]) tbody tr {
+  transition: background-color 0.18s ease;
+}
+
+.md-typeset .md-typeset__table table:not([class]) tbody tr:hover {
+  background-color: var(--md-default-fg-color--lightest);
+}
+
+.md-typeset pre > code {
+  transition: box-shadow 0.22s ease;
+}
+.md-typeset .highlight:hover pre > code {
+  box-shadow: 0 0 0 1px var(--md-default-fg-color--lighter);
+}
+
+.md-nav--primary .md-nav__link {
+  transition: color 0.16s ease, transform 0.16s ease;
+}
+.md-nav--primary .md-nav__link:hover {
+  transform: translateX(2px);
+}
+
+/* ------------------------------------------------- 3. animated flow diagram */
+
+.dgm {
+  /* Structure */
+  --dgm-radius: 10px;
+  --dgm-gap: 0;
+
+  /* Surface + neutral line, overridden for slate below */
+  --dgm-surface: #fbfcfe;
+  --dgm-frame: rgb(88 103 117 / 22%);
+  --dgm-line: #c3ccd8;
+  --dgm-muted: #5b6675;
+
+  margin: 1.4rem 0 1.1rem;
+  padding: 1.4rem 1rem 1.2rem;
+  background: var(--dgm-surface);
+  border: 1px solid var(--dgm-frame);
+  border-radius: var(--dgm-radius);
+  box-shadow: 0 6px 20px rgb(23 33 43 / 8%);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+[data-md-color-scheme="slate"] .dgm {
+  --dgm-surface: rgb(255 255 255 / 3%);
+  --dgm-frame: rgb(255 255 255 / 12%);
+  --dgm-line: rgb(255 255 255 / 22%);
+  --dgm-muted: rgb(255 255 255 / 58%);
+  box-shadow: none;
+}
+
+.dgm-head {
+  text-align: center;
+  margin-bottom: 1.1rem;
+}
+.dgm-head__title {
+  display: block;
+  font-weight: 700;
+  font-size: 0.86rem;
+  color: var(--md-default-fg-color);
+  letter-spacing: -0.005em;
+}
+.dgm-head__sub {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--dgm-muted);
+  font-size: 0.7rem;
+}
+
+.dgm-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* --- nodes --- */
+
+.dgm-node {
+  --dgm-accent: var(--dgm-line);
+  --dgm-node-bg: var(--md-default-bg-color);
+  --dgm-node-fg: var(--md-default-fg-color);
+
+  width: 100%;
+  max-width: 30rem;
+  box-sizing: border-box;
+  padding: 0.6rem 0.85rem;
+  background: var(--dgm-node-bg);
+  border: 1px solid var(--dgm-accent);
+  border-left: 3px solid var(--dgm-accent);
+  border-radius: 7px;
+  text-align: left;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.dgm-node:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgb(23 33 43 / 12%);
+}
+
+.dgm-node__badge {
+  display: inline-block;
+  padding: 0 0.5em;
+  margin-bottom: 0.3rem;
+  border-radius: 10px;
+  background: var(--dgm-accent);
+  color: var(--dgm-badge-fg, #fff);
+  font-family: var(--md-code-font-family, monospace);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dgm-node__title {
+  display: block;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--dgm-node-fg);
+  /* Titles carry URLs and flag names; on a phone they must break rather than
+   * push through the card border. */
+  overflow-wrap: anywhere;
+}
+.dgm-node__title code,
+.dgm-node__sub code,
+.dgm-node__meta code {
+  font-size: 0.95em;
+  padding: 0 0.25em;
+}
+
+.dgm-node__sub {
+  display: block;
+  margin-top: 0.1rem;
+  color: var(--md-default-fg-color);
+  opacity: 0.85;
+  overflow-wrap: anywhere;
+}
+.dgm-node__meta {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--dgm-muted);
+  font-size: 0.66rem;
+}
+
+/* Accent variants — one per layer of the stack. */
+.dgm-node--client {
+  --dgm-accent: #4f46e5;
+  --dgm-node-bg: #eef2ff;
+  --dgm-node-fg: #312e81;
+}
+.dgm-node--edge {
+  --dgm-accent: #0891b2;
+  --dgm-node-bg: #ecfeff;
+  --dgm-node-fg: #155e75;
+}
+.dgm-node--svc {
+  --dgm-accent: #059669;
+  --dgm-node-bg: #ecfdf5;
+  --dgm-node-fg: #065f46;
+}
+.dgm-node--gpu {
+  --dgm-accent: #d97706;
+  --dgm-node-bg: #fffbeb;
+  --dgm-node-fg: #92400e;
+}
+
+[data-md-color-scheme="slate"] .dgm-node--client {
+  --dgm-accent: #818cf8;
+  --dgm-node-bg: rgb(99 102 241 / 14%);
+  --dgm-node-fg: #c7d2fe;
+  --dgm-badge-fg: #1e1b4b;
+}
+[data-md-color-scheme="slate"] .dgm-node--edge {
+  --dgm-accent: #22d3ee;
+  --dgm-node-bg: rgb(34 211 238 / 12%);
+  --dgm-node-fg: #a5f3fc;
+  --dgm-badge-fg: #083344;
+}
+[data-md-color-scheme="slate"] .dgm-node--svc {
+  --dgm-accent: #34d399;
+  --dgm-node-bg: rgb(52 211 153 / 12%);
+  --dgm-node-fg: #a7f3d0;
+  --dgm-badge-fg: #022c22;
+}
+[data-md-color-scheme="slate"] .dgm-node--gpu {
+  --dgm-accent: #fbbf24;
+  --dgm-node-bg: rgb(251 191 36 / 12%);
+  --dgm-node-fg: #fde68a;
+  --dgm-badge-fg: #451a03;
+}
+[data-md-color-scheme="slate"] .dgm-node:hover {
+  box-shadow: 0 6px 16px rgb(0 0 0 / 35%);
+}
+
+/* --- connectors ---
+ * A connector is a 2px rule with a dot travelling along it. The dot is the
+ * only continuously-moving element in the diagram; everything else is static
+ * until hovered. */
+
+.dgm-link {
+  position: relative;
+  width: 2px;
+  height: 2.1rem;
+  background: var(--dgm-line);
+  flex: none;
+}
+.dgm-link::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  border-radius: 50%;
+  background: var(--dgm-dot, #0891b2);
+  animation: dgm-travel 2.6s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+.dgm-link--client { --dgm-dot: #4f46e5; }
+.dgm-link--edge { --dgm-dot: #0891b2; }
+.dgm-link--svc { --dgm-dot: #059669; }
+[data-md-color-scheme="slate"] .dgm-link--client { --dgm-dot: #818cf8; }
+[data-md-color-scheme="slate"] .dgm-link--edge { --dgm-dot: #22d3ee; }
+[data-md-color-scheme="slate"] .dgm-link--svc { --dgm-dot: #34d399; }
+
+/* Staggered starts so the packets read as one stream moving down the stack
+ * rather than three dots blinking in unison. */
+.dgm-link--d1::after { animation-delay: 0.35s; }
+.dgm-link--d2::after { animation-delay: 0.7s; }
+
+@keyframes dgm-travel {
+  0%   { transform: translateY(-3px) scale(0.6); opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { transform: translateY(calc(2.1rem - 4px)) scale(0.6); opacity: 0; }
+}
+
+/* --- fan-out: one stem, a bus bar, two legs --- */
+
+.dgm-fan {
+  position: relative;
+  width: 100%;
+  max-width: 30rem;
+  height: 3.1rem;
+  flex: none;
+}
+.dgm-fan__stem,
+.dgm-fan__leg {
+  position: absolute;
+  width: 2px;
+  background: var(--dgm-line);
+}
+.dgm-fan__stem {
+  left: 50%;
+  top: 0;
+  height: 1.3rem;
+  margin-left: -1px;
+}
+.dgm-fan__bar {
+  position: absolute;
+  top: 1.3rem;
+  left: 25%;
+  right: 25%;
+  height: 2px;
+  background: var(--dgm-line);
+}
+.dgm-fan__leg {
+  top: 1.3rem;
+  height: 1.8rem;
+}
+.dgm-fan__leg--l { left: 25%; }
+.dgm-fan__leg--r { left: 75%; }
+
+.dgm-fan__stem::after,
+.dgm-fan__leg::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  border-radius: 50%;
+  background: var(--dgm-fan-dot, #059669);
+}
+.dgm-fan__stem::after {
+  animation: dgm-travel-stem 2.6s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  animation-delay: 1.05s;
+}
+.dgm-fan__leg::after {
+  animation: dgm-travel-leg 2.6s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  animation-delay: 1.45s;
+}
+[data-md-color-scheme="slate"] .dgm-fan { --dgm-fan-dot: #34d399; }
+
+@keyframes dgm-travel-stem {
+  0%   { transform: translateY(-3px) scale(0.6); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translateY(1.3rem); opacity: 1; }
+}
+@keyframes dgm-travel-leg {
+  0%   { transform: translateY(-2px); opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(1.8rem) scale(0.6); opacity: 0; }
+}
+
+/* --- side-by-side row (the two cards) --- */
+
+.dgm-row {
+  display: flex;
+  gap: 0.7rem;
+  width: 100%;
+  max-width: 30rem;
+}
+.dgm-row > .dgm-node {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+}
+
+/* The GPUs breathe — the only signal that this row is live silicon, not a
+ * label. Slow enough (3.4s) to sit under the reading threshold. */
+.dgm-node--pulse {
+  animation: dgm-pulse 3.4s ease-in-out infinite;
+}
+.dgm-row > .dgm-node--pulse:last-child {
+  animation-delay: 1.7s;
+}
+@keyframes dgm-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(217 119 6 / 0%); }
+  50%      { box-shadow: 0 0 0 5px rgb(217 119 6 / 14%); }
+}
+[data-md-color-scheme="slate"] .dgm-node--pulse {
+  animation-name: dgm-pulse-dark;
+}
+@keyframes dgm-pulse-dark {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(251 191 36 / 0%); }
+  50%      { box-shadow: 0 0 0 5px rgb(251 191 36 / 18%); }
+}
+
+.dgm-foot {
+  margin: 1.1rem auto 0;
+  max-width: 30rem;
+  padding-top: 0.7rem;
+  border-top: 1px dashed var(--dgm-frame);
+  color: var(--dgm-muted);
+  font-size: 0.68rem;
+  text-align: center;
+}
+
+@media screen and (max-width: 30rem) {
+  .dgm-row {
+    flex-direction: column;
+  }
+  /* With the cards stacked the fan-out legs point nowhere — collapse it to a
+   * single centred rule. */
+  .dgm-fan {
+    height: 2.1rem;
+  }
+  .dgm-fan__bar,
+  .dgm-fan__leg {
+    display: none;
+  }
+  .dgm-fan__stem {
+    height: 2.1rem;
+  }
+  @keyframes dgm-travel-stem {
+    0%   { transform: translateY(-3px) scale(0.6); opacity: 0; }
+    20%  { opacity: 1; }
+    100% { transform: translateY(2.1rem) scale(0.6); opacity: 0; }
+  }
+}
+
+/* ------------------------------------------------ 4. reduced-motion opt-out */
+
+@media (prefers-reduced-motion: reduce) {
+  body.motion-on [data-motion],
+  body.motion-on [data-motion].motion-in {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  body.motion-on [data-motion] tbody tr,
+  .dgm-link::after,
+  .dgm-fan__stem::after,
+  .dgm-fan__leg::after,
+  .dgm-node--pulse {
+    animation: none;
+  }
+  /* Keep the packets visible-but-parked so the connectors still read as
+   * directional rather than losing their dots entirely. */
+  .dgm-link::after,
+  .dgm-fan__stem::after,
+  .dgm-fan__leg::after {
+    opacity: 1;
+    transform: translateY(0.9rem);
+  }
+  .dgm-node,
+  .md-nav--primary .md-nav__link {
+    transition: none;
+  }
+  .dgm-node:hover,
+  .md-nav--primary .md-nav__link:hover {
+    transform: none;
+  }
+}
