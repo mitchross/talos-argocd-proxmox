@@ -71,6 +71,43 @@ spec:
         volumeMounts:
         - name: postgres-data
           mountPath: /var/lib/postgresql/data
+      # Read-only Prometheus view of Postgres health. Keep query text disabled:
+      # queryid is enough to find expensive statements without putting SQL or
+      # values into a high-cardinality metric label.
+      - name: postgres-exporter
+        image: quay.io/prometheuscommunity/postgres-exporter:v0.19.1@sha256:e96064f876226d94bb6ce48a4c4b3dd76edba91168ec1ab024e5c4b959310b0f
+        imagePullPolicy: IfNotPresent
+        args:
+        - --collector.long_running_transactions
+        - --collector.stat_statements
+        - --collector.stat_statements.limit=25
+        env:
+        - name: DATA_SOURCE_NAME
+          valueFrom:
+            secretKeyRef:
+              name: posthog-secrets
+              key: posthog-db-url
+        ports:
+        - containerPort: 9187
+          name: metrics
+        livenessProbe:
+          httpGet:
+            path: /metrics
+            port: metrics
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /metrics
+            port: metrics
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 128Mi
       volumes:
       - name: postgres-data
         persistentVolumeClaim:
@@ -87,6 +124,9 @@ spec:
   - name: postgres
     port: 5432
     targetPort: 5432
+  - name: metrics
+    port: 9187
+    targetPort: metrics
   selector:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: db

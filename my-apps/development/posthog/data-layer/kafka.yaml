@@ -128,6 +128,12 @@ spec:
     name: proxy
   - port: 33145
     name: rpc
+  # Redpanda's Prometheus-compatible public metrics endpoint. It includes
+  # committed consumer offsets and partition high-water marks, so Grafana can
+  # calculate lag without another exporter.
+  - port: 9644
+    targetPort: admin
+    name: metrics
   selector:
     app.kubernetes.io/name: posthog
     app.kubernetes.io/component: kafka
