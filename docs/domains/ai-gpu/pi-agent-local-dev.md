@@ -563,36 +563,7 @@ tokens, cost, latency, and model land in the self-hosted PostHog instance's
 three). It doesn't replace the direct vLLM path above; it's a second provider
 you opt into per-model.
 
-```mermaid
-flowchart TD
-    subgraph WS["💻 Workstation"]
-        PI["pi TUI<br/>driven by ONE model at a time"]
-        SEL{"/model — which model drives<br/>this session? (manual, explicit choice)"}
-        SUB{"mid-task: is this hard enough to<br/>escalate? (qwen's own judgment,<br/>steered by AGENTS.md)"}
-        PI --> SEL
-        PI -.->|"while qwen is driving"| SUB
-    end
-
-    SEL -->|"vanillax-vllm<br/>(default — NOT logged)"| VROUTE["https://vllm.vanillax.me/v1<br/>(direct, bypasses LiteLLM)"]
-    SEL -->|"vanillax-litellm<br/>(manual switch — logged)"| LROUTE["https://litellm.vanillax.me/v1"]
-    SUB -->|"yes → subagent tool call<br/>agent: kimi-consult"| LROUTE
-
-    subgraph CLUSTER["☸️ Kubernetes cluster"]
-        VROUTE --> VLLM["vLLM<br/>2x RTX 3090 · qwen3.6-27b"]
-        LROUTE --> LITELLM["LiteLLM proxy<br/>looks up model → real backend + real key"]
-        LITELLM -->|"hosted_vllm/qwen3.6-27b"| VLLM
-        LITELLM -->|"moonshot/kimi-k3"| MOONSHOT
-        LITELLM -.->|"success/failure_callback"| CAPTURE["PostHog capture"]
-        CAPTURE --> CH[("ClickHouse")]
-        CH --> UI["PostHog UI<br/>Traces / Generations / Users"]
-
-        OP["1Password item:<br/>litellm"] --> ES["ExternalSecret"] --> SECRET[("k8s Secret<br/>litellm-secrets")] --> LITELLM
-    end
-
-    subgraph EXT["🌐 External"]
-        MOONSHOT["Moonshot API<br/>api.moonshot.ai — real $ cost"]
-    end
-```
+![Diagram: pi chooses between a direct, unlogged vLLM route and a LiteLLM-proxied route (manual model switch or the kimi-consult subagent); LiteLLM resolves requests to vLLM or Moonshot's Kimi K3 API and logs every proxied call to self-hosted PostHog, with secrets flowing in from 1Password.](../../assets/pi-litellm-architecture.svg)
 
 **The one thing worth being precise about:** the everyday `vanillax-vllm` path is
 **not logged**. Only traffic through LiteLLM — a manual `/model` switch, or a
