@@ -35,7 +35,7 @@ helmCharts:
     # 0.8.0: adds a SnapshotPolicy deletion cascade. onPolicyDelete: Retain is
     # pinned in the kopiur-backup component so an ArgoCD prune of a policy can't
     # delete its backup history. CRDs unchanged (still 8) — stubs render as-is.
-    version: 0.8.0
+    version: 0.8.1
     releaseName: kopiur
     namespace: kopiur-system
     includeCRDs: true
