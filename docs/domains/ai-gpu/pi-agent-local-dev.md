@@ -18,12 +18,53 @@
 
 ## Architecture
 
-```
-pi (workstation TUI)
-  └── https://vllm.vanillax.me/v1          (internal gateway route, LAN only)
-        └── vLLM TP=2 · qwen3.6-27b · 262K ctx · vision · qwen3_coder tool parser
-              └── 2× RTX 3090 @ 290W cap (NVIDIA infrastructure DaemonSet)
-```
+<div class="dgm">
+  <div class="dgm-head">
+    <span class="dgm-head__title">One request, workstation to silicon</span>
+    <span class="dgm-head__sub">Every pi turn walks this path. Nothing here is a separate hop you configure — the client picks a base URL and the rest is already deployed.</span>
+  </div>
+  <div class="dgm-flow">
+    <div class="dgm-node dgm-node--client">
+      <span class="dgm-node__badge">client</span>
+      <span class="dgm-node__title">pi — workstation TUI</span>
+      <span class="dgm-node__sub">Agent config lives in <code>~/.pi/agent/</code></span>
+      <span class="dgm-node__meta">Nothing on this row deploys to the cluster</span>
+    </div>
+    <div class="dgm-link dgm-link--client" aria-hidden="true"></div>
+    <div class="dgm-node dgm-node--edge">
+      <span class="dgm-node__badge">gateway</span>
+      <span class="dgm-node__title"><code>https://vllm.vanillax.me/v1</code></span>
+      <span class="dgm-node__sub">Internal Gateway API route, LAN only</span>
+      <span class="dgm-node__meta">HTTPRoute <code>timeouts: 30m</code> — long generations survive</span>
+    </div>
+    <div class="dgm-link dgm-link--edge dgm-link--d1" aria-hidden="true"></div>
+    <div class="dgm-node dgm-node--svc">
+      <span class="dgm-node__badge">inference</span>
+      <span class="dgm-node__title">vLLM · <code>qwen3.6-27b</code> · TP=2</span>
+      <span class="dgm-node__sub">262K context · vision · <code>qwen3_coder</code> tool parser</span>
+      <span class="dgm-node__meta">Tensor-parallel across both cards — one model, two GPUs</span>
+    </div>
+    <div class="dgm-fan" aria-hidden="true">
+      <span class="dgm-fan__stem"></span>
+      <span class="dgm-fan__bar"></span>
+      <span class="dgm-fan__leg dgm-fan__leg--l"></span>
+      <span class="dgm-fan__leg dgm-fan__leg--r"></span>
+    </div>
+    <div class="dgm-row">
+      <div class="dgm-node dgm-node--gpu dgm-node--pulse">
+        <span class="dgm-node__badge">gpu 0</span>
+        <span class="dgm-node__title">RTX 3090</span>
+        <span class="dgm-node__meta">290W cap</span>
+      </div>
+      <div class="dgm-node dgm-node--gpu dgm-node--pulse">
+        <span class="dgm-node__badge">gpu 1</span>
+        <span class="dgm-node__title">RTX 3090</span>
+        <span class="dgm-node__meta">290W cap</span>
+      </div>
+    </div>
+  </div>
+  <p class="dgm-foot">Cards are exposed by the NVIDIA infrastructure DaemonSet. Whole-card and mutually exclusive — vLLM holding them means llama-cpp and ComfyUI are scaled to zero.</p>
+</div>
 
 Everything agent-side lives on the workstation (`~/.pi/agent/`); nothing here
 deploys to the cluster. The backend is already agent-tuned **server-side** —
