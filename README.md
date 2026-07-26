@@ -64,16 +64,16 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 2. **An Omni service-account key** stored in 1Password (item `talos-prod-sa`) — see [Cluster Access](#cluster-access-omni-service-account) to create one
 3. **Local tools**: `omnictl`, `talosctl`, `kubectl`, `kustomize`, Cilium CLI (`cilium` or `cilium-cli`), 1Password CLI (`op`), and `helm`
 
-### Version pins (as of 2026-06-28)
+### Version pins
 
 | Component | Version | Source of truth |
 |-----------|---------|-----------------|
 | Omni server + `omnictl` | `v1.9.0` | `omni/omni/omni.env.example` |
 | Talos Linux | `v1.13.7` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
 | Kubernetes | `v1.36.3` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
-| Cilium | `1.19.5` | `infrastructure/networking/cilium/kustomization.yaml` |
+| Cilium | `1.19.6` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.4.1` | bootstrap commands below |
-| ArgoCD Helm chart | `10.1.3` (Argo CD `v3.4.5`) | `scripts/bootstrap-argocd.sh` |
+| ArgoCD Helm chart | `10.2.1` (Argo CD `v3.4.5`) | `scripts/bootstrap-argocd.sh` |
 | Proxmox provider | `latest@sha256:96433a…` | `omni/proxmox-provider/docker-compose.yml` |
 
 Keep the Omni server and local `omnictl` on the **same** release — mismatched versions fail with obscure gRPC errors.
@@ -121,7 +121,7 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/downloa
 kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
 
 # 5. Cilium CNI (see step 5 below for the full flag list)
-cilium-cli install --version 1.19.5 --set cluster.name=talos-singlenode-gpu-prod ...
+cilium-cli install --version 1.19.6 --set cluster.name=talos-singlenode-gpu-prod ...
 
 # 6. Pre-seed 1Password secrets
 kubectl create namespace 1passwordconnect
@@ -214,7 +214,7 @@ Omni provisions Talos without a CNI. Install Cilium to get networking up:
 
 ```bash
 cilium-cli install \
-    --version 1.19.5 \
+    --version 1.19.6 \
     --set cluster.name=talos-singlenode-gpu-prod \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
@@ -241,7 +241,7 @@ kubectl get nodes
 
 > Three settings here **must match** the values ArgoCD will render at Wave 0 (`infrastructure/networking/cilium/`), or Wave 0 fights the CLI install:
 > - **Routing mode matches by default**: the CLI's default (`tunnel`/vxlan) equals `values.yaml`'s `routingMode: tunnel`. If the managed values ever change routing mode, add the matching `--set routingMode=...` here or Wave 0 restarts every agent mid-bootstrap.
-> - **`--version 1.19.5`** must match `infrastructure/networking/cilium/kustomization.yaml`. A mismatch makes ArgoCD upgrade Cilium at Wave 0, regenerating some Hubble certs but not others → `x509: certificate signed by unknown authority` blocks every later wave.
+> - **`--version 1.19.6`** must match `infrastructure/networking/cilium/kustomization.yaml`. A mismatch makes ArgoCD upgrade Cilium at Wave 0, regenerating some Hubble certs but not others → `x509: certificate signed by unknown authority` blocks every later wave.
 > - **`cluster.name`** must match `values.yaml` (Hubble cert SANs). Run without it and certs are issued for `default`/`kind-kind` → TLS failures.
 > - **Hubble stays disabled at bootstrap on purpose** — ArgoCD enables it at Wave 0 so it's the sole owner of the Hubble TLS certs (no CLI-vs-ArgoCD cert mismatch).
 >
