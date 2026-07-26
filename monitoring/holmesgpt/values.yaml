@@ -1,0 +1,88 @@
+logLevel: INFO
+
+# Phones-home by default; helper "holmes.enableTelemetry" falls back to true
+# when this key is absent.
+enableTelemetry: false
+
+# Counter-intuitive flag: false = chart renders its own ClusterRole
+# (read-only, no secrets, no write verbs — audited 0.36.0); true = BYO RBAC.
+k8sRBAC: false
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 1Gi
+  limits:
+    memory: 2Gi
+
+# In-cluster vLLM is unauthenticated; "none" is the documented sentinel key.
+modelList:
+  local-qwen:
+    model: openai/qwen3.6-27b
+    api_base: http://vllm-service.vllm.svc.cluster.local:8080/v1
+    api_key: none
+
+toolsets:
+  kubernetes/core:
+    enabled: true
+  kubernetes/logs:
+    enabled: true
+  prometheus/metrics:
+    enabled: true
+    config:
+      prometheus_url: http://kube-prometheus-stack-prometheus.prometheus-stack.svc.cluster.local:9090
+  grafana/loki:
+    enabled: true
+    config:
+      api_url: http://loki-gateway.loki-stack.svc.cluster.local
+      additional_headers:
+        X-Scope-OrgID: "1"
+  grafana/tempo:
+    enabled: true
+    config:
+      api_url: http://tempo.monitoring.svc.cluster.local:3200
+  # No SaaS, no internet, and no LLM shell access — investigations stay
+  # read-only against the APIs above.
+  robusta:
+    enabled: false
+  internet:
+    enabled: false
+  bash:
+    enabled: false
+  connectivity_check:
+    enabled: false
+
+# Cluster context the LLM can't discover on its own; mounted as skills.
+customSkills:
+  cluster-context:
+    content: |
+      ---
+      description: Homelab cluster layout and normal-state facts for investigations
+      ---
+      ## Cluster facts (talos-prod)
+      - GitOps: ArgoCD auto-discovers apps from directory structure; check
+        Application sync/health before suspecting runtime issues.
+      - GPU workloads (vllm, llama-cpp, comfyui, swarmui) are mutually
+        exclusive whole-card and scale-swapped: some at replicas=0 is NORMAL,
+        not an outage. Current default: vllm=1, others 0.
+      - Storage: Longhorn for RWO PVCs; a Deployment with an RWO PVC uses
+        Recreate strategy — brief downtime during updates is expected.
+      - Backups: kopiur (SnapshotPolicy/SnapshotSchedule/Restore CRs per PVC).
+        CNPG databases use Barman to S3 instead — never kopiur.
+      - Loki labels are OTel semconv: k8s_namespace_name, k8s_pod_name,
+        k8s_container_name, service_name. Promtail-style {namespace=...}
+        selectors return no data.
+  investigation-priorities:
+    content: |
+      ---
+      description: Investigation order of operations for alerts in this cluster
+      ---
+      ## Investigate in this order
+      1. What changed: ArgoCD app sync status and recent rollouts first.
+      2. Workload state: pod events, restarts, OOMKills, probe failures.
+      3. Metrics: RED/USE via Prometheus; compare against the alert window.
+      4. Logs: errors in the affected namespace around first regression.
+      5. Dependencies: database (CNPG/plain postgres), PVC/Longhorn volume
+         health, DNS. Node-level checks only if evidence points there.
+      Always state root cause with the specific evidence found, then a
+      recommended next action. Say "inconclusive" rather than guessing.
