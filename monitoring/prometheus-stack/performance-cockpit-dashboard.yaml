@@ -33,46 +33,73 @@ data:
           "gridPos": { "x": 0, "y": 0, "w": 24, "h": 5 },
           "options": {
             "mode": "markdown",
-            "content": "## 1. Fix red cards first\n**Cluster red** means the machine is full. **Workload red** means one app is the likely cause. **Alerts red** usually tells you the exact broken component.\n\n## 2. Find the offender\nThe four ranked lists below show who is using CPU/RAM and who is close to a hard limit. **Click any bar** to open the app investigator with the correct namespace and workload already selected.\n\n## 3. Read the cause decoder\nCPU throttling = CPU limit; memory near limit + restarts = likely OOM; resources green + errors = app/dependency/config problem.\n\n## 4. Only then use a specialist view\n[PostHog — web / Postgres / Kafka / ClickHouse](/d/posthog-performance/why-is-posthog-slow) · [Storage / Longhorn](/d/2BCgsldGz/storage) · [Deployments / ArgoCD](/d/qPkgGHg7k/deployments) · [Right-sizing / VPA](/d/vpa-recommendations/right-sizing) · [GPU](/d/gpu-overview/gpu) · [Raw app logs](/d/loki-logs-otel/logs)"
+            "content": "## 1. Fix the named critical problem first\nThe table directly below says **what broke and where**. Click the **Problem** name for the alert details. Empty table = no critical alert.\n\n## 2. Find the offender\nThe four ranked lists below show who is using CPU/RAM and who is close to a hard limit. Click a workload name, colored bar, or value to open its investigator automatically.\n\n## 3. Read the cause decoder\nCPU throttling = CPU limit; memory near limit + restarts = likely OOM; resources green + errors = app/dependency/config problem.\n\n## 4. Only then use a specialist view\n[PostHog — web / Postgres / Kafka / ClickHouse](/d/posthog-performance/why-is-posthog-slow) · [Storage / Longhorn](/d/2BCgsldGz/storage) · [Deployments / ArgoCD](/d/qPkgGHg7k/deployments) · [Right-sizing / VPA](/d/vpa-recommendations/right-sizing) · [GPU](/d/gpu-overview/gpu) · [Raw app logs](/d/loki-logs-otel/logs)"
           }
         },
         {
           "id": 2,
-          "type": "stat",
-          "title": "Critical alerts",
-          "description": "Do these first. A value of 0 is healthy.",
-          "gridPos": { "x": 0, "y": 5, "w": 6, "h": 4 },
+          "type": "table",
+          "title": "CRITICAL — WHAT BROKE? (click the Problem name)",
+          "description": "Every firing critical alert is named here. Empty table = healthy.",
+          "gridPos": { "x": 0, "y": 5, "w": 12, "h": 4 },
           "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
           "targets": [
-            { "expr": "count(max by(alertname,namespace) (ALERTS{alertstate=\"firing\",severity=\"critical\"})) or vector(0)", "instant": true, "refId": "A" }
+            {
+              "expr": "max by(alertname,namespace,exported_namespace,policy,component) (ALERTS{alertstate=\"firing\",severity=\"critical\"})",
+              "format": "table",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": { "Time": true, "__name__": true, "Value": true },
+                "indexByName": {
+                  "alertname": 0,
+                  "exported_namespace": 1,
+                  "policy": 2,
+                  "component": 3,
+                  "namespace": 4
+                },
+                "renameByName": {
+                  "alertname": "Problem",
+                  "component": "Component",
+                  "exported_namespace": "Affected namespace",
+                  "namespace": "Alert source",
+                  "policy": "Affected object"
+                }
+              }
+            }
           ],
           "fieldConfig": {
-            "defaults": {
-              "noValue": "0",
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  { "color": "green", "value": null },
-                  { "color": "red", "value": 1 }
+            "defaults": {},
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "Problem" },
+                "properties": [
+                  {
+                    "id": "links",
+                    "value": [
+                      {
+                        "title": "Open this alert",
+                        "url": "/alerting/list?search=${__value.text}"
+                      }
+                    ]
+                  }
                 ]
               }
-            },
-            "overrides": []
+            ]
           },
-          "options": {
-            "colorMode": "background",
-            "graphMode": "none",
-            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-            "textMode": "auto",
-            "wideLayout": true
-          }
+          "options": { "cellHeight": "sm", "showHeader": true }
         },
         {
           "id": 3,
           "type": "stat",
           "title": "Performance / reliability warnings",
           "description": "Security scan findings are intentionally excluded from this performance cockpit.",
-          "gridPos": { "x": 6, "y": 5, "w": 6, "h": 4 },
+          "gridPos": { "x": 12, "y": 5, "w": 4, "h": 4 },
           "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
           "targets": [
             { "expr": "count(max by(alertname,namespace) (ALERTS{alertstate=\"firing\",severity=\"warning\",category!=\"security\"})) or vector(0)", "instant": true, "refId": "A" }
@@ -87,7 +114,13 @@ data:
                   { "color": "yellow", "value": 1 },
                   { "color": "red", "value": 10 }
                 ]
-              }
+              },
+              "links": [
+                {
+                  "title": "Show warning names",
+                  "url": "/d/performance-cockpit?viewPanel=14&from=${__from}&to=${__to}"
+                }
+              ]
             },
             "overrides": []
           },
@@ -104,7 +137,7 @@ data:
           "type": "stat",
           "title": "Pods not ready",
           "description": "Running or pending pods that are not ready right now.",
-          "gridPos": { "x": 12, "y": 5, "w": 6, "h": 4 },
+          "gridPos": { "x": 16, "y": 5, "w": 4, "h": 4 },
           "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
           "targets": [
             {
@@ -122,7 +155,13 @@ data:
                   { "color": "green", "value": null },
                   { "color": "red", "value": 1 }
                 ]
-              }
+              },
+              "links": [
+                {
+                  "title": "Show unready pods",
+                  "url": "/d/performance-cockpit?viewPanel=17&from=${__from}&to=${__to}"
+                }
+              ]
             },
             "overrides": []
           },
@@ -139,7 +178,7 @@ data:
           "type": "stat",
           "title": "Container restarts — 1 hour",
           "description": "A sudden increase usually means crashes, OOMs, or a bad rollout.",
-          "gridPos": { "x": 18, "y": 5, "w": 6, "h": 4 },
+          "gridPos": { "x": 20, "y": 5, "w": 4, "h": 4 },
           "datasource": { "type": "prometheus", "uid": "${DS_PROM}" },
           "targets": [
             { "expr": "sum(increase(kube_pod_container_status_restarts_total[1h])) or vector(0)", "instant": true, "refId": "A" }
@@ -155,7 +194,13 @@ data:
                   { "color": "yellow", "value": 1 },
                   { "color": "red", "value": 5 }
                 ]
-              }
+              },
+              "links": [
+                {
+                  "title": "Show restart causes",
+                  "url": "/d/performance-cockpit?viewPanel=16&from=${__from}&to=${__to}"
+                }
+              ]
             },
             "overrides": []
           },
