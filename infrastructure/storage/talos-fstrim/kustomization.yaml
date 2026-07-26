@@ -4,3 +4,4 @@ namespace: talos-fstrim
 resources:
   - namespace.yaml
   - cronjob.yaml
+  - cronjob-dell.yaml
