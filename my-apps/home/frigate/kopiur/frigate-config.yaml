@@ -21,9 +21,11 @@ spec:
     keepMonthly: 3
   mover:
     securityContext:
-      runAsUser: 568
+      # Frigate writes .jwt_secret as root and the uid-568 mover cannot open it.
+      # uid 0 + gid 568 can read that file and the group-readable app data.
+      runAsUser: 0
       runAsGroup: 568
-      runAsNonRoot: true
+      runAsNonRoot: false
     podSecurityContext:
       fsGroup: 568
       supplementalGroups:
@@ -54,9 +56,9 @@ spec:
       offset: 0
   mover:
     securityContext:
-      runAsUser: 568
+      runAsUser: 0
       runAsGroup: 568
-      runAsNonRoot: true
+      runAsNonRoot: false
     podSecurityContext:
       fsGroup: 568
       supplementalGroups:

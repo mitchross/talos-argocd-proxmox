@@ -9,3 +9,7 @@ metadata:
     # kopiur-managed: ClusterExternalSecret cred fanout + ClusterRepository
     # tenancy (allowedNamespaces selector). Replaces pvc-plumber labels.
     kopiur.home-operations.com/repo: cluster-kopia
+  annotations:
+    # Frigate writes .jwt_secret as root with owner-only permissions. Permit
+    # this namespace's kopiur mover to use uid 0 so that file is backed up.
+    kopiur.home-operations.com/privileged-movers: "true"
