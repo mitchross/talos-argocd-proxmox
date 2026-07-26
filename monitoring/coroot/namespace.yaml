@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: coroot
+  labels:
+    # node-agent is a privileged hostPID DaemonSet (eBPF probes)
+    pod-security.kubernetes.io/enforce: privileged
