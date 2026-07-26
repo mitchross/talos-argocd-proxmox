@@ -406,10 +406,10 @@ See the GPU machine classes in `../machine-classes/` and the patches in `../clus
 **Solution 1**: Use custom ISO with extensions pre-baked
 ```bash
 docker run --rm -i \
-  ghcr.io/siderolabs/imager:v1.13.0 \
+  ghcr.io/siderolabs/imager:v1.13.7 \
   iso \
-  --system-extension-image ghcr.io/siderolabs/nonfree-kmod-nvidia-production:v1.13.0 \
-  --system-extension-image ghcr.io/siderolabs/nvidia-container-toolkit-production:v1.13.0
+  --system-extension-image ghcr.io/siderolabs/nonfree-kmod-nvidia-production:595.71.05-v1.13.7 \
+  --system-extension-image ghcr.io/siderolabs/nvidia-container-toolkit-production:595.71.05-v1.19.1
 ```
 
 **Solution 2**: Check Proxmox console/tty settings
