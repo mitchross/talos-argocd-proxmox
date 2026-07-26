@@ -13,6 +13,18 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/git-branch-guard.sh",
+            "if": "Bash(git *)",
+            "timeout": 10,
+            "statusMessage": "Checking branch rule (no commit/push on main)"
+          }
+        ]
+      },
+      {
         "matcher": "Read",
         "hooks": [
           {
@@ -36,18 +48,6 @@
           {
             "type": "command",
             "command": "mink pre-write"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/git-branch-guard.sh",
-            "if": "Bash(git *)",
-            "timeout": 10,
-            "statusMessage": "Checking branch rule (no commit/push on main)"
           }
         ]
       }
@@ -77,6 +77,24 @@
           {
             "type": "command",
             "command": "mink post-write"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mink post-tool"
+          }
+        ]
+      },
+      {
+        "matcher": "Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mink post-tool"
           }
         ]
       }
