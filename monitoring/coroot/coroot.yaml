@@ -1,0 +1,80 @@
+# Coroot CE trial: embedded Prometheus (2d) keeps its high-cardinality eBPF
+# metrics out of the main prometheus-stack instance, and every volume is
+# reclaimPolicy Delete — removing this directory leaves zero residue.
+# AI RCA is enterprise-only and intentionally absent; CE inspections only.
+apiVersion: coroot.com/v1
+kind: Coroot
+metadata:
+  name: coroot
+  namespace: coroot
+spec:
+  communityEdition: {}
+  metricsRefreshInterval: 30s
+  storage:
+    size: 10Gi
+    className: longhorn
+    reclaimPolicy: Delete
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+  prometheus:
+    retention: 2d
+    storage:
+      size: 10Gi
+      className: longhorn
+      reclaimPolicy: Delete
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 1Gi
+  clickhouse:
+    replicas: 1
+    storage:
+      size: 10Gi
+      className: longhorn
+      reclaimPolicy: Delete
+    resources:
+      requests:
+        cpu: 200m
+        memory: 768Mi
+      limits:
+        memory: 2Gi
+    keeper:
+      replicas: 1
+      storage:
+        size: 2Gi
+        className: longhorn
+        reclaimPolicy: Delete
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 256Mi
+  nodeAgent:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 200Mi
+      limits:
+        memory: 1Gi
+    tolerations:
+      - operator: Exists
+  clusterAgent:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 512Mi
+  logsTTL: 3d
+  tracesTTL: 3d
+  profilesTTL: 3d
+  service:
+    type: ClusterIP
+    port: 8080
