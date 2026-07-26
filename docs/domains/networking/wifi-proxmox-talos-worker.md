@@ -68,13 +68,13 @@ The machine class deliberately carries **no** `ip=` kernel argument
 
 The GTX 1050 Ti is Pascal (compute capability 6.1). NVIDIA moved Pascal to the
 580 legacy/LTS branch; the 595 unified production driver used by the RTX 3090
-worker does not drive it. Talos `v1.13.4` resolves the Dell worker's extensions
+worker does not drive it. Talos `v1.13.7` resolves the Dell worker's extensions
 as a matched pair:
 
-| Extension | Talos `v1.13.4` image |
+| Extension | Talos `v1.13.7` image |
 |---|---|
-| `siderolabs/nonfree-kmod-nvidia-lts` | `580.159.04-v1.13.4` |
-| `siderolabs/nvidia-container-toolkit-lts` | `580.159.04-v1.19.1` |
+| `siderolabs/nonfree-kmod-nvidia-lts` | `580.173.02-v1.13.7` |
+| `siderolabs/nvidia-container-toolkit-lts` | `580.173.02-v1.19.1` |
 
 Never mix the production kernel module with the LTS toolkit. The Threadripper
 worker deliberately remains on the production pair.
