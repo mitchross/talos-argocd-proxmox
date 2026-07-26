@@ -1,0 +1,93 @@
+# Proxmox discard=on only passes through discard requests that the guest sends,
+# while Talos does not schedule fstrim itself. Keep the targets explicit:
+# fstrim --all would also walk kubelet-mounted Longhorn workload filesystems.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: talos-fstrim
+  namespace: talos-fstrim
+  labels:
+    app.kubernetes.io/name: talos-fstrim
+    app.kubernetes.io/component: node-maintenance
+spec:
+  # The initial reclaim saturated host I/O while releasing hundreds of GiB.
+  # Run future, incremental passes in a quiet local-time maintenance window.
+  schedule: "30 4 * * 0"
+  timeZone: America/Detroit
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 1800
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 3600
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: talos-fstrim
+            app.kubernetes.io/component: node-maintenance
+        spec:
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          terminationGracePeriodSeconds: 30
+          # These three filesystems exist together only on the dual-RTX worker.
+          nodeSelector:
+            gpu-worker: "true"
+          tolerations:
+            - key: nvidia.com/gpu
+              operator: Exists
+              effect: NoSchedule
+            - key: gpu
+              operator: Equal
+              value: "true"
+              effect: NoSchedule
+          hostPID: true
+          containers:
+            - name: fstrim
+              image: docker.io/library/alpine:3.22.1@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1
+              imagePullPolicy: IfNotPresent
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+
+                  for target in \
+                    /var \
+                    /var/mnt/longhorn-nvme1 \
+                    /var/mnt/longhorn-ssd-flash
+                  do
+                    echo "[fstrim] $(date -u +%Y-%m-%dT%H:%M:%SZ) trimming ${target}"
+                    nsenter --mount=/proc/1/ns/mnt -- \
+                      /usr/local/sbin/fstrim --verbose "${target}"
+                  done
+
+                  echo "[fstrim] $(date -u +%Y-%m-%dT%H:%M:%SZ) all targets completed"
+              securityContext:
+                privileged: true
+                readOnlyRootFilesystem: true
+              resources:
+                requests:
+                  cpu: 5m
+                  memory: 8Mi
+                limits:
+                  cpu: 100m
+                  memory: 32Mi
+              volumeMounts:
+                # This matches Talos's own util-linux extension test pod. The
+                # fstrim binary lives on the host at /usr/local/sbin/fstrim.
+                - name: dev
+                  mountPath: /dev
+                - name: host
+                  mountPath: /host
+                  readOnly: true
+          volumes:
+            - name: dev
+              hostPath:
+                path: /dev
+                type: Directory
+            - name: host
+              hostPath:
+                path: /
+                type: Directory

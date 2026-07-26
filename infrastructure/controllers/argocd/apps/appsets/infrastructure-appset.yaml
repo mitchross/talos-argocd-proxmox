@@ -54,6 +54,7 @@ spec:
       # Longhorn stays default; static/pre-existing NFS stays on nfs.csi.k8s.io.
       - path: infrastructure/storage/truenas-csi
       - path: infrastructure/storage/local-storage
+      - path: infrastructure/storage/talos-fstrim
       # NOTE: longhorn and snapshot-controller are NOT listed here.
       # They have dedicated standalone Applications at Wave 1 (longhorn-app.yaml,
       # snapshot-controller-app.yaml) so storage is healthy before the
