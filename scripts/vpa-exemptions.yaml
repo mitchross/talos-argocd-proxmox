@@ -50,12 +50,7 @@ coverageExemptions:
 
 # These workloads are materialized by an operator and therefore are not present
 # in the Git render that CI validates.
-generatedTargets:
-  - apiVersion: apps/v1
-    kind: Deployment
-    namespace: k8sgpt
-    name: k8sgpt
-    reason: "The K8sGPT operator creates this Deployment from the K8sGPT CR."
+generatedTargets: []
 
 # Controller and test namespaces are outside the app-workload coverage policy.
 # Their sizing is owned by upstream charts or by deliberately disposable tests.
@@ -118,11 +113,6 @@ workloadExemptions:
     namespace: argocd
     name: argocd-redis
     reason: "Argo CD internal Redis sizing stays chart-owned."
-  - apiVersion: apps/v1
-    kind: Deployment
-    namespace: k8sgpt
-    name: k8sgpt-operator-controller-manager
-    reason: "K8sGPT operator controller sizing stays chart-owned."
   - apiVersion: apps/v1
     kind: Deployment
     namespace: prometheus-stack

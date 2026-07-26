@@ -2,13 +2,13 @@
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
 metadata:
-  name: k8sgpt
-  namespace: k8sgpt
+  name: holmes
+  namespace: holmesgpt
 spec:
   targetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: k8sgpt
+    name: holmes-holmes
   updatePolicy:
     updateMode: InPlaceOrRecreate
     minReplicas: 1

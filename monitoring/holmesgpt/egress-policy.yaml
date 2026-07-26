@@ -1,0 +1,37 @@
+# An LLM agent with cluster read access gets no internet: egress is limited
+# to the API server, DNS, vLLM, and the telemetry backends it investigates
+# with. Ingress is unrestricted (internal gateway reaches the API).
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: holmes-egress-lockdown
+  namespace: holmesgpt
+spec:
+  endpointSelector:
+    matchLabels:
+      app: holmes
+  egress:
+    - toEntities:
+        - kube-apiserver
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: TCP
+            - port: "53"
+              protocol: UDP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: vllm
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: prometheus-stack
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: loki-stack
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
