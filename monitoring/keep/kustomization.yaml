@@ -1,0 +1,34 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: keep
+
+resources:
+  - namespace.yaml
+  - externalsecret.yaml
+  - postgres/deployment.yaml
+  - postgres/service.yaml
+  - postgres/pvc.yaml
+  - httproute.yaml
+  - vpa.yaml
+
+helmCharts:
+  - name: keep
+    repo: https://keephq.github.io/helm-charts
+    version: 0.1.96
+    releaseName: keep
+    valuesFile: values.yaml
+    includeCRDs: true
+
+# The chart's pre-delete hook Job (no disable flag) deletes every keep-*
+# secret in the namespace. ArgoCD has no pre-delete phase, so it would apply
+# as a normal resource and nuke the ESO-managed keep-db-secret on every sync.
+patches:
+  - target:
+      kind: Job
+      name: delete-keep-secrets
+    patch: |-
+      $patch: delete
+      apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: delete-keep-secrets

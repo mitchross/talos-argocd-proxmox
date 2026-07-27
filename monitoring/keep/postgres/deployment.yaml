@@ -1,0 +1,83 @@
+# Plain Postgres for Keep (gitea pattern, minus kopiur: alert history is
+# monitoring data, and providers/workflows re-provision from git).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keep-postgres
+  namespace: keep
+  labels:
+    app: keep-postgres
+spec:
+  strategy:
+    type: Recreate # RWO PVC — RollingUpdate deadlocks on Multi-Attach
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keep-postgres
+  template:
+    metadata:
+      labels:
+        app: keep-postgres
+    spec:
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 999 # postgres uid:gid in the official image
+      containers:
+        - name: postgres
+          # Pin MAJOR.MINOR — majors need a manual dump/restore (see the
+          # gitea-postgres comment; #1621 crashlooped on a stale data dir).
+          image: postgres:18.4
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: "keep"
+            - name: POSTGRES_USER
+              value: "keep"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keep-db-secret
+                  key: password
+            - name: POSTGRES_INITDB_ARGS
+              value: "--data-checksums"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          startupProbe:
+            exec:
+              command: ["pg_isready", "-U", "keep", "-d", "keep"]
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "keep", "-d", "keep"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "keep", "-d", "keep"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: keep-postgres-data
