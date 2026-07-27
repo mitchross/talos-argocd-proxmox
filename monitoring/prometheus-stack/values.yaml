@@ -205,6 +205,12 @@ alertmanager:
         webhook_configs:
           - url: "http://keep-backend.keep.svc.cluster.local:8080/alerts/event/prometheus"
             send_resolved: true
+            # Keep's NOAUTH verifier accepts any credential but rejects NONE —
+            # this placeholder is not a secret, it just has to exist.
+            http_config:
+              basic_auth:
+                username: api_key
+                password: noauth
 # Grafana Configuration
 grafana:
   enabled: true
