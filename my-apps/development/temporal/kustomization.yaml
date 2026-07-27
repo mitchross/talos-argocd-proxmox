@@ -50,3 +50,21 @@ patches:
       - op: add
         path: /metadata/annotations/argocd.argoproj.io~1hook-delete-policy
         value: BeforeHookCreation
+  # frontend + matching serve gRPC long-polls (60s+ by design), which
+  # Coroot's L7 latency SLI reads as permanently slow — its histogram tops
+  # out at 10s, so no threshold can fit. Disable latency SLO; availability
+  # SLO stays active.
+  - target:
+      kind: Deployment
+      name: temporal-frontend
+    patch: |
+      - op: add
+        path: /metadata/annotations/coroot.com~1slo-latency-objective
+        value: "0%"
+  - target:
+      kind: Deployment
+      name: temporal-matching
+    patch: |
+      - op: add
+        path: /metadata/annotations/coroot.com~1slo-latency-objective
+        value: "0%"
