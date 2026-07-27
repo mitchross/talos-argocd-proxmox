@@ -1,0 +1,58 @@
+# Same path split the chart's nginx Ingress performs (prefix stripped before
+# the backend): /v2 -> API, /websocket -> soketi, / -> UI.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: keep
+  namespace: keep
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal-technitium
+      namespace: gateway
+  hostnames:
+    - keep.vanillax.me
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /v2
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: keep-backend
+          port: 8080
+          weight: 1
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /websocket
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: keep-websocket
+          port: 6001
+          weight: 1
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: keep-frontend
+          port: 3000
+          weight: 1
