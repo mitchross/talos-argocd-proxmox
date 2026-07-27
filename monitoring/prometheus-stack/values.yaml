@@ -8,6 +8,13 @@ global:
 # CRD Configuration - Essential for proper functioning
 crds:
   enabled: true
+defaultRules:
+  disabled:
+    # Effectively a single-worker cluster: these fire when requests exceed
+    # N-1 nodes' capacity, i.e. they demand failover headroom that cannot
+    # exist here. Actual utilization alerts (NodeMemoryRequestsHigh) remain.
+    KubeCPUOvercommit: true
+    KubeMemoryOvercommit: true
 # Prometheus Configuration
 prometheus:
   enabled: true
@@ -190,9 +197,8 @@ alertmanager:
     retention: 72h
     configSecret: ""
   # Delivery destination is the Keep console (keep.vanillax.me) — web UI, not
-  # chat/email. Keep runs AUTH_TYPE=NO_AUTH, so no credential is needed on
-  # this webhook. Watchdog stays visible in Keep but its severity=none never
-  # matches the Holmes-RCA workflow filter.
+  # chat/email. Watchdog and InfoInhibitor are Alertmanager-internal plumbing
+  # and route to null; everything else lands in the Keep feed.
   config:
     route:
       receiver: "keep"
@@ -200,6 +206,16 @@ alertmanager:
       group_wait: 30s
       group_interval: 5m
       repeat_interval: 4h
+      # This list REPLACES the chart's default child routes, so Watchdog->null
+      # must be restated here. InfoInhibitor is a routing artifact (it exists
+      # only to inhibit info-severity alerts) — never deliver it.
+      routes:
+        - receiver: "null"
+          matchers:
+            - alertname = "Watchdog"
+        - receiver: "null"
+          matchers:
+            - alertname = "InfoInhibitor"
     receivers:
       # The chart merges its default Watchdog->null child route into this
       # config, but this receivers list REPLACES the chart's — omitting
