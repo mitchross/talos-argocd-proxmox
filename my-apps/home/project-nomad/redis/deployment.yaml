@@ -5,6 +5,10 @@ metadata:
   namespace: project-nomad
   labels:
     app: project-nomad-redis
+  annotations:
+    # Blocking queue pops (~5s) read as slow requests to Coroot's L7 eBPF
+    # latency SLI at the 500ms default; 10s keeps a real stall visible.
+    coroot.com/slo-latency-threshold: "10s"
 spec:
   strategy:
     type: Recreate
