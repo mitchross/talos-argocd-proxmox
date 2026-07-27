@@ -31,6 +31,14 @@ spec:
                 or
               kube_verticalpodautoscaler_status_recommendation_containerrecommendations_target_cpu
             )
+              unless on (namespace, target_name)
+            (
+              # GPU scale-swap parks whole Deployments at replicas: 0; a VPA
+              # with no pods can never have a recommendation — not a fault.
+              label_replace(kube_deployment_spec_replicas, "target_name", "$1", "deployment", "(.*)") == 0
+                or
+              label_replace(kube_statefulset_replicas, "target_name", "$1", "statefulset", "(.*)") == 0
+            )
           # Avoid paging during the recommender's normal initial sampling
           # window; sustained absence indicates a missing/incompatible target.
           for: 4h

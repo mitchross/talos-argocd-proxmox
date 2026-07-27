@@ -35,12 +35,12 @@ spec:
           serviceAccountName: registry-gc
           containers:
             - name: gc
-              # bitnami/kubectl:1.31 was deleted from Docker Hub in Bitnami's
-              # 2025+ catalog purge (legacy tags removed / moved to
-              # bitnamilegacy/) -> ImagePullBackOff every weekly run. Switched
-              # to the official Kubernetes-hosted image (registry.k8s.io won't
-              # vanish like Docker Hub Bitnami), SHA-pinned per repo policy.
-              image: registry.k8s.io/kubectl:v1.36.3@sha256:6e4fce3c83651edb91b74bc67701c5cd263dd8aa3cd4254b1798d6425a5ab789
+              # NOT registry.k8s.io/kubectl: that image is distroless (no
+              # /bin/bash, no /bin/sh) so this script dies in seconds with
+              # StartError — every weekly run failed silently after the
+              # Bitnami-purge switch. alpine/k8s ships kubectl + bash.
+              # (bitnami/kubectl itself was purged from Docker Hub in 2025.)
+              image: docker.io/alpine/k8s:1.36.2@sha256:44ef4942e171939b9c665a4a84beb80e2dcdb9a24330d4651cfdfd2e9deecc47
               command: [/bin/bash, -euo, pipefail, -c]
               args:
                 - |
