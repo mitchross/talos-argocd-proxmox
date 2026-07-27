@@ -33,7 +33,7 @@ backend:
     - name: PORT
       value: "8080"
     - name: AUTH_TYPE
-      value: NO_AUTH
+      value: NOAUTH
     - name: KEEP_API_URL
       value: https://keep.vanillax.me/v2
     - name: PUSHER_APP_ID
@@ -101,7 +101,7 @@ frontend:
     - name: NEXTAUTH_URL
       value: https://keep.vanillax.me
     - name: AUTH_TYPE
-      value: NO_AUTH
+      value: NOAUTH
     - name: API_URL_CLIENT
       value: /v2
     - name: VERCEL
