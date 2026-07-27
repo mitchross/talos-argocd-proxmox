@@ -10,12 +10,7 @@ This is a production-grade GitOps Kubernetes cluster running on **Talos OS** wit
 
 **Tech Stack**: Talos OS + ArgoCD + Cilium (Gateway API) + Longhorn + 1Password + GPU support
 
-**AI/LLM Backend**: Two OpenAI-compatible local backends, both NOT ollama:
-
-- **vLLM** (`http://vllm-service.vllm.svc.cluster.local:8080/v1`, served model `qwen3.6-27b` — Qwen3.6-27B dense AWQ, multimodal/vision) is the **default for app inference**. OpenWebUI, Perplexica, Project NOMAD, and Karakeep all point here. Use vLLM / `qwen3.6-27b` when wiring an in-cluster app to chat/vision inference.
-- **llama-cpp** (`http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`) serves the **Qwen3.6-35B-A3B** MoE (Unsloth UD-Q4_K_XL + `mmproj-BF16.gguf`) plus Gemma 4 and Qwen 3.5 Uncensored as selectable presets (aliases `qwen3.6` / `qwen3.6-nothink` / `qwen3.6-longctx` / `gemma4*` / `uncensored`; see `my-apps/ai/llama-cpp/presets.ini`). Kept for ComfyUI's vision→image workflow and manual/interactive multi-preset use.
-
-GPU topology: the GPU workloads are **mutually exclusive whole-card** (`type: Recreate`, time-slicing disabled — never two pods on the cards at once). They scale-swap: bringing one up means scaling the others to `replicas: 0`. Current state is vLLM `replicas: 1` with llama-cpp and ComfyUI at `0` (so the external `llama.vanillax.me` route reads "no healthy upstream" until llama-cpp is scaled back up). App→backend wiring is tabulated in `docs/domains/ai-gpu/model-catalog.md`; the swap procedure + card truth table live in `docs/domains/ai-gpu/gpu-scale-swap.md`.
+**AI/LLM Backend**: two OpenAI-compatible local backends, **never ollama**. Default for app inference: **vLLM** (`http://vllm-service.vllm.svc.cluster.local:8080/v1`, model `qwen3.6-27b`). Multi-preset playground + ComfyUI vision: **llama-cpp** (`http://llama-cpp-service.llama-cpp.svc.cluster.local:8080/v1`). GPU workloads are mutually-exclusive whole-card and scale-swap (bringing one up = scaling the others to `replicas: 0`). Full detail: `my-apps/ai/CLAUDE.md`, `docs/domains/ai-gpu/model-catalog.md`, `docs/domains/ai-gpu/gpu-scale-swap.md`.
 
 ## Core Architecture Pattern: GitOps Self-Management
 
@@ -66,28 +61,6 @@ or external automation to write application manifests.
 ```
 
 **Never commit secrets to Git**. Always use ExternalSecret resources pointing to 1Password.
-
-## Directory Structure
-
-```
-infrastructure/          # Core cluster components (Wave 4)
-├── controllers/        # Operators and system controllers
-├── database/          # Database operators and instances
-├── networking/        # Cilium, Gateway API, DNS
-└── storage/           # Longhorn, NFS, SMB, Local storage
-
-monitoring/             # Observability stack (Wave 5)
-my-apps/                # User applications (Wave 6)
-├── ai/                # GPU workloads
-├── development/       # Dev tools
-├── home/              # Home automation
-├── media/             # Media services
-└── common/            # Shared Kustomize components
-
-scripts/                # Automation tools
-omni/                   # Omni (Sidero) deployment configs
-docs/                   # Documentation
-```
 
 ## Comment Style
 
@@ -152,29 +125,6 @@ Do **not** write changelog/jira-style comments: no per-version release-note summ
 - Use `Replace=true,Force=true` sync-options on Jobs — causes duplicate Job execution bug ([#24005](https://github.com/argoproj/argo-cd/issues/24005)); use ArgoCD hooks instead
 - Auto-merge major Helm chart version bumps for critical infrastructure (kube-prometheus-stack, longhorn, cilium) — **a kube-prometheus-stack v82→v83 auto-merge caused a full cluster outage on 2026-04-08 via Kyverno webhook deadlock**. Pin Renovate to minor/patch only for these charts.
 - Run a kopiur mover as plain `root` to "fix" a permission error. Under baseline Pod Security the mover has no read capabilities, so root can't read non-root data — set the mover `securityContext` to the **data owner uid:gid** instead (`docs/domains/storage/kopiur-mover-permissions.md`). Only use `runAsUser: 0` + the `privileged-movers` namespace annotation when the data is genuinely root-owned.
-
-## Nested CLAUDE.md Files
-
-Detailed instructions load automatically when working in these directories:
-
-| Directory | Contains |
-|-----------|----------|
-| `infrastructure/` | Essential commands, AppSet rules, ArgoCD/secret debugging |
-| `infrastructure/storage/` | Storage classes, NFS CSI patterns, 10G performance tuning |
-| `infrastructure/database/` | CNPG patterns, database DR procedures, serverName tracking |
-| `infrastructure/networking/` | Gateway API routing patterns, HTTPRoute templates |
-| `my-apps/` | App templates (minimal, web, secrets, storage), Helm+Kustomize patterns |
-| `my-apps/ai/` | GPU workload patterns, llama-cpp backend |
-| `my-apps/development/posthog/` | Self-hosted PostHog: file map, invariants, upgrade/DR rules, porting guide |
-| `monitoring/` | Monitoring pitfalls (S3 creds, ServiceMonitor selectors) |
-
-## Custom Commands
-
-| Command | Purpose |
-|---------|---------|
-| `/project:new-app <category/name>` | Guided workflow for adding a new application |
-| `/project:add-backup <app-path>` | Add automatic backup to PVC(s) |
-| `/project:new-database <app-name>` | Create a database (plain Postgres + kopiur by default; CNPG only when PITR is required) |
 
 ## Reference Examples
 
