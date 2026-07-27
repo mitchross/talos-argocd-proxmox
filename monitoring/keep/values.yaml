@@ -91,7 +91,7 @@ backend:
                     Description: {{ alert.description }}.
             enrich_alert:
               - key: ai_rca
-                value: "{{ results.analysis }}"
+                value: "{{ results.body.analysis }}"
 
 frontend:
   enabled: true
