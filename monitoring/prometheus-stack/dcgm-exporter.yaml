@@ -36,7 +36,10 @@ spec:
         feature.node.kubernetes.io/pci-0300_10de.present: "true"
       containers:
         - name: dcgm-exporter
-          image: nvcr.io/nvidia/k8s/dcgm-exporter:3.3.5-3.4.0-ubuntu22.04
+          # 3.3.5 emitted DCGM_FI_DEV_XID_ERRORS twice per GPU — every scrape
+          # dropped 1-2 duplicate-timestamp samples and kept
+          # PrometheusDuplicateTimestamps permanently firing.
+          image: nvcr.io/nvidia/k8s/dcgm-exporter:4.5.2-4.8.1-ubuntu22.04@sha256:17e9d49093f2d86d90260eec3c07b18b3f78fc5eadef3c8ab26a24fa5a9c1b2c
           ports:
             - name: http-metrics
               containerPort: 9400
