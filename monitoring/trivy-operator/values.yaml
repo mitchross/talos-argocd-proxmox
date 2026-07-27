@@ -87,7 +87,9 @@ resources:
     memory: 128Mi
   limits:
     cpu: 500m
-    memory: 512Mi
+    # 512Mi OOM-killed the operator ~2.5min after every start (exit 137)
+    # once the report count grew; it never stayed up long enough to reconcile.
+    memory: 1Gi
 
 trivy:
   image:
