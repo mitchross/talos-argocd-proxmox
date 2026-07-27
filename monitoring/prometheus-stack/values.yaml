@@ -201,6 +201,11 @@ alertmanager:
       group_interval: 5m
       repeat_interval: 4h
     receivers:
+      # The chart merges its default Watchdog->null child route into this
+      # config, but this receivers list REPLACES the chart's — omitting
+      # "null" fails operator validation ("undefined receiver") and the old
+      # config silently stays live.
+      - name: "null"
       - name: "keep"
         webhook_configs:
           - url: "http://keep-backend.keep.svc.cluster.local:8080/alerts/event/prometheus"
