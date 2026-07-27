@@ -188,11 +188,23 @@ alertmanager:
       fsGroup: 65534
     # Retention
     retention: 72h
-    # Alert rules are visible in Prometheus, Grafana, and the internal
-    # Alertmanager UI. Delivery remains the chart's explicit null receiver
-    # until a real destination Secret is chosen; do not ship localhost webhook
-    # placeholders that look configured but discard every notification.
     configSecret: ""
+  # Delivery destination is the Keep console (keep.vanillax.me) — web UI, not
+  # chat/email. Keep runs AUTH_TYPE=NO_AUTH, so no credential is needed on
+  # this webhook. Watchdog stays visible in Keep but its severity=none never
+  # matches the Holmes-RCA workflow filter.
+  config:
+    route:
+      receiver: "keep"
+      group_by: ["alertname", "namespace"]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+    receivers:
+      - name: "keep"
+        webhook_configs:
+          - url: "http://keep-backend.keep.svc.cluster.local:8080/alerts/event/prometheus"
+            send_resolved: true
 # Grafana Configuration
 grafana:
   enabled: true

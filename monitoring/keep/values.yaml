@@ -1,0 +1,135 @@
+# Keep is the web alert console: Alertmanager webhooks land here, and a
+# provisioned workflow asks HolmesGPT to investigate criticals, attaching the
+# RCA to the alert (visible in the UI). No chat/text receivers by design.
+global:
+  # Chart only ships nginx/haproxy/traefik Ingress; this cluster is Gateway
+  # API. httproute.yaml replicates the prefix-strip the nginx template does.
+  ingress:
+    enabled: false
+
+# Chart DB floats mysql:latest with an empty password — replaced by the
+# pinned plain-Postgres in postgres/ (gitea pattern).
+database:
+  enabled: false
+
+backend:
+  enabled: true
+  waitForDatabase:
+    enabled: true
+    # init container resolves the DB host from the DATABASE_NAME env var
+    port: 5432
+  databaseConnectionStringFromSecret:
+    enabled: true
+    secretName: keep-db-secret
+    secretKey: connection-string
+  # This list REPLACES the chart default wholesale — DATABASE_CONNECTION_STRING
+  # must stay absent (injected from the secret above; a duplicate env wins
+  # unpredictably).
+  env:
+    - name: DATABASE_NAME
+      value: keep-postgres
+    - name: SECRET_MANAGER_TYPE
+      value: k8s
+    - name: PORT
+      value: "8080"
+    - name: AUTH_TYPE
+      value: NO_AUTH
+    - name: KEEP_API_URL
+      value: https://keep.vanillax.me/v2
+    - name: PUSHER_APP_ID
+      value: "1"
+    - name: PUSHER_APP_KEY
+      value: keepappkey
+    - name: PUSHER_APP_SECRET
+      value: keepappsecret
+    - name: PUSHER_HOST
+      value: keep-websocket
+    - name: PUSHER_PORT
+      value: "6001"
+    - name: PROMETHEUS_MULTIPROC_DIR
+      value: /tmp/prometheus
+    - name: POSTHOG_DISABLED
+      value: "true"
+    - name: SENTRY_DISABLED
+      value: "true"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+  provision:
+    providers:
+      vllm-local:
+        type: vllm
+        authentication:
+          api_url: http://vllm-service.vllm.svc.cluster.local:8080/v1
+          api_key: none
+    workflows:
+      - id: holmes-rca
+        name: Holmes RCA on critical alerts
+        description: >-
+          Ask HolmesGPT to investigate every critical alert and attach the
+          evidence-based root cause to the alert.
+        triggers:
+          - type: alert
+            filters:
+              - key: severity
+                value: critical
+        actions:
+          - name: holmes-investigate
+            provider:
+              type: http
+              with:
+                url: http://holmes-holmes.holmesgpt.svc.cluster.local/api/chat
+                method: POST
+                body:
+                  ask: >-
+                    Investigate this Kubernetes alert and state the root cause
+                    with the evidence you found, then one recommended fix.
+                    Alert: {{ alert.name }}. Namespace: {{ alert.namespace }}.
+                    Description: {{ alert.description }}.
+            enrich_alert:
+              - key: ai_rca
+                value: "{{ results.analysis }}"
+
+frontend:
+  enabled: true
+  env:
+    - name: NEXTAUTH_SECRET
+      value: secret
+    - name: NEXTAUTH_URL
+      value: https://keep.vanillax.me
+    - name: AUTH_TYPE
+      value: NO_AUTH
+    - name: API_URL_CLIENT
+      value: /v2
+    - name: VERCEL
+      value: "1"
+    - name: ENV
+      value: development
+    - name: NODE_ENV
+      value: development
+    - name: HOSTNAME
+      value: 0.0.0.0
+    - name: PUSHER_APP_KEY
+      value: keepappkey
+    - name: FRIGADE_DISABLED
+      value: "true"
+    - name: POSTHOG_DISABLED
+      value: "true"
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+
+websocket:
+  enabled: true
+  resources:
+    requests:
+      cpu: 25m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
