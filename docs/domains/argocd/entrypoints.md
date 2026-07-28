@@ -53,6 +53,35 @@ Operator CRDs early — `SkipDryRunOnMissingResource` is an escape hatch / obser
 never a core fix. `cert-manager` is at **Wave 1** (not 4) so cert-dependent apps (cnpg-barman-plugin,
 Wave 3) can start. Full detail: [cluster DR nuke restore runbook](../../disaster-recovery.md).
 
+## Bootstrap guardrail — Application health does not prove webhook reachability
+
+Waves gate on Argo CD Application health. For a webhook Deployment that means
+**ready replicas == desired** — and kubelet decides readiness by probing the pod
+**locally, on its own node**. Neither signal involves the API server. A webhook
+pod can therefore be `Running`, `Ready`, and its Application `Healthy`, while the
+API server cannot reach it across the pod network. Every later wave then proceeds
+into a webhook that cannot be called.
+
+The blast radius is set by `failurePolicy`, not by the size of the component. A
+cluster-scoped `failurePolicy: Fail` webhook rejects **every** matching write in
+the cluster while unreachable, and an Argo CD sync that aborts applies **none**
+of its resources — so unrelated apps stall waiting on Secrets that were never
+created.
+
+Two rules follow:
+
+- **Fail-closed cluster-scoped webhooks are pinned to the control plane**
+  (`nodeSelector: node-role.kubernetes.io/control-plane` plus the matching
+  `NoSchedule` toleration). The API server calls them node-locally, so no
+  pod-network fault on any other node can break admission. This applies to
+  `cert-manager` and the `cloudnative-pg` operator. Availability is then coupled
+  to the API server's own availability, which is the correct coupling: if the
+  control plane is down, admission is moot.
+- **Do not add a custom Lua health check to probe webhook reachability.** Argo CD
+  configuration stays simple; the reachability signal belongs in alerting
+  (`monitoring/prometheus-stack/admission-webhook-alerts.yaml`, which reads the
+  API server's own `apiserver_admission_webhook_*` metrics), not in the wave gate.
+
 ## Notes
 
 - `project-nomad` is intentionally managed by `appsets/my-apps-appset.yaml` as a single bundled app at `my-apps/home/project-nomad`. Its child folders are resources inside that app, not generated Argo CD Applications.
