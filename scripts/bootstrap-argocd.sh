@@ -23,7 +23,6 @@ EXPECTED_CILIUM_VERSION="$(awk '
     print version
   }
 ' "$ROOT_DIR/infrastructure/networking/cilium/kustomization.yaml")"
-EXPECTED_CILIUM_CLUSTER_NAME="talos-singlenode-gpu-prod"
 
 if command -v cilium > /dev/null 2>&1; then
   CILIUM_CMD="cilium"
@@ -45,19 +44,10 @@ if [ -z "$CILIUM_CMD" ]; then
 fi
 
 if ! "$CILIUM_CMD" status --wait --wait-duration 30s &> /dev/null; then
-  echo "❌ Cilium is not healthy. Install Cilium first:"
+  echo "❌ Cilium is not healthy."
   echo ""
-  echo "   $CILIUM_CMD install \\"
-  echo "       --version $EXPECTED_CILIUM_VERSION \\"
-  echo "       --set cluster.name=$EXPECTED_CILIUM_CLUSTER_NAME \\"
-  echo "       --set ipam.mode=kubernetes \\"
-  echo "       --set kubeProxyReplacement=true \\"
-  echo "       --set k8sServiceHost=localhost \\"
-  echo "       --set k8sServicePort=7445 \\"
-  echo "       --set hubble.enabled=false \\"
-  echo "       --set hubble.relay.enabled=false \\"
-  echo "       --set hubble.ui.enabled=false \\"
-  echo "       --set gatewayAPI.enabled=true"
+  echo "   This script installs ArgoCD; it does not install the prerequisite CNI."
+  echo "   Run README.md → Rebuild and Bootstrap → Step 5 exactly, then rerun this script."
   echo ""
   exit 1
 fi
@@ -72,18 +62,7 @@ if [ -n "$RUNNING_VERSION" ] && [ "$RUNNING_VERSION" != "$EXPECTED_CILIUM_VERSIO
   echo "   ArgoCD Wave 0 will upgrade Cilium $RUNNING_VERSION → $EXPECTED_CILIUM_VERSION"
   echo "   This in-place upgrade can corrupt BPF state and break new pod networking."
   echo ""
-  echo "   Recommended: Reinstall Cilium at the correct version first:"
-  echo "     $CILIUM_CMD uninstall"
-  echo "     $CILIUM_CMD install --version $EXPECTED_CILIUM_VERSION \\"
-  echo "         --set cluster.name=$EXPECTED_CILIUM_CLUSTER_NAME \\"
-  echo "         --set ipam.mode=kubernetes \\"
-  echo "         --set kubeProxyReplacement=true \\"
-  echo "         --set k8sServiceHost=localhost \\"
-  echo "         --set k8sServicePort=7445 \\"
-  echo "         --set hubble.enabled=false \\"
-  echo "         --set hubble.relay.enabled=false \\"
-  echo "         --set hubble.ui.enabled=false \\"
-  echo "         --set gatewayAPI.enabled=true"
+  echo "   Stop and reconcile Cilium with README.md → Rebuild and Bootstrap → Step 5."
   echo ""
   read -p "   Continue anyway? (y/N) " -n 1 -r
   echo ""
