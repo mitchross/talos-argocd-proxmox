@@ -89,6 +89,28 @@ Block the nuke until every box checks — **you restore *from* these**:
 are **snapshots inside Omni** — apply + sync them *before* machines
 provision, or VMs are built from stale state and must be reprovisioned.
 
+### Gate the wave train on cross-node pod networking
+
+Run this after the Cilium install and **before** `bootstrap-argocd.sh`. Nodes
+reaching `Ready` only proves the kubelet talks to the API server; it does not
+prove that pods on different nodes can talk to each other. A rebuild is exactly
+when that differs — new VMs, new NICs, new placement.
+
+```bash
+kubectl -n kube-system exec ds/cilium -c cilium-agent -- cilium-health status
+```
+
+Every node must report **`1/1` under both `Node` and `Endpoints`**. `Node 1/1`
+with `Endpoints 0/1` is the trap: the node is reachable at its host IP while the
+pod network to it is broken. Node-level checks, `kubectl get nodes`, and ICMP all
+pass in that state.
+
+Do not start the wave train with any node showing `Endpoints 0/1`. Sync waves
+gate on pod readiness, which a broken pod network does not disturb — so the waves
+proceed normally and the failures surface much later as unrelated apps stuck on
+missing Secrets. Fix the network first; it is far cheaper than unwinding a
+half-converged cluster.
+
 **Bootstrap rules** (proven by the 2026-06 rebuilds):
 
 - CRDs first, controllers second, CRs third.
