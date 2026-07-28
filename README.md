@@ -6,7 +6,10 @@
 
 A GitOps-driven Kubernetes cluster on **Talos OS** (secure, immutable Linux for K8s) with **ArgoCD** and **Cilium**, running on Proxmox. Nodes are provisioned and managed through **[Omni](https://github.com/siderolabs/omni)** (Sidero's Talos platform) with the **[Proxmox Infrastructure Provider](https://github.com/siderolabs/omni-infra-provider-proxmox)** — no SSH, no manual node config.
 
-The whole cluster boots from one script. Once Omni hands you a running Talos cluster, bootstrap is **four copy-paste steps** (Gateway CRDs → Cilium → secrets → ArgoCD), and ArgoCD takes over and deploys everything else from this repo.
+The cluster rebuild follows one ordered runbook below. Omni provisions Talos,
+then the one-time bootstrap seeds Gateway API CRDs, Cilium, 1Password
+credentials, and ArgoCD. ArgoCD takes over and deploys everything else from
+this repo.
 
 ## Key Features
 
@@ -82,97 +85,63 @@ Keep the Omni server and local `omnictl` on the **same** release — mismatched 
 
 ---
 
-## Bootstrap
+## Rebuild and Bootstrap
 
 > **Two clusters live here.** Everything below uses the **single-node GPU** cluster. For the multi-node prod cluster, swap the names/files:
 >
 > | | Single-node GPU | Multi-node prod |
 > |---|---|---|
 > | Cluster | `talos-singlenode-gpu-prod` | `talos-prod-cluster` |
-> | Machine class | `omni/machine-classes/single-node-control-plane.yaml` + `single-node-talos-gpu.yaml` | `omni/machine-classes/` |
+> | Machine classes | `single-node-control-plane.yaml` + `single-node-talos-gpu.yaml` + `proxmox-dell-gpu.yaml` | `omni/machine-classes/` |
 > | Template | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` | `omni/cluster-template/cluster-template.yaml` |
-> | Topology | 2 VMs (1 CP + 1 GPU worker) | 3 CP + 3 workers + 1 GPU |
+> | Topology | 3 VMs (1 CP + 2 GPU workers) | 3 CP + 3 workers + 1 GPU |
 
-The full path from nothing to a running GitOps cluster, in order. Steps 1–3 are the Omni side (provision a Talos cluster); steps 4–7 are the bootstrap (install the GitOps stack). If Omni already gave you a running cluster with `kubectl` access, skip to step 4.
+This is the only rebuild procedure in this README. Run it from the repository
+root, in order. Every required command is shown in full; there are no
+placeholder commands or omitted flags.
 
-<details>
-<summary><b>The whole sequence, copy-paste</b> — the annotated steps below explain each block and the gotchas</summary>
+### 1. Remove the old cluster
+
+Skip this step when provisioning for the first time.
 
 ```bash
-# 1. Destroy the old cluster (only when rebuilding)
 omnictl cluster delete talos-singlenode-gpu-prod --destroy-disconnected-machines
-
-# 2. Apply machine classes, then sync the cluster template to provision
-omnictl apply -f omni/machine-classes/single-node-control-plane.yaml
-omnictl apply -f omni/machine-classes/single-node-talos-gpu.yaml
-omnictl get machineclasses
-omnictl cluster template sync -v -f omni/cluster-template/cluster-template-singlenode-gpu.yaml
-
-# 3. Authenticate to Omni and get kube/talos access
-eval "$(op signin)"
-export OMNI_ENDPOINT=https://omni.vanillax.me:443
-export OMNI_SERVICE_ACCOUNT_KEY="$(op read 'op://homelab-prod/talos-prod-sa/OMNI_SERVICE_ACCOUNT_KEY')"
-omnictl kubeconfig  --cluster talos-singlenode-gpu-prod --service-account --user talos-prod-sa --force
-omnictl talosconfig --cluster talos-singlenode-gpu-prod --force
-kubectl get nodes -o wide   # NotReady until Cilium is installed
-
-# 4. Gateway API CRDs
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/standard-install.yaml
-kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
-
-# 5. Cilium CNI (see step 5 below for the full flag list)
-cilium-cli install --version 1.19.6 --set cluster.name=talos-singlenode-gpu-prod ...
-
-# 6. Pre-seed 1Password secrets
-kubectl create namespace 1passwordconnect
-kubectl create namespace external-secrets
-export OP_CREDENTIALS=$(op read op://homelab-prod/1passwordconnect/1password-credentials.json)
-export OP_CONNECT_TOKEN=$(op read 'op://homelab-prod/1password-operator-token/credential')
-kubectl create secret generic 1password-credentials  --namespace 1passwordconnect --from-literal=1password-credentials.json="$OP_CREDENTIALS"
-kubectl create secret generic 1password-operator-token --namespace 1passwordconnect --from-literal=token="$OP_CONNECT_TOKEN"
-kubectl create secret generic 1passwordconnect        --namespace external-secrets --from-literal=token="$OP_CONNECT_TOKEN"
-
-# 7. Hand off to GitOps
-./scripts/bootstrap-argocd.sh
-```
-
-</details>
-
-### 1. Apply the machine classes
-
-Machine classes and the cluster template are **snapshots stored inside Omni** — VMs are built from whatever Omni had at provision time, not live from this repo. Always apply the class and sync the template **before** machines provision.
-
-```bash
-omnictl apply -f omni/machine-classes/single-node-control-plane.yaml
-omnictl apply -f omni/machine-classes/single-node-talos-gpu.yaml
-omnictl get machineclasses
-```
-
-> **Sync THIS template** before provisioning — not a `cluster-template-working.yaml` variant. (2026-06-11 incident: provisioning against a stale snapshot produced workers with the wrong disk layout, a mid-bootstrap Talos rolling upgrade, and a forced reprovision.)
-
-### 2. Provision (or destroy) the cluster
-
-Template sync owns the MachineSets — don't create them separately.
-
-```bash
-# Optional preview:
-omnictl cluster template validate -f omni/cluster-template/cluster-template-singlenode-gpu.yaml
-omnictl cluster template sync -v -f omni/cluster-template/cluster-template-singlenode-gpu.yaml --dry-run
-
-# Provision / update (idempotent):
-omnictl cluster template sync -v -f omni/cluster-template/cluster-template-singlenode-gpu.yaml
-
-# Watch until healthy:
-omnictl cluster template status -f omni/cluster-template/cluster-template-singlenode-gpu.yaml --wait 30m
 omnictl get machines
 ```
 
-Full teardown (for a clean rebuild):
+Do not continue until the old machines disappear from Omni and their VMs
+disappear from Proxmox.
+
+### 2. Apply the machine classes and provision Talos
+
+Machine classes and the cluster template are **snapshots stored inside Omni**.
+Apply all three classes before syncing the template; template sync owns the
+MachineSets.
 
 ```bash
-omnictl cluster delete talos-singlenode-gpu-prod --destroy-disconnected-machines
-omnictl get machines        # must drain to empty; the VMs disappear from the Proxmox UI
+omnictl apply -f omni/machine-classes/single-node-control-plane.yaml
+omnictl apply -f omni/machine-classes/single-node-talos-gpu.yaml
+omnictl apply -f omni/machine-classes/proxmox-dell-gpu.yaml
+omnictl get machineclasses
+
+omnictl cluster template validate \
+  -f omni/cluster-template/cluster-template-singlenode-gpu.yaml
+omnictl cluster template sync -v \
+  -f omni/cluster-template/cluster-template-singlenode-gpu.yaml \
+  --dry-run
+omnictl cluster template sync -v \
+  -f omni/cluster-template/cluster-template-singlenode-gpu.yaml
+
+omnictl get machinerequeststatuses -w
 ```
+
+Stop the watch with `Ctrl-C` after all three requests show
+`Provision Complete`. Do not use `cluster template status --wait` here: the
+cluster cannot become healthy until Cilium is installed in step 5.
+
+> **Sync this template, not a stale working copy.** A 2026-06-11 rebuild used
+> a stale template snapshot and produced the wrong disk layout plus a
+> mid-bootstrap Talos upgrade, forcing another reprovision.
 
 ### 3. Authenticate and get cluster access
 
@@ -182,22 +151,25 @@ eval "$(op signin)"
 export OMNI_ENDPOINT=https://omni.vanillax.me:443
 export OMNI_SERVICE_ACCOUNT_KEY="$(op read 'op://homelab-prod/talos-prod-sa/OMNI_SERVICE_ACCOUNT_KEY')"
 
-omnictl kubeconfig  --cluster talos-singlenode-gpu-prod --service-account --user talos-prod-sa --force
-omnictl talosconfig --cluster talos-singlenode-gpu-prod --force
+omnictl kubeconfig \
+  --cluster talos-singlenode-gpu-prod \
+  --service-account \
+  --user talos-prod-sa \
+  --force
 
-kubectl get nodes -o wide   # nodes show NotReady until Cilium is installed (step 5) — that's expected
+talosctl config remove omni-prod-talos-singlenode-gpu-prod -y 2>/dev/null || true
+omnictl talosconfig --cluster talos-singlenode-gpu-prod
+
+kubectl get nodes -o wide
 ```
 
 > **`OMNI_ENDPOINT` is mandatory whenever `OMNI_SERVICE_ACCOUNT_KEY` is set.** With the key exported, omnictl ignores config-file contexts entirely; forgetting the endpoint fails with the cryptic `delegating_resolver: invalid target address "": missing address`.
 
-> **Run `talosconfig` once per cluster.** `omnictl talosconfig` merges into `~/.talos/config` (`--merge` defaults to **true**), and talos renames a *colliding* context with a `-1`/`-2`/… suffix instead of replacing it — `--force` does **not** prevent this. You only need it once (or after a nuke/recreate, when the CA rotates). To refresh idempotently, drop the old context first:
->
-> ```bash
-> talosctl config remove omni-prod-talos-singlenode-gpu-prod -y   # ignore "not found"
-> omnictl talosconfig --cluster talos-singlenode-gpu-prod
-> ```
->
-> First time on a fresh Omni? Create the service account first — see [Cluster Access](#cluster-access-omni-service-account).
+The nodes are expected to be `NotReady` until Cilium is installed in step 5.
+The explicit `talosctl config remove` prevents `omnictl talosconfig` from
+creating a suffixed duplicate context after a rebuild. First time on a fresh
+Omni? Create the service account first — see
+[Cluster Access](#cluster-access-omni-service-account).
 
 ### 4. Install Gateway API CRDs
 
@@ -210,10 +182,18 @@ kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/re
 
 ### 5. Install Cilium (CNI)
 
-Omni provisions Talos without a CNI. Install Cilium to get networking up:
+Omni provisions Talos without a CNI. This one-time seed gives ArgoCD enough
+pod networking to start; ArgoCD assumes management of the same Cilium release
+at Wave 0.
 
 ```bash
-cilium-cli install \
+if command -v cilium >/dev/null 2>&1; then
+  CILIUM_CMD=cilium
+else
+  CILIUM_CMD=cilium-cli
+fi
+
+"$CILIUM_CMD" install \
     --version 1.19.6 \
     --set cluster.name=talos-singlenode-gpu-prod \
     --set ipam.mode=kubernetes \
@@ -230,45 +210,48 @@ cilium-cli install \
     --set gatewayAPI.enabled=true \
     --set gatewayAPI.enableAlpn=true \
     --set gatewayAPI.enableAppProtocol=true
-```
-
-Verify, then the nodes flip to `Ready`:
-
-```bash
-cilium-cli status
+"$CILIUM_CMD" status --wait --wait-duration 5m
 kubectl get nodes
 ```
 
-> Three settings here **must match** the values ArgoCD will render at Wave 0 (`infrastructure/networking/cilium/`), or Wave 0 fights the CLI install:
+All nodes must become `Ready` before continuing. These settings must match
+what ArgoCD renders at Wave 0 (`infrastructure/networking/cilium/`), or Wave 0
+will immediately reconfigure the seed install:
+
 > - **Routing mode matches by default**: the CLI's default (`tunnel`/vxlan) equals `values.yaml`'s `routingMode: tunnel`. If the managed values ever change routing mode, add the matching `--set routingMode=...` here or Wave 0 restarts every agent mid-bootstrap.
 > - **`--version 1.19.6`** must match `infrastructure/networking/cilium/kustomization.yaml`. A mismatch makes ArgoCD upgrade Cilium at Wave 0, regenerating some Hubble certs but not others → `x509: certificate signed by unknown authority` blocks every later wave.
 > - **`cluster.name`** must match `values.yaml` (Hubble cert SANs). Run without it and certs are issued for `default`/`kind-kind` → TLS failures.
 > - **Hubble stays disabled at bootstrap on purpose** — ArgoCD enables it at Wave 0 so it's the sole owner of the Hubble TLS certs (no CLI-vs-ArgoCD cert mismatch).
->
-> On Arch/CachyOS the binary is often `cilium-cli`, not `cilium`. The bootstrap script accepts either.
 
 ### 6. Pre-seed 1Password secrets
 
-These secrets bootstrap 1Password Connect + External Secrets, which then sync every other secret from the vault.
+These secrets bootstrap 1Password Connect + External Secrets, which then sync
+every other secret from the vault. The dry-run/apply form makes the commands
+safe to rerun.
 
 ```bash
-kubectl create namespace 1passwordconnect
-kubectl create namespace external-secrets
+export OP_CREDENTIALS="$(op read op://homelab-prod/1passwordconnect/1password-credentials.json)"
+export OP_CONNECT_TOKEN="$(op read 'op://homelab-prod/1password-operator-token/credential')"
 
-export OP_CREDENTIALS=$(op read op://homelab-prod/1passwordconnect/1password-credentials.json)
-export OP_CONNECT_TOKEN=$(op read 'op://homelab-prod/1password-operator-token/credential')
+kubectl create namespace 1passwordconnect \
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace external-secrets \
+  --dry-run=client -o yaml | kubectl apply -f -
 
 kubectl create secret generic 1password-credentials \
   --namespace 1passwordconnect \
-  --from-literal=1password-credentials.json="$OP_CREDENTIALS"
+  --from-literal=1password-credentials.json="$OP_CREDENTIALS" \
+  --dry-run=client -o yaml | kubectl apply -f -
 
 kubectl create secret generic 1password-operator-token \
   --namespace 1passwordconnect \
-  --from-literal=token="$OP_CONNECT_TOKEN"
+  --from-literal=token="$OP_CONNECT_TOKEN" \
+  --dry-run=client -o yaml | kubectl apply -f -
 
 kubectl create secret generic 1passwordconnect \
   --namespace external-secrets \
-  --from-literal=token="$OP_CONNECT_TOKEN"
+  --from-literal=token="$OP_CONNECT_TOKEN" \
+  --dry-run=client -o yaml | kubectl apply -f -
 ```
 
 ### 7. Bootstrap ArgoCD
@@ -279,30 +262,15 @@ kubectl create secret generic 1passwordconnect \
 
 The script pre-flights Cilium, installs ArgoCD via Helm, seeds the `argocd-redis` auth secret (so a fresh cluster doesn't wedge), and applies `root.yaml` to hand control to GitOps self-management.
 
-<details>
-<summary>Manual equivalent (Option B)</summary>
-
-```bash
-kubectl apply -f infrastructure/controllers/argocd/ns.yaml
-
-helm upgrade --install argocd argo-cd \
-  --repo https://argoproj.github.io/argo-helm \
-  --version 10.2.1 \
-  --namespace argocd \
-  --values infrastructure/controllers/argocd/values.yaml \
-  --wait --timeout 10m
-
-kubectl wait --for condition=established --timeout=60s crd/applications.argoproj.io
-kubectl wait --for=condition=Available deployment/argocd-server -n argocd --timeout=300s
-
-kubectl apply -f infrastructure/controllers/argocd/root.yaml
-```
-
-</details>
-
 ### 8. Verify
 
 ```bash
+omnictl cluster template status \
+  -f omni/cluster-template/cluster-template-singlenode-gpu.yaml \
+  --wait 30m
+
+kubectl get nodes
+
 # Watch applications sync (all should reach 'Synced')
 kubectl get applications -n argocd -w
 
