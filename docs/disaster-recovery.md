@@ -74,16 +74,18 @@ Block the nuke until every box checks — **you restore *from* these**:
     -> wait: machines drained, VMs gone in Proxmox
     -> omnictl apply machine classes + template validate/sync
     -> machines provision from the NEW template
+    -> Gateway API CRDs
+    -> seed Cilium CNI
+    -> seed 1Password credentials
     -> bootstrap-argocd.sh
-    -> sync waves walk: Cilium -> Longhorn -> kopiur -> apps
+    -> sync waves assume Cilium management -> Longhorn -> kopiur -> apps
     -> restore wave runs itself
 ```
 
-> **Manual pre-steps before `bootstrap-argocd.sh`** — the script assumes them; the
-> exact commands are `README.md` § Bootstrap, steps 4–6: **(4)** Gateway API CRDs,
-> **(5)** Cilium CNI install, **(6)** pre-seed the 1Password Connect credential
-> Secrets. Skip them and the new cluster has no CNI (nodes stay `NotReady`) and
-> External Secrets can never start. Step 7 is the script itself.
+> **Manual pre-steps before `bootstrap-argocd.sh`** — the script assumes them.
+> Follow the single canonical procedure in `README.md` § Rebuild and Bootstrap.
+> Skip the Cilium seed and the new cluster has no CNI (nodes stay `NotReady`);
+> skip the 1Password seed and External Secrets can never start.
 
 **Ordering rule (twice-learned):** machine classes and the cluster template
 are **snapshots inside Omni** — apply + sync them *before* machines
