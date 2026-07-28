@@ -16,7 +16,7 @@ resources:
 helmCharts:
   - name: redis
     repo: oci://registry-1.docker.io/bitnamicharts
-    version: 27.0.17
+    version: 27.0.18
     releaseName: redis
     namespace: redis-instance
     includeCRDs: true
