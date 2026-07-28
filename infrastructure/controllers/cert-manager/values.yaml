@@ -21,6 +21,20 @@ extraArgs:
   - "--dns01-check-retry-period=10s"
   - "--max-concurrent-challenges=60"
   - "--enable-certificate-owner-ref=true"
+# Pin to the control plane. `webhook.cert-manager.io` is a cluster-scoped
+# failurePolicy: Fail webhook, so if the API server cannot reach it, EVERY
+# cert-manager.io write fails and every sync wave that creates a Certificate
+# stalls. Co-locating with the API server makes that call node-local, so it
+# cannot be broken by a pod-network fault on another node.
+# NEVER remove the toleration: control plane nodes carry a NoSchedule taint.
+nodeSelector:
+  kubernetes.io/os: linux
+  node-role.kubernetes.io/control-plane: ""
+tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+
 # Security context for improved container security - This section is well-configured
 securityContext:
   runAsNonRoot: true
@@ -35,6 +49,15 @@ resources:
     cpu: 20m
     memory: 128Mi
 webhook:
+  # The admission endpoint itself — the component that must stay reachable from
+  # the API server. Same placement as the controller above.
+  nodeSelector:
+    kubernetes.io/os: linux
+    node-role.kubernetes.io/control-plane: ""
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
   securityContext:
     runAsNonRoot: true
     runAsUser: 65534
@@ -47,6 +70,15 @@ webhook:
       cpu: 15m
       memory: 128Mi
 cainjector:
+  # cainjector populates the webhook's caBundle; a split placement would make
+  # webhook readiness depend on a cross-node call again.
+  nodeSelector:
+    kubernetes.io/os: linux
+    node-role.kubernetes.io/control-plane: ""
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
   securityContext:
     runAsNonRoot: true
     runAsUser: 65534

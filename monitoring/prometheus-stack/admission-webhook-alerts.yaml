@@ -1,0 +1,98 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: admission-webhook-alerts
+  namespace: prometheus-stack
+  labels:
+    app.kubernetes.io/name: kube-prometheus-stack
+    app.kubernetes.io/instance: kube-prometheus-stack
+    app.kubernetes.io/managed-by: Helm
+    prometheus: kube-prometheus-stack-prometheus
+    role: alert-rules
+spec:
+  # Admission-webhook reachability, measured from the API server's own metrics
+  # (job="apiserver") rather than from pod health.
+  #
+  # WHY THIS EXISTS: sync waves gate on ArgoCD Application health, and for a
+  # webhook Deployment that means "ready replicas == desired". A webhook pod can
+  # be Running and Ready — its kubelet probe succeeds because kubelet probes it
+  # locally on the same node — while the API server cannot reach it across the
+  # pod network. Nothing in the wave model observes that gap, so every later wave
+  # marches into a webhook that cannot be called. These rules close it by asking
+  # the only component whose opinion matters: the API server.
+  #
+  # The `code` label is what makes this precise:
+  #   503 = the API server could not reach/complete the call (the failure mode)
+  #   4xx = the webhook was reached and deliberately rejected (normal policy)
+  # Alerting on rejected="true" alone would fire on every legitimate rejection.
+  groups:
+    - name: admission.webhooks
+      rules:
+        # A failurePolicy: Fail webhook the API server cannot reach. Every write
+        # matching its rules is now failing cluster-wide. For cluster-scoped
+        # webhooks (cert-manager, CNPG, Longhorn) this blocks ArgoCD syncs, and
+        # any sync that aborts applies NONE of its resources — so unrelated
+        # components stall waiting on Secrets that were never created.
+        - alert: AdmissionWebhookUnreachable
+          expr: |
+            sum by (name, type) (
+              rate(apiserver_admission_webhook_request_total{rejected="true", code="503"}[5m])
+            ) > 0
+          for: 5m
+          labels:
+            severity: critical
+            component: kube-apiserver
+            category: control-plane
+          annotations:
+            summary: "Admission webhook unreachable: {{ $labels.name }}"
+            description: |
+              The API server has been unable to complete calls to admission
+              webhook {{ $labels.name }} ({{ $labels.type }}) for 5m, returning
+              503. If this webhook is failurePolicy: Fail, every matching
+              create/update in the cluster is now rejected.
+
+              The backing pod is very likely Running and Ready — kubelet probes
+              it node-locally, so pod health does not prove API server
+              reachability. Check the path, not the pod.
+
+              Actions:
+              1. kubectl get validatingwebhookconfiguration,mutatingwebhookconfiguration
+                 -o custom-columns=NAME:.metadata.name,SVC:.webhooks[*].clientConfig.service.name
+              2. Find the backing Service, then confirm it has ready endpoints on a
+                 node the API server can reach:
+                 kubectl -n <ns> get endpointslice -l kubernetes.io/service-name=<svc> \
+                   -o custom-columns=READY:.endpoints[*].conditions.ready,NODE:.endpoints[*].nodeName
+              3. If endpoints exist but are unreachable, suspect cross-node pod
+                 networking rather than the workload:
+                 kubectl -n kube-system exec ds/cilium -c cilium-agent -- cilium-health status
+                 Node reachable + Endpoints 0/1 means the pod network is broken to
+                 that node, not the pod.
+
+        # failurePolicy: Ignore webhooks that the API server gave up on. These
+        # fail SILENTLY — the request is admitted with the webhook skipped, so
+        # defaulting/mutation quietly does not happen and nothing surfaces an
+        # error. Warning rather than critical because writes still succeed.
+        - alert: AdmissionWebhookFailingOpen
+          expr: |
+            sum by (name) (
+              rate(apiserver_admission_webhook_fail_open_count[10m])
+            ) > 0
+          for: 15m
+          labels:
+            severity: warning
+            component: kube-apiserver
+            category: control-plane
+          annotations:
+            summary: "Admission webhook failing open: {{ $labels.name }}"
+            description: |
+              The API server has been skipping admission webhook
+              {{ $labels.name }} for 15m because it could not be called and its
+              failurePolicy is Ignore. Requests are being admitted WITHOUT this
+              webhook running, so any defaulting, mutation, or validation it
+              performs is silently not applied. Resources created during this
+              window may be missing fields the webhook would have set.
+
+              Actions:
+              1. Locate the backing Service and confirm it has ready endpoints.
+              2. After the webhook recovers, re-sync anything created during the
+                 window so the skipped mutation/defaulting is applied.

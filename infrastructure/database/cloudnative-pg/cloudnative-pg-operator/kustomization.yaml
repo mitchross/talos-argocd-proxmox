@@ -46,6 +46,18 @@ helmCharts:
     namespace: cloudnative-pg
     includeCRDs: true
     valuesInline:
+      # Pin to the control plane. cnpg-webhook-service backs cluster-scoped
+      # failurePolicy: Fail webhooks, so an unreachable operator pod blocks every
+      # postgresql.cnpg.io write cluster-wide. Co-locating with the API server
+      # makes the admission call node-local.
+      # NEVER remove the toleration: control plane nodes carry a NoSchedule taint.
+      nodeSelector:
+        kubernetes.io/os: linux
+        node-role.kubernetes.io/control-plane: ""
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
       config:
         # Enable job cleanup and set retention policies
         data:
