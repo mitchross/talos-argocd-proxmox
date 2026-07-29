@@ -9,7 +9,7 @@ helmCharts:
   - name: vertical-pod-autoscaler
     repo: https://kubernetes.github.io/autoscaler
     # renovate: datasource=helm depName=vertical-pod-autoscaler registryUrl=https://kubernetes.github.io/autoscaler
-    version: 0.10.0
+    version: 0.11.0
     releaseName: vpa
     namespace: vertical-pod-autoscaler
     includeCRDs: true
