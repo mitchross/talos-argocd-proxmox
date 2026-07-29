@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: mailpit
-          image: ghcr.io/axllent/mailpit:latest@sha256:38b612e3fd62f786a46a699e336bdf591bab7d2a0230f0263bddecc6589e5426
+          image: ghcr.io/axllent/mailpit:latest@sha256:56341a70f45e512ee835c1f2e19e2fe42716fba03d8a0be72e1705ee21539fd4
           imagePullPolicy: IfNotPresent
           env:
             - name: TZ

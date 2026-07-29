@@ -18,10 +18,10 @@ spec:
   - name: OTEL_RESOURCE_ATTRIBUTES
     value: k8s.cluster.name=talos-prod
   nodejs:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest@sha256:122915d17b56bb329dfe7c764f5561284ab92399c4be69b910973c18375e3175
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-nodejs:latest@sha256:075c3a7f641125d42767dbb72df4c93eba3214accd620b7952a20310cf7d345a
   java:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest@sha256:b287abd409152bfc395bf86ad453eca76473760bc9f76d88c423210d73290ee8
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:latest@sha256:1001e3603937f05181e9f92526d1346b9f29d708f7c657aab13642f6eeb9facf
   go:
     image: ghcr.io/open-telemetry/opentelemetry-go-instrumentation/autoinstrumentation-go:latest@sha256:664715c04cb854ffdbb920ea1289a86b0717f39e46b18e6584caa9e1f2e4d83f
   dotnet:
-    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:latest@sha256:4fe1e7a0ed61b5d042e81ac288bd76e9f8d7ca3a60c1a5b62eec3502a3e787c8
+    image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-dotnet:latest@sha256:bfc5456eccd5b2106c90066c31f9c07d79961bcaa8fe55241d2c6dda0b414c7a
