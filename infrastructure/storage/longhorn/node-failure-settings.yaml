@@ -1,6 +1,11 @@
 # Longhorn Node Failure and Recovery Settings
 # These settings prevent the issues you experienced with faulted volumes
 # when nodes were removed from the cluster.
+#
+# ONLY settings absent from values.yaml defaultSettings belong here. Longhorn's
+# ConfigMap controller reconciles Setting CRs from longhorn-default-setting, so
+# anything declared in both places has its CR silently overwritten — declare a
+# setting in exactly one file.
 
 ---
 # CRITICAL: Automatically delete pods when a node goes down
@@ -36,34 +41,6 @@ metadata:
   name: node-drain-policy
   namespace: longhorn-system
 value: "block-if-contains-last-replica"
-
----
-# Reserve NOTHING on default-created disks (V2 rebuild, 2026-06-11).
-# The old value (25%) was a V1-era fix for "insufficient storage" when the
-# default disk lived on the shared OS partition. On V2 every Longhorn disk is
-# a DEDICATED raw block device (/dev/sdb via the cluster template's
-# default-disks-config annotation) with nothing else on it — reserving 25%
-# would silently waste ~176Gi per 704G disk, because longhorn-manager
-# computes storageReserved from this percentage at disk-creation time when
-# the annotation says storageReserved: 0.
-# NOTE: this Setting CR is authoritative — values.yaml defaultSettings only
-# seeds on first install (see storage-over-provisioning-percentage below).
-apiVersion: longhorn.io/v1beta2
-kind: Setting
-metadata:
-  name: storage-reserved-percentage-for-default-disk
-  namespace: longhorn-system
-value: "0"
-
----
-# Enable fast replica rebuild for quicker recovery
-# NOTE: Must be a plain boolean string, not JSON format
-apiVersion: longhorn.io/v1beta2
-kind: Setting
-metadata:
-  name: fast-replica-rebuild-enabled
-  namespace: longhorn-system
-value: "true"
 
 ---
 # Concurrent replica rebuilds per node — INTENTIONALLY 1 (2026-06-12 incident).
@@ -135,14 +112,3 @@ metadata:
   name: data-engine-cpu-mask
   namespace: longhorn-system
 value: '{"v2":"0xf"}'
-
----
-# Scheduling ceiling per disk: (disk_size - reserved) * this %.
-# Keep in step with defaultSettings in values.yaml — longhorn-manager reconciles
-# this from that ConfigMap and wins, so a mismatch here is silently ignored.
-apiVersion: longhorn.io/v1beta2
-kind: Setting
-metadata:
-  name: storage-over-provisioning-percentage
-  namespace: longhorn-system
-value: "200"

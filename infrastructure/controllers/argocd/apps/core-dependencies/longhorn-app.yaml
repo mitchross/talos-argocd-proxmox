@@ -40,17 +40,16 @@ spec:
         maxDuration: 5m
   # Longhorn health checks ensure storage is ready before
   # other applications that need PVCs can be deployed
+  # Do NOT re-add a blanket `ConfigMap /data` or `Setting /value` ignore here.
+  # With RespectIgnoreDifferences=true those don't just hide a diff, they stop
+  # ArgoCD APPLYING the field — and settings reach Longhorn only via
+  #   values.yaml defaultSettings -> longhorn-default-setting ConfigMap
+  #     -> Longhorn's ConfigMap controller -> Setting CRs
+  # so ignoring either end made every Longhorn setting in git decorative. The
+  # cluster ran storage-over-provisioning at 600 while git said 200/300 and
+  # ArgoCD still reported Synced.
   ignoreDifferences:
-  - group: ""
-    kind: ConfigMap
-    jsonPointers:
-    - /data
   - group: ""
     kind: Secret
     jsonPointers:
     - /data
-  # Longhorn controller mutates Setting values into versioned format
-  - group: longhorn.io
-    kind: Setting
-    jsonPointers:
-    - /value
