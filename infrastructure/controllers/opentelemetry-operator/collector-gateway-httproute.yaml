@@ -28,6 +28,14 @@ metadata:
     # silently ignores the route and no CNAME is created in Cloudflare.
     external-dns: "true"
   annotations:
+    # MUST sync after the collectors (wave 1). Its backendRef Service
+    # otel-gateway-collector is created by the operator only once
+    # OpenTelemetryCollector/otel-gateway exists, so at the default wave 0 this
+    # route can never go Healthy — and ArgoCD will not advance to wave 1 until
+    # it does. That deadlocked the app from 2026-07-29 until 07-30: the
+    # collectors were never created, otel sat Degraded, and the failing child
+    # burned root's sync retries.
+    argocd.argoproj.io/sync-wave: "2"
     # Inherited from gateway-external's own target annotation when unset
     # (verified live), but the repo rule requires it per-route: keeps the
     # CNAME pinned to the tunnel if the Gateway annotation ever moves.
