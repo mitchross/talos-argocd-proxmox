@@ -46,3 +46,26 @@ helmCharts:
     # "chart requires kubeVersion >=1.32.0-0". Keep loosely in step with the
     # real cluster version (omni/cluster-template/cluster-template.yaml).
     kubeVersion: "1.36.3"
+
+# Upstream RBAC gap (chart 0.8.1): kopiur-mover has get+patch on the `*/status`
+# subresources but not the parents, which RBAC treats as distinct. Movers 403 and
+# stop reporting progress, so a Restore sits in "Restoring" with no status — that
+# masked a hung gitea restore for 24h on 2026-07-29. Drop once upstream fixes it.
+patches:
+  - target:
+      kind: ClusterRole
+      name: kopiur-mover
+    patch: |-
+      - op: add
+        path: /rules/-
+        value:
+          apiGroups: ["kopiur.home-operations.com"]
+          resources:
+            - snapshots
+            - restores
+            - repositories
+            - clusterrepositories
+            - maintenances
+            - snapshotpolicies
+            - repositoryreplications
+          verbs: ["get"]

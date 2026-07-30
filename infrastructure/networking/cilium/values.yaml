@@ -146,10 +146,12 @@ hubble:
 
 # Operator Configuration
 operator:
-  # SINGLE-NODE: the required hostname anti-affinity below makes a 2nd operator
-  # replica permanently unschedulable (no 2nd host) -> the Deployment never goes
-  # 2/2 healthy and the Cilium ArgoCD app hangs Progressing. 1 replica on one node.
-  replicas: 1
+  # One per worker, via the required hostname anti-affinity below. At 1 replica
+  # this kept landing on the solar-powered shed node, putting IPAM and identity
+  # management behind that node's uptime.
+  # Drop back to 1 if the cluster ever has a single schedulable worker — the
+  # required anti-affinity would leave the 2nd replica Pending and hang the app.
+  replicas: 2
   resources:
     requests:
       cpu: 200m

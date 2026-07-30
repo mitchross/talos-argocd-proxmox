@@ -137,19 +137,12 @@ metadata:
 value: '{"v2":"0xf"}'
 
 ---
-# Over-provisioning ceiling for replica scheduling.
-# values.yaml's defaultSettings only seeds on FIRST install — Longhorn
-# manages settings via this CRD post-install, so the chart value at 300
-# was being silently reverted to 200 by longhorn-manager's reconciliation.
-# Pinning it here means ArgoCD owns the value and it stays at 300.
-#
-# Per-node ceiling math: (disk_size - reserved) * over_provisioning%
-# V2 layout (2026-06-11): reserved=0 on the dedicated 704G (672G GPU) block
-# disks, so at 300% the ceiling is ~2100 Gi/node. Physical usage stays the
-# real constraint; 300% is scheduling headroom, not a promise of capacity.
+# Scheduling ceiling per disk: (disk_size - reserved) * this %.
+# Keep in step with defaultSettings in values.yaml — longhorn-manager reconciles
+# this from that ConfigMap and wins, so a mismatch here is silently ignored.
 apiVersion: longhorn.io/v1beta2
 kind: Setting
 metadata:
   name: storage-over-provisioning-percentage
   namespace: longhorn-system
-value: "300"
+value: "200"
