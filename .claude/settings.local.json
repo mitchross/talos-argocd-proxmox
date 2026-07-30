@@ -28,5 +28,8 @@
   },
   "enabledMcpjsonServers": [
     "claude-tempo"
+  ],
+  "disabledMcpjsonServers": [
+    "claude-tempo"
   ]
 }

@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deal-scout
+  namespace: deal-scout
+  labels:
+    app: deal-scout
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  strategy:
+    type: Recreate # RWO PVC (SQLite) — old pod must release the volume first
+  selector:
+    matchLabels:
+      app: deal-scout
+  template:
+    metadata:
+      labels:
+        app: deal-scout
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: deal-scout
+          # Source: ~/programming/hermes-agent/dashboard — build & push:
+          #   docker build -t registry.vanillax.me/deal-scout:v0.1.0 dashboard/
+          #   docker push registry.vanillax.me/deal-scout:v0.1.0
+          image: registry.vanillax.me/deal-scout:v0.1.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DATA_DIR
+              value: /data
+            - name: INGEST_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: deal-scout-secrets
+                  key: INGEST_TOKEN
+          ports:
+            - containerPort: 8000
+              name: http
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+          resources:
+            requests:
+              cpu: 25m
+              memory: 96Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: deal-scout-data
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
