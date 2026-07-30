@@ -1,0 +1,30 @@
+# INTERNAL route (local network only, via gateway-internal) — mirrors vllm.
+# Hermes on the desktop hits https://hindsight.vanillax.me with the tenant
+# API key (Authorization: Bearer). Memory data stays off the Cloudflare tunnel.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: hindsight-route
+  namespace: hindsight
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: gateway-internal-technitium
+      namespace: gateway
+  hostnames:
+    - "hindsight.vanillax.me"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      timeouts:
+        request: 5m # recall/reflect calls can chain several LLM round-trips
+        backendRequest: 5m
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: hindsight-service
+          port: 8888
+          weight: 1

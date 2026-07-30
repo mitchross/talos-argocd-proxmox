@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hindsight
+  namespace: hindsight
+  labels:
+    app: hindsight
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: hindsight
+  template:
+    metadata:
+      labels:
+        app: hindsight
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: hindsight
+          # Full (non-slim) image: bundled local embedding + reranker models,
+          # so only the LLM is external (in-cluster vLLM).
+          image: ghcr.io/vectorize-io/hindsight:0.8.6
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hindsight-secrets
+                  key: POSTGRES_PASSWORD
+            - name: HINDSIGHT_API_DATABASE_URL
+              value: "postgresql://hindsight:$(POSTGRES_PASSWORD)@hindsight-db:5432/hindsight"
+            - name: HINDSIGHT_API_VECTOR_EXTENSION
+              value: "pgvector"
+            # Memory-processing LLM: in-cluster vLLM (OpenAI-compatible, free tokens)
+            - name: HINDSIGHT_API_LLM_PROVIDER
+              value: "openai"
+            - name: HINDSIGHT_API_LLM_BASE_URL
+              value: "http://vllm-service.vllm.svc.cluster.local:8080/v1"
+            - name: HINDSIGHT_API_LLM_MODEL
+              value: "qwen3.6-27b"
+            - name: HINDSIGHT_API_LLM_API_KEY
+              value: "vllm" # vLLM ignores auth; SDK requires a non-empty key
+            - name: HINDSIGHT_API_TENANT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hindsight-secrets
+                  key: HINDSIGHT_API_TENANT_API_KEY
+          ports:
+            - containerPort: 8888
+              name: http
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60 # first boot loads embedding models
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 200m
+              memory: 1Gi
+            limits:
+              memory: 3Gi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 512Mi

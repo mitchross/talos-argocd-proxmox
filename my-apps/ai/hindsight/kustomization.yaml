@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: hindsight
+
+resources:
+  - namespace.yaml
+  - externalsecret.yaml
+  - pvc.yaml
+  - db-deployment.yaml
+  - deployment.yaml
+  - service.yaml
+  - httproute.yaml
+  - vpa.yaml
