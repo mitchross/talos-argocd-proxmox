@@ -29,12 +29,13 @@ defaultSettings:
   # the Dell system disk reserves 30 GiB. Keep the global percentage at 0 so it
   # does not add a second, implicit reservation on top of those declarations.
   storageReservedPercentageForDefaultDisk: "0"
-  # Declared Longhorn capacity exceeds the Threadripper's two 450 GiB thin-
-  # backed filesystems. 600% permits those declarations; actual free space
-  # remains protected by storageMinimalAvailablePercentage: 10 and the Dell's
-  # explicit 30 GiB reservation. This is a scheduling band-aid, not extra
-  # physical capacity; offload bulk data to NFS.
-  storageOverProvisioningPercentage: "600"
+  # Budget per disk = storageMaximum * this %, against DECLARED PVC size. At 600%
+  # the Dell reached 206 GiB scheduled on a 97 GiB disk; at 200% its budget falls
+  # below what it already holds, so Longhorn stops placing new replicas on the
+  # shed node on its own. Over-committed disks refuse new replicas, never evict.
+  # Do NOT drop to 100% — a DR restore doubles declared demand via `prime-*` PVCs
+  # and would deadlock the rebuild. Mirrored in node-failure-settings.yaml.
+  storageOverProvisioningPercentage: "200"
   allowRecurringJobWhileVolumeDetached: "true"
   replicaAutoBalance: "best-effort"
   # Ensure new consolidated settings that can be per-engine stay simple scalars for V1-only clusters
