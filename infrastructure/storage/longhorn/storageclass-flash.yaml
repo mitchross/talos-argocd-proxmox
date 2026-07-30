@@ -36,8 +36,13 @@
 # consumer NVMe. Pre-allocating the volume did not help. If anyone recreates
 # `ssd-ent` as an lvmthin pool, this tier silently becomes a downgrade.
 #
-# dataLocality strict-local: the replica must live on the node that runs the pod —
-# no cross-node hop on the write path. Fine here: single worker node.
+# NEVER set dataLocality back to strict-local while more than one worker is
+# schedulable. The `flash` disk exists on one node and the scheduler cannot see
+# diskSelector, so the two pick nodes independently; every mismatch is a permanent
+# deadlock (the Longhorn webhook rejects the attach and the pod waits forever).
+# That took out grafana, alertmanager, posthog and radar-ng on 2026-07-29.
+# best-effort keeps the replica on the flash disk and lets a remote pod attach
+# over the network instead of wedging.
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -55,4 +60,4 @@ parameters:
   # Pins volumes to Longhorn disks tagged `flash` — see the
   # node.longhorn.io/default-disks-config annotation in the Omni cluster template.
   diskSelector: "flash"
-  dataLocality: "strict-local"
+  dataLocality: "best-effort"
