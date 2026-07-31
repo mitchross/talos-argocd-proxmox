@@ -31,4 +31,4 @@ spec:
           # bumping recovery target lineage. See cnpg-plugin-migration.md
           # §9.1. N-1 of base (base now writes v6). RustFS multipart bug was
           # FIXED 2026-06-19 (1.0.0-beta.8) — these base backups ARE restorable.
-          serverName: immich-database-v5
+          serverName: immich-database-v6
