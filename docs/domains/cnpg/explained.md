@@ -143,16 +143,16 @@ to make CNPG re-evaluate).
 | Step | Type | Why |
 |---|---|---|
 | Update `base/cluster.yaml` `serverName: vN → vN+1` | **Git commit** | New WAL writes need a clean prefix on S3. Declared in Git. |
-| Update `overlays/recovery/bootstrap-patch.yaml` `externalClusters.serverName: vN-1 → vN` | **Git commit** | Recovery reads FROM the previous lineage. Declared in Git. |
+| Update `overlays/recovery/bootstrap-patch.yaml` source + `recoveryTarget.backupID` | **Git commit** | Recovery reads a verified data-bearing base backup, which may be older than the numerically previous lineage. |
 | Flip root `kustomization.yaml` from `overlays/initdb` to `overlays/recovery` | **Git commit (the feature flag)** | The single line that switches CNPG from "fresh-init mode" to "restore mode" on next Cluster creation. |
 | `git push` | nothing magic — just makes ArgoCD see the new state | |
-| `kubectl annotate application <db> argocd.argoproj.io/refresh=hard` | **kubectl** | ArgoCD's manifest cache is sticky. Force it to re-render against the new commit. **Skip this and ArgoCD spawns a fresh-init cluster from the stale pre-flip render despite your correct recovery commit.** |
+| `kubectl annotate application database-<db> argocd.argoproj.io/refresh=hard` | **kubectl** | ArgoCD's manifest cache is sticky. Force it to re-render against the new commit. **Skip this and ArgoCD spawns a fresh-init cluster from the stale pre-flip render despite your correct recovery commit.** |
 | `kubectl delete cluster <db>-database` | **kubectl** | Live mutation. CNPG only evaluates `spec.bootstrap` on Cluster CREATE, never on update. To force a fresh bootstrap evaluation you MUST delete and recreate. |
 | `kubectl delete pvc -l cnpg.io/cluster=<db>-database` | **kubectl** | CNPG leaves PVCs as data-protection. Delete them explicitly so the new Cluster doesn't reattach to the old (corrupt or empty) data. |
 | Trigger ArgoCD sync via `kubectl patch application` | **kubectl** | Once Cluster + PVCs are gone, ArgoCD recreates them from the new manifest (now with `bootstrap.recovery`). |
 | CNPG operator runs `barman-cloud-restore` | automatic | Pulls base backup + replays WAL until tip. |
-| Restart consumer apps via `kubectl rollout restart` | **kubectl** | Existing app pods cached the old DB connection — they'll error-retry until restarted. |
-| (Optional) flip kustomization back to `overlays/initdb` | **Git commit** | Cosmetic. Once the Cluster exists, `spec.bootstrap` is a no-op. Both overlays are valid for steady-state declarations. |
+| Reconcile consumer apps | **kubectl / ArgoCD** | Most apps need a rollout restart. Temporal requires syncing `my-apps-temporal` so its schema hook runs. |
+| Flip kustomization back to `overlays/initdb` | **Git commit** | Once verified, retire the recovery declaration so accidental future PVC loss cannot replay a stale backup plan. |
 
 The pattern: **Git declares intent. kubectl forces the cluster to act on the new
 intent.** CNPG's "bootstrap-on-create-only" rule means you can't just
@@ -167,7 +167,7 @@ CNPG requires a **clean WAL archive** for every newly-created Cluster. After a
 recovery, the new Cluster cannot write WAL to the same S3 directory the previous
 Cluster wrote to (WAL files would collide and corruption-detection would scream).
 
-So every recovery bumps `serverName` by one:
+So every recovery writes to a brand-new higher `serverName`:
 
 ```
 s3://postgres-backups/cnpg/temporal/
@@ -180,9 +180,10 @@ s3://postgres-backups/cnpg/temporal/
     └── wals/
 ```
 
-During DR, you restore FROM lineage `v(N-1)` and point new backups AT lineage
-`vN`. The prior lineage stays untouched as a safety net for future DR events (if
-`v3` itself ever needs restoring, you'd recover from `v2` and bump to `v4`).
+During a simple DR, you restore FROM lineage `v(N-1)` and point new backups AT
+lineage `vN`. If `v(N-1)` is empty or polluted, restore an older verified
+lineage/backup ID and still write to a brand-new higher lineage. The recovery
+source stays untouched as a safety net.
 
 The two `serverName` fields have to move in lockstep, IN THE SAME COMMIT:
 
@@ -205,13 +206,13 @@ When you run a recovery, here are the phases you'll see in order:
 pre-flight  Capture baseline row counts for a few key tables so you can verify
             them afterward.
 
-verify      Confirm Barman has the prior lineage's WAL on S3 (note the latest
-            archived WAL timestamp).
+verify      Confirm Barman has the intended data-bearing backup and WAL on S3.
+            Compare PostgreSQL system IDs; pin backupID if the catalog is mixed.
 
 GIT         Edit three files in ONE commit:
-              base/cluster.yaml         serverName  vN-1 → vN
+              base/cluster.yaml         serverName  old → new clean vN
               overlays/recovery/bootstrap-patch.yaml
-                                        serverName  vN-2 → vN-1
+                                        source + pinned backupID → verified data
               kustomization.yaml        flag        initdb → recovery
             Commit + push.
 

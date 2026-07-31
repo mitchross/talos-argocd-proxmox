@@ -53,8 +53,11 @@ while IFS= read -r appset; do
     appset_path=$(echo "$appset_path" | sed 's/.*path: //' | tr -d "'\"" | xargs)
     [ -z "$appset_path" ] && continue
 
-    # The generated Application name is {{path.basename}}
-    generated_name=$(basename "$appset_path")
+    # Render the AppSet's metadata.name template for this generator path.
+    # Every generated Application must carry a domain prefix; assuming a bare
+    # basename here allowed ambiguous identities such as database `temporal`.
+    name_template=$(grep "name:.*path.basename" "$appset" | head -1 | sed 's/.*name: *//' | tr -d "'\"" | xargs || true)
+    generated_name=$(printf '%s\n' "$name_template" | sed "s/{{ \\.path\\.basename }}/$(basename "$appset_path")/")
 
     # Check if this name conflicts with a standalone Application
     for i in "${!standalone_names[@]}"; do
@@ -261,6 +264,27 @@ while IFS= read -r comp_kust; do
     ERRORS=$((ERRORS + 1))
   fi
 done < <(grep -rl "^kind: Component$" my-apps --include=kustomization.yaml 2>/dev/null | sort)
+echo ""
+
+# ─────────────────────────────────────────────
+# 9. Enforce domain-prefixed generated identities
+# ─────────────────────────────────────────────
+echo "--- Check 9: ApplicationSet name prefixes ---"
+
+while IFS='|' read -r appset_file expected_template; do
+  actual_template=$(grep "name:.*path.basename" "$appset_file" | head -1 | sed 's/.*name: *//' | tr -d "'\"" | xargs || true)
+  if [ "$actual_template" != "$expected_template" ]; then
+    echo "  ERROR: $appset_file generates '$actual_template'; expected '$expected_template'"
+    ERRORS=$((ERRORS + 1))
+  else
+    echo "  OK: $actual_template"
+  fi
+done <<'EOF'
+infrastructure/controllers/argocd/apps/appsets/database-appset.yaml|database-{{ .path.basename }}
+infrastructure/controllers/argocd/apps/appsets/infrastructure-appset.yaml|infrastructure-{{ .path.basename }}
+infrastructure/controllers/argocd/apps/appsets/monitoring-appset.yaml|monitoring-{{ .path.basename }}
+infrastructure/controllers/argocd/apps/appsets/my-apps-appset.yaml|my-apps-{{ .path.basename }}
+EOF
 echo ""
 
 # ─────────────────────────────────────────────

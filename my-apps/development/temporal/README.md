@@ -240,8 +240,10 @@ kubectl -n temporal logs deploy/temporal-frontend --tail=50
 kubectl -n temporal exec -it deploy/temporal-admintools -- bash
 # now you can run `temporal workflow list ...`, etc.
 
-# Force ArgoCD resync (e.g. after editing values.yaml)
-argocd app sync temporal
+# Force the Temporal server/schema ArgoCD app to resync (e.g. after editing
+# values.yaml or recreating only its CNPG database). `database-temporal` owns
+# PostgreSQL; syncing it does NOT run this app's schema hook.
+argocd app sync my-apps-temporal
 
 # Check schema migration logs
 kubectl -n temporal logs job/temporal-schema-1.x.y

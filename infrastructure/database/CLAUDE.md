@@ -4,7 +4,7 @@
 > Postgres + kopiur inside the owning app's directory (reference:
 > `my-apps/development/gitea/postgres/`; pattern + migration runbook:
 > [`docs/domains/cnpg/plain-postgres-migration.md`](../../docs/domains/cnpg/plain-postgres-migration.md)).
-> The four existing CNPG databases migrate off one at a time. Everything below
+> The three existing CNPG databases migrate off one at a time. Everything below
 > remains **fully in force for the unmigrated databases** — do not relax it early.
 
 > **Required reading before performing DR or modifying database backups:**
@@ -61,15 +61,26 @@ resources:
 The `serverName` values below live in each DB's `base/cluster.yaml` and
 `overlays/recovery/bootstrap-patch.yaml` — bump both when you recover.
 
-| Database  | Current write target (base)  | Prior lineage (recovery source) |
-|-----------|------------------------------|---------------------------------|
-| gitea     | `gitea-database-v10`         | `gitea-database-v9`             |
-| immich    | `immich-database-v6`         | `immich-database-v5`            |
-| paperless | `paperless-database-v6`      | `paperless-database-v5`         |
-| temporal  | `temporal-database-v8`       | `temporal-database-v7`          |
+| Database  | Next write target (base) | Recovery source | Pinned backup ID |
+|-----------|--------------------------|-----------------|------------------|
+| immich    | `immich-database-v8`     | `immich-database-v6` | `20260728T020000` |
+| paperless | `paperless-database-v8`  | `paperless-database-v6` | `20260728T050000` |
+| temporal  | `temporal-database-v10`  | `temporal-database-v8` | `20260728T030000` |
 
-2026-06-28 (first kopiur-only full nuke): all four recovered from their prior
-lineage and write forward to the bumped target above (gitea v9→v10, immich
+The roots are intentionally on `overlays/recovery` for the planned 2026-07-31
+full-cluster rebuild. Flip them back to `overlays/initdb` only after restore,
+application-level validation, and successful backups on v8/v8/v10.
+
+2026-07-31 pre-nuke audit: the July 29 rebuild used `initdb`, so live Immich
+had zero assets/users, Paperless had zero documents, and Temporal had zero
+executions. The clean v7/v7/v9 backups therefore preserve empty databases and
+are abandoned. The data-bearing July 28 backups above were verified directly
+with `barman-cloud-backup-list`. Paperless v6 also contains a newer successful
+backup from the empty replacement PostgreSQL system ID, which is why all three
+recovery overlays pin an exact `backupID` instead of trusting "latest".
+
+2026-06-28 (first kopiur-only full nuke): all four then-existing databases
+recovered from their prior lineage and wrote forward to that event's targets (gitea v9→v10, immich
 v5→v6, paperless v5→v6, temporal v7→v8). After recovery completed and the
 primaries went healthy, all four root kustomizations were **flipped back
 `overlays/recovery` → `overlays/initdb`** (steady state) so a future PVC loss
@@ -101,9 +112,9 @@ current writes go to v9**.
 
 ## Normal operation (add a new CNPG DB)
 
-1. Copy an existing DB directory (e.g. `gitea/`) to `<newapp>/`.
+1. Copy an existing DB directory (e.g. `paperless/`) to `<newapp>/`.
 2. Update names, owner, image, postInitApplicationSQL, resource sizes in `base/cluster.yaml` and `overlays/initdb/bootstrap-patch.yaml`.
-3. Set `base/cluster.yaml` `backup.barmanObjectStore.serverName` to `<newapp>-database-v1`.
+3. Set `base/cluster.yaml` `spec.plugins[0].parameters.serverName` to `<newapp>-database-v1`.
 4. Set `overlays/recovery/bootstrap-patch.yaml` to reference `<newapp>-database-v1` as the prior lineage (placeholder until a real DR event bumps both).
 5. Commit + push. Database AppSet auto-discovers `infrastructure/database/*/*` — no appset edits needed.
 
@@ -112,7 +123,9 @@ current writes go to v9**.
 See the full runbook in [`docs/domains/cnpg/disaster-recovery.md`](../../docs/domains/cnpg/disaster-recovery.md#runbook-restore-from-barman-recovery). Short version:
 
 1. Bump `base/cluster.yaml` `serverName` to next `-vN`.
-2. Set `overlays/recovery/bootstrap-patch.yaml` `externalClusters.serverName` to the now-prior `-v(N-1)`.
+2. Set `overlays/recovery/bootstrap-patch.yaml` `externalClusters.serverName`
+   to the verified data-bearing lineage and pin `recoveryTarget.backupID` when
+   a lineage contains backups from more than one PostgreSQL system ID.
 3. Flip root `kustomization.yaml` → `overlays/recovery`.
 4. Commit, push.
 5. Delete live Cluster + PVCs so CNPG re-evaluates bootstrap on fresh creation:
@@ -120,7 +133,7 @@ See the full runbook in [`docs/domains/cnpg/disaster-recovery.md`](../../docs/do
    kubectl -n cloudnative-pg delete cluster <db>-database
    kubectl -n cloudnative-pg delete pvc -l cnpg.io/cluster=<db>-database
    ```
-6. Trigger ArgoCD sync on the `<db>` application.
+6. Trigger ArgoCD sync on the `database-<db>` application.
 7. Watch `*-full-recovery-*` pod logs for Barman base + WAL replay.
 
 ## Critical rules (from prior incidents)
@@ -133,8 +146,13 @@ See the full runbook in [`docs/domains/cnpg/disaster-recovery.md`](../../docs/do
   AppSet's `ignoreDifferences`.** `RespectIgnoreDifferences=true` + SSA will
   silently strip those fields during apply, producing a Cluster with no
   bootstrap → CNPG defaults to initdb → empty DB despite git saying recovery.
-- **Rolling-restart consumer apps after a DB rebuild.** Pods connected to the
-  old DB won't re-run their migrations against the new empty one until restarted.
+- **Reconcile the consumer after a DB rebuild.** Most apps need a rollout
+  restart. Temporal is different: SQL setup/update is an Argo Sync hook in
+  `my-apps-temporal`, so explicitly sync that Application after a DB-only
+  rebuild; restarting its Deployments does not run the schema hook.
+- **Pin `recoveryTarget.backupID` when a lineage is polluted.** Barman's
+  chronological latest backup can belong to a newer empty PostgreSQL system
+  that reused the same serverName. `DONE` does not mean it contains your data.
 - **Specify `database` + `owner` + `secret` in recovery bootstrap.** CNPG
   defaults to `database: app, owner: app` if omitted.
 - **Don't add kopiur backup CRs to CNPG PVCs.** They use Barman/S3, not kopiur.

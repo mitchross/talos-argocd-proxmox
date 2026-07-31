@@ -10,6 +10,11 @@ spec:
       owner: immich
       secret:
         name: immich-app-secret
+      recoveryTarget:
+        # v6 also contains a failed base-backup attempt from the empty
+        # post-2026-07-29 cluster. Pin the last completed data-bearing backup
+        # instead of trusting chronological "latest" selection.
+        backupID: "20260728T020000"
       # No recoveryTarget → restore to latest-WAL available on S3.
       # See gitea/overlays/recovery/bootstrap-patch.yaml for rationale.
   # Plugin-shape externalClusters (replaces the deprecated in-tree
@@ -27,8 +32,7 @@ spec:
           # endpoint). Only serverName changes between live writes and
           # recovery reads.
           barmanObjectName: immich-objectstore
-          # Previous lineage to recover FROM. DO NOT change without
-          # bumping recovery target lineage. See cnpg-plugin-migration.md
-          # §9.1. N-1 of base (base now writes v6). RustFS multipart bug was
-          # FIXED 2026-06-19 (1.0.0-beta.8) — these base backups ARE restorable.
+          # Data-bearing recovery lineage. Base writes to fresh v8; v7 is an
+          # empty post-rebuild lineage and must never be selected as a restore
+          # source. backupID above pins the verified 2026-07-28 base backup.
           serverName: immich-database-v6

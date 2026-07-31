@@ -6,12 +6,15 @@ spec:
   bootstrap:
     recovery:
       source: temporal-recovery-source
-      # No recoveryTarget -> restore to latest available WAL.
-      # Prior dated targetTime "2026-04-16T23:59:59Z" was a DR landmine
-      # (predates earliest archived WAL on -v1) and was removed 2026-05-03
-      # alongside the v1->v2 lineage bump. If a future PITR is needed,
-      # set targetTime to a value that is verifiably present in the
-      # externalClusters serverName's wals/ prefix on RustFS.
+      database: temporal
+      owner: temporal
+      secret:
+        name: temporal-app-secret
+      recoveryTarget:
+        # Pin the last completed data-bearing backup before the 2026-07-29
+        # rebuild. Later v8 attempts belong to the empty replacement system
+        # and failed, while v9's completed backup contains no executions.
+        backupID: "20260728T030000"
   # Plugin-shape externalClusters (replaces the deprecated in-tree
   # barmanObjectStore field on externalClusters[]; removed in CNPG 1.30.0).
   # Reuses the prod ObjectStore CR (base/objectstore.yaml) — the only thing
@@ -39,6 +42,7 @@ spec:
           #   v4 — short-lived lineage of the aborted first 2026-06-11
           #        rebuild attempt.
           #   v5 — lineage superseded by the 2026-06-12 rebuild.
-          #   v6 — abandoned 2026-06-23 (dirty prefix → "Expected empty
-          #        archive"); kept at N-1 relative to the active v7 write target.
+          #   v6 — abandoned 2026-06-23 (dirty prefix → "Expected empty archive").
+          #   v8 — last data-bearing lineage before the 2026-07-29 rebuild;
+          #        backupID above selects its verified 2026-07-28 base backup.
           serverName: temporal-database-v8
