@@ -36,7 +36,8 @@ infrastructure/database/cloudnative-pg/<db>/
     │   └── bootstrap-patch.yaml    ← merge-patch adds bootstrap.initdb
     └── recovery/
         ├── kustomization.yaml
-        └── bootstrap-patch.yaml    ← merge-patch adds bootstrap.recovery + externalClusters
+        ├── bootstrap-patch.yaml    ← merge-patch adds bootstrap.recovery + externalClusters
+        └── post-recovery-backup.yaml ← event-specific Backup; pruned on initdb flip
 ```
 
 The root `kustomization.yaml`:
@@ -68,8 +69,12 @@ The `serverName` values below live in each DB's `base/cluster.yaml` and
 | temporal  | `temporal-database-v10`  | `temporal-database-v8` | `20260728T030000` |
 
 The roots are intentionally on `overlays/recovery` for the planned 2026-07-31
-full-cluster rebuild. Flip them back to `overlays/initdb` only after restore,
-application-level validation, and successful backups on v8/v8/v10.
+full-cluster rebuild. Their Argo Applications and consumer Applications have
+auto-sync/self-heal explicitly disabled. After bootstrap, run
+`scripts/bootstrap-cnpg-recovery.sh --execute`; it advances each pair only
+after exact lineage, application rows, WAL archiving, and the recovery-only
+`Backup` object are proven. Flip the roots back to `overlays/initdb` only after that
+acceptance succeeds on v8/v8/v10.
 
 2026-07-31 pre-nuke audit: the July 29 rebuild used `initdb`, so live Immich
 had zero assets/users, Paperless had zero documents, and Temporal had zero
@@ -133,7 +138,9 @@ See the full runbook in [`docs/domains/cnpg/disaster-recovery.md`](../../docs/do
    kubectl -n cloudnative-pg delete cluster <db>-database
    kubectl -n cloudnative-pg delete pvc -l cnpg.io/cluster=<db>-database
    ```
-6. Trigger ArgoCD sync on the `database-<db>` application.
+6. Trigger ArgoCD sync on the `database-<db>` application. For the prepared
+   fresh-cluster rebuild, use `scripts/bootstrap-cnpg-recovery.sh --execute`
+   instead of performing the remaining steps by hand.
 7. Watch `*-full-recovery-*` pod logs for Barman base + WAL replay.
 
 ## Critical rules (from prior incidents)
