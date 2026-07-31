@@ -38,9 +38,9 @@ The review map for everything directly rendered by the root Application from `in
 | `custom-entrypoints/vpa-system-policies-app.yaml` | Application | 6 | VPA policies for the small set of bootstrap/system workloads without a co-located owner | No, ownership exception is explicit |
 | `custom-entrypoints/opentelemetry-operator-observability-app.yaml` | Application | 6 | Optional OpenTelemetry ServiceMonitor after monitoring CRDs exist | No, keeps observability out of core |
 | `appsets/infrastructure-appset.yaml` | ApplicationSet | 4 | Explicit list of core infrastructure directories | N/A |
-| `appsets/database-appset.yaml` | ApplicationSet | 4 | Discovers `infrastructure/database/*/*`; uses `selfHeal: false` for DR | N/A |
+| `appsets/database-appset.yaml` | ApplicationSet | 4 | Discovers `infrastructure/database/*/*`; support apps auto-sync, three CNPG clusters are manual DR gates | N/A |
 | `appsets/monitoring-appset.yaml` | ApplicationSet | 5 | Discovers `monitoring/*` after core infra | N/A |
-| `appsets/my-apps-appset.yaml` | ApplicationSet | 6 | Discovers `my-apps/*/*` (excluding `my-apps/common/*` Components) after core storage and restore foundations | N/A |
+| `appsets/my-apps-appset.yaml` | ApplicationSet | 6 | Discovers `my-apps/*/*` (excluding Components); the three CNPG consumers are manual until their restores pass | N/A |
 
 Generated Application identities are domain-prefixed:
 `infrastructure-<component>`, `database-<database>`, `monitoring-<component>`,

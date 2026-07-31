@@ -324,6 +324,25 @@ Before deleting the cluster, verify all four parts for every database:
 3. The base manifest writes to a brand-new serverName with an empty S3 prefix.
 4. The root kustomization already renders `bootstrap.recovery`.
 
+After Argo bootstrap installs Waves 0–4, run the prepared transaction. Its
+default mode is read-only preflight; mutation requires the explicit flag:
+
+```bash
+./scripts/bootstrap-cnpg-recovery.sh
+./scripts/bootstrap-cnpg-recovery.sh --execute
+```
+
+This boundary follows the current controller contracts rather than relying on
+wave timing. [Argo CD 3.4 treats `automated.enabled: false` as an explicit
+pause](https://argo-cd.readthedocs.io/en/release-3.4/user-guide/auto_sync/),
+while disabling only self-heal does not prevent a Git-triggered auto-sync.
+ApplicationSet RollingSync is not used here: it is still Beta and gates only on
+Application health, which cannot prove PostgreSQL lineage or application data.
+[CloudNativePG recovery bootstraps a new Cluster rather than restoring
+in-place](https://cloudnative-pg.io/documentation/current/recovery/); its
+guidance also supports exact `backupID` selection and distinct recovery/read
+and forward-write `serverName` values.
+
 ### Prepared recovery for the 2026-07-31 rebuild
 
 The pre-nuke audit queried each Barman catalog directly and compared it with
@@ -340,9 +359,14 @@ Paperless v6 also contains a successful 2026-07-30 backup from the empty
 replacement PostgreSQL system ID. Removing its `backupID` pin will restore the
 wrong database.
 
-**Post-bootstrap acceptance.** On a genuinely fresh cluster the wave-6 apps
-start after the wave-4 database Applications, so they normally connect cleanly.
-Validate data rather than trusting `Ready`:
+**Post-bootstrap acceptance.** Auto-sync is disabled for all three database
+Applications and their three consumers. The script hard-refreshes and syncs
+each database, verifies the pinned manifest and PostgreSQL system identifier,
+requires a non-empty application table plus `ContinuousArchiving` and
+the exact recovery-only `Backup` in `completed` phase (plus
+`LastBackupSucceeded`), then syncs the consumer. That event-specific Backup is
+part of the recovery overlay and is pruned when the root returns to `initdb`.
+The equivalent data checks are:
 
 ```bash
 kubectl exec -n cloudnative-pg immich-database-1 -c postgres -- \

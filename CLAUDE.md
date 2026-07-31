@@ -46,13 +46,18 @@ Applications deploy in strict order to prevent race conditions:
 | **2** | kopiur operator | Kopia-native backup operator (8 CRDs + controller + webhook), rendered from the OCI chart `oci://ghcr.io/home-operations/charts/kopiur`. Serves the volume populator for restore-before-bind. |
 | **3** | CNPG Barman Plugin + kopiur config | Database backup plugin before DB clusters; kopiur `ClusterRepository cluster-kopia` + `ClusterExternalSecret` cred fanout + `VolumeSnapshotClass longhorn-snapclass` |
 | **4** | Infrastructure AppSet + custom entrypoints | Explicit path list plus KEDA and Temporal Worker Controller standalone Apps |
-| **4** | Database AppSet | Discovers `infrastructure/database/*/*` — `selfHeal: false` for DR |
+| **4** | Database AppSet | Auto-syncs support services; the three legacy CNPG clusters are manual DR gates |
 | **5** | OTEL + Monitoring AppSet | OpenTelemetry Operator plus `monitoring/*` |
 | **6** | Observability overlays + My-Apps AppSet | KEDA/OTEL ServiceMonitors after monitoring CRDs exist, plus `my-apps/*/*` |
 
 **Backend-down safety** (kopiur, replacing the retired `wait-for-rustfs` MAP): a backup against an unreachable repo errors — the Snapshot Job fails and retries, nothing garbage is written. A **restore against an unreachable repo leaves the PVC `Pending`**: kopiur raises the backend error *before* the `onMissingSnapshot` decision, so an outage can never bind an empty volume. This preserves the exact guarantee the MAP gave VolSync, with no admission policy. (Source-verified: `crates/controller/src/restore/mod.rs` `resolve_snapshot`; a brand-new PVC with a *reachable* repo but no snapshot still binds empty and backs up forward — `onMissingSnapshot: Continue` = deploy-or-restore.)
 
-**Databases** use a separate AppSet with `selfHeal: false` so `skip-reconcile` annotations stick during DR recovery. The infrastructure AppSet uses `selfHeal: true` which would strip manual annotations.
+**Databases** use a separate AppSet. The CNPG operator, shared secrets, and
+Redis remain automated; Immich, Paperless, and Temporal have
+`automated.enabled: false`, as do their three consumer Applications. Advance
+that restore transaction with `scripts/bootstrap-cnpg-recovery.sh --execute`.
+Do not turn their auto-sync/self-heal back on: the script owns refresh → DB
+sync → lineage/data/archive/backup proof → consumer sync.
 
 **AppProjects** are intentionally permissive for this single-operator homelab.
 They provide UI grouping and policy intent, not multi-tenant security. Tighten

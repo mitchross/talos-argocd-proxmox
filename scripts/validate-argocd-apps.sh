@@ -288,6 +288,38 @@ EOF
 echo ""
 
 # ─────────────────────────────────────────────
+# 10. Preserve the CNPG recovery transaction boundary
+# ─────────────────────────────────────────────
+echo "--- Check 10: CNPG manual recovery gates ---"
+
+database_appset="$APPS_DIR/appsets/database-appset.yaml"
+my_apps_appset="$APPS_DIR/appsets/my-apps-appset.yaml"
+
+if ! grep -q 'eq .path.basename "immich".*eq .path.basename "paperless".*eq .path.basename "temporal"' "$database_appset" \
+   || ! grep -A5 'eq .path.basename "immich".*eq .path.basename "paperless".*eq .path.basename "temporal"' "$database_appset" | grep -q 'enabled: false'; then
+  echo "  ERROR: database AppSet must explicitly disable automated sync for immich, paperless, and temporal"
+  ERRORS=$((ERRORS + 1))
+else
+  echo "  OK: three CNPG database Applications are manual"
+fi
+
+if ! grep -q 'eq .path.basename "immich".*eq .path.basename "paperless-ngx".*eq .path.basename "temporal"' "$my_apps_appset" \
+   || ! grep -A5 'eq .path.basename "immich".*eq .path.basename "paperless-ngx".*eq .path.basename "temporal"' "$my_apps_appset" | grep -q 'enabled: false'; then
+  echo "  ERROR: my-apps AppSet must explicitly disable automated sync for the three CNPG consumers"
+  ERRORS=$((ERRORS + 1))
+else
+  echo "  OK: three CNPG consumer Applications are manual"
+fi
+
+if [ ! -x scripts/bootstrap-cnpg-recovery.sh ]; then
+  echo "  ERROR: scripts/bootstrap-cnpg-recovery.sh is missing or not executable"
+  ERRORS=$((ERRORS + 1))
+else
+  echo "  OK: guarded CNPG recovery script is executable"
+fi
+echo ""
+
+# ─────────────────────────────────────────────
 # Summary
 # ─────────────────────────────────────────────
 echo "=== Summary ==="

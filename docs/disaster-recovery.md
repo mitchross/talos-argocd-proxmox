@@ -89,8 +89,9 @@ Block the nuke until every box checks — **you restore *from* these**:
     -> seed Cilium CNI
     -> seed 1Password credentials
     -> bootstrap-argocd.sh
-    -> sync waves assume Cilium management -> Longhorn -> kopiur -> apps
-    -> restore wave runs itself
+    -> sync waves install Cilium management -> Longhorn -> kopiur -> DB support
+    -> bootstrap-cnpg-recovery.sh --execute
+    -> guarded DB restore -> proof -> consumer sync, one database at a time
 ```
 
 > **Manual pre-steps before `bootstrap-argocd.sh`** — the script assumes them.

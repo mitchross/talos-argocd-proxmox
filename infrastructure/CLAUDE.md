@@ -72,7 +72,11 @@ grep "my-new-appset.yaml" infrastructure/controllers/argocd/apps/kustomization.y
 kubectl get applicationset -n argocd
 ```
 
-Databases are auto-discovered separately by `database-appset.yaml` via `infrastructure/database/*/*` glob.
+Databases are discovered separately by `database-appset.yaml` via the
+`infrastructure/database/*/*` glob. Support Applications auto-sync. The three
+legacy CNPG clusters (`immich`, `paperless`, `temporal`) and their consumer
+Applications are explicit manual gates; run
+`scripts/bootstrap-cnpg-recovery.sh --execute` on a fresh-cluster restore.
 
 ## Debugging ArgoCD
 
