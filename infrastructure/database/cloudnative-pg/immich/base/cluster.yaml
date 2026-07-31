@@ -75,4 +75,5 @@ spec:
         #        reused v4 (whose prefix still held old WAL) → Barman "Expected
         #        empty archive", ContinuousArchiving stuck False. Clean v5 prefix.
         # DO NOT change this value without bumping lineage in lockstep.
-        serverName: immich-database-v6
+        #   v6 — 2026-07-29 rebuild reused non-empty prefix → archiving stuck False.
+        serverName: immich-database-v7

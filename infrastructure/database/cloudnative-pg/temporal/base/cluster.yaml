@@ -36,7 +36,7 @@ spec:
     # 50Gi -> 10Gi for single-node 2950X rebuild (2026-06-19). WAL is transient
     # spool (max_wal_size < 1GB); 50Gi was never approached. Reclaims Longhorn
     # scheduling budget on the worker's Longhorn filesystems.
-    size: 10Gi
+    size: 20Gi  # 2026-07-31: was 10Gi; filled during the v8 archive deadlock — headroom for boot + backlog drain
     storageClass: longhorn
   enableSuperuserAccess: true
   monitoring:
@@ -68,4 +68,8 @@ spec:
         # DO NOT change this value without bumping lineage in lockstep.
         # The companion overlays/recovery/bootstrap-patch.yaml MUST be
         # updated in the SAME commit (read FROM v(N-1) → write TO vN).
-        serverName: temporal-database-v8
+        #   v8 — 2026-07-29 full-cluster rebuild; fresh initdb reused the v8 name
+        #        whose prefix already held WAL → Barman "Expected empty archive",
+        #        ContinuousArchiving=False since; WAL PVC filled 2026-07-31 and
+        #        took Temporal down. Clean v9 prefix.
+        serverName: temporal-database-v9
