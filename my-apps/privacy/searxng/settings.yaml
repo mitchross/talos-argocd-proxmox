@@ -2,7 +2,6 @@ use_default_settings: true
 
 server:
     base_url: 'https://search.vanillax.me'  # Remove trailing slash
-    secret_key: "${SEARXNG_SECRET_KEY}"  # Use from secret
     bind_address: "0.0.0.0"
     port: 8080  # Match with deployment port
     public_instance: true

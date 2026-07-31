@@ -50,8 +50,6 @@ spec:
               value: "paperless-database-rw.cloudnative-pg.svc.cluster.local"
             - name: PAPERLESS_DBNAME
               value: "paperless"
-            - name: PAPERLESS_REDIS
-              value: "redis://redis-master.redis-instance.svc.cluster.local:6379"
             - name: USERMAP_UID
               value: "1000"
             - name: USERMAP_GID

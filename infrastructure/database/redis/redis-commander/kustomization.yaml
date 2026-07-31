@@ -11,6 +11,7 @@ labels:
       app.kubernetes.io/managed-by: argocd
 resources:
   - namespace.yaml
+  - externalsecret.yaml
   - deployment.yaml
   - service.yaml
   - httproute.yaml

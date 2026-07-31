@@ -3,12 +3,11 @@ kind: Service
 metadata:
   name: redis-commander
   namespace: redis
-  annotations:
-    io.cilium/lb-ipam-ips: "192.168.10.45" # Your specified IP
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
-    - port: 8081
-      targetPort: 8081
+    - name: http
+      port: 8081
+      targetPort: http
   selector:
     app: redis-commander

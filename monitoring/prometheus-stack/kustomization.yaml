@@ -4,6 +4,7 @@ namespace: prometheus-stack
 resources:
   - vpa.yaml
   - ns.yaml
+  - grafana-externalsecret.yaml
   - alertmanager-http-route.yaml
   - grafana-http-route.yaml
   - prometheus-http-route.yaml
