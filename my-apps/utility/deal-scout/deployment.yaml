@@ -29,9 +29,9 @@ spec:
       containers:
         - name: deal-scout
           # Source: ~/programming/hermes-agent/dashboard — build & push:
-          #   docker build -t registry.vanillax.me/deal-scout:v0.2.0 dashboard/
-          #   docker push registry.vanillax.me/deal-scout:v0.2.0
-          image: registry.vanillax.me/deal-scout:v0.2.0
+          #   docker build -t registry.vanillax.me/deal-scout:v0.2.1 dashboard/
+          #   docker push registry.vanillax.me/deal-scout:v0.2.1
+          image: registry.vanillax.me/deal-scout:v0.2.1
           imagePullPolicy: IfNotPresent
           env:
             - name: DATA_DIR
