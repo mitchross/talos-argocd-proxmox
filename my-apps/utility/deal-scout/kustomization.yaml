@@ -9,5 +9,6 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
-  - cronjob.yaml
+  - temporal-connection.yaml
+  - temporal-worker-deployment.yaml
   - vpa.yaml

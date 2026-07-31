@@ -1,0 +1,9 @@
+# Connection — Temporal Worker Controller CRD (see news-reader-temporal-worker
+# for the annotated original). Reusable "how to reach Temporal" for this ns.
+apiVersion: temporal.io/v1alpha1
+kind: Connection
+metadata:
+  name: cluster-temporal
+  namespace: deal-scout
+spec:
+  hostPort: "temporal-frontend.temporal.svc.cluster.local:7233"
