@@ -59,7 +59,6 @@ spec:
       # They have dedicated standalone Applications at Wave 1 (longhorn-app.yaml,
       # snapshot-controller-app.yaml) so storage is healthy before the
       # kopiur operator (Wave 2).
-      - path: infrastructure/storage/kopia-ui
       - path: infrastructure/storage/rustfs-lifecycle
   template:
     metadata:

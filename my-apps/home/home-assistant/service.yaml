@@ -26,7 +26,3 @@ spec:
       protocol: TCP
       port: 8123
       targetPort: 8123
-    - name: code-server
-      protocol: TCP
-      port: 8080
-      targetPort: 8080

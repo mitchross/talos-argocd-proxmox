@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: wyze-bridge
-        image: ghcr.io/idisposable/docker-wyze-bridge:4.5.0
+        image: ghcr.io/thatdaveguy1/docker-wyze-bridge:latest@sha256:9b4c88f601d41b987beaa12a0c296dfc7dbc3162ff95986c8a61869560b73ce6
         imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:
@@ -34,7 +34,7 @@ spec:
         - containerPort: 8189
           name: webrtc-ice
           protocol: UDP
-        - containerPort: 5080
+        - containerPort: 5000
           name: web-ui
         resources:
           requests:
@@ -45,7 +45,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /
-            port: 5080
+            port: 5000
           initialDelaySeconds: 30
           periodSeconds: 60
           timeoutSeconds: 5
@@ -53,7 +53,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /
-            port: 5080
+            port: 5000
           initialDelaySeconds: 15
           periodSeconds: 10
           timeoutSeconds: 5

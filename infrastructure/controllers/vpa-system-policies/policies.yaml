@@ -136,25 +136,3 @@ spec:
           memory: 2Gi
       - containerName: metrics
         mode: Off
----
-apiVersion: autoscaling.k8s.io/v1
-kind: VerticalPodAutoscaler
-metadata:
-  name: kopia-ui
-  namespace: kopia-ui
-spec:
-  targetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: kopia-ui
-  updatePolicy:
-    updateMode: InPlaceOrRecreate
-    minReplicas: 1
-  resourcePolicy:
-    containerPolicies:
-      - containerName: "*"
-        controlledResources: ["cpu", "memory"]
-        controlledValues: RequestsOnly
-        maxAllowed:
-          cpu: "1"
-          memory: 2Gi

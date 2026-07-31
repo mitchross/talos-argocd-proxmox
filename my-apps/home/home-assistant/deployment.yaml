@@ -145,56 +145,6 @@ spec:
               memory: 512Mi
             limits:
               memory: 4Gi
-        - name: code-server
-          image: "ghcr.io/coder/code-server:4.130.0"
-          imagePullPolicy: IfNotPresent
-          securityContext:
-            runAsNonRoot: false
-            runAsUser: 0
-            readOnlyRootFilesystem: false
-          env:
-            - name: TZ
-              value: "America/New_York"
-          args:
-            - "--auth"
-            - "none"
-            - "--user-data-dir"
-            - "/config/.vscode"
-            - "--extensions-dir"
-            - "/config/.vscode"
-            - "--port"
-            - "8080"
-            - "/config"
-          ports:
-            - containerPort: 8080
-              name: code-server
-              protocol: TCP
-          # Health checks for code-server
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: code-server
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 3
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /healthz
-              port: code-server
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 3
-          resources:
-            requests:
-              cpu: 50m
-              memory: 128Mi
-            limits:
-              memory: 512Mi
-          volumeMounts:
-            - name: config
-              mountPath: /config
       volumes:
         - name: config
           persistentVolumeClaim:
