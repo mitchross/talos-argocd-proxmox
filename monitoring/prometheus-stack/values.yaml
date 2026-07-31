@@ -237,8 +237,10 @@ grafana:
   enabled: true
   deploymentStrategy:
     type: Recreate
-  # Admin credentials
-  adminPassword: "prom-operator"
+  admin:
+    existingSecret: grafana-admin-credentials
+    userKey: admin-user
+    passwordKey: admin-password
   # Persistence
   persistence:
     enabled: true

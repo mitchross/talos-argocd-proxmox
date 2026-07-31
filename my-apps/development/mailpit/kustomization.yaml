@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - vpa.yaml
   - ns.yaml
+  - externalsecret.yaml
   - deployment.yaml
   - service.yaml
   - httproute.yaml

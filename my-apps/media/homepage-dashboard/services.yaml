@@ -175,10 +175,6 @@
         icon: longhorn.png
         href: https://longhorn.vanillax.me
         description: Storage Management
-    - Kopia:
-        icon: kopia.png
-        href: https://kopia.vanillax.me
-        description: Backup Management
     - Container Registry:
         icon: docker.png
         href: https://registry.vanillax.me

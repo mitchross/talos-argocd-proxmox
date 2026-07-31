@@ -20,7 +20,3 @@ spec:
         maxAllowed:
           cpu: "2"
           memory: 4Gi
-      # The editor is ancillary; keep its small Git request outside the
-      # Home Assistant workload ceiling.
-      - containerName: code-server
-        mode: Off

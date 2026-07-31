@@ -69,11 +69,11 @@ data:
             "allowedVersions": "/^v\\d+\\.\\d+\\.\\d+$/"
           },
           {
-            "description": "in-cluster registry images: auto-merge minor+patch within the v\\d+.\\d+.\\d+ stream.",
+            "description": "in-cluster registry images require dashboard approval and manual merge because the registry currently permits anonymous writes.",
             "matchDatasources": ["custom.gitea-vanillax"],
             "matchUpdateTypes": ["patch", "minor"],
-            "automerge": true,
-            "automergeType": "pr"
+            "dependencyDashboardApproval": true,
+            "automerge": false
           },
           {
             "description": "radar-ng open-meteo sync worker embeds the upstream Open-Meteo binary. Do not auto-merge: upstream open-meteo 1.5.3 missed libparquet-glib.so.2400 and broke model sync/forecast serving.",
