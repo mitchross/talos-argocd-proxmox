@@ -53,7 +53,7 @@ apiVersion: temporal.io/v1alpha1
 kind: WorkerDeployment
 metadata:
   name: news-digest                           # → also the Temporal "deployment name"
-  namespace: news-reader-temporal-worker
+  namespace: news-reader
 spec:
   replicas: 1                                 # per versioned Deployment; bump for HPA-less scale-out
   workerOptions:
