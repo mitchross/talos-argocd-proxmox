@@ -9,4 +9,5 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+  - cronjob.yaml
   - vpa.yaml
