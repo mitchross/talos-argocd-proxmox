@@ -14,7 +14,7 @@ labels:
       app.kubernetes.io/name: paperless-db
       app.kubernetes.io/managed-by: argocd
 resources:
-  # - overlays/recovery      # DR-only: restore from Barman v5 → write v6. Re-enable before a nuke.
-  - overlays/initdb          # ← ACTIVE (steady state; recovered 2026-06-28). No-op on existing cluster; writes v6.
+  - overlays/recovery        # ← ACTIVE FOR 2026-07-31 NUKE: pinned v6 backup → clean v8.
+  # - overlays/initdb        # Steady state only; flip back after recovery and data validation.
   - externalsecret.yaml
   - scheduled-backup.yaml

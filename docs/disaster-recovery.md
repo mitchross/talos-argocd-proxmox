@@ -61,6 +61,10 @@ Block the nuke until every box checks — **you restore *from* these**:
 - [ ] RustFS/S3 endpoint reachable; access key registered on the external server; Kopia auth works
       (a past nuke proved an unregistered external credential blocks recovery even with perfect Git state)
 - [ ] Talos secrets / Omni machine configs available off-cluster
+- [ ] CNPG roots render `overlays/recovery`, each recovery source/backupID has
+      been verified against the Barman catalog, and every base `serverName` is
+      a brand-new forward-write lineage. Current prepared matrix:
+      [CNPG cluster-nuke runbook](domains/cnpg/disaster-recovery.md#prepared-recovery-for-the-2026-07-31-rebuild).
 - [ ] **Backups fresh**: each backed-up PVC has a recent `Succeeded` kopiur `Snapshot` you can live with — apps roll back to exactly that snapshot. Spot-check across namespaces:
       `kubectl get snapshot -A` (look at the newest per source) and confirm no `SnapshotSchedule` is wedged: `kubectl get snapshotschedule -A`.
       To top up a stale one on demand: `kubectl kopiur snapshot now --policy <name> -n <ns>` (CLI ≥0.5.1, krew)
@@ -69,9 +73,16 @@ Block the nuke until every box checks — **you restore *from* these**:
 
 ## Rebuild sequence
 
+> **2026-07-31 Application identity migration:** the pending domain-prefix
+> change replaces generated Argo Application objects. Merge that change only
+> **after `omnictl cluster delete` has removed the old Kubernetes API**, then
+> bootstrap from the merged revision. Merging it into the live old cluster can
+> let the deleted Application identities prune the workloads they own.
+
 ```text
   omnictl cluster delete
     -> wait: machines drained, VMs gone in Proxmox
+    -> merge the prepared recovery/Application-name PR (old API is gone)
     -> omnictl apply machine classes + template validate/sync
     -> machines provision from the NEW template
     -> Gateway API CRDs

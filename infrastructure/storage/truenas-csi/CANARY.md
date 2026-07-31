@@ -10,7 +10,7 @@ full-admin key.
 ## Preconditions
 
 ```bash
-kubectl get application truenas-csi -n argocd
+kubectl get application infrastructure-truenas-csi -n argocd
 kubectl get pods -n truenas-csi -o wide
 kubectl get csidriver csi.truenas.io
 kubectl get storageclass truenas-nfs

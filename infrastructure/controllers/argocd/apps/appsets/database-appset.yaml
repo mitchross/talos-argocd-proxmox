@@ -13,8 +13,10 @@ spec:
   # name, while `.path.path` is the complete repository-relative path.
   # Example: `infrastructure/database/cloudnative-pg/immich` produces
   # `.path.basename = immich` and `.path.path` equal to that full path, so the
-  # generated Application is named `immich`, targets namespace `immich`, and
-  # renders manifests from the original directory.
+  # generated Application is named `database-immich`, targets namespace
+  # `immich`, and renders manifests from the original directory. The domain
+  # prefix is operationally important: without it, `temporal` (the database)
+  # is indistinguishable from `my-apps-temporal` (the server) in the Argo UI.
   # `missingkey=error` stops generation when a field is absent instead of
   # silently creating an Application with an empty name, path, or namespace.
   goTemplate: true
@@ -38,7 +40,7 @@ spec:
       - path: infrastructure/database/*/*
   template:
     metadata:
-      name: '{{ .path.basename }}'
+      name: 'database-{{ .path.basename }}'
       annotations:
         argocd.argoproj.io/manifest-generate-paths: '{{ .path.path }}'
         argocd.argoproj.io/sync-wave: "4"

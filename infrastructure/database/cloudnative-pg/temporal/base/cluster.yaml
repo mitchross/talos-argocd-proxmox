@@ -71,5 +71,10 @@ spec:
         #   v8 — 2026-07-29 full-cluster rebuild; fresh initdb reused the v8 name
         #        whose prefix already held WAL → Barman "Expected empty archive",
         #        ContinuousArchiving=False since; WAL PVC filled 2026-07-31 and
-        #        took Temporal down. Clean v9 prefix.
-        serverName: temporal-database-v9
+        #        took Temporal down.
+        #   v9 — clean archiving target opened 2026-07-31, but its first base
+        #        backup preceded schema initialization and contains no workflow
+        #        executions. Abandoned after the audit.
+        #   v10 — clean forward target for the 2026-07-31 recovery from the
+        #         pinned data-bearing v8 backup.
+        serverName: temporal-database-v10

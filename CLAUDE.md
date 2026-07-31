@@ -30,9 +30,9 @@ Manual Bootstrap → ArgoCD → Root App → ApplicationSets → Auto-discovered
 
 **Critical Understanding**: Directory = Application
 ```
-my-apps/ai/llama-cpp/           → ArgoCD Application "llama-cpp"
+my-apps/ai/llama-cpp/           → ArgoCD Application "my-apps-llama-cpp"
 infrastructure/storage/longhorn/ → ArgoCD Application "longhorn"
-monitoring/prometheus-stack/     → ArgoCD Application "prometheus-stack"
+monitoring/prometheus-stack/     → ArgoCD Application "monitoring-prometheus-stack"
 ```
 
 ## Sync Wave Architecture

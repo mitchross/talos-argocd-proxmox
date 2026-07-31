@@ -13,7 +13,10 @@ spec:
   # name, while `.path.path` is the complete repository-relative path.
   # Example: `infrastructure/networking/gateway` produces
   # `.path.basename = gateway` and `.path.path = infrastructure/networking/gateway`,
-  # so Argo creates the `gateway` Application/namespace and renders that folder.
+  # so Argo creates the `infrastructure-gateway` Application, targets namespace
+  # `gateway`, and renders that folder. Generated Application names are always
+  # domain-prefixed so the Argo UI never relies on project/path inspection to
+  # distinguish similarly named components.
   # `missingkey=error` stops generation when a field is absent instead of
   # silently creating an Application with an empty name, path, or namespace.
   goTemplate: true
@@ -62,7 +65,7 @@ spec:
       - path: infrastructure/storage/rustfs-lifecycle
   template:
     metadata:
-      name: '{{ .path.basename }}'
+      name: 'infrastructure-{{ .path.basename }}'
       annotations:
         argocd.argoproj.io/manifest-generate-paths: '{{ .path.path }}'
         argocd.argoproj.io/sync-wave: "4"
