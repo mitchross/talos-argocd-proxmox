@@ -9,4 +9,6 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+  - temporal-workers/temporal-connection.yaml
+  - temporal-workers/temporal-worker-deployment.yaml
   - vpa.yaml
