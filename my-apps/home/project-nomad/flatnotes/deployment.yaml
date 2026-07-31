@@ -23,7 +23,10 @@ spec:
           image: dullage/flatnotes:v5.5.4
           env:
             - name: FLATNOTES_AUTH_TYPE
-              value: "none"
+              value: "password"
+          envFrom:
+            - secretRef:
+                name: project-nomad-secrets
           ports:
             - containerPort: 8080
               name: http

@@ -24,6 +24,9 @@ spec:
           env:
             - name: TZ
               value: America/Detroit
+          envFrom:
+            - secretRef:
+                name: mailpit-secrets
           ports:
             - name: http
               containerPort: 8025

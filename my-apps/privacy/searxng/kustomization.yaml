@@ -6,7 +6,7 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
-  - secret.yaml
+  - externalsecret.yaml
   - redis.yaml
 configMapGenerator:
   - name: searxng-config-settings

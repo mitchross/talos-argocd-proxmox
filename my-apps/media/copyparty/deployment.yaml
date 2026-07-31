@@ -63,5 +63,5 @@ spec:
         persistentVolumeClaim:
           claimName:  copyparty-data
       - name: config
-        configMap: 
+        secret:
           name: copyparty-config

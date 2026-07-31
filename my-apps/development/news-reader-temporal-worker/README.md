@@ -37,7 +37,7 @@ flowchart LR
     REG[registry.vanillax.me/<br/>news-reader-temporal-worker:vX.Y.Z]
 
     subgraph talos[gitea.vanillax.me/vanillax/talos-argocd-proxmox]
-        REN[.github/renovate.json5]
+        REN[self-hosted Renovate]
         TWD[my-apps/development/news-reader-temporal-worker/<br/>temporal-worker-deployment.yaml]
     end
 
@@ -50,18 +50,19 @@ flowchart LR
     CODE --> GHA
     GHA --> REG
     REG --> REN
-    REN -->|auto-PR + merge| TWD
+    REN -->|dashboard approval + reviewed PR| TWD
     TWD --> WC
     WC --> DEP
     DEP -->|long-poll news-digest task queue| T
     WC -->|RegisterWorkerVersion| T
 ```
 
-The hop **Renovate → talos repo PR → ArgoCD sync** is what closes the
-loop. Renovate's `customManagers` block in `.github/renovate.json5` is
-configured to scan `registry.vanillax.me/v2/<image>/tags/list`; when it
-sees a new semver tag it opens a PR that edits the `image:` line in
-`temporal-worker-deployment.yaml` and auto-merges.
+The hop **Renovate → reviewed talos repo PR → ArgoCD sync** is what closes
+the loop. The self-hosted Renovate config scans
+`registry.vanillax.me/v2/<image>/tags/list`; when it sees a new semver tag,
+the dependency must first be approved on the self-hosted Dependency Dashboard.
+Renovate then opens a PR that edits the `image:` line in
+`temporal-worker-deployment.yaml`; merge remains manual.
 
 ---
 
