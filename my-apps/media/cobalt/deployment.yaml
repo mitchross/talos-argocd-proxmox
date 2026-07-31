@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cobalt
+  namespace: cobalt
+  labels:
+    app.kubernetes.io/name: cobalt
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cobalt
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cobalt
+    spec:
+      securityContext:
+        # Image declares `USER node` by name; kubelet cannot verify a non-numeric
+        # user, so runAsNonRoot needs the matching numeric uid or the pod won't start.
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: cobalt
+        image: ghcr.io/imputnet/cobalt:11@sha256:63186dd68afd57ce3bb1f62cc4c139f5fa95b9c3e87a3cf5c6e4c7a570523f62
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: API_URL
+          value: "https://cobalt.vanillax.me/"
+        ports:
+        - name: http
+          containerPort: 9000
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: [ "ALL" ]
+        volumeMounts:
+        # readOnlyRootFilesystem leaves node/ffmpeg with nowhere to spill scratch data.
+        - name: tmp
+          mountPath: /tmp
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            memory: 1Gi
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: tmp
+        emptyDir: {}
