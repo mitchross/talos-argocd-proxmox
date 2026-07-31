@@ -32,7 +32,7 @@ apiVersion: temporal.io/v1alpha1
 kind: Connection
 metadata:
   name: cluster-temporal
-  namespace: news-reader-temporal-worker
+  namespace: news-reader
 spec:
   hostPort: "temporal-frontend.temporal.svc.cluster.local:7233"
   # No mutualTLSSecretRef — our self-hosted frontend has no auth configured.

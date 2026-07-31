@@ -26,8 +26,8 @@ resources:
   # WorkerDeployment couldn't co-locate because the Temporal WorkerController
   # strips podAffinity from its pod template. Schedules are seeded one-time
   # via `python -m temporal.schedules.seed` after rollout.
-  - configmap-temporal-config.yaml
-  - temporal-connection.yaml
-  - temporal-worker-deployment.yaml
+  - temporal-workers/configmap-temporal-config.yaml
+  - temporal-workers/temporal-connection.yaml
+  - temporal-workers/temporal-worker-deployment.yaml
 
 namespace: radar-ng
