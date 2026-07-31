@@ -64,4 +64,4 @@ spec:
           claimName:  copyparty-data
       - name: config
         secret:
-          name: copyparty-config
+          secretName: copyparty-config
