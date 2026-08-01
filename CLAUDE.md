@@ -57,7 +57,9 @@ Redis remain automated; Immich, Paperless, and Temporal have
 `automated.enabled: false`, as do their three consumer Applications. Advance
 that restore transaction with `scripts/bootstrap-cnpg-recovery.sh --execute`.
 Do not turn their auto-sync/self-heal back on: the script owns refresh → DB
-sync → lineage/data/archive/backup proof → consumer sync.
+sync → lineage/data/archive/backup proof → consumer sync. This is a
+repository-specific recovery safety boundary, not an upstream CNPG
+prescription for Argo CD.
 
 **AppProjects** are intentionally permissive for this single-operator homelab.
 They provide UI grouping and policy intent, not multi-tenant security. Tighten

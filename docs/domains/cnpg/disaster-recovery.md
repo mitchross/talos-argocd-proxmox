@@ -332,16 +332,35 @@ default mode is read-only preflight; mutation requires the explicit flag:
 ./scripts/bootstrap-cnpg-recovery.sh --execute
 ```
 
-This boundary follows the current controller contracts rather than relying on
-wave timing. [Argo CD 3.4 treats `automated.enabled: false` as an explicit
+Neither the Argo CD nor CloudNativePG project publishes a joint recovery guide
+that prescribes this manual boundary. There is, however, direct operational
+precedent: the
+[Akamai App Platform CNPG restore runbook](https://techdocs.akamai.com/app-platform/docs/restore-platform-databases)
+halts Argo CD auto-sync, stops the database consumer, replaces the CNPG
+`Cluster`, and then re-enables sync. This repository's policy applies the same
+control boundary, extended with the acceptance evidence required after the
+July 29 empty-`initdb` incident.
+
+[Argo CD 3.4 treats `automated.enabled: false` as an explicit
 pause](https://argo-cd.readthedocs.io/en/release-3.4/user-guide/auto_sync/),
 while disabling only self-heal does not prevent a Git-triggered auto-sync.
-ApplicationSet RollingSync is not used here: it is still Beta and gates only on
-Application health, which cannot prove PostgreSQL lineage or application data.
+Argo CD does have a direct CNPG integration: its
+[built-in CNPG health check](https://github.com/argoproj/argo-cd/blob/release-3.4/resource_customizations/postgresql.cnpg.io/Cluster/health.lua)
+maps `Setting up primary` to `Progressing` and `Cluster in healthy state` to
+`Healthy`, and it ships
+[CNPG resource actions](https://argo-cd.readthedocs.io/en/release-3.4/operator-manual/resource_actions_builtin/).
+That integration can prove controller-level readiness, but not the restored
+PostgreSQL system identifier, application rows, or a completed backup in the
+new lineage. ApplicationSet RollingSync could order database and consumer
+Applications using that health result, but it remains Beta and cannot perform
+those data-level acceptance checks. The script retains the manual boundary so
+the consumer is released only after all of those checks pass.
+
 [CloudNativePG recovery bootstraps a new Cluster rather than restoring
 in-place](https://cloudnative-pg.io/documentation/current/recovery/); its
 guidance also supports exact `backupID` selection and distinct recovery/read
-and forward-write `serverName` values.
+and forward-write `serverName` values. Those are CNPG recovery requirements,
+not a CNPG recommendation about Argo CD sync policy.
 
 ### Prepared recovery for the 2026-07-31 rebuild
 
