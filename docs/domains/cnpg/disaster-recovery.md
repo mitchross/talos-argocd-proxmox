@@ -333,13 +333,10 @@ default mode is read-only preflight; mutation requires the explicit flag:
 ```
 
 Neither the Argo CD nor CloudNativePG project publishes a joint recovery guide
-that prescribes this manual boundary. There is, however, direct operational
-precedent: the
-[Akamai App Platform CNPG restore runbook](https://techdocs.akamai.com/app-platform/docs/restore-platform-databases)
-halts Argo CD auto-sync, stops the database consumer, replaces the CNPG
-`Cluster`, and then re-enables sync. This repository's policy applies the same
-control boundary, extended with the acceptance evidence required after the
-July 29 empty-`initdb` incident.
+that prescribes this manual boundary. It is a repository-specific safety
+decision based on the two controllers' documented behavior and the acceptance
+evidence required after the July 29 empty-`initdb` incident; it must not be
+presented as an upstream best practice.
 
 [Argo CD 3.4 treats `automated.enabled: false` as an explicit
 pause](https://argo-cd.readthedocs.io/en/release-3.4/user-guide/auto_sync/),
