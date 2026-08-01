@@ -53,8 +53,11 @@ while IFS= read -r appset; do
     appset_path=$(echo "$appset_path" | sed 's/.*path: //' | tr -d "'\"" | xargs)
     [ -z "$appset_path" ] && continue
 
-    # The generated Application name is {{path.basename}}
-    generated_name=$(basename "$appset_path")
+    # Render the AppSet's metadata.name template for this generator path.
+    # Every generated Application must carry a domain prefix; assuming a bare
+    # basename here allowed ambiguous identities such as database `temporal`.
+    name_template=$(grep "name:.*path.basename" "$appset" | head -1 | sed 's/.*name: *//' | tr -d "'\"" | xargs || true)
+    generated_name=$(printf '%s\n' "$name_template" | sed "s/{{ \\.path\\.basename }}/$(basename "$appset_path")/")
 
     # Check if this name conflicts with a standalone Application
     for i in "${!standalone_names[@]}"; do
@@ -261,6 +264,59 @@ while IFS= read -r comp_kust; do
     ERRORS=$((ERRORS + 1))
   fi
 done < <(grep -rl "^kind: Component$" my-apps --include=kustomization.yaml 2>/dev/null | sort)
+echo ""
+
+# ─────────────────────────────────────────────
+# 9. Enforce domain-prefixed generated identities
+# ─────────────────────────────────────────────
+echo "--- Check 9: ApplicationSet name prefixes ---"
+
+while IFS='|' read -r appset_file expected_template; do
+  actual_template=$(grep "name:.*path.basename" "$appset_file" | head -1 | sed 's/.*name: *//' | tr -d "'\"" | xargs || true)
+  if [ "$actual_template" != "$expected_template" ]; then
+    echo "  ERROR: $appset_file generates '$actual_template'; expected '$expected_template'"
+    ERRORS=$((ERRORS + 1))
+  else
+    echo "  OK: $actual_template"
+  fi
+done <<'EOF'
+infrastructure/controllers/argocd/apps/appsets/database-appset.yaml|database-{{ .path.basename }}
+infrastructure/controllers/argocd/apps/appsets/infrastructure-appset.yaml|infrastructure-{{ .path.basename }}
+infrastructure/controllers/argocd/apps/appsets/monitoring-appset.yaml|monitoring-{{ .path.basename }}
+infrastructure/controllers/argocd/apps/appsets/my-apps-appset.yaml|my-apps-{{ .path.basename }}
+EOF
+echo ""
+
+# ─────────────────────────────────────────────
+# 10. Preserve the CNPG recovery transaction boundary
+# ─────────────────────────────────────────────
+echo "--- Check 10: CNPG manual recovery gates ---"
+
+database_appset="$APPS_DIR/appsets/database-appset.yaml"
+my_apps_appset="$APPS_DIR/appsets/my-apps-appset.yaml"
+
+if ! grep -q 'eq .path.basename "immich".*eq .path.basename "paperless".*eq .path.basename "temporal"' "$database_appset" \
+   || ! grep -A5 'eq .path.basename "immich".*eq .path.basename "paperless".*eq .path.basename "temporal"' "$database_appset" | grep -q 'enabled: false'; then
+  echo "  ERROR: database AppSet must explicitly disable automated sync for immich, paperless, and temporal"
+  ERRORS=$((ERRORS + 1))
+else
+  echo "  OK: three CNPG database Applications are manual"
+fi
+
+if ! grep -q 'eq .path.basename "immich".*eq .path.basename "paperless-ngx".*eq .path.basename "temporal"' "$my_apps_appset" \
+   || ! grep -A5 'eq .path.basename "immich".*eq .path.basename "paperless-ngx".*eq .path.basename "temporal"' "$my_apps_appset" | grep -q 'enabled: false'; then
+  echo "  ERROR: my-apps AppSet must explicitly disable automated sync for the three CNPG consumers"
+  ERRORS=$((ERRORS + 1))
+else
+  echo "  OK: three CNPG consumer Applications are manual"
+fi
+
+if [ ! -x scripts/bootstrap-cnpg-recovery.sh ]; then
+  echo "  ERROR: scripts/bootstrap-cnpg-recovery.sh is missing or not executable"
+  ERRORS=$((ERRORS + 1))
+else
+  echo "  OK: guarded CNPG recovery script is executable"
+fi
 echo ""
 
 # ─────────────────────────────────────────────

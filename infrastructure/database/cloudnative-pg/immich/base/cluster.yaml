@@ -75,5 +75,9 @@ spec:
         #        reused v4 (whose prefix still held old WAL) → Barman "Expected
         #        empty archive", ContinuousArchiving stuck False. Clean v5 prefix.
         # DO NOT change this value without bumping lineage in lockstep.
-        #   v6 — 2026-07-29 rebuild reused non-empty prefix → archiving stuck False.
-        serverName: immich-database-v7
+        #   v6 — last data-bearing lineage before the 2026-07-29 rebuild.
+        #   v7 — clean archiving target opened 2026-07-31, but the live initdb
+        #        contained zero assets/users. Abandoned after the audit.
+        #   v8 — clean forward target for the 2026-07-31 recovery from the
+        #        pinned v6 backup.
+        serverName: immich-database-v8

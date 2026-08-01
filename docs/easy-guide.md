@@ -51,7 +51,8 @@ the Applications:
 ```text
 my-apps/ai/open-webui/           →  ArgoCD Application "my-apps-open-webui"
 infrastructure/storage/longhorn/ →  ArgoCD Application "longhorn"
-monitoring/prometheus-stack/     →  ArgoCD Application "prometheus-stack"
+infrastructure/networking/gateway/ → ArgoCD Application "infrastructure-gateway"
+monitoring/prometheus-stack/     →  ArgoCD Application "monitoring-prometheus-stack"
 ```
 
 Deploying a new app = `mkdir`, add a `kustomization.yaml`, `git push`. That's
@@ -499,11 +500,13 @@ Survives (off-cluster):
 The rebuild, end to end:
 
 1. `omnictl` provisions fresh Talos VMs on Proxmox (machine classes + template).
-2. `./scripts/bootstrap-argocd.sh` — the **only** storage-relevant manual step.
+2. `./scripts/bootstrap-argocd.sh` installs Argo and starts the dependency waves.
 3. Waves 0–3 walk: network → secrets → storage → kopiur operator → repo config.
-4. Waves 4–6: databases restore via Barman; every app PVC holds `Pending`
-   while its populator hydrates it; apps start on restored data, in parallel.
-5. You drink the coffee.
+4. `./scripts/bootstrap-cnpg-recovery.sh --execute` advances each CNPG restore,
+   proves its lineage/data/backup, then syncs its consumer.
+5. Other app PVCs hold `Pending` while kopiur hydrates them; apps start on
+   restored data in parallel.
+6. You drink the coffee.
 
 A [restore canary](disaster-recovery.md#the-restore-canary) takes daily backups
 and runs weekly quick verification. Its isolated test PVC is where an operator

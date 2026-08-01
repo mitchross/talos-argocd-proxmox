@@ -96,8 +96,8 @@ database's backups live — for example `gitea-database-v10`. Each one is a
 **lineage**.
 
 - `base/cluster.yaml` sets the **CURRENT WRITE** serverName (where new backups land).
-- When you restore, you **read FROM** the prior lineage and **write forward TO a
-  brand-new bumped lineage** (`vN` → `vN+1`).
+- When you restore, you **read FROM** a verified data-bearing lineage and write
+  forward TO a brand-new higher lineage. Skip empty/polluted lineage numbers.
 
 !!! info
     Why bump the number on every restore? Postgres requires a **clean (empty) WAL
@@ -108,8 +108,9 @@ database's backups live — for example `gitea-database-v10`. Each one is a
     folder to write into.
 
 The current write target for each database is `spec.plugins[0].parameters.serverName`
-in that DB's `base/cluster.yaml`; the recovery overlay's `externalClusters` source
-`serverName` is always the prior lineage.
+in that DB's `base/cluster.yaml`; the recovery overlay's `externalClusters`
+source `serverName` is the verified data-bearing lineage and may deliberately
+skip newer empty lineages.
 
 ---
 
@@ -121,7 +122,7 @@ This single line is the entire mode switch.
 | Overlay | When | What it does |
 |---------|------|--------------|
 | **`overlays/initdb`** | NORMAL / steady state | `bootstrap.initdb` creates a fresh **empty** database the first time the cluster is created. On an already-running cluster it's a **no-op** (CNPG only reads `spec.bootstrap` at creation time). |
-| **`overlays/recovery`** | DISASTER RECOVERY only | `bootstrap.recovery` restores from the prior lineage (via `externalClusters`), and the base writes forward to the new lineage. |
+| **`overlays/recovery`** | DISASTER RECOVERY only | `bootstrap.recovery` restores a verified backup from a data-bearing lineage, and the base writes forward to a new clean lineage. |
 
 ### Diagram 2 — the one feature flag
 
@@ -135,8 +136,8 @@ kustomization.yaml  (pick ONE overlay)
    │
    └─ only during a restore ─▶ overlays/recovery  — DISASTER RECOVERY
                                 bootstrap.recovery
-                                → restore from prior lineage v(N-1)
-                                → write forward to vN
+                                → restore pinned backup from data lineage vM
+                                → write forward to clean lineage vN
 ```
 
 !!! tip
@@ -153,7 +154,7 @@ auto-discovers** anything matching `infrastructure/database/*/*`.
 ### Diagram 4 — start a new DB
 
 ```text
-Copy an existing <db>/ folder (e.g. gitea/)
+Copy an existing <db>/ folder (e.g. paperless/)
         │
         ▼
 Rename + edit names, owner, image, SQL
@@ -176,7 +177,7 @@ CNPG creates an empty DB, backups start
 
 ### Steps
 
-1. **Copy** an existing database folder, e.g. `gitea/` → `<newdb>/`.
+1. **Copy** an existing database folder, e.g. `paperless/` → `<newdb>/`.
 2. **Edit** names, owner, image, `postInitApplicationSQL`, and resource sizes in
    `base/cluster.yaml` and `overlays/initdb/bootstrap-patch.yaml`.
 3. **Set the serverName** in `base/cluster.yaml` to `<newdb>-database-v1`.
@@ -195,9 +196,10 @@ CNPG creates an empty DB, backups start
 Do this only for a real DR event: the database is gone, corrupt, or empty
 after a cluster nuke, and you want its data back from S3.
 
-The big idea: **read FROM the prior lineage `v(N-1)`, write forward to a new
-lineage `vN`**, by flipping the feature flag to `recovery` and forcing CNPG to
-re-create the cluster from scratch.
+The big idea: **read a verified backup FROM data-bearing lineage `vM`, write
+forward to a new clean lineage `vN`**, by flipping the feature flag to
+`recovery` and forcing CNPG to re-create the cluster from scratch. `vM` need
+not be `v(N-1)` when newer lineages are empty or polluted.
 
 !!! warning
     **CNPG only reads `spec.bootstrap` when a cluster is first created.** Flipping
@@ -211,7 +213,7 @@ re-create the cluster from scratch.
 1. Bump base/cluster.yaml serverName → vN (new lineage)
         │
         ▼
-2. Set overlays/recovery source serverName → v(N-1) (prior, good data)
+2. Set recovery source + backupID → verified data-bearing backup
         │
         ▼
 3. Flip kustomization.yaml → overlays/recovery
@@ -237,8 +239,10 @@ re-create the cluster from scratch.
 
 1. **Bump the write target.** In `base/cluster.yaml`, set
    `spec.plugins[0].parameters.serverName` to the next lineage `vN`.
-2. **Point recovery at the good data.** In `overlays/recovery/bootstrap-patch.yaml`,
-   set the `externalClusters` source `serverName` to the now-prior `v(N-1)`.
+2. **Point recovery at verified data.** In `overlays/recovery/bootstrap-patch.yaml`,
+   set the `externalClusters` source `serverName` to the data-bearing lineage.
+   Pin `recoveryTarget.backupID` if that lineage contains a newer empty backup
+   or backups from multiple PostgreSQL system IDs.
 3. **Flip the flag.** In the root `kustomization.yaml`, activate `overlays/recovery`.
 4. **Commit + push.**
 5. **Delete the live Cluster and PVCs** (REQUIRED):
@@ -246,7 +250,7 @@ re-create the cluster from scratch.
    kubectl -n cloudnative-pg delete cluster <db>-database
    kubectl -n cloudnative-pg delete pvc -l cnpg.io/cluster=<db>-database
    ```
-6. **Sync the ArgoCD app** so it re-creates the cluster from the recovery overlay.
+6. **Sync `database-<db>`** so ArgoCD re-creates the cluster from the recovery overlay.
 7. **Watch the recovery.** A `<db>-database-1-full-recovery-*` pod appears and
    replays the base backup + WAL. Tail its logs; look for
    `consistent recovery state reached`.
@@ -278,12 +282,18 @@ re-create the cluster from scratch.
     entirely** to restore to the latest available WAL.
 
 !!! warning
-    **Rolling-restart the consumer apps after a rebuild.** Apps connected to the
-    old database won't re-run their migrations against the freshly-restored one
-    until they reconnect. Restart them:
+    **Reconcile consumer apps after a database-only rebuild.** Most apps need a
+    rollout restart. Temporal's schema migration is an Argo Sync hook, so sync
+    `my-apps-temporal`; restarting its Deployments is insufficient:
     ```bash
     kubectl -n <app-namespace> rollout restart deployment/<app>
+    argocd app sync my-apps-temporal
     ```
+
+!!! warning
+    **"Latest successful backup" can still mean "empty."** Reusing a
+    serverName can put backups from multiple PostgreSQL system IDs in one
+    catalog. Validate application row counts and pin the intended `backupID`.
 
 !!! warning
     **CNPG is a SEPARATE backup system from kopiur.** kopiur = file-level PVC

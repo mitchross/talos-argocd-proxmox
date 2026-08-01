@@ -40,9 +40,9 @@ this repo.
 **The core idea: a directory *is* an application.** Add a directory with a `kustomization.yaml` under `my-apps/`, `infrastructure/`, or `monitoring/`, push to Git, and an ApplicationSet discovers it and creates the ArgoCD `Application` automatically. No manual `Application` resources.
 
 ```
-my-apps/ai/comfyui/              → ArgoCD Application "comfyui"
+my-apps/ai/comfyui/              → ArgoCD Application "my-apps-comfyui"
 infrastructure/storage/longhorn/ → ArgoCD Application "longhorn"
-monitoring/prometheus-stack/     → ArgoCD Application "prometheus-stack"
+monitoring/prometheus-stack/     → ArgoCD Application "monitoring-prometheus-stack"
 ```
 
 ### Sync Wave Architecture
@@ -55,7 +55,7 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 | **1** | Core controllers | cert-manager, Longhorn, VolumeSnapshot Controller |
 | **2** | kopiur operator | Kopia-native backup operator (CRDs + controller + webhook); serves the volume populator for restore-before-bind |
 | **3** | CNPG Barman Plugin + kopiur config | DB backup plugin before DB clusters; kopiur `ClusterRepository` + credential fanout + `VolumeSnapshotClass` |
-| **4** | Infrastructure AppSet + custom entrypoints + Database AppSet | cert-manager extras, GPU Operators, Gateway, KEDA, VPA, Temporal Worker Controller; CNPG instances (`selfHeal: false` for DR) |
+| **4** | Infrastructure AppSet + custom entrypoints + Database AppSet | cert-manager extras, GPU Operators, Gateway, KEDA, VPA, Temporal Worker Controller; DB support auto-syncs, CNPG instances are manual DR gates |
 | **5** | OTEL Operator + Monitoring AppSet | OpenTelemetry Operator, Prometheus, Grafana, Loki |
 | **6** | Observability overlays + My-Apps AppSet | KEDA/OTEL ServiceMonitors (after monitoring CRDs exist) and `my-apps/*/*` user apps |
 
@@ -263,6 +263,19 @@ kubectl create secret generic 1passwordconnect \
 The script pre-flights Cilium, installs ArgoCD via Helm, seeds the `argocd-redis` auth secret (so a fresh cluster doesn't wedge), and applies `root.yaml` to hand control to GitOps self-management.
 
 ### 8. Verify
+
+The three prepared CNPG restores and their consumers intentionally do not
+auto-sync. Once Waves 0–4 have installed the CNPG operator, Barman plugin,
+secrets, and storage, validate the plan and execute the guarded restore:
+
+```bash
+./scripts/bootstrap-cnpg-recovery.sh
+./scripts/bootstrap-cnpg-recovery.sh --execute
+```
+
+Execute mode refuses the wrong live bootstrap lineage and requires the audited
+PostgreSQL system ID, a non-empty application table, WAL archiving, and a
+successful event-specific base backup before syncing each consumer.
 
 ```bash
 omnictl cluster template status \
