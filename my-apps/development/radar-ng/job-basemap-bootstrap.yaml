@@ -68,6 +68,15 @@ spec:
         job: basemap-bootstrap
     spec:
       restartPolicy: OnFailure
+      # The running basemap Deployment mounts this same Longhorn RWO PVC.
+      # Keep the hook on that pod's node or a second worker cannot attach it.
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: basemap
+              topologyKey: kubernetes.io/hostname
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
