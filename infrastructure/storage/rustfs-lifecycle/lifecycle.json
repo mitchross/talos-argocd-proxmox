@@ -41,6 +41,24 @@
       "Status": "Enabled",
       "Filter": { "Prefix": "cnpg/gitea/gitea-database-v10/" },
       "Expiration": { "Days": 60 }
+    },
+    {
+      "ID": "expire-abandoned-immich-v7-2026-07-31",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "cnpg/immich/immich-database-v7/" },
+      "Expiration": { "Days": 60 }
+    },
+    {
+      "ID": "expire-abandoned-paperless-v7-2026-07-31",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "cnpg/paperless/paperless-database-v7/" },
+      "Expiration": { "Days": 60 }
+    },
+    {
+      "ID": "expire-abandoned-temporal-v9-2026-07-31",
+      "Status": "Enabled",
+      "Filter": { "Prefix": "cnpg/temporal/temporal-database-v9/" },
+      "Expiration": { "Days": 60 }
     }
   ]
 }

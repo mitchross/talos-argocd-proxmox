@@ -10,12 +10,12 @@ spec:
       owner: paperless
       secret:
         name: paperless-app-secret
-      # No recoveryTarget → restore to latest-WAL available on S3.
-      # Our PITR target of pre-nuke (2026-04-16) is unreachable because
-      # paperless's WAL archiving broke on 2026-03-26 (last available WAL).
-      # We'll get paperless data as of 2026-03-26 instead of pre-nuke.
-      # TODO: investigate WHY WAL archiving stopped — check ScheduledBackup
-      # + CNPG operator logs around that date post-restore.
+      recoveryTarget:
+        # CRITICAL: v6 contains a successful 2026-07-30 backup of the empty
+        # post-rebuild database (different PostgreSQL system ID). Without this
+        # pin, "latest" restores that empty backup instead of the last
+        # data-bearing backup from before the 2026-07-29 nuke.
+        backupID: "20260728T050000"
   # Plugin-shape externalClusters (replaces the deprecated in-tree
   # barmanObjectStore field on externalClusters[]; removed in CNPG 1.30.0).
   # Reuses the prod ObjectStore CR (base/objectstore.yaml) — the only thing
@@ -31,8 +31,7 @@ spec:
           # endpoint). Only serverName changes between live writes and
           # recovery reads.
           barmanObjectName: paperless-objectstore
-          # Previous lineage to recover FROM. DO NOT change without
-          # bumping recovery target lineage. See cnpg-plugin-migration.md
-          # §9.1. N-1 of base (base now writes v6). RustFS multipart bug was
-          # FIXED 2026-06-19 (1.0.0-beta.8) — these base backups ARE restorable.
+          # Data-bearing recovery lineage. Base writes to fresh v8; v7 is an
+          # empty post-rebuild lineage. backupID above avoids the newer empty
+          # base backup that polluted this otherwise valid v6 catalog.
           serverName: paperless-database-v6

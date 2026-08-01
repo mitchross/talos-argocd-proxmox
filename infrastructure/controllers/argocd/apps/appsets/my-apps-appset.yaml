@@ -43,6 +43,26 @@ spec:
       # nothing). Guarded by validate-argocd-apps.sh Check 8.
       - path: my-apps/common/*
         exclude: true
+  # Consumers of the manually reconciled CNPG clusters are manual too. This
+  # prevents their migrations/schema hooks from racing a fresh Barman restore.
+  # The recovery script syncs each consumer only after its database lineage and
+  # application rows have been verified. Every other workload remains fully
+  # automated and self-healing.
+  templatePatch: |
+    spec:
+      syncPolicy:
+        automated:
+          {{ if or (eq .path.basename "immich") (eq .path.basename "paperless-ngx") (eq .path.basename "temporal") }}
+          enabled: false
+          prune: false
+          selfHeal: false
+          allowEmpty: false
+          {{ else }}
+          enabled: true
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+          {{ end }}
   template:
     metadata:
       name: 'my-apps-{{ .path.basename }}'
@@ -73,10 +93,6 @@ spec:
         server: https://kubernetes.default.svc
         namespace: '{{ .path.basename }}'
       syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
-          allowEmpty: false
         syncOptions:
         - CreateNamespace=true
         - ServerSideApply=true

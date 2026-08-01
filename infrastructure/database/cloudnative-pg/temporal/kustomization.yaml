@@ -14,7 +14,7 @@ labels:
       app.kubernetes.io/name: temporal-db
       app.kubernetes.io/managed-by: argocd
 resources:
-  # - overlays/recovery      # DR-only: restore from Barman v7 → write v8. Re-enable before a nuke.
-  - overlays/initdb          # ← ACTIVE (steady state; recovered 2026-06-28). bootstrap.initdb is a no-op on existing Cluster; writes v8.
+  - overlays/recovery        # ← ACTIVE FOR 2026-07-31 NUKE: pinned v8 backup → clean v10.
+  # - overlays/initdb        # Steady state only; flip back after recovery, schema hook, and data validation.
   - externalsecret.yaml
   - scheduled-backup.yaml

@@ -34,7 +34,9 @@ path: Barman Cloud → RustFS S3. The two never touch each other. See
 ### How recovery works (the 30-second version)
 
 - Normal operation → `Cluster` has `bootstrap.initdb`, Postgres comes up empty, Barman writes WAL + scheduled base backups to S3.
-- DR event → flip the feature flag to `bootstrap.recovery` + specify `externalClusters` pointing at the prior backup lineage; CNPG runs `barman-cloud-restore` on first boot to pull the base backup + replay WAL.
+- DR event → flip the feature flag to `bootstrap.recovery` + specify
+  `externalClusters` pointing at a verified data-bearing lineage; CNPG runs
+  `barman-cloud-restore` on first boot to pull the selected base backup + replay WAL.
 
 ### Why "lineage" (`-v1`, `-v2`, ...)
 
@@ -55,9 +57,9 @@ s3://postgres-backups/cnpg/<app>/
     └── wals/
 ```
 
-During DR, you restore FROM one lineage (e.g., v2) and point new backups AT the
-next (v3). The prior lineage stays untouched as a PITR source for future DR
-events.
+During DR, you restore FROM a verified lineage (e.g., v2) and point new backups
+AT a brand-new higher lineage (e.g., v3). Empty or polluted lineages may require
+skipping a number. The recovery lineage stays untouched as a PITR source.
 
 ## Repo layout per DB
 
@@ -117,9 +119,9 @@ secret, and any `postInitApplicationSQL` (extensions, grants, initial data).
 ### `overlays/recovery/bootstrap-patch.yaml`
 
 Adds `spec.bootstrap.recovery` pointing at a named `externalClusters` entry,
-which in turn points at the **prior lineage** on S3. Optionally includes
-`recoveryTarget.targetTime` for point-in-time recovery. **Do not set a
-targetTime beyond the last archived WAL** — Postgres will FATAL with
+which in turn points at the **verified data-bearing lineage** on S3. It can
+include `recoveryTarget.backupID` for deterministic base-backup selection or
+`targetTime` for point-in-time recovery. **Do not set a targetTime beyond the last archived WAL** — Postgres will FATAL with
 "recovery ended before configured recovery target was reached."
 
 ---
@@ -168,7 +170,7 @@ spec:
         barmanObjectName: <db>-objectstore     # the prod ObjectStore CR (base/objectstore.yaml)
         serverName: <db>-database-vN           # N = new lineage, e.g. v2 → v3
 
-# overlays/recovery/bootstrap-patch.yaml — point externalClusters at the PRIOR lineage
+# overlays/recovery/bootstrap-patch.yaml — point at the verified data lineage
 spec:
   bootstrap:
     recovery:
@@ -177,9 +179,10 @@ spec:
       owner: <owner>
       secret:
         name: <db>-app-secret
-      # Optional PITR — ONLY if you know WAL exists at that timestamp
+      # Pin this whenever a serverName contains backups from more than one
+      # PostgreSQL system ID or a newer backup is known to be empty.
       # recoveryTarget:
-      #   targetTime: "2026-04-17T23:59:59Z"
+      #   backupID: "YYYYMMDDTHHMMSS"
   externalClusters:
     - name: <db>-recovery-source
       plugin:
@@ -190,7 +193,7 @@ spec:
           # on the ObjectStore, NOT inline here). Only serverName differs: it
           # selects the PRIOR lineage subtree to restore from.
           barmanObjectName: <db>-objectstore
-          serverName: <db>-database-v(N-1)   # N-1 = the lineage with good data
+          serverName: <db>-database-vM       # M = the verified lineage with good data
 ```
 
 > The `serverName` here selects the prior backup lineage on the same RustFS
@@ -198,6 +201,11 @@ spec:
 > older lineages age out of RustFS lifecycle retention and become
 > unrestorable. All DBs use the `plugin:` shape (no in-tree
 > `externalClusters[].barmanObjectStore`).
+>
+> A `DONE` backup is not proof that it contains the wanted data. A rebuilt
+> empty PostgreSQL cluster can successfully write a newer base backup into a
+> reused serverName. Compare PostgreSQL system IDs and application row counts;
+> pin the last data-bearing `backupID` when the catalog is mixed.
 
 **2. Flip the feature flag.**
 
@@ -225,12 +233,12 @@ empty database with `bootstrap.initdb` and `serverName: v(N-1)` despite
 git being correct.
 
 ```bash
-kubectl annotate application <db> -n argocd \
+kubectl annotate application database-<db> -n argocd \
   argocd.argoproj.io/refresh=hard --overwrite
 
 # Verify ArgoCD now sees the Cluster as OutOfSync (proves cache picked
 # up the new bootstrap.recovery + new serverName)
-kubectl get application <db> -n argocd \
+kubectl get application database-<db> -n argocd \
   -o jsonpath='{.status.resources[?(@.kind=="Cluster")].status}{"\n"}'
 # Expect: OutOfSync
 ```
@@ -247,7 +255,7 @@ kubectl -n cloudnative-pg get pvc -l cnpg.io/cluster=<db>-database
 **6. Trigger ArgoCD sync.**
 
 ```bash
-kubectl -n argocd patch application <db> --type merge \
+kubectl -n argocd patch application database-<db> --type merge \
   -p '{"operation":{"sync":{"revision":"HEAD"}}}'
 ```
 
@@ -274,41 +282,121 @@ kubectl exec -n cloudnative-pg <db>-database-1 -c postgres -- \
   psql -U postgres -d <db> -c "\dt"   # should show restored tables
 ```
 
-**9. Restart the consumer app** so it picks up the fresh DB connection.
+**9. Reconcile the consumer app** so it picks up the fresh DB connection.
 
 ```bash
 kubectl -n <db> rollout restart deployment/<app>
 ```
 
-**10. (Optional) Flip back to initdb.** Once the Cluster exists and is running
-with the recovered data, `spec.bootstrap` is a no-op — CNPG ignores it on
-existing Clusters. You can leave the overlay on `recovery`, or flip the root
-`kustomization.yaml` back to `overlays/initdb` for a tidier "steady state" git
-declaration. Both are valid.
+Temporal is different: schema creation is an Argo Sync hook, not server startup
+logic. After a **database-only** recreation, explicitly sync
+`my-apps-temporal`; a Deployment restart does not execute the hook:
+
+```bash
+argocd app sync my-apps-temporal
+```
+
+**10. Flip back to initdb.** Once the Cluster is running with verified data,
+`spec.bootstrap` is a no-op on that existing Cluster. Restore
+`overlays/initdb` as the steady-state declaration so an accidental future PVC
+loss cannot silently replay this now-stale recovery plan.
 
 ---
 
 ## Runbook: cluster nuke rebuild
 
-Entire K8s cluster was rebuilt, ArgoCD bootstrapping fresh, CNPG DBs need to
-come back:
+Entire K8s cluster is being rebuilt, ArgoCD is bootstrapping fresh, and CNPG
+databases need to come back:
 
 - If Barman S3 still has usable backups → set root `kustomization.yaml` to
   `overlays/recovery` **before ArgoCD first-syncs** the DB. The AppSet will
   create each Cluster with `bootstrap.recovery` on initial creation — no
   delete/recreate dance needed.
-- If Barman S3 is empty or unreliable → use `overlays/initdb` and rebuild
-  the DB fresh. Apps will re-migrate their schemas on first connect.
+- If Barman S3 is empty or unreliable → use `overlays/initdb` only when an
+  intentionally empty database is acceptable. Do not assume an app will
+  recreate data merely because it can recreate tables.
 
-**Post-bootstrap app rollout.** After DBs come up, the apps that talk to
-them may still be pointing at stale connections and need a rolling restart:
+Before deleting the cluster, verify all four parts for every database:
+
+1. The recovery source serverName contains the intended data-bearing backup.
+2. `recoveryTarget.backupID` selects it when the catalog contains a newer empty
+   backup or multiple PostgreSQL system IDs.
+3. The base manifest writes to a brand-new serverName with an empty S3 prefix.
+4. The root kustomization already renders `bootstrap.recovery`.
+
+After Argo bootstrap installs Waves 0–4, run the prepared transaction. Its
+default mode is read-only preflight; mutation requires the explicit flag:
 
 ```bash
-for ns in gitea immich paperless-ngx temporal; do
-  kubectl -n "$ns" get deploy --no-headers | awk '{print $1}' | \
-    xargs -I {} kubectl -n "$ns" rollout restart deployment/{}
-done
+./scripts/bootstrap-cnpg-recovery.sh
+./scripts/bootstrap-cnpg-recovery.sh --execute
 ```
+
+Neither the Argo CD nor CloudNativePG project publishes a joint recovery guide
+that prescribes this manual boundary. It is a repository-specific safety
+decision based on the two controllers' documented behavior and the acceptance
+evidence required after the July 29 empty-`initdb` incident; it must not be
+presented as an upstream best practice.
+
+[Argo CD 3.4 treats `automated.enabled: false` as an explicit
+pause](https://argo-cd.readthedocs.io/en/release-3.4/user-guide/auto_sync/),
+while disabling only self-heal does not prevent a Git-triggered auto-sync.
+Argo CD does have a direct CNPG integration: its
+[built-in CNPG health check](https://github.com/argoproj/argo-cd/blob/release-3.4/resource_customizations/postgresql.cnpg.io/Cluster/health.lua)
+maps `Setting up primary` to `Progressing` and `Cluster in healthy state` to
+`Healthy`, and it ships
+[CNPG resource actions](https://argo-cd.readthedocs.io/en/release-3.4/operator-manual/resource_actions_builtin/).
+That integration can prove controller-level readiness, but not the restored
+PostgreSQL system identifier, application rows, or a completed backup in the
+new lineage. ApplicationSet RollingSync could order database and consumer
+Applications using that health result, but it remains Beta and cannot perform
+those data-level acceptance checks. The script retains the manual boundary so
+the consumer is released only after all of those checks pass.
+
+[CloudNativePG recovery bootstraps a new Cluster rather than restoring
+in-place](https://cloudnative-pg.io/documentation/current/recovery/); its
+guidance also supports exact `backupID` selection and distinct recovery/read
+and forward-write `serverName` values. Those are CNPG recovery requirements,
+not a CNPG recommendation about Argo CD sync policy.
+
+### Prepared recovery for the 2026-07-31 rebuild
+
+The pre-nuke audit queried each Barman catalog directly and compared it with
+the live application tables. The July 31 v7/v7/v9 backups are valid backups of
+empty replacement databases and are intentionally not restore sources.
+
+| Database | Read lineage | Pinned backup | Backup completed (UTC) | New write lineage |
+|---|---|---|---|---|
+| Immich | `immich-database-v6` | `20260728T020000` | 2026-07-28 02:00:18 | `immich-database-v8` |
+| Paperless | `paperless-database-v6` | `20260728T050000` | 2026-07-28 05:00:10 | `paperless-database-v8` |
+| Temporal | `temporal-database-v8` | `20260728T030000` | 2026-07-28 03:02:57 | `temporal-database-v10` |
+
+Paperless v6 also contains a successful 2026-07-30 backup from the empty
+replacement PostgreSQL system ID. Removing its `backupID` pin will restore the
+wrong database.
+
+**Post-bootstrap acceptance.** Auto-sync is disabled for all three database
+Applications and their three consumers. The script hard-refreshes and syncs
+each database, verifies the pinned manifest and PostgreSQL system identifier,
+requires a non-empty application table plus `ContinuousArchiving` and
+the exact recovery-only `Backup` in `completed` phase (plus
+`LastBackupSucceeded`), then syncs the consumer. That event-specific Backup is
+part of the recovery overlay and is pruned when the root returns to `initdb`.
+The equivalent data checks are:
+
+```bash
+kubectl exec -n cloudnative-pg immich-database-1 -c postgres -- \
+  psql -U postgres -d immich -c 'select count(*) from asset;'
+kubectl exec -n cloudnative-pg paperless-database-1 -c postgres -- \
+  psql -U postgres -d paperless -c 'select count(*) from documents_document;'
+kubectl exec -n cloudnative-pg temporal-database-1 -c postgres -- \
+  psql -U postgres -d temporal -c 'select count(*) from executions;'
+```
+
+The first `my-apps-temporal` sync runs the schema hook and namespace seed. If
+Temporal's database is ever recreated without also recreating its Application,
+sync `my-apps-temporal` explicitly before judging the UI; syncing
+`database-temporal` only reconciles PostgreSQL.
 
 ---
 
@@ -448,7 +536,8 @@ The restored DB is empty (or has a subset of data). Common causes:
     psql -U postgres -c "SELECT count(*) FROM pg_tables WHERE schemaname='public';"
   ```
 - Recovery ran, but the consumer app hasn't been restarted — its migration
-  logic hasn't touched the new DB. Rolling-restart the app.
+  logic hasn't touched the new DB. Reconcile the app. For Temporal, sync
+  `my-apps-temporal`; a rollout restart cannot run its schema hook.
 
 ### New Cluster comes up with `bootstrap.initdb` despite git saying `recovery`
 
@@ -464,7 +553,7 @@ The DB's ArgoCD Application may carry a `argocd.argoproj.io/skip-reconcile: "tru
 annotation. ArgoCD reports sync success but never actually reconciles. Fix:
 
 ```bash
-kubectl -n argocd annotate application <db> \
+kubectl -n argocd annotate application database-<db> \
   argocd.argoproj.io/skip-reconcile- --overwrite
 ```
 
