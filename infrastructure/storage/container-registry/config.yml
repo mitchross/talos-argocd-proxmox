@@ -7,6 +7,16 @@ storage:
     blobdescriptor: inmemory
   delete:
     enabled: true
+  # Must be declared here even though it's false. registry-gc flips it with
+  # REGISTRY_STORAGE_MAINTENANCE_READONLY_ENABLED=true, and distribution v3's
+  # env override can only descend into a key that already exists as a map. On
+  # registry:3 without this block the override lands as a scalar and the
+  # process panics at boot ("readonly config key must contain additional
+  # keys"), which bricked the registry for 15h on 2026-08-02 — GC set the var,
+  # crashed the pod, and never reached the step that unsets it.
+  maintenance:
+    readonly:
+      enabled: false
   # Blobs on RustFS S3 (durable, survives a cluster/storage nuke — unlike the
   # old Longhorn-snapshot-on-PVC path). accesskey/secretkey injected via env
   # (REGISTRY_STORAGE_S3_ACCESSKEY/SECRETKEY) from Secret registry-s3-credentials.
