@@ -34,4 +34,5 @@ services:
       --siderolink-api-advertised-url=${SIDEROLINK_ADVERTISED_API_URL}
       --siderolink-wireguard-advertised-addr=${SIDEROLINK_WIREGUARD_ADVERTISED_ADDR}
       --initial-users=${INITIAL_USER_EMAILS}
+      ${VERSION_FLAGS}
       ${AUTH}

@@ -96,6 +96,7 @@ Backups are **kopiur** (Kopia-native operator).
 - **Databases**: [Plain Postgres migration — CNPG exit ramp, new-DB default](domains/cnpg/plain-postgres-migration.md) · [Backup/restore/start — beginner guide](domains/cnpg/backup-restore-start-guide.md) · [CNPG explained](domains/cnpg/explained.md) · [CNPG disaster recovery](domains/cnpg/disaster-recovery.md)
 - **GitOps / ArgoCD**: [argocd](domains/argocd/argocd.md) · [entrypoints & waves](domains/argocd/entrypoints.md)
 - **Enterprise multi-cluster planning**: [roadmap](domains/multicluster/enterprise-gitops-roadmap.md) · [concrete fleet PRD](domains/multicluster/prd.md)
+- **Cluster OS (Talos)**: [1.13 → 1.14 upgrade runbook](domains/talos/talos-1.14-upgrade.md) — pre-release pin, the `/var` `noexec` vs Longhorn V1 gotcha, verification and rollback
 - **Networking**: [topology](domains/networking/topology.md) · [Wi-Fi Proxmox Talos worker](domains/networking/wifi-proxmox-talos-worker.md) · [policy](domains/networking/policy.md) · [Technitium `vanillax.me` migration](domains/networking/technitium-vanillax-me-migration.md)
 - **Storage**: [kopia maintenance](domains/storage/kopia-maintenance-plan.md) · [RWO/RWX model & sizing](domains/storage/storage-model-rwo-rwx-and-sizing.md) · [RustFS credentials](domains/rustfs/credential-runbook.md) · [future: tiered storage](domains/storage/architecture-future.md)
 - **Observability**: [radar-ng](domains/observability/radar-ng.md)

@@ -833,7 +833,7 @@ EOF
 ## Resources
 
 - [Cilium Documentation](https://docs.cilium.io/)
-- [Talos + Cilium Guide](https://www.talos.dev/v1.13/kubernetes-guides/network/deploying-cilium/)
+- [Talos + Cilium Guide](https://www.talos.dev/v1.14/kubernetes-guides/network/deploying-cilium/)
 - [Gateway API Docs](https://gateway-api.sigs.k8s.io/)
 - [Hubble Documentation](https://docs.cilium.io/en/stable/gettingstarted/hubble/)
 - [Cilium Slack](https://cilium.io/slack)

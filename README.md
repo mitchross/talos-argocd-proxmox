@@ -72,8 +72,8 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 | Component | Version | Source of truth |
 |-----------|---------|-----------------|
 | Omni server + `omnictl` | `v1.9.0` | `omni/omni/omni.env.example` |
-| Talos Linux | `v1.13.7` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
-| Kubernetes | `v1.36.3` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
+| Talos Linux | `v1.14.0-beta.1` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
+| Kubernetes | `v1.37.0-beta.0` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
 | Cilium | `1.19.6` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.4.1` | bootstrap commands below |
 | ArgoCD Helm chart | `10.2.1` (Argo CD `v3.4.5`) | `scripts/bootstrap-argocd.sh` |
@@ -305,7 +305,7 @@ From here, new applications are discovered automatically — add a directory wit
 > **Multi-node prod only** — confirm storage nodes were born with the expected layout (catches a stale-Omni-config failure at provision time instead of at Longhorn bootstrap):
 >
 > ```bash
-> kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage'  # expect every node Talos (v1.13.7)
+> kubectl get nodes -o custom-columns='NAME:.metadata.name,OS:.status.nodeInfo.osImage'  # expect every node Talos (v1.14.0-beta.1)
 > talosctl -n <worker-ip> get disks               # expect a single ~800G sda (sda+sdb = STALE 2-disk layout)
 > kubectl get nodes.longhorn.io -n longhorn-system # expect 4 Ready storage nodes after Longhorn starts
 > ```
@@ -362,13 +362,40 @@ Normal application PVC backups use **[kopiur](https://github.com/home-operations
 - **Exclusions**: CNPG uses native Barman → S3 (not kopiur). Redis and PostHog are backup-exempt and disposable.
 - **Read first**: [docs/domains/storage/kopiur-backup-architecture.md](docs/domains/storage/kopiur-backup-architecture.md), then [docs/disaster-recovery.md](docs/disaster-recovery.md) and [docs/domains/cnpg/disaster-recovery.md](docs/domains/cnpg/disaster-recovery.md).
 
-## Cluster Upgrades & Talos 1.13 Notes
+## Cluster Upgrades & Talos 1.14 Notes
 
-The cluster runs Talos **1.13.7**. A few things changed at 1.13 that you'll hit when you spin up or rebuild — read this before touching the cluster template.
+The cluster runs Talos **1.14.0-beta.1** with Kubernetes **1.37.0-beta.0**. Read [docs/domains/talos/talos-1.14-upgrade.md](docs/domains/talos/talos-1.14-upgrade.md) before touching the cluster template — it carries the full 1.13 → 1.14 change list, the pre-flight/verification steps, and the rollback path.
+
+### This is a pre-release pin
+
+Neither 1.14.0 nor Kubernetes 1.37.0 has a GA tag yet (newest builds are `v1.14.0-beta.1`, released 2026-07-31, and `v1.37.0-beta.0`). Two consequences:
+
+- **Omni must allow pre-release versions** or `omnictl cluster template sync` rejects the version as unknown. `omni/omni/omni.env.example` ships `VERSION_FLAGS=--enable-talos-pre-release-versions`; the compose `command:` interpolates it.
+- **No patch-release safety net.** A regression found in beta.1 has no 1.14.x fix to roll forward to — the recovery is rolling *back* to `v1.13.7` / `v1.36.3`, which for Talos means an in-place downgrade through Omni and is not guaranteed clean. Snapshot etcd first; the runbook has the sequence.
+
+Move both templates to the GA tags and empty `VERSION_FLAGS` as soon as they ship.
+
+### The 1.14 change that bites this cluster: `/var` is `noexec`
+
+Talos 1.14 mounts the EPHEMERAL volume (`/var`) `noexec` in addition to the existing `nosuid` + `nodev`. **Longhorn's V1 engine execs its engine/replica binaries out of `/var/lib/longhorn`**, so a machine provisioned under the default comes up with a dead instance-manager — and this cluster runs V1 (the V2/SPDK engine was retired 2026-06-12). Both templates carry the opt-out:
+
+```yaml
+- name: ephemeral-allow-exec
+  inline:
+    apiVersion: v1alpha1
+    kind: VolumeConfig
+    name: EPHEMERAL
+    mount:
+      secure: false
+```
+
+`secure` is all-or-nothing — turning off `noexec` also turns off `nosuid`/`nodev`, which is the 1.13 behaviour this cluster already ran on. The upstream alternative (a dedicated Longhorn disk on a `UserVolumeConfig` at `/var/mnt/longhorn`) is **not** usable on the multi-node prod template: adding a second disk shifts PCIe enumeration on these VMs, which is what left the GPU worker with no NIC and no SideroLink on 2026-06-11.
+
+**Only newly provisioned machines get `noexec`** — nodes upgraded in place keep their existing mount options. So this is a rebuild/DR hazard, not an upgrade-day one, which makes it easy to miss until a destroy-and-restore drill fails.
 
 ### Never pin below Talos 1.13.4
 
-1.13.3 fixed containerd mount propagation and concurrent config-apply; 1.13.4 added a kube-scheduler integer-marshalling fix. This template sets scheduler integer args, so 1.13.4 is the floor — use it or a newer 1.13 patch.
+1.13.3 fixed containerd mount propagation and concurrent config-apply; 1.13.4 added a kube-scheduler integer-marshalling fix. This template sets scheduler integer args, so 1.13.4 is the floor for any rollback target — the 1.14 pin is above it, but if you drop back, drop back to `v1.13.7`, never to an earlier patch.
 
 **Observed 1.13.2 failure:** freshly provisioned nodes repeatedly failed to create pod sandboxes (`lstat /proc/.../ns/ipc: no such file or directory`, `can't find shim for sandbox`, `ttrpc: closed`). Rebooting and reinstalling Cilium didn't help; moving them to 1.13.4 restored containerd, control-plane pods, and Cilium. For a stuck rollout, reprovision one machine at a time (preserves etcd quorum for control planes):
 
@@ -391,6 +418,8 @@ Talos 1.13 replaced the old install/upgrade flow with the **LifecycleService API
 ```
 
 All machine classes (CP / worker / GPU) share the bus layout, so the patch goes at cluster scope. A class with a different disk presentation (e.g. NVMe passthrough → `/dev/nvme0n1`) needs a per-machineset override.
+
+1.14 deprecates `.machine.install` in favour of an `UnattendedInstall` document but still honours the v1alpha1 field. This patch is load-bearing for provisioning, so it stays on v1alpha1 until the migration can be tested on its own — see the deprecation inventory in the [1.14 upgrade runbook](docs/domains/talos/talos-1.14-upgrade.md).
 
 ### Upgrading Omni / omnictl
 

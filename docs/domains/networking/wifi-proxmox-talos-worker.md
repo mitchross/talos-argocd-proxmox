@@ -68,12 +68,12 @@ The machine class deliberately carries **no** `ip=` kernel argument
 
 The GTX 1050 Ti is Pascal (compute capability 6.1). NVIDIA moved Pascal to the
 580 legacy/LTS branch; the 595 unified production driver used by the RTX 3090
-worker does not drive it. Talos `v1.13.7` resolves the Dell worker's extensions
-as a matched pair:
+worker does not drive it. Talos `v1.14.0-beta.1` resolves the Dell worker's
+extensions as a matched pair:
 
-| Extension | Talos `v1.13.7` image |
+| Extension | Talos `v1.14.0-beta.1` image |
 |---|---|
-| `siderolabs/nonfree-kmod-nvidia-lts` | `580.173.02-v1.13.7` |
+| `siderolabs/nonfree-kmod-nvidia-lts` | `580.173.02-v1.14.0-beta.1` |
 | `siderolabs/nvidia-container-toolkit-lts` | `580.173.02-v1.19.1` |
 
 Never mix the production kernel module with the LTS toolkit. The Threadripper
@@ -283,6 +283,6 @@ annotation, or kubelet mount while replicas remain is a data-loss operation.
 
 - [Omni infrastructure providers](https://docs.siderolabs.com/omni/infrastructure-and-extensions/infrastructure-providers)
 - [Omni Proxmox provider](https://github.com/siderolabs/omni-infra-provider-proxmox)
-- [Talos NVIDIA proprietary drivers](https://docs.siderolabs.com/talos/v1.13/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary)
+- [Talos NVIDIA proprietary drivers](https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/hardware-and-drivers/nvidia-gpu-proprietary)
 - [NVIDIA legacy GPU support](https://nvidia.custhelp.com/app/answers/detail/a_id/3142/)
 - [Proxmox VE PCI passthrough and resource mapping](https://pve.proxmox.com/pve-docs/pve-admin-guide.html)

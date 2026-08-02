@@ -8,9 +8,11 @@ name: talos-singlenode-gpu-prod
 labels:
   cluster-id: "2"
 kubernetes:
-  version: v1.36.3
+  version: v1.37.0-beta.0
 talos:
-  version: v1.13.7
+  # PRE-RELEASE — see the same block in cluster-template.yaml. Omni needs
+  # --enable-talos-pre-release-versions to accept this version.
+  version: v1.14.0-beta.1
 patches:
 - name: disable-default-cni
   inline:
@@ -31,6 +33,21 @@ patches:
     machine:
       install:
         disk: /dev/sda
+# Talos 1.14 added noexec to EPHEMERAL (/var) on newly provisioned machines.
+# Longhorn V1 execs its engine/replica binaries out of /var/lib/longhorn, which
+# on both node sets here is the bind mount from /var/local/longhorn on the
+# EPHEMERAL volume (the `talos-ephemeral` entry in the default-disks-config
+# annotations below) — so without this the Longhorn instance-manager comes up
+# dead on any rebuild. `secure: false` also turns off nosuid/nodev; the field
+# is all-or-nothing. The UserVolume-backed tiers (/var/mnt/longhorn-nvme1,
+# /var/mnt/longhorn-ssd-flash) are separate volumes and unaffected either way.
+- name: ephemeral-allow-exec
+  inline:
+    apiVersion: v1alpha1
+    kind: VolumeConfig
+    name: EPHEMERAL
+    mount:
+      secure: false
 - file: patches/docker-hub-auth.yaml
 - name: node-performance
   inline:

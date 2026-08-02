@@ -364,25 +364,37 @@
       registryUrlTemplate: 'https://argoproj.github.io/argo-helm',
     },
     {
-      description: 'Omni cluster template - Talos version',
+      // Talos 1.14 stopped publishing ghcr.io/siderolabs/installer (the default
+      // installer moved to Image Factory), so the docker datasource this rule
+      // used to point at is frozen at the last 1.13 tag and would silently stop
+      // proposing updates. Track the git tags instead.
+      //
+      // Both templates are matched, and the version pattern accepts
+      // pre-release suffixes because the cluster is pinned to v1.14.0-beta.1.
+      // Renovate only proposes unstable versions when the current value is
+      // itself unstable, so this rule reverts to stable-only on its own once
+      // the pin moves to 1.14.0 GA.
+      description: 'Omni cluster templates - Talos version',
       customType: 'regex',
       managerFilePatterns: [
         '/^omni/cluster-template/cluster-template\\.yaml$/',
+        '/^omni/cluster-template/cluster-template-singlenode-gpu\\.yaml$/',
       ],
       matchStrings: [
-        'talos:\\s*\\n\\s+version:\\s*(?<currentValue>v[0-9.]+)',
+        'talos:\\s*\\n(?:\\s*#.*\\n)*\\s+version:\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+(?:-[a-z]+\\.[0-9]+)?)',
       ],
-      depNameTemplate: 'ghcr.io/siderolabs/installer',
-      datasourceTemplate: 'docker',
+      depNameTemplate: 'siderolabs/talos',
+      datasourceTemplate: 'github-releases',
     },
     {
-      description: 'Omni cluster template - Kubernetes version',
+      description: 'Omni cluster templates - Kubernetes version',
       customType: 'regex',
       managerFilePatterns: [
         '/^omni/cluster-template/cluster-template\\.yaml$/',
+        '/^omni/cluster-template/cluster-template-singlenode-gpu\\.yaml$/',
       ],
       matchStrings: [
-        'kubernetes:\\s*\\n\\s+version:\\s*(?<currentValue>v[0-9.]+)',
+        'kubernetes:\\s*\\n(?:\\s*#.*\\n)*\\s+version:\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+(?:-[a-z]+\\.[0-9]+)?)',
       ],
       depNameTemplate: 'ghcr.io/siderolabs/kubelet',
       datasourceTemplate: 'docker',
