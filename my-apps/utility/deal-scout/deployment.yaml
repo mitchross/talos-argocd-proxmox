@@ -28,7 +28,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: deal-scout
-          # Source: ~/programming/hermes-agent/dashboard — build & push:
+          # Source: ~/programming/deal-scout/dashboard — build & push:
           #   docker build -t registry.vanillax.me/deal-scout:v0.4.3 dashboard/
           #   docker push registry.vanillax.me/deal-scout:v0.4.3
           image: registry.vanillax.me/deal-scout:v0.4.3
