@@ -11,8 +11,18 @@
     'argocd',
     'terraform',
     'dockerfile',
+    // Added 2026-08-02. The Omni Proxmox provider composes carried a comment
+    // claiming Renovate tracked their digests, but this list never enabled
+    // the manager — the pin silently sat on a 2026-06-11 :latest digest while
+    // upstream cut v0.1.0 and v0.2.0. Scoped to omni/ below.
+    'docker-compose',
     'custom.regex',
   ],
+  'docker-compose': {
+    managerFilePatterns: [
+      '/^omni/.+/docker-compose\\.yml$/',
+    ],
+  },
   argocd: {
     managerFilePatterns: [
       '/^infra/.+\\.yaml$/',
@@ -362,6 +372,24 @@
       depNameTemplate: 'argo-cd',
       datasourceTemplate: 'helm',
       registryUrlTemplate: 'https://argoproj.github.io/argo-helm',
+    },
+    {
+      // The Omni server tag lives in an env file the compose interpolates
+      // (`image: ghcr.io/siderolabs/omni:${OMNI_IMG_TAG}`), so no standard
+      // manager can see it. Untracked, it drifted from v1.9.0 through three
+      // patch releases before anyone noticed. Keep the operator's local
+      // omnictl on whatever this resolves to — a skew fails with obscure
+      // gRPC errors.
+      description: 'Omni server image tag',
+      customType: 'regex',
+      managerFilePatterns: [
+        '/^omni/omni/omni\\.env\\.example$/',
+      ],
+      matchStrings: [
+        'OMNI_IMG_TAG=(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)',
+      ],
+      depNameTemplate: 'ghcr.io/siderolabs/omni',
+      datasourceTemplate: 'docker',
     },
     {
       // Talos 1.14 stopped publishing ghcr.io/siderolabs/installer (the default

@@ -71,13 +71,13 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 
 | Component | Version | Source of truth |
 |-----------|---------|-----------------|
-| Omni server + `omnictl` | `v1.9.0` | `omni/omni/omni.env.example` |
+| Omni server + `omnictl` | `v1.9.3` | `omni/omni/omni.env.example` |
 | Talos Linux | `v1.14.0-beta.1` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
 | Kubernetes | `v1.37.0-beta.0` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
 | Cilium | `1.19.6` | `infrastructure/networking/cilium/kustomization.yaml` |
 | Gateway API CRDs | `v1.4.1` | bootstrap commands below |
 | ArgoCD Helm chart | `10.2.1` (Argo CD `v3.4.5`) | `scripts/bootstrap-argocd.sh` |
-| Proxmox provider | `latest@sha256:96433a…` | `omni/proxmox-provider/docker-compose.yml` |
+| Proxmox provider | `v0.2.0@sha256:c0d068…` | `omni/proxmox-provider/docker-compose.yml` |
 
 Keep the Omni server and local `omnictl` on the **same** release — mismatched versions fail with obscure gRPC errors.
 
@@ -423,12 +423,22 @@ All machine classes (CP / worker / GPU) share the bus layout, so the patch goes 
 
 ### Upgrading Omni / omnictl
 
-Run Omni and `omnictl` **on the same release** (currently `v1.9.0`, pinned in `omni/omni/omni.env.example`). When upgrading:
+Run Omni and `omnictl` **on the same release** (currently `v1.9.3`, pinned in `omni/omni/omni.env.example`). When upgrading:
 
 1. Take an Omni etcd snapshot (`omni/omni/README.md` → Backup/Recovery).
 2. Upgrade the Omni container, restart, and confirm the UI loads and existing clusters stay healthy.
 3. Upgrade `omnictl` on your workstation to match — mismatched versions fail with obscure gRPC errors.
 4. Regenerate the service-account kubeconfig if it's older than ~30 days (token rotation lags server upgrades).
+
+### Upgrading the Proxmox infrastructure provider
+
+Both provider instances — `omni/proxmox-provider/` (Threadripper) and `omni/proxmox-provider-dell/` (Dell) — must run the **same tag and digest**. They register against one Omni server and upstream publishes no compatibility story for a skew between them.
+
+The pin moved from a rolling `latest@sha256:…` to the release tag `v0.2.0` on 2026-08-02. The old pin was a mid-stream `:latest` digest captured 2026-06-11, between the v0.1.0 and v0.2.0 releases — reproducible, but with no changelog to reason about. v0.2.0 adds Proxmox HA registration, configurable placement strategies, and provider-version reporting to Omni, and fixes scheduler reservation leaks during deprovisioning.
+
+Neither provider instance nor `OMNI_IMG_TAG` was actually covered by Renovate before 2026-08-02 (the `docker-compose` manager was never enabled and the Omni tag lives in an env file), despite in-repo comments claiming otherwise. Both are tracked now — see `.github/renovate.json5`.
+
+To upgrade: bump the tag and digest in **both** compose files, then `docker compose up -d` in each directory. Watch `omnictl get machinerequeststatuses` afterwards; a provider that fails to re-register leaves machine requests stuck in a pending state rather than erroring loudly.
 
 ### CNPG clean-slate baseline (April 2026)
 

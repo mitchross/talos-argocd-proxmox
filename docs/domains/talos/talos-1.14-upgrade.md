@@ -34,7 +34,7 @@ Two consequences that change how you operate:
   `VERSION_FLAGS=--enable-talos-pre-release-versions`, interpolated into the
   compose `command:`. If Omni accepts the Talos version but rejects the
   Kubernetes one, find its counterpart flag:
-  `docker run --rm ghcr.io/siderolabs/omni:v1.9.0 --help | grep pre-release`.
+  `docker run --rm ghcr.io/siderolabs/omni:v1.9.3 --help | grep pre-release`.
 - **There is no roll-forward.** A regression in beta.1 has no 1.14.x patch to
   escape to; the only recovery is rolling *back* to 1.13.7, which is an
   in-place Talos downgrade and is not guaranteed clean. Treat the etcd snapshot
@@ -207,8 +207,16 @@ Pascal support.
 
 ### Prerequisites
 
-- `omnictl` and the Omni server both on `v1.9.0` — mismatched versions fail with
-  obscure gRPC errors.
+- `omnictl` and the Omni server both on `v1.9.3` — mismatched versions fail with
+  obscure gRPC errors. v1.9.0 → v1.9.3 is three patch releases with no breaking
+  changes; v1.9.2's *"improved error propagation from machine lifecycle APIs"*
+  matters here specifically, because the LifecycleService API is what drives
+  Talos install/upgrade and its failures historically surfaced nowhere (the
+  `machine.install.disk` trap in the root README).
+- Both Proxmox provider instances on `v0.2.0` and on the **same** digest —
+  `omni/proxmox-provider/` and `omni/proxmox-provider-dell/`. Upgrade the
+  providers *before* the cluster, so a provider restart is not competing with a
+  rolling node upgrade for machine-request reconciliation.
 - A current Omni etcd snapshot (`omni/omni/README.md` → Backup/Recovery).
 - A current cluster etcd snapshot (step 1).
 - Every kopiur `Snapshot` recently `Succeeded` — this is the real safety net if
