@@ -44,6 +44,18 @@ spec:
               command: [/bin/bash, -euo, pipefail, -c]
               args:
                 - |
+                  # Always restore writes, even if GC or the rollout fails.
+                  # Without this the registry stays read-only until someone
+                  # notices pulls 503ing (see config.yml — a failed run on
+                  # 2026-08-02 left it down for 15h).
+                  restore_writes() {
+                    echo "[gc] restoring writes (trap)"
+                    kubectl -n kube-system set env deploy/registry \
+                      REGISTRY_STORAGE_MAINTENANCE_READONLY_ENABLED- || true
+                    kubectl -n kube-system rollout status deploy/registry --timeout=180s || true
+                  }
+                  trap restore_writes EXIT
+
                   echo "[gc] flipping registry to read-only"
                   kubectl -n kube-system set env deploy/registry \
                     REGISTRY_STORAGE_MAINTENANCE_READONLY_ENABLED=true
@@ -55,10 +67,7 @@ spec:
                   kubectl -n kube-system exec "$POD" -- \
                     registry garbage-collect -m /etc/distribution/config.yml
 
-                  echo "[gc] restoring writes"
-                  kubectl -n kube-system set env deploy/registry \
-                    REGISTRY_STORAGE_MAINTENANCE_READONLY_ENABLED-
-                  kubectl -n kube-system rollout status deploy/registry --timeout=180s
+                  # Writes are restored by the EXIT trap above.
                   echo "[gc] done"
 ---
 apiVersion: v1
