@@ -45,4 +45,6 @@ spec:
           #   v6 — abandoned 2026-06-23 (dirty prefix → "Expected empty archive").
           #   v8 — last data-bearing lineage before the 2026-07-29 rebuild;
           #        backupID above selects its verified 2026-07-28 base backup.
+          #   v10 — empty initdb lineage from the 2026-08-01 run. Base writes
+          #         forward to v11; never select v9 or v10 as a restore source.
           serverName: temporal-database-v8
