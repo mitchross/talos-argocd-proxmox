@@ -64,9 +64,13 @@ The `serverName` values below live in each DB's `base/cluster.yaml` and
 
 | Database  | Next write target (base) | Recovery source | Pinned backup ID |
 |-----------|--------------------------|-----------------|------------------|
-| immich    | `immich-database-v9`     | `immich-database-v6` | `20260728T020000` |
 | paperless | `paperless-database-v9`  | `paperless-database-v6` | `20260728T050000` |
 | temporal  | `temporal-database-v11`  | `temporal-database-v8` | `20260728T030000` |
+
+Immich is no longer here: it migrated to plain Postgres + kopiur
+(`my-apps/media/immich/postgres/`). Every immich CNPG lineage (v1–v8) held a
+database with zero users and zero assets, so there was nothing to recover and
+nothing to migrate — see the note below.
 
 The roots are intentionally on `overlays/recovery` for the planned 2026-07-31
 full-cluster rebuild. Their Argo Applications and consumer Applications have
@@ -75,6 +79,16 @@ auto-sync/self-heal explicitly disabled. After bootstrap, run
 after exact lineage, application rows, WAL archiving, and the recovery-only
 `Backup` object are proven. Flip the roots back to `overlays/initdb` only after that
 acceptance succeeds on v9/v9/v11.
+
+2026-08-03: immich left CNPG for plain Postgres + kopiur. A restore of its
+pinned "data-bearing" 2026-07-28 v6 backup came up with the correct
+`system_identifier` but `public.user = 0` and `public.asset = 0` — the ~48 MB
+backup is almost entirely static `geodata_places`. Every immich lineage back to
+v1 (2026-05-31) is the same size, so the database had been empty for months and
+no lineage was worth recovering. Immich needs the `vchord` extension, so its
+plain-Postgres deployment uses `ghcr.io/immich-app/postgres` (a stock postgres
+image cannot run immich). Photo files live on the `library` PVC and were never
+affected; album/face/tag metadata was already gone.
 
 2026-08-03: the 2026-08-01 recovery run silently bootstrapped `initdb` instead
 of recovering. Its v8/v8/v10 lineages carry a different `systemid`, sit on WAL

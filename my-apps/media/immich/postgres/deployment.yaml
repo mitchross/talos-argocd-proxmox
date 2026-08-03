@@ -1,0 +1,110 @@
+# Plain PostgreSQL for immich — the gitea/postgres pattern. No operator: the
+# DB is an ordinary app whose PVC kopiur backs up (hourly tier) and
+# restores-before-bind on recreate. Postgres treats a restored
+# crash-consistent snapshot like a power loss and WAL-recovers on boot.
+# Trade-off vs CNPG: restore granularity is the last snapshot, not
+# point-in-time. Runbook: docs/domains/cnpg/plain-postgres-migration.md
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-postgres
+  namespace: immich
+  labels:
+    app: immich-postgres
+spec:
+  strategy:
+    type: Recreate # RWO PVC — RollingUpdate deadlocks on Multi-Attach
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-postgres
+  template:
+    metadata:
+      labels:
+        app: immich-postgres
+    spec:
+      # SIGINT (the image's STOPSIGNAL) triggers Postgres "fast shutdown":
+      # it aborts open transactions and flushes cleanly. 60s covers a busy
+      # checkpoint before the kubelet escalates to SIGKILL.
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 999 # postgres uid:gid in the official image
+      containers:
+        - name: postgres
+          # Immich's own Postgres image: it ships and preloads the vchord
+          # vector extension (shared_preload_libraries) that immich-server
+          # requires — a stock postgres image CANNOT run immich. Keep the
+          # vectorchord version aligned with what immich-server expects.
+          # Pin MAJOR — a MAJOR bump needs a manual dump/restore because
+          # Postgres data directories are not major-version compatible.
+          image: ghcr.io/immich-app/postgres:17-vectorchord0.4.3@sha256:79b95b795f0911e95ffa4d092a2162c4d81a984d5629bc8f786afe0bc0657671
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            # First boot on an EMPTY volume creates this DB + user — the whole
+            # database is declared right here, no admin tool. On a restored
+            # (non-empty) volume these are ignored and the restored data wins.
+            # User/password come from the SAME secret immich-server reads, so
+            # the role and the client credential can never drift apart.
+            - name: POSTGRES_DB
+              value: "immich"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: immich-db-credentials
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: immich-db-credentials
+                  key: password
+            - name: POSTGRES_INITDB_ARGS
+              value: "--data-checksums"
+            # Subdirectory keeps initdb happy on a fresh PVC (top-level mount
+            # contains lost+found).
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          # Probes expand $POSTGRES_USER rather than hardcoding it, because the
+          # username is secret-sourced — a literal here would silently break if
+          # the 1Password item ever differs.
+          startupProbe:
+            exec:
+              command:
+                ["sh", "-c", 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command:
+                ["sh", "-c", 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command:
+                ["sh", "-c", 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: immich-postgres-data
