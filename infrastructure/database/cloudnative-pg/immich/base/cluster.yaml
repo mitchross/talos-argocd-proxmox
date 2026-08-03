@@ -78,6 +78,8 @@ spec:
         #   v6 — last data-bearing lineage before the 2026-07-29 rebuild.
         #   v7 — clean archiving target opened 2026-07-31, but the live initdb
         #        contained zero assets/users. Abandoned after the audit.
-        #   v8 — clean forward target for the 2026-07-31 recovery from the
-        #        pinned v6 backup.
-        serverName: immich-database-v8
+        #   v8 — opened 2026-08-01, but that run bootstrapped initdb instead of
+        #        recovering: its backups carry a different systemid and sit on
+        #        timeline 1, so they hold an empty database. Abandoned.
+        #   v9 — clean forward target for the recovery from the pinned v6 backup.
+        serverName: immich-database-v9
