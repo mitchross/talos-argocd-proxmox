@@ -31,6 +31,23 @@ patches:
     machine:
       install:
         disk: /dev/sda
+# Cross-node pod TCP silently dies without this. virtio hands VXLAN packets
+# up with the INNER TCP checksum still deferred (CHECKSUM_PARTIAL); nothing
+# downstream can finish it, because pve's mlx4_en uplink reports
+# tx-udp_tnl-csum-segmentation off [fixed] and the host only ever sees the
+# outer UDP header. The receiver then discards every segment as corrupt
+# (Tcp: InCsumErrors in /proc/net/snmp) with no interface or BPF drop
+# recorded, so it looks like a black hole. Same-host pod traffic is immune —
+# the partial-checksum metadata rides along and is never materialised — which
+# is why only the node across the wire loses TCP while UDP and ICMP work.
+# Verify with: talosctl get ethernetstatus
+- name: vxlan-inner-checksum
+  inline:
+    apiVersion: v1alpha1
+    kind: EthernetConfig
+    name: eth0
+    features:
+      tx-checksum-ip-generic: false
 - file: patches/docker-hub-auth.yaml
 - name: node-performance
   inline:
