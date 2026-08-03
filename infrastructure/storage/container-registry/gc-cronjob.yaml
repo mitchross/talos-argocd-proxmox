@@ -3,14 +3,12 @@
 # fills silently — pushes start failing once it's full.
 #
 # Flow:
-#   1. Flip REGISTRY_STORAGE_MAINTENANCE_READONLY_ENABLED=true on the
-#      registry deploy. Concurrent pushes during GC can corrupt the store
-#      (in-flight blob upload + GC sweep = lost data) so we go read-only
-#      first.
+#   1. Flip the registry deploy to read-only. Concurrent pushes during GC can
+#      corrupt the store (in-flight blob upload + GC sweep = lost data).
 #   2. Wait for the rolled pod to be Ready.
 #   3. Exec `registry garbage-collect -m` inside the pod. `-m` is
 #      mark-and-sweep (the safe variant introduced in distribution 2.x).
-#   4. Unset the env var, wait for rollout.
+#   4. Unset the env var, wait for rollout (EXIT trap — always runs).
 #
 # Schedule is Sunday 04:00 UTC — off-peak for this cluster's CI bursts.
 apiVersion: batch/v1
@@ -44,9 +42,23 @@ spec:
               command: [/bin/bash, -euo, pipefail, -c]
               args:
                 - |
+                  # Restore writes on every exit path. A failed run that left
+                  # the registry read-only 503'd every pull for 15h once.
+                  restore_writes() {
+                    echo "[gc] restoring writes (trap)"
+                    kubectl -n kube-system set env deploy/registry \
+                      REGISTRY_STORAGE_MAINTENANCE- || true
+                    kubectl -n kube-system rollout status deploy/registry --timeout=180s || true
+                  }
+                  trap restore_writes EXIT
+
+                  # Override the whole maintenance map, not the leaf. On
+                  # registry:3 REGISTRY_STORAGE_MAINTENANCE_READONLY_ENABLED
+                  # either panics the process at boot or is dropped with
+                  # "map with non-string keys" — never applied.
                   echo "[gc] flipping registry to read-only"
                   kubectl -n kube-system set env deploy/registry \
-                    REGISTRY_STORAGE_MAINTENANCE_READONLY_ENABLED=true
+                    'REGISTRY_STORAGE_MAINTENANCE={readonly: {enabled: true}}'
                   kubectl -n kube-system rollout status deploy/registry --timeout=180s
 
                   echo "[gc] running garbage-collect -m"
@@ -55,10 +67,6 @@ spec:
                   kubectl -n kube-system exec "$POD" -- \
                     registry garbage-collect -m /etc/distribution/config.yml
 
-                  echo "[gc] restoring writes"
-                  kubectl -n kube-system set env deploy/registry \
-                    REGISTRY_STORAGE_MAINTENANCE_READONLY_ENABLED-
-                  kubectl -n kube-system rollout status deploy/registry --timeout=180s
                   echo "[gc] done"
 ---
 apiVersion: v1
