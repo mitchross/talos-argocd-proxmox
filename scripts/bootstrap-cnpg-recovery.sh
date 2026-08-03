@@ -186,7 +186,9 @@ wait_for_backup() {
   backup_name="$1"
   deadline="$(deadline_after "$BACKUP_TIMEOUT_SECONDS")"
   while true; do
-    backup_json="$(kubectl -n "$CNPG_NAMESPACE" get backup "$backup_name" -o json 2>/dev/null || true)"
+    # Fully qualified: bare `backup` resolves to backups.longhorn.io, which
+    # wins the short-name race and makes this wait time out forever.
+    backup_json="$(kubectl -n "$CNPG_NAMESPACE" get backups.postgresql.cnpg.io "$backup_name" -o json 2>/dev/null || true)"
     phase="$(printf '%s' "$backup_json" | jq -r '.status.phase // ""' 2>/dev/null || true)"
     case "$phase" in
       completed)
