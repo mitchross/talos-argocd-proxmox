@@ -1,7 +1,7 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Backup
 metadata:
-  name: paperless-post-recovery-v8
+  name: paperless-post-recovery-v9
   annotations:
     argocd.argoproj.io/sync-wave: "10"
 spec:

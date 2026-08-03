@@ -31,7 +31,7 @@ spec:
           # endpoint). Only serverName changes between live writes and
           # recovery reads.
           barmanObjectName: paperless-objectstore
-          # Data-bearing recovery lineage. Base writes to fresh v8; v7 is an
-          # empty post-rebuild lineage. backupID above avoids the newer empty
-          # base backup that polluted this otherwise valid v6 catalog.
+          # Data-bearing recovery lineage. Base writes to fresh v9; v7 and v8
+          # are empty post-rebuild lineages. backupID above avoids the newer
+          # empty base backup that polluted this otherwise valid v6 catalog.
           serverName: paperless-database-v6

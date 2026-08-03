@@ -32,7 +32,7 @@ spec:
           # endpoint). Only serverName changes between live writes and
           # recovery reads.
           barmanObjectName: immich-objectstore
-          # Data-bearing recovery lineage. Base writes to fresh v8; v7 is an
-          # empty post-rebuild lineage and must never be selected as a restore
-          # source. backupID above pins the verified 2026-07-28 base backup.
+          # Data-bearing recovery lineage. Base writes to fresh v9; v7 and v8
+          # are empty post-rebuild lineages and must never be selected as a
+          # restore source. backupID above pins the verified 2026-07-28 backup.
           serverName: immich-database-v6

@@ -1,7 +1,7 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Backup
 metadata:
-  name: temporal-post-recovery-v10
+  name: temporal-post-recovery-v11
   annotations:
     argocd.argoproj.io/sync-wave: "10"
 spec:

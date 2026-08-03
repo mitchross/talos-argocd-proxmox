@@ -64,9 +64,9 @@ The `serverName` values below live in each DB's `base/cluster.yaml` and
 
 | Database  | Next write target (base) | Recovery source | Pinned backup ID |
 |-----------|--------------------------|-----------------|------------------|
-| immich    | `immich-database-v8`     | `immich-database-v6` | `20260728T020000` |
-| paperless | `paperless-database-v8`  | `paperless-database-v6` | `20260728T050000` |
-| temporal  | `temporal-database-v10`  | `temporal-database-v8` | `20260728T030000` |
+| immich    | `immich-database-v9`     | `immich-database-v6` | `20260728T020000` |
+| paperless | `paperless-database-v9`  | `paperless-database-v6` | `20260728T050000` |
+| temporal  | `temporal-database-v11`  | `temporal-database-v8` | `20260728T030000` |
 
 The roots are intentionally on `overlays/recovery` for the planned 2026-07-31
 full-cluster rebuild. Their Argo Applications and consumer Applications have
@@ -74,7 +74,15 @@ auto-sync/self-heal explicitly disabled. After bootstrap, run
 `scripts/bootstrap-cnpg-recovery.sh --execute`; it advances each pair only
 after exact lineage, application rows, WAL archiving, and the recovery-only
 `Backup` object are proven. Flip the roots back to `overlays/initdb` only after that
-acceptance succeeds on v8/v8/v10.
+acceptance succeeds on v9/v9/v11.
+
+2026-08-03: the 2026-08-01 recovery run silently bootstrapped `initdb` instead
+of recovering. Its v8/v8/v10 lineages carry a different `systemid`, sit on WAL
+timeline 1, and hold empty databases (temporal 5 MB vs v8's 160 MB), so they
+are abandoned and the write targets moved to v9/v9/v11. The reads stay pinned
+to the 2026-07-28 backups — those remain the only data-bearing ones. Verify a
+recovery by comparing `systemid` in the new lineage's `backup.info` against the
+source lineage: a real restore preserves it.
 
 2026-07-31 pre-nuke audit: the July 29 rebuild used `initdb`, so live Immich
 had zero assets/users, Paperless had zero documents, and Temporal had zero
