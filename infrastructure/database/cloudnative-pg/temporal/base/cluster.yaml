@@ -75,6 +75,8 @@ spec:
         #   v9 — clean archiving target opened 2026-07-31, but its first base
         #        backup preceded schema initialization and contains no workflow
         #        executions. Abandoned after the audit.
-        #   v10 — clean forward target for the 2026-07-31 recovery from the
-        #         pinned data-bearing v8 backup.
-        serverName: temporal-database-v10
+        #   v10 — opened 2026-08-01, but that run bootstrapped initdb instead of
+        #         recovering: its backups carry a different systemid, sit on
+        #         timeline 1, and are 5 MB against v8's 160 MB. Abandoned.
+        #   v11 — clean forward target for the recovery from the pinned v8 backup.
+        serverName: temporal-database-v11

@@ -1,7 +1,7 @@
 apiVersion: postgresql.cnpg.io/v1
 kind: Backup
 metadata:
-  name: immich-post-recovery-v8
+  name: immich-post-recovery-v9
   annotations:
     # Create after the recovery Cluster. The recovery script independently
     # waits for this exact Backup to complete before releasing the consumer.
