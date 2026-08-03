@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# Restore the three legacy CNPG databases on a freshly rebuilt cluster.
+# Restore the remaining legacy CNPG databases (paperless, temporal) on a
+# freshly rebuilt cluster. Immich left CNPG for plain Postgres + kopiur —
+# every immich backup lineage held an empty database, so there was nothing to
+# recover. See docs/domains/cnpg/plain-postgres-migration.md.
 #
 # This script intentionally performs no deletes. The CNPG Applications and
 # their consumers have automated sync disabled in their ApplicationSets, so a
@@ -314,7 +317,6 @@ log "Validating the pinned recovery contract"
 while IFS='|' read -r db_name read_lineage backup_id write_lineage system_id database_name table_name consumer_app consumer_path; do
   assert_recovery_render "$db_name" "$read_lineage" "$backup_id" "$write_lineage"
 done <<'EOF'
-immich|immich-database-v6|20260728T020000|immich-database-v9|7654249409354104861|immich|asset|my-apps-immich|my-apps/media/immich
 paperless|paperless-database-v6|20260728T050000|paperless-database-v9|7654249455955726366|paperless|documents_document|my-apps-paperless-ngx|my-apps/home/paperless-ngx
 temporal|temporal-database-v8|20260728T030000|temporal-database-v11|7654249455983591452|temporal|executions|my-apps-temporal|my-apps/development/temporal
 EOF
@@ -376,7 +378,6 @@ while IFS='|' read -r db_name read_lineage backup_id write_lineage system_id dat
   sync_application "$consumer_app"
   wait_for_application_healthy "$consumer_app"
 done <<'EOF'
-immich|immich-database-v6|20260728T020000|immich-database-v9|7654249409354104861|immich|asset|my-apps-immich|my-apps/media/immich
 paperless|paperless-database-v6|20260728T050000|paperless-database-v9|7654249455955726366|paperless|documents_document|my-apps-paperless-ngx|my-apps/home/paperless-ngx
 temporal|temporal-database-v8|20260728T030000|temporal-database-v11|7654249455983591452|temporal|executions|my-apps-temporal|my-apps/development/temporal
 EOF

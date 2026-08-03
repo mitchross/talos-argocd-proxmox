@@ -71,7 +71,7 @@ spec:
         - name: IMMICH_MEDIA_LOCATION
           value: /library
         - name: DB_HOSTNAME
-          value: "immich-database-rw.cloudnative-pg.svc.cluster.local"
+          value: "immich-postgres.immich.svc.cluster.local"
         - name: DB_PORT
           value: "5432"
         - name: DB_USERNAME

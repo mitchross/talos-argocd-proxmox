@@ -2,7 +2,7 @@
 
 **Decision (2026-07-09):** new databases run as **plain Postgres Deployments
 backed up by kopiur**, and the CNPG databases migrate to that pattern one at
-a time (gitea done in #1603; immich, paperless, temporal remaining). The idle
+a time (gitea and immich done; paperless, temporal remaining). The idle
 Crunchy PGO operator was removed the same day (it managed zero databases).
 
 ![Decision between CNPG with Barman and plain PostgreSQL with Kopiur based on the required recovery contract](../../assets/postgres-recovery-choice.svg)
@@ -108,9 +108,12 @@ cluster; nothing changes for the app until step 4. Gitea shown; adjust names.
       v9/v10 lineages added to rustfs lifecycle)
 - [ ] temporal migrated
 - [ ] paperless migrated
-- [ ] immich migrated — **needs the pgvector/VectorChord image**
-      (`ghcr.io/immich-app/postgres`), not stock `postgres`; match the major
-      version immich documents
+- [x] immich migrated (2026-08-03) — no dump/restore was needed: every CNPG
+      lineage back to v1 held zero users and zero assets, so the cutover was a
+      greenfield empty database. Uses `ghcr.io/immich-app/postgres`
+      (**not** stock `postgres` — immich requires the `vchord` extension,
+      preloaded by that image); pinned to the `17-vectorchord0.4.3` major the
+      CNPG cluster ran. Photo files live on the separate `library` PVC.
 - [ ] delete `infrastructure/database/cloudnative-pg/` (operator, global
       secrets, per-DB dirs) and `custom-entrypoints/cnpg-barman-plugin-app.yaml`
       (+ its entry in `apps/kustomization.yaml`)
