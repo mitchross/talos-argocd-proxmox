@@ -313,11 +313,17 @@ wait_for_application_healthy() {
 
 cd "$ROOT_DIR"
 
+# The per-database proof table must be one that actually holds rows in the
+# pinned backup, otherwise the assertion fails on a restore that genuinely
+# worked. Paperless asserts auth_user (2 accounts), not documents_document:
+# every paperless lineage has zero documents, so documents_document could
+# never pass. Verify a candidate table against the restored cluster before
+# changing one — a table chosen for looking important is not evidence.
 log "Validating the pinned recovery contract"
 while IFS='|' read -r db_name read_lineage backup_id write_lineage system_id database_name table_name consumer_app consumer_path; do
   assert_recovery_render "$db_name" "$read_lineage" "$backup_id" "$write_lineage"
 done <<'EOF'
-paperless|paperless-database-v6|20260728T050000|paperless-database-v9|7654249455955726366|paperless|documents_document|my-apps-paperless-ngx|my-apps/home/paperless-ngx
+paperless|paperless-database-v6|20260728T050000|paperless-database-v9|7654249455955726366|paperless|auth_user|my-apps-paperless-ngx|my-apps/home/paperless-ngx
 temporal|temporal-database-v8|20260728T030000|temporal-database-v11|7654249455983591452|temporal|executions|my-apps-temporal|my-apps/development/temporal
 EOF
 
@@ -378,7 +384,7 @@ while IFS='|' read -r db_name read_lineage backup_id write_lineage system_id dat
   sync_application "$consumer_app"
   wait_for_application_healthy "$consumer_app"
 done <<'EOF'
-paperless|paperless-database-v6|20260728T050000|paperless-database-v9|7654249455955726366|paperless|documents_document|my-apps-paperless-ngx|my-apps/home/paperless-ngx
+paperless|paperless-database-v6|20260728T050000|paperless-database-v9|7654249455955726366|paperless|auth_user|my-apps-paperless-ngx|my-apps/home/paperless-ngx
 temporal|temporal-database-v8|20260728T030000|temporal-database-v11|7654249455983591452|temporal|executions|my-apps-temporal|my-apps/development/temporal
 EOF
 
