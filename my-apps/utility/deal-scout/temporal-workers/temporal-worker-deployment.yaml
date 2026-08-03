@@ -1,19 +1,12 @@
-# WorkerDeployment — Temporal Worker Controller CRD (annotated walkthrough in
-# news-reader-temporal-worker/temporal-worker-deployment.yaml).
-#
-# Runs the deal-scout Temporal worker: task queue `deal-scout`, which owns the
-# `deal-scout-scan` Schedule (5x/day, browserless sources: Slickdeals + MSU +
-# Comprenew). No cron anywhere — Temporal Schedules + durable activities with
-# retries. Watch runs at temporal.vanillax.me → Schedules / Workflows.
-#
-# Browser-bound eBay/FB scans still run on the desktop via the
-# deal-scout-runner systemd timer polling the dashboard's /api/scan-request
-# (Temporal frontend is not exposed off-cluster; expose 7233 later and that
-# relay becomes a desktop Temporal worker on a `deal-scout-local` queue).
+# One cluster worker owns both schedules. Cluster-capable sources run as
+# isolated activities here; eBay uses its application-only Browse API token.
+# The Facebook schedule writes a durable job to the
+# Deal Scout API for the outbound-only CachyOS runner. Temporal's unauthenticated
+# frontend remains cluster-internal.
 apiVersion: temporal.io/v1alpha1
 kind: WorkerDeployment
 metadata:
-  name: deal-scout # → Temporal "deployment name"
+  name: deal-scout
   namespace: deal-scout
 spec:
   replicas: 1
@@ -26,7 +19,6 @@ spec:
     steps:
       - rampPercentage: 50
         pauseDuration: 2m
-      # workflows here are short (one scrape activity); a light ramp suffices
   sunset:
     scaledownDelay: 10m
     deleteDelay: 1h
@@ -45,25 +37,35 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          # Source: deal-scout repo, worker/ — build & push:
-          #   docker build -f worker/Dockerfile -t registry.vanillax.me/deal-scout-worker:vX.Y.Z .
-          # Controller injects TEMPORAL_ADDRESS / TEMPORAL_NAMESPACE /
-          # TEMPORAL_DEPLOYMENT_NAME / TEMPORAL_WORKER_BUILD_ID — do not set here.
-          image: registry.vanillax.me/deal-scout-worker:v0.1.0
+          # Source: deal-scout repo worker/. No personal browser profile is
+          # present; eBay authentication is application-only OAuth.
+          image: ghcr.io/mitchross/deal-scout-worker:v0.2.0@sha256:f4aa8c9b597bcd9ff4adc766b080e76080a773c9d96b0a4455cdc1c33b541a3b
           imagePullPolicy: IfNotPresent
           env:
             - name: DEAL_SCOUT_API
               value: "http://deal-scout:8000"
+            - name: CLUSTER_SOURCES
+              value: "ebay,slickdeals,msu,comprenew"
             - name: DEAL_SCOUT_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: deal-scout-secrets
                   key: INGEST_TOKEN
+            - name: EBAY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: deal-scout-ebay
+                  key: EBAY_CLIENT_ID
+            - name: EBAY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: deal-scout-ebay
+                  key: EBAY_CLIENT_SECRET
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
-            readOnlyRootFilesystem: false # Temporal workflow bundling writes to tmp
+            readOnlyRootFilesystem: false
           resources:
             requests:
               cpu: 50m
