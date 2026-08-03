@@ -18,9 +18,15 @@ resources:
   - deployment-machine-learning.yaml
   - deployment-valkey.yaml
   - services.yaml
+  - postgres/pvc.yaml
+  - postgres/service.yaml
+  - postgres/deployment.yaml
   - kopiur/library.yaml
+  - kopiur/immich-postgres-data.yaml
 
-# Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub(s) in kopiur/. Backs up the `library` PVC ONLY —
-# the immich database is CNPG (Barman/S3) and is never under kopiur/VolSync.
+# Uniform kopiur backup fields (repository, copyMethod, populator) for the
+# per-PVC stubs in kopiur/. Backs up `library` (daily) and the plain-Postgres
+# `immich-postgres-data` (hourly). Immich left CNPG/Barman for this pattern —
+# see docs/domains/cnpg/plain-postgres-migration.md.
 components:
   - ../../common/kopiur-backup

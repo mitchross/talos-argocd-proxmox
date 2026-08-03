@@ -52,7 +52,7 @@ spec:
     spec:
       syncPolicy:
         automated:
-          {{ if or (eq .path.basename "immich") (eq .path.basename "paperless-ngx") (eq .path.basename "temporal") }}
+          {{ if or (eq .path.basename "paperless-ngx") (eq .path.basename "temporal") }}
           enabled: false
           prune: false
           selfHeal: false
