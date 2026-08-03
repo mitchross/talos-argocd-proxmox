@@ -10,5 +10,6 @@ resources:
   - service.yaml
   - httproute.yaml
   - temporal-workers/temporal-connection.yaml
+  - temporal-workers/ebay-externalsecret.yaml
   - temporal-workers/temporal-worker-deployment.yaml
   - vpa.yaml
