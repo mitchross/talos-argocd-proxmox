@@ -11,10 +11,10 @@ spec:
   # result" (the template context). The Git generator supplies its matched
   # directory as the `path` object: `.path.basename` is the final directory
   # name, while `.path.path` is the complete repository-relative path.
-  # Example: `infrastructure/database/cloudnative-pg/immich` produces
-  # `.path.basename = immich` and `.path.path` equal to that full path, so the
-  # generated Application is named `database-immich`, targets namespace
-  # `immich`, and renders manifests from the original directory. The domain
+  # Example: `infrastructure/database/cloudnative-pg/paperless` produces
+  # `.path.basename = paperless` and `.path.path` equal to that full path, so
+  # the generated Application is named `database-paperless`, targets namespace
+  # `paperless`, and renders manifests from the original directory. The domain
   # prefix is operationally important: without it, `temporal` (the database)
   # is indistinguishable from `my-apps-temporal` (the server) in the Argo UI.
   # `missingkey=error` stops generation when a field is absent instead of
@@ -38,8 +38,8 @@ spec:
       revision: main
       directories:
       - path: infrastructure/database/*/*
-  # The three stateful CNPG clusters are deliberately manual. A restore is a
-  # transaction, not a background reconciliation: hard-refresh the pinned
+  # The remaining stateful CNPG clusters are deliberately manual. A restore is
+  # a transaction, not a background reconciliation: hard-refresh the pinned
   # recovery render, create the Cluster, prove its PostgreSQL lineage/data,
   # then reconcile its consumer. Support Applications discovered by this same
   # generator (CNPG operator, global secrets, and Redis) remain automated.
@@ -48,7 +48,7 @@ spec:
     spec:
       syncPolicy:
         automated:
-          {{ if or (eq .path.basename "immich") (eq .path.basename "paperless") (eq .path.basename "temporal") }}
+          {{ if or (eq .path.basename "paperless") (eq .path.basename "temporal") }}
           enabled: false
           prune: false
           selfHeal: false
