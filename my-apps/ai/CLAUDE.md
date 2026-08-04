@@ -70,11 +70,15 @@ intended for that card must opt in with the Dell GPU class explicitly.
   injection. (Sole exception: the infrastructure `nvidia-powerlimit` admin
   DaemonSet, which must see all cards without consuming a `nvidia.com/gpu`
   allocation.)
-- **Both 3090s are power-capped at 290W** by
-  `infrastructure/controllers/nvidia-gpu-operator/powerlimit-daemonset.yaml`
-  (measured efficiency knee: −22% power for −7% decode TPS — see the power
-  section of `docs/domains/ai-gpu/3090-llm-optimization.md`). Don't "fix" a
-  perceived slowdown by deleting the cap; tune `POWER_LIMIT_WATTS` instead.
+- **Both 3090s are power-capped at 200W** by
+  `infrastructure/controllers/nvidia-gpu-operator/powerlimit-daemonset.yaml`.
+  This is a **house-circuit constraint, not an efficiency choice**: at the
+  previous 290W cap the Threadripper box drew ~900W at the wall and basement
+  lights flickered. 290W is the measured efficiency knee and 200W is below it
+  (club-3090 measures ~16% worse efficiency at 230W than 290W), so this
+  deliberately trades throughput for electrical headroom. Don't raise it back
+  toward 290W without confirming the circuit; don't "fix" a perceived slowdown
+  by deleting the cap.
 
 ## GPU Workload Pattern
 

@@ -91,10 +91,11 @@ curl -s http://vllm-service.vllm.svc.cluster.local:8080/v1/models
   `nvidia-powerlimit` admin DaemonSet).
 - Don't switch a GPU Deployment to `RollingUpdate` — Recreate is what
   guarantees the old pod releases the card (and avoids RWO Multi-Attach).
-- Don't delete the 290 W power cap to "fix" slowness — tune
+- Don't delete the 200 W power cap to "fix" slowness — tune
   `POWER_LIMIT_WATTS` in
   `infrastructure/controllers/nvidia-gpu-operator/powerlimit-daemonset.yaml`
-  instead.
+  instead. The cap is set by the house circuit, not by the efficiency knee;
+  raising it needs an electrical decision, not just a performance one.
 
 Related: [model catalog](model-catalog.md) (who points at what) ·
 [3090 LLM optimization](3090-llm-optimization.md) (why vLLM TP=2 is the

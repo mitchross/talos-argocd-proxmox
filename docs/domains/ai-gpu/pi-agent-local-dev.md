@@ -54,12 +54,12 @@
       <div class="dgm-node dgm-node--gpu dgm-node--pulse">
         <span class="dgm-node__badge">gpu 0</span>
         <span class="dgm-node__title">RTX 3090</span>
-        <span class="dgm-node__meta">290W cap</span>
+        <span class="dgm-node__meta">200W cap</span>
       </div>
       <div class="dgm-node dgm-node--gpu dgm-node--pulse">
         <span class="dgm-node__badge">gpu 1</span>
         <span class="dgm-node__title">RTX 3090</span>
-        <span class="dgm-node__meta">290W cap</span>
+        <span class="dgm-node__meta">200W cap</span>
       </div>
     </div>
   </div>
