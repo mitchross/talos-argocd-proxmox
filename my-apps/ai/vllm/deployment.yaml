@@ -158,6 +158,14 @@ spec:
               readOnly: true
             - name: dshm
               mountPath: /dev/shm        # TP workers IPC over shared memory — size it generously
+            # Persist the compiled graphs. Both paths must survive a restart or
+            # the engine recompiles from scratch every boot.
+            - name: compile-cache
+              mountPath: /root/.cache/vllm/torch_compile_cache
+              subPath: torch_compile
+            - name: compile-cache
+              mountPath: /root/.triton/cache
+              subPath: triton
       volumes:
         - name: models
           persistentVolumeClaim:
@@ -166,3 +174,6 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 16Gi
+        - name: compile-cache
+          persistentVolumeClaim:
+            claimName: vllm-compile-cache
