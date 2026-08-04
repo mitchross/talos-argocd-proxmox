@@ -402,11 +402,20 @@ tuning can only trim the small slice; retiring the platform is the real saving.
 
 **Live mitigation:**
 `infrastructure/controllers/nvidia-gpu-operator/powerlimit-daemonset.yaml` —
-a DaemonSet on the GPU node that caps both 3090s at **290W** (club-3090
-`docs/HARDWARE.md` measured knee: −22% board power for −7% decode TPS vs 370W
-stock; the "230W sweet spot" lore costs ~16% efficiency vs 290W). Set
-`POWER_LIMIT_WATTS=250` to favor prefill-heavy workloads (−5% chat TPS,
-prefill at its own knee).
+a DaemonSet on the GPU node that caps both 3090s at **200W**.
+
+200W is a **house-circuit limit, not the efficiency knee**. At the previous
+290W cap the whole Threadripper box measured ~896W at the wall (2x ~245W GPU +
+~190W CPU + ~100W platform + PSU loss) and basement lights flickered. The cap
+buys electrical headroom at a real throughput cost.
+
+For reference, the performance-optimal values from club-3090 `docs/HARDWARE.md`
+are **290W** air-cooled (measured knee: −22% board power for −7% decode TPS vs
+370W stock) and **250W** for prefill-heavy work; that doc also notes the "230W
+sweet spot" lore costs ~16% efficiency vs 290W, so 200W is below every measured
+recommendation. Raising `POWER_LIMIT_WATTS` back toward 290W is an electrical
+decision first — confirm the circuit, and note that GPU transient spikes exceed
+any `nvidia-smi` average cap, so the cap alone does not eliminate flicker.
 
 **Rejected: KEDA cron scale-to-zero for vLLM overnight.** The my-apps AppSet
 runs `selfHeal: true` and the GPU apps use git replica-flips as the
