@@ -72,13 +72,8 @@ intended for that card must opt in with the Dell GPU class explicitly.
   allocation.)
 - **Both 3090s are power-capped at 200W** by
   `infrastructure/controllers/nvidia-gpu-operator/powerlimit-daemonset.yaml`.
-  This is a **house-circuit constraint, not an efficiency choice**: at the
-  previous 290W cap the Threadripper box drew ~900W at the wall and basement
-  lights flickered. 290W is the measured efficiency knee and 200W is below it
-  (club-3090 measures ~16% worse efficiency at 230W than 290W), so this
-  deliberately trades throughput for electrical headroom. Don't raise it back
-  toward 290W without confirming the circuit; don't "fix" a perceived slowdown
-  by deleting the cap.
+  This is a **house-circuit limit, not the efficiency knee** (that's 290W) —
+  raising it is an electrical decision. Don't delete the cap to "fix" slowness.
 
 ## GPU Workload Pattern
 
