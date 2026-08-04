@@ -77,14 +77,8 @@ spec:
       - name: postgres-exporter
         image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e
         imagePullPolicy: IfNotPresent
-        # Non-default collectors disabled: the exporter crashlooped 91 times,
-        # exiting code 2 several minutes after a clean start with nothing
-        # logged. Ruled out: the DB connection (established fine), the server
-        # version (15.12.0 read OK), and pg_stat_statements itself (installed,
-        # preloaded, queries fine by hand). The silent exit points at one of
-        # these two non-default collectors, so run the default set instead.
-        # Re-add ONE at a time if their metrics are wanted, and watch the
-        # restart count before adding the second.
+        # Non-default collectors disabled — they crashlooped the exporter
+        # (exit 2, nothing logged). Re-add one at a time.
         # args:
         # - --collector.long_running_transactions
         # - --collector.stat_statements
