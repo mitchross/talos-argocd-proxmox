@@ -9,7 +9,11 @@ spec:
   # vLLM is the active in-cluster LLM backend (TP=2 across both 3090s).
   # llama-cpp and comfyui are scaled to 0 — vLLM's TP=2 takes BOTH cards.
   # To revert: set this to 0 and llama-cpp-server back to 1 (one commit).
-  replicas: 1
+  #
+  # Temporarily 0: idling the GPUs (~25W/card instead of ~195W) to test
+  # whether basement light flicker tracks this box or the AC compressor.
+  # Set back to 1 when that test is done.
+  replicas: 0
   strategy:
     type: Recreate            # whole-card GPU workload; never two pods on the cards at once
   revisionHistoryLimit: 1
