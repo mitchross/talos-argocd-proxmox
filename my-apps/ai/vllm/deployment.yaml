@@ -158,8 +158,7 @@ spec:
               readOnly: true
             - name: dshm
               mountPath: /dev/shm        # TP workers IPC over shared memory — size it generously
-            # Persist the compiled graphs. Both paths must survive a restart or
-            # the engine recompiles from scratch every boot.
+            # Both paths must persist or the engine recompiles every boot.
             - name: compile-cache
               mountPath: /root/.cache/vllm/torch_compile_cache
               subPath: torch_compile
