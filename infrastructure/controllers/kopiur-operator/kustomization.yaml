@@ -10,47 +10,32 @@ helmCharts:
   - name: kopiur
     repo: oci://ghcr.io/home-operations/charts
     # renovate: datasource=docker depName=ghcr.io/home-operations/charts/kopiur
-    # CHART version == app version (release.yaml packages with --app-version=VERSION).
-    # Pre-1.0/alpha: re-verify CRDs on every bump.
-    # 0.5.0 breaking changes assessed 2026-07-04 (upstream #190/#191/#192):
-    #   - copyMethod default flipped Direct→Snapshot — no impact, the
-    #     kopiur-backup component pins copyMethod: Snapshot explicitly (and must
-    #     keep pinning it: SSA re-defaulting hazard on implicit values).
-    #   - verification.quick reshaped to { schedule: {...} } — unused here.
-    #   - metrics renamed (kopiur_snapshot_* → kopiur_policy_last_backup_*) —
-    #     chart ServiceMonitor/PrometheusRule/dashboard all disabled; nothing
-    #     in monitoring/ scrapes kopiur metric names.
-    # 0.5.2 (2026-07-05): one fix — transient VolumeSnapshot errors no longer
-    # terminally fail backups (#201). Directly relevant: Longhorn under load
-    # throws exactly those (DR doc "attach conflicts"); pre-0.5.2 they burned
-    # the whole run until the next cron.
-    # 0.6.0 (2026-07-06): the breaking chart refactor (#206) — pre-verified
-    # 2026-07-06 before release: our values keys keep their paths; CRDs moved
-    # from templated resources to Helm's native crds/ dir. That move DELETED
-    # CRDs (and every kopiur CR with them) for Flux HelmRelease users on
-    # upgrade — helm doesn't manage crds/ on upgrade. Our path is immune:
-    # helm template --include-crds (this includeCRDs: true) emits the same 8
-    # CRDs before and after, so ArgoCD never sees them leave the manifest.
-    # NEVER remove includeCRDs: true — it IS the CRD lifecycle here.
-    # 0.8.0: adds a SnapshotPolicy deletion cascade. onPolicyDelete: Retain is
-    # pinned in the kopiur-backup component so an ArgoCD prune of a policy can't
-    # delete its backup history. CRDs unchanged (still 8) — stubs render as-is.
-    version: 0.8.1
+    # CHART version == app version (release.yaml packages with --app-version=VERSION),
+    # so this one pin also drives the controller/webhook/mover image tags.
+    # Pre-1.0/alpha: re-verify the 8 CRDs on every bump.
+    version: 0.9.2
     releaseName: kopiur
     namespace: kopiur-system
+    # NEVER remove includeCRDs: true — it IS the CRD lifecycle here. Upstream
+    # keeps the CRDs in helm's native crds/ dir, which `helm upgrade` does not
+    # manage; that is how Flux HelmRelease users lost every kopiur CR on the
+    # 0.6.0 refactor. Rendering with --include-crds keeps all 8 in the manifest
+    # ArgoCD applies, so they never appear to leave the desired state.
     includeCRDs: true
     valuesFile: values.yaml
-    # 0.6.0 raised the chart's kubeVersion floor to >=1.32.0-0. Without this
-    # field, `kustomize build --enable-helm` (CI AND the ArgoCD repo-server)
-    # templates with helm's DEFAULT capabilities (v1.31) and the render fails
-    # "chart requires kubeVersion >=1.32.0-0". Keep loosely in step with the
-    # real cluster version (omni/cluster-template/cluster-template.yaml).
+    # The chart declares kubeVersion >=1.32.0-0. Without this field,
+    # `kustomize build --enable-helm` (CI AND the ArgoCD repo-server) templates
+    # with helm's DEFAULT capabilities (v1.31) and the render fails "chart
+    # requires kubeVersion >=1.32.0-0". Keep loosely in step with the real
+    # cluster version (omni/cluster-template/cluster-template.yaml).
     kubeVersion: "1.36.3"
 
-# Upstream RBAC gap (chart 0.8.1): kopiur-mover has get+patch on the `*/status`
-# subresources but not the parents, which RBAC treats as distinct. Movers 403 and
-# stop reporting progress, so a Restore sits in "Restoring" with no status — that
-# masked a hung gitea restore for 24h on 2026-07-29. Drop once upstream fixes it.
+# Upstream RBAC gap (still present in chart 0.9.2): kopiur-mover has get+patch on
+# the `*/status` subresources but not the parents, which RBAC treats as distinct.
+# Movers 403 and stop reporting progress, so a Restore sits in "Restoring" with no
+# status — that masked a hung gitea restore for 24h on 2026-07-29. Drop once
+# upstream widens deploy/rbac/mover-clusterrole.yaml (its `cargo xtask gen-rbac`
+# output is the chart's source of truth).
 patches:
   - target:
       kind: ClusterRole
