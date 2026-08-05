@@ -294,10 +294,45 @@ or [`my-apps/home/project-nomad/mysql/`](https://github.com/mitchross/talos-argo
 
 ---
 
-## 6. Upstream 0.5.x–0.8 notes (chart pinned `0.8.0`)
+## 6. Upstream 0.5.x–0.9.x notes (chart pinned `0.9.2`)
 
-What changed upstream in 0.5.0–0.8.0 and how it lands here:
+What changed upstream and how it lands here. Entries are kept only where they
+explain why this repo is configured the way it is — the full release history
+lives at <https://github.com/home-operations/kopiur/releases>.
 
+- **0.9.2 (2026-08-02)**: adds opt-in **object-lock blob retention** on
+  `Repository`/`ClusterRepository` (S3 Object Lock; WORM protection for the
+  backup blobs themselves). **Not enabled here** — it needs Object Lock support
+  on the RustFS bucket and a retention window that outlives the GFS policy;
+  evaluate it as a ransomware control before turning it on, because locked blobs
+  cannot be deleted early even by a maintenance run. Also: a blank
+  `volumeSnapshotClassName` now explicitly means "auto-select the default class
+  for the source PVC's CSI driver" — we pin `longhorn-snapclass` in the
+  component, so this is a no-op here.
+- **0.9.1 (2026-07-29)**: the controller survives a slow API server instead of
+  abdicating leadership on the first missed renew (#319/#324). Paired with a
+  new chart-rendered **cluster-scoped `FlowSchema`**
+  (`kopiur-leader-election`, `leaderElection.flowSchema.enabled: true` by
+  default), which puts the operator's `leases` calls into Kubernetes' built-in
+  guaranteed `leader-election` APF lane instead of `workload-low`. This is the
+  only new object the 0.8.1 → 0.9.2 bump adds to the cluster; the permissive
+  AppProject `clusterResourceWhitelist` already allows it.
+- **0.9.0 (2026-07-28) — breaking upstream (#304), but not for us.** Mover
+  security-context handling became identity-aware, and CRD changes are purely
+  **additive**: still 8 CRDs, no field removed or newly required, so every
+  per-PVC stub renders and validates unchanged (verified against the 0.9.2 CRD
+  schemas at the bump). Two things worth knowing:
+    - Every backup now **records the identity it actually ran as** (uid/gid,
+      pod `fsGroup`, and whether it was explicit/inherited/defaulted) onto the
+      kopia snapshot as the `kopiur-meta` tag, mirrored to
+      `Snapshot.status.recorded`. It lives in the repository, so it survives a
+      cluster rebuild and reappears on discovered snapshots.
+    - Restores gain a third inherit form, `spec.mover.inheritSecurityContextFrom.snapshot: {}`,
+      which replays that recorded identity. Unlike `pvcConsumer` it needs **no
+      live pod**, so it works with `target.populator` and during a DR
+      cold-start — which is exactly the objection that rules out `pvcConsumer`
+      below. Not adopted yet: the explicit data-owner uids in the stubs are
+      still the rule, and switching would want a restore drill first.
 - **0.8.0 adds a SnapshotPolicy deletion cascade + snapshot auto-adoption**
   (#272), with mass-deletion protection. Two new `SnapshotPolicy` fields:
     - `spec.deletion.onPolicyDelete` (`Retain` default / `Delete`) — `Retain`
