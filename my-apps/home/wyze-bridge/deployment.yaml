@@ -4,10 +4,7 @@ metadata:
   name: wyze-bridge
   namespace: wyze-bridge
 spec:
-  # Parked at 0: crashlooping (263 restarts). Every restart is an unhealthy
-  # object for HolmesGPT to investigate, and each investigation is dozens of
-  # LLM calls against vLLM — so this was indirectly pinning both GPUs.
-  # Diagnose the crashloop before setting this back to 1.
+  # Parked at 0 — crashlooping (263 restarts). Diagnose before restoring to 1.
   replicas: 0
   strategy:
     type: Recreate

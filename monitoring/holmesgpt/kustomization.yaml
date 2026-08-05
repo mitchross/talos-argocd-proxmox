@@ -16,11 +16,8 @@ helmCharts:
     valuesFile: values.yaml
     includeCRDs: true
 
-# Parked at 0. Holmes is an agentic investigator: each unhealthy object drives
-# dozens of chained qwen3.6-27b calls, and it opened 8 concurrent connections
-# against vLLM's max-num-seqs=2 — saturating both GPUs at ~193W each for
-# 0.1 tok/s. Nothing consumes the output (robusta sink disabled, no inbound
-# callers), so the analysis was discarded. Wire it to a sink before scaling up.
+# Parked at 0 — saturated vLLM and nothing consumes its output (no sink, no
+# inbound callers). Wire it to a sink before scaling up.
 patches:
   - target:
       kind: Deployment
