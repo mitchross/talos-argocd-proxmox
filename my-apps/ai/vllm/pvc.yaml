@@ -50,12 +50,8 @@ spec:
   storageClassName: ""
   volumeName: vllm-nfs-pv
 ---
-# torch.compile + Triton kernel caches. Without this the engine recompiles on
-# every start: measured 166s of torch.compile plus a 131s warmup inside an
-# 11-minute cold start, all of it thrown away when the pod restarts. Local
-# block (not the read-only NFS models share) because the caches are written at
-# runtime. Pattern from the club-3090 dual-3090 compose, which mounts the same
-# two paths.
+# torch.compile + Triton caches — without this the engine recompiles every
+# boot (~166s). Local block: the caches are written at runtime.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
