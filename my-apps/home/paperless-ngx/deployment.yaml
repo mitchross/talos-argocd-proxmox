@@ -29,7 +29,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       containers:
         - name: paperless-ngx
-          image: ghcr.io/paperless-ngx/paperless-ngx:latest@sha256:d5651511a6e3a5cb5e5c0da1f5024aa296a4051a28d9d743ce832a8eca16b453
+          image: ghcr.io/paperless-ngx/paperless-ngx:latest@sha256:69a4e06ec9d17a662693341128cc6a4d717c48ac793d769bbf8748e83e37975c
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
