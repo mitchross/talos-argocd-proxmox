@@ -332,6 +332,20 @@
       dependencyDashboardApproval: true,
       automerge: false,
     },
+    {
+      // deal-scout images are released by scripts/release.sh in the source
+      // repo (github.com/mitchross/deal-scout), which builds both images
+      // under one version and opens its own gitops PR pinning tag+digest.
+      // Renovate would open a competing bump and, under the repo-wide
+      // minor/patch rule, AUTOMERGE it -- racing that PR and splitting the
+      // dashboard and worker onto different versions. Last rule wins.
+      description: 'deal-scout images are released by their own pipeline; Renovate must not bump them',
+      matchPackageNames: [
+        'ghcr.io/mitchross/deal-scout',
+        'ghcr.io/mitchross/deal-scout-worker',
+      ],
+      enabled: false,
+    },
   ],
   ignorePaths: [
     '**/charts/**',
