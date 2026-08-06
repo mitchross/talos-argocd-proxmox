@@ -30,10 +30,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Match the binaries bundled in Argo CD v3.4.5. A render that only passes
+  # Match the binaries bundled in Argo CD v3.5.0. A render that only passes
   # with newer or older tools is not proof that repo-server can deploy it.
+  # v3.5.0 dropped Helm 3 entirely — repo-server renders with Helm 4.
   KUSTOMIZE_VERSION: 5.8.1
-  HELM_VERSION: 3.19.4
+  HELM_VERSION: 4.2.1
   KUBECONFORM_VERSION: v0.7.0
   KUBERNETES_VERSION: 1.36.3
 

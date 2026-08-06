@@ -140,11 +140,11 @@ See the complete guide: [docs/CILIUM_CNI.md](docs/CILIUM_CNI.md)
 **Quick Install**:
 ```bash
 # Disable kube-proxy in cluster config, then:
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/standard-install.yaml
-kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/experimental-install.yaml
 
 cilium-cli install \
-    --version 1.19.6 \
+    --version 1.20.0 \
     --set cluster.name=talos-prod-cluster \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
