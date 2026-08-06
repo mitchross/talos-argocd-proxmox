@@ -173,12 +173,15 @@ Omni? Create the service account first — see
 
 ### 4. Install Gateway API CRDs
 
-Install both channels before enabling Cilium Gateway API support, **experimental last**. Both channels ship `TLSRoute`, but standard serves only `v1` while experimental serves `v1alpha2`/`v1alpha3` too — Cilium reads the alpha versions, so a standard-channel `TLSRoute` CRD makes every TLSRoute unreadable. Applying experimental second leaves the right one in place.
+Install the complete standard channel before enabling Cilium Gateway API support:
 
 ```bash
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml
-kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/experimental-install.yaml
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml
 ```
+
+Do not apply the full experimental bundle afterward: Gateway API v1.6.1's
+safe-upgrades policy rejects mixing the two channels. This cluster does not use
+experimental `TLSRoute` resources.
 
 ### 5. Install Cilium (CNI)
 
