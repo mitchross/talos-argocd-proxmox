@@ -18,7 +18,7 @@ resources:
 helmCharts:
   - name: headlamp
     repo: https://kubernetes-sigs.github.io/headlamp/
-    version: "0.43.0"
+    version: "0.44.0"
     releaseName: headlamp
     namespace: kube-system
     includeCRDs: true
