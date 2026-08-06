@@ -74,14 +74,14 @@ ArgoCD deploys in strict order so dependencies land before the things that need 
 | Omni server + `omnictl` | `v1.9.0` | `omni/omni/omni.env.example` |
 | Talos Linux | `v1.13.7` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
 | Kubernetes | `v1.36.3` | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` |
-| Cilium | `1.19.6` | `infrastructure/networking/cilium/kustomization.yaml` |
-| Gateway API CRDs | `v1.4.1` | bootstrap commands below |
-| ArgoCD Helm chart | `10.2.1` (Argo CD `v3.4.5`) | `scripts/bootstrap-argocd.sh` |
+| Cilium | `1.20.0` | `infrastructure/networking/cilium/kustomization.yaml` |
+| Gateway API CRDs | `v1.6.1` | bootstrap commands below |
+| ArgoCD Helm chart | `10.3.0` (Argo CD `v3.5.0`) | `scripts/bootstrap-argocd.sh` |
 | Proxmox provider | `latest@sha256:96433a…` | `omni/proxmox-provider/docker-compose.yml` |
 
 Keep the Omni server and local `omnictl` on the **same** release — mismatched versions fail with obscure gRPC errors.
 
-> **Gateway API `v1.4.1` is an intentional pin.** `v1.5.x` moved `TLSRoute` to `v1`, but Cilium 1.19 still expects `v1alpha2`. Cilium 1.20 is the first minor with Gateway API 1.5.1 support — don't bump the CRDs ahead of Cilium.
+> **Keep the Gateway API CRDs on the version Cilium declares support for.** Cilium 1.20 supports Gateway API `v1.6.1`. Bumping the CRDs ahead of Cilium breaks route reconciliation — check the Cilium release's Gateway API docs before moving either one.
 
 ---
 
@@ -173,11 +173,11 @@ Omni? Create the service account first — see
 
 ### 4. Install Gateway API CRDs
 
-Install both channels before enabling Cilium Gateway API support — Cilium 1.19 still watches the experimental `TLSRoute` API.
+Install both channels before enabling Cilium Gateway API support, **experimental last**. Both channels ship `TLSRoute`, but standard serves only `v1` while experimental serves `v1alpha2`/`v1alpha3` too — Cilium reads the alpha versions, so a standard-channel `TLSRoute` CRD makes every TLSRoute unreadable. Applying experimental second leaves the right one in place.
 
 ```bash
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/standard-install.yaml
-kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/experimental-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/standard-install.yaml
+kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.6.1/experimental-install.yaml
 ```
 
 ### 5. Install Cilium (CNI)
@@ -194,7 +194,7 @@ else
 fi
 
 "$CILIUM_CMD" install \
-    --version 1.19.6 \
+    --version 1.20.0 \
     --set cluster.name=talos-singlenode-gpu-prod \
     --set ipam.mode=kubernetes \
     --set kubeProxyReplacement=true \
@@ -219,7 +219,7 @@ what ArgoCD renders at Wave 0 (`infrastructure/networking/cilium/`), or Wave 0
 will immediately reconfigure the seed install:
 
 > - **Routing mode matches by default**: the CLI's default (`tunnel`/vxlan) equals `values.yaml`'s `routingMode: tunnel`. If the managed values ever change routing mode, add the matching `--set routingMode=...` here or Wave 0 restarts every agent mid-bootstrap.
-> - **`--version 1.19.6`** must match `infrastructure/networking/cilium/kustomization.yaml`. A mismatch makes ArgoCD upgrade Cilium at Wave 0, regenerating some Hubble certs but not others → `x509: certificate signed by unknown authority` blocks every later wave.
+> - **`--version 1.20.0`** must match `infrastructure/networking/cilium/kustomization.yaml`. A mismatch makes ArgoCD upgrade Cilium at Wave 0, regenerating some Hubble certs but not others → `x509: certificate signed by unknown authority` blocks every later wave.
 > - **`cluster.name`** must match `values.yaml` (Hubble cert SANs). Run without it and certs are issued for `default`/`kind-kind` → TLS failures.
 > - **Hubble stays disabled at bootstrap on purpose** — ArgoCD enables it at Wave 0 so it's the sole owner of the Hubble TLS certs (no CLI-vs-ArgoCD cert mismatch).
 
