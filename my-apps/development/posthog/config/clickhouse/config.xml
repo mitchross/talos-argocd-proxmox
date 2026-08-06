@@ -86,11 +86,13 @@
     <background_message_broker_schedule_pool_size>10</background_message_broker_schedule_pool_size>
     <max_thread_pool_size>10000</max_thread_pool_size>
 
-    <!-- how many threads merge files, default is 16. Must stay >=10: upstream
-         migrations create tables with per-table
-         number_of_free_entries_in_pool_to_execute_mutation=20, and CH rejects
-         the CREATE unless pool*concurrency_ratio(2) >= 20. -->
-    <background_pool_size>12</background_pool_size>
+    <!-- how many threads merge files. Upstream migrations create tables whose
+         per-table pool thresholds CH sanity-checks against
+         pool*concurrency_ratio(2); the CREATE is rejected if the product is
+         lower. Highest threshold seen so far is
+         number_of_free_entries_in_pool_to_execute_optimize_entire_partition=25,
+         so this must stay >=13. Left at upstream's default 16 (=32) for headroom. -->
+    <background_pool_size>16</background_pool_size>
 
     <!-- Number of workers to recycle connections in background (see also drain_timeout).
          If the pool is full, connection will be drained synchronously. -->
