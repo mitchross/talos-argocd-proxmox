@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: wyze-bridge
-        image: ghcr.io/thatdaveguy1/docker-wyze-bridge:latest@sha256:9b4c88f601d41b987beaa12a0c296dfc7dbc3162ff95986c8a61869560b73ce6
+        image: ghcr.io/thatdaveguy1/docker-wyze-bridge:latest@sha256:704866f6f99efcbdbb02e43d27d1199b4d592a3838219551f9903fa803faf74d
         imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:
