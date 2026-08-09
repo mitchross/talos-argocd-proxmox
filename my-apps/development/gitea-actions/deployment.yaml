@@ -94,10 +94,13 @@ spec:
               command: [docker, info]
             periodSeconds: 2
             failureThreshold: 30
+          # `docker info` runs well past the 1s probe default on a dind busy
+          # with a build, and a liveness timeout kills the daemon mid-job.
           livenessProbe:
             exec:
               command: [docker, info]
             periodSeconds: 30
+            timeoutSeconds: 10
 
         # Prune sidecar — keeps the dind PVC from filling up. Runs every
         # 6h; bounds buildkit cache to 20Gi and removes stopped
