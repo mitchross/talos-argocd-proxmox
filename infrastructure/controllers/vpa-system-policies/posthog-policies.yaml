@@ -39,7 +39,12 @@ spec:
     minReplicas: 1
   resourcePolicy:
     containerPolicies:
-      - containerName: "*"
+      # Fixed-size sidecar: leave it alone. VPA scaled it to 35m CPU, which
+      # stretched the /metrics scrape past its probe timeout and restart-looped
+      # the exporter, taking the whole pod out of the `db` Service endpoints.
+      - containerName: postgres-exporter
+        mode: "Off"
+      - containerName: db
         controlledResources: ["cpu", "memory"]
         controlledValues: RequestsOnly
         maxAllowed:
