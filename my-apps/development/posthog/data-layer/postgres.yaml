@@ -95,18 +95,20 @@ spec:
         ports:
         - containerPort: 9187
           name: metrics
+        # NEVER give this sidecar a readinessProbe. A not-ready container makes
+        # the whole pod not-ready, which drops this pod from the `db` Service
+        # endpoints and black-holes Postgres for every PostHog consumer — the
+        # database stays up and nothing can reach it. The DSN comment above
+        # avoids the same deadlock from the other direction.
+        # timeoutSeconds must exceed a real scrape: /metrics queries Postgres
+        # and measured ~1.65s here, against the 1s default.
         livenessProbe:
           httpGet:
             path: /metrics
             port: metrics
           initialDelaySeconds: 10
           periodSeconds: 30
-        readinessProbe:
-          httpGet:
-            path: /metrics
-            port: metrics
-          initialDelaySeconds: 5
-          periodSeconds: 10
+          timeoutSeconds: 10
         resources:
           requests:
             cpu: 10m
