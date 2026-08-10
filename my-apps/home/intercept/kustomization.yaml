@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: intercept
+
+resources:
+  - namespace.yaml
+  - pvc.yaml
+  - kopiur/intercept-data.yaml
+  - deployment.yaml
+  - service.yaml
+  - httproute.yaml
+  - vpa.yaml
+
+components:
+  - ../../common/kopiur-backup

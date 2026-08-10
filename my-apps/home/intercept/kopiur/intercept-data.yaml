@@ -1,0 +1,47 @@
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: intercept-data
+  namespace: intercept
+spec:
+  sources:
+    - pvc:
+        name: intercept-data
+  identity:
+    username: intercept-data
+    hostname: intercept
+  retention:
+    keepDaily: 14
+    keepWeekly: 6
+    keepMonthly: 3
+  mover:
+    securityContext:
+      runAsUser: 0
+      runAsNonRoot: false
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: intercept-data-daily
+  namespace: intercept
+spec:
+  policyRef:
+    name: intercept-data
+  schedule:
+    cron: "53 3 * * *"
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: intercept-data-restore
+  namespace: intercept
+spec:
+  source:
+    fromPolicy:
+      name: intercept-data
+      offset: 0
+  mover:
+    securityContext:
+      runAsUser: 0
+      runAsNonRoot: false
