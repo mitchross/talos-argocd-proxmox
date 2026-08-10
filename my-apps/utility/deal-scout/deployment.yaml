@@ -29,7 +29,7 @@ spec:
       containers:
         - name: deal-scout
           # Source: github.com/mitchross/deal-scout, dashboard/
-          image: ghcr.io/mitchross/deal-scout:v0.8.1@sha256:6d27f3681c380307359e3d9f436dbdcdc28abd659d543c3f6daed7327e255100
+          image: ghcr.io/mitchross/deal-scout:v0.8.3@sha256:cfc7963174e60d98906a6d1f0c9b2d446e2037377c1b34ebecb6b87577754726
           imagePullPolicy: IfNotPresent
           env:
             - name: DATA_DIR
