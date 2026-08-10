@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: intercept-postgres
+  namespace: intercept
+spec:
+  selector:
+    app.kubernetes.io/name: intercept-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+      protocol: TCP
