@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: intercept
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+    kopiur.home-operations.com/repo: cluster-kopia
+  annotations:
+    # Intercept and the kopiur mover both run as root: the upstream image owns
+    # its SQLite database and capture output as uid 0.
+    kopiur.home-operations.com/privileged-movers: "true"
