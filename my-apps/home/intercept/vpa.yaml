@@ -22,3 +22,28 @@ spec:
         maxAllowed:
           cpu: "4"
           memory: 8Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: intercept-postgres
+  namespace: intercept
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: intercept-postgres
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: postgres
+        controlledResources: ["cpu", "memory"]
+        controlledValues: RequestsOnly
+        minAllowed:
+          cpu: 25m
+          memory: 128Mi
+        maxAllowed:
+          cpu: "2"
+          memory: 4Gi

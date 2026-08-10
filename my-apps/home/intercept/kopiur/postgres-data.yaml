@@ -1,0 +1,57 @@
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: intercept-postgres-data
+  namespace: intercept
+spec:
+  sources:
+    - pvc:
+        name: intercept-postgres-data
+  identity:
+    username: intercept-postgres-data
+    hostname: intercept
+  retention:
+    keepHourly: 24
+    keepDaily: 7
+    keepWeekly: 4
+  mover:
+    securityContext:
+      runAsUser: 999
+      runAsGroup: 999
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 999
+      supplementalGroups:
+        - 999
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: intercept-postgres-data-hourly
+  namespace: intercept
+spec:
+  policyRef:
+    name: intercept-postgres-data
+  schedule:
+    cron: "1 * * * *"
+---
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: intercept-postgres-data-restore
+  namespace: intercept
+spec:
+  source:
+    fromPolicy:
+      name: intercept-postgres-data
+      offset: 0
+  mover:
+    securityContext:
+      runAsUser: 999
+      runAsGroup: 999
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 999
+      supplementalGroups:
+        - 999

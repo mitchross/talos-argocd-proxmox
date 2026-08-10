@@ -4,8 +4,13 @@ namespace: intercept
 
 resources:
   - namespace.yaml
+  - postgres-secret.yaml
   - pvc.yaml
   - kopiur/intercept-data.yaml
+  - postgres/deployment.yaml
+  - postgres/service.yaml
+  - postgres/pvc.yaml
+  - kopiur/postgres-data.yaml
   - deployment.yaml
   - service.yaml
   - httproute.yaml
