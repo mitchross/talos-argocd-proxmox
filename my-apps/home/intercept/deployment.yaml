@@ -71,6 +71,21 @@ spec:
               value: INFO
             - name: INTERCEPT_ADSB_AUTO_START
               value: "false"
+            - name: INTERCEPT_ADSB_HISTORY_ENABLED
+              value: "true"
+            - name: INTERCEPT_ADSB_DB_HOST
+              value: intercept-postgres
+            - name: INTERCEPT_ADSB_DB_PORT
+              value: "5432"
+            - name: INTERCEPT_ADSB_DB_NAME
+              value: intercept_adsb
+            - name: INTERCEPT_ADSB_DB_USER
+              value: intercept
+            - name: INTERCEPT_ADSB_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: intercept-postgres-secret
+                  key: password
             - name: INTERCEPT_SHARED_OBSERVER_LOCATION
               value: "true"
             - name: INTERCEPT_REGION
