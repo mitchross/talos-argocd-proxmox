@@ -52,7 +52,9 @@ spec:
               mountPath: /persist
       containers:
         - name: intercept
-          image: ghcr.io/smittix/intercept:main@sha256:72bb71edf69a6e26b356edcc83911f523029fc3eb6249d5b9a08857740afb3bf
+          # Upstream's amd64 acarsdec is built with -march=native and crashes
+          # on this worker; the derivative only replaces that binary (#246).
+          image: ghcr.io/mitchross/intercept:acarsdec-portable-0f59c326-339f63eb@sha256:fdbe22567f5c5e016952ff0609847f9ce3e3a1dd71ed4ebf2bad51bb6b08f9af
           imagePullPolicy: IfNotPresent
           securityContext:
             # Upstream requires privileged access for libusb-based SDR tools.
