@@ -123,6 +123,12 @@ gatewayAPI:
   sessionAffinity: true
   sessionAffinityTimeoutSeconds: 10800 # 3 hours
 
+# Cilium 1.20.0 ADS can livelock after its last L7 listener drains, publishing
+# an empty policy snapshot that makes every Gateway return 403 "Access denied".
+# Split xDS is unaffected; keep it until cilium/cilium#47624 ships in a release.
+envoy:
+  xdsMode: split
+
 # Cilium agent resources (VPA-optimized 2026-02-28; mem limit raised 2026-05-04)
 # Capacity baseline 2026-05-04 showed cilium-* daemonset pods observed
 # 0.8-1.2 GiB at the 2 GiB limit boundary. Endpoint maps grow with churn.
