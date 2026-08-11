@@ -62,8 +62,12 @@ defaultSettings:
   # a Longhorn setting.
   # Performance: prefer local disk for reads when replica is on same node
   defaultDataLocality: "best-effort"
-  # Cleanup: limit snapshot accumulation per volume
-  snapshotMaxCount: "10"
+  # Cleanup: limit snapshot accumulation per volume. Headroom matters here:
+  # a failed kopiur backup leaves its Longhorn snapshot behind, so each failure
+  # permanently burns a slot. At "10" a two-day backend outage filled five
+  # volumes and wedged their backups indefinitely — a full volume cannot
+  # snapshot, so it can never back up again without a manual purge.
+  snapshotMaxCount: "30"
   autoCleanupSystemGeneratedSnapshot: "true"
   # Allow Longhorn to auto-upgrade volume engines after manager upgrades
   concurrentAutomaticEngineUpgradePerNodeLimit: "3"
