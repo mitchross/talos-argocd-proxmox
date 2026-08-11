@@ -3,6 +3,11 @@ kind: PersistentVolumeClaim
 metadata:
   name: deal-scout-data
   namespace: deal-scout
+  annotations:
+    # Immutable dataSourceRef on a Bound PVC — mask the SSA dry-run diff
+    # (the AppSet ignoreDifferences handles the live compare).
+    argocd.argoproj.io/compare-options: ServerSideDiff=false
+    argocd.argoproj.io/sync-options: ServerSideApply=false
 spec:
   accessModes:
     - ReadWriteOnce
@@ -10,3 +15,12 @@ spec:
   resources:
     requests:
       storage: 1Gi
+  # kopiur restore-before-bind: on recreate this binds Pending until the
+  # Restore populator hydrates it from the latest kopia snapshot. No-op while
+  # Bound. Backup/restore CRs in kopiur/deal-scout-data.yaml; uniform fields
+  # come from the ../../common/kopiur-backup component; the mover uid:gid
+  # lives in the stub.
+  dataSourceRef:
+    apiGroup: kopiur.home-operations.com
+    kind: Restore
+    name: deal-scout-data-restore
