@@ -1,0 +1,67 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
+# hindsight database backup STUB — uniform fields (repository, copyMethod,
+# populator) injected by ../../common/kopiur-backup. The mover securityContext
+# is per-PVC and stays in THIS stub (docs/domains/storage/kopiur-mover-permissions.md).
+#
+# pgvector/pgvector:pg16 running as a plain Deployment, NOT CloudNativePG --
+# so it gets no CNPG backup and needs this. Runs as uid/gid 999 (the postgres
+# user in that image), which is what the mover securityContext below matches.
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: hindsight-db-pvc
+  namespace: hindsight
+spec:
+  sources:
+    - pvc:
+        name: hindsight-db-pvc
+  identity:
+    username: hindsight-db-pvc
+    hostname: hindsight
+  retention:
+    keepDaily: 14
+    keepWeekly: 6
+    keepMonthly: 3
+  mover:
+    securityContext:
+      runAsUser: 999
+      runAsGroup: 999
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 999
+      supplementalGroups:
+        - 999
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: hindsight-db-pvc-daily
+  namespace: hindsight
+spec:
+  policyRef:
+    name: hindsight-db-pvc
+  schedule:
+    cron: "57 3 * * *"
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: hindsight-db-pvc-restore
+  namespace: hindsight
+spec:
+  source:
+    fromPolicy:
+      name: hindsight-db-pvc
+      offset: 0
+  mover:
+    securityContext:
+      runAsUser: 999
+      runAsGroup: 999
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 999
+      supplementalGroups:
+        - 999

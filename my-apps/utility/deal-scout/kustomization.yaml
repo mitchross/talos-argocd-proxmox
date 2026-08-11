@@ -13,3 +13,8 @@ resources:
   - temporal-workers/ebay-externalsecret.yaml
   - temporal-workers/temporal-worker-deployment.yaml
   - vpa.yaml
+  - kopiur/deal-scout-data.yaml
+
+# Uniform kopiur backup fields (repository, copyMethod, populator) for the per-PVC stub(s) in kopiur/.
+components:
+  - ../../common/kopiur-backup
