@@ -9,6 +9,17 @@ metadata:
   namespace: kafka
   annotations:
     argocd.argoproj.io/sync-wave: "-3"
+    # Strimzi creates this PVC from the Kafka CR's storage block, so it is never
+    # rendered and cannot carry a dataSourceRef. Combined with the deliberate
+    # "no Restore CR" decision below, that tripped the [dsr] hard failure and
+    # blocked every PR in the repo. Declared rather than silenced.
+    storage.vanillax.dev/operator-owned-pvc: "true"
+    storage.vanillax.dev/no-restore-before-bind-reason: >-
+      Strimzi owns the claim; this dev log is disposable, so a rebuild starts on
+      an empty volume rather than gating wave 0 on a restore. Backups still run
+      and DR is a manual restore. Re-adding restore-before-bind needs a mover
+      that can WRITE the archived tree - the 1001:0 mover could read it for
+      backup but not recreate it, which wedged the old restore gate.
 spec:
   sources:
     - pvc:
