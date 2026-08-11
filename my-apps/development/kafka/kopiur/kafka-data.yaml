@@ -46,28 +46,8 @@ spec:
     # Daily is intentional: this high-churn learning log needs nuke recovery,
     # not a one-hour RPO or 24 snapshots of constantly rolling segments.
     cron: "11 3 * * *"
----
-# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
-apiVersion: kopiur.home-operations.com/v1alpha1
-kind: Restore
-metadata:
-  name: kafka-data-restore
-  namespace: kafka
-  annotations:
-    # The namespace-scoped restore gate in wave -1 waits for Ready=True before
-    # Strimzi lands in wave 0; Argo itself needs no Kopiur health customization.
-    argocd.argoproj.io/sync-wave: "-2"
-spec:
-  source:
-    fromPolicy:
-      name: kafka-data
-      offset: 0
-  mover:
-    securityContext:
-      runAsUser: 1001
-      runAsGroup: 0
-      runAsNonRoot: true
-    podSecurityContext:
-      fsGroup: 0
-      supplementalGroups:
-        - 0
+# No Restore CR: this dev cluster's log is treated as disposable, so a rebuild
+# starts Strimzi on an empty volume rather than gating wave 0 on a restore.
+# Backups still run — re-adding restore-before-bind means adding a Restore here
+# whose mover can WRITE the archived tree (the 1001:0 mover could read it for
+# backup but not recreate it, which is what wedged the old restore gate).
