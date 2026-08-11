@@ -41,6 +41,17 @@ REPO_LABEL = "kopiur.home-operations.com/repo"
 REPO_LABEL_VAL = "cluster-kopia"
 EXEMPT_LABEL = "backup-exempt"
 EXEMPT_REASON = "storage.vanillax.dev/backup-exempt-reason"
+# Deliberate opt-out from restore-before-bind, for a PVC an OPERATOR creates.
+# Strimzi builds data-0-dev-kafka-dual-role-0 from the Kafka CR's storage block,
+# so it is never rendered and cannot carry a dataSourceRef; the kafka bundle
+# also declines a Restore CR on purpose (its 1001:0 mover can read the tree for
+# backup but not recreate it, which wedged the old restore gate). Backups still
+# run; DR for that volume is a documented manual step.
+#
+# Annotated, not silent: the [dsr] rule stays a hard failure for anyone who has
+# not written down the decision, exactly like backup-exempt.
+OPERATOR_PVC_ANN = "storage.vanillax.dev/operator-owned-pvc"
+OPERATOR_PVC_REASON = "storage.vanillax.dev/no-restore-before-bind-reason"
 SYSTEM_NS = {
     "kube-system", "argocd", "longhorn-system", "kopiur-system", "cert-manager",
     "external-secrets", "kube-node-lease", "kube-public", "monitoring", "gateway",
@@ -122,7 +133,21 @@ def main():
             pvc = pvcs.get((pns, pvcname))
             if pvc is None:
                 direct = direct_restore_pvcs.get((pns, pvcname, pname))
-                if direct is None:
+                panns = anns_of(p)
+                if direct is None and panns.get(OPERATOR_PVC_ANN) == "true":
+                    if not panns.get(OPERATOR_PVC_REASON):
+                        warns.append(
+                            f"[dsr]     SnapshotPolicy {pns}/{pname} declares "
+                            f"{OPERATOR_PVC_ANN} but no {OPERATOR_PVC_REASON} "
+                            "annotation — record why DR is manual here"
+                        )
+                    else:
+                        warns.append(
+                            f"[dsr]     SnapshotPolicy {pns}/{pname} backs up "
+                            f"operator-owned PVC '{pvcname}' with no "
+                            "restore-before-bind — DR is a manual step by decision"
+                        )
+                elif direct is None:
                     fails.append(
                         f"[dsr]     SnapshotPolicy {pns}/{pname} backs up PVC "
                         f"'{pvcname}' but neither that PVC nor a matching "
