@@ -1,0 +1,67 @@
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotpolicy_v1alpha1.json
+# deal-scout data backup STUB — uniform fields (repository, copyMethod,
+# populator) injected by ../../common/kopiur-backup. The mover securityContext
+# is per-PVC and stays in THIS stub (docs/domains/storage/kopiur-mover-permissions.md).
+#
+# Holds deals.db, a SQLite database: scraped listings plus the feedback and
+# learned reject signals that are NOT reproducible by re-scraping. Backed up
+# per the "non-CNPG databases" rule in docs/storage-architecture.md.
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotPolicy
+metadata:
+  name: deal-scout-data
+  namespace: deal-scout
+spec:
+  sources:
+    - pvc:
+        name: deal-scout-data
+  identity:
+    username: deal-scout-data
+    hostname: deal-scout
+  retention:
+    keepDaily: 14
+    keepWeekly: 6
+    keepMonthly: 3
+  mover:
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 1000
+      supplementalGroups:
+        - 1000
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/snapshotschedule_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: SnapshotSchedule
+metadata:
+  name: deal-scout-data-daily
+  namespace: deal-scout
+spec:
+  policyRef:
+    name: deal-scout-data
+  schedule:
+    cron: "55 3 * * *"
+---
+# yaml-language-server: $schema=https://k8s-schemas.home-operations.com/kopiur.home-operations.com/restore_v1alpha1.json
+apiVersion: kopiur.home-operations.com/v1alpha1
+kind: Restore
+metadata:
+  name: deal-scout-data-restore
+  namespace: deal-scout
+spec:
+  source:
+    fromPolicy:
+      name: deal-scout-data
+      offset: 0
+  mover:
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+    podSecurityContext:
+      fsGroup: 1000
+      supplementalGroups:
+        - 1000
