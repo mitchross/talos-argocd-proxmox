@@ -10,9 +10,9 @@
 # and ran this cluster stably for months before the V2 rebuild. Data path is
 # filesystem paths declared by the active cluster template. The Threadripper
 # worker provides /var/lib/longhorn (scsi0), /var/mnt/longhorn-nvme1 (scsi1),
-# and the flash-tagged /var/mnt/longhorn-ssd-flash; the Dell worker provides a
-# smaller /var/lib/longhorn target on its 100 GiB Talos system disk. Engines
-# cannot be
+# and the flash-tagged /var/mnt/longhorn-ssd-flash. The Dell worker keeps its
+# smaller /var/lib/longhorn disk registered but unschedulable so old replicas
+# can be evacuated without allowing new placement there. Engines cannot be
 # flipped on a live cluster with attached volumes — this config is applied via
 # nuke + rebuild with restore-from-backup (the proven DR flow).
 # History: V2 forensics in git history; short version in docs/disaster-recovery.md.
@@ -31,8 +31,9 @@ defaultSettings:
   storageReservedPercentageForDefaultDisk: "0"
   # Budget per disk = storageMaximum * this %, against DECLARED PVC size. At 600%
   # the Dell reached 206 GiB scheduled on a 97 GiB disk; at 200% its budget falls
-  # below what it already holds, so Longhorn stops placing new replicas on the
-  # shed node on its own. Over-committed disks refuse new replicas, never evict.
+  # below what it already held during the 2026-08-10 incident. Dell is now
+  # explicitly unschedulable; over-committed disks refuse new replicas but do
+  # not evict existing ones on their own.
   # Do NOT drop to 100% — a DR restore doubles declared demand via `prime-*` PVCs
   # and would deadlock the rebuild. Mirrored in node-failure-settings.yaml.
   storageOverProvisioningPercentage: "200"
@@ -95,10 +96,9 @@ persistence:
   # default) — the `dataEngine: v2` routing was removed 2026-06-12.
   defaultClass: true
   # -- Default number of replicas for volumes.
-  # Keep new volumes at one replica even after adding the Dell storage target.
-  # A second replica would synchronously place writes across the Wi-Fi media
-  # bridge, changing latency and rebuild behavior for every default-class PVC.
-  # Promote selected volumes/classes to two only after measuring that path.
+  # Keep new volumes at one replica. Dell is not a replica target, and a second
+  # trustworthy wired storage worker does not yet exist. Promote selected
+  # volumes/classes to two only after adding and measuring that failure domain.
   # Off-cluster durability remains kopiur/Kopia backups to RustFS S3.
   defaultClassReplicaCount: 1
   # -- Default filesystem type.

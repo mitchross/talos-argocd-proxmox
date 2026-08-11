@@ -36,7 +36,7 @@ recoverable copy outside it. [Open the full-size storage diagram](assets/storage
 - [What happens when a PVC is created](#what-happens-when-a-pvc-is-created) · [If this, then that](#if-this-then-that)
 - [Architecture at a glance](#architecture-at-a-glance) · [Design decisions](#design-decisions) · [The scenarios](#the-scenarios)
 - [Schedules & repository](#backup-schedules-retention-repository)
-- **Operations:** [enable](#enable-a-backup) · [exempt](#exempt-a-pvc-deliberate-non-backup) · [restore drill](#restore-drill-prove-it)
+- **Operations:** [enable](#enable-a-backup) · [exempt](#exempt-a-pvc-deliberate-non-backup) · [restore drill](#restore-drill-prove-it) · [evacuate Dell](#evacuate-the-dell-longhorn-disk)
 - [Troubleshooting](#troubleshooting) · [Adapting this to your cluster](#adapting-this-to-your-cluster) · [Known limitations](#known-limitations-and-non-goals)
 - [Files reference](#files-reference)
 
@@ -384,6 +384,62 @@ This drill runs on demand against a dedicated test PVC — the
 [restore canary](disaster-recovery.md#the-restore-canary)
 (`my-apps/system/restore-canary/`). Its backup and quick-verification schedules
 run continuously; the destructive restore remains deliberate.
+
+### Evacuate the Dell Longhorn disk
+
+**Purpose:** move every existing Longhorn replica off Dell without permitting
+new placement there. Dell remains available for compute, stateless workloads,
+and workloads backed by NFS or SMB. Local block storage stays on Threadripper.
+
+**Status:** the Omni template declares Dell's registered `talos-ephemeral`
+disk with `allowScheduling: false`. The template protects rebuilt nodes; the
+existing Longhorn `Node` object still needs the one-time operator action below.
+Do not remove the disk declaration while it owns replicas.
+
+Before changing live state, identify the Dell node and prove that every active
+volume is healthy, its target disks have scheduling headroom, and protected
+PVCs have recent successful Kopiur snapshots:
+
+```bash
+DELL_STORAGE_NODE=talos-singlenode-gpu-prod-dell-gpu-workers-kf5x8m
+
+kubectl get nodes "$DELL_STORAGE_NODE"
+kubectl -n longhorn-system get nodes.longhorn.io "$DELL_STORAGE_NODE" -o yaml
+kubectl -n longhorn-system get replicas.longhorn.io \
+  -l longhornnode="$DELL_STORAGE_NODE"
+kubectl -n longhorn-system get volumes.longhorn.io \
+  -o custom-columns=NAME:.metadata.name,STATE:.status.state,ROBUSTNESS:.status.robustness
+kubectl get snapshot.kopiur.home-operations.com -A
+```
+
+Expected before eviction: the Kubernetes and Longhorn nodes are ready; the
+Dell replica inventory is understood; active volumes are `healthy`; target
+Threadripper disks are schedulable with enough space for the declared replica
+sizes; and protected PVCs have a recent `Succeeded` snapshot with non-zero
+files. Stop if a volume is faulted, a protected PVC lacks a usable snapshot, or
+Longhorn reports no suitable target disk.
+
+After this Git revision is the desired state:
+
+1. In Longhorn, open **Node → Dell worker → Edit Node and Disks**.
+2. Set the `talos-ephemeral` disk's **Scheduling** to **Disable** and save.
+3. Set that disk's **Eviction Requested** to `true` and save.
+4. Watch the disk's replica count and Longhorn events. Longhorn rebuilds a
+   replacement before evicting each replica; it also temporarily attaches a
+   detached volume when needed.
+5. Stop on any rebuild or scheduling error. Cancel eviction by setting
+   **Eviction Requested** to `false`; remaining replicas stay on Dell.
+6. Success is Dell replica count `0`, no active volume faulted or degraded, and
+   the affected workloads mounted and ready. Clear **Eviction Requested**, but
+   leave **Scheduling** disabled.
+
+Longhorn's upstream procedure and guarantees are documented in
+[Evicting Replicas on Disabled Disks or Nodes](https://longhorn.io/docs/1.12.0/nodes-and-volumes/nodes/disks-or-nodes-eviction/).
+
+This operation does not migrate application PVCs to NFS or SMB and does not
+change pod placement. Hardware-bound and stateful workloads require a separate
+per-application decision before enforcing the stricter policy that Dell run
+only stateless or remote-file-storage workloads.
 
 ---
 
