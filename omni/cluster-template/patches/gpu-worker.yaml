@@ -1,6 +1,6 @@
 # Shared GPU worker Talos configuration. The worker set owns its DHCP/static
 # address policy; this patch only constrains kubelet address selection and
-# loads the NVIDIA modules required by both the RTX 3090 and GTX 1050 Ti VMs.
+# loads the NVIDIA modules required by GPU worker VMs.
 # Do not pin DHCP to a PCI-derived interface name: passthrough hardware can
 # reorder the virtual NIC. nodeIP.validSubnets is stable across that reshuffle.
 machine:

@@ -50,10 +50,8 @@ model:
   labelmap_path: /openvino-model/coco_91cl_bkgr.txt
 ffmpeg:
   input_args: preset-rtsp-generic
-  # NVDEC on the Dell GTX 1050 Ti (Pascal): auto-selects the right decode
-  # profile per stream. Detection stays OpenVINO-on-CPU — Frigate 0.17's
-  # TensorRT detector needs Turing+, not Pascal.
-  hwaccel_args: preset-nvidia
+  # The Dell worker is CPU-only. Omitting hwaccel_args deliberately selects
+  # software decode; detection also remains OpenVINO-on-CPU.
   # Nest streams carry Opus audio; MP4 recordings need AAC. This preset
   # transcodes audio to AAC for the record role (without it, recordings are
   # silent or fail to mux the Opus track).

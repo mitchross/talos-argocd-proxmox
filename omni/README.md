@@ -78,7 +78,7 @@ plane and worker MachineSets; do not create MachineSets separately.
 Define "machine classes" in Omni that specify CPU, RAM, and disk resources. The Proxmox provider watches for new machines and automatically creates VMs matching your specifications.
 
 ### GPU Support (Optional)
-Include NVIDIA GPU support for AI/ML workloads. See the machine classes in [machine-classes/](machine-classes/) (e.g. `gpu-worker.yaml`, `single-node-talos-gpu.yaml`) and the patches in [cluster-template/patches/](cluster-template/patches/) for configuration details.
+Include NVIDIA GPU support for AI/ML workloads. See the machine classes in [machine-classes/](machine-classes/) (e.g. `gpu-worker.yaml`, `threadripper-gpu-worker.yaml`) and the patches in [cluster-template/patches/](cluster-template/patches/) for configuration details.
 
 ### Production Ready
 - SSL/TLS encryption with Let's Encrypt
@@ -174,7 +174,9 @@ isn't enough to plan around.
   disk plus any `additional_disks` you declare in the machine class, and
   provisions them all at VM creation — so extra data disks get recreated
   with the VM rather than needing a manual Proxmox attach (see
-  `omni/machine-classes/single-node-talos-gpu.yaml`). You can still plan
+  `omni/machine-classes/threadripper-gpu-worker.yaml`). The small CPU-only
+  `threadripper-worker` deliberately uses `local-lvm` so it does not consume
+  capacity from those Longhorn pools. You can still plan
   storage as Longhorn replicas or use external storage (NFS to TrueNAS,
   RustFS S3) for stateful data.
 - **Extensions must be baked into the Talos image OR declared in the

@@ -1,10 +1,10 @@
 ---
-# omnictl apply -f single-node-control-plane.yaml
+# omnictl apply -f omni/machine-classes/threadripper-control-plane.yaml
 # Dedicated Threadripper control-plane VM.
 metadata:
   namespace: default
   type: MachineClasses.omni.sidero.dev
-  id: single-node-control-plane
+  id: threadripper-control-plane
 spec:
   matchlabels: []
   autoprovision:
