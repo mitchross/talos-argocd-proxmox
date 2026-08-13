@@ -115,8 +115,9 @@ nav:
       - Decision records:
           - kopiur evaluation: domains/storage/kopiur-evaluation.md
           - kopiur trial: kopiur-trial.md
-  - Databases (CloudNativePG):
-      - Backup/restore/start — beginner guide: domains/cnpg/backup-restore-start-guide.md
+  - Databases:
+      - Run Postgres here — plain-English guide (start here): domains/cnpg/run-postgres-plain-english.md
+      - CNPG backup/restore/start — beginner guide: domains/cnpg/backup-restore-start-guide.md
       - CNPG explained: domains/cnpg/explained.md
       - CNPG disaster recovery: domains/cnpg/disaster-recovery.md
       - Plain Postgres migration (CNPG exit ramp): domains/cnpg/plain-postgres-migration.md

@@ -93,7 +93,7 @@ Backups are **kopiur** (Kopia-native operator).
 
 ### 🗃️ Domains
 
-- **Databases**: [Plain Postgres migration — CNPG exit ramp, new-DB default](domains/cnpg/plain-postgres-migration.md) · [Backup/restore/start — beginner guide](domains/cnpg/backup-restore-start-guide.md) · [CNPG explained](domains/cnpg/explained.md) · [CNPG disaster recovery](domains/cnpg/disaster-recovery.md)
+- **Databases**: [Run Postgres here — plain-English operator guide](domains/cnpg/run-postgres-plain-english.md) · [Plain Postgres migration — CNPG exit ramp, new-DB default](domains/cnpg/plain-postgres-migration.md) · [Backup/restore/start — beginner guide](domains/cnpg/backup-restore-start-guide.md) · [CNPG explained](domains/cnpg/explained.md) · [CNPG disaster recovery](domains/cnpg/disaster-recovery.md)
 - **GitOps / ArgoCD**: [argocd](domains/argocd/argocd.md) · [entrypoints & waves](domains/argocd/entrypoints.md)
 - **Enterprise multi-cluster planning**: [roadmap](domains/multicluster/enterprise-gitops-roadmap.md) · [concrete fleet PRD](domains/multicluster/prd.md)
 - **Networking**: [topology](domains/networking/topology.md) · [Wi-Fi Proxmox Talos worker](domains/networking/wifi-proxmox-talos-worker.md) · [policy](domains/networking/policy.md) · [Technitium `vanillax.me` migration](domains/networking/technitium-vanillax-me-migration.md)
