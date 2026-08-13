@@ -292,14 +292,36 @@ PVC: its `kopiur/restore-canary-data.yaml` stub carries the `SnapshotPolicy` +
 The `SnapshotSchedule` keeps a fresh snapshot and a weekly quick verification
 checks repository blobs. Those automated checks do **not** prove a restore. To
 drill the full path, write and hash a sentinel, force and wait for a successful
-snapshot, delete only the canary PVC, and let Argo recreate it via its
-`dataSourceRef` → `Restore` populator:
+snapshot, delete the canary PVC **and its `Restore` CR**, and let Argo recreate
+both so the populator re-hydrates the PVC:
 
 ```
-sentinel (old UID + sha256) → forced kopiur Snapshot
-→ delete ONLY the canary PVC → Git/Argo recreate with dataSourceRef → Restore
+sentinel (new UID + sha256) → forced kopiur Snapshot
+→ delete the canary PVC AND restore-canary-data-restore
+→ Git/Argo recreate both → Restore re-resolves to the new snapshot
 → kopiur populator restore → byte-identical verification
 ```
+
+**Delete the `Restore` CR too — the drill is invalid without it.** A `Restore`
+resolves its source **once, at admission, and never re-resolves**
+(`status.resolved` is pinned; `offset: 0` means "latest as of admission", not
+"latest now"). Delete only the PVC and the populator replays whatever snapshot
+the `Restore` pinned on first use, so the drill reports `RestoreSucceeded`
+against frozen data regardless of whether backups work. Every drill between
+2026-08-03 and 2026-08-13 restored a 2026-06-10 sentinel this way and still
+passed its own success check.
+
+Gate the verdict on the pin before the bytes:
+
+```
+kubectl -n restore-canary get restore restore-canary-data-restore \
+  -o jsonpath='{.status.resolved.pinnedAt} {.status.resolved.kopiaSnapshotID}'
+```
+
+`pinnedAt` must be newer than the drill snapshot. A healthy drill moves
+`Pending → Restoring → Bound`; a PVC that binds instantly never ran the
+populator, and a `TargetAlreadyBound` reason means the `Restore` short-circuited
+because the PVC still existed.
 
 A manually executed passing drill proves the *entire* chain — Git render, kopiur CR wiring,
 kopia round-trip, populator restore — with data integrity checked by hash,
