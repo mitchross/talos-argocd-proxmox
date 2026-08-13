@@ -10,6 +10,7 @@ services:
       - /dev/net/tun
     volumes:
       - ${ETCD_VOLUME_PATH}:/_out/etcd
+      - ${SQLITE_STORAGE_PATH}:/_out/sqlite
       - ${ETCD_ENCRYPTION_KEY}:/omni.asc
       - ${TLS_CERT}:/tls.crt
       - ${TLS_KEY}:/tls.key
@@ -31,7 +32,10 @@ services:
       --k8s-proxy-bind-addr=${K8S_PROXY_BIND_ADDR}
       --advertised-api-url=${ADVERTISED_API_URL}
       --advertised-kubernetes-proxy-url=${ADVERTISED_K8S_PROXY_URL}
-      --siderolink-api-advertised-url=${SIDEROLINK_ADVERTISED_API_URL}
+      --machine-api-advertised-url=${SIDEROLINK_ADVERTISED_API_URL}
       --siderolink-wireguard-advertised-addr=${SIDEROLINK_WIREGUARD_ADVERTISED_ADDR}
       --initial-users=${INITIAL_USER_EMAILS}
+      --sqlite-storage-path=/_out/sqlite/omni.db
+      --eula-accept-name=${EULA_ACCEPT_NAME}
+      --eula-accept-email=${EULA_ACCEPT_EMAIL}
       ${AUTH}
