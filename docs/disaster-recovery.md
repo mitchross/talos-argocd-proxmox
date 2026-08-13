@@ -101,7 +101,10 @@ Block the nuke until every box checks — **you restore *from* these**:
 
 **Ordering rule (twice-learned):** machine classes and the cluster template
 are **snapshots inside Omni** — apply + sync them *before* machines
-provision, or VMs are built from stale state and must be reprovisioned.
+provision, or VMs are built from stale state and must be reprovisioned. Applying
+a changed MachineClass does not resize or replace an already allocated VM; a
+replacement/full rebuild is required for its new virtual hardware to take
+effect.
 
 ### Gate the wave train on cross-node pod networking
 

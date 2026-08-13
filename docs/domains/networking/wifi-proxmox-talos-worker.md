@@ -5,11 +5,12 @@ behind the ASUS RT-AX86U media bridge is a CPU-only Talos worker managed by
 Omni's `proxmox-dell` provider. The retired GTX 1050 Ti is not passed through
 and the Talos image carries no NVIDIA extensions.
 
-!!! warning "Desired state pending replacement"
-    The repository now describes `dell-workers` with the
-    `dell-worker` class. The old `dell-gpu-workers` node is offline and
-    must be replaced through the ordered rollout below. Its Longhorn replica
-    inventory was verified empty before this change.
+!!! warning "MachineClass updates are not in-place VM updates"
+    The repository describes `dell-workers` with the `dell-worker` class.
+    Applying that class only changes future Omni allocations; it does not
+    rename, resize, or replace an existing VM. Use the ordered replacement
+    checks below, or the root README's full-cluster rebuild, to make live
+    hardware match the class.
 
 ## Target and source of truth
 
@@ -60,17 +61,24 @@ or `preset-nvidia` ffmpeg configuration.
 
 ## Ordered rollout
 
-The replacement is destructive to the old VM, so do not combine these checks
-into a blind template sync.
+Machine replacement destroys provider-owned VM disks. For a full-cluster
+replacement, use the root README's rebuild procedure and satisfy every gate in
+`docs/disaster-recovery.md`. The sequence below is for an incremental Dell
+replacement; do not combine it into a blind template sync.
 
-1. Verify the old Dell Longhorn replica inventory is empty:
+1. Verify every protected PVC has a recent successful off-host kopiur snapshot,
+   the restore canary has a recent passing drill, both CNPG databases have a
+   recent completed Barman backup, and every Longhorn volume is healthy:
 
    ```bash
-   kubectl -n longhorn-system get replicas.longhorn.io \
-     -l longhornnode=talos-singlenode-gpu-prod-dell-gpu-workers-kf5x8m
+   kubectl get snapshots.kopiur.home-operations.com -A
+   kubectl get backups.postgresql.cnpg.io -A
+   kubectl -n longhorn-system get volumes.longhorn.io
    ```
 
-   Expected: no resources.
+   Do not infer safety from an empty replica query against an old node name.
+   The live Dell is a schedulable Longhorn target, and deleting its VM destroys
+   its 400 GiB provider-owned disk.
 
 2. In **Node → Disks → LVM**, create the thick volume group/storage
    `dell-ssd-vmstore` on the unused Samsung `/dev/sda` with **Add Storage**
@@ -84,6 +92,7 @@ into a blind template sync.
    dry run:
 
    ```bash
+   omnictl apply -f omni/machine-classes/threadripper-control-plane.yaml
    omnictl apply -f omni/machine-classes/threadripper-worker.yaml
    omnictl apply -f omni/machine-classes/threadripper-gpu-worker.yaml
    omnictl apply -f omni/machine-classes/dell-worker.yaml
@@ -93,14 +102,15 @@ into a blind template sync.
      -f omni/cluster-template/cluster-template-singlenode-gpu.yaml --dry-run
    ```
 
-5. Stop if the dry run replaces the control plane or removes the RTX worker
-   before the new `workers` MachineSet is Ready. Provision the 32 GiB general
-   worker first and allow ordinary workloads to move there.
+5. Remember that the dry run updates MachineSet class references but does not
+   replace existing allocations. For an incremental rollout, provision the
+   24 GiB general worker first and allow ordinary workloads to move there.
 
 6. Replace the Dell with `dell-workers`, then reattach both RTL-SDR mappings.
-   Only after the general and Dell CPU workers are Ready should the existing
-   RTX VM be shut down and cold-resized from 96 to 64 GiB in Proxmox. Do not
-   reprovision that VM: its attached disks own the live Longhorn data.
+   For an incremental GPU change, only after the general and Dell CPU workers
+   are Ready should the existing RTX VM be shut down and cold-resized. For a
+   full rebuild, the provider recreates its disks and application data must
+   return from the verified off-host backups.
 
 7. Verify:
 
@@ -120,8 +130,9 @@ into a blind template sync.
 
 ## Rollback and stop conditions
 
-- Stop on a non-empty Dell replica inventory, an unhealthy Longhorn volume,
-  or a dry run that touches the control plane unexpectedly.
+- Stop on a stale/failed backup, a failed restore canary, an unhealthy Longhorn
+  volume, or a dry run that touches the control plane unexpectedly during an
+  incremental rollout.
 - If the new Dell cannot register, verify DHCP, the media bridge, and that
   `kernelargs` remains empty.
 - If Intercept cannot see radios, restore the recorded USB mappings on the

@@ -1,4 +1,5 @@
-# Threadripper GPU cluster: 1 control-plane VM + 1 GPU worker VM.
+# Threadripper GPU cluster: 1 control-plane VM + 1 general worker VM + 1 GPU
+# worker VM, plus 1 CPU-only Dell worker VM on the separate Proxmox host.
 # See omni/docs/threadripper-gpu-cluster.md for rebuild notes and sizing rationale.
 #
 #   omnictl cluster template sync -v -f cluster-template-singlenode-gpu.yaml
