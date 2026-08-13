@@ -1,10 +1,10 @@
 ---
-# omnictl apply -f single-node-control-plane.yaml
+# omnictl apply -f omni/machine-classes/threadripper-control-plane.yaml
 # Dedicated Threadripper control-plane VM.
 metadata:
   namespace: default
   type: MachineClasses.omni.sidero.dev
-  id: single-node-control-plane
+  id: threadripper-control-plane
 spec:
   matchlabels: []
   autoprovision:
@@ -14,7 +14,9 @@ spec:
     providerdata: |
       cores: 4
       sockets: 1
-      memory: 16384
+      # Steady state is ~7.5 GiB; 12 GiB keeps etcd headroom while holding the
+      # three Threadripper guests to a 100 GiB total against 125.67 GiB of RAM.
+      memory: 12288
       disk_size: 100
       storage_selector: name == "nvme0-vmstore"
       network_bridge: vmbr0

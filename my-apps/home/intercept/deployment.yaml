@@ -24,7 +24,7 @@ spec:
       # Both Proxmox RTL-SDR mappings terminate on this Talos VM. The hostPath
       # below is node-local, so the pod must never move to another worker.
       nodeSelector:
-        node.vanillax.dev/class: dell-gpu
+        node.vanillax.dev/class: dell-worker
       initContainers:
         - name: initialize-data
           image: docker.io/library/alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b

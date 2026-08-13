@@ -16,6 +16,6 @@ services:
       --omni-service-account-key ${OMNI_INFRA_PROVIDER_KEY}
       --id proxmox-dell
       --provider-name "Proxmox Dell"
-      --provider-description "Proxmox infrastructure provider - Dell host (1050 Ti)"
+      --provider-description "Proxmox infrastructure provider - Dell CPU worker host"
     restart: unless-stopped
     network_mode: host

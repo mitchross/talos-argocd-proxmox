@@ -1,10 +1,10 @@
 ---
-# omnictl apply -f single-node-talos-gpu.yaml
+# omnictl apply -f omni/machine-classes/threadripper-gpu-worker.yaml
 # Dedicated Threadripper GPU worker. See omni/docs/threadripper-gpu-cluster.md.
 metadata:
   namespace: default
   type: MachineClasses.omni.sidero.dev
-  id: single-node-talos-gpu
+  id: threadripper-gpu-worker
 spec:
   matchlabels: []
   autoprovision:
@@ -12,10 +12,14 @@ spec:
     kernelargs: []
     metavalues: []
     providerdata: |
-      cores: 32
+      # 24 of the host's 32 threads. At 32 this VM alone could saturate every
+      # thread, starving the control-plane and worker VMs and the host itself.
+      cores: 24
       sockets: 1
-      # GPU passthrough pins guest RAM; keep host headroom.
-      memory: 98304
+      # GPU passthrough pins guest RAM. Provision the general worker before
+      # replacing this VM: while the Dell was offline, this node used ~68 GiB
+      # and must shed non-GPU pods before the 64 GiB cutover.
+      memory: 65536
       disk_size: 450
       storage_selector: name == "nvme0-vmstore"
       network_bridge: vmbr0

@@ -388,13 +388,15 @@ run continuously; the destructive restore remains deliberate.
 ### Evacuate the Dell Longhorn disk
 
 **Purpose:** move every existing Longhorn replica off Dell without permitting
-new placement there. Dell remains available for compute, stateless workloads,
-and workloads backed by NFS or SMB. Local block storage stays on Threadripper.
+new placement on its old system disk. This cleared the old VM for replacement;
+the new dedicated Samsung SSD is a separate storage-adoption step.
 
-**Status:** the Omni template declares Dell's registered `talos-ephemeral`
-disk with `allowScheduling: false`. The template protects rebuilt nodes; the
-existing Longhorn `Node` object still needs the one-time operator action below.
-Do not remove the disk declaration while it owns replicas.
+**Status:** completed. A read-only check on 2026-08-12 returned no replicas for
+the old Dell node, and every active volume reported healthy on the Threadripper
+GPU worker. The replacement CPU-only Dell definition retains an unschedulable
+system-disk declaration and adds the Samsung-backed `dell-ssd` target. The old
+evacuation remains a prerequisite: do not confuse the new empty disk with the
+retired system-disk replica path.
 
 Before changing live state, identify the Dell node and prove that every active
 volume is healthy, its target disks have scheduling headroom, and protected
@@ -436,10 +438,8 @@ After this Git revision is the desired state:
 Longhorn's upstream procedure and guarantees are documented in
 [Evicting Replicas on Disabled Disks or Nodes](https://longhorn.io/docs/1.12.0/nodes-and-volumes/nodes/disks-or-nodes-eviction/).
 
-This operation does not migrate application PVCs to NFS or SMB and does not
-change pod placement. Hardware-bound and stateful workloads require a separate
-per-application decision before enforcing the stricter policy that Dell run
-only stateless or remote-file-storage workloads.
+This operation does not move existing replicas onto the new Samsung SSD; normal
+Longhorn scheduling and any deliberate replica-count changes happen separately.
 
 ---
 
