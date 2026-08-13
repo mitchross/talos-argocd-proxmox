@@ -12,11 +12,13 @@ spec:
     kernelargs: []
     metavalues: []
     providerdata: |
-      cores: 32
+      # 24 of the host's 32 threads. At 32 this VM alone could saturate every
+      # thread, starving the control-plane and worker VMs and the host itself.
+      cores: 24
       sockets: 1
-      # GPU passthrough pins guest RAM. Provision the 32 GiB general worker
-      # before replacing this VM: while the Dell was offline, this node used
-      # ~68 GiB and must shed non-GPU pods before the 64 GiB cutover.
+      # GPU passthrough pins guest RAM. Provision the general worker before
+      # replacing this VM: while the Dell was offline, this node used ~68 GiB
+      # and must shed non-GPU pods before the 64 GiB cutover.
       memory: 65536
       disk_size: 450
       storage_selector: name == "nvme0-vmstore"
