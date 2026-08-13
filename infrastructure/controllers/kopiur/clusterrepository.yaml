@@ -7,9 +7,10 @@
 # VolSync repo at s3://volsync-kopia/cluster. So the proven backup path is
 # untouched, and karakeep's first kopiur snapshot captures its CURRENT data.
 #
-# ⚠️ ACCESS: confirm the rustfs workload key (rustfs-workload-access-key) has
-# read/write on the `kopiur` bucket — the existing policy may scope it to
-# volsync-kopia only. If denied, widen the RustFS bucket policy (or use admin creds).
+# ACCESS: the rustfs workload key has full head/list/put/delete on the `kopiur`
+# bucket — verified against the live endpoint, so do NOT re-litigate bucket
+# policy when this repo misbehaves. A slow or hanging connect here is index-blob
+# bloat (see bootstrap.failurePolicy below), never a 403.
 # Endpoint is the S3 API port :30292 (NOT the console :30293).
 #
 # Field shapes confirmed vs deploy/examples/backends/s3-minio-http.yaml:
@@ -43,6 +44,23 @@ spec:
       key: KOPIA_PASSWORD
   create:
     enabled: true
+  parameters:
+    epoch:
+      # Maintenance runs on schedule and reclaims 0 bytes because compaction is
+      # gated on epoch advance: an epoch cannot close before minDuration, and
+      # compaction trails two epochs behind — 48h at kopia's 24h default. This
+      # repo generates index blobs faster than that, so the count only ever
+      # grows (2045 and climbing). 6h puts compaction ~12h behind instead.
+      minDuration: 6h
+  # Opening this repo takes ~90s — kopia merges ~2000 content-index blobs on
+  # every connect — against the 120s default deadline. A connect that crosses
+  # the deadline is killed, which fails the health probe, trips the circuit
+  # breaker, and moves the repo to Degraded; Degraded then blocks the very
+  # maintenance that would compact the index, so each cycle makes the next
+  # connect slower. Keep this headroom until maintenance has the index down.
+  bootstrap:
+    failurePolicy:
+      activeDeadlineSeconds: 600
   # No credentialProjection: the kopiur-rustfs Secret is delivered to every
   # consumer namespace by the ClusterExternalSecret (see externalsecret.yaml),
   # so the operator needs no cluster-wide secrets-write RBAC.
