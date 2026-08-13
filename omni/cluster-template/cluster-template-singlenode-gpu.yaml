@@ -1,4 +1,5 @@
-# Threadripper GPU cluster: 1 control-plane VM + 1 GPU worker VM.
+# Threadripper GPU cluster: 1 control-plane VM + 1 general worker VM + 1 GPU
+# worker VM, plus 1 CPU-only Dell worker VM on the separate Proxmox host.
 # See omni/docs/threadripper-gpu-cluster.md for rebuild notes and sizing rationale.
 #
 #   omnictl cluster template sync -v -f cluster-template-singlenode-gpu.yaml
@@ -70,7 +71,7 @@ patches:
 ---
 kind: ControlPlane
 machineClass:
-  name: single-node-control-plane
+  name: threadripper-control-plane
   size: 1
 systemExtensions:
 - siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
@@ -111,9 +112,9 @@ patches:
           bind-address: "0.0.0.0"
 ---
 kind: Workers
-name: dell-gpu-workers
+name: dell-workers
 machineClass:
-  name: proxmox-dell-gpu
+  name: dell-worker
   size: 1
 systemExtensions:
 - siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
@@ -121,13 +122,8 @@ systemExtensions:
 - siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
 - siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
 - siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
-# The GTX 1050 Ti is Pascal. NVIDIA moved Pascal off the unified production
-# driver after R580, so the 595.x *-production extensions used by the RTX 3090
-# worker cannot drive it. Keep this pair on the matching 580.x LTS branch.
-- siderolabs/nonfree-kmod-nvidia-lts # renovate: datasource=docker depName=siderolabs/nonfree-kmod-nvidia-lts
-- siderolabs/nvidia-container-toolkit-lts # renovate: datasource=docker depName=siderolabs/nvidia-container-toolkit-lts
 patches:
-- name: dell-proxmox-gpu-worker
+- name: dell-proxmox-worker
   inline:
     machine:
       # Static-in-git address: survives VM replacement (new MAC, same address)
@@ -146,23 +142,28 @@ patches:
           - network: 0.0.0.0/0
             gateway: 192.168.10.1
       nodeLabels:
-        node.vanillax.dev/class: dell-gpu
-        node.vanillax.dev/gpu-class: gtx-1050-ti
+        node.vanillax.dev/class: dell-worker
         topology.kubernetes.io/zone: yard
-- file: patches/gpu-worker.yaml
-- name: dell-longhorn-system-disk
+- name: dell-worker-network-and-hardening
   inline:
     machine:
-      # Keep the Dell disk registered so existing replicas remain readable
-      # during evacuation, but never schedule new replicas here. This worker's
-      # system disk and Wi-Fi bridge are not a trustworthy Longhorn tier.
+      kubelet:
+        nodeIP:
+          validSubnets:
+          - 192.168.10.0/24
+      sysctls:
+        net.core.bpf_jit_harden: 1
+- name: dell-longhorn-disks
+  inline:
+    machine:
+      # The 64 GiB system disk is never a replica target. The separate Samsung
+      # SSD is schedulable Longhorn capacity; it remains a single Wi-Fi failure
+      # domain, not HA by itself.
       nodeLabels:
         node.longhorn.io/create-default-disk: "config"
       nodeAnnotations:
-        # Reserve 30GiB for Talos, container images, and operational headroom.
-        # Longhorn values storageReserved in bytes.
         node.longhorn.io/default-disks-config: >-
-          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":32212254720,"tags":[]}]
+          [{"name":"talos-ephemeral","path":"/var/lib/longhorn","allowScheduling":false,"diskType":"filesystem","storageReserved":17179869184,"tags":[]},{"name":"dell-ssd","path":"/var/mnt/longhorn-dell-ssd","allowScheduling":true,"diskType":"filesystem","storageReserved":0,"tags":["dell-ssd"]}]
       kubelet:
         extraMounts:
         - destination: /var/lib/longhorn
@@ -172,11 +173,52 @@ patches:
           - bind
           - rshared
           - rw
+- name: dell-longhorn-ssd-volume
+  inline:
+    apiVersion: v1alpha1
+    kind: UserVolumeConfig
+    name: longhorn-dell-ssd
+    provisioning:
+      # The only non-system disk is the 400 GiB scsi1 device. Keep the lower
+      # bound well above the 64 GiB boot disk so enumeration order cannot make
+      # Talos format the wrong device.
+      diskSelector:
+        match: "!system_disk && disk.size >= 350u * GB"
+      minSize: 350GB
+      grow: true
+---
+kind: Workers
+name: workers
+machineClass:
+  name: threadripper-worker
+  size: 1
+systemExtensions:
+- siderolabs/iscsi-tools # renovate: datasource=docker depName=siderolabs/iscsi-tools
+- siderolabs/nfs-utils # renovate: datasource=docker depName=siderolabs/nfs-utils
+- siderolabs/nfsrahead # renovate: datasource=docker depName=siderolabs/nfsrahead
+- siderolabs/util-linux-tools # renovate: datasource=docker depName=siderolabs/util-linux-tools
+- siderolabs/qemu-guest-agent # renovate: datasource=docker depName=siderolabs/qemu-guest-agent
+patches:
+- name: general-worker
+  inline:
+    machine:
+      nodeLabels:
+        node.vanillax.dev/class: general-worker
+        topology.kubernetes.io/zone: house
+      kubelet:
+        nodeIP:
+          validSubnets:
+          - 192.168.10.0/24
+        extraConfig:
+          serializeImagePulls: false
+          maxPods: 150
+      sysctls:
+        net.core.bpf_jit_harden: 1
 ---
 kind: Workers
 name: gpu-workers
 machineClass:
-  name: single-node-talos-gpu
+  name: threadripper-gpu-worker
   size: 1
 # Do not add nfs-utils to GPU nodes; use the CSI NFS path instead.
 systemExtensions:

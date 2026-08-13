@@ -92,9 +92,14 @@ Keep the Omni server and local `omnictl` on the **same** release — mismatched 
 > | | Single-node GPU | Multi-node prod |
 > |---|---|---|
 > | Cluster | `talos-singlenode-gpu-prod` | `talos-prod-cluster` |
-> | Machine classes | `single-node-control-plane.yaml` + `single-node-talos-gpu.yaml` + `proxmox-dell-gpu.yaml` | `omni/machine-classes/` |
+> | Machine classes | `threadripper-control-plane.yaml` + `threadripper-worker.yaml` + `threadripper-gpu-worker.yaml` + `dell-worker.yaml` | `omni/machine-classes/` |
 > | Template | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` | `omni/cluster-template/cluster-template.yaml` |
-> | Topology | 3 VMs (1 CP + 2 GPU workers) | 3 CP + 3 workers + 1 GPU |
+> | Topology | Threadripper: 1 CP + 1 regular + 1 GPU worker; Dell: 1 regular worker | 3 CP + 3 workers + 1 GPU |
+
+The Threadripper classes intentionally allocate 100 GiB total: 12 GiB to the
+control plane, 24 GiB to the regular worker, and 64 GiB to the GPU worker. This
+leaves roughly 25.67 GiB of the host's 125.67 GiB usable RAM for Proxmox and
+QEMU overhead. The Dell worker receives 48 GiB of its host's 64 GiB.
 
 This is the only rebuild procedure in this README. Run it from the repository
 root, in order. Every required command is shown in full; there are no
@@ -115,13 +120,16 @@ disappear from Proxmox.
 ### 2. Apply the machine classes and provision Talos
 
 Machine classes and the cluster template are **snapshots stored inside Omni**.
-Apply all three classes before syncing the template; template sync owns the
-MachineSets.
+Apply all four classes before syncing the template; template sync owns the
+MachineSets. Applying a class does not mutate an existing VM: CPU, RAM, disks,
+and the visible machine identity change only when Omni provisions a replacement
+from that class.
 
 ```bash
-omnictl apply -f omni/machine-classes/single-node-control-plane.yaml
-omnictl apply -f omni/machine-classes/single-node-talos-gpu.yaml
-omnictl apply -f omni/machine-classes/proxmox-dell-gpu.yaml
+omnictl apply -f omni/machine-classes/threadripper-control-plane.yaml
+omnictl apply -f omni/machine-classes/threadripper-worker.yaml
+omnictl apply -f omni/machine-classes/threadripper-gpu-worker.yaml
+omnictl apply -f omni/machine-classes/dell-worker.yaml
 omnictl get machineclasses
 
 omnictl cluster template validate \
@@ -135,7 +143,7 @@ omnictl cluster template sync -v \
 omnictl get machinerequeststatuses -w
 ```
 
-Stop the watch with `Ctrl-C` after all three requests show
+Stop the watch with `Ctrl-C` after all four requests show
 `Provision Complete`. Do not use `cluster template status --wait` here: the
 cluster cannot become healthy until Cilium is installed in step 5.
 

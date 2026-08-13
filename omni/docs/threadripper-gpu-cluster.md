@@ -1,14 +1,20 @@
 # Threadripper GPU Cluster
 
-`talos-singlenode-gpu-prod` is intended to run on the Threadripper Proxmox host
-as two VMs:
+`talos-singlenode-gpu-prod` runs three VMs on the Threadripper Proxmox host:
 
-- `single-node-control-plane`: 4 vCPU, 16 GiB RAM, 100 GiB disk.
-- `single-node-talos-gpu`: 32 vCPU, 96 GiB RAM, two 450 GiB disks, two RTX 3090s.
+- `threadripper-control-plane`: 4 vCPU, 12 GiB RAM, 100 GiB disk.
+- `threadripper-worker`: 8 vCPU, 24 GiB RAM, 64 GiB `local-lvm` boot disk.
+- `threadripper-gpu-worker`: 24 vCPU, 64 GiB RAM, two 450 GiB disks, one
+  300 GiB flash disk, and two RTX 3090s.
 
 The split keeps Kubernetes control-plane services away from GPU and app
 workloads. It improves stability and scheduler headroom, but it is still not HA
 because there is only one etcd member.
+
+The three guests allocate 100 GiB of the host's 125.67 GiB usable RAM. The
+remaining roughly 25.67 GiB is intentionally left for Proxmox, provider
+services, QEMU overhead, and filesystem cache. The GPU VM receives only 24 of
+the host's 32 CPU threads so it cannot starve the other guests and hypervisor.
 
 ## Rebuild Guidance
 
@@ -22,8 +28,22 @@ apps.
 
 ## Notes
 
-- The GPU worker is set to 96 GiB and the control plane to 16 GiB. VFIO pins
-  guest RAM during GPU passthrough, so retain enough Proxmox host headroom.
+- Applying a MachineClass changes future allocations only. It does not resize,
+  rename, or replace an existing Omni machine. To adopt changed CPU/RAM values,
+  replace that machine deliberately or perform the full-cluster rebuild in the
+  root README.
+- Provision and ready the 24 GiB general worker before resizing the GPU VM.
+  The GPU node used about 68 GiB while Dell was offline; non-GPU workloads
+  must move before the GPU node is reduced to 64 GiB.
+- During an incremental rollout, cold-resize the existing GPU VM in Proxmox to
+  preserve its provider-owned Longhorn disks. During a full-cluster rebuild,
+  those disks are intentionally destroyed and their data must be recovered
+  from the off-host backups required by `docs/disaster-recovery.md`.
+- The general worker boot disk belongs on `local-lvm`. Do not place it on
+  `nvme0-vmstore` or `nvme1-vmstore`; those pools back the existing Longhorn
+  disks and were already 73% and 38% allocated at this decision point.
+- The Dell's added Samsung SSD is separate capacity. It does not reduce the
+  space required by any Threadripper VM disk.
 - Keep `siderolabs/nfs-utils` off GPU worker nodes. Use the CSI NFS path.
 - The second Longhorn disk is attached at VM creation time by the provider.
 - Longhorn uses one replica per volume in this single-worker cluster. It places
