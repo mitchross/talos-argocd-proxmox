@@ -9,10 +9,11 @@ addresses are on the same `192.168.10.0/24`:
 
 - **Main LAN (192.168.10.0/24)** — all cluster traffic; wired nodes via the
   10G switch.
-- **Control-plane VM** — `192.168.10.81`.
-- **GPU worker VM** — `192.168.10.177` (dual RTX 3090 passed through from the
-  bare-metal X399/2950X host).
-- **General worker VM** — DHCP on the wired LAN; 32 GiB CPU-only compute.
+- **Control-plane VM** — DHCP on the wired LAN.
+- **GPU worker VM** — DHCP on the wired LAN (dual RTX 3090 passed through from
+  the bare-metal X399/2950X host).
+- **General worker VM** — DHCP on the wired LAN; 8 vCPU and 24 GiB RAM for
+  CPU-only compute.
 - **Dell CPU worker VM** — `192.168.10.119` (static, in git), bridged over Wi-Fi through an
   ASUS RT-AX86U media bridge; see the
   [Wi-Fi Proxmox Talos worker runbook](wifi-proxmox-talos-worker.md).
@@ -53,7 +54,7 @@ instance-manager or replica flows, uses VXLAN.
 │   ┌──────────────────────┐          ┌──────────────────────────────────┐    │
 │   │ Control Plane +      │          │        GPU Worker VM             │    │
 │   │ General Worker VMs   │          │                                  │    │
-│   │   192.168.10.81      │          │       192.168.10.177            │    │
+│   │      DHCP            │          │            DHCP                  │    │
 │   │                      │          │  net0 (ens18) → vmbr0 → 10G LAN │    │
 │   └──────────────────────┘          │  dual RTX 3090 (passthrough)    │    │
 │                                     └──────────────────────────────────┘    │
@@ -79,10 +80,10 @@ instance-manager or replica flows, uses VXLAN.
 | Dell Proxmox | 192.168.10.16 | Wi-Fi-site CPU-only hypervisor |
 | Technitium / Omni (NUC) | 192.168.10.15 | Split-DNS for `vanillax.me` + self-hosted Omni |
 | ASUS RT-AX86U | 192.168.10.70 | Media bridge (Wi-Fi → Ethernet) for the Dell |
-| Control Plane | 192.168.10.81 | K8s control-plane node |
+| Control Plane | DHCP | K8s control-plane node; verify live address with `kubectl` |
 | Dell CPU Worker | 192.168.10.119 | K8s CPU worker VM (static, bridged via AX86U) |
 | TrueNAS | 192.168.10.133 | NAS (NFS/SMB/RustFS S3) — 10G |
-| GPU Worker | 192.168.10.177 | K8s GPU worker node |
+| GPU Worker | DHCP | K8s GPU worker node; verify live address with `kubectl` |
 | Wyze Bridge | 192.168.10.46 | RTSP camera streams |
 | LoadBalancer Pool | 192.168.10.32-63 (/27) | Cilium L2 announcements |
 

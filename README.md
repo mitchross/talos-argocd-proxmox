@@ -96,6 +96,11 @@ Keep the Omni server and local `omnictl` on the **same** release — mismatched 
 > | Template | `omni/cluster-template/cluster-template-singlenode-gpu.yaml` | `omni/cluster-template/cluster-template.yaml` |
 > | Topology | Threadripper: 1 CP + 1 regular + 1 GPU worker; Dell: 1 regular worker | 3 CP + 3 workers + 1 GPU |
 
+The Threadripper classes intentionally allocate 100 GiB total: 12 GiB to the
+control plane, 24 GiB to the regular worker, and 64 GiB to the GPU worker. This
+leaves roughly 25.67 GiB of the host's 125.67 GiB usable RAM for Proxmox and
+QEMU overhead. The Dell worker receives 48 GiB of its host's 64 GiB.
+
 This is the only rebuild procedure in this README. Run it from the repository
 root, in order. Every required command is shown in full; there are no
 placeholder commands or omitted flags.
@@ -116,7 +121,9 @@ disappear from Proxmox.
 
 Machine classes and the cluster template are **snapshots stored inside Omni**.
 Apply all four classes before syncing the template; template sync owns the
-MachineSets.
+MachineSets. Applying a class does not mutate an existing VM: CPU, RAM, disks,
+and the visible machine identity change only when Omni provisions a replacement
+from that class.
 
 ```bash
 omnictl apply -f omni/machine-classes/threadripper-control-plane.yaml
