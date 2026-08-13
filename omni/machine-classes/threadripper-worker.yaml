@@ -15,7 +15,10 @@ spec:
     providerdata: |
       cores: 8
       sockets: 1
-      memory: 32768
+      # Sized against the host RAM budget, not this node's appetite: the three
+      # Threadripper guests must total <=100 GiB so Proxmox and the qemu
+      # per-VM overhead never push the host into swap.
+      memory: 24576
       # Keep this boot/image disk off the two NVMe Longhorn pools. The Proxmox
       # `local-lvm` thin pool is ~152 GiB and was only 2% used when selected;
       # 64 GiB leaves roughly 85 GiB of physical-pool headroom.
