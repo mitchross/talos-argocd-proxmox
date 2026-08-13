@@ -99,6 +99,45 @@ spec:
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
+        # Metrics sidecar — reference implementation for the plain-Postgres
+        # pattern (docs/domains/cnpg/run-postgres-plain-english.md § Metrics).
+        # Scraped via the Service's `metrics` port + servicemonitor.yaml.
+        - name: postgres-exporter
+          image: quay.io/prometheuscommunity/postgres-exporter:v0.17.1
+          securityContext:
+            # Image default uid (nobody); shares the pod, connects over
+            # localhost so no pg_hba/network exposure changes.
+            runAsUser: 65534
+            runAsGroup: 65534
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: DATA_SOURCE_URI
+              value: "localhost:5432/gitea?sslmode=disable"
+            - name: DATA_SOURCE_USER
+              value: "gitea"
+            - name: DATA_SOURCE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: gitea-db-secret
+                  key: password
+          ports:
+            - containerPort: 9187
+              name: metrics
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
       volumes:
         - name: postgres-data
           persistentVolumeClaim:

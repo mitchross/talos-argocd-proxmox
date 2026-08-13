@@ -12,3 +12,6 @@ spec:
     - name: postgres
       port: 5432
       targetPort: 5432
+    - name: metrics
+      port: 9187
+      targetPort: 9187
