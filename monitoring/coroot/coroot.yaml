@@ -2,6 +2,14 @@
 # metrics out of the main prometheus-stack instance, and every volume is
 # reclaimPolicy Delete — removing this directory leaves zero residue.
 # AI RCA is enterprise-only and intentionally absent; CE inspections only.
+#
+# SCALED TO ZERO. The node-agent's eBPF profiler symbolizes stacks by re-reading
+# every container binary each cycle; on the GPU worker that was a sustained
+# 1 GB/s of disk reads (cluster-agent another 550 MB/s), saturating both the
+# SATA and NVMe thin pools on the Proxmox host — IO pressure stall 57%, load 96.
+# Everything else in the cluster combined reads <30 MB/s.
+# nodeAgent/clusterAgent have no replicas field, so they are parked on an
+# unschedulable nodeSelector — that is the only way to zero a DaemonSet here.
 apiVersion: coroot.com/v1
 kind: Coroot
 metadata:
@@ -9,6 +17,7 @@ metadata:
   namespace: coroot
 spec:
   communityEdition: {}
+  replicas: 0
   metricsRefreshInterval: 30s
   storage:
     size: 10Gi
@@ -33,7 +42,7 @@ spec:
       limits:
         memory: 1Gi
   clickhouse:
-    replicas: 1
+    replicas: 0
     storage:
       size: 10Gi
       className: longhorn
@@ -45,7 +54,7 @@ spec:
       limits:
         memory: 2Gi
     keeper:
-      replicas: 1
+      replicas: 0
       storage:
         size: 2Gi
         className: longhorn
@@ -57,6 +66,17 @@ spec:
         limits:
           memory: 256Mi
   nodeAgent:
+    # The read storm. eBPF profiling re-reads container binaries to symbolize
+    # stacks; the tracer and log collector are off for the same reason.
+    nodeSelector:
+      coroot.vanillax.dev/enabled: "true"
+    ebpfProfiler:
+      enabled: false
+    ebpfTracer:
+      enabled: false
+    logCollector:
+      collectLogEntries: false
+      collectLogBasedMetrics: false
     resources:
       requests:
         cpu: 100m
@@ -66,6 +86,8 @@ spec:
     tolerations:
       - operator: Exists
   clusterAgent:
+    nodeSelector:
+      coroot.vanillax.dev/enabled: "true"
     resources:
       requests:
         cpu: 50m
