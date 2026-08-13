@@ -10,9 +10,10 @@
 # and ran this cluster stably for months before the V2 rebuild. Data path is
 # filesystem paths declared by the active cluster template. The Threadripper
 # worker provides /var/lib/longhorn (scsi0), /var/mnt/longhorn-nvme1 (scsi1),
-# and the flash-tagged /var/mnt/longhorn-ssd-flash. The Dell worker keeps its
-# smaller /var/lib/longhorn disk registered but unschedulable so old replicas
-# can be evacuated without allowing new placement there. Engines cannot be
+# and the flash-tagged /var/mnt/longhorn-ssd-flash. The Dell CPU worker adds a
+# dedicated Samsung-backed disk at /var/mnt/longhorn-dell-ssd; its boot disk
+# and the Threadripper general worker remain outside replica scheduling.
+# Engines cannot be
 # flipped on a live cluster with attached volumes — this config is applied via
 # nuke + rebuild with restore-from-backup (the proven DR flow).
 # History: V2 forensics in git history; short version in docs/disaster-recovery.md.
@@ -26,7 +27,8 @@ defaultSettings:
   # this, Longhorn ignores the annotation and only creates defaultDataPath.
   createDefaultDiskLabeledNodes: "true"
   # Disk annotations own their reservations: Threadripper disks use 0, while
-  # the Dell system disk reserves 30 GiB. Keep the global percentage at 0 so it
+  # the Dell system disk reserves 16 GiB and its data SSD uses 0. Keep the
+  # global percentage at 0 so it
   # does not add a second, implicit reservation on top of those declarations.
   storageReservedPercentageForDefaultDisk: "0"
   # Budget per disk = storageMaximum * this %, against DECLARED PVC size. At 600%

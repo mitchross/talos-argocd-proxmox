@@ -4,7 +4,7 @@
 
 | Class | Use Case |
 |-------|----------|
-| `longhorn` | Distributed block storage — **cluster default**, served by the **V1 data engine** (chart default). The Threadripper worker is the only replica target and has three Longhorn disks: `/var/lib/longhorn` on its Talos/system disk, `/var/mnt/longhorn-nvme1` on its second (NVMe) disk, and `/var/mnt/longhorn-ssd-flash` (tag `flash`) on the enterprise-SATA RAID1 backing the `longhorn-flash` StorageClass. The Dell worker's 100 GiB Talos disk remains registered only as an evacuation source; scheduling is disabled. Dell is compute-only for Longhorn and should run stateless or NFS/SMB-backed workloads. **V2/SPDK was tried and retired 2026-06-12** — it failed under full-DR restore load (open Longhorn 1.12 bugs #13315/#13314); forensics in git history; short version in `docs/disaster-recovery.md`. Do not re-enable V2 without a fixed release + a passed DR drill. |
+| `longhorn` | Distributed block storage — **cluster default**, served by the **V1 data engine** (chart default). The Threadripper GPU worker has three Longhorn disks: `/var/lib/longhorn`, `/var/mnt/longhorn-nvme1`, and flash-tagged `/var/mnt/longhorn-ssd-flash`. The Dell CPU worker adds a dedicated 400 GiB virtual disk on its Samsung 500 GB SSD at `/var/mnt/longhorn-dell-ssd` (tag `dell-ssd`); its 64 GiB Talos disk stays unschedulable. The Threadripper general worker is compute-only. Dell capacity crosses the Wi-Fi media bridge and is a separate failure domain, not HA by itself. **V2/SPDK was tried and retired 2026-06-12** — it failed under full-DR restore load (open Longhorn 1.12 bugs #13315/#13314); forensics in git history; short version in `docs/disaster-recovery.md`. Do not re-enable V2 without a fixed release + a passed DR drill. |
 | `truenas-nfs` | Official TrueNAS CSI dynamic NFS (canary-gated, non-default) |
 | `nfs-comfyui-10g` | NFS 10G for ComfyUI models |
 | `nfs-llama-cpp-10g` | NFS 10G for LLM models |
@@ -111,6 +111,7 @@ Linux kernel (5.4+) defaults NFS `read_ahead_kb` to **128 KB**, limiting sequent
 | `nvme1-vmstore` | `/dev/nvme1n1` (EDILOCA EN605 512GB NVMe) | Worker VM Disk 2 (`scsi1`) | LVM-Thin |
 | `ssd-ent` | `/dev/md0` = mdadm RAID1 of 2× HPE MK000480GWCEV enterprise SATA SSD (PLP) | Worker VM Disk 3 → Longhorn `flash` disk (`longhorn-flash` StorageClass) | **thick LVM** (NOT thin) |
 | `local-lvm` | `/dev/sdb` (SanDisk SD7TB3Q 256GB SATA SSD) | Proxmox Boot & Host Storage | LVM-Thin |
+| `dell-ssd-vmstore` (Dell host) | `/dev/sda`, Samsung SSD 850 EVO 500GB, serial `S3PTNF0J801121E` | Dell VM `scsi1` → `/var/mnt/longhorn-dell-ssd` | **thick LVM**; 400 GiB virtual disk |
 
 **LVM-Thin** on the NVMe/boot pools gives thin provisioning. **`ssd-ent` is deliberately
 THICK LVM** — an lvmthin pool collapses fsync to ~170 IOPS (metadata commit per fsync,

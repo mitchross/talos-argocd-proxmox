@@ -1,11 +1,11 @@
 ---
-title: How Omni provisions the Wi-Fi Proxmox GPU worker
+title: How Omni provisions the Wi-Fi Proxmox CPU worker
 config:
   layout: elk
 ---
 flowchart LR
-  accTitle: Wi-Fi Proxmox Talos GPU worker architecture
-  accDescr: Git and Omni define a Talos worker request. A Proxmox provider on the management NUC creates a VM on the Dell host, attaches the mapped GTX 1050 Ti, and the worker joins the existing cluster through the ASUS media bridge.
+  accTitle: Wi-Fi Proxmox Talos CPU worker architecture
+  accDescr: Git and Omni define a CPU-only Talos worker request. A Proxmox provider on the management NUC creates a VM on the Dell host and the worker joins the existing cluster through the ASUS media bridge.
 
   subgraph MANAGEMENT["MANAGEMENT"]
     direction LR
@@ -24,9 +24,9 @@ flowchart LR
     BRIDGE["`ASUS media bridge
     Ethernet over Wi-Fi`"]
     PVE["`Dell Proxmox
-    VFIO + PCI mapping`"]
+    CPU-only host`"]
     VM["`Talos worker VM
-    static address + GTX 1050 Ti`"]
+    static address + RTL-SDR`"]
     BRIDGE link@<--> PVE
     PVE create@--> VM
   end
@@ -34,7 +34,7 @@ flowchart LR
   subgraph CLUSTER["KUBERNETES"]
     direction TB
     CORE["`Existing wired core
-    control plane + RTX 3090 worker`"]
+    control plane + CPU + RTX workers`"]
     VXLAN["`Cilium VXLAN
     node-IP transport`"]
     CORE corePath@--> VXLAN

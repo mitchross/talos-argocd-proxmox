@@ -2,9 +2,9 @@
 
 ## Overview
 
-The cluster (`talos-singlenode-gpu-prod`) runs a wired control plane and RTX
-3090 GPU worker on a flat LAN with 10G switch infrastructure, plus a third,
-Wi-Fi-bridged Dell Proxmox GPU worker (deployed 2026-07-19); all node
+The cluster (`talos-singlenode-gpu-prod`) runs a wired control plane, general
+worker, and RTX 3090 GPU worker on a flat LAN with 10G switch infrastructure,
+plus a Wi-Fi-bridged Dell Proxmox CPU worker; all node
 addresses are on the same `192.168.10.0/24`:
 
 - **Main LAN (192.168.10.0/24)** — all cluster traffic; wired nodes via the
@@ -12,8 +12,8 @@ addresses are on the same `192.168.10.0/24`:
 - **Control-plane VM** — `192.168.10.81`.
 - **GPU worker VM** — `192.168.10.177` (dual RTX 3090 passed through from the
   bare-metal X399/2950X host).
-- **Dell GPU worker VM** — `192.168.10.119` (static, in git), GTX 1050 Ti
-  passed through from Proxmox `192.168.10.16`, bridged over Wi-Fi through an
+- **General worker VM** — DHCP on the wired LAN; 32 GiB CPU-only compute.
+- **Dell CPU worker VM** — `192.168.10.119` (static, in git), bridged over Wi-Fi through an
   ASUS RT-AX86U media bridge; see the
   [Wi-Fi Proxmox Talos worker runbook](wifi-proxmox-talos-worker.md).
 - **Storage** — TrueNAS/RustFS-S3 at `192.168.10.133` (NFS/SMB/RustFS S3).
@@ -51,16 +51,17 @@ instance-manager or replica flows, uses VXLAN.
 │            │                                    │                            │
 │            ▼                                    ▼                            │
 │   ┌──────────────────────┐          ┌──────────────────────────────────┐    │
-│   │  Control-Plane VM    │          │        GPU Worker VM             │    │
+│   │ Control Plane +      │          │        GPU Worker VM             │    │
+│   │ General Worker VMs   │          │                                  │    │
 │   │   192.168.10.81      │          │       192.168.10.177            │    │
 │   │                      │          │  net0 (ens18) → vmbr0 → 10G LAN │    │
 │   └──────────────────────┘          │  dual RTX 3090 (passthrough)    │    │
 │                                     └──────────────────────────────────┘    │
 │                                                                              │
 │   Wi-Fi ┌──────────────────┐  eth  ┌────────────────┐ vmbr0 ┌────────────┐  │
-│   ~~~~~▶│  ASUS RT-AX86U   │──────▶│ Dell Proxmox   │──────▶│ Dell GPU   │  │
+│   ~~~~~▶│  ASUS RT-AX86U   │──────▶│ Dell Proxmox   │──────▶│ Dell CPU   │  │
 │         │  media bridge    │       │ host (.16)     │       │ Worker VM  │  │
-│         │  192.168.10.70   │       │ GTX 1050 Ti    │       │ .119 static│  │
+│         │  192.168.10.70   │       │ CPU-only       │       │ .119 static│  │
 │         └──────────────────┘       └────────────────┘       └────────────┘  │
 │          (all three nodes appear directly on 192.168.10.0/24)                 │
 │                                                                              │
@@ -75,11 +76,11 @@ instance-manager or replica flows, uses VXLAN.
 |--------|-----|---------|
 | Router/Gateway | 192.168.10.1 | Default route + client DNS (Firewalla) |
 | Proxmox | 192.168.10.14 | Hypervisor |
-| Dell Proxmox | 192.168.10.16 | Wi-Fi-site hypervisor (GTX 1050 Ti passthrough) |
+| Dell Proxmox | 192.168.10.16 | Wi-Fi-site CPU-only hypervisor |
 | Technitium / Omni (NUC) | 192.168.10.15 | Split-DNS for `vanillax.me` + self-hosted Omni |
 | ASUS RT-AX86U | 192.168.10.70 | Media bridge (Wi-Fi → Ethernet) for the Dell |
 | Control Plane | 192.168.10.81 | K8s control-plane node |
-| Dell GPU Worker | 192.168.10.119 | K8s worker VM with GTX 1050 Ti (static, bridged via AX86U) |
+| Dell CPU Worker | 192.168.10.119 | K8s CPU worker VM (static, bridged via AX86U) |
 | TrueNAS | 192.168.10.133 | NAS (NFS/SMB/RustFS S3) — 10G |
 | GPU Worker | 192.168.10.177 | K8s GPU worker node |
 | Wyze Bridge | 192.168.10.46 | RTSP camera streams |

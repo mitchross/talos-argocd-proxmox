@@ -51,8 +51,8 @@ Apply each machine class individually using the `-f` flag:
 omnictl apply -f machine-classes/control-plane.yaml
 omnictl apply -f machine-classes/worker.yaml
 omnictl apply -f machine-classes/gpu-worker.yaml
-omnictl apply -f machine-classes/single-node-control-plane.yaml
-omnictl apply -f machine-classes/single-node-talos-gpu.yaml
+omnictl apply -f machine-classes/threadripper-control-plane.yaml
+omnictl apply -f machine-classes/threadripper-gpu-worker.yaml
 ```
 
 ### Verifying Machine Classes
