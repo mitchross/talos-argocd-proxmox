@@ -19,6 +19,15 @@ spec:
   identity:
     username: hindsight-db-pvc
     hostname: hindsight
+  hooks:
+    beforeSnapshot:
+      - workloadExec:
+          podSelector:
+            matchLabels:
+              app: hindsight-db
+          container: postgres
+          command: ["/bin/sh", "-c", "exec psql -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"CHECKPOINT\""]
+          timeout: 2m
   retention:
     keepDaily: 14
     keepWeekly: 6

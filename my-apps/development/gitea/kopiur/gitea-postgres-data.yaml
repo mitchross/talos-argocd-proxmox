@@ -2,8 +2,8 @@
 # gitea-postgres-data backup STUB — uniform fields (repository, copyMethod,
 # populator) injected by ../../common/kopiur-backup. The mover securityContext
 # is per-PVC and stays in THIS stub (docs/domains/storage/kopiur-mover-permissions.md).
-# HOURLY tier: database — caps data loss at ~1h. The CSI snapshot is
-# crash-consistent; Postgres WAL-recovers from it like a power loss.
+# HOURLY tier: database — caps data loss at ~1h. The before-hook
+# CHECKPOINTs Postgres so the CSI capture starts from a flushed state.
 apiVersion: kopiur.home-operations.com/v1alpha1
 kind: SnapshotPolicy
 metadata:
@@ -16,6 +16,15 @@ spec:
   identity:
     username: gitea-postgres-data
     hostname: gitea
+  hooks:
+    beforeSnapshot:
+      - workloadExec:
+          podSelector:
+            matchLabels:
+              app: gitea-postgres
+          container: postgres
+          command: ["/bin/sh", "-c", "exec psql -v ON_ERROR_STOP=1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -c \"CHECKPOINT\""]
+          timeout: 2m
   retention:
     keepHourly: 24
     keepDaily: 7
